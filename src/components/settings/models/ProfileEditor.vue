@@ -2,30 +2,30 @@
 import { computed, ref, useTemplateRef } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
-import { usePiSetup } from '@/app/ai/agents/setup'
+import { useCodingAgentSetup, usePiSetup } from '@/app/ai/agents/setup/use'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
+import { useProfileSignIn } from '@/app/ai/models/settings/profile-editor/sign-in'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
-import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
+import AgentSetup from '@/components/settings/agents/AgentSetup.vue'
 import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import { focusInvalidField } from '@/components/settings/layout/focus'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
+import ProfileCapabilities from '@/components/settings/models/ProfileCapabilities.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
+import ChatGPTSignInField from '@/components/settings/provider/ChatGPTSignInField.vue'
 import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
-import AppInput from '@/components/ui/input/AppInput.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials, settings } = useI18n()
@@ -42,6 +42,10 @@ const {
   providerDef,
   isACP,
   isHarness,
+  isCloud,
+  cloudWorkspaces,
+  cloudState,
+  retryCloud,
   supportsThinking,
   modelOptions,
   selectedModelValue,
@@ -61,24 +65,40 @@ const {
   testConnection: runConnectionTest
 } = profile
 const pi = usePiSetup(isHarness)
+const codingAgent = useCodingAgentSetup(() => draft.providerID)
+const signIn = useProfileSignIn(keyInput)
 const customModelPlaceholder = computed(() =>
   isHarness.value ? (pi.state.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
 )
 const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
-const thinkingLevelOptions = computed(() => buildThinkingLevelOptions(ai.value))
-useSettingsFormGuard({ dirty, busy, cancel: () => emit('done') })
+const cloudWorkspaceOptions = computed(() =>
+  cloudWorkspaces.value.map((workspace) => ({ value: workspace.id, label: workspace.name }))
+)
+const cloudNotice = computed(() => {
+  if (cloudState.value === 'unavailable') return ai.value.cloudAIUnavailable
+  if (cloudState.value === 'workspaces-failed') return ai.value.cloudAIWorkspacesFailed
+  if (cloudState.value === 'no-workspace') return ai.value.cloudAINoWorkspace
+  if (cloudState.value === 'catalog-failed') return ai.value.cloudAICatalogFailed
+  return null
+})
+useSettingsFormGuard({
+  dirty,
+  busy,
+  cancel: () => emit('done'),
+  crumb: {
+    parent: () => ai.value.modelsTitle,
+    title: () => (profileId ? ai.value.editModel : ai.value.addModel)
+  }
+})
 const CUSTOM_MODEL_VALUE = '__custom__'
-const advancedOpen = ref(Boolean(draft.customModelID.trim()))
 function updateProvider(id: AIProviderID) {
+  // A sign-in still waiting must not land in another provider's key.
+  signIn.cancel()
   profile.updateProvider(id)
-  advancedOpen.value = id === 'harness:pi'
 }
-function updateModel(id: string) {
-  profile.updateModel(id)
-  if (id === CUSTOM_MODEL_VALUE) advancedOpen.value = true
-}
+
 async function save() {
   if (busy.value) return
   if (!(await feedback.validate('save'))) {
@@ -112,35 +132,50 @@ async function remove() {
     @submit.prevent="save"
   >
     <SettingsPage data-test-id="settings-model-editor">
-      <SettingsSection>
-        <template #title>{{ profileId ? ai.editModel : ai.addModel }}</template>
-        <template #description>{{ ai.modelEditorDescription }}</template>
-        <fieldset :disabled="busy" class="flex min-w-0 flex-col gap-3">
-          <ProviderSettingsField
-            v-slot="{ control }"
-            :label="ai.modelName"
-            :hint="settings.modelNameHint"
-            :error="fieldErrors.name"
-            @blur="feedback.blur('name')"
-          >
-            <AppInput
-              ref="nameInput"
-              v-bind="control"
-              v-model="draft.name"
-              :aria-label="ai.modelName"
-              :placeholder="modelDisplayName"
-              size="sm"
-            />
-          </ProviderSettingsField>
+      <fieldset :disabled="busy" class="flex min-w-0 flex-col gap-6">
+        <ProviderSettingsField
+          v-slot="{ control }"
+          :label="ai.modelName"
+          :hint="settings.modelNameHint"
+          :error="fieldErrors.name"
+          @blur="feedback.blur('name')"
+        >
+          <ProviderSettingsInput
+            ref="nameInput"
+            v-bind="control"
+            v-model="draft.name"
+            :aria-label="ai.modelName"
+            :placeholder="modelDisplayName"
+          />
+        </ProviderSettingsField>
 
-          <ProviderSettingsField :label="ai.provider">
+        <SettingsSection>
+          <template #title>{{ ai.modelConfiguration }}</template>
+          <ProviderSettingsField v-slot="{ control }" :label="ai.provider">
             <ProviderSelect
+              v-bind="control"
               :model-value="draft.providerID"
               :aria-label="ai.provider"
               data-test-id="settings-model-provider"
               @update:model-value="updateProvider"
             />
           </ProviderSettingsField>
+          <div
+            v-if="codingAgent.agent.value && codingAgent.state.value"
+            class="flex flex-col gap-2"
+            data-test-id="settings-agent-setup"
+          >
+            <AgentSetup
+              :agent="codingAgent.agent.value"
+              :setup="codingAgent.state.value"
+              @check="codingAgent.check()"
+              @install-agent="codingAgent.install()"
+              @install-bridge="codingAgent.installBridge()"
+              @sign-in="codingAgent.signIn()"
+              @cancel-sign-in="codingAgent.cancelSignIn()"
+              @submit-sign-in-code="codingAgent.submitSignInCode($event)"
+            />
+          </div>
 
           <div v-if="pi.state.value" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
             <PiSetup
@@ -151,14 +186,40 @@ async function remove() {
             />
           </div>
 
-          <template v-if="!isACP">
-            <div class="flex items-center gap-2 pt-1">
-              <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
-                {{ ai.modelConfiguration }}
-              </p>
-              <div class="h-px flex-1 bg-border" />
-            </div>
+          <div
+            v-if="isCloud && cloudNotice"
+            class="flex items-start justify-between gap-2"
+            data-test-id="settings-cloud-ai-notice"
+          >
+            <p class="text-xs leading-relaxed text-muted">{{ cloudNotice }}</p>
+            <AppButton
+              v-if="cloudState === 'catalog-failed' || cloudState === 'workspaces-failed'"
+              variant="outline"
+              size="sm"
+              @click="retryCloud"
+            >
+              {{ ai.retryRequest }}
+            </AppButton>
+          </div>
 
+          <ProviderSettingsField
+            v-if="isCloud && cloudWorkspaceOptions.length"
+            :label="ai.cloudWorkspace"
+            :hint="ai.cloudWorkspaceHint"
+            v-slot="{ control }"
+            :error="fieldErrors.cloudWorkspace"
+          >
+            <AppSelect
+              v-bind="control"
+              :model-value="draft.cloudWorkspaceId ?? ''"
+              :label="ai.cloudWorkspace"
+              :options="cloudWorkspaceOptions"
+              data-test-id="settings-cloud-ai-workspace"
+              @update:model-value="draft.cloudWorkspaceId = String($event)"
+            />
+          </ProviderSettingsField>
+
+          <template v-if="!isACP">
             <ProviderSettingsField
               v-if="modelOptions.length && !isHarness"
               v-slot="{ control }"
@@ -174,7 +235,7 @@ async function remove() {
                 :placeholder="ai.selectModel"
                 :search-placeholder="ai.searchModels"
                 :empty-label="common.noResults"
-                @update:model-value="updateModel(String($event))"
+                @update:model-value="profile.updateModel(String($event))"
               />
             </ProviderSettingsField>
 
@@ -194,13 +255,12 @@ async function remove() {
                 :placeholder="customModelPlaceholder"
               />
             </ProviderSettingsField>
+          </template>
+        </SettingsSection>
 
-            <div class="flex items-center gap-2 pt-1">
-              <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
-                {{ ai.connectionSettings }}
-              </p>
-              <div class="h-px flex-1 bg-border" />
-            </div>
+        <template v-if="!isACP">
+          <SettingsSection>
+            <template #title>{{ ai.connectionSettings }}</template>
 
             <ProviderSettingsField
               v-if="providerDef.supportsCustomBaseURL"
@@ -220,9 +280,11 @@ async function remove() {
 
             <ProviderSettingsField
               v-if="draft.providerID === 'openai-compatible'"
+              v-slot="{ control }"
               :label="ai.apiType"
             >
               <AppSelect
+                v-bind="control"
                 v-model="draft.customAPIType"
                 :label="ai.apiType"
                 :options="[
@@ -232,7 +294,20 @@ async function remove() {
               />
             </ProviderSettingsField>
 
+            <ChatGPTSignInField
+              v-if="providerDef.signInOnly"
+              :saved="hasExistingKey"
+              :signed-in="signIn.signedIn.value"
+              :email="signIn.email.value"
+              :status="signIn.status.value"
+              :disabled="busy"
+              @sign-in="signIn.signIn()"
+              @reopen="signIn.reopen()"
+              @cancel="signIn.cancel()"
+              @sign-out="clearKey"
+            />
             <ProviderSettingsKeyField
+              v-else-if="!isCloud"
               v-model="keyInput"
               :label="ai.apiKey"
               :saved="hasExistingKey"
@@ -255,82 +330,23 @@ async function remove() {
               :disabled="busy"
               @test="testConnection"
             />
-          </template>
+          </SettingsSection>
 
-          <AppCollapsible
-            v-if="!isACP"
-            v-model:open="advancedOpen"
-            :ui="{
-              root: 'rounded border border-border',
-              trigger: 'px-2.5 py-2 text-[11px] text-muted hover:text-surface',
-              icon: 'size-3'
-            }"
-          >
-            <template #label>{{ ai.advancedModelSettings }}</template>
-            <div class="flex flex-col gap-3 border-t border-border p-2.5">
-              <div>
-                <p class="text-[11px] font-medium text-surface">{{ ai.modelCapabilities }}</p>
-                <p class="mt-0.5 text-[10px] text-muted">
-                  {{ knownModel ? ai.modelCapabilitiesDetected : ai.modelCapabilitiesManual }}
-                </p>
-              </div>
+          <ProfileCapabilities
+            v-model:tools="toolsEnabled"
+            v-model:vision="visionEnabled"
+            v-model:thinking-level="draft.thinkingLevel"
+            v-model:permission-mode="draft.harnessPermissionMode"
+            :detected="knownModel !== null"
+            :capabilities="knownCapabilities"
+            :output-tokens="outputTokenRecommendation"
+            :thinking="supportsThinking"
+            :harness="isHarness"
+          />
+        </template>
 
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[11px] text-muted">{{ ai.modelCapabilityTools }}</span>
-                  <span v-if="knownModel" class="text-[10px] text-surface">
-                    {{
-                      knownCapabilities.includes('tools') ? common.supported : common.unsupported
-                    }}
-                  </span>
-                  <AppSwitch v-else v-model="toolsEnabled" :label="ai.modelCapabilityTools" />
-                </div>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[11px] text-muted">{{ ai.modelCapabilityVision }}</span>
-                  <span v-if="knownModel" class="text-[10px] text-surface">
-                    {{
-                      knownCapabilities.includes('vision') ? common.supported : common.unsupported
-                    }}
-                  </span>
-                  <AppSwitch v-else v-model="visionEnabled" :label="ai.modelCapabilityVision" />
-                </div>
-              </div>
-
-              <ProviderSettingsField v-if="supportsThinking" :label="ai.thinkingLevel">
-                <AppSelect
-                  v-model="draft.thinkingLevel"
-                  :label="ai.thinkingLevel"
-                  :options="thinkingLevelOptions"
-                />
-                <p class="mt-1 text-[10px] text-muted">{{ ai.thinkingLevelDescription }}</p>
-              </ProviderSettingsField>
-
-              <ProviderSettingsField v-if="isHarness" :label="ai.harnessToolPermissions">
-                <AppSelect
-                  v-model="draft.harnessPermissionMode"
-                  :label="ai.harnessToolPermissions"
-                  :options="[
-                    { value: 'allow-reads', label: ai.harnessPermissionReads },
-                    { value: 'allow-edits', label: ai.harnessPermissionEdits },
-                    { value: 'allow-all', label: ai.harnessPermissionAll }
-                  ]"
-                />
-              </ProviderSettingsField>
-
-              <div class="border-t border-border pt-2.5">
-                <p class="text-[11px] font-medium text-surface">{{ ai.outputLimit }}</p>
-                <p class="mt-0.5 text-[10px] text-muted">
-                  {{ ai.outputLimitAutomatic }} ·
-                  {{ outputTokenRecommendation.toLocaleString() }}
-                  {{ common.tokens }}
-                </p>
-              </div>
-            </div>
-          </AppCollapsible>
-
-          <SettingsSaveFeedback :error="saveError" :result="saveResult" />
-        </fieldset>
-      </SettingsSection>
+        <SettingsSaveFeedback :error="saveError" :result="saveResult" />
+      </fieldset>
 
       <template #footer>
         <AppButton v-if="canDelete" color="error" :disabled="busy" @click="deleteOpen = true">

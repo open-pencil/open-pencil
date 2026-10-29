@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, useId } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue'
+import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import type { VoiceCallError } from '@/app/collab/voice/call'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
@@ -13,9 +14,11 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { voiceCall } from '@/theme/collaboration/voice-call'
+import voiceCallTheme from '@/theme/collaboration/voice-call'
 
 import type { VoiceDeviceOption } from './useVoiceCallControl'
+
+const voiceCall = tv(voiceCallTheme)
 
 /**
  * A room's voice call beside the avatar stack: the button that starts or joins it, mute while in

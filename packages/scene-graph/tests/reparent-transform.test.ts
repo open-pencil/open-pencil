@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getWorldMatrix, SceneGraph, TransformMatrix } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import TransformMatrix from '@open-pencil/scene-graph/matrix'
 
 function setup() {
   const graph = new SceneGraph()

@@ -2,7 +2,7 @@
 import { useObjectUrl } from '@vueuse/core'
 import { shallowRef, watch } from 'vue'
 
-import { renderNodesToImage } from '@open-pencil/core/io'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { useEditorStore } from '@/app/editor/active-store'

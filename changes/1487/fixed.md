@@ -1,0 +1,2 @@
+- Designs saved without a Cover page get a preview of their first page on Home, in recent files, and in their .fig thumbnail, as Figma's files do.
+- The storage list keeps showing previews and errors while it refreshes instead of flashing blank.

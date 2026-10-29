@@ -3,6 +3,8 @@ import { defineCommand } from 'citty'
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
 import { checkTypes } from './checks/attw'
+import { validatePackageContents } from './checks/contents'
+import { validateEntryExports } from './checks/exports'
 import { formatPackageDiagnostics, validatePackageMetadata } from './checks/metadata'
 import { checkPublint } from './checks/publint'
 import { verifyPackedPackages } from './smoke/verify'
@@ -13,9 +15,13 @@ const rootArg = { type: 'string', description: 'Explicit workspace root' } as co
 async function check(root: string): Promise<void> {
   const diagnostics = await measurePhase('metadata', () => validatePackageMetadata(root))
   if (diagnostics.length > 0) throw new Error(formatPackageDiagnostics(diagnostics))
+  const exportDiagnostics = await measurePhase('exports', () => validateEntryExports(root))
+  if (exportDiagnostics.length > 0) throw new Error(formatPackageDiagnostics(exportDiagnostics))
+  const contentDiagnostics = await measurePhase('contents', () => validatePackageContents(root))
+  if (contentDiagnostics.length > 0) throw new Error(formatPackageDiagnostics(contentDiagnostics))
   await measurePhase('Publint', () => checkPublint(root))
   await measurePhase('ATTW', () => checkTypes(root))
-  console.log('Package metadata, Publint and ATTW checks passed.')
+  console.log('Package metadata, exports, contents, Publint and ATTW checks passed.')
 }
 
 export const checkCommand = defineCommand({

@@ -1,13 +1,23 @@
-import {
-  tokenNumberInUnit,
-  type TokenUnit,
-  type Variable,
-  type VariableScope
-} from '@open-pencil/scene-graph'
+import type { TokenUnit, Variable, VariableScope } from '@open-pencil/scene-graph'
+import { tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
 
 import { variableNamespace } from './names'
 
 const UNITLESS_SCOPES = new Set<VariableScope>(['OPACITY', 'FONT_STYLE', 'FONT_VARIATIONS'])
+
+/**
+ * A property that takes values in each token unit, where a browser checks or computes a CSS
+ * expression written for the token: `scale` takes any plain number, `width` any length.
+ */
+export const TOKEN_UNIT_PROPERTY: Record<TokenUnit, string> = {
+  none: 'scale',
+  px: 'width',
+  rem: 'width',
+  '%': 'width',
+  ms: 'transition-duration',
+  s: 'transition-duration',
+  deg: 'rotate'
+}
 
 /**
  * The unit a FLOAT token is written in. An explicit unit wins; opacity and font weights are

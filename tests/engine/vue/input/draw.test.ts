@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor, type Tool } from '@open-pencil/core/editor'
+import { createEditor, type Editor, type Tool } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { handleDrawMove, startShapeDraw, startTextDraw } from '#vue/shared/input/draw'

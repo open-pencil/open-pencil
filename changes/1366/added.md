@@ -1,0 +1,2 @@
+- On desktop, AI setup shows whether Claude Code, Codex, and Pi are installed and signed in, names the account Claude Code and Codex use, and signs them in from the setup screen.
+- Coding agent chats send your message only once the agent has connected to OpenPencil's tools, and otherwise say why it could not.

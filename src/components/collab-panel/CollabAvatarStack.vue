@@ -11,7 +11,7 @@ const collab = useCollabPanelContext()
     :rows="collab.presenceRows"
     :following="collab.following"
     :connected="collab.state.status === 'live'"
-    :in-room="collab.state.inRoom"
+    :can-leave="collab.state.canLeave"
     @follow="collab.follow"
     @rename="collab.renameLocalAgent"
     @leave="collab.disconnect"

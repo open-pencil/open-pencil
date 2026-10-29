@@ -1,3 +1,4 @@
+import { parse } from 'acorn'
 import { transform } from 'sucrase'
 
 const options = {
@@ -7,18 +8,17 @@ const options = {
   production: true
 }
 
-/** The part of an authored program a JSX element was written in. */
-export type DesignJSXChunk = 'statements' | 'expression'
-
 /**
- * Transformed Design JSX whose elements carry `__source: { fileName, lineNumber }` props.
- * `fileName` names the chunk; adding its offset to `lineNumber` gives the 1-based line in the
- * source that was passed in.
+ * Transformed Design JSX: a function body that returns what the source renders. Its elements
+ * carry `__source: { lineNumber }` props; adding `lineOffset` to `lineNumber` gives the 1-based
+ * line in the source that was passed in.
  */
 export interface DesignJSXProgram {
   code: string
-  lineOffsets: Readonly<Record<DesignJSXChunk, number>>
+  lineOffset: number
 }
+
+const RULE = 'Design JSX is one JSX expression, or statements that end with `return` and the JSX'
 
 function lineCount(text: string): number {
   let lines = 0
@@ -26,61 +26,48 @@ function lineCount(text: string): number {
   return lines
 }
 
-function transformChunk(source: string, chunk: DesignJSXChunk | null): string {
-  if (!chunk) return transform(source, options).code
-  const { code } = transform(source, { ...options, production: false, filePath: chunk })
-  // Both chunks share one function body, and Sucrase declares `_jsxFileName` in each.
-  return chunk === 'statements' ? code.replaceAll('_jsxFileName', '_jsxStatementsFileName') : code
+function transformBody(body: string, withLines: boolean): string {
+  return withLines
+    ? transform(body, { ...options, production: false, filePath: 'design.jsx' }).code
+    : transform(body, options).code
 }
 
-function transformExpression(source: string, chunk: DesignJSXChunk | null): string {
-  return transformChunk(`return (${source.trim()})`, chunk)
-}
-
-function statementBoundaries(source: string): number[] {
-  const boundaries = new Set<number>()
-  for (let index = 0; index < source.length; index++) {
-    if (source[index] === '\n') boundaries.add(index + 1)
-  }
-  return [...boundaries].sort((left, right) => right - left)
-}
-
-function transformProgram(source: string, withLines: boolean): DesignJSXProgram {
-  const leadingLines = lineCount(source.slice(0, source.length - source.trimStart().length))
-  const trimmed = source.trim()
-  try {
-    return {
-      code: transformExpression(trimmed, withLines ? 'expression' : null),
-      lineOffsets: { statements: leadingLines, expression: leadingLines }
-    }
-  } catch (expressionError) {
-    for (const boundary of statementBoundaries(trimmed)) {
-      const statements = trimmed.slice(0, boundary).trim()
-      const rawExpression = trimmed.slice(boundary)
-      const expression = rawExpression.trim()
-      if (!statements || !expression) continue
-      try {
-        const transformedStatements = transformChunk(statements, withLines ? 'statements' : null)
-        const expressionStart = boundary + rawExpression.length - rawExpression.trimStart().length
-        return {
-          code: `${transformedStatements}\n${transformExpression(expression, withLines ? 'expression' : null)}`,
-          lineOffsets: {
-            statements: leadingLines,
-            expression: leadingLines + lineCount(trimmed.slice(0, expressionStart))
-          }
-        }
-      } catch {
-        continue
-      }
-    }
-    throw expressionError
-  }
+/** Whether a function body returns from its top level, as statements must end. */
+function returns(code: string): boolean {
+  const program = parse(code, { ecmaVersion: 'latest', allowReturnOutsideFunction: true })
+  return program.body.some((statement) => statement.type === 'ReturnStatement')
 }
 
 /**
- * Transform Design JSX into a function body. A plain JSX expression is accepted directly.
- * For authored programs, top-level declarations must precede a final expression on a new line.
+ * The function body a Design JSX string stands for, tried in order: one JSX expression, sibling
+ * elements, or statements that end with `return` and the JSX, as a component's body does. Each
+ * keeps the source's lines where they are.
  */
+function transformProgram(source: string, withLines: boolean): DesignJSXProgram {
+  const trimmed = source.trim()
+  const lineOffset = lineCount(source.slice(0, source.length - source.trimStart().length))
+  const expressions = [`return (${trimmed})`]
+  if (trimmed.startsWith('<')) expressions.push(`return (<>${trimmed}</>)`)
+  for (const body of expressions) {
+    try {
+      return { code: transformBody(body, withLines), lineOffset }
+    } catch {
+      continue
+    }
+  }
+  let code: string
+  try {
+    code = transformBody(trimmed, withLines)
+  } catch (error) {
+    throw new Error(`${RULE}: ${error instanceof Error ? error.message : String(error)}`, {
+      cause: error
+    })
+  }
+  if (!returns(code)) throw new Error(`${RULE}; these statements return nothing.`)
+  return { code, lineOffset }
+}
+
+/** Transform Design JSX into the body of a function that returns what it renders. */
 export function transformDesignJSXExpression(source: string): string {
   return transformProgram(source, false).code
 }

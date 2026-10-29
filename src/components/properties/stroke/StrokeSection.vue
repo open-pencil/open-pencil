@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
+import { SIDE_STROKE_TYPES } from '@open-pencil/scene-graph/node-defaults'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { useColorBindingProvider } from '@open-pencil/vue/controls/binding-provider'
+import { applySolidStrokeColor, applyStrokePaint } from '@open-pencil/vue/controls/color-model'
+import { MIXED, useNodeProps } from '@open-pencil/vue/controls/node-props'
+import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
+import { useStrokeControls } from '@open-pencil/vue/controls/stroke'
+import { useI18n } from '@open-pencil/vue/i18n'
 import {
-  applySolidStrokeColor,
-  applyStrokePaint,
   BindableValueRoot,
-  MIXED,
-  useColorBindingProvider,
-  useI18n,
-  useNodeProps,
-  useOkHCL,
-  useStrokeControls
-} from '@open-pencil/vue'
-import type { BindableValueActions } from '@open-pencil/vue'
+  type BindableValueActions
+} from '@open-pencil/vue/primitives/BindableValue'
 
 import FillPicker from '@/components/fill-picker/FillPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -70,6 +70,13 @@ function onPickerOpenChange(
 }
 const { panels, common } = useI18n()
 const expandedSides = ref(false)
+/** Figma strokes each side apart only on rectangles, frames, components, and instances. */
+const sidesOffered = computed(
+  () =>
+    selectedNodes.value.length > 0 &&
+    selectedNodes.value.every((node) => SIDE_STROKE_TYPES.has(node.type))
+)
+const sidesShown = computed(() => sidesOffered.value && expandedSides.value)
 
 /** A bound variable colours the swatch, but only a solid stroke has one colour to replace. */
 function displayStroke(stroke: Stroke, resolvedColor: Color | undefined): Fill {
@@ -168,6 +175,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
                 :label="panels.stroke"
                 :fill="displayStroke(stroke, binding.resolvedValue)"
                 :okhcl="createStrokeOkhclAdapter(okhcl, activeNode, index)"
+                :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                 :keep-open="gradients.pressesHandle"
                 :active-stop="gradients.stop(gradients.target(selectedNodeIds, 'strokes', index))"
                 @update:active-stop="
@@ -234,7 +242,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
         />
         <Tip :label="panels.strokeWeight">
           <NumberField
-            v-if="!expandedSides"
+            v-if="!sidesShown"
             class="flex-1"
             icon="W"
             :model-value="items[0]?.weight ?? 1"
@@ -249,6 +257,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
           @patch="actions.patch(0, $event)"
         />
         <IconButton
+          v-if="sidesOffered"
           :label="panels.strokeSides"
           size="xs"
           class="size-[26px] shrink-0"
@@ -263,7 +272,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
       <StrokeSettingsPopover v-if="isMixed && advancedActive" />
 
       <div
-        v-if="!isMixed && items.length > 0 && expandedSides"
+        v-if="!isMixed && items.length > 0 && sidesShown"
         class="mt-1.5 grid grid-cols-2 gap-1.5"
       >
         <NumberField

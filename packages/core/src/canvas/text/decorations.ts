@@ -8,14 +8,17 @@ import type {
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
 import { outlineInk, savedGlyphInk, type InkSpan } from '#core/canvas/text/ink'
+import { COMBINING_KEYCAP, drawKeycapFrame } from '#core/canvas/text/keycap'
+import type { TextLayout } from '#core/canvas/text/layout'
+import { styleRunColor } from '#core/canvas/text/paragraph'
 import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
 import type { PreparedText } from '#core/canvas/text/preparation/cache'
-import { shownText } from '#core/text/case'
+import { shownCharacters, shownText } from '#core/text/case'
 import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from '#core/text/character-style'
-import { weightToStyle } from '#core/text/fonts'
-import { fontDecorationMetricsSync, type FontDecorationMetrics } from '#core/text/opentype'
+import { fontDecorationMetricsSync, type FontDecorationMetrics } from '#core/text/font/glyphs'
 
 /**
  * Figma's Inter, measured from the decorations it saves, for text drawn without its font: its
@@ -347,6 +350,42 @@ export function savedTextDecorationRects(
  * Draws laid-out text and its decorations, `y` below the node's top. The decorations are kept
  * with the prepared text, which its cache replaces when an input of the text changes.
  */
+/** The frames of the text's keycaps, which its layout leaves to be drawn, in their text's colour. */
+function drawKeycapFrames(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SceneNode,
+  layout: TextLayout,
+  y: number,
+  paint: Paint
+): void {
+  const text = shownText(node)
+  if (!text.includes(COMBINING_KEYCAP)) return
+  // Style runs index the source text, which a case such as `ß` to `SS` makes shorter.
+  const sourceIndexAt = new Map<number, number>()
+  let shownIndex = 0
+  for (const { character, sourceIndex } of shownCharacters(node)) {
+    sourceIndexAt.set(shownIndex, sourceIndex)
+    shownIndex += character.length
+  }
+  const runPaint = paint.copy()
+  try {
+    for (const glyph of laidOutGlyphs(node, layout, text, y) ?? []) {
+      const character = glyph.firstCharacter
+      if (character === undefined || text[character] !== COMBINING_KEYCAP) continue
+      // The frame takes the colour the paragraph gives its mark: its style run's, if it has one.
+      const source = sourceIndexAt.get(character) ?? character
+      const run = node.styleRuns.find(
+        (item) => source >= item.start && source < item.start + item.length
+      )
+      runPaint.setColor(run ? styleRunColor(ck, run.style, paint.getColor()) : paint.getColor())
+      drawKeycapFrame(ck, canvas, glyph.x, glyph.y, glyph.fontSize, runPaint)
+    }
+  } finally {
+    runPaint.delete()
+  }
+}
+
 export function drawTextLayout(
   ck: CanvasKit,
   canvas: Canvas,
@@ -357,6 +396,7 @@ export function drawTextLayout(
 ): void {
   const layout = prepared.paragraph
   layout.draw(canvas, 0, y)
+  drawKeycapFrames(ck, canvas, node, layout, y, textPaint)
   if (!hasDecoration(node)) return
   if (prepared.decorations?.y !== y) {
     const glyphs = laidOutGlyphs(node, layout, shownText(node), y)

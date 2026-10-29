@@ -1,0 +1,1 @@
+export { useInlineRename } from './use'

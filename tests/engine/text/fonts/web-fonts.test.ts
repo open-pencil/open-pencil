@@ -52,6 +52,39 @@ describe('web font coverage requests', () => {
     blocked.resolve(new Response('{}', { status: 200 }))
   })
 
+  test('proxies only font provider requests while a provider resolves', async () => {
+    const resolver = new WebFontResolver()
+    resolver.setEnabled({ google: true })
+    const started = Promise.withResolvers<undefined>()
+    const blocked = Promise.withResolvers<Response>()
+    const proxied: string[] = []
+    resolver.setRemoteFetch(async (url) => {
+      proxied.push(url)
+      started.resolve(undefined)
+      return blocked.promise
+    })
+    const originalFetch = globalThis.fetch
+    const direct: string[] = []
+    globalThis.fetch = Object.assign(
+      async (input: RequestInfo | URL) => {
+        direct.push(input instanceof Request ? input.url : input.toString())
+        return new Response('{}')
+      },
+      { preconnect: originalFetch.preconnect }
+    )
+    try {
+      const loading = resolver.listFamilies('google')
+      await started.promise
+      await fetch('https://cloud.example.com/api/session')
+      expect(direct).toEqual(['https://cloud.example.com/api/session'])
+      expect(proxied).not.toContain('https://cloud.example.com/api/session')
+      blocked.resolve(new Response('{}', { status: 200 }))
+      await loading
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
   test('requests script-specific subsets instead of Latin only', () => {
     expect(webFontSubsetsForText('مرحبا')).toContain('arabic')
     expect(webFontSubsetsForText('한글')).toContain('korean')

@@ -46,6 +46,7 @@ const contrast: IssueGroupView = {
   help: 'Text needs a contrast ratio of at least 4.5:1 with its background to meet WCAG AA.',
   fixes: [],
   bindsOnly: true,
+  count: 1,
   rows: [
     row({
       issue: issue('color-contrast', 'caption', 'error'),
@@ -76,6 +77,7 @@ const colors: IssueGroupView = {
   help: 'This color matches a color variable. Bind it so theme and palette changes reach this layer.',
   fixes: [bindAction('card').request, bindAction('dot').request],
   bindsOnly: true,
+  count: 3,
   rows: [
     row({
       issue: issue('no-hardcoded-colors', 'card', 'warning'),
@@ -111,6 +113,7 @@ const radius: IssueGroupView = {
   help: 'Corner radius should come from the radius scale or a variable.',
   fixes: [],
   bindsOnly: true,
+  count: 1,
   rows: [
     row({
       issue: issue('consistent-radius', 'card', 'info'),

@@ -11,20 +11,10 @@ function clearRetainedSceneState(r: SkiaRenderer): void {
 }
 
 function disposePathCaches(r: SkiaRenderer): void {
-  for (const cache of [
-    r.vectorPathCache,
-    r.vectorStrokePathCache,
-    r.vectorStrokeOutlineCache,
-    r.fillGeometryCache,
-    r.strokeGeometryCache
-  ]) {
-    for (const paths of cache.values()) {
-      for (const p of paths) p.delete()
-    }
-    cache.clear()
-  }
+  r.nodePaths.clear()
   r.glyphSilhouetteCache.clear()
   r.derivedGlyphPathCache.clear()
+  r.emojiImageCache.clear()
 }
 
 /** Frees every live image `r`'s surface holds and forgets those an earlier surface held. */
@@ -65,10 +55,13 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.componentLabelFont?.delete()
   r.fontMgr?.delete()
   const fontProvider = r.fontProvider
-  fontProvider?.delete()
   r.fontProvider = null
   r.fontsLoaded = false
-  fontManager.detachProvider(fontProvider)
+  // Only its own provider: a renderer that never loaded fonts leaves the others' attached.
+  if (fontProvider) {
+    fontManager.detachProvider(fontProvider)
+    fontProvider.delete()
+  }
   r.rulerBgPaint.delete()
   r.rulerTickPaint.delete()
   r.rulerTextPaint.delete()
@@ -77,6 +70,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.rulerLabelPaint.delete()
   r.penPathPaint.delete()
   r.penLiveStrokePaint.delete()
+  r.pencilStrokePaint.delete()
   r.penHandlePaint.delete()
   r.penVertexFill.delete()
   r.penVertexStroke.delete()

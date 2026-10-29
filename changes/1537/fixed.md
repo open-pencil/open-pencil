@@ -1,0 +1,2 @@
+- Text in Traditional Chinese loads the Traditional Chinese fallback font it draws in, and Hangul jamo, half-width katakana and Arabic Extended-B letters get their fallback fonts.
+- Saving a `.fig` gives a variable whose ID Figma cannot read a new one, instead of keeping an ID Figma drops the variable for.

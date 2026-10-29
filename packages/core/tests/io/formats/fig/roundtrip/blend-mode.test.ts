@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('roundtrip: layer blend modes', () => {
   beforeAll(async () => {

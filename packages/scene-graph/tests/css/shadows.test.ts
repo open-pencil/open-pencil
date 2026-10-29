@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Color, Effect } from '@open-pencil/scene-graph'
+import type { Effect } from '@open-pencil/scene-graph'
 import { parseCSSShadows } from '@open-pencil/scene-graph/css'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 

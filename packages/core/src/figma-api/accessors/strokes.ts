@@ -1,8 +1,10 @@
-import { newStrokeGeometry, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 
 import {
   nodeId,
   raw,
+  strokeOwner,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
@@ -42,26 +44,26 @@ export function installStrokeNodeProxyAccessors(
     // Figma keeps stroke weight and alignment on the node, with or without strokes.
     strokeWeight: {
       get(this: ProxyThis): number {
-        return newStrokeGeometry(raw(this, internals)).weight
+        return newStrokeGeometry(raw(strokeOwner(this, internals), internals)).weight
       },
       set(this: ProxyThis, value: number) {
-        setStrokeWeight(graph(this, internals), raw(this, internals), value)
+        setStrokeWeight(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
       }
     },
     strokeAlign: {
       get(this: ProxyThis): string {
-        return newStrokeGeometry(raw(this, internals)).align
+        return newStrokeGeometry(raw(strokeOwner(this, internals), internals)).align
       },
       set(this: ProxyThis, value: SceneNode['strokeAlign']) {
-        setStrokeAlign(graph(this, internals), raw(this, internals), value)
+        setStrokeAlign(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
       }
     },
     dashPattern: {
       get(this: ProxyThis): readonly number[] {
-        return Object.freeze([...raw(this, internals).dashPattern])
+        return Object.freeze([...raw(strokeOwner(this, internals), internals).dashPattern])
       },
       set(this: ProxyThis, value: readonly number[]) {
-        updateNode(this, internals, { dashPattern: [...value] })
+        updateNode(strokeOwner(this, internals), internals, { dashPattern: [...value] })
       }
     },
     strokeCap: {
@@ -79,12 +81,13 @@ export function installStrokeNodeProxyAccessors(
     },
     strokeJoin: {
       get(this: ProxyThis): string {
-        return raw(this, internals).strokeJoin
+        return raw(strokeOwner(this, internals), internals).strokeJoin
       },
       set(this: ProxyThis, value: string) {
         const strokeJoin = value as SceneNode['strokeJoin']
-        const node = raw(this, internals)
-        updateNode(this, internals, {
+        const owner = strokeOwner(this, internals)
+        const node = raw(owner, internals)
+        updateNode(owner, internals, {
           strokeJoin,
           strokes: node.strokes.map((stroke) => ({ ...stroke, join: strokeJoin }))
         })

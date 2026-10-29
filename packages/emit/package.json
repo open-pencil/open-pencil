@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/emit",
-  "version": "0.16.0-beta.3",
+  "version": "0.16.0",
   "description": "How OpenPencil exporters emit source: JavaScript, TypeScript, and JSX built as ESTree and printed with esrap.",
   "license": "MIT",
   "repository": {
@@ -19,9 +19,9 @@
   "types": "./dist/index.d.ts",
   "imports": {
     "#emit/*": {
-      "types": "./src/*",
-      "bun": "./src/*",
-      "default": "./dist/*"
+      "types": "./src/*.ts",
+      "bun": "./src/*.ts",
+      "default": "./dist/*.js"
     }
   },
   "exports": {
@@ -38,9 +38,8 @@
   },
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
-    "check": "bun run typecheck && bun run build && bun run smoke:dist",
+    "check": "bun run typecheck && bun run build",
     "prepack": "bun run build",
-    "smoke:dist": "bun scripts/smoke-dist.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

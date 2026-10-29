@@ -1,7 +1,8 @@
 import { renderTree } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { reconcileRenderedLayers, type TreeNode } from '@open-pencil/design-jsx'
-import type { SceneNode, Vector } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'
 import { evaluateDesignJSX } from '@/app/code/sandbox/evaluate'
@@ -90,7 +91,7 @@ export async function previewDesignJSX(
 
   let roots: TreeNode[]
   try {
-    roots = convertDesignJSXRoots(evaluated.roots, evaluated.lineOffsets)
+    roots = convertDesignJSXRoots(evaluated.roots, evaluated.lineOffset, evaluated.collections)
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
-import { CaptureStack } from '@open-pencil/core'
+import { CaptureStack } from '@open-pencil/core/profiler'
 
 describe('CaptureStack', () => {
   it('builds a tree of node profiles', () => {

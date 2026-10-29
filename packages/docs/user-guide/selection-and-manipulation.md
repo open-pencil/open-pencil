@@ -16,6 +16,9 @@ Select objects to move, resize, rotate, duplicate, and organize them on the canv
 - **Double-click a frame's or component's name** above it on the canvas to rename it in place
 - **Marquee drag** — drag on empty canvas to draw a selection rectangle; intersecting nodes are selected on release. Started inside a top-level frame without auto layout or a section, it selects that container's layers; from the page, a frame or section that holds layers is selected only when fully enclosed
 - <kbd>⌘</kbd><kbd>A</kbd> — select all nodes on the current page
+- <kbd>Enter</kbd> — select the children of the selected layers; on a vector it edits the path and on text it edits the text
+- <kbd>Shift</kbd> + <kbd>Enter</kbd> or <kbd>\\</kbd> — select the parent of the selected layers
+- <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd> — select the next or previous sibling, going down or up the layers panel and wrapping at the ends
 - **Click empty canvas** — deselect all
 
 ## Moving

@@ -1,0 +1,1 @@
+- In a shared room, comments, replies, review statuses, and file settings that several people change at once all keep their changes instead of one replacing the others, and enabled libraries and the document's color space now reach everyone in the room.

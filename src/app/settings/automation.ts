@@ -1,9 +1,10 @@
+import { isEmptyObject } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { allRules } from '@open-pencil/core/lint'
-import { AVAILABLE_LOCALES, locale, setLocale, type Locale } from '@open-pencil/vue'
+import { AVAILABLE_LOCALES, locale, setLocale, type Locale } from '@open-pencil/vue/i18n'
 
-import { agentStepLimitSchema } from '@/app/ai/chat/step-limit'
+import { agentStepLimitSchema } from '@/app/ai/reply/schema'
 import { applySnappingPreferences, setDesignIssuesOnCanvas } from '@/app/settings/preferences/apply'
 import {
   ANIMATION_PREFERENCES,
@@ -15,8 +16,9 @@ import {
   updateDesignCheckPreferences,
   type AppPreferences
 } from '@/app/settings/preferences/store'
-import { accentPreferenceSchema } from '@/app/shell/accent/palette'
-import { APP_THEMES, getAppTheme, setAppTheme, type AppTheme } from '@/app/shell/theme'
+import { APP_THEMES, type AppTheme } from '@/app/settings/theme'
+import { accentPreferenceSchema } from '@/app/shell/accent/schema'
+import { getAppTheme, setAppTheme } from '@/app/shell/theme'
 
 /**
  * The editor preferences that automation clients (CLI, MCP) may read and change.
@@ -37,9 +39,9 @@ export interface AutomationSettings {
   designCheck: AppPreferences['designCheck']
 }
 
-const optionalBoolean = v.optional(v.boolean())
+const optionalBooleanSchema = v.optional(v.boolean())
 
-export const automationSettingsPatchSchema = v.strictObject({
+const automationSettingsPatchSchema = v.strictObject({
   appearance: v.optional(
     v.strictObject({
       theme: v.optional(v.picklist(APP_THEMES)),
@@ -52,9 +54,9 @@ export const automationSettingsPatchSchema = v.strictObject({
     v.strictObject({
       snapping: v.optional(
         v.strictObject({
-          geometry: optionalBoolean,
-          objects: optionalBoolean,
-          pixelGrid: optionalBoolean
+          geometry: optionalBooleanSchema,
+          objects: optionalBooleanSchema,
+          pixelGrid: optionalBooleanSchema
         })
       )
     })
@@ -62,7 +64,7 @@ export const automationSettingsPatchSchema = v.strictObject({
   rendering: v.optional(
     v.strictObject({ canvasMode: v.optional(v.picklist(CANVAS_RENDERING_MODES)) })
   ),
-  recovery: v.optional(v.strictObject({ enabled: optionalBoolean })),
+  recovery: v.optional(v.strictObject({ enabled: optionalBooleanSchema })),
   chat: v.optional(
     v.strictObject({
       reasoningDisplay: v.optional(v.picklist(REASONING_DISPLAYS)),
@@ -72,7 +74,7 @@ export const automationSettingsPatchSchema = v.strictObject({
   ),
   designCheck: v.optional(
     v.strictObject({
-      showOnCanvas: optionalBoolean,
+      showOnCanvas: optionalBooleanSchema,
       preset: v.optional(v.picklist(DESIGN_CHECK_PRESETS)),
       disabledRules: v.optional(v.array(v.picklist(Object.keys(allRules))))
     })
@@ -126,7 +128,7 @@ export function updateAutomationSettings(input: unknown): AutomationSettings {
   }
   if (patch.editing?.snapping) applySnappingPreferences(patch.editing.snapping)
   const { showOnCanvas, ...designCheck } = patch.designCheck ?? {}
-  if (Object.keys(designCheck).length > 0) updateDesignCheckPreferences(designCheck)
+  if (!isEmptyObject(designCheck)) updateDesignCheckPreferences(designCheck)
   // Through the menu's setter, so the native View menu checkmark follows.
   if (showOnCanvas !== undefined) setDesignIssuesOnCanvas(showOnCanvas)
 

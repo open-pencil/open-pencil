@@ -5,7 +5,7 @@ import { parseArgs } from 'node:util'
 
 import { captureGraphOracle, figmaOracleScript } from '#visual/capture/scene'
 import { summarizePathDiagnostics } from '#visual/path-diagnostics'
-import { compareSceneOracle, SceneOracleNodeSchema } from '#visual/scene-oracle'
+import { compareSceneOracle, sceneOracleNodeSchema } from '#visual/scene-oracle'
 import { $ } from 'bun'
 import * as v from 'valibot'
 
@@ -31,7 +31,7 @@ const oracle = v.parse(
   v.pipe(
     v.string(),
     v.parseJson(),
-    v.object({ fileKey: v.string(), rootId: v.string(), nodes: v.array(SceneOracleNodeSchema) })
+    v.object({ fileKey: v.string(), rootId: v.string(), nodes: v.array(sceneOracleNodeSchema) })
   ),
   capture
 )

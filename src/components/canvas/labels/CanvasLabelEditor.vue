@@ -10,7 +10,7 @@ import {
   LABEL_OFFSET_Y
 } from '@open-pencil/core/constants'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
-import type { CanvasLabelEdit } from '@open-pencil/vue'
+import type { CanvasLabelEdit } from '@open-pencil/vue/canvas/labels'
 
 import type { CanvasLabelPresentation } from '@/components/canvas/labels/presentation'
 import InlineLabelEditor from '@/components/ui/input/InlineLabelEditor.vue'

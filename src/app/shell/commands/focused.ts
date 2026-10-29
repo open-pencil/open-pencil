@@ -1,5 +1,5 @@
-import { isCanvasTextInput } from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
+import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isInputElement } from '@/app/shell/keyboard/focus'

@@ -13,7 +13,8 @@ import { data } from '#docs-api/components/property-list.data'
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useEditorPropertyList } from '@open-pencil/vue'
+import { PropertyListRoot } from '@open-pencil/vue/primitives/PropertyList'
+import { useEditorPropertyList } from '@open-pencil/vue/controls/property-list'
 const fills = useEditorPropertyList('fills')
 </script>
 

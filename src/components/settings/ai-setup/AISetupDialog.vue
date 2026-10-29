@@ -2,6 +2,7 @@
 import {
   aiSetupDialogOpen,
   aiSetupEntry,
+  aiSetupOffersTour,
   closeAISetup
 } from '@/app/ai/models/settings/onboarding/dialog'
 import { openTour } from '@/app/demo/document'
@@ -37,6 +38,7 @@ function takeTour(): void {
   >
     <AISetupFlow
       :entry="aiSetupEntry"
+      :offers-tour="aiSetupOffersTour"
       @close="closeAISetup"
       @advanced="openAdvancedSettings"
       @tour="takeTour"

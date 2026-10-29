@@ -18,7 +18,7 @@ type Args = {
   rows: PresencePersonRow[]
   following: FollowTarget | null
   connected: boolean
-  inRoom: boolean
+  canLeave: boolean
 }
 
 const meta = {
@@ -29,7 +29,7 @@ const meta = {
     rows: room,
     following: null,
     connected: true,
-    inRoom: true,
+    canLeave: true,
     onFollow: fn(),
     onRename: fn(),
     onLeave: fn()
@@ -66,7 +66,7 @@ export const ManyPeople: Story = {
 }
 
 export const Alone: Story = {
-  args: { rows: room.slice(0, 1), connected: false, inRoom: false }
+  args: { rows: room.slice(0, 1), connected: false, canLeave: false }
 }
 
 /** You and Ana are in the voice call: Ana is speaking and you are muted. */

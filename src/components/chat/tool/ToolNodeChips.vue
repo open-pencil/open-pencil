@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useToolNodes } from '@/components/chat/tool/useToolNodes'
-import { chatToolTheme } from '@/theme/chat/tool'
+
+import { chatToolTheme } from './ui'
 
 const { ids } = defineProps<{ ids: string[] }>()
 const { ai } = useI18n()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'

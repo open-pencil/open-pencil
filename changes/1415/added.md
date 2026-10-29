@@ -1,0 +1,1 @@
+- `.pen` icons draw as pen.dev draws them: Lucide, Feather, and Phosphor from their icon sets, Material Symbols from Google's fonts at the icon's weight, and icons whose library or name is a variable in the layer's theme. `.pen` image fills draw from data URLs everywhere, and from files in the document's folder in the CLI and desktop app.

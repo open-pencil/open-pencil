@@ -1,0 +1,1 @@
+- A document still opening when you switch to another tab no longer fails with "The operation was timed out"; it finishes opening and is drawn when you return to its tab.

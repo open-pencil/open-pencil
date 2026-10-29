@@ -1,0 +1,1 @@
+- A selected ellipse shows Figma's arc handles: drag them to cut a slice, turn the arc, change its sweep, or open a hole, with Shift rounding to 15° and tenths.

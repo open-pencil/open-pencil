@@ -4,6 +4,8 @@
   "usageCompleted": "Ukończone",
   "usageInputTokens": "Tokeny wejściowe",
   "usageOutputTokens": "Tokeny wyjściowe",
+  "usageCachedInputTokens": "Tokeny wejściowe z pamięci podręcznej",
+  "usageCacheWriteTokens": "Tokeny zapisane w pamięci podręcznej",
   "usageByModel": "Według modelu",
   "usageNoData": "Brak zarejestrowanych danych użycia.",
   "usageNotReported": "Nie zgłoszono",

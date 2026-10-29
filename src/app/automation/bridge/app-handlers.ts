@@ -1,5 +1,6 @@
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { isAutomationUndoLabel } from '@/app/automation/execution/editor'
+import { recentFiles } from '@/app/recent-files'
 import { readAutomationSettings, updateAutomationSettings } from '@/app/settings/automation'
 import { switchTab } from '@/app/tabs'
 
@@ -47,6 +48,16 @@ export async function handleRedo(target: AutomationTarget, _args: unknown): Prom
 
 export function handleGetSettings(): unknown {
   return { ok: true, result: { settings: readAutomationSettings() } }
+}
+
+/** Local design files from the recent files list, newest first, within the user's limit. */
+export function handleListRecentFiles(): unknown {
+  const files = recentFiles.value.flatMap((document) =>
+    document.kind === 'local'
+      ? [{ path: document.path, name: document.name, updated_at: document.updatedAt }]
+      : []
+  )
+  return { ok: true, result: { files } }
 }
 
 export function handleUpdateSettings(args: unknown): unknown {

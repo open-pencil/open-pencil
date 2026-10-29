@@ -1,7 +1,16 @@
 import { computed, ref } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
+import type {
+  GridTrack,
+  LayoutAlign,
+  LayoutCounterAlign,
+  LayoutSizing,
+  NumericNodeProperty,
+  SceneGraph,
+  SceneNode
+} from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
   enforcedAspectRatio,
@@ -10,15 +19,8 @@ import {
   layoutSizingUpdates,
   lockedAspectRatioTarget,
   sizeKeepingAspectRatio,
-  type GridTrack,
-  type LayoutAlign,
-  type LayoutCounterAlign,
-  type LayoutSizing,
-  type LayoutSizingAxis,
-  type NumericNodeProperty,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type LayoutSizingAxis
+} from '@open-pencil/scene-graph/layout'
 
 import { useNodePreview } from '#vue/controls/node-preview/use'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'

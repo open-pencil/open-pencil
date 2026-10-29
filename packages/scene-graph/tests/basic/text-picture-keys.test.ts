@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { GLYPH_AFFECTING_KEYS, TEXT_PICTURE_KEYS } from '@open-pencil/scene-graph/text/picture'
 
 describe('text rendering invalidation keys', () => {
   test('TEXT_PICTURE_KEYS contains rendered-picture properties', () => {
-    const keys = SceneGraph.TEXT_PICTURE_KEYS
+    const keys = TEXT_PICTURE_KEYS
     for (const k of [
       'text',
       'fontSize',
@@ -28,7 +28,7 @@ describe('text rendering invalidation keys', () => {
   })
 
   test('GLYPH_AFFECTING_KEYS contains only properties that change imported glyphs', () => {
-    const keys = SceneGraph.GLYPH_AFFECTING_KEYS
+    const keys = GLYPH_AFFECTING_KEYS
     for (const k of [
       'text',
       'fontSize',
@@ -53,7 +53,7 @@ describe('text rendering invalidation keys', () => {
   })
 
   test('TEXT_PICTURE_KEYS does NOT contain non-text properties', () => {
-    const keys = SceneGraph.TEXT_PICTURE_KEYS
+    const keys = TEXT_PICTURE_KEYS
     for (const k of ['x', 'y', 'rotation', 'opacity', 'visible', 'name']) {
       expect(keys.has(k)).toBe(false)
     }

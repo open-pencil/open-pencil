@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { supportsFileSystemAccess } from '@/app/document/io/capability'
 import ExternalLink from '@/components/links/ExternalLink.vue'

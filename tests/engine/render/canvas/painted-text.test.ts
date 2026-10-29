@@ -13,10 +13,10 @@ import { repoPath } from '#tests/helpers/paths'
 
 const FONT_FAMILY = 'Painted text fixture'
 beforeAll(async () => {
-  for (const style of ['Regular', 'SemiBold']) {
-    const data = await Bun.file(repoPath(`packages/core/assets/Inter-${style}.ttf`)).arrayBuffer()
-    fontManager.markLoaded(FONT_FAMILY, style, data)
-  }
+  // Inter's variable file draws both styles, as the bundled Inter does.
+  const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+  for (const style of ['Regular', 'SemiBold'])
+    await fontManager.markLoaded(FONT_FAMILY, style, data)
 })
 
 const solid: Fill = { type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 describe('variable mode undo', () => {
   test('setting a default mode moves it first, and undo restores the order', () => {

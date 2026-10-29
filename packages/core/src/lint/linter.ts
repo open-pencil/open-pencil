@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
@@ -30,6 +32,9 @@ export class Linter {
   private rules = new Map<string, Rule>()
   private ruleConfigs = new Map<string, { severity: Severity; options?: Record<string, unknown> }>()
   private messages: LintMessage[] = []
+  private graph: SceneGraph | null = null
+  /** The enabled rules with their contexts, made once per run rather than once per layer. */
+  private checks: { rule: Rule; context: RuleContext }[] = []
   private nodes = new Map<string, LintNode>()
   private variables: LintVariables = {
     counts: { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0 },
@@ -63,10 +68,13 @@ export class Linter {
   lintGraph(graph: SceneGraph, rootIds?: string[]): LintResult {
     this.messages = []
     this.nodes.clear()
+    this.graph = graph
     this.variables = describeVariables(graph)
+    this.checks = this.ruleChecks()
     const roots = rootIds && rootIds.length > 0 ? rootIds : graph.getPages().map((p) => p.id)
-    for (const id of roots) this.capture(graph, id, undefined)
-    for (const id of roots) this.lintNode(id)
+    for (const id of outermostRoots(graph, roots)) this.lintNode(id, undefined)
+    this.graph = null
+    this.checks = []
     return {
       messages: this.messages,
       errorCount: this.messages.filter((m) => m.severity === 'error').length,
@@ -75,13 +83,19 @@ export class Linter {
     }
   }
 
-  private capture(graph: SceneGraph, id: string, parent?: LintNode) {
-    const raw = graph.getNode(id)
-    if (!raw) return
-    const node = this.toLintNode(graph, raw)
+  /**
+   * The rules' view of `id`, made the first time the walk or a rule reaches it. Instance sublayers
+   * are never linted, so on a page made of instances most layers are never converted at all.
+   */
+  private nodeFor(id: string, parent: LintNode | undefined): LintNode | undefined {
+    const cached = this.nodes.get(id)
+    if (cached) return cached
+    const raw = this.graph?.getNode(id)
+    if (!this.graph || !raw) return undefined
+    const node = this.toLintNode(this.graph, raw)
     node.parent = parent
     this.nodes.set(id, node)
-    for (const childId of raw.childIds) this.capture(graph, childId, node)
+    return node
   }
 
   private toLintNode(graph: SceneGraph, raw: SceneNode): LintNode {
@@ -105,6 +119,7 @@ export class Linter {
       rotation: raw.rotation,
       visible: raw.visible,
       locked: raw.locked,
+      opacity: raw.opacity,
       layoutMode: raw.layoutMode,
       layoutPositioning: raw.layoutPositioning,
       layoutGrow: raw.layoutGrow,
@@ -144,43 +159,69 @@ export class Linter {
     }
   }
 
-  private lintNode(id: string) {
-    const node = this.nodes.get(id)
-    if (!node) return
+  private ruleChecks(): { rule: Rule; context: RuleContext }[] {
+    const checks: { rule: Rule; context: RuleContext }[] = []
     for (const [ruleId, rule] of this.rules) {
-      if (rule.match && !rule.match.includes(node.type)) continue
       const config = this.ruleConfigs.get(ruleId)
       if (!config || config.severity === 'off') continue
-      const context: RuleContext = {
-        variables: this.variables,
-        report: ({ node, message, suggest, data, fix, suggestions }) => {
-          this.messages.push({
-            ruleId,
-            severity: config.severity as Exclude<Severity, 'off'>,
-            message,
-            nodeId: node.id,
-            nodeName: node.name,
-            nodePath: getNodePath(this.nodes.get(node.id) ?? node),
-            suggest,
-            data,
-            fix,
-            suggestions
-          })
-        },
-        getConfig: () => config.options,
-        getParent: (node) => this.nodes.get(node.id)?.parent ?? null,
-        getChildren: (node) =>
-          node.childIds
-            .map((childId) => this.nodes.get(childId))
-            .filter((child): child is LintNode => !!child)
-      }
+      const severity = config.severity
+      checks.push({
+        rule,
+        context: {
+          variables: this.variables,
+          report: ({ node, message, suggest, data, fix, suggestions }) => {
+            this.messages.push({
+              ruleId,
+              severity,
+              message,
+              nodeId: node.id,
+              nodeName: node.name,
+              nodePath: getNodePath(this.nodes.get(node.id) ?? node),
+              suggest,
+              data,
+              fix,
+              suggestions
+            })
+          },
+          getConfig: () => config.options,
+          getParent: (node) => this.nodes.get(node.id)?.parent ?? null,
+          getChildren: (node) =>
+            node.childIds
+              .map((childId) => this.nodeFor(childId, this.nodes.get(node.id)))
+              .filter((child): child is LintNode => !!child)
+        }
+      })
+    }
+    return checks
+  }
+
+  private lintNode(id: string, parent: LintNode | undefined) {
+    const node = this.nodeFor(id, parent)
+    if (!node) return
+    for (const { rule, context } of this.checks) {
+      if (rule.match && !rule.match.includes(node.type)) continue
       rule.check(node, context)
     }
     // Instance sublayers mirror their main component: issues there are fixed once in the
     // component, so reporting every placed copy only multiplies the same finding.
     if (node.type === 'INSTANCE') return
-    for (const childId of node.childIds) this.lintNode(childId)
+    for (const childId of node.childIds) this.lintNode(childId, node)
   }
+}
+
+/**
+ * The roots no other root contains, each once. A layer inside another root is linted with it,
+ * so it has its real parents and reports once.
+ */
+function outermostRoots(graph: SceneGraph, ids: readonly string[]): string[] {
+  const requested = new Set(ids)
+  return uniq(ids).filter((id) => {
+    for (let parentId = graph.getNode(id)?.parentId; parentId;) {
+      if (requested.has(parentId)) return false
+      parentId = graph.getNode(parentId)?.parentId
+    }
+    return true
+  })
 }
 
 function describeVariables(graph: SceneGraph): LintVariables {

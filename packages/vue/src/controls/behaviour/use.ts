@@ -17,7 +17,7 @@ import {
   type BehaviourKind,
   type BehaviourNumberSettings,
   type InteractionState
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/behaviours'
 
 import type { VariantDefinitionControl } from '#vue/controls/variants'
 import { useEditor } from '#vue/editor/context'

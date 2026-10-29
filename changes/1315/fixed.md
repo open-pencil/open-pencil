@@ -1,0 +1,1 @@
+- Text bound to a number variable shows values just off a whole number, such as 2.0000002, with two decimals, as Figma does.

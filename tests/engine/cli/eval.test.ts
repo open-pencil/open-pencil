@@ -49,8 +49,9 @@ heavy('eval CLI', () => {
       '--json',
       '--code',
       `
-        const collection = figma.createVariableCollection('Eval spacing');
-        const variable = figma.createVariable('Padding', 'FLOAT', collection.id, 10);
+        const collection = figma.variables.createVariableCollection('Eval spacing');
+        const variable = figma.variables.createVariable('Padding', collection, 'FLOAT');
+        variable.setValueForMode(collection.defaultModeId, 10);
         const frame = figma.createFrame();
         frame.layoutMode = 'HORIZONTAL';
         frame.primaryAxisSizingMode = 'AUTO';
@@ -58,8 +59,8 @@ heavy('eval CLI', () => {
         const child = figma.createRectangle();
         child.resize(5, 5);
         frame.appendChild(child);
-        figma.bindVariable(frame.id, 'paddingLeft', variable.id);
-        figma.setVariableValue(variable.id, collection.defaultModeId, 20);
+        openpencil.bindVariable(frame, 'paddingLeft', variable);
+        variable.setValueForMode(collection.defaultModeId, 20);
         return { padding: frame.paddingLeft, width: frame.width, childX: child.x };
       `
     ])

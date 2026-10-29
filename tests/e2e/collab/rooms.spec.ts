@@ -8,7 +8,7 @@ import {
   ROOM_ID,
   SECOND_ROOM_ID,
   share,
-  shareLinkPath,
+  roomLinkPath,
   startRelay,
   type Peer
 } from '#tests/helpers/collab/room'
@@ -42,7 +42,7 @@ test('a share link opens the room in its own tab, waiting until someone with it 
   let host: Peer | null = null
   let guest: Peer | null = null
   try {
-    guest = await createPeer(browser, 'Guest', relay.url, { path: shareLinkPath() })
+    guest = await createPeer(browser, 'Guest', relay.url, { path: roomLinkPath() })
     const screen = guest.page.getByTestId('room-screen')
     // It connects and looks for people before it says nobody who has the file is here.
     await expect(screen).toHaveAttribute('data-status', /^(connecting|looking)$/)
@@ -67,7 +67,7 @@ test('a share link opens the room in its own tab, waiting until someone with it 
     await expect(screen).toHaveCount(0)
     await expect.poll(() => roomStatus(guest as Peer)).toBe('live')
     await expect.poll(() => layerName((guest as Peer).page, nodeId)).toBe('Shared card')
-    await expect(guest.page).toHaveURL(new RegExp(`/share/${ROOM_ID}\\?`))
+    await expect(guest.page).toHaveURL(new RegExp(`/rooms/${ROOM_ID}\\?`))
     expect(collaborationErrors(guest)).toEqual([])
   } finally {
     await closeAll([guest, host], relay)
@@ -88,7 +88,7 @@ test('joining from a document opens a new tab and leaves that document alone', a
     guest = await createPeer(browser, 'Guest', relay.url)
     const ownNode = await addRectangle(guest.page, 'My own work')
     await guest.page.getByTestId('collab-share-button').click()
-    await guest.page.getByTestId('collab-join-input').fill(`https://example.test/share/${ROOM_ID}/`)
+    await guest.page.getByTestId('collab-join-input').fill(`https://example.test/rooms/${ROOM_ID}/`)
     await guest.page.getByTestId('collab-join-room-button').click()
 
     await expect.poll(() => layerName((guest as Peer).page, hostNode)).toBe('Room card')
@@ -98,7 +98,7 @@ test('joining from a document opens a new tab and leaves that document alone', a
     await guest.page.getByTestId('tabbar-tab').first().click()
     await expect.poll(() => layerName((guest as Peer).page, ownNode)).toBe('My own work')
     expect(await roomStatus(guest)).toBeNull()
-    await expect(guest.page).not.toHaveURL(/\/share\//)
+    await expect(guest.page).not.toHaveURL(/\/rooms\//)
     await expect
       .poll(() => host?.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
       .toBe(1)
@@ -114,7 +114,7 @@ test('a pasted link that is not a room says so and joins nothing', async ({ brow
   try {
     guest = await createPeer(browser, 'Guest', relay.url)
     await guest.page.getByTestId('collab-share-button').click()
-    await guest.page.getByTestId('collab-join-input').fill('https://example.test/share/nope')
+    await guest.page.getByTestId('collab-join-input').fill('https://example.test/rooms/nope')
     await guest.page.getByTestId('collab-join-room-button').click()
     await expect(guest.page.getByTestId('collab-join-error')).toBeVisible()
     await expect(guest.page.getByTestId('tabbar-tab')).toHaveCount(1)
@@ -134,7 +134,7 @@ test('reloading a room tab rejoins it, and leaving keeps an unsaved copy', async
     const nodeId = await addRectangle(host.page, 'Kept card')
     await share(host)
 
-    guest = await createPeer(browser, 'Guest', relay.url, { path: shareLinkPath() })
+    guest = await createPeer(browser, 'Guest', relay.url, { path: roomLinkPath() })
     await expect.poll(() => layerName((guest as Peer).page, nodeId)).toBe('Kept card')
 
     await guest.page.reload()
@@ -149,7 +149,7 @@ test('reloading a room tab rejoins it, and leaving keeps an unsaved copy', async
     expect(
       await guest.page.evaluate(() => window.openPencil?.getStore?.().hasUnsavedChanges())
     ).toBe(true)
-    await expect(guest.page).not.toHaveURL(/\/share\//)
+    await expect(guest.page).not.toHaveURL(/\/rooms\//)
     await expect
       .poll(() => host?.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
       .toBe(0)
@@ -175,7 +175,7 @@ test('two room tabs stay live at once, each syncing with its own room', async ({
     const inRoomA = await addRectangle(guest.page, 'For A')
     await connect(guest, SECOND_ROOM_ID)
     await expect.poll(() => roomStatus(guest as Peer)).toBe('live')
-    await expect(guest.page).toHaveURL(new RegExp(`/share/${SECOND_ROOM_ID}\\?`))
+    await expect(guest.page).toHaveURL(new RegExp(`/rooms/${SECOND_ROOM_ID}\\?`))
 
     await expect.poll(() => layerName((hostA as Peer).page, inRoomA)).toBe('For A')
     expect(await layerName(hostB.page, inRoomA)).toBeUndefined()
@@ -200,7 +200,7 @@ test("a guest's page list shows which page the sharer is on, and who is there on
     host = await createPeer(browser, 'Host', relay.url)
     await addRectangle(host.page, 'Card')
     await share(host)
-    guest = await createPeer(browser, 'Guest', relay.url, { path: shareLinkPath() })
+    guest = await createPeer(browser, 'Guest', relay.url, { path: roomLinkPath() })
     await expect(guest.page.getByTestId('room-screen')).toHaveCount(0, { timeout: 15_000 })
 
     // A real pointer over the canvas, as people move it, not the test hook.

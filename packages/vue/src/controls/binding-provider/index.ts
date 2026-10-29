@@ -22,3 +22,5 @@ export type {
   BindingTarget,
   BoundEditPolicy
 } from '#vue/controls/binding-provider/types'
+export { useTextContentBindingProvider } from '#vue/controls/binding-provider/text'
+export { useVisibilityBindingProvider } from '#vue/controls/binding-provider/visibility'

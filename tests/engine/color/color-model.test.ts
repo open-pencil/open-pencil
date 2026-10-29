@@ -2,10 +2,15 @@ import { describe, expect, test } from 'bun:test'
 
 import { ref } from 'vue'
 
-import type { OkHCLColor } from '@open-pencil/core'
-import type { Color } from '@open-pencil/scene-graph'
-import type { ColorFieldFormat } from '@open-pencil/vue'
-import { BUILT_IN_COLOR_FORMATS, fromPercent, toPercent, useColorModel } from '@open-pencil/vue'
+import type { OkHCLColor } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import {
+  type ColorFieldFormat,
+  BUILT_IN_COLOR_FORMATS,
+  fromPercent,
+  toPercent,
+  useColorModel
+} from '@open-pencil/vue/controls/color-model'
 
 function expectColorClose(actual: Color, expected: Color, precision = 5) {
   expect(actual.r).toBeCloseTo(expected.r, precision)

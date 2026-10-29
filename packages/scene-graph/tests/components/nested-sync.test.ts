@@ -1,10 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import {
-  SceneGraph,
-  recordInstanceOverride,
-  deleteInstanceOverride
-} from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { deleteInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 test('outer sync preserves a nested edit without blocking sibling or other-field inheritance', () => {
   const graph = new SceneGraph()

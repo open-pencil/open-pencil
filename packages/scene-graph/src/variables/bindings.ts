@@ -1,11 +1,22 @@
+import { isEqual } from 'es-toolkit/predicate'
+
+import type { VariableModeFallback } from '.'
 import { copyFills, copyStrokes } from '../copy'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances'
 import type { Color } from '../primitives'
-import type { Fill, SceneNode, Stroke, StyleRun, VariableValue } from '../types'
-import type { VariableModeFallback } from '../variables'
-import { NUMERIC_FIELDS, isNumericVariableBindingField } from './fields'
-export { isNumericVariableBindingField } from './fields'
+import { pixelLength } from '../text/lengths'
+import type { Fill, SceneNode, Stroke, StyleRun, TextLength } from '../types'
+import { NUMERIC_FIELDS, isNumericVariableBindingField, paintBindingTarget } from './fields'
+import { variableText, variableTruthy } from './text'
+import { variableValueReferences } from './value'
+export {
+  isNumericVariableBindingField,
+  paintBindingTarget,
+  TEXT_CONTENT_VARIABLE_TYPES,
+  VISIBILITY_VARIABLE_TYPES,
+  type PaintBindingList
+} from './fields'
 
 /** New declarations belong to the outermost occurrence, bounded by a component definition. */
 export function variableBindingOwner(graph: SceneGraph, node: SceneNode): SceneNode {
@@ -32,6 +43,14 @@ export function assignVariableBindingUnits(
   }
 }
 
+/** Fields a bound number sets as a length in pixels, as Figma's do, whatever unit they held. */
+const TEXT_LENGTH_FIELDS: ReadonlySet<string> = new Set(['lineHeight', 'letterSpacing'])
+
+/** A bound number as the field stores it. */
+function boundValue(field: string, value: number): number | TextLength {
+  return TEXT_LENGTH_FIELDS.has(field) ? pixelLength(value) : value
+}
+
 /**
  * The values a node's numeric bindings resolve to in its mode, in scene units, for the fields
  * whose stored value differs. A width or height an instance overrides keeps its own value.
@@ -51,45 +70,13 @@ export function resolvedNumericBindings(
     const scale = node.variableBindingScales[field] ?? 1
     const effective = value * scale
     if (!Number.isFinite(effective)) continue
-    const next = field === 'opacity' ? Math.max(0, Math.min(1, effective)) : effective
-    if (node[field as keyof SceneNode] !== next) Object.assign(updates, { [field]: next })
+    const next = boundValue(
+      field,
+      field === 'opacity' ? Math.max(0, Math.min(1, effective)) : effective
+    )
+    if (!isEqual(node[field as keyof SceneNode], next)) Object.assign(updates, { [field]: next })
   }
   return updates
-}
-
-/**
- * The text a variable bound to text content shows: a string as it is, and a number or boolean
- * as Figma writes it, since Figma lets either be text content.
- */
-export function variableText(value: VariableValue | undefined): string | undefined {
-  if (typeof value === 'string') return value
-  if (typeof value === 'boolean') return String(value)
-  if (typeof value === 'number' && Number.isFinite(value)) return numberText(value)
-  return undefined
-}
-
-const INT32_MIN = -2_147_483_648
-const INT32_MAX = 2_147_483_647
-
-/** How near a whole number a value must be for Figma to write it as one. */
-const WHOLE_NUMBER_TOLERANCE = 1e-6
-
-/**
- * A number as Figma desktop 126 writes it as text: one within a millionth of a whole number as
- * that integer, clamped to 32 bits, and anything else with two decimals, its sign kept and an
- * exact tie rounded to even, as C's `%.2f` does (0.125 is "0.12", 0.999 is "1.00", -0.004 is
- * "-0.00").
- */
-function numberText(value: number): string {
-  const whole = Math.round(value)
-  if (Math.abs(value - whole) < WHOLE_NUMBER_TOLERANCE)
-    return String(Math.min(INT32_MAX, Math.max(INT32_MIN, whole)) || 0)
-  const scaled = Math.abs(value) * 100
-  const floor = Math.floor(scaled)
-  const tie = scaled - floor === 0.5
-  const cents = tie ? floor + (floor % 2) : Math.round(scaled)
-  const sign = value < 0 ? '-' : ''
-  return `${sign}${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`
 }
 
 /**
@@ -112,8 +99,9 @@ export function resolvedValueBindings(
   }
   const text = node.type === 'TEXT' ? variableText(resolve('text')) : undefined
   if (text !== undefined && text !== node.text) updates.text = text
-  const visible = resolve('visible')
-  if (typeof visible === 'boolean' && visible !== node.visible) updates.visible = visible
+  // Figma binds visibility to text too, and shows the layer when the text reads as true.
+  const visible = variableTruthy(resolve('visible'))
+  if (visible !== undefined && visible !== node.visible) updates.visible = visible
   return updates
 }
 
@@ -137,8 +125,10 @@ export function resolvedRunBindings(
       const variableId = bound[field]
       if (!variableId) continue
       const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
-      if (value === undefined || !Number.isFinite(value) || style[field] === value) continue
-      style = { ...style, [field]: value }
+      if (value === undefined || !Number.isFinite(value)) continue
+      const next = boundValue(field, value)
+      if (isEqual(style[field], next)) continue
+      style = { ...style, [field]: next }
     }
     return style === run.style ? run : { ...run, style }
   })
@@ -173,12 +163,12 @@ export function resolvedPaintBindings(
   const changes: Pick<Partial<SceneNode>, 'fills' | 'strokes'> = {}
   for (const field in node.boundVariables) {
     if (!field.endsWith('/color')) continue
-    const match = /^(fills|strokes)\/(\d+)\/color$/.exec(field)
-    if (!match) continue
+    const paint = paintBindingTarget(field)
+    if (!paint) continue
     const color = graph.resolveColorVariableForNode(node.id, node.boundVariables[field], fallback)
-    const index = Number(match[2])
+    const { index } = paint
     if (!color) continue
-    if (match[1] === 'fills') {
+    if (paint.list === 'fills') {
       if (!node.fills[index]) continue
       changes.fills ??= copyFills(node.fills)
       applyBoundColor(changes.fills[index], color)
@@ -205,8 +195,8 @@ export function variablesResolvingThrough(graph: SceneGraph, ids: Iterable<strin
     grew = false
     for (const variable of graph.variables.values()) {
       if (found.has(variable.id)) continue
-      const aliases = Object.values(variable.valuesByMode).some(
-        (value) => typeof value === 'object' && 'aliasId' in value && found.has(value.aliasId)
+      const aliases = Object.values(variable.valuesByMode).some((value) =>
+        variableValueReferences(value).some((id) => found.has(id))
       )
       if (aliases) {
         found.add(variable.id)
@@ -243,9 +233,8 @@ export function collectionsBoundIn(graph: SceneGraph, roots: Iterable<string>): 
     const variable = graph.variables.get(id)
     if (!variable) continue
     collections.add(variable.collectionId)
-    for (const value of Object.values(variable.valuesByMode)) {
-      if (typeof value === 'object' && 'aliasId' in value) pending.push(value.aliasId)
-    }
+    for (const value of Object.values(variable.valuesByMode))
+      pending.push(...variableValueReferences(value))
   }
   return collections
 }

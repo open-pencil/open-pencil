@@ -28,12 +28,16 @@ export function useVariables() {
     if (!activeCollectionId.value && cols[0]) activeCollectionId.value = cols[0].id
   })
 
-  const activeCollection = computed(() => editor.getCollection(activeCollectionId.value) ?? null)
+  const activeCollection = computed(
+    () => collections.value.find((collection) => collection.id === activeCollectionId.value) ?? null
+  )
   const activeModes = computed(() => activeCollection.value?.modes ?? [])
 
   const variables = useSceneComputed(() => {
     if (!activeCollectionId.value) return [] as Variable[]
-    const all = editor.getVariablesForCollection(activeCollectionId.value)
+    const all = editor
+      .getVariablesForCollection(activeCollectionId.value)
+      .map((variable) => structuredClone(variable))
     return fuzzyFilter(all, ['name', 'description'], searchTerm.value)
   })
 

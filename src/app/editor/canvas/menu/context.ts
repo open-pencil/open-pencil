@@ -1,13 +1,17 @@
 import { computed, type Ref } from 'vue'
 
-import { formatShortcut, type Editor, type MenuEntry } from '@open-pencil/vue'
+import type { Editor } from '@open-pencil/core'
+import { formatShortcut } from '@open-pencil/vue/editor/commands'
+import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 
 import type { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import {
   CANVAS_COPY_AS_ACTIONS,
   CANVAS_COPY_AS_GROUP_TEST_ID,
+  CANVAS_PROPERTIES_ACTIONS,
   CANVAS_VECTORIZE_TEST_ID,
-  type CanvasContextActionId
+  type CanvasContextActionId,
+  type CanvasContextActionMeta
 } from '@/app/editor/canvas/menu/registry'
 
 const STATIC_SELECTION_COMMAND_IDS = new Set(['selection.duplicate', 'selection.delete'])
@@ -22,6 +26,8 @@ type CanvasCopyLabels = {
   copyAsJSX: string
   copyNodeId: string
   copyXPath: string
+  copyProperties: string
+  pasteProperties: string
   convertToVector: string
 }
 
@@ -49,7 +55,9 @@ function copyAction(
         actions.clipboardWrite(editor.copySelectionAsText(actions.ids()), 'text')
       )
     case 'copy-as-svg':
-      return runAsync(() => actions.clipboardWrite(editor.copySelectionAsSVG(actions.ids()), 'SVG'))
+      return runAsync(async () =>
+        actions.clipboardWrite(await editor.copySelectionAsSVG(actions.ids()), 'SVG')
+      )
     case 'copy-as-png':
       return runAsync(actions.copyAsPNG)
     case 'copy-as-jsx':
@@ -58,6 +66,10 @@ function copyAction(
       return runAsync(actions.copyNodeId)
     case 'copy-xpath':
       return runAsync(actions.copyXPath)
+    case 'copy-properties':
+      return runAsync(actions.copyProperties)
+    case 'paste-properties':
+      return runAsync(actions.pasteProperties)
     default: {
       const exhaustive: never = id
       return exhaustive
@@ -70,15 +82,20 @@ function copyPasteAsEntry(
   actions: CanvasMenuActions,
   labels: CanvasCopyLabels
 ): MenuEntry {
+  const item = (meta: CanvasContextActionMeta): MenuEntry => ({
+    label: labels[meta.labelKey],
+    testId: meta.testId,
+    shortcut: formatShortcut(meta.shortcut),
+    action: copyAction(meta.id, editor, actions)
+  })
   return {
     label: labels.copyPasteAs,
     testId: CANVAS_COPY_AS_GROUP_TEST_ID,
-    sub: CANVAS_COPY_AS_ACTIONS.map((meta) => ({
-      label: labels[meta.labelKey],
-      testId: meta.testId,
-      shortcut: formatShortcut(meta.shortcut),
-      action: copyAction(meta.id, editor, actions)
-    }))
+    sub: [
+      ...CANVAS_COPY_AS_ACTIONS.map(item),
+      { separator: true },
+      ...CANVAS_PROPERTIES_ACTIONS.map(item)
+    ]
   }
 }
 

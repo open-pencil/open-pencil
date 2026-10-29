@@ -1,21 +1,20 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  contentPluginData,
-  OPEN_PENCIL_PLUGIN_DATA,
-  OPEN_PENCIL_PLUGIN_ID,
-  readAllPluginData,
-  readPluginData,
-  SceneGraph,
-  withPluginData,
-  type PluginDataEntry
-} from '@open-pencil/scene-graph'
+import { SceneGraph, type PluginDataEntry } from '@open-pencil/scene-graph'
 import {
   clearNodeFillOkHCL,
   getNodeOkHCLPayloads,
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
 } from '@open-pencil/scene-graph/color'
+import {
+  contentPluginData,
+  OPEN_PENCIL_PLUGIN_DATA,
+  OPEN_PENCIL_PLUGIN_ID,
+  readAllPluginData,
+  readPluginData,
+  withPluginData
+} from '@open-pencil/scene-graph/plugin-data'
 
 const { exportSettings, okhcl, textDirection } = OPEN_PENCIL_PLUGIN_DATA
 const OTHER_PLUGIN: PluginDataEntry = { pluginId: 'other-plugin', key: 'okhcl', value: 'theirs' }
@@ -71,7 +70,12 @@ describe('OpenPencil plugin data', () => {
 
   test('picking an OkHCL color keeps the node’s other plugin data', () => {
     const graph = new SceneGraph()
-    const paint = { type: 'SOLID' as const, visible: true, opacity: 1, color: { r: 1, g: 0, b: 0, a: 1 } }
+    const paint = {
+      type: 'SOLID' as const,
+      visible: true,
+      opacity: 1,
+      color: { r: 1, g: 0, b: 0, a: 1 }
+    }
     const node = graph.createNode('FRAME', graph.getPages()[0].id, {
       fills: [paint],
       strokes: [{ ...paint, weight: 1, align: 'INSIDE' as const }],

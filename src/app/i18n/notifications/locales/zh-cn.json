@@ -4,6 +4,7 @@
   "clipboardMissingDesignData": "剪贴板中没有设计数据。",
   "clipboardAccessBlocked": "当前浏览器环境阻止了剪贴板访问。",
   "copiedAs": "已复制为 {format}。",
+  "copiedProperties": "已复制属性。",
   "pngClipboardUnavailable": "此浏览器不支持将 PNG 导出到剪贴板。",
   "openFileFailed": "无法打开“{name}”：{error}",
   "importedDOMCSS": "已导入 DOM/CSS 文档。",
@@ -29,5 +30,6 @@
   "openQueuedFilesFailed": "无法打开传递给 OpenPencil 的文件：{error}",
   "tokensLeftOut": "未写入样式表：{names}",
   "designTokensLeftOut": "未写入设计令牌：{names}",
-  "designTokensImported": "已导入 {count} 个设计令牌。"
+  "designTokensImported": "已导入 {count} 个设计令牌。",
+  "unsupportedVariableExpressions": "OpenPencil 暂不能计算这些变量，图层保留文件中保存的值：{names}"
 }

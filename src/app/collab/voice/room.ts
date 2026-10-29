@@ -13,7 +13,7 @@ const SPEAKING_LEVEL = 0.02
 /** How long someone still counts as speaking after their level drops, so pauses between words don't flicker. */
 const SPEAKING_HOLD_MS = 400
 
-const MediaSourceStats = v.object({ type: v.literal('media-source'), audioLevel: v.number() })
+const mediaSourceStatsSchema = v.object({ type: v.literal('media-source'), audioLevel: v.number() })
 
 /** The microphone a call sends, as `getUserMedia` returned it. */
 export interface Microphone {
@@ -145,7 +145,7 @@ export function attachRoomVoice({ awareness, peers, connection }: RoomVoiceOptio
       if (!sender) continue
       const stats = await sender.getStats()
       for (const report of stats.values()) {
-        const source = v.safeParse(MediaSourceStats, report)
+        const source = v.safeParse(mediaSourceStatsSchema, report)
         if (source.success) return source.output.audioLevel
       }
     }

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { MIXED, useI18n, useSelectionLayout, type TextResizeMode } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import { useSelectionLayout, type TextResizeMode } from '@open-pencil/vue/controls/selection-layout'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'

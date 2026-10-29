@@ -1,17 +1,19 @@
-import type { Editor, ShapeHandleHover } from '@open-pencil/core/editor'
+import type { Editor, ShapeHandleHover } from '@open-pencil/core'
 import {
+  arcChanges,
   cornerRadiusAtPoint,
   cornerRadiusChanges,
   createSceneGeometry,
   dragsSingleCorner,
   hitTestShapeHandles,
-  isRadiusHandle,
+  isArcHandle,
   pointCountAtPoint,
   shapeHandleLayout,
   starRatioAtPoint,
   type ShapeHandleKind
 } from '@open-pencil/core/geometry'
-import type { SceneNode, Vector } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { editorMessages } from '#vue/i18n/messages/editor'
 import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
@@ -22,12 +24,18 @@ const HANDLE_DRAG_THRESHOLD_PX = 5
 
 function handleLabel(handle: ShapeHandleKind | null): string {
   const messages = editorMessages.get()
+  if (handle === 'arcStart') return messages.arcStart
+  if (handle === 'arcEnd') return messages.arcSweep
+  if (handle === 'arcRatio') return messages.arcRatio
   if (handle === 'count') return messages.pointCount
   if (handle === 'ratio') return messages.starRatio
   return messages.cornerRadius
 }
 
 function undoLabel(handle: ShapeHandleKind): string {
+  if (handle === 'arcStart') return 'Change arc start'
+  if (handle === 'arcEnd') return 'Change arc sweep'
+  if (handle === 'arcRatio') return 'Change arc ratio'
   if (handle === 'count') return 'Change point count'
   if (handle === 'ratio') return 'Change star ratio'
   return 'Change corner radius'
@@ -84,6 +92,7 @@ function handleChanges(
   single: boolean,
   shiftKey: boolean
 ): Partial<SceneNode> {
+  if (isArcHandle(handle)) return arcChanges(node, handle, local, shiftKey)
   if (handle === 'count') return { pointCount: pointCountAtPoint(node, local) }
   if (handle === 'ratio') return { starInnerRadius: starRatioAtPoint(node, local) }
   const radius = cornerRadiusAtPoint(node, handle, local, shiftKey)
@@ -92,7 +101,7 @@ function handleChanges(
 
 /** How far a count or ratio handle's centre lies from where it was grabbed, in the node's pixels. */
 function grabOffset(editor: Editor, node: SceneNode, handle: ShapeHandleKind, screen: Vector) {
-  if (isRadiusHandle(handle)) return { x: 0, y: 0 }
+  if (handle !== 'count' && handle !== 'ratio') return { x: 0, y: 0 }
   const geometry = createSceneGeometry(editor.graph, editor.state.rotationPreview)
   const centre = shapeHandleLayout(node, geometry, editor.state)?.find(
     (candidate) => candidate.handle === handle
@@ -103,8 +112,8 @@ function grabOffset(editor: Editor, node: SceneNode, handle: ShapeHandleKind, sc
 }
 
 /**
- * Starts dragging the shape handle under the pointer, if any, as in Figma desktop. A radius
- * follows the pointer rather than the distance dragged and Shift rounds it to tens; the count and
+ * Starts dragging the shape handle under the pointer, if any, as in Figma desktop. A radius or an
+ * arc follows the pointer rather than the distance dragged and Shift rounds it; the count and
  * ratio handles keep where they were grabbed. Each drag is one undo step.
  */
 export function tryStartShapeHandleDrag(

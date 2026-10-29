@@ -1,0 +1,1 @@
+- With nothing selected, the Design panel's Document section sets how tightly a document's `.fig` is compressed: Fast, as Figma saves, Smaller, or Smallest. The choice is stored in the file, every save uses it, and Figma opens all three. Saves in the browser and of opened files on desktop now write Zstd instead of deflate, so they come out smaller at every setting.

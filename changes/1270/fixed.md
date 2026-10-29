@@ -1,0 +1,1 @@
+- A copy of a component that holds an instance keeps what it sets on that instance after the file is saved and reopened: edits to its slot content, such as a hidden or recoloured layer, and its text, boolean, and swap property values, such as an exposed button's label.

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 
 import { handleMarqueeMove } from '#vue/canvas/transform/marquee'
 
@@ -10,7 +10,11 @@ afterEach(() => editor.dispose())
 
 function marquee(from: [number, number], to: [number, number], containerId?: string) {
   editor.clearSelection()
-  handleMarqueeMove(editor, { type: 'marquee', startX: from[0], startY: from[1], containerId }, ...to)
+  handleMarqueeMove(
+    editor,
+    { type: 'marquee', startX: from[0], startY: from[1], containerId },
+    ...to
+  )
   return [...editor.state.selectedIds]
 }
 

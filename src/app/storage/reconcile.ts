@@ -30,7 +30,8 @@ export function reconcileStorageDocuments(
       id: metadata.id,
       name: metadata.name,
       updatedAt: metadata.updatedAt,
-      metadataAuthoritative: true
+      metadataAuthoritative: true,
+      revision: metadata.remoteRevision ?? null
     })
   }
 

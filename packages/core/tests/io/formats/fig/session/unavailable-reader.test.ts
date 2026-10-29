@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { inertPopulationWorker } from '#core-tests/helpers/fig/population-worker'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import {
   registerFigPopulationWorker,

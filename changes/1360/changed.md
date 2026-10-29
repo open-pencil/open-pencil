@@ -1,0 +1,1 @@
+- MiniMax recommends MiniMax-M3.1-Flash by default, with MiniMax-M3 as the other recommended model, and Flash runs at low effort when thinking is set to Off or Minimal, the lowest it supports.

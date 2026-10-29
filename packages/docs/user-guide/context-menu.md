@@ -34,6 +34,19 @@ The **Copy/Paste as** submenu offers additional clipboard formats for the select
 
 Clipboard actions are disabled when nothing is selected (except Paste, which is available when the clipboard has content).
 
+## Copy and Paste Properties
+
+| Action | Shortcut (Mac) | Shortcut (Win/Linux) |
+|--------|----------------|----------------------|
+| Copy properties | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Alt</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
+| Paste properties | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>V</kbd> | <kbd>Alt</kbd> + <kbd>Ctrl</kbd> + <kbd>V</kbd> |
+
+Both are in the **Copy/Paste as** submenu.
+
+- **Copy properties** puts the selected layer on the system clipboard the way Figma does, marked so a plain Paste ignores it.
+- **Paste properties** applies the look of the one layer on the clipboard to every selected layer, locked ones included, in one undo step. It reads a copy made with Copy properties or ordinary Copy, here or in Figma.
+- The look is fills, strokes, effects, opacity, blend mode, corner radius, and linked styles and variables. Between frames it includes auto layout and layout grids, and between text layers the text style. Position, size, rotation, name, and content never change, and properties a text layer mixes across its characters are left alone.
+
 ## Z-Order
 
 | Action | Shortcut |

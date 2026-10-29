@@ -20,6 +20,7 @@ It exposes:
 - text case and direction
 - ending truncation and maximum lines
 - OpenType feature toggles
+- variable font axes (`axes`, `opticalSizeAuto`)
 - list style (`listType`, `null` when the paragraphs differ) and hanging lists
 - helpers for changing family, weight, alignment, and decorations
 - `merged(key)` and `fontFeature(tag)`, which return the shared value or `MIXED`
@@ -27,7 +28,7 @@ It exposes:
 ## Usage
 
 ```ts
-import { useTypography } from '@open-pencil/vue'
+import { useTypography } from '@open-pencil/vue/controls/typography'
 
 const typography = useTypography()
 ```
@@ -86,6 +87,15 @@ While the text is being edited, `setListType` and `setParagraphSpacing` change t
 typography.setListType('UNORDERED')
 typography.setHangingList(true)
 typography.setParagraphSpacing('listSpacing', 8)
+```
+
+### Set variable font axes
+
+`axes` lists the axes of the selected text's variable font, each with its `tag`, `name`, range, and the `value` it is drawn at (`MIXED` when the layers differ), and is empty for a static font or layers in different families. `previewAxis` shows a value while a field is dragged, `setAxis` sets it in one undo step, and `setOpticalSizeAuto` lets the optical size follow the font size or holds it. Changing weight, slant, or family puts the axes back at the style's own.
+
+```ts
+typography.setAxis('wght', 560)
+typography.setOpticalSizeAuto(false)
 ```
 
 ## Related APIs

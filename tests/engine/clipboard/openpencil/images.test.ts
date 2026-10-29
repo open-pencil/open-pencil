@@ -3,16 +3,15 @@ import { describe, expect, test } from 'bun:test'
 import { deflateSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
+import { buildOpenPencilClipboardHTML, parseOpenPencilClipboard } from '@open-pencil/core/clipboard'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
-  buildOpenPencilClipboardHTML,
-  FigmaAPI,
-  parseOpenPencilClipboard,
-  SceneGraph
-} from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/core'
-import { getInstanceOverride, setInstanceOverride } from '@open-pencil/scene-graph'
+  getInstanceOverride,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { storeImageBytes } from '#tests/helpers/scene'
 
 describe('clipboard roundtrip with images', () => {
   function graphWithImageNode(): {
@@ -24,8 +23,7 @@ describe('clipboard roundtrip with images', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const imageBytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])
-    const figma = new FigmaAPI(graph)
-    const { hash } = figma.createImage(imageBytes)
+    const hash = storeImageBytes(graph, imageBytes)
 
     const node = graph.createNode('RECTANGLE', page.id, {
       name: 'ImageRect',
@@ -121,12 +119,11 @@ describe('clipboard roundtrip with images', () => {
   test('multiple image hashes in different nodes are all included', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
-    const figma = new FigmaAPI(graph)
 
     const bytes1 = new Uint8Array([10, 20, 30])
     const bytes2 = new Uint8Array([40, 50, 60])
-    const { hash: hash1 } = figma.createImage(bytes1)
-    const { hash: hash2 } = figma.createImage(bytes2)
+    const hash1 = storeImageBytes(graph, bytes1)
+    const hash2 = storeImageBytes(graph, bytes2)
 
     const node1 = graph.createNode('RECTANGLE', page.id, {
       name: 'Img1',
@@ -187,10 +184,9 @@ describe('clipboard roundtrip with images', () => {
   test('child node image hashes are collected', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
-    const figma = new FigmaAPI(graph)
 
     const bytes = new Uint8Array([99, 88, 77])
-    const { hash } = figma.createImage(bytes)
+    const hash = storeImageBytes(graph, bytes)
 
     const frame = graph.createNode('FRAME', page.id, { name: 'Parent', width: 200, height: 200 })
     graph.createNode('RECTANGLE', frame.id, {

@@ -49,7 +49,7 @@ describe('APP_MENU_SCHEMA', () => {
     ).filter((entry) => !('type' in entry) && entry.handler === 'shell')
 
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
-      'open-storage-workspace',
+      'browse-files',
       'open-tour',
       'settings',
       'view-design-issues',
@@ -62,13 +62,15 @@ describe('APP_MENU_SCHEMA', () => {
     ])
   })
 
-  test('includes storage workspace navigation in the shared File menu', () => {
+  test('browses and saves to places from one File menu item each', () => {
     const fileMenu = APP_MENU_SCHEMA.find((group) => group.label === 'File')
-    const entries = fileMenu ? actionItems(fileMenu.items) : []
-
-    expect(entries).toContainEqual(
-      expect.objectContaining({ id: 'open-storage-workspace', label: 'Open Storage Workspace…' })
+    const ids = (fileMenu ? actionItems(fileMenu.items) : []).map((entry) =>
+      'type' in entry ? '' : entry.id
     )
+
+    expect(ids).toContain('browse-files')
+    expect(ids).toContain('save-to')
+    expect(ids).not.toContain('save-to-cloud')
   })
 
   test('exposes recent files through the native File menu', () => {

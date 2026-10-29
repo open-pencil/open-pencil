@@ -1,0 +1,1 @@
+- Scripts edit variant properties as Figma's Plugin API does: renaming or adding a variant property on a component set renames every variant and instances follow, renaming a variant updates the set's values, deleting a variant property fails as in Figma, and `variantProperties` reads a variant's or an instance's values.

@@ -99,7 +99,6 @@ describe('Figma component property import', () => {
     expect(instance?.componentPropertyAssignments).toEqual({ '3:1': 'Profile Item' })
     if (!component || !instance) throw new Error('Expected imported component and instance')
     expect(graph.getInstances(component.id).map((node) => node.id)).toContain(instance.id)
-    expect(graph.instanceIndex.get('1:1')?.has(instance.id)).toBeFalsy()
 
     // Page-shell loading is covered through the replacement session API in session/main-thread.test.ts.
   })

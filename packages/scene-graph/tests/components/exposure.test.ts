@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  exposableInstances,
-  exposedInstances,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { exposableInstances, exposedInstances } from '@open-pencil/scene-graph/components'
 
 function setup() {
   const graph = new SceneGraph()

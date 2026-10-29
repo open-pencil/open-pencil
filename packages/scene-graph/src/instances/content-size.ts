@@ -1,8 +1,11 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '../'
 import { TEXT_METRIC_FIELDS, TEXT_SHAPING_FIELDS } from '../fields/text'
+import type { SceneGraph } from '../graph'
 import { layoutSizing } from '../layout/sizing'
+import type { Rect } from '../primitives'
+import { resizedChildRect } from '../resize'
+import type { SceneNode } from '../types'
 
 const METRIC_FIELDS: ReadonlySet<string> = new Set(TEXT_METRIC_FIELDS)
 
@@ -42,15 +45,33 @@ function contentSizedAxes(
  * its count and the layers it shows rather than to the component's placeholder. Layout measures
  * those axes; the component's size there would be stale.
  */
+/** Where synchronization placed a copy, and on which axes the copy keeps that place itself. */
+export interface SyncedPlacement {
+  placed: Rect
+  x: boolean
+  y: boolean
+}
+
 export function keepOwnContentSize(
   graph: SceneGraph,
   updates: Partial<SceneNode>,
   copy: SceneNode,
-  source: SceneNode
+  source: SceneNode,
+  placement?: SyncedPlacement
 ): void {
   const axes = contentSizedAxes(graph, copy, source, updates)
   if (axes.width) Reflect.deleteProperty(updates, 'width')
   if (axes.height) Reflect.deleteProperty(updates, 'height')
+  if (!placement) return // An instance root keeps its own position.
+  const final = { ...copy, ...updates }
+  const anchored = resizedChildRect(
+    placement.placed,
+    final,
+    final.horizontalConstraint,
+    final.verticalConstraint
+  )
+  if (placement.x && final.width !== placement.placed.width) updates.x = anchored.x
+  if (placement.y && final.height !== placement.placed.height) updates.y = anchored.y
 }
 
 /**

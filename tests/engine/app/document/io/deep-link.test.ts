@@ -5,7 +5,7 @@ import { openDeepLink, resolveDeepLinkFile } from '@/app/document/io/deep-link'
 /**
  * Stands in for the `path_matches_suffix` Tauri command. The real comparator asks the
  * platform (ASCII-case-insensitive on macOS and Windows, exact on Linux); these tests
- * cover the resolver's own contract, and the case rule is tested in `deep_link.rs`.
+ * cover the resolver's own contract, and the case rule is tested in `desktop/src/launch/paths.rs`.
  */
 const matchesSuffix = async (candidate: string, relative: string): Promise<boolean> => {
   const a = candidate.replaceAll('\\', '/')

@@ -1,0 +1,1 @@
+- Library components keep their instances' overrides and instance-swap defaults when inserted into a document, and libraries published to a CLI catalog keep overrides and vector shapes.

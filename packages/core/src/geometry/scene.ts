@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode, Vector } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   getAxisAlignedWorldBounds,
   getNodeLocalMatrix,
@@ -7,7 +7,7 @@ import {
   getWorldMatrix
 } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { RotationPreview, ViewportTransform } from './types'
 

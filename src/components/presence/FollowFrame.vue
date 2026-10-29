@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { colorToCSS, darkenForContrast } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { FollowedLabel } from '@/app/presence/registry'
 import { isEditing } from '@/app/shell/keyboard/focus'
-import { followFrame } from '@/theme/collaboration/follow-frame'
+import followFrameTheme from '@/theme/collaboration/follow-frame'
+
+const followFrame = tv(followFrameTheme)
 
 const { followed } = defineProps<{ followed: FollowedLabel }>()
 const emit = defineEmits<{ stop: [] }>()

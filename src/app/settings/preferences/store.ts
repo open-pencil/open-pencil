@@ -2,20 +2,19 @@ import { useLocalStorage } from '@vueuse/core'
 import { uniq } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pencil/core/editor'
-import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph'
+import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pencil/core'
+import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph/comments'
 
-import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
+import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/reply/step-limit'
 import {
   DEFAULT_TOOLBAR_LAYOUT,
   normalizeToolbarLayout,
   type ToolbarLayout
 } from '@/app/editor/toolbar/layout'
-import {
-  accentPreferenceSchema,
-  DEFAULT_ACCENT,
-  type AccentPreference
-} from '@/app/shell/accent/palette'
+import { DEFAULT_RECENT_FILES_LIMIT } from '@/app/recent-files/limit'
+import { recentFilesLimitSchema } from '@/app/recent-files/schema'
+import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
+import { accentPreferenceSchema, type AccentPreference } from '@/app/shell/accent/schema'
 
 export const ANIMATION_PREFERENCES = ['system', 'off'] as const
 export type AnimationPreference = (typeof ANIMATION_PREFERENCES)[number]
@@ -29,6 +28,10 @@ export type ChangePreviewSize = (typeof CHANGE_PREVIEW_SIZES)[number]
 
 export const CANVAS_RENDERING_MODES = ['retained', 'tiled'] as const
 export type CanvasRenderingMode = (typeof CANVAS_RENDERING_MODES)[number]
+
+/** Multipliers for how far each wheel or pinch event zooms the canvas; 1 is Figma's rate. */
+export const ZOOM_SPEEDS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2] as const
+export type ZoomSpeed = (typeof ZOOM_SPEEDS)[number]
 
 export const DESIGN_CHECK_PRESETS = ['recommended', 'strict', 'accessibility'] as const
 export type DesignCheckPreset = (typeof DESIGN_CHECK_PRESETS)[number]
@@ -77,12 +80,16 @@ export interface AppPreferences {
     /** Whether the view follows our AI agents while they work. */
     followAgents: boolean
   }
+  files: { recentLimit: number }
   version: 1
   recovery: {
     enabled: boolean
   }
   editing: {
     snapping: SnappingPreferences
+  }
+  navigation: {
+    zoomSpeed: ZoomSpeed
   }
   rendering: {
     canvasMode: CanvasRenderingMode
@@ -104,11 +111,13 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     changePreviewSize: 'medium',
     followAgents: true
   },
+  files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
   version: 1,
   recovery: { enabled: true },
   editing: {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
+  navigation: { zoomSpeed: 1 },
   rendering: { canvasMode: 'retained' },
   designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
   comments: {
@@ -152,6 +161,9 @@ const appPreferencesSchema = section({
     ),
     followAgents: v.fallback(v.boolean(), defaults.chat.followAgents)
   }),
+  files: section({
+    recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)
+  }),
   version: v.fallback(v.literal(1), 1),
   recovery: section({ enabled: v.fallback(v.boolean(), defaults.recovery.enabled) }),
   editing: section({
@@ -160,6 +172,9 @@ const appPreferencesSchema = section({
       objects: v.fallback(v.boolean(), snapping.objects),
       pixelGrid: v.fallback(v.boolean(), snapping.pixelGrid)
     })
+  }),
+  navigation: section({
+    zoomSpeed: v.fallback(v.picklist(ZOOM_SPEEDS), defaults.navigation.zoomSpeed)
   }),
   rendering: section({
     canvasMode: v.fallback(v.picklist(CANVAS_RENDERING_MODES), defaults.rendering.canvasMode)
@@ -250,6 +265,10 @@ export function updateCanvasRenderingMode(canvasMode: CanvasRenderingMode): void
     ...appPreferences.value,
     rendering: { canvasMode }
   }
+}
+
+export function updateZoomSpeed(zoomSpeed: ZoomSpeed): void {
+  appPreferences.value = { ...appPreferences.value, navigation: { zoomSpeed } }
 }
 
 export function updateSnappingPreferences(changes: Partial<SnappingPreferences>): void {

@@ -1,9 +1,14 @@
+import { groupBy, sum } from 'es-toolkit'
+
 import type { DiagnosticEvent } from '@/app/diagnostics/types'
 
 export type UsageModelSummary = {
   provider: string
   model: string
-  requests: number
+  /** Model calls: a built-in chat reply makes one per step, an agent reply one per turn. */
+  steps: number
+  inputTokens: number | null
+  outputTokens: number | null
 }
 
 export type UsageSummary = {
@@ -22,23 +27,28 @@ function sumAttribute(events: DiagnosticEvent[], name: string): number | null {
   const values = events
     .map((event) => event.attributes[name])
     .filter((value): value is number => typeof value === 'number')
-  return values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0)
+  return values.length === 0 ? null : sum(values)
 }
 
 export function summarizeUsage(events: DiagnosticEvent[]): UsageSummary {
   const steps = events.filter((event) => event.name === 'model.step.completed')
   const completedRequests = events.filter((event) => event.name === 'chat.completed').length
   const failedRequests = events.filter((event) => event.name === 'chat.failed').length
-  const modelCounts = new Map<string, UsageModelSummary>()
-
-  for (const step of steps) {
-    const provider = String(step.attributes.provider ?? 'unknown')
-    const model = String(step.attributes.model ?? 'unknown')
-    const key = `${provider}\u0000${model}`
-    const current = modelCounts.get(key)
-    if (current) current.requests++
-    else modelCounts.set(key, { provider, model, requests: 1 })
-  }
+  const byModel = groupBy(
+    steps,
+    (step) =>
+      `${String(step.attributes.provider ?? 'unknown')}\u0000${String(step.attributes.model ?? 'unknown')}`
+  )
+  const models = Object.values(byModel).map((modelSteps) => {
+    const first = modelSteps[0]?.attributes ?? {}
+    return {
+      provider: String(first.provider ?? 'unknown'),
+      model: String(first.model ?? 'unknown'),
+      steps: modelSteps.length,
+      inputTokens: sumAttribute(modelSteps, 'inputTokens'),
+      outputTokens: sumAttribute(modelSteps, 'outputTokens')
+    }
+  })
 
   return {
     requests: completedRequests + failedRequests,
@@ -52,6 +62,11 @@ export function summarizeUsage(events: DiagnosticEvent[]): UsageSummary {
       (event) =>
         event.attributes.cacheReadTokens === null && event.attributes.cacheWriteTokens === null
     ).length,
-    models: [...modelCounts.values()].sort((left, right) => right.requests - left.requests)
+    models: models.sort(
+      (left, right) =>
+        (right.inputTokens ?? 0) +
+        (right.outputTokens ?? 0) -
+        ((left.inputTokens ?? 0) + (left.outputTokens ?? 0))
+    )
   }
 }

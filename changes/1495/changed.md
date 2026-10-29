@@ -1,0 +1,1 @@
+- Font settings, including system font access, online font providers, fallback packs, and the downloaded font cache, moved from a popover in the Typography section to **Settings › Fonts**; the gear in Typography opens it.

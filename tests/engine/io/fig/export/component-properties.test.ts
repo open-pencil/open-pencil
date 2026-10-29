@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec } from '@open-pencil/core'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'

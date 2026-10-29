@@ -51,7 +51,19 @@ function mapPart(part: TextStreamPart<ToolSet>): BackendEvent | undefined {
       output: asJSONValue(part.output)
     }
   }
-  if (part.type === 'finish') return { type: 'finish', finishReason: part.finishReason }
+  if (part.type === 'finish') {
+    const usage = part.totalUsage
+    return {
+      type: 'finish',
+      finishReason: part.finishReason,
+      usage: {
+        inputTokens: usage.inputTokens ?? null,
+        outputTokens: usage.outputTokens ?? null,
+        cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? null,
+        cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? null
+      }
+    }
+  }
   if (part.type === 'error') {
     return {
       type: 'error',

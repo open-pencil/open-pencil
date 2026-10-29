@@ -2,12 +2,13 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { ref, watch } from 'vue'
 
-import { useCollaborationMessages, useCommonMessages } from '@open-pencil/vue'
+import { useCollaborationMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-import { roomScreen } from '@/theme/collaboration/room-screen'
+
+import { roomScreen } from './ui'
 
 /** "You'll appear as Teal Fox · Change": the name others will see, renamed in a small popover. */
 const { name } = defineProps<{ name: string }>()

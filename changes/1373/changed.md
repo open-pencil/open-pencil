@@ -1,0 +1,1 @@
+- Recommended models now include Claude Haiku 5.5, used for fast work with an Anthropic key, Gemini 4 Argon, GLM-5.3-FlashX, and the free MiniMax-M3.1-Flash route on OpenRouter. DeepSeek recommends DeepSeek Flash, and Z.ai lists its current models; earlier models remain available from the full model list.

@@ -86,3 +86,4 @@ export function colorDistance(c1: Color, c2: Color): number {
     ) * 255
   )
 }
+export * from './schema'

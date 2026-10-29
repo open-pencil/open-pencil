@@ -1,6 +1,11 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 // Results recorded from the same scripts run in live Figma (2026-10-10).
 function spacedText(characters = 'A\nB\nC') {
@@ -90,8 +95,6 @@ describe('paragraph spacing ranges', () => {
     expect(perParagraph(text, (s, e) => text.getRangeParagraphSpacing(s, e))).toEqual([7, 7])
     text.setRangeParagraphSpacing(0, 1, 30)
     text.insertCharacters(1, '\nZ')
-    expect(perParagraph(text, (s, e) => text.getRangeParagraphSpacing(s, e))).toEqual([
-      30, 30, 7
-    ])
+    expect(perParagraph(text, (s, e) => text.getRangeParagraphSpacing(s, e))).toEqual([30, 30, 7])
   })
 })

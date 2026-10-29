@@ -3,17 +3,27 @@ import { useElementSize } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import type { VariableTokenFields } from '@open-pencil/core/editor'
+import type { VariableTokenFields } from '@open-pencil/core'
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
 import {
   isLibraryCollection,
   type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
-import { useI18n, useSceneComputed, useVariables } from '@open-pencil/vue'
+import {
+  formatVariableFormula,
+  parseVariableFormula,
+  variableFormulaReference
+} from '@open-pencil/scene-graph/variables'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import { useVariables } from '@open-pencil/vue/variables'
 
 import {
   aliasCandidates,
+  cssReferenceCandidates,
+  referencePillName,
+  formulaCandidates,
   groupTree,
   inGroup,
   searchTokenIds,
@@ -26,9 +36,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
+import { AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
 import CollectionInspector from '@/components/variables/CollectionInspector.vue'
 import TokenAddMenu from '@/components/variables/TokenAddMenu.vue'
 import TokenBulkInspector from '@/components/variables/TokenBulkInspector.vue'
@@ -39,15 +47,15 @@ import TokenTable from '@/components/variables/TokenTable.vue'
 import TokenTypeFilter from '@/components/variables/TokenTypeFilter.vue'
 import { useTokenActions } from '@/components/variables/useTokenActions'
 import { swapTransition } from '@/theme/motion/styles'
-import tokensPanelTheme, {
+import panelTheme, {
   TOKENS_PANEL_COMPACT_WIDTH,
   TOKENS_PANEL_SIDEBAR_WIDTH
-} from '@/theme/tokens-panel'
+} from '@/theme/variables/panel'
 
 const emit = defineEmits<{ copy: [format: TokenStylesheetFormat]; export: [] }>()
 
 const { variables: messages, common } = useI18n()
-const ui = tv(tokensPanelTheme)()
+const ui = tv(panelTheme)()
 
 /**
  * The panel lays out by its own width, not the window: inside a dialog, a split view, or a phone.
@@ -136,6 +144,15 @@ const bulkIds = computed(
 )
 const candidates = computed(() =>
   editedRow.value ? aliasCandidates(editor.graph, editedRow.value.variable) : []
+)
+/** Characters, counting each pill by its name, a formula fits on one line before it breaks. */
+const FORMULA_LINE_WIDTH = 36
+
+const referenceCandidates = computed(() =>
+  editedRow.value ? formulaCandidates(editor.graph, editedRow.value.variable) : []
+)
+const cssCandidates = computed(() =>
+  editedRow.value ? cssReferenceCandidates(editor.graph, editedRow.value.variable) : []
 )
 
 const collectionOptions = computed(() =>
@@ -273,6 +290,22 @@ const tokenInspector = computed(() => {
   const id = editedId.value
   return {
     aliasCandidates: candidates.value,
+    cssCandidates: cssCandidates.value,
+    formula: id
+      ? {
+          candidates: referenceCandidates.value,
+          parse: (modeId: string, source: string) =>
+            parseVariableFormula(editor.graph, id, modeId, source),
+          // A long formula reads on several lines in its field.
+          format: (value: VariableValue) =>
+            formatVariableFormula(editor.graph, value, {
+              width: FORMULA_LINE_WIDTH,
+              display: (variableId) =>
+                referencePillName(editor.graph.variables.get(variableId)?.name ?? variableId)
+            }),
+          reference: (id: string) => variableFormulaReference(editor.graph, id)
+        }
+      : undefined,
     onRename: (name: string) => id && editor.renameVariable(id, name),
     onUpdateToken: (patch: Partial<VariableTokenFields>) =>
       id && editor.updateVariableToken(id, patch),
@@ -502,9 +535,10 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
         />
         <Transition v-bind="swapTransition" mode="out-in">
           <TokenBulkInspector v-if="bulkIds" key="bulk" v-bind="bulkInspector" />
+          <!-- One key for every token: switching rows updates the inspector in place, unanimated. -->
           <TokenInspector
             v-else-if="editedRow"
-            :key="editedRow.variable.id"
+            key="token"
             v-bind="tokenInspector"
             :row="editedRow"
             :collection="collection"

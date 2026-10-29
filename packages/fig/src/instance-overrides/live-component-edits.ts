@@ -1,9 +1,6 @@
-import {
-  getInstanceOverride,
-  INSTANCE_SYNC_FIELDS,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { INSTANCE_SYNC_FIELDS } from '@open-pencil/scene-graph/instances'
+import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
 
 import type { MaterializedInstance } from './materialize-instance'
 
@@ -26,13 +23,7 @@ function owningInstances(graph: SceneGraph, target: SceneNode): SceneNode[] {
 export function syncSourceLayers(graph: SceneGraph, target: SceneNode): SceneNode[] {
   const sources: SceneNode[] = []
   for (const owner of owningInstances(graph, target)) {
-    const mapped = getInstanceOverride(
-      owner.instanceOverrides,
-      owner.id,
-      target.id,
-      'sourceComponentId'
-    )
-    const sourceId = typeof mapped === 'string' ? mapped : target.componentId
+    const sourceId = copiedComponentLayerId(owner.instanceOverrides, owner.id, target)
     const source = sourceId ? graph.getNode(sourceId) : undefined
     if (source) sources.push(source)
   }

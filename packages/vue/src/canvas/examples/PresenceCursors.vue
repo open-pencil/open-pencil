@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import CanvasRoot from '#vue/canvas/CanvasRoot.vue'

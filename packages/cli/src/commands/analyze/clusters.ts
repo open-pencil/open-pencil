@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty'
+import { mean, sumBy } from 'es-toolkit'
 
 import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 import { calcClusterConfidence } from '@open-pencil/core/tools'
@@ -72,8 +73,8 @@ export default defineCommand({
       const heights = c.nodes.map((n) => n.height)
       const wRange = Math.max(...widths) - Math.min(...widths)
       const hRange = Math.max(...heights) - Math.min(...heights)
-      const avgW = Math.round(widths.reduce((a, b) => a + b, 0) / widths.length)
-      const avgH = Math.round(heights.reduce((a, b) => a + b, 0) / heights.length)
+      const avgW = Math.round(mean(widths))
+      const avgH = Math.round(mean(heights))
 
       const sizeStr =
         wRange <= 4 && hRange <= 4
@@ -95,7 +96,7 @@ export default defineCommand({
 
     console.log(fmtList(items, { numbered: true }))
 
-    const clusteredNodes = data.clusters.reduce((sum, c) => sum + c.nodes.length, 0)
+    const clusteredNodes = sumBy(data.clusters, (c) => c.nodes.length)
     console.log('')
     console.log(
       fmtSummary({

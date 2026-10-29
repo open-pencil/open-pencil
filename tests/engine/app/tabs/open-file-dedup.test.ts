@@ -6,15 +6,22 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
+import { getRecoveryStore, resetRecoveryStoreForTests } from '@/app/document/recovery'
+import { createMemoryRecoveryStore } from '@/app/document/recovery/memory'
 import {
-  createDocumentInCurrentTab,
+  closeTab,
   createHomeTab,
   createTab,
   getActiveStore,
   getTabsSnapshot,
   openFileInNewTab,
   showNewTab,
-  tabCount
+  restoreRecoverySnapshot,
+  switchAdjacentTab,
+  switchTab,
+  tabCount,
+  withHomePinned,
+  type Tab
 } from '@/app/tabs'
 import { fileIdentitiesMatch, findTabByFileIdentity } from '@/app/tabs/open/identity'
 
@@ -56,7 +63,7 @@ function acknowledgePendingPresentation(): void {
 
 type FileOpenOutcome = { status: 'fulfilled' } | { status: 'rejected'; reason: unknown }
 
-async function settleFileOpen(opening: Promise<void>): Promise<void> {
+async function settleFileOpen(opening: Promise<unknown>): Promise<void> {
   const outcome: Promise<FileOpenOutcome> = opening.then(
     () => ({ status: 'fulfilled' }),
     (reason: unknown) => ({ status: 'rejected', reason })
@@ -173,30 +180,101 @@ describe('openFileInNewTab deduplication', () => {
     expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toHaveLength(1)
   })
 
-  test('converts the current New tab into a blank document', () => {
-    createHomeTab()
-    const home = getTabsSnapshot().at(-1)
-    const count = tabCount()
-
-    const document = createDocumentInCurrentTab()
-
-    expect(tabCount()).toBe(count)
-    expect(document.id).toBe(expectDefined(home, 'home tab').id)
-    expect(document.kind).toBe('document')
+  test('keeps one Home pinned first, which never closes', async () => {
+    createTab()
+    const home = createHomeTab()
+    expect(createHomeTab().id).toBe(home.id)
+    expect(getTabsSnapshot()[0]?.id).toBe(home.id)
+    await closeTab(home.id)
+    expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toEqual([home])
   })
 
-  test('opens a file in the current New tab', async () => {
-    createHomeTab()
-    const home = getTabsSnapshot().at(-1)
+  test('cycles through the tabs both ways, wrapping between the last tab and Home', () => {
+    createTab()
+    const home = createHomeTab()
+    const tabs = getTabsSnapshot()
+    const last = expectDefined(tabs.at(-1), 'last tab')
+    const second = expectDefined(tabs[1], 'tab after Home')
+    switchTab(last.id)
+
+    switchAdjacentTab(1)
+    expect(getActiveStore()).toBe(home.store)
+    switchAdjacentTab(1)
+    expect(getActiveStore()).toBe(second.store)
+    switchAdjacentTab(-1)
+    switchAdjacentTab(-1)
+    expect(getActiveStore()).toBe(last.store)
+  })
+
+  test('pins Home first, moving it there or adding it when the tabs have none', () => {
+    const design = createTab()
+    const home = createHomeTab()
+    const ids = (tabs: readonly Tab[]) => tabs.map((tab) => tab.id)
+    expect(ids(withHomePinned([design], () => home))).toEqual([home.id, design.id])
+    const pinned = [home, design]
+    expect(withHomePinned(pinned, () => createTab())).toBe(pinned)
+    expect(ids(withHomePinned([design, home], () => createTab()))).toEqual([home.id, design.id])
+  })
+
+  test('a failed recovery restore closes its tab and keeps the snapshot', async () => {
+    resetRecoveryStoreForTests(createMemoryRecoveryStore())
+    await getRecoveryStore().write({
+      id: 'broken',
+      documentName: 'Broken',
+      figBytes: new Uint8Array([1])
+    })
+    ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('read failed')
+    )
+    const home = createHomeTab()
+    const count = tabCount()
+
+    await expect(restoreRecoverySnapshot('broken')).rejects.toThrow('read failed')
+
+    expect(tabCount()).toBe(count)
+    expect(getActiveStore()).toBe(home.store)
+    expect(await getRecoveryStore().read('broken')).not.toBeNull()
+    resetRecoveryStoreForTests()
+  })
+
+  test('opens a file from Home in a tab of its own, leaving Home as it is', async () => {
+    const home = createHomeTab()
     const count = tabCount()
 
     await settleFileOpen(
       openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/from-home.fig')
     )
 
-    expect(tabCount()).toBe(count)
-    expect(getTabsSnapshot().at(-1)?.id).toBe(home?.id)
+    expect(tabCount()).toBe(count + 1)
     expect(getTabsSnapshot().at(-1)?.kind).toBe('document')
+    expect(
+      expectDefined(
+        getTabsSnapshot().find((tab) => tab.id === home.id),
+        'home'
+      ).kind
+    ).toBe('home')
+  })
+
+  test('closes the tab a file opened from Home got when it fails, leaving Home as it was', async () => {
+    ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('read failed')
+    )
+    createTab()
+    const home = createHomeTab()
+    const count = tabCount()
+
+    await expect(
+      settleFileOpen(openFileInNewTab(new File([], 'broken.fig'), undefined, '/tmp/broken.fig'))
+    ).rejects.toThrow('read failed')
+
+    expect(tabCount()).toBe(count)
+    const after = expectDefined(
+      getTabsSnapshot().find((tab) => tab.id === home.id),
+      'home tab'
+    )
+    expect([after.kind, after.store]).toEqual(['home', home.store])
+    // Home was in front when the open began, so it is again, not the other design.
+    expect(getActiveStore()).toBe(home.store)
   })
 
   test('activates the existing tab when the same path is opened again', async () => {

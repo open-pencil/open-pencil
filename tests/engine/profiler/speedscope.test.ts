@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
-import { toSpeedscopeJSON, type FrameCapture } from '@open-pencil/core'
+import { toSpeedscopeJSON, type FrameCapture } from '@open-pencil/core/profiler'
 
 describe('toSpeedscopeJSON', () => {
   it('produces valid speedscope JSON', () => {

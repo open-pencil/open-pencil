@@ -26,7 +26,11 @@ for (const theme of ['light', 'dark']) {
         const editor = window.openPencil?.getStore?.()
         if (!editor) throw new Error('Editor unavailable')
         const id = editor.createShape('TEXT', 100, 100, 240, 80)
-        editor.updateNode(id, { text: 'Unavailable variable', fontSize: 24, letterSpacing: 2 })
+        editor.updateNode(id, {
+          text: 'Unavailable variable',
+          fontSize: 24,
+          letterSpacing: { value: 2, unit: 'PIXELS' }
+        })
         const collection = editor.graph.createCollection('Typography')
         const variable = editor.graph.createVariable(
           'Tracking/Missing alias',

@@ -11,6 +11,16 @@ export const editorMessageDefaults = {
   pointCount: 'Count',
   /** The word before a star's inner ratio beside its dragged handle. */
   starRatio: 'Ratio',
+  /** The word before an ellipse arc's start angle beside its dragged handle. */
+  arcStart: 'Start',
+  /** The word before an ellipse arc's sweep, in percent of a turn, beside its dragged end handle. */
+  arcSweep: 'Sweep',
+  /** The word before an ellipse arc's inner ratio beside its dragged handle. */
+  arcRatio: 'Ratio',
+  /** What an empty sticky note shows in its body on the canvas. */
+  stickyPlaceholder: 'Type anything, @mention anyone',
+  /** What an empty connector label shows on the canvas while it is typed into. */
+  connectorLabelPlaceholder: 'Add text',
   showUI: params('Show UI ({shortcut})'),
   previewing: 'Previewing',
   startPreview: params('Preview ({shortcut})'),

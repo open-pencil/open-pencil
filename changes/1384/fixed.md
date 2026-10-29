@@ -1,0 +1,1 @@
+- A boolean's background blur stays inside its shape, and an inner shadow over a curved edge no longer lets the fill show through it, as in Figma.

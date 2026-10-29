@@ -1,4 +1,4 @@
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { loadFont } from '@/app/editor/fonts'

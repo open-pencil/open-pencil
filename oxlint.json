@@ -155,6 +155,7 @@
     "open-pencil/no-structuredclone-scene-arrays": "error",
     "open-pencil/no-vue-style-blocks": "error",
     "open-pencil/no-native-title-attributes-in-vue": "error",
+    "open-pencil/no-overlay-content-from-open-state": "error",
     "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
     "open-pencil/no-raw-svg-in-app-vue-templates": "error",
     "open-pencil/no-ui-helper-calls-in-vue-templates": "error",
@@ -201,15 +202,12 @@
       }
     ],
     "open-pencil/no-core-parent-relative-imports": "error",
+    "open-pencil/no-document-change-capture": "error",
     "open-pencil/no-mcp-parent-relative-imports": "error",
     "open-pencil/no-vue-parent-relative-imports": "error",
     "open-pencil/no-cli-parent-relative-imports": "error",
-    "open-pencil/no-mcp-core-barrel-imports": "error",
-    "open-pencil/no-cli-core-barrel-imports": "error",
-    "open-pencil/no-script-core-barrel-imports": "error",
     "open-pencil/no-core-self-package-imports": "error",
     "open-pencil/no-inline-prompt-constants": "error",
-    "open-pencil/no-app-vue-core-barrel-imports": "error",
     "open-pencil/no-direct-graph-emitter-subscriptions": "error",
     "open-pencil/no-on-unmounted-in-composition-roots": "error",
     "open-pencil/no-composable-state-wrappers": "error",
@@ -436,6 +434,55 @@
       }
     },
     {
+      "files": [
+        "packages/cloud/src/**/*.ts"
+      ],
+      "rules": {
+        "typescript/no-unsafe-assignment": "error",
+        "typescript/no-unsafe-argument": "error",
+        "typescript/no-unsafe-call": "error",
+        "typescript/no-unsafe-member-access": "error",
+        "typescript/no-unsafe-return": "error",
+        "typescript/switch-exhaustiveness-check": "error",
+        "typescript/no-deprecated": "error"
+      }
+    },
+    {
+      "files": ["packages/cloud/src/server/**/*.ts"],
+      "rules": {
+        "open-pencil/no-raw-sql": "error",
+        "open-pencil/no-cloud-dynamic-html": "error"
+      }
+    },
+    {
+      "files": ["packages/feedback/src/**/*.ts"],
+      "rules": {
+        "open-pencil/no-raw-sql": "error"
+      }
+    },
+    {
+      "files": [
+        "packages/cloud/src/server/db/expressions.ts",
+        "packages/cloud/src/server/db/migrate.ts",
+        "packages/cloud/src/server/db/migrations/**/*.ts"
+      ],
+      "rules": {
+        "open-pencil/no-raw-sql": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/cloud/src/**/*.ts",
+        "src/app/cloud/**/*.ts",
+        "src/app/collab/**/*.ts",
+        "src/app/integrations/storage/cloud/**/*.ts"
+      ],
+      "rules": {
+        "open-pencil/no-cloud-secret-in-query": "error",
+        "open-pencil/no-cloud-secret-logging": "error"
+      }
+    },
+    {
       "files": ["tools/ci/policy/src/**/*.ts"],
       "rules": {
         "open-pencil/prefer-es-toolkit": "off"
@@ -474,9 +521,22 @@
       }
     },
     {
+      "files": ["src/**/*.{ts,vue}", "packages/*/src/**/*.{ts,vue}"],
+      "rules": {
+        "open-pencil/valibot-schema-conventions": "error"
+      }
+    },
+    {
+      "files": ["tools/*/*/src/**/*.ts"],
+      "rules": {
+        "open-pencil/valibot-schema-conventions": ["error", { "placement": false }]
+      }
+    },
+    {
       "files": [
         "src/**/*.{ts,vue}",
-        "packages/{scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}"
+        "packages/{scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}",
+        "packages/cloud/src/{client,contract}/**/*.ts"
       ],
       "rules": {
         "compat/compat": "error"
@@ -505,7 +565,9 @@
     {
       "files": [
         "packages/cli/src/**",
-        "packages/mcp/src/**"
+        "packages/mcp/src/**",
+        "packages/cloud/src/runtime/node/**",
+        "packages/cloud/tests/e2e/**"
       ],
       "rules": {
         "no-console": "off"
@@ -556,11 +618,23 @@
     },
     {
       "files": [
-        "packages/core/src/io/formats/fig/export.ts",
-        "packages/core/src/kiwi/fig/parse/worker.ts"
+        "packages/core/src/io/formats/fig/export/index.ts",
+        "packages/core/src/io/formats/fig/export/worker.ts",
+        "packages/core/src/kiwi/fig/parse/worker.ts",
+        "src/app/code/sandbox/frame.ts",
+        "src/app/code/sandbox/worker/index.ts"
       ],
       "rules": {
         "unicorn/require-post-message-target-origin": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/code/sandbox/evaluate.ts",
+        "src/app/code/sandbox/frame.ts"
+      ],
+      "rules": {
+        "import/default": "off"
       }
     }
   ],
@@ -568,6 +642,7 @@
     "node_modules",
     "dist",
     "desktop",
+    "packages/mermaid/src/upstream",
     "*.config.*"
   ],
   "categories": {

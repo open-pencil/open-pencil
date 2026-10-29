@@ -1,0 +1,680 @@
+/* eslint-disable max-lines -- text rendering scenarios share CanvasKit setup and fixtures */
+
+import { describe, test, expect, mock, spyOn } from 'bun:test'
+
+import { SkiaRenderer as SkiaRendererClass } from '@open-pencil/core/canvas'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { pixelLength } from '@open-pencil/scene-graph/text'
+import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
+
+import { initCanvasKit } from '#cli/headless'
+import type { SkiaRenderer } from '#core/canvas/renderer'
+import { renderText } from '#core/canvas/scene'
+import {
+  buildParagraph,
+  isNodeFontLoaded,
+  nodeFontReadiness,
+  textVerticalOffset
+} from '#core/canvas/text'
+import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
+import { transformTextCase } from '#core/text/case'
+import { fontManager } from '#core/text/fonts'
+import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
+
+import { expectDefined } from '#tests/helpers/assert'
+import { repoPath } from '#tests/helpers/paths'
+
+import { asDouble, expectRgbaPixels } from '../helpers'
+
+function createMockCanvas() {
+  return {
+    drawParagraph: mock(() => undefined),
+    drawPicture: mock(() => undefined),
+    drawText: mock(() => undefined),
+    drawPath: mock(() => undefined),
+    drawRect: mock(() => undefined),
+    save: mock(() => undefined),
+    saveLayer: mock(() => undefined),
+    restore: mock(() => undefined),
+    clipRect: mock(() => undefined),
+    translate: mock(() => undefined),
+    scale: mock(() => undefined),
+    rotate: mock(() => undefined)
+  }
+}
+
+function createMockParagraph() {
+  const paragraph = {
+    delete: mock(() => undefined),
+    getHeight: mock(() => 20),
+    draw: mock((canvas: { drawParagraph: (...args: unknown[]) => void }, x: number, y: number) =>
+      canvas.drawParagraph(paragraph, x, y)
+    )
+  }
+  return paragraph
+}
+
+function createMockPicture() {
+  return { delete: mock(() => undefined) }
+}
+
+function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
+  const paragraph = createMockParagraph()
+  return asDouble<SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }>({
+    fontsLoaded: true,
+    fontProvider: {},
+    textFont: {},
+    derivedGlyphPathCache: createDerivedGlyphPathCache(),
+    fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
+    effectLayerPaint: {
+      setBlendMode: mock(() => undefined),
+      setColorFilter: mock(() => undefined),
+      setImageFilter: mock(() => undefined)
+    },
+    ck: {
+      MakePicture: mock(() => createMockPicture()),
+      PathBuilder: class {
+        moveTo = mock(() => this)
+        lineTo = mock(() => this)
+        cubicTo = mock(() => this)
+        quadTo = mock(() => this)
+        close = mock(() => this)
+        setFillType = mock(() => this)
+        delete = mock(() => undefined)
+        detachAndDelete = mock(() => ({
+          countPoints: mock(() => 0),
+          delete: mock(() => undefined),
+          setFillType: mock(() => undefined)
+        }))
+      },
+      LTRBRect: mock((...args: number[]) => args),
+      Color4f: mock((...args: number[]) => new Float32Array(args)),
+      BlendMode: { SrcOver: 0, SrcIn: 1 },
+      ClipOp: { Intersect: 0 }
+    },
+    DEFAULT_FONT_SIZE: 14,
+    isNodeFontLoaded: mock(() => true),
+    nodeFontReadiness: mock(() => 'ready'),
+    isTextPictureCurrent: mock(() => true),
+    buildParagraph: mock(() => paragraph),
+    _paragraph: paragraph,
+    ...overrides
+  })
+}
+
+function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
+  return createDefaultNode(() => '0:1', 'TEXT', {
+    text: 'Hello 你好',
+    fontSize: 16,
+    fontFamily: 'Arial',
+    fontWeight: 400,
+    italic: false,
+    letterSpacing: pixelLength(0),
+    lineHeight: null,
+    textAlignHorizontal: 'LEFT',
+    textAlignVertical: 'TOP',
+    textAutoResize: 'NONE',
+    textDecoration: 'NONE',
+    textDirection: 'AUTO',
+    styleRuns: [],
+    ...overrides
+  })
+}
+
+async function createTextRenderer() {
+  const ck = await initCanvasKit()
+  const surface = expectDefined(ck.MakeSurface(400, 120), 'surface')
+  const renderer = new SkiaRendererClass(ck, surface)
+  return { renderer, surface }
+}
+
+describe('text case and vertical alignment', () => {
+  test('transforms display text without changing the source', () => {
+    expect(transformTextCase('hello WORLD', 'ORIGINAL')).toBe('hello WORLD')
+    expect(transformTextCase('hello World', 'UPPER')).toBe('HELLO WORLD')
+    expect(transformTextCase('Hello WORLD', 'LOWER')).toBe('hello world')
+    expect(transformTextCase('hello WORLD 42nd', 'TITLE')).toBe('Hello World 42nd')
+  })
+
+  test('computes top, center, and bottom paragraph offsets', () => {
+    expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'TOP' }), 20)).toBe(0)
+    expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'CENTER' }), 20)).toBe(40)
+    expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'BOTTOM' }), 20)).toBe(80)
+    expect(textVerticalOffset(textNode({ height: 10, textAlignVertical: 'BOTTOM' }), 20)).toBe(0)
+  })
+})
+
+describe('renderText', () => {
+  test('uses buildParagraph when fonts are loaded and node font is available', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(r, canvas as never, textNode())
+
+    expect(r.buildParagraph).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      halfLeading: true
+    })
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawText).not.toHaveBeenCalled()
+    expect(r._paragraph.delete).toHaveBeenCalledTimes(1)
+  })
+
+  test('skips text while the node font is not available', () => {
+    const r = createMockRenderer({ nodeFontReadiness: mock(() => 'pending') })
+    const canvas = createMockCanvas()
+
+    renderText(r, canvas as never, textNode())
+
+    expect(r.buildParagraph).not.toHaveBeenCalled()
+    expect(canvas.drawParagraph).not.toHaveBeenCalled()
+    expect(canvas.drawText).not.toHaveBeenCalled()
+  })
+
+  test('paints gradients through native paragraphs without outline font data', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(r, canvas as never, textNode(), {
+      type: 'GRADIENT_LINEAR',
+      visible: true,
+      opacity: 1,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      gradientStops: [],
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+    })
+
+    expect(r.buildParagraph).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      halfLeading: true,
+      foregroundPaint: r.fillPaint
+    })
+    expect(canvas.saveLayer).not.toHaveBeenCalled()
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawRect).not.toHaveBeenCalled()
+    expect(r._paragraph.delete).toHaveBeenCalledTimes(1)
+  })
+
+  test('keeps native paragraph layout even when outline font data is available', async () => {
+    const interData = await Bun.file(
+      repoPath('packages/core/assets/InterVariable.ttf')
+    ).arrayBuffer()
+    await fontManager.markLoaded('Inter', 'Regular', interData)
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(
+      r,
+      canvas as never,
+      textNode({ text: 'OPEN', fontFamily: 'Inter', width: 120, height: 40 }),
+      {
+        type: 'GRADIENT_LINEAR',
+        visible: true,
+        opacity: 1,
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        gradientStops: [],
+        gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      }
+    )
+
+    expect(canvas.drawPath).not.toHaveBeenCalled()
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.saveLayer).not.toHaveBeenCalled()
+  })
+
+  test('prefers resolved fonts over baked text pictures', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node = textNode({ textPicture: new Uint8Array([1, 2, 3]) })
+
+    renderText(r, canvas as never, node)
+
+    expect(canvas.drawPicture).not.toHaveBeenCalled()
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+  })
+
+  test('renders a live paragraph for finalized default-family substitution', () => {
+    const r = createMockRenderer({ nodeFontReadiness: mock(() => 'substituted') })
+    const canvas = createMockCanvas()
+    const node = textNode({
+      fontFamily: 'Geist',
+      text: 'Edited text',
+      textPicture: null,
+      derivedTextGlyphs: null
+    })
+
+    renderText(r, canvas as never, node)
+
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+  })
+
+  test.each(['ready', 'substituted'] as const)(
+    'keeps derived path-text glyphs when its face is %s',
+    (readiness) => {
+      const base = createMockRenderer()
+      const r = createMockRenderer({
+        nodeFontReadiness: mock(() => readiness),
+        ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
+      })
+      const canvas = createMockCanvas()
+      const node = textNode({
+        fontFamily: 'Missing Path Font',
+        textPathData: {
+          network: { vertices: [], segments: [], regions: [] },
+          normalizedSize: { x: 100, y: 20 },
+          tValue: 0,
+          forward: true
+        },
+        derivedTextGlyphs: [
+          {
+            commandsBlob: new Uint8Array(),
+            x: 0,
+            y: 0,
+            rotation: 0,
+            fontSize: 12
+          }
+        ]
+      })
+
+      renderText(r, canvas as never, node)
+
+      expect(r.buildParagraph).not.toHaveBeenCalled()
+    }
+  )
+  test('uses baked text pictures after font resolution is exhausted', () => {
+    const r = createMockRenderer({ nodeFontReadiness: mock(() => 'exhausted') })
+    const canvas = createMockCanvas()
+    const node = textNode({ textPicture: new Uint8Array([1, 2, 3]) })
+
+    renderText(r, canvas as never, node)
+
+    expect(canvas.drawPicture).toHaveBeenCalledTimes(1)
+    expect(r.buildParagraph).not.toHaveBeenCalled()
+  })
+
+  test('falls back to drawText only when fonts are NOT loaded', () => {
+    const r = createMockRenderer({ fontsLoaded: false, fontProvider: null })
+    const canvas = createMockCanvas()
+
+    renderText(r, canvas as never, textNode())
+
+    expect(canvas.drawText).toHaveBeenCalledTimes(1)
+    expect(r.buildParagraph).not.toHaveBeenCalled()
+  })
+
+  test('does nothing for empty text', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(r, canvas as never, textNode({ text: '' }))
+
+    expect(r.buildParagraph).not.toHaveBeenCalled()
+    expect(canvas.drawText).not.toHaveBeenCalled()
+    expect(canvas.drawPicture).not.toHaveBeenCalled()
+  })
+})
+
+describe('paragraph font weights', () => {
+  test('bold Inter paragraph is wider than regular Inter', async () => {
+    const { renderer, surface } = await createTextRenderer()
+    await renderer.loadFonts()
+    const regular = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const bold = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Inter', 'Regular', regular)
+    await fontManager.markLoaded('Inter', 'Bold', bold)
+
+    const base = textNode({
+      text: 'World largest design',
+      fontFamily: 'Inter',
+      fontSize: 64,
+      width: 1000,
+      height: 100,
+      fontWeight: 400,
+      italic: false
+    })
+    const regularParagraph = buildParagraph(renderer, base)
+    const boldParagraph = buildParagraph(renderer, { ...base, fontWeight: 700 })
+
+    expect(boldParagraph.getLongestLine()).toBeGreaterThan(regularParagraph.getLongestLine())
+    regularParagraph.delete()
+    boldParagraph.delete()
+    surface.delete()
+  })
+
+  test('shapes italic text when only the regular family face is available', async () => {
+    const { renderer, surface } = await createTextRenderer()
+    await renderer.loadFonts()
+    const regular = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Inter', 'Regular', regular)
+    const demand = fontFaceDemand('Inter', 'Regular Italic', 'Synthetic italic')
+    fontResolver.reset(demand)
+    fontResolver.exhaust(demand)
+    const node = textNode({
+      text: 'Synthetic italic',
+      fontFamily: 'Inter',
+      italic: true,
+      width: 300,
+      height: 40
+    })
+
+    expect(isNodeFontLoaded(renderer, node)).toBe(true)
+    const paragraph = buildParagraph(renderer, node)
+    paragraph.layout(300)
+    expect(paragraph.getLongestLine()).toBeGreaterThan(0)
+
+    paragraph.delete()
+    fontResolver.reset(demand)
+    surface.delete()
+  })
+})
+
+describe('renderText headless visual', () => {
+  test('detects base direction for Arabic and mixed text', () => {
+    expect(detectTextDirection('مرحبا')).toBe('RTL')
+    expect(resolveTextDirection('AUTO', 'مرحبا world')).toBe('RTL')
+    expect(resolveTextDirection('AUTO', 'Hello مرحبا')).toBe('LTR')
+    expect(resolveTextDirection('RTL', 'Hello')).toBe('RTL')
+  })
+
+  test('observes CanvasKit notdef glyphs for unsupported CJK text', async () => {
+    const ck = await initCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    fontProvider.registerFont(interData, 'Inter')
+    await fontManager.markLoaded('Inter', 'Regular', interData)
+    const fallbackFamilies = fontManager.getCJKFallbackFamilies()
+    const originalFallbacks = [...fallbackFamilies]
+    fallbackFamilies.length = 0
+    const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
+
+    try {
+      const renderer = new SkiaRendererClass(ck, surface)
+      renderer.fontsLoaded = true
+      renderer.fontProvider = fontProvider
+      const paragraph = buildParagraph(
+        renderer,
+        textNode({ text: 'A𠀀B', fontFamily: 'Inter', fontWeight: 400 })
+      )
+      paragraph.layout(200)
+
+      expect(missingGlyphCharacters('A𠀀B', paragraph.getShapedLines())).toEqual(['𠀀'])
+      paragraph.delete()
+    } finally {
+      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+      surface.delete()
+    }
+  })
+
+  test('requests a CJK fallback for text whose face is substituted', async () => {
+    const ck = await initCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    await fontManager.markLoaded('Inter', 'Regular', interData)
+    const fallbackFamilies = fontManager.getCJKFallbackFamilies()
+    const originalFallbacks = [...fallbackFamilies]
+    fallbackFamilies.length = 0
+    const fallbackPack = spyOn(fontManager, 'ensureFallbackPack').mockResolvedValue({})
+    const face = fontFaceDemand('Undrawable Sans', 'Regular')
+    fontResolver.exhaust(face)
+    const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
+
+    try {
+      const renderer = new SkiaRendererClass(ck, surface)
+      renderer.fontsLoaded = true
+      renderer.fontProvider = fontProvider
+      const node = textNode({ text: '按钮', fontFamily: 'Undrawable Sans', fontWeight: 400 })
+
+      expect(nodeFontReadiness(renderer, node)).toBe('pending')
+      await Promise.resolve()
+      expect(fallbackPack).toHaveBeenCalled()
+      expect(fallbackPack.mock.calls[0]?.[0]?.some((script) => script.startsWith('cjk'))).toBe(true)
+    } finally {
+      fallbackPack.mockRestore()
+      fontResolver.reset(face)
+      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+      surface.delete()
+    }
+  })
+
+  test('does not require fallback families when the primary font covers CJK glyphs', async () => {
+    const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+    const notoData = await Bun.file(notoPath).arrayBuffer()
+    await fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+    const fallbackFamilies = fontManager.getCJKFallbackFamilies()
+    const originalFallbacks = [...fallbackFamilies]
+    fallbackFamilies.length = 0
+
+    try {
+      const loaded = isNodeFontLoaded(
+        { fontProvider: {}, fontsLoaded: true } as never,
+        textNode({ text: '你好世界', fontFamily: 'Noto Sans SC', fontWeight: 400 })
+      )
+
+      expect(loaded).toBe(true)
+    } finally {
+      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+    }
+  })
+
+  test('renders CJK text via fallback font through paragraph shaper', async () => {
+    const ck = await initCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    await fontManager.markLoaded('Inter', 'Regular', interData)
+
+    const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+    const notoData = await Bun.file(notoPath).arrayBuffer()
+    await fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+    fontManager.setCJKFallbackFamily('Noto Sans SC')
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+    }
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('TEXT', page.id, {
+      text: '你好世界',
+      fontFamily: 'Inter',
+      fontSize: 32,
+      fontWeight: 400,
+      width: 200,
+      height: 50,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+
+    const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
+    const renderer = new SkiaRendererClass(ck, surface)
+    renderer.viewportWidth = 200
+    renderer.viewportHeight = 50
+    renderer.dpr = 1
+    renderer.fontsLoaded = true
+    renderer.fontProvider = fontProvider
+
+    const canvas = surface.getCanvas()
+    canvas.clear(ck.WHITE)
+    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
+    surface.flush()
+
+    const image = surface.makeImageSnapshot()
+    const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
+    image.delete()
+    surface.delete()
+
+    expect(encoded.length).toBeGreaterThan(200)
+
+    const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
+    const pixels = expectRgbaPixels(
+      decodedImage.readPixels(0, 0, {
+        width: 200,
+        height: 50,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
+      'decoded CJK pixels'
+    )
+    decodedImage.delete()
+
+    let darkPixels = 0
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i] < 128 && pixels[i + 1] < 128 && pixels[i + 2] < 128) {
+        darkPixels++
+      }
+    }
+    // CJK characters are dense — should have many dark pixels if rendering correctly
+    // Tofu boxes would have far fewer (just outlines)
+    expect(darkPixels).toBeGreaterThan(500)
+  })
+
+  test('renders linear gradient text through the canvas scene fill path', async () => {
+    const ck = await initCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    fontProvider.registerFont(interData, 'Inter')
+    await fontManager.markLoaded('Inter', 'Regular', interData)
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('TEXT', page.id, {
+      text: 'OPEN',
+      fontFamily: 'Inter',
+      fontSize: 64,
+      fontWeight: 400,
+      width: 220,
+      height: 80,
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          opacity: 1,
+          visible: true,
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          gradientStops: [
+            { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+            { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+          ],
+          gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+        }
+      ]
+    })
+
+    const surface = expectDefined(ck.MakeSurface(220, 80), 'CanvasKit surface')
+    const renderer = new SkiaRendererClass(ck, surface)
+    renderer.viewportWidth = 220
+    renderer.viewportHeight = 80
+    renderer.dpr = 1
+    renderer.fontsLoaded = true
+    renderer.fontProvider = fontProvider
+
+    const canvas = surface.getCanvas()
+    canvas.clear(ck.WHITE)
+    renderer.renderShape(canvas, expectDefined(graph.getNode(node.id), 'text node'), graph)
+    surface.flush()
+
+    const image = surface.makeImageSnapshot()
+    const pixels = expectRgbaPixels(
+      image.readPixels(0, 0, {
+        width: 220,
+        height: 80,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
+      'gradient text pixels'
+    )
+    image.delete()
+    surface.delete()
+
+    let redTextPixels = 0
+    let blueTextPixels = 0
+    for (let y = 0; y < 80; y++) {
+      for (let x = 0; x < 220; x++) {
+        const i = (y * 220 + x) * 4
+        const r = pixels[i]
+        const g = pixels[i + 1]
+        const b = pixels[i + 2]
+        if (g > 220) continue
+        // Figma's identity transform runs left to right: the first stop, red, is on the left.
+        if (x < 110 && r > b + 40) redTextPixels++
+        if (x >= 110 && b > r + 40) blueTextPixels++
+      }
+    }
+
+    expect(redTextPixels).toBeGreaterThan(40)
+    expect(blueTextPixels).toBeGreaterThan(40)
+  })
+
+  test('renders Arabic text via fallback font through paragraph shaper', async () => {
+    const ck = await initCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    fontProvider.registerFont(interData, 'Inter')
+    await fontManager.markLoaded('Inter', 'Regular', interData)
+
+    const arabicPath = repoPath('tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf')
+    const arabicData = await Bun.file(arabicPath).arrayBuffer()
+    fontProvider.registerFont(arabicData, 'Noto Naskh Arabic')
+    fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('TEXT', page.id, {
+      text: 'مرحبا بالعالم',
+      textDirection: 'AUTO',
+      fontFamily: 'Inter',
+      fontSize: 32,
+      fontWeight: 400,
+      width: 220,
+      height: 60,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+
+    const surface = expectDefined(ck.MakeSurface(220, 60), 'CanvasKit surface')
+    const renderer = new SkiaRendererClass(ck, surface)
+    renderer.viewportWidth = 220
+    renderer.viewportHeight = 60
+    renderer.dpr = 1
+    renderer.fontsLoaded = true
+    renderer.fontProvider = fontProvider
+
+    const canvas = surface.getCanvas()
+    canvas.clear(ck.WHITE)
+    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
+    surface.flush()
+
+    const image = surface.makeImageSnapshot()
+    const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
+    image.delete()
+    surface.delete()
+
+    expect(encoded.length).toBeGreaterThan(200)
+
+    const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
+    const pixels = expectRgbaPixels(
+      decodedImage.readPixels(0, 0, {
+        width: 220,
+        height: 60,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
+      'decoded text pixels'
+    )
+    decodedImage.delete()
+
+    let darkPixels = 0
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i] < 128 && pixels[i + 1] < 128 && pixels[i + 2] < 128) {
+        darkPixels++
+      }
+    }
+    expect(darkPixels).toBeGreaterThan(450)
+  })
+})

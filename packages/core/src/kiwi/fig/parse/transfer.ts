@@ -68,6 +68,7 @@ export function cloneSceneGraphForFigExport(graph: SceneGraph): SceneGraph {
   cloned.instanceIndex = new Map(
     [...graph.instanceIndex].map(([id, nodeIds]) => [id, new Set(nodeIds)])
   )
+  cloned.connectorIds = new Set(graph.connectorIds)
   cloned.figKiwiVersion = graph.figKiwiVersion
   cloned.figSchemaDeflated = graph.figSchemaDeflated
   cloned.documentColorSpace = graph.documentColorSpace
@@ -97,6 +98,8 @@ export function deserializeSceneGraph(data: SerializedSceneGraph): SceneGraph {
   graph.variableCollections = new Map(data.variableCollections)
   graph.activeMode = new Map(data.activeMode)
   graph.instanceIndex = new Map(data.instanceIndex.map(([id, nodeIds]) => [id, new Set(nodeIds)]))
+  // Routing finds connectors through the index the nodes it was sent without imply.
+  for (const [id, node] of graph.nodes) if (node.type === 'CONNECTOR') graph.connectorIds.add(id)
   graph.figKiwiVersion = data.figKiwiVersion
   graph.figSchemaDeflated = data.figSchemaDeflated
   graph.documentColorSpace = data.documentColorSpace

@@ -10,14 +10,12 @@ import type {
   DiagnosticLevel,
   DiagnosticValue
 } from '../types'
+import { tokenUsageSchema } from './schema'
 
 const modelStepSchema = v.object({
   provider: v.string(),
   model: v.string(),
-  inputTokens: v.nullable(v.number()),
-  outputTokens: v.nullable(v.number()),
-  cacheReadTokens: v.nullable(v.number()),
-  cacheWriteTokens: v.nullable(v.number())
+  ...tokenUsageSchema.entries
 })
 
 const chatCompletedSchema = v.object({ finishReason: v.nullable(v.string()) })

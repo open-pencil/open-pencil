@@ -10,10 +10,11 @@ import {
   deleteCommentThread,
   replyToCommentThread,
   resolveCommentThread
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/comments'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { useCollabIdentity } from '@/app/collab/identity'
+import { roomForStore } from '@/app/collab/rooms'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import type { PagePoint } from '@/app/editor/pages/point'
 import { setCommentsOnCanvas } from '@/app/settings/preferences/apply'
@@ -65,9 +66,15 @@ export const useComments = createGlobalState(() => {
   })
   const { threads, mutate, update, pinPosition } = documentComments
 
-  function me() {
-    return { name: identity.name.value, color: identity.color }
-  }
+  /**
+   * Who writes here: who the document's tab is in its room, such as a Cloud member under their
+   * account, or this device's own identity outside one.
+   */
+  const me = computed(() => {
+    const store = storeRef.value
+    const own = store ? roomForStore(store)?.identity : undefined
+    return { name: own?.name.value ?? identity.name.value, color: own?.color ?? identity.color }
+  })
 
   function startDraft(at: PagePoint) {
     activeThreadId.value = null
@@ -95,7 +102,7 @@ export const useComments = createGlobalState(() => {
     const thread = createCommentThread(store.graph, {
       pageId: place.pageId,
       at: place,
-      author: me(),
+      author: me.value,
       text: body,
       now: now()
     })
@@ -114,7 +121,7 @@ export const useComments = createGlobalState(() => {
   function reply(threadId: string, text: string) {
     const body = text.trim()
     if (!body) return
-    const entry = createCommentReply(me(), body, now())
+    const entry = createCommentReply(me.value, body, now())
     update(threadId, (thread) => replyToCommentThread(thread, entry))
   }
 
@@ -163,7 +170,7 @@ export const useComments = createGlobalState(() => {
     activeThreadId,
     draft,
     onDeleteRequested: deleteRequested.on,
-    author: identity.name,
+    author: computed(() => me.value.name),
     showOnCanvas,
     listQuery,
     listShowResolved,

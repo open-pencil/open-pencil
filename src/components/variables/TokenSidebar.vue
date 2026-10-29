@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { GroupEntry } from '@/app/editor/tokens/model'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import tokensPanelTheme from '@/theme/tokens-panel'
+import sidebarTheme from '@/theme/variables/sidebar'
 
 /**
  * Collections and the groups inside the active one, each with how many tokens it holds. Picking
@@ -26,14 +26,14 @@ const activeGroup = defineModel<string | null>('group', { default: null })
 const emit = defineEmits<{ addCollection: [] }>()
 
 const { variables } = useI18n()
-const ui = tv(tokensPanelTheme)()
+const ui = tv(sidebarTheme)()
 </script>
 
 <template>
-  <nav :class="ui.sidebar()" :aria-label="variables.collections" data-test-id="tokens-sidebar">
-    <section :class="ui.sidebarSection()">
-      <div :class="ui.sidebarHeading()">
-        <h3 :class="ui.sectionTitle()">{{ variables.collections }}</h3>
+  <nav :class="ui.root()" :aria-label="variables.collections" data-test-id="tokens-sidebar">
+    <section :class="ui.section()">
+      <div :class="ui.heading()">
+        <h3 :class="ui.title()">{{ variables.collections }}</h3>
         <IconButton
           :label="variables.createCollection"
           data-test-id="variables-add-collection"
@@ -46,7 +46,7 @@ const ui = tv(tokensPanelTheme)()
         v-for="item in collections"
         :key="item.id"
         type="button"
-        :class="ui.sidebarItem()"
+        :class="ui.item()"
         :data-active="item.id === activeCollectionId || undefined"
         :aria-current="item.id === activeCollectionId ? 'true' : undefined"
         data-test-id="variables-collection-tab"
@@ -56,35 +56,35 @@ const ui = tv(tokensPanelTheme)()
         <Tip v-if="item.library" :label="variables.libraryCollectionHint">
           <AppBadge>{{ variables.libraryCollection }}</AppBadge>
         </Tip>
-        <span :class="ui.sidebarCount()">{{ item.count }}</span>
+        <span :class="ui.count()">{{ item.count }}</span>
       </button>
     </section>
 
-    <section v-if="groups.length > 0" :class="ui.sidebarSection()">
-      <h3 :class="[ui.sectionTitle(), ui.sidebarHeading()]">{{ variables.groups }}</h3>
+    <section v-if="groups.length > 0" :class="ui.section()">
+      <h3 :class="[ui.title(), ui.heading()]">{{ variables.groups }}</h3>
       <button
         type="button"
-        :class="ui.sidebarItem()"
+        :class="ui.item()"
         :data-active="activeGroup === null || undefined"
         :aria-current="activeGroup === null ? 'true' : undefined"
         @click="activeGroup = null"
       >
         <span class="truncate">{{ variables.allVariables }}</span>
-        <span :class="ui.sidebarCount()">{{ total }}</span>
+        <span :class="ui.count()">{{ total }}</span>
       </button>
       <button
         v-for="group in groups"
         :key="group.path"
         type="button"
-        :class="ui.sidebarItem()"
+        :class="ui.item()"
         :style="{ '--depth': group.depth }"
         :data-active="activeGroup === group.path || undefined"
         :aria-current="activeGroup === group.path ? 'true' : undefined"
         data-test-id="variables-group"
         @click="activeGroup = group.path"
       >
-        <span :class="ui.sidebarGroupLabel()">{{ group.label }}</span>
-        <span :class="ui.sidebarCount()">{{ group.count }}</span>
+        <span :class="ui.groupLabel()">{{ group.label }}</span>
+        <span :class="ui.count()">{{ group.count }}</span>
       </button>
     </section>
   </nav>

@@ -1,4 +1,4 @@
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { openTour } from '@/app/demo/document'
 import { requestAppExit } from '@/app/document/close/exit'
@@ -11,7 +11,7 @@ import {
 } from '@/app/settings/preferences/native-menu'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
-import { openStorageWorkspace } from '@/app/shell/menu/navigation'
+import { browseFiles } from '@/app/shell/menu/navigation'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { useAppTheme } from '@/app/shell/theme'
 import { checkForAppUpdate } from '@/app/shell/updater/check'
@@ -53,8 +53,8 @@ export function useShellMenu() {
   const { setTheme } = useAppTheme()
   const { updates } = useI18n()
   const actions: Partial<Record<string, () => void>> = {
-    'open-storage-workspace': () => {
-      void import('@/router').then(({ default: router }) => openStorageWorkspace(router))
+    'browse-files': () => {
+      void import('@/router').then(({ default: router }) => browseFiles(router))
     },
     'open-tour': () => {
       openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))

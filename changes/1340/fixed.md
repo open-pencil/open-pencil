@@ -1,0 +1,3 @@
+- MCP tools whose `path` is their own data, such as `create_vector` and `path_set`, no longer fail on long paths or create folders, and `export_pdf` writes the file its `path` names.
+- MCP `open_file`, `save_file`, and `new_document` work with paths in the browser app: files are read from and copies saved to the MCP root through the server.
+- A document opened from a link whose name has spaces or non-Latin letters keeps its name instead of showing it percent-encoded.

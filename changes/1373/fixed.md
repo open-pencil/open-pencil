@@ -1,0 +1,2 @@
+- Off and Minimal thinking no longer fail on GLM-5.3, GLM-5.3-Flash, or Gemini 3.1 Pro, and no longer run GPT-6.1 Sol and GPT-6 Astra at their default effort: these models use low, the lowest each accepts.
+- The free model shown first for OpenRouter no longer points at the removed Qwen3.8 27B route.

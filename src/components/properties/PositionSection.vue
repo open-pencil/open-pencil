@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { PositionControlsRoot, useI18n } from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { PositionControlsRoot } from '@open-pencil/vue/primitives/PositionControls'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import NumberField from '@/components/inputs/NumberField.vue'
+import AlignmentActionsMenu from '@/components/properties/AlignmentActionsMenu.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
@@ -10,6 +13,8 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 const { panels } = useI18n()
 const store = useEditorStore()
+const { getCommand } = useEditorCommands()
+const canTidy = getCommand('selection.tidyUp').enabled
 
 function handleAlign(
   nodeAlign: (axis: 'horizontal' | 'vertical', pos: 'min' | 'center' | 'max') => void,
@@ -27,7 +32,16 @@ function handleAlign(
 
 <template>
   <PositionControlsRoot
-    v-slot="{ active, xValue, yValue, rotationValue, inAutoLayout, ignoresAutoLayout, actions }"
+    v-slot="{
+      active,
+      xValue,
+      yValue,
+      rotationValue,
+      rotates,
+      inAutoLayout,
+      ignoresAutoLayout,
+      actions
+    }"
   >
     <PanelSection v-if="active" :label="panels.position">
       <template v-if="inAutoLayout" #actions>
@@ -85,6 +99,7 @@ function handleAlign(
           >
             <icon-lucide-align-end-horizontal class="size-3.5" />
           </IconButton>
+          <AlignmentActionsMenu v-if="canTidy" />
         </div>
       </div>
 
@@ -113,7 +128,7 @@ function handleAlign(
         </Tip>
       </PanelGrid>
 
-      <PanelGrid :columns="2" class="mt-1.5">
+      <PanelGrid v-if="rotates" :columns="2" class="mt-1.5">
         <Tip :label="panels.rotation">
           <NumberField
             suffix="°"

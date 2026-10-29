@@ -15,7 +15,7 @@ import {
 import { computed, ref } from 'vue'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   aiModelSettings,
@@ -28,7 +28,8 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatProfileItem from '@/components/chat/ChatProfileItem.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useSelectUI } from '@/components/ui/select/select'
-import { chatProfileTheme } from '@/theme/chat/profile'
+
+import { chatProfileTheme } from './ui'
 
 const { ai } = useI18n()
 const open = ref(false)

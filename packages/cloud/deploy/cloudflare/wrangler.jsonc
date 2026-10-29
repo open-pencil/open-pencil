@@ -1,0 +1,38 @@
+// OpenPencil Cloud on Cloudflare Workers. To deploy, copy this folder next to it (for example to
+// deploy/mine), add your deployment TOML as openpencil-cloud.toml, replace the values marked below,
+// and run `wrangler deploy --assets "$(git rev-parse --show-toplevel)/dist-cloud"` there. The
+// self-hosting guide walks through it.
+{
+  "name": "openpencil-cloud",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // The deployment TOML is bundled as text and parsed when the Worker starts.
+  "rules": [{ "type": "Text", "globs": ["**/*.toml"], "fallthrough": false }],
+  "observability": { "enabled": true },
+  // The editor and the portal from `bun run build:cloud`, which `--assets` names. The Worker always
+  // answers first: API routes win, portal pages get `cloud.html`, then files, and any other page
+  // the editor's `index.html`.
+  "assets": {
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": true
+  },
+  // Replace with your domain.
+  "routes": [{ "pattern": "cloud.example.com", "custom_domain": true }],
+  "workers_dev": false,
+  // Replace with the ID from `wrangler hyperdrive create`. Locally the connection string comes from
+  // CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE instead.
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "your-hyperdrive-id" }],
+  // One object per document holds its live collaboration rooms.
+  "durable_objects": {
+    "bindings": [{ "name": "RELAY", "class_name": "CollaborationRelayObject" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CollaborationRelayObject"] }],
+  // Used by `[email] transport = "cloudflare"`.
+  "send_email": [{ "name": "EMAIL" }],
+  // Cleanup, and email that failed to send after its request.
+  "triggers": { "crons": ["*/5 * * * *"] },
+  // Add the other secrets your TOML names, such as GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.
+  "secrets": { "required": ["BETTER_AUTH_SECRET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"] }
+}

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import type { SceneNode, TextPathData, VectorNetwork } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -9,10 +9,10 @@ import {
   fitTextPathBoxToGlyphs,
   getTextPathData,
   layoutPathTextFromAdvances,
-  pathTextSelectionBand,
   pointAtArc,
   reflowPathTextGlyphs,
-  sampleTextPath
+  sampleTextPath,
+  textPathStartArc
 } from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -123,12 +123,10 @@ describe('path-text reflow — real fixture (optional local)', () => {
     const path = expectDefined(sampleTextPath(data, fitted), 'fitted overlay path')
     expect(maxGlyphToPath(path, glyphs)).toBeLessThan(12)
 
-    // Start marker (overlay uses pointAtArc at tValue * length) lands on the
-    // fitted curve near the first glyph.
-    const start = pointAtArc(path, Math.min(Math.max(data.tValue, 0), 1) * path.length)
-    expect(Math.hypot(start.x - glyphs[0].x, start.y - glyphs[0].y)).toBeLessThan(
-      glyphs[0].fontSize
-    )
+    // The start marker sits on the segment Figma marks, near arc 595 of 1540, not at
+    // tValue × length (845.7), where this centered run's first glyph happens to be.
+    expect(data.startSegment).toBe(1)
+    expect(textPathStartArc(data, rawPath)).toBeCloseTo(595, 0)
   })
 
   test('fitTextPathBoxToGlyphs returns null with no glyphs to fit', async () => {
@@ -306,6 +304,33 @@ describe('selection overlay — path helpers', () => {
     expect(Math.hypot(mid.x - start.x, mid.y - start.y)).toBeGreaterThan(1)
   })
 
+  test('the start marker sits on the marked start segment, or at tValue along an unmarked path', () => {
+    const zero = { x: 0, y: 0 }
+    const data: TextPathData = {
+      network: {
+        vertices: [
+          { x: 0, y: 50 },
+          { x: 200, y: 50 },
+          { x: 400, y: 50 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
+          { start: 1, end: 2, tangentStart: zero, tangentEnd: zero }
+        ],
+        regions: []
+      },
+      normalizedSize: { x: 400, y: 100 },
+      tValue: 0.5,
+      forward: true,
+      startSegment: 1
+    }
+    const box = { x: 0, y: 0, width: 400, height: 100 }
+    const path = expectDefined(sampleTextPath(data, box), 'path')
+
+    expect(textPathStartArc(data, path)).toBeCloseTo(300, 0)
+    expect(textPathStartArc({ ...data, startSegment: undefined }, path)).toBeCloseTo(200, 0)
+  })
+
   test('eligible node samples the curve (not a rectangle); dataless node falls back', () => {
     const node = makeCircleTextPathNode()
     // Overlay eligibility seam: retained data + a node-local box are both present.
@@ -337,38 +362,6 @@ describe('selection overlay — path helpers', () => {
       text: 'x'
     })
     expect(getTextPathData(bare)).toBeNull()
-  })
-
-  test('selection band hugs a glyph run that straddles the path seam', () => {
-    const node = makeCircleTextPathNode()
-    const data = expectDefined(getTextPathData(node), 'data')
-    const box = expectDefined(node.textPathBox, 'box')
-
-    // Seam s=0 sits at 3 o'clock (228,128). A run at angles −30°..+30° straddles
-    // it: min/max arc-length would trace the whole opposite (empty) arc, so the
-    // band must instead hug this right-side cluster.
-    const glyphs = [-30, -20, -10, 10, 20, 30].map((deg) => {
-      const a = (deg * Math.PI) / 180
-      return { x: 128 + 100 * Math.cos(a), y: 128 + 100 * Math.sin(a), fontSize: 40, rotation: 0 }
-    })
-
-    const poly = expectDefined(pathTextSelectionBand(data, box, glyphs), 'band')
-    expect(poly.length).toBeGreaterThanOrEqual(6)
-
-    // Centroid on the glyph side (right of centre); the old complement arc gave
-    // a centroid near 9 o'clock (x < 128).
-    let bx = 0
-    for (let i = 0; i < poly.length; i += 2) bx += poly[i]
-    bx /= poly.length / 2
-    expect(bx).toBeGreaterThan(140)
-
-    // Every band vertex hugs some glyph; the complement arc would sit ~2·radius
-    // (~200px) away.
-    for (let i = 0; i < poly.length; i += 2) {
-      let best = Infinity
-      for (const g of glyphs) best = Math.min(best, Math.hypot(poly[i] - g.x, poly[i + 1] - g.y))
-      expect(best).toBeLessThan(60)
-    }
   })
 })
 

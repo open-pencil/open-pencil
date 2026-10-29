@@ -1,0 +1,1 @@
+- Undoing a dragged font size, line height, or letter spacing back to where a document was saved marks it saved again, instead of keeping it marked as edited.

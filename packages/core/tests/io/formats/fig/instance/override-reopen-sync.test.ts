@@ -1,9 +1,9 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
@@ -13,6 +13,10 @@ import {
   installFigMutationJournal
 } from '#core/kiwi/fig/population/delta'
 import { populateFigPage } from '#core/kiwi/fig/session/document-state'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 function instanceNamed(graph: SceneGraph, name: string): SceneNode {
   const instance = [...graph.getAllNodes()].find(

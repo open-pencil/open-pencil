@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 export function createProfilerActions(editor: Editor) {
   function activeCanvas() {

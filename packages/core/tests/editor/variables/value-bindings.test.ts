@@ -2,8 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 function boundText() {
   const graph = new SceneGraph()

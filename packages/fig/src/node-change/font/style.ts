@@ -1,4 +1,4 @@
-import { FONT_WEIGHT_NAMES } from '@open-pencil/scene-graph'
+import { FONT_WEIGHT_NAMES } from '@open-pencil/scene-graph/font-style'
 
 export function weightToFigmaStyle(weight: number, italic = false): string {
   const rounded = Math.round(weight / 100) * 100

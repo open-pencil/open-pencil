@@ -1,0 +1,1 @@
+- The desktop app waits up to 20 seconds for a slow-starting MCP server instead of giving up after five, and stopping the server from the app, or quitting the app, now ends the server process too, so a leftover server no longer keeps answering after the app lets go of it (#1167).

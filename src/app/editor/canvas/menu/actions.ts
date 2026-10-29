@@ -3,7 +3,11 @@ import type { Ref } from 'vue'
 import { nodeToXPath } from '@open-pencil/core/xpath'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
+import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste/replace'
+import {
+  copySelectionProperties,
+  pasteClipboardProperties
+} from '@/app/editor/clipboard/properties'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { createTextClipboard } from '@/app/editor/clipboard/text'
 import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize'
@@ -73,6 +77,8 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     ids,
     execCommand,
     pasteToReplace: () => pasteClipboardToReplace(store),
+    copyProperties: () => copySelectionProperties(store),
+    pasteProperties: () => pasteClipboardProperties(store),
     clipboardWrite,
     copyNodeId,
     copyXPath,

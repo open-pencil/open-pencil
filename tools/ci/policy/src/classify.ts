@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process'
 import { appendFile } from 'node:fs/promises'
 
+import { cloudInputs } from './cloud-inputs'
 import { classifyPaths } from './policy'
 import { isVerifiedTree } from './verified-tree/status'
 
-const base = process.env.CI_BASE_SHA
+const base = comparisonBase()
 const output = process.env.GITHUB_OUTPUT
 if (!base || !/^[a-f0-9]{40}$/.test(base) || !output)
   throw new Error('Missing CI base SHA or output file')
@@ -16,9 +17,30 @@ const paths = execFileSync('git', ['diff', '--no-renames', '--name-only', '-z', 
   .toString('utf8')
   .split('\0')
   .filter(Boolean)
-const scope = (await queuedTreeVerified()) ? 'verified' : classifyPaths(paths)
+// The workflow runs this from the repository root, before dependencies are installed. Manifests
+// that can't be read, such as a broken package.json, run the Cloud checks rather than skip them.
+const inputs = await cloudInputs(process.cwd()).catch((error: unknown) => {
+  console.log(`Could not read the Cloud inputs, so the Cloud checks run: ${String(error)}`)
+  return 'all' as const
+})
+const scope = (await queuedTreeVerified()) ? 'verified' : classifyPaths(paths, inputs)
 await appendFile(output, `scope=${scope}\n`)
 console.log(`Selected ${scope} checks for ${paths.length} changed paths`)
+
+/**
+ * The commit a change is measured from. A pull request checks out GitHub's merge of it into the
+ * base branch as it is now, so that merge's first parent is the base. The event's `base.sha` can
+ * be older when the base branch moved, which would count the base's newer commits as the pull
+ * request's own. The merge queue's `base_sha` is exact.
+ */
+function comparisonBase(): string | undefined {
+  if (process.env.CI_EVENT !== 'pull_request') return process.env.CI_BASE_SHA
+  const parents = execFileSync('git', ['rev-list', '--parents', '-n', '1', 'HEAD'])
+    .toString('utf8')
+    .trim()
+    .split(' ')
+  return parents.length === 3 ? parents[1] : process.env.CI_BASE_SHA
+}
 
 /** In the merge queue, whether the queued commit's tree already passed its pull request's CI. */
 async function queuedTreeVerified(): Promise<boolean> {

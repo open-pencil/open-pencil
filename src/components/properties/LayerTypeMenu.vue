@@ -10,13 +10,15 @@ import type { Component } from 'vue'
 import IconCheck from '~icons/lucide/check'
 import IconChevronDown from '~icons/lucide/chevron-down'
 
-import { layerTypeOptions, type LayerType } from '@open-pencil/core/editor'
+import { layerTypeOptions, type LayerType } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useI18n, useRetainedPopup } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { NODE_ICONS } from '@/app/editor/icons'
+import { NODE_ICONS } from '@/components/icons'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 
 // Figma's layer type menu: a frame, a group, and a section switch to one another in place.
@@ -54,19 +56,21 @@ const itemCls = menuItem({ justify: 'between' })
     </Tip>
     <DropdownMenuPortal v-if="portalActive">
       <DropdownMenuContent align="start" side="bottom" :side-offset="4" :class="menuCls.content">
-        <DropdownMenuItem
-          v-for="item in types"
-          :key="item.type"
-          :class="itemCls"
-          :disabled="disabled(item.type)"
-          @select="item.type !== node.type && store.convertLayerType(node.id, item.type)"
-        >
-          <div class="flex min-w-0 items-center gap-2">
-            <component :is="item.icon" class="size-3.5 shrink-0 text-muted" />
-            <span>{{ item.label() }}</span>
-          </div>
-          <IconCheck v-if="item.type === node.type" class="ml-4 size-3.5" />
-        </DropdownMenuItem>
+        <MenuScrollArea>
+          <DropdownMenuItem
+            v-for="item in types"
+            :key="item.type"
+            :class="itemCls"
+            :disabled="disabled(item.type)"
+            @select="item.type !== node.type && store.convertLayerType(node.id, item.type)"
+          >
+            <div class="flex min-w-0 items-center gap-2">
+              <component :is="item.icon" class="size-3.5 shrink-0 text-muted" />
+              <span>{{ item.label() }}</span>
+            </div>
+            <IconCheck v-if="item.type === node.type" class="ml-4 size-3.5" />
+          </DropdownMenuItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

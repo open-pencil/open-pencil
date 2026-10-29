@@ -2,7 +2,7 @@
 import { useTextareaAutosize } from '@vueuse/core'
 import { onMounted, ref, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 

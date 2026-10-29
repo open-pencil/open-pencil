@@ -1,0 +1,1 @@
+- Settings editors for models, media services, MCP connections, and storage show where they sit in the window title, such as **Settings › Models › Edit model**, and the earlier steps go back.

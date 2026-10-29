@@ -14,6 +14,14 @@ export function validatedJSON<TSchema extends v.GenericSchema>(schema: TSchema) 
   })
 }
 
+/** The query string parsed with `schema`; a missing or malformed parameter gets a 400. */
+export function validatedQuery<TSchema extends v.GenericSchema>(schema: TSchema) {
+  return validator('query', (value, c) => {
+    const parsed = v.safeParse(schema, value)
+    return parsed.success ? parsed.output : c.body(null, 400)
+  })
+}
+
 /**
  * Counts the request against a rate limit, keyed by the client address Cloudflare reports. The
  * address lives only in the limiter's memory; nothing here stores or forwards it.

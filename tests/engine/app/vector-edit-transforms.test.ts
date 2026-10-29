@@ -1,10 +1,9 @@
 import { describe, test, expect } from 'bun:test'
 
+import { createEditor, type Editor } from '@open-pencil/core'
 import { computeHandleVisibleVertices } from '@open-pencil/core/canvas/overlays'
-import { createEditor, type Editor } from '@open-pencil/core/editor'
 import { regenerateFillGeometry } from '@open-pencil/core/vector'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode, type VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 

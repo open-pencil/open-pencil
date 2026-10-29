@@ -1,17 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FontManager, SceneGraph, documentFontStatus } from '@open-pencil/core'
-import { UnsupportedFontFormatError } from '@open-pencil/core/text'
+import { FontManager, documentFontStatus, UnsupportedFontFormatError } from '@open-pencil/core/text'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
 }
 
 describe('documentFontStatus', () => {
-  test('reports loaded faces and their source without false warnings', () => {
+  test('reports loaded faces and their source without false warnings', async () => {
     const graph = new SceneGraph()
     const manager = new FontManager()
-    manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    await manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
     graph.createNode('TEXT', pageId(graph), {
       name: 'Title',
       text: 'Hello',
@@ -37,10 +37,26 @@ describe('documentFontStatus', () => {
     })
   })
 
-  test('reports the active default-family substitution for missing faces', () => {
+  test('counts a root that is itself a text node', async () => {
     const graph = new SceneGraph()
     const manager = new FontManager()
-    manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    await manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    const node = graph.createNode('TEXT', pageId(graph), {
+      text: 'Hello',
+      fontFamily: 'Inter',
+      fontWeight: 400
+    })
+
+    const status = documentFontStatus(graph, [node.id], manager)
+    expect(status.faces.map((face) => [face.family, face.style, face.status])).toEqual([
+      ['Inter', 'Regular', 'available']
+    ])
+  })
+
+  test('reports the active default-family substitution for missing faces', async () => {
+    const graph = new SceneGraph()
+    const manager = new FontManager()
+    await manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
     const node = graph.createNode('TEXT', pageId(graph), {
       name: 'Unavailable label',
       text: 'Hello',
@@ -65,10 +81,10 @@ describe('documentFontStatus', () => {
     ])
   })
 
-  test('reports synthesized styles and style-run faces separately', () => {
+  test('reports synthesized styles and style-run faces separately', async () => {
     const graph = new SceneGraph()
     const manager = new FontManager()
-    manager.markLoaded('Example Sans', 'Regular', new ArrayBuffer(8), 'local')
+    await manager.markLoaded('Example Sans', 'Regular', new ArrayBuffer(8), 'local')
     const node = graph.createNode('TEXT', pageId(graph), {
       name: 'Mixed text',
       text: 'Bold and serif',
@@ -112,7 +128,7 @@ describe('documentFontStatus', () => {
   test('reports why the host could not load an installed face until it loads', async () => {
     const graph = new SceneGraph()
     const manager = new FontManager()
-    manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    await manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
     let host: 'unsupported' | 'failed' | 'drawable' = 'unsupported'
     manager.setHostFontLoader(async (family, style) => {
       if (host === 'unsupported') throw new UnsupportedFontFormatError(family, style)

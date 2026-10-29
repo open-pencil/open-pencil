@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ToastProvider, ToastViewport } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { toast, toastDuration } from '@/app/shell/ui'
 import AppToast from '@/components/ui/feedback/AppToast.vue'

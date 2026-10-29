@@ -2,15 +2,12 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SkiaRenderer } from '@open-pencil/core'
-import {
-  exportFigFile,
-  initCanvasKit,
-  parseFigFile,
-  renderNodesToImage
-} from '@open-pencil/core/io'
-import { readIcon, readIconTint, SceneGraph } from '@open-pencil/scene-graph'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
 
 import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import { buildIconData } from '#core/icons/svg'
@@ -25,6 +22,15 @@ function insertIcon(graph: SceneGraph, body: string, viewBox = 24, size = 24) {
 }
 
 describe('placeIcon', () => {
+  test('leaves out shapes the SVG hides', () => {
+    const body = (hidden: string, none: string) =>
+      `<g ${hidden}><path d="M2 2h8v8H2z"/></g><path ${none} d="M14 2h8v8h-8z"/><path d="M2 14h8v8H2z"/>`
+    expect(insertIcon(new SceneGraph(), body('', '')).vectors).toHaveLength(3)
+    expect(
+      insertIcon(new SceneGraph(), body('visibility="hidden"', 'display="none"')).vectors
+    ).toHaveLength(1)
+  })
+
   test('keeps round stroke caps and joins after a .fig round trip', async () => {
     const graph = new SceneGraph()
     insertIcon(
@@ -121,7 +127,14 @@ describe('icon identity', () => {
     const { frame } = insertIcon(graph, BODY, 24, 32)
     const green = parseColor('#00ff00')
     recolorIcon(graph, frame.id, green)
-    const other = buildIconData({ body: '<path fill="currentColor" d="M0 0h24v24H0z"/>' }, 'test', 'square', 24, 24, 32)
+    const other = buildIconData(
+      { body: '<path fill="currentColor" d="M0 0h24v24H0z"/>' },
+      'test',
+      'square',
+      24,
+      24,
+      32
+    )
     swapIcon(graph, frame.id, other)
 
     const swapped = expectDefined(graph.getNode(frame.id), 'swapped icon')
@@ -135,7 +148,11 @@ describe('icon identity', () => {
   test('leaves artwork without a name in a set unnamed', () => {
     const graph = new SceneGraph()
     const icon = buildIconData({ body: BODY }, 'svg', 'custom', 24, 24, 24)
-    const frame = placeIcon(graph, graph.getPages()[0].id, icon, { size: 24, color: BLACK, identity: false })
+    const frame = placeIcon(graph, graph.getPages()[0].id, icon, {
+      size: 24,
+      color: BLACK,
+      identity: false
+    })
     expect(readIcon(frame)).toBeNull()
   })
 })

@@ -1,6 +1,7 @@
-import type { Fill, ShaderPaint, Variable } from '@open-pencil/scene-graph'
+import type { Fill, Variable } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
-import { shaderEffectLabel } from '@open-pencil/vue'
+import type { ShaderPaint } from '@open-pencil/scene-graph/shaders'
+import { shaderEffectLabel } from '@open-pencil/vue/controls/shader'
 
 export function fillLabel(
   fill: Fill,

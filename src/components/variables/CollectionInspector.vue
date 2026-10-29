@@ -16,7 +16,7 @@ import {
   isModeAttributeName,
   type VariableCollection
 } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   changeConditionKind,
@@ -31,10 +31,12 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import { useConditionLabels } from '@/components/variables/useConditionLabels'
-import tokensPanelTheme from '@/theme/tokens-panel'
+import inspectorTheme from '@/theme/variables/inspector'
 
 const { collection, layout = 'side' } = defineProps<{
   collection: VariableCollection
@@ -56,7 +58,7 @@ const emit = defineEmits<{
 
 const { variables } = useI18n()
 const { kindOptions } = useConditionLabels()
-const ui = computed(() => tv(tokensPanelTheme)({ layout }))
+const ui = computed(() => tv(inspectorTheme)({ layout }))
 const menu = useMenuUI({ content: 'w-44', item: 'justify-start gap-2' })
 const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
 
@@ -98,7 +100,8 @@ function commitName() {
   else draft.name = collection.name
 }
 
-const attributeErrorId = `${useId()}-attribute`
+const attributeId = `${useId()}-attribute`
+const attributeErrorId = `${attributeId}-error`
 /** Blank restores the default; anything else must be an attribute a selector can name as is. */
 const attributeInvalid = computed(() => {
   const name = draft.attribute.trim()
@@ -187,7 +190,7 @@ function attributeDone(event: KeyboardEvent) {
 </script>
 
 <template>
-  <aside :class="ui.inspector()" data-test-id="collection-inspector">
+  <aside :class="ui.root()" data-test-id="collection-inspector">
     <section :class="ui.section()">
       <span :class="ui.label()" class="flex items-center gap-1.5">
         {{ variables.collection }}
@@ -216,21 +219,27 @@ function attributeDone(event: KeyboardEvent) {
           </DropdownMenuTrigger>
           <DropdownMenuPortal>
             <DropdownMenuContent side="bottom" :side-offset="4" align="end" :class="menu.content">
-              <DropdownMenuItem
-                :class="dangerItem"
-                data-test-id="variables-delete-collection"
-                @select="emit('remove')"
-              >
-                <icon-lucide-trash-2 :class="menu.icon" />
-                {{ variables.deleteCollection }}
-              </DropdownMenuItem>
+              <MenuScrollArea>
+                <DropdownMenuItem
+                  :class="dangerItem"
+                  data-test-id="variables-delete-collection"
+                  @select="emit('remove')"
+                >
+                  <icon-lucide-trash-2 :class="menu.icon" />
+                  {{ variables.deleteCollection }}
+                </DropdownMenuItem>
+              </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
         </DropdownMenuRoot>
       </div>
-      <label v-if="collection.modes.length > 1" :class="ui.field()">
-        <span :class="ui.label()">{{ variables.modeAttribute }}</span>
+      <PanelFieldGroup
+        v-if="collection.modes.length > 1"
+        :label="variables.modeAttribute"
+        :for="attributeId"
+      >
         <AppInput
+          :id="attributeId"
           v-model="draft.attribute"
           size="sm"
           :placeholder="defaultModeAttributeName(collection)"
@@ -248,12 +257,12 @@ function attributeDone(event: KeyboardEvent) {
         <span v-else-if="attributeExample" :class="ui.hint()">{{
           variables.modeAttributeHint({ example: attributeExample })
         }}</span>
-      </label>
+      </PanelFieldGroup>
     </section>
 
     <section :class="ui.section()">
       <div class="flex items-center justify-between">
-        <h3 :class="ui.sectionTitle()">{{ variables.modes }}</h3>
+        <h3 :class="ui.title()">{{ variables.modes }}</h3>
         <IconButton
           :label="variables.addMode"
           data-test-id="variables-add-mode"
@@ -288,27 +297,29 @@ function attributeDone(event: KeyboardEvent) {
             </DropdownMenuTrigger>
             <DropdownMenuPortal>
               <DropdownMenuContent side="bottom" :side-offset="4" align="end" :class="menu.content">
-                <DropdownMenuItem :class="menu.item" @select="emit('duplicateMode', item.modeId)">
-                  <icon-lucide-copy :class="menu.icon" />
-                  {{ variables.duplicateMode }}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  v-if="item.modeId !== collection.defaultModeId"
-                  :class="menu.item"
-                  @select="emit('setDefaultMode', item.modeId)"
-                >
-                  <icon-lucide-pin :class="menu.icon" />
-                  {{ variables.setDefaultMode }}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator :class="menu.separator" />
-                <DropdownMenuItem
-                  :class="dangerItem"
-                  :disabled="collection.modes.length <= 1"
-                  @select="emit('removeMode', item.modeId)"
-                >
-                  <icon-lucide-trash-2 :class="menu.icon" />
-                  {{ variables.deleteMode }}
-                </DropdownMenuItem>
+                <MenuScrollArea>
+                  <DropdownMenuItem :class="menu.item" @select="emit('duplicateMode', item.modeId)">
+                    <icon-lucide-copy :class="menu.icon" />
+                    {{ variables.duplicateMode }}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    v-if="item.modeId !== collection.defaultModeId"
+                    :class="menu.item"
+                    @select="emit('setDefaultMode', item.modeId)"
+                  >
+                    <icon-lucide-pin :class="menu.icon" />
+                    {{ variables.setDefaultMode }}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator :class="menu.separator" />
+                  <DropdownMenuItem
+                    :class="dangerItem"
+                    :disabled="collection.modes.length <= 1"
+                    @select="emit('removeMode', item.modeId)"
+                  >
+                    <icon-lucide-trash-2 :class="menu.icon" />
+                    {{ variables.deleteMode }}
+                  </DropdownMenuItem>
+                </MenuScrollArea>
               </DropdownMenuContent>
             </DropdownMenuPortal>
           </DropdownMenuRoot>

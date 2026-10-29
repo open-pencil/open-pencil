@@ -1,0 +1,1 @@
+- `@open-pencil/pen` no longer exports `iconFontFamily`, and `penAssets(doc).icons` lists `{ name, options }` requests, one per way an icon is drawn, instead of icon names; a host loads each with `provider.icons([name], size, options)`.

@@ -23,11 +23,12 @@ Mehrere Modelle können getrennt für Gestaltung, Prüfung, schnelle Aufgaben un
 | Anbieter | Beispiele | Einrichtung |
 |----------|-----------|-------------|
 | **OpenRouter** | Claude, GPT, Gemini, DeepSeek, Qwen und weitere | API-Schlüssel von [openrouter.ai](https://openrouter.ai) |
-| **Anthropic** | Claude Sonnet 4.6, Claude Opus 4.6 | API-Schlüssel von [console.anthropic.com](https://console.anthropic.com) |
-| **OpenAI** | GPT-5.3 Codex, GPT-4.1, o3, o4-mini | API-Schlüssel von [platform.openai.com](https://platform.openai.com) |
-| **Google AI** | Gemini 3.1 Pro, Gemini 3 Flash | API-Schlüssel von [aistudio.google.dev](https://aistudio.google.dev) |
-| **Z.ai** | GLM-5.1, GLM-5, GLM-4.7 und GLM-4.5 | API-Schlüssel laut [Z.ai-Dokumentation](https://docs.z.ai/devpack/quick-start) |
-| **MiniMax** | MiniMax M3, M2.7, M2.7-highspeed, M2.5 und M2.1 | API-Schlüssel von [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **Anthropic** | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1 und Claude Haiku 5.5 | API-Schlüssel von [console.anthropic.com](https://console.anthropic.com) |
+| **OpenAI** | GPT-6.1 Sol, GPT-6 Astra und GPT-6 Luna | API-Schlüssel von [platform.openai.com](https://platform.openai.com) |
+| **Google AI** | Gemini 3.8 Flash und Gemini 4 Argon | API-Schlüssel von [aistudio.google.dev](https://aistudio.google.dev) |
+| **DeepSeek** | DeepSeek Flash und DeepSeek V4 Pro | API-Schlüssel von [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
+| **Z.ai** | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX und GLM-5V-Turbo | API-Schlüssel laut [Z.ai-Dokumentation](https://docs.z.ai/devpack/quick-start) |
+| **MiniMax** | MiniMax-M3.1-Flash und MiniMax-M3 | API-Schlüssel von [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
 | **OpenAI-kompatibel** | Endpunkt im OpenAI-API-Format | Eigene Basisadresse und Schlüssel |
 | **Anthropic-kompatibel** | Endpunkt im Anthropic-API-Format | Eigene Basisadresse und Schlüssel |
 

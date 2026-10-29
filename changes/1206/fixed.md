@@ -1,0 +1,1 @@
+- Shader covers on openpencil.dev and in the `/demo` tour show their first frame instead of a blank square, and the editor keeps a shader's saved frame instead of replacing it with a blank one in a browser whose WebGPU cannot draw.

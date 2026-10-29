@@ -1,10 +1,8 @@
-import { tv } from 'tailwind-variants'
-
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
 /** The toolbar's avatar stack controls: your menu, collaborators to follow, and everyone. */
-export const presenceAvatars = tv({
+export default {
   slots: {
     trigger:
       'relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-panel-focus',
@@ -16,4 +14,4 @@ export const presenceAvatars = tv({
     card: ['z-50 w-60 p-2', floatingSurface, motionStyles.floating],
     leave: 'mt-2 w-full'
   }
-})
+} as const

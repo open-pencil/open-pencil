@@ -1,12 +1,12 @@
 import { pick } from 'es-toolkit/object'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   applyComponentPropertyValue,
-  cloneInstanceOverrideState,
   componentPropertyDefinitions,
   findComponentPropertyTargets
-} from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/components'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
 import type { EditorContext } from '#core/editor/types'
 

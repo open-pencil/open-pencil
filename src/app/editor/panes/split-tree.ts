@@ -1,3 +1,4 @@
+import { sum, sumBy } from 'es-toolkit'
 export const MAX_VISIBLE_CANVAS_PANES = 4
 
 export type SplitDirection = 'horizontal' | 'vertical'
@@ -13,9 +14,7 @@ export type CanvasSplitNode =
     }
 
 export function paneCount(node: CanvasSplitNode): number {
-  return node.type === 'pane'
-    ? 1
-    : node.children.reduce((count, child) => count + paneCount(child), 0)
+  return node.type === 'pane' ? 1 : sumBy(node.children, paneCount)
 }
 
 export function leafPaneIds(node: CanvasSplitNode): string[] {
@@ -37,7 +36,7 @@ export function normalizeSplitSizes(length: number, sizes?: number[]): number[] 
   ) {
     return Array.from({ length }, () => 100 / length)
   }
-  const total = sizes.reduce((sum, size) => sum + size, 0)
+  const total = sum(sizes)
   return sizes.map((size) => (size / total) * 100)
 }
 

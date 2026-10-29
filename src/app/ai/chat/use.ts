@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
+import { createChatSessionManager } from '@/app/ai/chat/session'
 import {
   apiKeyStatus,
   browserCredentialsRemembered,
@@ -21,7 +22,6 @@ import {
   resolveAPIKey,
   setAPIKey
 } from '@/app/ai/chat/storage'
-import { createChatSessionManager } from '@/app/ai/chat/transports'
 import { designModelProfile } from '@/app/ai/models'
 import { exposeChatTransportOverride } from '@/app/browser-bridge'
 import { getActiveEditorStore } from '@/app/editor/active-store'

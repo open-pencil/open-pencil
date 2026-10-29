@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { propertySection } from '#tests/helpers/properties'
+import { propertyField, propertySection } from '#tests/helpers/properties'
 
 let page: Page
 let canvas: CanvasHelper
@@ -121,4 +121,19 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
 
   const sectionInputsFinal = await propertySection(page, 'Stroke').getByRole('spinbutton').count()
   expect(sectionInputsFinal).toBe(sectionInputsBefore)
+})
+
+// Figma strokes each side apart only on rectangles, frames, components, and instances.
+test('an ellipse strokes all its sides at one weight, with no sides toggle', async () => {
+  await canvas.pressKey('o')
+  await canvas.drag(300, 250, 400, 330)
+  await canvas.waitForRender()
+  expect((await getSelectedNodeFlags())?.type).toBe('ELLIPSE')
+
+  const stroke = propertySection(page, 'Stroke')
+  await stroke.getByRole('button', { name: 'Add stroke' }).click()
+  await canvas.waitForRender()
+
+  await expect(propertyField(page, 'stroke-weight')).toBeVisible()
+  await expect(propertyField(page, 'stroke-sides')).toHaveCount(0)
 })

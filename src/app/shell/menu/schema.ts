@@ -1,4 +1,4 @@
-import type { EditorCommandId } from '@open-pencil/vue'
+import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
 
 export type AppMenuTarget = 'all' | 'browser' | 'native'
 
@@ -22,6 +22,7 @@ export type AppMenuPaletteLabel =
   | 'exportSelectionAsPNG'
   | 'exportSelectionAsSVG'
   | 'exportSelectionAsPPTX'
+  | 'exportSelectionAsDrawIO'
   | 'exportSelectionAsFig'
 
 export interface AppMenuPaletteMetadata {
@@ -33,6 +34,10 @@ export interface AppMenuPaletteMetadata {
 
 export type AppMenuHandler = 'editor' | 'shell'
 
+/** A feature an item waits for: it shows only while the feature is available (`./features`). */
+/** Items shown only for a document backed by a file on disk. */
+export type AppMenuFeature = 'local-file' | 'cloud-document'
+
 export interface AppMenuActionItem {
   type?: 'item'
   id: string
@@ -43,6 +48,7 @@ export interface AppMenuActionItem {
   checkbox?: boolean
   target?: AppMenuTarget
   handler?: AppMenuHandler
+  feature?: AppMenuFeature
   palette?: AppMenuPaletteMetadata
   sub?: AppMenuEntry[]
 }
@@ -77,12 +83,19 @@ export const APP_MENU_SCHEMA = [
       { id: 'new', label: 'New', shortcut: 'MOD+N' },
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
       { id: 'open-recent', label: 'Open Recent', target: 'native' },
-      { id: 'open-storage-workspace', label: 'Open Storage Workspace…', handler: 'shell' },
+      { id: 'browse-files', label: 'Browse Files…', handler: 'shell' },
       { id: 'open-tour', label: 'Open the Tour', handler: 'shell' },
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
-      { id: 'save-to-storage', label: 'Save to Storage…' },
+      { id: 'save-to', label: 'Save To…' },
+      {
+        id: 'save-version',
+        label: 'Save to Version History…',
+        shortcut: 'ALT+MOD+S',
+        feature: 'cloud-document'
+      },
+      { id: 'version-history', label: 'Show Version History', feature: 'cloud-document' },
       { type: 'separator' },
       {
         id: 'export-selection',
@@ -106,6 +119,11 @@ export const APP_MENU_SCHEMA = [
             palette: { icon: 'download', label: 'exportSelectionAsPPTX' }
           },
           {
+            id: 'export-drawio',
+            label: 'draw.io',
+            palette: { icon: 'download', label: 'exportSelectionAsDrawIO' }
+          },
+          {
             id: 'export-fig',
             label: '.fig',
             palette: { icon: 'download', label: 'exportSelectionAsFig' }
@@ -113,8 +131,11 @@ export const APP_MENU_SCHEMA = [
         ]
       },
       { type: 'separator' },
-      { id: 'autosave', label: 'Autosave', checkbox: true },
+      { id: 'autosave', label: 'Autosave', checkbox: true, feature: 'local-file' },
       { id: 'close', label: 'Close Tab', shortcut: 'MOD+W' },
+      // ⌃Tab on every platform, as in Figma's desktop app, so it is not a MOD shortcut.
+      { id: 'previous-tab', label: 'Select Previous Tab', accelerator: 'Ctrl+Shift+Tab' },
+      { id: 'next-tab', label: 'Select Next Tab', accelerator: 'Ctrl+Tab' },
       // Windows, Linux, and the browser menu; macOS shows it in the application menu instead.
       { type: 'separator' },
       { ...SETTINGS_MENU_ITEM, handler: 'shell' }
@@ -184,6 +205,15 @@ export const APP_MENU_SCHEMA = [
       },
       { id: 'zoom-in', label: 'Zoom In', shortcut: 'MOD+=' },
       { id: 'zoom-out', label: 'Zoom Out', shortcut: 'MOD+-' },
+      { type: 'separator' },
+      {
+        id: 'view.zoomPreviousFrame',
+        label: 'Zoom to Previous Frame',
+        command: 'view.zoomPreviousFrame'
+      },
+      { id: 'view.zoomNextFrame', label: 'Zoom to Next Frame', command: 'view.zoomNextFrame' },
+      { id: 'view.previousPage', label: 'Previous Page', command: 'view.previousPage' },
+      { id: 'view.nextPage', label: 'Next Page', command: 'view.nextPage' },
       { type: 'separator' },
       { id: 'view-split-right', label: 'Split Right' },
       { id: 'view-split-down', label: 'Split Down' },
@@ -447,6 +477,62 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.distributeVertical',
         label: 'Distribute Vertical Spacing',
         command: 'selection.distributeVertical'
+      },
+      { type: 'separator' },
+      { id: 'selection.tidyUp', label: 'Tidy Up', command: 'selection.tidyUp' },
+      {
+        id: 'selection.packHorizontal',
+        label: 'Pack Horizontal',
+        command: 'selection.packHorizontal'
+      },
+      { id: 'selection.packVertical', label: 'Pack Vertical', command: 'selection.packVertical' },
+      {
+        id: 'arrange-layout',
+        label: 'Auto Arrange',
+        sub: [
+          {
+            id: 'selection.arrangeSpread',
+            label: 'Spread Apart',
+            command: 'selection.arrangeSpread'
+          },
+          {
+            id: 'selection.arrangeCompact',
+            label: 'Spread and Compact',
+            command: 'selection.arrangeCompact'
+          },
+          {
+            id: 'selection.arrangePack',
+            label: 'Pack into Rows',
+            command: 'selection.arrangePack'
+          },
+          { type: 'separator' },
+          {
+            id: 'selection.arrangeFlowDown',
+            label: 'Flow, Top to Bottom',
+            command: 'selection.arrangeFlowDown'
+          },
+          {
+            id: 'selection.arrangeFlowRight',
+            label: 'Flow, Left to Right',
+            command: 'selection.arrangeFlowRight'
+          },
+          {
+            id: 'selection.arrangeTreeDown',
+            label: 'Tree, Top to Bottom',
+            command: 'selection.arrangeTreeDown'
+          },
+          {
+            id: 'selection.arrangeTreeRight',
+            label: 'Tree, Left to Right',
+            command: 'selection.arrangeTreeRight'
+          },
+          {
+            id: 'selection.arrangeRadial',
+            label: 'Radial Map',
+            command: 'selection.arrangeRadial'
+          },
+          { id: 'selection.arrangeNetwork', label: 'Network', command: 'selection.arrangeNetwork' }
+        ]
       }
     ]
   }

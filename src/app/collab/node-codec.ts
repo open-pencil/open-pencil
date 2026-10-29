@@ -1,19 +1,24 @@
-import { isEqual } from 'es-toolkit/predicate'
+import { isPlainObject, omit } from 'es-toolkit'
+import * as v from 'valibot'
 
+import type { Fill, GeometryPath, SceneNode, SourceMetadata } from '@open-pencil/scene-graph'
+import { copyFills } from '@open-pencil/scene-graph/copy'
 import {
   deserializeInstanceOverrideState,
-  serializeInstanceOverrideState,
-  type Fill,
-  type FillType,
-  type GeometryPath,
-  type SceneNode,
-  type SourceMetadata
-} from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
+  serializeInstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
-import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
+import { fillSchema } from '@open-pencil/scene-graph/paints'
+import {
+  matrixSchema,
+  vectorSchema,
+  type Matrix,
+  type Vector
+} from '@open-pencil/scene-graph/primitives'
 
 import { ORDER_KEY_FIELD, PAGE_FIELD, PARENTS_FIELD } from '@/app/collab/shared-tree/fields'
+
+import { writeRecord, type YFields } from './records'
 
 const DERIVED_NODE_FIELDS = new Set<keyof SceneNode>(['textPicture'])
 /**
@@ -27,19 +32,6 @@ const TREE_FIELDS = new Set<string>([
   ORDER_KEY_FIELD,
   PAGE_FIELD
 ])
-const FILL_TYPES = new Set<FillType>([
-  'SOLID',
-  'GRADIENT_LINEAR',
-  'GRADIENT_RADIAL',
-  'GRADIENT_ANGULAR',
-  'GRADIENT_DIAMOND',
-  'IMAGE',
-  'VIDEO',
-  'PATTERN',
-  'NOISE',
-  'CUSTOM'
-])
-
 type YjsNodeLike = {
   entries(): IterableIterator<[string, unknown]>
 }
@@ -59,21 +51,22 @@ export function encodeNodeForYjs(node: SceneNode): Record<string, unknown> {
   return encoded
 }
 
+/**
+ * The document node's plugin data is shared entry by entry beside the layers
+ * (`src/app/collab/document/sync.ts`), so the document node's own map leaves it out.
+ */
+export const DOCUMENT_NODE_FIELDS: readonly (keyof SceneNode)[] = ['pluginData']
+
 export function syncEncodedNodeToYMap(
   node: SceneNode,
-  ynode: {
-    delete(key: string): void
-    get(key: string): unknown
-    has(key: string): boolean
-    set(key: string, value: unknown): void
-  }
+  ynode: YFields,
+  omitted: readonly (keyof SceneNode)[] = []
 ): void {
   for (const key of DERIVED_NODE_FIELDS) {
     if (ynode.has(key)) ynode.delete(key)
   }
-  for (const [key, value] of Object.entries(encodeNodeForYjs(node))) {
-    if (!isEqual(ynode.get(key), value)) ynode.set(key, value)
-  }
+  // The tree's fields live beside the layer's own, so fields the layer lacks are left alone.
+  writeRecord(ynode, omit(encodeNodeForYjs(node), omitted), { drop: false })
 }
 
 export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {
@@ -96,9 +89,9 @@ export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {
 
 export function normalizeSourceMetadata(source: unknown): SourceMetadata {
   const defaults = createDefaultSourceMetadata()
-  if (!isRecord(source)) return defaults
+  if (!isPlainObject(source)) return defaults
 
-  const fig = isRecord(source.fig) ? source.fig : {}
+  const fig = isPlainObject(source.fig) ? source.fig : {}
   return {
     format: source.format === 'fig' ? 'fig' : null,
     id: stringOrNull(source.id),
@@ -107,8 +100,8 @@ export function normalizeSourceMetadata(source: unknown): SourceMetadata {
     fig: {
       rawSize: normalizeVector(fig.rawSize),
       rawTransform: normalizeMatrix(fig.rawTransform),
-      rawNodeFields: isRecord(fig.rawNodeFields) ? structuredClone(fig.rawNodeFields) : {},
-      layout: isRecord(fig.layout)
+      rawNodeFields: isPlainObject(fig.rawNodeFields) ? structuredClone(fig.rawNodeFields) : {},
+      layout: isPlainObject(fig.layout)
         ? (structuredClone(fig.layout) as SourceMetadata['fig']['layout'])
         : null,
       symbolOverrides: arrayOrEmpty(fig.symbolOverrides),
@@ -124,7 +117,7 @@ function normalizeGeometryPaths(value: unknown): GeometryPath[] {
   if (!Array.isArray(value)) return []
   const paths: GeometryPath[] = []
   for (const item of value) {
-    if (!isRecord(item) || !(item.commandsBlob instanceof Uint8Array)) continue
+    if (!isPlainObject(item) || !(item.commandsBlob instanceof Uint8Array)) continue
     const path: GeometryPath = {
       windingRule: item.windingRule === 'EVENODD' ? 'EVENODD' : 'NONZERO',
       commandsBlob: new Uint8Array(item.commandsBlob)
@@ -138,72 +131,17 @@ function normalizeGeometryPaths(value: unknown): GeometryPath[] {
 }
 
 function normalizeVector(value: unknown): Vector | null {
-  if (!isRecord(value) || !isFiniteNumber(value.x) || !isFiniteNumber(value.y)) return null
-  return { x: value.x, y: value.y }
+  const result = v.safeParse(vectorSchema, value)
+  return result.success ? result.output : null
 }
 
 function normalizeMatrix(value: unknown): Matrix | null {
-  if (!isRecord(value)) return null
-  const entries = [value.m00, value.m01, value.m02, value.m10, value.m11, value.m12]
-  if (!entries.every((item) => isFiniteNumber(item))) return null
-  return {
-    m00: value.m00 as number,
-    m01: value.m01 as number,
-    m02: value.m02 as number,
-    m10: value.m10 as number,
-    m11: value.m11 as number,
-    m12: value.m12 as number
-  }
+  const result = v.safeParse(matrixSchema, value)
+  return result.success ? result.output : null
 }
 
 function normalizeFills(value: unknown): Fill[] {
-  return Array.isArray(value) ? value.filter(isFill) : []
-}
-
-function isFill(value: unknown): value is Fill {
-  return (
-    isRecord(value) &&
-    typeof value.type === 'string' &&
-    FILL_TYPES.has(value.type as FillType) &&
-    isColor(value.color) &&
-    isFiniteNumber(value.opacity) &&
-    typeof value.visible === 'boolean' &&
-    isOptionalGradientStops(value.gradientStops) &&
-    isOptionalMatrix(value.gradientTransform) &&
-    isOptionalMatrix(value.imageTransform) &&
-    isOptionalVector(value.patternSpacing) &&
-    isOptionalVector(value.noiseSize)
-  )
-}
-
-function isOptionalGradientStops(value: unknown): boolean {
-  return (
-    value === undefined ||
-    (Array.isArray(value) &&
-      value.every((stop) => isRecord(stop) && isFiniteNumber(stop.position) && isColor(stop.color)))
-  )
-}
-
-function isOptionalMatrix(value: unknown): boolean {
-  return value === undefined || normalizeMatrix(value) !== null
-}
-
-function isOptionalVector(value: unknown): boolean {
-  return value === undefined || normalizeVector(value) !== null
-}
-
-function isColor(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    isFiniteNumber(value.r) &&
-    isFiniteNumber(value.g) &&
-    isFiniteNumber(value.b) &&
-    isFiniteNumber(value.a)
-  )
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
+  return Array.isArray(value) ? value.filter((fill): fill is Fill => v.is(fillSchema, fill)) : []
 }
 
 function arrayOrEmpty(value: unknown): unknown[] {
@@ -222,8 +160,4 @@ function stringOrNull(value: unknown): string | null {
 
 function numberOrNull(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

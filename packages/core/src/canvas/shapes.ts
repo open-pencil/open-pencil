@@ -1,10 +1,13 @@
-import type { Canvas, Path, PathBuilder } from 'canvaskit-wasm'
+import type { Canvas, Paint, Path } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { polygonOutline } from '@open-pencil/scene-graph/polygon'
+import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
+import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
+import { isWholeArc } from '#core/geometry'
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
+import { traceSmoothRect } from './paths/smooth-corners'
 import type { SkiaRenderer } from './renderer'
 
 export function nodeHasRadius(node: SceneNode): boolean {
@@ -31,304 +34,12 @@ export function nodeHasSmoothCorners(node: SceneNode): boolean {
   return node.cornerRadius > 0
 }
 
-type SmoothCornerKey = 'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft'
-
-type SmoothCorner = {
-  radius: number
-  budget: number
-}
-
-type SmoothCornerPathParams = {
-  a: number
-  b: number
-  c: number
-  d: number
-  p: number
-  radius: number
-  arcSectionLength: number
-}
-
-function smoothCornerRadii(
-  node: SceneNode,
-  width: number,
-  height: number,
-  spread: number
-): Record<SmoothCornerKey, SmoothCorner> {
-  const radius = (value: number) => Math.max(0, value + spread)
-  const radii: Record<SmoothCornerKey, number> = node.independentCorners
-    ? {
-        topLeft: radius(node.topLeftRadius),
-        topRight: radius(node.topRightRadius),
-        bottomRight: radius(node.bottomRightRadius),
-        bottomLeft: radius(node.bottomLeftRadius)
-      }
-    : {
-        topLeft: radius(node.cornerRadius),
-        topRight: radius(node.cornerRadius),
-        bottomRight: radius(node.cornerRadius),
-        bottomLeft: radius(node.cornerRadius)
-      }
-
-  if (
-    radii.topLeft === radii.topRight &&
-    radii.topRight === radii.bottomRight &&
-    radii.bottomRight === radii.bottomLeft
-  ) {
-    const budget = Math.min(width, height) / 2
-    const clampedRadius = Math.min(radii.topLeft, budget)
-    return {
-      topLeft: { radius: clampedRadius, budget },
-      topRight: { radius: clampedRadius, budget },
-      bottomRight: { radius: clampedRadius, budget },
-      bottomLeft: { radius: clampedRadius, budget }
-    }
-  }
-
-  const budgets: Record<SmoothCornerKey, number> = {
-    topLeft: -1,
-    topRight: -1,
-    bottomRight: -1,
-    bottomLeft: -1
-  }
-  const adjacentByCorner: Record<
-    SmoothCornerKey,
-    Array<{ corner: SmoothCornerKey; sideLength: number }>
-  > = {
-    topLeft: [
-      { corner: 'topRight', sideLength: width },
-      { corner: 'bottomLeft', sideLength: height }
-    ],
-    topRight: [
-      { corner: 'topLeft', sideLength: width },
-      { corner: 'bottomRight', sideLength: height }
-    ],
-    bottomRight: [
-      { corner: 'bottomLeft', sideLength: width },
-      { corner: 'topRight', sideLength: height }
-    ],
-    bottomLeft: [
-      { corner: 'bottomRight', sideLength: width },
-      { corner: 'topLeft', sideLength: height }
-    ]
-  }
-
-  for (const corner of (Object.keys(radii) as SmoothCornerKey[]).sort(
-    (a, b) => radii[b] - radii[a]
-  )) {
-    const cornerRadius = radii[corner]
-    const budget = Math.min(
-      ...adjacentByCorner[corner].map((adjacent) => {
-        const adjacentRadius = radii[adjacent.corner]
-        if (cornerRadius === 0 && adjacentRadius === 0) return 0
-        if (budgets[adjacent.corner] >= 0) return adjacent.sideLength - budgets[adjacent.corner]
-        return (cornerRadius / (cornerRadius + adjacentRadius)) * adjacent.sideLength
-      })
-    )
-    budgets[corner] = budget
-    radii[corner] = Math.min(cornerRadius, budget)
-  }
-
-  return {
-    topLeft: { radius: radii.topLeft, budget: budgets.topLeft },
-    topRight: { radius: radii.topRight, budget: budgets.topRight },
-    bottomRight: { radius: radii.bottomRight, budget: budgets.bottomRight },
-    bottomLeft: { radius: radii.bottomLeft, budget: budgets.bottomLeft }
-  }
-}
-
-function degreesToRadians(degrees: number): number {
-  return (degrees * Math.PI) / 180
-}
-
-function smoothCornerPathParams(corner: SmoothCorner, smoothing: number): SmoothCornerPathParams {
-  let cornerSmoothing = smoothing
-  let p = (1 + cornerSmoothing) * corner.radius
-  if (corner.radius > 0) {
-    const maxSmoothing = corner.budget / corner.radius - 1
-    cornerSmoothing = Math.min(cornerSmoothing, maxSmoothing)
-    p = Math.min(p, corner.budget)
-  }
-
-  const arcMeasure = 90 * (1 - cornerSmoothing)
-  const arcSectionLength = Math.sin(degreesToRadians(arcMeasure / 2)) * corner.radius * Math.sqrt(2)
-  const angleAlpha = (90 - arcMeasure) / 2
-  const p3ToP4Distance = corner.radius * Math.tan(degreesToRadians(angleAlpha / 2))
-  const angleBeta = 45 * cornerSmoothing
-  const c = p3ToP4Distance * Math.cos(degreesToRadians(angleBeta))
-  const d = c * Math.tan(degreesToRadians(angleBeta))
-  const b = (p - arcSectionLength - c - d) / 3
-
-  return {
-    a: 2 * b,
-    b,
-    c,
-    d,
-    p,
-    radius: corner.radius,
-    arcSectionLength
-  }
-}
-
-function drawTopRightSmoothCorner(
-  path: PathBuilder,
-  corner: SmoothCornerPathParams,
-  x: number,
-  y: number
-) {
-  if (corner.radius === 0) {
-    path.lineTo(x + corner.p, y)
-    return
-  }
-  path.cubicTo(
-    x + corner.a,
-    y,
-    x + corner.a + corner.b,
-    y,
-    x + corner.a + corner.b + corner.c,
-    y + corner.d
-  )
-  path.arcToRotated(
-    corner.radius,
-    corner.radius,
-    0,
-    true,
-    false,
-    x + corner.p - corner.d,
-    y + corner.p - corner.a - corner.b - corner.c
-  )
-  path.cubicTo(
-    x + corner.p,
-    y + corner.p - corner.a - corner.b,
-    x + corner.p,
-    y + corner.p - corner.a,
-    x + corner.p,
-    y + corner.p
-  )
-}
-
-function drawBottomRightSmoothCorner(
-  path: PathBuilder,
-  corner: SmoothCornerPathParams,
-  x: number,
-  y: number
-) {
-  if (corner.radius === 0) {
-    path.lineTo(x, y + corner.p)
-    return
-  }
-  path.cubicTo(
-    x,
-    y + corner.a,
-    x,
-    y + corner.a + corner.b,
-    x - corner.d,
-    y + corner.a + corner.b + corner.c
-  )
-  path.arcToRotated(
-    corner.radius,
-    corner.radius,
-    0,
-    true,
-    false,
-    x - corner.p + corner.a + corner.b + corner.c,
-    y + corner.p - corner.d
-  )
-  path.cubicTo(
-    x - corner.p + corner.a + corner.b,
-    y + corner.p,
-    x - corner.p + corner.a,
-    y + corner.p,
-    x - corner.p,
-    y + corner.p
-  )
-}
-
-function drawBottomLeftSmoothCorner(
-  path: PathBuilder,
-  corner: SmoothCornerPathParams,
-  x: number,
-  y: number
-) {
-  if (corner.radius === 0) {
-    path.lineTo(x - corner.p, y)
-    return
-  }
-  path.cubicTo(
-    x - corner.a,
-    y,
-    x - corner.a - corner.b,
-    y,
-    x - corner.a - corner.b - corner.c,
-    y - corner.d
-  )
-  path.arcToRotated(
-    corner.radius,
-    corner.radius,
-    0,
-    true,
-    false,
-    x - corner.p + corner.d,
-    y - corner.p + corner.a + corner.b + corner.c
-  )
-  path.cubicTo(
-    x - corner.p,
-    y - corner.p + corner.a + corner.b,
-    x - corner.p,
-    y - corner.p + corner.a,
-    x - corner.p,
-    y - corner.p
-  )
-}
-
-function drawTopLeftSmoothCorner(
-  path: PathBuilder,
-  corner: SmoothCornerPathParams,
-  x: number,
-  y: number
-) {
-  if (corner.radius === 0) {
-    path.lineTo(x, y - corner.p)
-    return
-  }
-  path.cubicTo(
-    x,
-    y - corner.a,
-    x,
-    y - corner.a - corner.b,
-    x + corner.d,
-    y - corner.a - corner.b - corner.c
-  )
-  path.arcToRotated(
-    corner.radius,
-    corner.radius,
-    0,
-    true,
-    false,
-    x + corner.p - corner.a - corner.b - corner.c,
-    y - corner.p + corner.d
-  )
-  path.cubicTo(
-    x + corner.p - corner.a - corner.b,
-    y - corner.p,
-    x + corner.p - corner.a,
-    y - corner.p,
-    x + corner.p,
-    y - corner.p
-  )
-}
-
-export function makeSmoothRRectPath(
-  r: SkiaRenderer,
-  node: SceneNode,
-  spread = 0,
-  offsetX = 0,
-  offsetY = 0
-): Path {
+export function makeSmoothRRectPath(r: SkiaRenderer, node: SceneNode, spread = 0): Path {
   const path = new r.ck.PathBuilder()
-  const left = offsetX - spread
-  const top = offsetY - spread
-  const right = offsetX + node.width + spread
-  const bottom = offsetY + node.height + spread
+  const left = 0 - spread
+  const top = 0 - spread
+  const right = node.width + spread
+  const bottom = node.height + spread
   const width = right - left
   const height = bottom - top
   if (width <= 0 || height <= 0) {
@@ -336,78 +47,135 @@ export function makeSmoothRRectPath(
     return path.detachAndDelete()
   }
 
-  const smoothing = Math.max(0, Math.min(node.cornerSmoothing, 1))
-  const corners = smoothCornerRadii(node, width, height, spread)
-  const topLeftCorner = smoothCornerPathParams(corners.topLeft, smoothing)
-  const topRightCorner = smoothCornerPathParams(corners.topRight, smoothing)
-  const bottomRightCorner = smoothCornerPathParams(corners.bottomRight, smoothing)
-  const bottomLeftCorner = smoothCornerPathParams(corners.bottomLeft, smoothing)
-
-  if (
-    topLeftCorner.radius === 0 &&
-    topRightCorner.radius === 0 &&
-    bottomRightCorner.radius === 0 &&
-    bottomLeftCorner.radius === 0
-  ) {
+  if (!traceSmoothRect(path, node, { left, top, right, bottom }, spread)) {
     path.addRect(r.ck.LTRBRect(left, top, right, bottom))
-    return path.detachAndDelete()
   }
-
-  path.moveTo(right - topRightCorner.p, top)
-  drawTopRightSmoothCorner(path, topRightCorner, right - topRightCorner.p, top)
-  path.lineTo(right, bottom - bottomRightCorner.p)
-  drawBottomRightSmoothCorner(path, bottomRightCorner, right, bottom - bottomRightCorner.p)
-  path.lineTo(left + bottomLeftCorner.p, bottom)
-  drawBottomLeftSmoothCorner(path, bottomLeftCorner, left + bottomLeftCorner.p, bottom)
-  path.lineTo(left, top + topLeftCorner.p)
-  drawTopLeftSmoothCorner(path, topLeftCorner, left, top + topLeftCorner.p)
-  path.close()
   return path.detachAndDelete()
 }
 
-export function makeNodeShapePath(
+/**
+ * A layer's outline as Skia draws it fastest: its box, its rounded box, its oval, or paths. Paths
+ * the renderer caches are borrowed; the rest are `owned` and freed by `withNodeOutline`.
+ */
+export type NodeOutline =
+  | { kind: 'rect'; rect: Float32Array }
+  | { kind: 'rrect'; rrect: Float32Array }
+  | { kind: 'oval'; rect: Float32Array }
+  | { kind: 'paths'; paths: readonly Path[]; owned: boolean }
+
+/**
+ * `path` grown by `spread`, or shrunk when it is negative, by a round-joined ring around it. Null
+ * when Skia cannot build the ring.
+ */
+function pathWithSpread(r: SkiaRenderer, path: Path, spread: number): Path | null {
+  if (spread === 0) return path.copy()
+  const ring = path.makeStroked({ width: Math.abs(spread) * 2, join: r.ck.StrokeJoin.Round })
+  if (!ring) return null
+  const result = r.ck.Path.MakeFromOp(
+    path,
+    ring,
+    spread > 0 ? r.ck.PathOp.Union : r.ck.PathOp.Difference
+  )
+  ring.delete()
+  return result
+}
+
+/** `paths` grown by `spread` as an outline that owns them: borrowed ones are copied. */
+function pathsOutline(
   r: SkiaRenderer,
-  node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean
-): Path {
-  const path = new r.ck.PathBuilder()
+  paths: readonly (Path | null)[],
+  spread: number,
+  owned: boolean
+): NodeOutline {
+  const present = paths.filter((path): path is Path => path !== null)
+  if (spread === 0) return { kind: 'paths', paths: present, owned }
+  const grown = present.map((path) => pathWithSpread(r, path, spread))
+  if (owned) for (const path of present) path.delete()
+  return { kind: 'paths', paths: grown.filter((path): path is Path => path !== null), owned: true }
+}
+
+/**
+ * The outline a layer fills and clips to, grown by `spread`: saved fill geometry first, as Figma
+ * gave it, then an arc, a polygon, star, or shape with text, a vector's paths, and a box with its
+ * corners. Boxes and ovals grow as boxes and ovals; paths grow by a round-joined ring.
+ */
+function nodeOutline(r: SkiaRenderer, node: SceneNode, spread: number): NodeOutline {
+  // `0 - spread` rather than `-spread`: a spread of 0 must not put -0 into flattened geometry.
+  const rect = r.ck.LTRBRect(0 - spread, 0 - spread, node.width + spread, node.height + spread)
   switch (node.type) {
-    case 'ELLIPSE':
-      path.addOval(rect)
-      break
     case 'VECTOR': {
-      const vps = r.getVectorPaths(node)
-      if (vps) {
-        for (const vp of vps) path.addPath(vp)
-      }
-      break
+      const paths = r.getFillGeometry(node) ?? r.getVectorPaths(node) ?? []
+      return pathsOutline(r, paths, spread, false)
+    }
+    case 'ELLIPSE': {
+      const geometry = r.getFillGeometry(node)
+      if (geometry) return pathsOutline(r, geometry, spread, false)
+      if (node.arcData) return pathsOutline(r, [makeArcPath(r, node)], spread, true)
+      return { kind: 'oval', rect }
     }
     case 'POLYGON':
-    case 'STAR': {
-      const polyPath = r.makePolygonPath(node)
-      path.addPath(polyPath)
-      polyPath.delete()
-      break
-    }
+    case 'STAR':
+    case 'SHAPE_WITH_TEXT':
+      return pathsOutline(r, [makePolygonPath(r, node)], spread, true)
     default:
       if (nodeHasSmoothCorners(node)) {
-        const smoothPath = makeSmoothRRectPath(r, node)
-        path.addPath(smoothPath)
-        smoothPath.delete()
-      } else if (hasRadius) {
-        path.addRRect(r.makeRRect(node))
-      } else {
-        path.addRect(rect)
+        return { kind: 'paths', paths: [makeSmoothRRectPath(r, node, spread)], owned: true }
       }
+      if (nodeHasRadius(node)) return { kind: 'rrect', rrect: makeRRectWithSpread(r, node, spread) }
+      return { kind: 'rect', rect }
   }
+}
+
+/** Runs `use` with the layer's outline grown by `spread`, then frees the paths it built for it. */
+export function withNodeOutline<T>(
+  r: SkiaRenderer,
+  node: SceneNode,
+  use: (outline: NodeOutline) => T,
+  spread = 0
+): T {
+  const outline = nodeOutline(r, node, spread)
+  try {
+    return use(outline)
+  } finally {
+    if (outline.kind === 'paths' && outline.owned) for (const path of outline.paths) path.delete()
+  }
+}
+
+export function drawOutline(canvas: Canvas, outline: NodeOutline, paint: Paint): void {
+  switch (outline.kind) {
+    case 'rect':
+      canvas.drawRect(outline.rect, paint)
+      return
+    case 'rrect':
+      canvas.drawRRect(outline.rrect, paint)
+      return
+    case 'oval':
+      canvas.drawOval(outline.rect, paint)
+      return
+    case 'paths':
+      for (const path of outline.paths) canvas.drawPath(path, paint)
+  }
+}
+
+/** `outline` as one path the caller owns. */
+function outlineToPath(r: SkiaRenderer, outline: NodeOutline): Path {
+  if (outline.kind === 'paths' && outline.paths.length === 1) return outline.paths[0].copy()
+  const path = new r.ck.PathBuilder()
+  if (outline.kind === 'rect') path.addRect(outline.rect)
+  else if (outline.kind === 'rrect') path.addRRect(outline.rrect)
+  else if (outline.kind === 'oval') path.addOval(outline.rect)
+  else for (const source of outline.paths) path.addPath(source)
   return path.detachAndDelete()
 }
 
-/** The polygon or star with its corner radius and smoothing, as Figma draws it. */
-export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
+/** The layer's outline grown by `spread`, as one path the caller owns. */
+export function makeNodeShapePath(r: SkiaRenderer, node: SceneNode, spread = 0): Path {
+  return withNodeOutline(r, node, (outline) => outlineToPath(r, outline), spread)
+}
+
+function outlinePath(r: SkiaRenderer, commands: PolygonOutlineCommand[]): Path {
   const path = new r.ck.PathBuilder()
-  for (const command of polygonOutline(node)) {
+  for (const command of commands) {
     if (command.type === 'M') path.moveTo(command.x, command.y)
     else if (command.type === 'L') path.lineTo(command.x, command.y)
     else if (command.type === 'C')
@@ -415,6 +183,28 @@ export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
     else path.close()
   }
   return path.detachAndDelete()
+}
+
+/**
+ * The polygon or star with its corner radius and smoothing, as Figma draws it, or the outline of
+ * a shape with text.
+ */
+export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
+  if (node.type === 'SHAPE_WITH_TEXT') {
+    return outlinePath(
+      r,
+      shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height, node.cornerRadius)
+        .outline
+    )
+  }
+  return outlinePath(r, polygonOutline(node))
+}
+
+/** A shape with text's stroke-only inner lines, such as a database's front rim, if it has any. */
+export function makeShapeWithTextDetailsPath(r: SkiaRenderer, node: SceneNode): Path | null {
+  if (node.type !== 'SHAPE_WITH_TEXT') return null
+  const { details } = shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height)
+  return details.length > 0 ? outlinePath(r, details) : null
 }
 
 export function makeRRect(r: SkiaRenderer, node: SceneNode): Float32Array {
@@ -448,8 +238,8 @@ export function makeRRectWithSpread(
 ): Float32Array {
   if (node.independentCorners) {
     return new Float32Array([
-      -spread,
-      -spread,
+      0 - spread,
+      0 - spread,
       node.width + spread,
       node.height + spread,
       Math.max(0, node.topLeftRadius + spread),
@@ -463,94 +253,99 @@ export function makeRRectWithSpread(
     ])
   }
   return r.ck.RRectXY(
-    r.ck.LTRBRect(-spread, -spread, node.width + spread, node.height + spread),
+    r.ck.LTRBRect(0 - spread, 0 - spread, node.width + spread, node.height + spread),
     Math.max(0, node.cornerRadius + spread),
     Math.max(0, node.cornerRadius + spread)
   )
 }
 
-export function makeRRectWithOffset(
-  r: SkiaRenderer,
-  node: SceneNode,
-  ox: number,
-  oy: number,
-  spread: number
-): Float32Array {
-  const s = spread
-  if (node.independentCorners) {
-    return new Float32Array([
-      ox + s,
-      oy + s,
-      node.width + ox - s,
-      node.height + oy - s,
-      Math.max(0, node.topLeftRadius - s),
-      Math.max(0, node.topLeftRadius - s),
-      Math.max(0, node.topRightRadius - s),
-      Math.max(0, node.topRightRadius - s),
-      Math.max(0, node.bottomRightRadius - s),
-      Math.max(0, node.bottomRightRadius - s),
-      Math.max(0, node.bottomLeftRadius - s),
-      Math.max(0, node.bottomLeftRadius - s)
-    ])
-  }
-  return r.ck.RRectXY(
-    r.ck.LTRBRect(ox + s, oy + s, node.width + ox - s, node.height + oy - s),
-    Math.max(0, node.cornerRadius - s),
-    Math.max(0, node.cornerRadius - s)
-  )
-}
-
-export function clipNodeShape(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean
-): void {
-  if (node.type === 'ELLIPSE') {
-    const clipPath = new r.ck.PathBuilder()
-    clipPath.addOval(rect)
-    const immutableClipPath = clipPath.detachAndDelete()
-    canvas.clipPath(immutableClipPath, r.ck.ClipOp.Intersect, true)
-    immutableClipPath.delete()
-  } else if (nodeHasSmoothCorners(node)) {
-    const clipPath = makeSmoothRRectPath(r, node)
-    canvas.clipPath(clipPath, r.ck.ClipOp.Intersect, true)
-    clipPath.delete()
-  } else if (hasRadius) {
-    canvas.clipRRect(r.makeRRect(node), r.ck.ClipOp.Intersect, true)
-  } else {
-    canvas.clipRect(rect, r.ck.ClipOp.Intersect, true)
-  }
+export function clipNodeShape(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
+  withNodeOutline(r, node, (outline) => {
+    const op = r.ck.ClipOp.Intersect
+    if (outline.kind === 'rect') canvas.clipRect(outline.rect, op, true)
+    else if (outline.kind === 'rrect') canvas.clipRRect(outline.rrect, op, true)
+    else if (outline.kind === 'paths' && outline.paths.length === 1) {
+      canvas.clipPath(outline.paths[0], op, true)
+    } else {
+      const path = outlineToPath(r, outline)
+      canvas.clipPath(path, op, true)
+      path.delete()
+    }
+  })
 }
 
 export function getVectorPaths(r: SkiaRenderer, node: SceneNode): Path[] | null {
   if (!node.vectorNetwork) return null
-  const cached = r.vectorPathCache.get(node.id)
+  const cached = r.nodePaths.vector.get(node.id)
   if (cached) return cached
-  const paths = vectorNetworkToPath(r.ck, node.vectorNetwork)
-  r.vectorPathCache.set(node.id, paths)
+  const paths = vectorNetworkToPath(r.ck, node.vectorNetwork, node.cornerRadius)
+  r.nodePaths.store(r.nodePaths.vector, node.id, paths)
   return paths
 }
 
 export function getFillGeometry(r: SkiaRenderer, node: SceneNode): Path[] | null {
   if (node.fillGeometry.length === 0) return null
-  const cached = r.fillGeometryCache.get(node.id)
+  const cached = r.nodePaths.fillGeometry.get(node.id)
   if (cached) return cached
   const paths = node.fillGeometry.map((g) =>
     geometryBlobToPath(r.ck, g.commandsBlob, g.windingRule)
   )
-  r.fillGeometryCache.set(node.id, paths)
+  r.nodePaths.store(r.nodePaths.fillGeometry, node.id, paths)
   return paths
 }
 
 export function getStrokeGeometry(r: SkiaRenderer, node: SceneNode): Path[] | null {
   if (node.strokeGeometry.length === 0) return null
-  const cached = r.strokeGeometryCache.get(node.id)
+  const cached = r.nodePaths.strokeGeometry.get(node.id)
   if (cached) return cached
   const paths = node.strokeGeometry.map((g) =>
     geometryBlobToPath(r.ck, g.commandsBlob, g.windingRule)
   )
-  r.strokeGeometryCache.set(node.id, paths)
+  r.nodePaths.store(r.nodePaths.strokeGeometry, node.id, paths)
   return paths
+}
+
+export function makeArcPath(r: SkiaRenderer, node: SceneNode) {
+  const arc = node.arcData
+  if (!arc) return null
+  const cx = node.width / 2
+  const cy = node.height / 2
+  const rx = node.width / 2
+  const ry = node.height / 2
+  const innerRx = rx * arc.innerRadius
+  const innerRy = ry * arc.innerRadius
+
+  const startDeg = arc.startingAngle * (180 / Math.PI)
+  const endDeg = arc.endingAngle * (180 / Math.PI)
+  const sweepDeg = endDeg - startDeg
+
+  const path = new r.ck.PathBuilder()
+  const oval = r.ck.LTRBRect(0, 0, node.width, node.height)
+
+  const isFullCircle = isWholeArc(arc)
+  if (arc.innerRadius > 0) {
+    const innerOval = r.ck.LTRBRect(cx - innerRx, cy - innerRy, cx + innerRx, cy + innerRy)
+    if (isFullCircle) {
+      // Two loops wound in opposite directions, so the hole stays empty under nonzero fill. A
+      // full-turn `addArc` from an angle off the axes draws nothing.
+      path.addOval(oval, false)
+      path.addOval(innerOval, true)
+    } else {
+      // One outline whose ends run straight across the ring; `addArc` would start a new contour
+      // for each edge and close them on their chords.
+      path.arcToOval(oval, startDeg, sweepDeg, true)
+      path.arcToOval(innerOval, startDeg + sweepDeg, -sweepDeg, false)
+    }
+    path.close()
+    return path.detachAndDelete()
+  }
+
+  if (isFullCircle) {
+    path.addOval(oval)
+  } else {
+    path.moveTo(cx, cy)
+    path.arcToOval(oval, startDeg, sweepDeg, false)
+    path.close()
+  }
+  return path.detachAndDelete()
 }

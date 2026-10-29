@@ -4,7 +4,8 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { ShapeHandleHover, GradientEdit } from '#core/editor/types'
+import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -72,6 +73,8 @@ export interface RenderOverlays {
   } | null
   /** The selected shape's handles and the label of the one in use. */
   shapeHandleHover?: ShapeHandleHover | null
+  /** The layer a connector end would attach to, outlined with its magnets. */
+  connectorTarget?: ConnectorTarget | null
   penState?: {
     vertices: Vector[]
     segments: Array<{
@@ -87,6 +90,7 @@ export interface RenderOverlays {
     cursorX?: number
     cursorY?: number
   } | null
+  pencilState?: PencilState | null
   nodeEditState?: {
     nodeId: string
     vertices: VectorVertex[]
@@ -98,8 +102,13 @@ export interface RenderOverlays {
     }>
     regions: VectorRegion[]
     selectedVertexIndices: Set<number>
+    selectedSegmentIndices?: Set<number>
     selectedHandles?: Set<number>
     hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
+    /** The region under the pointer, hatched as in Figma. */
+    hoveredRegion?: number | null
+    /** Regions picked by clicking inside them, hatched while selected. */
+    selectedRegions?: Set<number>
   } | null
   presenceCursors?: PresenceCursor[]
   designIssues?: DesignIssueOverlay | null

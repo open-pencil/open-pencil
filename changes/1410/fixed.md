@@ -1,0 +1,1 @@
+- Strokes, gradients, blend modes, blurs, and disabled effects of current `.pen` files draw as in pen.dev, and a `.pen` file whose strokes are lists of paints opens instead of failing (#1324).

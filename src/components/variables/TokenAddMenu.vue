@@ -9,11 +9,13 @@ import {
 import { computed } from 'vue'
 
 import type { VariableType } from '@open-pencil/scene-graph'
-import { useI18n, variablesAddTestId, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { variablesAddTestId, vTestId } from '@open-pencil/vue/testing'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type-icons'
 
 /** `labelled` spells out "Create variable" where the toolbar has room for it. */
@@ -53,19 +55,21 @@ const items = computed(() => {
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent side="bottom" :side-offset="4" align="end" :class="menu.content">
-        <DropdownMenuItem
-          v-for="item in items"
-          :key="item.type"
-          :class="menu.item"
-          v-test-id="variablesAddTestId(item.type)"
-          @select="emit('add', item.type)"
-        >
-          <component :is="item.icon" :class="menu.icon" />
-          <span class="flex min-w-0 flex-1 flex-col">
-            <span>{{ item.label }}</span>
-            <span class="truncate text-[10px] text-muted">{{ item.hint }}</span>
-          </span>
-        </DropdownMenuItem>
+        <MenuScrollArea>
+          <DropdownMenuItem
+            v-for="item in items"
+            :key="item.type"
+            :class="menu.item"
+            v-test-id="variablesAddTestId(item.type)"
+            @select="emit('add', item.type)"
+          >
+            <component :is="item.icon" :class="menu.icon" />
+            <span class="flex min-w-0 flex-1 flex-col">
+              <span>{{ item.label }}</span>
+              <span class="truncate text-[10px] text-muted">{{ item.hint }}</span>
+            </span>
+          </DropdownMenuItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

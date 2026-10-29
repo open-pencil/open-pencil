@@ -14,7 +14,12 @@ export {
   type NetworkNearestResult
 } from './curve-math'
 
-import type { VectorNetwork, VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
+import type {
+  VectorNetwork,
+  VectorRegion,
+  VectorSegment,
+  VectorVertex
+} from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 function finishSplitSegment(
@@ -344,6 +349,73 @@ export function deleteVertex(network: VectorNetwork, vertexIndex: number): Vecto
 
   // Regions are invalidated when segments are removed
   return { vertices: newVertices, segments: newSegments, regions: [] }
+}
+
+// ---------------------------------------------------------------------------
+// Delete segments and vertices together
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete segments and vertices in one step, as Figma's Delete does in vector edit mode. A vertex
+ * takes every segment attached to it, and a vertex the deleted segments leave unconnected goes
+ * too, so deleting the middle segment of an open path splits it in two. Region loops that lose a
+ * segment are dropped. The result may have no vertices.
+ */
+export function deleteVectorParts(
+  network: VectorNetwork,
+  segmentIndices: Iterable<number>,
+  vertexIndices: Iterable<number>
+): VectorNetwork {
+  const { vertices, segments, regions } = network
+  const deletedVertices = new Set(vertexIndices)
+  const deletedSegments = new Set(segmentIndices)
+  for (const [index, segment] of segments.entries()) {
+    if (deletedVertices.has(segment.start) || deletedVertices.has(segment.end)) {
+      deletedSegments.add(index)
+    }
+  }
+
+  const connected = new Set<number>()
+  for (const [index, segment] of segments.entries()) {
+    if (deletedSegments.has(index)) continue
+    connected.add(segment.start)
+    connected.add(segment.end)
+  }
+  for (const index of deletedSegments) {
+    const segment = segments.at(index)
+    if (!segment) continue
+    if (!connected.has(segment.start)) deletedVertices.add(segment.start)
+    if (!connected.has(segment.end)) deletedVertices.add(segment.end)
+  }
+
+  const vertexMap = new Map<number, number>()
+  const nextVertices: VectorVertex[] = []
+  for (const [index, vertex] of vertices.entries()) {
+    if (deletedVertices.has(index)) continue
+    vertexMap.set(index, nextVertices.length)
+    nextVertices.push({ ...vertex })
+  }
+
+  const segmentMap = new Map<number, number>()
+  const nextSegments: VectorSegment[] = []
+  for (const [index, segment] of segments.entries()) {
+    const start = vertexMap.get(segment.start)
+    const end = vertexMap.get(segment.end)
+    if (deletedSegments.has(index) || start === undefined || end === undefined) continue
+    segmentMap.set(index, nextSegments.length)
+    nextSegments.push({ ...segment, start, end })
+  }
+
+  const nextRegions: VectorRegion[] = []
+  for (const region of regions) {
+    const loops = region.loops.flatMap((loop) => {
+      const mapped = loop.map((index) => segmentMap.get(index))
+      return mapped.every((index) => index !== undefined) ? [mapped] : []
+    })
+    if (loops.length > 0) nextRegions.push({ ...region, loops })
+  }
+
+  return { vertices: nextVertices, segments: nextSegments, regions: nextRegions }
 }
 
 // Break network at vertex

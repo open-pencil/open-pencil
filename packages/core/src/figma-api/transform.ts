@@ -1,10 +1,9 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   getNodeLocalMatrix,
   getParentToContainerMatrix,
-  localTransformFromWorld,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  localTransformFromWorld
+} from '@open-pencil/scene-graph/coordinate'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import { figmaRotation } from '#core/geometry/figma'

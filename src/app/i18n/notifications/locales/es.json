@@ -4,6 +4,7 @@
   "clipboardMissingDesignData": "El portapapeles no contiene datos de diseño.",
   "clipboardAccessBlocked": "El acceso al portapapeles está bloqueado en este contexto del navegador.",
   "copiedAs": "Copiado como {format}.",
+  "copiedProperties": "Propiedades copiadas.",
   "pngClipboardUnavailable": "La exportación PNG al portapapeles no está disponible en este navegador.",
   "openFileFailed": "No se pudo abrir «{name}»: {error}",
   "importedDOMCSS": "Documento DOM/CSS importado.",
@@ -29,5 +30,6 @@
   "openQueuedFilesFailed": "No se pudieron abrir los archivos entregados a OpenPencil: {error}",
   "tokensLeftOut": "No incluido en la hoja de estilos: {names}.",
   "designTokensLeftOut": "No incluidos en los design tokens: {names}.",
-  "designTokensImported": "Se importaron {count} design tokens."
+  "designTokensImported": "Se importaron {count} design tokens.",
+  "unsupportedVariableExpressions": "OpenPencil aún no puede evaluar estas variables, así que las capas conservan los valores guardados en el archivo: {names}."
 }

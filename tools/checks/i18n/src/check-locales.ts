@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 
 import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
@@ -9,16 +9,23 @@ import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
   TRANSLATED_LOCALES,
-  messageDefaults,
-  type TranslatedLocale
-} from '@open-pencil/vue'
+  type TranslatedLocale,
+  messageDefaults
+} from '@open-pencil/vue/i18n'
 
 import { hasMixedLatinAndCjk, placeholders } from './quality'
 
 const LOCALES_DIR = 'packages/vue/src/i18n/locales'
+/**
+ * Where a namespace's translations live under each locale, when not at `<namespace>.json`.
+ * Namespaces of one domain share a folder (`cloud/editor`, `cloud/portal`), not a file prefix.
+ */
 const LOCALE_FILE_NAMES: Record<string, string> = {
+  cloud: 'cloud/editor',
+  cloudPortal: 'cloud/portal',
   designCheck: 'design-check',
-  variableTypes: 'variable-types'
+  variables: 'variables/panel',
+  variableTypes: 'variables/types'
 }
 const REQUIRED_INDEX_FILE = 'index.ts'
 const TRANSLATION_BASELINE_PATH = 'tools/checks/i18n/translation-baseline.txt'
@@ -41,10 +48,10 @@ function localeFileName(namespace: string) {
   return LOCALE_FILE_NAMES[namespace] ?? namespace
 }
 
-const JSONObjectText = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+const jsonObjectTextSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
 
 function readJSONObject(path: string): JSONObject {
-  return v.parse(JSONObjectText, readFileSync(path, 'utf-8'))
+  return v.parse(jsonObjectTextSchema, readFileSync(path, 'utf-8'))
 }
 
 function report(message: string) {
@@ -124,7 +131,10 @@ for (const [locale, dir] of expectedLocaleDirs) {
   const localeDir = join(LOCALES_DIR, dir)
   if (!existsSync(localeDir)) continue
 
-  const files = readdirSync(localeDir)
+  // Paths below the locale folder, with `/` separators on every platform.
+  const files = readdirSync(localeDir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => relative(localeDir, join(entry.parentPath, entry.name)).split(sep).join('/'))
   if (!files.includes(REQUIRED_INDEX_FILE)) {
     report(`\n${locale}: missing ${REQUIRED_INDEX_FILE}`)
   }

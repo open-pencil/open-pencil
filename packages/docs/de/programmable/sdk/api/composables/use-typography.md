@@ -17,7 +17,7 @@ description: Font family, Style, Size, Alignment und Formatting von Text objects
 ## Verwendung
 
 ```ts
-import { useTypography } from '@open-pencil/vue'
+import { useTypography } from '@open-pencil/vue/controls/typography'
 
 const typography = useTypography()
 ```
@@ -52,6 +52,15 @@ const typography = useTypography({
 typography.toggleBold()
 typography.toggleItalic()
 typography.toggleDecoration('UNDERLINE')
+```
+
+### Achsen variabler Schriften setzen
+
+`axes` listet die Achsen der variablen Schrift des ausgewählten Texts mit `tag`, `name`, Bereich und dem `value`, in dem sie gezeichnet wird (`MIXED`, wenn die Ebenen abweichen); bei statischen Schriften oder verschiedenen Familien ist die Liste leer. `previewAxis` zeigt einen Wert beim Ziehen, `setAxis` setzt ihn in einem Undo-Schritt, und `setOpticalSizeAuto` lässt die optische Größe der Schriftgröße folgen oder hält sie fest. Eine neue Stärke, Neigung oder Familie setzt die Achsen auf die des Schnitts zurück.
+
+```ts
+typography.setAxis('wght', 560)
+typography.setOpticalSizeAuto(false)
 ```
 
 ## Siehe auch

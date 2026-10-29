@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 test('new pages in reader-backed graphs are live and never queried from the archive', async () => {

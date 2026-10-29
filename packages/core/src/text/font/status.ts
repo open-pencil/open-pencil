@@ -36,10 +36,14 @@ function faceKey(family: string, style: string): string {
   return `${family}\0${style}`
 }
 
+/** The text nodes under each root, and each root that is itself text. */
 function rootTextNodes(graph: SceneGraph, rootIds: readonly string[]): SceneNode[] {
-  return rootIds.flatMap((rootId) =>
-    graph.flattenTree(rootId).flatMap(({ node }) => (node.type === 'TEXT' ? [node] : []))
-  )
+  return rootIds.flatMap((rootId) => {
+    const root = graph.getNode(rootId)
+    if (!root) return []
+    const nodes = [root, ...graph.flattenTree(rootId).map(({ node }) => node)]
+    return nodes.filter((node) => node.type === 'TEXT')
+  })
 }
 
 function collectFaceUses(graph: SceneGraph, rootIds: readonly string[]): MutableFontFaceUse[] {

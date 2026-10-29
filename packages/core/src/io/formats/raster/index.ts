@@ -2,7 +2,9 @@ export {
   computeContentBounds,
   renderNodesToImage,
   renderThumbnail,
+  thumbnailFrame,
   type RasterExportFormat,
+  type ThumbnailFrame,
   type ExportFormat
 } from './render'
 export { initCanvasKit, headlessRenderNodes, headlessRenderThumbnail } from './headless'

@@ -1,0 +1,1 @@
+- `getCanvasKit` from `@open-pencil/core/canvaskit` no longer reads Vite's `BASE_URL` to find `canvaskit.wasm` in a browser; it loads `/canvaskit.wasm` unless the host sets the URL with `setCanvasKitLocator` (for example `setCanvasKitLocator(() => wasmURL)` with `import wasmURL from 'canvaskit-wasm/bin/canvaskit.wasm?url'`) or passes `locateFile`.

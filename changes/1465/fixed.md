@@ -1,0 +1,1 @@
+- `.pen` documents whose instance overrides replace layers save as `.fig`: a nested instance replaced by another component is swapped, as in Figma, and an instance whose layers an override replaces otherwise opens detached.

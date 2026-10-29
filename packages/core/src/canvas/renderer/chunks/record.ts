@@ -6,7 +6,7 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture, withWorldViewport } from '#core/canvas/renderer/picture'
-import { clipNodeShape, nodeHasRadius } from '#core/canvas/shapes'
+import { clipNodeShape } from '#core/canvas/shapes'
 
 import type { RenderChunk } from './index'
 
@@ -17,7 +17,7 @@ export interface RecordedRenderChunk {
 
 function clipAncestor(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, node: SceneNode): void {
   canvas.concat(getWorldMatrix(node, graph))
-  clipNodeShape(r, canvas, node, r.ck.LTRBRect(0, 0, node.width, node.height), nodeHasRadius(node))
+  clipNodeShape(r, canvas, node)
   const inverse = Matrix.invert(getWorldMatrix(node, graph))
   if (inverse) canvas.concat(inverse)
 }

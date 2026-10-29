@@ -3,8 +3,7 @@ import * as v from 'valibot'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
-import { toolNumber, nodeIdInput } from '#core/tools/input'
-import { defineTool, nodeNotFound } from '#core/tools/schema'
+import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const updateNode = defineTool({
   name: 'update_node',
@@ -13,7 +12,7 @@ export const updateNode = defineTool({
     'Update properties of an existing node: position, size, opacity, corner radius, visibility, text, font.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     x: v.optional(toolNumber(v.pipe(v.number(), v.description('X position')))),
     y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y position')))),
     width: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width')))),

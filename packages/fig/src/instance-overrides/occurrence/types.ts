@@ -1,5 +1,6 @@
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { Vector } from '@open-pencil/scene-graph'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { BoundPropertyClaim } from '../bindings/properties'
 import type { ComponentPropAssignment } from '../types'
@@ -79,4 +80,6 @@ export interface InterpretInstanceOptions {
   onMissingComponent?: (diagnostic: MissingComponentDiagnostic) => void
   /** Keep the component's own slot content where the assigned content frame is gone. */
   onMissingSlotContent?: (diagnostic: MissingSlotContentDiagnostic) => void
+  /** Called as each layer expands, so a caller can tell a long read from a stuck one. */
+  onProgress?: () => void
 }

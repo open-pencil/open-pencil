@@ -1,14 +1,12 @@
+export { canMakeBooleanSourceNode, canMakeBooleanSourcePath, nodeHasVisibleStroke } from './boolean'
+export { flattenNodesToVectorProps, type VectorFlattenProps } from './flatten'
 export {
-  canMakeBooleanSourceNode,
-  canMakeBooleanSourcePath,
-  hasVisibleStrokeSourceNode,
-  nodeHasVisibleStroke
-} from './boolean'
-export {
-  flattenNodesToVectorProps,
-  outlineStrokeNodesToVectorProps,
-  type VectorFlattenProps
-} from './flatten'
+  canOutlineStroke,
+  layersToOutline,
+  outlineStrokeLayer,
+  type OutlinedLayer,
+  type OutlinePiece
+} from './outline-stroke'
 export {
   distanceToGuideSegment,
   getGuideScreenSegment,
@@ -42,3 +40,7 @@ export type {
   DesignIssueSeverity,
   PlacedIssueMarker
 } from './issues/types'
+export { hitTestStatusLabels, type PlacedStatusLabel } from './labels/status'
+export { LabelCache, type CachedComponent, type CachedSection } from './labels/cache'
+export { withFigExportRuntime } from './text/shape'
+export { drawnFontAxes, type DrawnFontAxes, type DrawnFontAxis } from './text/font-families'

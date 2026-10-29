@@ -4,6 +4,8 @@
   "usageCompleted": "已完成",
   "usageInputTokens": "输入令牌",
   "usageOutputTokens": "输出令牌",
+  "usageCachedInputTokens": "缓存输入令牌",
+  "usageCacheWriteTokens": "缓存写入令牌",
   "usageByModel": "按模型",
   "usageNoData": "暂无使用数据。",
   "usageNotReported": "未报告",

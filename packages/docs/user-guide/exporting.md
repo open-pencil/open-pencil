@@ -70,6 +70,8 @@ You can also drag a `.fig`, `.pen`, or other supported document onto the window;
 
 Saved files are compressed and include a thumbnail image for preview in file browsers.
 
+With nothing selected, the **Document** section of the Design panel sets how tightly the document is compressed. **Fast** matches Figma's own saves. **Smaller** and **Smallest** make the file smaller and take longer to save, which is most noticeable on large documents and least on files made mostly of images. The choice is stored in the file, and Figma opens all three.
+
 ### Round-trip Compatibility
 
 Files exported from OpenPencil can be opened in Figma, and vice versa. The .fig format preserves all node types, properties, fills, strokes, effects, vector data, and layout settings.

@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts, parseFigFile } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { computeAllLayouts } from '@open-pencil/core/layout'
+import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined, expectFills } from '#tests/helpers/assert'
 
@@ -143,9 +147,7 @@ describe('MCP tool execution', () => {
     findTool('set_fill').execute(api, { id: frame.id, color: '#ff0000' })
     const node = expectDefined(api.getNodeById(frame.id), 'filled rectangle')
     expect(node.fills).toHaveLength(1)
-    expect(expectFills(node.fills)[0].color.r).toBeCloseTo(1)
-    expect(expectFills(node.fills)[0].color.g).toBeCloseTo(0)
-    expect(expectFills(node.fills)[0].color.b).toBeCloseTo(0)
+    expect(expectFills(node.fills)[0]).toMatchObject({ color: { r: 1, g: 0, b: 0 } })
   })
 
   test('set_layout configures auto-layout', () => {

@@ -3,18 +3,17 @@ export { tryStartResize } from '#vue/shared/input/resize/start'
 import { isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import { resizedPathTextGlyphs, type Editor } from '@open-pencil/core'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
+import type { SceneNode, DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
+import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import {
   cloneInstanceOverrideState,
-  cloneVectorNetwork,
-  findInstanceAncestor,
-  recapturedAspectRatio,
-  recordInstanceOverride
-} from '@open-pencil/scene-graph'
-import type { InstanceOverrideState, SceneNode } from '@open-pencil/scene-graph'
-import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+  type InstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
+import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
@@ -22,6 +21,7 @@ import {
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
 import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
@@ -37,28 +37,28 @@ import type { DragResize } from '#vue/shared/input/types'
  */
 /**
  * Figma resize semantics for imported text-on-path: constant font size,
- * glyphs re-placed along the scaled path (see core/text/path). Used
+ * text laid out again along the scaled path (resizedPathTextGlyphs). Used
  * instead of geometric glyph/silhouette scaling whenever the node still has
  * its layout path. Baked node-level silhouettes cannot follow re-placed
  * glyphs, so strokeGeometry is cleared — the renderer rebuilds silhouettes
  * per glyph — and stroke weight stays constant like the font size.
  */
 function reflowedPathTextChanges(
+  node: SceneNode | undefined,
   orig: Pick<ResizeSnapshot, 'textPathData' | 'textPathBox' | 'derivedTextGlyphs' | 'strokes'>,
   sx: number,
   sy: number
 ): Partial<SceneNode> | null {
   if (!orig.textPathData || !orig.textPathBox || !orig.derivedTextGlyphs?.length) return null
-  const data = orig.textPathData
-  const layout = calibratePathTextLayout(orig.derivedTextGlyphs, data, orig.textPathBox)
-  if (!layout) return null
   const box = {
     x: orig.textPathBox.x * sx,
     y: orig.textPathBox.y * sy,
     width: orig.textPathBox.width * sx,
     height: orig.textPathBox.height * sy
   }
-  const glyphs = reflowPathTextGlyphs(orig.derivedTextGlyphs, data, layout, box)
+  const glyphs =
+    (node && resizedPathTextGlyphs(node, orig.derivedTextGlyphs, orig.textPathBox, box)) ??
+    movedPathTextGlyphs(orig.derivedTextGlyphs, orig.textPathData, orig.textPathBox, box)
   if (!glyphs) return null
   return {
     derivedTextGlyphs: glyphs,
@@ -66,6 +66,17 @@ function reflowedPathTextChanges(
     strokeGeometry: [],
     strokes: copyStrokes(orig.strokes)
   }
+}
+
+/** Without the font, the old glyphs move along the path, keeping their spacing. */
+function movedPathTextGlyphs(
+  glyphs: DerivedTextGlyph[],
+  data: TextPathData,
+  origBox: Rect,
+  box: Rect
+): DerivedTextGlyph[] | null {
+  const layout = calibratePathTextLayout(glyphs, data, origBox)
+  return layout ? reflowPathTextGlyphs(glyphs, data, layout, box) : null
 }
 
 /**
@@ -145,7 +156,12 @@ function applyConstrainedChildren(
     if (orig && orig.width > 0 && orig.height > 0) {
       const width = childChanges.width ?? orig.width
       const height = childChanges.height ?? orig.height
-      const reflow = reflowedPathTextChanges(orig, width / orig.width, height / orig.height)
+      const reflow = reflowedPathTextChanges(
+        editor.graph.getNode(childId),
+        orig,
+        width / orig.width,
+        height / orig.height
+      )
       if (reflow) Object.assign(childChanges, reflow)
     }
     editor.graph.updateNodePreview(childId, childChanges)
@@ -178,6 +194,7 @@ export function applyResize(
   markResized(d, newRect, editor)
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
+      node,
       {
         textPathData: d.origTextPathData,
         textPathBox: d.origTextPathBox,

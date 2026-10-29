@@ -99,6 +99,11 @@
   --color-code-string: #a3d9a5;
   --color-code-number: #e5bc8b;
   --color-code-comment: #969eaa;
+
+  /* Chart series in fixed order, checked as a set for color-vision deficiency on the panel. */
+  --color-chart-1: #3987e5;
+  --color-chart-2: #d95926;
+  --color-chart-3: #199e70;
 }
 
 html[data-theme='light'] {
@@ -139,4 +144,26 @@ html[data-theme='light'] {
   --color-code-string: #276b3b;
   --color-code-number: #965212;
   --color-code-comment: #69727f;
+  --color-chart-1: #2a78d6;
+  --color-chart-2: #eb6834;
+  --color-chart-3: #1baf7a;
+}
+
+/* Points vccs charts at the theme: series colors, quiet grid and axes, panel tooltips. */
+@utility chart-theme {
+  --v-charts-series-1: var(--color-chart-1);
+  --v-charts-series-2: var(--color-chart-2);
+  --v-charts-series-3: var(--color-chart-3);
+  --v-charts-grid: var(--color-border);
+  --v-charts-axis: var(--color-border);
+  --v-charts-text: var(--color-muted);
+  --v-charts-cursor: var(--color-hover);
+  --v-charts-muted: var(--color-panel-field);
+  --v-charts-background: var(--color-panel);
+  --v-charts-inactive: var(--color-muted);
+  --v-charts-focus: var(--color-panel-focus);
+  --v-charts-tooltip-background: var(--color-panel);
+  --v-charts-tooltip-border: var(--color-border);
+  --v-charts-tooltip-foreground: var(--color-surface);
+  --v-charts-label-foreground: var(--color-surface);
 }

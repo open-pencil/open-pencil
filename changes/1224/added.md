@@ -1,0 +1,1 @@
+- A sticky note tool, shown from Customize toolbar, places FigJam sticky notes to type into. Their handles scale them or make them wide as in FigJam, the Design panel sets their colour, text size, and author line, and scripts read and edit them as Figma's `StickyNode` (#1118).

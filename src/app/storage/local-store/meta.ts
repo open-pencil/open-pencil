@@ -13,6 +13,39 @@ export function sortAndFilterMetas(
   return filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
+/**
+ * Local edits keep the revision they build on and any unresolved conflict; bytes written straight
+ * from the provider replace the base revision and leave nothing to resolve.
+ */
+function writtenRevisions(
+  input: LocalCanvasWriteInput,
+  existing: LocalCanvasMeta | null
+): Pick<LocalCanvasMeta, 'remoteRevision' | 'conflictRevision'> {
+  if (input.remoteRevision !== undefined) {
+    return { remoteRevision: input.remoteRevision, conflictRevision: null }
+  }
+  return {
+    remoteRevision: existing?.remoteRevision ?? null,
+    conflictRevision: existing?.conflictRevision ?? null
+  }
+}
+
+type CanvasIdentity = Pick<
+  LocalCanvasMeta,
+  'id' | 'providerId' | 'profileId' | 'containerId' | 'name'
+>
+
+/** A write may omit where the canvas lives; it stays where it was. */
+function canvasIdentity(input: CanvasIdentity, existing: LocalCanvasMeta | null): CanvasIdentity {
+  return {
+    id: input.id,
+    providerId: input.providerId,
+    profileId: input.profileId ?? existing?.profileId,
+    containerId: input.containerId ?? existing?.containerId,
+    name: input.name
+  }
+}
+
 /** Meta row for a full canvas write (fig bytes present). */
 export function buildWriteMeta(
   input: LocalCanvasWriteInput,
@@ -20,9 +53,7 @@ export function buildWriteMeta(
   hasThumb: boolean
 ): LocalCanvasMeta {
   return {
-    id: input.id,
-    providerId: input.providerId,
-    name: input.name,
+    ...canvasIdentity(input, existing),
     updatedAt: input.updatedAt ?? new Date().toISOString(),
     revision: input.revision ?? (existing ? existing.revision + 1 : 1),
     syncStatus: input.syncStatus ?? 'pending',
@@ -33,7 +64,8 @@ export function buildWriteMeta(
     hasFig: true,
     hasThumb,
     figSize: input.figBytes.byteLength,
-    lastOpenedAt: existing?.lastOpenedAt
+    lastOpenedAt: existing?.lastOpenedAt,
+    ...writtenRevisions(input, existing)
   }
 }
 
@@ -43,9 +75,7 @@ export function buildIndexMeta(
   existing: LocalCanvasMeta | null
 ): LocalCanvasMeta {
   return {
-    id: input.id,
-    providerId: input.providerId,
-    name: input.name,
+    ...canvasIdentity(input, existing),
     updatedAt: input.updatedAt,
     revision: input.revision ?? existing?.revision ?? 1,
     syncStatus: input.syncStatus,
@@ -53,6 +83,8 @@ export function buildIndexMeta(
     lastSyncError: input.lastSyncError,
     tombstoned: false,
     hasFig: input.hasFig ?? existing?.hasFig ?? false,
-    hasThumb: input.hasThumb ?? existing?.hasThumb ?? false
+    hasThumb: input.hasThumb ?? existing?.hasThumb ?? false,
+    remoteRevision: input.remoteRevision ?? existing?.remoteRevision ?? null,
+    conflictRevision: existing?.conflictRevision ?? null
   }
 }

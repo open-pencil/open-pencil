@@ -1,6 +1,4 @@
-import { executeAtomicTool, isEmptyDocumentChange } from '@open-pencil/core/editor'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import type { ToolDef } from '@open-pencil/core/tools'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
@@ -16,15 +14,16 @@ export function isAutomationUndoLabel(label: string | null): boolean {
   return label?.startsWith(`${AUTOMATION_UNDO_LABEL}: `) === true
 }
 
-/** Commit first; asynchronous font availability is presentation work, not a transaction. */
-export async function executeAtomicEditorTool(
+/**
+ * Loads the fonts a committed atomic edit drew its text in. This is presentation work after the
+ * edit's step, not part of it, so it runs outside the edit.
+ */
+export async function loadAtomicToolFonts(
   store: EditorStore,
   figma: FigmaAPI,
-  def: ToolDef,
   args: Record<string, unknown>,
-  options: Parameters<typeof executeAtomicTool>[4] = {}
-): Promise<unknown> {
-  const result = executeAtomicTool(store, figma, def, args, options)
+  options: { isLive?: () => boolean } = {}
+): Promise<void> {
   const targetId = typeof args.id === 'string' ? args.id : figma.currentPageId
   if (figma.graph.getNode(targetId)?.type === 'TEXT') {
     try {
@@ -38,7 +37,6 @@ export async function executeAtomicEditorTool(
       console.warn('[Agent fonts]', error)
     }
   }
-  return result
 }
 
 /**
@@ -52,18 +50,5 @@ export async function executeWithDocumentUndo<T>(
   label: string,
   run: () => Promise<T>
 ): Promise<T> {
-  const finishChange = store.captureDocumentChange(pageId)
-  try {
-    return await run()
-  } finally {
-    const change = finishChange()
-    // Read-only scripts and no-op edits must not leave empty steps in the user's history.
-    if (!isEmptyDocumentChange(change)) {
-      store.pushUndoStep({
-        label,
-        forward: () => store.restoreDocumentChange(change, 'after'),
-        inverse: () => store.restoreDocumentChange(change, 'before')
-      })
-    }
-  }
+  return store.recordEditAsync({ label, pageId }, run)
 }

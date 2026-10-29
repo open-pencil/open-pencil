@@ -5,7 +5,8 @@ import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { layoutSizing, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 const makeSceneGraph = () => new SceneGraph()
 

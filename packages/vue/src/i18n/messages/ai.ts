@@ -47,11 +47,14 @@ export const aiMessageDefaults = {
   connectProvider: 'Connect an AI provider to start chatting.',
   connectionTestSuccess: 'Connected successfully. Model is reachable.',
   connectionTestMissingAPIKey: 'Enter an API key before testing.',
+  connectionTestMissingSignIn: 'Sign in before testing.',
   connectionTestMissingBaseURL: 'Enter a base URL before testing.',
   connectionTestMissingModel: 'Enter a model ID before testing.',
   connectionTestInvalidBaseURL:
     'Base URL is invalid. Use a full URL like https://api.example.com/v1.',
   connectionTestAuthFailed: 'Authentication failed. Check your API key.',
+  connectionTestSignInExpired: 'The sign-in has expired. Sign in again.',
+  connectionTestPlanForbidden: 'Your plan can’t use this model. Choose another model.',
   connectionTestInsufficientCredit:
     'The provider account has insufficient credit or quota. Top it up and try again.',
   connectionTestModelNotFound: 'Model not found. Check the model ID.',
@@ -131,7 +134,6 @@ export const aiMessageDefaults = {
   modelsDescription: 'Configure reusable models and their provider connections.',
   addModel: 'Add model',
   editModel: 'Edit model',
-  modelEditorDescription: 'Provider, model, credentials, and capabilities.',
   modelName: 'Name',
   modelConfiguration: 'Model',
   connectionSettings: 'Connection',
@@ -145,6 +147,11 @@ export const aiMessageDefaults = {
   selectDesignModel: 'Select design model',
   modelNeedsCredential: 'Needs key',
   modelAgentConnection: 'Agent',
+  modelConnectionChecking: 'Checking…',
+  modelNotInstalled: 'Not installed',
+  modelInstalled: 'Installed',
+  modelSignedOut: 'Signed out',
+  modelToolsUnreachable: 'Tools unreachable',
   thinkingLevel: 'Thinking level',
   thinkingLevelDescription:
     'How much the model reasons before answering. You can change it for each message in the chat.',
@@ -188,11 +195,12 @@ export const aiMessageDefaults = {
   customModelID: 'Custom model ID',
   customModel: 'Custom model…',
   customModelGroup: 'Custom model',
-  advancedModelSettings: 'Advanced settings',
   outputLimit: 'Output limit',
   outputLimitAutomatic: 'Automatic recommendation',
   maxOutputTokens: 'Max output tokens',
   chatAuthenticationFailed: 'Your provider API key is invalid or expired. Replace it in Settings.',
+  chatSignInExpired: 'Your sign-in has expired. Sign in again in Settings.',
+  chatPlanForbidden: 'Your plan can’t use the selected model. Choose another model in Settings.',
   chatForbidden: 'This API key cannot use the selected model. Check its model access.',
   chatInsufficientCredit:
     'The provider account has insufficient credit or quota. Top it up and try again.',
@@ -203,6 +211,27 @@ export const aiMessageDefaults = {
   chatRateLimited: 'The provider rate limit was reached. Wait a moment and try again.',
   chatRequestFailed: 'The model request failed. Check the provider settings and try again.',
   openProviderSettingsAction: 'Open settings',
+  cloudWorkspace: 'Workspace',
+  cloudWorkspaceHint: 'The workspace whose plan pays for these requests.',
+  cloudAIUnavailable: 'Sign in to an OpenPencil Cloud server that offers AI to use these models.',
+  cloudAINoWorkspace: 'None of your workspaces on this server includes AI.',
+  cloudAICatalogFailed:
+    'OpenPencil Cloud could not list its models. Check your connection and try again.',
+  cloudAIWorkspacesFailed:
+    'OpenPencil Cloud could not check which of your workspaces include AI. Check your connection and try again.',
+  chatCloudCreditsExhausted:
+    'This workspace has used this month’s AI credits. Manage its plan to add more.',
+  chatCloudAllowanceUsed:
+    'This workspace has used this month’s AI allowance. Ask your Cloud administrator to raise it.',
+  chatCloudAllowanceUsedUntil: params(
+    'This workspace has used this month’s AI allowance. It renews on {date}. Ask your Cloud administrator to raise it sooner.'
+  ),
+  connectionTestCloudCreditsExhausted: 'This workspace has no AI credits left this month.',
+  cloudCreditsLeft: params('{credits} credits left'),
+  cloudCreditsRenew: params('Renews {date}'),
+  manageCloudPlanAction: 'Manage plan',
+  chatCloudUnavailable:
+    'OpenPencil Cloud AI is unavailable. Sign in to OpenPencil Cloud and choose a workspace in Settings.',
   visionModelUnavailable: 'Choose a Vision model in Settings before attaching images.',
   chatPiCompanionMissing: 'Pi needs the Harness companion. Run guided setup to install it.',
   chatPiCompanionOutdated:
@@ -253,9 +282,10 @@ export const aiMessageDefaults = {
   aiSetupConnectTitle: 'Connect your AI',
   aiSetupNothingDescription: 'Go back to choose other access, or set up AI in advanced settings.',
   aiSetupAgentDescription: params(
-    'OpenPencil starts {agent} when you send a message. Sign in with its own command-line tool first.'
+    'OpenPencil starts {agent} when you send a message, with the account {agent} is signed in to.'
   ),
   aiSetupAgentInstall: 'If it is not installed yet, run:',
+  aiSetupAgentInstallSupported: 'Install the supported adapter:',
   aiSetupAgentChecking: 'Checking this computer…',
   aiSetupAgentInstalled: 'installed',
   aiSetupAgentNotFound: 'not found',
@@ -283,6 +313,34 @@ export const aiMessageDefaults = {
   aiSetupAgentLookupFailed: 'Couldn’t check this computer. Try again.',
   aiSetupAgentCopyPrompt: 'Copy setup prompt',
   aiSetupAgentCheckAgain: 'Check again',
+  aiSetupAgentInstallRuns: params('Installing runs {command}.'),
+  aiSetupDetectNotFound: 'Not found on this computer',
+  aiSetupDetectFound: 'Found on this computer',
+  aiSetupDetectSignedOut: 'Found · not signed in',
+  aiSetupDetectSignedIn: 'Signed in',
+  aiSetupDetectSignedInAs: params('Signed in · {account}'),
+  aiSetupAgentAccount: 'Account',
+  aiSetupAgentAccountChecking: 'checking…',
+  aiSetupAgentAccountUnknown: 'couldn’t check',
+  aiSetupAgentNotSignedIn: 'not signed in',
+  aiSetupAgentSigningIn: 'signing in…',
+  aiSetupAgentSignIn: 'Sign in',
+  aiSetupAgentSignInBrowser: 'Finish signing in in your browser.',
+  aiSetupAgentSignInOpenPage: 'Open the sign-in page',
+  aiSetupAgentSignInCode: 'Code from the sign-in page, if it shows one',
+  aiSetupAgentSignInSubmitCode: 'Submit code',
+  aiSetupAgentSignInFailed: params('Couldn’t sign in to {agent}. Try again.'),
+  aiSetupAgentTools: 'OpenPencil tools',
+  aiSetupAgentToolsConnected: 'connected',
+  aiSetupAgentToolsUnreachable: 'not reachable',
+  aiSetupAgentToolsFailed: params(
+    '{agent} can’t reach OpenPencil’s tools, so chats with it won’t start.'
+  ),
+  aiSetupAgentToolsHint:
+    'Check that OpenPencil’s MCP server is running in Settings → MCP, then press Check again.',
+  aiSetupAgentAdapterMismatch: params(
+    'OpenPencil found {path}, another adapter it doesn’t support. Install the supported one, then remove this one or move it later on your PATH.'
+  ),
   aiSetupPiDescription:
     'OpenPencil runs Pi through its Harness companion and uses the providers you signed in to in Pi.',
   aiSetupPiCompanion: 'Harness companion',
@@ -315,19 +373,35 @@ export const aiMessageDefaults = {
   aiSetupAlreadyConnected: 'Everything you selected is already connected.',
   aiSetupOpenRouterSignIn: 'Sign in with OpenRouter',
   aiSetupOpenRouterWaiting: 'Finish signing in to OpenRouter in your browser.',
-  aiSetupOpenRouterReopen: 'Open again',
+  aiSetupSignInReopen: 'Open again',
   aiSetupOpenRouterOrKey: 'Or paste an API key',
   aiSetupOpenRouterBlocked:
     'Your browser blocked the sign-in window. Allow pop-ups for OpenPencil and try again.',
-  aiSetupOpenRouterCancelled: 'Sign-in was cancelled.',
-  aiSetupOpenRouterExpired: 'Sign-in took too long. Try again.',
+  aiSetupSignInCancelled: 'Sign-in was cancelled.',
+  aiSetupSignInExpired: 'Sign-in took too long. Try again.',
   aiSetupOpenRouterFailed: 'Couldn’t sign in to OpenRouter. Try again or paste an API key.',
   aiSetupOpenRouterSignedInTitle: 'Signed in to OpenRouter',
   aiSetupOpenRouterKeyLabel: params('· key “{label}”'),
   aiSetupOpenRouterVerifying: 'Checking your OpenRouter key…',
   aiSetupOpenRouterNoCredits:
     'This OpenRouter account has no credits yet. Add credits on OpenRouter to use paid models such as the recommended one.',
-  aiSetupOpenRouterChange: 'Use a different account',
+  aiSetupSignInChange: 'Use a different account',
+  aiSetupSignOut: 'Sign out',
+  aiSetupAccessSubscriptions: 'Subscriptions',
+  aiSetupAccessChatGPT: 'Use your ChatGPT plan’s models in OpenPencil’s own agent.',
+  aiSetupChatGPTSignIn: 'Sign in with ChatGPT',
+  aiSetupChatGPTWaiting: 'Finish signing in to ChatGPT in your browser.',
+  aiSetupChatGPTSignedInTitle: 'Signed in to ChatGPT',
+  aiSetupChatGPTFailed: 'Couldn’t sign in to ChatGPT. Try again.',
+  aiSetupChatGPTPortInUse:
+    'Another sign-in, such as `codex login`, is using port 1455. Finish or close it, then try again.',
+  aiSetupChatGPTCallbackSignedIn:
+    'Signed in to ChatGPT. You can close this tab and return to OpenPencil.',
+  aiSetupChatGPTCallbackCancelled: 'ChatGPT sign-in was cancelled. You can close this tab.',
+  aiSetupChatGPTCallbackStale:
+    'This sign-in link belongs to an earlier attempt. Start again from OpenPencil.',
+  aiSetupChatGPTUsage: 'Replies count toward your ChatGPT plan’s usage limits.',
+  aiSetupSavedSignInHint: 'Your saved sign-in will be used.',
   aiSetupUseRecommended: 'Use recommended setup',
   aiSetupRolesDescription:
     'Choose a model for each kind of work. We picked recommended ones from what you connected; anything else you configured stays as it is.'

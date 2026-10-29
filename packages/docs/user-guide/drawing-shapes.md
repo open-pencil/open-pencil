@@ -13,8 +13,8 @@ The bottom toolbar provides tools for creating shapes, frames, and sections. Sel
 | Rectangle | <kbd>R</kbd> | Draws a rectangle |
 | Ellipse | <kbd>O</kbd> | Draws an ellipse |
 | Line | <kbd>L</kbd> | Draws a line |
-| Frame | <kbd>F</kbd> | Draws a frame (container for other nodes) |
-| Section | <kbd>S</kbd> | Draws a section (takes in the siblings it fully covers) |
+| Frame | <kbd>F</kbd> or <kbd>A</kbd> | Draws a frame (container for other nodes) |
+| Section | <kbd>Shift</kbd> + <kbd>S</kbd> | Draws a section (takes in the siblings it fully covers) |
 
 ## Shapes Flyout
 
@@ -100,8 +100,8 @@ Select the Frame tool to browse collapsible presets for phones, tablets, desktop
 | Rectangle tool | <kbd>R</kbd> | <kbd>R</kbd> |
 | Ellipse tool | <kbd>O</kbd> | <kbd>O</kbd> |
 | Line tool | <kbd>L</kbd> | <kbd>L</kbd> |
-| Frame tool | <kbd>F</kbd> | <kbd>F</kbd> |
-| Section tool | <kbd>S</kbd> | <kbd>S</kbd> |
+| Frame tool | <kbd>F</kbd> or <kbd>A</kbd> | <kbd>F</kbd> or <kbd>A</kbd> |
+| Section tool | <kbd>⇧</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>S</kbd> |
 | Constrain to square/circle | <kbd>Shift</kbd> + drag | <kbd>Shift</kbd> + drag |
 
 ## Tips

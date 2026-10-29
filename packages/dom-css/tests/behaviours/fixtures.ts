@@ -1,11 +1,6 @@
-import {
-  emptyBehaviour,
-  SceneGraph,
-  withBehaviour,
-  withIcon,
-  type Behaviour,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { emptyBehaviour, withBehaviour, type Behaviour } from '@open-pencil/scene-graph/behaviours'
+import { withIcon } from '@open-pencil/scene-graph/icons'
 
 const solid = (r: number, g: number, b: number) => [
   { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }

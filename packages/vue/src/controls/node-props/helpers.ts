@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'

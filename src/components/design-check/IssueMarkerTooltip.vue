@@ -7,17 +7,20 @@ import {
   TooltipRoot,
   TooltipTrigger
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import type { PlacedIssueMarker } from '@open-pencil/core/canvas'
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { issueDetail, ruleTitle } from '@/app/editor/design-check/format'
 import { compareIssueSeverity, type DesignIssue } from '@/app/editor/design-check/issues'
-import { sceneNodeIcon } from '@/app/editor/icons'
+import { sceneNodeIcon } from '@/components/icons'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
-import { issueTooltip } from '@/theme/design-check'
+import { issueTooltipTheme } from '@/theme/design-check'
+
+const issueTooltip = tv(issueTooltipTheme)
 
 /** Issues listed before the tooltip summarizes the rest. */
 const MAX_ITEMS = 4

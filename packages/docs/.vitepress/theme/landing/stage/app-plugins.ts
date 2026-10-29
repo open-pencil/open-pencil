@@ -1,7 +1,7 @@
 import type { App } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-import { createRetainedScopePlugin } from '@open-pencil/vue'
+import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 const installed = new WeakSet<App>()
 

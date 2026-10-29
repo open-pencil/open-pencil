@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createEditor, type Editor } from '@open-pencil/core'
 import { buildOpenPencilClipboardHTML } from '@open-pencil/core/clipboard'
-import { createEditor } from '@open-pencil/core/editor'
-import type { Editor } from '@open-pencil/core/editor'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 
 function copiedRectangleHTML(name = 'Pasted') {

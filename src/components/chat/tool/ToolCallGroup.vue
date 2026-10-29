@@ -2,14 +2,15 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { toolDisplayName, type ToolCallPart } from '@/app/ai/chat/tool-calls/display'
 import { toolCallState } from '@/components/chat/tool/state'
 import ToolCallCard from '@/components/chat/tool/ToolCallCard.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
-import { chatToolTheme } from '@/theme/chat/tool'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
+
+import { chatToolTheme } from './ui'
 
 /** Runs up to this long stay expanded; longer ones fold all but the latest call. */
 const INLINE_CALLS = 3

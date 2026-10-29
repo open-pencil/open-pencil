@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCommentMessages, useCommonMessages } from '@open-pencil/vue'
+import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useActionToast } from '@/app/shell/toast/action'

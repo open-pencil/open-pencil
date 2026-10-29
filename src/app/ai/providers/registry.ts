@@ -4,6 +4,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { chatGPTAdapter } from '@/app/ai/providers/chatgpt/adapter'
 import {
   createAnthropicCompatibleAdapter,
   createOpenAICompatibleAdapter
@@ -28,6 +29,7 @@ const MODEL_PROVIDER_ADAPTERS = {
   },
   anthropic: createAnthropicCompatibleAdapter(),
   openai: createOpenAICompatibleAdapter(),
+  chatgpt: chatGPTAdapter,
   google: {
     create(config, runtime) {
       return createGoogleGenerativeAI({ apiKey: config.apiKey, fetch: runtime.fetch })(
@@ -48,6 +50,11 @@ const MODEL_PROVIDER_ADAPTERS = {
   }),
   'anthropic-compatible': createAnthropicCompatibleAdapter({
     baseURL: (config) => config.customBaseURL
+  }),
+  // The base URL and the token-carrying fetch come from Cloud's AI service, not from settings.
+  openpencil: createOpenAICompatibleAdapter({
+    baseURL: (config) => config.customBaseURL,
+    mode: 'chat'
   })
 } satisfies Record<DirectProviderID, ModelProviderAdapter>
 

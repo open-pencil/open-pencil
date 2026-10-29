@@ -1,4 +1,4 @@
-import type { MovePlace, Tool } from '@open-pencil/core/editor'
+import type { AttachModifiers, MovePlace, Tool } from '@open-pencil/core'
 import type { HandlePosition } from '@open-pencil/core/geometry'
 import type {
   DerivedTextGlyph,
@@ -28,6 +28,77 @@ export interface DragDraw {
   snap: (value: number) => number
   nodeId: string
   update: (changes: Partial<SceneNode>) => void
+  commit: () => void
+  cancel: () => void
+}
+
+/**
+ * A connector drawn with the connector tool, from the press to the release or from one click to
+ * the next. Positions are screen pixels, to tell a click from a drag.
+ */
+export interface DragConnectorDraw {
+  type: 'connector-draw'
+  startSX: number
+  startSY: number
+  moved: boolean
+  /** Where the pointer is, in canvas coordinates. */
+  x: number
+  y: number
+  /** The keys held at the last move, which the release attaches by. */
+  modifiers: AttachModifiers
+  commit: () => void
+  cancel: () => void
+}
+
+/** An end of a selected connector dragged to another layer or point. */
+export interface DragConnectorEnd {
+  type: 'connector-end'
+  commit: () => void
+  cancel: () => void
+}
+
+/** An elbow segment or the curve of a selected connector dragged into place. */
+export interface DragConnectorLine {
+  type: 'connector-line'
+  commit: () => void
+  cancel: () => void
+}
+
+/** An end of a selected line or arrow dragged to aim it. */
+export interface DragLineEnd {
+  type: 'line-end'
+  commit: () => void
+  cancel: () => void
+}
+
+/** A sticky note being drawn: it grows from the press corner with the drag, as a frame does. */
+export interface DragStickyDraw {
+  type: 'sticky-draw'
+  /** Grows the note to the pointer, in canvas coordinates. */
+  move: (cx: number, cy: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
+/**
+ * A sticky note's handle dragged: a corner, top, or bottom scales the whole note, a side switches
+ * it between square and wide, as in FigJam.
+ */
+export interface DragStickyScale {
+  type: 'sticky-scale'
+  mode: 'scale' | 'wide'
+  handle: HandlePosition
+  startX: number
+  startY: number
+  nodeId: string
+  origRect: Rect
+  /** The note and its sublayers as the drag found them. */
+  originals: Map<string, SceneNode>
+  /** The scale and top-left the latest step reached. */
+  scale: number
+  position: Vector
+  /** Whether a side drag has reached the wide width. */
+  wide: boolean
   commit: () => void
   cancel: () => void
 }
@@ -130,6 +201,10 @@ export interface DragPen {
   knotStartY: number
 }
 
+export interface DragPencil {
+  type: 'pencil-drag'
+}
+
 export interface DragTextSelect {
   type: 'text-select'
   startX: number
@@ -141,6 +216,11 @@ export interface DragEditNode {
   startX: number
   startY: number
   origPositions: Map<number, Vector>
+  /**
+   * A selected segment or region that was pressed: releasing without a drag selects only it, or
+   * with Shift takes it out of the selection.
+   */
+  click?: { part: 'segment' | 'region'; index: number; deselect: boolean }
 }
 
 export interface DragEditHandle {
@@ -151,6 +231,17 @@ export interface DragEditHandle {
   startX: number
   startY: number
   initialTangent: Vector | null
+}
+
+/** A drag over empty space while editing a path: selects the points and segments it encloses. */
+export interface DragEditMarquee {
+  type: 'edit-marquee'
+  startX: number
+  startY: number
+  /** Points kept selected alongside the enclosed ones, as with Shift held. */
+  baseSelection: Set<number>
+  /** Segments kept selected alongside the enclosed ones, as with Shift held. */
+  baseSegments: Set<number>
 }
 
 export interface DragBendHandle {
@@ -201,16 +292,24 @@ export interface DragShapeHandle {
 export type DragState =
   | DragShapeHandle
   | DragDraw
+  | DragStickyDraw
+  | DragConnectorDraw
+  | DragConnectorEnd
+  | DragConnectorLine
+  | DragLineEnd
   | DragGradient
   | DragMove
   | DragPan
   | DragResize
+  | DragStickyScale
   | DragMarquee
   | DragRotate
   | DragPen
+  | DragPencil
   | DragTextSelect
   | DragEditNode
   | DragEditHandle
+  | DragEditMarquee
   | DragBendHandle
   | DragGuide
 
@@ -222,5 +321,6 @@ export const TOOL_TO_NODE: Partial<Record<Tool, NodeType>> = {
   LINE: 'LINE',
   POLYGON: 'POLYGON',
   STAR: 'STAR',
-  TEXT: 'TEXT'
+  TEXT: 'TEXT',
+  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT'
 }

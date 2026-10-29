@@ -3,30 +3,28 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import { nodeChangeToProps, sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
+const oracleLengthSchema = v.object({ unit: v.string(), value: v.number() })
 
-const OracleLength = v.object({ unit: v.string(), value: v.number() })
-
-const OracleDecorationColor = v.object({
+const oracleDecorationColorSchema = v.object({
   value: v.object({
     color: v.object({ r: v.number(), g: v.number(), b: v.number() }),
     opacity: v.number()
   })
 })
 
-type OracleDecorationColor = v.InferOutput<typeof OracleDecorationColor>
+type OracleDecorationColor = v.InferOutput<typeof oracleDecorationColorSchema>
 
-const RichTextOracleJSON = v.pipe(
+const richTextOracleSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
     characters: v.string(),
     leadingTrim: v.string(),
-    textDecorationOffset: OracleLength,
+    textDecorationOffset: oracleLengthSchema,
     textDecorationSkipInk: v.boolean(),
     ranges: v.array(
       v.object({
@@ -34,8 +32,8 @@ const RichTextOracleJSON = v.pipe(
         end: v.number(),
         textDecoration: v.string(),
         textDecorationStyle: v.string(),
-        textDecorationThickness: OracleLength,
-        textDecorationColor: OracleDecorationColor
+        textDecorationThickness: oracleLengthSchema,
+        textDecorationColor: oracleDecorationColorSchema
       })
     )
   })
@@ -43,7 +41,7 @@ const RichTextOracleJSON = v.pipe(
 
 function readOracle() {
   return v.parse(
-    RichTextOracleJSON,
+    richTextOracleSchema,
     readFileSync('tests/fixtures/figma-oracles/rich-text-decoration.json', 'utf8')
   )
 }

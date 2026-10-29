@@ -1,0 +1,1 @@
+export { useSelectionCapabilities } from './use'

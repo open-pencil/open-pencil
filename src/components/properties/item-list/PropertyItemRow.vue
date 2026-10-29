@@ -2,8 +2,13 @@
 import type { ClassValue } from 'tailwind-variants'
 import type { VNode } from 'vue'
 
-import { PropertyListItem, PropertyListRemove, PropertyListVisibility } from '@open-pencil/vue'
-import type { PropertyListItemSlotProps, PropertyListKey } from '@open-pencil/vue'
+import {
+  PropertyListItem,
+  PropertyListRemove,
+  PropertyListVisibility,
+  type PropertyListItemSlotProps,
+  type PropertyListKey
+} from '@open-pencil/vue/primitives/PropertyList'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'

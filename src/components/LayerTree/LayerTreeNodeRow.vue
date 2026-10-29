@@ -2,12 +2,12 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import type { LayerNode } from '@open-pencil/vue'
+import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { LayerIssueMark as LayerIssueMarkData } from '@/app/editor/design-check/layers'
-import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import LayerIssueMark from '@/components/design-check/LayerIssueMark.vue'
+import { COMPONENT_TYPES, nodeIcon } from '@/components/icons'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import LayerTreeActions from './LayerTreeActions.vue'

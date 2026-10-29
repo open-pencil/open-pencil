@@ -2,7 +2,7 @@ import { useElementSize } from '@vueuse/core'
 import type { CanvasKit } from 'canvaskit-wasm'
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 import {
   createCanvasSurfaceManager,
@@ -48,7 +48,8 @@ export function useCanvas(
     setCanvasKit: (value) => {
       ck = value
     },
-    onReady: options?.onReady
+    onReady: options?.onReady,
+    onFailed: options?.onFailed
   })
 
   // The scene surface plays shaders in preview; an overlay surface draws none.
@@ -64,8 +65,13 @@ export function useCanvas(
     })
   }
 
-  const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIssueMarker } =
-    createCanvasHitTests(editor, surface.getRenderer)
+  const {
+    hitTestSectionTitle,
+    hitTestComponentLabel,
+    hitTestFrameTitle,
+    hitTestIssueMarker,
+    hitTestStatusLabel
+  } = createCanvasHitTests(editor, surface.getRenderer)
 
   return {
     render: surface.markDirty,
@@ -73,6 +79,7 @@ export function useCanvas(
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,
-    hitTestIssueMarker
+    hitTestIssueMarker,
+    hitTestStatusLabel
   }
 }

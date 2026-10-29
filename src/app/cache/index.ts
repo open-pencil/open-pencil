@@ -1,3 +1,4 @@
+import { dirname } from 'pathe'
 import * as v from 'valibot'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
@@ -21,10 +22,7 @@ function cachePath(key: string) {
 }
 
 function cacheDirectoryPath(key: string) {
-  const segments = key.split('/').slice(0, -1)
-  return segments.length > 0
-    ? `${APP_CACHE_DIR}/${segments.map(encodeURIComponent).join('/')}`
-    : APP_CACHE_DIR
+  return dirname(cachePath(key))
 }
 
 function storageKey(key: string) {
@@ -118,7 +116,7 @@ export async function removeCachePrefix(prefix: string): Promise<void> {
   removeStorageEntriesWithPrefix(prefix)
 }
 
-const CacheEnvelopeJSON = v.pipe(
+const cacheEnvelopeSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({ updatedAt: v.number(), value: v.unknown() })
@@ -136,7 +134,7 @@ export async function readCacheJSON<TSchema extends v.GenericSchema>(
   const raw = await readCacheText(key)
   if (!raw) return null
 
-  const envelope = v.safeParse(CacheEnvelopeJSON, raw)
+  const envelope = v.safeParse(cacheEnvelopeSchema, raw)
   if (!envelope.success) return null
   if (maxAgeMs !== undefined && Date.now() - envelope.output.updatedAt > maxAgeMs) return null
   const value = v.safeParse(schema, envelope.output.value)

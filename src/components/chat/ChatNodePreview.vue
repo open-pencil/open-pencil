@@ -2,8 +2,8 @@
 import { useObjectUrl } from '@vueuse/core'
 import { shallowRef, watch } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import { renderNodesToImage } from '@open-pencil/core/io'
+import type { Editor } from '@open-pencil/core'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 
 import type { ReferencedNode } from '@/app/ai/chat/context'
 

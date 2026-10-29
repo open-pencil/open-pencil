@@ -1,5 +1,5 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { BindingState } from '@open-pencil/vue'
+import type { BindingState } from '@open-pencil/vue/controls/binding-provider'
 
 import type { BindingFieldUI } from './ui'
 
@@ -10,6 +10,8 @@ export interface VariablePickerItem {
   collection?: string
   /** A color variable's value, shown as a swatch in place of the variable icon. */
   color?: Color
+  /** Resolved numeric value, or mixed/unresolved state for the selected targets. */
+  text?: string
 }
 
 export interface VariablePickerProps {

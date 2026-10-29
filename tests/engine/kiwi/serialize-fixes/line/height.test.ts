@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { lineHeightPixels, pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -19,7 +21,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 16,
-      lineHeight: 24
+      lineHeight: pixelLength(24)
     })
 
     const changes = toKiwi(node, graph)
@@ -56,7 +58,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 16,
-      lineHeight: 28
+      lineHeight: pixelLength(28)
     })
 
     const exported = await exportFigFile(graph)
@@ -66,7 +68,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       [...reimported.nodes.values()].find((n) => n.type === 'TEXT'),
       'text node'
     )
-    expect(textNode.lineHeight).toBe(28)
+    expect(lineHeightPixels(textNode.lineHeight, textNode.fontSize)).toBe(28)
   })
 })
 

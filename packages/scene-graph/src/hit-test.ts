@@ -1,6 +1,8 @@
-import type { SceneGraph, SceneNode, NodeType } from './'
+import { hitsConnectorLine } from './connectors/hit'
 import { getWorldMatrix } from './coordinate'
+import type { SceneGraph } from './graph'
 import Matrix from './matrix'
+import type { SceneNode, NodeType } from './types'
 
 const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',
@@ -172,6 +174,10 @@ function hitTestChildren(
       continue
     }
 
+    if (child.type === 'CONNECTOR') {
+      if (hitsConnectorLine(graph, child, px, py, pad)) return child
+      continue
+    }
     if (containsPoint(px, py, child, graph, transformCache, pad)) return child
   }
 

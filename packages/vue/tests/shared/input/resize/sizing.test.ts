@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'
 import { tryStartResize } from '#vue/shared/input/resize/start'
@@ -8,7 +8,7 @@ import type { DragResize } from '#vue/shared/input/types'
 
 // Handle drags on a Hug × Hug auto layout frame of two 100×100 frames at 200,150, recorded in
 // live Figma on 2026-10-10: [x, y, width, height, horizontal sizing, vertical sizing].
-const CASES: [DragResize["handle"], number, number, boolean, (number | string)[]][] = [
+const CASES: [DragResize['handle'], number, number, boolean, (number | string)[]][] = [
   ['e', 60, 0, false, [200, 150, 260, 100, 'FIXED', 'HUG']],
   ['s', 0, 40, false, [200, 150, 200, 140, 'HUG', 'FIXED']],
   ['se', 60, 40, false, [200, 150, 260, 140, 'FIXED', 'FIXED']],

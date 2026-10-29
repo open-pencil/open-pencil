@@ -1,0 +1,1 @@
+- Dialogs keep their content still while they open and close, instead of redrawing a cleared name, the other choice's labels, or emptied fields as they fade out, and open on their loaded content rather than filling in after.

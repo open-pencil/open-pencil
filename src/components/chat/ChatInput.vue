@@ -2,7 +2,8 @@
 import { computed, useTemplateRef } from 'vue'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
-import { useI18n, useSelectionState } from '@open-pencil/vue'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
@@ -10,6 +11,7 @@ import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
+import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
 import ChatNodePreview from '@/components/chat/ChatNodePreview.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
@@ -216,6 +218,7 @@ const selectedProfileName = computed(
             </template>
           </ChatProfileSelect>
           <ChatThinkingSelect />
+          <ChatCreditBalance :replying="isStreaming" />
         </template>
       </div>
     </template>

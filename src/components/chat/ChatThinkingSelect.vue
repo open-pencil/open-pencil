@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { thinkingLevelLabel, thinkingLevelOptions } from '@/app/ai/models/thinking'
 import ThinkingMeter from '@/components/chat/ThinkingMeter.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { chatProfileTheme } from '@/theme/chat/profile'
-import { chatThinkingTheme } from '@/theme/chat/thinking'
+
+import { chatProfileTheme, chatThinkingTheme } from './ui'
 
 const { ai } = useI18n()
 const ui = chatProfileTheme()

@@ -1,10 +1,11 @@
-import interBold from '@open-pencil/core/assets/Inter-Bold.ttf?url'
-import interExtraBold from '@open-pencil/core/assets/Inter-ExtraBold.ttf?url'
-import interMedium from '@open-pencil/core/assets/Inter-Medium.ttf?url'
-import interRegular from '@open-pencil/core/assets/Inter-Regular.ttf?url'
+import harfBuzzSubset from 'harfbuzzjs/dist/harfbuzz-subset.wasm?url'
+
 import interSemiBold from '@open-pencil/core/assets/Inter-SemiBold.ttf?url'
+import interVariableItalic from '@open-pencil/core/assets/InterVariable-Italic.ttf?url'
+import interVariable from '@open-pencil/core/assets/InterVariable.ttf?url'
 import notoNaskhArabic from '@open-pencil/core/assets/NotoNaskhArabic-Regular.ttf?url'
-import { fontManager } from '@open-pencil/core/text'
+import emojiMetrics from '@open-pencil/core/assets/OpenPencilEmojiMetrics-Regular.ttf?url'
+import { fontManager, setHarfBuzzSubsetLocator } from '@open-pencil/core/text'
 
 /**
  * Core ships its bundled fonts in `@open-pencil/core/assets`. Importing them as assets lets
@@ -13,15 +14,18 @@ import { fontManager } from '@open-pencil/core/text'
  * in a Vite build, not in the Bun test runner.
  */
 const BUNDLED_FONT_URLS: Record<string, string> = {
-  'Inter-Regular.ttf': interRegular,
-  'Inter-Medium.ttf': interMedium,
+  'InterVariable.ttf': interVariable,
+  'InterVariable-Italic.ttf': interVariableItalic,
   'Inter-SemiBold.ttf': interSemiBold,
-  'Inter-Bold.ttf': interBold,
-  'Inter-ExtraBold.ttf': interExtraBold,
-  'NotoNaskhArabic-Regular.ttf': notoNaskhArabic
+  'NotoNaskhArabic-Regular.ttf': notoNaskhArabic,
+  'OpenPencilEmojiMetrics-Regular.ttf': emojiMetrics
 }
 
-/** Points core at the emitted font files. Call before any font loads. */
+/**
+ * Points core at the emitted font files, and at HarfBuzz's subsetter, which cuts static files of
+ * variable font instances for PDF export. Call before any font loads.
+ */
 export function installBundledFonts(): void {
   fontManager.setBundledFontLocator((file) => BUNDLED_FONT_URLS[file] ?? `/${file}`)
+  setHarfBuzzSubsetLocator(() => harfBuzzSubset)
 }

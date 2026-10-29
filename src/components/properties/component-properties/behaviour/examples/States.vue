@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { BehaviourControl } from '@open-pencil/vue'
+import type { BehaviourControl } from '@open-pencil/vue/controls/behaviour'
 
 import BehaviourSection from '../BehaviourSection.vue'
 

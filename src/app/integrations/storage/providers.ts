@@ -1,3 +1,5 @@
+import { CLOUD_STORAGE_PROVIDERS } from '@/app/cloud/integration/storage'
+
 import { defineStorageProvider, StorageProviderRegistry } from './registry'
 import { createS3StorageAdapter } from './s3/adapter'
 
@@ -17,4 +19,7 @@ export const S3_STORAGE_PROVIDER = defineStorageProvider({
   createAdapter: createS3StorageAdapter
 })
 
-export const storageProviderRegistry = new StorageProviderRegistry([S3_STORAGE_PROVIDER])
+export const storageProviderRegistry = new StorageProviderRegistry([
+  S3_STORAGE_PROVIDER,
+  ...CLOUD_STORAGE_PROVIDERS
+])

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
 import { checkForAppUpdate } from '@/app/shell/updater/check'

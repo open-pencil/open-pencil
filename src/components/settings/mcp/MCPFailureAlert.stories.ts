@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import type { MCPServerSetupState } from '@/app/ai/agents/setup'
+import type { MCPServerSetupState } from '@/app/ai/agents/setup/view'
 import {
   MCP_INSTALL_COMMAND,
   type MCPFailure,
@@ -86,7 +86,7 @@ export const Outdated: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/The installed MCP server is v0\.15\.1/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Update MCP server' })).toBeVisible()
-    await expect(canvas.queryByTestId('settings-mcp-install-command')).toBeNull()
+    await expect(canvas.queryByText(/npm (?:i|install) -g @open-pencil\/mcp/)).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'Copy prompt for your agent' })).toBeNull()
     // Updating restarts the server, so Restart is not offered beside it.
     await expect(canvas.queryByRole('button', { name: 'Restart MCP server' })).toBeNull()
@@ -109,7 +109,7 @@ export const NeedsNode: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.queryByRole('button', { name: 'Install MCP server' })).toBeNull()
     await expect(canvas.getByRole('link', { name: 'Node.js' })).toBeVisible()
-    await expect(canvas.getByTestId('settings-mcp-install-command')).toBeVisible()
+    await expect(canvas.getByText(/npm (?:i|install) -g @open-pencil\/mcp/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Copy prompt for your agent' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Check again' })).toBeVisible()
   }

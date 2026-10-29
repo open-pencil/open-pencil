@@ -17,8 +17,7 @@ function entry(pixels: number): EffectRasterCacheEntry {
     height: 10,
     scale: 2,
     pixels,
-    fontGeneration: 0,
-    dependencyIds: []
+    fontGeneration: 0
   }
 }
 
@@ -51,17 +50,6 @@ describe('effect raster cache', () => {
     cache.delete('node')
     expect(second.image.delete).toHaveBeenCalledTimes(1)
     expect(cache.size).toBe(0)
-  })
-
-  test('invalidates an owning raster when a geometry dependency changes', () => {
-    const cache = new EffectRasterCache()
-    const parent = { ...entry(100), dependencyIds: ['child'] }
-    cache.set('parent', parent)
-
-    cache.deleteDependencies('child')
-
-    expect(parent.image.delete).toHaveBeenCalledTimes(1)
-    expect(cache.has('parent')).toBe(false)
   })
 
   test('evicts least-recently-used entries within the pixel budget', () => {

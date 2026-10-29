@@ -1,13 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 describe('setting a frame’s child order', () => {
   test('moves the children in one undo step, past a read-only library layer that stays', () => {
     const editor = createEditor()
     try {
       const { graph } = editor
-      const frame = graph.createNode('FRAME', editor.state.currentPageId, { layoutMode: 'HORIZONTAL' })
+      const frame = graph.createNode('FRAME', editor.state.currentPageId, {
+        layoutMode: 'HORIZONTAL'
+      })
       const a = graph.createNode('RECTANGLE', frame.id, { name: 'A', width: 40, height: 40 })
       const b = graph.createNode('RECTANGLE', frame.id, { name: 'B', width: 40, height: 40 })
       const remote = graph.createNode('COMPONENT', frame.id, {

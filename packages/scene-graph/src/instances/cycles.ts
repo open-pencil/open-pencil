@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../'
+import type { SceneGraph } from '../graph'
 import { instanceMainComponent } from './main-component'
 
 /** Components at or above `parentId`, counting the component each enclosing instance shows. */

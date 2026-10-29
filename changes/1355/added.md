@@ -1,0 +1,1 @@
+- Design JSX draws ellipse arcs and donuts with `startAngle`, `endAngle`, and `innerRadius` on `<Ellipse>`, flips any layer with `flipX` and `flipY`, and exports both, so they survive `get_jsx`.

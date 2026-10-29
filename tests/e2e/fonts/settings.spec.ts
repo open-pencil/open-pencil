@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-test('font settings popover exposes web font access without desktop-only cache actions', async ({
+test('the font settings gear opens Settings › Fonts without desktop-only cache actions', async ({
   page
 }) => {
   await page.goto('/')
@@ -45,24 +45,29 @@ test('font settings popover exposes web font access without desktop-only cache a
   await fontSettings.click()
   await expect(page.locator('[role=tooltip]').filter({ hasText: 'Font settings' })).toHaveCount(0)
 
-  await expect(page.getByText('Allow browser access to local fonts')).toBeVisible()
+  const panel = page.getByTestId('font-settings-panel')
+  await expect(panel).toBeVisible()
+  await expect(page.getByTestId('settings-section-fonts')).toHaveAttribute('aria-selected', 'true')
+  await expect(panel.getByText('Allow browser access to local fonts')).toBeVisible()
   await expect(page.getByTestId('font-settings-request-access')).toBeVisible()
-  await expect(page.getByTestId('font-settings-toggle-online-fonts')).toHaveText('Disable')
-  await expect(page.getByTestId('font-settings-provider-google')).toBeChecked()
-  await expect(page.getByTestId('font-settings-provider-fontsource')).toBeChecked()
-  await expect(page.getByTestId('font-settings-provider-bunny')).not.toBeChecked()
-  await expect(page.getByTestId('font-settings-provider-fontshare')).not.toBeChecked()
-  await page.getByTestId('font-settings-toggle-online-fonts').click()
-  await expect(page.getByTestId('font-settings-toggle-online-fonts')).toHaveText('Enable')
-  await expect(page.getByTestId('font-settings-provider-google')).toBeDisabled()
-  await page.getByTestId('font-settings-toggle-online-fonts').click()
-  await expect(page.getByTestId('font-settings-toggle-online-fonts')).toHaveText('Disable')
+  const online = panel.getByRole('switch', { name: 'Online fonts', exact: true })
+  const provider = (name: string) => panel.getByRole('switch', { name, exact: true })
+  await expect(online).toBeChecked()
+  await expect(provider('Google Fonts')).toBeChecked()
+  await expect(provider('Fontsource')).toBeChecked()
+  await expect(provider('Bunny Fonts')).not.toBeChecked()
+  await expect(provider('Fontshare')).not.toBeChecked()
+  await online.click()
+  await expect(online).not.toBeChecked()
+  await expect(provider('Google Fonts')).toBeDisabled()
+  await online.click()
+  await expect(online).toBeChecked()
   await expect(page.getByTestId('font-settings-download-fallbacks')).toHaveCount(0)
   await expect(page.getByTestId('font-settings-refresh-cache')).toHaveCount(0)
   await expect(page.getByTestId('font-settings-clear-cache')).toHaveCount(0)
   await expect(page.getByText('Download CJK and Arabic fallbacks')).toHaveCount(0)
 
   await page.keyboard.press('Escape')
-  await expect(page.getByTestId('font-settings-panel')).toBeHidden()
+  await expect(panel).toBeHidden()
   await expect(typography).toBeVisible()
 })

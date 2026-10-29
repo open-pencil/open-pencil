@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { compileScript } from '@open-pencil/core/tools'
-import { readComments, SceneGraph } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { readComments } from '@open-pencil/scene-graph/comments'
 
 /** A document with a Card frame holding a Title, as a script would build it. */
 async function document() {

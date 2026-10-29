@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import {
   createSceneGeometry,
   rotationHandleLayout,

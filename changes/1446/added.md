@@ -1,0 +1,1 @@
+- draw.io diagrams open, in the desktop app also from the system: `.drawio` and `.dio` files and draw.io's editable PNG and SVG exports become pages of FigJam shapes with text and connectors joined to them, keeping their colours, labels, arrowheads, bend points, turns and mirroring, layers, and containers.

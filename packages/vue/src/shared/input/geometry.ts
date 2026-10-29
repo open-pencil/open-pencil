@@ -1,7 +1,8 @@
+import type { Editor } from '@open-pencil/core'
 import { HANDLE_HIT_RADIUS, LAYER_HIT_PAD } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import {
   createSceneGeometry,
+  isLineLike,
   selectionHandleRect,
   hasTransformHandles,
   rotationHandleLayout,
@@ -15,8 +16,12 @@ import {
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import resizeCursorSVG from '#vue/shared/assets/resize-cursor.svg?raw'
-import rotateCursorSVG from '#vue/shared/assets/rotate-cursor.svg?raw'
+import moveCursorSVG from '#vue/shared/assets/cursors/move.svg?raw'
+import resizeCursorSVG from '#vue/shared/assets/cursors/resize.svg?raw'
+import rotateCursorSVG from '#vue/shared/assets/cursors/rotate.svg?raw'
+
+/** Figma's four-way cursor over a handle that moves a point, such as a line's end. */
+export const MOVE_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(moveCursorSVG)}") 12 12, auto`
 
 export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
   if (!canvas) return { sx: 0, sy: 0, cx: 0, cy: 0 }
@@ -169,7 +174,9 @@ function transformZoneOf(
   zoom: number
 ): TransformZone | null {
   const pointer = geometry.toLocal(node, { x: cx, y: cy })
-  return pointer ? transformZoneAt(pointer, selectionHandleRect(node), zoom) : null
+  const zone = pointer ? transformZoneAt(pointer, selectionHandleRect(node), zoom) : null
+  // A line is aimed by its two end handles, not resized: see `lineEndAt`.
+  return zone?.kind === 'resize' && isLineLike(node) ? null : zone
 }
 
 export function getHitHandleByMatrix(
@@ -198,7 +205,7 @@ export function hitTestTopRotationHandleByMatrix(
   preview?: RotationPreview | null
 ): boolean {
   const rect = selectionHandleRect(node)
-  if (!hasTransformHandles(rect.width * zoom, rect.height * zoom)) return false
+  if (isLineLike(node) || !hasTransformHandles(rect.width * zoom, rect.height * zoom)) return false
   const geometry = createSceneGeometry(graph, preview)
   const handle = geometry.toWorld(node, rotationHandleLayout(node, geometry, zoom).handle)
   const radius = HANDLE_HIT_RADIUS / zoom

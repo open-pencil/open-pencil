@@ -1,12 +1,15 @@
 import { inflateSync } from 'fflate'
-import { decompress as zstdDecompress } from 'fzstd'
 
-import { decodeBinarySchema, compileSchema, ByteBuffer, type HeaderFields } from '../schema-runtime'
-import type { FigmaMessage, NodeChange } from './codec'
+import {
+  decodeBinarySchema,
+  compileSchema,
+  ByteBuffer,
+  type HeaderFields,
+  type RuntimeMessage
+} from '../schema-runtime'
+import type { NodeChange } from './codec'
+import { decompressFigKiwiData } from './container'
 import { extractFigPageManifest, type FigPageManifestEntry } from './page-manifest'
-import { isZstdCompressed } from './protocol'
-
-export type { NodeChange } from './codec'
 
 /**
  * Deduplicates pluginData/pluginRelaunchData entries on raw NodeChange objects.
@@ -43,10 +46,6 @@ interface FigKiwiPayload {
   version: number
 }
 
-interface CompiledKiwiSchema {
-  decodeMessage(data: Uint8Array): unknown
-}
-
 export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
   const header = new TextDecoder().decode(data.slice(0, 8))
   if (header !== 'fig-kiwi') return null
@@ -70,19 +69,16 @@ export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
   }
   if (chunks.length < 2) return null
 
-  const compressed = chunks[1]
-  let dataRaw: Uint8Array
-  if (isZstdCompressed(compressed)) {
-    dataRaw = zstdDecompress(compressed)
-  } else {
-    try {
-      dataRaw = inflateSync(compressed)
-    } catch {
-      throw new Error('Failed to decompress fig-kiwi data chunk')
-    }
-  }
+  return { schemaDeflated: chunks[0], dataRaw: decompressFigKiwiData(chunks[1]), version }
+}
 
-  return { schemaDeflated: chunks[0], dataRaw, version }
+function isRuntimeMessage(value: unknown): value is RuntimeMessage {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !(value instanceof Uint8Array)
+  )
 }
 
 export interface FigKiwiDecodeResult {
@@ -103,28 +99,29 @@ export function decodeFigKiwiCanvas(
   if (!payload) throw new Error('Invalid fig-kiwi container')
 
   const schemaBytes = inflateSync(payload.schemaDeflated)
-  const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+  const compiled = compileSchema(decodeBinarySchema(new ByteBuffer(schemaBytes)), headers)
   if (onPages) {
     try {
-      const pages = extractFigPageManifest(schema, payload.dataRaw)
+      const pages = extractFigPageManifest(compiled.schema, payload.dataRaw)
       if (pages.length > 0) onPages(pages)
     } catch (error) {
       console.warn('Failed to scan FIG page manifest; continuing with full decode:', error)
     }
   }
-  const compiled = compileSchema(schema, headers) as CompiledKiwiSchema
-  const message = compiled.decodeMessage(payload.dataRaw) as FigmaMessage
+  if (!compiled.decodeMessage) throw new Error('The fig-kiwi schema has no Message')
+  const message = compiled.decodeMessage(payload.dataRaw)
 
-  const nodeChanges = message.nodeChanges
-  if (!nodeChanges || nodeChanges.length === 0) {
+  const records = message.nodeChanges
+  if (!Array.isArray(records) || records.length === 0) {
     throw new Error('No nodes found in .fig file')
   }
-
+  const nodeChanges = records as NodeChange[]
   deduplicateNodeChangePluginData(nodeChanges)
 
-  const blobs: Uint8Array[] = (message.blobs ?? []).map((blob) =>
-    blob.bytes instanceof Uint8Array ? blob.bytes : new Uint8Array(Object.values(blob.bytes))
-  )
+  const blobs: Uint8Array[] = (Array.isArray(message.blobs) ? message.blobs : []).map((blob) => {
+    const bytes = isRuntimeMessage(blob) ? blob.bytes : undefined
+    return bytes instanceof Uint8Array ? bytes : new Uint8Array(Object.values(bytes ?? {}))
+  })
 
   return {
     nodeChanges,

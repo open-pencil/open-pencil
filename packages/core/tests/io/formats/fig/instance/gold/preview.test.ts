@@ -1,10 +1,9 @@
-import { expect, test } from 'bun:test'
+import { beforeAll, expect, test } from 'bun:test'
 
 import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
 
-import { FigmaAPI } from '@open-pencil/core'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import {
   interpretInstance,
@@ -14,7 +13,15 @@ import {
   materializeInstance,
   type InstanceOccurrence
 } from '@open-pencil/fig/instance-overrides'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(async () => {
+  await registerTestFont()
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Medium' })
+})
 
 function named(node: InstanceOccurrence, name: string): InstanceOccurrence {
   const child = node.children.find((candidate) => candidate.properties.name === name)

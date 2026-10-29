@@ -1,4 +1,3 @@
-import { useClipboard } from '@vueuse/core'
 import { computed, inject, provide, proxyRefs } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 import IconFilePlus from '~icons/lucide/file-plus'
@@ -7,17 +6,20 @@ import IconImageDown from '~icons/lucide/image-down'
 import IconSave from '~icons/lucide/save'
 import IconZoomIn from '~icons/lucide/zoom-in'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
 
+import { isCloudBinding, openCloudShare } from '@/app/cloud/integration'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useActiveEditorStoreRef, useEditorStore } from '@/app/editor/active-store'
-import { toolIcons } from '@/app/editor/icons'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { presenceOf, renameAgent as renameLocalAgent } from '@/app/presence/registry'
 import type { FollowTarget } from '@/app/presence/types'
 import { openFileDialog } from '@/app/shell/menu/use'
+import { useSendLink } from '@/app/shell/share/link'
 import { toast } from '@/app/shell/ui'
 import { roomStatusText } from '@/components/collab-room/statusText'
+import { toolIcons } from '@/components/icons'
 import { presenceRows } from '@/components/presence/rows'
 import type { ToolbarActionItem } from '@/components/toolbar/types'
 import { getShareURL } from '@/constants'
@@ -27,7 +29,7 @@ type MenuAction = ToolbarActionItem
 function createMobileHudContext() {
   const collab = useCollabInjected()
   const store = useEditorStore()
-  const { copy } = useClipboard()
+  const { send } = useSendLink()
   const { common, collaboration } = useI18n()
   const notifications = useNotificationMessages()
   const { getCommand } = useEditorCommands()
@@ -83,13 +85,22 @@ function createMobileHudContext() {
       : ''
   )
 
-  /** Copies the room's link; a tab not in a room is shared first, never a room it opened. */
-  function share() {
+  /**
+   * Shares the document. A Cloud document opens its share dialog, where its server decides who
+   * may open it. Anything else goes into a room, shared first if it is not in one, never a room it
+   * opened, and its link goes out through the system share sheet, or is copied without one.
+   */
+  async function share() {
+    // A Cloud document shares through its server; signed out, there is nothing to open yet.
+    if (isCloudBinding(store.getStorageBinding())) {
+      openCloudShare(store)
+      return
+    }
     if (!collab) return
     const roomId = collabState.value.roomId ?? collab.shareCurrentDoc()
     if (!roomId) return
-    void copy(getShareURL(roomId))
-    toast.info(notifications.value.linkCopied)
+    const sent = await send(getShareURL(roomId), store.state.documentName)
+    if (sent === 'copied') toast.info(notifications.value.linkCopied)
   }
 
   function disconnect() {

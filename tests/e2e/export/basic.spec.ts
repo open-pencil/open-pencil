@@ -111,7 +111,7 @@ test('format selector changes to JPG', async () => {
   await expect(formatTrigger).toHaveAttribute('aria-label', 'Export format')
   await formatTrigger.click()
 
-  for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF', 'PPTX']) {
+  for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF', 'PPTX', 'draw.io']) {
     await expect(page.locator('[role="option"]').filter({ hasText: label })).toBeVisible()
   }
 
@@ -227,6 +227,16 @@ test('a PPTX export setting downloads a PowerPoint file', async () => {
   await expect(exportItems().first().getByRole('textbox', { name: 'Export scale' })).toHaveCount(0)
   const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
   expect(download.suggestedFilename()).toBe('Export rect 1.pptx')
+  canvas.assertNoErrors()
+})
+
+test('a draw.io export setting downloads a draw.io file', async () => {
+  await createExportableRect([{ scale: 1, format: 'drawio' }])
+  await forceBlobDownload()
+
+  await expect(exportItems().first().getByRole('textbox', { name: 'Export scale' })).toHaveCount(0)
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1.drawio')
   canvas.assertNoErrors()
 })
 

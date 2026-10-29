@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { VariableCollection } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
@@ -58,7 +58,7 @@ function resolveNumber(editor: Editor, id: string, target?: BindingTarget) {
 
 export function useNumberBindingProvider() {
   return useOpenPencilBindingProvider<number>({
-    type: 'FLOAT',
+    types: ['FLOAT'],
     resolve: resolveNumber,
     prepareEdit: (editor, id, target) =>
       prepareModeEdit(editor, id, target, () => resolveNumber(editor, id, target)),

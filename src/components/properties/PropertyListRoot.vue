@@ -2,11 +2,12 @@
 import type { VNode } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { useEditorPropertyList } from '@open-pencil/vue/controls/property-list'
 import {
   PropertyListRoot as HeadlessPropertyListRoot,
-  useEditorPropertyList
-} from '@open-pencil/vue'
-import type { PropertyListKey, PropertyListRootSlotProps } from '@open-pencil/vue'
+  type PropertyListKey,
+  type PropertyListRootSlotProps
+} from '@open-pencil/vue/primitives/PropertyList'
 
 const { propKey, label } = defineProps<{
   propKey: K

@@ -1,4 +1,13 @@
-import { lstat, mkdir, readlink, realpath, writeFile } from 'node:fs/promises'
+import { constants } from 'node:fs'
+import {
+  lstat,
+  mkdir,
+  open,
+  readlink,
+  realpath,
+  writeFile,
+  type FileHandle
+} from 'node:fs/promises'
 import { dirname, basename, isAbsolute, join, parse, resolve, sep as osSep } from 'node:path'
 
 import { compact } from 'es-toolkit/array'
@@ -216,12 +225,35 @@ export async function resolveSafePath(filePath: string, root: string): Promise<S
   return resolveSafePathInternal(filePath, root, 0)
 }
 
-export async function writeToolOutput(
-  toolName: string,
-  result: Record<string, unknown>,
+/**
+ * The tools whose `path` names a file to write their result to, and the bytes each writes. Other
+ * tools' `path` is their own data, such as `create_vector`'s SVG path, and never touches disk.
+ */
+const FILE_OUTPUTS: Record<
+  string,
+  (result: Record<string, unknown>) => string | Uint8Array | null
+> = {
+  export_svg: (result) => (typeof result.svg === 'string' ? result.svg : null),
+  get_jsx: (result) => (typeof result.jsx === 'string' ? result.jsx : null),
+  export_image: (result) =>
+    typeof result.base64 === 'string' ? toUint8Array(result.base64) : null,
+  export_pdf: (result) => (typeof result.base64 === 'string' ? toUint8Array(result.base64) : null)
+}
+
+/** Whether a tool's `path` argument names a file it writes, rather than data of its own. */
+export function writesFileOutput(toolName: string): boolean {
+  return toolName in FILE_OUTPUTS
+}
+
+/** The largest document `/files` passes either way, as the app caps documents it fetches. */
+export const MAX_FILE_TRANSFER_BYTES = 64 * 1024 * 1024
+
+/** Write `content` to a path inside `root`, creating its folders, and return where it landed. */
+export async function writeInsideRoot(
   filePath: string,
-  root: string
-): Promise<MCPResult | null> {
+  root: string,
+  content: string | Uint8Array
+): Promise<{ written: string; byteLength: number }> {
   const { resolved, realPath } = await resolveSafePath(filePath, root)
   // Use the canonical realPath for filesystem operations to prevent TOCTOU:
   // an attacker could swap a directory component with a symlink between
@@ -234,21 +266,71 @@ export async function writeToolOutput(
   // with a symlink between resolveSafePath and the write would be detected
   // here — realpath follows the ancestor symlink and resolves outside root.
   await resolveSafePath(parentDir, root)
-  if (toolName === 'export_svg' && typeof result.svg === 'string') {
-    await writeFile(realPath, result.svg, 'utf8')
-    await resolveSafePath(realPath, root)
-    return ok({ written: resolved, byteLength: Buffer.byteLength(result.svg, 'utf8') })
+  await writeFile(realPath, content)
+  await resolveSafePath(realPath, root)
+  const byteLength =
+    typeof content === 'string' ? Buffer.byteLength(content, 'utf8') : content.byteLength
+  return { written: resolved, byteLength }
+}
+
+const READ_CHUNK_BYTES = 1024 * 1024
+
+/**
+ * Read an open file to its end in chunks, refusing it as soon as it passes the cap, so a file
+ * that grows while it is read is never buffered whole.
+ */
+async function readBounded(handle: FileHandle, name: string): Promise<Uint8Array<ArrayBuffer>> {
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const chunk = new Uint8Array(READ_CHUNK_BYTES)
+    const { bytesRead } = await handle.read(chunk, 0, chunk.length, total)
+    if (bytesRead === 0) break
+    total += bytesRead
+    if (total > MAX_FILE_TRANSFER_BYTES) {
+      throw new Error(`"${name}" is larger than ${MAX_FILE_TRANSFER_BYTES} bytes`)
+    }
+    chunks.push(chunk.subarray(0, bytesRead))
   }
-  if (toolName === 'export_image' && typeof result.base64 === 'string') {
-    const bytes = toUint8Array(result.base64)
-    await writeFile(realPath, bytes)
-    await resolveSafePath(realPath, root)
-    return ok({ written: resolved, byteLength: bytes.length })
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.length
   }
-  if (toolName === 'get_jsx' && typeof result.jsx === 'string') {
-    await writeFile(realPath, result.jsx, 'utf8')
+  return bytes
+}
+
+/** Read a file inside `root`, refusing one larger than `MAX_FILE_TRANSFER_BYTES`. */
+export async function readInsideRoot(
+  filePath: string,
+  root: string
+): Promise<Uint8Array<ArrayBuffer>> {
+  const { realPath } = await resolveSafePath(filePath, root)
+  // One descriptor for the checks and the read, so the file cannot be swapped between them; a
+  // symlink in its place is refused, and a folder swapped above it is caught by the re-check.
+  // Windows has no O_NOFOLLOW (it is undefined there), so only the re-check guards it.
+  const handle = await open(realPath, constants.O_RDONLY | constants.O_NOFOLLOW)
+  try {
+    const stats = await handle.stat()
+    if (!stats.isFile()) throw new Error(`"${basename(realPath)}" is not a file`)
+    if (stats.size > MAX_FILE_TRANSFER_BYTES) {
+      throw new Error(`"${basename(realPath)}" is larger than ${MAX_FILE_TRANSFER_BYTES} bytes`)
+    }
     await resolveSafePath(realPath, root)
-    return ok({ written: resolved, byteLength: Buffer.byteLength(result.jsx, 'utf8') })
+    return await readBounded(handle, basename(realPath))
+  } finally {
+    await handle.close()
   }
-  return null
+}
+
+export async function writeToolOutput(
+  toolName: string,
+  result: Record<string, unknown>,
+  filePath: string,
+  root: string
+): Promise<MCPResult | null> {
+  const content = FILE_OUTPUTS[toolName]?.(result)
+  if (content == null) return null
+  return ok(await writeInsideRoot(filePath, root, content))
 }

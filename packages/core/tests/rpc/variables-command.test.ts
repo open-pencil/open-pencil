@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { executeRPCCommand, type TokensResult } from '@open-pencil/core/rpc'
+import { executeRPCCommand, type TokensResult, type VariablesResult } from '@open-pencil/core/rpc'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 function graphWithTokens(): SceneGraph {
   const graph = new SceneGraph()
@@ -38,5 +39,24 @@ describe('tokens command', () => {
     expect(() => executeRPCCommand(graphWithTokens(), 'tokens', { type: 'shadow' })).toThrow(
       'Unknown variable type: shadow. Use COLOR, FLOAT, STRING, BOOLEAN.'
     )
+  })
+})
+
+describe('variables command', () => {
+  test('lists a formula as written, with what it gives', async () => {
+    const graph = graphWithTokens()
+    const gap = [...graph.variables.values()].find((variable) => variable.name === 'Gap')
+    const collection = [...graph.variableCollections.values()][0]
+    if (!gap || !collection) throw new Error('Missing token')
+    const large = graph.createVariable('Large', 'FLOAT', collection.id, 0)
+    large.valuesByMode[collection.defaultModeId] = parseVariableFormula(
+      graph,
+      large.id,
+      collection.defaultModeId,
+      '({Gap} * 2)'
+    ).value
+    const result = (await executeRPCCommand(graph, 'variables', {})) as VariablesResult
+    const values = result.collections.flatMap((entry) => entry.variables)
+    expect(values.find((variable) => variable.name === 'Large')?.value).toBe('{Gap} * 2 = 16')
   })
 })

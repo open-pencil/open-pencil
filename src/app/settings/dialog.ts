@@ -9,8 +9,10 @@ export type SettingsSection =
   | 'privacy'
   | 'mcp'
   | 'tools'
+  | 'fonts'
   | 'media'
   | 'storage'
+  | 'cloud'
 
 export const settingsDialogOpen = ref(false)
 export const settingsDialogSection = ref<SettingsSection>('general')

@@ -7,7 +7,7 @@ import type { RecordedWheelSample } from '@open-pencil/core/profiler'
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetup('/?test&no-chrome&no-rulers&renderer=tiled&navigation-benchmark')
-const WheelSample: v.GenericSchema<unknown, RecordedWheelSample> = v.object({
+const wheelSampleSchema: v.GenericSchema<unknown, RecordedWheelSample> = v.object({
   timeMs: v.number(),
   deltaX: v.number(),
   deltaY: v.number(),
@@ -20,9 +20,13 @@ const WheelSample: v.GenericSchema<unknown, RecordedWheelSample> = v.object({
   cancelable: v.optional(v.boolean(), true),
   directionInvertedFromDevice: v.optional(v.boolean())
 })
-const GestureJSON = v.pipe(v.string(), v.parseJson(), v.object({ wheel: v.array(WheelSample) }))
+const gestureSchema = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ wheel: v.array(wheelSampleSchema) })
+)
 const reversal = v.parse(
-  GestureJSON,
+  gestureSchema,
   readFileSync('tests/fixtures/navigation/gestures/synthetic-repeated-pinch-reversal.json', 'utf8')
 )
 

@@ -1,20 +1,20 @@
 import * as v from 'valibot'
 
-import { validateVectorNetwork } from '@open-pencil/scene-graph'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { validateVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
-const finiteNumber = v.pipe(v.number(), v.finite())
+const finiteNumberSchema = v.pipe(v.number(), v.finite())
 const zeroVector = () => ({ x: 0, y: 0 })
-const point = v.object({ x: finiteNumber, y: finiteNumber })
+const pointSchema = v.object({ x: finiteNumberSchema, y: finiteNumberSchema })
 
-const VectorNetworkShape = v.object({
+const vectorNetworkSchema = v.object({
   vertices: v.array(
     v.object({
-      x: finiteNumber,
-      y: finiteNumber,
+      x: finiteNumberSchema,
+      y: finiteNumberSchema,
       strokeCap: v.optional(v.string()),
       strokeJoin: v.optional(v.string()),
-      cornerRadius: v.optional(finiteNumber),
+      cornerRadius: v.optional(finiteNumberSchema),
       handleMirroring: v.optional(v.picklist(['NONE', 'ANGLE', 'ANGLE_AND_LENGTH']))
     })
   ),
@@ -22,8 +22,8 @@ const VectorNetworkShape = v.object({
     v.object({
       start: v.pipe(v.number(), v.integer()),
       end: v.pipe(v.number(), v.integer()),
-      tangentStart: v.optional(point, zeroVector),
-      tangentEnd: v.optional(point, zeroVector)
+      tangentStart: v.optional(pointSchema, zeroVector),
+      tangentEnd: v.optional(pointSchema, zeroVector)
     })
   ),
   regions: v.optional(
@@ -42,21 +42,21 @@ const VectorNetworkShape = v.object({
  * `validateVectorNetwork`; the shape schema then types the value and fills missing tangents
  * and regions.
  */
-const VectorNetworkJSON = v.pipe(
+const vectorNetworkJSONSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.rawCheck<unknown>(({ dataset, addIssue }) => {
     if (!dataset.typed) return
     for (const message of validateVectorNetwork(dataset.value)) addIssue({ message })
   }),
-  VectorNetworkShape
+  vectorNetworkSchema
 )
 
 export type VectorNetworkJSONResult = { network: VectorNetwork } | { error: string }
 
 /** Parse and validate VectorNetwork JSON, returning a tool error instead of throwing. */
 export function parseVectorNetworkJSON(text: string): VectorNetworkJSONResult {
-  const result = v.safeParse(VectorNetworkJSON, text)
+  const result = v.safeParse(vectorNetworkJSONSchema, text)
   if (result.success) return { network: result.output }
   if (result.issues.some((issue) => issue.type === 'parse_json'))
     return { error: 'Invalid VectorNetwork JSON' }

@@ -1,13 +1,12 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   behaviourToSpec,
-  instanceMainComponent,
   readBehaviour,
-  slotPropertyId,
   textBinding,
-  type BehaviourKind,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type BehaviourKind
+} from '@open-pencil/scene-graph/behaviours'
+import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { REKA_ELEMENTS, rekaRole } from '../behaviours'
 import type { JSXProp, JSXValue } from './value'

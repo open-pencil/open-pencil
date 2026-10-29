@@ -232,7 +232,8 @@ describe('Tauri MCP spawning', () => {
               OPENPENCIL_MCP_CORS_ORIGIN: 'tauri://localhost',
               OPENPENCIL_MCP_TCP: '1',
               OPENPENCIL_MCP_ROOT: '/mock/home',
-              OPENPENCIL_MCP_APP_TIMEOUT_MS: '30000'
+              OPENPENCIL_MCP_APP_TIMEOUT_MS: '30000',
+              OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1'
             }
           }
         })
@@ -273,5 +274,87 @@ describe('Tauri MCP spawning', () => {
       )
     ).toBe(true)
     expect(calls.at(-1)).toEqual({ cmd: 'plugin:shell|kill', args: { cmd: 'killChild', pid: 77 } })
+  })
+
+  test('keeps waiting for a server that is slow to answer while its child runs', async () => {
+    installTauriMockWindow()
+    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { platform: 'Win32', userAgent: 'Windows' }
+    })
+
+    let healthChecks = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async () => {
+        healthChecks += 1
+        // Slower than the five fixed tries the app used to allow.
+        if (healthChecks <= 9) return new Response('', { status: 404 })
+        return new Response(
+          JSON.stringify({
+            status: 'ok',
+            version: '0.0.0-test',
+            authRequired: true,
+            discoveryPath: DISCOVERY_PATH
+          }),
+          { status: 200 }
+        )
+      })
+    )
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
+      if (cmd === 'plugin:shell|spawn') return 77
+      const pathArg = (args as { path?: string })?.path
+      if (cmd === 'plugin:fs|exists') return pathArg === DISCOVERY_PATH
+      if (cmd === 'plugin:fs|read_text_file')
+        return pathArg === DISCOVERY_PATH ? new TextEncoder().encode(DISCOVERY_JSON) : null
+      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
+      return null
+    })
+
+    const handle = await spawnMCPIfNeeded({
+      earlyExitMs: 5,
+      healthPollMs: 5,
+      healthDeadlineMs: 5000
+    })
+    expect(handle?.managed).toBe(true)
+    expect(healthChecks).toBeGreaterThan(9)
+  })
+
+  test('reports a child that exits while the app waits as exited, not as a timeout', async () => {
+    installTauriMockWindow()
+    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
+    })
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
+      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
+      if (cmd === 'plugin:fs|exists') return false
+      if (cmd === 'plugin:shell|spawn') {
+        const onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent
+          .onmessage
+        // Past the early-exit window, before the deadline.
+        setTimeout(() => onEvent({ event: 'Terminated', payload: { code: 3, signal: null } }), 40)
+        return 88
+      }
+      return null
+    })
+
+    const handle = await spawnMCPIfNeeded({
+      earlyExitMs: 5,
+      healthPollMs: 5,
+      healthDeadlineMs: 5000
+    })
+    expect(handle).toBeNull()
+    expect(getAutomationStartupFailure()).toMatchObject({
+      code: 'exited',
+      detail: expect.stringContaining('code=3')
+    })
   })
 })

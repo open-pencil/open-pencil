@@ -13,6 +13,7 @@ import {
   VALUE_FONT_SIZE
 } from '#core/constants'
 import { withTextMeasurer } from '#core/layout/text-measurement'
+import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { fontManager } from '#core/text/fonts'
 import { prepareGraphFonts } from '#core/text/prepare'
 import {
@@ -125,7 +126,9 @@ export async function loadFonts(
 
   const [fontData, titleData] = await Promise.all([
     fontManager.loadFont(DEFAULT_FONT_FAMILY, 'Regular'),
-    fontManager.fetchBundledFont(SECTION_TITLE_FONT_URL).catch(() => null)
+    fontManager.fetchBundledFont(SECTION_TITLE_FONT_URL).catch(() => null),
+    // Without it emoji only take the text font's missing-glyph width; text still draws.
+    fontManager.loadFont(EMOJI_METRICS_FAMILY, 'Regular').catch(() => null)
   ])
   if (r.isDestroyed()) return
   if (titleData) registerSectionTitleFont(r, titleData)

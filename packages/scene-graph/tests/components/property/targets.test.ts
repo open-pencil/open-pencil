@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, findComponentPropertyTarget } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { findComponentPropertyTarget } from '@open-pencil/scene-graph/components'
 
 test('component properties follow source identity when instance siblings are reordered', () => {
   const graph = new SceneGraph()

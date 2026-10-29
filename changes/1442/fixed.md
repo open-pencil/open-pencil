@@ -1,0 +1,1 @@
+- CJK text in the desktop app and with local fonts in the browser no longer runs CanvasKit out of memory after repeated edits, saves, and exports: system fallback fonts are read once and registered once, instead of on every preparation.

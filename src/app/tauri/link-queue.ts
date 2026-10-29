@@ -1,0 +1,39 @@
+import * as v from 'valibot'
+
+import { isTauri } from '@/app/tauri/env'
+
+/**
+ * Hands the desktop app's queued links to `open`: those that arrived before the editor started,
+ * then each batch the native side announces with `event`. `command` drains the queue, and its
+ * answer is checked against `schema` before anything opens.
+ */
+export async function bindDesktopLinkQueue<T>(options: {
+  event: string
+  command: string
+  schema: v.GenericSchema<unknown, T>
+  label: string
+  open: (item: T) => unknown
+}): Promise<() => void> {
+  if (!isTauri()) return () => undefined
+  const [{ invoke }, { listen }] = await Promise.all([
+    import('@tauri-apps/api/core'),
+    import('@tauri-apps/api/event')
+  ])
+  const queue = v.array(options.schema)
+  async function drain() {
+    const items = v.parse(queue, await invoke<unknown>(options.command))
+    // The native side already emptied its queue, so one link that fails must not drop the rest.
+    for (const item of items) {
+      try {
+        await options.open(item)
+      } catch (error) {
+        console.error(`[${options.label}]`, error)
+      }
+    }
+  }
+  const stop = await listen(options.event, () => {
+    void drain().catch((error: unknown) => console.error(`[${options.label}]`, error))
+  })
+  await drain()
+  return stop
+}

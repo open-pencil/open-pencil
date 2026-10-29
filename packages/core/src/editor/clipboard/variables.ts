@@ -1,11 +1,10 @@
+import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import { remapStyleRunReferences, styleRunReferences } from '@open-pencil/scene-graph/text'
 import {
-  remapStyleRunReferences,
-  styleRunReferences,
-  type SceneGraph,
-  type SceneNode,
-  type Variable,
-  type VariableCollection
-} from '@open-pencil/scene-graph'
+  isUnsupportedVariableValue,
+  mapVariableValueReferences,
+  variableValueReferences
+} from '@open-pencil/scene-graph/variables'
 
 export interface ClipboardVariables {
   activeModes: Array<[string, string]>
@@ -19,15 +18,26 @@ export function captureClipboardVariables(
 ): ClipboardVariables {
   const variables = new Map<string, Variable>()
   const collections = new Map<string, VariableCollection>()
+  function capture(collection: VariableCollection | undefined) {
+    if (collection && !collections.has(collection.id))
+      collections.set(collection.id, structuredClone(collection))
+  }
   function visit(id: string) {
     if (variables.has(id)) return
     const variable = graph.variables.get(id)
     if (!variable) return
     variables.set(id, structuredClone(variable))
-    const collection = graph.variableCollections.get(variable.collectionId)
-    if (collection) collections.set(collection.id, structuredClone(collection))
+    capture(graph.variableCollections.get(variable.collectionId))
     for (const value of Object.values(variable.valuesByMode)) {
-      if (typeof value === 'object' && 'aliasId' in value) visit(value.aliasId)
+      for (const reference of variableValueReferences(value)) visit(reference)
+      // A kept expression can name a mode of a collection none of its aliases reach.
+      if (isUnsupportedVariableValue(value))
+        for (const modeId of value.modes)
+          capture(
+            [...graph.variableCollections.values()].find((collection) =>
+              collection.modes.some((mode) => mode.modeId === modeId)
+            )
+          )
     }
   }
   for (const node of nodes) {
@@ -74,9 +84,11 @@ export function importClipboardVariables(graph: SceneGraph, dependencies: Clipbo
     valuesByMode: Object.fromEntries(
       Object.entries(variable.valuesByMode).map(([mode, value]) => [
         modeIds.get(mode) ?? mode,
-        typeof value === 'object' && 'aliasId' in value
-          ? { aliasId: variableIds.get(value.aliasId) ?? value.aliasId }
-          : structuredClone(value)
+        mapVariableValueReferences(
+          value,
+          (id) => variableIds.get(id) ?? id,
+          (id) => modeIds.get(id) ?? id
+        )
       ])
     )
   }))

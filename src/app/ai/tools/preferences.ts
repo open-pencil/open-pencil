@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { configurableAITools, isAIToolEnabled } from './catalog'
 
-const OverridesJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.boolean()))
+const overridesSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.boolean()))
 
 export const aiToolOverrides = useLocalStorage<Record<string, boolean>>(
   'open-pencil:ai:tool-access',
@@ -12,7 +12,7 @@ export const aiToolOverrides = useLocalStorage<Record<string, boolean>>(
   {
     serializer: {
       read: (raw) => {
-        const result = v.safeParse(OverridesJSON, raw)
+        const result = v.safeParse(overridesSchema, raw)
         return result.success ? result.output : {}
       },
       write: JSON.stringify

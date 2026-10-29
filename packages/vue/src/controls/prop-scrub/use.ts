@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { NumericNodeProperty, SceneNode } from '@open-pencil/scene-graph'
 
 import { useNodePreview } from '#vue/controls/node-preview/use'

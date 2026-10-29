@@ -1,0 +1,1 @@
+- FigJam sticky notes open from `.fig` files and paste from FigJam with their colour, text, author line, wide shape, and scale, and save back so Figma shows them as sticky notes (#1118).

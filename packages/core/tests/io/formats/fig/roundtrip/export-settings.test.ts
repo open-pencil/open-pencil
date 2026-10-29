@@ -1,14 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import {
-  exportFigFile,
-  initCodec,
-  parseFigFile,
-  SceneGraph,
-  type NodeChange
-} from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { effectiveFigmaRawNodeFields, parseFigBuffer, materializeDocument } from '@open-pencil/fig'
-import { MAX_EXPORT_SCALE } from '@open-pencil/scene-graph'
+import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { MAX_EXPORT_SCALE } from '@open-pencil/scene-graph/export-scale'
 
 function decodeExport(bytes: Uint8Array) {
   return parseFigBuffer(new Uint8Array(bytes).buffer)

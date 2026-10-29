@@ -1,20 +1,24 @@
 import { isEmptyObject, isEqual, omitBy, pick } from 'es-toolkit'
 
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
+import type {
+  SceneNode,
+  TextParagraphSpacingField,
+  TextParagraphStyle
+} from '@open-pencil/scene-graph'
 import {
   hasParagraphSpacing,
   MAX_LIST_INDENTATION,
   paragraphStyleAt,
   textParagraphRanges,
-  withParagraphSpacing,
-  type SceneNode,
-  type TextParagraphSpacingField,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+  withParagraphSpacing
+} from '@open-pencil/scene-graph/text'
 
-import { AUTO } from '../overrides/text'
+import { TEXT_CASE, TEXT_DECORATION } from '../enums'
+import { AUTO, textLengthJSX } from '../overrides/text'
 import { SPAN_STYLE_FIELDS, type SpanStyle } from '../text-content'
 import { collectDecorationProps } from './decoration'
+import { collectFontSettingProps } from './font'
 import { collectFillProps } from './paint'
 import { fontWeightValue } from './props'
 import { propAttribute, type JSXProp } from './value'
@@ -52,12 +56,17 @@ function spanProps(style: SpanStyle, node: SceneNode): JSXProp[] {
   if (style.fontWeight !== undefined) props.push(['weight', fontWeightValue(style.fontWeight)])
   if (style.italic !== undefined) props.push(['italic', style.italic])
   if (style.fills) collectFillProps({ ...node, fills: style.fills }, props)
-  if (style.lineHeight !== undefined) props.push(['lineHeight', style.lineHeight ?? AUTO])
-  if (style.letterSpacing !== undefined) props.push(['letterSpacing', style.letterSpacing])
+  if (style.lineHeight !== undefined) {
+    props.push(['lineHeight', style.lineHeight ? textLengthJSX(style.lineHeight) : AUTO])
+  }
+  if (style.letterSpacing !== undefined) {
+    props.push(['letterSpacing', textLengthJSX(style.letterSpacing)])
+  }
   if (style.textDecoration !== undefined)
-    props.push(['textDecoration', style.textDecoration.toLowerCase()])
+    props.push(['textDecoration', TEXT_DECORATION.print(style.textDecoration)])
   collectDecorationProps(style, node, props)
-  if (style.textCase !== undefined) props.push(['textCase', style.textCase.toLowerCase()])
+  collectFontSettingProps(style, props)
+  if (style.textCase !== undefined) props.push(['textCase', TEXT_CASE.print(style.textCase)])
   if (style.hyperlink) props.push(['href', style.hyperlink.value])
   return props
 }

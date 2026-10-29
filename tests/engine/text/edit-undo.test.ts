@@ -2,13 +2,12 @@ import { describe, test, expect } from 'bun:test'
 
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
-import type { StyleRun } from '@open-pencil/core'
-import { createTextActions } from '@open-pencil/core/editor'
-import type { EditorContext, EditorState } from '@open-pencil/core/editor'
+import { createTextActions, type EditorContext, type EditorState } from '@open-pencil/core'
 import { iconify } from '@open-pencil/core/icons'
-import { getInstanceOverride } from '@open-pencil/scene-graph'
-import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
+import { TextEditor } from '@open-pencil/core/text'
+import { SceneGraph, type StyleRun, type DerivedTextGlyph } from '@open-pencil/scene-graph'
+import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import { fontManager } from '#core/text/fonts'
 
@@ -40,6 +39,7 @@ function setup() {
     requestRefresh: () => {
       state.sceneVersion++
     },
+    getUserName: () => '',
     requestRepaint: () => {
       state.renderVersion++
     },
@@ -85,10 +85,10 @@ function straightTextPathNetwork() {
 }
 
 async function setupPathText() {
-  const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+  const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
   expect(font).toBeTruthy()
   if (!font) return null
-  fontManager.markLoaded('Inter', 'Regular', font)
+  await fontManager.markLoaded('Inter', 'Regular', font)
 
   const setupResult = setup()
   const glyphs: DerivedTextGlyph[] = [
@@ -161,6 +161,29 @@ describe('text edit undo', () => {
 
     undo.redo()
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello World')
+  })
+
+  test('ends the edit when an undo takes the text away, and leaves its redo in place', () => {
+    const { graph, undo, textEditor, state, textNode, actions } = setup()
+    const pageId = state.currentPageId
+    const snapshot = structuredClone(textNode)
+    // The step that made the text, as a duplicate or a paste records one.
+    undo.push({
+      label: 'Duplicate',
+      forward: () => graph.createNodeWithId(snapshot.id, 'TEXT', pageId, snapshot),
+      inverse: () => graph.deleteNode(snapshot.id)
+    })
+    actions.startTextEditing(textNode.id)
+
+    actions.runTextEditStep(() => undo.undo())
+    expect(graph.getNode(textNode.id)).toBeUndefined()
+    expect(textEditor.isActive).toBe(false)
+    expect(state.editingTextId).toBeNull()
+
+    actions.runTextEditStep(() => undo.redo())
+    expect(graph.getNode(textNode.id)).toBeDefined()
+    expect(undo.canUndo).toBe(true)
+    expect(undo.undoLabel).toBe('Duplicate')
   })
 
   test('undoes a change made while editing on its own, then the typing before it', () => {
@@ -552,5 +575,28 @@ describe('editing text a component property drives', () => {
     expect(getNodeOrThrow(graph, instance.id).componentPropertyAssignments).toEqual({})
     expect(getNodeOrThrow(graph, label.id).text).toBe('Buy')
     expect(getNodeOrThrow(graph, caption.id).text).toBe('Buy')
+  })
+
+  test('typing over text a variable decides lets go of the variable in the same step', () => {
+    const { graph, undo, textEditor, textNode, actions } = setup()
+    const collection = graph.createCollection('Copy')
+    const count = graph.createVariable('count', 'FLOAT', collection.id, 3)
+    graph.bindVariable(textNode.id, 'text', count.id)
+    graph.updateNode(textNode.id, { text: '3' })
+
+    actions.startTextEditing(textNode.id)
+    textEditor.insert(' items', getNodeOrThrow(graph, textNode.id))
+    actions.commitTextEdit()
+
+    expect(getNodeOrThrow(graph, textNode.id)).toMatchObject({
+      text: '3 items',
+      boundVariables: {}
+    })
+    undo.undo()
+    expect(getNodeOrThrow(graph, textNode.id)).toMatchObject({
+      text: '3',
+      boundVariables: { text: count.id }
+    })
+    expect(undo.canUndo).toBe(false)
   })
 })

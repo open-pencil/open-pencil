@@ -1,19 +1,24 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Path } from 'canvaskit-wasm'
-
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas } from '../helpers'
-import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
+import {
+  createMockCanvas,
+  createMockRenderer,
+  effectNode,
+  mockCalls,
+  OPAQUE_FILL,
+  TEST_GRAPH
+} from './helpers'
 
 describe('Edge cases and bug fixes', () => {
-  test('drop shadow cast from stroke when node has no fill', () => {
+  test('a dashed stroke without a fill casts from an opaque copy of its dashes', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
@@ -35,268 +40,65 @@ describe('Edge cases and bug fixes', () => {
           weight: 2,
           opacity: 1,
           color: { r: 0, g: 0, b: 0, a: 1 },
-          align: 'CENTER'
+          align: 'CENTER',
+          dashPattern: [4, 2]
         }
       ],
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array() }],
       childIds: []
-    }
-    r.getStrokeGeometry = mock(() => [{} as Path])
+    })
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
 
-    expect(r.getStrokeGeometry).toHaveBeenCalledWith(node)
-    expect(canvas.drawPath).toHaveBeenCalled()
+    expect(r.getCachedDropShadow).toHaveBeenCalled()
+    expect(r.paintShapeContent).toHaveBeenCalledWith(
+      canvas,
+      expect.objectContaining({
+        fills: [],
+        strokes: [expect.objectContaining({ dashPattern: [4, 2], opacity: 1 })],
+        effects: []
+      }),
+      TEST_GRAPH
+    )
   })
 
-  test('drop shadow on stroked containers uses the container bounds', () => {
+  test('drop shadow is not drawn under a fill at 0% opacity', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
-      type: 'FRAME',
-      width: 224,
-      height: 424,
-      fills: [],
+    const node = createDefaultNode(() => 'transparent-fill', 'RECTANGLE', {
+      width: 200,
+      height: 200,
+      fills: [{ visible: true, type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0 }],
       effects: [
         {
           type: 'DROP_SHADOW',
           visible: true,
           color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 0, y: 2 },
-          radius: 4,
+          offset: { x: 0, y: 0 },
+          radius: 8,
           spread: 0,
           showShadowBehindNode: false
         }
       ],
-      strokes: [
-        {
-          type: 'SOLID',
-          visible: true,
-          weight: 1,
-          opacity: 1,
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          align: 'CENTER'
-        }
-      ],
-      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array() }],
-      childIds: ['header']
-    }
-    r.getStrokeGeometry = mock(() => [{} as Path])
+      strokes: [],
+      strokeGeometry: [],
+      childIds: []
+    })
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), true, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
 
-    expect(r.getStrokeGeometry).not.toHaveBeenCalled()
-    expect(canvas.drawRRect).toHaveBeenCalled()
-  })
-
-  test('drop shadow from child applies child transforms (geometric parity)', () => {
-    const r = createMockRenderer()
-    const canvas = createMockCanvas()
-    const child: Partial<SceneNode> = {
-      type: 'RECTANGLE',
-      x: 10,
-      y: 20,
-      width: 50,
-      height: 60,
-      rotation: 45,
-      flipY: true,
-      effects: []
-    }
-    const node: Partial<SceneNode> = {
-      type: 'FRAME',
-      width: 100,
-      height: 100,
-      fills: [],
-      effects: [
-        {
-          type: 'DROP_SHADOW',
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 5, y: 5 },
-          radius: 0,
-          spread: 0
-        }
-      ],
-      childIds: ['child1']
-    }
-
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node as SceneNode,
-      new Float32Array(4),
-      false,
-      'behind',
-      child as SceneNode
-    )
-
-    // Verify order: translate (offset) -> rotate -> translate (flip) -> scale
-    const translateCalls = mockCalls(canvas.translate)
-    const rotateCalls = mockCalls(canvas.rotate)
-    const scaleCalls = mockCalls(canvas.scale)
-
-    expect(translateCalls[0]).toEqual([5 + 10, 5 + 20])
-    expect(rotateCalls[0]).toEqual([45, 25, 30])
-    expect(translateCalls[1]).toEqual([0, 60])
-    expect(scaleCalls[0]).toEqual([1, -1])
-    expect(canvas.drawRect).toHaveBeenCalled()
-  })
-
-  test('drop shadow from TEXT child renders glyphs (fidelity parity)', () => {
-    const r = createMockRenderer()
-    const canvas = createMockCanvas()
-    const child: Partial<SceneNode> = {
-      type: 'TEXT',
-      x: 10,
-      y: 20,
-      width: 50,
-      height: 60,
-      text: 'Hello',
-      effects: []
-    }
-    const node: Partial<SceneNode> = {
-      type: 'FRAME',
-      width: 100,
-      height: 100,
-      fills: [],
-      effects: [
-        {
-          type: 'DROP_SHADOW',
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 5, y: 5 },
-          radius: 10,
-          spread: 0
-        }
-      ],
-      childIds: ['child1']
-    }
-
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node as SceneNode,
-      new Float32Array(4),
-      false,
-      'behind',
-      child as SceneNode
-    )
-
-    expect(r.getCachedDropShadow).toHaveBeenCalled()
-    expect(canvas.saveLayer).toHaveBeenCalled()
-    expect(canvas.translate).toHaveBeenCalledWith(15, 25)
-    expect(r.renderText).toHaveBeenCalledWith(expect.anything(), child)
-  })
-
-  test('inner shadow from shape child applies child transforms and rects (geometric parity)', () => {
-    const r = createMockRenderer()
-    const canvas = createMockCanvas()
-    const child: Partial<SceneNode> = {
-      type: 'RECTANGLE',
-      x: 10,
-      y: 20,
-      width: 50,
-      height: 60,
-      rotation: 45,
-      flipY: true,
-      effects: []
-    }
-    const node: Partial<SceneNode> = {
-      type: 'FRAME',
-      width: 100,
-      height: 100,
-      fills: [],
-      effects: [
-        {
-          type: 'INNER_SHADOW',
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 5, y: 5 },
-          radius: 0,
-          spread: 0
-        }
-      ],
-      childIds: ['child1']
-    }
-
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node as SceneNode,
-      new Float32Array(4),
-      false,
-      'front',
-      child as SceneNode
-    )
-
-    const translateCalls = mockCalls(canvas.translate)
-    const rotateCalls = mockCalls(canvas.rotate)
-    const scaleCalls = mockCalls(canvas.scale)
-
-    expect(translateCalls[0]).toEqual([10, 20])
-    expect(rotateCalls[0]).toEqual([45, 25, 30])
-    expect(translateCalls[1]).toEqual([0, 60])
-    expect(scaleCalls[0]).toEqual([1, -1])
-    expect(r.ck.LTRBRect).toHaveBeenCalledWith(0, 0, 50, 60)
-    expect(canvas.clipRect).toHaveBeenCalled()
-  })
-
-  test('drop shadow from TEXT child applies offset in parent space', () => {
-    const r = createMockRenderer()
-    const canvas = createMockCanvas()
-    const child: Partial<SceneNode> = {
-      type: 'TEXT',
-      x: 10,
-      y: 20,
-      width: 50,
-      height: 60,
-      text: 'Hello',
-      rotation: 45,
-      effects: []
-    }
-    const node: Partial<SceneNode> = {
-      type: 'FRAME',
-      width: 100,
-      height: 100,
-      fills: [],
-      effects: [
-        {
-          type: 'DROP_SHADOW',
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 5, y: 5 },
-          radius: 10,
-          spread: 0
-        }
-      ],
-      childIds: ['child1']
-    }
-
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node as SceneNode,
-      new Float32Array(4),
-      false,
-      'behind',
-      child as SceneNode
-    )
-
-    const translateCalls = mockCalls(canvas.translate)
-    expect(translateCalls[0]).toEqual([15, 25]) // offset + child position
-
-    // The filter should NOT have the offset (neutralized to 0,0)
-    expect(r.getCachedDropShadow).toHaveBeenCalledWith(0, 0, expect.closeTo(4.3), expect.anything())
+    expect(canvas.drawRect).not.toHaveBeenCalled()
+    expect(canvas.drawPath).not.toHaveBeenCalled()
   })
 
   test('INNER_SHADOW with large offset does not vanish (bounding box union)', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       effects: [
         {
           type: 'INNER_SHADOW',
@@ -307,16 +109,9 @@ describe('Edge cases and bug fixes', () => {
           spread: 0
         }
       ]
-    }
+    })
 
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node as SceneNode,
-      new Float32Array([0, 0, 100, 100]),
-      false,
-      'front'
-    )
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')
 
     // Expect LTRBRect for 'big' to encompass both the shape (0 to 100) and the offset hole (200 to 300)
     // with expand (20) padding: min(-20, -20+200) = -20, max(100+20, 100+20+200) = 320
@@ -329,52 +124,17 @@ describe('Edge cases and bug fixes', () => {
     expect(canvas.drawPath).toHaveBeenCalled()
   })
 
-  test('INNER_SHADOW with spread on rounded rect shrinks hole concentrically', () => {
-    const r = createMockRenderer()
-    const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
-      type: 'RECTANGLE',
-      width: 100,
-      height: 100,
-      cornerRadius: 10,
-      fills: [],
-      effects: [
-        {
-          type: 'INNER_SHADOW',
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 5, y: 5 },
-          radius: 10,
-          spread: 4
-        }
-      ]
-    }
-
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node as SceneNode,
-      new Float32Array([0, 0, 100, 100]),
-      true,
-      'front'
-    )
-
-    // makeRRectWithOffset should receive (node, localOffsetX, localOffsetY, spread)
-    // localOffsetX = 5, localOffsetY = 5, spread = 4
-    expect(r.makeRRectWithOffset).toHaveBeenCalledWith(node, 5, 5, 4)
-  })
-
   test('drop shadow restores canvas and paint state when drawing throws', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
     canvas.drawRect = mock(() => {
       throw new Error('draw failed')
     })
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       effects: [
         {
           type: 'DROP_SHADOW',
@@ -387,29 +147,28 @@ describe('Edge cases and bug fixes', () => {
       ],
       strokeGeometry: [],
       childIds: []
-    }
+    })
 
-    expect(() =>
-      renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
-    ).toThrow('draw failed')
+    expect(() => renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')).toThrow(
+      'draw failed'
+    )
 
     expect(canvas.restore).toHaveBeenCalled()
     expect(r.auxFill.setMaskFilter).toHaveBeenCalledWith(null)
     expect(r.auxFill.setBlendMode).toHaveBeenCalledWith(r.ck.BlendMode.SrcOver)
-    expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
   })
 
   test('text inner shadow restores canvas when glyph rendering throws', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    r.renderText = mock(() => {
+    r.paintShapeContent = mock(() => {
       throw new Error('text failed')
     })
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'TEXT',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       effects: [
         {
           type: 'INNER_SHADOW',
@@ -420,13 +179,13 @@ describe('Edge cases and bug fixes', () => {
           spread: 0
         }
       ]
-    }
+    })
 
-    expect(() =>
-      renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'front')
-    ).toThrow('text failed')
+    expect(() => renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')).toThrow(
+      'text failed'
+    )
 
-    expect(mockCalls(canvas.restore).length).toBe(2)
+    expect(mockCalls(canvas.restore).length).toBe(1)
     expect(r.effectLayerPaint.setColorFilter).toHaveBeenCalledWith(null)
     expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
   })

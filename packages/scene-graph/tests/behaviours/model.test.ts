@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   behaviourOwner,
   emptyBehaviour,
   guessInteractionStates,
   missingBindings,
   readBehaviour,
-  SceneGraph,
   withBehaviour
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/behaviours'
 
 /** A Switch set with a State variant property and a Thumb slot. */
 function switchSet() {

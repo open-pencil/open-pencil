@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { IORegistry } from '@open-pencil/core/io'
-import { createSelectedNodeState } from '@open-pencil/vue'
+import { createSelectedNodeState } from '@open-pencil/vue/editor/selection-state'
 
 import { createDocumentExportActions } from '@/app/document/export'
 import { createDocumentIOActions } from '@/app/document/io'
@@ -72,6 +72,11 @@ export function createEditorStoreModules(
     ...flash,
     ...pen,
     ...vectorEdit,
+    /** Going read-only keeps a vector edit in progress, as the editor keeps edited text. */
+    setReadOnly(readOnly: boolean) {
+      if (readOnly) vectorEdit.exitNodeEditMode(true)
+      editor.setReadOnly(readOnly)
+    },
     openFigFile: documentIO.openFigFile,
     openDOMFile: documentIO.openDOMFile,
     importDOMText: documentIO.importDOMText,
@@ -81,6 +86,10 @@ export function createEditorStoreModules(
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
+    /** Counts the document changed by something outside its history, so it gets saved. */
+    markDocumentChanged: documentIO.markDocumentChanged,
+    /** Applies changes the document already has elsewhere, such as its room's, as no edit. */
+    adoptChanges: documentIO.adoptChanges,
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
     getDocumentFilePath: documentIO.getDocumentFilePath,
@@ -95,6 +104,7 @@ export function createEditorStoreModules(
     setStorageDocumentSource: documentIO.setStorageDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
     saveFigFileToPath: documentIO.saveFigFileToPath,
+    saveFigFileCopy: documentIO.saveFigFileCopy,
     saveFigFileToStorage: documentIO.saveFigFileToStorage,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
     designCheck,

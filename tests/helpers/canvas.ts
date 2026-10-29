@@ -1,5 +1,13 @@
 import type { Page, Locator } from '@playwright/test'
 
+import { OFFICIAL_CLOUD_URL } from '@/constants'
+
+/**
+ * The app asks the official Cloud server whether Cloud is open yet and carries on without an
+ * answer, so a request to it that fails is the network's, not the app's.
+ */
+const OFFICIAL_CLOUD_ORIGIN = new URL(OFFICIAL_CLOUD_URL).origin
+
 export class CanvasHelper {
   readonly page: Page
   readonly canvas: Locator
@@ -10,7 +18,9 @@ export class CanvasHelper {
     this.canvas = page.getByTestId('canvas-area')
     page.on('pageerror', (err) => this.errors.push(err.message))
     page.on('console', (msg) => {
-      if (msg.type() === 'error') this.errors.push(msg.text())
+      if (msg.type() !== 'error') return
+      if (msg.location().url.startsWith(OFFICIAL_CLOUD_ORIGIN)) return
+      this.errors.push(msg.text())
     })
   }
 
@@ -69,6 +79,20 @@ export class CanvasHelper {
     await this.waitForRender()
   }
 
+  async pasteSVG(markup: string, x: number, y: number) {
+    return this.page.evaluate(
+      async ({ markup, x, y }) => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const pasted = await store.pasteSVG(markup, x, y)
+        store.clearSelection()
+        store.requestRender()
+        return pasted
+      },
+      { markup, x, y }
+    )
+  }
+
   async screenshotCanvas() {
     return this.canvas.screenshot()
   }
@@ -124,7 +148,7 @@ export class CanvasHelper {
   }
 
   async drawSection(x: number, y: number, width: number, height: number) {
-    await this.pressKey('s')
+    await this.pressKey('Shift+KeyS')
     await this.drag(x, y, x + width, y + height)
     await this.waitForRender()
   }
@@ -135,7 +159,7 @@ export class CanvasHelper {
     const keys: Record<string, string> = {
       select: 'v',
       frame: 'f',
-      section: 's',
+      section: 'Shift+KeyS',
       rectangle: 'r',
       ellipse: 'o',
       text: 't',

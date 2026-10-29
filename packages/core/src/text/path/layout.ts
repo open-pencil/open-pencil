@@ -108,7 +108,8 @@ export function calibratePathTextLayout(
  * at `anchor` (fraction of total length), each next glyph advances by
  * advance * fontSize (advances are in em units) along the travel direction,
  * offset along the left normal by `offset`. Used when the characters change
- * and the baked per-glyph deltas no longer apply.
+ * and the baked per-glyph deltas no longer apply. Each glyph keeps its advance
+ * in px, so the caret can stand after the last one.
  */
 export function layoutPathTextFromAdvances(
   data: TextPathData,
@@ -123,13 +124,15 @@ export function layoutPathTextFromAdvances(
   let s = anchor * path.length
   return glyphSources.map((src) => {
     const p = pointAtArc(path, s)
-    s += dir * src.advance * src.fontSize
+    const advance = src.advance * src.fontSize
+    s += dir * advance
     return {
       commandsBlob: src.commandsBlob,
       x: p.x + -p.ty * offset,
       y: p.y + p.tx * offset,
       fontSize: src.fontSize,
-      rotation: normalizeAngle(chordRotation(p, pointAtArc(path, s), data.forward))
+      rotation: normalizeAngle(chordRotation(p, pointAtArc(path, s), data.forward)),
+      advance
     }
   })
 }

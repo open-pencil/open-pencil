@@ -38,13 +38,22 @@ Pinch-to-zoom on UI panels (layers, properties) is prevented so it doesn't accid
 | Hand tool | <kbd>H</kbd> | <kbd>H</kbd> |
 | Zoom in | <kbd>⌘</kbd><kbd>+</kbd> | <kbd>Ctrl</kbd> + <kbd>+</kbd> |
 | Zoom out | <kbd>⌘</kbd><kbd>−</kbd> | <kbd>Ctrl</kbd> + <kbd>−</kbd> |
-| Zoom to 100% | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Ctrl</kbd> + <kbd>0</kbd> |
+| Zoom in / out | <kbd>+</kbd> / <kbd>−</kbd> | <kbd>+</kbd> / <kbd>−</kbd> |
+| Zoom to 100% | <kbd>⇧</kbd><kbd>0</kbd> or <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Shift</kbd> + <kbd>0</kbd> or <kbd>Ctrl</kbd> + <kbd>0</kbd> |
 | Zoom to fit | <kbd>⇧</kbd><kbd>1</kbd> | <kbd>Shift</kbd> + <kbd>1</kbd> |
 | Zoom to selection | <kbd>⇧</kbd><kbd>2</kbd> | <kbd>Shift</kbd> + <kbd>2</kbd> |
+| Zoom to next / previous frame | <kbd>N</kbd> / <kbd>⇧</kbd><kbd>N</kbd> | <kbd>N</kbd> / <kbd>Shift</kbd> + <kbd>N</kbd> |
+| Next / previous page | <kbd>Page Down</kbd> / <kbd>Page Up</kbd> | <kbd>Page Down</kbd> / <kbd>Page Up</kbd> |
 | Pixel grid | <kbd>⇧</kbd><kbd>'</kbd> | <kbd>Shift</kbd> + <kbd>'</kbd> |
 | Snap to pixel grid | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>'</kbd> |
 | Rulers | <kbd>⇧</kbd><kbd>R</kbd> | <kbd>Shift</kbd> + <kbd>R</kbd> |
 | Multiplayer cursors | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>\\</kbd> | <kbd>Alt</kbd> + <kbd>Ctrl</kbd> + <kbd>\\</kbd> |
+
+## Frames and Pages
+
+<kbd>N</kbd> selects the next top-level frame on the page and zooms to it; <kbd>Shift</kbd> + <kbd>N</kbd> goes back. Frames inside sections count, hidden ones do not, and the order runs left to right, then top to bottom, wrapping at the ends. With a layer inside a frame selected, the step starts from that frame.
+
+<kbd>Page Down</kbd> and <kbd>Page Up</kbd> open the next and previous page in the Pages panel's order.
 
 ## Pixel Grid
 

@@ -21,6 +21,14 @@ export function decodeVectorNetworkBlob(
   data: Uint8Array,
   styleOverrideTable?: StyleOverride[]
 ): VectorNetwork {
+  return readVectorNetworkBlob(data, styleOverrideTable).network
+}
+
+/** The network a blob holds, with each segment's style word, which the network itself drops. */
+function readVectorNetworkBlob(
+  data: Uint8Array,
+  styleOverrideTable?: StyleOverride[]
+): { network: VectorNetwork; segmentStyles: number[] } {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
   let offset = 0
 
@@ -55,7 +63,9 @@ export function decodeVectorNetworkBlob(
   }
 
   const segments: VectorSegment[] = []
+  const segmentStyles: number[] = []
   for (let index = 0; index < segmentCount; index++) {
+    segmentStyles.push(view.getUint32(offset, true))
     offset += 4
     const start = view.getUint32(offset, true)
     offset += 4
@@ -99,7 +109,7 @@ export function decodeVectorNetworkBlob(
     regions.push({ windingRule, loops })
   }
 
-  return { vertices, segments, regions }
+  return { network: { vertices, segments, regions }, segmentStyles }
 }
 
 function vertexStyleKey(vertex: VectorVertex): string {
@@ -212,4 +222,20 @@ export function encodeVectorNetworkBlob(
   }
 
   return new Uint8Array(buffer)
+}
+
+/** The style word Figma writes on the one segment a text path starts on. */
+const TEXT_PATH_START_SEGMENT = 0x1ffffff
+
+/**
+ * The segment a text path starts on: Figma marks it by writing {@link TEXT_PATH_START_SEGMENT}
+ * as its style word, and `textPathStart.tValue` is the position within it. Segment 0 when none is
+ * marked, as in Figma.
+ */
+export function textPathStartSegment(blob: Uint8Array): number {
+  const { segmentStyles } = readVectorNetworkBlob(blob)
+  const index = segmentStyles.findIndex(
+    (word) => (word & TEXT_PATH_START_SEGMENT) === TEXT_PATH_START_SEGMENT
+  )
+  return Math.max(index, 0)
 }

@@ -1,0 +1,1 @@
+- FigJam connectors open from `.fig` files and paste from FigJam with their ends, route, caps, line style, and label, bound to the layers they join, and save back so Figma keeps them live (#616).

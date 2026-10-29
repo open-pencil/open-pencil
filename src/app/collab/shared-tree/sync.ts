@@ -44,6 +44,13 @@ export function createLocalEdit(): LocalEdit {
   }
 }
 
+/** Adds what `edit` changed to `into`. */
+export function mergeLocalEdit(into: LocalEdit, edit: LocalEdit): void {
+  for (const key of Object.keys(into) as (keyof LocalEdit)[]) {
+    for (const id of edit[key]) into[key].add(id)
+  }
+}
+
 export function isLocalEditEmpty(edit: LocalEdit): boolean {
   return Object.values(edit).every((ids: Set<string>) => ids.size === 0)
 }

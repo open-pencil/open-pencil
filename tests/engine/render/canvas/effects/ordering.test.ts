@@ -33,7 +33,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
     }
 
     const callOrder: string[] = []
-    r.renderEffects = mock((_c, _n, _r, _h, pass) => {
+    r.renderEffects = mock((_c, _n, _g, pass) => {
       callOrder.push(`renderEffects:${pass}`)
     })
     r.drawNodeFill = mock(() => {
@@ -42,10 +42,15 @@ describe('Renderer effect ordering (Behavioral)', () => {
 
     renderShapeUncached(r, asCanvas(canvas), node, graph as SceneGraph)
 
-    expect(callOrder).toEqual(['renderEffects:behind', 'drawNodeFill', 'renderEffects:front'])
+    expect(callOrder).toEqual([
+      'renderEffects:behind',
+      'drawNodeFill',
+      'renderEffects:inner',
+      'renderEffects:front'
+    ])
   })
 
-  test('inner shadow and blur render after strokes', () => {
+  test('inner shadows render under strokes and noise over them, as in Figma', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
     const node = createDefaultNode(() => 'node1', 'RECTANGLE', {
@@ -79,7 +84,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
     }
 
     const callOrder: string[] = []
-    r.renderEffects = mock((_c, _n, _r, _h, pass) => {
+    r.renderEffects = mock((_c, _n, _g, pass) => {
       callOrder.push(`renderEffects:${pass}`)
     })
     r.drawStrokeWithAlign = mock(() => {
@@ -88,10 +93,11 @@ describe('Renderer effect ordering (Behavioral)', () => {
 
     renderShapeUncached(r, asCanvas(canvas), node, graph as SceneGraph)
 
-    const strokeIdx = callOrder.indexOf('drawStrokeWithAlign')
-    const frontIdx = callOrder.indexOf('renderEffects:front')
-    expect(strokeIdx).toBeGreaterThan(-1)
-    expect(frontIdx).toBeGreaterThan(-1)
-    expect(strokeIdx).toBeLessThan(frontIdx)
+    expect(callOrder).toEqual([
+      'renderEffects:behind',
+      'renderEffects:inner',
+      'drawStrokeWithAlign',
+      'renderEffects:front'
+    ])
   })
 })

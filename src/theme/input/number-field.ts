@@ -1,4 +1,4 @@
-import { panelFieldBase } from '../panel/field'
+import { panelFieldBase } from '../panel/field/base'
 
 const numberFieldTheme = {
   slots: {

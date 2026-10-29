@@ -1,0 +1,1 @@
+- Line arrow and triangle arrow heads draw at Figma's size and shape.

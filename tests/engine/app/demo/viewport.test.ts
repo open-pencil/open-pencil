@@ -1,6 +1,6 @@
 import { expect, spyOn, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { showFirstChapter } from '@/app/demo/viewport'
 

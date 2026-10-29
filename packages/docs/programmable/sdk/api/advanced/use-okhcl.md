@@ -16,7 +16,7 @@ OpenPencil editor.
 ## Usage
 
 ```ts
-import { useOkHCL } from '@open-pencil/vue'
+import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
 
 const okhcl = useOkHCL()
 

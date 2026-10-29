@@ -1,6 +1,8 @@
 import { difference } from 'es-toolkit/array'
 import { isPlainObject } from 'es-toolkit/predicate'
 
+import { property } from './component-properties'
+import type { DesignJSXHelperDefinition } from './definitions'
 import {
   backgroundBlur,
   dropShadow,
@@ -21,6 +23,8 @@ import {
   type GradientPaintOptions,
   type SolidPaintOptions
 } from './paints'
+import { ref } from './refs'
+import { defineMode, defineVars, designMode, designVar } from './variables'
 
 /** Every option a helper reads; `satisfies` keeps the list equal to the options type. */
 type OptionKeys<Options> = Record<keyof Options, true>
@@ -88,20 +92,36 @@ function checked<Args extends unknown[], Result>(
   }
 }
 
-/** The paint and effect helpers evaluated Design JSX can call, reporting ignored options. */
+/**
+ * Every helper Design JSX code can call, reporting ignored options to `warnings`. This is the
+ * one list of them: the string renderer's scope, the code panel's sandbox, the editor's
+ * completions, and the authoring reference all read it.
+ */
 export function designJSXHelpers(warnings: string[]) {
   return {
+    solid: checked(warnings, 'solid', solid, SOLID_OPTIONS, 1),
+    gradient: checked(warnings, 'gradient', gradient, GRADIENT_OPTIONS, 2),
+    linearGradient: checked(warnings, 'linearGradient', linearGradient, GRADIENT_OPTIONS, 1),
+    radialGradient: checked(warnings, 'radialGradient', radialGradient, GRADIENT_OPTIONS, 1),
+    angularGradient: checked(warnings, 'angularGradient', angularGradient, GRADIENT_OPTIONS, 1),
+    diamondGradient: checked(warnings, 'diamondGradient', diamondGradient, GRADIENT_OPTIONS, 1),
+    shader: checked(warnings, 'shader', shader, SOLID_OPTIONS, 1),
     dropShadow: checked(warnings, 'dropShadow', dropShadow, SHADOW_OPTIONS, 0),
     innerShadow: checked(warnings, 'innerShadow', innerShadow, SHADOW_OPTIONS, 0),
     layerBlur: checked(warnings, 'layerBlur', layerBlur, BLUR_OPTIONS, 0),
     backgroundBlur: checked(warnings, 'backgroundBlur', backgroundBlur, BLUR_OPTIONS, 0),
     foregroundBlur: checked(warnings, 'foregroundBlur', foregroundBlur, BLUR_OPTIONS, 0),
-    solid: checked(warnings, 'solid', solid, SOLID_OPTIONS, 1),
-    shader: checked(warnings, 'shader', shader, SOLID_OPTIONS, 1),
-    gradient: checked(warnings, 'gradient', gradient, GRADIENT_OPTIONS, 2),
-    linearGradient: checked(warnings, 'linearGradient', linearGradient, GRADIENT_OPTIONS, 1),
-    radialGradient: checked(warnings, 'radialGradient', radialGradient, GRADIENT_OPTIONS, 1),
-    angularGradient: checked(warnings, 'angularGradient', angularGradient, GRADIENT_OPTIONS, 1),
-    diamondGradient: checked(warnings, 'diamondGradient', diamondGradient, GRADIENT_OPTIONS, 1)
+    defineVars,
+    defineMode,
+    designVar,
+    designMode,
+    property,
+    ref
   }
 }
+
+export type DesignJSXHelperName = keyof ReturnType<typeof designJSXHelpers>
+
+export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = Object.keys(
+  designJSXHelpers([])
+).map((name) => ({ name, description: `OpenPencil ${name} helper.` }))

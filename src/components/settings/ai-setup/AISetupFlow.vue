@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
 import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
@@ -20,8 +20,13 @@ import AISetupConnection from './AISetupConnection.vue'
 import AISetupReview from './AISetupReview.vue'
 import AISetupRoles from './AISetupRoles.vue'
 
-const { entry, agentsAvailable = IS_TAURI } = defineProps<{
+const {
+  entry,
+  offersTour = true,
+  agentsAvailable = IS_TAURI
+} = defineProps<{
   entry: AISetupEntry
+  offersTour?: boolean
   agentsAvailable?: boolean
 }>()
 const emit = defineEmits<{ close: []; advanced: []; tour: [] }>()
@@ -29,8 +34,19 @@ const { ai, common } = useI18n()
 const styles = tv(theme)()
 
 const onboarding = useAIOnboarding({ agentsAvailable })
-const { answers, step, recommended, plan, roles, gaps, hasDesign, busy, saveResult, canContinue } =
-  onboarding
+const {
+  answers,
+  step,
+  recommended,
+  plan,
+  roles,
+  gaps,
+  hasDesign,
+  busy,
+  saveResult,
+  canContinue,
+  detections
+} = onboarding
 const { isRecommended } = roles
 const phase = ref<'welcome' | 'wizard' | 'saved'>(entry === 'welcome' ? 'welcome' : 'wizard')
 
@@ -107,7 +123,7 @@ async function finish(): Promise<void> {
           <h3 :class="styles.introHeading()">{{ ai.aiSetupWelcomeAITitle }}</h3>
           <p :class="styles.introText()">{{ ai.aiSetupWelcomeAIDescription }}</p>
         </section>
-        <section :class="styles.tour()" data-test-id="ai-setup-tour">
+        <section v-if="offersTour" :class="styles.tour()" data-test-id="ai-setup-tour">
           <div>
             <h3 :class="styles.introHeading()">{{ ai.aiSetupWelcomeTourTitle }}</h3>
             <p :class="styles.introText()">{{ ai.aiSetupWelcomeTourDescription }}</p>
@@ -135,7 +151,11 @@ async function finish(): Promise<void> {
 
       <template v-else-if="step === 'access'">
         <p :class="styles.help()">{{ ai.aiSetupAccessDescription }}</p>
-        <AISetupAccess v-model="answers.access" :agents-available="agentsAvailable" />
+        <AISetupAccess
+          v-model="answers.access"
+          :agents-available="agentsAvailable"
+          :detections="detections"
+        />
       </template>
 
       <template v-else-if="step === 'connect'">
@@ -190,6 +210,9 @@ async function finish(): Promise<void> {
           @check-agent="onboarding.refreshAgents()"
           @install-agent="onboarding.installAgent(providerID)"
           @install-bridge="onboarding.setupCanvasBridge()"
+          @sign-in-agent="onboarding.signInAgent(providerID)"
+          @cancel-agent-sign-in="onboarding.cancelAgentSignIn(providerID)"
+          @submit-agent-sign-in-code="onboarding.submitAgentSignInCode(providerID, $event)"
         />
       </template>
 

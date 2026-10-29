@@ -1,0 +1,1 @@
+- The model editor shows a model's capabilities, output limit, and thinking level directly instead of under **Advanced settings**, and the media, MCP connection, and storage editors slide in from their lists like it, returning focus to the row that opened them.

@@ -1,6 +1,6 @@
 import type { CanvasKit, LineMetrics, Paragraph, ShapedLine } from 'canvaskit-wasm'
 
-import type { Vector } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** A stretch of a paragraph's characters set at one line height, `null` for auto. */
 export interface LineHeightRun {

@@ -1,4 +1,5 @@
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** Anything path commands can be emitted into: a canvaskit Path or a blob encoder. */
 export interface PathSink {
@@ -75,25 +76,126 @@ export function addLoopToPath(
   path.close()
 }
 
+function isStraight(seg: VectorSegment): boolean {
+  const { tangentStart: ts, tangentEnd: te } = seg
+  return ts.x === 0 && ts.y === 0 && te.x === 0 && te.y === 0
+}
+
+/** Cubic handle length, as a fraction of the radius, of a circular arc turning by `angle`. */
+function arcHandle(angle: number): number {
+  return (4 / 3) * Math.tan(angle / 4)
+}
+
+interface RoundedCorner {
+  /** Where the arc leaves the incoming segment and joins the outgoing one. */
+  start: Vector
+  end: Vector
+  handleIn: Vector
+  handleOut: Vector
+}
+
+/**
+ * The arc rounding `corner` between straight runs from `from` and to `after`, or null when the
+ * runs do not turn or have no length. A radius never takes more than half of either run.
+ */
+function roundedCorner(
+  from: Vector,
+  corner: Vector,
+  after: Vector,
+  radius: number
+): RoundedCorner | null {
+  const inLength = Math.hypot(corner.x - from.x, corner.y - from.y)
+  const outLength = Math.hypot(after.x - corner.x, after.y - corner.y)
+  if (radius <= 0 || inLength === 0 || outLength === 0) return null
+  const inDir = { x: (corner.x - from.x) / inLength, y: (corner.y - from.y) / inLength }
+  const outDir = { x: (after.x - corner.x) / outLength, y: (after.y - corner.y) / outLength }
+  const turn = Math.acos(Math.max(-1, Math.min(1, inDir.x * outDir.x + inDir.y * outDir.y)))
+  if (turn <= 1e-6) return null
+  const reach = Math.min(radius * Math.tan(turn / 2), inLength / 2, outLength / 2)
+  const handle = arcHandle(turn) * (reach / Math.tan(turn / 2))
+  const start = { x: corner.x - inDir.x * reach, y: corner.y - inDir.y * reach }
+  const end = { x: corner.x + outDir.x * reach, y: corner.y + outDir.y * reach }
+  return {
+    start,
+    end,
+    handleIn: { x: start.x + inDir.x * handle, y: start.y + inDir.y * handle },
+    handleOut: { x: end.x - outDir.x * handle, y: end.y - outDir.y * handle }
+  }
+}
+
+function drawCorner(path: PathSink, corner: RoundedCorner) {
+  path.lineTo(corner.start.x, corner.start.y)
+  path.cubicTo(
+    corner.handleIn.x,
+    corner.handleIn.y,
+    corner.handleOut.x,
+    corner.handleOut.y,
+    corner.end.x,
+    corner.end.y
+  )
+}
+
+/**
+ * Draws one chain, rounding each vertex where two straight segments meet by its corner radius, or
+ * `cornerRadius` when it has none, as Figma rounds a vector's corners. A chain that comes back to
+ * where it started is closed, its last corner rounded too.
+ */
+function addChainToPath(
+  path: PathSink,
+  chain: number[],
+  segments: VectorSegment[],
+  vertices: VectorVertex[],
+  cornerRadius: number
+): void {
+  // The chain's vertices in drawing order; a closed chain ends where it started.
+  const first = findChainStart(chain, segments)
+  const order = [first]
+  for (const segIdx of chain) {
+    const seg = segments[segIdx]
+    order.push(seg.start === order[order.length - 1] ? seg.end : seg.start)
+  }
+  const closed = chain.length > 2 && order[order.length - 1] === first
+  const cornerAt = (index: number): RoundedCorner | null => {
+    const incoming = segments[chain[index - 1]]
+    const outgoing = segments[chain[index % chain.length]]
+    if (!isStraight(incoming) || !isStraight(outgoing)) return null
+    const corner = vertices[order[index]]
+    return roundedCorner(
+      vertices[order[index - 1]],
+      corner,
+      vertices[order[(index % chain.length) + 1]],
+      corner.cornerRadius ?? cornerRadius
+    )
+  }
+  const wrap = closed ? cornerAt(chain.length) : null
+  const begin = wrap?.end ?? vertices[first]
+  path.moveTo(begin.x, begin.y)
+  for (let index = 0; index < chain.length; index++) {
+    const last = index === chain.length - 1
+    const corner = last ? wrap : cornerAt(index + 1)
+    if (corner) {
+      drawCorner(path, corner)
+      continue
+    }
+    const seg = segments[chain[index]]
+    addSegmentDirected(path, seg, vertices, seg.start === order[index])
+  }
+  if (closed) path.close()
+}
+
 export function addOpenSegmentsToPath(
   path: PathSink,
   segments: VectorSegment[],
-  vertices: VectorVertex[]
+  vertices: VectorVertex[],
+  cornerRadius = 0
 ): void {
   const visited = new Set<number>()
   const chains = buildChains(segments)
 
   for (const chain of chains) {
     if (chain.length === 0) continue
-    let current = findChainStart(chain, segments)
-    path.moveTo(vertices[current].x, vertices[current].y)
-    for (const segIdx of chain) {
-      visited.add(segIdx)
-      const seg = segments[segIdx]
-      const forward = seg.start === current
-      addSegmentDirected(path, seg, vertices, forward)
-      current = forward ? seg.end : seg.start
-    }
+    for (const segIdx of chain) visited.add(segIdx)
+    addChainToPath(path, chain, segments, vertices, cornerRadius)
   }
 
   for (let i = 0; i < segments.length; i++) {

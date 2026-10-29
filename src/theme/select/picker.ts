@@ -1,6 +1,6 @@
 import { motionStyles } from '../motion/styles'
 import { floatingSurface } from '../overlay'
-import { panelFieldBase } from '../panel/field'
+import { panelFieldBase } from '../panel/field/base'
 
 /** Choices per row in the grid layout; keyboard navigation moves this many for a row. */
 export const APP_PICKER_GRID_COLUMNS = 8

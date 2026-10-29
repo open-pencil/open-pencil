@@ -1,0 +1,1 @@
+- `exportFigFile` from `@open-pencil/core` takes one options object, `exportFigFile(graph, { ck, renderer, pageId, renderHeadlessThumbnail, documentName })`, instead of positional CanvasKit, renderer, page, and thumbnail arguments.

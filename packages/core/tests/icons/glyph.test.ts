@@ -1,14 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
-import { isIconModified, readIcon, readIconTint, SceneGraph, withIcon } from '@open-pencil/scene-graph'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { isIconModified, readIcon, readIconTint, withIcon } from '@open-pencil/scene-graph/icons'
 import {
   collectResizeDescendants,
   computeConstrainedResizeChanges
 } from '@open-pencil/scene-graph/resize'
 
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { buildIconData } from '#core/icons/svg'
 
 const BLACK = parseColor('#000000')
@@ -48,7 +49,9 @@ describe('icon glyphs', () => {
     ] as const) {
       const { graph, frame } = placed(body, size)
       const loaded = await parseFigFile((await exportFigFile(graph)).slice().buffer)
-      const icon = [...loaded.getAllNodes()].find((node) => readIcon(node)?.name === readIcon(frame)?.name)
+      const icon = [...loaded.getAllNodes()].find(
+        (node) => readIcon(node)?.name === readIcon(frame)?.name
+      )
       if (!icon) throw new Error('Expected the icon to load')
       // An icon without a glyph also reads as unedited, so the glyph itself has to survive.
       expect(readIcon(icon)?.glyph).toBe(readIcon(frame)?.glyph ?? 'missing')
@@ -94,7 +97,9 @@ describe('icon glyphs', () => {
     expect(added.modified()).toBe(true)
 
     const logo = placed(LOGO)
-    const own = logo.graph.getChildren(logo.frame.id).find((child) => readIconTint(child).length === 0)
+    const own = logo.graph
+      .getChildren(logo.frame.id)
+      .find((child) => readIconTint(child).length === 0)
     if (!own) throw new Error('Expected a path with its own color')
     logo.graph.updateNode(own.id, {
       fills: own.fills.map((fill) => ({ ...fill, color: parseColor('#16a34a') }))

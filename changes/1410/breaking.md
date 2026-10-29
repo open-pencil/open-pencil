@@ -1,0 +1,1 @@
+- `@open-pencil/pen` exports only `parsePenFile`, `readPenFile`, and the `PenDocument`, `PenNode`, and `PenOverride` types; its conversion helpers, such as `parseSize`, `applyPadding`, `convertFill`, `convertStroke`, `isVarRef`, and `buildVarContext`, are no longer public.

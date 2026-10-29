@@ -19,6 +19,7 @@ const {
   x,
   y,
   rotation,
+  rotates,
   inAutoLayout,
   ignoresAutoLayout,
   toggleIgnoreAutoLayout
@@ -53,6 +54,7 @@ const actions = {
     :w-value="wValue"
     :h-value="hValue"
     :rotation-value="rotationValue"
+    :rotates="rotates"
     :in-auto-layout="inAutoLayout"
     :ignores-auto-layout="ignoresAutoLayout"
     :mixed="MIXED"

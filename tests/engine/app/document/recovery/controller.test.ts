@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { reactive, ref } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { createDocumentChanges } from '@/app/document/io/changes'
 import { createDocumentRecovery } from '@/app/document/recovery/controller'

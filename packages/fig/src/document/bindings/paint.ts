@@ -1,4 +1,5 @@
-import { resolvedPaintBindings, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 /** Resolve bound paint colors only after occurrence hierarchy and modes are available. */
 export function applyDocumentPaintBindings(

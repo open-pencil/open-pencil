@@ -14,6 +14,7 @@ export function useModelProfileFeedback(
   const testing = ref(false)
   const providerKind = computed(() => {
     if (profile.isACP.value) return 'acp'
+    if (profile.isCloud.value) return 'cloud'
     return profile.isHarness.value ? 'harness' : 'api'
   })
   const values = computed(() => ({
@@ -22,6 +23,7 @@ export function useModelProfileFeedback(
     customModelID: profile.draft.customModelID,
     baseURL: profile.draft.customBaseURL,
     credential: Boolean(keyInput.value.trim() || profile.hasExistingKey.value),
+    cloudWorkspace: profile.draft.cloudWorkspaceId ?? '',
     tools: (profile.knownModel.value
       ? profile.knownCapabilities.value
       : profile.draft.capabilities

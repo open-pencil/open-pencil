@@ -9,7 +9,7 @@ import {
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import { boundedImageScale } from '@/app/ai/tools/vision'
+import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
 import type { EditorStore } from '@/app/editor/active-store'
 import type { ChangePreviewSize } from '@/app/settings/preferences/store'
 

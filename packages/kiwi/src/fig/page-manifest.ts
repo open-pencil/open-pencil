@@ -1,5 +1,5 @@
 import { ByteBuffer } from '../schema-runtime/bb'
-import type { Definition, Field, Schema } from '../schema-runtime/schema'
+import type { CompiledDefinition, CompiledSchema } from '../schema-runtime/interpreter'
 
 export interface FigPageManifestEntry {
   sourceId: string
@@ -14,103 +14,16 @@ interface PageCandidate extends FigPageManifestEntry {
   type: string | null
 }
 
-type DefinitionMap = Map<string, Definition>
-interface ScanContext {
-  definitions: DefinitionMap
-  fields: Map<string, Map<number, Field>>
-}
-
-function fieldMap(definition: Definition): Map<number, Field> {
-  return new Map(definition.fields.map((field) => [field.value, field]))
-}
-
-function cachedFieldMap(context: ScanContext, definition: Definition): Map<number, Field> {
-  let fields = context.fields.get(definition.name)
-  if (!fields) {
-    fields = fieldMap(definition)
-    context.fields.set(definition.name, fields)
-  }
-  return fields
-}
-
-function skipSingleValue(bb: ByteBuffer, field: Field, context: ScanContext): void {
-  switch (field.type) {
-    case 'bool':
-    case 'byte':
-      bb.readByte()
-      return
-    case 'int':
-      bb.readVarInt()
-      return
-    case 'uint':
-      bb.readVarUint()
-      return
-    case 'float':
-      bb.readVarFloat()
-      return
-    case 'string':
-      bb.skipString()
-      return
-    case 'int64':
-      bb.readVarInt64()
-      return
-    case 'uint64':
-      bb.readVarUint64()
-      return
-  }
-
-  const definition = field.type ? context.definitions.get(field.type) : undefined
-  if (!definition) throw new Error(`Invalid Kiwi field type: ${String(field.type)}`)
-  if (definition.kind === 'ENUM') {
-    bb.readVarUint()
-    return
-  }
-  skipDefinition(bb, definition, context)
-}
-
-function skipFieldValue(bb: ByteBuffer, field: Field, context: ScanContext): void {
-  if (!field.isArray) {
-    skipSingleValue(bb, field, context)
-    return
-  }
-  if (field.type === 'byte') {
-    bb.skipByteArray()
-    return
-  }
-  let length = bb.readVarUint()
-  while (length-- > 0) skipSingleValue(bb, field, context)
-}
-
-function skipDefinition(bb: ByteBuffer, definition: Definition, context: ScanContext): void {
-  if (definition.kind === 'STRUCT') {
-    for (const field of definition.fields) skipFieldValue(bb, field, context)
-    return
-  }
-
-  const fields = cachedFieldMap(context, definition)
-  for (;;) {
-    const fieldId = bb.readVarUint()
-    if (fieldId === 0) return
-    const field = fields.get(fieldId)
-    if (!field) throw new Error(`Invalid field ${fieldId} in Kiwi ${definition.name}`)
-    skipFieldValue(bb, field, context)
-  }
-}
-
-function enumName(bb: ByteBuffer, field: Field, context: ScanContext): string | null {
+function enumName(bb: ByteBuffer, definition: CompiledDefinition | null): string | null {
   const value = bb.readVarUint()
-  const definition = field.type ? context.definitions.get(field.type) : undefined
-  return definition?.kind === 'ENUM'
-    ? (definition.fields.find((candidate) => candidate.value === value)?.name ?? null)
-    : null
+  return definition?.kind === 'ENUM' ? (definition.names[value] ?? null) : null
 }
 
 function scanNodeChange(
   bb: ByteBuffer,
-  definition: Definition,
-  context: ScanContext
+  schema: CompiledSchema,
+  nodeChange: CompiledDefinition
 ): PageCandidate | null {
-  const fields = cachedFieldMap(context, definition)
   let sourceSessionId: number | null = null
   let sourceLocalId: number | null = null
   let parentSessionId: number | null = null
@@ -121,10 +34,8 @@ function scanNodeChange(
   let name: string | null = null
   let internalOnly = false
 
-  for (;;) {
-    const fieldId = bb.readVarUint()
-    if (fieldId === 0) break
-    const field = fields.get(fieldId)
+  for (let fieldId = bb.readVarUint(); fieldId !== 0; fieldId = bb.readVarUint()) {
+    const field = nodeChange.byId[fieldId]
     if (!field) throw new Error(`Invalid field ${fieldId} in Kiwi NodeChange`)
     switch (field.name) {
       case 'guid':
@@ -138,10 +49,10 @@ function scanNodeChange(
         bb.skipString()
         break
       case 'phase':
-        phase = enumName(bb, field, context)
+        phase = enumName(bb, field.definition)
         break
       case 'type':
-        type = enumName(bb, field, context)
+        type = enumName(bb, field.definition)
         break
       case 'name':
         if (type === 'DOCUMENT' || type === 'CANVAS') name = bb.readString()
@@ -151,7 +62,7 @@ function scanNodeChange(
         internalOnly = !!bb.readByte()
         break
       default:
-        skipFieldValue(bb, field, context)
+        schema.skip(field, bb)
     }
   }
 
@@ -185,36 +96,28 @@ function scanNodeChange(
 }
 
 /**
- * Scans decoded Kiwi bytes without materializing NodeChange objects. Kiwi messages are not
+ * Scans encoded Kiwi bytes without materializing NodeChange objects. Kiwi messages are not
  * length-prefixed, so every value is visited, but only document/page fields are allocated.
  */
-export function extractFigPageManifest(schema: Schema, data: Uint8Array): FigPageManifestEntry[] {
-  const definitions: DefinitionMap = new Map(
-    schema.definitions.map((definition) => [definition.name, definition])
-  )
-  const context: ScanContext = { definitions, fields: new Map() }
-  const message = definitions.get('Message')
-  const nodeChange = definitions.get('NodeChange')
-  if (message?.kind !== 'MESSAGE' || nodeChange?.kind !== 'MESSAGE') {
-    return []
-  }
+export function extractFigPageManifest(
+  schema: CompiledSchema,
+  data: Uint8Array
+): FigPageManifestEntry[] {
+  const message = schema.definition('Message')
+  const nodeChange = schema.definition('NodeChange')
+  if (message.kind !== 'MESSAGE' || nodeChange.kind !== 'MESSAGE') return []
 
   const bb = new ByteBuffer(data)
-  const messageFields = cachedFieldMap(context, message)
   const candidates: PageCandidate[] = []
-  for (;;) {
-    const fieldId = bb.readVarUint()
-    if (fieldId === 0) break
-    const field = messageFields.get(fieldId)
+  for (let fieldId = bb.readVarUint(); fieldId !== 0; fieldId = bb.readVarUint()) {
+    const field = message.byId[fieldId]
     if (!field) throw new Error(`Invalid field ${fieldId} in Kiwi Message`)
     if (field.name !== 'nodeChanges' || !field.isArray) {
-      skipFieldValue(bb, field, context)
+      schema.skip(field, bb)
       continue
     }
-
-    let length = bb.readVarUint()
-    while (length-- > 0) {
-      const candidate = scanNodeChange(bb, nodeChange, context)
+    for (let length = bb.readVarUint(); length > 0; length--) {
+      const candidate = scanNodeChange(bb, schema, nodeChange)
       if (candidate) candidates.push(candidate)
     }
     break

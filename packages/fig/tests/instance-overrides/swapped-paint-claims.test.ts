@@ -3,8 +3,85 @@ import { expect, test } from 'bun:test'
 import { expectPathError } from '#fig-tests/helpers/errors'
 import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
+import { symbolDataOf } from '#fig/instance-overrides/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+
+test('a root swap takes the replacement paint but keeps explicit root paint claims', () => {
+  const paint = (r: number, g: number): NonNullable<NodeChange['fillPaints']> => [
+    { type: 'SOLID', color: { r, g, b: 0, a: 1 }, visible: true, opacity: 1 }
+  ]
+  const red = paint(1, 0),
+    green = paint(0, 1),
+    yellow = paint(1, 1)
+  const changes: NodeChange[] = [
+    { guid: guid(1), type: 'SYMBOL', fillPaints: red },
+    { guid: guid(2), type: 'SYMBOL', fillPaints: green },
+    {
+      guid: guid(3),
+      type: 'SYMBOL',
+      componentPropDefs: [
+        { id: guid(90), type: 'INSTANCE_SWAP', initialValue: { guidValue: guid(1) } }
+      ]
+    },
+    {
+      guid: guid(4),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(3), position: '!' },
+      fillPaints: red,
+      symbolData: { symbolID: guid(1) },
+      componentPropRefs: [{ defID: guid(90), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+    },
+    {
+      guid: guid(5),
+      type: 'INSTANCE',
+      symbolData: { symbolID: guid(3) },
+      componentPropAssignments: [{ defID: guid(90), value: { guidValue: guid(2) } }]
+    }
+  ]
+  const nested = () => interpretInstance(changes, '1:5').children[0]
+  expect(nested().properties.fillPaints).toEqual(green)
+  const source = changes[3],
+    outer = changes[4]
+  const sourceData = symbolDataOf(source),
+    outerData = symbolDataOf(outer)
+  if (!sourceData || !outerData) throw new Error('Missing paint owners')
+  source.fillPaints = yellow
+  expect(nested().properties.fillPaints).toEqual(green)
+  source.fillPaints = []
+  expect(nested().properties.fillPaints).toEqual(green)
+  sourceData.symbolOverrides = [{ guidPath: { guids: [guid(1)] }, fillPaints: [] }]
+  expect(nested().properties.fillPaints).toEqual([])
+  sourceData.symbolOverrides = [{ guidPath: { guids: [guid(1)] }, fillPaints: yellow }]
+  expect(nested().properties.fillPaints).toEqual(yellow)
+  outerData.symbolOverrides = [{ guidPath: { guids: [guid(4)] }, fillPaints: [] }]
+  expect(nested().properties.fillPaints).toEqual([])
+  sourceData.symbolOverrides = []
+  outerData.symbolOverrides = []
+  source.fillPaints = yellow
+  outer.componentPropAssignments = []
+  expect(nested().properties.fillPaints).toEqual(yellow)
+  changes.push(
+    { guid: guid(6), type: 'SYMBOL', fillPaints: [] },
+    {
+      guid: guid(7),
+      type: 'INSTANCE',
+      symbolData: { symbolID: guid(3) },
+      componentPropAssignments: [{ defID: guid(90), value: { guidValue: guid(2) } }]
+    },
+    {
+      guid: guid(8),
+      type: 'INSTANCE',
+      symbolData: { symbolID: guid(7) },
+      componentPropAssignments: [{ defID: guid(90), value: { guidValue: guid(6) } }]
+    }
+  )
+  expect(interpretInstance(changes, '1:8').children[0].properties.fillPaints).toEqual([])
+  changes[7].componentPropAssignments = [{ defID: guid(90), value: { guidValue: guid(1) } }]
+  expect(interpretInstance(changes, '1:8').children[0].properties.fillPaints).toEqual(yellow)
+  sourceData.symbolOverrides = [{ guidPath: { guids: [guid(1)] }, fillPaints: yellow }]
+  expect(interpretInstance(changes, '1:8').children[0].properties.fillPaints).toEqual(yellow)
+})
 
 test('binding swap ignores known removed-child paint claims without discarding unswapped source claims', () => {
   const changes = [
@@ -101,4 +178,41 @@ test('binding swap ignores known removed-child paint claims without discarding u
   expect(interpretInstance(changes, '1:7').children[0].children[0].properties.fillPaints).toEqual(
     []
   )
+})
+
+test('a root swap drops the old fill style link along with the old paint', () => {
+  const paint = (g: number): NonNullable<NodeChange['fillPaints']> => [
+    { type: 'SOLID', color: { r: 1 - g, g, b: 0, a: 1 }, visible: true, opacity: 1 }
+  ]
+  const todoStyle = { guid: guid(80) },
+    doneStyle = { guid: guid(81) }
+  const changes: NodeChange[] = [
+    { guid: guid(1), type: 'SYMBOL', fillPaints: paint(0), styleIdForFill: todoStyle },
+    { guid: guid(2), type: 'SYMBOL', fillPaints: paint(1), styleIdForFill: doneStyle },
+    {
+      guid: guid(3),
+      type: 'SYMBOL',
+      componentPropDefs: [
+        { id: guid(90), type: 'INSTANCE_SWAP', initialValue: { guidValue: guid(1) } }
+      ]
+    },
+    {
+      guid: guid(4),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(3), position: '!' },
+      fillPaints: paint(0),
+      styleIdForFill: todoStyle,
+      symbolData: { symbolID: guid(1) },
+      componentPropRefs: [{ defID: guid(90), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+    },
+    {
+      guid: guid(5),
+      type: 'INSTANCE',
+      symbolData: { symbolID: guid(3) },
+      componentPropAssignments: [{ defID: guid(90), value: { guidValue: guid(2) } }]
+    }
+  ]
+  const badge = interpretInstance(changes, '1:5').children[0].properties
+  expect(badge.fillPaints).toEqual(paint(1))
+  expect(badge.styleIdForFill).toEqual(doneStyle)
 })

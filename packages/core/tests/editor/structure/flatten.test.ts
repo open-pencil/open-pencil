@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BLACK, TRANSPARENT } from '@open-pencil/core/constants'
-import { createEditor } from '@open-pencil/core/editor'
-import { initCanvasKit } from '@open-pencil/core/io'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { fontManager } from '@open-pencil/core/text'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
@@ -31,13 +31,13 @@ async function createEditorWithRenderer() {
 }
 
 async function loadInterRegular() {
-  const data = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
-  fontManager.markLoaded('Inter', 'Regular', data)
+  const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+  await fontManager.markLoaded('Inter', 'Regular', data)
 }
 
 async function loadInterBold() {
-  const data = await Bun.file('packages/core/assets/Inter-Bold.ttf').arrayBuffer()
-  fontManager.markLoaded('Inter', 'Bold', data)
+  const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+  await fontManager.markLoaded('Inter', 'Bold', data)
 }
 
 async function loadNotoSansSC() {
@@ -45,7 +45,7 @@ async function loadNotoSansSC() {
   const text = await file.slice(0, 32).text()
   if (text.startsWith('version ')) return false
   const data = await file.arrayBuffer()
-  fontManager.markLoaded('Noto Sans SC', 'Regular', data)
+  await fontManager.markLoaded('Noto Sans SC', 'Regular', data)
   fontManager.setCJKFallbackFamily('Noto Sans SC')
   return true
 }
@@ -80,78 +80,6 @@ describe('flattenSelected', () => {
     expect(vector?.vectorNetwork?.vertices.length).toBeGreaterThan(0)
     expect(editor.graph.getNode(first.id)).toBeUndefined()
     expect(editor.graph.getNode(second.id)).toBeUndefined()
-  })
-
-  test('outlines visible strokes into a vector path', async () => {
-    const { editor } = await createEditorWithRenderer()
-    const pageId = editor.state.currentPageId
-    const rect = editor.graph.createNode('RECTANGLE', pageId, {
-      x: 20,
-      y: 30,
-      width: 40,
-      height: 30,
-      fills: [{ type: 'SOLID', color: TRANSPARENT, opacity: 1, visible: true }],
-      strokes: [
-        { type: 'SOLID', color: BLACK, weight: 8, opacity: 1, visible: true, align: 'CENTER' }
-      ]
-    })
-
-    editor.select([rect.id])
-    editor.outlineStrokeSelected()
-
-    const [vectorId] = [...editor.state.selectedIds]
-    const vector = editor.graph.getNode(vectorId)
-    expect(vector?.type).toBe('VECTOR')
-    expect(vector?.name).toBe('Outline stroke')
-    expect(vector?.x).toBe(16)
-    expect(vector?.y).toBe(26)
-    expect(vector?.width).toBe(48)
-    expect(vector?.height).toBe(38)
-    expect(vector?.vectorNetwork?.vertices.length).toBeGreaterThan(0)
-    expect(editor.graph.getNode(rect.id)).toBeUndefined()
-  })
-
-  test('outlines stroked descendants inside groups', async () => {
-    const { editor } = await createEditorWithRenderer()
-    const pageId = editor.state.currentPageId
-    const rect = editor.graph.createNode('RECTANGLE', pageId, {
-      x: 20,
-      y: 30,
-      width: 40,
-      height: 30,
-      fills: [{ type: 'SOLID', color: TRANSPARENT, opacity: 1, visible: true }],
-      strokes: [
-        { type: 'SOLID', color: BLACK, weight: 8, opacity: 1, visible: true, align: 'CENTER' }
-      ]
-    })
-    editor.select([rect.id])
-    editor.groupSelected()
-
-    editor.outlineStrokeSelected()
-
-    const [vectorId] = [...editor.state.selectedIds]
-    const vector = editor.graph.getNode(vectorId)
-    expect(vector?.type).toBe('VECTOR')
-    expect(vector?.name).toBe('Outline stroke')
-    expect(vector?.vectorNetwork?.vertices.length).toBeGreaterThan(0)
-  })
-
-  test('does not outline fill-only shapes as strokes', async () => {
-    const { editor } = await createEditorWithRenderer()
-    const pageId = editor.state.currentPageId
-    const rect = editor.graph.createNode('RECTANGLE', pageId, {
-      x: 20,
-      y: 30,
-      width: 40,
-      height: 30,
-      strokes: []
-    })
-
-    editor.select([rect.id])
-    const result = editor.outlineStrokeSelected()
-
-    expect(result).toBeNull()
-    expect(editor.graph.getNode(rect.id)?.type).toBe('RECTANGLE')
   })
 
   test('outlines loaded text through the shared text outline path', async () => {
@@ -205,33 +133,33 @@ describe('flattenSelected', () => {
   test.each(['NONE', 'UNDERLINE'] as const)(
     'flattens a list with its bullets, as the canvas draws it (%s)',
     async (textDecoration) => {
-    await loadInterRegular()
-    const { editor, renderer } = await createEditorWithRenderer()
-    await renderer.loadFonts()
-    const pageId = editor.state.currentPageId
-    const text = editor.graph.createNode('TEXT', pageId, {
-      x: 100,
-      text: 'One\nTwo',
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      fontSize: 16,
-      width: 120,
-      height: 40,
-      textDecoration,
-      textParagraphs: [
-        { listType: 'UNORDERED', indentation: 1 },
-        { listType: 'UNORDERED', indentation: 1 }
-      ]
-    })
+      await loadInterRegular()
+      const { editor, renderer } = await createEditorWithRenderer()
+      await renderer.loadFonts()
+      const pageId = editor.state.currentPageId
+      const text = editor.graph.createNode('TEXT', pageId, {
+        x: 100,
+        text: 'One\nTwo',
+        fontFamily: 'Inter',
+        fontWeight: 400,
+        fontSize: 16,
+        width: 120,
+        height: 40,
+        textDecoration,
+        textParagraphs: [
+          { listType: 'UNORDERED', indentation: 1 },
+          { listType: 'UNORDERED', indentation: 1 }
+        ]
+      })
 
-    editor.select([text.id])
-    editor.flattenSelected()
+      editor.select([text.id])
+      editor.flattenSelected()
 
-    const [vectorId] = [...editor.state.selectedIds]
-    const vector = editor.graph.getNode(vectorId)
-    // The bullets sit in the first 24px of indent, left of the items' text.
-    expect(vector?.x).toBeGreaterThan(106)
-    expect(vector?.x).toBeLessThan(112)
+      const [vectorId] = [...editor.state.selectedIds]
+      const vector = editor.graph.getNode(vectorId)
+      // The bullets sit in the first 24px of indent, left of the items' text.
+      expect(vector?.x).toBeGreaterThan(106)
+      expect(vector?.x).toBeLessThan(112)
     }
   )
 

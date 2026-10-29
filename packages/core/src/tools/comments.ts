@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { DEFAULT_COMMENT_AUTHOR, OpenPencilAPI } from '#core/openpencil-api'
 import { defineTool, toolFailure } from '#core/tools/schema'
 
-const author = v.optional(
+const authorSchema = v.optional(
   v.pipe(
     v.string(),
     v.description(
@@ -60,7 +60,7 @@ export const addComment = defineTool({
     y: v.optional(
       v.pipe(v.number(), v.description('Canvas Y, or offset from the layer’s top edge'))
     ),
-    author
+    author: authorSchema
   }),
   execute: (figma, { text, ...options }) => {
     try {
@@ -80,7 +80,7 @@ export const replyToComment = defineTool({
   input: v.strictObject({
     id: v.pipe(v.string(), v.description('Comment thread ID')),
     text: v.pipe(v.string(), v.minLength(1), v.description('The reply, in Markdown')),
-    author
+    author: authorSchema
   }),
   execute: (figma, { id, text, author }) => {
     try {

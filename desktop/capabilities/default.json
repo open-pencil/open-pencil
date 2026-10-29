@@ -63,6 +63,10 @@
       "allow": [{ "path": "**" }]
     },
     {
+      "identifier": "fs:allow-lstat",
+      "allow": [{ "path": "**" }]
+    },
+    {
       "identifier": "fs:allow-open",
       "allow": [{ "path": "**" }],
       "deny": [
@@ -128,6 +132,11 @@
       "identifier": "shell:allow-spawn",
       "allow": [
         { "name": "claude-agent-acp", "cmd": "claude-agent-acp", "args": false },
+        {
+          "name": "claude-agent-acp-sign-in",
+          "cmd": "claude-agent-acp",
+          "args": ["--cli", "auth", "login", "--claudeai"]
+        },
         { "name": "codex-acp", "cmd": "codex-acp", "args": false },
         { "name": "gemini", "cmd": "gemini", "args": ["--acp"] },
         {
@@ -157,6 +166,11 @@
         { "name": "openpencil-mcp-http", "cmd": "openpencil-mcp-http", "args": false },
         { "name": "openpencil-harness", "cmd": "openpencil-harness", "args": false },
         { "name": "cmd-claude-agent-acp", "cmd": "cmd", "args": ["/c", "claude-agent-acp"] },
+        {
+          "name": "cmd-claude-agent-acp-sign-in",
+          "cmd": "cmd",
+          "args": ["/c", "claude-agent-acp", "--cli", "auth", "login", "--claudeai"]
+        },
         { "name": "cmd-codex-acp", "cmd": "cmd", "args": ["/c", "codex-acp"] },
         { "name": "cmd-gemini", "cmd": "cmd", "args": ["/c", "gemini", "--acp"] },
         {

@@ -1,0 +1,17 @@
+{
+  "name": "@open-pencil/cloud-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#cloud-dev/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/cloud": "workspace:*",
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "smol-toml": "^1.8.0"
+  }
+}

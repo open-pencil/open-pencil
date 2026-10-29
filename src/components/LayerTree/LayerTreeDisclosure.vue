@@ -19,6 +19,7 @@ const emit = defineEmits<{ toggle: [] }>()
     :data-expanded="expanded || undefined"
     :class="ui.disclosure"
     @click.stop="emit('toggle')"
+    @dblclick.stop
   >
     <icon-lucide-chevron-right class="size-3" />
   </button>

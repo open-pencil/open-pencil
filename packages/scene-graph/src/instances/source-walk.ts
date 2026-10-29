@@ -1,6 +1,6 @@
-import type { SceneGraph } from '../'
-import { getInstanceOverride } from '../instance-overrides'
+import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
+import { copiedComponentLayerId } from './overrides'
 
 /**
  * Walk an instance's layers beside the component layers they copy, matched the way instance
@@ -19,13 +19,7 @@ export function walkInstanceSources(
   const walk = (sourceParent: SceneNode, instanceParent: SceneNode): void => {
     const bySource = new Map<string, SceneNode>()
     for (const child of graph.getChildren(instanceParent.id)) {
-      const mapped = getInstanceOverride(
-        instance.instanceOverrides,
-        instance.id,
-        child.id,
-        'sourceComponentId'
-      )
-      const sourceId = typeof mapped === 'string' ? mapped : child.componentId
+      const sourceId = copiedComponentLayerId(instance.instanceOverrides, instance.id, child)
       if (!sourceId) continue
       if (strict && bySource.has(sourceId))
         throw new Error(`Ambiguous component-property target ${sourceId}`)

@@ -1,4 +1,5 @@
-import type { SceneGraph, SceneNode, SharedStyle, SharedStyleKind, SharedStyleType } from './index'
+import type { SceneGraph } from './graph'
+import type { SceneNode, SharedStyle, SharedStyleKind, SharedStyleType } from './types'
 
 const STYLE_REF_KEYS = {
   fill: 'fillStyleId',
@@ -7,6 +8,9 @@ const STYLE_REF_KEYS = {
   effect: 'effectStyleId',
   grid: 'gridStyleId'
 } as const satisfies Record<SharedStyleKind, keyof SceneNode>
+
+/** The fields that link a layer to its shared styles. */
+export const STYLE_LINK_FIELDS = Object.values(STYLE_REF_KEYS)
 
 const STYLE_TYPES = {
   fill: 'FILL',

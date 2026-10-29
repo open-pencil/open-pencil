@@ -78,6 +78,19 @@ describe('background page checks', () => {
     checks.stop()
   })
 
+  test("give a page's last result only while nothing on it has changed", () => {
+    const { first, checks } = setup()
+    checks.start()
+    const issues = [issue('live', first.id, 'warning')]
+    checks.report(first.id, issues)
+
+    expect(checks.fresh(first.id)).toEqual(issues)
+
+    checks.invalidate(first.id)
+    expect(checks.fresh(first.id)).toBeNull()
+    checks.stop()
+  })
+
   test('leave pages a large file has not loaded unchecked', async () => {
     const { first, second, third, checked, checks } = setup(['Third'])
 

@@ -4,6 +4,8 @@
   "usageCompleted": "Завершённые",
   "usageInputTokens": "Входные токены",
   "usageOutputTokens": "Выходные токены",
+  "usageCachedInputTokens": "Входные токены из кэша",
+  "usageCacheWriteTokens": "Токены, записанные в кэш",
   "usageByModel": "По модели",
   "usageNoData": "Данных об использовании нет.",
   "usageNotReported": "Не сообщается",

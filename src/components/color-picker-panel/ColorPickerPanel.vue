@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { OkHCLControls } from '@open-pencil/vue'
+import type { OkHCLControls } from '@open-pencil/vue/controls/color-model'
 
 import ColorAreaControl from '@/components/color-picker-panel/ColorAreaControl.vue'
 import { provideColorPickerPanel } from '@/components/color-picker-panel/context'

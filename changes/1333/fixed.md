@@ -1,0 +1,1 @@
+- SVG export draws a whole donut's outer edge and hole instead of nothing.

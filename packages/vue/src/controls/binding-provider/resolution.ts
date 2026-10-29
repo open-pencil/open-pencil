@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { VariableValue } from '@open-pencil/scene-graph'
 
 import type { BindingTarget } from './types'

@@ -1,0 +1,5 @@
+- Number and true/false variables take live formulas: references show as pills, the field shows the result, true/false formulas can compare numbers, and formulas survive undo, copy and paste, sharing and `.fig` saves.
+- The token stylesheet writes number formulas as `calc()` over the variables they use, and design-token files keep each formula beside its result.
+- CSS expressions complete token names as `var()` pills, preview what the browser computes, are checked when committed, and can be added to any number mode from the value's label row.
+- Formulas and CSS expressions are highlighted and span several lines, with Shift+Enter for a line break.
+- Imported Figma color and opacity expressions retain their variable references.

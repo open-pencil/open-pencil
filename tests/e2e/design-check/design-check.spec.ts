@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
@@ -414,4 +414,62 @@ test('Canvas markers and Layers panel marks can be turned off from the View menu
   await editor.page.getByRole('menuitem', { name: 'View' }).click()
   await editor.page.getByRole('menuitemcheckbox', { name: 'Design issues' }).click()
   await expect.poll(markerCount).toBeGreaterThan(0)
+})
+
+/** Sixty small notes in a grid, far enough apart that each one's marker can be clicked. */
+const NOTE = { columns: 6, gapX: 100, gapY: 50, width: 40, height: 10, left: 40, top: 60 }
+
+/** Adds the notes at zoom 1 and returns their ids in order; each is too small to read. */
+function addNotes(page: Page): Promise<string[]> {
+  return page.evaluate((note) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.zoom = 1
+    store.state.panX = 0
+    store.state.panY = 0
+    return Array.from(
+      { length: 60 },
+      (_, index) =>
+        store.graph.createNode('TEXT', store.state.currentPageId, {
+          name: `Note ${index + 1}`,
+          text: 'Note',
+          fontSize: 8,
+          x: note.left + (index % note.columns) * note.gapX,
+          y: note.top + Math.floor(index / note.columns) * note.gapY,
+          width: note.width,
+          height: note.height
+        }).id
+    )
+  }, NOTE)
+}
+
+test('A marker opens an issue past the rows its group shows at first', async () => {
+  const lastNoteId = (await addNotes(editor.page)).at(-1)
+  await waitForMarkers(editor.page)
+
+  // The sixtieth note's row is past the fifty its group lists at first.
+  const last = 59
+  const marker = {
+    x: NOTE.left + (last % NOTE.columns) * NOTE.gapX + NOTE.width + 12,
+    y: NOTE.top + Math.floor(last / NOTE.columns) * NOTE.gapY - 12
+  }
+  await hoverMarker(marker)
+  await editor.canvas.click(marker.x, marker.y)
+
+  await expect(editor.page.getByRole('tab', { name: /^Lint/ })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  )
+  await expect(lintPanel(editor.page).locator(`[data-node-id="${lastNoteId}"]`)).toBeInViewport()
+})
+
+test('A group lists its first rows and shows the rest on request', async () => {
+  await addNotes(editor.page)
+  await editor.page.getByRole('tab', { name: /^Lint/ }).click()
+  const rows = lintPanel(editor.page).locator('[data-rule-id="min-text-size"] [data-issue-id]')
+  await expect(rows).toHaveCount(50)
+
+  await lintPanel(editor.page).getByRole('button', { name: 'Show 10 more' }).click()
+
+  await expect(rows).toHaveCount(60)
 })

@@ -1,0 +1,2 @@
+- Opening a `.fig` reads its record index up to 1.7× faster, with the Kiwi schema compiled once into tables.
+- `.fig` data decompresses with the same Zstd that saves it, about 3× faster than before in browsers and the desktop app.

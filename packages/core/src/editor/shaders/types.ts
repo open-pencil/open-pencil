@@ -1,5 +1,5 @@
-import type { ShaderPreset } from '@open-pencil/scene-graph'
 import type { Size } from '@open-pencil/scene-graph/primitives'
+import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 /**
  * Draws a shader's still frame. Core has no GPU or DOM, so the canvas that has them supplies

@@ -1,9 +1,15 @@
 import type { StorageProviderID } from '@/app/integrations/storage/types'
 
+/** Where a stored canvas lives besides its provider; see `StorageLocation`. */
+type LocalCanvasLocation = {
+  profileId?: string
+  containerId?: string
+}
+
 export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
 
 /** Metadata for a stored canvas cached on device (document bytes stored separately). */
-export type LocalCanvasMeta = {
+export type LocalCanvasMeta = LocalCanvasLocation & {
   id: string
   providerId: StorageProviderID
   name: string
@@ -21,6 +27,10 @@ export type LocalCanvasMeta = {
   figSize?: number
   /** Last time this canvas was opened on this device (LRU eviction key). */
   lastOpenedAt?: string
+  /** The provider revision the local bytes were edited from, when the provider tracks them. */
+  remoteRevision?: string | null
+  /** The newer provider revision found when an upload conflicted, kept until resolved. */
+  conflictRevision?: string | null
 }
 
 /** Index-only row for remote canvases not yet downloaded (no fig body). */
@@ -33,7 +43,7 @@ export type LocalCanvasIndexInput = Omit<
   hasThumb?: boolean
 }
 
-export type LocalCanvasWriteInput = {
+export type LocalCanvasWriteInput = LocalCanvasLocation & {
   id: string
   providerId: StorageProviderID
   name: string
@@ -43,4 +53,6 @@ export type LocalCanvasWriteInput = {
   /** If set, keep this revision; otherwise increment from existing. */
   revision?: number
   syncStatus?: LocalSyncStatus
+  /** Replaces the base revision, as when the bytes come straight from the provider. */
+  remoteRevision?: string | null
 }

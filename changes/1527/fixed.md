@@ -1,0 +1,1 @@
+- SVG and PDF exports keep inside and outside strokes on their side of the outline, and SVG export sets text on the lines and baselines the canvas draws, wrapped paragraphs included (#1520, #1521).

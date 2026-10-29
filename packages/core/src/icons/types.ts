@@ -1,8 +1,11 @@
 import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { IconOptions } from '@open-pencil/scene-graph/icons'
 
 export interface IconPath {
   vectorNetwork: VectorNetwork
   fill: string | null
+  /** How opaque the fill is, as for a symbol's secondary layers; opaque when left out. */
+  fillOpacity?: number
   stroke: string | null
   strokeWidth: number
   strokeCap: string
@@ -15,7 +18,14 @@ export interface IconData {
   width: number
   height: number
   paths: IconPath[]
+  /** How a set we draw ourselves drew it, every option filled in; none for Iconify icons. */
+  options?: IconOptions
 }
+
+/** A control for how a set's icons are drawn: a range, such as a font axis, or a choice. */
+export type IconOption =
+  | { key: string; name: string; min: number; max: number; default: number; step: number }
+  | { key: string; name: string; values: readonly string[]; default: string }
 
 export interface IconifyIconEntry {
   body: string
@@ -48,6 +58,8 @@ export interface IconCollection {
   license: string | null
   /** Drawn in the set's own colors, which an icon color does not change. */
   multicolor: boolean
+  /** How the set's icons can be drawn, for a set we draw ourselves. */
+  options?: readonly IconOption[]
 }
 
 export interface IconPathInfo {
@@ -76,6 +88,8 @@ export interface SVGElementLayer {
   /** The element's `id`, when it is drawn directly rather than through `<use>`. */
   name: string | null
   opacity: number
+  /** False when `visibility` or `display` hides it; Figma imports it as a hidden layer. */
+  visible: boolean
   /** The clip region this element adds to `clipPaths`, by index. */
   clip: number | null
 }
@@ -113,11 +127,16 @@ export interface SVGTextInfo {
   pathIndex: number
 }
 
-export type SVGClipPathInfo = Pick<IconPathInfo, 'd' | 'fillRule' | 'transform'>
+export type SVGClipPathInfo = Pick<IconPathInfo, 'd' | 'fillRule' | 'transform'> & {
+  /** False when `visibility` or `display` hides the shape, which Figma keeps as a hidden layer. */
+  visible: boolean
+}
 
 export interface SVGClipPathRegion {
   /** The `<clipPath>` element's `id`. */
   id: string
   paths: SVGClipPathInfo[]
   units: 'userSpaceOnUse' | 'objectBoundingBox'
+  /** False when the `<clipPath>` itself is hidden: Figma's mask is then hidden and clips nothing. */
+  visible: boolean
 }

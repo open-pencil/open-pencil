@@ -8,6 +8,8 @@ export const diagnosticsMessageDefaults = {
   usageCompleted: 'Completed',
   usageInputTokens: 'Input tokens',
   usageOutputTokens: 'Output tokens',
+  usageCachedInputTokens: 'Cached input tokens',
+  usageCacheWriteTokens: 'Cache write tokens',
   usageByModel: 'By model',
   usageNoData: 'No usage data recorded.',
   usageNotReported: 'Not reported',

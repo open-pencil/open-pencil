@@ -24,6 +24,8 @@ export class UndoManager {
   private undoStack: UndoEntry[] = []
   private redoStack: UndoEntry[] = []
   private batches: UndoBatch[] = []
+  private replaying = 0
+  private openEdits = 0
   private readonly settlers = new Set<() => void>()
   private readonly limit: number
   private readonly onChange: (() => void) | undefined
@@ -82,7 +84,7 @@ export class UndoManager {
     this.settle()
     const entry = this.undoStack.pop()
     if (!entry) return null
-    entry.inverse()
+    this.replay(() => entry.inverse())
     this.redoStack.push(entry)
     this.onChange?.()
     return entry.label
@@ -92,7 +94,7 @@ export class UndoManager {
     this.settle()
     const entry = this.redoStack.pop()
     if (!entry) return null
-    entry.forward()
+    this.replay(() => entry.forward())
     this.undoStack.push(entry)
     this.onChange?.()
     return entry.label
@@ -142,8 +144,68 @@ export class UndoManager {
     this.onChange?.()
   }
 
+  /** Whether undo or redo is replaying a step, whose changes are history rather than new edits. */
+  get isReplaying(): boolean {
+    return this.replaying > 0
+  }
+
+  /**
+   * Adds a change that the newest step caused, as one an editor makes in response to it, so undo
+   * and redo apply them together. Inside a batch it joins the batch. False with no step to join.
+   */
+  extendLastStep(entry: UndoEntry): boolean {
+    if (this.currentBatch) {
+      this.currentBatch.entries.push(entry)
+      return true
+    }
+    const last = this.undoStack.at(-1)
+    if (!last) return false
+    // The step keeps its identity, so callers that hold it still find it in the history.
+    const { forward, inverse } = last
+    last.forward = () => {
+      forward()
+      entry.forward()
+    }
+    last.inverse = () => {
+      entry.inverse()
+      inverse()
+    }
+    return true
+  }
+
+  private replay(step: () => void) {
+    this.replaying++
+    try {
+      step()
+    } finally {
+      this.replaying--
+    }
+  }
+
   get isBatching(): boolean {
     return this.batches.length > 0
+  }
+
+  /**
+   * Marks an edit whose step is recorded when it ends, such as an agent's call that awaits fonts
+   * or a layout before it finishes. Returns the function that ends it; ending it twice is a no-op.
+   */
+  openEdit(): () => void {
+    this.openEdits++
+    let open = true
+    return () => {
+      if (!open) return
+      open = false
+      this.openEdits--
+    }
+  }
+
+  /**
+   * Whether a batch or an edit opened with `openEdit` will record a step for the changes made now,
+   * so they are not edits outside the history.
+   */
+  get isRecording(): boolean {
+    return this.isBatching || this.openEdits > 0
   }
 
   /** Committed history, or changes in an open batch that a settling hook commits first. */

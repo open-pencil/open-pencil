@@ -4,7 +4,7 @@ import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
 import { ref, shallowRef } from 'vue'
 
-import { AgentSetupError } from '@/app/ai/agents/readiness'
+import { AgentSetupError } from '@/app/ai/agents/setup/readiness'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -14,6 +14,7 @@ const messages = ref({
   openSettings: 'Open settings',
   requestFailed: 'Request failed',
   visionUnavailable: 'Vision unavailable',
+  cloudUnavailable: 'Cloud AI unavailable',
   runSetup: 'Run guided setup',
   agentSetup: {
     'companion-missing': 'Companion missing',

@@ -2,7 +2,7 @@
 import { tinykeys } from 'tinykeys'
 import { onScopeDispose } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { getActiveEditorStoreOrNull, useEditorStore } from '@/app/editor/active-store'
 import { appMenuShortcutLabel, appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'

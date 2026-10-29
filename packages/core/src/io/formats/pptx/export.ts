@@ -1,8 +1,10 @@
 import { fromUint8Array } from 'js-base64'
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, Mat3, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { TransformMatrix, getWorldMatrix } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
   hasUnsupportedTransform,
@@ -433,6 +435,7 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
   const singleLine = node.maxLines === 1 || node.textAutoResize === 'WIDTH_AND_HEIGHT'
 
   const runs = buildTextRuns(ctx, node, opacity)
+  const lineHeightPx = lineHeightPixels(node.lineHeight, node.fontSize)
   ctx.slide.addText(runs, {
     x: box.x,
     y: box.y,
@@ -447,7 +450,7 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
     // If the receiving app reflows text past the box, shrink to avoid layout
     // breakage; otherwise this has no effect.
     fit: 'shrink',
-    lineSpacing: node.lineHeight != null ? pt(ctx, node.lineHeight) : undefined,
+    lineSpacing: lineHeightPx != null ? pt(ctx, lineHeightPx) : undefined,
     shadow: mapShadow(node, opacity)
   })
   ctx.stats.editable += 1
@@ -491,7 +494,10 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
         italic: s.italic ?? node.italic,
         color: fill ? hex(fill.color) : '000000',
         transparency: transparency(opacity * (fill ? fill.opacity * fill.color.a : 1)),
-        charSpacing: charSpacingPt(ctx, s.letterSpacing ?? node.letterSpacing),
+        charSpacing: charSpacingPt(
+          ctx,
+          textLengthPixels(s.letterSpacing ?? node.letterSpacing, fontSize)
+        ),
         underline: deco === 'UNDERLINE' ? { style: 'sng' as const } : undefined,
         strike: deco === 'STRIKETHROUGH' ? ('sngStrike' as const) : undefined
       }

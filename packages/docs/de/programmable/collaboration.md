@@ -10,7 +10,7 @@ Mehrere Personen können dasselbe Dokument gleichzeitig bearbeiten. Die Teilnehm
 ## Raum teilen
 
 1. Schaltfläche „Teilen“ oben rechts öffnen.
-2. **Diese Datei teilen** wählen – der Link `app.openpencil.dev/share/<room-id>` wird kopiert.
+2. **Diese Datei teilen** wählen – der Link `app.openpencil.dev/rooms/<room-id>` wird kopiert.
 3. Link an die anderen Teilnehmer senden.
 
 Nur „Teilen“ bringt ein Dokument in einen Raum: Der Tab, aus dem Sie teilen, wird zum Tab des Raums und bleibt mit seiner Datei verbunden. Jede Person mit dem Link kann beitreten.

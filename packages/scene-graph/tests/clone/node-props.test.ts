@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, getInstanceOverride, setInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import {
+  getInstanceOverride,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 

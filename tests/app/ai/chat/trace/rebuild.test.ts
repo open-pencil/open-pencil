@@ -9,9 +9,9 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import { matchesRecordedStep, rebuildStepMessages } from '@/app/ai/chat/trace/rebuild'
 import { createRunRecorder } from '@/app/ai/chat/trace/recorder'
-import { createToolLoopTransport } from '@/app/ai/chat/transports'
 import { createAITools } from '@/app/ai/tools'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
+import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
 

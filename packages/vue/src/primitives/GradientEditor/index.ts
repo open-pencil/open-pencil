@@ -7,3 +7,4 @@ export type {
   GradientEditorStopSlotProps,
   GradientEditorStopSlots
 } from '#vue/primitives/GradientEditor/types'
+export { useGradientStops } from './useGradientStops'

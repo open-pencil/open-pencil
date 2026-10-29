@@ -1,4 +1,4 @@
-import { PingSchema, UsageEventSchema, type UsageEvent } from './schema'
+import { pingSchema, usageEventSchema, type UsageEvent } from './schema'
 
 export interface FieldDescription {
   name: string
@@ -46,7 +46,7 @@ const EVENT_DESCRIPTIONS: {
   }
 }
 
-type PingField = keyof typeof PingSchema.entries
+type PingField = keyof typeof pingSchema.entries
 
 const BUILD_FIELDS = [
   'version',
@@ -72,7 +72,7 @@ function valuesOf(schema: unknown): readonly string[] {
 }
 
 function describeField(name: PingField): FieldDescription {
-  return { name, description: PING_DESCRIPTIONS[name], values: valuesOf(PingSchema.entries[name]) }
+  return { name, description: PING_DESCRIPTIONS[name], values: valuesOf(pingSchema.entries[name]) }
 }
 
 /** The build fields every ping and every usage batch carries. */
@@ -87,7 +87,7 @@ export function describePingFields(): FieldDescription[] {
 
 /** Every usage event, its properties, and the values each property can take. */
 export function describeUsageEvents(): UsageEventDescription[] {
-  return UsageEventSchema.options.map((option) => {
+  return usageEventSchema.options.map((option) => {
     const name = option.entries.name.literal
     const described: { description: string; properties: Record<string, string> } =
       EVENT_DESCRIPTIONS[name]

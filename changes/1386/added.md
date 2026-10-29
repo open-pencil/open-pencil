@@ -1,0 +1,3 @@
+- Claude Code and Codex replies can revert and restore the edits they made, the chat marks the calls you undid, and their tool cards show what each call changed, as for provider models.
+- Settings → Usage counts the tokens of Claude Code, Codex, and Pi replies, shows cached input and cache writes, and lists each model's input and output tokens.
+- Pi replies show a run of thoughts as one, start new text after a tool call, and close their text when stopped.

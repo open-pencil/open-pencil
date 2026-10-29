@@ -1,7 +1,7 @@
 import { useTimeoutFn } from '@vueuse/core'
 import { computed, effectScope, ref, shallowRef, watch } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { isFigPagePending } from '@open-pencil/core/io/formats/fig'
 import { createLinter, type LintConfig, type LintFixRequest } from '@open-pencil/core/lint'
 
@@ -43,6 +43,11 @@ export function createDesignCheck(editor: Editor, state: AppEditorState) {
   const snapshot = shallowRef<DesignCheckSnapshot | null>(null)
   const panelVisible = ref(false)
   const focusedIssueId = ref<string | null>(null)
+  /** The layer of the focused issue, which takes the focus with it when it is deleted. */
+  const focusedNodeId = computed(() => {
+    const id = focusedIssueId.value
+    return id ? (snapshot.value?.issues.find((issue) => issue.id === id)?.nodeId ?? null) : null
+  })
 
   const preferences = computed(() => appPreferences.value.designCheck)
   const enabled = computed(() => panelVisible.value || preferences.value.showOnCanvas)
@@ -81,7 +86,10 @@ export function createDesignCheck(editor: Editor, state: AppEditorState) {
     return graph.onNodeEvents({
       created: (node) => touch(node.id),
       updated: (id) => touch(id),
-      deleted: (_id, parentId) => touch(parentId),
+      deleted: (id, parentId) => {
+        touch(parentId)
+        if (id === focusedNodeId.value) focusedIssueId.value = null
+      },
       reparented: (_id, oldParentId, newParentId) => {
         touch(oldParentId)
         touch(newParentId)
@@ -143,20 +151,37 @@ export function createDesignCheck(editor: Editor, state: AppEditorState) {
       if (pagesNeeded.value) pages.invalidateAll()
     })
     watch(pagesNeeded, (on) => (on ? pages.start() : pages.stop()), { immediate: true })
-    watch(snapshot, (current) => current && pages.report(current.pageId, current.issues))
+    // Immediate: the first check runs while `enabled` starts up, before this watcher exists.
+    watch(
+      snapshot,
+      (current) => {
+        if (!current) return
+        pages.report(current.pageId, current.issues)
+        // A focused issue the check no longer finds, such as one fixed, has no row left to show.
+        const focused = focusedIssueId.value
+        if (focused && !current.issues.some(({ id }) => id === focused)) focusedIssueId.value = null
+      },
+      { immediate: true }
+    )
+    // A page nothing changed on shows its last result at once. The check still runs once the
+    // switch settles, rather than inside it, since variables can change what a page reports.
     watch(
       () => state.currentPageId,
-      () => {
+      (pageId) => {
         focusedIssueId.value = null
         editor.setDesignIssueHighlight(null)
-        if (enabled.value) run()
+        const cached = enabled.value ? pages.fresh(pageId) : null
+        if (cached) snapshot.value = { pageId, issues: [...cached] }
+        publishMarkers()
+        if (enabled.value) schedule()
       }
     )
     watch(
       () => state.sceneVersion,
       () => enabled.value && schedule()
     )
-    watch([snapshot, () => preferences.value.showOnCanvas], publishMarkers)
+    // Immediate: the first check runs before this watcher exists, while `enabled` starts up.
+    watch([snapshot, () => preferences.value.showOnCanvas], publishMarkers, { immediate: true })
   })
 
   const unsubscribeGraph = editor.onEditorEvent('graph:replaced', () => {
@@ -196,6 +221,8 @@ export function createDesignCheck(editor: Editor, state: AppEditorState) {
     // A page switch clears the focused issue, so focus follows the switch.
     if (issue.pageId !== state.currentPageId && editor.graph.getNode(issue.pageId)) {
       await editor.switchPage(issue.pageId)
+      // The row to focus belongs to the new page's check, which would otherwise come later.
+      run()
     }
     focusedIssueId.value = issue.id
     if (!editor.graph.getNode(issue.nodeId)) return

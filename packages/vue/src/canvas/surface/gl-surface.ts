@@ -1,7 +1,7 @@
 import type { CanvasKit, Surface } from 'canvaskit-wasm'
 
+import type { Editor } from '@open-pencil/core'
 import { IS_BROWSER } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import type { DocumentColorSpace } from '@open-pencil/scene-graph'
 
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
@@ -34,6 +34,23 @@ function parkingHandle(ck: CanvasKit): GLHandle | null {
   return handle
 }
 
+/** Makes the parking context current, so CanvasKit lets go of the one it held. */
+function park(ck: CanvasKit): void {
+  const parking = parkingHandle(ck)
+  if (!parking) return
+  try {
+    ck.MakeGrContext(parking)?.delete()
+  } catch {
+    // A browser drops a page's oldest WebGL contexts once it holds too many, as WebKit does after
+    // a few tabs, and reports it only later; the parking context is the oldest, so it is the one
+    // gone, and CanvasKit fails on it. A new parking context takes its place.
+    ck.deleteContext(parking)
+    parkingHandles.delete(ck)
+    const replacement = parkingHandle(ck)
+    if (replacement) ck.MakeGrContext(replacement)?.delete()
+  }
+}
+
 /**
  * Unregisters a canvas's WebGL context from CanvasKit. `deleteContext` leaves CanvasKit holding
  * the last current context, which keeps the canvas, and every component its element reaches,
@@ -47,9 +64,7 @@ export function releaseWebGLContext(
   const context = canvas ? (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) : null
   const wasCurrent = context !== null && Reflect.get(ck, 'ctx') === context
   ck.deleteContext(handle)
-  if (!wasCurrent) return
-  const parking = parkingHandle(ck)
-  if (parking) ck.MakeGrContext(parking)?.delete()
+  if (wasCurrent) park(ck)
 }
 
 export function sizeCanvas(

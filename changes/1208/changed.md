@@ -1,0 +1,1 @@
+- The variables list shows an alias as a pill sized to its target's name followed by the value it gives, and a value with a CSS expression keeps showing its value, marked CSS, with the expression on hover.

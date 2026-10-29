@@ -134,7 +134,7 @@ selected passing properties as complete editable-document compatibility.
 - [Export context and identity allocation](../src/node-change/export/context.ts)
 - [Property/layout conversion](../src/node-change/serialize.ts)
 - [Archive assembly](../src/archive.ts)
-- [Core export orchestration](../../core/src/io/formats/fig/export.ts)
+- [Core export orchestration](../../core/src/io/formats/fig/export/index.ts)
 - [Figma-authored contract fixture](../tests/document/fixtures/README.md)
 - [Self-size export](../tests/document/self-size-export.test.ts)
 - [Edited layout export](../tests/document/layout-edit-export.test.ts)

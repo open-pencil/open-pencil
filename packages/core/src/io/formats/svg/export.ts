@@ -1,13 +1,16 @@
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
+import { normalizeDashPattern } from '#core/canvas/strokes'
+import { lineStrokePath } from '#core/canvas/strokes/line'
+import { fittedDashPattern } from '#core/canvas/strokes/sides'
 import { computeContentBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
-  formatColor,
+  formatSolidColor,
   createFilterDef,
   resolveFill,
+  solidFillOpacity,
   SVG_STROKE_CAP,
   SVG_STROKE_JOIN,
   SVG_BLEND_MODE
@@ -15,29 +18,42 @@ import {
 import {
   round,
   geometryBlobToSVGPath,
-  vectorNetworkToSVGPaths,
   makePolygonPoints,
   roundedPolygonPath,
   hasRadius,
   roundedRectPath,
-  arcPath
+  arcPath,
+  shapeWithTextOutlinePath
 } from './paths'
 
-export { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from './paths'
+export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
-import type {
-  SceneGraph,
-  SceneNode,
-  Fill,
-  Stroke,
-  CharacterStyleOverride
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import { looseSegments, regionSVGPaths } from '@open-pencil/scene-graph/vector-network'
 
-import type { SVGExportContext } from './defs'
+import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
+import type { SVGExportContext, SVGFontAlias } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
+import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
+import { renderTextNode } from './text/export'
+import type { SVGTextLayout } from './text/lines'
 
 // --- Node rendering ---
+
+/**
+ * A vector network's paths: its regions as they are traced, and its open segments as the canvas
+ * strokes them, rounded and pulled back under their heads.
+ */
+function networkElements(
+  node: SceneNode,
+  network: VectorNetwork,
+  common: Record<string, string | number | undefined>
+): SVGNode[] {
+  const regions = regionSVGPaths(network).map((d) => svg('path', { d, ...common }))
+  if (looseSegments(network).length === 0) return regions
+  return [...regions, ...openPathElements(node, network, common, looseSegments)]
+}
 
 function vectorShapeElements(
   node: SceneNode,
@@ -73,16 +89,14 @@ function vectorShapeElements(
           svg('path', {
             ...attrs,
             fill: fillAttr,
+            'fill-opacity': solidFillOpacity(fill, ctx.colorSpace),
             stroke: index === visibleFills.length - 1 ? common.stroke : 'none'
           })
         )
       }
     }
   } else if (node.vectorNetwork) {
-    const paths = vectorNetworkToSVGPaths(node.vectorNetwork)
-    for (const d of paths) {
-      elements.push(svg('path', { d, ...common }))
-    }
+    elements.push(...networkElements(node, node.vectorNetwork, common))
   }
   if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
     for (const geo of node.strokeGeometry) {
@@ -99,19 +113,32 @@ function vectorShapeElements(
       }
     }
   }
+  if (node.vectorNetwork) elements.push(...vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
   return elements.length > 0
     ? elements
     : [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
 }
 
+/** A line's dashes stretched along it as the canvas lays them, half a dash at each end. */
+function lineDashAttrs(stroke: Stroke | undefined, length: number) {
+  const fitted = fittedDashPattern(length, normalizeDashPattern(stroke?.dashPattern))
+  if (!fitted) return {}
+  return {
+    'stroke-dasharray': fitted.intervals.map((size) => round(size)).join(' '),
+    'stroke-dashoffset': round(fitted.offset)
+  }
+}
+
 function nodeShapeElements(
   node: SceneNode,
   fillAttr: string | null,
+  fillOpacity: number | undefined,
   strokeAttrs: Record<string, string | number | undefined>,
   ctx: SVGExportContext
 ): SVGNode[] {
   const common: Record<string, string | number | undefined> = {
     fill: fillAttr ?? 'none',
+    'fill-opacity': fillOpacity,
     ...strokeAttrs
   }
 
@@ -131,17 +158,27 @@ function nodeShapeElements(
       ]
     }
 
-    case 'LINE':
+    case 'LINE': {
+      // Where the canvas strokes it: to one side of the line, with its caps inside its length.
+      const stroke = node.strokes.find((item) => item.visible)
+      const {
+        network,
+        from: start,
+        to: end
+      } = lineStrokePath(node, stroke?.weight ?? 0, stroke?.cap ?? node.strokeCap)
       return [
         svg('line', {
-          x1: 0,
-          y1: 0,
-          x2: round(node.width),
-          y2: round(node.height),
+          x1: round(start.x),
+          y1: round(start.y),
+          x2: round(end.x),
+          y2: round(end.y),
           fill: 'none',
-          ...strokeAttrs
-        })
+          ...strokeAttrs,
+          ...lineDashAttrs(stroke, Math.hypot(end.x - start.x, end.y - start.y))
+        }),
+        ...arrowHeadElements(node, network, stroke, strokeAttrs)
       ]
+    }
 
     case 'STAR':
     case 'POLYGON':
@@ -151,6 +188,9 @@ function nodeShapeElements(
 
     case 'VECTOR':
       return vectorShapeElements(node, common, strokeAttrs, ctx)
+
+    case 'SHAPE_WITH_TEXT':
+      return shapeWithTextElements(node, common, strokeAttrs, ctx)
 
     default: {
       if (hasRadius(node)) {
@@ -172,89 +212,20 @@ function nodeShapeElements(
   }
 }
 
-function styleOverrideToTspanAttrs(
-  style: CharacterStyleOverride,
-  colorSpace: 'srgb' | 'display-p3'
-): Record<string, string | number | undefined> {
-  const attrs: Record<string, string | number | undefined> = {}
-  if (style.fontFamily) attrs['font-family'] = style.fontFamily
-  if (style.fontSize) attrs['font-size'] = style.fontSize
-  if (style.fontWeight) attrs['font-weight'] = style.fontWeight
-  if (style.italic) attrs['font-style'] = 'italic'
-  if (style.letterSpacing) attrs['letter-spacing'] = round(style.letterSpacing)
-  if (style.textDecoration === 'UNDERLINE') attrs['text-decoration'] = 'underline'
-  if (style.textDecoration === 'STRIKETHROUGH') attrs['text-decoration'] = 'line-through'
-  if (style.fills) {
-    const visibleFill = style.fills.find((f) => f.visible && f.type === 'SOLID')
-    if (visibleFill) {
-      attrs.fill = formatColor(visibleFill.color, visibleFill.opacity, colorSpace)
-    }
-  }
-  return attrs
-}
-
-function isLogicalTextEnd(node: SceneNode, direction: 'LTR' | 'RTL'): boolean {
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'RIGHT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'LEFT')
-  )
-}
-
-function textAnchorForNode(
+/**
+ * A FigJam shape's outline, and its inner lines, such as a database's front rim, stroked as the
+ * canvas strokes them: at the stroke's own weight, ending where the outline does.
+ */
+function shapeWithTextElements(
   node: SceneNode,
-  direction: 'LTR' | 'RTL'
-): 'middle' | 'end' | undefined {
-  if (node.textAlignHorizontal === 'CENTER') return 'middle'
-  if (isLogicalTextEnd(node, direction)) return 'end'
-  return undefined
-}
-
-function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
-  if (node.textAlignHorizontal === 'CENTER') return round(node.width / 2)
-  if (isLogicalTextEnd(node, direction)) return round(node.width)
-  return 0
-}
-
-function renderTextNode(
-  node: SceneNode,
-  fillAttr: string | null,
-  colorSpace: 'srgb' | 'display-p3'
-): SVGNode {
-  const direction = resolveNodeTextDirection(node)
-  const textAnchor = textAnchorForNode(node, direction)
-
-  let textDecoration: 'underline' | 'line-through' | undefined
-  if (node.textDecoration === 'UNDERLINE') textDecoration = 'underline'
-  else if (node.textDecoration === 'STRIKETHROUGH') textDecoration = 'line-through'
-
-  const attrs: Record<string, string | number | undefined> = {
-    'font-family': node.fontFamily || undefined,
-    'font-size': node.fontSize || undefined,
-    'font-weight': node.fontWeight !== 400 ? node.fontWeight : undefined,
-    'font-style': node.italic ? 'italic' : undefined,
-    fill: fillAttr ?? undefined,
-    direction: direction === 'RTL' ? 'rtl' : undefined,
-    'text-anchor': textAnchor,
-    'text-decoration': textDecoration,
-    'letter-spacing': node.letterSpacing ? round(node.letterSpacing) : undefined
-  }
-
-  const x = textXForNode(node, direction)
-  const y = node.fontSize || 14
-
-  if (node.styleRuns.length > 0) {
-    const spans: SVGNode[] = []
-    let pos = 0
-    for (const run of node.styleRuns) {
-      const text = node.text.slice(pos, pos + run.length)
-      pos += run.length
-      spans.push(svg('tspan', styleOverrideToTspanAttrs(run.style, colorSpace), text))
-    }
-
-    return svg('text', { x, y, ...attrs }, ...spans)
-  }
-
-  return svg('text', { x, y, ...attrs }, node.text)
+  common: Record<string, string | number | undefined>,
+  strokeAttrs: Record<string, string | number | undefined>,
+  ctx: SVGExportContext
+): SVGNode[] {
+  return [
+    svg('path', { d: shapeWithTextOutlinePath(node), ...common }),
+    ...shapeWithTextDetailElements(node, strokeAttrs, ctx)
+  ]
 }
 
 // --- Main recursive renderer ---
@@ -316,18 +287,20 @@ function buildGroupAttrs(
 
 function buildSVGStrokeAttrs(
   visibleStrokes: Stroke[],
-  colorSpace: 'srgb' | 'display-p3'
+  colorSpace: 'srgb' | 'display-p3',
+  nodeCap: SceneNode['strokeCap']
 ): Record<string, string | number | undefined> {
   if (visibleStrokes.length === 0) return {}
   const stroke = visibleStrokes[0]
+  const cap = stroke.cap ?? nodeCap
   const attrs: Record<string, string | number | undefined> = {
-    stroke: formatColor(stroke.color, 1, colorSpace),
+    // Opacity 1 keeps the color opaque. Display P3 must not also keep color alpha here, or a
+    // viewer multiplies it by stroke-opacity; the canvas paints stroke.opacity alone.
+    stroke: formatSolidColor(stroke.color, 1, colorSpace),
     'stroke-width': round(stroke.weight)
   }
   if (stroke.opacity < 1) attrs['stroke-opacity'] = round(stroke.opacity)
-  if (stroke.cap && stroke.cap !== 'NONE') {
-    attrs['stroke-linecap'] = SVG_STROKE_CAP[stroke.cap] ?? 'butt'
-  }
+  if (cap !== 'NONE') attrs['stroke-linecap'] = SVG_STROKE_CAP[cap] ?? 'butt'
   if (stroke.join && stroke.join !== 'MITER') {
     attrs['stroke-linejoin'] = SVG_STROKE_JOIN[stroke.join] ?? 'miter'
   }
@@ -345,6 +318,36 @@ function buildShapeChildren(
   node: SceneNode,
   visibleFills: Fill[],
   fillAttr: string | null,
+  fillOpacity: number | undefined,
+  strokeAttrs: Record<string, string | number | undefined>,
+  visibleStrokes: Stroke[],
+  ctx: SVGExportContext
+): SVGNode[] {
+  const aligned = hasPathLevelFills(node) ? null : alignedStroke(node, visibleStrokes[0])
+  if (!aligned) {
+    return fillAndStrokeElements(
+      node,
+      visibleFills,
+      fillAttr,
+      fillOpacity,
+      strokeAttrs,
+      visibleStrokes.length,
+      ctx
+    )
+  }
+  // The fill goes as it is, and the stroke over it inside or outside the outline.
+  return [
+    ...fillAndStrokeElements(node, visibleFills, fillAttr, fillOpacity, {}, 0, ctx),
+    ...alignedStrokeElement(node, aligned, strokeAttrs, ctx),
+    ...(node.type === 'SHAPE_WITH_TEXT' ? shapeWithTextDetailElements(node, strokeAttrs, ctx) : [])
+  ]
+}
+
+function fillAndStrokeElements(
+  node: SceneNode,
+  visibleFills: Fill[],
+  fillAttr: string | null,
+  fillOpacity: number | undefined,
   strokeAttrs: Record<string, string | number | undefined>,
   visibleStrokeCount: number,
   ctx: SVGExportContext
@@ -352,7 +355,7 @@ function buildShapeChildren(
   if (hasPathLevelFills(node)) {
     return vectorShapeElements(
       node,
-      { fill: fillAttr ?? 'none', ...strokeAttrs },
+      { fill: fillAttr ?? 'none', 'fill-opacity': fillOpacity, ...strokeAttrs },
       strokeAttrs,
       ctx,
       visibleFills
@@ -368,6 +371,7 @@ function buildShapeChildren(
           ...nodeShapeElements(
             node,
             ref,
+            solidFillOpacity(fill, ctx.colorSpace),
             fill === visibleFills[visibleFills.length - 1] ? strokeAttrs : {},
             ctx
           )
@@ -379,7 +383,7 @@ function buildShapeChildren(
 
   const hasFillOrStroke = fillAttr || visibleStrokeCount > 0
   if (hasFillOrStroke && !isGroupLike(node)) {
-    return nodeShapeElements(node, fillAttr, strokeAttrs, ctx)
+    return nodeShapeElements(node, fillAttr, fillOpacity, strokeAttrs, ctx)
   }
 
   return []
@@ -388,27 +392,44 @@ function buildShapeChildren(
 /** The paint CSS `color` sets, for a tinted icon path. */
 const CURRENT_COLOR = 'currentColor'
 
+/** A paint's SVG color and, for an sRGB solid, the `fill-opacity` beside it. */
+function exportedFill(
+  fill: Fill | undefined,
+  node: SceneNode,
+  ctx: SVGExportContext
+): { color: string | null; opacity: number | undefined } {
+  if (!fill) return { color: null, opacity: undefined }
+  return {
+    color: resolveFill(fill, node, ctx),
+    opacity: solidFillOpacity(fill, ctx.colorSpace)
+  }
+}
+
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (!node.visible) return null
 
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
-    const firstFill = node.fills.find((f) => f.visible)
-    const fillAttr = firstFill ? resolveFill(firstFill, node, ctx) : null
-    const textEl = renderTextNode(node, fillAttr, ctx.colorSpace)
-    return svg('g', groupAttrs, textEl)
+    const fill = exportedFill(
+      node.fills.find((f) => f.visible),
+      node,
+      ctx
+    )
+    return svg('g', groupAttrs, renderTextNode(node, fill.color, ctx, fill.opacity))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
   const visibleStrokes = node.strokes.filter((s) => s.visible)
   const tint = ctx.tint?.(node) ?? []
-  const ownFill =
-    visibleFills.length > 0 && !hasPathLevelFills(node)
-      ? resolveFill(visibleFills[0], node, ctx)
-      : null
-  const fillAttr = ownFill && tint.includes('fill') ? CURRENT_COLOR : ownFill
-  const ownStrokes = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace)
+  const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
+  const fill = exportedFill(ownFill, node, ctx)
+  const tintedFill = fill.color !== null && tint.includes('fill')
+  const fillAttr = tintedFill ? CURRENT_COLOR : fill.color
+  // `currentColor` has no alpha. Display P3 normally bakes solid opacity into the color, which a
+  // tint throws away, so a tinted solid keeps `fill-opacity` in every color space.
+  const fillOpacity = ownFill ? solidFillOpacity(ownFill, ctx.colorSpace, tintedFill) : fill.opacity
+  const ownStrokes = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace, node.strokeCap)
   const strokeAttrs =
     ownStrokes.stroke && tint.includes('stroke')
       ? { ...ownStrokes, stroke: CURRENT_COLOR }
@@ -418,8 +439,9 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     node,
     visibleFills,
     fillAttr,
+    fillOpacity,
     strokeAttrs,
-    visibleStrokes.length,
+    visibleStrokes,
     ctx
   )
 
@@ -460,6 +482,16 @@ export interface SVGExportOptions {
   xmlDeclaration?: boolean
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
+  /**
+   * Line breaks of text nodes as the editor laid them out, wraps included. Without them, only
+   * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
+   */
+  textLayout?: SVGTextLayout
+  /**
+   * A family to name a font face by instead of its own, such as the one a PDF embeds the face's
+   * file under. Text in an aliased face is written in that family at normal weight and style.
+   */
+  fontAlias?: SVGFontAlias
 }
 
 export function renderNodesToSVG(
@@ -479,7 +511,9 @@ export function renderNodesToSVG(
     defs: [],
     defIdCounter: 0,
     graph,
-    colorSpace: options.colorSpace ?? 'srgb'
+    colorSpace: options.colorSpace ?? 'srgb',
+    textLayout: options.textLayout,
+    fontAlias: options.fontAlias
   }
 
   const contentNodes: SVGNode[] = []

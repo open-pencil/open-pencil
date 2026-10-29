@@ -1,10 +1,8 @@
-import { tv } from 'tailwind-variants'
-
 /**
  * The room tab's screen while its document is on the way, centred like the app's other empty
  * states (`AppPlaceholder`) over the whole tab.
  */
-export const roomScreen = tv({
+export const roomScreenTheme = {
   slots: {
     root: 'absolute inset-0 z-20 flex overflow-y-auto bg-canvas',
     title: 'text-sm font-semibold',
@@ -18,10 +16,10 @@ export const roomScreen = tv({
     footnote: 'flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-muted',
     link: 'text-primary underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none'
   }
-})
+} as const
 
 /** A note across the top of the canvas, such as after leaving a room. */
-export const roomNotice = tv({
+export const roomNoticeTheme = {
   slots: {
     root: 'absolute top-3 left-1/2 z-20 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-3 rounded-lg border border-border bg-panel px-3 py-2 shadow-sm',
     icon: 'size-4 shrink-0 text-muted',
@@ -29,4 +27,4 @@ export const roomNotice = tv({
     title: 'text-xs font-medium text-surface',
     description: 'text-[11px] text-muted'
   }
-})
+} as const

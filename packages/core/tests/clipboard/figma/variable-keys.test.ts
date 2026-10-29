@@ -2,8 +2,9 @@ import { beforeAll, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { buildFigmaClipboardHTML, parseFigmaClipboard } from '@open-pencil/core'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 beforeAll(async () => {

@@ -8,7 +8,6 @@ import type { FontFamilyOption } from '@open-pencil/core/text'
 import { useRetainedActivity } from '#vue/lifecycle/retention/context'
 
 export type FontAccessState = 'unsupported' | 'prompt' | 'granted' | 'denied'
-export type { FontFamilyOption, FontFamilySource } from '@open-pencil/core/text'
 
 export interface FontAccessController {
   state: () => FontAccessState

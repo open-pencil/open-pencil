@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
-import { captureGraphCheckpoint } from '@open-pencil/scene-graph'
+import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
 import { readPage } from '@/app/collab/shared-tree/fields'
 
@@ -62,7 +62,7 @@ describe('collab layer tree', () => {
         }
       },
       ({ hostStore }, pageId) => {
-        hostStore.graph.reorderChild('rect:3', pageId, 0)
+        hostStore.graph.insertChildAt('rect:3', pageId, 0)
       },
       (stores, pageId) => {
         expect(getNodeOrThrow(stores.peerStore.graph, pageId).childIds).toEqual([
@@ -138,7 +138,7 @@ describe('collab layer tree', () => {
 
         const checkpoint = captureGraphCheckpoint(hostStore.graph)
         hostStore.graph.reparentNode('rect:1', 'frame:1')
-        hostStore.graph.reorderChild('rect:2', pageId, 0)
+        hostStore.graph.insertChildAt('rect:2', pageId, 0)
         await settleGraphSync()
         expect(getNodeOrThrow(peerStore.graph, 'rect:1').parentId).toBe('frame:1')
 

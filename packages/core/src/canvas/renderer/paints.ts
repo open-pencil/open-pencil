@@ -90,6 +90,12 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.penLiveStrokePaint.setColor(ck.Color4f(0, 0, 0, 1))
   r.penLiveStrokePaint.setAntiAlias(true)
 
+  r.pencilStrokePaint = new ck.Paint()
+  r.pencilStrokePaint.setStyle(ck.PaintStyle.Stroke)
+  r.pencilStrokePaint.setStrokeCap(ck.StrokeCap.Round)
+  r.pencilStrokePaint.setStrokeJoin(ck.StrokeJoin.Round)
+  r.pencilStrokePaint.setAntiAlias(true)
+
   r.penHandlePaint = new ck.Paint()
   r.penHandlePaint.setStyle(ck.PaintStyle.Stroke)
   r.penHandlePaint.setStrokeWidth(1)

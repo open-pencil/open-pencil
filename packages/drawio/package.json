@@ -1,0 +1,48 @@
+{
+  "name": "@open-pencil/drawio",
+  "version": "0.16.0",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "check": "bun run typecheck && bun run build",
+    "prepack": "bun run build",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/drawio"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.12",
+    "fflate": "^0.8.3",
+    "image-size": "^2.0.4",
+    "js-base64": "^3.9.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "tsdown": "^0.22.14",
+    "typescript": "~5.8.3"
+  }
+}

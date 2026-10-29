@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, executeAtomicTool } from '@open-pencil/core/editor'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
+import { createEditor, executeAtomicTool } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -12,6 +13,7 @@ function setup() {
   const figma = new FigmaAPI(graph)
   const editor = {
     graph,
+    state: { readOnly: false },
     runLayoutForNode: () => undefined,
     requestRender: () => undefined,
     pushUndoStep: undo.pushStep.bind(undo)
@@ -64,15 +66,11 @@ describe('atomic agent tools', () => {
 
   test('variable values and bound nodes are undoable across pages', () => {
     const { figma, editor, undo, rectangle, tool } = setup()
-    const collection = figma.createVariableCollection('Colors')
-    const variable = figma.createVariable('Brand', 'COLOR', collection.id, {
-      r: 1,
-      g: 0,
-      b: 0,
-      a: 1
-    })
+    const collection = figma.variables.createVariableCollection('Colors')
+    const variable = figma.variables.createVariable('Brand', collection, 'COLOR')
+    variable.setValueForMode(collection.defaultModeId, { r: 1, g: 0, b: 0, a: 1 })
     tool('set_fill').execute(figma, { id: rectangle.id, color: '#ff0000' })
-    figma.bindVariable(rectangle.id, 'fills/0/color', variable.id)
+    new OpenPencilAPI(figma).bindVariable(rectangle.id, 'fills/0/color', variable)
     const page = figma.createPage()
     figma.currentPage = page
     executeAtomicTool(editor, figma, tool('set_variable'), {
@@ -81,15 +79,15 @@ describe('atomic agent tools', () => {
       value: '#00ff00'
     })
     expect(
-      figma.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
+      figma.variables.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
     ).toMatchObject({ g: 1 })
     undo.undo()
     expect(
-      figma.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
+      figma.variables.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
     ).toMatchObject({ r: 1, g: 0 })
     undo.redo()
     expect(
-      figma.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
+      figma.variables.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
     ).toMatchObject({ r: 0, g: 1 })
   })
 

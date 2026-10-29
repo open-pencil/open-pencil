@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { TextParagraphStyle } from '@open-pencil/scene-graph'
 import {
   paragraphStylesAfterEdit,
   paragraphStylesAfterTextChange,
@@ -7,9 +8,8 @@ import {
   textListItems,
   topLevelNumberDigits,
   withIndentation,
-  withListType,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+  withListType
+} from '@open-pencil/scene-graph/text'
 
 const ol = (indentation = 1): TextParagraphStyle => ({ listType: 'ORDERED', indentation })
 const ul = (indentation = 1): TextParagraphStyle => ({ listType: 'UNORDERED', indentation })
@@ -43,7 +43,17 @@ describe('list numbering', () => {
     const letters = markers([ol(1), ...Array.from({ length: 28 }, () => ol(2))])
     expect(letters.slice(-3)).toEqual(['z.', 'aa.', 'ab.'])
     const numerals = markers([ol(1), ol(2), ...Array.from({ length: 9 }, () => ol(3))])
-    expect(numerals.slice(2)).toEqual(['i.', 'ii.', 'iii.', 'iv.', 'v.', 'vi.', 'vii.', 'viii.', 'ix.'])
+    expect(numerals.slice(2)).toEqual([
+      'i.',
+      'ii.',
+      'iii.',
+      'iv.',
+      'v.',
+      'vi.',
+      'vii.',
+      'viii.',
+      'ix.'
+    ])
   })
 
   test('styles markers from the first item of each list group', () => {
@@ -52,10 +62,10 @@ describe('list numbering', () => {
   })
 
   test('widens by the digits of the largest top-level number only', () => {
-    const items = textListItems(
-      Array.from({ length: 13 }, (_, index) => `p${index}`).join('\n'),
-      [ol(1), ...Array.from({ length: 12 }, () => ol(4))]
-    )
+    const items = textListItems(Array.from({ length: 13 }, (_, index) => `p${index}`).join('\n'), [
+      ol(1),
+      ...Array.from({ length: 12 }, () => ol(4))
+    ])
     expect(topLevelNumberDigits(items)).toBe(1)
     const long = textListItems(
       Array.from({ length: 12 }, (_, index) => `p${index}`).join('\n'),
@@ -67,8 +77,16 @@ describe('list numbering', () => {
 
 describe('paragraph styles through edits', () => {
   test('continue the list into inserted paragraphs', () => {
-    expect(paragraphStylesAfterEdit([ul(), ul()], 'a\nb', 1, 1, '\nnew')).toEqual([ul(), ul(), ul()])
-    expect(paragraphStylesAfterEdit([plain, ol()], 'a\nb', 3, 3, '\nend')).toEqual([plain, ol(), ol()])
+    expect(paragraphStylesAfterEdit([ul(), ul()], 'a\nb', 1, 1, '\nnew')).toEqual([
+      ul(),
+      ul(),
+      ul()
+    ])
+    expect(paragraphStylesAfterEdit([plain, ol()], 'a\nb', 3, 3, '\nend')).toEqual([
+      plain,
+      ol(),
+      ol()
+    ])
   })
 
   test('keep the first paragraph style when a newline is deleted', () => {
@@ -78,12 +96,18 @@ describe('paragraph styles through edits', () => {
 
   test('follow an editor that replaces the whole text', () => {
     // Enter at the end of an item, then joining the item back.
-    expect(paragraphStylesAfterTextChange([plain, ol()], 'a\nb', 'a\nb\n')).toEqual([plain, ol(), ol()])
+    expect(paragraphStylesAfterTextChange([plain, ol()], 'a\nb', 'a\nb\n')).toEqual([
+      plain,
+      ol(),
+      ol()
+    ])
     expect(paragraphStylesAfterTextChange([ul(), ol()], 'a\nb', 'ab')).toEqual([ul()])
   })
 
   test('change whole paragraphs a range touches, not the one after its newline', () => {
-    const next = paragraphStylesInRange([], 'a\nb\nc', 0, 2, (style) => withListType(style, 'ORDERED'))
+    const next = paragraphStylesInRange([], 'a\nb\nc', 0, 2, (style) =>
+      withListType(style, 'ORDERED')
+    )
     expect(next).toEqual([ol()])
   })
 

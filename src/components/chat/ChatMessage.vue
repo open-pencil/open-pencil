@@ -4,7 +4,8 @@ import { isReasoningUIPart, isTextUIPart } from 'ai'
 import type { UIMessage } from 'ai'
 import { computed, ref } from 'vue'
 
-import { useI18n, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'

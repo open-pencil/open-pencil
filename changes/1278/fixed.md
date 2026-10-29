@@ -1,0 +1,1 @@
+- The MCP HTTP server no longer runs out of sessions after failed initializations, session-less GET requests, or cancelled tool calls, and closes sessions idle for 15 minutes (`OPENPENCIL_MCP_SESSION_IDLE_TIMEOUT_MS`).

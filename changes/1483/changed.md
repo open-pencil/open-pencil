@@ -1,0 +1,1 @@
+- A Cloud server's Profile page changes your name in a dialog, as it already did your email, and confirms changes in a short notice at the top of the page; removing your picture asks first. **Account settings** in Home's account menu opens that page directly, and the menu shows your picture, name, email, and server.

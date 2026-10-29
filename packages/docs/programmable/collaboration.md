@@ -10,7 +10,7 @@ Edit designs together in real time. Peers connect directly — no server relays 
 ## Sharing a Room
 
 1. Click the share button in the top-right corner
-2. Click **Share this file** — the link (`app.openpencil.dev/share/<room-id>`) is copied
+2. Click **Share this file** — the link (`app.openpencil.dev/rooms/<room-id>`) is copied
 3. Send it to your collaborators
 
 Only Share puts a document into a room: the tab you share from becomes the room's tab and stays tied to its file. Anyone with the link can join.

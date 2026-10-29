@@ -9,7 +9,8 @@ import {
 } from 'reka-ui'
 import { nextTick, ref, watch } from 'vue'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import {
@@ -21,6 +22,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 const store = useEditorStore()
 const { getCommand } = useEditorCommands()
@@ -119,109 +121,116 @@ watch(open, (v) => {
         :class="menuCls.content"
         @escape-key-down="cancelInput"
       >
-        <div class="px-1 py-1">
-          <input
-            v-if="editing"
-            ref="inputRef"
-            v-model="inputValue"
-            data-test-id="zoom-input"
-            class="w-full rounded border border-accent bg-input px-2 py-1 text-xs text-surface outline-none"
-            @blur="commitInput"
-            @keydown.enter="commitInput"
-            @keydown.escape.stop="cancelInput"
-          />
-          <button
-            v-else
-            data-test-id="zoom-input-trigger"
-            class="w-full cursor-pointer rounded border border-border bg-input px-2 py-1 text-left text-xs text-surface hover:border-muted"
-            @click="startEditing"
+        <MenuScrollArea>
+          <div class="px-1 py-1">
+            <input
+              v-if="editing"
+              ref="inputRef"
+              v-model="inputValue"
+              data-test-id="zoom-input"
+              class="w-full rounded border border-accent bg-input px-2 py-1 text-xs text-surface outline-none"
+              @blur="commitInput"
+              @keydown.enter="commitInput"
+              @keydown.escape.stop="cancelInput"
+            />
+            <button
+              v-else
+              data-test-id="zoom-input-trigger"
+              class="w-full cursor-pointer rounded border border-border bg-input px-2 py-1 text-left text-xs text-surface hover:border-muted"
+              @click="startEditing"
+            >
+              {{ zoomPercent() }}%
+            </button>
+          </div>
+
+          <DropdownMenuSeparator :class="menuCls.separator" />
+
+          <DropdownMenuItem :class="itemCls" @select="zoomIn">
+            <span class="flex-1">{{ menuText.zoomIn }}</span>
+            <AppShortcutText>{{ appMenuShortcutLabel('zoom-in') }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem :class="itemCls" @select="zoomOut">
+            <span class="flex-1">{{ menuText.zoomOut }}</span>
+            <AppShortcutText>{{ appMenuShortcutLabel('zoom-out') }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem :class="itemCls" @select="getCommand('view.zoomFit').run()">
+            <span class="flex-1">{{ commands.zoomToFit }}</span>
+            <AppShortcutText>{{ appMenuShortcutLabel('view.zoomFit') }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            v-for="preset in ZOOM_PRESETS"
+            :key="preset.level"
+            :class="itemCls"
+            @select="store.zoomToLevel(preset.level)"
           >
-            {{ zoomPercent() }}%
-          </button>
-        </div>
+            <icon-lucide-check
+              v-if="isActivePreset(preset.level)"
+              class="absolute left-2 size-3.5"
+            />
+            <span class="flex-1">{{ preset.label() }}</span>
+            <AppShortcutText v-if="preset.shortcut">{{ preset.shortcut }}</AppShortcutText>
+          </DropdownMenuItem>
 
-        <DropdownMenuSeparator :class="menuCls.separator" />
+          <DropdownMenuSeparator :class="menuCls.separator" />
 
-        <DropdownMenuItem :class="itemCls" @select="zoomIn">
-          <span class="flex-1">{{ menuText.zoomIn }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('zoom-in') }}</AppShortcutText>
-        </DropdownMenuItem>
-        <DropdownMenuItem :class="itemCls" @select="zoomOut">
-          <span class="flex-1">{{ menuText.zoomOut }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('zoom-out') }}</AppShortcutText>
-        </DropdownMenuItem>
-        <DropdownMenuItem :class="itemCls" @select="getCommand('view.zoomFit').run()">
-          <span class="flex-1">{{ commands.zoomToFit }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('view.zoomFit') }}</AppShortcutText>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          v-for="preset in ZOOM_PRESETS"
-          :key="preset.level"
-          :class="itemCls"
-          @select="store.zoomToLevel(preset.level)"
-        >
-          <icon-lucide-check v-if="isActivePreset(preset.level)" class="absolute left-2 size-3.5" />
-          <span class="flex-1">{{ preset.label() }}</span>
-          <AppShortcutText v-if="preset.shortcut">{{ preset.shortcut }}</AppShortcutText>
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator :class="menuCls.separator" />
-
-        <DropdownMenuItem :class="itemCls" @select.prevent="togglePixelGrid">
-          <icon-lucide-check
-            v-if="store.state.showPixelGrid !== false"
-            class="absolute left-2 size-3.5"
-          />
-          <span class="flex-1">{{ menuText.pixelGrid }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('view-pixel-grid') }}</AppShortcutText>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          :class="itemCls"
-          @select.prevent="
-            setSnappingPreference('pixelGrid', !store.state.snappingPreferences.pixelGrid)
-          "
-        >
-          <icon-lucide-check
-            v-if="store.state.snappingPreferences.pixelGrid"
-            class="absolute left-2 size-3.5"
-          />
-          <span class="flex-1">{{ menuText.snapToPixelGrid }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('snap-pixel-grid') }}</AppShortcutText>
-        </DropdownMenuItem>
-        <DropdownMenuItem :class="itemCls" @select.prevent="toggleRulers">
-          <icon-lucide-check v-if="store.state.showRulers" class="absolute left-2 size-3.5" />
-          <span class="flex-1">{{ panels.rulers }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('view-rulers') }}</AppShortcutText>
-        </DropdownMenuItem>
-        <DropdownMenuItem :class="itemCls" @select.prevent="toggleRemoteCursors">
-          <icon-lucide-check
-            v-if="store.state.showRemoteCursors"
-            class="absolute left-2 size-3.5"
-          />
-          <span class="flex-1">{{ panels.multiplayerCursors }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('view-multiplayer-cursors') }}</AppShortcutText>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          :class="itemCls"
-          @select.prevent="setDesignIssuesOnCanvas(!appPreferences.designCheck.showOnCanvas)"
-        >
-          <icon-lucide-check
-            v-if="appPreferences.designCheck.showOnCanvas"
-            class="absolute left-2 size-3.5"
-          />
-          <span class="flex-1">{{ menuText.designIssues }}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          :class="itemCls"
-          @select.prevent="setCommentsOnCanvas(!appPreferences.comments.showOnCanvas)"
-        >
-          <icon-lucide-check
-            v-if="appPreferences.comments.showOnCanvas"
-            class="absolute left-2 size-3.5"
-          />
-          <span class="flex-1">{{ menuText.comments }}</span>
-          <AppShortcutText>{{ appMenuShortcutLabel('view-comments') }}</AppShortcutText>
-        </DropdownMenuItem>
+          <DropdownMenuItem :class="itemCls" @select.prevent="togglePixelGrid">
+            <icon-lucide-check
+              v-if="store.state.showPixelGrid !== false"
+              class="absolute left-2 size-3.5"
+            />
+            <span class="flex-1">{{ menuText.pixelGrid }}</span>
+            <AppShortcutText>{{ appMenuShortcutLabel('view-pixel-grid') }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            :class="itemCls"
+            @select.prevent="
+              setSnappingPreference('pixelGrid', !store.state.snappingPreferences.pixelGrid)
+            "
+          >
+            <icon-lucide-check
+              v-if="store.state.snappingPreferences.pixelGrid"
+              class="absolute left-2 size-3.5"
+            />
+            <span class="flex-1">{{ menuText.snapToPixelGrid }}</span>
+            <AppShortcutText>{{ appMenuShortcutLabel('snap-pixel-grid') }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem :class="itemCls" @select.prevent="toggleRulers">
+            <icon-lucide-check v-if="store.state.showRulers" class="absolute left-2 size-3.5" />
+            <span class="flex-1">{{ panels.rulers }}</span>
+            <AppShortcutText>{{ appMenuShortcutLabel('view-rulers') }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem :class="itemCls" @select.prevent="toggleRemoteCursors">
+            <icon-lucide-check
+              v-if="store.state.showRemoteCursors"
+              class="absolute left-2 size-3.5"
+            />
+            <span class="flex-1">{{ panels.multiplayerCursors }}</span>
+            <AppShortcutText>{{
+              appMenuShortcutLabel('view-multiplayer-cursors')
+            }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            :class="itemCls"
+            @select.prevent="setDesignIssuesOnCanvas(!appPreferences.designCheck.showOnCanvas)"
+          >
+            <icon-lucide-check
+              v-if="appPreferences.designCheck.showOnCanvas"
+              class="absolute left-2 size-3.5"
+            />
+            <span class="flex-1">{{ menuText.designIssues }}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            :class="itemCls"
+            @select.prevent="setCommentsOnCanvas(!appPreferences.comments.showOnCanvas)"
+          >
+            <icon-lucide-check
+              v-if="appPreferences.comments.showOnCanvas"
+              class="absolute left-2 size-3.5"
+            />
+            <span class="flex-1">{{ menuText.comments }}</span>
+            <AppShortcutText>{{ appMenuShortcutLabel('view-comments') }}</AppShortcutText>
+          </DropdownMenuItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

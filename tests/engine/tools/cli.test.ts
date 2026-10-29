@@ -25,12 +25,12 @@ async function evalCode(
   return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode }
 }
 
-const RecordJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+const recordSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
 
-const SolidFills = v.array(v.object({ color: v.object({ r: v.number() }) }))
+const solidFillsSchema = v.array(v.object({ color: v.object({ r: v.number() }) }))
 
 function parseRecord(stdout: string): Record<string, unknown> {
-  return v.parse(RecordJSON, stdout)
+  return v.parse(recordSchema, stdout)
 }
 
 heavy('CLI tool operations via eval', () => {
@@ -61,7 +61,7 @@ heavy('CLI tool operations via eval', () => {
     `)
     expect(exitCode).toBe(0)
     const result = parseRecord(stdout)
-    const fills = v.parse(SolidFills, result.fills)
+    const fills = v.parse(solidFillsSchema, result.fills)
     expect(fills.length).toBe(1)
     expect(fills[0].color.r).toBe(1)
   })
@@ -206,8 +206,8 @@ heavy('CLI tool operations via eval', () => {
 
   test('list variables from fixture', async () => {
     const { stdout, exitCode } = await evalCode(`
-      const vars = figma.getLocalVariables()
-      const cols = figma.getLocalVariableCollections()
+      const vars = figma.variables.getLocalVariables()
+      const cols = figma.variables.getLocalVariableCollections()
       return { variables: vars.length, collections: cols.length }
     `)
     expect(exitCode).toBe(0)

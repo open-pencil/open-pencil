@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { UndoManager } from '@open-pencil/scene-graph'
+import { UndoManager } from '@open-pencil/scene-graph/undo'
 
 test('discarding nested batches preserves committed undo/redo without replay or notifications', () => {
   let changes = 0

@@ -1,0 +1,1 @@
+- Resizing and selecting text on a path no longer stutters: laying the text along its path is about 50 times faster.

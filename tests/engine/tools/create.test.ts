@@ -230,7 +230,7 @@ describe('create_vector', () => {
     const tool = getTool('create_vector')
     const before = graph.nodes.size
 
-    for (const path of ['', 'not a path', 'null', 'M0 0 L']) {
+    for (const path of ['', 'not a path', 'null', 'M0 0 L', 'M0 0 L0 0']) {
       const result = tool.execute(figma, { x: 0, y: 0, name: 'Ghost', path }) as ToolResult
       expect(result.error).toBeDefined()
       expect(graph.nodes.size).toBe(before)

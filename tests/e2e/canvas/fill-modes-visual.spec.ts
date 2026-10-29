@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 
-import { shaderPresetKey } from '@open-pencil/scene-graph'
+import type * as FigNodeChange from '@open-pencil/fig/node-change'
+import type { Fill } from '@open-pencil/scene-graph'
+import { shaderPresetKey } from '@open-pencil/scene-graph/shaders'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
@@ -64,6 +66,8 @@ test('FIT avatar preserves the full clipboard fixture image', async () => {
 
 test('gradients and image fill modes', async () => {
   await editor.page.evaluate(async () => {
+    const figURL = '/@id/@open-pencil/fig/node-change'
+    const { convertFills, nodeChangeToProps }: typeof FigNodeChange = await import(figURL)
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -157,29 +161,39 @@ test('gradients and image fill modes', async () => {
       ]
     })
 
-    const scaleModes = ['FILL', 'FIT', 'TILE', 'CROP'] as const
+    const scaleModes = ['FILL', 'FIT', 'TILE', 'CROP', 'STRETCH'] as const
     for (const [index, imageScaleMode] of scaleModes.entries()) {
       store.graph.createNode('RECTANGLE', pageId, {
         name: `${imageScaleMode} image visual`,
-        x: 84 + index * 116,
+        x: imageScaleMode === 'STRETCH' ? 660 : 84 + index * 116,
         y: 184,
         width: 92,
         height: 72,
         cornerRadius: 14,
-        fills: [
-          {
-            type: 'IMAGE',
-            color: { r: 0, g: 0, b: 0, a: 1 },
-            visible: true,
-            opacity: 1,
-            imageHash,
-            imageScaleMode,
-            imageTransform:
-              imageScaleMode === 'CROP'
-                ? { m00: 0.5, m01: 0, m02: 0.25, m10: 0, m11: 0.5, m12: 0.25 }
-                : undefined
-          }
-        ],
+        fills:
+          imageScaleMode === 'STRETCH'
+            ? convertFills([
+                {
+                  type: 'IMAGE',
+                  image: { hash: imageHash },
+                  imageScaleMode,
+                  transform: { m00: 2, m01: 0, m02: -0.25, m10: 0, m11: 2, m12: 0.125 }
+                }
+              ])
+            : [
+                {
+                  type: 'IMAGE',
+                  color: { r: 0, g: 0, b: 0, a: 1 },
+                  visible: true,
+                  opacity: 1,
+                  imageHash,
+                  imageScaleMode,
+                  imageTransform:
+                    imageScaleMode === 'CROP'
+                      ? { m00: 0.5, m01: 0, m02: 0.25, m10: 0, m11: 0.5, m12: 0.25 }
+                      : undefined
+                }
+              ],
         strokes: [
           {
             type: 'SOLID',
@@ -193,6 +207,66 @@ test('gradients and image fill modes', async () => {
       })
     }
 
+    // Figma tiles by scale and turns Fill, Fit and Tile images; a Tile ignores a crop it kept.
+    const placements: Partial<Fill>[] = [
+      { imageScaleMode: 'TILE', scale: 0.5 },
+      { imageScaleMode: 'TILE', imageRotation: 90 },
+      { imageScaleMode: 'FILL', imageRotation: 90 },
+      {
+        imageScaleMode: 'TILE',
+        imageTransform: { m00: 0.5, m01: 0, m02: 0.25, m10: 0, m11: 0.5, m12: 0.25 }
+      }
+    ]
+    for (const [index, placement] of placements.entries()) {
+      store.graph.createNode('RECTANGLE', pageId, {
+        name: `Image placement ${index}`,
+        x: 84 + index * 116,
+        y: 320,
+        width: 92,
+        height: 72,
+        fills: [
+          {
+            type: 'IMAGE',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            visible: true,
+            opacity: 1,
+            imageHash,
+            ...placement
+          }
+        ]
+      })
+    }
+
+    for (const [index, rotation] of [90, -90].entries()) {
+      const line = nodeChangeToProps(
+        {
+          type: 'LINE',
+          size: { x: 70, y: 0 },
+          transform: {
+            m00: 0,
+            m01: rotation === 90 ? -1 : 1,
+            m02: 730 + index * 20,
+            m10: rotation === 90 ? 1 : -1,
+            m11: 0,
+            m12: rotation === 90 ? 100 : 170
+          }
+        },
+        []
+      )
+      store.graph.createNode('LINE', pageId, {
+        ...line,
+        strokes: [
+          {
+            type: 'SOLID',
+            color: { r: 0.1, g: 0.2, b: 0.6, a: 1 },
+            weight: 3,
+            align: 'CENTER',
+            opacity: 1,
+            visible: true
+          }
+        ]
+      })
+    }
     store.clearSelection()
     store.requestRender()
   })
@@ -206,6 +280,26 @@ test('gradients and image fill modes', async () => {
     expect(Math.min(r, g, b)).toBeLessThan(200)
   }
   await editor.canvas.waitForRender()
+  // A line is stroked to its upper side: the one turned down covers 730–733, the one turned up
+  // 747–750.
+  const [cropPixel, ...linePixels] = await readScenePixels(editor.page, [
+    { x: 706, y: 235 },
+    { x: 731, y: 130 },
+    { x: 748, y: 130 }
+  ])
+  expect(cropPixel.slice(0, 3)).toEqual([17, 24, 39])
+  for (const [r, g, b] of linePixels) {
+    expect(Math.abs(r - 26)).toBeLessThanOrEqual(4)
+    expect(Math.abs(g - 51)).toBeLessThanOrEqual(4)
+    expect(Math.abs(b - 153)).toBeLessThanOrEqual(4)
+  }
+  const [turnedFill, keptCrop] = await readScenePixels(editor.page, [
+    { x: 316 + 70, y: 320 + 20 },
+    { x: 432 + 20, y: 320 + 10 }
+  ])
+  // The red top-left quarter turns to the top right, and a kept crop leaves the tile at full size.
+  expect(turnedFill.slice(0, 3)).toEqual([239, 68, 68])
+  expect(keptCrop.slice(0, 3)).toEqual([239, 68, 68])
   await expectCanvas('gradients-and-image-fill-modes')
 })
 

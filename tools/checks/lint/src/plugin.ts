@@ -1,4 +1,9 @@
 import {
+  noCloudDynamicHTMLRule,
+  noCloudSecretInQueryRule,
+  noCloudSecretLoggingRule
+} from '#lint/rules/cloud.ts'
+import {
   noConditionalObjectSpreads,
   noFlatKiwiModules,
   noMixedCaseAcronymIdentifiers
@@ -9,12 +14,15 @@ import { noUnvalidatedJSONParseRule } from '#lint/rules/quality/json-parse.ts'
 import { noModuleMockingRule } from '#lint/rules/quality/module-mocking.ts'
 import { noReduceAccumulatorCopyRule } from '#lint/rules/quality/reduce-accumulator-copy.ts'
 import { noUnknownTailwindClassesRule } from '#lint/rules/quality/tailwind-classes.ts'
+import { valibotSchemaConventionsRule } from '#lint/rules/quality/valibot-schemas.ts'
 import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
+import { noRawSQLRule } from '#lint/rules/sql.ts'
+import { noOverlayContentFromOpenState } from '#lint/rules/vue/overlays.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
 import type { PluginRule, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
 
-import type { Color } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const noInlineNamedTypes = {
   meta: {
@@ -377,15 +385,12 @@ import {
   noDeepParentRelativeImports,
   noDeepParentRelativePaths,
   noCoreParentRelativeImports,
+  noDocumentChangeCapture,
   noMcpParentRelativeImports,
   noVueParentRelativeImports,
   noCliParentRelativeImports,
-  noMcpCoreBarrelImports,
-  noCliCoreBarrelImports,
-  noScriptCoreBarrelImports,
   noCoreSelfPackageImports,
   noInlinePromptConstants,
-  noAppVueCoreBarrelImports,
   noAppImportsInPackages,
   noCoreFrameworkImports
 } from '#lint/rules/imports.ts'
@@ -433,6 +438,7 @@ const plugin = {
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
+    'no-overlay-content-from-open-state': noOverlayContentFromOpenState,
     'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
     'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates,
     'no-ui-helper-calls-in-vue-templates': noUiHelperCallsInVueTemplates,
@@ -458,15 +464,12 @@ const plugin = {
     'no-deep-parent-relative-imports': noDeepParentRelativeImports,
     'no-deep-parent-relative-paths': noDeepParentRelativePaths,
     'no-core-parent-relative-imports': noCoreParentRelativeImports,
+    'no-document-change-capture': noDocumentChangeCapture,
     'no-mcp-parent-relative-imports': noMcpParentRelativeImports,
     'no-vue-parent-relative-imports': noVueParentRelativeImports,
     'no-cli-parent-relative-imports': noCliParentRelativeImports,
-    'no-mcp-core-barrel-imports': noMcpCoreBarrelImports,
-    'no-cli-core-barrel-imports': noCliCoreBarrelImports,
-    'no-script-core-barrel-imports': noScriptCoreBarrelImports,
     'no-core-self-package-imports': noCoreSelfPackageImports,
     'no-inline-prompt-constants': noInlinePromptConstants,
-    'no-app-vue-core-barrel-imports': noAppVueCoreBarrelImports,
     'no-app-imports-in-packages': noAppImportsInPackages,
     'no-core-framework-imports': noCoreFrameworkImports,
     'no-direct-storage-access': noDirectStorageAccess,
@@ -500,12 +503,17 @@ const plugin = {
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
     'no-conditional-object-spreads': noConditionalObjectSpreads,
     'no-hand-rolled-base64': noHandRolledBase64Rule,
+    'no-raw-sql': noRawSQLRule,
+    'no-cloud-dynamic-html': noCloudDynamicHTMLRule,
+    'no-cloud-secret-in-query': noCloudSecretInQueryRule,
+    'no-cloud-secret-logging': noCloudSecretLoggingRule,
     'no-unvalidated-json-parse': noUnvalidatedJSONParseRule,
     'prefer-es-toolkit': preferEsToolkitRule,
     'no-module-mocking': noModuleMockingRule,
     'no-reduce-accumulator-copy': noReduceAccumulatorCopyRule,
     'no-widen-then-assert': noWidenThenAssertRule,
-    'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles
+    'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles,
+    'valibot-schema-conventions': valibotSchemaConventionsRule
   } satisfies Record<string, PluginRule>
 }
 

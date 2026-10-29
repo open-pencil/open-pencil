@@ -1,6 +1,6 @@
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import { designJSXProp } from '../schema'
+import { designJSXProp } from '../definitions'
 import type { TreeNode } from '../tree'
 import {
   BEHAVIOUR_PROPS,

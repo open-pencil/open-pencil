@@ -4,11 +4,11 @@ import { bytesToHex, hexToBytes } from '#fig/node-change/bytes'
 import { figImageEntries, nameImagesForFigma } from '#fig/node-change/images'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 import {
-  computeImageHash,
   OPEN_PENCIL_PLUGIN_DATA,
   OPEN_PENCIL_PLUGIN_ID
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/plugin-data'
 
 const STILL = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3])
 /** A shader still's own name, which is not the SHA-1 of its bytes. */

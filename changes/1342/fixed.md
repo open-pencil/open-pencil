@@ -1,0 +1,1 @@
+- A document opened from a link in the browser saves with Cmd+S by download and is covered by crash recovery; it could not be saved before.

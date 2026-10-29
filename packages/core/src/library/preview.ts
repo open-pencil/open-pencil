@@ -1,4 +1,5 @@
-import { cloneNodeProps, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 

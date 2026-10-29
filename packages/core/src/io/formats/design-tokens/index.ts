@@ -34,7 +34,7 @@ export {
   type TokenImportOptions,
   type TokenImportPlan
 } from './plan'
-export type { PlannedStyle } from './plan-styles'
+export type { PlannedStyle } from './plan/styles'
 export {
   applyTokenImport,
   importTokensIntoGraph,

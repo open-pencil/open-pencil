@@ -1,5 +1,6 @@
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
+import { compact } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
@@ -12,12 +13,12 @@ import type {
 } from '@open-pencil/scene-graph'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
-  DEFAULT_STROKE_WEIGHT,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData
-} from '@open-pencil/scene-graph'
+  DEFAULT_STROKE_WEIGHT
+} from '@open-pencil/scene-graph/constants'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { layoutGridCount } from '@open-pencil/scene-graph/layout'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /* eslint-disable max-lines */
@@ -31,7 +32,12 @@ import {
   mergePluginData,
   serializePluginRelaunchData
 } from '../plugin-data'
-import { applyTextRunReferences } from '../text/run-references'
+import { serializeNodeStatus } from '../status'
+import {
+  componentPropAssignment,
+  componentPropertyValue,
+  componentPropertyVariableValue
+} from './assignments/values'
 import {
   applyColorVariableBinding,
   createFillPaints,
@@ -46,9 +52,11 @@ import {
   type KiwiSymbolOverridePayload,
   type SceneNodeToKiwiContext
 } from './context'
+import { generatedFrameRecord, writesGeneratedFrame } from './generated'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
-import { slotContentAssignment, slotDefinitionFields } from './slots'
+import { slotDefinitionFields } from './slots'
+import { serializeText } from './text'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 
@@ -116,46 +124,6 @@ function componentPropertyTypeForKiwi(type: string) {
   return type
 }
 
-function componentPropertyValue(
-  type: string,
-  value: string,
-  context: SceneNodeToKiwiContext,
-  localIdCounter: { value: number }
-) {
-  if (type === 'BOOLEAN') return { boolValue: value === 'true' }
-  if (type === 'INSTANCE_SWAP') {
-    const target = context.graph.getNode(value)
-    const guid = target
-      ? getOrCreateNodeGuid(context, target.id, localIdCounter)
-      : parseGuidOrNull(value)
-    return guid ? { guidValue: guid } : { textValue: { characters: value } }
-  }
-  return { textValue: { characters: value } }
-}
-
-function componentPropertyVariableValue(
-  type: string,
-  value: string,
-  context: SceneNodeToKiwiContext,
-  localIdCounter: { value: number }
-) {
-  const legacy = componentPropertyValue(type, value, context, localIdCounter)
-  if (type === 'BOOLEAN')
-    return {
-      value: { boolValue: value === 'true' },
-      dataType: 'BOOLEAN',
-      resolvedDataType: 'BOOLEAN'
-    }
-  if (type === 'INSTANCE_SWAP' && 'guidValue' in legacy) {
-    return {
-      value: { symbolIdValue: { guid: legacy.guidValue } },
-      dataType: 'SYMBOL_ID',
-      resolvedDataType: 'SYMBOL_ID'
-    }
-  }
-  return { value: { textValue: value }, dataType: 'STRING', resolvedDataType: 'STRING' }
-}
-
 function serializeVariableModes(
   node: SceneNode,
   variableIdToGuid?: Map<string, GUID>,
@@ -168,6 +136,15 @@ function serializeVariableModes(
     return [{ variableSetID: { guid: collectionGuid }, variableModeID: modeGuid }]
   })
   return entries.length > 0 ? { entries } : undefined
+}
+
+function applyVariableModes(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  record: KiwiNodeChange
+): void {
+  const modes = serializeVariableModes(node, context.varIdToGuid, context.modeIdToGuid)
+  if (modes) record.variableModeBySetMap = modes
 }
 
 const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([
@@ -710,25 +687,11 @@ function applyComponentMetadata(
   }
 
   applyParameterReferences(nc, parameterRefs)
-  const componentPropAssignments = Object.entries(node.componentPropertyAssignments)
-    .map(([propertyId, value]) => {
-      const definition = context.componentPropertyDefinitionsById.get(propertyId)
-      if (!definition) return null
-      if (definition.type === 'SLOT')
-        return slotContentAssignment(
-          context,
-          node,
-          propertyId,
-          getOrCreatePropertyGuid(context, propertyId, localIdCounter),
-          localIdCounter
-        )
-      return {
-        defID: getOrCreatePropertyGuid(context, propertyId, localIdCounter),
-        value: componentPropertyValue(definition.type, value, context, localIdCounter),
-        varValue: componentPropertyVariableValue(definition.type, value, context, localIdCounter)
-      }
-    })
-    .filter((assignment): assignment is NonNullable<typeof assignment> => assignment !== null)
+  const componentPropAssignments = compact(
+    Object.entries(node.componentPropertyAssignments).map(([propertyId, value]) =>
+      componentPropAssignment(context, node, propertyId, value, localIdCounter)
+    )
+  )
   if (
     shouldSerializeRawBackedField(
       node,
@@ -749,6 +712,12 @@ function applyComponentMetadata(
   }
 }
 
+/** Whether the node is still saved in the box Figma gave it, not in its own. */
+function savedInFigmaBox(node: SceneNode): boolean {
+  const payload = effectiveFigmaSourcePayload(node)
+  return !!payload.rawSize && !!payload.rawTransform
+}
+
 function exportNodeSize(node: SceneNode): Vector {
   // rawSize and rawTransform are a matched pair describing the ORIGINAL Figma
   // box. Once the transform no longer backs the node, exportNodeTransform
@@ -756,10 +725,8 @@ function exportNodeSize(node: SceneNode): Vector {
   // an un-expanded rawSize disagrees about the box (for rotation, a different
   // centre) and the node drifts on reimport. Use rawSize only while the
   // transform still backs it.
-  const payload = effectiveFigmaSourcePayload(node)
-  return payload.rawSize && payload.rawTransform
-    ? { ...payload.rawSize }
-    : { x: node.width, y: node.height }
+  const { rawSize } = effectiveFigmaSourcePayload(node)
+  return rawSize && savedInFigmaBox(node) ? { ...rawSize } : { x: node.width, y: node.height }
 }
 
 function exportNodeTransform(context: SceneNodeToKiwiContext, node: SceneNode): Matrix {
@@ -843,19 +810,6 @@ function applySharedStyleProps(
   if (node.guides.length > 0) nc.guides = exportCanvasGuides(node.guides)
 }
 
-/** A text's props, and what its ranges refer to, which needs the document's identities. */
-function serializeText(context: SceneNodeToKiwiContext, node: SceneNode, nc: KiwiNodeChange): void {
-  context.serializeTextProps(
-    node,
-    nc,
-    context.graph,
-    context.fontDigestMap,
-    context.blobs,
-    context.glyphBlobMap
-  )
-  if (nc.textData) applyTextRunReferences(context, node, nc.textData)
-}
-
 function applyNodeVisualProps(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
@@ -922,7 +876,10 @@ function applyNodeVisualProps(
 function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): string {
   const isPathText =
     node.textPathData !== null && node.type === 'TEXT' && (node.derivedTextGlyphs?.length ?? 0) > 0
-  return isPathText ? 'TEXT_PATH' : context.mapToFigmaType(node.type)
+  if (isPathText) return 'TEXT_PATH'
+  // A generated frame that lost its template's layers is kept as a frame; see `writesGeneratedFrame`.
+  if (isGeneratedFrame(node) && !writesGeneratedFrame(context, node)) return 'FRAME'
+  return context.mapToFigmaType(node.type)
 }
 
 /**
@@ -938,9 +895,18 @@ function nodeToSerialize(context: SceneNodeToKiwiContext, source: SceneNode): Sc
   }
 }
 
-/** An instance writes its contents on its own record; a caller may write a record alone. */
+/**
+ * An instance writes its contents on its own record, as a generated frame writes its sublayers;
+ * a caller may write a record alone.
+ */
 function exportedChildren(node: SceneNode, context: SceneNodeToKiwiContext): SceneNode[] {
-  if (node.type === 'INSTANCE' || context.writeChildren === false) return []
+  if (
+    node.type === 'INSTANCE' ||
+    writesGeneratedFrame(context, node) ||
+    context.writeChildren === false
+  ) {
+    return []
+  }
   return context.graph
     .getChildren(node.id)
     .filter((child) => !child.internalOnly && child.sharedStyleType === null)
@@ -980,6 +946,7 @@ export function overridableNodeFields(
   applyNodeStateProps(node, nc)
   applyNodeVisualProps({ ...context, fontDigestMap: undefined }, node, nc)
   context.serializeLayoutProps(node, nc)
+  applyVariableModes(context, node, nc)
   return nc
 }
 
@@ -1036,23 +1003,19 @@ export function sceneNodeToKiwiWithContext(
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   mergeParameterBindings(nc)
   applyRawFigmaNodeFields(context, node, nc)
-  const variableModeBySetMap = serializeVariableModes(
-    node,
-    context.varIdToGuid,
-    context.modeIdToGuid
-  )
-  if (variableModeBySetMap) nc.variableModeBySetMap = variableModeBySetMap
+  applyVariableModes(context, node, nc)
 
   applyExportSettingsPluginData(node)
   applyLibrarySourcePluginData(node)
-  applyTextPathBoxPluginData(node)
+  serializeNodeStatus(node, nc)
+  applyTextPathBoxPluginData(node, savedInFigmaBox(node))
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {
     nc.pluginRelaunchData = serializePluginRelaunchData(node.pluginRelaunchData)
   }
 
-  const result: KiwiNodeChange[] = [nc]
+  const result: KiwiNodeChange[] = [generatedFrameRecord(context, node, nc) ?? nc]
   const children = exportedChildren(node, context)
   for (let i = 0; i < children.length; i++) {
     result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))

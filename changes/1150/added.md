@@ -1,0 +1,1 @@
+- Editing text on a path works along the path, as in Figma: clicking places the caret between the characters you click, dragging, Shift-clicking and double-clicking select characters, and the caret and selection follow the curve.

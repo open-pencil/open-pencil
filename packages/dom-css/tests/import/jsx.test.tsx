@@ -1,11 +1,11 @@
 /** @jsxImportSource @open-pencil/dom-css */
 import { describe, expect, it } from 'bun:test'
 
+import { serializeHTML } from '#dom-css/export/index'
 import {
   createHeadlessCSSRuntime,
   jsxToDesignDocument,
   jsxToSceneGraph,
-  serializeHTML,
   tailwindJSXToSceneGraph
 } from '#dom-css/index'
 

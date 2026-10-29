@@ -1,5 +1,8 @@
+import { sumBy } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { ELLIPSIS } from '#core/text/ellipsis'
 import type { DocumentFontStatus } from '#core/text/font/status'
 import { prepareGraphFonts } from '#core/text/prepare'
 import { queryByXPath } from '#core/xpath'
@@ -28,7 +31,7 @@ function countDescendants(graph: SceneGraph, rootId: string): number {
 
 function countNodes(graph: SceneGraph, pageId: string): number {
   const page = graph.getNode(pageId)
-  return page?.childIds.reduce((count, id) => count + countDescendants(graph, id), 0) ?? 0
+  return page ? sumBy(page.childIds, (id) => countDescendants(graph, id)) : 0
 }
 
 function nodeFrame(node: SceneNode) {
@@ -335,7 +338,7 @@ export const nodeCommand: RPCCommand<NodeArgs, NodeResult | { error: string }> =
       textDirection: node.textDirection,
       text: (() => {
         if (!node.text.length) return null
-        if (node.text.length > 200) return node.text.slice(0, 200) + '…'
+        if (node.text.length > 200) return node.text.slice(0, 200) + ELLIPSIS
         return node.text
       })(),
       parent: parent ? { id: parent.id, name: parent.name, type: parent.type } : null,

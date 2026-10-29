@@ -4,6 +4,7 @@
   "clipboardMissingDesignData": "Die Zwischenablage enthält keine Designdaten.",
   "clipboardAccessBlocked": "Der Zugriff auf die Zwischenablage ist in diesem Browserkontext blockiert.",
   "copiedAs": "Als {format} kopiert.",
+  "copiedProperties": "Eigenschaften kopiert.",
   "pngClipboardUnavailable": "Der PNG-Export in die Zwischenablage ist in diesem Browser nicht verfügbar.",
   "openFileFailed": "„{name}“ konnte nicht geöffnet werden: {error}",
   "importedDOMCSS": "DOM/CSS-Dokument importiert.",
@@ -29,5 +30,6 @@
   "openQueuedFilesFailed": "Die an OpenPencil übergebenen Dateien konnten nicht geöffnet werden: {error}",
   "tokensLeftOut": "Nicht im Stylesheet enthalten: {names}.",
   "designTokensLeftOut": "Nicht in den Design-Tokens enthalten: {names}.",
-  "designTokensImported": "{count} Design-Tokens importiert."
+  "designTokensImported": "{count} Design-Tokens importiert.",
+  "unsupportedVariableExpressions": "OpenPencil kann diese Variablen noch nicht auswerten, daher behalten Ebenen die in der Datei gespeicherten Werte: {names}."
 }

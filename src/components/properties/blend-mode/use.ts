@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
 import type { BlendMode } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { AppSelectGroup } from '@/components/ui/select/select'
 

@@ -1,6 +1,8 @@
 import {
   node,
   type BaseProps,
+  type EllipseProps,
+  type VectorProps,
   type ComponentProps,
   type InstanceProps,
   type ParagraphProps,
@@ -38,7 +40,7 @@ export function Rectangle(props: BaseProps, ...children: Child[]): TreeNode {
   return withChildren('rectangle', props, children)
 }
 
-export function Ellipse(props: BaseProps, ...children: Child[]): TreeNode {
+export function Ellipse(props: BaseProps & EllipseProps, ...children: Child[]): TreeNode {
   return withChildren('ellipse', props, children)
 }
 
@@ -60,7 +62,7 @@ export function Polygon(
   return withChildren('polygon', props, children)
 }
 
-export function Vector(props: BaseProps, ...children: Child[]): TreeNode {
+export function Vector(props: BaseProps & VectorProps, ...children: Child[]): TreeNode {
   return withChildren('vector', props, children)
 }
 

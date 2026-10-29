@@ -2,3 +2,6 @@ POSTHOG_KEY=phc_development
 # Cloudflare's Turnstile test secret, which accepts every token and reports example.com.
 TURNSTILE_SECRET=1x0000000000000000000000000000000AA
 TURNSTILE_HOSTNAMES=example.com
+# The metrics snapshot's tokens; without real ones its requests fail and nothing is recorded.
+GITHUB_TOKEN=github_development
+CLOUDFLARE_ANALYTICS_TOKEN=cloudflare_development

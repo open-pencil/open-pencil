@@ -46,18 +46,22 @@ In the Chat settings beside the model overview, choose whether reasoning is **Co
 
 ## Supported Providers
 
-| Provider                 | Models                                          | Setup                                                                                                       |
-| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **OpenRouter**           | Claude, GPT, Gemini, DeepSeek, Qwen, and others | API key from [openrouter.ai](https://openrouter.ai)                                                         |
-| **Anthropic**            | Claude Sonnet 4.6, Claude Opus 4.6              | API key from [console.anthropic.com](https://console.anthropic.com)                                         |
-| **OpenAI**               | GPT-5.3 Codex, GPT-4.1, o3, o4-mini             | API key from [platform.openai.com](https://platform.openai.com)                                             |
-| **Google AI**            | Gemini 3.1 Pro, Gemini 3 Flash                  | API key from [aistudio.google.dev](https://aistudio.google.dev)                                             |
-| **Z.ai**                 | GLM-5.1, GLM-5, GLM-4.7, GLM-4.5 family         | API key from [docs.z.ai](https://docs.z.ai/devpack/quick-start)                                             |
-| **MiniMax**              | MiniMax M3, M2.7, M2.7-highspeed, M2.5, M2.1    | API key from [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
-| **OpenAI-compatible**    | Any endpoint with OpenAI API format             | Custom base URL + key. Supports Completions and Responses API toggle.                                       |
-| **Anthropic-compatible** | Any endpoint with Anthropic API format          | Custom base URL + key                                                                                       |
+| Provider                 | Models                                                                 | Setup                                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **OpenRouter**           | Claude, GPT, Gemini, DeepSeek, Qwen, and others                        | API key from [openrouter.ai](https://openrouter.ai)                                                         |
+| **Anthropic**            | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | API key from [console.anthropic.com](https://console.anthropic.com)                                         |
+| **OpenAI**               | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna                                   | API key from [platform.openai.com](https://platform.openai.com)                                             |
+| **ChatGPT**              | The models your ChatGPT plan offers in Codex, listed live              | Desktop app: **Sign in with ChatGPT**. Replies count toward the plan's usage limits.                        |
+| **Google AI**            | Gemini 3.8 Flash, Gemini 4 Argon                                       | API key from [aistudio.google.dev](https://aistudio.google.dev)                                             |
+| **DeepSeek**             | DeepSeek Flash, DeepSeek V4 Pro                                        | API key from [platform.deepseek.com](https://platform.deepseek.com/api_keys)                                |
+| **Z.ai**                 | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo                   | API key from [docs.z.ai](https://docs.z.ai/devpack/quick-start)                                             |
+| **MiniMax**              | MiniMax-M3.1-Flash, MiniMax-M3                                         | API key from [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **OpenAI-compatible**    | Any endpoint with OpenAI API format                                    | Custom base URL + key. Supports Completions and Responses API toggle.                                       |
+| **Anthropic-compatible** | Any endpoint with Anthropic API format                                 | Custom base URL + key                                                                                       |
 
-No backend, no subscription — your key talks directly to the provider. Browser requests are subject to each provider's CORS policy, and model deployments vary in how reliably they stream tool calls. See [BYOK provider and model compatibility](./byok-provider-compatibility) for measured results and reproduction steps.
+No backend — your key or sign-in talks directly to the provider. Browser requests are subject to each provider's CORS policy, and model deployments vary in how reliably they stream tool calls. See [BYOK provider and model compatibility](./byok-provider-compatibility) for measured results and reproduction steps.
+
+**ChatGPT** uses your ChatGPT plan instead of an API key, through the same backend and sign-in as OpenAI's Codex CLI. Signing in opens the browser and returns to the desktop app on `localhost:1455`, the only address OpenAI accepts for it, so close a running `codex login` first. The sign-in is stored like a key and refreshes itself; the model list comes from your account. The browser app does not offer it.
 
 ## External MCP connections
 

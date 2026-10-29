@@ -1,5 +1,5 @@
 import type { EditorStore } from '@/app/editor/active-store'
-import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
+import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste/replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { onCanvasSelection } from '@/app/shell/commands/focused'

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useCredentialSettings } from '@/app/settings/credentials/preferences/use'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -17,15 +18,13 @@ const { busy, paused, failed, checkFailed, remembered, retry, retryCheck } = use
   <SettingsSection v-if="!IS_TAURI || paused || failed || checkFailed">
     <template #title>{{ credentials.settingsTitle }}</template>
     <SettingsGroup v-if="!IS_TAURI">
-      <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-        <span>
-          <span class="block text-xs text-surface">{{ credentials.rememberDevice }}</span>
-          <span v-if="!remembered" class="block text-[11px] text-muted">{{
-            credentials.sessionOnly
-          }}</span>
-        </span>
+      <SettingsRow
+        as="label"
+        :label="credentials.rememberDevice"
+        :description="!remembered ? credentials.sessionOnly : undefined"
+      >
         <AppSwitch v-model="remembered" :label="credentials.rememberDevice" />
-      </label>
+      </SettingsRow>
     </SettingsGroup>
     <AppAlert v-if="checkFailed" tone="warning" :heading="credentials.checkFailed">
       <template #actions>

@@ -1,9 +1,5 @@
-import {
-  TRANSFORM_FIELDS,
-  type SceneGraph,
-  type SceneGraphEvents,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneGraphEvents, SceneNode } from '@open-pencil/scene-graph'
+import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { markFlowChanged } from '#core/layout/derived'
@@ -29,8 +25,10 @@ type GraphEventOptions = {
   ) => void
 }
 
+// A vector's open corners are rounded by its corner radius, so its paths follow that too.
 const GEOMETRY_CACHE_KEYS = new Set<keyof SceneNode>([
   'vectorNetwork',
+  'cornerRadius',
   'fillGeometry',
   'strokeGeometry'
 ])

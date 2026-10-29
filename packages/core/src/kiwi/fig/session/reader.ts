@@ -40,13 +40,15 @@ export function openReaderSession(
     checkpoint: () => session.checkpoint(),
     graph: session.graph,
     pages,
-    populate(pageId: string) {
+    /** `onProgress` is called as the load advances, as `loadPage` calls it. */
+    populate(pageId: string, onProgress?: () => void) {
       const sourceId = sourceByGraph.get(pageId)
       if (!sourceId) throw new Error(`Unknown graph page ${pageId}`)
       const populated = !session.loadedPageIds.has(sourceId)
       const journal = installFigMutationJournal(session.graph)
       try {
-        session.loadPage(sourceId)
+        session.loadPage(sourceId, onProgress)
+        onProgress?.()
         return {
           checkpoint: session.checkpoint(),
           populated,

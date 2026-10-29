@@ -24,29 +24,29 @@ const BLEND_MODE_KEYS = {
   PASS_THROUGH: true
 } satisfies Record<BlendMode, true>
 
-const BLEND_MODES = Object.keys(BLEND_MODE_KEYS) as BlendMode[]
+export const BLEND_MODES = Object.keys(BLEND_MODE_KEYS) as BlendMode[]
 
 /** Effect kinds Figma's plugin API accepts that OpenPencil does not model yet. */
 const UNSUPPORTED_EFFECT_TYPES = new Set(['NOISE', 'TEXTURE', 'GLASS', 'SHADER'])
 
 // Figma rejects Infinity as well as NaN ("Number must be finite").
-const finite = v.pipe(v.number(), v.finite())
-const unit = v.pipe(finite, v.minValue(0), v.maxValue(1))
-const nonNegative = v.pipe(finite, v.minValue(0))
+const finiteSchema = v.pipe(v.number(), v.finite())
+const unitSchema = v.pipe(finiteSchema, v.minValue(0), v.maxValue(1))
+const nonNegativeSchema = v.pipe(finiteSchema, v.minValue(0))
 
-const color = v.strictObject({ r: unit, g: unit, b: unit, a: unit })
-const vector = v.strictObject({ x: finite, y: finite })
+const colorSchema = v.strictObject({ r: unitSchema, g: unitSchema, b: unitSchema, a: unitSchema })
+const vectorSchema = v.strictObject({ x: finiteSchema, y: finiteSchema })
 // Variable bindings on effects are not supported; Figma reports an empty object.
-const boundVariables = v.optional(v.strictObject({}))
+const boundVariablesSchema = v.optional(v.strictObject({}))
 
 const shadowEntries = {
-  color,
-  offset: vector,
-  radius: nonNegative,
-  spread: v.optional(finite),
+  color: colorSchema,
+  offset: vectorSchema,
+  radius: nonNegativeSchema,
+  spread: v.optional(finiteSchema),
   visible: v.boolean(),
   blendMode: v.picklist(BLEND_MODES),
-  boundVariables
+  boundVariables: boundVariablesSchema
 }
 
 const effectSchema = v.variant('type', [
@@ -58,10 +58,10 @@ const effectSchema = v.variant('type', [
   v.strictObject({ type: v.literal('INNER_SHADOW'), ...shadowEntries }),
   v.strictObject({
     type: v.picklist(['LAYER_BLUR', 'BACKGROUND_BLUR']),
-    radius: nonNegative,
+    radius: nonNegativeSchema,
     visible: v.boolean(),
     blurType: v.optional(v.literal('NORMAL'), 'NORMAL'),
-    boundVariables
+    boundVariables: boundVariablesSchema
   })
 ])
 
@@ -70,8 +70,9 @@ const effectsSchema = v.array(effectSchema)
 /** An effect as Figma's plugin API reads and writes it (`Effect` in `@figma/plugin-typings`). */
 export type FigmaEffect = v.InferOutput<typeof effectSchema>
 
-function issuePath(issue: v.BaseIssue<unknown>): string {
-  return (issue.path ?? [])
+/** Figma's spelling of a path into a value: `[0].color.r`. */
+export function issuePath(path: readonly v.IssuePathItem[] | undefined): string {
+  return (path ?? [])
     .map((item) => (typeof item.key === 'number' ? `[${item.key}]` : `.${String(item.key)}`))
     .join('')
 }
@@ -101,7 +102,7 @@ export function parseFigmaEffects(value: unknown): Effect[] {
   if (!result.success) {
     const [issue] = result.issues
     throw new Error(
-      `Property "effects" failed validation: ${issue.message} at ${issuePath(issue) || 'effects'}`
+      `Property "effects" failed validation: ${issue.message} at ${issuePath(issue.path) || 'effects'}`
     )
   }
   return result.output.map(toSceneEffect)

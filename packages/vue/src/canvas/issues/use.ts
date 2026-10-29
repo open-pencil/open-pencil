@@ -1,8 +1,8 @@
 import { useEventListener } from '@vueuse/core'
 import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
 
+import type { Editor } from '@open-pencil/core'
 import type { PlacedIssueMarker } from '@open-pencil/core/canvas'
-import type { Editor } from '@open-pencil/core/editor'
 
 export interface CanvasIssueMarkerOptions {
   /** Marker under a point in canvas-element CSS pixels; `useCanvas()` returns one. */

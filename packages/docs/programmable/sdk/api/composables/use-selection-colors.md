@@ -13,7 +13,7 @@ because they differ across the selection or a selected layer has children.
 ## Usage
 
 ```ts
-import { useSelectionColors } from '@open-pencil/vue'
+import { useSelectionColors } from '@open-pencil/vue/controls/selection-colors'
 
 const selection = useSelectionColors()
 

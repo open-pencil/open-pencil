@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { prepareNodeTransfer } from './nodes'
 import { requireTransferReference } from './references'

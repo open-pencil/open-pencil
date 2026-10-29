@@ -1,25 +1,21 @@
-import { pickBy } from 'es-toolkit'
+import { isEmptyObject, pickBy } from 'es-toolkit'
 
-import {
-  getAxisAlignedWorldBounds,
-  getWorldMatrix,
-  FITTED_CONTAINER_TYPES,
-  TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
-  findInstanceAncestor,
-  recapturedAspectRatio,
-  recordInstanceOverride,
-  rescaleNodeTree,
-  slotPropertyId,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
+import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
+import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
   createResizeSnapshot,
+  scaledGeometryChanges,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
@@ -43,7 +39,9 @@ import {
   withOrigin
 } from '#core/figma-api/transform'
 import type { FigmaTransform } from '#core/figma-api/types'
+import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
+import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
 
@@ -116,6 +114,8 @@ export function installBasicNodeProxyAccessors(
       },
       set(this: ProxyThis, value: string) {
         updateNode(this, internals, { name: value })
+        // A variant's name holds its values, which the set's value lists follow.
+        syncVariantName(graph(this, internals), raw(this, internals))
       }
     },
     removed: {
@@ -263,6 +263,53 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 }
 
 /**
+ * A vector's path scaled to its new size, as Figma's resize does. The stroke keeps its weight: with
+ * a network to stroke, the saved stroke outline goes and the stroke draws from the scaled path, as
+ * when the path is set; without one, the outline is all that draws the stroke, so it scales too.
+ */
+function resizedVectorGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
+  if (node.type !== 'VECTOR') return {}
+  const strokesPath = (node.vectorNetwork?.vertices.length ?? 0) > 0
+  const snapshot = createResizeSnapshot(node)
+  const path = {
+    ...snapshot,
+    strokes: [],
+    strokeGeometry: strokesPath ? [] : snapshot.strokeGeometry
+  }
+  // A side at zero keeps the path along it, as in Figma, so the next resize scales the path from
+  // its own extent and gets the shape back.
+  const bounds = node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
+  const fromWidth = node.width > 0 ? node.width : (bounds?.width ?? 0)
+  const fromHeight = node.height > 0 ? node.height : (bounds?.height ?? 0)
+  const geometry = scaledGeometryChanges(
+    path,
+    fromWidth,
+    fromHeight,
+    width || fromWidth,
+    height || fromHeight
+  )
+  if (!strokesPath || isEmptyObject(geometry) || node.strokeGeometry.length === 0) return geometry
+  return { ...geometry, strokeGeometry: [] }
+}
+
+/** The least size Figma's `resize` gives a vector side; `resizeWithoutConstraints` allows zero. */
+const MIN_VECTOR_RESIZE = 0.0001
+
+/** The size a resize gives a node: a vector cannot become 0×0, and `resize` keeps its sides above zero. */
+function resizedSize(
+  node: SceneNode,
+  width: number,
+  height: number,
+  constrained: boolean
+): { width: number; height: number } {
+  if (node.type !== 'VECTOR') return { width, height }
+  if (width === 0 && height === 0)
+    throw new Error('Cannot set width and height of vector node to zero')
+  if (!constrained) return { width, height }
+  return { width: Math.max(width, MIN_VECTOR_RESIZE), height: Math.max(height, MIN_VECTOR_RESIZE) }
+}
+
+/**
  * Resizes a node keeping its top-left corner, as Figma's does, though it turns about its center.
  * `resize` places the layers inside by their constraints, as Figma's does, without making their
  * sizes overrides; `resizeWithoutConstraints` leaves them be, except in an instance. The groups around the node refit
@@ -271,13 +318,14 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 function resizeNode(
   target: ProxyThis,
   internals: NodeProxyInternals,
-  width: number,
-  height: number,
+  requestedWidth: number,
+  requestedHeight: number,
   constrained: boolean
 ): void {
   assertEditable(target, internals)
   const scene = graph(target, internals)
   const node = raw(target, internals)
+  const { width, height } = resizedSize(node, requestedWidth, requestedHeight, constrained)
   const before = containerTransform(node, scene)
   const size = { width: node.width, height: node.height }
   // An instance's layers follow its constraints however it is resized, as in Figma.
@@ -285,6 +333,7 @@ function resizeNode(
     constrained || node.type === 'INSTANCE'
       ? new Map(descendants(scene, node).map((child) => [child.id, createResizeSnapshot(child)]))
       : new Map<string, ResizeSnapshot>()
+  const geometry = resizedVectorGeometry(node, width, height)
   // Text given a size stops sizing itself to its content, as in Figma.
   const fixesText =
     node.type === 'TEXT' &&
@@ -302,6 +351,7 @@ function resizeNode(
   scene.updateNode(node.id, {
     width,
     height,
+    ...geometry,
     ...recaptured,
     ...sizing,
     ...(fixesText ? { textAutoResize: 'NONE' as const } : {})
@@ -313,6 +363,7 @@ function resizeNode(
   recordInstanceOverride(scene, node.id, [
     'width',
     'height',
+    ...Object.keys(geometry),
     ...Object.keys(recaptured),
     ...Object.keys(sizing),
     ...(fixesText ? ['textAutoResize'] : [])

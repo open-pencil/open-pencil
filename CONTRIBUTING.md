@@ -80,6 +80,10 @@ Do not submit placeholder PRs. Remove template comments before opening a PR. Do 
 
 CodeRabbit may flag PR description or readability issues for maintainers to review. Missing template sections or validation details are normal review feedback; they are not, by themselves, a personal judgment on the contributor. Maintainers may close PRs manually when they are clearly automated, not written in English, unrelated to the project, or impossible to review without substantial guesswork. If you are unsure how to fix something, please open a detailed issue instead of submitting a placeholder PR.
 
+## Licensing
+
+A contribution is licensed under the license of the files it changes, as [`REUSE.toml`](./REUSE.toml) maps them: MIT for most of the repository, and Apache-2.0 for OpenPencil Cloud's server, relay, administration, and the pages it serves (section 5 of the Apache License). New files under those paths take the same license.
+
 ## Commits
 
 ### Attribution
@@ -94,7 +98,7 @@ The Commit messages check flags known AI co-author identities in newly introduce
 
 The **Commit messages** CI job checks every commit introduced by a PR, including docs-only PRs. It does not lint existing base-branch history or GitHub's synthetic merge commit. The aggregate CI result requires this job to pass.
 
-Use `type(optional-scope): short description`, for example `fix(MCP): preserve connection settings`. Allowed types are `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `ci`, and `chore`. Keep subjects short, imperative, and narrowly scoped; explain rationale in the body. Keep headers within 100 characters and omit a trailing period. Product names retain their casing (DOM/CSS, HTML, JSX, Tailwind, Kiwi, `.fig`, MCP, CLI, AI, ACP, i18n); bodies and footers may contain long lines. Release commits use exactly `Release vX.Y.Z`, or `Release vX.Y.Z-beta.N` for a pre-release.
+Use `type(optional-scope): short description`, for example `fix(MCP): preserve connection settings`. Scope a change that stays within one package or product area, named as its folder (`fig`, `core`, `canvas`, `cloud`) or product (`MCP`, `CLI`); leave a change that spans several unscoped. Allowed types are `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `ci`, and `chore`. Keep subjects short, imperative, and narrowly scoped; explain rationale in the body. Keep headers within 100 characters and omit a trailing period. Product names retain their casing (DOM/CSS, HTML, JSX, Tailwind, Kiwi, `.fig`, MCP, CLI, AI, ACP, i18n); bodies and footers may contain long lines. Release commits use exactly `Release vX.Y.Z`, or `Release vX.Y.Z-beta.N` for a pre-release.
 
 PR titles follow the same convention because GitHub uses them as merge subjects. The separate **PR title** workflow checks new and updated PRs, including title edits, without rerunning the full CI suite. Title validation disables commitlint's default merge/revert exceptions. Release titles and commits retain the exact `Release vX.Y.Z` (or `-beta.N`) convention.
 

@@ -9,12 +9,14 @@ import {
 import { toRef } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useI18n, useRetainedPopup } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import type { EditorStore } from '@/app/editor/session'
 import type { LibraryService } from '@/app/libraries'
 import { useInstanceUpdate } from '@/components/properties/component-properties/instance-update/use'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { node, editor, service } = defineProps<{
@@ -53,21 +55,23 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
     </Tip>
     <DropdownMenuPortal v-if="portalActive">
       <DropdownMenuContent align="end" side="bottom" :side-offset="4" :class="menu.content">
-        <DropdownMenuItem
-          data-test-id="instance-update-selected"
-          :class="menu.item"
-          :disabled="updating"
-          @select="updateSelectedInstance"
-        >
-          {{ panels.updateSelectedInstance }}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          data-test-id="instance-review-update"
-          :class="menu.item"
-          @select="emit('review')"
-        >
-          {{ panels.reviewLibraryUpdate }}
-        </DropdownMenuItem>
+        <MenuScrollArea>
+          <DropdownMenuItem
+            data-test-id="instance-update-selected"
+            :class="menu.item"
+            :disabled="updating"
+            @select="updateSelectedInstance"
+          >
+            {{ panels.updateSelectedInstance }}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            data-test-id="instance-review-update"
+            :class="menu.item"
+            @select="emit('review')"
+          >
+            {{ panels.reviewLibraryUpdate }}
+          </DropdownMenuItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

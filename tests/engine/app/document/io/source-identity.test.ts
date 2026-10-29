@@ -1,9 +1,11 @@
-import { describe, expect, test, vi } from 'bun:test'
+import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { createDefaultEditorState } from '@open-pencil/core/editor'
+import { createDefaultEditorState } from '@open-pencil/core'
 
-import { createSaveActions } from '@/app/document/io/save'
-import { createDocumentSourceState } from '@/app/document/io/source-state'
+import * as browserIO from '@/app/document/io/browser'
+import { createSaveActions } from '@/app/document/io/save/actions'
+import * as saveTargets from '@/app/document/io/save/targets'
+import { createDocumentSourceState } from '@/app/document/io/source/state'
 
 import { asDouble } from '#tests/helpers/doubles'
 
@@ -36,6 +38,7 @@ function createSaveHarness(handle: FileSystemFileHandle) {
     setDownloadName: vi.fn(),
     getStorageBinding: () => null,
     setStorageBinding: vi.fn(),
+    hasWritableSource: () => true,
     setSourceIdentity,
     setSavedVersion: vi.fn(),
     setLastWriteTime: vi.fn(),
@@ -43,6 +46,10 @@ function createSaveHarness(handle: FileSystemFileHandle) {
   })
   return { actions, setSourceIdentity }
 }
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('saved document identity', () => {
   test('tracks storage binding alongside local source identity', () => {
@@ -55,6 +62,48 @@ describe('saved document identity', () => {
       providerId: 's3-compatible',
       documentId: 'remote-1'
     })
+  })
+
+  test('a browser document opened from a URL saves by download, not in place', () => {
+    const source = createDocumentSourceState()
+    source.setFilePath('https://example.com/design.fig')
+    expect(source.hasWritableSource()).toBe(false)
+
+    source.setFileHandle(makeWritableHandle('design.fig'))
+    expect(source.hasWritableSource()).toBe(true)
+  })
+
+  test('a desktop document saves to its path in place', () => {
+    const source = createDocumentSourceState()
+    source.setFilePath('/Users/me/design.fig')
+    Reflect.set(globalThis, 'window', { __TAURI_INTERNALS__: {} })
+    try {
+      expect(source.hasWritableSource()).toBe(true)
+    } finally {
+      Reflect.deleteProperty(globalThis, 'window')
+    }
+  })
+
+  test('a file the browser will not write to is downloaded under its name and forgotten', async () => {
+    // An embedded browser hands out the picked file, then refuses to write to it.
+    const refused = asDouble<FileSystemFileHandle>({
+      kind: 'file',
+      name: 'chosen.fig',
+      createWritable: vi.fn(async () => {
+        throw new DOMException('Not allowed in this context', 'NotAllowedError')
+      })
+    })
+    vi.spyOn(saveTargets, 'chooseBrowserFigSaveHandle').mockResolvedValue(refused)
+    const download = vi.spyOn(browserIO, 'downloadBlob').mockReturnValue(undefined)
+    const { actions, setSourceIdentity } = createSaveHarness(refused)
+
+    expect(await actions.saveFigFileAs()).toBe(true)
+    expect(download).toHaveBeenCalledWith(
+      expect.any(Uint8Array),
+      'chosen.fig',
+      'application/octet-stream'
+    )
+    expect(setSourceIdentity).toHaveBeenLastCalledWith({ handle: null, path: null })
   })
 
   test('publishes the writable handle after a successful save', async () => {

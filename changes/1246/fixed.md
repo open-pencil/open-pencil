@@ -1,0 +1,1 @@
+- AI chat and ACP agents are told to draw on the canvas rather than write HTML or run terminal commands, to name the document they mean when several are open, and to revert their own changes with undo.

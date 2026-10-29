@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Editor, EditorEvents } from '@open-pencil/core/editor'
+import type { Editor, EditorEvents } from '@open-pencil/core'
 
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 

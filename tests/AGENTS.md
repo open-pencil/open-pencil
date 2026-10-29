@@ -23,6 +23,7 @@
 - A stand-in for an interface a test cannot build (CanvasKit, `EditorStore`) goes through `asDouble` from `#tests/helpers/doubles`, which is the one sanctioned widening; `open-pencil/no-broad-double-cast` rejects the `as unknown as` spelling.
 - In Bun tests prefer injected dependencies or scoped spies with explicit cleanup. `mock.restore()` restores spies but does not undo `mock.module()` overrides; do not assume module mocks are isolated by cleanup hooks. Read the installed runner's lifecycle and mocking docs before adding global or module-level instrumentation.
 - Make flaky tests deterministic; raising a timeout is never the fix. Keep package-manager invocations out of `bun test` suites; their cold start is not bounded.
+- Heavy tests are opt-in: `runsHeavyTests` is false unless `BUN_HEAVY_TESTS=true`, which only the unit test runner sets while giving each heavy file its own process, so run suites through `bun run test:unit`, `test:unit:quick`, or `bun tools/dev/unit-tests/src/run.ts <group>`; a file that parses a large fixture, or a populated `gold-preview.fig` more than once, gates it with `heavy` or `test.if(runsHeavyTests)` and is listed in `HEAVY_UNIT_TEST_PATTERNS` (`tools/dev/unit-tests/src/shards.ts`).
 
 ## Browser runs
 

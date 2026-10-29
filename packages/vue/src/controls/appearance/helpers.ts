@@ -2,8 +2,9 @@ import { compact } from 'es-toolkit'
 import { computed } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
+import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
 
 import type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
@@ -15,11 +16,17 @@ const CORNER_RADIUS_TYPES = new Set([
   'COMPONENT',
   'INSTANCE',
   'POLYGON',
-  'STAR'
+  'STAR',
+  'SHAPE_WITH_TEXT'
 ])
 
-/** A polygon's or star's corners share one radius, so Figma offers no per-corner radii for them. */
-const SHARED_RADIUS_TYPES = new Set(['POLYGON', 'STAR'])
+/**
+ * A polygon's, star's or shape with text's corners share one radius, so Figma offers no
+ * per-corner radii for them.
+ */
+const SHARED_RADIUS_TYPES = new Set(['POLYGON', 'STAR', 'SHAPE_WITH_TEXT'])
+
+const POINT_COUNT_TYPES = new Set(['POLYGON', 'STAR'])
 
 const CORNER_PATHS: CornerRadiusKey[] = [
   'topLeftRadius',
@@ -139,7 +146,7 @@ export function createAppearanceState({
   const hasPointCount = computed(
     () =>
       selectedNodes.value.length > 0 &&
-      selectedNodes.value.every((target) => SHARED_RADIUS_TYPES.has(target.type))
+      selectedNodes.value.every((target) => POINT_COUNT_TYPES.has(target.type))
   )
   const hasStarRatio = computed(
     () =>
@@ -235,9 +242,7 @@ export function createAppearanceActions({
       if (liveNodes.length === 0) return
       const allVisible = liveNodes.every((n) => n.visible)
       editor.undo.runBatch('Toggle visibility', () => {
-        for (const n of liveNodes) {
-          editor.updateNodeWithUndo(n.id, { visible: !allVisible }, 'Toggle visibility')
-        }
+        for (const n of liveNodes) editor.setNodeVisibility(n.id, !allVisible)
       })
       return
     }
@@ -246,7 +251,7 @@ export function createAppearanceActions({
     if (!selected) return
     const liveNode = editor.getNode(selected.id)
     if (!liveNode) return
-    editor.updateNodeWithUndo(liveNode.id, { visible: !liveNode.visible }, 'Toggle visibility')
+    editor.setNodeVisibility(liveNode.id, !liveNode.visible)
   }
 
   function toggleIndependentCorners() {
@@ -275,13 +280,7 @@ export function createAppearanceActions({
             if (target.independentCorners) continue
             editor.updateNodeWithUndo(
               target.id,
-              {
-                independentCorners: true,
-                topLeftRadius: target.cornerRadius,
-                topRightRadius: target.cornerRadius,
-                bottomRightRadius: target.cornerRadius,
-                bottomLeftRadius: target.cornerRadius
-              } as Partial<SceneNode>,
+              independentCornerChanges(target),
               'Independent corner radii'
             )
           } else {

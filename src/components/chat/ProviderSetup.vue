@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { openSettingsDialog } from '@/app/settings/dialog'
 import AppButton from '@/components/ui/button/AppButton.vue'

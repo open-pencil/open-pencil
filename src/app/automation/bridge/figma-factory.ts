@@ -1,14 +1,23 @@
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI, MAX_IMAGE_FETCH_BYTES } from '@open-pencil/core/figma-api'
 import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
 
+import { renderAutomationImage } from '@/app/automation/bridge/export-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-import { listFamilies, listFonts, loadFont } from '@/app/editor/fonts'
+import { listFamilies, listFonts } from '@/app/editor/fonts'
+import { createTauriFetch } from '@/app/tauri/http'
+import { IS_TAURI } from '@/constants'
+
+// Figma loads `createImageAsync` URLs through its own server; on desktop the native proxy does
+// the same, past CORS, which a browser cannot.
+const imageFetch = IS_TAURI
+  ? createTauriFetch({ maxResponseBytes: MAX_IMAGE_FETCH_BYTES })
+  : undefined
 
 export function makeFigmaFromStore(
   store: EditorStore,
   pageId = store.state.currentPageId
 ): FigmaAPI {
-  const api = new FigmaAPI(store.graph)
+  const api = new FigmaAPI(store.graph, { fetch: imageFetch })
   api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider
   api.theme = store.state.theme ?? 'light'
@@ -27,12 +36,15 @@ export function makeFigmaFromStore(
     },
     zoom: store.state.zoom
   }
-  api.exportImage = (nodeIds, opts) =>
-    store.renderExportImage(nodeIds, opts.scale ?? 1, opts.format ?? 'PNG', opts.pageId ?? pageId)
+  api.exportImage = async (nodeIds, opts) =>
+    renderAutomationImage(
+      store,
+      nodeIds,
+      opts.scale ?? 1,
+      opts.format ?? 'PNG',
+      opts.pageId ?? pageId
+    )
   if (store.renderer) api.rasterCodec = createCanvasKitRasterCodec(store.renderer.ck)
-  api.loadFontAsync = async ({ family, style }) => {
-    await loadFont(family, style).catch(() => null)
-  }
   api.listAvailableFontsAsync = async () => {
     const [systemFonts, familyOptions] = await Promise.all([listFonts(), listFamilies()])
     const fonts = systemFonts.flatMap(({ family, styles }) =>

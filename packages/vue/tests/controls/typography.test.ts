@@ -2,11 +2,14 @@ import { afterAll, beforeAll, expect, test } from 'bun:test'
 
 import { computed, effectScope, nextTick, shallowRef } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { DEFAULT_WEB_FONT_PROVIDER_SETTINGS, fontManager } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { createTypographyActions } from '#vue/controls/typography/actions'
+import { createTypographyAxes } from '#vue/controls/typography/axes'
 import { useFamilyFaces } from '#vue/controls/typography/faces'
 
 // The faces Figma lists for these families (desktop 126), given as installed fonts so no test
@@ -180,4 +183,153 @@ test('the weight list follows a font catalog that arrives after the first lookup
   expect(weights.value.map((weight) => weight.value)).toEqual([400, 700])
   stop()
   fontManager.setHostFontCatalog(CATALOG)
+})
+
+/** A text layer in the bundled variable Inter, which has weight and optical size axes. */
+async function variableText(fontSize = 24) {
+  await fontManager.loadFont('Inter', 'Regular')
+  const editor = createEditor()
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'a',
+    fontFamily: 'Inter',
+    fontSize
+  })
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  return { editor, text, axes, stop: () => scope.stop() }
+}
+
+test('lists the variable font’s axes at the values the text is drawn at', async () => {
+  const { axes, stop } = await variableText()
+  const values = Object.fromEntries(axes.axes.value.map((axis) => [axis.tag, axis.value]))
+  // Regular is weight 400, and the optical size follows the font size.
+  expect(values).toMatchObject({ wght: 400, opsz: 24 })
+  expect(axes.opticalSizeAuto.value).toBe(true)
+  stop()
+})
+
+test('an axis set by hand is one undo step, and an optical size set by hand stops following', async () => {
+  const { editor, text, axes, stop } = await variableText()
+  axes.previewAxis('wght', 520)
+  axes.previewAxis('wght', 560)
+  axes.setAxis('wght', 560)
+  axes.setAxis('opsz', 16)
+  expect(text.fontVariations).toEqual([
+    { axis: 'wght', value: 560 },
+    { axis: 'opsz', value: 16 }
+  ])
+  expect(text.opticalSizeFromFontSize).toBe(false)
+  editor.undo.undo()
+  editor.undo.undo()
+  expect(text.fontVariations).toEqual([])
+  expect(text.opticalSizeFromFontSize).toBe(true)
+  stop()
+})
+
+test('turning automatic optical size off holds the size it is drawn at', async () => {
+  const { text, axes, stop } = await variableText(20)
+  axes.setOpticalSizeAuto(false)
+  expect(text.fontVariations).toEqual([{ axis: 'opsz', value: 20 }])
+  axes.setOpticalSizeAuto(true)
+  expect(text.fontVariations).toEqual([])
+  stop()
+})
+
+test('a named weight draws at its own axes, keeping an optical size set by hand', async () => {
+  const { editor, text, stop } = await variableText()
+  editor.graph.updateNode(text.id, {
+    fontVariations: [
+      { axis: 'wght', value: 560 },
+      { axis: 'opsz', value: 16 }
+    ],
+    opticalSizeFromFontSize: false
+  })
+  const actions = createTypographyActions({
+    editor,
+    nodes: computed(() => [text]),
+    activeFormatting: computed(() => []),
+    supports: () => true,
+    options: {}
+  })
+  await actions.setWeight(700)
+  expect(text.fontWeight).toBe(700)
+  expect(text.fontVariations).toEqual([{ axis: 'opsz', value: 16 }])
+  stop()
+})
+
+test('a cancelled axis edit puts back the axes it previewed', async () => {
+  const { text, axes, stop } = await variableText()
+  axes.previewAxis('opsz', 18)
+  expect(text.opticalSizeFromFontSize).toBe(false)
+  axes.cancelAxis()
+  expect(text.fontVariations).toEqual([])
+  expect(text.opticalSizeFromFontSize).toBe(true)
+  stop()
+})
+
+test('an axis set while text is edited styles the selected characters, and undoes', async () => {
+  await fontManager.loadFont('Inter', 'Regular')
+  const ck = await initCanvasKit()
+  const surface = ck.MakeSurface(200, 200)
+  if (!surface) throw new Error('Expected a surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  const editor = createEditor()
+  editor.setCanvasKit(ck, renderer)
+  await renderer.loadFonts()
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello world',
+    fontFamily: 'Inter',
+    width: 200,
+    height: 20
+  })
+  editor.startTextEditing(text.id)
+  const state = editor.textEditor?.state
+  if (!state) throw new Error('Expected a text editor')
+  state.selectionAnchor = 6
+  state.cursor = 11
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  const node = () => editor.graph.getNode(text.id)
+  try {
+    axes.previewAxis('wght', 500)
+    axes.setAxis('wght', 600)
+    expect(node()?.fontVariations).toEqual([])
+    expect(node()?.styleRuns).toEqual([
+      { start: 6, length: 5, style: { fontVariations: [{ axis: 'wght', value: 600 }] } }
+    ])
+    editor.undoAction()
+    expect(node()?.styleRuns).toEqual([])
+    // Whether optical size follows the font size is the selected characters' own, as in Figma.
+    axes.setOpticalSizeAuto(false)
+    expect(node()?.opticalSizeFromFontSize).toBe(true)
+    expect(node()?.styleRuns).toEqual([
+      {
+        start: 6,
+        length: 5,
+        style: { opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] }
+      }
+    ])
+    editor.undoAction()
+    expect(node()?.styleRuns).toEqual([])
+
+    // A typed optical size goes to the selected characters too, and stays when the edit ends.
+    axes.setAxis('opsz', 20)
+    const typed = {
+      start: 6,
+      length: 5,
+      style: { fontVariations: [{ axis: 'opsz', value: 20 }], opticalSizeFromFontSize: false }
+    }
+    expect(node()?.styleRuns).toEqual([typed])
+    expect(node()?.opticalSizeFromFontSize).toBe(true)
+    expect(node()?.fontVariations).toEqual([])
+    editor.commitTextEdit()
+    expect(editor.state.editingTextId).toBeNull()
+    expect(node()?.styleRuns).toEqual([typed])
+  } finally {
+    scope.stop()
+    editor.dispose()
+    renderer.destroy()
+  }
 })

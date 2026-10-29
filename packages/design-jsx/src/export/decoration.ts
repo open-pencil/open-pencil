@@ -1,5 +1,6 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 
+import { TEXT_DECORATION_STYLE } from '../enums'
 import { AUTO, CURRENT_COLOR } from '../overrides/text'
 import { paintPropValue } from './paint'
 import type { JSXProp } from './value'
@@ -24,7 +25,7 @@ export function collectDecorationProps(
 ): void {
   const { textDecorationFills: fills } = style
   if (style.textDecorationStyle !== undefined)
-    props.push(['textDecorationStyle', style.textDecorationStyle.toLowerCase()])
+    props.push(['textDecorationStyle', TEXT_DECORATION_STYLE.print(style.textDecorationStyle)])
   if (fills) {
     const fill = fills.at(0)
     props.push(['textDecorationColor', fill ? paintPropValue(fill, node) : CURRENT_COLOR])

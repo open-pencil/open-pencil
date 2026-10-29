@@ -29,6 +29,7 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   layoutGrids: ['layoutGrids'],
   guides: ['guides'],
   exportSettings: ['exportSettings'],
+  status: ['sectionStatusInfo'],
   cornerRadius: ['cornerRadius'],
   independentCorners: ['rectangleCornerRadiiIndependent'],
   topLeftRadius: ['rectangleTopLeftCornerRadius', 'rectangleCornerRadiiIndependent'],
@@ -77,6 +78,7 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   paragraphIndent: ['paragraphIndent', ...TEXT_DERIVED_RAW_FIELDS],
   hangingList: ['hangingList', ...TEXT_DERIVED_RAW_FIELDS],
   fontVariations: ['fontVariations', ...TEXT_DERIVED_RAW_FIELDS],
+  opticalSizeFromFontSize: ['detachOpticalSizeFromFontSize', ...TEXT_DERIVED_RAW_FIELDS],
   fontFeatures: [
     'fontVariantCommonLigatures',
     'fontVariantContextualLigatures',

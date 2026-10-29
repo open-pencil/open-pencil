@@ -1,17 +1,18 @@
 import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
+import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { symbolDataOf } from '@open-pencil/fig/instance-overrides'
-import { setInstanceOverride } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
-const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
+const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)
 
 for (const scale of [0.5, 2]) {
   for (const literalClaim of [false, true]) {
@@ -24,8 +25,9 @@ for (const scale of [0.5, 2]) {
       const root = expectDefined(graph.getNode(expectDefined(sources.get('293733:8'))))
       const nested = expectDefined(graph.getChildren(root.id)[0])
       const api = new FigmaAPI(graph)
-      api.bindVariable(root.id, 'paddingRight', '293742:7')
-      api.bindVariable(nested.id, 'paddingRight', '293742:7')
+      const openpencil = new OpenPencilAPI(api)
+      openpencil.bindVariable(root.id, 'paddingRight', { id: '293742:7' })
+      openpencil.bindVariable(nested.id, 'paddingRight', { id: '293742:7' })
       if (literalClaim) {
         createEditor({ graph }).updateNodeWithUndo(root.id, { paddingLeft: 12 })
         setInstanceOverride(root.instanceOverrides, root.id, root.id, 'paddingLeft', 12)
@@ -84,11 +86,7 @@ for (const scale of [0.5, 2]) {
       expect(restored.componentScale).toBe(scale * 0.5)
       expect(child.variableBindingScales.paddingLeft).toBe(scale * 0.5)
       const variable = expectDefined(reopened.variables.get(child.boundVariables.paddingLeft))
-      new FigmaAPI(reopened).setVariableValue(
-        variable.id,
-        reopened.getNodeVariableModeId(child.id, variable.collectionId),
-        16
-      )
+      expectDefined(new FigmaAPI(reopened).variables.getVariableById(variable.id)).setValueForMode(reopened.getNodeVariableModeId(child.id, variable.collectionId), 16)
       expect(child.paddingLeft).toBe(8 * scale)
       expect(restored.width).toBe((literalClaim ? 41 : 39) * scale)
     })

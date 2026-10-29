@@ -1,16 +1,20 @@
-import { CommittedGraphEventError, cycleSafeParent } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { uniq } from 'es-toolkit'
+
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
+import { CommittedGraphEventError, type SceneNode } from '@open-pencil/scene-graph'
+import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { parseFigmaClipboard, parseOpenPencilClipboard } from '#core/clipboard'
+import { parseOpenPencilClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
 
 import { createClipboardAssetActions } from './clipboard/assets'
 import type { ClipboardSnapshot } from './clipboard/copy'
 import { createClipboardCopyActions } from './clipboard/copy'
-import { importClipboardDependencies } from './clipboard/dependencies'
+import { importClipboardDependenciesWithUndo } from './clipboard/dependencies'
 import { createClipboardExportActions } from './clipboard/export'
 import { createClipboardFontActions } from './clipboard/fonts'
 import { deleteIds, recreateSnapshots, restoreDeletedEntries } from './clipboard/history'
@@ -155,31 +159,11 @@ export function createClipboardActions(ctx: EditorContext) {
     cursorPos?: Vector,
     options: PasteOptions = {}
   ) {
+    // Copy properties writes layers for Paste properties only, as in Figma.
+    if (snapshot.properties) return
     let created: string[] = []
     ctx.undo.runBatch('Paste', () => {
-      const dependencies = importClipboardDependencies(ctx, snapshot)
-      if (dependencies.styleSnapshots.length > 0) {
-        ctx.undo.push({
-          label: 'Import clipboard styles',
-          forward: () => {
-            for (const style of dependencies.styleSnapshots) {
-              ctx.graph.preserveSourceMetadataDuring(() =>
-                ctx.graph.createNode(style.type, ctx.state.currentPageId, style)
-              )
-            }
-          },
-          inverse: () => {
-            for (const style of dependencies.styleSnapshots) ctx.graph.deleteNode(style.id)
-          }
-        })
-      }
-      if (dependencies.applyVariables && dependencies.revertVariables) {
-        ctx.undo.push({
-          label: 'Import clipboard variables',
-          forward: dependencies.applyVariables,
-          inverse: dependencies.revertVariables
-        })
-      }
+      const dependencies = importClipboardDependenciesWithUndo(ctx, snapshot)
       created = pasteOpenPencilNodes(
         dependencies.nodes,
         snapshot.placement,
@@ -211,6 +195,7 @@ export function createClipboardActions(ctx: EditorContext) {
     }
 
     const figma = await parseFigmaClipboard(html)
+    if (figma?.assetType === 'STYLE_PROPERTIES') return
     if (figma) {
       // One undo step for the paste and any slot it claims.
       const pasted = ctx.undo.runBatch('Paste', () => {
@@ -386,18 +371,27 @@ export function createClipboardActions(ctx: EditorContext) {
     ctx.undo.runBatch('Delete', () => deleteLayers(nodeIds, nextSelection))
   }
 
+  /** Whether a delete removes this layer: one that is unlocked and may leave its parent. */
+  function deletable(id: string): boolean {
+    const node = ctx.graph.getNode(id)
+    if (!node || node.locked) return false
+    return acceptsChildren(ctx, node.parentId ?? ctx.state.currentPageId)
+  }
+
   function deleteLayers(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
+    const requested = [...nodeIds].filter(deletable)
+    // Connectors go with a layer they attach to, as in FigJam; one that stays keeps them.
+    const attached = attachedConnectors(ctx.graph, requested).map((node) => node.id)
     const entries: Array<{
       id: string
       parentId: string
       index: number
       subtree: Map<string, SceneNode>
     }> = []
-    for (const id of nodeIds) {
+    for (const id of uniq([...requested, ...attached])) {
       const node = ctx.graph.getNode(id)
-      if (!node || node.locked) continue
+      if (!node || !deletable(id)) continue
       const parentId = node.parentId ?? ctx.state.currentPageId
-      if (!acceptsChildren(ctx, parentId)) continue
       const parent = ctx.graph.getNode(parentId)
       const index = parent?.childIds.indexOf(id) ?? -1
       entries.push({ id, parentId, index, subtree: snapshotSubtree(ctx.graph, id) })

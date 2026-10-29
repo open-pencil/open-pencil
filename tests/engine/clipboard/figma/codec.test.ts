@@ -27,6 +27,13 @@ test('Fig clipboard codec preserves prepared node changes and binary blobs', asy
   expect(parsed?.blobs[0]).toBeInstanceOf(Uint8Array)
 })
 
+test('Fig clipboard carries the Copy properties marker that Figma writes', async () => {
+  await initCodec()
+  expect((await parseFigmaClipboard(encodeFigmaClipboard([], [], 1)))?.assetType).toBe('UNKNOWN')
+  const properties = encodeFigmaClipboard([], [], 1, 'STYLE_PROPERTIES')
+  expect((await parseFigmaClipboard(properties))?.assetType).toBe('STYLE_PROPERTIES')
+})
+
 test('Fig clipboard with malformed or mistyped metadata is ignored', async () => {
   await initCodec()
   const html = encodeFigmaClipboard([], [], 123)

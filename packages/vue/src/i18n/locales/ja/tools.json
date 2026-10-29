@@ -8,7 +8,11 @@
   "polygon": "多角形",
   "star": "スター",
   "pen": "ペンツール",
+  "pencil": "鉛筆",
   "text": "テキスト",
+  "sticky": "付箋",
+  "shape": "シェイプ",
+  "connector": "コネクタ",
   "hand": "手のひらツール",
   "comment": "コメント"
 }

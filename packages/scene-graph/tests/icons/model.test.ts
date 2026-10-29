@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { iconNames, SceneGraph, withIcon } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { iconNames, withIcon } from '@open-pencil/scene-graph/icons'
 
 function icon(graph: SceneGraph, parentId: string, name: string) {
   const frame = graph.createNode('FRAME', parentId, { name: `Icon / ${name}` })

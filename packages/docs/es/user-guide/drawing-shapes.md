@@ -15,7 +15,7 @@ La barra inferior contiene herramientas para crear formas, marcos y secciones. S
 | Elipse | <kbd>O</kbd> | Elipse |
 | Línea | <kbd>L</kbd> | Línea |
 | Marco | <kbd>F</kbd> | Contenedor de otros objetos |
-| Sección | <kbd>S</kbd> | Contenedor de nivel superior |
+| Sección | <kbd>Shift</kbd> + <kbd>S</kbd> | Contenedor de nivel superior |
 
 Polígono y Estrella están disponibles en el menú de formas.
 

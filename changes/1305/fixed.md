@@ -1,0 +1,1 @@
+- Text set in a style its font lacks, such as italic in a font without an italic face, draws in the face the font has, as Figma draws it, instead of a slanted or emboldened imitation that copies, saved files, and exported code did not keep; the font status lists the style as missing.

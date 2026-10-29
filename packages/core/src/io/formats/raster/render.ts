@@ -1,13 +1,10 @@
 import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
-import {
-  getWorldMatrix,
-  type Mat3,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
@@ -324,14 +321,22 @@ export function renderNodesToImage(
   )
 }
 
-export function renderThumbnail(
-  ck: CanvasKit,
-  renderer: SkiaRenderer,
+export interface ThumbnailFrame {
+  /** The page content the thumbnail shows. */
+  bounds: VisualBounds
+  scale: number
+  /** The thumbnail's size in pixels. */
+  width: number
+  height: number
+}
+
+/** The page region a thumbnail fitted into `width` by `height` pixels shows, and its size. */
+export function thumbnailFrame(
   graph: SceneGraph,
   pageId: string,
   width: number,
   height: number
-): Uint8Array | null {
+): ThumbnailFrame | null {
   const page = graph.getNode(pageId)
   if (!page || page.childIds.length === 0) return null
 
@@ -343,10 +348,27 @@ export function renderThumbnail(
   if (contentW <= 0 || contentH <= 0) return null
 
   const scale = Math.min(width / contentW, height / contentH)
-  const pixelW = Math.max(1, Math.round(contentW * scale))
-  const pixelH = Math.max(1, Math.round(contentH * scale))
+  return {
+    bounds,
+    scale,
+    width: Math.max(1, Math.round(contentW * scale)),
+    height: Math.max(1, Math.round(contentH * scale))
+  }
+}
+
+export function renderThumbnail(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  width: number,
+  height: number
+): Uint8Array | null {
+  const frame = thumbnailFrame(graph, pageId, width, height)
+  if (!frame) return null
+  const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.
-  const background = getPageColor(page)
+  const background = getPageColor(graph.getNode(pageId))
 
   return renderToSurface(ck, renderer, graph, pageId, pixelW, pixelH, 'PNG', 100, (canvas) => {
     canvas.clear(ck.Color4f(background.r, background.g, background.b, 1))

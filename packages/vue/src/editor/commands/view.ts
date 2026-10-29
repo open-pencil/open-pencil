@@ -1,16 +1,13 @@
 import { computed } from 'vue'
 
 import type { EditorCommandMapOptions } from './context'
-import type { EditorCommand } from './types'
+import type { EditorCommand, EditorCommandId } from './types'
 
 export function createViewCommands({
   editor,
   capabilities,
   messages: t
-}: EditorCommandMapOptions): Pick<
-  Record<'view.zoom100' | 'view.zoomFit' | 'view.zoomSelection', EditorCommand>,
-  'view.zoom100' | 'view.zoomFit' | 'view.zoomSelection'
-> {
+}: EditorCommandMapOptions): Record<Extract<EditorCommandId, `view.${string}`>, EditorCommand> {
   return {
     'view.zoom100': {
       id: 'view.zoom100',
@@ -35,6 +32,38 @@ export function createViewCommands({
       },
       enabled: capabilities.canZoomToSelection,
       run: () => editor.zoomToSelection()
+    },
+    'view.zoomNextFrame': {
+      id: 'view.zoomNextFrame',
+      get label() {
+        return t.value.zoomToNextFrame
+      },
+      enabled: computed(() => true),
+      run: () => editor.zoomToNextFrame()
+    },
+    'view.zoomPreviousFrame': {
+      id: 'view.zoomPreviousFrame',
+      get label() {
+        return t.value.zoomToPreviousFrame
+      },
+      enabled: computed(() => true),
+      run: () => editor.zoomToPreviousFrame()
+    },
+    'view.nextPage': {
+      id: 'view.nextPage',
+      get label() {
+        return t.value.nextPage
+      },
+      enabled: computed(() => true),
+      run: () => void editor.switchToNextPage()
+    },
+    'view.previousPage': {
+      id: 'view.previousPage',
+      get label() {
+        return t.value.previousPage
+      },
+      enabled: computed(() => true),
+      run: () => void editor.switchToPreviousPage()
     }
   }
 }

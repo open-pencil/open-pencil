@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue'
-
-import { avatarStack } from '@/theme/collaboration/avatar-stack'
+import { useCommonMessages } from '@open-pencil/vue/i18n'
 
 import PersonAvatar from './PersonAvatar.vue'
 import type { PresencePersonRow } from './rows'
+import { avatarStack } from './ui'
 
 /**
  * The people in a room or on a page, overlapping, each with how many agents they run, then

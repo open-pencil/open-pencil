@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import {
-  MIXED,
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue
-} from '@open-pencil/vue'
+} from '@open-pencil/vue/controls/component-props'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
 
 describe('component property control model', () => {
   test('requires identical ordered property IDs and types', () => {

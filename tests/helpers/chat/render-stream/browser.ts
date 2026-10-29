@@ -1,4 +1,4 @@
-import { createToolLoopTransport } from '@/app/ai/chat/transports'
+import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 
 import { createRenderStreamModel, type RenderStreamScenario } from './model'
 

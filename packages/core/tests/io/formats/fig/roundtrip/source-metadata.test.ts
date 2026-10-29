@@ -1,9 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
-import { guidToString } from '@open-pencil/fig/node-change'
-import type { Vector } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** The codec types only the fields it writes; raw passthrough metadata is read through these. */
 interface RawLayoutGrid {
@@ -224,6 +226,7 @@ describe('fig roundtrip source metadata', () => {
     text.source.fig.rawNodeFields.toggledOffOTFeatures = ['LIGA']
     text.source.fig.rawNodeFields.semanticWeight = 'BOLD'
     text.source.fig.rawNodeFields.semanticItalic = 'ITALIC'
+    text.source.fig.rawNodeFields.emojiImageSet = 'NOTO'
     text.source.fig.rawNodeFields.derivedTextData = {
       layoutSize: { x: 80, y: 20 },
       derivedLines: [{ directionality: 'LTR' }]
@@ -245,6 +248,7 @@ describe('fig roundtrip source metadata', () => {
     expect(exported?.toggledOffOTFeatures).toEqual(['LIGA'])
     expect(exported?.semanticWeight).toBe('BOLD')
     expect(exported?.semanticItalic).toBe('ITALIC')
+    expect(exported?.emojiImageSet).toBe('NOTO')
     expect(exported?.derivedTextData?.layoutSize).toEqual({ x: 80, y: 20 })
   })
 
@@ -496,7 +500,7 @@ describe('fig roundtrip source metadata', () => {
     const reopened = await parseFigFile(saved.slice().buffer)
     const page = reopened.getPages()[0]
     const inserted = reopened.createNode('RECTANGLE', page.id, { name: 'Inserted' })
-    reopened.reorderChild(inserted.id, page.id, 0)
+    reopened.insertChildAt(inserted.id, page.id, 0)
     const resaved = await exportFigFile(reopened)
 
     const cardGuid = savedGuidOf(saved, 'Card')
@@ -514,7 +518,7 @@ describe('fig roundtrip source metadata', () => {
     const cardGuid = savedGuidOf(await exportFigFile(graph), 'Card')
 
     const inserted = graph.createNode('RECTANGLE', page.id, { name: 'Inserted' })
-    graph.reorderChild(inserted.id, page.id, 0)
+    graph.insertChildAt(inserted.id, page.id, 0)
     const resaved = await exportFigFile(graph)
 
     expect(cardGuid).toBeDefined()

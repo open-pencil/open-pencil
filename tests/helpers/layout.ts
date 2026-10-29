@@ -1,5 +1,5 @@
-import { readFigFile } from '@open-pencil/core'
-import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/core'
+import { readFigFile } from '@open-pencil/core/io/formats/fig'
+import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 export function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

@@ -1,11 +1,15 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { breakAtVertex, deleteVertex, vectorHandleParts } from '@open-pencil/core/vector'
+import type { Editor } from '@open-pencil/core'
+import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '@open-pencil/core/vector'
 
 import { pushNodeEditHistory } from './history'
 import { getLiveNetwork, setNodeEditNetwork } from './network'
 import type { VectorEditState } from './types'
 
-export function createVectorEditSelectionActions(editor: Editor, state: VectorEditState) {
+export function createVectorEditSelectionActions(
+  editor: Editor,
+  state: VectorEditState,
+  exitNodeEditMode: (commit: boolean) => void
+) {
   function getNodeEditState() {
     return state.nodeEditState
   }
@@ -20,6 +24,8 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
       es.selectedVertexIndices = next
     } else {
       es.selectedVertexIndices = new Set([vertexIndex])
+      es.selectedSegmentIndices = new Set()
+      es.selectedRegions = new Set()
     }
     editor.requestRepaint()
   }
@@ -52,7 +58,12 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
   function nodeEditDeleteSelected() {
     const es = getNodeEditState()
     if (!es) return
-    if (es.selectedHandles.size === 0 && es.selectedVertexIndices.size === 0) return
+    if (
+      es.selectedHandles.size === 0 &&
+      es.selectedVertexIndices.size === 0 &&
+      es.selectedSegmentIndices.size === 0
+    )
+      return
     pushNodeEditHistory(es)
     let live = getLiveNetwork(es)
 
@@ -64,15 +75,21 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
       else seg.tangentEnd = { x: 0, y: 0 }
     }
 
-    const verticesToDelete = [...es.selectedVertexIndices].sort((a, b) => b - a)
-    for (const vi of verticesToDelete) {
-      const next = deleteVertex(live, vi)
-      if (!next) break
-      live = next
+    live = deleteVectorParts(live, es.selectedSegmentIndices, es.selectedVertexIndices)
+    // As in Figma, deleting every point deletes the layer. The edits made before it are committed
+    // first, so undoing the delete brings back the path as it was just before.
+    if (live.vertices.length === 0) {
+      const { nodeId } = es
+      exitNodeEditMode(true)
+      editor.select([nodeId])
+      editor.deleteSelected()
+      return
     }
 
     setNodeEditNetwork(es, live)
     es.selectedVertexIndices = new Set()
+    es.selectedSegmentIndices = new Set()
+    es.selectedRegions = new Set()
     es.selectedHandles = new Set()
     editor.requestRender()
   }
@@ -86,6 +103,8 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
     const next = breakAtVertex(live, vertexIndex)
     setNodeEditNetwork(es, next)
     es.selectedHandles = new Set()
+    es.selectedSegmentIndices = new Set()
+    es.selectedRegions = new Set()
     es.selectedVertexIndices = new Set([vertexIndex])
     editor.requestRender()
   }

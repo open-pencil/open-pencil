@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { hasInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { createResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
 import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'

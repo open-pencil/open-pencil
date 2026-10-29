@@ -1,18 +1,21 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  sceneNodeToDesignDocument,
-  sceneNodesToTailwindJSXWithLayers,
-  serializeHTML
-} from '#dom-css/index'
+import { serializeHTML } from '#dom-css/export/html'
+import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
+import { sceneNodesToTailwindJSXWithLayers } from '#dom-css/export/tailwind-jsx'
 
-import { createShaderPaint, SceneGraph, withShaderPaints } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createShaderPaint, withShaderPaints } from '@open-pencil/scene-graph/shaders'
 
 const PRESET = {
   components: [{ type: 'Aurora', props: { colorA: '#ff3300', speed: 2 } }, { type: 'FilmGrain' }]
 }
 const FRAME = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
-const JPEG_FRAME = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70, 73, 70])
+/** A JPEG's header through its frame, which declares a 37 × 21 image. */
+const JPEG_FRAME = new Uint8Array([
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, 0xff, 0xc4, 0x00, 0x02, 0xff, 0xc0, 0x00, 0x11,
+  0x08, 0x00, 0x15, 0x00, 0x25, 0x03
+])
 
 /** A layer with no children that fills with a shader, whose still frame is saved. */
 function shaderLayer(frame = FRAME) {

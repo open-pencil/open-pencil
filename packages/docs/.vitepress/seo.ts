@@ -68,13 +68,13 @@ export const siteHead: [string, Record<string, string>][] = [
   ],
   ['meta', { property: 'og:type', content: 'website' }],
   ['meta', { property: 'og:site_name', content: 'OpenPencil' }],
-  ['meta', { property: 'og:image', content: `${BASE}/screenshot.png` }],
-  ['meta', { property: 'og:image:width', content: '2784' }],
-  ['meta', { property: 'og:image:height', content: '1824' }],
-  ['meta', { property: 'og:image:alt', content: 'OpenPencil — AI-Native Design Editor' }],
+  ['meta', { property: 'og:image', content: `${BASE}/social.png` }],
+  ['meta', { property: 'og:image:width', content: '2400' }],
+  ['meta', { property: 'og:image:height', content: '1260' }],
+  ['meta', { property: 'og:image:alt', content: 'OpenPencil — Open-Source Design Editor' }],
   ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
   ['meta', { name: 'twitter:site', content: '@openpencildev' }],
-  ['meta', { name: 'twitter:image', content: `${BASE}/screenshot.png` }]
+  ['meta', { name: 'twitter:image', content: `${BASE}/social.png` }]
 ]
 
 type SitemapItem = {

@@ -58,4 +58,31 @@ describe('export metadata', () => {
       'runtime target is a declaration file (./dist/index.d.ts)'
     ])
   })
+
+  test('rejects wildcard import targets without an extension', () => {
+    const diagnostics = validateManifest({
+      ...validManifest,
+      imports: {
+        '#example/*': { types: './dist/*.d.ts', bun: './src/*', default: './dist/*.js' }
+      }
+    })
+    expect(diagnostics.map(({ message }) => message)).toEqual([
+      'wildcard target names no extension (./src/*)'
+    ])
+  })
+
+  test('accepts a wildcard import target that names an index file', () => {
+    expect(
+      validateManifest({
+        ...validManifest,
+        imports: { '#example/*': { types: './dist/*/index.d.ts', default: './dist/*/index.js' } }
+      })
+    ).toEqual([])
+  })
+
+  test('accepts a wildcard import target in another package', () => {
+    expect(validateManifest({ ...validManifest, imports: { '#icons/*': 'icon-pack/*' } })).toEqual(
+      []
+    )
+  })
 })

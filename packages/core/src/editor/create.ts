@@ -13,7 +13,7 @@ import {
   hasStoredBackground,
   setDefaultPageBackground
 } from '#core/figma-api/page-backgrounds'
-import { iconify } from '#core/icons'
+import { defaultIcons } from '#core/icons'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
 import { installTextMeasurer } from '#core/layout'
@@ -26,31 +26,45 @@ import { fontResolver } from '#core/text/resolver'
 import { createAlignmentActions } from './alignment'
 import { createClipboardBridge } from './bridges/clipboard'
 import { createComponentBridge } from './bridges/components'
+import { createFrameNavigationBridge } from './bridges/frames'
 import { createLintFixBridge } from './bridges/lint'
 import { createStructureBridge } from './bridges/structure'
 import { createUndoBridge } from './bridges/undo'
 import { createClipboardActions } from './clipboard'
+import { createClipboardPropertiesActions } from './clipboard/paste/properties'
 import { createColorSpaceActions } from './color-space'
 import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
+import { createConnectorDrawActions, createConnectorEndpointActions } from './connectors/draw'
+import { createConnectorLineActions } from './connectors/line'
+import { createConnectorRouting } from './connectors/routing'
+import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
+import { createDocumentSettingsActions } from './document-settings'
+import { createFigCompressionActions } from './fig-compression'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
 import { createIconActions } from './icons'
 import { createDesignIssueActions } from './issues'
+import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createPlayActions } from './play/actions'
+import { createReadOnlyActions, guardReadOnly, guardUndo, READ_ONLY_TOOLS } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
+import { createShapeWithTextActions } from './shapes/with-text'
 import { createDefaultEditorState } from './state'
+import { createStatusActions } from './statuses'
+import { createStickyActions } from './stickies'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import { createPendingTextLayout } from './text/pending-layout'
 import { createTextSelectionStyle } from './text/selection-style'
+import { createGeneratedTextActions } from './text/typeface'
 import type {
   EditorContext,
   EditorEventName,
@@ -193,10 +207,14 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function setActiveTool(tool: EditorState['activeTool']) {
+    if (state.readOnly && !READ_ONLY_TOOLS.has(tool)) return
     const previous = state.activeTool
     state.activeTool = tool
     if (tool !== 'SELECT') state.measurementMode = 'off'
-    if (previous !== tool) emitEditorEvent('tool:changed', tool, previous)
+    if (previous === tool) return
+    // Guides the pen showed for its next point do not belong to the next tool.
+    if (previous === 'PEN') state.snapGuides = []
+    emitEditorEvent('tool:changed', tool, previous)
   }
 
   const graphReads = createGraphReadActions(() => _graph)
@@ -240,7 +258,8 @@ export function createEditor(options?: EditorOptions) {
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
-    icons: options?.icons ?? iconify,
+    getUserName: () => options?.getUserName?.() ?? '',
+    icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,
     getRenderer: () => _renderer,
     getRenderers: () => _renderers,
@@ -266,27 +285,57 @@ export function createEditor(options?: EditorOptions) {
   const pages = createPageActions(ctx, shaderFrames)
   const guides = createGuideActions(ctx)
   const designIssues = createDesignIssueActions(ctx)
-  const shapes = createShapeActions(ctx)
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
   const clipboard = createClipboardActions(ctx)
   const colorSpace = createColorSpaceActions(ctx)
+  const documentSettings = createDocumentSettingsActions(ctx)
   const undoActions = createUndoActions(ctx)
   const text = createTextActions(ctx)
   const nodes = createNodeActions(ctx)
+  const shapes = createShapeActions(ctx, nodes.updateNodeWithUndo)
+  const clipboardProperties = createClipboardPropertiesActions(
+    ctx,
+    nodes.updateNodeWithUndo,
+    clipboard.loadFontsForNodes
+  )
   const variables = createVariableActions(ctx)
   const designTokens = createDesignTokenActions(ctx, variables, nodes)
   const vectorize = createVectorizeActions(ctx)
   const icons = createIconActions(ctx)
+  const stickies = createStickyActions(ctx)
+  const shapesWithText = createShapeWithTextActions(ctx)
+  const generatedText = createGeneratedTextActions(ctx)
+  const statuses = createStatusActions(ctx)
+  const figCompression = createFigCompressionActions(ctx)
+  createConnectorRouting(ctx)
+  const connectorDrawing = createConnectorDrawActions(ctx)
+  const connectorEndpoints = createConnectorEndpointActions(
+    ctx,
+    nodes.beginNodePreview,
+    clipboard.deleteNodes
+  )
+  const connectorLines = createConnectorLineActions(ctx, nodes.beginNodePreview)
+  const connectorStyles = createConnectorStyleActions(ctx)
+  const lineEnds = createLineEndActions(ctx, nodes.beginNodePreview)
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
+  const frameNavigation = createFrameNavigationBridge(ctx, selection, viewport)
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
+  const readOnly = createReadOnlyActions(ctx, () => {
+    nodes.flushNudge()
+    nodes.cancelNodePreviews()
+    if (state.editingTextId) text.commitTextEdit()
+    shapes.penCancel()
+    shapes.pencilCancel()
+    state.gradientEdit = null
+  })
 
   // The edited text follows changes made outside the editor, such as a panel field being
   // dragged, so its caret and selection move with the text instead of after the change.
@@ -363,7 +412,7 @@ export function createEditor(options?: EditorOptions) {
     releaseOriginalFigArchive(_graph)
   }
 
-  return {
+  const editor = {
     get graph() {
       return _graph
     },
@@ -376,7 +425,7 @@ export function createEditor(options?: EditorOptions) {
     get textEditor() {
       return _textEditor
     },
-    undo,
+    undo: guardUndo(undo, () => state.readOnly),
     state,
 
     // Graph reads
@@ -435,6 +484,18 @@ export function createEditor(options?: EditorOptions) {
     // Bitmap-to-vector replacement
     ...vectorize,
     ...icons,
+    ...stickies,
+    ...shapesWithText,
+    ...generatedText,
+    statusWorkflow: statuses.statusWorkflow,
+    getShownStatus: statuses.getShownStatus,
+    setStatus: statuses.setStatus,
+    setStatusWorkflow: statuses.setStatusWorkflow,
+    ...connectorDrawing,
+    ...connectorEndpoints,
+    ...connectorLines,
+    ...lineEnds,
+    ...connectorStyles,
     ...shaders,
     ...shaderFrames,
 
@@ -447,6 +508,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Viewport
     ...viewport,
+    ...frameNavigation,
 
     // Undo — bridge functions that need cross-module refs
     ...undoBridge,
@@ -462,9 +524,16 @@ export function createEditor(options?: EditorOptions) {
     redoAction: () => text.runTextEditStep(undoBridge.redoAction),
 
     setDocumentColorSpace: colorSpace.setDocumentColorSpace,
+    updateEnabledLibraries: documentSettings.updateEnabledLibraries,
+    refreshDocumentSettings: documentSettings.refreshDocumentSettings,
+    figCompression: figCompression.figCompression,
+    setFigCompression: figCompression.setFigCompression,
 
     // Clipboard — bridge functions that need selectedNodes
     ...clipboardBridge,
+
+    // Paste properties: the look of a copied layer, onto the selection
+    ...clipboardProperties,
 
     // Components — bridge functions
     ...componentBridge,
@@ -473,8 +542,18 @@ export function createEditor(options?: EditorOptions) {
     ...structureBridge,
 
     // Lint fixes, which touch nodes, structure and deletion in one undo step
-    ...lintFixBridge
+    ...lintFixBridge,
+
+    // Read-only documents, which refuse every action above that changes them
+    ...readOnly
   }
+  return guardReadOnly(editor, () => state.readOnly)
 }
 
-export type Editor = ReturnType<typeof createEditor>
+/**
+ * The editor `createEditor` returns. An interface rather than an alias, so declarations that
+ * mention it, such as a Vue composable's inferred return type, name it instead of spelling out
+ * its members, some of whose types are internal to Core.
+ */
+// eslint-disable-next-line typescript/no-empty-object-type -- The interface is the point: an alias's members are spelled out in emitted declarations.
+export interface Editor extends ReturnType<typeof createEditor> {}

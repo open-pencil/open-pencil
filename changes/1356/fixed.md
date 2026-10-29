@@ -1,0 +1,1 @@
+- Layers with opacity below 100% or a blend mode draw whole when rotated or inside a rotated frame, instead of being cut off.

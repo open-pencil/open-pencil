@@ -7,37 +7,32 @@ import {
 } from '@/app/diagnostics'
 import {
   activeStorageProviderID,
-  createActiveStorageAdapter,
-  storageCredentialStatuses,
-  storagePreferencesComplete,
-  storageProviderRegistry
+  openStorageAdapter,
+  storageLocationOf,
+  StorageRevisionConflictError,
+  StorageUnavailableError
 } from '@/app/integrations/storage'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { getOutbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUI } from '@/app/storage/sync/status'
-import type { OutboxJob } from '@/app/storage/sync/types'
+import { PARKED_ATTEMPT_AT, type OutboxJob } from '@/app/storage/sync/types'
 import { emitStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 const MAX_ATTEMPTS = 8
 const BASE_BACKOFF_MS = 1500
 const MAX_BACKOFF_MS = 60_000
 
-class StorageSyncBlockedError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'StorageSyncBlockedError'
-  }
-}
-
 let pumping = false
 let wakeTimer: ReturnType<typeof setTimeout> | null = null
 let onlineBound = false
 
 function isOnline(): boolean {
+  // Runtimes without a network indicator, such as workers and tests, count as online.
   if (typeof navigator === 'undefined') return true
-  return navigator.onLine
+  const online: unknown = Reflect.get(navigator, 'onLine')
+  return online !== false
 }
 
 function backoffMs(attempts: number): number {
@@ -49,7 +44,7 @@ function backoffMs(attempts: number): number {
 export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number | null {
   if (jobs.length === 0) return null
   const nextAt = Math.min(...jobs.map((job) => job.nextAttemptAt))
-  return nextAt === Number.MAX_SAFE_INTEGER ? null : Math.max(250, nextAt - now)
+  return nextAt === PARKED_ATTEMPT_AT ? null : Math.max(250, nextAt - now)
 }
 
 function isPermanentError(error: unknown): boolean {
@@ -59,27 +54,15 @@ function isPermanentError(error: unknown): boolean {
     msg.includes('403') ||
     msg.includes('401') ||
     msg.includes('access denied') ||
-    msg.includes('invalid access key') ||
-    msg.includes('not configured')
+    msg.includes('invalid access key')
   )
 }
 
 async function runJob(job: OutboxJob): Promise<void> {
   const store = getLocalCanvasStore()
   const meta = await store.getMeta(job.canvasId)
-  const providerID = meta?.providerId ?? activeStorageProviderID.value
-  if (!storagePreferencesComplete(providerID)) {
-    throw new StorageSyncBlockedError('Storage is not configured')
-  }
-  const provider = storageProviderRegistry.get(providerID)
-  const statuses = await storageCredentialStatuses(providerID)
-  const missingCredential = provider.credentialFields.some(
-    (field) => field.required && statuses[field.id] !== 'configured'
-  )
-  if (missingCredential) {
-    throw new StorageSyncBlockedError('Storage credentials are unavailable')
-  }
-  const adapter = createActiveStorageAdapter(providerID)
+  const location = meta ? storageLocationOf(meta) : { providerId: activeStorageProviderID.value }
+  const adapter = await openStorageAdapter(location)
 
   if (job.type === 'deleteCanvas') {
     await adapter.deleteDocument(job.canvasId)
@@ -95,55 +78,53 @@ async function runJob(job: OutboxJob): Promise<void> {
     return
   }
 
-  if (job.type === 'putCanvas') {
-    // Superseded by a newer local revision already on disk
-    if (meta.revision > job.revision) return
-    if (!meta.hasFig) return
-    const fig = await store.readFig(job.canvasId)
-    if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
-    setUploadProgress(job.canvasId, 0)
-    try {
-      await adapter.putDocument(
-        job.canvasId,
-        fig,
-        {
-          name: meta.name,
-          updatedAt: meta.updatedAt
-        },
-        ({ transferredBytes, totalBytes }) => {
-          if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
-        }
-      )
-    } finally {
-      setUploadProgress(job.canvasId, null)
-    }
-    // Only mark synced if still on this revision and no other pending work for newer rev
-    const latest = await store.getMeta(job.canvasId)
-    if (latest && latest.revision === job.revision && !latest.tombstoned) {
-      await store.updateMeta(
-        job.canvasId,
-        {
-          syncStatus: 'synced',
-          lastSyncedAt: new Date().toISOString(),
-          lastSyncError: null
-        },
-        { expectedRevision: job.revision }
-      )
-      await evictLocalFigCache(new Set([job.canvasId]))
-      emitStorageWorkspaceEvent({
-        providerId: providerID,
-        documentId: job.canvasId,
-        kind: 'synced'
-      })
-    }
-    return
+  // Superseded by a newer local revision already on disk
+  if (meta.revision > job.revision) return
+  if (!meta.hasFig) return
+  const fig = await store.readFig(job.canvasId)
+  if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
+  setUploadProgress(job.canvasId, 0)
+  let written: { revision: string | null }
+  try {
+    written = await adapter.putDocument(
+      job.canvasId,
+      fig,
+      {
+        name: meta.name,
+        updatedAt: meta.updatedAt
+      },
+      ({ transferredBytes, totalBytes }) => {
+        if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
+      },
+      { baseRevision: meta.remoteRevision ?? null }
+    )
+  } finally {
+    setUploadProgress(job.canvasId, null)
   }
-
-  // Remaining job type: putThumb
-  if (!adapter.putThumbnail) return
-  const thumb = await store.readThumb(job.canvasId)
-  if (!thumb) return
-  await adapter.putThumbnail(job.canvasId, thumb)
+  // Later local edits build on what was just stored, even when they arrived mid-upload.
+  if (written.revision !== null) {
+    await store.updateMeta(job.canvasId, { remoteRevision: written.revision })
+  }
+  // Only mark synced if still on this revision and no other pending work for newer rev
+  const latest = await store.getMeta(job.canvasId)
+  if (latest && latest.revision === job.revision && !latest.tombstoned) {
+    await store.updateMeta(
+      job.canvasId,
+      {
+        syncStatus: 'synced',
+        lastSyncedAt: new Date().toISOString(),
+        lastSyncError: null,
+        conflictRevision: null
+      },
+      { expectedRevision: job.revision }
+    )
+    await evictLocalFigCache(new Set([job.canvasId]))
+    emitStorageWorkspaceEvent({
+      ...location,
+      documentId: job.canvasId,
+      kind: 'synced'
+    })
+  }
 }
 
 async function pumpOnce(): Promise<void> {
@@ -188,10 +169,30 @@ async function pumpOnce(): Promise<void> {
       retryable
     })
     const message = error instanceof Error ? error.message : String(error)
-    if (error instanceof StorageSyncBlockedError) {
+    if (error instanceof StorageRevisionConflictError) {
+      // Both versions stay: the local bytes on this device, the newer one on the provider.
+      // The job waits for the person to choose, and other work carries on.
+      await getLocalCanvasStore().updateMeta(job.canvasId, {
+        syncStatus: 'conflict',
+        conflictRevision: error.currentRevision,
+        lastSyncError: null
+      })
+      await outbox.update({ ...job, nextAttemptAt: PARKED_ATTEMPT_AT })
+      const conflicted = await getLocalCanvasStore().getMeta(job.canvasId)
+      if (conflicted) {
+        emitStorageWorkspaceEvent({
+          ...storageLocationOf(conflicted),
+          documentId: job.canvasId,
+          kind: 'changed'
+        })
+      }
+      scheduleWake(50)
+      return
+    }
+    if (error instanceof StorageUnavailableError) {
       await outbox.update({
         ...job,
-        nextAttemptAt: Number.MAX_SAFE_INTEGER
+        nextAttemptAt: PARKED_ATTEMPT_AT
       })
       setSyncUI('error', message)
       return
@@ -202,34 +203,18 @@ async function pumpOnce(): Promise<void> {
     console.warn('[Storage sync] job failed:', job.type, job.canvasId, message)
 
     if (permanent) {
-      // A failed thumbnail upload must not poison the document's sync status —
-      // only canvas/delete jobs reflect into the meta row.
-      if (job.type !== 'putThumb') {
-        await getLocalCanvasStore().updateMeta(job.canvasId, {
-          syncStatus: 'error',
-          lastSyncError: message
-        })
-        setSyncUI('error', message.slice(0, 120))
-      } else {
-        // Keep a record without touching syncStatus so the stale remote
-        // thumbnail is at least diagnosable.
-        await getLocalCanvasStore().updateMeta(job.canvasId, { lastSyncError: message })
-      }
-      if (job.type === 'putThumb') {
-        await outbox.remove(job.id)
-        const remaining = await outbox.list()
-        setPendingSyncCount(remaining.length)
-        if (remaining.length > 0) scheduleWake(1000)
-        else setSyncUI('idle')
-      } else {
-        // Never discard a document mutation. Keep it durable until the user
-        // repairs credentials/permissions and explicitly wakes synchronization.
-        await outbox.update({
-          ...job,
-          attempts,
-          nextAttemptAt: Number.MAX_SAFE_INTEGER
-        })
-      }
+      await getLocalCanvasStore().updateMeta(job.canvasId, {
+        syncStatus: 'error',
+        lastSyncError: message
+      })
+      setSyncUI('error', message.slice(0, 120))
+      // Never discard a document mutation. Keep it durable until the user
+      // repairs credentials/permissions and explicitly wakes synchronization.
+      await outbox.update({
+        ...job,
+        attempts,
+        nextAttemptAt: PARKED_ATTEMPT_AT
+      })
       return
     }
 
@@ -239,12 +224,10 @@ async function pumpOnce(): Promise<void> {
       nextAttemptAt: Date.now() + backoffMs(attempts)
     }
     await outbox.update(updated)
-    if (job.type !== 'putThumb') {
-      await getLocalCanvasStore().updateMeta(job.canvasId, {
-        syncStatus: 'pending',
-        lastSyncError: message
-      })
-    }
+    await getLocalCanvasStore().updateMeta(job.canvasId, {
+      syncStatus: 'pending',
+      lastSyncError: message
+    })
     // Wake for the next ready job across the whole queue — not this job's
     // full backoff, which starved other jobs that were ready sooner.
     const all = await outbox.list()
@@ -306,11 +289,6 @@ export async function kickSyncEngine(): Promise<void> {
 
 export async function enqueuePutCanvas(canvasId: string, revision: number): Promise<void> {
   await getOutbox().enqueue({ canvasId, type: 'putCanvas', revision })
-  void kickSyncEngine()
-}
-
-export async function enqueuePutThumb(canvasId: string, revision: number): Promise<void> {
-  await getOutbox().enqueue({ canvasId, type: 'putThumb', revision })
   void kickSyncEngine()
 }
 

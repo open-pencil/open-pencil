@@ -1,10 +1,12 @@
 import type { Ref } from 'vue'
 
+import type { Editor } from '@open-pencil/core'
 import { PEN_CLOSE_THRESHOLD } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { createPenDrag, handlePenDragMove } from '#vue/canvas/pen/drag'
+import { PEN_CURSOR } from '#vue/editor/tool-cursor'
+import { resolveVertexSnap } from '#vue/shared/input/snap'
 import type { DragState } from '#vue/shared/input/types'
 import { handlePenNodeEditDown } from '#vue/shared/input/vector'
 
@@ -16,8 +18,19 @@ function nearFirstVertex(cx: number, cy: number, first: Vector, editor: Editor) 
   return Math.hypot(cx - first.x, cy - first.y) < PEN_CLOSE_THRESHOLD / zoom
 }
 
+/**
+ * The vertices the pen's next point lines up with, which in Figma are only the path's own: the
+ * path being drawn with the one it continues, or the path being edited before the pen picks it up.
+ */
+function penSnapVertices(editor: Editor): readonly Vector[] {
+  const penState = editor.state.penState
+  if (!penState) return editor.state.nodeEditState?.vertices ?? []
+  const resumed = penState.resumedPath?.network.vertices ?? []
+  return [...resumed, ...penState.vertices]
+}
+
 export function startPenInput(
-  e: MouseEvent,
+  e: Pick<MouseEvent, 'altKey'>,
   cx: number,
   cy: number,
   editor: Editor,
@@ -27,9 +40,10 @@ export function startPenInput(
   editor.state.penCursorX = null
   editor.state.penCursorY = null
 
-  const nodeEditState = editor.state.nodeEditState
-  if (nodeEditState) {
-    handlePenNodeEditDown(e, cx, cy, editor)
+  const { point } = resolveVertexSnap({ x: cx, y: cy }, penSnapVertices(editor), editor)
+  editor.setSnapGuides([])
+  if (editor.state.nodeEditState) {
+    handlePenNodeEditDown(e, cx, cy, editor, point)
     return true
   }
 
@@ -40,22 +54,26 @@ export function startPenInput(
       editor.penSetPendingClose(true)
       editor.penSetClosingToFirst(true)
       setDrag(createPenDrag(first.x, first.y))
-      cursorOverride.value = 'crosshair'
+      cursorOverride.value = PEN_CURSOR
       return true
     }
   }
 
   editor.penSetPendingClose(false)
-  editor.penAddVertex(cx, cy)
-  setDrag(createPenDrag(cx, cy))
-  cursorOverride.value = 'crosshair'
+  editor.penAddVertex(point.x, point.y)
+  setDrag(createPenDrag(point.x, point.y))
+  cursorOverride.value = PEN_CURSOR
   return true
 }
 
 export function updatePenHover(cx: number, cy: number, editor: Editor): boolean {
-  if (editor.state.activeTool !== 'PEN' || !editor.state.penState) return false
-  editor.state.penCursorX = cx
-  editor.state.penCursorY = cy
+  if (editor.state.activeTool !== 'PEN') return false
+  if (!editor.state.penState && !editor.state.nodeEditState) return false
+  const snap = resolveVertexSnap({ x: cx, y: cy }, penSnapVertices(editor), editor)
+  editor.setSnapGuides(snap.guides)
+  if (!editor.state.penState) return true
+  editor.state.penCursorX = snap.point.x
+  editor.state.penCursorY = snap.point.y
 
   const first = editor.state.penState.vertices[0]
   if (editor.state.penState.vertices.length > 2) {

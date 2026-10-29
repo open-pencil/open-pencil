@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import IconSmilePlus from '~icons/lucide/smile-plus'
 
-import { usePanelMessages } from '@open-pencil/vue'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'bun:test'
 
 import {
   createHeadlessCSSRuntime,
-  jsx,
   jsxToDesignDocument,
   jsxToSceneGraph,
   tailwindJSXToSceneGraph
 } from '@open-pencil/dom-css'
+import { jsx } from '@open-pencil/dom-css/browser'
 
 import { tailwindCardClasses } from '#tests/helpers/dom-css'
 

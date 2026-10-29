@@ -2,7 +2,8 @@
 import { useTextareaAutosize } from '@vueuse/core'
 import { computed, nextTick, useTemplateRef } from 'vue'
 
-import { shortcutPlatform, useCommentMessages } from '@open-pencil/vue'
+import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
+import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import {
   commentFormatForKey,
@@ -10,8 +11,10 @@ import {
   formatComment,
   type CommentEdit
 } from '@/app/comments/format'
+import { shortcutCode } from '@/app/shell/keyboard/layout'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { comments } from '@/theme/comments'
+
+import { comments } from './ui'
 
 /**
  * Where a comment or reply is written. Enter sends and Shift+Enter starts a new line or list
@@ -67,7 +70,7 @@ function onKeydown(event: KeyboardEvent) {
     return
   }
   const format = commentFormatForKey({
-    code: event.code,
+    code: shortcutCode(event),
     shiftKey: event.shiftKey,
     altKey: event.altKey,
     mod: mac ? event.metaKey : event.ctrlKey

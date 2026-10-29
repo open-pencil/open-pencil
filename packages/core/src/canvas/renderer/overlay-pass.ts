@@ -6,6 +6,7 @@ import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
+import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
@@ -113,6 +114,7 @@ export function drawOverlayPass(
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
   r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   drawDropTarget(r, canvas, graph, overlays.dropTargetId, overlays.rotationPreview)
+  drawConnectorTarget(r, canvas, graph, overlays.connectorTarget, overlays.rotationPreview)
   drawEditingText(r, canvas, graph, overlays)
   r.profiler.beginPhase('render:selection')
   // While a gradient is edited, Figma shows its handles instead of the layer's selection; a
@@ -121,7 +123,7 @@ export function drawOverlayPass(
     drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
   else {
     r.drawSelection(canvas, graph, selectedIds, overlays)
-    if (!overlays.transforming)
+    if (!overlays.transforming && !r.readOnly)
       drawShapeHandles(
         r,
         canvas,
@@ -140,11 +142,13 @@ export function drawOverlayPass(
   r.drawSnapGuides(canvas, overlays.snapGuides)
   r.drawMarquee(canvas, overlays.marquee)
   r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
-  if (!measuring && !overlays.transforming) {
+  if (!measuring && !overlays.transforming && !r.readOnly) {
     r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
   }
   r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
   r.drawPenOverlay(canvas, overlays.penState)
+  r.drawPencilOverlay(canvas, overlays.pencilState)
+  r.drawSnapMarks(canvas, overlays.snapGuides)
   updateIssueMarkers(r, graph, overlays)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)
   r.drawPresenceCursors(canvas, graph, overlays.presenceCursors)

@@ -1,7 +1,6 @@
 import { minBy } from 'es-toolkit'
 
-import type { Vector } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
 
 /**
  * Where a selected layer takes the pointer for resizing and rotating, as Figma desktop measures

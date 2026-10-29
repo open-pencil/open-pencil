@@ -1,0 +1,1 @@
+- `.pen` instances keep their component's layout and paints when they override only some of them, and their overrides reach layers inside nested instances or replace layers.

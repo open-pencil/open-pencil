@@ -1,16 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  exportFigFile,
-  FigmaAPI,
-  initCodec,
-  parseFigFile,
-  SceneGraph,
-  type NodeChange
-} from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { materializeDocument } from '@open-pencil/fig'
-
-import { deduplicateNodeChangePluginData } from '#core/kiwi'
+import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'

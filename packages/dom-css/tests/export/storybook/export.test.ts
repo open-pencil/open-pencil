@@ -7,7 +7,8 @@ import { BLUE_500, card, designSystem } from '#dom-css-tests/export/token-fixtur
 import { exportStorybook } from '#dom-css/index'
 
 import { es } from '@open-pencil/emit'
-import { emptyBehaviour, SceneGraph, withBehaviour } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { emptyBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 function buttonGraph() {
   const graph = new SceneGraph()

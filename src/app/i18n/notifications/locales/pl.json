@@ -4,6 +4,7 @@
   "clipboardMissingDesignData": "Schowek nie zawiera danych projektu.",
   "clipboardAccessBlocked": "Dostęp do schowka jest zablokowany w tym kontekście przeglądarki.",
   "copiedAs": "Skopiowano jako {format}.",
+  "copiedProperties": "Skopiowano właściwości.",
   "pngClipboardUnavailable": "Eksport PNG do schowka nie jest dostępny w tej przeglądarce.",
   "openFileFailed": "Nie udało się otworzyć „{name}”: {error}",
   "importedDOMCSS": "Zaimportowano dokument DOM/CSS.",
@@ -29,5 +30,6 @@
   "openQueuedFilesFailed": "Nie udało się otworzyć plików przekazanych do OpenPencil: {error}",
   "tokensLeftOut": "Pominięte w arkuszu stylów: {names}.",
   "designTokensLeftOut": "Pominięte w tokenach projektowych: {names}.",
-  "designTokensImported": "Zaimportowano tokeny projektowe: {count}."
+  "designTokensImported": "Zaimportowano tokeny projektowe: {count}.",
+  "unsupportedVariableExpressions": "OpenPencil nie potrafi jeszcze obliczyć tych zmiennych, więc warstwy zachowują wartości zapisane w pliku: {names}."
 }

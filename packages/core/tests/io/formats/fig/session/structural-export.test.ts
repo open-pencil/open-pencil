@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec } from '@open-pencil/core'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { openReaderSession } from '#core/kiwi/fig/session/reader'

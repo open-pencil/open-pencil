@@ -1,18 +1,39 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_ALPHA } from '#core/constants'
 import type { TextEditor } from '#core/text/editor'
+import { previousGraphemeBoundary } from '#core/text/graphemes'
 
 import { withScreenStroke } from './outline'
+
+/**
+ * The caret's colour at `index`, as Figma draws it: the fill of the character before the caret,
+ * or of the first at the text's start, when that is one visible solid fill, with its opacity;
+ * black for a gradient, several fills, or none. The layer's opacity leaves it be. Measured in
+ * Figma desktop.
+ */
+export function textCaretColor(node: SceneNode, index: number): Color {
+  const character = index > 0 ? previousGraphemeBoundary(node.text, index) : 0
+  const run = node.styleRuns.find(
+    (item) => character >= item.start && character < item.start + item.length
+  )
+  const visible = (run?.style.fills ?? node.fills).filter((fill) => fill.visible)
+  const [fill] = visible
+  if (visible.length !== 1 || fill.type !== 'SOLID') return TEXT_CARET_COLOR
+  return { ...fill.color, a: fill.color.a * fill.opacity }
+}
 
 export function drawTextEditOverlay(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  editor: TextEditor
+  editor: TextEditor,
+  /** How far the outline sits outside the text, as around a connector label's plate. */
+  outset = 0
 ): void {
   // Path text lays the paragraph out flat and then maps each glyph onto the
   // path. The flat caret / selection rects are in that flat space, so painting
@@ -25,7 +46,10 @@ export function drawTextEditOverlay(
   }
 
   withScreenStroke(r, { color: r.selColor() }, (paint) =>
-    canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
+    canvas.drawRect(
+      r.ck.LTRBRect(-outset, -outset, node.width + outset, node.height + outset),
+      paint
+    )
   )
 
   const selRects = editor.getSelectionRects()
@@ -39,9 +63,8 @@ export function drawTextEditOverlay(
   if (editor.caretVisible && !editor.hasSelection()) {
     const caret = editor.getCaretRect()
     if (caret) {
-      r.auxFill.setColor(
-        r.ck.Color4f(TEXT_CARET_COLOR.r, TEXT_CARET_COLOR.g, TEXT_CARET_COLOR.b, TEXT_CARET_COLOR.a)
-      )
+      const color = textCaretColor(node, editor.caretIndex ?? 0)
+      r.auxFill.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
       const w = TEXT_CARET_WIDTH / r.zoom
       canvas.drawRect(
         r.ck.LTRBRect(caret.x - w / 2, caret.y0, caret.x + w / 2, caret.y1),
@@ -52,9 +75,10 @@ export function drawTextEditOverlay(
 }
 
 /**
- * Caret for text on a path: a tick standing perpendicular to the curve at the
- * insertion glyph (baseline → ~cap height), so the cursor sits on the lettering
- * instead of at the flat-layout position. Blinks with `caretVisible`.
+ * Text on a path while it is edited, as Figma draws it: the lettering outlined by the bounds of
+ * its glyph boxes, the selection covering each selected glyph from the font's descent to its
+ * ascent, turned with the glyph, and the caret square to the path between two characters over the
+ * same height.
  */
 function drawPathTextCaret(
   r: SkiaRenderer,
@@ -62,19 +86,39 @@ function drawPathTextCaret(
   node: SceneNode,
   editor: TextEditor
 ): void {
+  const corners = editor.getPathTextQuads().flat()
+  if (corners.length > 0) {
+    const xs = corners.map((point) => point.x)
+    const ys = corners.map((point) => point.y)
+    withScreenStroke(r, { color: r.selColor() }, (paint) =>
+      canvas.drawRect(
+        r.ck.LTRBRect(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)),
+        paint
+      )
+    )
+  }
+
+  const quads = editor.getPathSelectionQuads()
+  if (quads.length > 0) {
+    // One path, so boxes overlapping where the path bends are not tinted twice.
+    const builder = new r.ck.PathBuilder()
+    for (const [first, ...rest] of quads) {
+      builder.moveTo(first.x, first.y)
+      for (const point of rest) builder.lineTo(point.x, point.y)
+      builder.close()
+    }
+    const path = builder.detachAndDelete()
+    r.auxFill.setColor(r.selColor(TEXT_SELECTION_ALPHA))
+    canvas.drawPath(path, r.auxFill)
+    path.delete()
+  }
+
   if (!editor.caretVisible || editor.hasSelection()) return
-  const glyphs = node.derivedTextGlyphs
-  const idx = editor.caretIndex
-  if (!glyphs?.length || idx == null) return
-  const g = glyphs[Math.min(Math.max(idx, 0), glyphs.length - 1)]
-  const fontSize = g.fontSize || 0
-  if (fontSize <= 0) return
-  const rot = g.rotation ?? 0
-  // Ascender ("up") direction from the glyph's on-path rotation.
-  const ux = -Math.sin(rot)
-  const uy = -Math.cos(rot)
-  r.auxStroke.setStrokeWidth((TEXT_CARET_WIDTH * 1.5) / r.zoom)
-  r.auxStroke.setColor(r.selColor())
+  const caret = editor.getPathCaret()
+  if (!caret) return
+  r.auxStroke.setStrokeWidth(TEXT_CARET_WIDTH / r.zoom)
+  const color = textCaretColor(node, editor.caretIndex ?? 0)
+  r.auxStroke.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
   r.auxStroke.setPathEffect(null)
-  canvas.drawLine(g.x, g.y, g.x + ux * fontSize * 0.72, g.y + uy * fontSize * 0.72, r.auxStroke)
+  canvas.drawLine(caret.from.x, caret.from.y, caret.to.x, caret.to.y, r.auxStroke)
 }

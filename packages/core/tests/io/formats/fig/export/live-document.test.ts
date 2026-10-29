@@ -2,9 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
-import { emptyBehaviour, readBehaviour, SceneGraph } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { emptyBehaviour, readBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/font/digests'
 import { fontManager } from '#core/text/fonts'
@@ -13,11 +15,11 @@ import { fontManager } from '#core/text/fonts'
 // a font an edit brought in while they loaded.
 test('font digests cover a font added while they load', async () => {
   const inter = expectDefined(
-    await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
-  fontManager.markLoaded('Inter', 'Regular', inter)
-  fontManager.markLoaded('Inter', 'Bold', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Bold', inter)
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   graph.createNode('TEXT', pageId, { text: 'Body', fontFamily: 'Inter', fontWeight: 400 })

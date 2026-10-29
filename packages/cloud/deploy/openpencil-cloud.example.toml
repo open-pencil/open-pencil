@@ -1,0 +1,149 @@
+schema_version = 2
+
+[deployment]
+mode = "self-hosted"
+public_url = "http://localhost:8787"
+indexing = "deny"
+# The server serves the editor itself, and its links point there. Trust any other editor origin
+# that connects to it, such as a development build.
+# trusted_origins = ["https://editor.example.com"]
+# The editor works with files on the device without signing in; false asks everyone to sign in.
+local_editor = true
+# Editors read this only from the official OpenPencil Cloud: it shows Cloud in editors from this
+# version on. Self-hosted servers leave it out.
+# listing = { minimum_editor_version = "0.14.0" }
+
+# Defaults to DATABASE_URL.
+[database]
+
+# The signing secret defaults to BETTER_AUTH_SECRET.
+[authentication]
+
+# "open", "approval" (an administrator reviews each new account), or "closed".
+[authentication.enrollment]
+mode = "open"
+notification_emails = []
+
+[authentication.mfa]
+required_for_admins = false
+totp = false
+recovery_codes = false
+trusted_device_lifetime_days = 14
+
+# Passkeys belong to public_url's host.
+[authentication.passkeys]
+enabled = false
+rp_name = "OpenPencil Cloud"
+
+[authentication.email_password]
+enabled = false
+sign_up = true
+minimum_password_length = 8
+maximum_password_length = 128
+verification_link_lifetime_minutes = 60
+password_reset_link_lifetime_minutes = 60
+compromised_password_check = false
+
+# Recommended when enabling public sign-up. TURNSTILE_SECRET_KEY remains external.
+# [authentication.captcha]
+# provider = "cloudflare-turnstile"
+# site_key = "replace-with-public-site-key"
+# allowed_hostnames = ["cloud.example.com"]
+
+[authentication.trusted_proxies]
+headers = []
+addresses = []
+
+# Add this table to enable Google. The client secret defaults to
+# GOOGLE_CLIENT_SECRET. The client ID may instead use
+# client_id = { from_env = "GOOGLE_CLIENT_ID" }.
+# [authentication.providers.google]
+# client_id = "your-public-google-client-id"
+
+# Add this table to enable Apple. The private key defaults to APPLE_PRIVATE_KEY.
+# [authentication.providers.apple]
+# client_id = "dev.openpencil.cloud"
+# team_id = "TEAM_ID"
+# key_id = "KEY_ID"
+# app_bundle_identifier = "dev.openpencil"
+
+[object_storage]
+endpoint = "http://localhost:8333"
+region = "us-east-1"
+bucket = "openpencil"
+force_path_style = true
+checksum_verification = "metadata"
+# Credentials default to S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
+maximum_upload_bytes = 1073741824
+
+[collaboration]
+# One WebSocket message on the relay, at least 262160. Larger edits arrive as 256 KiB fragments.
+maximum_message_bytes = 1048576
+maximum_connections_per_room = 1000
+# The relay is served on the API origin. Set this only when clients reach it through a different
+# URL, such as a separate proxy.
+# relay_url = "wss://relay.example.com/api/collaboration/relay"
+
+# How long deleted documents stay restorable.
+[documents]
+retention_days = 30
+
+[email]
+transport = "none"
+
+# Add this table to offer an AI service to editors. Cloud never proxies models: it advertises the
+# endpoint and signs short-lived ES256 tokens the service verifies against /.well-known/jwks.json.
+# The PKCS #8 signing key defaults to OPENPENCIL_CLOUD_AI_SIGNING_KEY. Workspaces also need the
+# [entitlements.ai] enabled entitlement.
+# [ai]
+# endpoint = "https://ai.example.com"
+# token_lifetime_minutes = 10
+
+# Where people manage their plan; editors link to it. Leave it out when the deployment does not bill.
+# [billing]
+# portal_url = "https://billing.example.com"
+
+# Add this table to let services such as billing set workspace entitlements over HTTP at
+# PUT /api/internal/workspaces/<id>/entitlements. The bearer token defaults to
+# OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
+# [internal_api]
+
+[workers.email]
+batch_size = 50
+interval_ms = 30000
+lease_ms = 300000
+maximum_attempts = 5
+
+[workers.cleanup]
+enabled = true
+batch_size = 100
+interval_ms = 60000
+lease_ms = 300000
+
+[entitlements]
+source = "static"
+
+[entitlements.documents]
+maximum_file_bytes = 1_073_741_824
+# Keep every version; false keeps the last 30 days of version history.
+revision_history = true
+
+[entitlements.storage]
+maximum_bytes = 1_099_511_627_776
+
+# Links work for people signed in to the server; guests are people who follow them without.
+[entitlements.sharing]
+links = true
+guest_view = true
+guest_edit = true
+guest_presence = true
+
+[entitlements.collaboration]
+enabled = true
+maximum_participants = 100
+
+# The AI service [ai] advertises. The allowance is credits per month, passed to the service in
+# every token; leave it out for no allowance.
+[entitlements.ai]
+enabled = false
+# monthly_credit_allowance = 10000

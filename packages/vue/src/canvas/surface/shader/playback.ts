@@ -2,10 +2,14 @@ import { useRafFn, watchThrottled } from '@vueuse/core'
 import type { createRendererFromJSON } from 'shaders/core'
 import { onScopeDispose, watch } from 'vue'
 
+import type { Editor, EditorState } from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
-import type { Editor, EditorState } from '@open-pencil/core/editor'
-import { readShaderPaints, shaderOfPaint, type ShaderPreset } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import {
+  readShaderPaints,
+  shaderOfPaint,
+  type ShaderPreset
+} from '@open-pencil/scene-graph/shaders'
 
 import { shaderFrames } from '#vue/canvas/surface/shader/frames'
 import { canDrawShaders } from '#vue/canvas/surface/shader/rasterizer'

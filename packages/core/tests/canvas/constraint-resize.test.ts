@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 import { resolve } from 'node:path'
 
-import { SkiaRenderer } from '@open-pencil/core'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '../helpers/assert'

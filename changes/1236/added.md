@@ -1,0 +1,2 @@
+- Design JSX draws connectors with `<Connector from="A" to="B">`, joining layers of the same JSX by name or, where layers share a name, by a `ref()` the layer is marked with, and JSX export writes them back (#616).
+- Design JSX may begin with statements, such as `const` declarations, that end with `return` and the JSX, as a component's body does.

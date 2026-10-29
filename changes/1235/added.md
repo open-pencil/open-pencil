@@ -1,0 +1,2 @@
+- A connector tool, shown from Customize toolbar, draws connectors between layers or points. Their end handles reattach them, double-click types a label, the Design panel sets their line type, end caps, and FigJam colour, weight, and dash, and scripts and agents create and edit them through `figma.createConnector()` and `create_connector` (#616).
+- Figma's filled triangle, diamond, and circle line caps draw instead of showing no head.

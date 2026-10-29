@@ -2,15 +2,17 @@ import * as v from 'valibot'
 
 import { behaviourSchema } from '../behaviours/schema'
 import type { OkHCLPayload } from '../color/okhcl'
+import { commentThreadsSchema } from '../comments/schema'
 import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
+import { FIG_COMPRESSIONS } from '../fig-compression'
 import { iconSchema, iconTintSchema } from '../icons/schema'
 import type { Rect } from '../primitives'
 import { shaderPaintSchema } from '../shaders/schema'
+import { nodeStatusSchema, statusWorkflowSchema } from '../statuses/schema'
 import {
   MODE_ATTRIBUTE_PATTERN,
   TOKEN_UNITS,
-  type CommentThread,
   type EnabledLibraryBinding,
   type ExportSetting,
   type LayoutDirection,
@@ -32,7 +34,7 @@ const DIRECTIONS = ['AUTO', 'LTR', 'RTL'] as const satisfies readonly (
   | LayoutDirection
 )[]
 
-const textPathBox: v.GenericSchema<unknown, Rect> = v.pipe(
+const textPathBoxSchema: v.GenericSchema<unknown, Rect> = v.pipe(
   v.object({ x: v.number(), y: v.number(), width: v.number(), height: v.number() }),
   v.check(
     ({ x, y, width, height }) => Number.isFinite(x + y + width + height) && width > 0 && height > 0
@@ -40,7 +42,7 @@ const textPathBox: v.GenericSchema<unknown, Rect> = v.pipe(
 )
 
 /** String-valued entries of a JSON object; other entries are dropped, not rejected. */
-const boundVariables = v.pipe(
+const boundVariablesSchema = v.pipe(
   v.custom<Record<string, unknown>>(
     (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
   ),
@@ -54,7 +56,7 @@ const boundVariables = v.pipe(
 )
 
 /** Every entry must be valid, or the whole value is ignored in favour of native settings. */
-const exportSettings: v.GenericSchema<unknown, ExportSetting[]> = v.array(
+const exportSettingsSchema: v.GenericSchema<unknown, ExportSetting[]> = v.array(
   v.pipe(
     v.object({
       scale: v.pipe(v.number(), v.finite()),
@@ -65,7 +67,7 @@ const exportSettings: v.GenericSchema<unknown, ExportSetting[]> = v.array(
   )
 )
 
-const librarySource: v.GenericSchema<unknown, LibraryAssetSource> = v.pipe(
+const librarySourceSchema: v.GenericSchema<unknown, LibraryAssetSource> = v.pipe(
   v.object({
     identity: v.object({ libraryId: v.string(), assetKey: v.string(), revisionId: v.string() }),
     sourceNodeId: v.optional(v.unknown()),
@@ -78,18 +80,18 @@ const librarySource: v.GenericSchema<unknown, LibraryAssetSource> = v.pipe(
   }))
 )
 
-const enabledLibrary = v.object({
+const enabledLibrarySchema = v.object({
   libraryId: v.string(),
   revisionId: v.string(),
   enabled: v.optional(v.unknown())
 })
 
 /** Invalid entries are skipped one by one, so one bad binding keeps the others. */
-const enabledLibraries: v.GenericSchema<unknown, EnabledLibraryBinding[]> = v.pipe(
+const enabledLibrariesSchema: v.GenericSchema<unknown, EnabledLibraryBinding[]> = v.pipe(
   v.array(v.unknown()),
   v.transform((items) =>
     items.flatMap((item) => {
-      const parsed = v.safeParse(enabledLibrary, item)
+      const parsed = v.safeParse(enabledLibrarySchema, item)
       if (!parsed.success) return []
       const { libraryId, revisionId, enabled } = parsed.output
       return [{ libraryId, revisionId, enabled: enabled === true }]
@@ -98,22 +100,25 @@ const enabledLibraries: v.GenericSchema<unknown, EnabledLibraryBinding[]> = v.pi
 )
 
 // Shape only. Whether a string is valid CSS is checked where it is written into a stylesheet.
-const cssText = v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(1000))
+const cssTextSchema = v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(1000))
 
 /** Token fields Figma has no slot for, with mode ids as the file spells them. */
 export interface StoredToken {
   unit?: TokenUnit
-  expressions?: Record<string, { css: string; resolved: number }>
+  expressions?: Record<string, { css: string; resolved?: number }>
 }
 
-const token: v.GenericSchema<unknown, StoredToken> = v.object({
+const tokenSchema: v.GenericSchema<unknown, StoredToken> = v.object({
   unit: v.optional(v.picklist(TOKEN_UNITS)),
   expressions: v.optional(
-    v.record(v.string(), v.object({ css: cssText, resolved: v.pipe(v.number(), v.finite()) }))
+    v.record(
+      v.string(),
+      v.object({ css: cssTextSchema, resolved: v.optional(v.pipe(v.number(), v.finite())) })
+    )
   )
 })
 
-const okhcl: v.GenericSchema<unknown, OkHCLPayload> = v.object({
+const okhclSchema: v.GenericSchema<unknown, OkHCLPayload> = v.object({
   version: v.literal(1),
   kind: v.picklist(['fill', 'stroke']),
   index: v.number(),
@@ -125,58 +130,13 @@ const okhcl: v.GenericSchema<unknown, OkHCLPayload> = v.object({
   })
 })
 
-const sourceLibraryPublication: v.GenericSchema<unknown, SourceLibraryPublication> = v.object({
-  libraryId: v.string(),
-  revisionId: v.string(),
-  name: v.string(),
-  catalogSource: v.optional(v.string())
-})
-
-// Lenient on purpose: other tools may write comments, so missing fields get defaults and one
-// malformed thread is skipped instead of hiding every comment.
-const commentAuthorColor = v.fallback(
-  v.optional(v.object({ r: v.number(), g: v.number(), b: v.number(), a: v.number() })),
-  undefined
-)
-
-/** What a comment and each reply say, who wrote them and when, and whether they were deleted. */
-const commentEntry = {
-  author: v.fallback(v.string(), ''),
-  authorColor: commentAuthorColor,
-  text: v.fallback(v.string(), ''),
-  createdAt: v.fallback(v.string(), ''),
-  deleted: v.optional(v.boolean())
-}
-
-const commentReply = v.object({ id: v.string(), ...commentEntry })
-
-const commentThread = v.object({
-  id: v.string(),
-  pageId: v.string(),
-  pageName: v.optional(v.string()),
-  nodeId: v.optional(v.nullable(v.string())),
-  nodeName: v.optional(v.nullable(v.string())),
-  offsetX: v.optional(v.number()),
-  offsetY: v.optional(v.number()),
-  x: v.fallback(v.number(), 0),
-  y: v.fallback(v.number(), 0),
-  ...commentEntry,
-  updatedAt: v.fallback(v.string(), ''),
-  resolved: v.fallback(v.boolean(), false),
-  resolvedAt: v.optional(v.nullable(v.string())),
-  replies: v.fallback(v.array(commentReply), [])
-})
-
-const comments: v.GenericSchema<unknown, CommentThread[]> = v.pipe(
-  v.array(v.unknown()),
-  v.transform((items) =>
-    items.flatMap((item) => {
-      const parsed = v.safeParse(commentThread, item)
-      if (!parsed.success) return []
-      const thread = parsed.output
-      return [{ ...thread, updatedAt: thread.updatedAt || thread.createdAt }]
-    })
-  )
+const sourceLibraryPublicationSchema: v.GenericSchema<unknown, SourceLibraryPublication> = v.object(
+  {
+    libraryId: v.string(),
+    revisionId: v.string(),
+    name: v.string(),
+    catalogSource: v.optional(v.string())
+  }
 )
 
 /**
@@ -192,26 +152,45 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   /** Marks a component set Figma would read as a plain frame. */
   nodeType: textPluginDataField('nodeType', 'format', ['COMPONENT_SET']),
   /** Variable bindings by field path, including those Figma cannot store natively. */
-  boundVariables: jsonPluginDataField('boundVariables', 'format', boundVariables),
-  exportSettings: jsonPluginDataField('exportSettings', 'format', exportSettings),
+  boundVariables: jsonPluginDataField('boundVariables', 'format', boundVariablesSchema),
+  exportSettings: jsonPluginDataField('exportSettings', 'format', exportSettingsSchema),
   /** The node-local rect a TEXT_PATH layout maps onto, which Kiwi has no field for. */
-  textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBox),
+  textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBoxSchema),
   /** The library asset a node was inserted from. */
-  librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySource),
+  librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySourceSchema),
+  /**
+   * The document root's id, on the DOCUMENT node, whose own GUID is always Figma's `0:0`; the
+   * root keeps it across a save as every layer keeps its GUID.
+   */
+  documentId: jsonPluginDataField(
+    'documentId',
+    'bookkeeping',
+    v.pipe(v.string(), v.nonEmpty(), v.maxLength(64))
+  ),
   /** Libraries enabled for the document, on the DOCUMENT node. */
-  enabledLibraries: jsonPluginDataField('enabledLibraries', 'bookkeeping', enabledLibraries),
+  enabledLibraries: jsonPluginDataField('enabledLibraries', 'bookkeeping', enabledLibrariesSchema),
   /** The library this document publishes as, on the DOCUMENT node. */
   sourceLibraryPublication: jsonPluginDataField(
     'sourceLibraryPublication',
     'bookkeeping',
-    sourceLibraryPublication
+    sourceLibraryPublicationSchema
   ),
   /** Canvas comment threads, deleted ones included, on the DOCUMENT node. */
-  comments: jsonPluginDataField('comments', 'bookkeeping', comments),
+  comments: jsonPluginDataField('comments', 'bookkeeping', commentThreadsSchema),
+  /** The statuses layers can be in, on the DOCUMENT node. */
+  statuses: jsonPluginDataField('statuses', 'bookkeeping', statusWorkflowSchema),
+  /** How tightly the document's `.fig` data is compressed, on the DOCUMENT node. */
+  figCompression: textPluginDataField('figCompression', 'bookkeeping', FIG_COMPRESSIONS),
+  /** A layer's status, any state of the workflow; Figma's `sectionStatusInfo` knows only two. */
+  status: jsonPluginDataField('status', 'format', nodeStatusSchema),
   /** Unit and CSS expressions, on each VARIABLE. */
-  token: jsonPluginDataField('token', 'format', token),
+  token: jsonPluginDataField('token', 'format', tokenSchema),
   /** Mode conditions by mode id, on each VARIABLE_SET. */
-  modeConditions: jsonPluginDataField('modeConditions', 'format', v.record(v.string(), cssText)),
+  modeConditions: jsonPluginDataField(
+    'modeConditions',
+    'format',
+    v.record(v.string(), cssTextSchema)
+  ),
   /** The attribute that switches manual modes, on each VARIABLE_SET. */
   modeAttribute: jsonPluginDataField(
     'modeAttribute',
@@ -219,7 +198,7 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
     v.pipe(v.string(), v.trim(), v.maxLength(100), v.regex(MODE_ATTRIBUTE_PATTERN))
   ),
   /** One entry per paint picked in OkHCL, so the picker reopens on the same coordinates. */
-  okhcl: jsonPluginDataField('okhcl', 'content', okhcl),
+  okhcl: jsonPluginDataField('okhcl', 'content', okhclSchema),
   /** How a main component or component set behaves as a control in preview. */
   behaviour: jsonPluginDataField('behaviour', 'content', behaviourSchema),
   /** The icon a frame draws, such as `lucide:home`, on the frame its paths are in. */

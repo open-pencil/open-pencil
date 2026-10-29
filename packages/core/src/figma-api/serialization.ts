@@ -1,5 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { pluginChildren } from './accessors/sticky'
+import { figmaFills, figmaStrokes } from './accessors/visual'
 import type { NodeProxyHost } from './proxy'
 
 function resolveBindings(graph: SceneGraph, node: SceneNode): Record<string, unknown> | undefined {
@@ -27,7 +29,7 @@ function appendTextProps(obj: Record<string, unknown>, n: SceneNode): void {
   obj.textAutoResize = n.textAutoResize
   obj.textDirection = n.textDirection
   if (n.lineHeight != null) obj.lineHeight = n.lineHeight
-  if (n.letterSpacing !== 0) obj.letterSpacing = n.letterSpacing
+  if (n.letterSpacing.value !== 0) obj.letterSpacing = n.letterSpacing
   if (n.textCase !== 'ORIGINAL') obj.textCase = n.textCase
   if (n.textDecoration !== 'NONE') obj.textDecoration = n.textDecoration
   if (n.maxLines != null) obj.maxLines = n.maxLines
@@ -52,8 +54,8 @@ export function nodeProxyToJSON(
     width: n.width,
     height: n.height
   }
-  if (n.fills.length > 0) obj.fills = n.fills
-  if (n.strokes.length > 0) obj.strokes = n.strokes
+  if (n.fills.length > 0) obj.fills = figmaFills(graph, n)
+  if (n.strokes.length > 0) obj.strokes = figmaStrokes(graph, n)
   if (n.effects.length > 0) obj.effects = n.effects
   if (n.opacity !== 1) obj.opacity = n.opacity
   if (n.cornerRadius > 0) obj.cornerRadius = n.cornerRadius
@@ -70,7 +72,7 @@ export function nodeProxyToJSON(
   // Include variable bindings with resolved values
   const bindings = resolveBindings(graph, n)
   if (bindings) obj.boundVariables = bindings
-  const children = graph.getChildren(nodeId)
+  const children = pluginChildren(graph, nodeId)
   if (children.length > 0) {
     if (maxDepth !== undefined && currentDepth >= maxDepth) {
       obj.childCount = children.length

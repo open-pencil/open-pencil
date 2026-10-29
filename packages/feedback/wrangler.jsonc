@@ -10,7 +10,15 @@
     "POSTHOG_HOST": "https://eu.i.posthog.com",
     "EMAIL_FROM": "hello@openpencil.dev",
     // The website's form and the web app's Settings; the desktop app opens the website.
-    "TURNSTILE_HOSTNAMES": "openpencil.dev,app.openpencil.dev"
+    "TURNSTILE_HOSTNAMES": "openpencil.dev,app.openpencil.dev",
+    // What the daily metrics snapshot records: this repository's stars, downloads, and traffic,
+    // and Cloudflare's visits to these hostnames in the openpencil.dev zone.
+    "GITHUB_REPOSITORY": "open-pencil/open-pencil",
+    "SITE_ZONE_ID": "6a1c3366d17c9cdefab66cf5dd4e1cbe",
+    "SITE_HOSTS": "openpencil.dev,app.openpencil.dev",
+    // The PostHog project the metrics dashboard's usage numbers come from.
+    "POSTHOG_APP_HOST": "https://eu.posthog.com",
+    "POSTHOG_PROJECT_ID": "267806"
   },
   // Created with `wrangler d1 create feedback --jurisdiction eu`, so rows stay in the EU.
   "d1_databases": [
@@ -28,7 +36,28 @@
     { "name": "WAITLIST_LIMITER", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } }
   ],
   "send_email": [{ "name": "EMAIL" }],
-  "triggers": { "crons": ["17 3 * * *"] },
+  // The metrics dashboard, built by `vite build --mode metrics` at the repository root. Its page
+  // lives under admin/, which always runs the Worker first so Access is checked; only the
+  // public brand artwork is served directly.
+  "assets": {
+    "directory": "../../dist-metrics",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": ["/admin", "/admin/*"]
+  },
+  // Just after midnight UTC the metrics snapshot records the day that ended; later, retention runs.
+  "triggers": { "crons": ["5 0 * * *", "17 3 * * *"] },
   // Set with `wrangler secret put`; locally from `.dev.vars` (see `.dev.vars.example`).
-  "secrets": { "required": ["POSTHOG_KEY", "TURNSTILE_SECRET"] }
+  "secrets": {
+    "required": [
+      "POSTHOG_KEY",
+      "TURNSTILE_SECRET",
+      "GITHUB_TOKEN",
+      "CLOUDFLARE_ANALYTICS_TOKEN",
+      "POSTHOG_PERSONAL_KEY",
+      // Not secret, but set per deployment once the Access application in front of /admin exists.
+      "ACCESS_TEAM_DOMAIN",
+      "ACCESS_AUD"
+    ]
+  }
 }

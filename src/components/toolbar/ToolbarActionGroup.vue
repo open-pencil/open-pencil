@@ -2,7 +2,7 @@
 import { ToolbarButton } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import { vTestId } from '@open-pencil/vue'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import type { ToolbarActionItem, ToolbarUI } from '@/components/toolbar/types'
 import toolbarTheme from '@/theme/toolbar'

@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { setTextMeasurer } from '@open-pencil/core/layout'
-
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
+
+import { createEditor } from '@open-pencil/core'
+import { setTextMeasurer } from '@open-pencil/core/layout'
+import { lineHeightPixels, pixelLength } from '@open-pencil/scene-graph/text'
 
 afterEach(() => {
   setTextMeasurer(null)
@@ -11,7 +12,10 @@ afterEach(() => {
 
 describe('editor text auto-resize updates', () => {
   test('lineHeight changes resize auto-height text', () => {
-    setTextMeasurer((node) => ({ width: node.width, height: node.lineHeight ?? 20 }))
+    setTextMeasurer((node) => ({
+      width: node.width,
+      height: lineHeightPixels(node.lineHeight, node.fontSize) ?? 20
+    }))
 
     const editor = createEditor()
     const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
@@ -19,17 +23,20 @@ describe('editor text auto-resize updates', () => {
       textAutoResize: 'HEIGHT',
       width: 120,
       height: 20,
-      lineHeight: 20
+      lineHeight: pixelLength(20)
     })
 
-    editor.updateNode(text.id, { lineHeight: 48 })
+    editor.updateNode(text.id, { lineHeight: pixelLength(48) })
 
-    expect(getNodeOrThrow(editor.graph, text.id).lineHeight).toBe(48)
+    expect(getNodeOrThrow(editor.graph, text.id).lineHeight).toEqual(pixelLength(48))
     expect(getNodeOrThrow(editor.graph, text.id).height).toBe(48)
   })
 
   test('lineHeight changes on auto-height text are undoable with height', () => {
-    setTextMeasurer((node) => ({ width: node.width, height: node.lineHeight ?? 20 }))
+    setTextMeasurer((node) => ({
+      width: node.width,
+      height: lineHeightPixels(node.lineHeight, node.fontSize) ?? 20
+    }))
 
     const editor = createEditor()
     const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
@@ -37,17 +44,17 @@ describe('editor text auto-resize updates', () => {
       textAutoResize: 'HEIGHT',
       width: 120,
       height: 20,
-      lineHeight: 20
+      lineHeight: pixelLength(20)
     })
 
-    editor.updateNodeWithUndo(text.id, { lineHeight: 48 }, 'Change lineHeight')
+    editor.updateNodeWithUndo(text.id, { lineHeight: pixelLength(48) }, 'Change lineHeight')
 
     expect(getNodeOrThrow(editor.graph, text.id).height).toBe(48)
     editor.undo.undo()
-    expect(getNodeOrThrow(editor.graph, text.id).lineHeight).toBe(20)
+    expect(getNodeOrThrow(editor.graph, text.id).lineHeight).toEqual(pixelLength(20))
     expect(getNodeOrThrow(editor.graph, text.id).height).toBe(20)
     editor.undo.redo()
-    expect(getNodeOrThrow(editor.graph, text.id).lineHeight).toBe(48)
+    expect(getNodeOrThrow(editor.graph, text.id).lineHeight).toEqual(pixelLength(48))
     expect(getNodeOrThrow(editor.graph, text.id).height).toBe(48)
   })
 
@@ -55,7 +62,10 @@ describe('editor text auto-resize updates', () => {
     // A mutation outside the font-gated canvas edit session cannot reflow the
     // glyphs. It must clear stale outlines/path identity without applying
     // paragraph auto-resize to the imported path-text box.
-    setTextMeasurer((node) => ({ width: node.width, height: node.lineHeight ?? 20 }))
+    setTextMeasurer((node) => ({
+      width: node.width,
+      height: lineHeightPixels(node.lineHeight, node.fontSize) ?? 20
+    }))
 
     const editor = createEditor()
     const glyphs = [

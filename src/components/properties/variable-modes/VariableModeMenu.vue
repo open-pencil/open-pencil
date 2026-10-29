@@ -15,10 +15,13 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { MIXED, usePanelMessages, type VariableModeChoice } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 import { AUTO_MODE, autoModeLabel } from './labels'
 
@@ -56,50 +59,54 @@ function select(choice: VariableModeChoice, value: string) {
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent side="bottom" align="end" :side-offset="4" :class="menu.content">
-        <template v-for="(group, index) in groups" :key="group.label">
-          <DropdownMenuSeparator v-if="index > 0" :class="menu.separator" />
-          <DropdownMenuLabel :class="menu.label">{{ group.label }}</DropdownMenuLabel>
-          <DropdownMenuSub v-for="choice in group.choices" :key="choice.collectionId">
-            <DropdownMenuSubTrigger
-              :class="[menu.subTrigger, 'justify-between data-[highlighted]:bg-hover']"
-            >
-              {{ choice.name }}
-              <icon-lucide-chevron-right :class="menu.icon" />
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent :side-offset="4" :class="menu.content">
-                <DropdownMenuRadioGroup
-                  :model-value="current(choice)"
-                  @update:model-value="
-                    (value) => typeof value === 'string' && select(choice, value)
-                  "
-                >
-                  <DropdownMenuRadioItem :value="AUTO_MODE" :class="item">
-                    <DropdownMenuItemIndicator class="absolute left-1.5">
-                      <icon-lucide-check :class="menu.icon" />
-                    </DropdownMenuItemIndicator>
-                    {{ autoModeLabel(panels, choice) }}
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuSeparator :class="menu.separator" />
-                  <DropdownMenuLabel :class="menu.label">
-                    {{ panels.variableModeHeading }}
-                  </DropdownMenuLabel>
-                  <DropdownMenuRadioItem
-                    v-for="mode in choice.modes"
-                    :key="mode.modeId"
-                    :value="mode.modeId"
-                    :class="item"
-                  >
-                    <DropdownMenuItemIndicator class="absolute left-1.5">
-                      <icon-lucide-check :class="menu.icon" />
-                    </DropdownMenuItemIndicator>
-                    {{ mode.name }}
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-        </template>
+        <MenuScrollArea>
+          <template v-for="(group, index) in groups" :key="group.label">
+            <DropdownMenuSeparator v-if="index > 0" :class="menu.separator" />
+            <DropdownMenuLabel :class="menu.label">{{ group.label }}</DropdownMenuLabel>
+            <DropdownMenuSub v-for="choice in group.choices" :key="choice.collectionId">
+              <DropdownMenuSubTrigger
+                :class="[menu.subTrigger, 'justify-between data-[highlighted]:bg-hover']"
+              >
+                {{ choice.name }}
+                <icon-lucide-chevron-right :class="menu.icon" />
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent :side-offset="4" :class="menu.content">
+                  <MenuScrollArea>
+                    <DropdownMenuRadioGroup
+                      :model-value="current(choice)"
+                      @update:model-value="
+                        (value) => typeof value === 'string' && select(choice, value)
+                      "
+                    >
+                      <DropdownMenuRadioItem :value="AUTO_MODE" :class="item">
+                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                          <icon-lucide-check :class="menu.icon" />
+                        </DropdownMenuItemIndicator>
+                        {{ autoModeLabel(panels, choice) }}
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuSeparator :class="menu.separator" />
+                      <DropdownMenuLabel :class="menu.label">
+                        {{ panels.variableModeHeading }}
+                      </DropdownMenuLabel>
+                      <DropdownMenuRadioItem
+                        v-for="mode in choice.modes"
+                        :key="mode.modeId"
+                        :value="mode.modeId"
+                        :class="item"
+                      >
+                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                          <icon-lucide-check :class="menu.icon" />
+                        </DropdownMenuItemIndicator>
+                        {{ mode.name }}
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </MenuScrollArea>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          </template>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

@@ -52,6 +52,14 @@ The graph emits typed events via nanoevents: `node:created`, `node:updated`, `no
 
 See [Scene Graph Reference](/reference/scene-graph) for internals.
 
+### Variable expressions
+
+Scene Graph owns the canonical variable definitions: literals, stable-ID aliases, bounded formula trees that give numbers, Booleans, text or colors, and composed colors. Shared Valibot schemas validate expression structure on FIG import, FIG export, and resolution. The resolver owns mode selection, dependency traversal, cycles, and evaluation; draft validation supplies an override without mutating the document. Canvas callers treat resolution failures as unresolved values, while the inspector retains diagnostics. Core applies edits, undo, binding reconciliation, and layout.
+
+Formula trees name operators in OpenPencil's own terms (`add`, `truthy`, `if`) with Figma's operand signatures and value rules: `+` joins text, `text()`, `truthy()` and `if()` convert and choose as Figma's `STRINGIFY`, `IS_TRUTHY` and `TERNARY` do, and number text follows Figma's two-decimal format. The FIG package alone maps each operator to Figma's `ExpressionFunction`, so other formats read and write the same tree. An expression the reader cannot hold as a formula, such as one naming a variable the file lacks, is kept as the file wrote it. Scene Graph parses formula text into a tree, checking operand types as it goes, and prints a tree back with only the parentheses precedence needs; references are `{name}` in text and IDs in the tree. Editors show references as pills and never ask users to type braces.
+
+A formula in `valuesByMode` is live document behavior. `expressions[modeId].css` is separate, target-specific CSS that replaces the value in CSS alone, edited in its own field. The token stylesheet writes number formulas as `calc()` over `var()` references, checking that units add and multiply as CSS allows, and declares a formula again in each mode scope that changes a variable it uses. Design-token files hold each mode's result with the formula in `$extensions`. Design JSX preserves node bindings through `designVar`, but does not yet bundle the referenced formula definitions; formulas that give Booleans, text or colors, or use `if()`, have no CSS form.
+
 ### Layout Engine (Yoga WASM)
 
 Meta's Yoga provides CSS flexbox and grid layout computation via a [fork](https://github.com/open-pencil/yoga/tree/grid) with CSS Grid support. A thin adapter maps Figma property names to Yoga equivalents:

@@ -1,4 +1,5 @@
-import { getWorldMatrix, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
   geometryBlobBounds,
   intersectVisualBounds,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue'
+import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue/controls/slots'
 
 import ComponentPropertyTextField from '@/components/properties/component-properties/ComponentPropertyTextField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'

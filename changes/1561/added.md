@@ -1,0 +1,1 @@
+- Arrange › Tidy Up, Pack Horizontal, and Pack Vertical work as in Figma, and the alignment row's More actions menu offers Tidy up (⌃⌥T) and the distribute commands (⌃⌥V, ⌃⌥H). An Auto Arrange submenu in the Arrange and canvas menus spreads overlapping layers apart, packs them into rows, or lays shapes out along their connectors as a flow, tree, radial map, or network.

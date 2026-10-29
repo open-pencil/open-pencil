@@ -1,21 +1,16 @@
+import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
   layoutSizing,
   layoutSizingError,
   layoutSizingUpdates,
   lockedAspectRatioTarget,
-  type LayoutGrid,
-  type LayoutMode,
-  type LayoutSizing,
   type LayoutSizingAxis,
-  type SceneNode,
-  type Vector
-} from '@open-pencil/scene-graph'
-import {
   AUTO_LAYOUT_GRID_COUNT,
   isAutoGridCount,
   layoutGridCount
 } from '@open-pencil/scene-graph/layout'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
   prepareFollowedFieldEdit,
@@ -78,15 +73,6 @@ export function installLayoutNodeProxyAccessors(
           isAutoGridCount(grid.count) ? { ...grid, count: AUTO_LAYOUT_GRID_COUNT } : grid
         )
         updateNode(this, internals, { layoutGrids: grids })
-      }
-    },
-    layoutDirection: {
-      get(this: ProxyThis): string {
-        const node = raw(this, internals)
-        return Object.hasOwn(node, 'layoutDirection') ? node.layoutDirection : 'AUTO'
-      },
-      set(this: ProxyThis, value: string) {
-        updateNode(this, internals, { layoutDirection: value as SceneNode['layoutDirection'] })
       }
     },
     primaryAxisAlignItems: mappedAccessor(internals, 'primaryAxisAlign'),

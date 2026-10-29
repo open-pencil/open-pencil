@@ -13,6 +13,7 @@ import AISetupFlow from './AISetupFlow.vue'
 
 interface Args {
   entry: 'welcome' | 'guided'
+  offersTour?: boolean
   agentsAvailable: boolean
 }
 
@@ -79,6 +80,9 @@ async function next() {
 }
 
 export const Welcome: Story = { args: { entry: 'welcome' } }
+
+/** Offered over the demo, which is the tour, so it does not point to it. */
+export const WelcomeInTour: Story = { args: { entry: 'welcome', offersTour: false } }
 export const Goals: Story = {}
 export const AccessInBrowser: Story = {
   play: async () => {

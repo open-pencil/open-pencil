@@ -1,4 +1,6 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { filename } from 'pathe/utils'
+
+import type { Editor, EditorState } from '@open-pencil/core'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { yieldToUI } from '@/app/document/io/browser'
@@ -56,7 +58,7 @@ export function createOpenActions({
       await yieldToUI()
       load.update({ phase: 'materializing', detail: file.name })
       await applyImportedDocument(editor, imported, load)
-      state.documentName = file.name.replace(/\.fig$/i, '')
+      state.documentName = filename(file.name) ?? file.name
       setDocumentSource(file.name, 'fig', handle, path)
       await fitCurrentPageToViewport()
       load.update({ phase: 'preparing-render', detail: state.documentName })

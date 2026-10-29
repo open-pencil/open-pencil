@@ -1,0 +1,3 @@
+- `open-pencil export --node` checks the fonts of a text layer exported on its own: `--font-policy strict` and `warn` used to find no fonts to check and let a substituted face through.
+- SVG export no longer adds a space where a text changes style, such as between a regular and a bold part of a word.
+- SVG and PDF export write text in the case it is set to show (upper, lower, or title case), as the canvas draws it.

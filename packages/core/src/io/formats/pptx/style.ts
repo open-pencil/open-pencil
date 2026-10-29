@@ -1,7 +1,9 @@
+import { clamp } from 'es-toolkit'
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** Scene paint/effect/text style → PPT property mapping (no slide geometry). */
 
@@ -51,7 +53,7 @@ export function mapShadow(node: SceneNode, opacity: number): PptxGenJS.ShadowPro
     type: e.type === 'INNER_SHADOW' ? 'inner' : 'outer',
     color: hex(e.color),
     opacity: clamp01(e.color.a * opacity),
-    blur: Math.min(Math.max(e.radius, 0), 100),
+    blur: clamp(e.radius, 0, 100),
     offset: Math.min(Math.hypot(e.offset.x, e.offset.y), 200),
     angle: angleRaw < 0 ? angleRaw + 360 : angleRaw
   }
@@ -84,15 +86,15 @@ export function hex(color: Color): string {
 }
 
 export function transparency(alpha: number): number {
-  return Math.min(Math.max(Math.round((1 - clamp01(alpha)) * 100), 0), 100)
+  return clamp(Math.round((1 - clamp01(alpha)) * 100), 0, 100)
 }
 
 export function clamp01(v: number): number {
-  return Math.min(Math.max(v, 0), 1)
+  return clamp(v, 0, 1)
 }
 
 export function clampRot(deg: number): number {
-  return Math.min(Math.max(deg, -360), 360)
+  return clamp(deg, -360, 360)
 }
 
 export function round2(v: number): number {

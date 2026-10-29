@@ -3254,17 +3254,20 @@ dependencies = [
 
 [[package]]
 name = "open_pencil"
-version = "0.16.0-beta.3"
+version = "0.16.0"
 dependencies = [
  "fix-path-env",
  "fontique",
+ "httparse",
  "keyring",
  "objc2-core-foundation",
  "objc2-core-text",
  "reqwest 0.12.28",
  "security-framework",
+ "semver",
  "serde",
  "serde_json",
+ "swift-rs",
  "tauri",
  "tauri-build",
  "tauri-plugin-clipboard-manager",
@@ -4657,9 +4660,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "swift-rs"
-version = "1.0.8"
+version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e45c444e496845d3f2a351146bff59aae4975b2280238df1dfaa0c7d1846f38e"
+checksum = "cefd87076fd385308ee4aff597256c902f1fbb4d031de1558efc12f8ffefadd9"
 dependencies = [
  "base64 0.21.7",
  "serde",

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
-import { resolvePlayState } from '@open-pencil/core/editor'
+import { resolvePlayState } from '@open-pencil/core'
 import { vectorElement } from '@open-pencil/core/io'
 import {
   behaviourControls,

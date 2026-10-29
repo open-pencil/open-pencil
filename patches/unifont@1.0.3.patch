@@ -1,0 +1,49 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 4025303a697d83850dee843310084bfec0398426..2646c9cf1cea7ffd68acb16bbd24a25344e885cc 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -746,6 +746,17 @@ function pickFontsourceAxisSlug(axes) {
+ async function getVariableAxes(ctx, font) {
+ 	return await ctx.storage.getItem(`fontsource:${font.family}-axes.json`, () => ctx.fetch(`${BASE_URL}/variable/${font.id}`).then((res) => res.json()));
+ }
++function getVariableFiles(fontDetail, subset) {
++	const shards = Object.keys(fontDetail.unicodeRange).filter((key) => /^\[\d+\]$/.test(key));
++	if (fontDetail.unicodeRange[subset] || shards.length === 0) return [{
++		file: subset,
++		range: subset
++	}];
++	return shards.map((range) => ({
++		file: range.slice(1, -1),
++		range
++	}));
++}
+ const VALID_FALLBACKS$1 = [
+ 	"sans-serif",
+ 	"serif",
+@@ -776,16 +787,16 @@ var fontsource_default = defineFontProvider("fontsource", async (_options, ctx)
+ 					const variableAxes = await getVariableAxes(ctx, font);
+ 					if (variableAxes?.axes.wght) {
+ 						const axisSlug = pickFontsourceAxisSlug(Object.keys(variableAxes.axes));
+-						fontFaceData.push({
+-							style,
+-							weight: [Number(variableAxes.axes.wght.min), Number(variableAxes.axes.wght.max)],
+-							src: [{
+-								url: `https://cdn.jsdelivr.net/fontsource/fonts/${font.id}:vf@latest/${subset}-${axisSlug}-${style}.woff2`,
+-								format: "woff2"
+-							}],
+-							unicodeRange: fontDetail.unicodeRange[subset]?.split(","),
+-							meta: { subset }
+-						});
++						for (const { file, range } of getVariableFiles(fontDetail, subset)) fontFaceData.push({
++								style,
++								weight: [Number(variableAxes.axes.wght.min), Number(variableAxes.axes.wght.max)],
++								src: [{
++									url: `https://cdn.jsdelivr.net/fontsource/fonts/${font.id}:vf@latest/${file}-${axisSlug}-${style}.woff2`,
++									format: "woff2"
++								}],
++								unicodeRange: fontDetail.unicodeRange[range]?.split(","),
++								meta: { subset }
++							});
+ 					}
+ 				} catch {
+ 					console.error(`Could not download variable axes metadata for \`${font.family}\` from \`fontsource\`. \`unifont\` will not be able to inject variable axes for ${font.family}.`);

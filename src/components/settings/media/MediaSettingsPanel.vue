@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useMediaMessages, useSettingsMessages } from '@open-pencil/vue'
+import { useMediaMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
 
 import { vectorizeProviderID, VECTORIZE_PROVIDER_DEFINITIONS } from '@/app/editor/vectorize'
 import { pexelsKeyStatus, unsplashKeyStatus } from '@/app/settings/credentials/media'
@@ -9,10 +9,14 @@ import type { MediaSettingsService } from '@/app/settings/media/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
+import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 import MediaCredentialEditor from './MediaCredentialEditor.vue'
 
 const editing = ref<MediaSettingsService | null>(null)
+// The editor keeps its service while it slides away.
+const editedService = useHeldContent(editing)
 const settings = useSettingsMessages()
 const media = useMediaMessages()
 const stockServices = computed(() => [
@@ -25,14 +29,16 @@ const vectorProvider = computed(() =>
 </script>
 
 <template>
-  <div class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-media-panel">
-    <MediaCredentialEditor
-      v-if="editing"
-      :key="editing"
-      :service="editing"
-      @done="editing = null"
-    />
-    <SettingsPage v-else>
+  <PanelDrillIn :open="editing !== null" data-test-id="settings-media-panel">
+    <template #detail>
+      <MediaCredentialEditor
+        v-if="editedService"
+        :key="editedService"
+        :service="editedService"
+        @done="editing = null"
+      />
+    </template>
+    <SettingsPage>
       <div class="flex flex-col gap-6">
         <SettingsSection>
           <template #title>{{ settings.media }}</template>
@@ -62,5 +68,5 @@ const vectorProvider = computed(() =>
         </SettingsSection>
       </div>
     </SettingsPage>
-  </div>
+  </PanelDrillIn>
 </template>

@@ -14,7 +14,8 @@ export {
   nodeSummary,
   requireNode,
   NodeNotFoundError,
-  toolChangesDocument
+  toolChangesDocument,
+  toolFailure
 } from './schema'
 export type { ToolDef, ToolExecution, ToolCapability } from './schema'
 export {
@@ -24,7 +25,7 @@ export {
   type ToolInterface,
   type ToolExposure
 } from './schema'
-export { toolNumber } from './input'
+export { toolNumber } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type { ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './ai-adapter'
 export {
@@ -44,4 +45,12 @@ export {
   parseOverlapSeverity
 } from './analyze/overlaps/params'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo'
-export { importSVG } from './create'
+export { importMermaid, importSVG } from './create'
+export { arrangeNodes } from './structure'
+export {
+  getStockPhotoProviders,
+  registerStockPhotoProvider,
+  setActiveStockPhotoProvider,
+  type StockPhotoProvider,
+  type StockPhotoResult
+} from './stock-photo/providers'

@@ -322,4 +322,66 @@ describe('derived text reader', () => {
 
     expect(convertFigmaDerivedTextGlyphs(data, blobs, characters)).toEqual([])
   })
+  /**
+   * Figma saves an emoji as a placeholder square with the emoji's code points, measured in
+   * Figma desktop, and draws the emoji over the square; without the code points it draws the
+   * square, so they survive reading and saving.
+   */
+  test("keeps an emoji glyph's code points and image set through reading and saving", () => {
+    const characters = 'H🖥️👍🏽'
+    const data: DerivedTextData = {
+      glyphs: [
+        {
+          commandsBlob: 0,
+          position: { x: 0, y: 97 },
+          fontSize: 100,
+          firstCharacter: 0,
+          advance: 0.74
+        },
+        {
+          commandsBlob: 0,
+          position: { x: 74, y: 97 },
+          fontSize: 100,
+          firstCharacter: 1,
+          advance: 1,
+          emojiCodePoints: [0x1f5a5, 0xfe0f]
+        },
+        {
+          commandsBlob: 0,
+          position: { x: 174, y: 97 },
+          fontSize: 100,
+          firstCharacter: 4,
+          advance: 1,
+          emojiCodePoints: [0x1f44d, 0x1f3fd],
+          emojiImageSet: 'NOTO'
+        }
+      ],
+      logicalIndexToCharacterOffsetMap: [0, 74, 74, 74, 174, 174, 174, 174]
+    }
+
+    const glyphs = convertFigmaDerivedTextGlyphs(data, blobs, characters)
+    expect(glyphs.map((glyph) => glyph.emojiCodePoints)).toEqual([
+      undefined,
+      [0x1f5a5, 0xfe0f],
+      [0x1f44d, 0x1f3fd]
+    ])
+    expect(glyphs.map((glyph) => glyph.emojiImageSet)).toEqual([undefined, undefined, 'NOTO'])
+    const saved = expectDefined(
+      buildNodeDerivedTextData(
+        textNode({ text: characters, derivedTextGlyphs: glyphs }),
+        context(null)
+      ),
+      'derived text'
+    )
+    expect(saved.glyphs?.map((glyph) => glyph.emojiCodePoints)).toEqual([
+      undefined,
+      [0x1f5a5, 0xfe0f],
+      [0x1f44d, 0x1f3fd]
+    ])
+    expect(saved.glyphs?.map((glyph) => glyph.emojiImageSet)).toEqual([
+      undefined,
+      undefined,
+      'NOTO'
+    ])
+  })
 })

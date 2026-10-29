@@ -1,17 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { LAYOUT_AFFECTING_KEYS } from '@open-pencil/scene-graph/fields'
 
 describe('LAYOUT_AFFECTING_KEYS membership', () => {
   test('contains all direct transform properties', () => {
-    const keys = SceneGraph.LAYOUT_AFFECTING_KEYS
+    const keys = LAYOUT_AFFECTING_KEYS
     for (const k of ['x', 'y', 'width', 'height', 'rotation', 'flipX', 'flipY']) {
       expect(keys.has(k)).toBe(true)
     }
   })
 
   test('contains all auto-layout properties', () => {
-    const keys = SceneGraph.LAYOUT_AFFECTING_KEYS
+    const keys = LAYOUT_AFFECTING_KEYS
     for (const k of [
       'layoutMode',
       'layoutDirection',
@@ -37,7 +37,7 @@ describe('LAYOUT_AFFECTING_KEYS membership', () => {
   })
 
   test('contains grid and sizing constraint properties', () => {
-    const keys = SceneGraph.LAYOUT_AFFECTING_KEYS
+    const keys = LAYOUT_AFFECTING_KEYS
     for (const k of [
       'gridTemplateColumns',
       'gridTemplateRows',
@@ -55,7 +55,7 @@ describe('LAYOUT_AFFECTING_KEYS membership', () => {
   })
 
   test('does NOT contain visual-only properties', () => {
-    const keys = SceneGraph.LAYOUT_AFFECTING_KEYS
+    const keys = LAYOUT_AFFECTING_KEYS
     for (const k of ['fills', 'strokes', 'effects', 'opacity', 'visible', 'name', 'pluginData']) {
       expect(keys.has(k)).toBe(false)
     }
@@ -72,6 +72,6 @@ describe('LAYOUT_AFFECTING_KEYS membership', () => {
     // gridTemplateColumns,gridTemplateRows,gridColumnGap,gridRowGap,gridPosition = 5
     // minWidth,maxWidth,minHeight,maxHeight,targetAspectRatio = 5
     // Total: 37
-    expect(SceneGraph.LAYOUT_AFFECTING_KEYS.size).toBe(37)
+    expect(LAYOUT_AFFECTING_KEYS.size).toBe(37)
   })
 })

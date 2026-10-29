@@ -16,8 +16,8 @@ import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/cha
 import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
 import { chatToResend } from '@/app/ai/chat/submission/resend'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
-import { useUndoRecords } from '@/app/ai/chat/submission/undone'
-import { restoreTurn, revertTurn } from '@/app/ai/chat/turns'
+import { restoreTurn, revertTurn } from '@/app/ai/reply/turns'
+import { useUndoRecords } from '@/app/ai/reply/undo'
 import type { EditorStore } from '@/app/editor/active-store'
 
 interface SubmissionOptions extends SubmissionErrorOptions {

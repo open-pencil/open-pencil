@@ -1,12 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
-import {
-  imageMimeType,
-  type Effect,
-  type Fill,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
@@ -18,10 +12,29 @@ import {
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
+import { imageMimeType } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import type { FontFaceRef } from '#core/text/face'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
+import type { SVGTextLayout } from './text/lines'
+
+/**
+ * A face text is drawn in, with what sets its axes: the font size the optical size follows unless
+ * `opticalSizeFromFontSize` is off, and the axes the text sets.
+ */
+export interface SVGFontRequest extends FontFaceRef {
+  /** Which of the style's files draws the text, 0 for its own then its shards; 0 when left out. */
+  file?: number
+  fontSize: number
+  variations: readonly FontVariation[]
+  opticalSizeFromFontSize: boolean
+}
+
+/** The family to name a font face by instead of its own, or null to keep the face. */
+export type SVGFontAlias = (font: SVGFontRequest) => string | null
 
 export interface SVGExportContext {
   defs: SVGNode[]
@@ -32,6 +45,9 @@ export interface SVGExportContext {
   idPrefix?: string
   /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
+  /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
+  textLayout?: SVGTextLayout
+  fontAlias?: SVGFontAlias
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
@@ -47,7 +63,39 @@ export function formatColor(
   if (colorSpace === 'display-p3') {
     return colorToDisplayCSS(alphaColor, { colorSpace })
   }
+  // Hex has no alpha. Stops and shadows already emit theirs; solid fills use `solidFillOpacity`.
   return colorToHex(alphaColor)
+}
+
+/**
+ * A solid paint's SVG color. The canvas paints `opacity` and drops color alpha: `setAlphaf`
+ * replaces it, and `.pen` stores a hex alpha in both fields. Display P3 carries that painted
+ * alpha in the color. sRGB hex cannot, so `solidFillOpacity` emits it beside the color.
+ */
+export function formatSolidColor(
+  color: Color,
+  opacity: number,
+  colorSpace: RenderColorSpace
+): string {
+  if (colorSpace === 'display-p3') {
+    return formatColor({ ...color, a: 1 }, round(opacity), colorSpace)
+  }
+  return formatColor(color, 1, colorSpace)
+}
+
+/**
+ * `fill-opacity` for a solid paint. Omitted at full opacity so an opaque export stays unchanged.
+ * Display P3 already carries the same alpha in the color `formatSolidColor` returns, unless
+ * `separate` is set because that color was replaced and can no longer carry it.
+ */
+export function solidFillOpacity(
+  fill: Fill,
+  colorSpace: RenderColorSpace,
+  separate = false
+): number | undefined {
+  if (fill.type !== 'SOLID' || (colorSpace === 'display-p3' && !separate)) return undefined
+  const alpha = round(fill.opacity)
+  return alpha < 1 ? alpha : undefined
 }
 
 function createGradientDef(
@@ -228,7 +276,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   if (!fill.visible) return null
 
   if (fill.type === 'SOLID') {
-    return formatColor(fill.color, fill.opacity, ctx.colorSpace)
+    return formatSolidColor(fill.color, fill.opacity, ctx.colorSpace)
   }
 
   if (fill.type.startsWith('GRADIENT')) {

@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  remapStyleRunReferences,
-  styleRunReferences,
-  type StyleRun
-} from '@open-pencil/scene-graph'
+import type { StyleRun } from '@open-pencil/scene-graph'
+import { remapStyleRunReferences, styleRunReferences } from '@open-pencil/scene-graph/text'
 
 const RUNS: StyleRun[] = [
   { start: 0, length: 2, style: { boundVariables: { fontSize: 'v1' }, textStyleId: 's1' } },

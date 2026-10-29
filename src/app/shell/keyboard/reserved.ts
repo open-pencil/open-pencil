@@ -1,4 +1,5 @@
 import { isButtonActivation } from './focus'
+import { shortcutCode } from './layout'
 
 const RESERVED_MOD_CODES = new Set([
   'Backslash',
@@ -27,8 +28,9 @@ const RESERVED_MOD_CODES = new Set([
 
 export function isReservedModShortcut(e: KeyboardEvent): boolean {
   if (!(e.metaKey || e.ctrlKey)) return false
-  if (e.altKey) return e.code === 'KeyB' || e.code === 'KeyK'
-  return RESERVED_MOD_CODES.has(e.code)
+  const code = shortcutCode(e)
+  if (e.altKey) return code === 'KeyB' || code === 'KeyK'
+  return RESERVED_MOD_CODES.has(code)
 }
 
 export function preventReservedKeyboardDefaults(e: KeyboardEvent) {

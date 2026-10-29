@@ -6,12 +6,14 @@ import {
   MCP_AGENT_GONE_MS,
   MCP_AGENT_IDLE_MS,
   agentFinished,
+  agentSessionOpened,
   agentStarted,
   endAgentSession,
   readAgentSession,
   restAgents,
   touchedNodeIds,
-  type AgentSession
+  type AgentSession,
+  watchChatAgent
 } from '@/app/automation/agents'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
@@ -152,5 +154,35 @@ describe("the app's own ACP and Pi chats", () => {
     expect(status(pi)).toBe('thinking')
     agentFinished(store, pi, { pageId: pageId(), nodeIds: [card.id], edited: true, reply: next })
     expect(status(pi)).toBe('editing')
+  })
+})
+
+describe("a chat's agent reaching OpenPencil's tools", () => {
+  test('the chat goes on once the server says its own agent opened a session', async () => {
+    const watch = watchChatAgent('0123456789abcdef')
+    let connected = false
+    void watch.connected.then(() => (connected = true))
+
+    agentSessionOpened({ session: 's-1', kind: 'acp', chat: 'fedcba9876543210' })
+    agentSessionOpened({ session: 's-2', kind: 'mcp' })
+    // An outside MCP client naming the chat does not stand in for its ACP agent.
+    agentSessionOpened({ session: 's-4', kind: 'mcp', chat: '0123456789abcdef' })
+    await Promise.resolve()
+    expect(connected).toBe(false)
+
+    agentSessionOpened({ session: 's-3', kind: 'acp', chat: '0123456789abcdef' })
+    await watch.connected
+    expect(connected).toBe(true)
+  })
+
+  test('a chat that stopped waiting ignores a late session', async () => {
+    const watch = watchChatAgent('00112233445566778899')
+    watch.stop()
+    agentSessionOpened({ session: 's-1', kind: 'acp', chat: '00112233445566778899' })
+    const settled = await Promise.race([
+      watch.connected.then(() => 'connected'),
+      Promise.resolve('waiting')
+    ])
+    expect(settled).toBe('waiting')
   })
 })

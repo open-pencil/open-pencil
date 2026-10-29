@@ -17,7 +17,7 @@ multiple modes retain selection; action mode emits commands without toggle state
 ```vue twoslash
 <script setup lang="ts">
 import { ref } from 'vue'
-import { SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue'
+import { SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue/primitives/SegmentedControl'
 
 const alignment = ref('left')
 </script>

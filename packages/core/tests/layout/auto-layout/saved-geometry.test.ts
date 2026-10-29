@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '#core/editor'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
+import { createEditor } from '#core/editor'
 
 /** Marks layers as read from a .fig file, with the geometry the file saved for them. */
 function asSaved(graph: SceneGraph, nodes: SceneNode[]) {
@@ -52,9 +53,25 @@ function savedNest() {
     paddingTop: 10,
     paddingBottom: 10
   } as const
-  const outer = graph.createNode('FRAME', editor.state.currentPageId, { ...hug, width: 70, height: 70 })
-  const middle = graph.createNode('FRAME', outer.id, { ...hug, x: 10, y: 10, width: 50, height: 50 })
-  const inner = graph.createNode('FRAME', middle.id, { ...hug, x: 10, y: 10, width: 30, height: 30 })
+  const outer = graph.createNode('FRAME', editor.state.currentPageId, {
+    ...hug,
+    width: 70,
+    height: 70
+  })
+  const middle = graph.createNode('FRAME', outer.id, {
+    ...hug,
+    x: 10,
+    y: 10,
+    width: 50,
+    height: 50
+  })
+  const inner = graph.createNode('FRAME', middle.id, {
+    ...hug,
+    x: 10,
+    y: 10,
+    width: 30,
+    height: 30
+  })
   const leaf = graph.createNode('RECTANGLE', inner.id, { x: 10, y: 10, width: 10, height: 10 })
   asSaved(graph, [outer, middle, inner, leaf])
   editor.runLayoutForNode(outer.id)
@@ -87,7 +104,7 @@ describe('a frame read from a .fig file reflows once its layout is edited', () =
   test('a new layer in the flow moves the saved ones along', () => {
     const { editor, row, first, second } = savedRow()
     const added = editor.graph.createNode('RECTANGLE', row.id, { width: 50, height: 40 })
-    editor.graph.reorderChild(added.id, row.id, 0)
+    editor.graph.insertChildAt(added.id, row.id, 0)
     editor.runLayoutForNode(row.id)
     expect([row.width, added.x, first.x, second.x]).toEqual([290, 10, 70, 180])
     editor.dispose()
@@ -164,7 +181,11 @@ test('a layer moved into a frame with saved geometry resizes it, even before it 
     paddingBottom: 2
   } as const
   // A component's layers as a .fig file loads them: saved sizes, no source format, not laid out.
-  const tag = graph.createNode('COMPONENT', editor.state.currentPageId, { ...hug, width: 62, height: 41 })
+  const tag = graph.createNode('COMPONENT', editor.state.currentPageId, {
+    ...hug,
+    width: 62,
+    height: 41
+  })
   const badge = graph.createNode('FRAME', tag.id, { ...hug, width: 24, height: 12 })
   graph.createNode('ELLIPSE', badge.id, { width: 8, height: 8 })
   const number = graph.createNode('RECTANGLE', tag.id, { width: 6, height: 17 })

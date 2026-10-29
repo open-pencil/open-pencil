@@ -27,6 +27,6 @@ export function restoreDeletedEntries(ctx: EditorContext, entries: DeletedEntry[
   for (const { id, parentId, index, subtree } of [...entries].reverse()) {
     const rootSnap = subtree.get(id)
     if (rootSnap) restoreSubtree(ctx.graph, rootSnap, parentId, subtree)
-    if (index >= 0) ctx.graph.reorderChild(id, parentId, index)
+    if (index >= 0) ctx.graph.insertChildAt(id, parentId, index)
   }
 }

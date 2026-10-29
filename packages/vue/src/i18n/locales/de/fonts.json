@@ -5,6 +5,10 @@
   "localFonts": "Lokale Schriften",
   "onlineFonts": "Online-Schriften",
   "downloadedCache": "Download-Cache",
+  "cachedFontCount": {
+    "one": "{count} Schrift",
+    "many": "{count} Schriften"
+  },
   "systemFontAccess": "Zugriff auf Systemschriften",
   "systemFontsAvailable": "Systemschriften sind verfügbar.",
   "allowBrowserFontAccess": "Browser-Schriftzugriff erlauben, wenn Systemschriften fehlen.",

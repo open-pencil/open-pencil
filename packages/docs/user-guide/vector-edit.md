@@ -1,6 +1,6 @@
 ---
 title: Vector Object Editing
-description: "How to edit vector path geometry: anchors, bezier handles, modifiers, and Pen tool actions in edit mode."
+description: 'How to edit vector path geometry: anchors, bezier handles, modifiers, and Pen tool actions in edit mode.'
 ---
 
 # Vector Object Editing
@@ -18,6 +18,7 @@ This activates geometry editing for the selected vector.
 ## Exiting the Mode
 
 - Press <kbd>Escape</kbd>.
+- Click empty space on the canvas.
 - Or switch to another editing context.
 
 ## What Changes in This Mode
@@ -38,13 +39,37 @@ This activates geometry editing for the selected vector.
 - Drag a handle on the anchor.
 - By default, behavior follows the anchor's current handle composition.
 
+### Select and Move a Segment
+
+- Click a segment to select it. The segment turns blue and shows a knob at its midpoint; its anchors stay unselected.
+- <kbd>Shift</kbd> + click adds a segment to the selection, or removes a selected one.
+- Drag a segment to move the two anchors it joins, along with the rest of the selection.
+
+### Select with a Marquee
+
+- Drag over empty space to select the anchors inside the rectangle and the segments between them.
+- <kbd>Shift</kbd> + drag adds them to the selection.
+
+### Select a Region
+
+- Move the pointer inside a filled area: the region under it is hatched with diagonal lines.
+- Click inside it to select the region and all of its points; drag to move it.
+- <kbd>Shift</kbd> + click adds the region to the selection.
+
+### Delete Anchors and Segments
+
+- Press <kbd>Delete</kbd> or <kbd>Backspace</kbd> to delete the selection.
+- A deleted anchor takes its segments with it.
+- A deleted segment takes only the anchors it leaves unconnected, so deleting the middle segment of a path splits it in two.
+- Deleting everything deletes the layer.
+
 ## Handle Drag Modifiers
 
-| Action | Mac | Windows / Linux |
-|----------|-----|-----------------|
-| Continuous (Smooth / Continuous) | <kbd>Cmd</kbd> + drag | <kbd>Ctrl</kbd> + drag |
-| Corner (Independent handles) | <kbd>Option</kbd> + drag | <kbd>Alt</kbd> + drag |
-| Direction lock (length only) | <kbd>Shift</kbd> + drag | <kbd>Shift</kbd> + drag |
+| Action                           | Mac                      | Windows / Linux         |
+| -------------------------------- | ------------------------ | ----------------------- |
+| Continuous (Smooth / Continuous) | <kbd>Cmd</kbd> + drag    | <kbd>Ctrl</kbd> + drag  |
+| Corner (Independent handles)     | <kbd>Option</kbd> + drag | <kbd>Alt</kbd> + drag   |
+| Direction lock (length only)     | <kbd>Shift</kbd> + drag  | <kbd>Shift</kbd> + drag |
 
 ### Continuous: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + drag
 

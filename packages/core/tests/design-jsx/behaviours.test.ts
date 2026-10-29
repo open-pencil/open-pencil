@@ -4,12 +4,8 @@ import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import {
-  missingBindings,
-  readBehaviour,
-  SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { missingBindings, readBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 async function render(jsx: string) {
   const graph = new SceneGraph()

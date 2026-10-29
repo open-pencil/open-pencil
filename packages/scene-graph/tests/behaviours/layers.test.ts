@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { findLayerByPath, layerPath, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { findLayerByPath, layerPath } from '@open-pencil/scene-graph/behaviours'
 
 describe('layer paths', () => {
   test('round-trip names that contain the path separators', () => {

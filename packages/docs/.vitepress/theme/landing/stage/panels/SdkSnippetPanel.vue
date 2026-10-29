@@ -13,12 +13,9 @@ const CLOSE_SCRIPT = `</${'script'}>`
 /** The smallest working canvas: the same shape as `packages/vue/src/canvas/examples`. */
 const SNIPPET = dedent`
   <script setup lang="ts">
-  import { createEditor } from '@open-pencil/core/editor'
-  import {
-    CanvasRoot,
-    CanvasSurface,
-    provideEditor
-  } from '@open-pencil/vue'
+  import { createEditor } from '@open-pencil/core'
+  import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
+  import { provideEditor } from '@open-pencil/vue'
 
   const editor = createEditor()
   provideEditor(editor)

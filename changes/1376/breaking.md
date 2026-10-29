@@ -1,0 +1,1 @@
+- `SkiaRenderer` drops the box and corner arguments from `drawNodeFill`, `drawNodeStroke`, `drawStrokeWithAlign`, `clipNodeShape`, `makeNodeShapePath`, `renderEffects`, and `applyClippedBlur`, and removes `drawArc` and `makeRRectWithOffset`: the renderer works out the outline itself.

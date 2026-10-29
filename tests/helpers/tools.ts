@@ -1,4 +1,6 @@
-import { ALL_TOOLS, FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { ALL_TOOLS, toolFailure } from '@open-pencil/core/tools'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 export { ALL_TOOLS }
 
@@ -25,4 +27,22 @@ export function getTool(name: string): (typeof ALL_TOOLS)[number] {
     ALL_TOOLS.find((tool) => tool.name === name),
     `tool ${name}`
   )
+}
+
+/**
+ * Runs a tool as the app's runner does: the fonts its text edits need load first, and one that
+ * cannot load is the call's error.
+ */
+export async function runTool(
+  figma: FigmaAPI,
+  name: string,
+  args: Record<string, unknown>
+): Promise<unknown> {
+  const tool = getTool(name)
+  try {
+    await tool.loadFonts(figma, args)
+  } catch (error) {
+    return toolFailure(error)
+  }
+  return tool.execute(figma, args)
 }

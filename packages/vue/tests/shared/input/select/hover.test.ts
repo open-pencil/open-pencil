@@ -1,9 +1,12 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { boundEndpoint, createConnector, layoutConnector } from '@open-pencil/scene-graph/connectors'
+import { createSticky } from '@open-pencil/scene-graph/generated'
 
 import {
+  MOVE_CURSOR,
   cornerRotationCursor,
   getHitHandleByMatrix,
   buildResizeCursor
@@ -45,4 +48,66 @@ test('a label does not take the press from a resize band', () => {
   expect(hit?.handle).toBe('nw')
   expect(cursorAt(-3, -3)).toBe(buildResizeCursor(hit?.rotation ?? 0))
   expect(getHitHandleByMatrix(120, -5, frame, editor.graph)?.handle).toBe('n')
+})
+
+const NO_HITS = {
+  hitTestInScope: () => null,
+  hitTestFrameTitle: () => null,
+  hitTestSectionTitle: () => null,
+  hitTestComponentLabel: () => null
+}
+
+test('a connector has no resize cursor, its end handles included, as in FigJam', () => {
+  editor = createEditor()
+  const page = editor.state.currentPageId
+  const a = editor.graph.createNode('RECTANGLE', page, { x: 0, y: 0, width: 100, height: 100 })
+  const b = editor.graph.createNode('RECTANGLE', page, { x: 300, y: 0, width: 100, height: 100 })
+  const connector = createConnector(editor.graph, page, {
+    start: boundEndpoint(a.id),
+    end: boundEndpoint(b.id)
+  })
+  editor.graph.updateNode(connector.id, { x: 100, y: 30, width: 200, height: 40 })
+  editor.select([connector.id])
+  expect(getHitHandleByMatrix(300, 50, connector, editor.graph)?.handle).toBe('e')
+  expect(updateHoverCursor(300, 50, editor, NO_HITS)).toBeNull()
+})
+
+test("a sticky note's handles keep their cursor, since they scale it", () => {
+  editor = createEditor()
+  const sticky = createSticky(editor.graph, editor.state.currentPageId, { text: '' })
+  editor.select([sticky.id])
+  const hit = getHitHandleByMatrix(sticky.width, sticky.height, sticky, editor.graph)
+  expect(hit?.handle).toBe('se')
+  expect(updateHoverCursor(sticky.width, sticky.height, editor, NO_HITS)).toBe(
+    buildResizeCursor(hit?.rotation ?? 0)
+  )
+})
+
+test("a line's ends show the move cursor, and its length takes no resize", () => {
+  editor = createEditor()
+  const line = editor.graph.createNode('LINE', editor.state.currentPageId, {
+    width: 200,
+    height: 0
+  })
+  editor.select([line.id])
+  expect(updateHoverCursor(200, 0, editor, NO_HITS)).toBe(MOVE_CURSOR)
+  expect(updateHoverCursor(0, 2, editor, NO_HITS)).toBe(MOVE_CURSOR)
+  expect(updateHoverCursor(100, 3, editor, NO_HITS)).toBeNull()
+})
+
+test("an elbow's segment handles show the way they slide, as in FigJam", () => {
+  editor = createEditor()
+  const page = editor.state.currentPageId
+  const a = editor.graph.createNode('RECTANGLE', page, { x: 0, y: 0, width: 100, height: 100 })
+  const b = editor.graph.createNode('RECTANGLE', page, { x: 300, y: 200, width: 100, height: 100 })
+  const connector = createConnector(editor.graph, page, {
+    start: boundEndpoint(a.id),
+    end: boundEndpoint(b.id),
+    lineType: 'ELBOWED'
+  })
+  layoutConnector(editor.graph, connector)
+  editor.select([connector.id])
+  // Right out of the first box, down the middle, then right into the second.
+  expect(updateHoverCursor(200, 150, editor, NO_HITS)).toBe(buildResizeCursor(0))
+  expect(updateHoverCursor(150, 50, editor, NO_HITS)).toBe(buildResizeCursor(90))
 })

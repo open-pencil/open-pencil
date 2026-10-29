@@ -1,12 +1,9 @@
 import { mkdir, stat } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 
-import { LOCALE_PREFIXES } from '#docs-config/seo'
 import { FEATURE_KINDS } from '#docs-config/theme/landing/content/features'
 import {
   POSTER_CAPTURE_PARAM,
-  POSTER_LAYOUTS,
-  POSTER_THEMES,
   posterParts,
   posterPath,
   type PosterLayout,
@@ -97,24 +94,18 @@ async function capturePage(browser: Browser, origin: string, target: PosterTarge
 }
 
 /**
- * Captures every stage of every landing page in each theme and layout from the built site in
- * `dist`, writing WebP stills under `out` at their poster paths.
+ * Captures every stage of the `targets` landing pages from the built site in `dist`, writing
+ * WebP stills under `out` at their poster paths.
  */
 export async function capturePosters({
   dist,
   out,
-  fingerprint
+  targets
 }: {
   dist: string
   out: string
-  fingerprint: string
+  targets: PosterTarget[]
 }): Promise<number> {
-  const locales = ['root', ...LOCALE_PREFIXES]
-  const targets: PosterTarget[] = locales.flatMap((locale) =>
-    POSTER_THEMES.flatMap((theme) =>
-      POSTER_LAYOUTS.map((layout) => ({ fingerprint, locale, theme, layout }))
-    )
-  )
   const server = serveSite(dist)
   let browser: Browser | null = null
   try {

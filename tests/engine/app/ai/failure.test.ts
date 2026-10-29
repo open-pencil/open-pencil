@@ -50,6 +50,16 @@ describe('AI chat failures', () => {
     })
   })
 
+  test('reports a refused sign-in or plan instead of a key for providers signed in to', () => {
+    expect(classifyAIChatError({ statusCode: 401 }, { signInOnly: true }).reason).toBe(
+      'sign-in-expired'
+    )
+    expect(classifyAIChatError({ statusCode: 403 }, { signInOnly: true }).reason).toBe(
+      'plan-forbidden'
+    )
+    expect(classifyAIChatError({ statusCode: 429 }, { signInOnly: true }).reason).toBe('rate-limit')
+  })
+
   test('classifies provider errors reported after the stream started', () => {
     const streamError = new StreamProviderError({
       message: 'Too many requests',

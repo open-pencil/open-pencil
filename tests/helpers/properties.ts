@@ -4,6 +4,11 @@ export function propertySection(page: Page, name: string): Locator {
   return page.getByRole('region', { name, exact: true })
 }
 
+/** The Design panel's header for the selected layer, found by the layer's name. */
+export function layerHeader(page: Page, name: string): Locator {
+  return page.locator('header').filter({ has: page.getByRole('heading', { name, exact: true }) })
+}
+
 export function propertyField(page: Page, property: string): Locator {
   return page.locator(`[data-property=${JSON.stringify(property)}]`)
 }

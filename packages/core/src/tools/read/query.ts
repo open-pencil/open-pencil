@@ -1,7 +1,6 @@
 import * as v from 'valibot'
 
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 import { queryByXPath } from '#core/xpath'
 
 export const queryNodes = defineTool({

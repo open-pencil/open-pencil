@@ -64,7 +64,7 @@ export function finishRenderPlacement(
 ): void {
   if (placement.insertIndex !== undefined) {
     for (const [offset, result] of results.entries()) {
-      graph.reorderChild(result.id, placement.parentId, placement.insertIndex + offset)
+      graph.insertChildAt(result.id, placement.parentId, placement.insertIndex + offset)
     }
   }
   if (placement.replaceId) graph.deleteNode(placement.replaceId)

@@ -8,11 +8,11 @@ import {
 } from '#fig/node-change/plugin-data'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { clampExportScale } from '@open-pencil/scene-graph/export-scale'
 import {
-  clampExportScale,
   OPEN_PENCIL_PLUGIN_DATA,
   OPEN_PENCIL_PLUGIN_ID
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/plugin-data'
 
 function withPluginValue(key: string, value: string, extra: NodeChange = {}): NodeChange {
   return { ...extra, pluginData: [{ pluginID: OPEN_PENCIL_PLUGIN_ID, key, value }] }

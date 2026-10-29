@@ -28,7 +28,7 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 - Commands use `packages/vue/src/editor/commands/registry.ts` for shortcuts, bindings, and menu IDs. Store portable tokens (`MOD+D`) and format them at render time; labels and translations never contain shortcuts.
 - Canvas menu structure lives in `packages/vue/src/editor/menu-model/canvas.ts`; the app's `CanvasMenu.vue` renders it.
 - `useEditorEvent(event, handler)` in `packages/vue/src/editor/events/use.ts` wraps the editor event bus.
-- i18n uses narrow product-domain catalogs under `packages/vue/src/i18n/messages/` with matching locale files. Inspect existing domains instead of adding generic UI/component namespaces; prefer narrow `use*Messages()` composables over aggregate `useI18n()`. `bun run check:i18n` enforces structure, placeholder parity, and reviewed translation baselines; remove stale baseline identities when fixing existing debt.
+- i18n uses narrow product-domain catalogs under `packages/vue/src/i18n/messages/` with matching locale files; namespaces of one domain share a folder (`messages/cloud/editor.ts`, `locales/<locale>/cloud/editor.json`) mapped in `LOCALE_FILE_NAMES` (`tools/checks/i18n/src/check-locales.ts`). Inspect existing domains instead of adding generic UI/component namespaces; prefer narrow `use*Messages()` composables over aggregate `useI18n()`. `bun run check:i18n` enforces structure, placeholder parity, and reviewed translation baselines; remove stale baseline identities when fixing existing debt.
 
 ## Documentation
 

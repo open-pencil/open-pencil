@@ -1,11 +1,21 @@
 import 'fake-indexeddb/auto'
 import { afterEach, expect, test } from 'bun:test'
 
+import { shallowRef } from 'vue'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { readComments, writeComments, type CommentThread } from '@open-pencil/scene-graph'
+import type { CommentThread } from '@open-pencil/scene-graph'
+import {
+  COMMENT_SORTS,
+  listCommentThreads,
+  readComments,
+  writeComments
+} from '@open-pencil/scene-graph/comments'
 
 import { executeWithDocumentUndo } from '@/app/automation/execution/editor'
+import { openDocumentRoom, roomForStore, leaveRoom } from '@/app/collab/rooms'
+import type { JoinCollabRoom } from '@/app/collab/transport'
 import { useComments } from '@/app/comments/use'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session/create'
@@ -147,4 +157,42 @@ test('an agent’s comment is not an undo step either, as comments stay out of u
 
   expect(useComments().threads.value).toHaveLength(1)
   expect(store.undo.canUndo).toBe(canUndo)
+})
+
+test('a comment is signed by who the tab is in its room, and “Only mine” follows that', () => {
+  const store = openDocument()
+  const color = { r: 0.13, g: 0.59, b: 0.95, a: 1 }
+  // A room that never connects: only who the tab is there matters here.
+  const silent: JoinCollabRoom = () => ({
+    makeAction: () => [() => undefined, () => undefined],
+    onPeerJoin: () => undefined,
+    onPeerLeave: () => undefined,
+    signalingConnected: () => false,
+    discoveryMs: 0,
+    media: null,
+    leave: async () => undefined
+  })
+  openDocumentRoom(store, `cloud:${crypto.randomUUID()}:0`, silent, {
+    name: shallowRef('Grace Hopper'),
+    color
+  })
+  try {
+    // Someone else's thread first, then this tab's own.
+    writeComments(store.graph, [thread('theirs', store.state.currentPageId)])
+    const added = comment(store, 10, 10, 'from the account')
+    expect(added).toMatchObject({ author: 'Grace Hopper', authorColor: color })
+    const mine = listCommentThreads(useComments().threads.value, {
+      query: '',
+      showResolved: true,
+      onlyPage: false,
+      pageId: store.state.currentPageId,
+      onlyMine: true,
+      author: useComments().author.value,
+      sort: COMMENT_SORTS[0]
+    })
+    expect(ids(mine)).toEqual([added.id])
+  } finally {
+    const room = roomForStore(store)
+    if (room) leaveRoom(room)
+  }
 })

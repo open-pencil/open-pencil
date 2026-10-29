@@ -1,8 +1,8 @@
 import type { Ref } from 'vue'
 
+import type { Editor } from '@open-pencil/core'
 import { computeGuideRedline, hitTestGuides } from '@open-pencil/core/canvas'
 import { RULER_SIZE } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 
 import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragGuide, DragState } from '#vue/shared/input/types'

@@ -8,8 +8,9 @@ import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
 import { printError } from '#cli/format'
 import {
   documentWriteOptions,
+  editDocument,
   loadDocument,
-  measureTextHeadlessly,
+  measureDocumentText,
   populateWholeDocument,
   writeFigDocument
 } from '#cli/headless'
@@ -71,12 +72,12 @@ export default defineCommand({
     const file = requireFile(args.file)
     const graph = await loadDocument(file)
     populateWholeDocument(graph)
-    await measureTextHeadlessly()
+    await measureDocumentText(graph)
     const figma = new FigmaAPI(graph)
 
     let result: unknown
     try {
-      result = await compileScript(code)(figma)
+      result = await editDocument(graph, () => compileScript(code)(figma))
     } catch (err) {
       printError(err instanceof Error ? err.message : String(err))
       process.exit(1)

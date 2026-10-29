@@ -4,6 +4,7 @@
   "clipboardMissingDesignData": "Gli appunti non contengono dati di design.",
   "clipboardAccessBlocked": "L’accesso agli appunti è bloccato in questo contesto del browser.",
   "copiedAs": "Copiato come {format}.",
+  "copiedProperties": "Proprietà copiate.",
   "pngClipboardUnavailable": "L’esportazione PNG negli appunti non è disponibile in questo browser.",
   "openFileFailed": "Impossibile aprire «{name}»: {error}",
   "importedDOMCSS": "Documento DOM/CSS importato.",
@@ -29,5 +30,6 @@
   "openQueuedFilesFailed": "Impossibile aprire i file passati a OpenPencil: {error}",
   "tokensLeftOut": "Esclusi dal foglio di stile: {names}.",
   "designTokensLeftOut": "Esclusi dai design token: {names}.",
-  "designTokensImported": "Importati {count} design token."
+  "designTokensImported": "Importati {count} design token.",
+  "unsupportedVariableExpressions": "OpenPencil non sa ancora valutare queste variabili, quindi i livelli mantengono i valori salvati nel file: {names}."
 }

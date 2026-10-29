@@ -27,6 +27,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for MCP and RPC auth\n` +
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: home directory on Windows, current working directory elsewhere)\n` +
       `  OPENPENCIL_MCP_EVAL           Set to 1 to enable the eval tool\n` +
+      `  OPENPENCIL_MCP_SESSION_IDLE_TIMEOUT_MS\n` +
+      `                               Close sessions idle this long, in ms (default: 900000;\n` +
+      `                               0 disables). An open GET/SSE stream is not activity.\n` +
       `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit\n` +
       `  OPENPENCIL_MCP_SCOPE         "selection" to let clients read only the selected layers\n` +
       `                               (default: "document")\n` +
@@ -37,7 +40,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `                               file after no app is attached for this many ms. The\n` +
       `                               grace period starts at startup and after disconnects.\n` +
       `                               Unset/0 disables it (default) — do not set this for\n` +
-      `                               manual/CLI use, since nothing may ever register.\n`
+      `                               manual/CLI use, since nothing may ever register.\n` +
+      `  OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE  Set to 1 to shut down when stdin closes, so a\n` +
+      `                               parent that starts the server through a shell wrapper\n` +
+      `                               can stop it by closing the pipe. Unset for manual/CLI use.\n`
   )
   process.exit(0)
 }
@@ -60,24 +66,24 @@ const port = rawPort
 // the PORT value alone determines whether TCP is enabled (PORT=0 is the kill switch).
 const withTcp = port > 0
 
-const MAX_APP_TIMEOUT_MS = 2_147_483_647
-const rawAppTimeoutText = process.env.OPENPENCIL_MCP_APP_TIMEOUT_MS?.trim()
-let appAttachTimeoutMs: number | undefined
-if (rawAppTimeoutText) {
-  if (!/^\d+$/.test(rawAppTimeoutText)) {
+const MAX_TIMEOUT_MS = 2_147_483_647
+
+/** Read a millisecond timeout from the environment, exiting on an invalid value. */
+function readTimeoutEnv(name: string): number | undefined {
+  const text = process.env[name]?.trim()
+  if (!text) return undefined
+  const timeoutMs = Number(text)
+  if (!/^\d+$/.test(text) || timeoutMs > MAX_TIMEOUT_MS) {
     process.stderr.write(
-      `Error: OPENPENCIL_MCP_APP_TIMEOUT_MS must be a non-negative integer, got "${rawAppTimeoutText}"\n`
+      `Error: ${name} must be an integer in 0–${MAX_TIMEOUT_MS}, got "${text}"\n`
     )
     process.exit(1)
   }
-  appAttachTimeoutMs = Number.parseInt(rawAppTimeoutText, 10)
-  if (!Number.isSafeInteger(appAttachTimeoutMs) || appAttachTimeoutMs > MAX_APP_TIMEOUT_MS) {
-    process.stderr.write(
-      `Error: OPENPENCIL_MCP_APP_TIMEOUT_MS must be an integer in 0–${MAX_APP_TIMEOUT_MS}, got "${rawAppTimeoutText}"\n`
-    )
-    process.exit(1)
-  }
+  return timeoutMs
 }
+
+const appAttachTimeoutMs = readTimeoutEnv('OPENPENCIL_MCP_APP_TIMEOUT_MS')
+const sessionIdleTimeoutMs = readTimeoutEnv('OPENPENCIL_MCP_SESSION_IDLE_TIMEOUT_MS')
 
 const toolPolicy = readToolPolicyFromEnv()
 
@@ -107,7 +113,8 @@ const handle = await startServer({
     return trimmed
   })(),
   corsOrigin: resolveCORSOrigins(process.env.OPENPENCIL_MCP_CORS_ORIGIN),
-  appAttachTimeoutMs
+  appAttachTimeoutMs,
+  sessionIdleTimeoutMs
 })
 
 const readyMarker = process.env.OPENPENCIL_MCP_READY_MARKER
@@ -128,3 +135,18 @@ const shutdown = async () => {
 
 process.on('SIGINT', () => void shutdown().catch(() => process.exit(1)))
 process.on('SIGTERM', () => void shutdown().catch(() => process.exit(1)))
+
+// A parent that started this server through a shell wrapper cannot always kill it directly
+// (on Windows, ending `cmd /c` leaves the process it started running), but its end of the
+// stdin pipe closes with it.
+if (process.env.OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE === '1') {
+  let stdinClosed = false
+  const onStdinClosed = () => {
+    if (stdinClosed) return
+    stdinClosed = true
+    void shutdown().catch(() => process.exit(1))
+  }
+  process.stdin.on('end', onStdinClosed)
+  process.stdin.on('close', onStdinClosed)
+  process.stdin.resume()
+}

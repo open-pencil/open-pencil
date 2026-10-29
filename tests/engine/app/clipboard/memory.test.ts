@@ -10,7 +10,7 @@ import {
   setInMemoryClipboardHTML,
   setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
-import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
+import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste/replace'
 import { executeClipboardCommand, type SystemClipboard } from '@/app/editor/clipboard/system'
 import { createBrowserSystemClipboard } from '@/app/editor/clipboard/system/browser'
 import type { BrowserClipboardIO, ClipboardPayload } from '@/app/editor/clipboard/system/types'

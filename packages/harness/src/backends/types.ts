@@ -2,6 +2,7 @@ import type {
   HarnessAdapterID,
   HarnessProviderCapability,
   HarnessSessionConfiguration,
+  HarnessTurnUsage,
   JSONValue
 } from '../protocol'
 
@@ -26,7 +27,7 @@ export type BackendEvent =
   | { type: 'reasoning-delta'; text: string }
   | { type: 'tool-call'; toolCallId: string; toolName: string; input: JSONValue }
   | { type: 'tool-result'; toolCallId: string; toolName: string; output: JSONValue }
-  | { type: 'finish'; finishReason: string }
+  | { type: 'finish'; finishReason: string; usage?: HarnessTurnUsage }
   | { type: 'error'; message: string }
 
 export interface HarnessBackend {

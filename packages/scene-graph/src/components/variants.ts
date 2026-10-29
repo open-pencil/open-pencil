@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
 
 /** Variants in reading order on the canvas: top to bottom, then left to right, then by name. */

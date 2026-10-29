@@ -1,5 +1,5 @@
 import { cloneNodeProps } from '../copy'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { GraphTransferPlan } from './apply'
 
 /** Capture post-placement state for redo; this does not authorize deleting shared resources. */

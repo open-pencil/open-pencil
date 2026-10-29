@@ -1,5 +1,8 @@
+import { generatedFrameOwner } from '@open-pencil/scene-graph/generated'
+
 import { createSelectionContainerActions } from './selection/container'
 import { createSelectionHitTestActions } from './selection/hit-test'
+import { createSelectionNavigationActions } from './selection/navigation'
 import { createSelectionOverlayActions } from './selection/overlays'
 import { createSelectionReadActions } from './selection/read'
 import type { EditorContext } from './types'
@@ -20,11 +23,18 @@ export function createSelectionActions(ctx: EditorContext) {
     )
   }
 
+  /** A generated frame's sublayer is selected as the frame, such as a sticky note's body. */
+  function selectable(id: string): string {
+    const node = ctx.graph.getNode(id)
+    return (node && generatedFrameOwner(ctx.graph, node)?.id) ?? id
+  }
+
   /**
    * Figma never selects a layer together with one of its ancestors. A plain selection keeps the
    * outermost layers; adding a layer replaces its selected ancestors and descendants.
    */
-  function select(ids: string[], additive = false) {
+  function select(requested: string[], additive = false) {
+    const ids = requested.map(selectable)
     if (!additive) {
       ctx.setSelectedIds(outermost(ids))
       return
@@ -59,6 +69,7 @@ export function createSelectionActions(ctx: EditorContext) {
 
   const containerActions = createSelectionContainerActions(ctx)
   const hitTestActions = createSelectionHitTestActions(ctx, select, clearSelection)
+  const navigationActions = createSelectionNavigationActions(ctx, select)
   const overlayActions = createSelectionOverlayActions(ctx)
   const readActions = createSelectionReadActions(ctx)
 
@@ -67,6 +78,7 @@ export function createSelectionActions(ctx: EditorContext) {
     clearSelection,
     selectAll,
     selectInverse,
+    ...navigationActions,
     ...overlayActions,
     ...containerActions,
     ...readActions,

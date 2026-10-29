@@ -1,0 +1,1 @@
+- Text changed by AI agents, MCP tools, or scripts to a font that had not loaded yet takes its real size, including text outside auto layout, so exported images match the sizes the agent reads back.

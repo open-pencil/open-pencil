@@ -1,0 +1,1 @@
+- Code in the Code tab that puts statements before its JSX ends them with `return` and the JSX, as a component's body does; the JSX alone on the last line no longer renders.

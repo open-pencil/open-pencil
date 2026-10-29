@@ -1,0 +1,1 @@
+- Scripts can set a polygon or star's `pointCount`, a star's `innerRadius`, and an ellipse's `arcData`, which did nothing before, and saving a document whose gradients a script set no longer fails.

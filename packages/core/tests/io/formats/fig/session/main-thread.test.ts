@@ -5,13 +5,13 @@ import {
   snapshotNodes
 } from '#core-tests/helpers/fig/save-contract'
 
-import { exportFigFile } from '@open-pencil/core/io'
 import {
+  exportFigFile,
   parseFigFile,
   populateFigPage,
   populateAllFigPages
 } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'

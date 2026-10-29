@@ -1,0 +1,1 @@
+- In Safari, the canvas cursor keeps changing after a drag, so resize and rotate cursors show over handles again.

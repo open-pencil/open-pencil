@@ -27,7 +27,7 @@ test('wrapped text keeps its lines after a .fig is saved and reopened (#914)', a
       height: 32,
       fontFamily: 'Inter',
       fontSize: 13,
-      lineHeight: 16,
+      lineHeight: { value: 16, unit: 'PIXELS' },
       textAutoResize: 'HEIGHT',
       fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
     })

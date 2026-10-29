@@ -2,7 +2,12 @@ import type { Canvas, Paint } from 'canvaskit-wasm'
 
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS, PEN_CLOSE_RADIUS_BOOST } from '#core/constants'
+import {
+  PEN_ANCHOR_RADIUS,
+  PEN_CLOSE_RADIUS_BOOST,
+  PEN_HANDLE_RADIUS,
+  PEN_VERTEX_RADIUS
+} from '#core/constants'
 
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 
@@ -99,10 +104,10 @@ function drawPenPaths(
   canvas.drawPath(segPath, r.penPathPaint)
   segPath.delete()
 
-  // 3) Draw cursor preview line with tech outline only
+  // 3) Draw the segment to the cursor in the selection color, as Figma previews the next segment
   const cursorPath = buildCursorPath(r, penState, toScreen)
   if (cursorPath) {
-    canvas.drawPath(cursorPath, r.penPathPaint)
+    canvas.drawPath(cursorPath, r.penVertexStroke)
     cursorPath.delete()
   }
 }
@@ -160,6 +165,27 @@ function drawPenTangentHandles(
   }
 }
 
+/** The pencil stroke as sampled so far, in the colour and width it will be drawn with. */
+export function drawPencilOverlay(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  pencilState: RenderOverlays['pencilState']
+): void {
+  if (!pencilState) return
+  const [first, ...rest] = pencilState.points
+  const path = new r.ck.PathBuilder()
+  path.moveTo(first.x * r.zoom + r.panX, first.y * r.zoom + r.panY)
+  if (rest.length === 0) path.lineTo(first.x * r.zoom + r.panX, first.y * r.zoom + r.panY)
+  for (const point of rest) path.lineTo(point.x * r.zoom + r.panX, point.y * r.zoom + r.panY)
+  const { color, weight } = pencilState.preview
+  const paint = r.pencilStrokePaint
+  paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  paint.setStrokeWidth(weight * r.zoom)
+  const stroke = path.detachAndDelete()
+  canvas.drawPath(stroke, paint)
+  stroke.delete()
+}
+
 export function drawPenOverlay(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -179,13 +205,27 @@ export function drawPenOverlay(
   drawPenPaths(r, canvas, penState, toScreen)
   drawPenTangentHandles(canvas, penState, toScreen, r.penHandlePaint, vertexFill)
 
+  // The point the next segment starts from is solid, as in Figma; the others stay hollow.
+  const anchor = penState.pendingClose ? -1 : vertices.length - 1
   for (let i = 0; i < vertices.length; i++) {
     const v = toScreen(vertices[i].x, vertices[i].y)
+    if (i === anchor) {
+      r.auxFill.setColor(r.selColor())
+      canvas.drawCircle(v.x, v.y, PEN_ANCHOR_RADIUS, r.auxFill)
+      continue
+    }
     const radius =
       i === 0 && penState.closingToFirst
         ? PEN_VERTEX_RADIUS + PEN_CLOSE_RADIUS_BOOST
         : PEN_VERTEX_RADIUS
     canvas.drawCircle(v.x, v.y, radius, vertexFill)
     canvas.drawCircle(v.x, v.y, radius, vertexStroke)
+  }
+
+  // Where the next click puts a point; a snapped cursor shows its cross inside this ring.
+  const { cursorX, cursorY } = penState
+  if (cursorX != null && cursorY != null && !penState.pendingClose && !penState.closingToFirst) {
+    const cursor = toScreen(cursorX, cursorY)
+    canvas.drawCircle(cursor.x, cursor.y, PEN_VERTEX_RADIUS, vertexStroke)
   }
 }

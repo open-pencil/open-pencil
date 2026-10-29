@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import type { PaddingProp } from '@/components/properties/layout/types'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'

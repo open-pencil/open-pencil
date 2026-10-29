@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { HitTestFns } from '#vue/shared/input/select'
@@ -10,7 +10,9 @@ let editor: Editor
 
 afterEach(() => editor.dispose())
 
-function labelHits(hits: Partial<Record<'frame' | 'section' | 'component', SceneNode>>): HitTestFns {
+function labelHits(
+  hits: Partial<Record<'frame' | 'section' | 'component', SceneNode>>
+): HitTestFns {
   return {
     hitTestInScope: () => null,
     isInsideContainerBounds: () => false,

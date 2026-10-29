@@ -7,7 +7,7 @@ import { toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io'
+import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { prepareGraphFonts } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/fig'
 import {

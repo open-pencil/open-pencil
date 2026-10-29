@@ -3,25 +3,25 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-const OracleVector = v.object({ x: v.number(), y: v.number() })
+const oracleVectorSchema = v.object({ x: v.number(), y: v.number() })
 
-const PatternOracleFill = v.object({
+const patternOracleFillSchema = v.object({
   type: v.string(),
   sourceNodeId: v.string(),
   tileType: v.string(),
-  spacing: OracleVector,
+  spacing: oracleVectorSchema,
   horizontalAlignment: v.string(),
   verticalAlignment: v.string()
 })
 
-const EffectOracleResult = v.object({
+const effectOracleResultSchema = v.object({
   ok: v.boolean(),
   effects: v.array(
     v.object({
       type: v.string(),
       noiseType: v.optional(v.string()),
       noiseSize: v.optional(v.number()),
-      noiseSizeVector: v.optional(OracleVector),
+      noiseSizeVector: v.optional(oracleVectorSchema),
       density: v.optional(v.number()),
       opacity: v.optional(v.number()),
       secondaryColor: v.optional(v.unknown())
@@ -29,21 +29,23 @@ const EffectOracleResult = v.object({
   )
 })
 
-const OracleSource = v.object({ id: v.string(), visible: v.boolean() })
+const oracleSourceSchema = v.object({ id: v.string(), visible: v.boolean() })
 
-const PaintOracleJSON = v.pipe(
+const paintOracleSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
     pattern: v.object({
       frame: v.object({ id: v.string() }),
-      source: OracleSource,
-      target: v.object({ fills: v.array(PatternOracleFill) })
+      source: oracleSourceSchema,
+      target: v.object({ fills: v.array(patternOracleFillSchema) })
     }),
     patternAlignment: v.object({
       frame: v.object({ id: v.string() }),
-      source: OracleSource,
-      targets: v.array(v.object({ alignment: v.string(), fills: v.array(PatternOracleFill) })),
+      source: oracleSourceSchema,
+      targets: v.array(
+        v.object({ alignment: v.string(), fills: v.array(patternOracleFillSchema) })
+      ),
       metrics: v.object({ rmseNormalized: v.number(), fuzzDifferentPixels: v.number() }),
       analysis: v.record(
         v.string(),
@@ -57,8 +59,8 @@ const PaintOracleJSON = v.pipe(
       )
     }),
     effects: v.object({
-      noise: v.object({ results: v.record(v.string(), EffectOracleResult) }),
-      textureAndGlass: v.object({ results: v.record(v.string(), EffectOracleResult) })
+      noise: v.object({ results: v.record(v.string(), effectOracleResultSchema) }),
+      textureAndGlass: v.object({ results: v.record(v.string(), effectOracleResultSchema) })
     }),
     pluginRuntimeCreation: v.record(v.string(), v.object({ ok: v.boolean(), message: v.string() })),
     currentFileFillTypes: v.record(v.string(), v.number()),
@@ -69,7 +71,7 @@ const PaintOracleJSON = v.pipe(
 
 function readOracle() {
   return v.parse(
-    PaintOracleJSON,
+    paintOracleSchema,
     readFileSync('tests/fixtures/figma-oracles/pattern-noise-custom-paints.json', 'utf8')
   )
 }

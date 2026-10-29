@@ -1,5 +1,13 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import {
+  assertProxyEditable,
+  graph,
+  raw,
+  type NodeProxyInternals,
+  type ProxyThis
+} from './accessor-utils'
+
 export const OPEN_PENCIL_PLUGIN_DATA_NAMESPACE = 'open-pencil'
 
 type PluginDataEntry = SceneNode['pluginData'][number]
@@ -86,4 +94,49 @@ export function getSharedPluginDataKeys(node: SceneNode, namespace: string): str
     const key = sharedPluginDataKey(entry, namespace)
     return key === null ? [] : [key]
   })
+}
+
+/** Figma's plugin data methods, which every node proxy has. */
+export interface PluginDataMethods {
+  getPluginData(key: string): string
+  setPluginData(key: string, value: string): void
+  getPluginDataKeys(): string[]
+  getSharedPluginData(namespace: string, key: string): string
+  setSharedPluginData(namespace: string, key: string, value: string): void
+  getSharedPluginDataKeys(namespace: string): string[]
+}
+
+export function installPluginDataMethods(prototype: object, internals: NodeProxyInternals): void {
+  const methods: {
+    [K in keyof PluginDataMethods]: (
+      this: ProxyThis,
+      ...args: Parameters<PluginDataMethods[K]>
+    ) => ReturnType<PluginDataMethods[K]>
+  } = {
+    getPluginData(key) {
+      return getPluginData(raw(this, internals), key)
+    },
+    setPluginData(key, value) {
+      assertProxyEditable(this, internals)
+      setPluginData(graph(this, internals), raw(this, internals), key, value)
+    },
+    getPluginDataKeys() {
+      return getPluginDataKeys(raw(this, internals))
+    },
+    getSharedPluginData(namespace, key) {
+      return getSharedPluginData(raw(this, internals), namespace, key)
+    },
+    setSharedPluginData(namespace, key, value) {
+      assertProxyEditable(this, internals)
+      setSharedPluginData(graph(this, internals), raw(this, internals), namespace, key, value)
+    },
+    getSharedPluginDataKeys(namespace) {
+      return getSharedPluginDataKeys(raw(this, internals), namespace)
+    }
+  }
+  // Non-enumerable, as class methods are.
+  Object.defineProperties(
+    prototype,
+    Object.fromEntries(Object.entries(methods).map(([name, value]) => [name, { value }]))
+  )
 }

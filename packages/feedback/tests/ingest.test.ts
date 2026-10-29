@@ -17,7 +17,7 @@ const BATCH: UsageBatch = {
   ]
 }
 
-const PostHogBody = v.pipe(
+const postHogBodySchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -59,7 +59,7 @@ describe('ingest', () => {
     const [call] = service.fetchCalls
     expect(call.url).toBe('https://eu.i.posthog.com/batch/')
     expect(call.init?.headers).toEqual({ 'Content-Type': 'application/json' })
-    const body = v.parse(PostHogBody, call.init?.body)
+    const body = v.parse(postHogBodySchema, call.init?.body)
     expect(body.api_key).toBe('phc_test')
     expect(body.batch).toEqual([
       {

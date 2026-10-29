@@ -1,0 +1,1 @@
+- Dragging a selected connector's segment, curve, or label reroutes it as FigJam does, and `.fig` files and the Figma clipboard keep those routes and label places.

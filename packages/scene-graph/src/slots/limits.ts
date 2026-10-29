@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
 
 /** A limit a slot's content breaks, named as Figma's `SlotNode.limitViolations` names them. */

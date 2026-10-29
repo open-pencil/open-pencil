@@ -1,8 +1,22 @@
-import type { NodeChange, VariableDataValuesEntry } from '@open-pencil/kiwi/fig/codec'
+import * as v from 'valibot'
+
+import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
+import type {
+  SceneGraph,
+  VariableFormulaNode,
+  VariableValue,
+  VariableColorExpression
+} from '@open-pencil/scene-graph'
+import {
+  variableFormulaSchema,
+  variableColorExpressionSchema,
+  inferFormulaType,
+  MAX_FORMULA_DEPTH
+} from '@open-pencil/scene-graph/variables'
 
 import { extractPluginData } from '../node-change/plugin-data'
+import { formulaOperatorOfFigmaFunction } from '../node-change/variable/formula'
 import { readVariableMetadata } from '../node-change/variable/metadata'
 import {
   readModeAttribute,
@@ -10,13 +24,27 @@ import {
   readVariableToken,
   withoutTokenPluginData
 } from '../node-change/variable/token'
+import { mapUnsupportedExpressionReferences } from '../node-change/variable/unsupported'
 import { createResourceResolver } from './resource-reference'
 
+export interface UnsupportedVariableExpressionDiagnostic {
+  sourceId: string
+  modeId: string
+  reason: 'unsupported-variable-expression'
+}
+type ExpressionReporter = (diagnostic: UnsupportedVariableExpressionDiagnostic) => void
+
+class UnsupportedExpressionError extends Error {
+  override name = 'UnsupportedExpressionError'
+}
+
 function valueOf(
-  entry: VariableDataValuesEntry,
-  resolve: ReturnType<typeof createResourceResolver>
+  entry: VariableDataEntry,
+  resolve: ReturnType<typeof createResourceResolver>,
+  depth = 0
 ): VariableValue {
-  const { value, dataType, resolvedDataType } = entry.variableData
+  if (depth > MAX_FORMULA_DEPTH) throw new Error('Variable expression is too deeply nested')
+  const { value, dataType, resolvedDataType } = entry
   if (!value) throw new Error('Missing variable value')
   const type = dataType ?? resolvedDataType
   if (type === 'ALIAS') {
@@ -28,13 +56,87 @@ function valueOf(
   if (type === 'BOOLEAN' && value.boolValue !== undefined) return value.boolValue
   if (type === 'STRING' && value.textValue !== undefined) return value.textValue
   if (type === 'FLOAT' && value.floatValue !== undefined) return value.floatValue
+  if (type === 'EXPRESSION') return expressionValue(entry, resolve, depth)
   throw new Error(`Unsupported variable value ${type}`)
+}
+
+function expressionValue(
+  entry: VariableDataEntry,
+  resolve: ReturnType<typeof createResourceResolver>,
+  depth: number
+): VariableValue {
+  const value = entry.value
+  if (!value) throw new Error('Missing expression')
+  if (value.expressionValue?.expressionFunction === 'COMPOSE_COLOR')
+    return colorExpression(entry, resolve)
+  const expression = value.expressionValue
+  const operator = formulaOperatorOfFigmaFunction(expression?.expressionFunction)
+  if (!operator) {
+    if (!expression?.expressionFunction) throw new Error('Missing variable expression function')
+    throw new UnsupportedExpressionError(
+      `Unsupported variable expression ${expression.expressionFunction}`
+    )
+  }
+  const operands = (expression?.expressionArguments ?? []).map((arg) => {
+    // A formula needs every variable it uses; one the document lacks keeps the file's tree.
+    if ((arg.dataType ?? arg.resolvedDataType) === 'ALIAS' && !resolve(arg.value?.alias))
+      throw new UnsupportedExpressionError(`${operator} uses a variable this document lacks`)
+    return formulaOperand(valueOf(arg, resolve, depth + 1))
+  })
+  const node = { operator, operands }
+  // Figma writes the result type; a formula of references alone would otherwise leave it open.
+  const written = v.safeParse(
+    v.picklist(['FLOAT', 'BOOLEAN', 'STRING', 'COLOR']),
+    entry.resolvedDataType
+  )
+  const formula = v.safeParse(variableFormulaSchema, {
+    expression: 'FORMULA',
+    type: written.success ? written.output : inferredType(node),
+    value: node
+  })
+  // Operands Figma itself would not resolve are kept as written rather than refused.
+  if (!formula.success) throw new UnsupportedExpressionError(`Invalid ${operator} expression`)
+  return formula.output
+}
+
+function inferredType(node: VariableFormulaNode) {
+  try {
+    return inferFormulaType(node)
+  } catch {
+    return undefined
+  }
+}
+
+/** An operand as a formula holds it; a color expression inside a formula is not one it can. */
+function formulaOperand(operand: VariableValue): VariableFormulaNode {
+  if (typeof operand !== 'object' || !('expression' in operand)) return operand
+  if (operand.expression === 'FORMULA') return operand.value
+  throw new UnsupportedExpressionError(`Unsupported nested ${operand.expression} expression`)
+}
+
+function colorExpression(
+  entry: VariableDataEntry,
+  resolve: ReturnType<typeof createResourceResolver>
+): VariableColorExpression {
+  const expression = entry.value?.expressionValue
+  const args = expression?.expressionArguments
+  if (expression?.expressionFunction !== 'COMPOSE_COLOR' || args?.length !== 2)
+    throw new UnsupportedExpressionError(
+      `Unsupported variable expression ${expression?.expressionFunction}`
+    )
+  // Only literal or alias operands are supported; other functions must not be flattened.
+  if (args.some((arg) => arg.dataType === 'EXPRESSION'))
+    throw new UnsupportedExpressionError('Unsupported nested color expression')
+  const color = valueOf(args[0], resolve)
+  const opacity = valueOf(args[1], resolve)
+  return v.parse(variableColorExpressionSchema, { expression: 'COMPOSE_COLOR', color, opacity })
 }
 
 function modeValues(
   resource: NodeChange,
   modes: readonly string[],
-  resolve: ReturnType<typeof createResourceResolver>
+  resolve: ReturnType<typeof createResourceResolver>,
+  onUnsupportedExpression?: ExpressionReporter
 ): Record<string, VariableValue> {
   const entries = resource.variableDataValues?.entries ?? []
   if (!entries.length) throw new Error('Missing mode values')
@@ -42,7 +144,46 @@ function modeValues(
   for (const entry of entries) {
     const modeId = guidToString(entry.modeID)
     if (!modes.includes(modeId)) throw new Error('Unknown mode')
-    values[modeId] = valueOf(entry, resolve)
+    let value: VariableValue
+    try {
+      value = valueOf(entry.variableData, resolve)
+    } catch (error) {
+      if (!(error instanceof UnsupportedExpressionError) || !onUnsupportedExpression) throw error
+      const data = structuredClone(entry.variableData)
+      const references: (string | null)[] = []
+      const modeKeys: string[] = []
+      mapUnsupportedExpressionReferences(
+        data,
+        (reference) => {
+          references.push(resolve(reference) ?? null)
+          return undefined
+        },
+        (guid) => {
+          modeKeys.push(guidToString(guid))
+          return guid
+        }
+      )
+      value = {
+        expression: 'UNSUPPORTED',
+        function: data.value?.expressionValue?.expressionFunction ?? '',
+        value: { ...data },
+        references,
+        modes: modeKeys
+      }
+      onUnsupportedExpression({
+        sourceId: resource.guid ? guidToString(resource.guid) : '',
+        modeId,
+        reason: 'unsupported-variable-expression'
+      })
+    }
+    if (
+      typeof value === 'object' &&
+      'expression' in value &&
+      value.expression === 'FORMULA' &&
+      value.type !== resource.variableResolvedType
+    )
+      throw new Error(`Expression result type does not match ${resource.variableResolvedType}`)
+    values[modeId] = value
   }
   return values
 }
@@ -51,7 +192,8 @@ function modeValues(
 export function materializeVariableResources(
   graph: SceneGraph,
   resources: readonly NodeChange[],
-  onUnsupported?: (resource: NodeChange) => void
+  onUnsupported?: (resource: NodeChange) => void,
+  onUnsupportedExpression?: ExpressionReporter
 ): void {
   const report = (resource: NodeChange, reason: string): void => {
     if (!onUnsupported) throw new Error(`Unsupported document resource ${resource.type}: ${reason}`)
@@ -86,13 +228,14 @@ export function materializeVariableResources(
       version: typeof resource.version === 'string' ? resource.version : undefined
     })
   }
-  addVariables(graph, resources, report)
+  addVariables(graph, resources, report, onUnsupportedExpression)
 }
 
 function addVariables(
   graph: SceneGraph,
   resources: readonly NodeChange[],
-  report: (resource: NodeChange, reason: string) => void
+  report: (resource: NodeChange, reason: string) => void,
+  onUnsupportedExpression?: ExpressionReporter
 ): void {
   const resolve = createResourceResolver(resources)
   for (const resource of resources) {
@@ -118,7 +261,8 @@ function addVariables(
         modeValues(
           resource,
           collection.modes.map((mode) => mode.modeId),
-          resolve
+          resolve,
+          onUnsupportedExpression
         )
       )
     } catch (error) {

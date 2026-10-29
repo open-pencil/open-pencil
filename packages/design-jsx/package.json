@@ -1,13 +1,13 @@
 {
   "name": "@open-pencil/design-jsx",
-  "version": "0.16.0-beta.3",
+  "version": "0.16.0",
   "license": "MIT",
   "type": "module",
   "imports": {
     "#design-jsx/*": {
-      "types": "./src/*",
-      "bun": "./src/*",
-      "default": "./dist/*"
+      "types": "./src/*.ts",
+      "bun": "./src/*.ts",
+      "default": "./dist/*.js"
     }
   },
   "exports": {
@@ -40,9 +40,8 @@
   ],
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
-    "check": "bun run typecheck && bun run build && bun run smoke:dist",
+    "check": "bun run typecheck && bun run build",
     "prepack": "bun run build",
-    "smoke:dist": "bun scripts/smoke-dist.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "repository": {

@@ -3,28 +3,34 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import { nodeChangeToProps, sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type MaskType } from '@open-pencil/scene-graph'
 
-import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
-
 const MASK_TYPE_VALUES = ['ALPHA', 'VECTOR', 'LUMINANCE'] as const satisfies readonly MaskType[]
 
-const MaskOracleEntry = v.object({ isMask: v.boolean(), maskType: v.picklist(MASK_TYPE_VALUES) })
+const maskOracleEntrySchema = v.object({
+  isMask: v.boolean(),
+  maskType: v.picklist(MASK_TYPE_VALUES)
+})
 
-const MaskOracleJSON = v.pipe(
+const maskOracleSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
-    masks: v.array(MaskOracleEntry),
-    nested: v.object({ children: v.array(MaskOracleEntry) }),
+    masks: v.array(maskOracleEntrySchema),
+    nested: v.object({ children: v.array(maskOracleEntrySchema) }),
     maskIsOutline: v.object({ pluginApiReadable: v.boolean(), note: v.string() })
   })
 )
 
 function readOracle() {
-  return v.parse(MaskOracleJSON, readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8'))
+  return v.parse(maskOracleSchema, readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8'))
+}
+
+/** The plugin API reports a vector mask as VECTOR. The .fig MaskType enum stores it as OUTLINE. */
+function kiwiMaskType(maskType: (typeof MASK_TYPE_VALUES)[number]) {
+  return maskType === 'VECTOR' ? 'OUTLINE' : maskType
 }
 
 describe('Figma mask oracle', () => {
@@ -33,7 +39,11 @@ describe('Figma mask oracle', () => {
 
     for (const mask of oracle.masks) {
       const props = nodeChangeToProps(
-        { type: 'RECTANGLE', mask: mask.isMask, maskType: mask.maskType } as NodeChange,
+        {
+          type: 'RECTANGLE',
+          mask: mask.isMask,
+          maskType: kiwiMaskType(mask.maskType)
+        } as NodeChange,
         []
       )
 
@@ -62,7 +72,7 @@ describe('Figma mask oracle', () => {
       )
 
       expect(changes[0].mask).toBe(true)
-      expect(changes[0].maskType).toBe(mask.maskType)
+      expect(changes[0].maskType).toBe(kiwiMaskType(mask.maskType))
     }
   })
 

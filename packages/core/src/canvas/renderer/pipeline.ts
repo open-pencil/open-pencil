@@ -14,11 +14,12 @@ import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-b
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
-  r: Pick<SkiaRenderer, 'worldViewport' | 'viewportImageRendering' | 'renderNode'>,
+  r: Pick<SkiaRenderer, 'worldViewport' | 'viewportImageRendering' | 'renderNode' | 'nodePaths'>,
   canvas: Canvas,
   graph: SceneGraph,
   pageId: string
 ): void {
+  r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
   r.viewportImageRendering = false
@@ -76,6 +77,7 @@ export function renderFromEditorState(
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
+  r.readOnly = state.readOnly
   // A previewing canvas shows the design as it runs: no selection, hover, or edit chrome.
   const previewing = state.play !== null
   render(
@@ -106,12 +108,14 @@ export function renderFromEditorState(
             cursorY: state.penCursorY ?? undefined
           } as RenderOverlays['penState'])
         : null,
+      pencilState: state.pencilState,
       nodeEditState: state.nodeEditState ?? null,
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,
       codeFocusNodeId: state.codeFocusNodeId,
       autoLayoutHover: state.autoLayoutHover,
-      shapeHandleHover: state.shapeHandleHover
+      shapeHandleHover: state.shapeHandleHover,
+      connectorTarget: state.connectorTarget
     },
     // Recorded pictures follow what the canvas draws, not every document change.
     state.canvasVersion,
@@ -206,6 +210,7 @@ function drawAboveScene(
   canvas.save()
   canvas.scale(r.dpr, r.dpr)
   r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
+  r.statusLabels = []
   if (!overlays.playing) drawLabelPass(r, canvas, graph, selectedIds, overlays)
   canvas.restore()
 
@@ -233,6 +238,7 @@ export function render(
     zoom: r.zoom
   })
   r.syncFontGeneration()
+  r.nodePaths.releaseUncached()
   const p = r.profiler
   p.beginFrame()
   p.setScenePictureDrawTime(0)

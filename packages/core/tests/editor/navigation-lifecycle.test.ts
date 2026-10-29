@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 describe('navigation lifecycle', () => {
   test('increments generation when a new gesture starts but not during one gesture', () => {

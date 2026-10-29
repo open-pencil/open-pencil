@@ -11,7 +11,7 @@ export interface SharingState {
   lastPingDay: string | null
 }
 
-const SharingStateSchema = v.object({
+const sharingStateSchema = v.object({
   installId: v.fallback(v.nullable(v.pipe(v.string(), v.regex(/^[0-9a-f]{32}$/))), null),
   lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null)
 })
@@ -22,7 +22,7 @@ export const sharingState = useLocalStorage<SharingState>(
   {
     mergeDefaults: (stored) =>
       v.parse(
-        v.fallback(SharingStateSchema, () => v.parse(SharingStateSchema, {})),
+        v.fallback(sharingStateSchema, () => v.parse(sharingStateSchema, {})),
         stored
       )
   }

@@ -1,35 +1,3 @@
-import {
-  DEFAULT_STROKE_WEIGHT,
-  normalizeFontFamily,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData
-} from '@open-pencil/scene-graph'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-
-import { effectiveFigmaRawNodeFields } from '../source-metadata'
-import { computeExportTransform, mapToFigmaType } from './basics'
-import { buildNodeDerivedTextData } from './derived-text/build'
-import { fillsOwnSizingAxis } from './export/fill-sizing'
-import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
-import { applyFontFeaturesToKiwi } from './font/features'
-import { weightToFigmaStyle } from './font/style'
-import { fillToKiwiPaint, safeColor } from './paint'
-import {
-  exportedVariableConsumptionEntries,
-  mergeVariableConsumptionMaps
-} from './variable/bindings'
-import {
-  buildStyleOverrideTable,
-  encodeVectorNetworkBlob,
-  type StyleOverride
-} from './vector/network'
-
-export {
-  buildFigKiwi,
-  decompressFigKiwiDataAsync,
-  FIG_KIWI_DEFAULT_VERSION,
-  parseFigKiwiChunks
-} from '@open-pencil/kiwi/fig/container'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
@@ -38,17 +6,38 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
+import { DEFAULT_STROKE_WEIGHT } from '@open-pencil/scene-graph/constants'
+import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, JSONObject } from '@open-pencil/scene-graph/primitives'
 
+import { effectiveFigmaRawNodeFields } from '../source-metadata'
+import { computeExportTransform, mapToFigmaType } from './basics'
+import { buildNodeDerivedTextData } from './derived-text/build'
+import { fillsOwnSizingAxis } from './export/fill-sizing'
 import {
   buildAssetRefToVarGuidMap,
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
 } from './export/node'
+import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
+import { applyFontFeaturesToKiwi } from './font/features'
+import { weightToFigmaStyle } from './font/style'
+import { fillToKiwiPaint, safeColor } from './paint'
 import { exportTextData, fontVariationToKiwi } from './text/data-export'
-import { FIGMA_AUTO_LINE_HEIGHT } from './text/values'
+import { figmaLetterSpacing, figmaLineHeight } from './text/values'
+import {
+  exportedVariableConsumptionEntries,
+  mergeVariableConsumptionMaps
+} from './variable/bindings'
 import { toKiwiWindingRule } from './vector/geometry'
+import {
+  buildStyleOverrideTable,
+  encodeVectorNetworkBlob,
+  type StyleOverride
+} from './vector/network'
 
 function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
   const anyIndividual =
@@ -112,6 +101,7 @@ function serializeTextProps(
   if (node.fontVariations.length > 0) {
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
+  if (!node.opticalSizeFromFontSize) nc.detachOpticalSizeFromFontSize = true
   const autoResize = node.textAutoResize
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
   if (!node.source.id || autoResize !== 'NONE' || 'textAutoResize' in rawNodeFields) {
@@ -127,7 +117,8 @@ function serializeTextProps(
   nc.fontVariantContextualLigatures = true
   applyFontFeaturesToKiwi(nc, node.fontFeatures)
   nc.fontVersion = ''
-  nc.emojiImageSet = 'APPLE'
+  // FigJam text draws Noto emoji; a file's own set is replayed from its raw fields.
+  if (!('emojiImageSet' in rawNodeFields)) nc.emojiImageSet = 'APPLE'
   if (node.textCase !== 'ORIGINAL') nc.textCase = node.textCase
   if (node.textTruncation === 'ENDING') nc.textTruncation = 'ENDING'
   if (node.maxLines != null) nc.maxLines = node.maxLines
@@ -142,11 +133,8 @@ function serializeTextProps(
     })
   }
   if (node.leadingTrim !== 'NONE') nc.leadingTrim = node.leadingTrim
-  nc.lineHeight =
-    node.lineHeight === null
-      ? { ...FIGMA_AUTO_LINE_HEIGHT }
-      : { value: node.lineHeight, units: 'PIXELS' }
-  nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
+  nc.lineHeight = figmaLineHeight(node.lineHeight)
+  nc.letterSpacing = figmaLetterSpacing(node.letterSpacing)
   if (node.textDecoration !== 'NONE') {
     nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
   }
@@ -370,7 +358,8 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
 function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
   if (node.isMask) {
     nc.mask = true
-    nc.maskType = node.maskType
+    // Figma's MaskType names a vector mask OUTLINE. ALPHA and LUMINANCE already match.
+    nc.maskType = node.maskType === 'VECTOR' ? 'OUTLINE' : node.maskType
     if (node.maskIsOutline) nc.maskIsOutline = true
   }
 

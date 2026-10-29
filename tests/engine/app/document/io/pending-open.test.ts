@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
-import { localeSetting } from '@open-pencil/vue'
+import { localeSetting } from '@open-pencil/vue/i18n'
 
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'

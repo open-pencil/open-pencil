@@ -30,6 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          # A pull request's merge commit and its parents; the first parent is the base it merges into.
+          fetch-depth: 2
           persist-credentials: false
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -92,7 +94,7 @@ jobs:
   source-quality:
     name: Code quality
     needs: changes
-    if: needs.changes.outputs.scope == 'code'
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -120,10 +122,13 @@ jobs:
       - name: Enforce architecture and type-shape boundaries
         run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
 
+      - name: Build the editor without Cloud
+        run: bun run check:cloud-off
+
   package-quality:
     name: Package integrity
     needs: changes
-    if: needs.changes.outputs.scope == 'code'
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -155,7 +160,7 @@ jobs:
   repository-quality:
     name: Repository hygiene
     needs: changes
-    if: needs.changes.outputs.scope == 'code'
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -192,7 +197,7 @@ jobs:
   storybook:
     name: Component workshop
     needs: changes
-    if: needs.changes.outputs.scope == 'code'
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -211,7 +216,7 @@ jobs:
   native-test-contracts:
     name: Native app contracts
     needs: changes
-    if: needs.changes.outputs.scope == 'code'
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 8
     runs-on: ubuntu-24.04
     container:
@@ -244,7 +249,7 @@ jobs:
 
   unit-tests:
     needs: changes
-    if: needs.changes.outputs.scope == 'code'
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     strategy:
@@ -272,7 +277,7 @@ jobs:
   feedback-tests:
     name: Feedback service
     needs: changes
-    if: needs.changes.outputs.scope == 'code'
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -285,9 +290,79 @@ jobs:
       - name: Typecheck and test the feedback Worker against a local D1
         run: bun run test:feedback
 
+  cloud-tests:
+    name: Cloud package
+    needs: changes
+    if: needs.changes.outputs.scope == 'cloud'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Generate package declarations
+        run: bun run build:packages
+
+      - name: Typecheck and run Cloud unit and integration tests
+        run: bun run test:cloud
+
+  cloud-storage:
+    name: Cloud storage — ${{ matrix.store }}
+    needs: changes
+    if: needs.changes.outputs.scope == 'cloud'
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # PostgreSQL and SeaweedFS: object-store checks, then the full revision flow.
+          - store: SeaweedFS
+            script: test:e2e
+          # Garage's S3 compatibility for the object-store checks.
+          - store: Garage
+            script: test:e2e:garage
+          # The Cloudflare Worker under wrangler dev, with its relay Durable Object, against
+          # PostgreSQL and SeaweedFS.
+          - store: Cloudflare Workers
+            script: test:e2e:cloudflare
+            worker: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Generate package declarations
+        run: bun run build:packages
+
+      # The editor's demo document draws its shader fills at build time in a headless Chromium.
+      - name: Install Chromium for the demo document
+        if: matrix.worker
+        uses: ./.github/actions/setup-playwright
+
+      # The Worker serves the editor and the portal as static assets, and every official
+      # deployment bundles them.
+      - name: Build the Cloud site and bundle the official Workers
+        if: matrix.worker
+        run: |
+          bun run build:cloud
+          for deployment in packages/cloud/deploy/openpencil/*/; do
+            (cd "$deployment" && bunx wrangler deploy --dry-run --assets "$GITHUB_WORKSPACE/dist-cloud")
+          done
+
+      - name: Run Cloud end-to-end tests against ${{ matrix.store }}
+        env:
+          CLOUD_E2E_SCRIPT: ${{ matrix.script }}
+        run: bun --filter @open-pencil/cloud "$CLOUD_E2E_SCRIPT"
+
   result:
     name: CI result
-    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, unit-tests, feedback-tests]
+    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, unit-tests, feedback-tests, cloud-tests, cloud-storage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3

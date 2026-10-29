@@ -20,10 +20,10 @@ import {
 } from '#core/geometry'
 
 /**
- * The selected rectangle's, polygon's, or star's handles while the pointer is over it: white
- * circles the size of the resize handles with a border in the selection colour, dotted when a drag
- * changes one corner, and a label such as "Radius 12" by the pointer for the handle in use, as in
- * Figma desktop.
+ * The selected rectangle's, polygon's, star's, or ellipse's handles while the pointer is over it:
+ * white circles the size of the resize handles with a border in the selection colour, dotted when
+ * a drag changes one corner and on an arc's start, and a label such as "Radius 12" by the pointer
+ * for the handle in use, as in Figma desktop.
  */
 export function drawShapeHandles(
   r: SkiaRenderer,
@@ -45,11 +45,11 @@ export function drawShapeHandles(
   border.setPathEffect(null)
   border.setStrokeWidth(1)
   border.setColor(color)
-  for (const { point } of handles) {
+  for (const { handle, point } of handles) {
     fill.setColor(r.ck.WHITE)
     canvas.drawCircle(point.x, point.y, HANDLE_HALF_SIZE, fill)
     canvas.drawCircle(point.x, point.y, HANDLE_HALF_SIZE, border)
-    if (!hover.single) continue
+    if (!hover.single && handle !== 'arcStart') continue
     fill.setColor(color)
     canvas.drawCircle(point.x, point.y, SHAPE_HANDLE.dotRadius, fill)
   }

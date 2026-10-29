@@ -1,176 +1,292 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
+import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { mapUpdate } from '@/app/ai/acp/map-update'
-import { formatConnectionError, buildCrashChunks } from '@/app/ai/acp/transport'
+import { createUpdateMapper } from '@/app/ai/agents/acp/events'
+import { agentTurnUsage, buildCrashChunks, formatConnectionError } from '@/app/ai/transports/acp'
+import { classifyToolState } from '@/components/chat/tool/state'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 const TEXT_ID = 'text-1'
 
-describe('mapUpdate', () => {
-  test('agent_message_chunk with non-empty text starts text and emits delta', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'agent_message_chunk',
-      content: { type: 'text', text: 'Hello' }
+/** The message the chat builds from one turn's updates, as the transport streams them. */
+async function transcript(updates: SessionUpdate[]): Promise<UIMessage['parts']> {
+  const mapper = createUpdateMapper('turn')
+  const chunks: UIMessageChunk[] = [{ type: 'start' }, { type: 'start-step' }]
+  for (const update of updates) chunks.push(...mapper.map(update))
+  chunks.push(...mapper.end(), { type: 'finish-step' }, { type: 'finish', finishReason: 'stop' })
+  const stream = new ReadableStream<UIMessageChunk>({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(chunk)
+      controller.close()
     }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.textStarted).toBe(true)
-    expect(result.chunks).toEqual([
-      { type: 'text-start', id: TEXT_ID },
-      { type: 'text-delta', id: TEXT_ID, delta: 'Hello' }
+  })
+  let message: UIMessage | undefined
+  for await (const next of readUIMessageStream({ stream })) message = next
+  return (message?.parts ?? []).filter((part) => part.type !== 'step-start')
+}
+
+function text(value: string): SessionUpdate {
+  return { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: value } }
+}
+
+function thought(value: string): SessionUpdate {
+  return { sessionUpdate: 'agent_thought_chunk', content: { type: 'text', text: value } }
+}
+
+function shown(part: UIMessage['parts'][number]) {
+  if (!('toolCallId' in part)) return null
+  const output = 'output' in part ? part.output : undefined
+  return {
+    type: part.type,
+    input: part.input,
+    state: classifyToolState({ toolName: part.type.slice(5), state: part.state, output }),
+    output,
+    errorText: 'errorText' in part ? part.errorText : undefined
+  }
+}
+
+/** Codex reports an MCP call titled by server and tool, with them and the arguments as input. */
+function codexCall(server: string, tool: string, args: unknown, id = 'call-1'): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call',
+    toolCallId: id,
+    title: `mcp.${server}.${tool}`,
+    kind: 'execute',
+    status: 'in_progress',
+    rawInput: { server, tool, arguments: args }
+  }
+}
+
+function codexDone(result: unknown, error: unknown = null, id = 'call-1'): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call_update',
+    toolCallId: id,
+    status: error ? 'failed' : 'completed',
+    rawOutput: { result, error }
+  }
+}
+
+function mcpText(value: unknown, isError?: boolean) {
+  return {
+    content: [{ type: 'text', text: JSON.stringify(value) }],
+    structuredContent: null,
+    ...(isError ? { isError } : {})
+  }
+}
+
+describe('an ACP turn in the chat', () => {
+  test('text forms one part until something else comes between', async () => {
+    const parts = await transcript([
+      text('I’ll inspect '),
+      text('the page.'),
+      codexCall('open-pencil', 'get_page_tree', {}),
+      codexDone(mcpText({ children: [] })),
+      text('Done.')
+    ])
+    expect(parts.filter((part) => part.type === 'text').map((part) => part.text)).toEqual([
+      'I’ll inspect the page.',
+      'Done.'
     ])
   })
 
-  test('agent_message_chunk with empty text is skipped', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'agent_message_chunk',
-      content: { type: 'text', text: '' }
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.textStarted).toBe(false)
-    expect(result.chunks).toEqual([])
+  test('a run of thoughts shows as one reasoning part', async () => {
+    const parts = await transcript([thought('Plan'), thought(' the grid'), text('Building it.')])
+    expect(parts.map((part) => part.type)).toEqual(['reasoning', 'text'])
+    expect(parts[0]).toMatchObject({ text: 'Plan the grid' })
   })
 
-  test('subsequent agent_message_chunk does not re-emit text-start', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'agent_message_chunk',
-      content: { type: 'text', text: 'world' }
-    }
-    const result = mapUpdate(update, TEXT_ID, true)
-    expect(result.textStarted).toBe(true)
-    expect(result.chunks).toEqual([{ type: 'text-delta', id: TEXT_ID, delta: 'world' }])
-  })
-
-  test('agent_thought_chunk emits reasoning start/delta/end', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'agent_thought_chunk',
-      content: { type: 'text', text: 'thinking...' }
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toHaveLength(3)
-    expect(result.chunks[0].type).toBe('reasoning-start')
-    expect(result.chunks[1]).toEqual({
-      type: 'reasoning-delta',
-      id: `reasoning-${TEXT_ID}`,
-      delta: 'thinking...'
+  test('OpenPencil’s own tools show as the built-in chat’s, with their arguments and result', async () => {
+    const [call] = await transcript([
+      codexCall('open-pencil', 'render', { jsx: '<Frame name="Calendar" />' }),
+      codexDone(mcpText({ id: '1:2', name: 'Calendar' }))
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-render',
+      input: { jsx: '<Frame name="Calendar" />' },
+      state: 'done',
+      output: { id: '1:2', name: 'Calendar' }
     })
-    expect(result.chunks[2].type).toBe('reasoning-end')
   })
 
-  test('tool_call emits tool-input-start', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'tool_call',
-      toolCallId: 'tc-1',
-      title: 'create_shape',
-      kind: 'edit',
-      status: 'pending'
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toEqual([
-      {
-        type: 'tool-input-start',
-        toolCallId: 'tc-1',
-        toolName: 'create_shape',
-        providerExecuted: true,
-        title: 'create_shape'
-      }
+  test('an exported image is passed on as the built-in chat holds it', async () => {
+    const [call] = await transcript([
+      codexCall('open-pencil', 'export_image', { ids: ['1:2'] }),
+      codexDone({ content: [{ type: 'image', data: 'iVBORw0KGgo=', mimeType: 'image/png' }] })
     ])
-  })
-
-  test('tool_call with rawInput emits tool-input-available', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'tool_call',
-      toolCallId: 'tc-2',
-      title: 'set_fill',
-      kind: 'edit',
-      status: 'pending',
-      rawInput: { id: '1:2', color: '#ff0000' }
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toHaveLength(2)
-    expect(result.chunks[1]).toEqual({
-      type: 'tool-input-available',
-      toolCallId: 'tc-2',
-      toolName: 'set_fill',
-      input: { id: '1:2', color: '#ff0000' },
-      providerExecuted: true,
-      title: 'set_fill'
+    expect(shown(expectDefined(call, 'tool part'))?.output).toEqual({
+      base64: 'iVBORw0KGgo=',
+      mimeType: 'image/png'
     })
   })
 
-  test('tool_call with empty title falls back to "unknown"', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'tool_call',
-      toolCallId: 'tc-3',
-      title: '',
-      kind: 'other',
-      status: 'pending'
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks[0]).toMatchObject({ toolName: 'unknown' })
-  })
-
-  test('tool_call_update completed emits tool-output-available', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'tool_call_update',
-      toolCallId: 'tc-1',
-      status: 'completed',
-      rawOutput: { id: '1:5', type: 'RECTANGLE' }
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toEqual([
-      {
-        type: 'tool-output-available',
-        toolCallId: 'tc-1',
-        output: { id: '1:5', type: 'RECTANGLE' },
-        providerExecuted: true
-      }
+  test('a tool error shows as a failed call with the tool’s message', async () => {
+    const parts = await transcript([
+      codexCall('open-pencil', 'describe', { id: '9:9' }, 'a'),
+      codexDone(mcpText({ error: 'Node 9:9 not found' }, true), null, 'a'),
+      codexCall('open-pencil', 'describe', { id: '9:9' }, 'b'),
+      codexDone(null, { message: 'tool call timed out' }, 'b')
+    ])
+    expect(parts.map((part) => shown(part))).toMatchObject([
+      { state: 'error', errorText: 'Node 9:9 not found' },
+      { state: 'error', errorText: 'tool call timed out' }
     ])
   })
 
-  test('tool_call_update failed emits tool-output-error', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'tool_call_update',
-      toolCallId: 'tc-1',
-      status: 'failed',
-      content: [{ type: 'content', content: { type: 'text', text: 'Node not found' } }]
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toEqual([
+  test('another server’s tools keep the MCP name and result', async () => {
+    const result = mcpText({ url: 'https://example.com' })
+    const [call] = await transcript([
+      codexCall('playwriter', 'execute', { code: 'page.url()' }),
+      codexDone(result)
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-mcp__playwriter__execute',
+      input: { code: 'page.url()' },
+      state: 'done',
+      output: result
+    })
+  })
+
+  test('Claude’s calls to OpenPencil’s tools show the same way, input arriving later', async () => {
+    const meta = { claudeCode: { toolName: 'mcp__open-pencil__render' } }
+    const [call] = await transcript([
       {
-        type: 'tool-output-error',
-        toolCallId: 'tc-1',
-        errorText: 'Node not found',
-        providerExecuted: true
+        sessionUpdate: 'tool_call',
+        toolCallId: 'toolu_1',
+        title: 'render',
+        kind: 'other',
+        status: 'pending',
+        rawInput: {},
+        _meta: meta
+      },
+      {
+        sessionUpdate: 'tool_call_update',
+        toolCallId: 'toolu_1',
+        rawInput: { jsx: '<Frame />' },
+        _meta: meta
+      },
+      {
+        sessionUpdate: 'tool_call_update',
+        toolCallId: 'toolu_1',
+        status: 'completed',
+        rawOutput: [{ type: 'text', text: JSON.stringify({ id: '1:3' }) }],
+        _meta: meta
       }
     ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-render',
+      input: { jsx: '<Frame />' },
+      state: 'done',
+      output: { id: '1:3' }
+    })
   })
 
-  test('agent_message_chunk with non-text content produces no chunks', () => {
-    const update: SessionUpdate = {
-      sessionUpdate: 'agent_message_chunk',
-      content: {
-        type: 'image',
-        mimeType: 'image/png',
-        data: '',
-        uri: 'https://example.com/img.png'
+  test('an agent’s own tools keep its title and output', async () => {
+    const [call] = await transcript([
+      {
+        sessionUpdate: 'tool_call',
+        toolCallId: 'sh-1',
+        title: 'Run ls',
+        kind: 'execute',
+        status: 'in_progress',
+        rawInput: { command: 'ls' }
+      },
+      {
+        sessionUpdate: 'tool_call_update',
+        toolCallId: 'sh-1',
+        status: 'failed',
+        content: [{ type: 'content', content: { type: 'text', text: 'Permission denied' } }]
       }
-    }
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.textStarted).toBe(false)
-    expect(result.chunks).toEqual([])
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-Run ls',
+      state: 'error',
+      errorText: 'Permission denied'
+    })
   })
 
-  test('unhandled update type produces no chunks', () => {
-    const update = {
-      sessionUpdate: 'available_commands_update',
-      availableCommands: []
-    } as SessionUpdate
-    const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toEqual([])
-    expect(result.textStarted).toBe(false)
+  test('a tool_call that arrives already failed ends with its error', async () => {
+    const [call] = await transcript([
+      {
+        sessionUpdate: 'tool_call',
+        toolCallId: 'mcp_startup.open-pencil',
+        title: 'mcp__open-pencil__startup',
+        kind: 'other',
+        status: 'failed',
+        content: [{ type: 'content', content: { type: 'text', text: 'failed to start' } }]
+      }
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      state: 'error',
+      errorText: 'failed to start'
+    })
+  })
+
+  test('non-text content and other updates add nothing', async () => {
+    const parts = await transcript([
+      {
+        sessionUpdate: 'agent_message_chunk',
+        content: {
+          type: 'image',
+          mimeType: 'image/png',
+          data: '',
+          uri: 'https://example.com/a.png'
+        }
+      },
+      { sessionUpdate: 'available_commands_update', availableCommands: [] },
+      text('')
+    ])
+    expect(parts).toEqual([])
+  })
+})
+
+describe('an agent turn’s usage', () => {
+  test('counts cached tokens as input, as the AI SDK does, and keeps them apart', () => {
+    // As Codex and Claude Code report a short turn: fresh input apart from the cache.
+    expect(
+      agentTurnUsage(
+        {
+          inputTokens: 13808,
+          cachedReadTokens: 12288,
+          cachedWriteTokens: 0,
+          outputTokens: 6,
+          totalTokens: 26102
+        },
+        'gpt-6.1-sol[low]'
+      )
+    ).toEqual({
+      model: 'gpt-6.1-sol[low]',
+      inputTokens: 26096,
+      outputTokens: 6,
+      cacheReadTokens: 12288,
+      cacheWriteTokens: 0
+    })
+    expect(
+      agentTurnUsage(
+        {
+          inputTokens: 2,
+          cachedReadTokens: 12211,
+          cachedWriteTokens: 28866,
+          outputTokens: 6,
+          totalTokens: 41085
+        },
+        null
+      )
+    ).toMatchObject({ model: null, inputTokens: 41079, cacheWriteTokens: 28866 })
+  })
+
+  test('leaves cache values unreported when the agent sends none', () => {
+    expect(agentTurnUsage({ inputTokens: 10, outputTokens: 2, totalTokens: 12 }, null)).toEqual({
+      model: null,
+      inputTokens: 10,
+      outputTokens: 2,
+      cacheReadTokens: null,
+      cacheWriteTokens: null
+    })
   })
 })
 

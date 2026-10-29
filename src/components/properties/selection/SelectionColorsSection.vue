@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { Color, Fill } from '@open-pencil/scene-graph'
-import { useI18n, useSelectionColors } from '@open-pencil/vue'
+import type { Fill } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { useSelectionColors } from '@open-pencil/vue/controls/selection-colors'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import PaintField from '@/components/inputs/PaintField.vue'

@@ -4259,6 +4259,10 @@ message ClientBroadcast {
 enum PasteAssetType {
   UNKNOWN = 0;
   VARIABLE = 1;
+  STYLE_PROPERTIES = 2;
+  STYLE_PROPERTIES_FILL = 3;
+  STYLE_PROPERTIES_STROKE = 4;
+  STYLE_PROPERTIES_EFFECT = 5;
 }
 
 message Message {
@@ -4475,6 +4479,7 @@ enum ExpressionFunction {
   NEGATE = 17;
   IS_TRUTHY = 18;
   KEYFRAME = 19;
+  COMPOSE_COLOR = 20;
 }
 
 message Expression {

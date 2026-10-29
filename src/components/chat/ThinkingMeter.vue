@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 
 import type { ThinkingLevel } from '@/app/ai/models/types'
-import { chatThinkingTheme } from '@/theme/chat/thinking'
+
+import { chatThinkingTheme } from './ui'
 
 const { level } = defineProps<{ level: ThinkingLevel }>()
 const ui = chatThinkingTheme()

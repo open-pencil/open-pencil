@@ -1,4 +1,4 @@
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { buildVariantName } from '@open-pencil/scene-graph/variant-name'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
@@ -8,6 +8,7 @@ import {
   collectVariantOptions,
   getComponentSet,
   getComponentSetVariants,
+  getDefaultVariantForComponentSet,
   getVariantDefinitions
 } from './model'
 
@@ -80,52 +81,59 @@ export function recordSnapshotChange(
 }
 
 export function updateVariantName(
-  ctx: EditorContext,
+  graph: SceneGraph,
   componentSetId: string,
   variant: SceneNode
 ): void {
   const values = Object.fromEntries(
-    getVariantDefinitions(ctx.graph, componentSetId).map((definition) => [
+    getVariantDefinitions(graph, componentSetId).map((definition) => [
       definition.name,
       variant.componentPropertyValues[definition.name] ?? ''
     ])
   )
-  if (Object.keys(values).length)
-    ctx.graph.updateNode(variant.id, { name: buildVariantName(values) })
+  if (Object.keys(values).length) graph.updateNode(variant.id, { name: buildVariantName(values) })
 }
 
-export function refreshVariantOptions(ctx: EditorContext, componentSetId: string): void {
-  const componentSet = getComponentSet(ctx.graph, componentSetId)
+/**
+ * Adds the values variants use to each axis's list. The panel keeps values no variant uses yet;
+ * `dropUnused` drops them and falls back to the default variant's value, as Figma does when a
+ * script renames a variant.
+ */
+export function refreshVariantOptions(
+  graph: SceneGraph,
+  componentSetId: string,
+  { dropUnused = false }: { dropUnused?: boolean } = {}
+): void {
+  const componentSet = getComponentSet(graph, componentSetId)
   if (!componentSet) return
-  const collected = collectVariantOptions(ctx.graph, componentSetId)
+  const collected = collectVariantOptions(graph, componentSetId)
+  const fallback = getDefaultVariantForComponentSet(graph, componentSetId)
   const definitions = componentSet.componentPropertyDefinitions.map((definition) => {
     if (definition.type !== 'VARIANT') return definition
     const present = collected.get(definition.name) ?? new Set<string>()
-    const options = [
-      ...(definition.variantOptions ?? []),
-      ...[...present].filter((value) => !definition.variantOptions?.includes(value))
-    ]
-    return {
-      ...definition,
-      defaultValue: options.includes(definition.defaultValue)
-        ? definition.defaultValue
-        : (options[0] ?? ''),
-      variantOptions: options
-    }
+    const kept = (definition.variantOptions ?? []).filter(
+      (value) => !dropUnused || present.has(value)
+    )
+    const options = [...kept, ...[...present].filter((value) => !kept.includes(value))]
+    const replacement = dropUnused ? fallback?.componentPropertyValues[definition.name] : undefined
+    const defaultValue = options.includes(definition.defaultValue)
+      ? definition.defaultValue
+      : (replacement ?? options.at(0) ?? '')
+    return { ...definition, defaultValue, variantOptions: options }
   })
-  ctx.graph.updateNode(componentSetId, {
+  graph.updateNode(componentSetId, {
     componentPropertyDefinitions: definitions
   })
 }
 
 /** Set a variant's property values and rename it to match. */
 export function setVariantValues(
-  ctx: EditorContext,
+  graph: SceneGraph,
   componentSetId: string,
   variantId: string,
   componentPropertyValues: Record<string, string>
 ): void {
-  ctx.graph.updateNode(variantId, { componentPropertyValues })
-  const updated = ctx.graph.getNode(variantId)
-  if (updated) updateVariantName(ctx, componentSetId, updated)
+  graph.updateNode(variantId, { componentPropertyValues })
+  const updated = graph.getNode(variantId)
+  if (updated) updateVariantName(graph, componentSetId, updated)
 }

@@ -1,10 +1,8 @@
-import { tv } from 'tailwind-variants'
-
 const NAME =
   'min-w-0 cursor-default truncate text-left text-[11px] text-surface outline-none focus-visible:ring-1 focus-visible:ring-panel-focus'
 
 /** People in a room, each followed by their agents. */
-export const presenceList = tv({
+export default {
   slots: {
     root: 'flex flex-col gap-0.5',
     person: 'flex h-7 min-w-0 items-center gap-2',
@@ -17,4 +15,4 @@ export const presenceList = tv({
     renameInput:
       'h-6 min-w-0 flex-1 rounded border border-accent bg-input px-1.5 text-[11px] text-surface outline-none'
   }
-})
+} as const

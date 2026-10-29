@@ -1,0 +1,1 @@
+- Dashed strokes on rectangles and frames are laid out as in Figma: each straight side and each rounded corner holds whole dashes with half a dash at each end, and sharp corners are filled, so dashes no longer start wherever the outline does or run straight past rounded corners.

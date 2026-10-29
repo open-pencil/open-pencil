@@ -1,6 +1,7 @@
-import { TEXT_METRIC_FIELDS, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
 
-import { estimateTextSize, getTextMeasurer } from './text-measurement'
+import { measureTextForLayout } from './text-measurement'
 
 export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
   ...TEXT_METRIC_FIELDS,
@@ -38,7 +39,7 @@ export function textAutoResizeChanges(
   if (mode !== 'HEIGHT' && mode !== 'WIDTH_AND_HEIGHT') return {}
 
   const maxWidth = mode === 'HEIGHT' ? next.width : undefined
-  const measured = getTextMeasurer()?.(next, maxWidth) ?? estimateTextSize(next, maxWidth)
+  const measured = measureTextForLayout(next, maxWidth)
   const resized: Partial<
     Pick<SceneNode, 'width' | 'height' | 'derivedLayout' | 'derivedTextGlyphs'>
   > = { derivedLayout: null, derivedTextGlyphs: null }

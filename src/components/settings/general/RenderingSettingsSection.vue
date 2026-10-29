@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences, updateCanvasRenderingMode } from '@/app/settings/preferences/store'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
@@ -29,25 +30,22 @@ function setTiledRendering(enabled: boolean): void {
     <template #description>{{ rendering.settingsDescription }}</template>
 
     <SettingsGroup>
-      <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-        <span>
-          <span class="flex flex-wrap items-center gap-2 text-xs text-surface">
+      <SettingsRow as="label" :description="rendering.progressiveTiledDescription">
+        <template #label>
+          <span class="flex flex-wrap items-center gap-2">
             {{ rendering.progressiveTiled }}
             <AppBadge :ui="{ base: 'bg-hover text-surface' }">{{
               rendering.experimental
             }}</AppBadge>
           </span>
-          <span class="block text-[10px] text-muted">{{
-            rendering.progressiveTiledDescription
-          }}</span>
-        </span>
+        </template>
         <AppSwitch
           :model-value="tiledRendering"
           :label="rendering.progressiveTiled"
           data-test-id="settings-progressive-tiled-rendering"
           @update:model-value="setTiledRendering"
         />
-      </label>
+      </SettingsRow>
     </SettingsGroup>
 
     <AppAlert v-if="hasURLOverride" :heading="rendering.urlOverride" />

@@ -3,13 +3,13 @@ import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
   isModeAttributeName,
-  type BindingScope,
   type TokenExpression,
   type Variable,
   type VariableCollection,
   type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
+import { tokenExpressionForValue, type BindingScope } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
@@ -441,12 +441,9 @@ export function createVariableActions(ctx: EditorContext) {
     const variable = ctx.graph.variables.get(id)
     if (!variable) return
     const previous = modeEntry(variable, modeId)
-    // A number keeps its expression, which records the number it stands for; anything else drops it.
-    const expression = previous.expression
     const next: ModeEntry = {
       value: structuredClone(value),
-      expression:
-        typeof value === 'number' && expression ? { ...expression, resolved: value } : undefined
+      expression: tokenExpressionForValue(previous.expression, value)
     }
     const apply = (entry: ModeEntry) => {
       const target = ctx.graph.variables.get(id)

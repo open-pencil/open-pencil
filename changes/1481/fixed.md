@@ -1,0 +1,1 @@
+- `.pen` paths and icons that fill or fit their container draw at their laid-out size instead of at 100 px.

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 function childByName(editor: ReturnType<typeof createEditor>, parentId: string, name: string) {
   return editor.graph.getChildren(parentId).find((node) => node.name === name)
@@ -41,6 +41,52 @@ function setupComponentProperties() {
 }
 
 describe('component property actions', () => {
+  test('a layer a boolean property hides leaves its group, which refits, and undo restores it', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const component = editor.graph.createNode('COMPONENT', pageId, {
+      name: 'Card',
+      width: 200,
+      height: 200,
+      componentPropertyDefinitions: [
+        { id: '10:2', name: 'Show icon', type: 'BOOLEAN', defaultValue: 'true' }
+      ]
+    })
+    const group = editor.graph.createNode('GROUP', component.id, {
+      name: 'Content',
+      width: 130,
+      height: 130
+    })
+    editor.graph.createNode('RECTANGLE', group.id, { name: 'Body', width: 50, height: 50 })
+    editor.graph.createNode('RECTANGLE', group.id, {
+      name: 'Icon',
+      x: 100,
+      y: 100,
+      width: 30,
+      height: 30,
+      componentPropertyReferences: [{ propertyId: '10:2', field: 'VISIBLE' }]
+    })
+    const instance = editor.graph.createInstance(component.id, pageId)
+    if (!instance) throw new Error('Expected card instance')
+    const content = childByName(editor, instance.id, 'Content')
+    const icon = content && childByName(editor, content.id, 'Icon')
+    if (!content || !icon) throw new Error('Expected group copy')
+    const size = () => {
+      const node = editor.graph.getNode(content.id)
+      return [node?.width, node?.height]
+    }
+
+    editor.toggleNodeVisibility(icon.id)
+    expect(size()).toEqual([50, 50])
+    editor.undo.undo()
+    expect(size()).toEqual([130, 130])
+
+    editor.updateNodeWithUndo(icon.id, { visible: false }, 'Hide')
+    expect(size()).toEqual([50, 50])
+    editor.undo.undo()
+    expect(size()).toEqual([130, 130])
+  })
+
   test('hiding a layer a boolean property shows sets the property, as Figma does', () => {
     const { editor, component, instance } = setupComponentProperties()
     editor.graph.createNode('FRAME', component.id, {

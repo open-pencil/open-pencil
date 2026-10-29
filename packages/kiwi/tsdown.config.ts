@@ -17,7 +17,6 @@ function rawText(): Rolldown.Plugin {
 
 export default defineConfig({
   entry: {
-    index: './src/index.ts',
     'schema-runtime': './src/schema-runtime/index.ts',
     fig: './src/fig/index.ts',
     'fig/codec': './src/fig/codec.ts',
@@ -50,7 +49,8 @@ export default defineConfig({
             const cleanId = id.split('?')[0]
             const parts = cleanId.split(/[\\/]/g)
             const srcIndex = parts.lastIndexOf('src')
-            const file = srcIndex >= 0 ? parts.slice(srcIndex + 1).join('/') : parts.at(-1) ?? 'chunk'
+            const file =
+              srcIndex >= 0 ? parts.slice(srcIndex + 1).join('/') : (parts.at(-1) ?? 'chunk')
             return `chunks/${file.replace(/\.(ts|tsx)$/, '')}`
           }
         }

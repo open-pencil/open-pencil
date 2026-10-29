@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { parseOpenPencilClipboard } from '@open-pencil/core'
+import { parseOpenPencilClipboard } from '@open-pencil/core/clipboard'
 import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
 
 const fixture = await Bun.file('tests/fixtures/clipboard/green-50.openpencil.html').text()

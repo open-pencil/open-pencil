@@ -65,9 +65,6 @@ storybook-static/
 /public/demo.fig
 /desktop/icons/
 
-# Copied from node_modules at build time
-public/canvaskit.wasm
-
 # Documentation build/cache output
 packages/docs/.vitepress/cache/
 packages/docs/.vitepress/dist/
@@ -96,3 +93,12 @@ scratch/
 # Feedback Worker local state and secrets
 packages/feedback/.wrangler/
 packages/feedback/.dev.vars
+
+# OpenPencil Cloud local and build outputs
+packages/cloud/deploy/generated/
+packages/cloud/dist-standalone/
+dist-cloud/
+dist-metrics/
+
+# SwiftPM output of desktop Swift packages built by hand
+desktop/swift/*/.build/

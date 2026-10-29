@@ -1,14 +1,14 @@
 import { motionStyles } from '../motion/styles'
 import { floatingSurface } from '../overlay'
-import { panelFieldBase } from '../panel/field'
+import { panelFieldBase } from '../panel/field/base'
 
 const appComboboxTheme = {
   slots: {
     trigger: [
       panelFieldBase,
-      'flex w-full min-w-0 items-center justify-between px-2 aria-invalid:border-error aria-invalid:focus:ring-error/25'
+      'flex w-full min-w-0 items-center justify-between aria-invalid:border-error aria-invalid:focus:ring-error/25'
     ],
-    value: 'min-w-0 flex-1 truncate text-left text-[11px] text-surface',
+    value: 'min-w-0 flex-1 truncate text-left text-surface',
     chevron: 'ml-1 size-3 shrink-0 text-muted',
     content: [
       'z-[110] max-h-72 min-w-[var(--reka-combobox-trigger-width)] overflow-hidden text-[11px]',
@@ -26,7 +26,17 @@ const appComboboxTheme = {
     indicator: 'absolute left-1.5 inline-flex items-center justify-center',
     description: 'truncate font-mono text-[9px] text-muted',
     meta: 'shrink-0 rounded bg-accent/10 px-1 py-px text-[9px] text-primary'
-  }
+  },
+  variants: {
+    /** The control scale in `theme/control.ts`, with the padding and text of an input that size. */
+    size: {
+      xs: { trigger: 'h-6 px-2', value: 'text-[11px]' },
+      sm: { trigger: 'h-7 px-2.5', value: 'text-xs' },
+      md: { trigger: 'h-8 px-3', value: 'text-xs' },
+      lg: { trigger: 'h-9 px-3', value: 'text-sm' }
+    }
+  },
+  defaultVariants: { size: 'xs' as const }
 }
 
 export type AppComboboxTheme = typeof appComboboxTheme

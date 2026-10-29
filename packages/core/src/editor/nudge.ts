@@ -4,7 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { collectNodePositions, pushPositionUndo } from './history/position'
-import { fitEnclosingGroupsWithUndo } from './structure/group-bounds'
+import { fitEnclosingGroupsWithUndo } from './structure/group/bounds'
 import type { EditorContext } from './types'
 
 const NUDGE_COMMIT_DELAY = 300
@@ -54,7 +54,7 @@ export function createNudgeActions(ctx: EditorContext) {
   let nudgeCommitTimer: ReturnType<typeof setTimeout> | null = null
 
   function applyOrder(parentId: string, order: readonly string[]) {
-    order.forEach((id, index) => ctx.graph.reorderChild(id, parentId, index))
+    order.forEach((id, index) => ctx.graph.insertChildAt(id, parentId, index))
     ctx.runLayoutForNode(parentId)
   }
 

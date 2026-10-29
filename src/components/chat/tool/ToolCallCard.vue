@@ -2,7 +2,7 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   displayedToolOutput,
@@ -23,8 +23,9 @@ import { loadCodeViewer } from '@/components/code-editor/lazy'
 import CodeViewer from '@/components/code-editor/LazyCodeViewer.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import { chatToolTheme } from '@/theme/chat/tool'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
+
+import { chatToolTheme } from './ui'
 
 /** `undone`: the user undid the call's edit, by Undo or the chat's Revert. */
 const { part, undone = false } = defineProps<{ part: ToolCallPart; undone?: boolean }>()

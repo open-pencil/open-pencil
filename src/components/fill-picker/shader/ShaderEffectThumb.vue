@@ -2,7 +2,7 @@
 import { useIntersectionObserver } from '@vueuse/core'
 import { ref, useTemplateRef } from 'vue'
 
-import { shaderEffectPreview, type ShaderEffect } from '@open-pencil/vue'
+import { shaderEffectPreview, type ShaderEffect } from '@open-pencil/vue/controls/shader'
 
 /** A small still of an effect, drawn the first time its row scrolls into view. */
 const { effect } = defineProps<{ effect?: ShaderEffect }>()

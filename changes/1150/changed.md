@@ -1,0 +1,1 @@
+- Selected text on a path no longer draws a filled band over its lettering: as in Figma, it shows its path, box and handles, and while its text is edited an outline around the lettering.

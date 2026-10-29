@@ -20,10 +20,11 @@ import { parseArgs } from 'node:util'
 import { $ } from 'bun'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { importClipboardNodes, parseFigmaClipboard } from '@open-pencil/core/clipboard'
-import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io'
+import { importClipboardNodes } from '@open-pencil/core/clipboard'
+import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager } from '@open-pencil/core/text'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 const { values: opts } = parseArgs({

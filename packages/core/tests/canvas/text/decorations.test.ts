@@ -1,19 +1,18 @@
 import { describe, expect, test } from 'bun:test'
-
-import { toUint8Array } from 'js-base64'
-import * as v from 'valibot'
-
 import { join } from 'node:path'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
+import { toUint8Array } from 'js-base64'
+import * as v from 'valibot'
 
-import { SceneGraph, type SceneNode, type Vector } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { savedDecoratedGlyphs, textDecorationRects } from '#core/canvas/text/decorations'
 
-const Rect = v.object({ x: v.number(), y: v.number(), w: v.number(), h: v.number() })
-const Oracle = v.object({
+const rectSchema = v.object({ x: v.number(), y: v.number(), w: v.number(), h: v.number() })
+const oracleSchema = v.object({
   outlines: v.array(v.string()),
   cases: v.array(
     v.object({
@@ -23,7 +22,11 @@ const Oracle = v.object({
       textDecoration: v.picklist(['NONE', 'UNDERLINE', 'STRIKETHROUGH']),
       textDecorationStyle: v.picklist(['SOLID', 'DOTTED', 'WAVY']),
       styleRuns: v.array(
-        v.object({ start: v.number(), length: v.number(), style: v.record(v.string(), v.unknown()) })
+        v.object({
+          start: v.number(),
+          length: v.number(),
+          style: v.record(v.string(), v.unknown())
+        })
       ),
       glyphs: v.array(
         v.object({
@@ -35,13 +38,13 @@ const Oracle = v.object({
           advance: v.optional(v.number())
         })
       ),
-      figmaRects: v.array(Rect)
+      figmaRects: v.array(rectSchema)
     })
   )
 })
 
 const oracle = v.parse(
-  v.pipe(v.string(), v.parseJson(), Oracle),
+  v.pipe(v.string(), v.parseJson(), oracleSchema),
   await Bun.file(join(FIXTURES, 'figma-oracles/text-decorations.json')).text()
 )
 

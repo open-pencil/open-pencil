@@ -2,8 +2,9 @@
 import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n, useRetainedPopup } from '@open-pencil/vue'
-import type { SlotLimit } from '@open-pencil/vue'
+import type { SlotLimit } from '@open-pencil/vue/controls/slots'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'

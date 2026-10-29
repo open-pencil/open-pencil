@@ -1,7 +1,7 @@
 import { message } from '@tauri-apps/plugin-dialog'
 import type { MessageDialogOptions, MessageDialogResult } from '@tauri-apps/plugin-dialog'
 
-import { commonMessages, filesMessages } from '@open-pencil/vue'
+import { commonMessages, filesMessages } from '@open-pencil/vue/i18n'
 
 import type { CloseChoice } from './controller'
 

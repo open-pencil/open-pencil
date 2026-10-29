@@ -1,17 +1,16 @@
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry, type BuiltinIOFormatId } from '@open-pencil/core/io'
+import type { ExportSetting, PluginDataEntry } from '@open-pencil/scene-graph'
+import { EXPORT_FORMAT_IDS, type ExportFormatId } from '@open-pencil/scene-graph/export-format'
 import {
-  EXPORT_FORMAT_IDS,
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
-  OPEN_PENCIL_PLUGIN_DATA,
-  clampExportScale,
-  withPluginData
-} from '@open-pencil/scene-graph'
-import type { ExportFormatId, ExportSetting, PluginDataEntry } from '@open-pencil/scene-graph'
+  clampExportScale
+} from '@open-pencil/scene-graph/export-scale'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
@@ -32,10 +31,13 @@ export { MIN_EXPORT_SCALE, MAX_EXPORT_SCALE, clampExportScale }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
+/** Formats known by a product name rather than their extension. */
+const PRODUCT_LABELS: Partial<Record<ExportFormatId, string>> = { drawio: 'draw.io' }
+
 /** Short, extension-style labels for the node export formats (PNG, PDF, PPTX, …). */
 export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = EXPORT_FORMATS.map((id) => ({
   value: id,
-  label: (io.getFormat(id)?.extensions[0] ?? id).toUpperCase()
+  label: PRODUCT_LABELS[id] ?? (io.getFormat(id)?.extensions[0] ?? id).toUpperCase()
 }))
 
 export function createDefaultExportSetting(): ExportSetting {

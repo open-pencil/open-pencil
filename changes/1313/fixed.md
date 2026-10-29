@@ -1,0 +1,1 @@
+- Double-clicking a layer's expand arrow, lock, or visibility button in the layers panel no longer starts renaming the layer.

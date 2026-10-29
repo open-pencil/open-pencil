@@ -7,7 +7,7 @@ import * as v from 'valibot'
 import { polygonCorners, polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
 
 // Outlines Figma desktop gives as `fillGeometry` for polygons and stars, recorded on 2026-10-10.
-const Oracle = v.object({
+const oracleSchema = v.object({
   cases: v.array(
     v.object({
       name: v.string(),
@@ -24,7 +24,7 @@ const Oracle = v.object({
 })
 
 const oracle = v.parse(
-  v.pipe(v.string(), v.parseJson(), Oracle),
+  v.pipe(v.string(), v.parseJson(), oracleSchema),
   readFileSync(new URL('fixtures/figma-polygon-corners.json', import.meta.url), 'utf8')
 )
 

@@ -1,4 +1,5 @@
-import { readIcon, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { readIcon } from '@open-pencil/scene-graph/icons'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -42,31 +43,55 @@ export function hasFrameTitle(node: SceneNode, parentType: string | undefined): 
   )
 }
 
+/** A label boxed as a section title is: where its box and text go, and how wide the text may get. */
+export interface PillLayout {
+  bounds: Rect
+  text: Vector
+  /** The text is cut short with an ellipsis past this width. */
+  maxTextWidth: number
+}
+
+/**
+ * A label boxed as a section title: padded text at the title's height, starting at `x` and no
+ * wider than `width`, with room `before` and `after` the text for marks such as a status dot.
+ * Without `metrics` it gives the widest the text may get, to lay the text out with.
+ */
+export function pillLayout(
+  x: number,
+  y: number,
+  width: number,
+  metrics?: LabelTextMetrics,
+  before = 0,
+  after = 0
+): PillLayout | null {
+  if (width <= 0) return null
+  const chrome = SECTION_TITLE_PADDING_X * 2 + before + after
+  const textWidth = metrics?.width ?? width
+  return {
+    bounds: { x, y, width: Math.min(textWidth + chrome, width), height: SECTION_TITLE_HEIGHT },
+    text: {
+      x: x + SECTION_TITLE_PADDING_X + before,
+      y: y + (SECTION_TITLE_HEIGHT - (metrics?.height ?? SECTION_TITLE_FONT_SIZE)) / 2
+    },
+    maxTextWidth: Math.max(1, width - chrome)
+  }
+}
+
 function sectionLabelLayout(
   screenWidth: number,
   inside: boolean,
   metrics?: LabelTextMetrics
 ): LabelLayout | null {
   const x = inside ? SECTION_TITLE_GAP : 0
-  if (screenWidth <= x) return null
   const y = inside ? SECTION_TITLE_GAP : -SECTION_TITLE_HEIGHT - SECTION_TITLE_GAP
-  const textWidth = metrics?.width ?? screenWidth
+  const pill = pillLayout(x, y, screenWidth - x, metrics)
+  if (!pill) return null
   return {
     kind: 'section',
-    bounds: {
-      x,
-      y,
-      width: Math.min(textWidth + SECTION_TITLE_PADDING_X * 2, screenWidth - x),
-      height: SECTION_TITLE_HEIGHT
-    },
-    text: {
-      x: x + SECTION_TITLE_PADDING_X,
-      y: y + (SECTION_TITLE_HEIGHT - (metrics?.height ?? SECTION_TITLE_FONT_SIZE)) / 2
-    },
+    ...pill,
     icon: null,
     fontSize: SECTION_TITLE_FONT_SIZE,
-    fontWeight: 600,
-    maxTextWidth: Math.max(1, screenWidth - x - SECTION_TITLE_PADDING_X * 2)
+    fontWeight: 600
   }
 }
 

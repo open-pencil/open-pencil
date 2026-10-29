@@ -5,16 +5,11 @@ import { computed, shallowRef } from 'vue'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useSettingsMessages } from '@open-pencil/vue'
+import { useSettingsMessages } from '@open-pencil/vue/i18n'
 
 import { accentPreference } from '@/app/shell/accent'
-import {
-  ACCENT_PRESET_COLORS,
-  ACCENT_PRESETS,
-  accentBaseColor,
-  type AccentPreference,
-  type AccentPreset
-} from '@/app/shell/accent/palette'
+import { ACCENT_PRESET_COLORS, accentBaseColor } from '@/app/shell/accent/palette'
+import { ACCENT_PRESETS, type AccentPreference, type AccentPreset } from '@/app/shell/accent/schema'
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/settings/accent'

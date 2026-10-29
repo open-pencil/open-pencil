@@ -1,0 +1,1 @@
+- Shadows of a frame or group without a fill render about four times faster when its layers stand apart, as in rows of cards or buttons.

@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
 import { behaviourOwner, readBehaviour } from './model'
 

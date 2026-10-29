@@ -1,0 +1,1 @@
+- In Settings, the model and provider fields, such as a model's name and API keys, use the same fill as the selects beside them, and every switch row and description uses the same text sizes.

@@ -1,4 +1,4 @@
-import { editedGradientLayout, type GradientEdit } from '@open-pencil/core/editor'
+import { editedGradientLayout, type GradientEdit } from '@open-pencil/core'
 import { hitTestGradientHandles } from '@open-pencil/core/geometry'
 
 import { useEditorStore } from '@/app/editor/active-store'

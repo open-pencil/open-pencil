@@ -1,20 +1,22 @@
 import { isEmptyObject, isEqual, omitBy, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
+import type {
+  CharacterStyleOverride,
+  SceneNode,
+  StyleRun,
+  TextParagraphStyle
+} from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import {
-  createDefaultNode,
   MAX_LIST_INDENTATION,
   paragraphCount,
   PLAIN_PARAGRAPH,
-  trimParagraphStyles,
-  type CharacterStyleOverride,
-  type SceneNode,
-  type StyleRun,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+  trimParagraphStyles
+} from '@open-pencil/scene-graph/text'
 
+import { parseScriptInput } from './schema'
 import { isTreeNode, type TreeNode } from './tree'
-import { parseScriptInput } from './validation'
 
 /** `<Span>`: characters of a text styled apart from the rest of it. */
 export const SPAN = 'text-span'
@@ -42,6 +44,9 @@ export const SPAN_STYLE_FIELDS = [
   'textDecorationThickness',
   'textUnderlineOffset',
   'textDecorationSkipInk',
+  'fontFeatures',
+  'fontVariations',
+  'textLanguage',
   'textCase'
 ] as const satisfies readonly (keyof CharacterStyleOverride & keyof SceneNode)[]
 
@@ -56,17 +61,17 @@ export type SpanOverrides = (props: Record<string, unknown>) => Partial<SceneNod
 
 export type TextContentFields = Partial<Pick<SceneNode, 'text' | 'styleRuns' | 'textParagraphs'>>
 
-const Length = v.pipe(v.number(), v.finite())
+const lengthSchema = v.pipe(v.number(), v.finite())
 
-const ParagraphProps = v.pipe(
+const paragraphPropsSchema = v.pipe(
   v.object({
     list: v.optional(v.picklist(['ordered', 'unordered'])),
     level: v.optional(
       v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_LIST_INDENTATION))
     ),
-    spacing: v.optional(Length),
-    listSpacing: v.optional(Length),
-    indent: v.optional(Length)
+    spacing: v.optional(lengthSchema),
+    listSpacing: v.optional(lengthSchema),
+    indent: v.optional(lengthSchema)
   }),
   v.check(
     (props) => props.level === undefined || props.list !== undefined,
@@ -85,14 +90,14 @@ export function isTextContent(child: TreeNode | string): boolean {
   return isTreeNode(child) && (child.type === SPAN || child.type === PARAGRAPH)
 }
 
-const SpanLink = v.object({ href: v.optional(v.pipe(v.string(), v.trim(), v.nonEmpty())) })
+const spanLinkSchema = v.object({ href: v.optional(v.pipe(v.string(), v.trim(), v.nonEmpty())) })
 
 function spanStyle(props: Record<string, unknown>, spanOverrides: SpanOverrides): SpanStyle {
   const style: SpanStyle = omitBy(
     pick(spanOverrides(props), SPAN_STYLE_FIELDS),
     (value) => value === undefined
   )
-  const { href } = parseScriptInput('Invalid <Span> props', SpanLink, props)
+  const { href } = parseScriptInput('Invalid <Span> props', spanLinkSchema, props)
   if (href) style.hyperlink = { type: 'URL', value: href }
   return style
 }
@@ -128,7 +133,7 @@ function textOf(children: TreeNode['children']): string {
 function paragraphStyle(props: Record<string, unknown>): TextParagraphStyle {
   const { list, level, spacing, listSpacing, indent } = parseScriptInput(
     'Invalid <Paragraph> props',
-    ParagraphProps,
+    paragraphPropsSchema,
     props
   )
   const style: TextParagraphStyle = list

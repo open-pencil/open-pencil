@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 // Recorded in Figma desktop 126: a layer made on the canvas is numbered one past the highest
 // number any layer on the page has with its name, whatever that layer is; booleans are not.

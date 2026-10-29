@@ -1,0 +1,5 @@
+- A document that fails to open from Home leaves Home in place instead of an empty tab.
+- The startup splash uses the app's theme, so it no longer changes colour as the app starts on a light system.
+- A document opened on a slow connection waits for the canvas to load instead of failing with “The operation was timed out”.
+- Storage downloads that take longer than 20 seconds finish instead of failing; only a transfer that stops for 20 seconds fails.
+- The startup splash stops animating when the system asks for reduced motion.

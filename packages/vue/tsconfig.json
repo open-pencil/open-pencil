@@ -17,6 +17,7 @@
       "#vue/*": ["./src/*", "./src/*.vue"],
       "#core/*": ["../core/src/*"],
       "@open-pencil/vue": ["./src/index.ts"],
+      "@open-pencil/vue/*": ["./src/*"],
       "@open-pencil/core": ["../core/src/index.ts"],
       "@open-pencil/core/*": ["../core/src/*"],
       "@open-pencil/core/editor": ["../core/src/editor/index.ts"],

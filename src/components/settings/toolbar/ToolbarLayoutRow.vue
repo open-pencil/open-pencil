@@ -10,11 +10,12 @@ import {
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watchPostEffect, type Component } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import theme from '@/theme/settings/toolbar/row'
 
@@ -120,33 +121,35 @@ function onGripKey(event: KeyboardEvent) {
           :side-offset="4"
           @close-auto-focus.prevent
         >
-          <DropdownMenuItem
-            :class="menu.item"
-            :disabled="!canMoveUp"
-            @select="emit('move', -1, 'options')"
-          >
-            <icon-lucide-arrow-up :class="menu.icon" />
-            {{ settings.toolbarMoveUp }}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            :class="menu.item"
-            :disabled="!canMoveDown"
-            @select="emit('move', 1, 'options')"
-          >
-            <icon-lucide-arrow-down :class="menu.icon" />
-            {{ settings.toolbarMoveDown }}
-          </DropdownMenuItem>
-          <template v-if="groupWith || inFlyout">
-            <DropdownMenuSeparator :class="menu.separator" />
-            <DropdownMenuItem v-if="groupWith" :class="menu.item" @select="emit('group')">
-              <icon-lucide-link-2 :class="menu.icon" />
-              {{ settings.toolbarGroupWith({ tool: groupWith }) }}
+          <MenuScrollArea>
+            <DropdownMenuItem
+              :class="menu.item"
+              :disabled="!canMoveUp"
+              @select="emit('move', -1, 'options')"
+            >
+              <icon-lucide-arrow-up :class="menu.icon" />
+              {{ settings.toolbarMoveUp }}
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="inFlyout" :class="menu.item" @select="emit('ungroup')">
-              <icon-lucide-unlink-2 :class="menu.icon" />
-              {{ settings.toolbarUngroup }}
+            <DropdownMenuItem
+              :class="menu.item"
+              :disabled="!canMoveDown"
+              @select="emit('move', 1, 'options')"
+            >
+              <icon-lucide-arrow-down :class="menu.icon" />
+              {{ settings.toolbarMoveDown }}
             </DropdownMenuItem>
-          </template>
+            <template v-if="groupWith || inFlyout">
+              <DropdownMenuSeparator :class="menu.separator" />
+              <DropdownMenuItem v-if="groupWith" :class="menu.item" @select="emit('group')">
+                <icon-lucide-link-2 :class="menu.icon" />
+                {{ settings.toolbarGroupWith({ tool: groupWith }) }}
+              </DropdownMenuItem>
+              <DropdownMenuItem v-if="inFlyout" :class="menu.item" @select="emit('ungroup')">
+                <icon-lucide-unlink-2 :class="menu.icon" />
+                {{ settings.toolbarUngroup }}
+              </DropdownMenuItem>
+            </template>
+          </MenuScrollArea>
         </DropdownMenuContent>
       </DropdownMenuPortal>
     </DropdownMenuRoot>

@@ -1,4 +1,5 @@
 import type { Ping } from '#feedback/contract'
+import { utcDayOf } from '#feedback/days'
 import type { FeedbackDatabase } from '#feedback/db'
 import type { Kysely } from 'kysely'
 
@@ -10,7 +11,7 @@ export async function recordPing(
 ): Promise<void> {
   await db
     .insertInto('usagePings')
-    .values({ ...ping, day: now.toISOString().slice(0, 10), count: 1 })
+    .values({ ...ping, day: utcDayOf(now).toString(), count: 1 })
     .onConflict((conflict) =>
       conflict
         .columns(['day', 'version', 'platform', 'arch', 'app', 'browser', 'usageStats'])

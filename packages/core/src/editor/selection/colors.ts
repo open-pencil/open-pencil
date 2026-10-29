@@ -1,8 +1,11 @@
-import type { Color, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { stickySublayers } from '@open-pencil/scene-graph/generated'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /**
  * Figma's Selection colors: every solid fill and stroke colour of the selected layers and their
- * descendants, most used first. Effect colours and colours bound to a variable are left out.
+ * descendants, most used first. Effect colours, colours bound to a variable and a sticky note's
+ * author line are left out.
  */
 
 export interface SelectionColor {
@@ -43,7 +46,9 @@ function eachNode(graph: SceneGraph, ids: readonly string[], visit: (node: Scene
     const node = graph.getNode(id)
     if (!node) return
     visit(node)
-    for (const childId of node.childIds) walk(childId)
+    // Figma lists a note's body and colour, not the author line it writes itself.
+    const author = node.type === 'STICKY' ? stickySublayers(graph, node)?.author : undefined
+    for (const childId of node.childIds) if (childId !== author?.id) walk(childId)
   }
   for (const id of ids) walk(id)
 }

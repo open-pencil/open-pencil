@@ -1,0 +1,1 @@
+- A gradient stroke on a straight line, or a gradient on any layer with no width or height, draws along it instead of stopping the canvas, as in 0.15.

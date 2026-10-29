@@ -29,15 +29,12 @@ Une interface courante :
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core/editor'
-import {
-  provideEditor,
-  CanvasRoot,
-  CanvasSurface,
-  ToolbarRoot,
-  PageListRoot,
-  LayerTreeRoot,
-} from '@open-pencil/vue'
+import { createEditor } from '@open-pencil/core'
+import { provideEditor } from '@open-pencil/vue'
+import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
+import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
+import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
+import { LayerTreeRoot } from '@open-pencil/vue/primitives/LayerTree'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)

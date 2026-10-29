@@ -1,4 +1,4 @@
-import { fontFallbackScriptForCharacter } from '#core/text/coverage'
+import { fontFallbackScriptForCharacter } from '#core/text/fallbacks'
 import type { FontFallbackScript } from '#core/text/fallbacks'
 
 export interface ObservedShapedLine {

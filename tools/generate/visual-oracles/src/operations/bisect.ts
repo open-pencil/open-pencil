@@ -6,7 +6,8 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
-import { headlessRenderNodes, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
+import { parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { headlessRenderNodes, initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'

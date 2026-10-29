@@ -10,6 +10,8 @@ export default {
     item: 'flex items-center gap-2 text-xs text-surface',
     readyIcon: 'size-3.5 shrink-0 text-success',
     missingIcon: 'size-3.5 shrink-0 text-muted',
-    actions: 'flex items-center gap-2'
+    actions: 'flex items-center gap-2',
+    signIn: 'flex flex-col items-start gap-2',
+    code: 'flex w-full items-center gap-2'
   }
 }

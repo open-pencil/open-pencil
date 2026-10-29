@@ -9,6 +9,17 @@ export function supportsFileSystemAccess(): boolean {
 }
 
 /**
+ * Whether a write failed because the browser refuses to write to a file it handed out, as embedded
+ * browsers and sandboxed frames do: the picker works but `createWritable` throws. Callers download
+ * the file instead.
+ */
+export function isFileWriteRefused(error: unknown): boolean {
+  return (
+    error instanceof Error && (error.name === 'NotAllowedError' || error.name === 'SecurityError')
+  )
+}
+
+/**
  * Opens the browser save picker. Resolves to null when the browser has no picker, and rejects
  * with `AbortError` when the user cancels so callers can keep cancel and failure distinct.
  */

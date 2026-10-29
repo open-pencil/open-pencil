@@ -1,13 +1,15 @@
 import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
-import { fontManager, weightToStyle } from '#core/text/fonts'
 import {
   fontHasGlyphSync,
   getGlyphOutlineMetricsSync,
   type OutlineCommand
-} from '#core/text/opentype'
+} from '#core/text/font/glyphs'
+import { fontManager } from '#core/text/fonts'
 
 export type TextOutlineUnsupportedReason =
   | 'not-text'
@@ -56,7 +58,8 @@ function styleName(style: Pick<TextStyle, 'fontWeight' | 'italic'>): string {
 }
 
 function styleKey(style: TextStyle): string {
-  return `${style.fontFamily}|${styleName(style)}|${style.fontSize}|${style.letterSpacing}`
+  const spacing = textLengthPixels(style.letterSpacing, style.fontSize)
+  return `${style.fontFamily}|${styleName(style)}|${style.fontSize}|${spacing}`
 }
 
 function textStyleAt(node: SceneNode, index: number): TextStyle {
@@ -121,7 +124,7 @@ export function getTextOutlineSupport(node: SceneNode): TextOutlineSupport {
 }
 
 function lineHeight(node: SceneNode): number {
-  return node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
+  return lineHeightPixels(node.lineHeight, node.fontSize) ?? Math.ceil(node.fontSize * 1.2)
 }
 
 interface TextLine {
@@ -150,7 +153,7 @@ function glyphAdvance(node: SceneNode, absoluteIndex: number): number | null {
     style.fontSize
   )
   const glyph = metrics?.[0]
-  return glyph ? glyph.advance + style.letterSpacing : null
+  return glyph ? glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize) : null
 }
 
 function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
@@ -262,7 +265,7 @@ function lineGlyphs(
 
     for (const glyph of metrics) {
       glyphs.push({ commands: glyph.commands, x: cursorX, y: baseline })
-      cursorX += glyph.advance + style.letterSpacing
+      cursorX += glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
     }
     index = end
   }

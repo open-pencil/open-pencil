@@ -282,12 +282,20 @@ function createScopedReader(
       }
     })
   const knownPageIds = new Set(pages.map((page) => page.id))
+  let recordIds: ReadonlySet<string> | undefined
   return {
     selectPages(ids: ReadonlySet<string>) {
       return createScopedReader(shared, ids)
     },
     get sourceRecords() {
       return structuredClone(changes.map(whole))
+    },
+    /** Every live record's GUID, on every page, read or not. */
+    get recordIds(): ReadonlySet<string> {
+      recordIds ??= new Set(
+        changes.flatMap((change) => (change.guid ? [guidToString(change.guid)] : []))
+      )
+      return recordIds
     },
     get documentRecord() {
       const document = changes.find((change) => change.type === 'DOCUMENT')

@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import { getComponentCatalog } from '#core/tools/component-catalog'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const listLibraries = defineTool({
   name: 'list_libraries',

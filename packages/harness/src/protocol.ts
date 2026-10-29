@@ -46,12 +46,20 @@ export type HarnessRequest =
   | { id: string; method: 'session.destroy'; params: { sessionId: string } }
   | { id: string; method: 'service.shutdown'; params?: Record<string, never> }
 
+/** A turn's tokens; input counts cached tokens too, which the cache fields break out. */
+export interface HarnessTurnUsage {
+  inputTokens: number | null
+  outputTokens: number | null
+  cacheReadTokens: number | null
+  cacheWriteTokens: number | null
+}
+
 export type HarnessTurnEvent =
   | { type: 'text-delta'; text: string }
   | { type: 'reasoning-delta'; text: string }
   | { type: 'tool-call'; toolCallId: string; toolName: string; input: JSONValue }
   | { type: 'tool-result'; toolCallId: string; toolName: string; output: JSONValue }
-  | { type: 'finish'; finishReason: string }
+  | { type: 'finish'; finishReason: string; usage?: HarnessTurnUsage }
   | { type: 'error'; message: string }
 
 export type HarnessSidecarMessage =

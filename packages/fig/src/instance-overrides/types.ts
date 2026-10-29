@@ -1,4 +1,5 @@
-import type { GUID, NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
 import { isUnsetGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 

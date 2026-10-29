@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { behaviourSpecSchema } from '@open-pencil/scene-graph'
+import { behaviourSpecSchema } from '@open-pencil/scene-graph/behaviours'
 
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { defineTool, toolFailure } from '#core/tools/schema'

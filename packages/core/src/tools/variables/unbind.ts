@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { nodeIdInput } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { OpenPencilAPI } from '#core/openpencil-api'
+import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
 export const unbindVariable = defineTool({
   name: 'unbind_variable',
@@ -9,7 +9,7 @@ export const unbindVariable = defineTool({
   description: 'Remove a variable binding from a node property.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
-    node_id: nodeIdInput,
+    node_id: nodeIdInputSchema,
     field: v.pipe(
       v.string(),
       v.description(
@@ -20,7 +20,7 @@ export const unbindVariable = defineTool({
           '"topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius", ' +
           '"borderTopWeight", "borderBottomWeight", "borderLeftWeight", "borderRightWeight", ' +
           '"gridRowGap", "gridColumnGap". ' +
-          'For STRING: "fontFamily". For BOOLEAN: "visible".'
+          'Text: "text", "fontFamily". Visibility: "visible".'
       )
     )
   }),
@@ -32,7 +32,7 @@ export const unbindVariable = defineTool({
     if (!boundValue) {
       return { error: `No binding found for field "${args.field}" on node "${args.node_id}"` }
     }
-    figma.unbindVariable(args.node_id, args.field)
+    new OpenPencilAPI(figma).unbindVariable(args.node_id, args.field)
     return { unbound: true, node_id: args.node_id, field: args.field }
   }
 })

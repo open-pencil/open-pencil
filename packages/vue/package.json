@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/vue",
-  "version": "0.16.0-beta.3",
+  "version": "0.16.0",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -8,6 +8,406 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./canvas": {
+      "types": "./dist/canvas/index.d.ts",
+      "import": "./dist/canvas/index.js",
+      "default": "./dist/canvas/index.js"
+    },
+    "./canvas/drop": {
+      "types": "./dist/canvas/drop/index.d.ts",
+      "import": "./dist/canvas/drop/index.js",
+      "default": "./dist/canvas/drop/index.js"
+    },
+    "./canvas/issues": {
+      "types": "./dist/canvas/issues/index.d.ts",
+      "import": "./dist/canvas/issues/index.js",
+      "default": "./dist/canvas/issues/index.js"
+    },
+    "./canvas/labels": {
+      "types": "./dist/canvas/labels/index.d.ts",
+      "import": "./dist/canvas/labels/index.js",
+      "default": "./dist/canvas/labels/index.js"
+    },
+    "./canvas/overlays": {
+      "types": "./dist/canvas/overlays/index.d.ts",
+      "import": "./dist/canvas/overlays/index.js",
+      "default": "./dist/canvas/overlays/index.js"
+    },
+    "./canvas/statuses": {
+      "types": "./dist/canvas/statuses/index.d.ts",
+      "import": "./dist/canvas/statuses/index.js",
+      "default": "./dist/canvas/statuses/index.js"
+    },
+    "./canvas/surface": {
+      "types": "./dist/canvas/surface/index.d.ts",
+      "import": "./dist/canvas/surface/index.js",
+      "default": "./dist/canvas/surface/index.js"
+    },
+    "./canvas/text-edit": {
+      "types": "./dist/canvas/text-edit/index.d.ts",
+      "import": "./dist/canvas/text-edit/index.js",
+      "default": "./dist/canvas/text-edit/index.js"
+    },
+    "./controls/appearance": {
+      "types": "./dist/controls/appearance/index.d.ts",
+      "import": "./dist/controls/appearance/index.js",
+      "default": "./dist/controls/appearance/index.js"
+    },
+    "./controls/behaviour": {
+      "types": "./dist/controls/behaviour/index.d.ts",
+      "import": "./dist/controls/behaviour/index.js",
+      "default": "./dist/controls/behaviour/index.js"
+    },
+    "./controls/binding-provider": {
+      "types": "./dist/controls/binding-provider/index.d.ts",
+      "import": "./dist/controls/binding-provider/index.js",
+      "default": "./dist/controls/binding-provider/index.js"
+    },
+    "./controls/color-model": {
+      "types": "./dist/controls/color-model/index.d.ts",
+      "import": "./dist/controls/color-model/index.js",
+      "default": "./dist/controls/color-model/index.js"
+    },
+    "./controls/color-variable-binding": {
+      "types": "./dist/controls/color-variable-binding/index.d.ts",
+      "import": "./dist/controls/color-variable-binding/index.js",
+      "default": "./dist/controls/color-variable-binding/index.js"
+    },
+    "./controls/component-props": {
+      "types": "./dist/controls/component-props/index.d.ts",
+      "import": "./dist/controls/component-props/index.js",
+      "default": "./dist/controls/component-props/index.js"
+    },
+    "./controls/connector": {
+      "types": "./dist/controls/connector/index.d.ts",
+      "import": "./dist/controls/connector/index.js",
+      "default": "./dist/controls/connector/index.js"
+    },
+    "./controls/constraints": {
+      "types": "./dist/controls/constraints/index.d.ts",
+      "import": "./dist/controls/constraints/index.js",
+      "default": "./dist/controls/constraints/index.js"
+    },
+    "./controls/effects": {
+      "types": "./dist/controls/effects/index.d.ts",
+      "import": "./dist/controls/effects/index.js",
+      "default": "./dist/controls/effects/index.js"
+    },
+    "./controls/fill": {
+      "types": "./dist/controls/fill/index.d.ts",
+      "import": "./dist/controls/fill/index.js",
+      "default": "./dist/controls/fill/index.js"
+    },
+    "./controls/icon": {
+      "types": "./dist/controls/icon/index.d.ts",
+      "import": "./dist/controls/icon/index.js",
+      "default": "./dist/controls/icon/index.js"
+    },
+    "./controls/layout": {
+      "types": "./dist/controls/layout/index.d.ts",
+      "import": "./dist/controls/layout/index.js",
+      "default": "./dist/controls/layout/index.js"
+    },
+    "./controls/mask": {
+      "types": "./dist/controls/mask/index.d.ts",
+      "import": "./dist/controls/mask/index.js",
+      "default": "./dist/controls/mask/index.js"
+    },
+    "./controls/node-props": {
+      "types": "./dist/controls/node-props/index.d.ts",
+      "import": "./dist/controls/node-props/index.js",
+      "default": "./dist/controls/node-props/index.js"
+    },
+    "./controls/number-expression": {
+      "types": "./dist/controls/number-expression/index.d.ts",
+      "import": "./dist/controls/number-expression/index.js",
+      "default": "./dist/controls/number-expression/index.js"
+    },
+    "./controls/number-variable-binding": {
+      "types": "./dist/controls/number-variable-binding/index.d.ts",
+      "import": "./dist/controls/number-variable-binding/index.js",
+      "default": "./dist/controls/number-variable-binding/index.js"
+    },
+    "./controls/okhcl": {
+      "types": "./dist/controls/okhcl/index.d.ts",
+      "import": "./dist/controls/okhcl/index.js",
+      "default": "./dist/controls/okhcl/index.js"
+    },
+    "./controls/position": {
+      "types": "./dist/controls/position/index.d.ts",
+      "import": "./dist/controls/position/index.js",
+      "default": "./dist/controls/position/index.js"
+    },
+    "./controls/prop-scrub": {
+      "types": "./dist/controls/prop-scrub/index.d.ts",
+      "import": "./dist/controls/prop-scrub/index.js",
+      "default": "./dist/controls/prop-scrub/index.js"
+    },
+    "./controls/property-list": {
+      "types": "./dist/controls/property-list/index.d.ts",
+      "import": "./dist/controls/property-list/index.js",
+      "default": "./dist/controls/property-list/index.js"
+    },
+    "./controls/selection-colors": {
+      "types": "./dist/controls/selection-colors/index.d.ts",
+      "import": "./dist/controls/selection-colors/index.js",
+      "default": "./dist/controls/selection-colors/index.js"
+    },
+    "./controls/selection-layout": {
+      "types": "./dist/controls/selection-layout/index.d.ts",
+      "import": "./dist/controls/selection-layout/index.js",
+      "default": "./dist/controls/selection-layout/index.js"
+    },
+    "./controls/shader": {
+      "types": "./dist/controls/shader/index.d.ts",
+      "import": "./dist/controls/shader/index.js",
+      "default": "./dist/controls/shader/index.js"
+    },
+    "./controls/shape-with-text": {
+      "types": "./dist/controls/shape-with-text/index.d.ts",
+      "import": "./dist/controls/shape-with-text/index.js",
+      "default": "./dist/controls/shape-with-text/index.js"
+    },
+    "./controls/shared-style": {
+      "types": "./dist/controls/shared-style/index.d.ts",
+      "import": "./dist/controls/shared-style/index.js",
+      "default": "./dist/controls/shared-style/index.js"
+    },
+    "./controls/slots": {
+      "types": "./dist/controls/slots/index.d.ts",
+      "import": "./dist/controls/slots/index.js",
+      "default": "./dist/controls/slots/index.js"
+    },
+    "./controls/sticky": {
+      "types": "./dist/controls/sticky/index.d.ts",
+      "import": "./dist/controls/sticky/index.js",
+      "default": "./dist/controls/sticky/index.js"
+    },
+    "./controls/stroke": {
+      "types": "./dist/controls/stroke/index.d.ts",
+      "import": "./dist/controls/stroke/index.js",
+      "default": "./dist/controls/stroke/index.js"
+    },
+    "./controls/typography": {
+      "types": "./dist/controls/typography/index.d.ts",
+      "import": "./dist/controls/typography/index.js",
+      "default": "./dist/controls/typography/index.js"
+    },
+    "./controls/variable-binding": {
+      "types": "./dist/controls/variable-binding/index.d.ts",
+      "import": "./dist/controls/variable-binding/index.js",
+      "default": "./dist/controls/variable-binding/index.js"
+    },
+    "./controls/variable-modes": {
+      "types": "./dist/controls/variable-modes/index.d.ts",
+      "import": "./dist/controls/variable-modes/index.js",
+      "default": "./dist/controls/variable-modes/index.js"
+    },
+    "./controls/variants": {
+      "types": "./dist/controls/variants/index.d.ts",
+      "import": "./dist/controls/variants/index.js",
+      "default": "./dist/controls/variants/index.js"
+    },
+    "./document/export": {
+      "types": "./dist/document/export/index.d.ts",
+      "import": "./dist/document/export/index.js",
+      "default": "./dist/document/export/index.js"
+    },
+    "./document/workspace": {
+      "types": "./dist/document/workspace/index.d.ts",
+      "import": "./dist/document/workspace/index.js",
+      "default": "./dist/document/workspace/index.js"
+    },
+    "./editor/commands": {
+      "types": "./dist/editor/commands/index.d.ts",
+      "import": "./dist/editor/commands/index.js",
+      "default": "./dist/editor/commands/index.js"
+    },
+    "./editor/events": {
+      "types": "./dist/editor/events/index.d.ts",
+      "import": "./dist/editor/events/index.js",
+      "default": "./dist/editor/events/index.js"
+    },
+    "./editor/inline-rename": {
+      "types": "./dist/editor/inline-rename/index.d.ts",
+      "import": "./dist/editor/inline-rename/index.js",
+      "default": "./dist/editor/inline-rename/index.js"
+    },
+    "./editor/menu-model": {
+      "types": "./dist/editor/menu-model/index.d.ts",
+      "import": "./dist/editor/menu-model/index.js",
+      "default": "./dist/editor/menu-model/index.js"
+    },
+    "./editor/selection-capabilities": {
+      "types": "./dist/editor/selection-capabilities/index.d.ts",
+      "import": "./dist/editor/selection-capabilities/index.js",
+      "default": "./dist/editor/selection-capabilities/index.js"
+    },
+    "./editor/selection-state": {
+      "types": "./dist/editor/selection-state/index.d.ts",
+      "import": "./dist/editor/selection-state/index.js",
+      "default": "./dist/editor/selection-state/index.js"
+    },
+    "./editor/tool-cursor": {
+      "types": "./dist/editor/tool-cursor/index.d.ts",
+      "import": "./dist/editor/tool-cursor/index.js",
+      "default": "./dist/editor/tool-cursor/index.js"
+    },
+    "./editor/viewport-kind": {
+      "types": "./dist/editor/viewport-kind/index.d.ts",
+      "import": "./dist/editor/viewport-kind/index.js",
+      "default": "./dist/editor/viewport-kind/index.js"
+    },
+    "./i18n": {
+      "types": "./dist/i18n/index.d.ts",
+      "import": "./dist/i18n/index.js",
+      "default": "./dist/i18n/index.js"
+    },
+    "./internal/scene-computed": {
+      "types": "./dist/internal/scene-computed/index.d.ts",
+      "import": "./dist/internal/scene-computed/index.js",
+      "default": "./dist/internal/scene-computed/index.js"
+    },
+    "./lifecycle/retention": {
+      "types": "./dist/lifecycle/retention/index.d.ts",
+      "import": "./dist/lifecycle/retention/index.js",
+      "default": "./dist/lifecycle/retention/index.js"
+    },
+    "./primitives/AppearanceControls": {
+      "types": "./dist/primitives/AppearanceControls/index.d.ts",
+      "import": "./dist/primitives/AppearanceControls/index.js",
+      "default": "./dist/primitives/AppearanceControls/index.js"
+    },
+    "./primitives/BindableValue": {
+      "types": "./dist/primitives/BindableValue/index.d.ts",
+      "import": "./dist/primitives/BindableValue/index.js",
+      "default": "./dist/primitives/BindableValue/index.js"
+    },
+    "./primitives/ChannelSlider": {
+      "types": "./dist/primitives/ChannelSlider/index.d.ts",
+      "import": "./dist/primitives/ChannelSlider/index.js",
+      "default": "./dist/primitives/ChannelSlider/index.js"
+    },
+    "./primitives/ColorPicker": {
+      "types": "./dist/primitives/ColorPicker/index.d.ts",
+      "import": "./dist/primitives/ColorPicker/index.js",
+      "default": "./dist/primitives/ColorPicker/index.js"
+    },
+    "./primitives/CommandPalette": {
+      "types": "./dist/primitives/CommandPalette/index.d.ts",
+      "import": "./dist/primitives/CommandPalette/index.js",
+      "default": "./dist/primitives/CommandPalette/index.js"
+    },
+    "./primitives/ConstraintsControl": {
+      "types": "./dist/primitives/ConstraintsControl/index.d.ts",
+      "import": "./dist/primitives/ConstraintsControl/index.js",
+      "default": "./dist/primitives/ConstraintsControl/index.js"
+    },
+    "./primitives/Fill": {
+      "types": "./dist/primitives/Fill/index.d.ts",
+      "import": "./dist/primitives/Fill/index.js",
+      "default": "./dist/primitives/Fill/index.js"
+    },
+    "./primitives/FontPicker": {
+      "types": "./dist/primitives/FontPicker/index.d.ts",
+      "import": "./dist/primitives/FontPicker/index.js",
+      "default": "./dist/primitives/FontPicker/index.js"
+    },
+    "./primitives/GradientEditor": {
+      "types": "./dist/primitives/GradientEditor/index.d.ts",
+      "import": "./dist/primitives/GradientEditor/index.js",
+      "default": "./dist/primitives/GradientEditor/index.js"
+    },
+    "./primitives/LayerTree": {
+      "types": "./dist/primitives/LayerTree/index.d.ts",
+      "import": "./dist/primitives/LayerTree/index.js",
+      "default": "./dist/primitives/LayerTree/index.js"
+    },
+    "./primitives/LayoutControls": {
+      "types": "./dist/primitives/LayoutControls/index.d.ts",
+      "import": "./dist/primitives/LayoutControls/index.js",
+      "default": "./dist/primitives/LayoutControls/index.js"
+    },
+    "./primitives/NumberField": {
+      "types": "./dist/primitives/NumberField/index.d.ts",
+      "import": "./dist/primitives/NumberField/index.js",
+      "default": "./dist/primitives/NumberField/index.js"
+    },
+    "./primitives/PageList": {
+      "types": "./dist/primitives/PageList/index.d.ts",
+      "import": "./dist/primitives/PageList/index.js",
+      "default": "./dist/primitives/PageList/index.js"
+    },
+    "./primitives/PositionControls": {
+      "types": "./dist/primitives/PositionControls/index.d.ts",
+      "import": "./dist/primitives/PositionControls/index.js",
+      "default": "./dist/primitives/PositionControls/index.js"
+    },
+    "./primitives/PropertyGrid": {
+      "types": "./dist/primitives/PropertyGrid/index.d.ts",
+      "import": "./dist/primitives/PropertyGrid/index.js",
+      "default": "./dist/primitives/PropertyGrid/index.js"
+    },
+    "./primitives/PropertyList": {
+      "types": "./dist/primitives/PropertyList/index.d.ts",
+      "import": "./dist/primitives/PropertyList/index.js",
+      "default": "./dist/primitives/PropertyList/index.js"
+    },
+    "./primitives/PropertySection": {
+      "types": "./dist/primitives/PropertySection/index.d.ts",
+      "import": "./dist/primitives/PropertySection/index.js",
+      "default": "./dist/primitives/PropertySection/index.js"
+    },
+    "./primitives/SegmentedControl": {
+      "types": "./dist/primitives/SegmentedControl/index.d.ts",
+      "import": "./dist/primitives/SegmentedControl/index.js",
+      "default": "./dist/primitives/SegmentedControl/index.js"
+    },
+    "./primitives/Toolbar": {
+      "types": "./dist/primitives/Toolbar/index.d.ts",
+      "import": "./dist/primitives/Toolbar/index.js",
+      "default": "./dist/primitives/Toolbar/index.js"
+    },
+    "./primitives/TypographyControls": {
+      "types": "./dist/primitives/TypographyControls/index.d.ts",
+      "import": "./dist/primitives/TypographyControls/index.js",
+      "default": "./dist/primitives/TypographyControls/index.js"
+    },
+    "./shared/dom-events": {
+      "types": "./dist/shared/dom-events.d.ts",
+      "import": "./dist/shared/dom-events.js",
+      "default": "./dist/shared/dom-events.js"
+    },
+    "./shared/drag": {
+      "types": "./dist/shared/drag/index.d.ts",
+      "import": "./dist/shared/drag/index.js",
+      "default": "./dist/shared/drag/index.js"
+    },
+    "./shared/font-status": {
+      "types": "./dist/shared/font-status/index.d.ts",
+      "import": "./dist/shared/font-status/index.js",
+      "default": "./dist/shared/font-status/index.js"
+    },
+    "./shared/input": {
+      "types": "./dist/shared/input/index.d.ts",
+      "import": "./dist/shared/input/index.js",
+      "default": "./dist/shared/input/index.js"
+    },
+    "./shared/search": {
+      "types": "./dist/shared/search/index.d.ts",
+      "import": "./dist/shared/search/index.js",
+      "default": "./dist/shared/search/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js",
+      "default": "./dist/testing/index.js"
+    },
+    "./variables": {
+      "types": "./dist/variables/index.d.ts",
+      "import": "./dist/variables/index.js",
+      "default": "./dist/variables/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -52,7 +452,8 @@
     "fuse.js": "^7.5.0",
     "nanostores": "^1.5.4",
     "reka-ui": "^2.10.5",
-    "shaders": "4.0.4"
+    "shaders": "4.0.4",
+    "valibot": "^1.5.0"
   },
   "devDependencies": {
     "tsdown": "^0.22.14",

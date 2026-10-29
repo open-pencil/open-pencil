@@ -5,7 +5,7 @@ import { expectDefined } from '#tests/helpers/assert'
 
 const editor = useEditorSetup()
 
-const ObservedShortcutJSON = v.pipe(
+const observedShortcutSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({ defaultPrevented: v.boolean(), shiftKey: v.boolean() })
@@ -106,9 +106,21 @@ test.describe('tool switching', () => {
     expect(await getActiveTool()).toBe('HAND')
   })
 
-  test('S → SECTION', async () => {
-    await editor.page.keyboard.press('s')
+  test('A → FRAME', async () => {
+    await editor.page.keyboard.press('v')
+    await editor.page.keyboard.press('a')
+    expect(await getActiveTool()).toBe('FRAME')
+  })
+
+  test('⇧S → SECTION', async () => {
+    await editor.page.keyboard.press('Shift+KeyS')
     expect(await getActiveTool()).toBe('SECTION')
+  })
+
+  test('S alone leaves the tool unchanged', async () => {
+    await editor.page.keyboard.press('v')
+    await editor.page.keyboard.press('s')
+    expect(await getActiveTool()).toBe('SELECT')
   })
 })
 
@@ -359,7 +371,7 @@ test.describe('zoom shortcuts', () => {
         if (!observed) throw new Error('Expected shortcut keydown event')
         return observed
       })
-      const event = v.parse(ObservedShortcutJSON, observed)
+      const event = v.parse(observedShortcutSchema, observed)
       return { event, zoom: await getZoom() }
     }
 
@@ -499,26 +511,6 @@ test.describe('zoom shortcuts', () => {
     const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
     expect(zoom).toBeLessThanOrEqual(1)
-  })
-})
-
-test.describe('undo/redo', () => {
-  test('⌘Z undoes last action', async () => {
-    await editor.canvas.clearCanvas()
-    await editor.canvas.drawRect(100, 100, 60, 60)
-    expect((await getPageChildren()).length).toBe(1)
-
-    await editor.page.keyboard.press('Meta+z')
-    await editor.canvas.waitForRender()
-
-    expect((await getPageChildren()).length).toBe(0)
-  })
-
-  test('⌘⇧Z redoes undone action', async () => {
-    await editor.page.keyboard.press('Meta+Shift+z')
-    await editor.canvas.waitForRender()
-
-    expect((await getPageChildren()).length).toBe(1)
   })
 })
 

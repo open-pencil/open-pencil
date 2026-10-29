@@ -1,7 +1,12 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
-import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import {
+  exportFigFile,
+  parseFigFile,
+  populateAllFigPages,
+  populateFigPage
+} from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 async function createLazyGraph() {

@@ -3,7 +3,7 @@ import { compact } from 'es-toolkit/array'
 import type { PrimitiveProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
 
-import type { BindingState } from '@open-pencil/vue'
+import type { BindingState } from '@open-pencil/vue/controls/binding-provider'
 
 import type { BindingFieldUI } from './ui'
 

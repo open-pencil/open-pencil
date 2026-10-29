@@ -1,334 +1,213 @@
-import { REKA_ELEMENTS, rekaRole } from './behaviours'
+import { mapValues } from 'es-toolkit/object'
+import * as v from 'valibot'
 
-function rekaDescription(namespace: string, part: string): string {
-  const role = rekaRole(`${namespace}.${part}`)
-  if (role?.role === 'root')
-    return `A main component that behaves as Reka UI's ${namespace} ${part}.`
-  if (role?.role === 'input') return `The text layer of a ${namespace}'s text property.`
-  return `The ${namespace} ${part}, drawn by a slot of its component.`
+import { tryParseColor } from '@open-pencil/scene-graph/color'
+import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import {
+  CONNECTOR_LINE,
+  CONNECTOR_SIDE,
+  enumProp,
+  FIGJAM_TEXT_SIZE,
+  FIGJAM_TYPEFACE,
+  SHAPE_KIND,
+  STROKE_ALIGN,
+  STROKE_CAP,
+  STROKE_JOIN
+} from './enums'
+import { isColor, isFillValue } from './overrides/fills'
+import { isStrokeValue } from './overrides/strokes'
+import { isLayerRef, type LayerRef } from './refs'
+import { isVariable } from './variables'
+
+/**
+ * Parse a value a design JSX script passed, or throw `heading` followed by every problem and
+ * where it is, as `v.summarize` lists them. Core words tool arguments the same way.
+ */
+export function parseScriptInput<S extends v.GenericSchema>(
+  heading: string,
+  schema: S,
+  value: unknown
+): v.InferOutput<S> {
+  const result = v.safeParse(schema, value)
+  if (result.success) return result.output
+  throw new Error(`${heading}:\n${v.summarize(result.issues)}`)
 }
 
-/** A Reka UI element as the element list describes it. */
-function rekaElementDefinitions(): DesignJSXElementDefinition[] {
-  return Object.entries(REKA_ELEMENTS).flatMap(([namespace, parts]) =>
-    Object.keys(parts).map((part) => {
-      const type = `${namespace}.${part}`
-      return { name: type, runtimeType: type, description: rekaDescription(namespace, part) }
-    })
+/**
+ * The layer props an element that draws its own layer takes, such as a connector's: the
+ * renderer makes them into fields and variable bindings as it does for any layer.
+ */
+export const ownLayerPropsSchema = v.object({
+  name: v.optional(v.string()),
+  key: v.optional(v.unknown()),
+  visible: v.optional(v.boolean()),
+  opacity: v.optional(v.number())
+})
+
+/** `OwnLayerProps` and the props that place a layer in its parent, such as a sticky note's. */
+export const placedOwnLayerPropsSchema = v.object({
+  ...ownLayerPropsSchema.entries,
+  x: v.optional(v.number()),
+  y: v.optional(v.number()),
+  position: v.optional(v.picklist(['absolute']))
+})
+
+/** A colour as a string, or as the colour a `designVar()` resolves to. */
+export const colorPropSchema = v.union(
+  [
+    v.pipe(
+      v.string(),
+      v.rawTransform(({ dataset, addIssue, NEVER }): Color => {
+        const color = tryParseColor(dataset.value)
+        if (color) return color
+        addIssue({ message: 'expected a colour' })
+        return NEVER
+      })
+    ),
+    v.custom<Color>(isColor)
+  ],
+  'expected a colour'
+)
+
+/** The props of an element read one at a time, each of them optional. */
+export type ElementPropsSchema = v.ObjectSchema<v.ObjectEntries, undefined>
+
+/**
+ * The props `schema` takes, read from `props`: one that does not fit is left out as if it were
+ * not set, since the renderer reports it (`elementPropWarnings`) and goes on.
+ */
+export function readElementProps<S extends ElementPropsSchema>(
+  schema: S,
+  props: Readonly<Record<string, unknown>>
+): v.InferOutput<S> {
+  const fitting = mapValues(schema.entries, (entry, key) =>
+    v.is(entry, props[key]) ? props[key] : undefined
   )
+  return v.parse(schema, fitting)
 }
 
-export type DesignJSXElementDefinition = {
-  name: string
-  runtimeType: string
-  description: string
-}
-
-export type DesignJSXNamedDefinition = {
-  name: string
-  description: string
-}
-
-export type DesignJSXPropertyDefinition = DesignJSXNamedDefinition
-export type DesignJSXHelperDefinition = DesignJSXNamedDefinition
-
-export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
-  { name: 'Frame', runtimeType: 'frame', description: 'A frame or auto-layout container.' },
-  { name: 'Text', runtimeType: 'text', description: 'A text layer.' },
-  {
-    name: 'Span',
-    runtimeType: 'text-span',
-    description: 'Characters inside a Text, styled apart from the rest.'
-  },
-  {
-    name: 'Paragraph',
-    runtimeType: 'text-paragraph',
-    description: 'One paragraph of a Text, plain or a list item.'
-  },
-  { name: 'Rectangle', runtimeType: 'rectangle', description: 'A rectangle layer.' },
-  { name: 'Ellipse', runtimeType: 'ellipse', description: 'An ellipse layer.' },
-  { name: 'Line', runtimeType: 'line', description: 'A line layer.' },
-  { name: 'Star', runtimeType: 'star', description: 'A star layer.' },
-  { name: 'Polygon', runtimeType: 'polygon', description: 'A polygon layer.' },
-  { name: 'Vector', runtimeType: 'vector', description: 'A vector layer.' },
-  { name: 'Group', runtimeType: 'group', description: 'A group of layers.' },
-  { name: 'Section', runtimeType: 'section', description: 'A canvas section.' },
-  { name: 'Component', runtimeType: 'component', description: 'A reusable component.' },
-  { name: 'ComponentSet', runtimeType: 'component-set', description: 'A component variant set.' },
-  { name: 'Instance', runtimeType: 'instance', description: 'An instance of a component.' },
-  { name: 'View', runtimeType: 'frame', description: 'An alias for Frame.' },
-  { name: 'Rect', runtimeType: 'rectangle', description: 'An alias for Rectangle.' },
-  { name: 'Icon', runtimeType: 'icon', description: 'An Iconify icon.' },
-  ...rekaElementDefinitions()
-]
-
-/** Props only `<Paragraph>` takes; like every element, it also takes `key`. */
-export const DESIGN_JSX_PARAGRAPH_PROPERTY_NAMES = [
-  'list',
-  'level',
-  'spacing',
-  'listSpacing',
-  'indent'
-] as const
-
-/** Props `<Span>` takes: `<Text>`'s character styles, under the same names, and a link. */
-export const DESIGN_JSX_SPAN_PROPERTY_NAMES = [
-  'style',
-  'size',
-  'fontSize',
-  'font',
-  'fontFamily',
-  'weight',
-  'fontWeight',
-  'italic',
-  'color',
-  'fill',
-  'fills',
-  'lineHeight',
-  'letterSpacing',
-  'textDecoration',
-  'textDecorationStyle',
-  'textDecorationColor',
-  'textDecorationThickness',
-  'textUnderlineOffset',
-  'textDecorationSkipInk',
-  'textCase',
-  'href'
-] as const
-
-/** Props `<Text>` sets every paragraph's spacing with; a `<Paragraph>` sets its own. */
-export const DESIGN_JSX_TEXT_PARAGRAPH_PROPERTY_NAMES = [
-  'paragraphSpacing',
-  'listSpacing',
-  'paragraphIndent',
-  'hangingList'
-] as const
-
-export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
-  'name',
-  'key',
-  'flex',
-  'flow',
-  'dir',
-  'gap',
-  'wrap',
-  'rowGap',
-  'columnGap',
-  'justify',
-  'justifyContent',
-  'items',
-  'align',
-  'alignItems',
-  'grow',
-  'w',
-  'h',
-  'width',
-  'height',
-  'minW',
-  'maxW',
-  'minH',
-  'maxH',
-  'x',
-  'y',
-  'top',
-  'left',
-  'position',
-  'constraints',
-  'p',
-  'padding',
-  'px',
-  'py',
-  'pt',
-  'pr',
-  'pb',
-  'pl',
-  'bg',
-  'fill',
-  'fills',
-  'background',
-  'backgroundColor',
-  'stroke',
-  'border',
-  'borderColor',
-  'strokeWidth',
-  'borderWidth',
-  'strokeAlign',
-  'strokeDash',
-  'strokeCap',
-  'strokeJoin',
-  'dashPattern',
-  'strokes',
-  'strokeWeights',
-  'rounded',
-  'borderRadius',
-  'roundedTL',
-  'roundedTR',
-  'roundedBL',
-  'roundedBR',
-  'cornerRadius',
-  'cornerSmoothing',
-  'opacity',
-  'blendMode',
-  'rotate',
-  'rotation',
-  'overflow',
-  'mask',
-  'visible',
-  'locked',
-  'shadow',
-  'blur',
-  'effects',
-  'size',
-  'fontSize',
-  'font',
-  'fontFamily',
-  'weight',
-  'fontWeight',
-  'italic',
-  'color',
-  'text',
-  'characters',
-  'content',
-  'value',
-  'title',
-  'textAlign',
-  'textAlignHorizontal',
-  'textHorizontalAlignment',
-  'textAlignVertical',
-  'textVerticalAlignment',
-  'textAutoResize',
-  'lineHeight',
-  'letterSpacing',
-  'textDecoration',
-  'textDecorationStyle',
-  'textDecorationColor',
-  'textDecorationThickness',
-  'textUnderlineOffset',
-  'textDecorationSkipInk',
-  'textCase',
-  'paragraphSpacing',
-  'paragraphIndent',
-  'hangingList',
-  'list',
-  'level',
-  'spacing',
-  'listSpacing',
-  'indent',
-  'maxLines',
-  'truncate',
-  'grid',
-  'columns',
-  'rows',
-  'colStart',
-  'rowStart',
-  'col',
-  'row',
-  'colSpan',
-  'rowSpan',
-  'points',
-  'pointCount',
-  'innerRadius',
-  'label',
-  'style',
-  'bind',
-  'component',
-  'componentId',
-  'properties',
-  'propertyRefs',
-  'of',
-  // A Reka UI root's behaviour, by its own property names
-  'modelValue',
-  'open',
-  'disabled',
-  'filled',
-  'states',
-  'min',
-  'max',
-  'step',
-  'defaultValue'
-] as const
-
-export const DESIGN_JSX_SUPPORTED_PROPERTIES = new Set<string>(DESIGN_JSX_SUPPORTED_PROPERTY_NAMES)
-
-/**
- * Properties accepted under more than one name, keyed by the name Design JSX writes. The
- * renderer reads the first one set, in this order; editors use it to find a value written
- * under any of its names.
- */
-export const DESIGN_JSX_PROPERTY_ALIASES: Readonly<Record<string, readonly string[]>> = {
-  w: ['width'],
-  h: ['height'],
-  bg: ['fill', 'background', 'backgroundColor'],
-  stroke: ['border', 'borderColor'],
-  rounded: ['cornerRadius', 'borderRadius'],
-  rotate: ['rotation'],
-  p: ['padding'],
-  colStart: ['col'],
-  rowStart: ['row'],
-  justify: ['justifyContent'],
-  items: ['align', 'alignItems'],
-  size: ['fontSize'],
-  font: ['fontFamily'],
-  weight: ['fontWeight'],
-  textAlign: ['textAlignHorizontal', 'textHorizontalAlignment'],
-  textAlignVertical: ['textVerticalAlignment']
-}
-
-/** A CSS-style key read from the `style` prop; `px` values like `'320px'` become numbers. */
-export interface DesignJSXStyleKey {
-  key: string
-  px?: boolean
-}
-
-/**
- * Properties also read from `style={{ … }}`, keyed by the name Design JSX writes, in the order
- * the renderer reads them. An attribute under any of the property's names wins over `style`.
- */
-export const DESIGN_JSX_STYLE_KEYS: Readonly<Record<string, readonly DesignJSXStyleKey[]>> = {
-  bg: [{ key: 'background' }, { key: 'backgroundColor' }],
-  color: [{ key: 'color' }],
-  stroke: [{ key: 'borderColor' }],
-  strokeWidth: [{ key: 'borderWidth', px: true }],
-  rounded: [{ key: 'borderRadius', px: true }],
-  size: [{ key: 'fontSize', px: true }],
-  weight: [{ key: 'fontWeight' }],
-  w: [{ key: 'width', px: true }],
-  h: [{ key: 'height', px: true }],
-  opacity: [{ key: 'opacity' }]
-}
-
-/** Every name a property is accepted under, the written name first. */
-export function designJSXPropertyNames(name: string): readonly string[] {
-  return [name, ...(DESIGN_JSX_PROPERTY_ALIASES[name] ?? [])]
-}
-
-/** The value of a property under the first of its names that is set. */
-export function designJSXProp(props: Readonly<Record<string, unknown>>, name: string): unknown {
-  for (const key of designJSXPropertyNames(name)) {
-    if (props[key] !== undefined && props[key] !== null) return props[key]
+/** A value as a warning quotes it; one JSON cannot write, such as a BigInt inside it, by its brackets. */
+function quoted(value: unknown): string {
+  if (typeof value === 'string') return `"${value}"`
+  if (typeof value !== 'object' || value === null) return String(value)
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return Array.isArray(value) ? '[…]' : '{…}'
   }
-  return undefined
 }
 
-export const DESIGN_JSX_PROPERTIES: DesignJSXPropertyDefinition[] =
-  DESIGN_JSX_SUPPORTED_PROPERTY_NAMES.map((name) => ({
-    name,
-    description: `OpenPencil ${name} property.`
-  }))
+/** A warning for each prop `props` sets that does not fit `schema`, naming the element. */
+export function elementPropWarnings(
+  schema: ElementPropsSchema,
+  props: Readonly<Record<string, unknown>>,
+  element: string
+): string[] {
+  return Object.entries(schema.entries).flatMap(([key, entry]) => {
+    const value = props[key]
+    // A `designVar()` resolves to its value before the element reads it.
+    if (value === undefined || isVariable(value)) return []
+    const result = v.safeParse(entry, value)
+    if (result.success) return []
+    const [issue] = result.issues
+    const source = `${key} ${quoted(value)} on <${element}> is ignored`
+    // A reader of its own, such as an enum's, names what it takes.
+    if (issue.kind === 'transformation') return [`Unknown ${source}; ${issue.message}.`]
+    // A choice of kinds names them; a single type or bound is Valibot's to name.
+    if (issue.type === 'union' || issue.type === 'custom')
+      return [`Invalid ${source}; ${issue.message}.`]
+    return [`Invalid ${source}; expected ${issue.expected}.`]
+  })
+}
 
-export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = [
-  'solid',
-  'gradient',
-  'linearGradient',
-  'radialGradient',
-  'angularGradient',
-  'diamondGradient',
-  'shader',
-  'dropShadow',
-  'innerShadow',
-  'layerBlur',
-  'backgroundBlur',
-  'foregroundBlur',
-  'designVar',
-  'defineVars'
-].map((name) => ({ name, description: `OpenPencil ${name} helper.` }))
+/** A layer of the same JSX by name or `ref()`, or a point in the connector's parent. */
+const connectorEndSchema = v.union(
+  [v.string(), v.custom<LayerRef>(isLayerRef), v.object({ x: v.number(), y: v.number() })],
+  'expected a layer name, a ref(), or { x, y }'
+)
+
+/** The props `<Connector>` takes: its own, and the layer props that style its line. */
+export const connectorPropsSchema = v.object({
+  from: v.optional(connectorEndSchema),
+  to: v.optional(connectorEndSchema),
+  fromSide: v.optional(enumProp(CONNECTOR_SIDE)),
+  toSide: v.optional(enumProp(CONNECTOR_SIDE)),
+  line: v.optional(enumProp(CONNECTOR_LINE)),
+  startCap: v.optional(enumProp(STROKE_CAP)),
+  endCap: v.optional(enumProp(STROKE_CAP)),
+  ...ownLayerPropsSchema.entries,
+  stroke: v.optional(colorPropSchema),
+  strokeWidth: v.optional(v.pipe(v.number(), v.gtValue(0))),
+  dashPattern: v.optional(v.array(v.number()))
+})
+
+const sizeSchema = v.pipe(v.number(), v.gtValue(0))
+const dashSchema = v.array(v.number())
+
+/**
+ * The layer props a shape has: its place, the size it is given, which it grows past to fit its
+ * label, and its paint. The label is styled as FigJam styles it, and the shape lays it out.
+ */
+export const shapeLayerPropsSchema = v.object({
+  ...placedOwnLayerPropsSchema.entries,
+  w: v.optional(sizeSchema),
+  h: v.optional(sizeSchema),
+  rotate: v.optional(v.number()),
+  rounded: v.optional(v.pipe(v.number(), v.minValue(0))),
+  bg: v.optional(v.custom(isFillValue, 'expected a colour or a paint')),
+  fills: v.optional(v.array(v.custom(isFillValue, 'expected a colour or a paint'))),
+  stroke: v.optional(colorPropSchema),
+  strokeWidth: v.optional(sizeSchema),
+  strokeAlign: v.optional(enumProp(STROKE_ALIGN)),
+  strokeDash: v.optional(dashSchema),
+  strokes: v.optional(v.array(v.custom(isStrokeValue, 'expected a stroke'))),
+  strokeCap: v.optional(enumProp(STROKE_CAP)),
+  strokeJoin: v.optional(enumProp(STROKE_JOIN)),
+  dashPattern: v.optional(dashSchema)
+})
+
+/**
+ * The props `<Shape>` takes: its kind, whether it keeps its height and truncates its label as a
+ * resized FigJam shape does, and the layer props a shape has.
+ */
+export const shapePropsSchema = v.object({
+  kind: v.optional(enumProp(SHAPE_KIND)),
+  truncate: v.optional(v.boolean()),
+  textSize: v.optional(enumProp(FIGJAM_TEXT_SIZE)),
+  typeface: v.optional(enumProp(FIGJAM_TYPEFACE)),
+  ...shapeLayerPropsSchema.entries
+})
+
+type StickyColorName = keyof typeof STICKY_COLORS
+
+function isStickyColorName(value: string): value is StickyColorName {
+  return value in STICKY_COLORS
+}
+
+/** A palette name such as `"yellow"`, or any colour. */
+const stickyColorSchema = v.pipe(
+  v.string(),
+  v.rawTransform(({ dataset, addIssue, NEVER }): Color => {
+    const name = dataset.value
+    if (isStickyColorName(name)) return { ...STICKY_COLORS[name] }
+    const color = tryParseColor(name)
+    if (color) return color
+    addIssue({ message: `expected ${Object.keys(STICKY_COLORS).join(', ')}, or a colour` })
+    return NEVER
+  })
+)
+
+/** The props `<Sticky>` takes: its own, and the few layer props a note has. */
+export const stickyPropsSchema = v.object({
+  color: v.optional(stickyColorSchema),
+  author: v.optional(v.string()),
+  authorVisible: v.optional(v.boolean()),
+  wide: v.optional(v.boolean()),
+  textSize: v.optional(enumProp(FIGJAM_TEXT_SIZE)),
+  typeface: v.optional(enumProp(FIGJAM_TYPEFACE)),
+  scale: v.optional(v.pipe(v.number(), v.gtValue(0))),
+  // A note takes the props that place it, but no size, fills, or layout.
+  ...placedOwnLayerPropsSchema.entries
+})

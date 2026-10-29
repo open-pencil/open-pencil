@@ -1,8 +1,13 @@
 import * as v from 'valibot'
 
 import type { FigmaNodeProxy } from '#core/figma-api'
-import { toolNumber, nodeIdInput } from '#core/tools/input'
-import { defineTool, nodeSummary, nodeToResult } from '#core/tools/schema'
+import {
+  toolNumber,
+  nodeIdInputSchema,
+  defineTool,
+  nodeSummary,
+  nodeToResult
+} from '#core/tools/schema'
 
 interface TreeEntry {
   id: string
@@ -99,7 +104,7 @@ export const getNode = defineTool({
     'Get detailed properties of a node by ID. Use depth to limit child recursion (0 = node only, 1 = direct children, etc). Default: unlimited.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     depth: v.optional(
       toolNumber(
         v.pipe(

@@ -1,4 +1,5 @@
 import { isPlainObject } from 'es-toolkit/predicate'
+import { basename, dirname, join, normalize } from 'pathe'
 import * as v from 'valibot'
 
 import { pathName } from './paths'
@@ -57,39 +58,39 @@ const COMPOSITE_TYPES = new Set([
   'cubicBezier'
 ])
 
-const DocumentSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
-type Document = v.InferOutput<typeof DocumentSchema>
+const documentSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+type Document = v.InferOutput<typeof documentSchema>
 
-const SourceSchema = v.union([v.object({ $ref: v.string() }), v.record(v.string(), v.unknown())])
-const ResolverSchema = v.object({
+const sourceSchema = v.union([v.object({ $ref: v.string() }), v.record(v.string(), v.unknown())])
+const resolverSchema = v.object({
   version: v.string(),
-  sets: v.optional(v.record(v.string(), v.object({ sources: v.array(SourceSchema) }))),
+  sets: v.optional(v.record(v.string(), v.object({ sources: v.array(sourceSchema) }))),
   modifiers: v.optional(
     v.record(
       v.string(),
       v.object({
-        contexts: v.record(v.string(), v.array(SourceSchema)),
+        contexts: v.record(v.string(), v.array(sourceSchema)),
         default: v.optional(v.string())
       })
     )
   ),
   resolutionOrder: v.array(v.unknown())
 })
-const ThemesSchema = v.array(
+const themesSchema = v.array(
   v.object({
     name: v.string(),
     group: v.optional(v.string()),
     selectedTokenSets: v.optional(v.record(v.string(), v.string()), {})
   })
 )
-const ModeExtensionSchema = v.object({
+const modeExtensionSchema = v.object({
   collection: v.optional(v.string()),
   mode: v.optional(v.string()),
   default: v.optional(v.boolean()),
   condition: v.optional(v.string()),
   modeAttribute: v.optional(v.string())
 })
-const NameExtensionSchema = v.object({ name: v.optional(v.string()) })
+const nameExtensionSchema = v.object({ name: v.optional(v.string()) })
 
 function extensionsOf(node: Record<string, unknown>): Record<string, unknown> {
   return isPlainObject(node.$extensions) ? node.$extensions : {}
@@ -97,7 +98,7 @@ function extensionsOf(node: Record<string, unknown>): Record<string, unknown> {
 
 /** The collection and mode a file says it holds, which OpenPencil writes into each mode file. */
 function modeInfo(parsed: Record<string, unknown> | undefined) {
-  const own = v.safeParse(ModeExtensionSchema, parsed && extensionsOf(parsed)[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(modeExtensionSchema, parsed && extensionsOf(parsed)[OPENPENCIL_EXTENSION])
   return own.success ? own.output : {}
 }
 
@@ -114,7 +115,7 @@ export function documentTokens(parsed: Record<string, unknown>): ReadToken[] {
         continue
       }
       const extensions = extensionsOf(child)
-      const own = v.safeParse(NameExtensionSchema, extensions[OPENPENCIL_EXTENSION])
+      const own = v.safeParse(nameExtensionSchema, extensions[OPENPENCIL_EXTENSION])
       tokens.push({
         path: at,
         name: (own.success ? own.output.name : undefined) ?? pathName(at),
@@ -131,24 +132,29 @@ export function documentTokens(parsed: Record<string, unknown>): ReadToken[] {
 
 /** `a/b/c.tokens.json` is `c`; `.tokens`, `.tokens.json`, and `.json` all go. */
 function baseName(path: string): string {
-  const file = path.split('/').at(-1) ?? path
-  return file.replace(/\.tokens(\.json)?$|\.json$/i, '')
+  return basename(path).replace(/\.tokens(\.json)?$|\.json$/i, '')
 }
 
+/** The folder a picked file sits in, or `''` for a file picked on its own. */
 function folderOf(path: string): string {
-  return path.split('/').slice(0, -1).join('/')
+  const folder = dirname(path)
+  return folder === '.' ? '' : folder
 }
 
-/** A `$ref` as a path among the picked files, relative to the file it appears in. */
+/**
+ * `path` as the picked files spell theirs: forward slashes, and nothing above their top, since
+ * nothing was picked from outside them.
+ */
+function pickedPath(path: string): string {
+  return normalize(path).replace(/^(?:\.\.\/|\/)+/, '')
+}
+
+/**
+ * A `$ref` as a path among the picked files: from the top of the picked folders when it starts
+ * with `/`, otherwise relative to the file it appears in.
+ */
 function resolveRef(from: string, ref: string): string {
-  const segments = [...folderOf(from).split('/'), ...ref.split('/')]
-  const resolved: string[] = []
-  for (const segment of segments) {
-    if (segment === '' || segment === '.') continue
-    if (segment === '..') resolved.pop()
-    else resolved.push(segment)
-  }
-  return resolved.join('/')
+  return pickedPath(ref.startsWith('/') ? ref : join(folderOf(from), ref))
 }
 
 /**
@@ -158,8 +164,8 @@ function resolveRef(from: string, ref: string): string {
 function findRef(reader: Reader, from: string, ref: string): string {
   const path = resolveRef(from, ref)
   if (reader.documents.has(path)) return path
-  const name = path.split('/').at(-1)
-  const matches = [...reader.documents.keys()].filter((key) => key.split('/').at(-1) === name)
+  const name = basename(path)
+  const matches = [...reader.documents.keys()].filter((key) => basename(key) === name)
   return matches.length === 1 ? matches[0] : path
 }
 
@@ -177,7 +183,7 @@ interface Reader {
 function sourceTokens(
   reader: Reader,
   from: string,
-  sources: ReadonlyArray<v.InferOutput<typeof SourceSchema>>
+  sources: ReadonlyArray<v.InferOutput<typeof sourceSchema>>
 ): { tokens: ReadToken[]; info: ReturnType<typeof modeInfo> } {
   const byPath = new Map<string, ReadToken>()
   let info: ReturnType<typeof modeInfo> = {}
@@ -204,7 +210,7 @@ function mode(name: string, tokens: ReadToken[], isDefault: boolean): ReadMode {
 
 /** A resolver: each modifier a collection of its contexts, each set a single-mode collection. */
 function readResolver(reader: Reader, path: string, parsed: Document): ReadCollection[] {
-  const result = v.safeParse(ResolverSchema, parsed)
+  const result = v.safeParse(resolverSchema, parsed)
   if (!result.success) {
     reader.issues.push({ kind: 'invalid-file', file: path })
     return []
@@ -247,7 +253,7 @@ function readResolver(reader: Reader, path: string, parsed: Document): ReadColle
  * primitives the themes refer to, become collections of their own.
  */
 function readThemes(
-  themes: v.InferOutput<typeof ThemesSchema>,
+  themes: v.InferOutput<typeof themesSchema>,
   setDocument: (name: string) => Record<string, unknown> | undefined
 ): ReadCollection[] {
   const groups = new Map<string, ReadMode[]>()
@@ -291,7 +297,7 @@ function readModeFiles(paths: readonly string[], reader: Reader): ReadCollection
     // collection they name, or into one.
     const folder = folderOf(path)
     const key = folder || info.collection || ''
-    const name = info.collection ?? (folder.split('/').at(-1) || 'Tokens')
+    const name = info.collection ?? (basename(folder) || 'Tokens')
     const collection = collections.get(key) ?? { name, modes: [], modeAttribute: undefined }
     collection.modeAttribute ??= info.modeAttribute
     collection.modes.push({
@@ -332,8 +338,8 @@ function splitComposites(collections: readonly ReadCollection[]) {
 export function readDesignTokens(files: readonly DesignTokenSourceFile[]): DesignTokenBundle {
   const reader: Reader = { documents: new Map(), used: new Set(), issues: [] }
   for (const file of files) {
-    const result = v.safeParse(DocumentSchema, file.text)
-    if (result.success) reader.documents.set(file.path, result.output)
+    const result = v.safeParse(documentSchema, file.text)
+    if (result.success) reader.documents.set(pickedPath(file.path), result.output)
     else reader.issues.push({ kind: 'invalid-file', file: file.path })
   }
   const collections: ReadCollection[] = []
@@ -343,7 +349,7 @@ export function readDesignTokens(files: readonly DesignTokenSourceFile[]): Desig
     collections.push(...readResolver(reader, path, parsed))
   }
   for (const [path, parsed] of reader.documents) {
-    const themes = v.safeParse(ThemesSchema, baseName(path) === '$themes' ? parsed : parsed.$themes)
+    const themes = v.safeParse(themesSchema, baseName(path) === '$themes' ? parsed : parsed.$themes)
     if (reader.used.has(path) || !themes.success) continue
     reader.used.add(path)
     const inline = baseName(path) !== '$themes'

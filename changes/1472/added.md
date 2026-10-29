@@ -1,0 +1,1 @@
+- On macOS 14 and later, the desktop app's icon picker offers SF Symbols, drawn by the Mac itself at a chosen weight, scale, and monochrome or hierarchical rendering; documents keep the outlines, so they draw on every platform.

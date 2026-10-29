@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -308,11 +308,11 @@ describe('hitTest — frame with children', () => {
 
     graph.updateNode(left.id, { flipX: false })
     expect(graph.getAbsolutePosition(child.id)).toEqual({ x: 120, y: 120 })
-    graph.reorderChild(child.id, right.id, 0)
+    graph.insertChildAt(child.id, right.id, 0)
     expect(graph.getAbsolutePosition(child.id)).toEqual({ x: 420, y: 120 })
     expect(graph.hitTest(430, 130, right.id)?.id).toBe(child.id)
 
-    graph.reorderChild(right.id, child.id, 0)
+    graph.insertChildAt(right.id, child.id, 0)
     expect(right.parentId).toBe(page)
     expect(child.parentId).toBe(right.id)
   })

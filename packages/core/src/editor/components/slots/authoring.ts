@@ -1,14 +1,16 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  removeComponentProperty,
+  createComponentPropertyId
+} from '@open-pencil/scene-graph/components'
 import {
   canCreateSlot,
   createSlotProperty,
-  removeComponentProperty,
   slotOwner,
   slotPropertyId,
   updateSlotProperty,
-  type SceneNode,
-  type SlotPropertyPatch,
-  createComponentPropertyId
-} from '@open-pencil/scene-graph'
+  type SlotPropertyPatch
+} from '@open-pencil/scene-graph/slots'
 
 import { wrapInAutoLayout } from '#core/editor/structure/auto-layout-wrap'
 import type { EditorContext } from '#core/editor/types'

@@ -1,0 +1,1 @@
+- The image fill picker sets a tile's scale and turns Fill, Fit, and Tile images by 90°.

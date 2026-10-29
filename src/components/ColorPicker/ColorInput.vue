@@ -2,8 +2,9 @@
 import { useAttrs } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { ColorInputRoot, inputValue } from '@open-pencil/vue'
-import type { OkHCLControls } from '@open-pencil/vue'
+import type { OkHCLControls } from '@open-pencil/vue/controls/color-model'
+import { ColorInputRoot } from '@open-pencil/vue/primitives/ColorPicker'
+import { inputValue } from '@open-pencil/vue/shared/dom-events'
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 

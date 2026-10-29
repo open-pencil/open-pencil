@@ -1,0 +1,1 @@
+- Dashed strokes with round or square ends, round or bevel joins, or smoothed corners are laid out as in Figma: each side and corner holds whole dashes, ends are capped only where dashes stop, and inside and outside strokes cap at their full weight.

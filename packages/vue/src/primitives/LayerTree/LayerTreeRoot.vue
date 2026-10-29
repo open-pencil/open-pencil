@@ -5,7 +5,7 @@ import { computed, nextTick, onScopeDispose, reactive, ref } from 'vue'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
-import { provideLayerTree } from '#vue/primitives/LayerTree/context'
+import { LAYER_OUTLINE_FIELDS, provideLayerTree } from '#vue/primitives/LayerTree/context'
 import type {
   LayerNode,
   LayerSelectionMode,
@@ -84,11 +84,17 @@ const PATCHABLE_NODE_KEYS = new Set<keyof SceneNode>([
   'layoutMode',
   'visible',
   'locked',
-  'variableModes'
+  'variableModes',
+  'isMask',
+  'fills',
+  'strokes',
+  ...LAYER_OUTLINE_FIELDS
 ])
 
 function patchTreeNode(id: string, changes: Partial<SceneNode>) {
-  if ('childIds' in changes || 'parentId' in changes) {
+  // A layout mode turns a layer's rows between front-most first and flow order.
+  const reordersRows = 'layoutMode' in changes && !!nodesById.get(id)?.children?.length
+  if ('childIds' in changes || 'parentId' in changes || reordersRows) {
     rebuildTree()
     return
   }

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import * as v from 'valibot'
 
-const pageResult = v.object({
+const pageResultSchema = v.object({
   ok: v.literal(true),
   result: v.object({ id: v.string(), name: v.string() })
 })
@@ -61,7 +61,7 @@ test('native WebMCP discovery, editing, validation and undo', async ({ page, bro
     expect(frames.has('save_file')).toBe(false)
     const current = await invoke('get_current_page')
     expect(current.status).toBe('Completed')
-    const original = v.parse(pageResult, current.output).result
+    const original = v.parse(pageResultSchema, current.output).result
     expect(
       (await invoke('update_node', { id: original.id, name: 'Browser agent page' })).status
     ).toBe('Completed')
@@ -70,29 +70,29 @@ test('native WebMCP discovery, editing, validation and undo', async ({ page, bro
     ).toBeVisible()
     const modifier = process.platform === 'darwin' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+z`)
-    expect(v.parse(pageResult, (await invoke('get_current_page')).output).result.name).toBe(
+    expect(v.parse(pageResultSchema, (await invoke('get_current_page')).output).result.name).toBe(
       original.name
     )
     await page.keyboard.press(`${modifier}+Shift+z`)
-    expect(v.parse(pageResult, (await invoke('get_current_page')).output).result.name).toBe(
+    expect(v.parse(pageResultSchema, (await invoke('get_current_page')).output).result.name).toBe(
       'Browser agent page'
     )
     expect((await invoke('update_node', { name: 'Missing id' })).status).toBe('Error')
-    expect(v.parse(pageResult, (await invoke('get_current_page')).output).result.name).toBe(
+    expect(v.parse(pageResultSchema, (await invoke('get_current_page')).output).result.name).toBe(
       'Browser agent page'
     )
     await page.getByRole('button', { name: 'Add page', exact: true }).click()
-    const secondPage = v.parse(pageResult, (await invoke('get_current_page')).output).result
+    const secondPage = v.parse(pageResultSchema, (await invoke('get_current_page')).output).result
     expect(secondPage.id).not.toBe(original.id)
     expect((await invoke('update_node', { id: original.id, name: 'Other page edit' })).status).toBe(
       'Completed'
     )
     await page.keyboard.press(`${modifier}+z`)
-    expect(v.parse(pageResult, (await invoke('get_current_page')).output).result.id).toBe(
+    expect(v.parse(pageResultSchema, (await invoke('get_current_page')).output).result.id).toBe(
       secondPage.id
     )
     expect(
-      v.parse(pageResult, (await invoke('get_node', { id: original.id })).output).result.name
+      v.parse(pageResultSchema, (await invoke('get_node', { id: original.id })).output).result.name
     ).toBe('Browser agent page')
   } finally {
     await cdp.detach()

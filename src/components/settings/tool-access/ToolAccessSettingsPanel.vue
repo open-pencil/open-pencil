@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAutomationMessages } from '@open-pencil/vue'
+import { useAutomationMessages } from '@open-pencil/vue/i18n'
 
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'

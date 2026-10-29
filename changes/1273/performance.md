@@ -1,0 +1,3 @@
+- Pages of a `.fig` file opened after the first load faster, about a quarter faster on a large design kit page.
+- A `.fig` document read without the background worker, as the CLI and the MCP server read it, frees the file's decoded records once every page is loaded and the document is saved, instead of keeping them while it stays open; on a large design kit that was hundreds of megabytes.
+- Layers inside instances share the layout settings Figma saved with their component's layers, so a large design kit page takes less memory.

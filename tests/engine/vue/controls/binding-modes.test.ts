@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
@@ -21,7 +21,7 @@ test('binding resolution uses node modes and reports mixed resolved values', () 
   })
   const targets = [a, b].map((node) => ({ nodeId: node.id, path: 'width' }))
   const provider = createOpenPencilBindingProvider(editor, {
-    type: 'FLOAT',
+    types: ['FLOAT'],
     prepareEdit: (e, id, target) =>
       prepareModeEdit(e, id, target, () => e.graph.resolveNumberVariableForNode(target.nodeId, id)),
     resolve: (e, id, target) =>

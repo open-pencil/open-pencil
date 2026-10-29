@@ -1,8 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import type * as Y from 'yjs'
+
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { openRoomSession, type RoomSession, type RoomSessionOptions } from '@/app/collab/session'
+import { claimRoot } from '@/app/collab/shared-tree/fields'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
 
@@ -140,6 +143,53 @@ describe('room sessions', () => {
       expect(early.peers.value.map((peer) => peer.hasFile)).toEqual([false])
       expect(early.status.value).toBe('waiting')
       expect(other.status.value).toBe('waiting')
+    })
+  })
+
+  test('a tab that holds the room’s document keeps showing it while its saved copy loads', async () => {
+    await withRooms(async (open) => {
+      let loaded: () => void = () => undefined
+      const whenSynced = new Promise<void>((resolve) => {
+        loaded = resolve
+      })
+      const session = open({
+        roomId: ROOM_A,
+        store: newStore('Poster'),
+        origin: 'shared',
+        holdsDocument: true,
+        openSavedCopy: () => ({ whenSynced, destroy: () => undefined })
+      })
+      expect(session.hasDocument.value).toBe(true)
+      expect(session.status.value).toBe('alone')
+      loaded()
+    })
+  })
+
+  test('a tab that holds the room’s document keeps showing it when the room’s root comes first', async () => {
+    await withRooms(async (open) => {
+      const room: { doc?: Y.Doc } = {}
+      const session = open({
+        roomId: ROOM_A,
+        store: newStore('Poster'),
+        origin: 'shared',
+        holdsDocument: true,
+        openSavedCopy: (_roomId, ydoc) => {
+          room.doc = ydoc
+          return noSavedCopy()
+        }
+      })
+      // The root another editor claimed, before any of its layers.
+      claimRoot(expectDefined(room.doc, 'room document').getMap('meta'), 'room:root')
+      expect(session.hasDocument.value).toBe(false)
+      expect(session.status.value).toBe('alone')
+    })
+  })
+
+  test('a room someone shared or joined can be left', async () => {
+    await withRooms(async (open) => {
+      const shared = open({ roomId: ROOM_A, store: newStore('Poster'), origin: 'shared' })
+      const joined = open({ roomId: ROOM_A, store: newStore(), origin: 'joined' })
+      expect([shared.leavable, joined.leavable]).toEqual([true, true])
     })
   })
 

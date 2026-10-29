@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-import { initCanvasKit } from '@open-pencil/core/io'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 
 import type { PixelImage } from '../image/pixel-image'
 

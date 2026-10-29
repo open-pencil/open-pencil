@@ -1,13 +1,50 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, pick } from 'es-toolkit'
+import { toRaw } from 'vue'
 
-import { readIcon, slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { readIcon } from '@open-pencil/scene-graph/icons'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
-import type { LayerNode, LayerRow, LayerSelectionMode } from '#vue/primitives/LayerTree/context'
+import { LAYER_OUTLINE_FIELDS } from '#vue/primitives/LayerTree/context'
+import type {
+  LayerNode,
+  LayerOutline,
+  LayerRow,
+  LayerSelectionMode
+} from '#vue/primitives/LayerTree/context'
 
 function explicitModeIds(node: SceneNode): string[] | undefined {
   const ids = Object.values(node.variableModes)
   return ids.length > 0 ? ids : undefined
+}
+
+function shapeWithTextTypeOf(node: SceneNode): ShapeWithTextType | undefined {
+  return node.type === 'SHAPE_WITH_TEXT' ? node.shapeWithTextType : undefined
+}
+
+/** The layers whose rows draw their own outline, as Figma's do; others keep their kind's glyph. */
+const OUTLINE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'LINE', 'POLYGON', 'STAR', 'VECTOR'])
+
+function outlineOf(node: SceneNode): LayerOutline | undefined {
+  if (!OUTLINE_TYPES.has(node.type) || (node.type === 'VECTOR' && !node.vectorNetwork)) {
+    return undefined
+  }
+  return pick(node, LAYER_OUTLINE_FIELDS)
+}
+
+/** A visible image paint, in fills or strokes, which Figma marks a layer's row with. */
+function showsImage(node: SceneNode): boolean {
+  return [...node.fills, ...node.strokes].some(
+    (paint) => paint.type === 'IMAGE' && paint.visible && paint.opacity > 0
+  )
+}
+
+function sameOutline(target: LayerOutline | undefined, source: LayerOutline | undefined) {
+  if (!target || !source) return target === source
+  // The target may be a reactive row, which hands back proxies of the objects it holds.
+  return LAYER_OUTLINE_FIELDS.every((field) => toRaw(target[field]) === source[field])
 }
 
 function nodeToLayerNode(node: SceneNode): LayerNode {
@@ -18,6 +55,10 @@ function nodeToLayerNode(node: SceneNode): LayerNode {
     layoutMode: node.layoutMode,
     slot: !!slotPropertyId(node),
     icon: !!readIcon(node),
+    shapeWithTextType: shapeWithTextTypeOf(node),
+    outline: outlineOf(node),
+    image: showsImage(node),
+    mask: node.isMask,
     visible: node.visible,
     locked: node.locked,
     modeIds: explicitModeIds(node)
@@ -29,6 +70,14 @@ export interface LayerTreeModel {
   byId: Map<string, LayerNode>
 }
 
+/**
+ * Whether a layer's rows follow its flow, as Figma lists a horizontal or vertical auto layout's
+ * children: first in the flow first. Other layers, grids included, list theirs front-most first.
+ */
+export function listsChildrenInFlow(node: Pick<SceneNode, 'layoutMode'>): boolean {
+  return node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL'
+}
+
 export function buildLayerTreeModel(graph: SceneGraph, parentId: string): LayerTreeModel {
   const byId = new Map<string, LayerNode>()
 
@@ -36,12 +85,17 @@ export function buildLayerTreeModel(graph: SceneGraph, parentId: string): LayerT
     const parent = graph.getNode(id)
     if (!parent) return []
     const children: LayerNode[] = []
-    for (const childId of parent.childIds) {
+    // `childIds` runs from back to front, which is also an auto layout's flow.
+    const rowOrder = listsChildrenInFlow(parent) ? parent.childIds : parent.childIds.toReversed()
+    for (const childId of rowOrder) {
       const sceneNode = graph.getNode(childId)
       if (!sceneNode || sceneNode.internalOnly) continue
       const node = nodeToLayerNode(sceneNode)
       byId.set(node.id, node)
-      if (sceneNode.childIds.length > 0) node.children = buildChildren(node.id)
+      // A generated frame, such as a sticky note, is one layer; its template owns what is inside.
+      if (sceneNode.childIds.length > 0 && !isGeneratedFrame(sceneNode)) {
+        node.children = buildChildren(node.id)
+      }
       children.push(node)
     }
     return children
@@ -63,12 +117,17 @@ export function indexLayerNodes(items: readonly LayerNode[]): Map<string, LayerN
 }
 
 export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
+  const outline = outlineOf(source)
   const changed =
     target.name !== source.name ||
     target.type !== source.type ||
     target.layoutMode !== source.layoutMode ||
     target.slot !== !!slotPropertyId(source) ||
     target.icon !== !!readIcon(source) ||
+    target.shapeWithTextType !== shapeWithTextTypeOf(source) ||
+    !sameOutline(target.outline, outline) ||
+    target.image !== showsImage(source) ||
+    target.mask !== source.isMask ||
     target.visible !== source.visible ||
     target.locked !== source.locked ||
     !isEqual(target.modeIds, explicitModeIds(source))
@@ -78,6 +137,10 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
   target.layoutMode = source.layoutMode
   target.slot = !!slotPropertyId(source)
   target.icon = !!readIcon(source)
+  target.shapeWithTextType = shapeWithTextTypeOf(source)
+  target.outline = outline
+  target.image = showsImage(source)
+  target.mask = source.isMask
   target.visible = source.visible
   target.locked = source.locked
   target.modeIds = explicitModeIds(source)

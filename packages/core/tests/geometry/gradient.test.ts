@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import {
   gradientHandleLayout,
   gradientHandles,
@@ -7,7 +9,6 @@ import {
   hitTestGradientHandles,
   moveGradientHandle
 } from '#core/geometry'
-import type { Vector } from '@open-pencil/scene-graph'
 
 // A 200 × 140 layer with a linear gradient from its left edge's middle to its right edge's middle:
 // Figma's identity transform.
@@ -49,9 +50,9 @@ describe('gradient handles', () => {
       y: 120
     })
     const figma = [1.2820513, 0.0769231, -0.0384615, -0.8547009, 1.2820513, -0.1410256]
-    expect([moved.m00, moved.m01, moved.m02, moved.m10, moved.m11, moved.m12].map((v) => +v.toFixed(5))).toEqual(
-      figma.map((v) => +v.toFixed(5))
-    )
+    expect(
+      [moved.m00, moved.m01, moved.m02, moved.m10, moved.m11, moved.m12].map((v) => +v.toFixed(5))
+    ).toEqual(figma.map((v) => +v.toFixed(5)))
   })
 
   // Figma desktop 126: the pointer at −10.2° from the start lands on −15°, at the pointer's distance.
@@ -79,9 +80,9 @@ describe('gradient handles', () => {
     expect(gradientStopPosition('GRADIENT_LINEAR', LEFT_TO_RIGHT, 200, 140, { x: 150, y: 3 })).toBe(
       0.75
     )
-    expect(gradientStopPosition('GRADIENT_LINEAR', LEFT_TO_RIGHT, 200, 140, { x: -40, y: 70 })).toBe(
-      0
-    )
+    expect(
+      gradientStopPosition('GRADIENT_LINEAR', LEFT_TO_RIGHT, 200, 140, { x: -40, y: 70 })
+    ).toBe(0)
   })
 
   test('an angular stop follows the pointer around the centre', () => {

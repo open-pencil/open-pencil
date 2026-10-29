@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { waitForDemo } from '#tests/helpers/demo'
 
 // `?test` suppresses the first-run offer, so these load the app as a person would, with none
 // of the stored preferences the other browser tests start from.
@@ -18,6 +19,16 @@ test('a fresh install offers guided AI setup once and remembers skipping it', as
   await page.reload()
   await new CanvasHelper(page).waitForInit()
   await expect(setup).toHaveCount(0)
+})
+
+test('a first visit to the demo offers the welcome without pointing to the tour', async ({
+  page
+}) => {
+  await page.goto('/demo')
+  await waitForDemo(page)
+  const setup = page.getByTestId('ai-setup-dialog')
+  await expect(setup.getByRole('heading', { name: 'Welcome to OpenPencil' })).toBeVisible()
+  await expect(setup.getByTestId('ai-setup-tour')).toHaveCount(0)
 })
 
 const CONFIGURED_MODEL_SETTINGS = {

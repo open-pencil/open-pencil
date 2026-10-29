@@ -1,10 +1,6 @@
-import {
-  compileTailwindCSS,
-  designDocumentToSceneGraph,
-  jsx,
-  jsxToDesignDocument,
-  type DesignDocument
-} from '@open-pencil/dom-css'
+import { compileTailwindCSS, jsxToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
+import { jsx } from '@open-pencil/dom-css/browser'
+import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 
 import {
   DOM_CSS_COLORS,

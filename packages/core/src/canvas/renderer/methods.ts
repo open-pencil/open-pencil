@@ -16,12 +16,13 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
 import * as Rulers from '#core/canvas/rulers'
 import * as SceneRender from '#core/canvas/scene'
-import { renderEffects as renderShadowEffects } from '#core/canvas/shadows'
+import { type EffectPass, renderEffects as renderShadowEffects } from '#core/canvas/shadows'
 import * as Shapes from '#core/canvas/shapes'
 import * as Strokes from '#core/canvas/strokes'
+import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import type { TextEditor } from '#core/text/editor'
 
-const rendererMethods: ThisType<SkiaRenderer> = {
+const rendererMethods = {
   drawHoverHighlight(
     canvas: Canvas,
     graph: SceneGraph,
@@ -117,6 +118,10 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Overlays.drawSnapGuides(this, canvas, guides)
   },
 
+  drawSnapMarks(canvas: Canvas, guides?: SnapGuide[]): void {
+    Overlays.drawSnapMarks(this, canvas, guides)
+  },
+
   drawMarquee(canvas: Canvas, marquee?: Rect | null): void {
     Overlays.drawMarquee(this, canvas, marquee)
   },
@@ -141,8 +146,8 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Overlays.drawAutoLayoutHover(this, canvas, graph, hover)
   },
 
-  drawTextEditOverlay(canvas: Canvas, node: SceneNode, editor: TextEditor): void {
-    Overlays.drawTextEditOverlay(this, canvas, node, editor)
+  drawTextEditOverlay(canvas: Canvas, node: SceneNode, editor: TextEditor, outset = 0): void {
+    Overlays.drawTextEditOverlay(this, canvas, node, editor, outset)
   },
 
   drawNodeEditOverlay(
@@ -160,6 +165,10 @@ const rendererMethods: ThisType<SkiaRenderer> = {
 
   drawPenOverlay(canvas: Canvas, penState: RenderOverlays['penState']): void {
     PenOverlay.drawPenOverlay(this, canvas, penState)
+  },
+
+  drawPencilOverlay(canvas: Canvas, pencilState: RenderOverlays['pencilState']): void {
+    PenOverlay.drawPencilOverlay(this, canvas, pencilState)
   },
 
   drawPresenceCursors(canvas: Canvas, graph: SceneGraph, cursors?: PresenceCursor[]): void {
@@ -238,59 +247,44 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     SceneRender.renderShapeUncached(this, canvas, node, graph)
   },
 
-  renderEffects(
-    canvas: Canvas,
-    node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean,
-    pass: 'behind' | 'front',
-    shadowShapeChild?: SceneNode | null
-  ): void {
-    renderShadowEffects(this, canvas, node, rect, hasRadius, pass, shadowShapeChild)
+  paintShapeContent(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    SceneRender.paintShapeContent(this, canvas, node, graph)
+  },
+
+  renderEffects(canvas: Canvas, node: SceneNode, graph: SceneGraph, pass: EffectPass): void {
+    renderShadowEffects(this, canvas, node, graph, pass)
   },
 
   renderText(canvas: Canvas, node: SceneNode, fill?: Fill): void {
     SceneRender.renderText(this, canvas, node, fill)
   },
 
-  drawNodeFill(
-    canvas: Canvas,
-    node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean,
-    fill?: Fill
-  ): void {
-    Fills.drawNodeFill(this, canvas, node, rect, hasRadius, fill)
+  drawNodeFill(canvas: Canvas, node: SceneNode, fill?: Fill): void {
+    Fills.drawNodeFill(this, canvas, node, fill)
   },
 
   applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): boolean {
     return Fills.applyFill(this, fill, node, graph, fillIndex)
   },
 
-  applyGradientFill(fill: Fill, node: SceneNode, graph: SceneGraph): void {
-    Fills.applyGradientFill(this, fill, node, graph)
+  applyGradientFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
+    return Fills.applyGradientFill(this, fill, node, graph)
   },
 
   applyImageFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
     return Fills.applyImageFill(this, fill, node, graph)
   },
 
-  drawArc(canvas: Canvas, node: SceneNode, paint: Paint): void {
-    Fills.drawArc(this, canvas, node, paint)
-  },
-
-  drawNodeStroke(canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean): void {
-    Strokes.drawNodeStroke(this, canvas, node, rect, hasRadius)
+  drawNodeStroke(canvas: Canvas, node: SceneNode): void {
+    Strokes.drawNodeStroke(this, canvas, node)
   },
 
   drawStrokeWithAlign(
     canvas: Canvas,
     node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean,
     align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
   ): void {
-    Strokes.drawStrokeWithAlign(this, canvas, node, rect, hasRadius, align)
+    Strokes.drawStrokeWithAlign(this, canvas, node, align)
   },
 
   drawRRectStrokeWithAlign(
@@ -302,20 +296,16 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Strokes.drawRRectStrokeWithAlign(this, canvas, rrect, node, stroke)
   },
 
-  drawIndividualSideStrokes(
-    canvas: Canvas,
-    node: SceneNode,
-    align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
-  ): void {
-    Strokes.drawIndividualSideStrokes(this, canvas, node, align)
+  drawIndividualSideStrokes(canvas: Canvas, node: SceneNode, stroke: Stroke): void {
+    drawIndividualSideStrokes(this, canvas, node, stroke)
   },
 
   strokeNodeShape(canvas: Canvas, node: SceneNode, paint: Paint): void {
     Strokes.strokeNodeShape(this, canvas, node, paint)
   },
 
-  makeNodeShapePath(node: SceneNode, rect: Float32Array, hasRadius: boolean): Path {
-    return Shapes.makeNodeShapePath(this, node, rect, hasRadius)
+  makeNodeShapePath(node: SceneNode): Path {
+    return Shapes.makeNodeShapePath(this, node)
   },
 
   makePolygonPath(node: SceneNode): Path {
@@ -330,12 +320,8 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     return Shapes.makeRRectWithSpread(this, node, spread)
   },
 
-  makeRRectWithOffset(node: SceneNode, ox: number, oy: number, spread: number): Float32Array {
-    return Shapes.makeRRectWithOffset(this, node, ox, oy, spread)
-  },
-
-  clipNodeShape(canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean): void {
-    Shapes.clipNodeShape(this, canvas, node, rect, hasRadius)
+  clipNodeShape(canvas: Canvas, node: SceneNode): void {
+    Shapes.clipNodeShape(this, canvas, node)
   },
 
   getVectorPaths(node: SceneNode): Path[] | null {
@@ -366,16 +352,12 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     return Effects.getCachedMaskBlur(this, sigma)
   },
 
-  applyClippedBlur(
-    canvas: Canvas,
-    node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean,
-    sigma: number
-  ): void {
-    Effects.applyClippedBlur(this, canvas, node, rect, hasRadius, sigma)
+  applyClippedBlur(canvas: Canvas, node: SceneNode, sigma: number, shape?: Path | null): void {
+    Effects.applyClippedBlur(this, canvas, node, sigma, shape)
   }
-}
+} satisfies ThisType<SkiaRenderer>
+
+export type RendererDomainMethods = typeof rendererMethods
 
 export function installRendererDomainMethods(prototype: object): void {
   Object.assign(prototype, rendererMethods)

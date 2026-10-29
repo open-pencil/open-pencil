@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 const BADGE = `<?xml version="1.0"?>
 <svg id="badge" viewBox="0 0 40 20"><g id="dot"><circle cx="10" cy="10" r="10"/></g></svg>`

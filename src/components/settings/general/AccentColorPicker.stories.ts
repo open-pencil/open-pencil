@@ -3,7 +3,8 @@ import { expect, userEvent, within } from 'storybook/test'
 import { onUnmounted } from 'vue'
 
 import { accentPreference } from '@/app/shell/accent'
-import { DEFAULT_ACCENT, type AccentPreference } from '@/app/shell/accent/palette'
+import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
+import { type AccentPreference } from '@/app/shell/accent/schema'
 
 import AccentColorPicker from './AccentColorPicker.vue'
 

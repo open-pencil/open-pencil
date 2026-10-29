@@ -1,5 +1,6 @@
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
-import type { SceneGraph, ShaderComponent, ShaderPreset } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { ShaderComponent, ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 import type { DesignDocument, DesignElement, DesignNode } from '../types'
 import { shaderEffectAttributes } from './components/shaders'

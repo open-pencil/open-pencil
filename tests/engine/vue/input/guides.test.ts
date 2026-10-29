@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { ref } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
 import type { DragState } from '#vue/shared/input/types'

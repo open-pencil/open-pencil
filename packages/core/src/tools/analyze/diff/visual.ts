@@ -5,8 +5,7 @@ import * as v from 'valibot'
 import type { FigmaAPI } from '#core/figma-api'
 import { computeContentBounds, type RGBAImage } from '#core/io/formats/raster'
 import { findPageId } from '#core/io/subgraph'
-import { nodeComparisonInput, toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { nodeComparisonInputSchema, toolNumber, defineTool } from '#core/tools/schema'
 import { boundedRasterScale, rasterScaleInputs } from '#core/tools/vector/export'
 
 /** pixelmatch paints mismatches in this color over a faded grayscale copy of the source. */
@@ -78,7 +77,7 @@ export const diffVisual = defineTool({
     'Pixel diff between two rendered nodes. Returns a PNG with changed pixels in red over a faded copy of the source, the changed pixel ratio, and the changed region in source-node coordinates. Use it to confirm an edit only touched the intended area.',
   execution: { kind: 'async', mutation: 'none' },
   input: v.strictObject({
-    ...nodeComparisonInput.entries,
+    ...nodeComparisonInputSchema.entries,
     ...rasterScaleInputs,
     threshold: v.optional(
       toolNumber(

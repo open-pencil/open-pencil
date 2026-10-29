@@ -17,12 +17,13 @@ import {
   editorCommandMetadata,
   formatShortcut,
   useEditorCommands,
-  useI18n,
-  useRetainedPopup
-} from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+  type EditorCommandId
+} from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { getCommand, runCommand } = useEditorCommands()
@@ -56,22 +57,24 @@ const itemCls = menuItem({ justify: 'between' })
     </Tip>
     <DropdownMenuPortal v-if="portalActive">
       <DropdownMenuContent align="end" side="bottom" :side-offset="4" :class="menuCls.content">
-        <DropdownMenuItem
-          v-for="operation in operations"
-          :key="operation.id"
-          :data-test-id="`boolean-operation-${operation.id.replace('selection.', '')}`"
-          :class="itemCls"
-          :disabled="!getCommand(operation.id).enabled.value"
-          @select="runCommand(operation.id)"
-        >
-          <div class="flex min-w-0 items-center gap-2">
-            <component :is="operation.icon" class="size-3.5 shrink-0 text-muted" />
-            <span>{{ getCommand(operation.id).label }}</span>
-          </div>
-          <span class="ml-6 text-[11px] text-muted">{{
-            formatShortcut(editorCommandMetadata(operation.id).shortcut)
-          }}</span>
-        </DropdownMenuItem>
+        <MenuScrollArea>
+          <DropdownMenuItem
+            v-for="operation in operations"
+            :key="operation.id"
+            :data-test-id="`boolean-operation-${operation.id.replace('selection.', '')}`"
+            :class="itemCls"
+            :disabled="!getCommand(operation.id).enabled.value"
+            @select="runCommand(operation.id)"
+          >
+            <div class="flex min-w-0 items-center gap-2">
+              <component :is="operation.icon" class="size-3.5 shrink-0 text-muted" />
+              <span>{{ getCommand(operation.id).label }}</span>
+            </div>
+            <span class="ml-6 text-[11px] text-muted">{{
+              formatShortcut(editorCommandMetadata(operation.id).shortcut)
+            }}</span>
+          </DropdownMenuItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

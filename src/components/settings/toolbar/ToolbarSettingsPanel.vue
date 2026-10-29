@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { DEFAULT_TOOLBAR_LAYOUT } from '@/app/editor/toolbar/layout'
 import { appPreferences, updateToolbarLayout } from '@/app/settings/preferences/store'

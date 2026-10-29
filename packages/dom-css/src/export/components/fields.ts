@@ -5,12 +5,12 @@ import { omit, pick } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import { es } from '@open-pencil/emit'
+import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 import {
   DEFAULT_NUMBER_SETTINGS,
   numberSettings,
-  type Behaviour,
-  type ComponentPropertyDefinition
-} from '@open-pencil/scene-graph'
+  type Behaviour
+} from '@open-pencil/scene-graph/behaviours'
 
 import type { GeneratedKind, RangeModel, TextModel } from './model'
 

@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { RAW_VERIFIERS, SCENE_VERIFIERS, type VerifierContext } from './helpers'
 
@@ -51,7 +52,7 @@ test('raw letter-spacing comparison uses the saved unit and still rejects wrong 
   const context = referenceContext('asset', 'asset')
   const text = context.aGraph.createNode('TEXT', context.aGraph.getPages()[0].id, {
     fontSize: 20,
-    letterSpacing: 0.1
+    letterSpacing: pixelLength(0.1)
   })
   context.aNodes.set(context.path, text)
   context.key = 'letterSpacing'

@@ -11,11 +11,13 @@
   "importing": "正在导入…",
   "importToCanvas": "导入到画布",
   "newTab": "新标签页",
+  "home": "主页",
   "closeTab": "关闭 {name}",
   "clipboardImageUnavailableWeb": "粘贴的设计包含 1 张无法在网页应用中加载的图片。请使用桌面应用以包含该图片。",
   "clipboardImagesUnavailableWeb": "粘贴的设计包含 {count} 张无法在网页应用中加载的图片。请使用桌面应用以包含这些图片。",
   "clipboardImageFetchFailed": "无法从 Figma 获取 1 张图片。请检查源文件是否可访问，然后重试。",
   "clipboardImagesFetchFailed": "无法从 Figma 获取 {count} 张图片。请检查源文件是否可访问，然后重试。",
+  "mermaidPasteFailed": "无法读取 Mermaid 图表。{error}",
   "recentFiles": "最近使用的文件",
   "recentFilesDescription": "继续编辑设计或新建设计。",
   "noRecentFiles": "暂无最近使用的文件",
@@ -25,5 +27,6 @@
   "newDesign": "新建设计",
   "noMatchingFiles": "没有与“{query}”匹配的文件。",
   "saveAsPrompt": "另存为：",
-  "browserFileAPINotSupported": "你的浏览器不支持本地文件 API。文件将被下载，而不是保存在原位置。"
+  "browserFileAPINotSupported": "你的浏览器不支持本地文件 API。文件将被下载，而不是保存在原位置。",
+  "newDesignIn": "在 {place} 中新建设计"
 }

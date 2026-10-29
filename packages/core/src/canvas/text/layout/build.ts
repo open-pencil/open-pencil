@@ -1,5 +1,7 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
+import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -7,13 +9,12 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
+  lineHeightPixels,
   topLevelNumberDigits,
-  type CharacterStyleOverride,
-  type StyleRun,
   type TextListItem,
   type TextParagraphRange
-} from '@open-pencil/scene-graph'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
+} from '@open-pencil/scene-graph/text'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from '#core/canvas/text/layout'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
@@ -29,8 +30,7 @@ import type { TextRenderer } from '#core/canvas/text/renderer'
 import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
-import { weightToStyle } from '#core/text/fonts'
-import { glyphAdvanceSync } from '#core/text/opentype'
+import { glyphAdvanceSync } from '#core/text/font/glyphs'
 
 /** A list item's indent per level, in ems of the list's first character. */
 const LIST_INDENT_EMS = 1.5
@@ -61,7 +61,8 @@ function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): 
 
 /** Line heights by paragraph index, `lead` places before the text: each run's, the text's elsewhere. */
 function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
-  const own = node.lineHeight || null
+  // A percent line height follows the font size of the characters it spaces.
+  const own = (fontSize = node.fontSize) => lineHeightPixels(node.lineHeight, fontSize) || null
   const runs: LineHeightRun[] = []
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
@@ -71,12 +72,16 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
   }
   let position = 0
   for (const run of node.styleRuns) {
-    if (position < run.start) add(position + lead, run.start + lead, own)
-    const lineHeight = run.style.lineHeight !== undefined ? run.style.lineHeight || null : own
+    if (position < run.start) add(position + lead, run.start + lead, own())
+    const runSize = run.style.fontSize ?? node.fontSize
+    const lineHeight =
+      run.style.lineHeight !== undefined
+        ? lineHeightPixels(run.style.lineHeight, runSize) || null
+        : own(runSize)
     add(run.start + lead, run.start + run.length + lead, lineHeight)
     position = run.start + run.length
   }
-  if (position < node.text.length) add(position + lead, node.text.length + lead, own)
+  if (position < node.text.length) add(position + lead, node.text.length + lead, own())
   return runs
 }
 
@@ -95,7 +100,7 @@ function paragraphLines(
   // Lines are cut by character index, which the text's case must keep.
   if (shownText(node).length !== node.text.length) return undefined
   const lead = firstLineIndent > 0 ? 1 : 0
-  const ellipsis = buildTruncateOpts(node, node.fontSize || DEFAULT_FONT_SIZE).ellipsis
+  const ellipsis = buildTruncateOpts(node).ellipsis
   // A justified line is stretched only with text after it: lines are laid out with the rest
   // of the paragraph and cut, as truncated last lines are.
   const justified = node.textAlignHorizontal === 'JUSTIFIED'
@@ -176,9 +181,10 @@ function markerNode(node: ParagraphNode, item: TextListItem, style: ListStyle): 
     letterSpacing: override?.letterSpacing ?? node.letterSpacing,
     lineHeight: override?.lineHeight !== undefined ? override.lineHeight : node.lineHeight,
     fontVariations: override?.fontVariations ?? node.fontVariations,
+    opticalSizeFromFontSize: override?.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize,
     fontFeatures:
       item.listType === 'ORDERED' ? [...features, { tag: 'TNUM', enabled: true }] : features,
-    textLanguage: override?.textLanguage ?? node.textLanguage,
+    textLanguage: override?.textLanguage !== undefined ? override.textLanguage : node.textLanguage,
     styleRuns: override?.fills
       ? [{ start: 0, length: item.marker.length, style: { fills: override.fills } }]
       : [],
@@ -211,7 +217,7 @@ function buildBlocks(
   )
   const digits = topLevelNumberDigits([...items.values()])
   const rtl = resolveNodeTextDirection(node) === 'RTL'
-  const truncation = buildTruncateOpts(node, node.fontSize || DEFAULT_FONT_SIZE)
+  const truncation = buildTruncateOpts(node)
   const maxLines = truncation.maxLines
   // Each paragraph starts one byte, its newline, after the one before it ends.
   const utf8Starts: number[] = []
@@ -339,14 +345,13 @@ function buildMarker(
   }
 }
 
-/** Lay a text node out as the renderer draws it, at its own width. */
-export function buildParagraph(
+function createTextLayout(
   r: TextRenderer,
   node: ParagraphNode,
-  color?: Float32Array,
-  options: ParagraphBuildOptions = {}
+  color: Float32Array | undefined,
+  options: ParagraphBuildOptions
 ): TextLayout {
-  const layout = needsParagraphLayout(node)
+  return needsParagraphLayout(node)
     ? buildBlocks(r, node, color, options)
     : TextLayout.ofParagraph(
         r.ck,
@@ -354,11 +359,38 @@ export function buildParagraph(
         shownText(node).length,
         paragraphLines(r, node, color, options)
       )
+}
+
+/** How many laid-out line boxes fit the fixed height, preserving the first line. */
+function linesWithinHeight(layout: TextLayout, height: number): number {
+  const lines = layout.getLineMetrics()
+  const firstOverflow = lines.findIndex((line) => line.baseline + line.descent > height)
+  return Math.max(1, firstOverflow === -1 ? lines.length : firstOverflow)
+}
+
+/** Lay a text node out as the renderer draws it, at its own width. */
+export function buildParagraph(
+  r: TextRenderer,
+  node: ParagraphNode,
+  color?: Float32Array,
+  options: ParagraphBuildOptions = {}
+): TextLayout {
+  const layout = createTextLayout(r, node, color, options)
+  const heightTruncation =
+    node.textTruncation === 'ENDING' &&
+    node.height > 0 &&
+    (node.maxLines == null || node.maxLines <= 0)
+  let fittingLines: number | undefined
   try {
     layoutForNode(layout, node)
-    return layout
+    if (heightTruncation) fittingLines = linesWithinHeight(layout, node.height)
   } catch (error) {
     layout.delete()
     throw error
   }
+  if (fittingLines !== undefined && fittingLines < layout.getLineMetrics().length) {
+    layout.delete()
+    return buildParagraph(r, { ...node, maxLines: fittingLines }, color, options)
+  }
+  return layout
 }

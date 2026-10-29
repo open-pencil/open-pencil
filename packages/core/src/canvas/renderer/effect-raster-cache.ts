@@ -11,7 +11,6 @@ export interface EffectRasterCacheEntry {
   scale: number
   pixels: number
   fontGeneration: number
-  dependencyIds: readonly string[]
 }
 
 const MAX_EFFECT_RASTER_CACHE_PIXELS = 24_000_000
@@ -29,12 +28,6 @@ export class EffectRasterCache extends ResourceCache<string, EffectRasterCacheEn
       weight: (entry) => entry.pixels,
       dispose: (entry) => entry.image.delete()
     })
-  }
-
-  deleteDependencies(nodeId: string): void {
-    for (const [ownerId, entry] of this) {
-      if (entry.dependencyIds.includes(nodeId)) this.delete(ownerId)
-    }
   }
 }
 

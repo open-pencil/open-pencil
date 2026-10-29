@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   applyGraphTransfer,
   captureTransferredState,
-  prepareGraphTransfer,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+  prepareGraphTransfer
+} from '@open-pencil/scene-graph/transfer'
 
 test('history captures post-placement geometry and separates reused image ownership', () => {
   const source = new SceneGraph(),

@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { SkiaRenderer } from '#core/canvas'
 import { DEFAULT_SELECTION_THEME } from '#core/constants'
-import { initCanvasKit } from '#core/io'
-
-import { expectDefined } from '#core-tests/helpers/assert'
+import { initCanvasKit } from '#core/io/formats/raster/headless'
 
 const ck = await initCanvasKit()
 

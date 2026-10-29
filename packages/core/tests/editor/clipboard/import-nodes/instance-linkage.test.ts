@@ -2,9 +2,9 @@ import { describe, expect, it } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { importClipboardNodes } from '@open-pencil/core'
-import type { NodeChange } from '@open-pencil/core'
+import { importClipboardNodes } from '@open-pencil/core/clipboard'
 import { linkImportedInstanceChildren } from '@open-pencil/fig/node-change'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('importClipboardNodes: instance child linkage', () => {

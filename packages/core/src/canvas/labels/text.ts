@@ -1,5 +1,7 @@
 import type { Font } from 'canvaskit-wasm'
 
+import { ELLIPSIS } from '#core/text/ellipsis'
+
 export function measureLabelText(font: Font, text: string): number {
   const glyphIds = font.getGlyphIDs(text)
   const widths = font.getGlyphWidths(glyphIds)
@@ -12,9 +14,8 @@ export function ellipsizeLabelText(font: Font, text: string, maxWidth: number): 
   if (maxWidth <= 0) return ''
   if (measureLabelText(font, text) <= maxWidth) return text
 
-  const ellipsis = '…'
-  const ellipsisWidth = measureLabelText(font, ellipsis)
-  if (maxWidth <= ellipsisWidth) return ellipsis
+  const ellipsisWidth = measureLabelText(font, ELLIPSIS)
+  if (maxWidth <= ellipsisWidth) return ELLIPSIS
 
   let width = 0
   let end = 0
@@ -25,5 +26,5 @@ export function ellipsizeLabelText(font: Font, text: string, maxWidth: number): 
     width += widths[index]
     end = index + 1
   }
-  return text.slice(0, end) + ellipsis
+  return text.slice(0, end) + ELLIPSIS
 }

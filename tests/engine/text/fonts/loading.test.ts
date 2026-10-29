@@ -9,14 +9,16 @@ import {
   fontWeightMatchOrder,
   fontManager,
   isVariableFont,
+  FontManager
+} from '@open-pencil/core/text'
+import { weightToFigmaStyle } from '@open-pencil/fig/node-change'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import {
   normalizeFontFamily,
   styleToVariant,
   styleToWeight,
-  weightToFigmaStyle,
-  weightToStyle,
-  FontManager,
-  SceneGraph
-} from '@open-pencil/core'
+  weightToStyle
+} from '@open-pencil/scene-graph/font-style'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { fetchStub } from '#tests/helpers/fetch'
@@ -132,36 +134,36 @@ describe('fontWeightMatchOrder', () => {
 })
 
 describe('FontManager loaded font cache', () => {
-  test('marks and checks font', () => {
+  test('marks and checks font', async () => {
     const family = `TestFont_${Date.now()}`
     expect(fontManager.isLoaded(family)).toBe(false)
-    fontManager.markLoaded(family, 'Regular', new ArrayBuffer(8))
+    await fontManager.markLoaded(family, 'Regular', new ArrayBuffer(8))
     expect(fontManager.isLoaded(family)).toBe(true)
   })
 
-  test('different styles for same family', () => {
+  test('different styles for same family', async () => {
     const family = `MultiStyle_${Date.now()}`
     expect(fontManager.isLoaded(family)).toBe(false)
-    fontManager.markLoaded(family, 'Bold', new ArrayBuffer(8))
+    await fontManager.markLoaded(family, 'Bold', new ArrayBuffer(8))
     expect(fontManager.isLoaded(family)).toBe(true)
     expect(fontManager.isStyleLoaded(family, 'Bold')).toBe(true)
     expect(fontManager.isStyleLoaded(family, 'Regular')).toBe(false)
   })
 
-  test('re-registers cached fonts when provider changes', () => {
+  test('re-registers cached fonts when provider changes', async () => {
     const manager = new FontManager()
     const canvasKit = {} as CanvasKit
     const first = createRecordingProvider()
     const second = createRecordingProvider()
 
     manager.attachProvider(canvasKit, first.provider)
-    manager.markLoaded('ProviderLifecycle', 'Regular', new ArrayBuffer(12))
+    await manager.markLoaded('ProviderLifecycle', 'Regular', new ArrayBuffer(12))
     expect(first.registrations).toEqual([{ family: 'ProviderLifecycle', byteLength: 12 }])
 
     manager.attachProvider(canvasKit, second.provider)
     expect(second.registrations).toEqual([{ family: 'ProviderLifecycle', byteLength: 12 }])
 
-    manager.markLoaded('SharedProviderLifecycle', 'Regular', new ArrayBuffer(16))
+    await manager.markLoaded('SharedProviderLifecycle', 'Regular', new ArrayBuffer(16))
     expect(first.registrations.at(-1)).toEqual({
       family: 'SharedProviderLifecycle',
       byteLength: 16
@@ -178,12 +180,12 @@ describe('FontManager loaded font cache', () => {
     expect(manager.provider()).toBeNull()
   })
 
-  test('renders loaded faces under their source families', () => {
+  test('renders loaded faces under their source families', async () => {
     const manager = new FontManager()
     const recording = createRecordingProvider()
 
     manager.attachProvider({} as CanvasKit, recording.provider)
-    manager.markLoaded('Inter', 'SemiBold', new ArrayBuffer(12))
+    await manager.markLoaded('Inter', 'SemiBold', new ArrayBuffer(12))
 
     const renderFamily = manager.renderFamily('Inter', 'SemiBold')
 
@@ -647,20 +649,20 @@ describe('isVariableFont', () => {
 })
 
 describe('fetchBundledFont', () => {
-  test('loads Inter-Regular.ttf from assets in headless', async () => {
-    const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+  test('loads InterVariable.ttf from assets in headless', async () => {
+    const buffer = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(buffer).toBeInstanceOf(ArrayBuffer)
     expect(expectDefined(buffer, 'Inter font buffer').byteLength).toBeGreaterThan(100_000)
   })
 
-  test('loads Inter-Bold.ttf from assets in headless', async () => {
-    const buffer = await fontManager.fetchBundledFont('/Inter-Bold.ttf')
+  test('loads InterVariable.ttf from assets in headless', async () => {
+    const buffer = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(buffer).toBeInstanceOf(ArrayBuffer)
     expect(expectDefined(buffer, 'Inter bold font buffer').byteLength).toBeGreaterThan(100_000)
   })
 
   test('returns valid TTF data', async () => {
-    const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const buffer = await fontManager.fetchBundledFont('/InterVariable.ttf')
     const view = new DataView(expectDefined(buffer, 'Inter font buffer'))
     // TrueType magic: 0x00010000
     expect(view.getUint32(0)).toBe(0x00010000)

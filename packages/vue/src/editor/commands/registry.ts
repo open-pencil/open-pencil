@@ -11,6 +11,14 @@ export const EDITOR_COMMAND_METADATA = {
   'edit.redo': { shortcut: 'MOD+SHIFT+Z', keybinding: ['$mod+Shift+KeyZ', '$mod+KeyY'] },
   'selection.selectAll': { shortcut: 'MOD+A', keybinding: '$mod+KeyA' },
   'selection.selectInverse': { shortcut: 'MOD+SHIFT+A', keybinding: '$mod+Shift+KeyA' },
+  // Enter also opens a vector's path or a text layer, so the app binds it with that.
+  'selection.selectChildren': { shortcut: '↵' },
+  'selection.selectParent': {
+    shortcut: 'SHIFT+↵',
+    keybinding: ['Shift+Enter', 'Backslash']
+  },
+  'selection.selectNextSibling': { shortcut: '⇥', keybinding: 'Tab' },
+  'selection.selectPreviousSibling': { shortcut: 'SHIFT+⇥', keybinding: 'Shift+Tab' },
   'selection.duplicate': {
     shortcut: 'MOD+D',
     keybinding: '$mod+KeyD',
@@ -81,8 +89,20 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: 'Shift+KeyV',
     contextTestId: 'context-flip-vertical'
   },
-  'selection.distributeHorizontal': {},
-  'selection.distributeVertical': {},
+  'selection.distributeHorizontal': { shortcut: 'CTRL+ALT+H', keybinding: 'Control+Alt+KeyH' },
+  'selection.distributeVertical': { shortcut: 'CTRL+ALT+V', keybinding: 'Control+Alt+KeyV' },
+  'selection.tidyUp': { shortcut: 'CTRL+ALT+T', keybinding: 'Control+Alt+KeyT' },
+  'selection.packHorizontal': {},
+  'selection.packVertical': {},
+  'selection.arrangeSpread': {},
+  'selection.arrangeCompact': {},
+  'selection.arrangePack': {},
+  'selection.arrangeFlowDown': {},
+  'selection.arrangeFlowRight': {},
+  'selection.arrangeTreeDown': {},
+  'selection.arrangeTreeRight': {},
+  'selection.arrangeRadial': {},
+  'selection.arrangeNetwork': {},
   'selection.booleanUnion': {
     shortcut: 'ALT+SHIFT+U',
     keybinding: 'Alt+Shift+KeyU',
@@ -112,9 +132,13 @@ export const EDITOR_COMMAND_METADATA = {
   'selection.outlineStroke': { contextTestId: 'context-outline-stroke' },
   'selection.moveToPage': {},
   'selection.setOpacity': { shortcut: '1-9, 0' },
-  'view.zoom100': { shortcut: 'MOD+0', keybinding: '$mod+Digit0' },
+  'view.zoom100': { shortcut: 'MOD+0', keybinding: ['$mod+Digit0', 'Shift+Digit0'] },
   'view.zoomFit': { shortcut: 'SHIFT+1', keybinding: ['$mod+Digit1', 'Shift+Digit1'] },
-  'view.zoomSelection': { shortcut: 'SHIFT+2', keybinding: ['$mod+Digit2', 'Shift+Digit2'] }
+  'view.zoomSelection': { shortcut: 'SHIFT+2', keybinding: ['$mod+Digit2', 'Shift+Digit2'] },
+  'view.zoomNextFrame': { shortcut: 'N', keybinding: 'KeyN' },
+  'view.zoomPreviousFrame': { shortcut: 'SHIFT+N', keybinding: 'Shift+KeyN' },
+  'view.nextPage': { shortcut: '⇟', keybinding: 'PageDown' },
+  'view.previousPage': { shortcut: '⇞', keybinding: 'PageUp' }
 } satisfies Record<EditorCommandId, EditorCommandMetadata>
 
 export function editorCommandMetadata(id: EditorCommandId): EditorCommandMetadata {

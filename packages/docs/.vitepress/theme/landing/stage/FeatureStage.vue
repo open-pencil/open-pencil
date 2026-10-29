@@ -4,7 +4,7 @@ import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
 import { defineAsyncComponent, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { STAGES } from './definitions'
 import { prepareEngine } from './engine-assets'

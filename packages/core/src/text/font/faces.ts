@@ -1,6 +1,6 @@
 import { uniqBy } from 'es-toolkit'
 
-import { parseFontStyle } from '@open-pencil/scene-graph'
+import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 
 /** One face a font family has: a weight, upright or italic. */
 export interface FamilyFace {

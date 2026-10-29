@@ -1,4 +1,5 @@
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
+import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { IS_BROWSER } from '#core/constants'
@@ -11,7 +12,7 @@ import {
   localFigArchive,
   registerFigArchive,
   workerFigArchive
-} from '#core/kiwi/fig/session/archive'
+} from '#core/kiwi/fig/session/archive/access'
 import { createFigSessionWorker } from '#core/kiwi/fig/session/client'
 import {
   registerReaderRecovery,
@@ -45,10 +46,13 @@ function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}
   return reader.graph
 }
 
-export function parseFigFileViaWorker(
+export async function parseFigFileViaWorker(
   buffer: ArrayBuffer,
   options: ParseFigFileOptions
 ): Promise<SceneGraph> {
+  options.signal?.throwIfAborted()
+  // The worker loads its own; this thread patches the archive on save, which reads it again.
+  await loadFigDataDecompressor()
   return new Promise((resolve, reject) => {
     options.signal?.throwIfAborted()
     const worker = createFigSessionWorker()
@@ -125,6 +129,10 @@ export async function parseFigFile(
   buffer: ArrayBuffer,
   options: ParseFigFileOptions = {}
 ): Promise<SceneGraph> {
+  options.signal?.throwIfAborted()
+  // Loaded here even when a worker opens the file: recovering its pages later reads the archive
+  // again on this thread.
+  await loadFigDataDecompressor()
   options.signal?.throwIfAborted()
   if (typeof Worker !== 'undefined' && IS_BROWSER) {
     try {

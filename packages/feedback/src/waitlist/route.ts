@@ -1,4 +1,4 @@
-import { WAITLIST_TURNSTILE_ACTION, WaitlistSignupSchema } from '#feedback/contract'
+import { WAITLIST_TURNSTILE_ACTION, waitlistSignupSchema } from '#feedback/contract'
 import { createFeedbackDatabase } from '#feedback/db'
 import type { FeedbackEnv, FeedbackServices } from '#feedback/env'
 import { rateLimited, validatedJSON } from '#feedback/http/request'
@@ -10,7 +10,7 @@ import { actionPage, page } from './pages'
 import { confirmSignup, leaveWaitlist, signUp } from './signup'
 import { verifyTurnstile } from './turnstile'
 
-const TokenSchema = v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/))
+const tokenSchema = v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/))
 
 const CONFIRM_PATH = '/waitlist/confirm'
 const LEAVE_PATH = '/waitlist/leave'
@@ -22,13 +22,13 @@ function linkTo(c: Context<FeedbackEnv>, path: string, token: string): string {
 }
 
 function queryToken(c: Context<FeedbackEnv>): string | null {
-  const parsed = v.safeParse(TokenSchema, c.req.query('token'))
+  const parsed = v.safeParse(tokenSchema, c.req.query('token'))
   return parsed.success ? parsed.output : null
 }
 
 async function formToken(c: Context<FeedbackEnv>): Promise<string | null> {
   const form = await c.req.parseBody()
-  const parsed = v.safeParse(TokenSchema, form.token)
+  const parsed = v.safeParse(tokenSchema, form.token)
   return parsed.success ? parsed.output : null
 }
 
@@ -42,7 +42,7 @@ export function waitlistRoutes(services: FeedbackServices) {
       .post(
         '/waitlist',
         rateLimited((env) => env.WAITLIST_LIMITER),
-        validatedJSON(WaitlistSignupSchema),
+        validatedJSON(waitlistSignupSchema),
         async (c) => {
           const signup = c.req.valid('json')
           const human = await verifyTurnstile(services.fetch, {

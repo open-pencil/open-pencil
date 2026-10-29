@@ -1,0 +1,71 @@
+services:
+  mailpit:
+    image: axllent/mailpit:v1.31.0
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_DISABLE_VERSION_CHECK: 'true'
+      MP_MAX_AGE: 7d
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_DISABLE_RDNS: 'true'
+    ports:
+      - '127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025'
+      - '127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025'
+    volumes:
+      - cloud-mailpit:/data
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: openpencil
+      POSTGRES_USER: openpencil
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openpencil-development-password}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-54329}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U openpencil -d openpencil']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - cloud-postgres:/var/lib/postgresql/data
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.41
+    command:
+      - server
+      - -dir=/data
+      - -s3
+      - -s3.port=8333
+      - -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - '127.0.0.1:${SEAWEEDFS_S3_PORT:-8333}:8333'
+      - '127.0.0.1:${SEAWEEDFS_MASTER_PORT:-9333}:9333'
+    volumes:
+      - cloud-seaweedfs:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ['CMD', 'nc', '-z', '127.0.0.1', '8333']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  seaweedfs-init:
+    image: amazon/aws-cli:2.27.49
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-openpencil}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-openpencil-development-secret}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-openpencil}
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - >-
+        aws --endpoint-url http://seaweedfs:8333 s3api head-bucket --bucket $${S3_BUCKET}
+        || aws --endpoint-url http://seaweedfs:8333 s3api create-bucket --bucket $${S3_BUCKET}
+
+volumes:
+  cloud-mailpit:
+  cloud-postgres:
+  cloud-seaweedfs:

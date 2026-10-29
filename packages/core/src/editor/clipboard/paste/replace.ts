@@ -44,7 +44,7 @@ function reorderCreatedAtReplacementIndex(
     // A paste that could not go into the target's parent, such as an instance of a component
     // the parent is inside, stays in the ancestor it went to.
     if (ctx.graph.getNode(created[i])?.parentId !== insertParentId) continue
-    ctx.graph.reorderChild(created[i], insertParentId, insertIndex + i)
+    ctx.graph.insertChildAt(created[i], insertParentId, insertIndex + i)
   }
 }
 

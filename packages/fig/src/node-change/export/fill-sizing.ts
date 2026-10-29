@@ -1,4 +1,5 @@
-import { layoutSizing, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 export type OwnSizingField = 'stackPrimarySizing' | 'stackCounterSizing'
 

@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { onMounted, ref, useTemplateRef } from 'vue'
 
-import tokensPanelTheme from '@/theme/tokens-panel'
+import cellInputTheme from '@/theme/variables/cell-input'
 
 /**
  * Edits one cell of the token list in place. Enter or leaving the field commits, Escape cancels,
@@ -11,7 +11,7 @@ import tokensPanelTheme from '@/theme/tokens-panel'
 const { value, label } = defineProps<{ value: string; label: string }>()
 const emit = defineEmits<{ commit: [text: string]; cancel: [] }>()
 
-const ui = tv(tokensPanelTheme)()
+const ui = tv(cellInputTheme)()
 const draft = ref(value)
 const input = useTemplateRef('input')
 let done = false
@@ -40,7 +40,7 @@ function onKeydown(event: KeyboardEvent) {
     ref="input"
     v-model="draft"
     :aria-label="label"
-    :class="ui.cellInput()"
+    :class="ui.base()"
     data-test-id="variables-cell-input"
     @keydown="onKeydown"
     @click.stop

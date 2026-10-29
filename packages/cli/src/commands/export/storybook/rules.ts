@@ -14,16 +14,16 @@ export const RULES_FILE = 'openpencil.stories.json'
  * have, whether a Vue or React export generates their component, and a title template with
  * `{document}`, `{page}`, `{name}`, and `{path}`, the title they would have.
  */
-const StoryRule = v.object({
+const storyRuleSchema = v.object({
   match: v.pipe(v.string(), v.minLength(1)),
   stories: v.optional(v.picklist(STORY_MODES)),
   generate: v.optional(v.boolean()),
   title: v.optional(v.pipe(v.string(), v.minLength(1)))
 })
 
-const StoryRules = v.object({ rules: v.array(StoryRule) })
+const storyRulesSchema = v.object({ rules: v.array(storyRuleSchema) })
 
-export type StoryRules = v.InferOutput<typeof StoryRules>
+export type StoryRules = v.InferOutput<typeof storyRulesSchema>
 
 /**
  * The rules in `path`, or in {@link RULES_FILE} when no path is given and the working
@@ -33,7 +33,7 @@ export async function readStoryRules(path: string | undefined): Promise<StoryRul
   const file = path ?? RULES_FILE
   if (path === undefined && !existsSync(file)) return null
   const parsed = v.safeParse(
-    v.pipe(v.string(), v.parseJson(), StoryRules),
+    v.pipe(v.string(), v.parseJson(), storyRulesSchema),
     await readFile(file, 'utf8')
   )
   if (!parsed.success) throw new Error(`Invalid rules in ${file}: ${v.summarize(parsed.issues)}`)

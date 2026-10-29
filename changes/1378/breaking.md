@@ -1,0 +1,1 @@
+- Shared rooms record document data in a new format, so people on this version and on earlier versions can no longer join each other's rooms, and rooms this browser saved with an earlier version are not converted.

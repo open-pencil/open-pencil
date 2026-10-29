@@ -8,11 +8,11 @@ import { toRaw } from 'vue'
  * with those undone and what the model was last told about them.
  */
 
-const MetadataRecord = v.record(v.string(), v.unknown())
+const metadataRecordSchema = v.record(v.string(), v.unknown())
 
 /** A message's metadata as a record; the AI SDK leaves its type open. */
 export function messageMetadata(message: UIMessage): Record<string, unknown> {
-  return v.is(MetadataRecord, message.metadata) ? message.metadata : {}
+  return v.is(metadataRecordSchema, message.metadata) ? message.metadata : {}
 }
 
 /**
@@ -35,24 +35,24 @@ export function updateMessage(
   )
 }
 
-const StoppedMetadata = v.object({ stopped: v.literal(true) })
+const stoppedMetadataSchema = v.object({ stopped: v.literal(true) })
 
 /** Whether the user stopped the reply before it finished. */
 export function wasStopped(message: UIMessage): boolean {
-  return v.is(StoppedMetadata, message.metadata)
+  return v.is(stoppedMetadataSchema, message.metadata)
 }
 
 /** A reply's edits, those undone, and what the model was last told and which message told it. */
-const ReplyUndoSchema = v.object({
+const replyUndoSchema = v.object({
   edits: v.array(v.object({ tool: v.string(), toolCallId: v.string() })),
   undone: v.array(v.string()),
   reported: v.optional(v.object({ undone: v.array(v.string()), in: v.string() }))
 })
 
-export type ReplyUndo = v.InferOutput<typeof ReplyUndoSchema>
+export type ReplyUndo = v.InferOutput<typeof replyUndoSchema>
 
 export function undoOf(message: UIMessage): ReplyUndo | null {
-  const parsed = v.safeParse(ReplyUndoSchema, messageMetadata(message).undo)
+  const parsed = v.safeParse(replyUndoSchema, messageMetadata(message).undo)
   return parsed.success ? parsed.output : null
 }
 

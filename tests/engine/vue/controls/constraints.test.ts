@@ -1,13 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import type { ConstraintType } from '@open-pencil/scene-graph'
 import {
   collectResizeDescendants,
   constrainedChildRect,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
-import { constraintPins, isConstraintEligible, toggleConstraintPin } from '@open-pencil/vue'
+import {
+  constraintPins,
+  isConstraintEligible,
+  toggleConstraintPin
+} from '@open-pencil/vue/controls/constraints'
 
 import { applyResize } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'

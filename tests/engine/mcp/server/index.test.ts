@@ -1,13 +1,13 @@
 /* eslint-disable max-lines -- MCP server scenarios share lifecycle and transport fixtures */
 
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
-import { mkdir, stat } from 'node:fs/promises'
+import { mkdir, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 
-import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
@@ -144,6 +144,12 @@ describe('startServer option validation', () => {
       'appWaitTimeoutMs must be a safe integer'
     )
   })
+
+  test('rejects an invalid session idle timeout', async () => {
+    for (const sessionIdleTimeoutMs of [-1, Number.NaN, Infinity, 1.5, 2_147_483_648]) {
+      await expect(startServer({ sessionIdleTimeoutMs })).rejects.toThrow(RangeError)
+    }
+  })
 })
 
 describe('MCP server', () => {
@@ -187,6 +193,7 @@ describe('MCP server', () => {
     expect(byName.get('save_file')?.effect).toBe('write')
     expect(byName.get('open_file')?.effect).toBe('read')
     expect(byName.get('open_file')?.capabilities).toEqual(['filesystem:read', 'document:read'])
+    expect(byName.get('list_recent_files')?.capabilities).toEqual(['filesystem:read'])
     expect(byName.get('close_file')?.effect).toBe('write')
     expect(byName.get('update_node')?.effect).toBe('write')
     expect(byName.get('new_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
@@ -438,7 +445,7 @@ describe('raw RPC', () => {
 describe('MCP server with mcpRoot', () => {
   async function withMCPRootServer(
     mcpRoot: string | null,
-    fn: (client: Client, browser: MockBrowser, graph: SceneGraph) => Promise<void>
+    fn: (client: Client, browser: MockBrowser, graph: SceneGraph, httpPort: number) => Promise<void>
   ) {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
     if (mcpRoot) await mkdir(mcpRoot, { recursive: true })
@@ -469,13 +476,57 @@ describe('MCP server with mcpRoot', () => {
       )
       await client.connect(transport)
 
-      await fn(client, browser, graph)
+      await fn(client, browser, graph, httpPort)
     } finally {
       await client?.close().catch(() => undefined)
       browser?.close()
       await handle.close()
     }
   }
+
+  test('a browser app reads and writes files inside mcpRoot through /files', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (_client, _browser, _graph, httpPort) => {
+      const path = join(TEST_MCP_ROOT, 'browser', 'saved.fig')
+      const url = (filePath: string) =>
+        `http://127.0.0.1:${httpPort}/files/${filePath.split(/[\\/]/).map(encodeURIComponent).join('/')}`
+      const auth = { authorization: `Bearer ${TEST_AUTH_TOKEN}` }
+      const bytes = new Uint8Array([80, 75, 3, 4, 1, 2, 3])
+
+      const put = await fetch(url(path), { method: 'PUT', headers: auth, body: bytes })
+      expect(put.status).toBe(200)
+      expect(new Uint8Array(await readFile(path))).toEqual(bytes)
+      const get = await fetch(url(path), { headers: auth })
+      expect(new Uint8Array(await get.arrayBuffer())).toEqual(bytes)
+
+      // Larger than one read chunk, so the file is read back across several.
+      const large = Uint8Array.from({ length: 2.5 * 1024 * 1024 }, (_, i) => i % 251)
+      await fetch(url(path), { method: 'PUT', headers: auth, body: large })
+      const back = await fetch(url(path), { headers: auth })
+      expect(new Uint8Array(await back.arrayBuffer())).toEqual(large)
+
+      // A name the URL must carry exactly: a space, a fragment mark, a literal escape, Cyrillic.
+      const awkward = join(TEST_MCP_ROOT, 'browser', 'my #1 %20 файл.fig')
+      expect(
+        (await fetch(url(awkward), { method: 'PUT', headers: auth, body: bytes })).status
+      ).toBe(200)
+      expect(new Uint8Array(await readFile(awkward))).toEqual(bytes)
+
+      expect((await fetch(url(path))).status).toBe(401)
+      const outside = join(TEST_MCP_ROOT, '..', 'outside.fig')
+      expect(
+        (await fetch(url(outside), { method: 'PUT', headers: auth, body: bytes })).status
+      ).toBe(400)
+    })
+  })
+
+  test('has no /files without mcpRoot', async () => {
+    await withMCPRootServer(null, async (_client, _browser, _graph, httpPort) => {
+      const response = await fetch(`http://127.0.0.1:${httpPort}/files/tmp/a.fig`, {
+        headers: { authorization: `Bearer ${TEST_AUTH_TOKEN}` }
+      })
+      expect(response.status).toBe(404)
+    })
+  })
 
   test('registers open_file and new_document tools when mcpRoot is set', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client) => {
@@ -484,6 +535,26 @@ describe('MCP server with mcpRoot', () => {
       expect(byName.has('open_file')).toBe(true)
       expect(byName.get('open_file')?.annotations?.readOnlyHint).toBe(true)
       expect(byName.has('new_document')).toBe(true)
+    })
+  })
+
+  test('list_recent_files keeps only recent files inside mcpRoot', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const inside = join(TEST_MCP_ROOT, 'recent.fig')
+      const outside = join(TEST_MCP_ROOT, '..', 'outside.fig')
+      const updatedAt = '2026-01-01T00:00:00.000Z'
+      browser.results.set('list_recent_files', {
+        files: [
+          { path: inside, name: 'recent.fig', updated_at: updatedAt },
+          { path: outside, name: 'outside.fig', updated_at: updatedAt }
+        ]
+      })
+
+      const result = await client.callTool({ name: 'list_recent_files', arguments: {} })
+      expect(result.isError).not.toBe(true)
+      expect(parseResult(result)).toEqual({
+        files: [{ path: inside, name: 'recent.fig', updated_at: updatedAt }]
+      })
     })
   })
 
@@ -586,6 +657,7 @@ describe('MCP server with mcpRoot', () => {
       const { tools } = await client.listTools()
       const names = tools.map((t) => t.name)
       expect(names).not.toContain('open_file')
+      expect(names).not.toContain('list_recent_files')
       expect(names).not.toContain('new_document')
     })
   })
@@ -882,5 +954,66 @@ describe('MCP sessions as agents', () => {
       for (let attempt = 0; attempt < 50 && !closed(); attempt++) await Bun.sleep(10)
       expect(closed()?.args).toEqual({ session: agent.session })
     })
+  })
+
+  function openedNotice(browser: MockBrowser) {
+    return browser.requests.find((item) => item.command === 'agent_session_opened')
+  }
+
+  test("an ACP chat's session tells the app it opened, naming the chat", async () => {
+    const chat = '0123456789abcdef0123456789abcdef'
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: chat },
+      async (client, browser) => {
+        // The notice reaches the app over its socket after initialize is answered.
+        for (let attempt = 0; attempt < 50 && !openedNotice(browser); attempt++) {
+          await Bun.sleep(10)
+        }
+        expect(openedNotice(browser)?.args).toMatchObject({ kind: 'acp', chat })
+        await client.callTool({ name: 'get_page_tree', arguments: {} })
+        const agent = agentOf(browser) as { session: string }
+        expect(openedNotice(browser)?.args).toMatchObject({ session: agent.session })
+      }
+    )
+  })
+
+  test("an ACP chat's tool call names the chat and the call's id in it", async () => {
+    const chat = '0123456789abcdef0123456789abcdef'
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: chat },
+      async (client, browser) => {
+        // Codex sends its call id as `callId`, Claude Code as `claudecode/toolUseId`.
+        await client.callTool({
+          name: 'get_page_tree',
+          arguments: {},
+          _meta: { callId: 'exec-1' }
+        })
+        await client.callTool({
+          name: 'get_page_tree',
+          arguments: {},
+          _meta: { 'claudecode/toolUseId': 'toolu_1' }
+        })
+        const agents = browser.requests
+          .filter((item) => item.command === 'tool')
+          .map((item) => (item.args as { agent?: unknown }).agent)
+        expect(agents).toMatchObject([
+          { kind: 'acp', chat, call: 'exec-1' },
+          { kind: 'acp', chat, call: 'toolu_1' }
+        ])
+      }
+    )
+  })
+
+  test('a chat header that is not a chat id is not forwarded', async () => {
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: 'not hex' },
+      async (_client, browser) => {
+        for (let attempt = 0; attempt < 50 && !openedNotice(browser); attempt++) {
+          await Bun.sleep(10)
+        }
+        const notice = expectDefined(openedNotice(browser), 'agent_session_opened notice')
+        expect(notice.args).not.toHaveProperty('chat')
+      }
+    )
   })
 })

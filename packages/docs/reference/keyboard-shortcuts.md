@@ -18,8 +18,8 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>V</kbd> | Move/Select | ✅ |
 | <kbd>K</kbd> | Scale | 🔲 |
 | <kbd>H</kbd> | Hand | ✅ |
-| <kbd>F</kbd> | Frame | ✅ |
-| <kbd>S</kbd> | Section | ✅ |
+| <kbd>F</kbd> or <kbd>A</kbd> | Frame | ✅ |
+| <kbd>⇧</kbd><kbd>S</kbd> | Section | ✅ |
 | <kbd>R</kbd> | Rectangle | ✅ |
 | <kbd>O</kbd> | Ellipse | ✅ |
 | <kbd>L</kbd> | Line | ✅ |
@@ -27,8 +27,10 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | — | Star | ✅ (flyout only) |
 | <kbd>⇧</kbd><kbd>L</kbd> | Arrow | 🔲 |
 | <kbd>P</kbd> | Pen | ✅ |
-| <kbd>⇧</kbd><kbd>P</kbd> | Pencil | 🔲 |
+| <kbd>⇧</kbd><kbd>P</kbd> | Pencil | ✅ |
 | <kbd>T</kbd> | Text | ✅ |
+| — | Sticky note (FigJam) | ✅ (toolbar, hidden by default) |
+| — | Connector (FigJam) | ✅ (toolbar, hidden by default) |
 | <kbd>C</kbd> | Comment | ✅ |
 | <kbd>I</kbd> | Eyedropper | 🔲 |
 
@@ -59,27 +61,44 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>⌘</kbd><kbd>A</kbd> | Select All | ✅ |
 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>A</kbd> | Select Inverse | ✅ |
 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy as PNG | ✅ |
-| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy Properties | 🔲 |
-| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>V</kbd> | Paste Properties | 🔲 |
+| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy Properties | ✅ |
+| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>V</kbd> | Paste Properties | ✅ |
 
 ## View
 
 | Shortcut | Action | Status |
 |----------|--------|--------|
-| <kbd>⌘</kbd><kbd>'</kbd> | Pixel Grid | 🔲 |
+| <kbd>⇧</kbd><kbd>'</kbd> | Pixel Grid | ✅ |
+| <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> | Snap to Pixel Grid | ✅ |
 | <kbd>⌃</kbd><kbd>G</kbd> | Layout Guides | 🔲 |
-| <kbd>⇧</kbd><kbd>R</kbd> | Rulers | 🔲 |
+| <kbd>⇧</kbd><kbd>R</kbd> | Rulers | ✅ |
 | <kbd>⇧</kbd><kbd>C</kbd> | Show/Hide Comments | ✅ |
 | <kbd>⌘</kbd><kbd>\\</kbd> | Show/Hide UI | ✅ |
 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> | Preview controls | ✅ |
 | <kbd>⌘</kbd><kbd>=</kbd> | Zoom In | ✅ |
 | <kbd>⌘</kbd><kbd>-</kbd> | Zoom Out | ✅ |
+| <kbd>+</kbd> / <kbd>-</kbd> | Zoom In / Out | ✅ |
 | <kbd>⌘</kbd><kbd>0</kbd> | Zoom to 100% | ✅ |
+| <kbd>⇧</kbd><kbd>0</kbd> | Zoom to 100% (alt) | ✅ |
 | <kbd>⌘</kbd><kbd>1</kbd> | Zoom to Fit | ✅ |
 | <kbd>⌘</kbd><kbd>2</kbd> | Zoom to Selection | ✅ |
 | <kbd>⇧</kbd><kbd>1</kbd> | Zoom to Fit (alt) | ✅ |
 | <kbd>⇧</kbd><kbd>2</kbd> | Zoom to Selection (alt) | ✅ |
+| <kbd>N</kbd> | Zoom to Next Frame | ✅ |
+| <kbd>⇧</kbd><kbd>N</kbd> | Zoom to Previous Frame | ✅ |
+| <kbd>Page Down</kbd> | Next Page | ✅ |
+| <kbd>Page Up</kbd> | Previous Page | ✅ |
+| <kbd>Z</kbd> | Zoom Tool | 🔲 |
 | <kbd>⌘</kbd><kbd>J</kbd> | Toggle AI Chat | ✅ |
+
+## Selection
+
+| Shortcut | Action | Status |
+|----------|--------|--------|
+| <kbd>↩</kbd> | Select Children | ✅ |
+| <kbd>⇧</kbd><kbd>↩</kbd> or <kbd>\\</kbd> | Select Parent | ✅ |
+| <kbd>⇥</kbd> | Select Next Sibling | ✅ |
+| <kbd>⇧</kbd><kbd>⇥</kbd> | Select Previous Sibling | ✅ |
 
 ## Object
 

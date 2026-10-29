@@ -1,0 +1,2 @@
+- Drop and inner shadows are cast from everything a layer draws, as in Figma: its strokes, every child of a frame or group, and boolean operations, cut out under translucent fills and strokes unless shown behind the node, with a shape's inner shadow under its strokes.
+- Strokes with sides of their own weights are drawn as one ring, as in Figma: corners are filled and rounded by their sides, dashes are spaced side by side, and translucent strokes no longer darken where the sides meet.

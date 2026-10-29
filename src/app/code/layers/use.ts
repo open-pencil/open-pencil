@@ -5,7 +5,7 @@ import {
   selectionToJSXWithLayers,
   type DesignJSXElement
 } from '@open-pencil/design-jsx'
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import type { GeneratedCode } from '@/app/code/generated'
 import type { DesignJSXLayerLine } from '@/app/code/live-preview'
@@ -54,7 +54,10 @@ export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
   function snippet(
     nodeId: string
   ): { code: string; layerIds: ReadonlyArray<string | null> } | null {
-    const { code, layerIds } = selectionToJSXWithLayers([nodeId], store.graph)
+    // The snippet goes inside the panel's JSX, where a declaration cannot.
+    const { code, layerIds } = selectionToJSXWithLayers([nodeId], store.graph, {
+      declarations: false
+    })
     return code ? { code, layerIds } : null
   }
 

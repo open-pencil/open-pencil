@@ -1,10 +1,10 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 import {
-  cloneInstanceOverrideState,
-  findInstanceAncestor,
   variableBindingOwner,
-  isNumericVariableBindingField,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  isNumericVariableBindingField
+} from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 

@@ -2,13 +2,13 @@
 
 Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforces the layout and kebab-case domain names. Every tool is a workspace named `@open-pencil/<domain>-tools`, listed literally in the root `workspaces` (the manifest schema rejects globs on purpose), so it can declare dependencies and run through `bun --filter`. `bun run check:tools` type-checks every tool through `tools/tsconfig.json`; `bun run test:tools` runs every tool with a `test` script. A tool imports its own files through its package.json `imports` alias (`#ci/*`, `#release/*`), other tools through their package name, and the docs site config through the shared `#docs-config/*` path.
 
-| Role        | Contract                                                                                                               | Domains                                                                                               |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `checks/`   | Read the tree and exit non-zero; never write inside the repository except an own baseline behind an explicit `--write` | `architecture`, `lint`, `i18n`, `secret-scan`, `type-shapes`, `docs`, `test-homes`, `package-quality` |
-| `generate/` | Write generated files or artifacts, idempotently                                                                       | `brand`, `demo`, `tauri-menu`, `authoring-reference`, `visual-oracles`, `landing-posters`             |
-| `release/`  | Build, verify, and publish packages and native artifacts                                                               | `package-artifacts`, `release-packages`                                                               |
-| `ci/`       | Consumed by workflows: path classification and gate policy, container images, the review-guidance bot                  | `policy`, `images`, `pr-review-guidance`                                                              |
-| `dev/`      | Test running and benchmarks for humans                                                                                 | `unit-tests`, `navigation-benchmark`, `dev-server`                                                    |
+| Role        | Contract                                                                                                               | Domains                                                                                                    |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `checks/`   | Read the tree and exit non-zero; never write inside the repository except an own baseline behind an explicit `--write` | `architecture`, `lint`, `i18n`, `secret-scan`, `type-shapes`, `docs`, `test-homes`, `package-quality`      |
+| `generate/` | Write generated files or artifacts, idempotently                                                                       | `brand`, `demo`, `emoji-metrics`, `tauri-menu`, `authoring-reference`, `visual-oracles`, `landing-posters` |
+| `release/`  | Build, verify, and publish packages and native artifacts                                                               | `package-artifacts`, `release-packages`                                                                    |
+| `ci/`       | Consumed by workflows: path classification and gate policy, container images, the review-guidance bot                  | `policy`, `images`, `pr-review-guidance`                                                                   |
+| `dev/`      | Test running, benchmarks, and local services for humans                                                                | `unit-tests`, `navigation-benchmark`, `dev-server`, `cloud`                                                |
 
 - Nothing under `generate/` or `release/` runs from `bun run check` except through a check entrypoint; `generate/authoring-reference` keeps its `check.ts` beside `generate.ts` until it splits.
 - Resolve the workspace with `resolveWorkspaceRoot` from `@open-pencil/package-artifacts-tools`, not parent-directory traversal. Keep sibling imports relative.
@@ -18,12 +18,16 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 ## CI
 
 - `.github/workflows/ci.yml` and `heavy-tests.yml` define validation gates. PR CI always classifies changed paths through `tools/ci/policy/src/policy.ts`: root docs, package READMEs, every `AGENTS.md`, `packages/docs` Markdown and assets, and skill Markdown are docs-only; runtime prompt Markdown, executable examples, configuration, and unknown paths require code validation.
-- Docs-only changes run documentation integrity and the docs build; everything else runs the full suites. The aggregate `CI result` gate requires successful classification and every applicable job; failures, cancellations, and unexpected skips cannot pass. Do not restore workflow-level path filtering on required CI.
+- Docs-only changes run documentation integrity and the docs build; everything else runs the full suites (`tools/ci/policy/src/policy.ts`).
+- The Cloud suites run when a change touches what `packages/cloud` is built from, derived from its workspace dependencies (`tools/ci/policy/src/cloud-inputs.ts`).
+- The aggregate `CI result` gate requires successful classification and every applicable job; failures, cancellations, and unexpected skips cannot pass (`tools/ci/policy/src/gate.ts`).
+- Do not restore workflow-level path filtering on required CI: a required check whose workflow never runs stays pending and blocks the merge (`.github/workflows/ci.yml`).
 - `commitlint.config.ts` enforces commit structure in the **Commit messages** job; the separate **PR title** workflow validates titles. Preserve the `Release vX.Y.Z` and `Release vX.Y.Z-beta.N` exception, including the ` (#N)` the merge queue appends, and product casing when changing rules; the known AI co-author check does not rewrite base history. Gate policy lives in `tools/ci/policy/src/policy.ts`.
 - `tools/ci/policy` runs right after Bun is set up, before any install, so it imports only Node built-ins; `oxlint.json` switches `open-pencil/prefer-es-toolkit` off there. Other CI tools install their workspace first, as `pr-review-guidance.yml` does through `.github/actions/setup-bun`.
 - Required checks must also run on `merge_group`, the merge queue's event; read base and head from `merge_group.base_sha`/`head_sha` there (`ci.yml`, `pr-title.yml`).
+- Path classification measures a pull request from its merge commit's first parent, the base as it is now; `pull_request.base.sha` lags when the base moves and would count the base's newer commits as the pull request's (`tools/ci/policy/tests/classify.test.ts`).
 - A passing pull request run records the tree it tested as the `CI verified tree` status on the PR head; a merge queue commit with that exact tree is classified `verified` and runs only the always-on checks. Any other tree, including a group with other PRs ahead, gets the full run (`tools/ci/policy/src/verified-tree/`).
-- App and docs production workflows run on `v*` tags or `workflow_dispatch`, not ordinary `master` pushes. `build.yml` checks the tooling out under `.pipeline/` and runs `tools/release/release-packages` from there.
+- The app production workflow runs on `v*` tags, and the docs workflow when a release is published, since the download page reads GitHub's releases at build time; both also run on `workflow_dispatch`, never on ordinary `master` pushes. `build.yml` checks the tooling out under `.pipeline/` and runs `tools/release/release-packages` from there.
 
 ## Releases
 
@@ -41,7 +45,7 @@ The `/demo` document is a tour of eight chapters on one page, each a section sta
 
 ## Landing posters
 
-`tools/generate/landing-posters/` captures WebP stills of every docs landing stage, per locale, theme, and layout, from a production docs build served locally in headless Chromium with software WebGL. `build:production` in `packages/docs` runs it after `vitepress build`; it reuses `.cache/landing-posters/<fingerprint>` when the inputs in `src/fingerprint.ts` are unchanged and copies the stills into `dist`, and `generate:landing-posters` forces a capture. The docs deploy workflow installs Chromium for it; dispatching it with `dry-run` builds and captures without deploying and keeps the stills as an artifact. A stage that starts depending on a new source tree adds it to `LANDING_POSTER_INPUTS`.
+`tools/generate/landing-posters/` captures WebP stills of every docs landing stage, per locale, theme, and layout, from a production docs build served locally in headless Chromium with software WebGL. `build:production` in `packages/docs` runs it after `vitepress build`; it reuses `.cache/landing-posters/<fingerprint>` when the inputs in `src/fingerprint.ts` are unchanged and copies the stills into `dist`, and `generate:landing-posters` forces a capture. The docs deploy workflow spreads the capture over runners: one job runs `build:site`, four run the generator with `--shard i/4`, and the deploy job gathers their stills and runs it with `--assemble`, which fails on any missing still; dispatching it with `dry-run` builds and captures without deploying and keeps the stills as an artifact. A stage that starts depending on a new source tree adds it to `LANDING_POSTER_INPUTS`.
 
 ## Brand assets
 

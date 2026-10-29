@@ -5,6 +5,7 @@ import raw from 'unplugin-raw/rolldown'
 
 const packageJSON = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
   dependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
 }
 
 export default defineConfig({
@@ -19,7 +20,10 @@ export default defineConfig({
   clean: true,
   outDir: './dist',
   deps: {
-    neverBundle: [...Object.keys(packageJSON.dependencies ?? {}), /^node:/],
+    neverBundle: [
+      ...Object.keys({ ...packageJSON.dependencies, ...packageJSON.peerDependencies }),
+      /^node:/
+    ],
     onlyBundle: false
   }
 })

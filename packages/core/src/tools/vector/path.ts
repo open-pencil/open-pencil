@@ -1,11 +1,10 @@
 import * as v from 'valibot'
 
-import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import type { FigmaAPI } from '#core/figma-api'
-import { toolNumber, nodeIdInput, nodeInput } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { defineTool, nodeIdInputSchema, nodeInputSchema, toolNumber } from '#core/tools/schema'
 import { parseVectorNetworkJSON } from '#core/tools/vector/network'
 
 function getVectorNode(
@@ -23,7 +22,7 @@ export const pathGet = defineTool({
   description: 'Get vector path data of a node.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: nodeInput,
+  input: nodeInputSchema,
   execute: (figma, { id }) => {
     const raw = figma.graph.getNode(id)
     if (!raw) return { error: `Node "${id}" not found` }
@@ -38,7 +37,7 @@ export const pathSet = defineTool({
   description: 'Set vector path data on a node. Provide a VectorNetwork JSON.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     path: v.pipe(v.string(), v.description('VectorNetwork JSON'))
   }),
   execute: (figma, args) => {
@@ -57,7 +56,7 @@ export const pathScale = defineTool({
   description: 'Scale vector path from center.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     factor: toolNumber(v.pipe(v.number(), v.description('Scale factor (e.g. 2 for double)')))
   }),
   execute: (figma, { id, factor }) => {
@@ -88,7 +87,7 @@ export const pathFlip = defineTool({
   description: 'Flip vector path horizontally or vertically.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     axis: v.pipe(v.picklist(['horizontal', 'vertical']), v.description('Flip axis'))
   }),
   execute: (figma, { id, axis }) => {
@@ -119,7 +118,7 @@ export const pathMove = defineTool({
   description: 'Move all path points by an offset.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     dx: toolNumber(v.pipe(v.number(), v.description('X offset'))),
     dy: toolNumber(v.pipe(v.number(), v.description('Y offset')))
   }),

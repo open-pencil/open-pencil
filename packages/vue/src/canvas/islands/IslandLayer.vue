@@ -2,7 +2,7 @@
 import { computedAsync } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import { playIslandRoots, type PlayState } from '@open-pencil/core/editor'
+import { playIslandRoots, type PlayState } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { tokenStylesheet } from '@open-pencil/dom-css/export'
 

@@ -29,6 +29,8 @@ export type AIModelConnection = {
   customBaseURL: string
   customAPIType: 'completions' | 'responses'
   credentialProfileId: string
+  /** The Home Cloud workspace whose plan pays for an `openpencil` connection. */
+  cloudWorkspaceId?: string
 }
 
 export type AIModelProfile = {
@@ -66,6 +68,7 @@ export type AIModelProfileDraft = {
   customModelID: string
   customBaseURL: string
   customAPIType: 'completions' | 'responses'
+  cloudWorkspaceId?: string
   maxOutputTokens: number
   thinkingLevel: ThinkingLevel
   harnessPermissionMode: HarnessPermissionMode

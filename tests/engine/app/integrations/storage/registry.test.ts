@@ -24,11 +24,11 @@ class TestStorageAdapter implements StorageAdapter {
   }
 
   getDocument() {
-    return Promise.resolve(new Uint8Array())
+    return Promise.resolve({ bytes: new Uint8Array(), revision: null })
   }
 
   putDocument() {
-    return Promise.resolve()
+    return Promise.resolve({ revision: null })
   }
 
   deleteDocument() {

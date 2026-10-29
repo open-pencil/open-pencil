@@ -22,6 +22,8 @@ export interface MCPRuntimeState {
   status: MCPRuntimeStatus
   endpoint: string
   version: string | null
+  /** Whether the running server reports agents opening sessions; older servers do not. */
+  agentSessionEvents: boolean
   /** Structured reason the server is unavailable; Settings renders translated copy. */
   failure: MCPFailure | null
   checking: boolean
@@ -74,6 +76,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     status: 'idle',
     endpoint: getMCPServerURL(),
     version: null,
+    agentSessionEvents: false,
     failure: null,
     checking: false,
     externallyManaged: false
@@ -95,6 +98,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
 
   function applyHealth(health: AutomationHealth): void {
     state.version = health.version ?? null
+    state.agentSessionEvents = health.agentSessionEvents ?? false
     dependencies.setToolDescriptors(health.tools ?? [])
     state.status = 'running'
     state.failure = null
@@ -109,6 +113,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
         return { ok: true }
       }
       state.version = null
+      state.agentSessionEvents = false
       dependencies.setToolDescriptors([])
       if (state.status !== 'error') state.status = 'stopped'
       return { ok: true }
@@ -177,6 +182,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     if (releaseStore) activeStore = null
     state.status = disconnectError ? 'error' : 'stopped'
     state.version = null
+    state.agentSessionEvents = false
     state.failure = disconnectError ? mcpFailure('unknown', disconnectError.message) : null
     state.externallyManaged = false
     dependencies.setToolDescriptors([])

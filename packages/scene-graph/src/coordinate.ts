@@ -1,7 +1,8 @@
-import type { SceneGraph, SceneNode } from './index'
+import type { SceneGraph } from './graph'
 import Matrix, { type Mat3 } from './matrix'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect, Vector } from './primitives'
+import type { SceneNode } from './types'
 
 export function getWorldMatrix(node: SceneNode, graph: Pick<SceneGraph, 'getNode'>): Mat3 {
   const chain: SceneNode[] = []
@@ -154,12 +155,18 @@ export function getAbsolutePositionFull(node: SceneNode, graph: SceneGraph) {
   }
 }
 /** Lines retain their origin pivot; other shapes rotate around their center. */
-export function getNodeRotationOrigin(node: SceneNode): Vector {
+export function getNodeRotationOrigin(node: Pick<SceneNode, 'type' | 'width' | 'height'>): Vector {
   return node.type === 'LINE' ? { x: 0, y: 0 } : { x: node.width / 2, y: node.height / 2 }
 }
 
+/** What places a layer in its parent: its position, size, reflection, turn, and pivot. */
+export type NodePlacement = Pick<
+  SceneNode,
+  'type' | 'x' | 'y' | 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'
+>
+
 /** Position can be applied separately by renderers before setting up local opacity layers. */
-export function getNodeLocalMatrix(n: SceneNode, position: Vector = n) {
+export function getNodeLocalMatrix(n: NodePlacement, position: Vector = n) {
   let matrix = Matrix.translated(position.x, position.y)
   if (n.flipX || n.flipY) {
     matrix = Matrix.multiply(

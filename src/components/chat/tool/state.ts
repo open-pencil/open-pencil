@@ -14,8 +14,15 @@ export function isMCPToolName(toolName: string): boolean {
   return toolName.startsWith('mcp__')
 }
 
+/** A result naming an error; `error: null`, as agents send for success, is not one. */
 function hasErrorOutput(output: unknown): boolean {
-  return typeof output === 'object' && output !== null && 'error' in output
+  return (
+    typeof output === 'object' &&
+    output !== null &&
+    'error' in output &&
+    output.error !== null &&
+    output.error !== undefined
+  )
 }
 
 export function classifyToolState({ toolName, state, output }: ToolStateInput): ToolDisplayState {

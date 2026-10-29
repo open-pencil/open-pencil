@@ -1,0 +1,1 @@
+- Variable formulas can use text and colors, join text with `+`, and call `if()`, `text()` and `truthy()`, which Figma files save as `TERNARY`, `STRINGIFY` and `IS_TRUTHY`; text and color variables can hold formulas, and formula completion lists the functions.

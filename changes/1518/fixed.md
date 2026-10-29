@@ -1,0 +1,1 @@
+- The code panel runs `shader()` paints, which failed there with "Unknown Design JSX helper".

@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { instanceMainComponent } from '../instances/main-component'
 import type { SceneNode } from '../types'
 
@@ -111,7 +111,7 @@ export function detachOwnedSlotContent(graph: SceneGraph, instance: SceneNode): 
       if (!name || parked.slots.some((slot) => [...slot.path, slot.name].join('\u0000') === key))
         continue
       const content = [...frame.childIds]
-      for (const id of content) graph.reorderChild(id, instance.id, instance.childIds.length)
+      for (const id of content) graph.insertChildAt(id, instance.id, instance.childIds.length)
       parked.slots.push({ path, name, content })
     }
   }
@@ -152,7 +152,7 @@ export function restoreOwnedSlotContent(
       continue
     }
     for (const id of Array.from(frame.childIds)) graph.deleteNode(id)
-    for (const [index, id] of slot.content.entries()) graph.reorderChild(id, frame.id, index)
+    for (const [index, id] of slot.content.entries()) graph.insertChildAt(id, frame.id, index)
     graph.updateNode(owner.id, {
       componentPropertyAssignments: { ...owner.componentPropertyAssignments, [propertyId]: '' }
     })

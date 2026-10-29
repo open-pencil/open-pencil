@@ -1,7 +1,7 @@
 import { useClipboard } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { useViewportKind } from '@open-pencil/vue'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
 import { roomLinkURL } from '@/app/collab/room/links'
 import { showsRoomDocument, type PendingRoomStatus } from '@/app/collab/room/status'

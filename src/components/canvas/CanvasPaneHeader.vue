@@ -9,12 +9,13 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import canvasPaneHeaderTheme from '@/theme/canvas-pane-header'
 
 const { paneId } = defineProps<{
@@ -65,14 +66,20 @@ function split(direction: SplitDirection) {
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
           <DropdownMenuContent side="bottom" align="end" :side-offset="3" :class="menuCls.content">
-            <DropdownMenuItem :disabled="!canSplit" :class="itemCls" @select="split('horizontal')">
-              <icon-lucide-columns-2 :class="menuCls.icon" />
-              <span>{{ menuText.splitRight }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem :disabled="!canSplit" :class="itemCls" @select="split('vertical')">
-              <icon-lucide-rows-2 :class="menuCls.icon" />
-              <span>{{ menuText.splitDown }}</span>
-            </DropdownMenuItem>
+            <MenuScrollArea>
+              <DropdownMenuItem
+                :disabled="!canSplit"
+                :class="itemCls"
+                @select="split('horizontal')"
+              >
+                <icon-lucide-columns-2 :class="menuCls.icon" />
+                <span>{{ menuText.splitRight }}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem :disabled="!canSplit" :class="itemCls" @select="split('vertical')">
+                <icon-lucide-rows-2 :class="menuCls.icon" />
+                <span>{{ menuText.splitDown }}</span>
+              </DropdownMenuItem>
+            </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
       </DropdownMenuRoot>

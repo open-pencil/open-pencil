@@ -2,6 +2,7 @@ import {
   FRAGMENT,
   node,
   type BaseProps,
+  type EllipseProps,
   type ParagraphProps,
   type SpanProps,
   type TreeNode,
@@ -32,7 +33,7 @@ export namespace JSX {
     'text-span': SpanProps
     'text-paragraph': ParagraphProps
     rectangle: BaseProps
-    ellipse: BaseProps
+    ellipse: BaseProps & EllipseProps
     line: BaseProps
     star: BaseProps & { points?: number; innerRadius?: number }
     polygon: BaseProps & { pointCount?: number }

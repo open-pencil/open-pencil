@@ -1,0 +1,2 @@
+- The variable picker no longer shows an empty divider at its bottom when nothing is bound.
+- Switching tokens in the variables dialog no longer animates the inspector.

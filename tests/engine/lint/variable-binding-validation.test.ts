@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
 import noHardcodedColors from '@open-pencil/core/lint/rules/no-hardcoded-colors'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -77,6 +77,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       rotation: 0,
       visible: true,
       locked: false,
+      opacity: 1,
       layoutMode: 'NONE',
       layoutPositioning: 'AUTO' as const,
       layoutGrow: 0,
@@ -126,6 +127,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       rotation: 0,
       visible: true,
       locked: false,
+      opacity: 1,
       layoutMode: 'NONE',
       layoutPositioning: 'AUTO' as const,
       layoutGrow: 0,

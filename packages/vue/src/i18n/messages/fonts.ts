@@ -1,4 +1,4 @@
-import { params } from '@nanostores/i18n'
+import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
 
@@ -23,6 +23,7 @@ export const fontsMessageDefaults = {
   localFonts: 'Local fonts',
   onlineFonts: 'Online fonts',
   downloadedCache: 'Downloaded cache',
+  cachedFontCount: count({ one: '{count} font', many: '{count} fonts' }),
   systemFontAccess: 'System font access',
   systemFontsAvailable: 'System fonts are available.',
   allowBrowserFontAccess: 'Allow browser font access when system fonts are missing.',

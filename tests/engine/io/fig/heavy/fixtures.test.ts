@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/core'
 import { populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 

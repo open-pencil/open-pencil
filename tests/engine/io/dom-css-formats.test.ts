@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { toUint8Array } from 'js-base64'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph, TRANSPARENT } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 

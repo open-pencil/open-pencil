@@ -112,17 +112,17 @@ API намеренно близок к Figma Plugin API, но работает �
 
 ### Переменные
 
-- `figma.getLocalVariables(type?)`
-- `figma.getVariableById(id)`
-- `figma.getLocalVariableCollections()`
-- `figma.getVariableCollectionById(id)`
-- `figma.createVariable(name, type, collectionId, value?)`
-- `figma.setVariableValue(variableId, modeId, value)`
-- `figma.deleteVariable(id)`
-- `figma.createVariableCollection(name)`
-- `figma.deleteVariableCollection(id)`
-- `figma.bindVariable(nodeId, field, variableId)`
-- `figma.unbindVariable(nodeId, field)`
+- `figma.variables.getLocalVariables(type?)`, `getVariableById(id)`, `getLocalVariableCollections()`, `getVariableCollectionById(id)` и их варианты `…Async`
+- `figma.variables.createVariableCollection(name)` и `createVariable(name, collection, resolvedType)` — каждый режим получает значение Figma по умолчанию
+- `figma.variables.createVariableAlias(variable)` и `setBoundVariableForPaint(paint, 'color', variable)`
+- `variable.setValueForMode(modeId, value)`, `valuesByMode`, `resolveForConsumer(node)`, `name`, `description`, `scopes`, `codeSyntax` и `remove()`
+- `collection.addMode(name)`, `renameMode(modeId, name)`, `removeMode(modeId)`, `modes`, `defaultModeId`, `variableIds` и `remove()`
+- `node.boundVariables`, `node.setBoundVariable(field, variable)` — поля и типы как в Figma, `node.setExplicitVariableModeForCollection(collection, modeId)` и `node.clearExplicitVariableModeForCollection(collection)`
+- `openpencil.bindVariable(node, field, variable)` — привязки как в панели слоя: текст принимает текстовую или числовую переменную, видимость — логическую или текстовую
+- `openpencil.unbindVariable(node, field)`
+- `openpencil.getLayoutDirection(node)` / `setLayoutDirection(node, direction)` и `getTextDirection(node)` / `setTextDirection(node, direction)` — направление автолейаута и текста: `AUTO`, `LTR` или `RTL`
+- `openpencil.getFillOkHCL(node, index?)` / `setFillOkHCL(node, color, index?)` и пара для обводки — цвет заливки или обводки в OkHCL
+- `openpencil.exposeInstanceSwap(instances, candidates, name?)` и `openpencil.getFontStatus()`
 
 ### Свойства
 
@@ -133,13 +133,14 @@ API намеренно близок к Figma Plugin API, но работает �
 - радиусы: `cornerRadius`, `topLeftRadius`, `topRightRadius`, `bottomRightRadius`, `bottomLeftRadius`;
 - текст: `characters`, `fontSize`, `fontName`, `fontWeight`, выравнивание, интерлиньяж, межбуквенный интервал и функции для диапазонов стилей;
 - автоматическая компоновка: `layoutMode`, `primaryAxisAlignItems`, `counterAxisAlignItems`, `itemSpacing`, отступы, размеры и положение;
-- обводка: `strokeWeight`, `strokeAlign`, `dashPattern`.
+- обводка: `strokeWeight`, `strokeAlign`, `dashPattern`;
+- статус: `devStatus` у секций, фреймов, компонентов, наборов компонентов и экземпляров, лежащих прямо на странице или в секции: `{ type: 'READY_FOR_DEV' | 'COMPLETED' }` или `null` (описание не сохраняется); он читается как `null`, пока слой лежит там, где статус не показывается.
 
 ### Служебные возможности
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` ничего не делает, поскольку OpenPencil не блокирует изменение текста до загрузки шрифта плагином
+- `figma.loadFontAsync(fontName)` загружает шрифт; как в Figma, изменить текст, его размер или шрифт можно только после загрузки шрифтов, которые он использует
 - `figma.listAvailableFontsAsync()` возвращает доступные системные шрифты
 - `figma.notify(message)` записывает предупреждение в режиме без интерфейса
 - `figma.viewport`
@@ -149,8 +150,7 @@ API намеренно близок к Figma Plugin API, но работает �
 Следующие API пока не предоставляются в совместимом виде:
 
 - `node.exportAsync()`
-- `node.setBoundVariable(field, variable)`
-- `figma.combineAsVariants(components, parent)`
+- переменные из библиотек, расширенные коллекции и привязки переменных к эффектам и сеткам
 - API стилей Figma, например `figma.createPaintStyle()` и `figma.createTextStyle()`
 - полная совместимость логических операций над векторами
 

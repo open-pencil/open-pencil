@@ -1,10 +1,9 @@
+import type { SceneGraph, SourceLibraryPublication } from '@open-pencil/scene-graph'
 import {
   OPEN_PENCIL_PLUGIN_DATA,
   readPluginData,
-  withPluginData,
-  type SceneGraph,
-  type SourceLibraryPublication
-} from '@open-pencil/scene-graph'
+  withPluginData
+} from '@open-pencil/scene-graph/plugin-data'
 
 export function readSourceLibraryPublication(graph: SceneGraph): SourceLibraryPublication | null {
   const root = graph.getNode(graph.rootId)

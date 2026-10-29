@@ -46,6 +46,21 @@ On the canvas, a layer shows a mode when you set the layer to it, whatever the c
 
 ## Managing Variables
 
+### Formula values
+
+A number variable's value field takes a number, another variable, or a formula. Start typing a variable's name and pick it from the list, or choose **Use a variable**: it appears as a pill, and the field shows what the formula gives, such as `= 16px`. Pills are stored by ID, so renaming a variable keeps the formula working. True/false, text and color variables keep their switch, text field or color picker; choose **Use a formula** beside one to write a formula instead.
+
+- Numbers use `+`, `-`, `*`, `/` and parentheses: `space/base * 4`.
+- True/false values use `and`, `or` and `not`, and compare numbers with `==`, `!=`, `<`, `<=`, `>` and `>=`: `viewport > 1024 and not loading`. `==` and `!=` also compare text.
+- Text is written in double quotes, and `+` joins it with other text, a number or a true/false value: `"Hello, " + name`. `text(count)` writes a number as Figma does, with two decimals unless it is whole: `3`, `1.50`.
+- `if(condition, then, otherwise)` picks between two numbers, texts, true/false values or colors: `if(compact, 8, 16)`, `if(dark, gray/900, #FFFFFF)`. Colors are written as `#RRGGBB`, or `#RRGGBBAA` with opacity.
+- `truthy(value)` is false for `0`, empty text, and the words `false`, `no` and `off`, and true for anything else, as Figma reads them.
+- Unknown variables, circular references, mixed types and division by zero are reported when you leave the field, and the saved value stays as it was.
+
+The result follows each layer's variable modes and updates bound layers when a variable it uses changes. Formulas use stored units, so lengths are in pixels. The list shows each formula's result; hover the formula icon to read the formula.
+
+In the stylesheet, a number formula is written as `calc()` over the variables it uses, such as `calc(var(--spacing-md) * 2 - var(--spacing-base))`, and is declared again in each mode that changes one of them. Formulas that use `if()`, text or true/false values have no CSS form and are left out of the stylesheet. A **CSS expression** replaces the value in CSS alone. Design token files hold each formula's result, with the formula under `$extensions`. Formulas survive copy and paste, sharing, undo and `.fig` saves, and Figma color and opacity expressions keep their variable references.
+
 Variables are grouped by the folders in their names (`Brand/Primary` appears as *Primary* under *Brand*), with their CSS name and one value per mode.
 
 - **Create variable** — click **Create variable** (or **+**) and pick a type; the new variable opens for editing
@@ -62,7 +77,7 @@ Selecting a variable edits:
 - **Name** and **CSS name** — leave the CSS name empty to derive it from the name and scopes, such as `--color-brand-primary`. Type the name without its `--`; a name CSS cannot use is flagged and not saved
 - **Unit** — for numbers, `px`, `rem`, `%`, `ms`, `s`, `deg`, or none; values are entered in that unit
 - **Value** (or **Values**, one per mode) — a color opens the color picker. The variable button next to a value points it at another variable of the same type, an alias that follows that variable; **Detach variable** turns it back into the value it showed
-- **CSS expression** — for numbers, a value such as `clamp(1rem, 4vw, 1.5rem)` written instead of the number in CSS, while the canvas keeps drawing the number
+- **CSS expression** — for numbers, choose **Add CSS expression** in a value's **⋯** menu to write CSS such as `clamp(1rem, 4vw, var(--spacing-md))` instead of the value, while the canvas keeps drawing the value. Token names complete as `var(--name)` and show as pills, the variable button inserts one, and an unclosed function, an unknown token or a value the token's unit does not take is reported when you leave the field. The expression stays when the value changes between a number, a variable and a formula; remove it from the same menu
 - **Scopes** — which properties the variable is offered for
 - **Description**
 - **Hide from publishing** — files that use this one as a library do not see the variable

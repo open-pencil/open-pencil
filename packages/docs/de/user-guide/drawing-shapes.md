@@ -15,7 +15,7 @@ Die untere Werkzeugleiste enthält Werkzeuge für Formen, Rahmen und Sektionen. 
 | Ellipse | <kbd>O</kbd> | Ellipse |
 | Linie | <kbd>L</kbd> | Linie |
 | Rahmen | <kbd>F</kbd> | Container für andere Objekte |
-| Sektion | <kbd>S</kbd> | Container der obersten Ebene |
+| Sektion | <kbd>Shift</kbd> + <kbd>S</kbd> | Container der obersten Ebene |
 
 Polygon und Stern befinden sich im Formenmenü.
 

@@ -1,14 +1,13 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { parse as parseVueSfc } from 'vue/compiler-sfc'
-
 import { noCrossPackageReexportShims } from './cross-package-reexport-shims.ts'
 import {
   noDynamicTailwindStateClasses,
   noVueTemplateUIHooksOrSVG
 } from './dynamic-tailwind-classes.ts'
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
+import { noNativeTitleAttributesInVue } from './native-titles.ts'
 import {
   collectFiles,
   collectFolders,
@@ -17,6 +16,7 @@ import {
   createTextRule,
   filePrefix,
   FILE_PREFIX_GROUP_ALLOWLIST,
+  fileStem,
   PACKAGE_ALIASES,
   PACKAGE_ALIAS_OWNERS,
   relativePath,
@@ -33,8 +33,10 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
     for (const folder of collectFolders(root)) {
       const folderRel = relativePath(root.path, folder.path)
       const groups = new Map<string, string[]>()
+      const names = new Set<string>()
       for (const child of folder.children ?? []) {
         if (child.type !== 'file' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
+        names.add(fileStem(child.path))
         const prefix = filePrefix(child.path)
         if (!prefix) continue
         const files = groups.get(prefix) ?? []
@@ -42,10 +44,11 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
         groups.set(prefix, files)
       }
       for (const [prefix, files] of groups) {
-        if (files.length < 3) continue
+        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are.
+        if (files.length < 3 && !names.has(prefix)) continue
         if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
         diagnostics.push({
-          message: `Use a ${prefix}/ domain folder instead of ${files.length} sibling files with the ${prefix}- filename prefix.`,
+          message: `Use a ${prefix}/ domain folder instead of sibling files named ${prefix} and ${prefix}-*.`,
           location: { path: folder.path }
         })
       }
@@ -146,7 +149,12 @@ const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
   },
   {
     from: 'tests/engine/figma-api/',
-    to: 'tests/engine/figma/api/',
+    to: 'packages/core/tests/figma-api/',
+    source: 'packages/core/src/figma-api/'
+  },
+  {
+    from: 'tests/engine/figma/',
+    to: 'packages/core/tests/figma-api/',
     source: 'packages/core/src/figma-api/'
   }
 ]
@@ -333,8 +341,17 @@ const noNonUIImportsInSharedUI = createImportRule(
   }
 )
 
-// The editor's root and router, plus the desktop Software Update window's page entry.
-const VIEW_ENTRYPOINTS = new Set(['src/App.vue', 'src/main.ts', 'src/router.ts', 'src/updater.ts'])
+// The editor's root and router, the desktop Software Update window's page entry, the Cloud
+// portal's entry and router, and the metrics dashboard's entry.
+const VIEW_ENTRYPOINTS = new Set([
+  'src/App.vue',
+  'src/main.ts',
+  'src/router.ts',
+  'src/updater.ts',
+  'src/cloud/main.ts',
+  'src/cloud/router.ts',
+  'src/metrics/main.ts'
+])
 
 const noViewsImportedOutsideEntry = createImportRule(
   'open-pencil/no-views-imported-outside-entry',
@@ -342,6 +359,45 @@ const noViewsImportedOutsideEntry = createImportRule(
     if (!resolved?.startsWith('src/views/')) return null
     if (VIEW_ENTRYPOINTS.has(sourceRel)) return null
     return 'Views are top-level composition entrypoints and must not be imported by app services or reusable components.'
+  }
+)
+
+// The Cloud portal is served by the Cloud server on its own, and the metrics dashboard by the
+// feedback Worker; both reuse the app's UI, never the editor, so their builds stay small.
+const CLOUD_PORTAL_SOURCES = [
+  'src/cloud/',
+  'src/views/cloud/',
+  'src/app/cloud-portal/',
+  'src/components/cloud-portal/',
+  'src/theme/cloud-portal/',
+  'src/metrics/',
+  'src/views/metrics/',
+  'src/app/metrics/',
+  'src/components/metrics/',
+  'src/theme/metrics/'
+]
+const EDITOR_ONLY_MODULES = ['src/app/editor/', 'src/app/shell/']
+
+const noEditorImportsInCloudPortal = createImportRule(
+  'open-pencil/no-editor-imports-in-cloud-portal',
+  (sourceRel, specifier, resolved) => {
+    if (!CLOUD_PORTAL_SOURCES.some((prefix) => sourceRel.startsWith(prefix))) return null
+    const editorOnly =
+      specifier.startsWith('canvaskit-wasm') ||
+      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix))
+    if (!editorOnly) return null
+    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small.'
+  }
+)
+
+// A theme is data: the component side wraps it with tv() once and derives its UI type from it.
+const noTailwindVariantsInThemes = createImportRule(
+  'open-pencil/no-tailwind-variants-in-themes',
+  (sourceRel, specifier) => {
+    if (!sourceRel.startsWith('src/theme/')) return null
+    if (specifier !== 'tailwind-variants' && !specifier.startsWith('tailwind-variants/'))
+      return null
+    return 'A theme file exports a plain slots object. Call tv() where the component uses it (src/components/ui/table/ui.ts).'
   }
 )
 
@@ -386,30 +442,6 @@ const noHardcodedMacOSShortcutGlyphs = createTextRule(
   }
 )
 
-const VUE_ATTRIBUTE_NODE = 6
-const VUE_DIRECTIVE_NODE = 7
-
-type VueTemplateNode = {
-  type?: number
-  name?: string
-  arg?: { content?: string }
-  props?: VueTemplateNode[]
-  children?: VueTemplateNode[]
-  loc?: { start?: { line?: number; column?: number } }
-}
-
-function walkVueTemplateAst(node: VueTemplateNode, visitor: (node: VueTemplateNode) => void) {
-  visitor(node)
-  for (const prop of node.props ?? []) walkVueTemplateAst(prop, visitor)
-  for (const child of node.children ?? []) walkVueTemplateAst(child, visitor)
-}
-
-function vuePropName(prop: VueTemplateNode) {
-  if (prop.type === VUE_ATTRIBUTE_NODE) return prop.name ?? null
-  if (prop.type === VUE_DIRECTIVE_NODE && prop.name === 'bind') return prop.arg?.content ?? null
-  return null
-}
-
 const SHARED_TEST_ID_ALLOWLIST = new Set([
   'packages/vue/src/primitives/ColorPicker/ColorPickerRoot.vue'
 ])
@@ -434,33 +466,6 @@ const noProductionTestIdsInSharedLayers = createTextRule(
         column: lines.at(-1)?.length ?? 0
       })
     }
-    return diagnostics
-  }
-)
-
-const noNativeTitleAttributesInVue = createTextRule(
-  'open-pencil/no-native-title-attributes-in-vue',
-  (sourceRel, content) => {
-    if (
-      !sourceRel.endsWith('.vue') ||
-      (!sourceRel.startsWith('src/') && !sourceRel.startsWith('packages/vue/src/'))
-    ) {
-      return []
-    }
-
-    const template = parseVueSfc(content, { filename: sourceRel }).descriptor.template?.ast
-    if (!template) return []
-
-    const diagnostics: Array<{ message: string; line?: number; column?: number }> = []
-    walkVueTemplateAst(template as VueTemplateNode, (node) => {
-      if (vuePropName(node) !== 'title') return
-      const loc = node.loc?.start
-      diagnostics.push({
-        message: 'Use Tip/Reka tooltip patterns instead of native title attributes.',
-        line: loc?.line,
-        column: loc?.column
-      })
-    })
     return diagnostics
   }
 )
@@ -534,6 +539,8 @@ export const openPencilArchitecturePlugin = {
     noAppImportsComponentsOrViews,
     noComponentsImportViews,
     noViewsImportedOutsideEntry,
+    noEditorImportsInCloudPortal,
+    noTailwindVariantsInThemes,
     noNonUIImportsInSharedUI,
     noAppImportsInSharedUI,
     noPropertyPanelInternalsOutsidePanel,

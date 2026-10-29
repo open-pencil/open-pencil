@@ -1,9 +1,5 @@
-import {
-  createComponentPropertyId,
-  type SceneGraph,
-  type SceneNode,
-  type Stroke
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { copyStrokes } from '@open-pencil/scene-graph/copy'
 import { deriveVariantProperties } from '@open-pencil/scene-graph/variant-properties'

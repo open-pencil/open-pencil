@@ -1,0 +1,1 @@
+- Dashed strokes on sections and component sets are drawn as on rectangles, as in Figma: sections showed no dashes, and component sets drew solid corners.

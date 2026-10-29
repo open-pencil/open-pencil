@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { inputValue, useColorModel } from '@open-pencil/vue'
+import { useColorModel } from '@open-pencil/vue/controls/color-model'
+import { inputValue } from '@open-pencil/vue/shared/dom-events'
 
 import { BindingPill } from '@/components/ui/binding'
 

@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { applyComponentPropertyValue } from '@open-pencil/scene-graph/components'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 function graphWithAssignedLabel() {
@@ -58,6 +59,47 @@ test('synchronizing carries other fields of a property-driven layer', () => {
 
   expect(graph.getNode(clone.id)?.text).toBe('Assigned')
   expect(graph.getNode(clone.id)?.opacity).toBe(0.5)
+})
+
+test('a nested instance takes its visibility from its parent, not its own child assignment', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const definitions = [
+    { id: '207:2', name: 'Visible', type: 'BOOLEAN' as const, defaultValue: 'false' }
+  ]
+  const inner = graph.createNode('COMPONENT', page.id, {
+    componentPropertyDefinitions: definitions
+  })
+  graph.createNode('RECTANGLE', inner.id, {
+    visible: false,
+    componentPropertyReferences: [{ propertyId: '207:2', field: 'VISIBLE' }]
+  })
+  const outer = graph.createNode('COMPONENT', page.id, {
+    componentPropertyDefinitions: definitions
+  })
+  const nested = graph.createInstance(inner.id, outer.id, {
+    visible: false,
+    componentPropertyReferences: [{ propertyId: '207:2', field: 'VISIBLE' }],
+    componentPropertyAssignments: { '207:2': 'false' }
+  })
+  const instance = graph.createInstance(outer.id, page.id, {
+    componentPropertyAssignments: { '207:2': 'true' }
+  })
+  if (!nested || !instance) throw new Error('Missing nested instance')
+  const clone = graph.getChildren(instance.id)[0]
+  graph.updateNode(clone.id, { visible: true })
+  graph.updateNode(nested.id, { opacity: 0.5 })
+  for (const visible of [true, false, true]) {
+    applyComponentPropertyValue(graph, instance.id, definitions[0], String(visible))
+    graph.syncInstances(outer.id)
+    expect(graph.getNode(clone.id)?.visible).toBe(visible)
+    expect(graph.getNode(clone.id)?.opacity).toBe(0.5)
+    expect(graph.getChildren(clone.id)[0].visible).toBe(false)
+  }
+  applyComponentPropertyValue(graph, clone.id, definitions[0], 'true')
+  graph.syncInstances(inner.id)
+  expect(graph.getNode(clone.id)?.visible).toBe(true)
+  expect(graph.getChildren(clone.id)[0].visible).toBe(true)
 })
 
 /** Property IDs are document-authored strings, so one may collide with an Object prototype key. */

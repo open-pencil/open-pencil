@@ -4,6 +4,7 @@
   "clipboardMissingDesignData": "В буфере обмена нет данных дизайна.",
   "clipboardAccessBlocked": "Доступ к буферу обмена заблокирован в этом контексте браузера.",
   "copiedAs": "Скопировано как {format}.",
+  "copiedProperties": "Свойства скопированы.",
   "pngClipboardUnavailable": "Экспорт PNG в буфер обмена недоступен в этом браузере.",
   "openFileFailed": "Не удалось открыть «{name}»: {error}",
   "importedDOMCSS": "Документ DOM/CSS импортирован.",
@@ -29,5 +30,6 @@
   "openQueuedFilesFailed": "Не удалось открыть файлы, переданные OpenPencil: {error}",
   "tokensLeftOut": "Не вошли в таблицу стилей: {names}.",
   "designTokensLeftOut": "Не вошли в дизайн-токены: {names}.",
-  "designTokensImported": "Импортировано дизайн-токенов: {count}."
+  "designTokensImported": "Импортировано дизайн-токенов: {count}.",
+  "unsupportedVariableExpressions": "OpenPencil пока не умеет вычислять эти переменные, поэтому слои сохраняют значения из файла: {names}."
 }

@@ -1,12 +1,9 @@
 import { pick } from 'es-toolkit/object'
 
-import {
-  styleDetachmentChanges,
-  findInstanceAncestor,
-  cloneInstanceOverrideState,
-  recordInstanceOverride,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -15,6 +12,7 @@ import { applyBoundVisibilityEdit, bindsVisibility } from './components/authorin
 import { createLayoutModeActions } from './layout-mode'
 import { createNodePreviewActions } from './node-preview'
 import { createNudgeActions } from './nudge'
+import { refitGroupsAroundLayers } from './structure/group/bounds'
 import { pathTextEditChanges } from './text/path-edit'
 import type { EditorContext } from './types'
 import { createVariableBindingActions } from './variable-bindings'
@@ -38,6 +36,7 @@ export function createNodeActions(ctx: EditorContext) {
   function runChangedLayout(id: string, changes: Partial<SceneNode>) {
     // A layer's modes reach the layers inside it.
     if (changes.variableModes) reconcileVariableLayouts(ctx.graph, { subtrees: [id] })
+    if (changes.visible !== undefined) refitGroupsAroundLayers(ctx, [id])
     ctx.runLayoutForNode(id)
   }
 

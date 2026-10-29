@@ -8,7 +8,7 @@ import {
   selectNode,
   type PropertyAuthoringScene
 } from '#tests/helpers/components/properties'
-import { propertySection } from '#tests/helpers/properties'
+import { layerHeader, propertySection } from '#tests/helpers/properties'
 
 let page: Page
 let canvas: CanvasHelper
@@ -34,13 +34,17 @@ test.afterAll(async () => {
   await page.close()
 })
 
-test('links a layer field to a new property from the section that owns the field', async () => {
+test('links a layer field to a new property from the layer header', async () => {
   await select(ids.labelId)
-  const typography = propertySection(page, 'Typography')
-  await typography.getByRole('button', { name: /Apply component property/ }).click()
-  await page.getByRole('menuitem', { name: /Create property/ }).click()
+  await layerHeader(page, 'Label').getByRole('button', { name: 'Apply variable/property' }).click()
+  await page
+    .getByRole('dialog', { name: 'Apply variable/property' })
+    .getByRole('button', { name: 'Create property…' })
+    .click()
 
-  await expect(typography.getByRole('button', { name: 'Detach property' })).toBeVisible()
+  await expect(
+    page.getByRole('group', { name: 'Content' }).getByRole('button', { name: 'Detach property' })
+  ).toBeVisible()
   await expect
     .poll(() => componentPropertyDefinitions(page, ids.buttonId))
     .toEqual([{ name: 'Label', type: 'TEXT', defaultValue: 'Button' }])

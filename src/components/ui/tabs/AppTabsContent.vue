@@ -2,7 +2,7 @@
 import { TabsContent } from 'reka-ui'
 import { normalizeClass, type HTMLAttributes } from 'vue'
 
-import { tabs } from '@/theme/tabs/tabs'
+import { tabs } from './ui'
 
 // Inactive panels unmount, matching settings' previous v-if lifecycle.
 // In particular, credentials must not be retained by force-mounting hidden forms.

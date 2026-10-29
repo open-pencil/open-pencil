@@ -109,7 +109,7 @@ describe('regenerateFillGeometry', () => {
     network.regions = []
     const [g] = regenerateFillGeometry(network, [ENTRY])
     const cmds = decode(g.commandsBlob)
-    expect(cmds[0]).toBe('M 0,0')
-    expect(cmds).toHaveLength(5) // M + 4 line segments around the square
+    // The chain closes, so the path does too.
+    expect(cmds).toEqual(['M 0,0', 'L 10,0', 'L 10,10', 'L 0,10', 'L 0,0', 'Z'])
   })
 })

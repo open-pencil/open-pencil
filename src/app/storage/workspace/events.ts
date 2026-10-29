@@ -1,7 +1,6 @@
-import type { StorageProviderID } from '@/app/integrations/storage/types'
+import type { StorageLocation } from '@/app/integrations/storage/types'
 
-export type StorageWorkspaceEvent = {
-  providerId: StorageProviderID
+export type StorageWorkspaceEvent = StorageLocation & {
   documentId?: string
   kind: 'changed' | 'synced'
 }

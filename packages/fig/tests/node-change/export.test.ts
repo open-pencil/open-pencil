@@ -13,6 +13,7 @@ import {
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 describe('@open-pencil/fig SceneGraph export policy', () => {
   test('maps node types deterministically', () => {
@@ -115,6 +116,24 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     ])
   })
 
+  // Recorded in Figma 126's clipboard: 150% line height as RAW 1.5, 10% letter spacing as PERCENT.
+  test('writes percent lengths as Figma does, on the text and its ranges', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Hello',
+      fontSize: 20,
+      lineHeight: percentLength(150),
+      letterSpacing: percentLength(10),
+      styleRuns: [{ start: 0, length: 2, style: { lineHeight: pixelLength(30) } }]
+    })
+    const [change] = sceneNodeToKiwi(text, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [])
+    expect(change.lineHeight).toEqual({ value: 1.5, units: 'RAW' })
+    expect(change.letterSpacing).toEqual({ value: 10, units: 'PERCENT' })
+    expect(change.textData?.styleOverrideTable).toEqual([
+      expect.objectContaining({ lineHeight: { value: 30, units: 'PIXELS' } })
+    ])
+  })
+
   test('writes styled ranges with the characters of a text claim, as Figma does', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -158,13 +177,17 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     const page = graph.getPages()[0]
     const component = graph.createNode('COMPONENT', page.id)
     graph.createNode('RECTANGLE', component.id, { overrideKey: '2:20', strokeWeight: 2 })
-    graph.createNode('TEXT', component.id, { overrideKey: '2:21', text: 'A', lineHeight: 30 })
+    graph.createNode('TEXT', component.id, {
+      overrideKey: '2:21',
+      text: 'A',
+      lineHeight: pixelLength(30)
+    })
     const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
     const [rect, text] = graph.getChildren(instance.id)
     // Placed at twice the component's size, as a scaled instance is.
     graph.updateNode(instance.id, { componentScale: 2 })
     graph.updateNode(rect.id, { strokeWeight: 8, strokeAlign: 'CENTER', cornerSmoothing: 0.6 })
-    graph.updateNode(text.id, { lineHeight: null, letterSpacing: 4 })
+    graph.updateNode(text.id, { lineHeight: null, letterSpacing: pixelLength(4) })
     graph.updateNode(instance.id, {
       instanceOverrides: {
         self: new Map(),
@@ -181,7 +204,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
             text.id,
             new Map<string, unknown>([
               ['lineHeight', null],
-              ['letterSpacing', 4]
+              ['letterSpacing', pixelLength(4)]
             ])
           ]
         ])

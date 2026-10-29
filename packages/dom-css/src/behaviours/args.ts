@@ -1,12 +1,10 @@
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   behaviourProperties,
   readBehaviour,
   type Behaviour,
-  type BehaviourKind,
-  type ComponentPropertyDefinition,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type BehaviourKind
+} from '@open-pencil/scene-graph/behaviours'
 
 /** A variant property a boolean value draws, as the component's boolean prop. */
 export interface BooleanArg {

@@ -1,0 +1,1 @@
+- The design check copies only the layers it checks and runs once per page switch, after the page is shown, so large pages switch and recheck faster.

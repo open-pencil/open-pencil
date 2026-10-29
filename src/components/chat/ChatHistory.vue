@@ -14,15 +14,18 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
-import { chatHistoryTheme } from '@/theme/chat/history'
+import historyTheme from '@/theme/chat/history'
+
+const chatHistoryTheme = tv(historyTheme)
 
 const {
   conversations,
@@ -182,13 +185,19 @@ function closeMenu(event: Event) {
             :class="menu.content"
             @close-auto-focus="closeMenu"
           >
-            <DropdownMenuItem :class="item" @select="rename">{{ ai.renameChat }}</DropdownMenuItem>
-            <DropdownMenuItem :class="item" @select="selectedId && emit('saveTrace', selectedId)">{{
-              ai.saveChatTrace
-            }}</DropdownMenuItem>
-            <DropdownMenuItem :class="item" @select="confirmDelete">{{
-              ai.deleteChat
-            }}</DropdownMenuItem>
+            <MenuScrollArea>
+              <DropdownMenuItem :class="item" @select="rename">{{
+                ai.renameChat
+              }}</DropdownMenuItem>
+              <DropdownMenuItem
+                :class="item"
+                @select="selectedId && emit('saveTrace', selectedId)"
+                >{{ ai.saveChatTrace }}</DropdownMenuItem
+              >
+              <DropdownMenuItem :class="item" @select="confirmDelete">{{
+                ai.deleteChat
+              }}</DropdownMenuItem>
+            </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
       </DropdownMenuRoot>

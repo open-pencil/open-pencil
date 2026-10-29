@@ -1,25 +1,31 @@
+import { isEmptyObject, isEqual, omit, pickBy } from 'es-toolkit'
 import * as Y from 'yjs'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
-import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
+import {
+  decodeNodeFromYjs,
+  DOCUMENT_NODE_FIELDS,
+  syncEncodedNodeToYMap
+} from '@/app/collab/node-codec'
 import {
   claimRoot,
   markTreeFormat,
+  readRoot,
   writeOrderKey,
   writePage,
   writeParentEntry,
   writeRootEntries,
   type YNodes
 } from '@/app/collab/shared-tree/fields'
-import { migrateLegacyLayers, TREE_MIGRATION_ORIGIN } from '@/app/collab/shared-tree/migration'
 import {
   applySharedTree,
   createLocalEdit,
   createSharedTree,
   isLocalEditEmpty,
   keepSharedLayers,
+  mergeLocalEdit,
   pageOf,
   recordLocalLayers,
   writeLocalPlacement,
@@ -42,6 +48,8 @@ type YjsObserverOptions = {
   store: EditorStore
   ynodes: YNodes
   yimages: YImages
+  /** Whether the room names an image by reference, which keeps it when its bytes leave. */
+  hasImageRef?: (name: string) => boolean
   getSuppressYjsEvents: () => boolean
   setSuppressGraphSync: (value: boolean) => void
   applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
@@ -52,6 +60,8 @@ type YjsGraphSyncOptions = {
   getYdoc: () => Y.Doc | null
   getYnodes: () => YNodes | null
   getYimages: () => YImages | null
+  /** Takes an image a layer uses to share some other way; false writes its bytes into the room. */
+  shareImage?: (name: string, bytes: Uint8Array) => boolean
   setSuppressYjsEvents: (value: boolean) => void
 }
 
@@ -74,7 +84,8 @@ export function bindCollabGraphEvents({
   let bound = true
 
   function record(update: (pending: LocalEdit) => void) {
-    if (getSuppressGraphSync() || !getYdoc() || !getYnodes()) return
+    // A read-only document makes no edits of its own; what changes it is the room's.
+    if (store.state.readOnly || getSuppressGraphSync() || !getYdoc() || !getYnodes()) return
     if (isLocalEditEmpty(edit)) queueMicrotask(flush)
     update(edit)
   }
@@ -127,13 +138,13 @@ export function registerYjsObservers({
   store,
   ynodes,
   yimages,
+  hasImageRef,
   getSuppressYjsEvents,
   setSuppressGraphSync,
   applyYjsToGraph
 }: YjsObserverOptions): () => void {
-  function onNodes(events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction) {
-    // A migration this peer wrote was applied by the change that triggered it.
-    if (getSuppressYjsEvents() || transaction.origin === TREE_MIGRATION_ORIGIN) return
+  function onNodes(events: Y.YEvent<Y.Map<unknown>>[]) {
+    if (getSuppressYjsEvents()) return
     setSuppressGraphSync(true)
     try {
       applyYjsToGraph(events)
@@ -152,7 +163,7 @@ export function registerYjsObservers({
         if (change.action === 'add' || change.action === 'update') {
           const data = yimages.get(key)
           if (data) store.graph.images.set(key, new Uint8Array(data))
-        } else {
+        } else if (!hasImageRef?.(key)) {
           store.graph.images.delete(key)
         }
       }
@@ -175,10 +186,13 @@ export function createYjsGraphSync({
   getYdoc,
   getYnodes,
   getYimages,
+  shareImage,
   setSuppressYjsEvents
 }: YjsGraphSyncOptions) {
   let pendingPageSwitch: { store: EditorStore; pageId: string } | undefined
   let shared: SharedTree | null = null
+  /** Edits made before this peer knew the room's root, which the room did not take. */
+  let heldBack = createLocalEdit()
 
   function sharedTreeOf(ydoc: Y.Doc): SharedTree {
     if (shared?.ydoc !== ydoc) {
@@ -195,15 +209,14 @@ export function createYjsGraphSync({
       ynode = new Y.Map()
       ynodes.set(nodeId, ynode)
     }
-    syncEncodedNodeToYMap(node, ynode)
+    syncEncodedNodeToYMap(node, ynode, nodeId === graph.rootId ? DOCUMENT_NODE_FIELDS : [])
 
     const localYimages = getYimages()
     if (!localYimages) return
     for (const fill of node.fills) {
-      if (fill.imageHash && !localYimages.has(fill.imageHash)) {
-        const data = graph.images.get(fill.imageHash)
-        if (data) localYimages.set(fill.imageHash, data)
-      }
+      if (!fill.imageHash || localYimages.has(fill.imageHash)) continue
+      const data = graph.images.get(fill.imageHash)
+      if (data && !shareImage?.(fill.imageHash, data)) localYimages.set(fill.imageHash, data)
     }
   }
 
@@ -214,6 +227,7 @@ export function createYjsGraphSync({
     const ynodes = getYnodes()
     if (!ydoc || !ynodes) return
     const tree = sharedTreeOf(ydoc)
+    if (tree.rootId === null) mergeLocalEdit(heldBack, edit)
     setSuppressYjsEvents(true)
     try {
       ydoc.transact(() => {
@@ -276,6 +290,7 @@ export function createYjsGraphSync({
         claimRoot(ydoc.getMap('meta'), graph.rootId)
         markTreeFormat(ydoc.getMap('meta'))
       })
+      heldBack = createLocalEdit()
       recordLocalLayers(sharedTreeOf(ydoc), ynodes, ydoc.getMap('meta'), ynodes.keys())
     } catch (error) {
       logCollabSyncError('Failed to sync document', error)
@@ -305,10 +320,10 @@ export function createYjsGraphSync({
       if (typeof nodeId === 'string') changed.add(nodeId)
     }
 
-    migrateLegacyLayers(ydoc, ynodes, ydoc.getMap('meta'), changed)
+    const roomRoot = readRoot(ydoc.getMap('meta'))
     for (const nodeId of changed) {
       const ynode = ynodes.get(nodeId)
-      if (ynode) applyYnodeToGraph(store.graph, nodeId, ynode)
+      if (ynode) applyYnodeToGraph(store.graph, nodeId, ynode, roomRoot)
     }
     const gone = [...deleted].filter((nodeId) => !ynodes.has(nodeId))
     // Moves go first, so a layer moved out of a deleted parent survives the deletion.
@@ -318,10 +333,24 @@ export function createYjsGraphSync({
   }
 
   /** Applies a layer's own fields; `applySharedTree` places it in the tree afterwards. */
-  function applyYnodeToGraph(graph: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
-    const props = decodeNodeFromYjs(ynode)
-    if (graph.getNode(nodeId)) {
-      graph.updateNode(nodeId, props)
+  function applyYnodeToGraph(
+    graph: SceneGraph,
+    nodeId: string,
+    ynode: Y.Map<unknown>,
+    roomRoot: string | undefined
+  ) {
+    const decoded = decodeNodeFromYjs(ynode)
+    // The document node's plugin data arrives entry by entry (`src/app/collab/document/sync.ts`).
+    const props: ReturnType<typeof decodeNodeFromYjs> =
+      nodeId === roomRoot || nodeId === graph.rootId ? omit(decoded, DOCUMENT_NODE_FIELDS) : decoded
+    const node = graph.getNode(nodeId)
+    if (node) {
+      // Only what differs: joining a room replays every layer, and a layer that already reads the
+      // same is no change, so it neither marks the document unsaved nor costs a redraw. The text
+      // picture is a cache the decoder clears, so it goes along only with a real change.
+      const { textPicture, ...fields } = props
+      const changes = pickBy(fields, (value, key) => !isEqual(Reflect.get(node, key), value))
+      if (!isEmptyObject(changes)) graph.updateNode(nodeId, { ...changes, textPicture })
       return
     }
     const type = props.type
@@ -347,5 +376,49 @@ export function createYjsGraphSync({
       })
   }
 
-  return { syncNodeToYjs, syncLocalEdit, syncAllNodesToYjs, applyYjsToGraph }
+  /**
+   * Writes the edits made before the room's root was known, once this peer's document follows
+   * that root, as a stored document's tab does: what was drawn while the room loaded joins it.
+   */
+  function syncHeldBackEdits() {
+    const ydoc = getYdoc()
+    const rootId = ydoc ? readRoot(ydoc.getMap('meta')) : undefined
+    if (!ydoc || rootId === undefined || isLocalEditEmpty(heldBack)) return
+    const tree = sharedTreeOf(ydoc)
+    if (tree.rootId === null) tree.setRoot(rootId)
+    const edit = heldBack
+    heldBack = createLocalEdit()
+    syncLocalEdit(edit)
+  }
+
+  /**
+   * Removes the layers under the document's root that the room does not hold. A stored document
+   * opened in several tabs numbers its layers afresh each time, so its copies of layers the room
+   * already has would otherwise sit beside the room's own.
+   */
+  function dropLayersOutsideRoom() {
+    const graph = getStore().graph
+    const ynodes = getYnodes()
+    if (!ynodes) return
+    const outside: string[] = []
+    const visit = (id: string) => {
+      for (const childId of graph.getNode(id)?.childIds ?? []) {
+        if (ynodes.has(childId)) visit(childId)
+        else outside.push(childId)
+      }
+    }
+    visit(graph.rootId)
+    for (const id of outside) graph.deleteNode(id)
+    // The page the tab was on may have been the file's own; it moves to one of the room's.
+    if (outside.length > 0) ensureCurrentPageExists(getStore())
+  }
+
+  return {
+    syncNodeToYjs,
+    syncLocalEdit,
+    syncAllNodesToYjs,
+    applyYjsToGraph,
+    syncHeldBackEdits,
+    dropLayersOutsideRoom
+  }
 }

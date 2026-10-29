@@ -4,8 +4,80 @@ import { guid } from '#fig-tests/helpers/guid'
 import { checkpointComponent, restoreComponentCheckpoint } from '#fig/document/component/checkpoint'
 import { interpretComponent } from '#fig/instance-overrides/interpret'
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
+import { deflateSync } from 'fflate'
 
+import { createFigDocumentSession, writeFigArchive } from '@open-pencil/fig'
+import {
+  createNodeChangesMessage,
+  encodeMessage,
+  getSchemaBytes,
+  initCodec,
+  type NodeChange
+} from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+test('checkpoint recovery keeps the effective fill of a swapped instance on a lazy page', async () => {
+  await initCodec()
+  const paint = (r: number): NonNullable<NodeChange['fillPaints']> => [
+    { type: 'SOLID', color: { r, g: 1 - r, b: 0, a: 1 }, visible: true, opacity: 1 }
+  ]
+  const records: NodeChange[] = [
+    { guid: guid(0), type: 'DOCUMENT' },
+    { guid: guid(1), type: 'CANVAS', parentIndex: { guid: guid(0), position: '!' } },
+    {
+      guid: guid(2),
+      type: 'SYMBOL',
+      parentIndex: { guid: guid(1), position: '!' },
+      fillPaints: paint(1)
+    },
+    {
+      guid: guid(3),
+      type: 'SYMBOL',
+      parentIndex: { guid: guid(1), position: '"' },
+      fillPaints: paint(0)
+    },
+    {
+      guid: guid(4),
+      type: 'SYMBOL',
+      parentIndex: { guid: guid(1), position: '#' },
+      componentPropDefs: [
+        { id: guid(90), type: 'INSTANCE_SWAP', initialValue: { guidValue: guid(2) } }
+      ]
+    },
+    {
+      guid: guid(5),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(4), position: '!' },
+      fillPaints: paint(1),
+      symbolData: { symbolID: guid(2) },
+      componentPropRefs: [{ defID: guid(90), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+    },
+    {
+      guid: guid(6),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(1), position: '$' },
+      symbolData: { symbolID: guid(4) },
+      componentPropAssignments: [{ defID: guid(90), value: { guidValue: guid(3) } }]
+    }
+  ]
+  const archive = writeFigArchive({
+    schemaDeflated: deflateSync(getSchemaBytes()),
+    kiwiData: encodeMessage(createNodeChangesMessage(0, 0, records)),
+    thumbnailPNG: new Uint8Array(),
+    metaJSON: '{}'
+  })
+  const bytes = new Uint8Array(archive).buffer
+  const initial = createFigDocumentSession(bytes)
+  const recovered = createFigDocumentSession(
+    bytes,
+    {},
+    { graph: initial.graph, checkpoint: initial.checkpoint() }
+  )
+  recovered.loadPage('1:1')
+  const root = recovered.graph.getNode(new Map(recovered.checkpoint().sources).get('1:6') ?? '')
+  if (!root) throw new Error('Missing recovered instance')
+  expect(recovered.graph.getChildren(root.id)[0].fills[0].color.g).toBe(1)
+})
 
 function setup() {
   const occurrence = interpretComponent(

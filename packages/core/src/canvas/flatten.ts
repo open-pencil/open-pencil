@@ -2,7 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
-import { makeBooleanSourcePath, makeStrokeOutlinePath, nodePathTransform } from './boolean'
+import { makeBooleanSourcePath, nodePathTransform } from './boolean'
 import type { SkiaRenderer } from './renderer'
 
 export type VectorFlattenProps = Pick<
@@ -62,15 +62,5 @@ export function flattenNodesToVectorProps(
 ): VectorFlattenProps | null {
   return nodesToVectorProps(renderer, graph, nodes, (r, g, node) =>
     makeBooleanSourcePath(r, node, g)
-  )
-}
-
-export function outlineStrokeNodesToVectorProps(
-  renderer: SkiaRenderer,
-  graph: SceneGraph,
-  nodes: SceneNode[]
-): VectorFlattenProps | null {
-  return nodesToVectorProps(renderer, graph, nodes, (r, g, node) =>
-    makeStrokeOutlinePath(r, node, g)
   )
 }

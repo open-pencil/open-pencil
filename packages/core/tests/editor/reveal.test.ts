@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 function setup() {
   const editor = createEditor({ getViewportSize: () => ({ width: 800, height: 600 }) })

@@ -11,10 +11,10 @@ import {
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { onScopeDispose, ref, watchEffect, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 import type { LayerDragInstruction } from '#vue/primitives/LayerTree/context'
-import { dropIndex } from '#vue/primitives/LayerTree/model'
+import { dropIndex, listsChildrenInFlow } from '#vue/primitives/LayerTree/model'
 
 interface DragItem {
   id: string
@@ -56,7 +56,8 @@ export function useLayerDrag(
       const cleanup = combine(
         draggable({
           element,
-          canDrag: () => acceptsSiblings,
+          // A read-only document's layers keep their order.
+          canDrag: () => acceptsSiblings && !editor.state.readOnly,
           getInitialData: () => ({ id: data.id }),
           onDragStart: () => {
             draggingId.value = data.id
@@ -128,13 +129,17 @@ export function useLayerDrag(
       const targetIndex = targetParent.childIds.indexOf(targetId)
       const at = (index: number) => dropIndex(targetParent.childIds, sourceId, index)
 
+      // Rows list layers front-most first, so a row above the target is in front of it; in an
+      // auto layout they follow the flow, so a row above comes before it.
+      const inFlow = listsChildrenInFlow(targetParent)
       if (inst.type === 'reorder-above') {
-        editor.reorderChildWithUndo(sourceId, targetParentId, at(targetIndex))
+        editor.reorderChildWithUndo(sourceId, targetParentId, at(targetIndex + (inFlow ? 0 : 1)))
       } else if (inst.type === 'reorder-below') {
-        editor.reorderChildWithUndo(sourceId, targetParentId, at(targetIndex + 1))
+        editor.reorderChildWithUndo(sourceId, targetParentId, at(targetIndex + (inFlow ? 1 : 0)))
       } else {
         const container = editor.graph.getNode(targetId)
         if (!container || !editor.graph.isContainer(targetId)) return
+        // Into a container on top of its other layers (the top of its rows), or last in its flow.
         editor.reorderChildWithUndo(sourceId, targetId, container.childIds.length)
         onMakeChildDrop?.(targetId)
       }

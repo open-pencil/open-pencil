@@ -17,8 +17,13 @@ import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
 import type { BuiltinIOFormatId } from '@open-pencil/core/io'
-import type { CommandPaletteGroup, CommandPaletteItem, MenuEntry } from '@open-pencil/vue'
-import { shortcutPlatform, useEditorCommands, useI18n } from '@open-pencil/vue'
+import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
+import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
+import { useI18n } from '@open-pencil/vue/i18n'
+import type {
+  CommandPaletteGroup,
+  CommandPaletteItem
+} from '@open-pencil/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -32,10 +37,13 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
-import { openStorageWorkspace } from '@/app/shell/menu/navigation'
+import { menuFeatureAvailable } from '@/app/shell/menu/features'
+import { browseFiles } from '@/app/shell/menu/navigation'
+import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
   AppMenuEntry,
+  AppMenuFeature,
   AppMenuGroupSchema,
   AppMenuIcon
 } from '@/app/shell/menu/schema'
@@ -43,8 +51,7 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { saveDocumentToStorage } from '@/app/storage/workspace/save'
-import { closeTab, activeTab } from '@/app/tabs'
+import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -80,8 +87,8 @@ function shortcutKeys(shortcut: string | undefined): string[] | undefined {
   })
 }
 
-function isVisible(entry: { target?: string }): boolean {
-  return entry.target !== 'native'
+function isVisible(entry: { target?: string; feature?: AppMenuFeature }): boolean {
+  return entry.target !== 'native' && menuFeatureAvailable(entry.feature)
 }
 
 function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type: 'separator' }> {
@@ -103,20 +110,25 @@ export function useAppMenu() {
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
     open: 'open',
-    'open-storage-workspace': 'openStorageWorkspace',
+    'browse-files': 'browseFiles',
     'open-tour': 'openTour',
     save: 'save',
     'save-as': 'saveAs',
-    'save-to-storage': 'saveToStorage',
+    'save-to': 'saveTo',
+    'save-version': 'saveToVersionHistory',
+    'version-history': 'showVersionHistory',
     'export-selection': 'exportSelection',
     autosave: 'autosave',
     close: 'closeTab',
+    'previous-tab': 'selectPreviousTab',
+    'next-tab': 'selectNextTab',
     copy: 'copy',
     cut: 'cut',
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
+    'arrange-layout': 'autoArrange',
     language: 'language',
     preferences: 'preferences',
     settings: 'settings',
@@ -171,18 +183,18 @@ export function useAppMenu() {
       void import('@/app/tabs').then((m) => m.createTab())
     },
     open: () => void openFileDialog(),
-    'open-storage-workspace': () => openStorageWorkspace(router),
+    'browse-files': () => browseFiles(router),
     'open-tour': () => {
       openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
     },
-    save: () => void store.saveFigFile(),
-    'save-as': () => void store.saveFigFileAs(),
-    'save-to-storage': () => void saveDocumentToStorage(store),
+    ...createSaveMenuActions(store),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
     close: () => {
       if (activeTab.value) void closeTab(activeTab.value.id)
     },
+    'previous-tab': () => switchAdjacentTab(-1),
+    'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
     variables: () => openVariablesDialog(store),
     'insert-icon': () => {
@@ -191,6 +203,7 @@ export function useAppMenu() {
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
+    'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
     ...createSharedEditorMenuActions(setTheme)
   }

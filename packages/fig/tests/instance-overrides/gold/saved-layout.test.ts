@@ -4,7 +4,8 @@ import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
 import { interpretInstance, resolveOccurrencePath } from '#fig/instance-overrides/interpret'
 
 import { parseFigBuffer } from '@open-pencil/fig'
-import { nodeChangeToProps, stringToGuid } from '@open-pencil/fig/node-change'
+import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 
 import oracle from './fixtures/gold-input-layout.json'
 

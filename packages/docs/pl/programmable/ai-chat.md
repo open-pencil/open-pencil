@@ -23,11 +23,12 @@ Możesz utworzyć kilka modeli i osobno przypisać je do projektowania, przeglą
 | Dostawca | Modele | Konfiguracja |
 |----------|--------|--------------|
 | **OpenRouter** | Claude, GPT, Gemini, DeepSeek, Qwen i inne | Klucz API z [openrouter.ai](https://openrouter.ai) |
-| **Anthropic** | Claude Sonnet 4.6, Claude Opus 4.6 | Klucz API z [console.anthropic.com](https://console.anthropic.com) |
-| **OpenAI** | GPT-5.3 Codex, GPT-4.1, o3, o4-mini | Klucz API z [platform.openai.com](https://platform.openai.com) |
-| **Google AI** | Gemini 3.1 Pro, Gemini 3 Flash | Klucz API z [aistudio.google.dev](https://aistudio.google.dev) |
-| **Z.ai** | GLM-5.1, GLM-5, GLM-4.7 i rodzina GLM-4.5 | Klucz API zgodnie z [dokumentacją Z.ai](https://docs.z.ai/devpack/quick-start) |
-| **MiniMax** | MiniMax M3, M2.7, M2.7-highspeed, M2.5, M2.1 | Klucz API z [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **Anthropic** | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | Klucz API z [console.anthropic.com](https://console.anthropic.com) |
+| **OpenAI** | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna | Klucz API z [platform.openai.com](https://platform.openai.com) |
+| **Google AI** | Gemini 3.8 Flash, Gemini 4 Argon | Klucz API z [aistudio.google.dev](https://aistudio.google.dev) |
+| **DeepSeek** | DeepSeek Flash, DeepSeek V4 Pro | Klucz API z [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
+| **Z.ai** | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo | Klucz API zgodnie z [dokumentacją Z.ai](https://docs.z.ai/devpack/quick-start) |
+| **MiniMax** | MiniMax-M3.1-Flash, MiniMax-M3 | Klucz API z [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
 | **Zgodny z OpenAI** | Dowolny punkt końcowy w formacie OpenAI API | Własny adres bazowy i klucz; wybór Completions API lub Responses API |
 | **Zgodny z Anthropic** | Dowolny punkt końcowy w formacie Anthropic API | Własny adres bazowy i klucz |
 

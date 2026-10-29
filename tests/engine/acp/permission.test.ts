@@ -8,7 +8,7 @@ import {
   requestPermissionFromUser,
   respondToPermission,
   rejectCurrentPermission
-} from '@/app/ai/acp/permission'
+} from '@/app/ai/agents/acp/permission'
 
 function makeRequest(
   options: { optionId: string; kind: string; name: string }[] = [

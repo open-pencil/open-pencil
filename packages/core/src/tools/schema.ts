@@ -10,6 +10,7 @@ import * as v from 'valibot'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
+import type { FigmaFontNameInput } from '#core/figma-api/fonts'
 
 export type ToolCapability =
   | 'document:read'
@@ -42,6 +43,12 @@ export interface ToolDef extends ToolMetadata {
   input: v.StrictObjectSchema<v.ObjectEntries, undefined>
   /** Derived from execution metadata, never declared independently by a tool. */
   readonly mutates: boolean
+  /**
+   * Loads the fonts the call's text edits need, as a Figma plugin loads them before it edits
+   * text; rejects when one cannot load. Every executor awaits it before `execute`, so a
+   * synchronous tool still edits in one step.
+   */
+  loadFonts: (figma: FigmaAPI, args: Record<string, unknown>) => Promise<void>
   execute: (figma: FigmaAPI, args: Record<string, unknown>) => unknown
 }
 
@@ -52,9 +59,15 @@ export function defineTool<P extends v.ObjectEntries, R>(
   def: ToolDefinitionMetadata & {
     input: v.StrictObjectSchema<P, undefined>
     execution: ToolExecution & (R extends PromiseLike<unknown> ? { kind: 'async' } : unknown)
+    /** The fonts a call's text edits need loaded first; text edits refuse unloaded fonts. */
+    fonts?: (
+      figma: FigmaAPI,
+      args: v.InferOutput<v.StrictObjectSchema<P, undefined>>
+    ) => FigmaFontNameInput[]
     execute: (figma: FigmaAPI, args: v.InferOutput<v.StrictObjectSchema<P, undefined>>) => R
   }
 ): ToolDef {
+  const { fonts } = def
   return {
     ...def,
     exposure: def.exposure ?? {},
@@ -64,6 +77,13 @@ export function defineTool<P extends v.ObjectEntries, R>(
     availability: def.availability ?? 'default',
     get mutates() {
       return def.execution.mutation !== 'none'
+    },
+    async loadFonts(figma, args) {
+      if (!fonts) return
+      // Wrong arguments are for `execute` to report.
+      const parsed = v.safeParse(def.input, args)
+      if (!parsed.success) return
+      for (const font of fonts(figma, parsed.output)) await figma.loadFontAsync(font)
     },
     execute: (figma, args) => def.execute(figma, parseToolArgs(def.name, def.input, args))
   }
@@ -143,4 +163,38 @@ export function nodeToResult(node: FigmaNodeProxy, maxDepth?: number): Record<st
 
 export function nodeSummary(node: FigmaNodeProxy): { id: string; name: string; type: string } {
   return { id: node.id, name: node.name, type: node.type }
+}
+
+export const nodeIdInputSchema = v.pipe(v.string(), v.description('Node ID'))
+export const nodeInputSchema = v.strictObject({ id: nodeIdInputSchema })
+export const nodeComparisonInputSchema = v.strictObject({
+  from: v.pipe(v.string(), v.description('Source node ID')),
+  to: v.pipe(v.string(), v.description('Target node ID'))
+})
+
+export function nodeTraversalInput(depthDescription: string) {
+  return v.strictObject({
+    id: nodeIdInputSchema,
+    depth: v.optional(toolNumber(v.pipe(v.number(), v.description(depthDescription))))
+  })
+}
+export const positionInputs = {
+  x: toolNumber(v.pipe(v.number(), v.description('X position in the parent, or on the page'))),
+  y: toolNumber(v.pipe(v.number(), v.description('Y position in the parent, or on the page')))
+}
+
+/** Reuse a native number schema for both numeric and numeric-string agent inputs. */
+export function toolNumber(schema: v.GenericSchema<number, number> = v.number()) {
+  // JSON Schema numbers are finite. Express that with representable bounds as well as at runtime.
+  const finite = v.pipe(schema, v.minValue(-Number.MAX_VALUE), v.maxValue(Number.MAX_VALUE))
+  return v.union([
+    finite,
+    v.pipe(
+      v.string(),
+      v.regex(/\S/, 'Expected a nonblank numeric string'),
+      v.description(v.getDescription(schema) ?? 'Numeric value'),
+      v.transform(Number),
+      finite
+    )
+  ])
 }

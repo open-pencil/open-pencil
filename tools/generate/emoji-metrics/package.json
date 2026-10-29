@@ -1,0 +1,18 @@
+{
+  "name": "@open-pencil/emoji-metrics-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#emoji-metrics/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "harfbuzzjs": "1.6.4"
+  },
+  "devDependencies": {
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/package-artifacts-tools": "workspace:*"
+  }
+}

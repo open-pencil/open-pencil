@@ -1,0 +1,1 @@
+- A layer's visibility binds to a boolean or text variable from the Appearance panel, as in Figma: right-click the eye, or use the variable/property button on a layer inside a component. Text shows the layer unless it is empty or reads "false", "no" or "off".

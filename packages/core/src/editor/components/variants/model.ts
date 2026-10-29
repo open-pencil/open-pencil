@@ -1,12 +1,7 @@
 import { uniq } from 'es-toolkit/array'
 
-import {
-  compareCanvasPosition,
-  defaultVariant,
-  type ComponentPropertyDefinition,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { compareCanvasPosition, defaultVariant } from '@open-pencil/scene-graph/components'
 
 export type VariantConflict = {
   values: Record<string, string>

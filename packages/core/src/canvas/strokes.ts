@@ -1,13 +1,24 @@
-import type { Canvas, EmbindEnumEntity, Paint } from 'canvaskit-wasm'
+import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
-import { arrowLinesSegments, equilateralArrowPoints } from '@open-pencil/scene-graph/arrow-caps'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
+import {
+  arrowLinesSegments,
+  circleCapRadius,
+  diamondCapPoints,
+  equilateralArrowPoints,
+  triangleCapPoints
+} from '@open-pencil/scene-graph/arrow-caps'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
-import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+import {
+  drawOutline,
+  makeShapeWithTextDetailsPath,
+  nodeHasSmoothCorners,
+  withNodeOutline
+} from './shapes'
 
 export function getStrokeCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
   switch (cap) {
@@ -106,6 +117,56 @@ export function drawDashedRRectWithSolidCorners(
   r.strokePaint.setPathEffect(null)
 }
 
+/** The outline a polygonal head fills: a triangle, an equilateral arrow, or a diamond. */
+function polygonPath(r: SkiaRenderer, points: readonly Vector[]): Path {
+  const builder = new r.ck.PathBuilder()
+  points.forEach((point, index) =>
+    index === 0 ? builder.moveTo(point.x, point.y) : builder.lineTo(point.x, point.y)
+  )
+  builder.close()
+  return builder.detachAndDelete()
+}
+
+/** The corners of each head drawn as a polygon, from its tip, direction, and weight. */
+const POLYGON_HEADS = {
+  ARROW_EQUILATERAL: equilateralArrowPoints,
+  TRIANGLE_FILLED: triangleCapPoints,
+  DIAMOND_FILLED: diamondCapPoints
+} satisfies Record<string, (x: number, y: number, angle: number, weight: number) => Vector[]>
+
+/**
+ * The filled outline of the head at `endpoint`. A line arrow's wings are one stroked path, so they
+ * meet in a round join rather than overlapping at the tip.
+ */
+export function arrowHeadPath(
+  r: SkiaRenderer,
+  endpoint: ArrowEndpoint,
+  weight: number
+): Path | null {
+  const { x, y, angle, cap } = endpoint
+  if (cap === 'ARROW_LINES') {
+    const [first, second] = arrowLinesSegments(x, y, angle, weight)
+    const builder = new r.ck.PathBuilder()
+    builder.moveTo(first.to.x, first.to.y)
+    builder.lineTo(first.from.x, first.from.y)
+    builder.lineTo(second.to.x, second.to.y)
+    const wings = builder.detachAndDelete()
+    const outline = wings.makeStroked({
+      width: weight,
+      cap: r.ck.StrokeCap.Round,
+      join: r.ck.StrokeJoin.Round
+    })
+    wings.delete()
+    return outline
+  }
+  if (cap === 'CIRCLE_FILLED') {
+    const builder = new r.ck.PathBuilder()
+    builder.addCircle(x, y, circleCapRadius(weight))
+    return builder.detachAndDelete()
+  }
+  return polygonPath(r, POLYGON_HEADS[cap](x, y, angle, weight))
+}
+
 /**
  * Draws arrow heads at open path endpoints in the stroke's color. The shaft
  * is expected to be drawn separately; heads overlay its terminal segment.
@@ -119,41 +180,71 @@ export function drawArrowHeads(
   opacity: number
 ): void {
   for (const endpoint of endpoints) {
-    if (endpoint.cap === 'ARROW_EQUILATERAL') {
-      const [tip, left, right] = equilateralArrowPoints(
-        endpoint.x,
-        endpoint.y,
-        endpoint.angle,
-        weight
-      )
-      const builder = new r.ck.PathBuilder()
-      builder.moveTo(tip.x, tip.y)
-      builder.lineTo(left.x, left.y)
-      builder.lineTo(right.x, right.y)
-      builder.close()
-      const path = builder.detachAndDelete()
-      r.fillPaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-      r.fillPaint.setAlphaf(opacity)
-      canvas.drawPath(path, r.fillPaint)
-      path.delete()
-    } else {
-      r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-      r.strokePaint.setAlphaf(opacity)
-      r.strokePaint.setStrokeWidth(weight)
-      r.strokePaint.setStrokeCap(r.ck.StrokeCap.Butt)
-      r.strokePaint.setPathEffect(null)
-      for (const wing of arrowLinesSegments(endpoint.x, endpoint.y, endpoint.angle, weight)) {
-        canvas.drawLine(wing.from.x, wing.from.y, wing.to.x, wing.to.y, r.strokePaint)
-      }
+    const { x, y, angle } = endpoint
+    switch (endpoint.cap) {
+      case 'ARROW_LINES':
+        r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+        r.strokePaint.setAlphaf(opacity)
+        r.strokePaint.setStrokeWidth(weight)
+        // One path, so the wings meet in a round join rather than overlapping at the tip.
+        r.strokePaint.setStrokeCap(r.ck.StrokeCap.Round)
+        r.strokePaint.setStrokeJoin(r.ck.StrokeJoin.Round)
+        r.strokePaint.setPathEffect(null)
+        strokeWings(r, canvas, arrowLinesSegments(x, y, angle, weight))
+        break
+      case 'CIRCLE_FILLED':
+        setHeadPaint(r, color, opacity)
+        canvas.drawCircle(x, y, circleCapRadius(weight), r.fillPaint)
+        break
+      case 'ARROW_EQUILATERAL':
+        fillHead(r, canvas, equilateralArrowPoints(x, y, angle, weight), color, opacity)
+        break
+      case 'TRIANGLE_FILLED':
+        fillHead(r, canvas, triangleCapPoints(x, y, angle, weight), color, opacity)
+        break
+      case 'DIAMOND_FILLED':
+        fillHead(r, canvas, diamondCapPoints(x, y, angle, weight), color, opacity)
+        break
     }
   }
+}
+
+function strokeWings(r: SkiaRenderer, canvas: Canvas, [first, second]: [ArrowWing, ArrowWing]) {
+  const builder = new r.ck.PathBuilder()
+  builder.moveTo(first.to.x, first.to.y)
+  builder.lineTo(first.from.x, first.from.y)
+  builder.lineTo(second.to.x, second.to.y)
+  const path = builder.detachAndDelete()
+  canvas.drawPath(path, r.strokePaint)
+  path.delete()
+}
+
+function setHeadPaint(r: SkiaRenderer, color: Color, opacity: number) {
+  r.fillPaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.fillPaint.setAlphaf(opacity)
+}
+
+/** Fills a head outlined by `points` in the stroke's colour. */
+function fillHead(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  points: readonly Vector[],
+  color: Color,
+  opacity: number
+) {
+  const path = polygonPath(r, points)
+  setHeadPaint(r, color, opacity)
+  canvas.drawPath(path, r.fillPaint)
+  path.delete()
 }
 
 /**
  * A gradient or image stroke paints through a shader, the way the same paint does as a fill.
  * Both paints get it: a vector stroke's outline and an arrowhead are filled shapes drawn with
  * `fillPaint`, so the shader has to be on whichever paint the draw helper reaches for.
- * Returns false for a solid stroke, which paints through the paint's color instead.
+ * Returns whether the stroke draws: a solid one paints through the paint's color, while a gradient
+ * CanvasKit cannot build, as for a transform that holds no numbers, or an image not yet decoded is
+ * skipped rather than drawn in that color, the way a fill is.
  */
 export function applyStrokeShader(
   r: SkiaRenderer,
@@ -165,33 +256,35 @@ export function applyStrokeShader(
   r.strokePaint.setShader(null)
   r.fillPaint.setShader(null)
   if (stroke.type.startsWith('GRADIENT') && stroke.gradientStops && stroke.gradientTransform) {
+    let built = true
     for (const paint of [r.strokePaint, r.fillPaint]) {
-      applyGradientFill(
-        r,
-        stroke,
-        node,
-        graph,
-        paint,
-        // Every stop resolves against this stroke's own binding, not the stop's position.
-        (color) =>
-          r.resolveStrokeColorInfo(
-            { ...stroke, type: 'SOLID', color, opacity: color.a, visible: true },
-            strokeIndex,
-            node,
-            graph
-          ).color
-      )
+      built =
+        applyGradientFill(
+          r,
+          stroke,
+          node,
+          graph,
+          paint,
+          // Every stop resolves against this stroke's own binding, not the stop's position.
+          (color) =>
+            r.resolveStrokeColorInfo(
+              { ...stroke, type: 'SOLID', color, opacity: color.a, visible: true },
+              strokeIndex,
+              node,
+              graph
+            ).color
+        ) && built
     }
-    return true
+    return built
   }
   if (stroke.type === 'IMAGE' && stroke.imageHash) {
-    let applied = false
+    let applied = true
     for (const paint of [r.strokePaint, r.fillPaint]) {
-      applied = applyImageFill(r, stroke, node, graph, paint) || applied
+      applied = applyImageFill(r, stroke, node, graph, paint) && applied
     }
     return applied
   }
-  return false
+  return true
 }
 
 /** Leaves any shader in place: a shaded stroke's color is unused, but its alpha still applies. */
@@ -225,66 +318,23 @@ export function drawStyledRRectStroke(
   r.strokePaint.setPathEffect(null)
 }
 
-export function drawNodeStroke(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean
-): void {
-  switch (node.type) {
-    case 'VECTOR': {
-      const vps = r.getVectorPaths(node)
-      if (vps) {
-        for (const vp of vps) canvas.drawPath(vp, r.strokePaint)
-      }
-      break
-    }
-    case 'ELLIPSE': {
-      const fg = r.getFillGeometry(node)
-      if (fg) {
-        for (const p of fg) canvas.drawPath(p, r.strokePaint)
-      } else if (node.arcData) {
-        r.drawArc(canvas, node, r.strokePaint)
-      } else {
-        canvas.drawOval(rect, r.strokePaint)
-      }
-      break
-    }
-    case 'POLYGON':
-    case 'STAR': {
-      const path = r.makePolygonPath(node)
-      canvas.drawPath(path, r.strokePaint)
-      path.delete()
-      break
-    }
-    default:
-      if (nodeHasSmoothCorners(node)) {
-        const path = makeSmoothRRectPath(r, node)
-        canvas.drawPath(path, r.strokePaint)
-        path.delete()
-      } else if (hasRadius) {
-        canvas.drawRRect(r.makeRRect(node), r.strokePaint)
-      } else {
-        canvas.drawRect(rect, r.strokePaint)
-      }
-  }
+/** Strokes a layer's outline, or a vector's own paths, open ones included. */
+export function drawNodeStroke(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
+  strokeNodeShape(r, canvas, node, r.strokePaint)
 }
 
 export function drawStrokeWithAlign(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean,
   align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
 ): void {
   if (align === 'INSIDE') {
     canvas.save()
-    r.clipNodeShape(canvas, node, rect, hasRadius)
+    r.clipNodeShape(canvas, node)
     const origWidth = r.strokePaint.getStrokeWidth()
     r.strokePaint.setStrokeWidth(origWidth * 2)
-    r.drawNodeStroke(canvas, node, rect, hasRadius)
+    r.drawNodeStroke(canvas, node)
     r.strokePaint.setStrokeWidth(origWidth)
     canvas.restore()
   } else if (align === 'OUTSIDE') {
@@ -292,7 +342,7 @@ export function drawStrokeWithAlign(
     const bigRect = r.ck.LTRBRect(-node.width, -node.height, node.width * 2, node.height * 2)
     const outerPath = new r.ck.PathBuilder()
     outerPath.addRect(bigRect)
-    const innerPath = r.makeNodeShapePath(node, rect, hasRadius)
+    const innerPath = r.makeNodeShapePath(node)
     const immutableOuterPath = outerPath.detachAndDelete()
     const clipPath = r.ck.Path.MakeFromOp(immutableOuterPath, innerPath, r.ck.PathOp.Difference)
     immutableOuterPath.delete()
@@ -305,11 +355,21 @@ export function drawStrokeWithAlign(
     clipPath.delete()
     const origWidth = r.strokePaint.getStrokeWidth()
     r.strokePaint.setStrokeWidth(origWidth * 2)
-    r.drawNodeStroke(canvas, node, rect, hasRadius)
+    r.drawNodeStroke(canvas, node)
     r.strokePaint.setStrokeWidth(origWidth)
     canvas.restore()
   } else {
-    r.drawNodeStroke(canvas, node, rect, hasRadius)
+    r.drawNodeStroke(canvas, node)
+  }
+  // Inner lines, such as a database's front rim, lie inside the outline: they keep the stroke's
+  // own weight whatever its alignment, and end where the outline does.
+  const details = makeShapeWithTextDetailsPath(r, node)
+  if (details) {
+    canvas.save()
+    r.clipNodeShape(canvas, node)
+    canvas.drawPath(details, r.strokePaint)
+    canvas.restore()
+    details.delete()
   }
 }
 
@@ -321,14 +381,7 @@ export function drawRRectStrokeWithAlign(
   stroke: Stroke
 ): void {
   if (nodeHasSmoothCorners(node)) {
-    drawStrokeWithAlign(
-      r,
-      canvas,
-      node,
-      r.ck.LTRBRect(0, 0, node.width, node.height),
-      true,
-      stroke.align
-    )
+    drawStrokeWithAlign(r, canvas, node, stroke.align)
     return
   }
 
@@ -369,114 +422,18 @@ export function drawRRectStrokeWithAlign(
   }
 }
 
-export function drawIndividualSideStrokes(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
-): void {
-  const w = node.width
-  const h = node.height
-  const inside = align === 'INSIDE'
-  const outside = align === 'OUTSIDE'
-
-  const tw = node.borderTopWeight
-  if (tw > 0) {
-    let y = 0
-    if (inside) y = tw / 2
-    else if (outside) y = -tw / 2
-    r.strokePaint.setStrokeWidth(tw)
-    canvas.drawLine(0, y, w, y, r.strokePaint)
-  }
-
-  const rw = node.borderRightWeight
-  if (rw > 0) {
-    let x = w
-    if (inside) x = w - rw / 2
-    else if (outside) x = w + rw / 2
-    r.strokePaint.setStrokeWidth(rw)
-    canvas.drawLine(x, 0, x, h, r.strokePaint)
-  }
-
-  const bw = node.borderBottomWeight
-  if (bw > 0) {
-    let y = h
-    if (inside) y = h - bw / 2
-    else if (outside) y = h + bw / 2
-    r.strokePaint.setStrokeWidth(bw)
-    canvas.drawLine(0, y, w, y, r.strokePaint)
-  }
-
-  const lw = node.borderLeftWeight
-  if (lw > 0) {
-    let x = 0
-    if (inside) x = lw / 2
-    else if (outside) x = -lw / 2
-    r.strokePaint.setStrokeWidth(lw)
-    canvas.drawLine(x, 0, x, h, r.strokePaint)
-  }
-}
-
+/** Strokes a layer's outline with `paint`: a vector's own paths, open ones included, and a line. */
 export function strokeNodeShape(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   paint: Paint
 ): void {
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-
-  switch (node.type) {
-    case 'ELLIPSE':
-      canvas.drawOval(rect, paint)
-      return
-    case 'VECTOR': {
-      const vps = r.getVectorPaths(node)
-      if (vps) {
-        for (const vp of vps) canvas.drawPath(vp, paint)
-      }
-      return
-    }
-    case 'LINE':
-      canvas.drawLine(0, 0, node.width, node.height, paint)
-      return
-    case 'POLYGON':
-    case 'STAR': {
-      const path = r.makePolygonPath(node)
-      canvas.drawPath(path, paint)
-      path.delete()
-      return
-    }
-  }
-
-  const hasRadius =
-    node.cornerRadius > 0 ||
-    (node.independentCorners &&
-      (node.topLeftRadius > 0 ||
-        node.topRightRadius > 0 ||
-        node.bottomRightRadius > 0 ||
-        node.bottomLeftRadius > 0))
-
-  if (hasRadius) {
-    if (node.independentCorners) {
-      const rrect = new Float32Array([
-        0,
-        0,
-        node.width,
-        node.height,
-        node.topLeftRadius,
-        node.topLeftRadius,
-        node.topRightRadius,
-        node.topRightRadius,
-        node.bottomRightRadius,
-        node.bottomRightRadius,
-        node.bottomLeftRadius,
-        node.bottomLeftRadius
-      ])
-      canvas.drawRRect(rrect, paint)
-    } else {
-      canvas.drawRRect(r.ck.RRectXY(rect, node.cornerRadius, node.cornerRadius), paint)
-    }
+  if (node.type === 'VECTOR') {
+    for (const path of r.getVectorPaths(node) ?? []) canvas.drawPath(path, paint)
+  } else if (node.type === 'LINE') {
+    canvas.drawLine(0, 0, node.width, node.height, paint)
   } else {
-    canvas.drawRect(rect, paint)
+    withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, paint))
   }
 }

@@ -1,2 +1,6 @@
-export { renderNodesToPDF } from './export'
-export type { PDFExportOptions } from './export'
+export { exportPDFDocument, type PDFDocumentOptions } from './document'
+export { renderPagesToPDFDetailed } from './export'
+export type { PDFExportOptions, PDFExportResult } from './export'
+export type { PDFFontFace, PDFFontReport } from './fonts'
+export { MAX_PDF_PAGES, PDF_MODES, PDFPlanError, planPDFPages } from './plan'
+export type { PDFMode, PDFPageSpec, PDFPlanInput } from './plan'

@@ -5,9 +5,9 @@ import {
   getStyleAt,
   removeStyleFromRange,
   toggleBoldInRange,
-  toggleItalicInRange,
-  type StyleRun
-} from '@open-pencil/core'
+  toggleItalicInRange
+} from '@open-pencil/core/text'
+import type { StyleRun } from '@open-pencil/scene-graph'
 
 // ---------------------------------------------------------------------------
 // toggleBoldInRange — mutation coverage

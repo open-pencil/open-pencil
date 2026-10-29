@@ -1,4 +1,5 @@
 import { useLocalStorage } from '@vueuse/core'
+import { clamp } from 'es-toolkit'
 import { computed, ref } from 'vue'
 
 /**
@@ -24,7 +25,7 @@ export function resolveDiagnosticsRetention(value: unknown): DiagnosticsRetentio
     return DIAGNOSTICS_RETENTION_DEFAULT
   }
   const whole = Math.round(parsed)
-  return Math.min(Math.max(whole, DIAGNOSTICS_RETENTION_MIN), DIAGNOSTICS_RETENTION_MAX)
+  return clamp(whole, DIAGNOSTICS_RETENTION_MIN, DIAGNOSTICS_RETENTION_MAX)
 }
 
 const diagnosticsEnabled = useLocalStorage('open-pencil:diagnostics-enabled', true)

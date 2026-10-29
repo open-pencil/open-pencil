@@ -1,4 +1,6 @@
-import { SceneGraph, styleRunReferences } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { styleRunReferences } from '@open-pencil/scene-graph/text'
+import { variableValueReferences } from '@open-pencil/scene-graph/variables'
 
 import type { ExportTarget } from './types'
 
@@ -80,6 +82,7 @@ function cloneIntoGraph(
       instances.add(id)
       graph.instanceIndex.set(copy.componentId, instances)
     }
+    if (copy.type === 'CONNECTOR') graph.connectorIds.add(id)
   }
 
   const rootClone = graph.getNode(source.rootId)
@@ -156,9 +159,7 @@ function collectVariableClosure(source: SceneGraph, variableId: string, out: Set
   if (!variable) return
   out.add(variableId)
   for (const value of Object.values(variable.valuesByMode)) {
-    if (typeof value === 'object' && 'aliasId' in value) {
-      collectVariableClosure(source, value.aliasId, out)
-    }
+    for (const id of variableValueReferences(value)) collectVariableClosure(source, id, out)
   }
 }
 

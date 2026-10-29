@@ -1,4 +1,4 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@open-pencil/core'
 import type { BuiltinIOFormatId, ExportRequest, IORegistry } from '@open-pencil/core/io'
 
 import {

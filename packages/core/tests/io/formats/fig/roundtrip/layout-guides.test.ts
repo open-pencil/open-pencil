@@ -1,7 +1,9 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 beforeAll(async () => {
   await initCodec()

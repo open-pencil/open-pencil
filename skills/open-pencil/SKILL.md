@@ -22,6 +22,12 @@ openpencil tree design.fig
 
 Use `openpencil --help`, per-command help, and the connected MCP server’s tool schemas to check the installed version’s capabilities. See the [CLI reference](https://openpencil.dev/reference/cli) and [MCP guide](https://openpencil.dev/programmable/mcp-server) for current documentation.
 
+## Variable formulas
+
+Inside `eval`, use `openpencil.setVariableFormula('Spacing', 'large', '{base} * 2')` for numeric formulas or `openpencil.setVariableFormula('State', 'visible', '{viewport} > 1024 and not {loading}')` for Boolean formulas, which use `and`, `or`, `not` and number comparisons. Collections and variables must already exist. An optional fourth argument selects a mode by name; otherwise the default mode is edited. The call validates before mutation and returns the resolved value. Length formulas use stored pixels. The CSS stylesheet writes number formulas as `calc()`; design-token files hold the result with the formula in `$extensions`.
+
+Variables follow Figma's plugin API: `figma.variables.getLocalVariables()`, `createVariable(name, collection, type)`, `variable.setValueForMode(modeId, value)`, and `node.setBoundVariable(field, variable)` with Figma's field names (`characters`, `width`, `paddingLeft`) and types; paint colours bind through `figma.variables.setBoundVariableForPaint`. To bind as the layer panel does, use `openpencil.bindVariable(node, field, variable)` and `openpencil.unbindVariable(node, field)` with OpenPencil names (`text`, `visible`, `opacity`, `fills/0/color`): text content takes a text or number variable, shown as text; visibility a boolean or text one. `openpencil` also sets layout and text direction (`setLayoutDirection`, `setTextDirection`), OkHCL paint colors (`setFillOkHCL`, `setStrokeOkHCL`), exposes instance swaps (`exposeInstanceSwap`), and reports font availability (`getFontStatus()`); booleans and flattening are Figma's `figma.union`, `subtract`, `intersect`, `exclude` and `figma.flatten`.
+
 ## Requirements
 
 ```bash
@@ -150,9 +156,11 @@ openpencil eval -c '
   buttons.length + " buttons updated"
 '
 
-# Modify and save to the same file
+# Modify and save to the same file; text edits need the text's fonts loaded first, as in Figma
 openpencil eval design.fig -w -c '
-  const texts = figma.currentPage.findAll(n => n.type === "TEXT");
+  const texts = figma.currentPage.findAll(n => n.type === "TEXT" && n.characters.length > 0);
+  const fonts = texts.flatMap(t => t.getRangeAllFontNames(0, t.characters.length));
+  await Promise.all(fonts.map(font => figma.loadFontAsync(font)));
   texts.forEach(t => { t.fontSize = 16 });
 '
 
@@ -165,13 +173,17 @@ echo 'figma.currentPage.children.map(n => n.name)' | openpencil eval design.fig 
 # Style part of a text, and read how it is styled
 openpencil eval design.fig -w -c '
   const title = figma.currentPage.findOne(n => n.type === "TEXT" && n.name === "Title");
+  const fonts = [...title.getRangeAllFontNames(0, title.characters.length), { family: "Inter", style: "Bold" }];
+  await Promise.all(fonts.map(font => figma.loadFontAsync(font)));
   title.setRangeFontName(0, 5, { family: "Inter", style: "Bold" });
   title.setRangeFills(0, 5, [{ type: "SOLID", color: { r: 0.9, g: 0.1, b: 0.1 } }]);
   title.getStyledTextSegments(["fontName", "fills"]).map(s => [s.characters, s.fontName.style])
 '
 ```
 
-Text styles follow Figma's per-character model: `getStyledTextSegments(fields)` reads runs, `getRange…`/`setRange…` read and set font, size, fills, letter spacing, line height, decorations, text case, hyperlinks, text and fill style IDs, and bound variables for `[start, end)`, and a text's `fontSize`, `fontName`, `fills`, and similar read `figma.mixed` while characters differ. Check for it before using the value.
+Text edits follow Figma's font rule: anything that lays text out again (`characters`, `fontSize`, `fontName`, spacing, case, alignment, auto-resize, and the matching `setRange…` methods) throws `Cannot write to node with unloaded font` until `figma.loadFontAsync` has loaded every font the text uses, and a new font has to be loaded before it is set. A font that is not available rejects `loadFontAsync`; replace it with `fontName = { family, style }` in a loaded font. The built-in text tools load fonts themselves.
+
+Text styles follow Figma's per-character model: `getStyledTextSegments(fields)` reads runs, `getRange…`/`setRange…` read and set font, size, fills, letter spacing, line height, decorations, text case, hyperlinks, text and fill style IDs, and bound variables for `[start, end)`, and a text's `fontSize`, `fontName`, `fills`, and similar read `figma.mixed` while characters differ. Check for it before using the value. Paints everywhere take Figma's shape: a solid `color` is `{ r, g, b }` with the alpha in `opacity`, and an image is `{ type: "IMAGE", imageHash, scaleMode: "FILL" | "FIT" | "CROP" | "TILE" }` with optional `rotation` and `scalingFactor`.
 
 Next to `figma`, scripts get `openpencil`: what OpenPencil adds to the Figma API, in its style. A main component can behave as a Reka UI control, by its own property and slot names:
 
@@ -200,6 +212,15 @@ openpencil eval design.fig -w -c 'openpencil.getComment("c_…").reply("Title is
 ```
 
 `openpencil.addComment(text, { node, page, x, y, author })` leaves a new one. Over MCP the same is `get_comments`, `add_comment`, `reply_to_comment`, and `resolve_comment`. Comment text is Markdown.
+
+Statuses say where a section, frame, component, or instance stands, from the document's own list. Read the list, find what is ready, and move a layer on once your work on it is done:
+
+```bash
+openpencil eval design.fig -c 'openpencil.statuses.map(s => s.name)'
+openpencil eval design.fig -w -c 'openpencil.setStatus(figma.currentPage.findOne(n => n.name === "Checkout"), "In review")'
+```
+
+`openpencil.getStatus(node)` reads one. Over MCP the same is `get_statuses` and `set_status`.
 
 ### Diff
 
@@ -285,10 +306,10 @@ The CLI defaults the filesystem root to the home directory on Windows and the cu
 
 ### MCP workflow
 
-1. **Find or open a document** — `list_documents` for open tabs and their IDs; `open_file { path }` within the effective filesystem root, or `new_document {}`. Pass `document_id` and `page_id` explicitly instead of relying on the active tab; `activate_document { document_id }` brings a tab to the front when the user should see it.
+1. **Find or open a document** — `list_documents` for open tabs and their IDs; `open_file { path }` within the effective filesystem root (`list_recent_files` lists recently opened files there), or `new_document {}`. Pass `document_id` and `page_id` explicitly instead of relying on the active tab; `activate_document { document_id }` brings a tab to the front when the user should see it.
 2. **Query** — `get_page_tree`, `find_nodes`, `query_nodes`, `get_node`, `list_pages`, `get_current_page`.
 3. **Inspect** — `get_jsx`, `diff_jsx`, `diff_create`, `diff_visual`, `describe`, `export_image`, `export_svg`, `export_pdf`.
-4. **Modify** — `render`, `batch_update`, `update_node`, `set_fill`, `set_layout`, `create_shape`, `import_svg`, etc.
+4. **Modify** — `render`, `batch_update`, `update_node`, `set_fill`, `set_layout`, `create_shape`, `import_svg`, etc. For a flowchart, write it as Mermaid and call `import_mermaid { mermaid }`: it lays out FigJam shapes, sections, and connectors without overlaps and returns each node's layer id, instead of placing shapes and connectors by hand. When layers you created overlap, call `arrange { ids }`: it spreads them apart and keeps each near where it was. `arrange` also packs screens (`mode: "pack"`) and lays shapes out along the connectors joining them (`mode: "flow"` for flows, `"tree"` for hierarchies, `"radial"` for mind maps, `"network"` for relationship maps).
 5. **Save/export** — `save_file`, `export_image`, `export_svg`, `export_pdf`, or CLI `export`.
 6. **Close** — `close_file { document_id, unsaved }` closes a document tab after the workflow. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; automation never prompts in the app.
 

@@ -30,7 +30,6 @@ export function invalidateAllPictures(r: SkiaRenderer): void {
   for (const pic of r.nodePictureCache.values()) pic?.delete()
   r.nodePictureCache.clear()
   r.nodePictureCacheGenerations.clear()
-  r.nodePictureCacheDependencies.clear()
   r.effectRasterCache.clear()
   clearSubtreePictureCache(r)
 }
@@ -44,20 +43,11 @@ export function invalidateNodePicture(
     keepShaping: changedKeys !== undefined && !changesShaping(changedKeys)
   })
   r.effectRasterCache.delete(nodeId)
-  r.effectRasterCache.deleteDependencies(nodeId)
-  for (const [ownerId, dependencyIds] of r.nodePictureCacheDependencies) {
-    if (!dependencyIds.includes(nodeId)) continue
-    r.nodePictureCache.get(ownerId)?.delete()
-    r.nodePictureCache.delete(ownerId)
-    r.nodePictureCacheGenerations.delete(ownerId)
-    r.nodePictureCacheDependencies.delete(ownerId)
-  }
   const pic = r.nodePictureCache.get(nodeId)
   if (pic) {
     pic.delete()
     r.nodePictureCache.delete(nodeId)
     r.nodePictureCacheGenerations.delete(nodeId)
-    r.nodePictureCacheDependencies.delete(nodeId)
   }
   const subtree = r.subtreePictureCache.get(nodeId)
   if (subtree) {

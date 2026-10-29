@@ -1,12 +1,11 @@
 import { pick } from 'es-toolkit'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   layoutSizing,
   layoutSizingUpdates,
-  type LayoutSizingAxis,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type LayoutSizingAxis
+} from '@open-pencil/scene-graph/layout'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 const SIZING_FIELDS = [

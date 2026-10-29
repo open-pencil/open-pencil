@@ -7,16 +7,20 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { acpPermissionOptionTestId, useI18n, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { acpPermissionOptionTestId, vTestId } from '@open-pencil/vue/testing'
 
 import {
   currentPermission,
   rejectCurrentPermission,
   respondToPermission
-} from '@/app/ai/acp/permission'
+} from '@/app/ai/agents/acp/permission'
 import { AppAlertDialogRoot } from '@/components/ui/dialog'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 const open = computed(() => currentPermission.value !== null)
+// Answering clears the request; the dialog keeps showing it while it animates closed.
+const permission = useHeldContent(currentPermission)
 const { ai } = useI18n()
 interface ToolCallInfo {
   title?: string
@@ -24,7 +28,7 @@ interface ToolCallInfo {
 }
 
 const toolCall = computed(
-  (): ToolCallInfo => (currentPermission.value?.request.toolCall as ToolCallInfo) ?? {}
+  (): ToolCallInfo => (permission.value?.request.toolCall as ToolCallInfo) ?? {}
 )
 
 const toolName = computed(() => toolCall.value.title ?? ai.value.unknownTool)
@@ -40,11 +44,11 @@ const toolInput = computed(() => {
 })
 
 const allowOptions = computed(
-  () => currentPermission.value?.request.options.filter((o) => o.kind.startsWith('allow')) ?? []
+  () => permission.value?.request.options.filter((o) => o.kind.startsWith('allow')) ?? []
 )
 
 const rejectOptions = computed(
-  () => currentPermission.value?.request.options.filter((o) => o.kind.startsWith('reject')) ?? []
+  () => permission.value?.request.options.filter((o) => o.kind.startsWith('reject')) ?? []
 )
 
 function handleDismiss() {

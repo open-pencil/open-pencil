@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { ComponentPropertyDefinition, SceneNode, SlotSettings } from '../types'
 import { slotPropertyId } from './frames'
 

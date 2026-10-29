@@ -16,6 +16,7 @@ export {
   type HarnessSessionConfiguration,
   type HarnessSidecarMessage,
   type HarnessTurnEvent,
+  type HarnessTurnUsage,
   type JSONValue
 } from './protocol'
 export { HarnessSessionService } from './service'

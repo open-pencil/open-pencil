@@ -1,12 +1,11 @@
 import { pick } from 'es-toolkit/object'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   fitEnclosingGroups,
   redoGroupFit,
-  undoGroupFit,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  undoGroupFit
+} from '@open-pencil/scene-graph/group-bounds'
 
 import { groupFitOptions } from '#core/canvas/boolean'
 import type { EditorContext } from '#core/editor/types'

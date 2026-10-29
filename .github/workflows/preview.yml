@@ -27,7 +27,7 @@ jobs:
         run: bun run format:check
 
       # The demo document's shader fills are drawn at build time in a headless Chromium.
-      - run: bunx playwright install --with-deps chromium
+      - uses: ./.github/actions/setup-playwright
 
       - run: bun run build
 

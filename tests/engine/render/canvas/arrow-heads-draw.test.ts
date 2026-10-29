@@ -43,7 +43,8 @@ function createHarness() {
     ck: {
       PathBuilder: MockPathBuilder,
       Color4f: mock((r: number, g: number, b: number, a: number) => ['color', r, g, b, a]),
-      StrokeCap: { Butt: 'butt-cap' }
+      StrokeCap: { Butt: 'butt-cap', Round: 'round-cap' },
+      StrokeJoin: { Round: 'round-join' }
     },
     fillPaint: {
       setColor: mock(() => undefined),
@@ -55,6 +56,7 @@ function createHarness() {
       setStrokeWidth: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setStrokeCap: mock(() => undefined),
+      setStrokeJoin: mock(() => undefined),
       setPathEffect: mock(() => undefined),
       setShader: mock(() => undefined)
     }
@@ -99,10 +101,10 @@ describe('drawArrowHeads', () => {
     expect(harness.moveToCalls).toEqual([[10, 5]])
     expect(harness.lineToCalls).toHaveLength(2)
     const corners = [...harness.lineToCalls].sort((a, b) => a[1] - b[1])
-    expect(corners[0][0]).toBeCloseTo(10 - 4 * SQRT3, 5)
-    expect(corners[0][1]).toBeCloseTo(1, 5)
-    expect(corners[1][0]).toBeCloseTo(10 - 4 * SQRT3, 5)
-    expect(corners[1][1]).toBeCloseTo(9, 5)
+    expect(corners[0][0]).toBeCloseTo(0, 5)
+    expect(corners[0][1]).toBeCloseTo(5 - 10 / SQRT3, 5)
+    expect(corners[1][0]).toBeCloseTo(0, 5)
+    expect(corners[1][1]).toBeCloseTo(5 + 10 / SQRT3, 5)
     expect(harness.renderer.fillPaint.setColor).toHaveBeenCalledWith(['color', 0.1, 0.2, 0.3, 1])
     expect(harness.renderer.fillPaint.setAlphaf).toHaveBeenCalledWith(0.8)
     expect(harness.drawPath).toHaveBeenCalledWith(harness.detached, harness.renderer.fillPaint)
@@ -110,7 +112,7 @@ describe('drawArrowHeads', () => {
     expect(harness.drawLineCalls).toHaveLength(0)
   })
 
-  test('strokes two wings for a lines endpoint without a dash effect', () => {
+  test('strokes both wings as one round-joined path without a dash effect', () => {
     const harness = createHarness()
 
     drawArrowHeads(
@@ -122,18 +124,19 @@ describe('drawArrowHeads', () => {
       1
     )
 
-    expect(harness.drawLineCalls).toHaveLength(2)
-    const wings = [...harness.drawLineCalls].sort((a, b) => a[3] - b[3])
-    expect(wings[0][0]).toBeCloseTo(0, 5)
-    expect(wings[0][1]).toBeCloseTo(0, 5)
-    expect(wings[0][2]).toBeCloseTo(-2 * SQRT3, 5)
-    expect(wings[0][3]).toBeCloseTo(-2, 5)
-    expect(wings[1][2]).toBeCloseTo(-2 * SQRT3, 5)
-    expect(wings[1][3]).toBeCloseTo(2, 5)
+    const end = 4.5 * Math.SQRT1_2
+    expect(harness.counters()).toEqual({ pathsBuilt: 1, closeCalls: 0 })
+    expect(harness.moveToCalls[0][0]).toBeCloseTo(-end, 5)
+    expect(Math.abs(harness.moveToCalls[0][1])).toBeCloseTo(end, 5)
+    expect(harness.lineToCalls[0]).toEqual([0, 0])
+    expect(harness.lineToCalls[1][0]).toBeCloseTo(-end, 5)
+    expect(harness.lineToCalls[1][1]).toBeCloseTo(-harness.moveToCalls[0][1], 5)
     expect(harness.renderer.strokePaint.setStrokeWidth).toHaveBeenCalledWith(1)
-    expect(harness.renderer.strokePaint.setStrokeCap).toHaveBeenCalledWith('butt-cap')
+    expect(harness.renderer.strokePaint.setStrokeCap).toHaveBeenCalledWith('round-cap')
+    expect(harness.renderer.strokePaint.setStrokeJoin).toHaveBeenCalledWith('round-join')
     expect(harness.renderer.strokePaint.setPathEffect).toHaveBeenCalledWith(null)
-    expect(harness.drawPath).not.toHaveBeenCalled()
+    expect(harness.drawPath).toHaveBeenCalledWith(harness.detached, harness.renderer.strokePaint)
+    expect(harness.drawLineCalls).toHaveLength(0)
   })
 
   test('draws nothing for an empty endpoint list', () => {

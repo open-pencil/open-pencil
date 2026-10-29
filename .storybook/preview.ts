@@ -2,11 +2,13 @@ import { withThemeByDataAttribute } from '@storybook/addon-themes'
 import type { Preview, Renderer } from '@storybook/vue3-vite'
 import { watch } from 'vue'
 
+import { installCanvasKitBinary } from '@/app/editor/canvas/canvaskit'
 import { installBundledFonts } from '@/app/editor/fonts/bundled'
 import { useAppTheme } from '@/app/shell/theme'
 import '@/app.css'
 
 installBundledFonts()
+installCanvasKitBinary()
 
 const preview: Preview = {
   decorators: [

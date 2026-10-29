@@ -108,8 +108,8 @@ export function relayURLFor(path: string, relayURL: string): string {
   return `${path}?test&collabTransport=test&collabRelay=${encodeURIComponent(relayURL)}`
 }
 
-export function shareLinkPath(roomId = ROOM_ID): string {
-  return `/share/${roomId}`
+export function roomLinkPath(roomId = ROOM_ID): string {
+  return `/rooms/${roomId}`
 }
 
 /**

@@ -24,9 +24,10 @@ The current development version requires Vue `^3.5.41` and, when supplying the o
 ```vue
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
+import { createDefaultEditorState, createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { CanvasRoot, CanvasSurface, provideEditor } from '@open-pencil/vue'
+import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
+import { provideEditor } from '@open-pencil/vue'
 
 const graph = new SceneGraph()
 const page = graph.getPages()[0]
@@ -54,6 +55,10 @@ provideEditor(editor)
 ```
 
 The fixed viewport size above is illustrative; a resizable shell should return its actual canvas container dimensions from `getViewportSize`. Pass reactive state for Vue controls, while keeping the Scene Graph itself framework-neutral.
+
+## Entry points
+
+The root exports only the editor context: `provideEditor`, `useEditor`, and `EDITOR_KEY`. Everything else comes from the subpath named after its source folder, such as `@open-pencil/vue/canvas`, `@open-pencil/vue/controls/fill`, `@open-pencil/vue/editor/commands`, `@open-pencil/vue/primitives/NumberField`, and `@open-pencil/vue/i18n`; `package.json` lists them all.
 
 ## Core concepts
 
@@ -240,7 +245,7 @@ These are mostly useful when extending SDK primitives rather than building from 
 <script setup lang="ts">
 import { provideEditor } from '@open-pencil/vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 const props = defineProps<{
   editor: Editor
@@ -257,7 +262,7 @@ provideEditor(props.editor)
 ### Read selection state
 
 ```ts
-import { useSelectionState } from '@open-pencil/vue'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 
 const { hasSelection, selectedCount, selectedNode } = useSelectionState()
 ```
@@ -265,7 +270,7 @@ const { hasSelection, selectedCount, selectedNode } = useSelectionState()
 ### Build a menu
 
 ```ts
-import { useMenuModel } from '@open-pencil/vue'
+import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
 
 const { appMenu, canvasMenu } = useMenuModel()
 ```

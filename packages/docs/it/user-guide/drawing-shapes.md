@@ -15,7 +15,7 @@ La barra inferiore contiene gli strumenti per creare forme, frame e sezioni. Sel
 | Ellisse | <kbd>O</kbd> | Ellisse |
 | Linea | <kbd>L</kbd> | Linea |
 | Frame | <kbd>F</kbd> | Contenitore di altri oggetti |
-| Sezione | <kbd>S</kbd> | Contenitore di primo livello |
+| Sezione | <kbd>Shift</kbd> + <kbd>S</kbd> | Contenitore di primo livello |
 
 Poligono e Stella sono disponibili nel menu delle forme.
 

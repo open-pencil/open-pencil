@@ -18,7 +18,7 @@ Das composable eignet sich für:
 ## Verwendung
 
 ```ts
-import { useEditorCommands } from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 
 const { commands, menuItem, runCommand, moveSelectionToPage, otherPages } = useEditorCommands()
 ```

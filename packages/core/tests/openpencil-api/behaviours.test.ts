@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
-import { readBehaviour, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { readBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 /** Run a script against a fresh document with a two-variant Switch set and a thumb frame. */
 async function run(code: string) {

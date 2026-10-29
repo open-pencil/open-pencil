@@ -1,10 +1,10 @@
 name: Deploy docs
 
 on:
-  push:
-    tags:
-      - "v*"
-      - "!v*-*"
+  # The download page reads GitHub's releases when the site is built, so the docs deploy when a
+  # release is published, not when its tag is pushed and the release is still a draft.
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       dry-run:
@@ -13,27 +13,100 @@ on:
         default: false
 
 jobs:
-  deploy:
+  build:
     # Pre-releases (vX.Y.Z-beta.N) ship desktop and npm builds only, never production,
     # including when dispatched manually on their tag.
     if: ${{ !(startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      deployments: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-bun
 
       - name: Build SDK packages for documentation
         run: bun run build:packages
 
-      # The production build captures stills of the landing's stages in headless Chromium.
-      - name: Install Chromium for landing posters
-        run: bunx playwright install --with-deps chromium
+      # The demo document the landing's stages open draws its shader stills in headless Chromium.
+      - name: Install Chromium for the demo document
+        uses: ./.github/actions/setup-playwright
 
-      - run: bun run --filter @open-pencil/docs build:production
+      - run: bun run --filter @open-pencil/docs build:site
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: docs-site
+          path: packages/docs/.vitepress/dist
+          include-hidden-files: true
+          retention-days: 1
+
+  # Capturing the landing's stills renders every stage in software WebGL, about 80 s per page,
+  # so the pages are spread over runners.
+  posters:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+        with:
+          cache-save: 'false'
+
+      - name: Install Chromium for landing posters
+        uses: ./.github/actions/setup-playwright
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: docs-site
+          path: packages/docs/.vitepress/dist
+
+      - run: bun tools/generate/landing-posters/src/generate.ts --shard ${{ matrix.shard }}/4
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: landing-posters-${{ matrix.shard }}
+          path: .cache/landing-posters
+          include-hidden-files: true
+          retention-days: 1
+
+  deploy:
+    needs: posters
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+        with:
+          cache-save: 'false'
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: docs-site
+          path: packages/docs/.vitepress/dist
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: landing-posters-*
+          merge-multiple: true
+          path: .cache/landing-posters
+
+      - name: Add the landing posters to the site
+        run: bun tools/generate/landing-posters/src/generate.ts --assemble
 
       - name: Keep the landing posters for review
         if: ${{ inputs.dry-run }}
@@ -42,7 +115,7 @@ jobs:
           name: landing-posters
           path: packages/docs/.vitepress/dist/landing-posters
 
-      # A tag push has no inputs, so it always deploys.
+      # A published release has no inputs, so it always deploys.
       - uses: cloudflare/wrangler-action@v4
         if: ${{ !inputs.dry-run }}
         with:

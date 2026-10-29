@@ -1,7 +1,7 @@
 import { render } from '@vue-email/render'
 import { defineComponent } from 'vue'
 
-import { emailLayout } from './layout'
+import { emailLayout } from '@open-pencil/cloud/email'
 
 const ConfirmationEmail = defineComponent({
   props: {
@@ -19,8 +19,7 @@ const ConfirmationEmail = defineComponent({
         actionURL: props.confirmURL,
         note: {
           text: 'Did not sign up? Ignore this email and the address is deleted in seven days, or',
-          linkLabel: 'remove it now',
-          linkURL: props.leaveURL
+          link: { label: 'remove it now', url: props.leaveURL }
         }
       })
   }

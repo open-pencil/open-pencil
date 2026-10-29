@@ -1,6 +1,5 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
-import { transformVectorNetwork } from '@open-pencil/scene-graph'
 import type {
   VectorVertex,
   VectorSegment,
@@ -10,6 +9,7 @@ import type {
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
 import {
@@ -18,7 +18,9 @@ import {
   vectorHandleParts,
   vectorNetworkToPath
 } from '#core/vector'
+import { evalCubic, segmentToAbsolute } from '#core/vector/curve-math'
 
+import { drawRegionHatch } from './region-hatch'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 
 type ToScreenFn = (x: number, y: number) => Vector
@@ -34,8 +36,11 @@ export interface NodeEditOverlayState {
   segments: VectorSegment[]
   regions: VectorRegion[]
   selectedVertexIndices: Set<number>
+  selectedSegmentIndices?: Set<number>
   selectedHandles?: Set<number>
   hoveredHandleInfo?: HandleInfo
+  hoveredRegion?: number | null
+  selectedRegions?: Set<number>
 }
 
 // Blue = rgb(59,130,246) ≈ 0.23, 0.51, 0.96
@@ -96,8 +101,20 @@ export function drawNodeEditOverlay(
   // Draw the node shape with its original fills/strokes/effects using live vertices
   drawLiveShape(r, canvas, graph, editState.nodeId, vertices, segments, regions)
 
+  // Hatch the hovered and selected regions, as Figma does
+  drawRegionHatch(r, canvas, graph, editState)
+
   // Draw technical stroke outline over the shape
   drawTechStroke(r, canvas, graph, editState.nodeId, vertices, segments, regions)
+
+  drawSelectedSegments(
+    r,
+    canvas,
+    vertices,
+    segments,
+    editState.selectedSegmentIndices ?? new Set<number>(),
+    toScreen
+  )
 
   // Draw tangent handle lines + diamonds for vertices with visible handles
   drawEditHandles(
@@ -187,6 +204,7 @@ const paintCache = new WeakMap<
     handleHoverFill: Paint
     handleHoverStroke: Paint
     techStrokePaint: Paint
+    segmentSelectedPaint: Paint
   }
 >()
 
@@ -261,6 +279,13 @@ function ensureNodeEditPaints(r: SkiaRenderer) {
   techStrokePaint.setColor(ck.Color4f(0.698, 0.698, 0.698, 1))
   techStrokePaint.setAntiAlias(true)
 
+  // Selected segment — blue 2px
+  const segmentSelectedPaint = new ck.Paint()
+  segmentSelectedPaint.setStyle(ck.PaintStyle.Stroke)
+  segmentSelectedPaint.setStrokeWidth(2)
+  segmentSelectedPaint.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
+  segmentSelectedPaint.setAntiAlias(true)
+
   paintCache.set(r, {
     handleLinePaint,
     handleLineSelectedPaint,
@@ -271,7 +296,8 @@ function ensureNodeEditPaints(r: SkiaRenderer) {
     handleSelectedStroke,
     handleHoverFill,
     handleHoverStroke,
-    techStrokePaint
+    techStrokePaint,
+    segmentSelectedPaint
   })
 }
 
@@ -317,6 +343,42 @@ function drawTechStroke(
     p.delete()
   }
   canvas.restore()
+}
+
+// ---------------------------------------------------------------------------
+// Selected segments
+// ---------------------------------------------------------------------------
+
+/** Selected segments draw in blue with a knob at their midpoint, as in Figma. */
+function drawSelectedSegments(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  vertices: VectorVertex[],
+  segments: VectorSegment[],
+  selectedSegmentIndices: Set<number>,
+  toScreen: ToScreenFn
+): void {
+  const { segmentSelectedPaint, vertexStroke1px } = getNodeEditPaints(r)
+  const network = { vertices, segments, regions: [] }
+  for (const index of selectedSegmentIndices) {
+    if (index >= segments.length) continue
+    const { p0, cp1, cp2, p3 } = segmentToAbsolute(network, index)
+    const s0 = toScreen(p0.x, p0.y)
+    const s1 = toScreen(cp1.x, cp1.y)
+    const s2 = toScreen(cp2.x, cp2.y)
+    const s3 = toScreen(p3.x, p3.y)
+
+    const builder = new r.ck.PathBuilder()
+    builder.moveTo(s0.x, s0.y)
+    builder.cubicTo(s1.x, s1.y, s2.x, s2.y, s3.x, s3.y)
+    const path = builder.detachAndDelete()
+    canvas.drawPath(path, segmentSelectedPaint)
+    path.delete()
+
+    const mid = evalCubic(s0.x, s0.y, s1.x, s1.y, s2.x, s2.y, s3.x, s3.y, 0.5)
+    canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, r.penVertexFill)
+    canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, vertexStroke1px)
+  }
 }
 
 // ---------------------------------------------------------------------------

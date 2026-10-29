@@ -1,9 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Fill, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  type Fill,
+  type SceneNode,
+  type Stroke,
+  type VectorNetwork
+} from '@open-pencil/scene-graph'
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -107,6 +112,7 @@ describe('group resize reflows path text instead of squashing it', () => {
       width: 256,
       height: 256,
       text: 'abc',
+      fontSize: 40,
       fills: [BLACK],
       strokes: [WHITE_STROKE],
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareGeometryBlob(256) }],
@@ -226,6 +232,7 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
       width: 256,
       height: 256,
       text: 'abc',
+      fontSize: 40,
       fills: [BLACK],
       strokes: [WHITE_STROKE],
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareGeometryBlob(256) }],
@@ -331,6 +338,7 @@ describe('resize + export integration: real commit path clears stale raw payload
       width: 256,
       height: 256,
       text: 'abc',
+      fontSize: 40,
       fills: [BLACK],
       strokes: [WHITE_STROKE],
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareGeometryBlob(256) }],

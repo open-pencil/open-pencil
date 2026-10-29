@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { diagnosticsMessages } from '@open-pencil/vue'
+import { diagnosticsMessages } from '@open-pencil/vue/i18n'
 
 import { summarizeDiagnosticEvent } from '@/app/diagnostics'
 import type { DiagnosticEvent } from '@/app/diagnostics/types'

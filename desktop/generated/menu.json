@@ -17,8 +17,8 @@
         "label": "Open Recent"
       },
       {
-        "id": "open-storage-workspace",
-        "label": "Open Storage Workspace…"
+        "id": "browse-files",
+        "label": "Browse Files…"
       },
       {
         "id": "open-tour",
@@ -38,8 +38,19 @@
         "accelerator": "CmdOrCtrl+Shift+S"
       },
       {
-        "id": "save-to-storage",
-        "label": "Save to Storage…"
+        "id": "save-to",
+        "label": "Save To…"
+      },
+      {
+        "id": "save-version",
+        "label": "Save to Version History…",
+        "accelerator": "Alt+CmdOrCtrl+S",
+        "feature": "cloud-document"
+      },
+      {
+        "id": "version-history",
+        "label": "Show Version History",
+        "feature": "cloud-document"
       },
       {
         "type": "separator"
@@ -62,6 +73,10 @@
             "label": "PPTX"
           },
           {
+            "id": "export-drawio",
+            "label": "draw.io"
+          },
+          {
             "id": "export-fig",
             "label": ".fig"
           }
@@ -73,12 +88,23 @@
       {
         "id": "autosave",
         "label": "Autosave",
-        "checkbox": true
+        "checkbox": true,
+        "feature": "local-file"
       },
       {
         "id": "close",
         "label": "Close Tab",
         "accelerator": "CmdOrCtrl+W"
+      },
+      {
+        "id": "previous-tab",
+        "label": "Select Previous Tab",
+        "accelerator": "Ctrl+Shift+Tab"
+      },
+      {
+        "id": "next-tab",
+        "label": "Select Next Tab",
+        "accelerator": "Ctrl+Tab"
       },
       {
         "type": "separator"
@@ -183,6 +209,29 @@
         "id": "zoom-out",
         "label": "Zoom Out",
         "accelerator": "CmdOrCtrl+-"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "view.zoomPreviousFrame",
+        "label": "Zoom to Previous Frame",
+        "accelerator": "Shift+N"
+      },
+      {
+        "id": "view.zoomNextFrame",
+        "label": "Zoom to Next Frame",
+        "accelerator": "N"
+      },
+      {
+        "id": "view.previousPage",
+        "label": "Previous Page",
+        "accelerator": "PageUp"
+      },
+      {
+        "id": "view.nextPage",
+        "label": "Next Page",
+        "accelerator": "PageDown"
       },
       {
         "type": "separator"
@@ -526,11 +575,74 @@
       },
       {
         "id": "selection.distributeHorizontal",
-        "label": "Distribute Horizontal Spacing"
+        "label": "Distribute Horizontal Spacing",
+        "accelerator": "Ctrl+Alt+H"
       },
       {
         "id": "selection.distributeVertical",
-        "label": "Distribute Vertical Spacing"
+        "label": "Distribute Vertical Spacing",
+        "accelerator": "Ctrl+Alt+V"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.tidyUp",
+        "label": "Tidy Up",
+        "accelerator": "Ctrl+Alt+T"
+      },
+      {
+        "id": "selection.packHorizontal",
+        "label": "Pack Horizontal"
+      },
+      {
+        "id": "selection.packVertical",
+        "label": "Pack Vertical"
+      },
+      {
+        "id": "arrange-layout",
+        "label": "Auto Arrange",
+        "sub": [
+          {
+            "id": "selection.arrangeSpread",
+            "label": "Spread Apart"
+          },
+          {
+            "id": "selection.arrangeCompact",
+            "label": "Spread and Compact"
+          },
+          {
+            "id": "selection.arrangePack",
+            "label": "Pack into Rows"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "id": "selection.arrangeFlowDown",
+            "label": "Flow, Top to Bottom"
+          },
+          {
+            "id": "selection.arrangeFlowRight",
+            "label": "Flow, Left to Right"
+          },
+          {
+            "id": "selection.arrangeTreeDown",
+            "label": "Tree, Top to Bottom"
+          },
+          {
+            "id": "selection.arrangeTreeRight",
+            "label": "Tree, Left to Right"
+          },
+          {
+            "id": "selection.arrangeRadial",
+            "label": "Radial Map"
+          },
+          {
+            "id": "selection.arrangeNetwork",
+            "label": "Network"
+          }
+        ]
       }
     ]
   }

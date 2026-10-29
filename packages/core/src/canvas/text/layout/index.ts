@@ -399,9 +399,11 @@ export class TextLayout {
       hi = block.length
       useRight = !rtl
     }
+    // The box of the whole character beside the caret: half an emoji or a surrogate pair has none.
+    const cluster = block.paragraph.getGlyphInfoAt(lo + block.lead)?.graphemeClusterTextRange
     const rects = block.paragraph.getRectsForRange(
-      lo + block.lead,
-      hi + block.lead,
+      cluster?.start ?? lo + block.lead,
+      cluster?.end ?? hi + block.lead,
       this.ck.RectHeightStyle.Max,
       this.ck.RectWidthStyle.Tight
     )

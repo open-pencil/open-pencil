@@ -1,0 +1,34 @@
+// cloud-staging.openpencil.dev, deployed by the Deploy Cloud workflow with target `staging`: a
+// filled-in copy of deploy/cloudflare. For a deployment of your own, copy that folder instead.
+{
+  "name": "openpencil-cloud-staging",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "rules": [{ "type": "Text", "globs": ["**/*.toml"], "fallthrough": false }],
+  "observability": { "enabled": true },
+  // The site build comes from `--assets`.
+  "assets": {
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": true
+  },
+  "routes": [{ "pattern": "cloud-staging.openpencil.dev", "custom_domain": true }],
+  "workers_dev": false,
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "4e4c4652a8a14c77bfdb2d50862d2e64" }],
+  "durable_objects": {
+    "bindings": [{ "name": "RELAY", "class_name": "CollaborationRelayObject" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CollaborationRelayObject"] }],
+  "send_email": [{ "name": "EMAIL" }],
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "secrets": {
+    "required": [
+      "BETTER_AUTH_SECRET",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "S3_ACCESS_KEY_ID",
+      "S3_SECRET_ACCESS_KEY"
+    ]
+  }
+}

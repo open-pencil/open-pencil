@@ -23,7 +23,7 @@ category is already active.
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Fill } from '@open-pencil/scene-graph'
-import { FillRoot } from '@open-pencil/vue'
+import { FillRoot } from '@open-pencil/vue/primitives/Fill'
 
 const fill = ref<Fill>({
   type: 'SOLID',

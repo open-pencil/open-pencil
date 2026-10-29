@@ -35,6 +35,10 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     providerDef,
     isACP,
     isHarness,
+    isCloud,
+    cloudWorkspaces,
+    cloudState,
+    retryCloud,
     supportsThinking,
     providerDisplayName,
     modelOptions,
@@ -51,7 +55,8 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   const saveError = ref<string | null>(null)
   const saveResult = ref<SettingsSaveResult | null>(null)
   const busy = ref(false)
-  const initialDraft = structuredClone(toRaw(draft))
+  /** What the draft was when the editor opened, which unsaved changes are measured against. */
+  const baseline = structuredClone(toRaw(draft))
   tryOnScopeDispose(() => {
     keyInput.value = ''
   })
@@ -68,7 +73,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   } = useProfileConnection({ draft, keyInput })
 
   const dirty = computed(
-    () => !isEqual(draft, initialDraft) || keyInput.value.length > 0 || keyCleared.value
+    () => !isEqual(draft, baseline) || keyInput.value.length > 0 || keyCleared.value
   )
 
   const canDelete = computed(() => (profileId ? canRemoveModelProfile(profileId) : false))
@@ -144,7 +149,13 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   }
 
   watch(
-    () => [draft.customBaseURL, draft.customModelID, draft.customAPIType, draft.modelID],
+    () => [
+      draft.customBaseURL,
+      draft.customModelID,
+      draft.customAPIType,
+      draft.modelID,
+      draft.cloudWorkspaceId
+    ],
     resetConnectionTest
   )
 
@@ -157,6 +168,10 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     providerDef,
     isACP,
     isHarness,
+    isCloud,
+    cloudWorkspaces,
+    cloudState,
+    retryCloud,
     supportsThinking,
     providerDisplayName,
     modelOptions,

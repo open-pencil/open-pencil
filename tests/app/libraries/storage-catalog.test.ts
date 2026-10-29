@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getInstanceOverride, SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import {
+  getInstanceOverride,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 import { StorageLibraryCatalog } from '@/app/libraries/catalog/storage'

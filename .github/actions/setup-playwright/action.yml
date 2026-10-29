@@ -1,0 +1,25 @@
+name: Setup Playwright Chromium
+
+description: >-
+  Restore Playwright's Chromium from the cache, downloading it only on a miss. GitHub's Ubuntu
+  runners already have the libraries Chromium needs, so nothing is installed with apt, whose
+  mirrors can take minutes.
+
+runs:
+  using: composite
+  steps:
+    - name: Read the Playwright version
+      id: playwright
+      shell: bash
+      run: echo "version=$(bunx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache@v6
+      id: browsers
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-chromium-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}
+
+    - name: Download Chromium
+      if: steps.browsers.outputs.cache-hit != 'true'
+      shell: bash
+      run: bunx playwright install chromium

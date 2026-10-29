@@ -14,7 +14,7 @@ import {
 } from '#core/lint'
 import { defineTool } from '#core/tools/schema'
 
-import { analysisLimitInput } from './input'
+import { analysisLimitInputSchema } from './schema'
 
 const lintScopeInput = {
   ids: v.optional(
@@ -72,7 +72,7 @@ export const lint = defineTool({
     'off-scale spacing and radius, colors that match a variable but are not bound, and structure hygiene. ' +
     'Findings are sorted by severity. A `fix` is safe to apply with lint_fix; `suggestions` change values and need judgment.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.strictObject({ ...lintScopeInput, limit: analysisLimitInput }),
+  input: v.strictObject({ ...lintScopeInput, limit: analysisLimitInputSchema }),
   execute: (figma, args) => {
     const result = runLint(figma, args)
     const rank = { error: 0, warning: 1, info: 2 }

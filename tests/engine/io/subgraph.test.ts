@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, extractExportGraph, parseFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { extractExportGraph } from '@open-pencil/core/io'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import type { SymbolData } from '@open-pencil/fig/instance-overrides'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
 

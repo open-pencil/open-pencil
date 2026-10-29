@@ -10,6 +10,7 @@ import {
   MCP_CONNECTION_NAME_MAX_LENGTH
 } from '@/app/integrations/mcp'
 import { requiredSetting, type SettingsValidationMessages } from '@/app/settings/validation/schema'
+import { validateAfterFirstError } from '@/app/settings/validation/use'
 
 import type { MCPConnectionDraft } from '../types'
 
@@ -71,11 +72,7 @@ export function useMCPConnectionForm(
     initialValues: { ...omit(createMCPConnectionDraft(), ['id']), credential: false },
     validationSchema: schema
   })
-  const config = (state: { errors: string[] }) => ({
-    validateOnModelUpdate: state.errors.length > 0,
-    validateOnChange: false,
-    validateOnInput: false
-  })
+  const config = validateAfterFirstError
   const [name] = form.defineField('name', config)
   const [url] = form.defineField('url', config)
   const [enabled] = form.defineField('enabled', config)

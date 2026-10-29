@@ -7,6 +7,7 @@
 // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
 import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
+import { isEmptyObject } from 'es-toolkit'
 
 import type { FigmaAPI } from '#core/figma-api'
 
@@ -189,7 +190,7 @@ export function toolsToAI(
         try {
           let execResult = options.executeTool
             ? await options.executeTool(def, figma, args, { toolCallId })
-            : await def.execute(figma, args)
+            : await def.loadFonts(figma, args).then(() => def.execute(figma, args))
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)
@@ -232,7 +233,7 @@ export function toolsToAI(
           mediaType: mimeType,
           data: { type: 'data' as const, data: base64 }
         }
-        return Object.keys(metadata).length > 0
+        return !isEmptyObject(metadata)
           ? {
               type: 'content',
               value: [{ type: 'text', text: JSON.stringify(metadata) }, image]

@@ -1,0 +1,1 @@
+- Scripts written for Figma's dynamic-page mode can switch pages with `figma.setCurrentPageAsync()` and load a page with `page.loadAsync()`, as in Figma, instead of stopping at the first of these calls.

@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core/editor'
-import type { Color } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { BindingTarget, BindingValueEdit } from './types'
 

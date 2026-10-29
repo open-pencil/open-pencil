@@ -1,13 +1,15 @@
-import { describe, expect, test } from 'bun:test'
+import { expect, test } from 'bun:test'
 
-import { computeAllLayouts, SceneGraph, setTextMeasurer } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
+import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, loadFixtureGraph, pageId, rect } from '#tests/helpers/layout'
-import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
-describe('text measurement', () => {
+heavy('text measurement', () => {
   test('derived text layout preserves imported auto-layout text bounds during measurement', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
@@ -341,7 +343,7 @@ describe('text measurement', () => {
       height: 66,
       text: 'GDP Growth Exceeds Expectations at 3.1% in Q2 Report That Nobody Expected',
       fontSize: 15,
-      lineHeight: 22,
+      lineHeight: pixelLength(22),
       textAutoResize: 'HEIGHT' as const
     })
 
@@ -371,7 +373,7 @@ describe('text measurement', () => {
       height: 100,
       text: 'GDP Growth Exceeds Expectations at 3.1% in Q2 Report That Nobody Expected',
       fontSize: 15,
-      lineHeight: 22,
+      lineHeight: pixelLength(22),
       textAutoResize: 'HEIGHT' as const
     })
 

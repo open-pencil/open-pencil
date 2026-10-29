@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { shaderPresetSchema, type ShaderPreset } from '@open-pencil/scene-graph'
+import { shaderPresetSchema, type ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 /**
  * Edits of a shader preset's stack of effects. The effects at the top level draw first to last,

@@ -1,0 +1,162 @@
+{
+  "name": "@open-pencil/cloud",
+  "version": "0.16.0",
+  "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
+  "license": "Apache-2.0 AND MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/cloud"
+  },
+  "bin": {
+    "openpencil-ai-relay": "./dist/bin/ai-relay.mjs",
+    "openpencil-cloud": "./dist/bin/server.mjs"
+  },
+  "files": [
+    "dist",
+    "src",
+    "NOTICE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#cloud/admin": "./src/admin/index.ts",
+    "#cloud/ai-relay": "./src/ai-relay/index.ts",
+    "#cloud/client": "./src/client/index.ts",
+    "#cloud/contract": "./src/contract/index.ts",
+    "#cloud/email": "./src/email/index.ts",
+    "#cloud/runtime/cloudflare": "./src/runtime/cloudflare/index.ts",
+    "#cloud/runtime/node": "./src/runtime/node/index.ts",
+    "#cloud/server": "./src/server/index.ts",
+    "#cloud/server/ai": "./src/server/ai/index.ts",
+    "#cloud/server/api": "./src/server/api/index.ts",
+    "#cloud/server/auth": "./src/server/auth/index.ts",
+    "#cloud/server/cleanup": "./src/server/cleanup/index.ts",
+    "#cloud/server/collaboration": "./src/server/collaboration/index.ts",
+    "#cloud/server/config": "./src/server/config/index.ts",
+    "#cloud/server/db": "./src/server/db/index.ts",
+    "#cloud/server/documents": "./src/server/documents/index.ts",
+    "#cloud/server/documents/versions": "./src/server/documents/versions/index.ts",
+    "#cloud/server/email": "./src/server/email/index.ts",
+    "#cloud/server/internal": "./src/server/internal/index.ts",
+    "#cloud/server/invitations": "./src/server/invitations/index.ts",
+    "#cloud/server/objects": "./src/server/objects/index.ts",
+    "#cloud/server/pictures": "./src/server/pictures/index.ts",
+    "#cloud/server/policy": "./src/server/policy/index.ts",
+    "#cloud/server/quota": "./src/server/quota/index.ts",
+    "#cloud/server/rate-limit": "./src/server/rate-limit/index.ts",
+    "#cloud/server/sharing": "./src/server/sharing/index.ts",
+    "#cloud/server/workspaces": "./src/server/workspaces/index.ts",
+    "#cloud/*": "./src/*.ts",
+    "#cloud-tests/*": "./tests/*.ts"
+  },
+  "exports": {
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "bun": "./src/contract/index.ts",
+      "import": "./dist/contract.js",
+      "default": "./dist/contract.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "bun": "./src/client/index.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
+    "./email": {
+      "types": "./dist/email.d.ts",
+      "bun": "./src/email/index.ts",
+      "import": "./dist/email.js",
+      "default": "./dist/email.js"
+    },
+    "./runtime/node": {
+      "types": "./dist/runtime-node.d.mts",
+      "bun": "./src/runtime/node/index.ts",
+      "import": "./dist/runtime-node.mjs",
+      "default": "./dist/runtime-node.mjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "bun": "./src/server/index.ts",
+      "import": "./dist/server.js",
+      "default": "./dist/server.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
+    "start": "node dist-standalone/server.mjs",
+    "dev": "bun --watch src/runtime/node/main.ts",
+    "ai-relay": "bun src/runtime/node/ai-relay/main.ts",
+    "check": "bun run typecheck && bun run test && bun run build",
+    "test": "bun run test:unit && bun run test:integration",
+    "test:unit": "bun test tests/ai-relay tests/client tests/contract tests/email tests/runtime tests/server",
+    "test:integration": "bun test --max-concurrency 8 tests/integration",
+    "test:e2e": "bun tests/e2e/run.ts",
+    "test:e2e:garage": "bun tests/e2e/garage.ts",
+    "test:e2e:cloudflare": "bun tests/e2e/cloudflare/run.ts",
+    "migrate": "bun src/runtime/node/migrate.ts",
+    "cleanup": "bun src/runtime/node/cleanup.ts",
+    "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
+    "entitlements": "bun src/runtime/node/entitlements/main.ts",
+    "admin": "bun src/runtime/node/admin.ts",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1149.0",
+    "@aws-sdk/s3-request-presigner": "^3.1149.0",
+    "@better-auth/core": "1.7.7",
+    "@better-auth/passkey": "1.7.7",
+    "@better-auth/utils": "0.4.2",
+    "@hono/node-server": "^1.19.17",
+    "@internationalized/date": "^3.12.3",
+    "@noble/hashes": "^2.4.0",
+    "@open-pencil/scene-graph": "workspace:*",
+    "@openfeature/server-sdk": "^1.23.0",
+    "@vue-email/components": "^0.0.21",
+    "@vue-email/render": "^0.0.9",
+    "better-auth": "1.7.7",
+    "bowser": "^2.14.1",
+    "dedent": "^1.7.2",
+    "es-toolkit": "^1.52.0",
+    "fflate": "^0.8.3",
+    "hono": "^4.13.13",
+    "hono-rate-limiter": "^0.5.3",
+    "image-size": "^2.0.4",
+    "jose": "^6.2.8",
+    "js-base64": "^3.9.3",
+    "kysely": "^0.29.6",
+    "lib0": "^0.2.117",
+    "nodemailer": "^9.0.5",
+    "smol-toml": "^1.8.0",
+    "ufo": "^1.6.4",
+    "valibot": "^1.5.0",
+    "vue": "^3.5.43",
+    "ws": "^8.21.3",
+    "yjs": "^13.6.32"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261011.1",
+    "@electric-sql/pglite": "0.4.1",
+    "@types/bun": "^1.3.14",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.21.0",
+    "@types/ws": "^8.18.1",
+    "kysely-pglite-dialect": "1.3.1",
+    "tsdown": "^0.22.14",
+    "typescript": "~5.8.3",
+    "wrangler": "4.149.0",
+    "y-protocols": "^1.0.7"
+  },
+  "optionalDependencies": {
+    "pg": "^8.23.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

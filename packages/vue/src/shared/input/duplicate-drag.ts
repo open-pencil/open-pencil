@@ -1,4 +1,4 @@
-import type { Editor, MovePlace } from '@open-pencil/core/editor'
+import type { Editor, MovePlace } from '@open-pencil/core'
 
 import type { DragState } from '#vue/shared/input/types'
 

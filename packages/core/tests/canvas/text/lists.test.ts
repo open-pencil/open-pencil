@@ -9,7 +9,7 @@ import { buildParagraph } from '#core/canvas/text/layout/build'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/fonts'
-import { glyphAdvanceSync } from '#core/text/opentype'
+import { glyphAdvanceSync } from '#core/text/font/glyphs'
 
 const ul = (indentation = 1): TextParagraphStyle => ({ listType: 'UNORDERED', indentation })
 const ol = (indentation = 1): TextParagraphStyle => ({ listType: 'ORDERED', indentation })
@@ -45,10 +45,10 @@ function lineStarts(shaped: ShapedText): number[] {
 describe('text lists', () => {
   beforeAll(async () => {
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   test('indents items one and a half ems per level and centres bullets in the indent', async () => {

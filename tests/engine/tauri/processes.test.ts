@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { spawnACPProcess } from '@/app/ai/acp/process'
+import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 

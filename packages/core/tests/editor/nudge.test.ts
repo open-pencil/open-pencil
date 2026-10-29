@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { getNodeOrThrow } from '../helpers/assert'
 

@@ -34,7 +34,7 @@
   "reka-ui": "^2.10.3",
   "tailwindcss": "^4.3.3",
   "culori": "^4.0.2",
-  "fzstd": "^0.1.1",
+  "@hpcc-js/wasm-zstd": "^1.16.2",
   "fflate": "^0.8.3",
   "@trystero-p2p/mqtt": "^0.26.0",
   "yjs": "^13.6.32",

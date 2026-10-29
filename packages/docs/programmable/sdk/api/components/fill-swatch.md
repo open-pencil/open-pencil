@@ -20,7 +20,7 @@ Consumers can place a checkerboard below the slot's `background` value for trans
 ```vue twoslash
 <script setup lang="ts">
 import type { Fill } from '@open-pencil/scene-graph'
-import { FillSwatch } from '@open-pencil/vue'
+import { FillSwatch } from '@open-pencil/vue/primitives/Fill'
 
 const fill: Fill = {
   type: 'SOLID',

@@ -4,31 +4,22 @@
  * It is a component with text properties, so its instances are the first thing a visitor who
  * clicks one sees in the panel.
  */
-import { Component, Frame, Instance, Text, type TreeNode } from '@open-pencil/design-jsx'
-import {
-  createComponentPropertyId,
-  createSlotProperty,
-  updateSlotProperty,
-  type ComponentPropertyDefinition,
-  type SceneGraph
-} from '@open-pencil/scene-graph'
+import { Component, Frame, Instance, Text, property, type TreeNode } from '@open-pencil/design-jsx'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
+import { createSlotProperty, updateSlotProperty } from '@open-pencil/scene-graph/slots'
 
 import { previewButton } from './chrome'
 import { renderTree } from './icons'
 import type { Theme } from './theme'
 
 export const TIP_PROPERTIES = {
-  step: { id: 'tip-step', name: 'Step', type: 'TEXT', defaultValue: '1' },
-  title: { id: 'tip-title', name: 'Title', type: 'TEXT', defaultValue: 'Try this' },
-  body: {
-    id: 'tip-body',
-    name: 'Body',
-    type: 'TEXT',
-    defaultValue: 'Select something on the canvas and look at the panel on the right.'
-  },
-  keys: { id: 'tip-keys', name: 'Shortcut', type: 'TEXT', defaultValue: '⌥ ⌘ ↩' },
-  showKeys: { id: 'tip-show-keys', name: 'Show shortcut', type: 'BOOLEAN', defaultValue: 'true' }
-} satisfies Record<string, ComponentPropertyDefinition>
+  step: property('Step', '1'),
+  title: property('Title', 'Try this'),
+  body: property('Body', 'Select something on the canvas and look at the panel on the right.'),
+  keys: property('Shortcut', '⌥ ⌘ ↩'),
+  showKeys: property('Show shortcut', true)
+}
 
 export const TIP_WIDTH = 320
 /** The slot a tip shows where to click in: a piece of the app's chrome with the target ringed. */
@@ -58,7 +49,6 @@ function tipComponent(theme: Theme): TreeNode {
   return (
     <Component
       name="Tip"
-      properties={Object.values(TIP_PROPERTIES)}
       flex="col"
       w={TIP_WIDTH}
       h="hug"
@@ -85,10 +75,8 @@ function tipComponent(theme: Theme): TreeNode {
             size={13}
             weight={700}
             color={vars.onAccent}
-            propertyRefs={[{ propertyId: TIP_PROPERTIES.step.id, field: 'TEXT' }]}
-          >
-            {TIP_PROPERTIES.step.defaultValue}
-          </Text>
+            text={TIP_PROPERTIES.step}
+          />
         </Frame>
         <Text
           name="Title"
@@ -96,10 +84,8 @@ function tipComponent(theme: Theme): TreeNode {
           size={15}
           weight={600}
           color={vars.text}
-          propertyRefs={[{ propertyId: TIP_PROPERTIES.title.id, field: 'TEXT' }]}
-        >
-          {TIP_PROPERTIES.title.defaultValue}
-        </Text>
+          text={TIP_PROPERTIES.title}
+        />
       </Frame>
       <Text
         name="Body"
@@ -108,10 +94,8 @@ function tipComponent(theme: Theme): TreeNode {
         lineHeight={20}
         w="fill"
         color={vars.muted}
-        propertyRefs={[{ propertyId: TIP_PROPERTIES.body.id, field: 'TEXT' }]}
-      >
-        {TIP_PROPERTIES.body.defaultValue}
-      </Text>
+        text={TIP_PROPERTIES.body}
+      />
       <Frame name={WHERE_SLOT_NAME} flex="col" w="fill" h="hug" items="start">
         {previewButton(theme)}
       </Frame>
@@ -124,7 +108,7 @@ function tipComponent(theme: Theme): TreeNode {
         py={6}
         rounded={8}
         bg={vars.raised}
-        propertyRefs={[{ propertyId: TIP_PROPERTIES.showKeys.id, field: 'VISIBLE' }]}
+        visible={TIP_PROPERTIES.showKeys}
       >
         <Text
           name="Keys"
@@ -132,10 +116,8 @@ function tipComponent(theme: Theme): TreeNode {
           size={12}
           weight={600}
           color={vars.text}
-          propertyRefs={[{ propertyId: TIP_PROPERTIES.keys.id, field: 'TEXT' }]}
-        >
-          {TIP_PROPERTIES.keys.defaultValue}
-        </Text>
+          text={TIP_PROPERTIES.keys}
+        />
       </Frame>
     </Component>
   )
@@ -157,11 +139,11 @@ export function tipInstance(componentId: string, tip: Tip): TreeNode {
       of={componentId}
       name={`Tip ${tip.step}`}
       properties={{
-        [TIP_PROPERTIES.step.id]: String(tip.step),
-        [TIP_PROPERTIES.title.id]: tip.title,
-        [TIP_PROPERTIES.body.id]: tip.body,
-        [TIP_PROPERTIES.keys.id]: tip.keys ?? '',
-        [TIP_PROPERTIES.showKeys.id]: tip.keys ? 'true' : 'false'
+        [TIP_PROPERTIES.step.name]: String(tip.step),
+        [TIP_PROPERTIES.title.name]: tip.title,
+        [TIP_PROPERTIES.body.name]: tip.body,
+        [TIP_PROPERTIES.keys.name]: tip.keys ?? '',
+        [TIP_PROPERTIES.showKeys.name]: tip.keys ? 'true' : 'false'
       }}
     />
   )

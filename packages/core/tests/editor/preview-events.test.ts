@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 describe('preview updates', () => {
   test('rotation notifications observe published state and clearing is reentrant', () => {

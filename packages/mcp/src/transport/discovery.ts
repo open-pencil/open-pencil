@@ -1,8 +1,9 @@
-import { randomBytes } from 'node:crypto'
-import { access, constants, lstat, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { access, constants, lstat, readFile, unlink } from 'node:fs/promises'
 import { Socket } from 'node:net'
 
 import * as v from 'valibot'
+
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 
 import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
@@ -29,7 +30,7 @@ export interface DiscoveryInfo {
   scope?: MCPToolScope
 }
 
-const DiscoveryInfoJSON = v.pipe(
+const discoveryInfoSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -47,7 +48,7 @@ const DiscoveryInfoJSON = v.pipe(
 
 /** Parse discovery file contents, or null when the file is not valid discovery JSON. */
 export function parseDiscoveryInfo(raw: string): DiscoveryInfo | null {
-  const result = v.safeParse(DiscoveryInfoJSON, raw)
+  const result = v.safeParse(discoveryInfoSchema, raw)
   return result.success ? result.output : null
 }
 
@@ -55,11 +56,9 @@ export function parseDiscoveryInfo(raw: string): DiscoveryInfo | null {
  * Writes the discovery JSON file at the platform-appropriate location.
  * Overwrites any existing file (from a previous server instance).
  *
- * The write is atomic: a sibling temp file is written first with `0o600`
- * permissions, then renamed over the final path. This avoids leaving
- * a half-written file visible to readers if the process is killed
- * mid-write, and prevents concurrent writers from corrupting the file
- * by interleaving their writes.
+ * The file is written all at once with `0o600` permissions, replacing a symlink at the path
+ * rather than writing through it, so readers never see half a file and concurrent writers never
+ * interleave.
  *
  * WARNING: The auth token is written in plaintext. Do not sync the discovery
  * file to cloud storage or include it in backups without encryption.
@@ -67,17 +66,7 @@ export function parseDiscoveryInfo(raw: string): DiscoveryInfo | null {
 export async function writeDiscoveryFile(info: DiscoveryInfo): Promise<void> {
   const path = await getDiscoveryPath()
   const json = JSON.stringify(info, null, 2)
-  // Add a random component to guarantee uniqueness
-  const random = randomBytes(6).toString('hex')
-  const tmpPath = `${path}.${process.pid}.${random}.tmp`
-  await writeFile(tmpPath, json, { mode: 0o600, encoding: 'utf-8' })
-  try {
-    await rename(tmpPath, path)
-  } catch (err) {
-    // Best-effort cleanup of the temp file on rename failure
-    await unlink(tmpPath).catch(() => undefined)
-    throw err
-  }
+  await writeFileAtomic(path, json, { mode: 0o600 })
 }
 
 /**

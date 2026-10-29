@@ -1,8 +1,14 @@
 import { describe, expect, test, vi } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import { createMemoryLocalCanvasStore } from '@/app/storage/local-store'
-import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
+import {
+  createMemoryLocalCanvasStore,
+  resetLocalCanvasStoreForTests
+} from '@/app/storage/local-store'
+import {
+  persistStorageCanvasLocally,
+  seedStorageCanvasFromRemote
+} from '@/app/storage/sync/persist'
 
 describe('local-first storage persistence', () => {
   test('writes document bytes before enqueueing remote synchronization', async () => {
@@ -52,5 +58,25 @@ describe('local-first storage persistence', () => {
     expect(thumbnail?.subarray(0, 8)).toEqual(
       new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     )
+  })
+
+  test('keeps the preview of a downloaded document', async () => {
+    const store = createMemoryLocalCanvasStore()
+    resetLocalCanvasStoreForTests(store)
+    try {
+      await seedStorageCanvasFromRemote({
+        providerId: 'cloud',
+        canvasId: 'canvas-downloaded',
+        name: 'Downloaded design',
+        updatedAt: '2026-10-19T00:00:00.000Z',
+        figBytes: new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+      })
+      const thumbnail = await store.readThumb('canvas-downloaded')
+      expect(thumbnail?.subarray(0, 8)).toEqual(
+        new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+      )
+    } finally {
+      resetLocalCanvasStoreForTests()
+    }
   })
 })

@@ -1,0 +1,1 @@
+- `.fig` files open when a layer's visibility is bound to a boolean or text variable, and the binding keeps working through page loading, variable edits, instance-specific variable modes, and saving; text shows the layer unless it is empty, "false", "no" or "off", as in Figma.

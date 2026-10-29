@@ -1,6 +1,7 @@
 import { omit } from 'es-toolkit/object'
 
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import { cloneRecord } from '../node-change/clone'
@@ -364,6 +365,7 @@ function interpretRoot(
     rank: number
   ): InstanceOccurrence => {
     if (expanding.has(id)) throw new Error(`Cyclic component expansion at ${id}`)
+    options.onProgress?.()
     const raw = sources.get(id)
     if (!raw) throw new Error(`Missing source node ${id}`)
     const record = bindRecord(raw, bindings)
@@ -525,6 +527,11 @@ function interpretRoot(
   ): InstanceOccurrence => {
     const original = raw.symbolData?.symbolID
     const [, sourceComponentOverrideKey] = componentKeys(original)
+    // A swapped root draws the replacement's paint, so the old paint's style link goes with it.
+    const placed =
+      base && effective && !sameGuid(original, effective) && source.type === 'INSTANCE'
+        ? omit(source, ['fillPaints', 'styleIdForFill'])
+        : source
     const occurrence: InstanceOccurrence = {
       sourceId: id,
       sourceComponentId: original,
@@ -536,7 +543,7 @@ function interpretRoot(
       properties: {
         // The component's look carries over; its identity does not.
         ...(base && omit(base.properties, COMPONENT_IDENTITY_FIELDS)),
-        ...source,
+        ...placed,
         ...(effective && source.symbolData
           ? { symbolData: { ...source.symbolData, symbolID: effective } }
           : {}),

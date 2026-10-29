@@ -4,15 +4,11 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { parseFixture } from '#core-tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#core-tests/helpers/test-utils'
 
-import {
-  exportFigFile,
-  FigmaAPI,
-  initCodec,
-  parseFigFile,
-  SceneGraph,
-  type Variable
-} from '@open-pencil/core'
-import type { Color } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 setDefaultTimeout(60_000)
 

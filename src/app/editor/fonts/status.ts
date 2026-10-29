@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { documentFontStatus, fontManager, fontResolver } from '@open-pencil/core/text'
-import { useEditorEvent } from '@open-pencil/vue'
+import { useEditorEvent } from '@open-pencil/vue/editor/events'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { loadFont, requestLocalFontAccess } from '@/app/editor/fonts'

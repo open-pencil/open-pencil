@@ -1,0 +1,1 @@
+- Collaboration room links use `/rooms/<room-id>` instead of `/share/<room-id>`; room links copied before this change no longer open.

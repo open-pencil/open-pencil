@@ -1,4 +1,4 @@
-import type { GradientStop, GradientTransform, Vector } from '@open-pencil/scene-graph'
+import type { GradientStop, GradientTransform } from '@open-pencil/scene-graph'
 import {
   applyGradientTransform,
   ellipticalGradientTransform,
@@ -6,6 +6,7 @@ import {
   linearGradientTransform,
   type GradientFillType
 } from '@open-pencil/scene-graph/gradient'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
  * On-canvas gradient handles, as Figma desktop 126 draws and drags them, built on the paint

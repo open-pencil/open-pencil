@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import * as v from 'valibot'
 
-const StoryIndex = v.object({
+const storyIndexSchema = v.object({
   entries: v.record(v.string(), v.object({ id: v.string(), type: v.string() }))
 })
 
@@ -18,7 +18,7 @@ test('every story renders, passes its play function, and meets axe in both theme
   request
 }) => {
   const text = await (await request.get('/index.json')).text()
-  const index = v.parse(v.pipe(v.string(), v.parseJson(), StoryIndex), text)
+  const index = v.parse(v.pipe(v.string(), v.parseJson(), storyIndexSchema), text)
   const stories = Object.values(index.entries).filter((entry) => entry.type === 'story')
   test.setTimeout(stories.length * THEMES.length * STORY_TIMEOUT_MS)
   expect(stories.length).toBeGreaterThan(0)

@@ -7,7 +7,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '#tests/helpers/chat/fixture'
 
 /** The JSON that Copy diagnostics puts on the clipboard, as far as these tests read it. */
-const ReportJSON = v.pipe(
+const reportSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -39,7 +39,7 @@ test('Settings exports correlated chat telemetry without conversation content', 
   await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible()
   const text = await page.evaluate(() => navigator.clipboard.readText())
-  const { environment, events } = v.parse(ReportJSON, text)
+  const { environment, events } = v.parse(reportSchema, text)
   expect(environment).toMatchObject({ app: expect.any(String), shell: 'browser' })
   const completed = events.filter((event) => event.name === 'chat.completed')
   expect(completed).toHaveLength(2)
@@ -65,7 +65,10 @@ test('Settings saves the diagnostics report as a file', async ({ configuredChat:
   ])
 
   expect(download.suggestedFilename()).toMatch(/\.json$/)
-  const { environment, events } = v.parse(ReportJSON, await readFile(await download.path(), 'utf8'))
+  const { environment, events } = v.parse(
+    reportSchema,
+    await readFile(await download.path(), 'utf8')
+  )
   expect(environment).toMatchObject({ shell: 'browser' })
   expect(events.map((event) => event.name)).toContain('chat.completed')
 })
@@ -154,7 +157,7 @@ test('uncaught errors are listed with their stack and can be filtered and copied
   await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
   // The clipboard outlives the test's page, so read it only once this copy has finished.
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible()
-  const report = v.parse(ReportJSON, await page.evaluate(() => navigator.clipboard.readText()))
+  const report = v.parse(reportSchema, await page.evaluate(() => navigator.clipboard.readText()))
   const runtime = report.events.find((event) => event.name === 'runtime.error')
   expect(runtime?.attributes).toMatchObject({ source: 'window', errorName: 'TypeError' })
   expect(String(runtime?.attributes.stack)).toContain('TypeError')

@@ -56,4 +56,41 @@ describe('export_image tool', () => {
 
     expect(calls[0]?.scale).toBe(1)
   })
+
+  test('names an ID that is not in the document instead of reporting nothing visible', async () => {
+    const { figma } = setupToolTest()
+    const frame = figma.createFrame()
+    figma.exportImage = async () => new Uint8Array([1])
+
+    const result = await getTool('export_image').execute(figma, { ids: [frame.id, '0:404'] })
+
+    expect(result).toEqual({ error: 'Node "0:404" not found' })
+  })
+
+  test('reports hidden layers as nothing visible without rendering them', async () => {
+    const { figma } = setupToolTest()
+    const frame = figma.createFrame()
+    frame.visible = false
+    let rendered = false
+    figma.exportImage = async () => {
+      rendered = true
+      return new Uint8Array([1])
+    }
+
+    const result = await getTool('export_image').execute(figma, { ids: [frame.id] })
+
+    expect(result).toEqual({ error: 'No visible nodes to export' })
+    expect(rendered).toBe(false)
+  })
+
+  test('tells an empty render apart from nothing visible', async () => {
+    const { figma } = setupToolTest()
+    const frame = figma.createFrame()
+    frame.resize(40, 30)
+    figma.exportImage = async () => null
+
+    const result = await getTool('export_image').execute(figma, { ids: [frame.id] })
+
+    expect(result).toEqual({ error: 'The renderer returned no image for these nodes' })
+  })
 })

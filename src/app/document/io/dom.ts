@@ -1,4 +1,4 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@open-pencil/core'
 import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 

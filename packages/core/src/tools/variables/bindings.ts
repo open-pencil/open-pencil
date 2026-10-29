@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { nodeIdInput } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { OpenPencilAPI } from '#core/openpencil-api'
+import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
 export const bindVariable = defineTool({
   name: 'bind_variable',
@@ -10,7 +10,7 @@ export const bindVariable = defineTool({
     'Bind a variable to a node property. For fills/strokes color bindings use indexed format like "fills/0/color".',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
-    node_id: nodeIdInput,
+    node_id: nodeIdInputSchema,
     field: v.pipe(
       v.string(),
       v.description(
@@ -21,7 +21,8 @@ export const bindVariable = defineTool({
           '"topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius", ' +
           '"borderTopWeight", "borderBottomWeight", "borderLeftWeight", "borderRightWeight", ' +
           '"gridRowGap", "gridColumnGap". ' +
-          'For STRING: "fontFamily". For BOOLEAN: "visible".'
+          'For STRING: "fontFamily". For STRING or FLOAT: "text", a number shown as text. ' +
+          'For BOOLEAN or STRING: "visible", text showing the layer unless empty or "false", "no", "off".'
       )
     ),
     variable_id: v.pipe(v.string(), v.description('Variable ID'))
@@ -29,10 +30,10 @@ export const bindVariable = defineTool({
   execute: (figma, args) => {
     const node = figma.getNodeById(args.node_id)
     if (!node) return { error: `Node "${args.node_id}" not found` }
-    const variable = figma.getVariableById(args.variable_id)
+    const variable = figma.variables.getVariableById(args.variable_id)
     if (!variable) return { error: `Variable "${args.variable_id}" not found` }
     try {
-      figma.bindVariable(args.node_id, args.field, args.variable_id)
+      new OpenPencilAPI(figma).bindVariable(args.node_id, args.field, variable)
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) }
     }

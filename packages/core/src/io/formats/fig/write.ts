@@ -1,1 +1,1 @@
-export { exportFigFile, compressFigData, compressFigDataSync } from './export'
+export { exportFigFile, compressFigData, type FigFileExtrasOptions } from './export'

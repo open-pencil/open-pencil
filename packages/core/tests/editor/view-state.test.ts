@@ -6,7 +6,7 @@ import {
   createEditor,
   createDefaultEditorViewState,
   pickEditorViewState
-} from '@open-pencil/core/editor'
+} from '@open-pencil/core'
 
 describe('editor state ownership', () => {
   test('composes editor state from shared and view defaults', () => {

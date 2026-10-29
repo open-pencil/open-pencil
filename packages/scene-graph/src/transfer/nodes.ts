@@ -1,5 +1,5 @@
 import { cloneNodeProps } from '../copy'
-import { remapInstanceOverrideState } from '../instance-overrides'
+import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
 import { remapStyleRunReferences, styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
@@ -37,7 +37,7 @@ export function semanticTransferReferences(node: SceneNode): string[] {
       typeof value === 'string' &&
       (field === 'componentId' ||
         field === 'sourceComponentId' ||
-        field.startsWith('boundVariables/'))
+        overriddenBindingField(field) !== null)
         ? [value]
         : []
     )
@@ -100,6 +100,12 @@ export function prepareNodeTransfer(
       style,
       node: (id) => refs.nodes.get(id) ?? id
     })
+  }
+  // A connector keeps the layers it was attached to when they are left behind; the end becomes
+  // free where nothing by that ID exists, as a pasted Figma connector does.
+  for (const field of ['connectorStart', 'connectorEnd'] as const) {
+    const endpoint = result[field]
+    if (endpoint?.nodeId) endpoint.nodeId = refs.nodes.get(endpoint.nodeId) ?? endpoint.nodeId
   }
   for (const paths of [result.fillGeometry, result.strokeGeometry]) {
     for (const path of paths ?? []) if (path.fillStyleId) path.fillStyleId = style(path.fillStyleId)

@@ -1,11 +1,21 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
+import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { TextLayout } from '#core/canvas/text/layout'
+import { fontVerticalMetricsSync } from '#core/text/font/glyphs'
+import { nextGraphemeBoundary, previousGraphemeBoundary } from '#core/text/graphemes'
+import {
+  pathTextCaret,
+  pathTextIndexAt,
+  pathTextSelectionQuads,
+  type PathTextCaret,
+  type PathTextLineMetrics
+} from '#core/text/path/caret'
 
 export interface TextCaret {
   x: number
@@ -48,6 +58,27 @@ export class TextEditor {
 
   private paragraphY(y: number): number {
     return y - this.paragraphVerticalOffset()
+  }
+
+  /**
+   * Text on a path is edited on its glyphs rather than the flat paragraph: the caret, the
+   * selection and the character a point hits follow the path, as in Figma.
+   */
+  private pathText(): { glyphs: DerivedTextGlyph[]; metrics: PathTextLineMetrics } | null {
+    const node = this.paragraphNode
+    if (!node?.textPathData || !node.derivedTextGlyphs?.length) return null
+    const metrics = fontVerticalMetricsSync(
+      node.fontFamily,
+      weightToStyle(node.fontWeight, node.italic)
+    )
+    return metrics ? { glyphs: node.derivedTextGlyphs, metrics } : null
+  }
+
+  /** The character boundary at a node-local point. */
+  private indexAt(s: TextEditorState, x: number, y: number): number | null {
+    const path = this.pathText()
+    if (path) return pathTextIndexAt(path.glyphs, s.text.length, { x, y }, path.metrics)
+    return s.paragraph?.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos ?? null
   }
 
   private prepareMove(extend: boolean): TextEditorState | null {
@@ -213,8 +244,9 @@ export class TextEditor {
 
   setCursorAt(x: number, y: number, extend = false): void {
     const s = this.current()
-    if (!s?.paragraph) return
-    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
+    if (!s) return
+    const pos = this.indexAt(s, x, y)
+    if (pos === null) return
     if (extend) {
       if (s.selectionAnchor === null) s.selectionAnchor = s.cursor
     } else {
@@ -236,16 +268,14 @@ export class TextEditor {
 
   selectWordAt(x: number, y: number): void {
     const s = this.current()
-    if (!s?.paragraph) return
-    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
-    this.selectWord(pos)
+    const pos = s && this.indexAt(s, x, y)
+    if (pos !== null) this.selectWord(pos)
   }
 
   selectLineAt(x: number, y: number): void {
     const s = this.current()
-    if (!s?.paragraph) return
-    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
-    this.selectLine(pos)
+    const pos = s && this.indexAt(s, x, y)
+    if (pos !== null) this.selectLine(pos)
   }
 
   insert(text: string, node: SceneNode): void {
@@ -259,7 +289,9 @@ export class TextEditor {
   backspace(node: SceneNode): void {
     const s = this.current()
     if (!s) return
-    const range = this.getSelectionRange() ?? (s.cursor > 0 ? [s.cursor - 1, s.cursor] : null)
+    const range =
+      this.getSelectionRange() ??
+      (s.cursor > 0 ? [previousGraphemeBoundary(s.text, s.cursor), s.cursor] : null)
     if (range) this.replaceRange(range[0], range[1], '')
     this.rebuildParagraph(node)
   }
@@ -268,7 +300,8 @@ export class TextEditor {
     const s = this.current()
     if (!s) return
     const range =
-      this.getSelectionRange() ?? (s.cursor < s.text.length ? [s.cursor, s.cursor + 1] : null)
+      this.getSelectionRange() ??
+      (s.cursor < s.text.length ? [s.cursor, nextGraphemeBoundary(s.text, s.cursor)] : null)
     if (range) this.replaceRange(range[0], range[1], '')
     this.rebuildParagraph(node)
   }
@@ -279,9 +312,9 @@ export class TextEditor {
     if (!extend && this.collapseSelectionTo(visualDirection === 'left' ? 0 : 1)) return
     this.prepareMove(extend)
     const movesForward = (visualDirection === 'left') === (s.textDirection === 'RTL')
-    const step = movesForward ? 1 : -1
-    const next = s.cursor + step
-    if (next >= 0 && next <= s.text.length) s.cursor = next
+    s.cursor = movesForward
+      ? nextGraphemeBoundary(s.text, s.cursor)
+      : previousGraphemeBoundary(s.text, s.cursor)
   }
 
   moveLeft(extend = false): void {
@@ -394,6 +427,31 @@ export class TextEditor {
     if (node.textAlignHorizontal === 'CENTER') x = node.width / 2
     if (node.textAlignHorizontal === 'RIGHT') x = node.width
     return { x, y0: offsetY, y1: offsetY + height }
+  }
+
+  /** The caret along the path, for text on a path. */
+  getPathCaret(): PathTextCaret | null {
+    const s = this.current()
+    const path = this.pathText()
+    if (!s || !path) return null
+    return pathTextCaret(path.glyphs, s.text.length, s.cursor, path.metrics)
+  }
+
+  /** The boxes of every glyph along the path, for outlining the lettering while it is edited. */
+  getPathTextQuads(): Vector[][] {
+    const s = this.current()
+    const path = this.pathText()
+    if (!s || !path) return []
+    return pathTextSelectionQuads(path.glyphs, s.text.length, 0, s.text.length, path.metrics)
+  }
+
+  /** The selection along the path, one box per glyph, for text on a path. */
+  getPathSelectionQuads(): Vector[][] {
+    const s = this.current()
+    const path = this.pathText()
+    const range = this.getSelectionRange()
+    if (!s || !path || !range) return []
+    return pathTextSelectionQuads(path.glyphs, s.text.length, range[0], range[1], path.metrics)
   }
 
   getCaretRect(): TextCaret | null {

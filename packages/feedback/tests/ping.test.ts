@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import { createTestService, type TestService } from '#feedback-tests/harness'
 import type { Ping } from '#feedback/contract'
+import { createFeedbackDatabase } from '#feedback/db'
 import { omit } from 'es-toolkit'
 
 const BUILD: Ping = {
@@ -23,13 +24,12 @@ afterAll(async () => {
   await service.dispose()
 })
 
-async function counts() {
-  const { results } = await service.db
-    .prepare(
-      'SELECT day, version, platform, app, usage_stats AS usageStats, count FROM usage_pings ORDER BY version, usage_stats'
-    )
-    .all()
-  return results
+function counts() {
+  return createFeedbackDatabase(service.db)
+    .selectFrom('usagePings')
+    .select(['day', 'version', 'platform', 'app', 'usageStats', 'count'])
+    .orderBy(['version', 'usageStats'])
+    .execute()
 }
 
 describe('ping', () => {

@@ -1,5 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 import {
   isShaderFrameCurrent,
   readShaderPaints,
@@ -7,10 +9,8 @@ import {
   shaderOfPaint,
   shaderPresetKey,
   withShaderPaints,
-  type SceneNode,
   type ShaderPaint
-} from '@open-pencil/scene-graph'
-import type { Size } from '@open-pencil/scene-graph/primitives'
+} from '@open-pencil/scene-graph/shaders'
 
 import type { EditorContext, EditorOptions } from '#core/editor/types'
 

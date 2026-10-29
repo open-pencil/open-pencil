@@ -4,38 +4,63 @@ export default defineConfig({
   entry: {
     index: './src/index.ts',
     'arrow-caps': './src/arrow-caps.ts',
-    copy: './src/copy.ts',
-    'node-defaults': './src/node-defaults.ts',
-    'hit-test': './src/hit-test.ts',
-    images: './src/images.ts',
-    instances: './src/instances.ts',
-    snap: './src/snap.ts',
-    'source-metadata': './src/source-metadata.ts',
-    preview: './src/preview.ts',
-    'text-picture': './src/text/picture.ts',
-    undo: './src/undo.ts',
-    variables: './src/variables.ts',
-    'variant-name': './src/variant-name.ts',
-    'variant-properties': './src/variant-properties.ts',
-    'vector-network': './src/vector-network.ts',
-    types: './src/types.ts',
-    primitives: './src/primitives.ts',
+    'asset-keys': './src/asset-keys.ts',
+    'behaviours/index': './src/behaviours/index.ts',
+    checkpoint: './src/checkpoint.ts',
+    'color/index': './src/color/index.ts',
+    'comments/index': './src/comments/index.ts',
+    'components/index': './src/components/index.ts',
+    'connectors/index': './src/connectors/index.ts',
     constants: './src/constants.ts',
     coordinate: './src/coordinate.ts',
-    matrix: './src/matrix.ts',
+    copy: './src/copy.ts',
+    'css/index': './src/css/index.ts',
+    'export-format': './src/export-format.ts',
+    'export-scale': './src/export-scale.ts',
+    'fields/index': './src/fields/index.ts',
+    'fig-compression': './src/fig-compression.ts',
+    'figjam/index': './src/figjam/index.ts',
+    'font-style': './src/font-style.ts',
+    'generated/index': './src/generated/index.ts',
     geometry: './src/geometry.ts',
     gradient: './src/gradient.ts',
-    polygon: './src/polygon.ts',
+    'group-bounds': './src/group-bounds.ts',
     guides: './src/guides.ts',
-    layout: './src/layout/index.ts',
-    text: './src/text/index.ts',
-    resize: './src/resize.ts',
-    'parse-path': './src/parse-path.ts',
-    random: './src/random.ts',
+    'hit-test': './src/hit-test.ts',
+    'icons/index': './src/icons/index.ts',
+    images: './src/images.ts',
+    'instances/index': './src/instances/index.ts',
+    'instances/overrides': './src/instances/overrides.ts',
+    'layout/index': './src/layout/index.ts',
+    matrix: './src/matrix.ts',
+    'mutation-impact': './src/mutation-impact.ts',
+    'node-defaults': './src/node-defaults.ts',
     'order-keys': './src/order-keys.ts',
-    color: './src/color/index.ts',
-    css: './src/css/index.ts',
-    'text-direction': './src/text/direction.ts'
+    'paints/index': './src/paints/index.ts',
+    'parse-path': './src/parse-path.ts',
+    'plugin-data/index': './src/plugin-data/index.ts',
+    polygon: './src/polygon.ts',
+    preview: './src/preview.ts',
+    'primitives/index': './src/primitives/index.ts',
+    random: './src/random.ts',
+    resize: './src/resize.ts',
+    'scaling/index': './src/scaling/index.ts',
+    'shaders/index': './src/shaders/index.ts',
+    'shape-with-text/index': './src/shape-with-text/index.ts',
+    'shared-styles': './src/shared-styles.ts',
+    'slots/index': './src/slots/index.ts',
+    snap: './src/snap.ts',
+    'source-metadata': './src/source-metadata.ts',
+    'statuses/index': './src/statuses/index.ts',
+    'text/index': './src/text/index.ts',
+    'text/direction': './src/text/direction.ts',
+    'text/picture': './src/text/picture.ts',
+    'transfer/index': './src/transfer/index.ts',
+    undo: './src/undo.ts',
+    'variables/index': './src/variables/index.ts',
+    'variant-name': './src/variant-name.ts',
+    'variant-properties': './src/variant-properties.ts',
+    'vector-network': './src/vector-network.ts'
   },
   platform: 'neutral',
   format: ['esm'],
@@ -51,22 +76,6 @@ export default defineConfig({
     neverBundle: [/^node:/],
     onlyBundle: false
   },
-  outputOptions: {
-    minifyInternalExports: false,
-    codeSplitting: {
-      groups: [
-        {
-          test: /(?<!\.d\.c?ts)$/,
-          name: (id) => {
-            const cleanId = id.split('?')[0]
-            const parts = cleanId.split(/[\\/]/g)
-            const srcIndex = parts.lastIndexOf('src')
-            const file =
-              srcIndex >= 0 ? parts.slice(srcIndex + 1).join('/') : (parts.at(-1) ?? 'chunk')
-            return `chunks/${file.replace(/\.(ts|tsx)$/, '')}`
-          }
-        }
-      ]
-    }
-  }
+  // Each module keeps its source path, so an entry's declarations never share a name with a chunk.
+  unbundle: true
 })

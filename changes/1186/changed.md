@@ -1,0 +1,1 @@
+- The layers panel lists the front-most layer first, as in Figma, and an auto layout's layers in their flow order; dropping a layer above another puts it in front of it, or before it in an auto layout.

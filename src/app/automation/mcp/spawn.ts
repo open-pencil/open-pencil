@@ -40,6 +40,8 @@ export interface AutomationHealth {
   authRequired?: boolean
   discoveryPath?: string
   tools?: ToolDescriptor[]
+  /** The server tells the app when an agent opens a session, so a chat can wait for its agent. */
+  agentSessionEvents?: boolean
 }
 
 export interface AutomationServerHandle {
@@ -72,6 +74,10 @@ interface MCPLookup {
 // prevents a server that outlives a crashed/reloaded app from squatting the
 // port forever while still allowing brief renderer reloads (issue #488).
 const MCP_APP_ATTACH_TIMEOUT_MS = 30_000
+// A server started from a cold npm shim can take longer than a few seconds to answer (14.8 s on
+// a Windows VM, issue #1167). The app waits this long for it, leaving the rest of the attach
+// grace above for the app to connect once it does.
+const MCP_STARTUP_HEALTH_DEADLINE_MS = MCP_APP_ATTACH_TIMEOUT_MS - 10_000
 
 /** Delays used while a spawned server comes up; tests shorten them. */
 export interface MCPStartupTiming {
@@ -79,6 +85,8 @@ export interface MCPStartupTiming {
   earlyExitMs: number
   /** Delay before each of the health polls after spawning. */
   healthPollMs: number
+  /** How long to keep polling while the child runs before giving up on it. */
+  healthDeadlineMs?: number
 }
 const DEFAULT_STARTUP_TIMING: MCPStartupTiming = { earlyExitMs: 250, healthPollMs: 1000 }
 
@@ -125,7 +133,7 @@ function rememberStartupError(error: unknown): null {
 }
 
 /** The one discovery-file field the app reads; the MCP package validates the whole file. */
-const DiscoveryTokenJSON = v.pipe(
+const discoveryTokenSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.looseObject({ authToken: v.optional(v.nullable(v.string())) })
@@ -140,7 +148,7 @@ const DiscoveryTokenJSON = v.pipe(
 async function readDiscoveryToken(discoveryPath: string): Promise<string | null> {
   try {
     const { readTextFile } = await import('@tauri-apps/plugin-fs')
-    const info = v.safeParse(DiscoveryTokenJSON, await readTextFile(discoveryPath))
+    const info = v.safeParse(discoveryTokenSchema, await readTextFile(discoveryPath))
     return info.success ? (info.output.authToken ?? null) : null
   } catch {
     return null
@@ -237,6 +245,7 @@ interface AutomationHealthRecord {
   authRequired?: unknown
   discoveryPath?: unknown
   tools?: unknown
+  agentSessionEvents?: unknown
 }
 
 function isAutomationHealthRecord(value: unknown): value is AutomationHealthRecord {
@@ -272,7 +281,14 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
   const authRequired = optionalBoolean(value.authRequired)
   const discoveryPath = optionalString(value.discoveryPath)
   const tools = parseToolDescriptors(value.tools)
-  if (version === null || authRequired === null || discoveryPath === null || tools === null) {
+  const agentSessionEvents = optionalBoolean(value.agentSessionEvents)
+  if (
+    version === null ||
+    authRequired === null ||
+    discoveryPath === null ||
+    tools === null ||
+    agentSessionEvents === null
+  ) {
     return null
   }
   const health: AutomationHealth = { status: value.status }
@@ -280,6 +296,7 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
   if (authRequired !== undefined) health.authRequired = authRequired
   if (discoveryPath !== undefined) health.discoveryPath = discoveryPath
   if (tools !== undefined) health.tools = tools
+  if (agentSessionEvents !== undefined) health.agentSessionEvents = agentSessionEvents
   return health
 }
 
@@ -350,6 +367,36 @@ async function pollHealth(
     if (health) return health
   }
   return null
+}
+
+/**
+ * Polls a server the app just started for as long as it runs, up to a deadline, so a slow start
+ * is not mistaken for a failed one. Resolves to null when the deadline passes or the child exits.
+ */
+async function waitForHealth(
+  deadlineMs: number,
+  delayMs: number,
+  authToken: string | null,
+  childClosed: Promise<unknown>
+): Promise<AutomationHealth | null> {
+  const exited = childClosed.then(() => 'exited' as const)
+  const giveUpAt = Date.now() + deadlineMs
+  const deadline = promiseTimeout(deadlineMs).then(() => 'deadline' as const)
+  for (;;) {
+    const remainingMs = giveUpAt - Date.now()
+    if (remainingMs <= 0) return null
+    const woke = await Promise.race([
+      promiseTimeout(Math.min(delayMs, remainingMs)).then(() => 'waited' as const),
+      deadline,
+      exited
+    ])
+    if (woke !== 'waited') return null
+    // A probe still running at the deadline does not count.
+    const health = await Promise.race([readAutomationHealth(authToken), deadline, exited])
+    // An answer from a server whose process already ended does not count.
+    if (health === 'deadline' || health === 'exited') return null
+    if (health) return health
+  }
 }
 
 export async function getAutomationAuthToken(): Promise<string | null> {
@@ -440,6 +487,23 @@ async function configureDevMCP(): Promise<AutomationServerHandle> {
   return { disconnect: noop, authToken, managed: true }
 }
 
+function exitedStartupError(
+  message: string,
+  event: { code: number | null; signal: number | null },
+  stderr: string
+): MCPStartupError {
+  const details = stderr.trim()
+  return new MCPStartupError(
+    `${message} (code ${event.code ?? 'null'}, signal ${event.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
+    mcpFailure(
+      'exited',
+      compact([`code=${event.code ?? 'null'}`, `signal=${event.signal ?? 'null'}`, details]).join(
+        ' '
+      )
+    )
+  )
+}
+
 async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationServerHandle | null> {
   runtimeAutomationStartupError = null
   runtimeAutomationStartupFailure = null
@@ -472,6 +536,9 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
       OPENPENCIL_MCP_TCP: '1',
       OPENPENCIL_MCP_ROOT: mcpRoot,
       OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
+      // Killing the shell wrapper on Windows leaves the server it started running; the app's end
+      // of the pipe closes with it, and the server exits on that.
+      OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1',
       OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
       OPENPENCIL_MCP_SCOPE: mcpScope()
     }
@@ -507,22 +574,16 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
     promiseTimeout(timing.earlyExitMs).then(() => null)
   ])
   if (earlyExit) {
-    const details = startupStderr.trim()
     return rememberStartupError(
-      new MCPStartupError(
-        `MCP server exited before startup completed (code ${earlyExit.code ?? 'null'}, signal ${earlyExit.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
-        mcpFailure(
-          'exited',
-          compact([
-            `code=${earlyExit.code ?? 'null'}`,
-            `signal=${earlyExit.signal ?? 'null'}`,
-            details
-          ]).join(' ')
-        )
-      )
+      exitedStartupError('MCP server exited before startup completed', earlyExit, startupStderr)
     )
   }
-  const health = await pollHealth(5, timing.healthPollMs, authToken)
+  const health = await waitForHealth(
+    timing.healthDeadlineMs ?? MCP_STARTUP_HEALTH_DEADLINE_MS,
+    timing.healthPollMs,
+    authToken,
+    childClosed
+  )
 
   if (health) {
     try {
@@ -553,10 +614,17 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
     }
   }
 
+  // A child that exited while the app waited for it is a crash, not a slow start.
+  const exitedWhileWaiting = await Promise.race([childClosed, Promise.resolve(null)])
   try {
     await child.kill().catch(() => undefined)
   } finally {
     runtimeAutomationAuthToken = null
+  }
+  if (exitedWhileWaiting) {
+    return rememberStartupError(
+      exitedStartupError('MCP server exited before it answered', exitedWhileWaiting, startupStderr)
+    )
   }
   return rememberStartupError(
     new MCPStartupError(

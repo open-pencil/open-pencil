@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** The voice call beside the avatar stack: its trigger, mute, and the call's popover. */
-export const voiceCall = tv({
+export default {
   slots: {
     root: 'flex shrink-0 items-center',
     trigger: 'relative',
@@ -24,4 +22,4 @@ export const voiceCall = tv({
     }
   },
   defaultVariants: { inCall: false }
-})
+} as const

@@ -1,0 +1,2 @@
+- General settings on desktop choose how many recent files to keep; the default stays at ten.
+- MCP `list_recent_files` lists recently opened files inside the MCP root, so agents can reopen them with `open_file`.

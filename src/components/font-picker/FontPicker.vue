@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 
 import { WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
-import { FontPickerRoot, useI18n } from '@open-pencil/vue'
-import type { FontPickerUI } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { FontPickerRoot, type FontPickerUI } from '@open-pencil/vue/primitives/FontPicker'
 
 import {
   listFamilies,

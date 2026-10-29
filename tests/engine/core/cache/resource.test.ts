@@ -8,6 +8,33 @@ interface Resource {
 }
 
 describe('ResourceCache', () => {
+  test('deleteWhere disposes the selected entries as deletes and keeps the rest', () => {
+    const removed: Array<[string, CacheRemovalReason]> = []
+    const cache = new ResourceCache<string, Resource>({
+      maxEntries: 4,
+      dispose: (_, key, reason) => removed.push([key, reason])
+    })
+    for (const [id, key] of ['a|1', 'a|2', 'b|1'].entries()) cache.set(key, { id, units: 1 })
+    cache.deleteWhere((_, key) => key.startsWith('a|'))
+    expect([...cache].map(([key]) => key)).toEqual(['b|1'])
+    expect(removed).toEqual([
+      ['a|1', 'delete'],
+      ['a|2', 'delete']
+    ])
+  })
+
+  test('deleteWhere removes every selected entry even when a disposal throws', () => {
+    const cache = new ResourceCache<string, Resource>({
+      maxEntries: 4,
+      dispose: (value) => {
+        if (value.id === 0) throw new Error('dispose failed')
+      }
+    })
+    for (const [id, key] of ['a|1', 'a|2', 'b|1'].entries()) cache.set(key, { id, units: 1 })
+    expect(() => cache.deleteWhere((_, key) => key.startsWith('a|'))).toThrow(AggregateError)
+    expect([...cache].map(([key]) => key)).toEqual(['b|1'])
+  })
+
   test('touches hits but not peeks or iteration, and disposes every removal', () => {
     const removed: Array<[number, CacheRemovalReason]> = []
     const cache = new ResourceCache<string, Resource>({

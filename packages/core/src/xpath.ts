@@ -1,6 +1,7 @@
 import type * as FontoxpathModule from 'fontoxpath'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 const NODE_TYPES = {
   ELEMENT_NODE: 1,
@@ -98,6 +99,13 @@ function createDocument(graph: SceneGraph, rootNode: SceneNode): XPathDocument {
   return doc
 }
 
+/** An attribute's value; text lengths compare in pixels, as `fontSize` does. */
+function attrValue(node: SceneNode, name: string): unknown {
+  if (name === 'lineHeight') return lineHeightPixels(node.lineHeight, node.fontSize)
+  if (name === 'letterSpacing') return textLengthPixels(node.letterSpacing, node.fontSize)
+  return Reflect.get(node, name)
+}
+
 function getAttrs(wrapped: XPathNode): XPathAttr[] {
   if (wrapped._attrs) return wrapped._attrs
 
@@ -106,7 +114,7 @@ function getAttrs(wrapped: XPathNode): XPathAttr[] {
 
   for (const attrName of QUERYABLE_ATTRS) {
     if (attrName in node) {
-      const value = Reflect.get(node, attrName)
+      const value = attrValue(node, attrName)
       if (value === undefined || value === null || typeof value === 'symbol') continue
       const stringValue =
         typeof value === 'object'

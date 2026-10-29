@@ -1,7 +1,8 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
-import { weightToStyle } from '#core/text/fonts'
-import { measureTextWithOpenType } from '#core/text/opentype'
+import { measureTextWithFont } from '#core/text/font/glyphs'
 
 export type TextMeasurer = (
   node: SceneNode,
@@ -21,13 +22,14 @@ export function estimateTextSize(
   const style = weightToStyle(node.fontWeight || 400, node.italic)
   const text = node.text || ''
 
-  const explicitLineH = (node.lineHeight ?? 0) > 0 ? (node.lineHeight as number) : undefined
-  const measured = measureTextWithOpenType(text, fontSize, family, style, maxWidth, explicitLineH)
+  const ownLineH = lineHeightPixels(node.lineHeight, fontSize) ?? 0
+  const explicitLineH = ownLineH > 0 ? ownLineH : undefined
+  const measured = measureTextWithFont(text, fontSize, family, style, maxWidth, explicitLineH)
   if (measured) return measured
 
   const charWidth = fontSize * GLYPH_WIDTH_FACTOR
   const singleLineWidth = Math.ceil(text.length * charWidth)
-  const lineH = (node.lineHeight ?? 0) > 0 ? (node.lineHeight as number) : Math.ceil(fontSize * 1.4)
+  const lineH = explicitLineH ?? Math.ceil(fontSize * 1.4)
 
   if (maxWidth && maxWidth > 0 && singleLineWidth > maxWidth) {
     const lines = Math.ceil(singleLineWidth / maxWidth)
@@ -42,6 +44,14 @@ export function getTextMeasurer(): TextMeasurer | null {
 
 export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
+}
+
+/** The size of `node`'s text: measured when a measurer is installed and can, estimated otherwise. */
+export function measureTextForLayout(
+  node: SceneNode,
+  maxWidth?: number
+): { width: number; height: number } {
+  return globalTextMeasurer?.(node, maxWidth) ?? estimateTextSize(node, maxWidth)
 }
 
 const installedMeasurers: TextMeasurer[] = []

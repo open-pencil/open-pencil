@@ -26,7 +26,6 @@ test('full picture invalidation resets tiled font-dependent resources', () => {
     sceneBackingBuild: null,
     nodePictureCache: new Map([['node', nodePicture]]),
     nodePictureCacheGenerations: new Map([['node', 1]]),
-    nodePictureCacheDependencies: new Map([['node', []]]),
     effectRasterCache: new EffectRasterCache(),
     subtreePictureCache: new Map([['subtree', { picture: subtreePicture }]]),
     subtreePictureCachePageId: 'page',
@@ -46,7 +45,7 @@ test('full picture invalidation resets tiled font-dependent resources', () => {
   expect(subtreePicture.delete).toHaveBeenCalledTimes(1)
 })
 
-test('node picture invalidation removes pictures that depend on a changed child', () => {
+test('node picture invalidation removes the changed node picture and keeps its parent', () => {
   const parentPicture = deletable()
   const childPicture = deletable()
   const textPreparationCache = new TextPreparationCache()
@@ -61,10 +60,6 @@ test('node picture invalidation removes pictures that depend on a changed child'
       ['parent', 1],
       ['child', 1]
     ]),
-    nodePictureCacheDependencies: new Map([
-      ['parent', ['child']],
-      ['child', []]
-    ]),
     effectRasterCache: new EffectRasterCache(),
     subtreePictureCache: new Map()
   })
@@ -74,9 +69,9 @@ test('node picture invalidation removes pictures that depend on a changed child'
   expect(textPreparationCache.deleteNode).toHaveBeenCalledWith('child', {
     keepShaping: false
   })
-  expect(parentPicture.delete).toHaveBeenCalledTimes(1)
+  expect(parentPicture.delete).not.toHaveBeenCalled()
   expect(childPicture.delete).toHaveBeenCalledTimes(1)
-  expect(renderer.nodePictureCache.size).toBe(0)
+  expect([...renderer.nodePictureCache.keys()]).toEqual(['parent'])
 
   invalidateNodePicture(renderer, 'child', ['width', 'height', 'x'])
   expect(textPreparationCache.deleteNode).toHaveBeenLastCalledWith('child', {

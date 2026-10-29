@@ -1,0 +1,1 @@
+export { usePropScrub } from './use'

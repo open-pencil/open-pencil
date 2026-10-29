@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 import { Markdown } from 'vue-stream-markdown'
 
@@ -9,7 +10,10 @@ import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import InlineCode from '@/components/markdown/InlineCode.vue'
 import MarkdownTooltip from '@/components/markdown/MarkdownTooltip.vue'
-import { markdownTheme, type MarkdownDensity } from '@/theme/markdown'
+import TaskCheckbox from '@/components/markdown/TaskCheckbox.vue'
+import theme, { type MarkdownDensity } from '@/theme/markdown'
+
+const markdownTheme = tv(theme)
 
 const {
   content,
@@ -28,7 +32,7 @@ const {
 
 const isDark = computed(() => resolvedAppTheme.value === 'dark')
 const ui = markdownTheme()
-const markdownComponents = { code: InlineCode }
+const markdownComponents = { code: InlineCode, input: TaskCheckbox }
 // The renderer's own tooltip doubles up with ours and does not follow the app's style.
 const uiComponents = { Tooltip: MarkdownTooltip }
 // Copy is the one table action that fits a chat reply; images open in the attachment viewer.

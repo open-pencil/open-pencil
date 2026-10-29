@@ -1,6 +1,6 @@
-import type { SceneNode } from '../'
 import { enforcedAspectRatio } from '../layout/aspect-ratio'
 import { layoutConstrainedChildRect } from '../resize'
+import type { SceneNode } from '../types'
 
 /** The fields that say where a copy sits in its parent. */
 export const PLACEMENT_FIELDS: ReadonlySet<string> = new Set(['x', 'y', 'width', 'height'])

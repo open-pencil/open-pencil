@@ -1,19 +1,17 @@
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import {
-  FONT_WEIGHT_NAMES,
-  fontManager,
-  nearestFamilyFace,
-  weightToStyle
-} from '@open-pencil/core/text'
+import type { Editor } from '@open-pencil/core'
+import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
   TextDecoration,
+  TextLength,
   TextListType,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
+import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
 import {
   createTextListActions,
@@ -22,8 +20,10 @@ import {
   paragraphSpacingOf
 } from '#vue/canvas/text-edit/paragraphs'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
+import { styleFontVariations } from '#vue/controls/typography/axes'
 import { useFamilyFaces } from '#vue/controls/typography/faces'
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
+import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { selectedNodesAsShown } from '#vue/editor/selection-state/nodes'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { useNodeFontStatus } from '#vue/shared/font-status/use'
@@ -33,6 +33,8 @@ type TextDirection = SceneNode['textDirection']
 type TextVerticalAlign = SceneNode['textAlignVertical']
 type TextCase = SceneNode['textCase']
 type TextTruncation = SceneNode['textTruncation']
+/** A value the panel previews and commits on every selected text. */
+type PropValue = number | string | TextLength | null
 
 function sharedValue<T>(values: readonly T[]): MixedValue<T> {
   const [first] = values
@@ -50,14 +52,21 @@ function sharedFormatting(nodes: readonly SceneNode[]) {
   return result
 }
 
+/** The text a selected layer's typography edits: its own, or a shape with text's label. */
+function typographyTargets(editor: Editor): SceneNode[] {
+  return selectedNodesAsShown(editor).flatMap((n) => {
+    if (n.type === 'TEXT') return [n]
+    const label = shapeWithTextLabel(editor.graph, n)
+    return label ? [label] : []
+  })
+}
+
 /**
- * Typography of the selected text layers. With other layers selected too, Figma shows the text's
- * typography and edits only the text, so `nodes` holds just the text layers.
+ * Typography of the selected text layers and shapes' labels. With other layers selected too,
+ * Figma shows the text's typography and edits only the text, so `nodes` holds just the text.
  */
 export function createTypographyState(editor: Editor) {
-  const nodes = useSceneComputed<SceneNode[]>(() =>
-    selectedNodesAsShown(editor).filter((n) => n.type === 'TEXT')
-  )
+  const nodes = useSceneComputed<SceneNode[]>(() => typographyTargets(editor))
   const node = computed<SceneNode | null>(() => nodes.value.at(0) ?? null)
   const { missingFonts, hasMissingFonts } = useNodeFontStatus(() => node.value)
   const fontFamily = computed(() => node.value?.fontFamily ?? '')
@@ -134,6 +143,9 @@ export function createTypographyActions({
   options
 }: TypographyActionOptions) {
   const lists = createTextListActions(editor)
+  // A dragged field's previews belong to the step its commit records, so they are not edits of
+  // their own that keep the document unsaved after that step is undone.
+  const batch = useUndoBatch(editor.undo, () => editor.beginInteractiveEdit())
   type Preview = { value: SceneNode[keyof SceneNode]; textStyleId: string | null }
   let previewKey: keyof SceneNode | undefined
   const beforePreview = new Map<string, Preview>()
@@ -201,7 +213,12 @@ export function createTypographyActions({
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic
         await options.fontLoader?.load(family, weightToStyle(fontWeight, italic))
-        return { fontFamily: family, fontWeight, italic }
+        return {
+          fontFamily: family,
+          fontWeight,
+          italic,
+          fontVariations: styleFontVariations(target)
+        }
       }
     )
   }
@@ -213,7 +230,7 @@ export function createTypographyActions({
       ['fontWeight'],
       async (target) => {
         await options.fontLoader?.load(target.fontFamily, weightToStyle(weight, target.italic))
-        return { fontWeight: weight }
+        return { fontWeight: weight, fontVariations: styleFontVariations(target) }
       },
       targets
     )
@@ -333,7 +350,7 @@ export function createTypographyActions({
       ['italic'],
       async (target) => {
         await options.fontLoader?.load(target.fontFamily, weightToStyle(target.fontWeight, italic))
-        return { italic }
+        return { italic, fontVariations: styleFontVariations(target) }
       },
       nodes.value.filter((target) => supports(target, target.fontWeight, italic))
     )
@@ -358,7 +375,8 @@ export function createTypographyActions({
     }
   }
 
-  function updateProp(key: keyof SceneNode, value: number | string | null) {
+  function updateProp(key: keyof SceneNode, value: PropValue) {
+    batch.ensure(`typography:${String(key)}`, `Change ${String(key)}`)
     if (previewKey !== key) {
       previewKey = key
       beforePreview.clear()
@@ -370,11 +388,7 @@ export function createTypographyActions({
     }
   }
 
-  function commitProp(
-    key: keyof SceneNode,
-    _value: number | string | null,
-    previous: number | string | null
-  ) {
+  function commitProp(key: keyof SceneNode, _value: PropValue, previous: PropValue) {
     const targets = nodes.value
     if (targets.length === 0) return
     const snapshots = previewKey === key ? beforePreview : new Map<string, Preview>()
@@ -393,6 +407,7 @@ export function createTypographyActions({
     })
     previewKey = undefined
     beforePreview.clear()
+    batch.flush()
   }
 
   return {

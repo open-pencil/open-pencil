@@ -6,7 +6,7 @@ import { omit } from 'es-toolkit/object'
 import { camelCase, upperFirst } from 'es-toolkit/string'
 
 import { es, jsx } from '@open-pencil/emit'
-import type { ShaderComponent } from '@open-pencil/scene-graph'
+import type { ShaderComponent } from '@open-pencil/scene-graph/shaders'
 
 import type {
   ComponentElement,

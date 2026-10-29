@@ -142,8 +142,8 @@ test('international text is correct on its first visible paint', async ({ page }
         response.arrayBuffer()
       )
     ])
-    fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
-    fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
+    await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
+    await fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
     fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
     fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
 
@@ -319,8 +319,8 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
         response.arrayBuffer()
       )
     ])
-    fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
-    fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
+    await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
+    await fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
     fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
     fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
     store.commitTextEdit()
@@ -383,7 +383,7 @@ test('substituted fonts still request fallbacks for CJK text', async ({ page }) 
     const requestedScripts: string[] = []
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
       requestedScripts.push(...scripts)
-      fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk, 'fallback')
+      await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk, 'fallback')
       fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
       return { cjk: ['Noto Sans CJK SC'] }
     }

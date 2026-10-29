@@ -1,14 +1,14 @@
 import { omit, uniq } from 'es-toolkit'
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  findInstanceAncestor,
-  type ComponentPropertyReferenceField,
-  type InstanceOverrideState,
-  type SceneGraph,
-  type SceneNode,
-  type Stroke
+import type {
+  ComponentPropertyReferenceField,
+  SceneGraph,
+  SceneNode,
+  Stroke
 } from '@open-pencil/scene-graph'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
+import type { InstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { assertProxyEditable, graph, raw } from './accessor-utils'

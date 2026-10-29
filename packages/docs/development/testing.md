@@ -97,6 +97,8 @@ Two environment faults look exactly like a code regression, and both have cost r
 
 Browser suites resolve `@open-pencil/*` through each package's built `dist`, which Vite then pre-bundles. Rebuilding a package does not invalidate that cache, so a Playwright run can execute code from before your change — including throwing on a field you just added. If a browser run contradicts the source you are reading, delete `node_modules/.vite` and run again before believing it.
 
+Heavy tests, the ones that parse the large fixtures or a populated `gold-preview.fig` more than once, run only with `BUN_HEAVY_TESTS=true`. The unit test runner sets it and gives each heavy file its own Bun process, because one such graph takes gigabytes and a process keeps every graph a test module holds until it exits: a bare `bun test` over `packages/core/tests/io/formats/fig` with heavy tests enabled has reached 37 GB. A bare `bun test` and `test:unit:quick` therefore skip them; `bun run test:unit` runs them, and `bun run test:unit:heavy` or `bun tools/dev/unit-tests/src/run.ts <group> --heavy-only` runs the heavy files alone.
+
 Heavier `.fig` suites are sensitive to machine load. A full run alongside other work has reported failures that vanish on a quiet re-run, with the same suite taking three times as long. Re-run a failing heavy test alone before concluding anything, and compare against the same test on `master` under the same load rather than against a remembered baseline. Raising its timeout is still never the fix.
 
 ## Server ownership and worktrees

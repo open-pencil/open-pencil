@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-gr
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { pathStrokeLineStyle } from '#core/icons/path-style'
+import { isSVGPathShown } from '#core/icons/svg'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 import type { SVGVectorizeResult, VectorizedPath } from './svg/to-vectors'
@@ -127,7 +128,7 @@ export function createVectorFrameChildren(
   vectorized: SVGVectorizeResult,
   placement: VectorFramePlacement
 ): void {
-  for (const [index, path] of vectorized.paths.entries()) {
+  for (const [index, path] of vectorized.paths.filter(isSVGPathShown).entries()) {
     createPlacedVector(
       graph,
       frameId,

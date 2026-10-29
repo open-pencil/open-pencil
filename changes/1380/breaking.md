@@ -1,0 +1,1 @@
+- The plugin API takes and gives a paint's `gradientTransform` and `imageTransform` as Figma does, two rows of three such as `[[1, 0, 0], [0, 1, 0]]`, and rejects the `{ m00, … }` object form and a gradient without a transform.

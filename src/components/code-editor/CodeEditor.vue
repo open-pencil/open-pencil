@@ -19,7 +19,7 @@ import {
 import { useTemplateRef, watch } from 'vue'
 
 import { DESIGN_JSX_ELEMENTS, type DesignJSXElement } from '@open-pencil/design-jsx'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { LayerIssue } from '@/app/code/layers/issues'
 import type { LayerLinkSource } from '@/app/code/layers/links'

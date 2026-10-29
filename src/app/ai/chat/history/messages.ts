@@ -6,7 +6,7 @@ import {
   setMessageAttachments
 } from '@/app/ai/attachment/presentation/store'
 import { visibleMessageText, setVisibleMessageText } from '@/app/ai/chat/presentation'
-import { settleMessage } from '@/app/ai/chat/settle'
+import { settleMessage } from '@/app/ai/reply/settle'
 import { readToolChange, setToolChange } from '@/app/ai/tools/changes/store'
 
 import type { ConversationMessage } from './types'

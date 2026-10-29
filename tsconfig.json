@@ -49,6 +49,12 @@
       "#feedback/*": [
         "./packages/feedback/src/*"
       ],
+      "@open-pencil/cloud/*": [
+        "./packages/cloud/src/*"
+      ],
+      "#cloud/*": [
+        "./packages/cloud/src/*"
+      ],
       "#dom-css/*": [
         "./packages/dom-css/src/*"
       ],
@@ -69,6 +75,9 @@
       ],
       "@open-pencil/vue": [
         "./packages/vue/src/index.ts"
+      ],
+      "@open-pencil/vue/*": [
+        "./packages/vue/src/*"
       ],
       "@open-pencil/core": [
         "./packages/core/src/index.ts"
@@ -96,6 +105,18 @@
       ],
       "@open-pencil/scene-graph/*": [
         "./packages/scene-graph/src/*"
+      ],
+      "#drawio/*": [
+        "./packages/drawio/src/*"
+      ],
+      "@open-pencil/drawio": [
+        "./packages/drawio/src/index.ts"
+      ],
+      "#mermaid/*": [
+        "./packages/mermaid/src/*"
+      ],
+      "@open-pencil/mermaid": [
+        "./packages/mermaid/src/index.ts"
       ],
       "#emit/*": [
         "./packages/emit/src/*"

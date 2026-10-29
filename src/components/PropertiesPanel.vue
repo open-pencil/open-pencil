@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages, useI18n } from '@open-pencil/vue'
+import { useDesignCheckMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { useAIChat } from '@/app/ai/chat/use'
+import { isVersionHistoryOpen } from '@/app/cloud/integration'
 import { useEditorStore } from '@/app/editor/active-store'
 import { countIssues } from '@/app/editor/design-check/issues'
-import { propertiesTabs } from '@/theme/panel/properties-tabs'
+import { CloudVersionHistory } from '@/components/cloud/integration'
+import propertiesTabsTheme from '@/theme/panel/properties-tabs'
 
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
@@ -15,6 +18,8 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+
+const propertiesTabs = tv(propertiesTabsTheme)
 
 const { activeTab } = useAIChat()
 const { panels } = useI18n()
@@ -24,6 +29,8 @@ const store = useEditorStore()
 const tabStyles = propertiesTabs()
 /** The Comment tool turns the sidebar into the comments list, as in Figma; the tabs keep their state. */
 const commenting = computed(() => store.state.activeTool === 'COMMENT')
+/** Version history takes the sidebar while it is open, for the document and a version alike. */
+const history = computed(() => isVersionHistoryOpen(store))
 
 /** Errors and warnings on the current page; suggestions do not earn an indicator. */
 const problemCount = computed(() => {
@@ -40,8 +47,13 @@ const problemCount = computed(() => {
     class="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-border bg-panel"
     style="contain: paint layout style"
   >
-    <CommentsPanel v-if="commenting" />
-    <TabsRoot v-show="!commenting" v-model="activeTab" class="flex min-h-0 flex-1 flex-col">
+    <CloudVersionHistory v-if="history" />
+    <CommentsPanel v-else-if="commenting" />
+    <TabsRoot
+      v-show="!commenting && !history"
+      v-model="activeTab"
+      class="flex min-h-0 flex-1 flex-col"
+    >
       <TabsList :class="tabStyles.list()">
         <TabsTrigger
           value="design"

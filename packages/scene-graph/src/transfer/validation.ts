@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { createDefaultNode } from '../node-defaults'
 import type { ComponentPropertyType } from '../types'
 import type { GraphTransferPlan } from './apply'

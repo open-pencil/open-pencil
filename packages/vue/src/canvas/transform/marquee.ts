@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 

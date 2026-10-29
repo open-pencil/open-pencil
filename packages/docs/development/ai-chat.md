@@ -6,11 +6,13 @@ How the built-in AI chat turns a message into edits, how a reply ends, and how w
 
 `src/app/ai/chat/submission/use.ts` sends a message through the AI SDK's `Chat`. Before sending, it appends notes for the model to the text: the layers you referenced, and the edits you undid or redid since the model last heard (`context.ts`). The transcript shows only what you wrote; `stripModelNotes` removes the notes. Notes go on the newest message only. Earlier messages never change, so the provider can keep caching the conversation up to the new message.
 
-`history/continuation.ts` (`requestMessages`) leaves tool calls without a result out of the request. They stay in the saved transcript.
+`chat/history/continuation.ts` (`requestMessages`) leaves tool calls without a result out of the request. They stay in the saved transcript.
+
+The model comes from `createAIModelRuntime` (`src/app/ai/models/runtime.ts`), with the connection's saved key. An `openpencil` connection has no key: it names a workspace on the Home Cloud server, and its model talks to the AI service that server's discovery advertises, through `@/app/cloud/integration` (`src/app/cloud/ai/`). Each request carries a short-lived token Cloud signs for that workspace, replaced shortly before it expires and once more when the service refuses it (`cloudAIFetch` in `packages/cloud/src/client/ai.ts`), so the service never sees the person's Cloud session.
 
 ## A run
 
-`transports.ts` starts a run (`tools/run.ts`) when the message is sent, before the model is reached, so a Stop at any point ends a run that exists. A `Run` belongs to one reply and holds:
+`transports/tool-loop.ts` starts a run (`reply/run.ts`) when the message is sent, before the model is reached, so a Stop at any point ends a run that exists. A `Run` belongs to one reply and holds:
 
 - the page it works on, which your navigation does not move and the agent's `switch_page` does;
 - the step budget captured when the message started;
@@ -22,10 +24,10 @@ The chat's agent is one presence entry per document (`presence/registry.ts`). It
 
 ## A tool call
 
-`tools/index.ts` runs every call through `executeCall`:
+Every call of an OpenPencil tool, from the chat, a coding agent through MCP, or WebMCP, runs through `runEditorTool` (`tools/runner.ts`); `tools/index.ts` passes the chat's calls with their reply:
 
-- Calls that change the document take a lock in turn, since whole-page snapshots must not interleave. A call that gets the lock after the reply ended changes nothing and returns an error.
-- The document change is captured, pushed as one undo step labelled `aiUndoLabel(tool)`, and recorded on the call's own run, the one it started in, even if a later reply has begun.
+- Calls that change a document take its lock in turn, since whole-page snapshots must not interleave. A reply's call that gets the lock after the reply ended changes nothing and returns an error.
+- The document change is captured and pushed as one undo step. A reply's call labels it `aiUndoLabel(tool)` and records it on the call's own run, the one it started in, even if a later reply has begun; another client's call is labelled by its source, such as `Agent` or `WebMCP`.
 - The change is recorded for the chat's change review, and the agent points at it.
 - A call's result reaches the model as JSON. `eval` converts what a script returns, as MCP and the CLI print it.
 - If you undid or redid the run's own edits since the model last heard, the result carries an `undoNote` saying so.
@@ -34,7 +36,7 @@ The chat's agent is one presence entry per document (`presence/registry.ts`). It
 
 A run ends once, in one of three ways: finished (`onFinish`), failed (`handleError`), or stopped (the request's abort signal). The agent goes idle and its cursor leaves the canvas. A tool already running keeps going: its edit lands in its run, but cannot move the agent again.
 
-When the chat's own `onFinish` reports a reply that was stopped, failed, or cut off, `settleEndedReply` waits for the run's last edit, then settles the message (`settle.ts`):
+When the chat's own `onFinish` reports a reply that was stopped, failed, or cut off, `settleEndedReply` waits for the run's last edit, then settles the message (`reply/settle.ts`):
 
 - reasoning and text are marked done;
 - each call that never reported back fails with whether it changed the document, which the model reads next time;
@@ -42,7 +44,11 @@ When the chat's own `onFinish` reports a reply that was stopped, failed, or cut 
 
 Diagnostics record `chat.completed`, `chat.stopped`, or `chat.failed`.
 
-`submission/undone.ts` records the reply's turn (`turns.ts`) once the run settles, so an edit landing after Stop belongs to the reply.
+`reply/undo.ts` records the reply's turn (`reply/turns.ts`) once the run settles, so an edit landing after Stop belongs to the reply.
+
+## An ACP reply
+
+An ACP agent calls OpenPencil's tools through the MCP server, and its replies keep their edits the same way. The ACP transport (`transports/acp.ts`) starts a run for each reply with `startAgentRun`, without the built-in chat's agent presence, since the agent shows through its MCP session, and ends it however the reply ends. Each MCP tool call carries the chat id from the agent's `x-openpencil-chat` header and the call's id in the agent's conversation, which Codex sends as `_meta.callId` and Claude Code as `_meta["claudecode/toolUseId"]`. While the reply goes on, a call that edits the chat's own document joins the run through `runEditorTool`, which `automation/bridge/tool-handlers.ts` calls with the reply, so Revert, Restore, and the undone marks work as for a provider model.
 
 ## Undo and the model
 

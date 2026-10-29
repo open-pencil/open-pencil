@@ -4,7 +4,8 @@ import { onScopeDispose } from 'vue'
 import { confirmAppExit } from '@/app/document/close/exit'
 import { isTauri } from '@/app/tauri/env'
 
-import { RESTART_REPLY_EVENT, RESTART_REQUEST_EVENT, RestartRequest } from './restart'
+import { RESTART_REPLY_EVENT, RESTART_REQUEST_EVENT } from './restart'
+import { restartRequestSchema } from './schema'
 import { UPDATER_WINDOW_LABEL } from './window'
 
 /** Lets the editor window answer restart requests from the Software Update window. */
@@ -16,7 +17,7 @@ export function useRestartApprovals(): void {
   async function register() {
     const { emitTo, listen } = await import('@tauri-apps/api/event')
     const unlisten = await listen<unknown>(RESTART_REQUEST_EVENT, ({ payload }) => {
-      const parsed = v.safeParse(RestartRequest, payload)
+      const parsed = v.safeParse(restartRequestSchema, payload)
       if (!parsed.success) return
       const { id } = parsed.output
       // Always answer, so the Software Update window never waits on a failed prompt.

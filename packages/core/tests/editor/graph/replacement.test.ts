@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'bun:test'
 
+import { createEditor } from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
-import { createEditor } from '@open-pencil/core/editor'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 test('graph replacement clears tiled state even when page IDs are reused', () => {

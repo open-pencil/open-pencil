@@ -1,0 +1,1 @@
+- Laying out a page no longer reports layers it leaves where they were, so revisiting a large page skips rebuilding the layers list, font status and Lint results.

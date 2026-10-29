@@ -1,0 +1,3 @@
+- Percent line heights and letter spacing stay a percent of the font size, as in Figma, from scripts, `.fig` files, CSS, design JSX, and `.pen` files, and the typography panel shows and edits them in their own unit.
+- Paints scripts set in Figma's shape draw as in Figma: image paints with `scaleMode`, `rotation`, or `scalingFactor` take effect, invalid paints throw Figma's validation messages, and solid paints read back with an RGB `color` and the alpha in `opacity`.
+- An instance's `componentProperties` reports its own variant for VARIANT properties, as in Figma.

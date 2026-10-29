@@ -1,0 +1,64 @@
+# cloud-staging.openpencil.dev, the official staging deployment. Secrets come from the Worker's
+# secrets: BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, S3_ACCESS_KEY_ID, and
+# S3_SECRET_ACCESS_KEY; DATABASE_URL is Hyperdrive's.
+schema_version = 2
+
+# Staging is only for people the team approved: no editor or shared files without signing in.
+[deployment]
+mode = "official"
+public_url = "https://cloud-staging.openpencil.dev"
+indexing = "deny"
+local_editor = false
+
+[database]
+
+[authentication.enrollment]
+mode = "approval"
+notification_emails = ["admin@openpencil.dev"]
+
+[authentication.email_password]
+enabled = false
+
+[authentication.trusted_proxies]
+headers = ["cf-connecting-ip"]
+addresses = []
+
+[authentication.providers.google]
+client_id = { from_env = "GOOGLE_CLIENT_ID" }
+
+[object_storage]
+endpoint = "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech"
+region = "us-east-2"
+bucket = "openpencil-cloud-staging"
+force_path_style = true
+checksum_verification = "metadata"
+
+[documents]
+retention_days = 30
+
+[email]
+transport = "cloudflare"
+from = "cloud@openpencil.dev"
+
+[entitlements]
+source = "static"
+
+[entitlements.documents]
+maximum_file_bytes = 1_073_741_824
+revision_history = true
+
+[entitlements.storage]
+maximum_bytes = 107_374_182_400
+
+[entitlements.sharing]
+links = true
+guest_view = false
+guest_edit = false
+guest_presence = false
+
+[entitlements.collaboration]
+enabled = true
+maximum_participants = 100
+
+[entitlements.ai]
+enabled = false

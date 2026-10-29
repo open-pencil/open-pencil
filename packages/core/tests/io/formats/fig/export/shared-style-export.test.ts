@@ -1,9 +1,10 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
-import { getSharedStyles, SceneGraph } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 
 beforeAll(async () => {
   await initCodec()

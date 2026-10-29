@@ -67,7 +67,7 @@ test('deleting a conversation asks in a confirmation dialog', async ({
   await expect(page.getByRole('button', { name: /Conversation to delete/ })).toHaveCount(0)
 })
 
-const TraceJSON = v.pipe(
+const traceSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -97,7 +97,7 @@ test('a conversation saves its raw trace with tool calls and run events', async 
   ])
 
   const path = await download.path()
-  const trace = v.parse(TraceJSON, await readFile(path, 'utf8'))
+  const trace = v.parse(traceSchema, await readFile(path, 'utf8'))
   // Named after the conversation, as other exports are named after their layer or document.
   expect(download.suggestedFilename()).toBe(`${trace.conversation.title} trace.json`)
   expect(trace.messages.map((row) => row.message.role)).toEqual(['user', 'assistant'])

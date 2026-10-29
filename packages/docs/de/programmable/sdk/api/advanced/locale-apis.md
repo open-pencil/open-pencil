@@ -18,13 +18,7 @@ Diese Exports eignen sich, wenn Locale Teil eines umfassenderen Application stat
 ## Verwendung
 
 ```ts
-import {
-  locale,
-  localeSetting,
-  setLocale,
-  AVAILABLE_LOCALES,
-  LOCALE_LABELS,
-} from '@open-pencil/vue'
+import { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '@open-pencil/vue/i18n'
 ```
 
 ## Verhalten

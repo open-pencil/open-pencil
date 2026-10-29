@@ -1,0 +1,1 @@
+- HTML and draw.io import read a quoted `font-family`, such as `'Noto Sans KR'` or `"Foo, Bar"`, as the font family instead of keeping the quotes in its name or cutting it at a comma.

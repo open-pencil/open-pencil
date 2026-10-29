@@ -10,7 +10,7 @@ description: Read and update mask state for the selected node.
 ## Usage
 
 ```ts
-import { useMask } from '@open-pencil/vue'
+import { useMask } from '@open-pencil/vue/controls/mask'
 
 const { active, maskType, setMaskType } = useMask()
 ```

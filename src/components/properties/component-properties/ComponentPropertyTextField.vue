@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MIXED, type MixedValue } from '@open-pencil/vue'
+import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
 
 import AppInput from '@/components/ui/input/AppInput.vue'
 

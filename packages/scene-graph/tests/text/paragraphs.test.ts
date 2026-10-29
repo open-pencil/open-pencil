@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { TextParagraphStyle } from '@open-pencil/scene-graph'
 import {
   paragraphSpacingAt,
   paragraphStylesAfterEdit,
@@ -7,9 +8,8 @@ import {
   sharedParagraphSpacing,
   trimParagraphStyles,
   withListType,
-  withParagraphSpacing,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+  withParagraphSpacing
+} from '@open-pencil/scene-graph/text'
 
 const plain: TextParagraphStyle = { listType: 'NONE', indentation: 0 }
 const node = (textParagraphs: TextParagraphStyle[]) => ({

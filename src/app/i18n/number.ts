@@ -1,4 +1,4 @@
-import { locale } from '@open-pencil/vue'
+import { locale } from '@open-pencil/vue/i18n'
 
 const numberFormats = new Map<string, Intl.NumberFormat>()
 

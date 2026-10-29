@@ -1,0 +1,1 @@
+- The sticky tool draws notes the way frames are drawn: a note appears at the press and grows with the drag, its text scaling with it, and a click places one with its corner there.

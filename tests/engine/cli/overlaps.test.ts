@@ -3,8 +3,8 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { SceneGraph } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { cliSourcePath, repoPath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'

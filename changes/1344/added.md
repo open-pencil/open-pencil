@@ -1,0 +1,1 @@
+- A text layer's content binds to a text or number variable from the layer header, as in Figma; a number shows as text, and typing over bound text detaches the variable.

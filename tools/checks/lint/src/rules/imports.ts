@@ -178,45 +178,6 @@ const noCliParentRelativeImports = createParentRelativeImportRule({
   message: 'Use the #cli/* package-local alias instead of parent-relative CLI imports.'
 })
 
-interface ExactCoreBarrelRuleOptions {
-  description: string
-  applies(file: string): boolean
-  message: string
-}
-
-function createExactCoreBarrelImportRule({
-  description,
-  applies,
-  message
-}: ExactCoreBarrelRuleOptions): RuleDefinition {
-  return createImportSourceRule({
-    description,
-    applies,
-    check: (source) => source === '@open-pencil/core' && message
-  })
-}
-
-const noMcpCoreBarrelImports = createExactCoreBarrelImportRule({
-  description: 'Disallow MCP imports from @open-pencil/core root barrel — use domain subpaths',
-  applies: (file) => file.includes('/packages/mcp/src/'),
-  message:
-    'Use a targeted @open-pencil/core subpath in MCP code instead of the compatibility barrel.'
-})
-
-const noCliCoreBarrelImports = createExactCoreBarrelImportRule({
-  description: 'Disallow CLI imports from @open-pencil/core root barrel — use domain subpaths',
-  applies: (file) => file.includes('/packages/cli/src/'),
-  message:
-    'Use a targeted @open-pencil/core subpath in CLI code instead of the compatibility barrel.'
-})
-
-const noScriptCoreBarrelImports = createExactCoreBarrelImportRule({
-  description: 'Disallow script imports from @open-pencil/core root barrel — use domain subpaths',
-  applies: (file) => file.includes('/scripts/'),
-  message:
-    'Use a targeted @open-pencil/core subpath or #core/* alias in scripts instead of the compatibility barrel.'
-})
-
 const noCoreSelfPackageImports = createImportSourceRule({
   description: 'Disallow @open-pencil/core self-imports inside packages/core/src',
   applies: (file) => file.includes('/packages/core/src/'),
@@ -247,15 +208,6 @@ const noInlinePromptConstants = {
   }
 } satisfies RuleDefinition
 
-const noAppVueCoreBarrelImports = createExactCoreBarrelImportRule({
-  description:
-    'Disallow app and Vue SDK imports from @open-pencil/core root barrel — use domain subpaths',
-  applies: (file) =>
-    (file.includes('/src/') && !file.includes('/packages/')) || file.includes('/packages/vue/src/'),
-  message:
-    'Use a targeted @open-pencil/core subpath (editor, scene-graph, constants, io, etc.) instead of the compatibility barrel.'
-})
-
 const noAppImportsInPackages = createImportSourceRule({
   description: 'Disallow app-shell imports from workspace packages',
   applies: (file) => file.includes('/packages/'),
@@ -275,7 +227,41 @@ const noCoreFrameworkImports = createImportSourceRule({
     `@open-pencil/core must stay framework-agnostic; do not import '${source}'.`
 })
 
+/**
+ * An edit records what it changed through `recordEdit` or `recordEditAsync`, which push its undo
+ * step when the document's unsaved state expects it; capturing a change by hand elsewhere is how
+ * an edit's step came to land after an await and left undone documents unsaved.
+ */
+const noDocumentChangeCapture: RuleDefinition = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow captureDocumentChange outside core editor history — record edits with recordEdit or recordEditAsync'
+    },
+    schema: []
+  },
+  create(context: RuleContext) {
+    const file = normalizedFilename(context)
+    // The history module owns the capture, and its tests exercise it directly.
+    if (!file.includes('/src/') || file.includes('/packages/core/src/editor/history/')) return {}
+    return {
+      ImportSpecifier(node) {
+        const imported =
+          node.imported.type === 'Identifier' ? node.imported.name : node.imported.value
+        if (imported !== 'captureDocumentChange') return
+        context.report({
+          node,
+          message:
+            'Record the edit with recordEdit or recordEditAsync instead of capturing a document change by hand.'
+        })
+      }
+    }
+  }
+}
+
 export {
+  noDocumentChangeCapture,
   noVueSelfPackageImports,
   noCrossPackageSourceImports,
   noDeepParentRelativeImports,
@@ -284,12 +270,8 @@ export {
   noMcpParentRelativeImports,
   noVueParentRelativeImports,
   noCliParentRelativeImports,
-  noMcpCoreBarrelImports,
-  noCliCoreBarrelImports,
-  noScriptCoreBarrelImports,
   noCoreSelfPackageImports,
   noInlinePromptConstants,
-  noAppVueCoreBarrelImports,
   noAppImportsInPackages,
   noCoreFrameworkImports
 }

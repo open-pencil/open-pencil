@@ -3,8 +3,7 @@ import * as v from 'valibot'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { placeIcon } from '#core/icons'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const fetchIconsTool = defineTool({
   name: 'fetch_icons',

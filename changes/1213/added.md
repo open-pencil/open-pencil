@@ -1,0 +1,1 @@
+- Copy properties and Paste properties (Alt+Cmd+C, Alt+Cmd+V, also under Copy/Paste as in the canvas menu) carry the look of one layer to others through the system clipboard, to and from Figma.

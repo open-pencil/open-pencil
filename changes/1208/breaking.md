@@ -1,0 +1,2 @@
+- `VariableValue` includes formula and color-expression objects; API consumers should resolve variables before treating non-alias objects as colors.
+- `TokenExpression.resolved` is optional: a CSS expression on a formula or reference mode records no number, and it now outlives changes to its mode's value instead of being dropped when the value stops being a plain number.

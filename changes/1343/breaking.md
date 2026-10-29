@@ -1,0 +1,1 @@
+- Layers opened from a `.fig` file keep the GUIDs the file saved them under as their IDs, instead of `0:1`, `0:2`, and so on in reading order, so an ID stays the same after a save and reopen. IDs printed by `openpencil tree` or MCP before this release no longer find their layers.

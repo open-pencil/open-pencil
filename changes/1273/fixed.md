@@ -1,0 +1,2 @@
+- Pages of a `.fig` file opened after the first keep their instance swaps, theme colours, and exact positions instead of resetting some of them to their component's.
+- Large pages of a `.fig` file, such as those of big design kits, load once in the background instead of timing out and loading again while the editor waits.

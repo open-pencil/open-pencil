@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 import { nameInGroup, reorderedVariableIds } from '@/app/editor/tokens/model'
 
@@ -60,9 +60,9 @@ export function useTokenActions(editor: Editor, copyName: (name: string) => stri
   /** Detaching keeps what the alias resolved to, so nothing on the canvas changes. */
   function detach(id: string, modeId: string) {
     const value = variable(id)?.valuesByMode[modeId]
-    if (typeof value !== 'object' || !('aliasId' in value)) return
+    if (typeof value !== 'object' || !('aliasId' in value || 'expression' in value)) return
     // In the edited mode, as the row shows it, not the mode the canvas happens to be in.
-    const resolved = editor.graph.resolveVariable(value.aliasId, modeId)
+    const resolved = editor.graph.resolveVariable(id, modeId)
     if (resolved !== undefined) editor.updateVariableValue(id, modeId, structuredClone(resolved))
   }
 

@@ -9,9 +9,9 @@ import {
   initCodec,
   isCodecReady,
   peekMessageType,
-  type Color,
   type NodeChange
 } from '../src/fig/codec'
+import type { Color } from '../src/fig/types'
 
 const red: Color = { r: 1, g: 0, b: 0, a: 1 }
 

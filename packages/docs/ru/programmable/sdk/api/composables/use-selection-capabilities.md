@@ -18,7 +18,7 @@ description: Реактивные булевы значения для UI и д�
 ## Использование
 
 ```ts
-import { useSelectionCapabilities } from '@open-pencil/vue'
+import { useSelectionCapabilities } from '@open-pencil/vue/editor/selection-capabilities'
 
 const caps = useSelectionCapabilities()
 ```
@@ -27,7 +27,7 @@ const caps = useSelectionCapabilities()
 
 ```vue
 <script setup lang="ts">
-import { useSelectionCapabilities } from '@open-pencil/vue'
+import { useSelectionCapabilities } from '@open-pencil/vue/editor/selection-capabilities'
 
 const { canDelete, canDuplicate, canCreateComponent } = useSelectionCapabilities()
 </script>

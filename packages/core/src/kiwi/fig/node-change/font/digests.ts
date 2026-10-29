@@ -1,6 +1,7 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
-import { fontManager, weightToStyle } from '#core/text/fonts'
+import { fontManager } from '#core/text/fonts'
 
 const fontDigestCache = new Map<string, Uint8Array>()
 

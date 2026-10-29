@@ -1,9 +1,9 @@
 import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
+import { PDF_MODES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
 import type { RasterExportFormat } from '#core/io/formats/raster'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 const exportInputs = {
   ids: v.optional(
@@ -71,11 +71,11 @@ export const exportSVG = defineTool({
   exposure: { webmcp: false },
   input: v.strictObject({ ...exportInputs }),
   execute: async (figma, args) => {
-    const { renderNodesToSVG } = await import('#core/io/formats/svg')
+    const { renderNodesToLaidOutSVG } = await import('#core/io/formats/svg/text/layout')
     const pageId = figma.currentPageId
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const svg = renderNodesToSVG(figma.graph, pageId, ids)
+    const svg = await renderNodesToLaidOutSVG(figma.graph, pageId, ids)
     if (!svg) return { error: 'No visible nodes to export' }
     return { svg }
   }
@@ -84,19 +84,73 @@ export const exportSVG = defineTool({
 export const exportPDF = defineTool({
   name: 'export_pdf',
   description:
-    'Export nodes as a vector PDF document. Text remains selectable, paths stay sharp at any zoom. Returns base64-encoded PDF data.',
+    'Export nodes as a vector PDF document. Text remains selectable and keeps its line breaks, paths stay sharp at any zoom. Returns base64-encoded PDF data and the size of each PDF page. ' +
+    'mode "single" (default) puts all ids on one PDF page; "frames" makes one PDF page per id (or per top-level frame of the current page); "pages" makes one PDF page per design page (all pages, or page_ids). ' +
+    'embed_fonts embeds the TrueType file of each font face the text uses, and of a variable font a static file of each instance the text draws (its weight, optical size, and other axes), and reports which faces were embedded and which fell back to a standard PDF font.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.strictObject({ ...exportInputs }),
+  input: v.strictObject({
+    ...exportInputs,
+    mode: v.optional(
+      v.pipe(
+        v.picklist(PDF_MODES),
+        v.description(
+          '"single" (default): one PDF page for all ids. "frames": one PDF page per id or top-level frame. "pages": one PDF page per design page.'
+        )
+      ),
+      'single'
+    ),
+    page_ids: v.optional(
+      v.pipe(
+        v.array(v.string()),
+        v.description('mode "pages": the design pages to export, in order (default: all pages)')
+      )
+    ),
+    embed_fonts: v.optional(
+      v.pipe(
+        v.boolean(),
+        v.description(
+          'Embed the fonts the text uses (default false: standard PDF fonts). Makes the file larger.'
+        )
+      ),
+      false
+    )
+  }),
   execute: async (figma, args) => {
-    const { renderNodesToPDF } = await import('#core/io/formats/pdf')
-    const pageId = figma.currentPageId
-    const ids =
-      args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const data = await renderNodesToPDF(figma.graph, pageId, ids)
-    if (!data || data.length === 0) return { error: 'No visible nodes to export' }
-    const base64 = fromUint8Array(data)
-    return { mimeType: 'application/pdf', base64, byteLength: data.length }
+    const [{ exportPDFDocument }, { readPDFPages }] = await Promise.all([
+      import('#core/io/formats/pdf/document'),
+      import('#core/io/formats/pdf/prepare')
+    ])
+    try {
+      if (args.mode === 'pages') readPDFPages(figma.graph, args.page_ids)
+      const specs = planPDFPages(figma.graph, {
+        mode: args.mode,
+        ids: args.ids,
+        pageIds: args.page_ids,
+        currentPageId: figma.currentPageId
+      })
+      const result = await exportPDFDocument(figma.graph, specs, {
+        embedFonts: args.embed_fonts,
+        layOutPages: args.mode === 'pages'
+      })
+      if (!result || result.data.length === 0) return { error: 'No visible nodes to export' }
+      return {
+        mimeType: 'application/pdf',
+        base64: fromUint8Array(result.data),
+        byteLength: result.data.length,
+        pageCount: result.pages.length,
+        pages: result.pages.map((page, index) => ({
+          page: index + 1,
+          ...(page.label ? { name: page.label } : {}),
+          width: Math.round(page.width),
+          height: Math.round(page.height)
+        })),
+        ...(result.fonts ? { fonts: result.fonts } : {})
+      }
+    } catch (error) {
+      if (error instanceof PDFPlanError) return { error: error.message }
+      throw error
+    }
   }
 })
 
@@ -123,8 +177,10 @@ export const exportImage = defineTool({
     const format = args.format.toUpperCase() as RasterExportFormat
     const requestedScale = args.scale
     const maxEdge = args.maxEdge
+    const missing = ids.find((id) => !figma.getNodeById(id))
+    if (missing) return { error: `Node "${missing}" not found` }
     const nodes = ids.map((id) => figma.getNodeById(id)).filter((node) => node !== null)
-    if (nodes.length === 0) return { error: 'No visible nodes to export' }
+    if (!nodes.some((node) => node.visible)) return { error: 'No visible nodes to export' }
     const bounds = nodes.reduce(
       (result, node) => {
         const box = node.absoluteBoundingBox
@@ -149,7 +205,9 @@ export const exportImage = defineTool({
       scale: boundedScale,
       format
     })
-    if (!data || data.length === 0) return { error: 'No visible nodes to export' }
+    if (!data || data.length === 0) {
+      return { error: 'The renderer returned no image for these nodes' }
+    }
     const base64 = fromUint8Array(data)
     const mimeMap = { PNG: 'image/png', JPG: 'image/jpeg', WEBP: 'image/webp' } as const
     return {

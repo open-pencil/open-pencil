@@ -1,3 +1,5 @@
+import { figmaClipboardPayload } from '@open-pencil/fig/clipboard'
+
 import type { ClipboardPayload } from '@/app/editor/clipboard/system/types'
 
 let memoryClipboard: ClipboardPayload = { html: '', plainText: '' }
@@ -11,9 +13,8 @@ export function setInMemoryClipboardPayload(payload: ClipboardPayload): void {
  * reading it back, changing quotes and escaping, but leave the Base64 alone.
  */
 function clipboardPayloadKey(html: string): string | null {
-  const meta = /\(figmeta\)(.*?)\(\/figmeta\)/.exec(html)?.[1]
-  const buffer = /\(figma\)(.*?)\(\/figma\)/s.exec(html)?.[1]
-  return meta && buffer ? `${meta}:${buffer}` : null
+  const payload = figmaClipboardPayload(html)
+  return payload ? `${payload.meta}:${payload.buffer}` : null
 }
 
 /** The snapshot of the last copy when `html` is that copy, however the clipboard rewrote it. */

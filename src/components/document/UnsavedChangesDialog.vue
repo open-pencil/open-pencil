@@ -3,18 +3,20 @@ import { useStore } from '@nanostores/vue'
 import { useFocus } from '@vueuse/core'
 import { useTemplateRef } from 'vue'
 
-import { commonMessages, filesMessages } from '@open-pencil/vue'
+import { commonMessages, filesMessages } from '@open-pencil/vue/i18n'
 
 import { answerClosePrompt, closePrompt } from '@/app/document/close/prompt'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlertDialogRoot from '@/components/ui/dialog/AppAlertDialogRoot.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import { documentCloseUI, documentCloseButtonUI } from '@/theme/document/close'
 
 const files = useStore(filesMessages)
 const common = useStore(commonMessages)
 const saveButton = useTemplateRef('saveButton')
+const prompt = useHeldContent(closePrompt)
 
 // The dialog mounts on open, so focusing the primary action when the target appears keeps
 // Return on Save while Escape still cancels.
@@ -28,7 +30,7 @@ function updateOpen(open: boolean) {
 <template>
   <AppAlertDialogRoot :open="closePrompt !== null" @update:open="updateOpen">
     <AppDialogHeader
-      :heading="files.saveBeforeClosing({ name: closePrompt?.documentName ?? '' })"
+      :heading="files.saveBeforeClosing({ name: prompt?.documentName ?? '' })"
       :description="files.saveBeforeClosingDescription"
       :show-close="false"
       :ui="documentCloseUI"

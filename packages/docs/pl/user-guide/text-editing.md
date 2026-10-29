@@ -72,12 +72,18 @@ Otwórz wybór czcionki w sekcji „Typografia”.
 
 Dostępne odmiany zależą od rodziny, na przykład Regular, Medium, Bold i Black.
 
+## Czcionki zmienne
+
+Gdy czcionka jest zmienna, na przykład Inter, sekcja Typografia pokazuje jej osie (grubość, rozmiar optyczny, szerokość i inne) z wartością, w jakiej są rysowane. Wpisana lub przeciągnięta wartość ustawia oś; wybór grubości, pochylenia lub rodziny przywraca osie tej odmiany. Rozmiar optyczny pokazuje **Auto**, dopóki podąża za rozmiarem czcionki; wpisana wartość lub **Stały** w jego menu go zatrzymuje, a **Auto** przywraca.
+
 ## Źródła czcionek
 
 - **Domyślnie:** Inter jest ładowany automatycznie.
 - **Aplikacja komputerowa:** czcionki systemowe i włączone katalogi Google Fonts, Fontsource, Bunny Fonts oraz Fontshare.
 - **Przeglądarka:** czcionki systemowe są dostępne w Chrome i Edge; katalogi internetowe wymagają aplikacji komputerowej.
 - **Pobrane czcionki:** aplikacja zapisuje pobrane odmiany do ponownego użycia na tym komputerze.
+
+Dostęp do czcionek systemowych i dostawców online ustawisz w **Ustawienia › Czcionki**, które otwiera koło zębate obok rodziny czcionek; w aplikacji desktopowej strona zarządza też pobranymi czcionkami i pakietami zastępczymi.
 
 ## Brakujące czcionki i zamienniki
 

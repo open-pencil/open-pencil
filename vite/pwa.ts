@@ -1,5 +1,18 @@
 import { VitePWA } from 'vite-plugin-pwa'
 
+/**
+ * Pages that are not the editor's: OAuth callbacks, which relay a redirect, and, where a Cloud
+ * server serves the editor, its API and its own pages, `CLOUD_PORTAL_PAGE_ROOTS` in
+ * `@open-pencil/cloud/contract`, which loads only once packages are built. Workbox matches the
+ * path with its query, so a page root may be followed by `?` as well as `/`.
+ */
+export const NOT_EDITOR_PAGES = [
+  /^\/oauth\//,
+  /^\/api\//,
+  /^\/\.well-known\//,
+  /^\/(?:welcome|auth|account|admin)(?:[/?]|$)/
+]
+
 export function openPencilPwaPlugin() {
   return VitePWA({
     registerType: 'autoUpdate',
@@ -8,8 +21,7 @@ export function openPencilPwaPlugin() {
       maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
       globPatterns: ['**/*.{js,css,html,wasm,png,svg,ico,ttf,webmanifest}'],
       navigateFallback: '/index.html',
-      // OAuth callbacks are standalone pages that relay a redirect, not app routes.
-      navigateFallbackDenylist: [/^\/oauth\//]
+      navigateFallbackDenylist: NOT_EDITOR_PAGES
     },
     manifest: {
       name: 'OpenPencil',

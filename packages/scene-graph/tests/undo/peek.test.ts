@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { UndoManager } from '@open-pencil/scene-graph'
+import { UndoManager } from '@open-pencil/scene-graph/undo'
 
 test('peeks entries from the top of the undo stack without changing it', () => {
   const undo = new UndoManager()

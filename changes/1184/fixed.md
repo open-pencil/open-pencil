@@ -1,0 +1,1 @@
+- Saving a file in a browser that shows the save picker but will not write to the chosen file now downloads it under that name instead of failing.

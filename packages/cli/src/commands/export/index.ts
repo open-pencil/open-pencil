@@ -193,10 +193,8 @@ async function executeFileExport(
   wholeDocument: boolean,
   fileName: string
 ) {
-  if (wholeDocument) {
-    if (formatId === 'fig') return io.writeDocument(formatId, graph, options)
+  if (wholeDocument)
     return io.exportContent(formatId, { graph, target: { scope: 'document' }, fileName }, options)
-  }
   return io.exportContent(formatId, { graph, target, fileName }, options)
 }
 

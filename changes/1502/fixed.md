@@ -1,0 +1,1 @@
+- `.pen` instances keep the fields their `ref` sets, and a swapped icon keeps its layer name, after a sync or saving as `.fig`.

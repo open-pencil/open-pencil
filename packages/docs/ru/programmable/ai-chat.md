@@ -23,11 +23,12 @@ description: Встроенный помощник с более чем 90 ин�
 | Поставщик | Модели | Настройка |
 |-----------|--------|-----------|
 | **OpenRouter** | Claude, GPT, Gemini, DeepSeek, Qwen и другие | Ключ API с [openrouter.ai](https://openrouter.ai) |
-| **Anthropic** | Claude Sonnet 4.6, Claude Opus 4.6 | Ключ API с [console.anthropic.com](https://console.anthropic.com) |
-| **OpenAI** | GPT-5.3 Codex, GPT-4.1, o3, o4-mini | Ключ API с [platform.openai.com](https://platform.openai.com) |
-| **Google AI** | Gemini 3.1 Pro, Gemini 3 Flash | Ключ API с [aistudio.google.dev](https://aistudio.google.dev) |
-| **Z.ai** | GLM-5.1, GLM-5, GLM-4.7 и семейство GLM-4.5 | Ключ API из [документации Z.ai](https://docs.z.ai/devpack/quick-start) |
-| **MiniMax** | MiniMax M3, M2.7, M2.7-highspeed, M2.5, M2.1 | Ключ API с [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **Anthropic** | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | Ключ API с [console.anthropic.com](https://console.anthropic.com) |
+| **OpenAI** | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna | Ключ API с [platform.openai.com](https://platform.openai.com) |
+| **Google AI** | Gemini 3.8 Flash, Gemini 4 Argon | Ключ API с [aistudio.google.dev](https://aistudio.google.dev) |
+| **DeepSeek** | DeepSeek Flash, DeepSeek V4 Pro | Ключ API с [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
+| **Z.ai** | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo | Ключ API из [документации Z.ai](https://docs.z.ai/devpack/quick-start) |
+| **MiniMax** | MiniMax-M3.1-Flash, MiniMax-M3 | Ключ API с [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
 | **Совместимый с OpenAI** | Любая конечная точка в формате OpenAI API | Собственные базовый URL и ключ; можно выбрать Completions API или Responses API |
 | **Совместимый с Anthropic** | Любая конечная точка в формате Anthropic API | Собственные базовый URL и ключ |
 

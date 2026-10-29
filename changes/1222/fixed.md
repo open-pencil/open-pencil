@@ -1,0 +1,1 @@
+- `export_image` says why it returned no image: an ID that is not in the document, layers that are all hidden, a render that came back empty, or, in the desktop app, a document whose canvas has no renderer, instead of always answering "No visible nodes to export".

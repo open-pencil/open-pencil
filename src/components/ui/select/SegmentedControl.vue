@@ -28,7 +28,10 @@ export interface SegmentedControlSlots {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue'
+import {
+  SegmentedControlItem,
+  SegmentedControlRoot
+} from '@open-pencil/vue/primitives/SegmentedControl'
 
 import theme from '@/theme/select/segmented-control'
 
