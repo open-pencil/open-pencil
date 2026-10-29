@@ -1,0 +1,8 @@
+
+def ALIYUN_GOOGLE = 'https://maven.aliyun.com/repository/google'
+def ALIYUN_PUBLIC = 'https://maven.aliyun.com/repository/public'
+def ALIYUNGradlePlugin = 'https://maven.aliyun.com/repository/gradle-plugin'
+include ':app'
+
+apply from: 'tauri.settings.gradle'
+

@@ -7,6 +7,7 @@ import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED } from '@/app/cloud/integration'
+import { MCP_SETTINGS_ENABLED } from '@/app/settings/mcp/feature'
 import {
   settingsDialogOpen,
   registerSettingsNavigation,
@@ -53,7 +54,7 @@ const sections = computed(
       { value: 'usage', label: settings.value.usage },
       { value: 'diagnostics', label: settings.value.diagnostics },
       { value: 'privacy', label: settings.value.privacy },
-      { value: 'mcp', label: settings.value.mcp },
+      ...(MCP_SETTINGS_ENABLED ? [{ value: 'mcp' as const, label: settings.value.mcp }] : []),
       { value: 'tools', label: settings.value.toolAccess },
       { value: 'fonts', label: settings.value.fonts },
       { value: 'media', label: settings.value.media },
@@ -145,7 +146,11 @@ function onOpenChange(open: boolean): void {
           <template #leading><icon-lucide-shield class="size-3.5" /></template>
           {{ settings.privacy }}
         </AppTabsTrigger>
-        <AppTabsTrigger value="mcp" data-test-id="settings-section-mcp">
+        <AppTabsTrigger
+          v-if="MCP_SETTINGS_ENABLED"
+          value="mcp"
+          data-test-id="settings-section-mcp"
+        >
           <template #leading><icon-lucide-plug class="size-3.5" /></template>
           {{ settings.mcp }}
         </AppTabsTrigger>
@@ -193,7 +198,7 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="privacy" as-child>
         <SettingsPage><PrivacySettingsPanel /></SettingsPage>
       </AppTabsContent>
-      <AppTabsContent value="mcp" as-child>
+      <AppTabsContent v-if="MCP_SETTINGS_ENABLED" value="mcp" as-child>
         <MCPWorkspacePanel />
       </AppTabsContent>
       <AppTabsContent value="tools" as-child>
