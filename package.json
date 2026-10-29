@@ -120,7 +120,7 @@
     "generate:icons": "bun tools/generate/brand/src/cli.ts generate",
     "check:icons": "bun tools/generate/brand/src/cli.ts check",
     "generate:tauri-menu": "bun tools/generate/tauri-menu/src/generate.ts",
-    "check:tools": "tsc --noEmit -p tools/tsconfig.json"
+    "check:tools": "bun tools/checks/test-types/src/index.ts tools"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.71",
