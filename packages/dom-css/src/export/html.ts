@@ -1,3 +1,4 @@
+import { escapeAttribute, escapeText } from 'entities'
 import { twirl } from 'twirlwind'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignText } from '../types'
@@ -46,14 +47,6 @@ export function splitWhitespace(value: string): string[] {
   return parts
 }
 
-function escapeText(value: string): string {
-  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-}
-
-function escapeAttr(value: string): string {
-  return escapeText(value).replaceAll('"', '&quot;')
-}
-
 function serializeText(node: DesignText): string {
   return escapeText(node.text)
 }
@@ -99,7 +92,7 @@ function serializeAttrs(node: DesignElement, options: SerializeHTMLOptions): str
   if (style && options.style !== 'tailwind') attrs.style = style
   const serialized = Object.entries(attrs)
     .filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '')
-    .map(([name, value]) => `${name}="${escapeAttr(value)}"`)
+    .map(([name, value]) => `${name}="${escapeAttribute(value)}"`)
 
   if (serialized.length === 0) return ''
   return ` ${serialized.join(' ')}`
@@ -111,7 +104,7 @@ const SHADER_FRAME_STYLE =
 
 function shaderFrame(node: DesignElement): string {
   const frame = node.shader?.frame
-  return frame ? `<img src="${escapeAttr(frame)}" alt="" style="${SHADER_FRAME_STYLE}">` : ''
+  return frame ? `<img src="${escapeAttribute(frame)}" alt="" style="${SHADER_FRAME_STYLE}">` : ''
 }
 
 function serializeElement(

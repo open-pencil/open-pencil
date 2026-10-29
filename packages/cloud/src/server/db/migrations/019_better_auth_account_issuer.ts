@@ -1,5 +1,6 @@
-import type { CloudDatabase } from '#cloud/server/db/tables'
 import type { Kysely } from 'kysely'
+
+import type { LegacyAuthSchemaDatabase } from './helpers'
 
 /** The unique index Better Auth 1.7.0 through 1.7.2 created on `account (issuer, accountId)`. */
 const ISSUER_INDEX = 'account_issuer_accountId_uidx'
@@ -11,7 +12,7 @@ const ISSUER_INDEX = 'account_issuer_accountId_uidx'
  * column itself is left for a later cleanup.
  */
 export async function up(database: Kysely<unknown>): Promise<void> {
-  const cloud = database as Kysely<CloudDatabase>
+  const cloud = database as Kysely<LegacyAuthSchemaDatabase>
   const account = (await database.introspection.getTables()).find(
     (table) => table.name === 'account'
   )
@@ -31,7 +32,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {
-  const cloud = database as Kysely<CloudDatabase>
+  const cloud = database as Kysely<LegacyAuthSchemaDatabase>
   await cloud
     .updateTable('cloudAuthSchema')
     .set({ version: '1.7.2+mfa.1', updatedAt: new Date() })

@@ -1,0 +1,1 @@
+- Design JSX `<Vector>` takes its path as SVG path data (`d`, with `fillRule`) or as Figma's `vectorPaths` (`paths`), and JSX export writes every vector's paths, so vectors and inline SVG artwork no longer render back empty.

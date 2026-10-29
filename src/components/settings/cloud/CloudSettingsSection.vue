@@ -19,6 +19,7 @@ import { signOutOfCloud } from '@/app/cloud/sessions/sign-out'
 import { clearCloudSessionToken } from '@/app/cloud/sessions/token'
 import { openExternalLink, toast } from '@/app/shell/ui'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import CloudSettingsPanel from './CloudSettingsPanel.vue'
 import CloudWaitlist from './CloudWaitlist.vue'
@@ -53,6 +54,7 @@ const entries = computed<CloudServerEntry[]>(() =>
 
 /** The server being removed, and how many documents would lose changes the server hasn't got. */
 const removing = ref<{ entry: CloudServerEntry; unsaved: number } | null>(null)
+const removingShown = useHeldContent(removing)
 
 async function askToRemove(id: string) {
   const entry = entries.value.find((candidate) => candidate.id === id)
@@ -106,14 +108,16 @@ async function remove() {
     <AppConfirmationDialog
       :open="removing !== null"
       tone="danger"
-      :heading="t.settingsDisconnectHeading({ host: removing?.entry.host ?? '' })"
+      :heading="t.settingsDisconnectHeading({ host: removingShown?.entry.host ?? '' })"
       :description="
-        removing?.unsaved
-          ? t.settingsDisconnectUnsavedDescription(removing.unsaved)
+        removingShown?.unsaved
+          ? t.settingsDisconnectUnsavedDescription(removingShown.unsaved)
           : t.settingsDisconnectDescription
       "
       :cancel-label="common.cancel"
-      :confirm-label="removing?.unsaved ? t.settingsDisconnectAndDiscard : t.settingsDisconnect"
+      :confirm-label="
+        removingShown?.unsaved ? t.settingsDisconnectAndDiscard : t.settingsDisconnect
+      "
       @update:open="(open) => !open && (removing = null)"
       @confirm="remove"
     />

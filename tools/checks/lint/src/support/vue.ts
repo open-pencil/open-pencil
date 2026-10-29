@@ -158,6 +158,8 @@ function isBoundStringLiteral(node: VueTemplateNode, name: string): boolean {
 export {
   VUE_DIRECTIVE_NODE,
   VUE_ELEMENT_NODE,
+  VUE_INTERPOLATION_NODE,
+  VUE_SIMPLE_EXPRESSION_NODE,
   hasExpressionCall,
   hasUIHelperCall,
   isBoundStringLiteral,

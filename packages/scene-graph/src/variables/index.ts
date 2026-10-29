@@ -4,7 +4,7 @@ import { omit, omitBy } from 'es-toolkit/object'
 import { BLACK } from '../constants'
 import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
-import { setInstanceOverride } from '../instances/overrides'
+import { bindingOverrideField, setInstanceOverride } from '../instances/overrides'
 import type {
   Variable,
   VariableCollection,
@@ -19,6 +19,7 @@ import {
 } from './bindings'
 import {
   BOOLEAN_BINDING_FIELDS,
+  paintBindingTarget,
   STRING_BINDING_FIELDS,
   TEXT_CONTENT_VARIABLE_TYPES,
   VISIBILITY_VARIABLE_TYPES
@@ -243,22 +244,21 @@ export function bindVariable(
   }
 
   // Color fields require COLOR variable type
-  const colorFieldMatch = field.match(/^(fills|strokes)\/(\d+)\/color$/)
-  if (colorFieldMatch) {
+  const paint = paintBindingTarget(field)
+  if (paint) {
     if (variable.type !== 'COLOR') {
       throw new Error(`Cannot bind ${variable.type} variable to color field "${field}"`)
     }
     // Validate index is within current array bounds
-    const arrayKey = colorFieldMatch[1] as 'fills' | 'strokes'
-    const index = Number.parseInt(colorFieldMatch[2], 10)
-    const currentLength = (node[arrayKey] as unknown[] | undefined)?.length ?? 0
-    if (index >= currentLength) {
-      throw new Error(`Index ${index} out of range for ${arrayKey} (length ${currentLength})`)
+    const currentLength = node[paint.list].length
+    if (paint.index >= currentLength) {
+      throw new Error(
+        `Index ${paint.index} out of range for ${paint.list} (length ${currentLength})`
+      )
     }
     // Auto-remove top-level dead binding (e.g. 'fills') when setting indexed binding
-    const topLevelKey = colorFieldMatch[1]
-    if (topLevelKey in node.boundVariables) {
-      node.boundVariables = omit(node.boundVariables, [topLevelKey])
+    if (paint.list in node.boundVariables) {
+      node.boundVariables = omit(node.boundVariables, [paint.list])
     }
   }
 
@@ -283,7 +283,7 @@ export function bindVariable(
     isNumericVariableBindingField(field) ||
     STRING_BINDING_FIELDS.has(field) ||
     BOOLEAN_BINDING_FIELDS.has(field) ||
-    colorFieldMatch
+    paint !== null
 
   if (!isKnownField) {
     throw new Error(`Unknown binding field "${field}"`)
@@ -331,12 +331,13 @@ function markBoundVariablesOverrideOnInstance(
       owner.instanceOverrides,
       owner.id,
       nodeId,
-      `boundVariables/${field}`,
+      bindingOverrideField(field),
       node.boundVariables[field] ?? null
     )
 }
 
 export * from './bindings'
+export * from './corners'
 export * from './formula'
 export * from './formula/schema'
 export * from './schema'

@@ -12,6 +12,7 @@ import { sceneGraphToDesignDocument, serializeHTML } from '@open-pencil/dom-css/
 import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import {
   DOM_CSS_COLORS,
@@ -99,8 +100,8 @@ function expectStyleRoundTripText(graph: SceneGraph, panel: SceneNode) {
   if (heading?.type !== 'TEXT') throw new Error('Expected text node')
   expect(heading.fontSize).toBe(18)
   expect(heading.fontWeight).toBe(700)
-  expect(heading.lineHeight).toBe(24)
-  expect(heading.letterSpacing).toBe(0.2)
+  expect(heading.lineHeight).toEqual(pixelLength(24))
+  expect(heading.letterSpacing).toEqual(pixelLength(0.2))
   expect(heading.textAlignHorizontal).toBe('CENTER')
   expect(heading.opacity).toBe(0.5)
   expect(heading.effects[0]?.type).toBe('DROP_SHADOW')

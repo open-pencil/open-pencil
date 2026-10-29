@@ -1,6 +1,6 @@
 import { computed, shallowRef } from 'vue'
 
-import { canMakeBooleanSourceNode, hasVisibleStrokeSourceNode } from '@open-pencil/core/canvas'
+import { canMakeBooleanSourceNode, layersToOutline } from '@open-pencil/core/canvas'
 
 import { useEditorEvent } from '#vue/editor/events/use'
 import { useSelectionState } from '#vue/editor/selection-state/use'
@@ -52,6 +52,10 @@ export function useSelectionCapabilities() {
     canToggleLock: computed(() => hasSelection.value),
     canFlip: computed(() => hasSelection.value),
     canDistribute: useSceneComputed(() => editor.canDistributeNodes([...editor.state.selectedIds])),
+    canArrange: useSceneComputed(() => editor.canArrangeNodes([...editor.state.selectedIds])),
+    canAutoArrange: useSceneComputed(() =>
+      editor.canAutoArrangeNodes([...editor.state.selectedIds])
+    ),
     canBooleanOperation: computed(() => selectedCount.value >= 2 && selectedNodesCanFlatten.value),
     canFlatten: computed(() => selectedNodesCanFlatten.value),
     canOutlineText: useSceneComputed(() => {
@@ -61,17 +65,9 @@ export function useSelectionCapabilities() {
         nodes.every((node) => node.type === 'TEXT' && canMakeBooleanSourceNode(node, editor.graph))
       )
     }),
-    canOutlineStroke: useSceneComputed(() => {
-      const nodes = editor.getSelectedNodes()
-      return (
-        nodes.length > 0 &&
-        nodes.every(
-          (node) =>
-            hasVisibleStrokeSourceNode(node, editor.graph) &&
-            canMakeBooleanSourceNode(node, editor.graph)
-        )
-      )
-    }),
+    canOutlineStroke: useSceneComputed(
+      () => layersToOutline(editor.getSelectedNodes(), editor.graph).length > 0
+    ),
     canGoToMainComponent: computed(() => selection.isInstance.value),
     canCreateInstance: computed(() => selectedNode.value?.type === 'COMPONENT'),
     canCreateSlot: selection.canCreateSlot,

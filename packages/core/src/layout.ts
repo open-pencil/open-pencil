@@ -27,6 +27,7 @@ import { keepsSavedLayout, usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
+export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
   estimateTextSize,
   getTextMeasurer,
@@ -561,6 +562,11 @@ function configureTextLeaf(
   const autoResize = child.textAutoResize
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const growsWidth = configureGrowingText(yogaChild, child, parent, fixedDerivedMainAxis)
+  const stretchesCross =
+    child.layoutAlignSelf === 'STRETCH' ||
+    (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
+  // Layout sets the width of text that grows along a row or stretches across a column.
+  const fillsWidth = (!isRow && stretchesCross) || growsWidth
 
   const cache = new Map<number, { width: number; height: number }>()
   const UNCONSTRAINED_KEY = -1
@@ -573,8 +579,11 @@ function configureTextLeaf(
       return
     }
 
+    // Auto-width text keeps each line whole, as Figma's does, in a parent narrower than the text;
+    // only a width that layout or a max width sets wraps it.
+    const wraps = fillsWidth || child.maxWidth != null
     yogaChild.setMeasureFunc((width, widthMode, _height, _heightMode) => {
-      const maxW = widthMode === MeasureMode.Undefined ? undefined : width
+      const maxW = wraps && widthMode !== MeasureMode.Undefined ? width : undefined
       const cacheKey = maxW === undefined ? UNCONSTRAINED_KEY : Math.round(maxW)
       const cached = cache.get(cacheKey)
       if (cached) return cached
@@ -584,14 +593,10 @@ function configureTextLeaf(
       return result
     })
   } else if (autoResize === 'HEIGHT') {
-    const stretchesCross =
-      child.layoutAlignSelf === 'STRETCH' ||
-      (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
-    // Let Yoga stretch or grow fill-width text instead of fixing its stored width.
-    const fillsWidth = (!isRow && stretchesCross) || growsWidth
     const fixedWidth = fixedDerivedMainAxis
       ? (child.derivedLayout?.width ?? child.width)
       : child.width
+    // Let Yoga stretch or grow fill-width text instead of fixing its stored width.
     if (child.layoutGrow <= 0 && !fillsWidth) {
       yogaChild.setWidth(fixedWidth)
     }

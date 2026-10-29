@@ -33,7 +33,7 @@ export class PostgresRateLimitStore implements Store {
       Math.floor(now.getTime() / this.windowMs) * this.windowMs + this.windowMs
     )
     const row = await this.database
-      .insertInto('cloudRateLimit')
+      .insertInto('apiRateLimit')
       .values({
         keyHash: this.hash(key),
         windowStartedAt: new Date(resetTime.getTime() - this.windowMs),
@@ -44,8 +44,8 @@ export class PostgresRateLimitStore implements Store {
         conflict.column('keyHash').doUpdateSet((expression) => ({
           requestCount: expression
             .case()
-            .whenRef('cloudRateLimit.windowStartedAt', '=', 'excluded.windowStartedAt')
-            .then(expression('cloudRateLimit.requestCount', '+', 1))
+            .whenRef('apiRateLimit.windowStartedAt', '=', 'excluded.windowStartedAt')
+            .then(expression('apiRateLimit.requestCount', '+', 1))
             .else(1)
             .end(),
           windowStartedAt: expression.ref('excluded.windowStartedAt'),
@@ -62,7 +62,7 @@ export class PostgresRateLimitStore implements Store {
 
   async decrement(key: string): Promise<void> {
     await this.database
-      .updateTable('cloudRateLimit')
+      .updateTable('apiRateLimit')
       .set((expression) => ({
         requestCount: expression.fn('greatest', [
           expression('requestCount', '-', 1),
@@ -74,6 +74,6 @@ export class PostgresRateLimitStore implements Store {
   }
 
   async resetKey(key: string): Promise<void> {
-    await this.database.deleteFrom('cloudRateLimit').where('keyHash', '=', this.hash(key)).execute()
+    await this.database.deleteFrom('apiRateLimit').where('keyHash', '=', this.hash(key)).execute()
   }
 }

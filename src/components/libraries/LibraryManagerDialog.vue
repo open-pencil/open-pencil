@@ -17,10 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
+import { AppTabsContent, AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { initialSection = 'browse' } = defineProps<{
@@ -40,6 +37,7 @@ async function openPublish() {
 const {
   section,
   loading,
+  ready,
   showAllPages,
   applying,
   visibleUpdateGroups,
@@ -69,7 +67,13 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="lg" height="tall" data-test-id="asset-libraries-dialog">
+  <AppDialogRoot
+    :open="open && ready"
+    size="lg"
+    height="tall"
+    data-test-id="asset-libraries-dialog"
+    @update:open="open = $event"
+  >
     <AppDialogHeader
       :heading="panels.manageLibraries"
       :description="panels.manageLibrariesDescription"

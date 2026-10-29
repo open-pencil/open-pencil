@@ -36,6 +36,9 @@ export const DESIGN_JSX_SPAN_PROPERTY_NAMES = [
   'textDecorationThickness',
   'textUnderlineOffset',
   'textDecorationSkipInk',
+  'fontFeatures',
+  'fontVariations',
+  'lang',
   'textCase',
   'href'
 ] as const
@@ -152,6 +155,10 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'textDecorationThickness',
   'textUnderlineOffset',
   'textDecorationSkipInk',
+  'fontFeatures',
+  'fontVariations',
+  'lang',
+  'fontOpticalSizing',
   'textCase',
   'paragraphSpacing',
   'paragraphIndent',
@@ -177,14 +184,18 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'innerRadius',
   'startAngle',
   'endAngle',
+  'd',
+  'fillRule',
+  'paths',
   'label',
   'style',
   'bind',
   'component',
   'componentId',
   'properties',
-  'propertyRefs',
   'of',
+  'exposed',
+  'mode',
   // A Reka UI root's behaviour, by its own property names
   'modelValue',
   'open',
@@ -264,21 +275,3 @@ export const DESIGN_JSX_PROPERTIES: DesignJSXPropertyDefinition[] =
     name,
     description: `OpenPencil ${name} property.`
   }))
-
-export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = [
-  'solid',
-  'gradient',
-  'linearGradient',
-  'radialGradient',
-  'angularGradient',
-  'diamondGradient',
-  'shader',
-  'dropShadow',
-  'innerShadow',
-  'layerBlur',
-  'backgroundBlur',
-  'foregroundBlur',
-  'designVar',
-  'defineVars',
-  'ref'
-].map((name) => ({ name, description: `OpenPencil ${name} helper.` }))

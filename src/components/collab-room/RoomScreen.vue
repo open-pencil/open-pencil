@@ -6,9 +6,9 @@ import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 import { isFetchingRoom, type PendingRoomStatus } from '@/app/collab/room/status'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import { roomScreen } from '@/theme/collaboration/room-screen'
 
 import RoomNameLine from './RoomNameLine.vue'
+import { roomScreen } from './ui'
 
 /**
  * What a room tab shows instead of the editor until the room's document arrives: what it is doing

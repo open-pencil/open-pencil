@@ -7,8 +7,9 @@ import * as v from 'valibot'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer, pngSize, readFigArchiveMeta } from '@open-pencil/fig'
+import { parseFigBuffer, readFigArchiveMeta } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { imageSize } from '@open-pencil/scene-graph/images'
 
 setDefaultTimeout(60_000)
 
@@ -34,7 +35,7 @@ function readArchive(bytes: Uint8Array) {
   return {
     raw,
     meta: meta.output,
-    thumbnailSize: expectDefined(pngSize(png), 'thumbnail size')
+    thumbnailSize: expectDefined(imageSize(png), 'thumbnail size')
   }
 }
 
@@ -50,6 +51,18 @@ describe('.fig meta.json', () => {
     expect(meta.client_meta.background_color).toEqual(BLUE_GRAY)
     expect(meta.client_meta.thumbnail_size).toEqual(thumbnailSize)
     expect(thumbnailSize.width).toBeGreaterThan(1)
+    expect(meta.client_meta.render_coordinates).toEqual({ x: 49, y: 3, width: 345, height: 308 })
+  })
+
+  test('without a Cover page, the thumbnail shows the first page a person drew on', async () => {
+    const { graph } = landingPage()
+    // An internal page, such as the one library data lives on, listed before it.
+    const internal = graph.addPage('Internal')
+    graph.updateNode(internal.id, { internalOnly: true })
+    graph.insertChildAt(internal.id, graph.rootId, 0)
+    graph.createNode('RECTANGLE', internal.id, { x: 900, y: 900, width: 10, height: 10 })
+    const { meta } = readArchive(await exportFigFile(graph, { renderHeadlessThumbnail: true }))
+
     expect(meta.client_meta.render_coordinates).toEqual({ x: 49, y: 3, width: 345, height: 308 })
   })
 

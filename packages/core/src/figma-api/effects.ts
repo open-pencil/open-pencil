@@ -24,7 +24,7 @@ const BLEND_MODE_KEYS = {
   PASS_THROUGH: true
 } satisfies Record<BlendMode, true>
 
-const BLEND_MODES = Object.keys(BLEND_MODE_KEYS) as BlendMode[]
+export const BLEND_MODES = Object.keys(BLEND_MODE_KEYS) as BlendMode[]
 
 /** Effect kinds Figma's plugin API accepts that OpenPencil does not model yet. */
 const UNSUPPORTED_EFFECT_TYPES = new Set(['NOISE', 'TEXTURE', 'GLASS', 'SHADER'])
@@ -70,8 +70,9 @@ const effectsSchema = v.array(effectSchema)
 /** An effect as Figma's plugin API reads and writes it (`Effect` in `@figma/plugin-typings`). */
 export type FigmaEffect = v.InferOutput<typeof effectSchema>
 
-function issuePath(issue: v.BaseIssue<unknown>): string {
-  return (issue.path ?? [])
+/** Figma's spelling of a path into a value: `[0].color.r`. */
+export function issuePath(path: readonly v.IssuePathItem[] | undefined): string {
+  return (path ?? [])
     .map((item) => (typeof item.key === 'number' ? `[${item.key}]` : `.${String(item.key)}`))
     .join('')
 }
@@ -101,7 +102,7 @@ export function parseFigmaEffects(value: unknown): Effect[] {
   if (!result.success) {
     const [issue] = result.issues
     throw new Error(
-      `Property "effects" failed validation: ${issue.message} at ${issuePath(issue) || 'effects'}`
+      `Property "effects" failed validation: ${issue.message} at ${issuePath(issue.path) || 'effects'}`
     )
   }
   return result.output.map(toSceneEffect)

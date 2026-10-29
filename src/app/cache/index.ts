@@ -1,3 +1,4 @@
+import { dirname } from 'pathe'
 import * as v from 'valibot'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
@@ -21,10 +22,7 @@ function cachePath(key: string) {
 }
 
 function cacheDirectoryPath(key: string) {
-  const segments = key.split('/').slice(0, -1)
-  return segments.length > 0
-    ? `${APP_CACHE_DIR}/${segments.map(encodeURIComponent).join('/')}`
-    : APP_CACHE_DIR
+  return dirname(cachePath(key))
 }
 
 function storageKey(key: string) {

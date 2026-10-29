@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 import {
@@ -39,7 +40,7 @@ function designSystem() {
     fontFamily: 'Inter',
     fontWeight: 700,
     fontSize: 32,
-    lineHeight: 40,
+    lineHeight: pixelLength(40),
     sharedStyleType: 'TEXT',
     internalOnly: true,
     boundVariables: { fontFamily: family.id }
@@ -100,7 +101,7 @@ describe('design token import', () => {
     expect(node).toMatchObject({
       name: 'Heading/H1',
       fontSize: 32,
-      lineHeight: 40,
+      lineHeight: pixelLength(40),
       fontWeight: 700
     })
     expect(node?.boundVariables.fontFamily).toBe(variableNamed(graph, 'Font/Body').id)
@@ -210,7 +211,7 @@ describe('design token import', () => {
     importInto(graph, exported(source))
 
     const [style] = getSharedStyles(graph, 'text')
-    expect(graph.getNode(style.nodeId)).toMatchObject({ textCase: 'UPPER', lineHeight: 40 })
+    expect(graph.getNode(style.nodeId)).toMatchObject({ textCase: 'UPPER', lineHeight: pixelLength(40) })
   })
 
   test('an edited shadow takes the place of the exact one, and the blur keeps its own', () => {

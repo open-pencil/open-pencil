@@ -18,8 +18,17 @@ test('model editing keeps the Settings shell stable and isolates the form', asyn
   await expect(editor).toBeVisible()
   await expect(dialog.getByText('Chat', { exact: true })).not.toBeVisible()
   await expect(dialog.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0)
+  await expect(page.getByTestId('settings-breadcrumb')).toHaveText(/Settings\s*Models\s*Add model/)
   await expect(page.getByTestId('app-settings-done')).toHaveCount(0)
   expect(await dialog.boundingBox()).toEqual(before)
+
+  // An untouched form goes back through the breadcrumb without asking.
+  await page.getByTestId('settings-editor-back').click()
+  await expect(editor).toHaveCount(0)
+  await expect(page.getByRole('alertdialog')).toHaveCount(0)
+  await expect(page.getByTestId('settings-breadcrumb')).toHaveCount(0)
+  await page.getByTestId('settings-add-model').click()
+  await expect(editor).toBeVisible()
 
   // Accidental dismissal must not throw away an in-progress profile.
   await editor.getByRole('textbox', { name: 'Name', exact: true }).fill('Draft profile')

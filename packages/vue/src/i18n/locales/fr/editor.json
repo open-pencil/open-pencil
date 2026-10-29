@@ -8,6 +8,7 @@
   "arcSweep": "Balayage",
   "arcRatio": "Rapport",
   "stickyPlaceholder": "Écrivez ce que vous voulez, @mentionnez quelqu’un",
+  "connectorLabelPlaceholder": "Ajouter du texte",
   "showUI": "Afficher l’interface ({shortcut})",
   "previewing": "Aperçu",
   "resetPreview": "Réinitialiser",

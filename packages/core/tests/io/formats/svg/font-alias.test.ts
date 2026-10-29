@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import { renderNodesToSVG, type SVGTextLine } from '#core/io/formats/svg'
+import { renderNodesToSVG, type SVGFontRequest, type SVGTextLine } from '#core/io/formats/svg'
+import { fontManager } from '#core/text/fonts'
 
 const ALIASES: Record<string, string> = {
   'Inter\0Regular': 'EmbeddedFont0',
@@ -16,7 +17,7 @@ function exportText(props: Partial<SceneNode>, lines?: SVGTextLine[]): string {
   const svg = renderNodesToSVG(graph, pageId, [node.id], {
     xmlDeclaration: false,
     textLayout: lines ? () => lines : undefined,
-    fontAlias: (family, style) => ALIASES[`${family}\0${style}`] ?? null
+    fontAlias: ({ family, style }) => ALIASES[`${family}\0${style}`] ?? null
   })
   if (!svg) throw new Error('nothing exported')
   return svg
@@ -69,5 +70,48 @@ describe('SVG text with font aliases', () => {
     )
     expect(textTag(svg)).toContain('font-family="EmbeddedFont0"')
     expect(spanTags(svg)[1]).toContain('font-family="Inter"')
+  })
+
+  test('a fallback span names its face, at the weight the text around it is drawn at', async () => {
+    // Inter is variable, so its Bold is drawn at a weight axis value.
+    await fontManager.loadFont('Inter', 'Bold')
+    const requests: SVGFontRequest[] = []
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const node = graph.createNode('TEXT', pageId, {
+      text: 'Bold 中文',
+      fontFamily: 'Inter',
+      fontWeight: 700,
+      fontSize: 20,
+      width: 200,
+      height: 60
+    })
+    const fallback = { family: 'Noto Sans SC', style: 'Regular', file: 0 }
+    const line: SVGTextLine = {
+      start: 0,
+      end: 7,
+      x: 0,
+      y: 20,
+      width: 100,
+      fallbacks: new Map([
+        [5, fallback],
+        [6, fallback]
+      ])
+    }
+    const svg = renderNodesToSVG(graph, pageId, [node.id], {
+      xmlDeclaration: false,
+      textLayout: () => [line],
+      fontAlias: (font) => {
+        requests.push(font)
+        return `${font.family}/${font.style}`
+      }
+    })
+    expect(spanTags(svg ?? '').map((tag) => tag.match(/font-family="([^"]*)"/)?.[1])).toEqual([
+      undefined,
+      'Noto Sans SC/Regular'
+    ])
+    // The paragraph draws every font it falls back to at the axes of the text's own.
+    const request = requests.find((font) => font.family === 'Noto Sans SC')
+    expect(request?.variations).toContainEqual({ axis: 'wght', value: 700 })
   })
 })

@@ -37,7 +37,7 @@ test.beforeAll(async ({ browser }) => {
       fontFamily: 'Inter',
       fontSize: 30,
       fontWeight: 700,
-      lineHeight: 38,
+      lineHeight: { value: 38, unit: 'PIXELS' },
       sharedStyleType: 'TEXT',
       internalOnly: true
     })

@@ -1,0 +1,1 @@
+- Mermaid flowcharts open from `.mmd` and `.mermaid` files and paste onto the canvas as FigJam shapes, sections, and connectors laid out automatically, keeping their shapes, arrowheads, line styles, labels, and `classDef`/`style` colours; AI and MCP agents import them with `import_mermaid`.

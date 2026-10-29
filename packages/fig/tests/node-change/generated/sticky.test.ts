@@ -9,6 +9,7 @@ import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { createSticky, stickySublayers, STICKY_COLORS } from '@open-pencil/scene-graph/generated'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 const guid = (localID: number) => ({ sessionID: 0, localID })
 const slot = (localID: number) => ({ guids: [{ sessionID: 40_000_000, localID }] })
@@ -88,7 +89,7 @@ describe('sticky notes', () => {
       fontFamily: 'Inter',
       fontWeight: 500,
       fontSize: 24,
-      lineHeight: 36,
+      lineHeight: percentLength(150),
       x: 30,
       y: 30,
       width: 300,
@@ -134,8 +135,13 @@ describe('sticky notes', () => {
     expect(sticky.fills[0]?.color).toEqual(STICKY_COLORS.yellow)
     expect(sticky.effects).toHaveLength(3)
     const { body, author } = expectDefined(stickySublayers(reread, sticky))
-    expect(body).toMatchObject({ text: 'Hello', fontSize: 16, lineHeight: 24 })
-    expect(author).toMatchObject({ text: 'Grace', fontSize: 12, lineHeight: 16, visible: true })
+    expect(body).toMatchObject({ text: 'Hello', fontSize: 16, lineHeight: percentLength(150) })
+    expect(author).toMatchObject({
+      text: 'Grace',
+      fontSize: 12,
+      lineHeight: pixelLength(16),
+      visible: true
+    })
     expect(sticky).toMatchObject({ paddingLeft: 20, itemSpacing: 16, minHeight: 240 })
   })
 

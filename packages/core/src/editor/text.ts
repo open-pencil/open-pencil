@@ -9,9 +9,10 @@ import {
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import type { TextEditorState } from '#core/text/editor'
-import { hasGlyphOutlines } from '#core/text/opentype'
+import { hasGlyphOutlines } from '#core/text/font/glyphs'
 
 import { applyBoundTextEdit } from './components/authoring/text-edit'
+import { fitEmptyLabelToPlaceholder } from './connectors/label-edit'
 import { applyGeneratedTextNameEdit } from './text/name'
 import { pathTextEditChanges } from './text/path-edit'
 import {
@@ -107,6 +108,8 @@ function applyTextInstanceOverride(
 
 export function createTextActions(ctx: EditorContext) {
   let activeSession: TextEditSession | null = null
+  /** Puts back the size an empty connector label had before its placeholder sized it. */
+  let restoreEmptyLabel: (() => void) | null = null
   const variableBindings = createVariableBindingActions(ctx)
 
   /**
@@ -136,6 +139,7 @@ export function createTextActions(ctx: EditorContext) {
     if (!isPathTextEditable(node)) return
     activeSession = createTextEditSession(node)
     ctx.state.editingTextId = nodeId
+    restoreEmptyLabel = fitEmptyLabelToPlaceholder(ctx, node)
     if (te) {
       te.setRenderer(ctx.getRenderer())
       te.start(node)
@@ -219,9 +223,12 @@ export function createTextActions(ctx: EditorContext) {
 
   function commitTextEdit() {
     const te = ctx.getTextEditor()
+    const restore = restoreEmptyLabel
+    restoreEmptyLabel = null
     if (!te?.isActive) {
       ctx.state.editingTextId = null
       activeSession = null
+      restore?.()
       return
     }
     const textState = te.state
@@ -229,6 +236,7 @@ export function createTextActions(ctx: EditorContext) {
     te.stop()
     ctx.state.editingTextId = null
     activeSession = null
+    restore?.()
     ctx.requestRender()
   }
 
@@ -247,7 +255,16 @@ export function createTextActions(ctx: EditorContext) {
     recordTextEdit(textState)
     change()
     const node = ctx.graph.getNode(textState.nodeId)
-    if (!node) return
+    if (!node) {
+      // The change took the text away, such as an undo past the step that made it: the edit
+      // ends with it, recording nothing of a node that is gone.
+      te.stop()
+      ctx.state.editingTextId = null
+      activeSession = null
+      restoreEmptyLabel = null
+      ctx.requestRender()
+      return
+    }
     activeSession = createTextEditSession(node)
     te.syncToNode(node)
     ctx.requestRender()

@@ -1,3 +1,5 @@
+import { escapeUTF8 } from 'entities'
+
 export interface SVGNode {
   tag: string
   attrs: Record<string, string | number>
@@ -20,18 +22,10 @@ export function svg(
   }
 }
 
-function escapeAttr(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-}
-
-function escapeText(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
 function renderAttrs(attrs: Record<string, string | number>): string {
   const parts: string[] = []
   for (const [k, v] of Object.entries(attrs)) {
-    parts.push(`${k}="${escapeAttr(String(v))}"`)
+    parts.push(`${k}="${escapeUTF8(String(v))}"`)
   }
   return parts.length > 0 ? ' ' + parts.join(' ') : ''
 }
@@ -49,20 +43,20 @@ export function renderSVGNode(node: SVGNode, indent = 0): string {
 
   if (TEXT_CONTENT_TAGS.has(node.tag)) {
     const content = node.children
-      .map((child) => (typeof child === 'string' ? escapeText(child) : renderSVGNode(child)))
+      .map((child) => (typeof child === 'string' ? escapeUTF8(child) : renderSVGNode(child)))
       .join('')
     return `${pad}<${node.tag}${attrsStr}>${content}</${node.tag}>`
   }
 
   const hasOnlyText = node.children.length === 1 && typeof node.children[0] === 'string'
   if (hasOnlyText) {
-    return `${pad}<${node.tag}${attrsStr}>${escapeText(node.children[0] as string)}</${node.tag}>`
+    return `${pad}<${node.tag}${attrsStr}>${escapeUTF8(node.children[0] as string)}</${node.tag}>`
   }
 
   const lines = [`${pad}<${node.tag}${attrsStr}>`]
   for (const child of node.children) {
     if (typeof child === 'string') {
-      lines.push(`${'  '.repeat(indent + 1)}${escapeText(child)}`)
+      lines.push(`${'  '.repeat(indent + 1)}${escapeUTF8(child)}`)
     } else {
       lines.push(renderSVGNode(child, indent + 1))
     }

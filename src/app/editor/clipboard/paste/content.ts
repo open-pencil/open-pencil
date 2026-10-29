@@ -1,6 +1,10 @@
 import type { Editor } from '@open-pencil/core'
 import { isSVGMarkup } from '@open-pencil/core/io/formats/svg'
+import { detectMermaidDiagram } from '@open-pencil/mermaid'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { filesMessages } from '@open-pencil/vue/i18n'
+
+import { toast } from '@/app/shell/ui'
 
 import { matchingClipboardSnapshot } from '../memory'
 
@@ -35,4 +39,41 @@ export async function pasteSVGText(
   if (!isSVGMarkup(text)) return false
   const { x, y } = pastePoint(editor, cursorPos)
   return editor.pasteSVG(text, x, y)
+}
+
+/** Whether pasted text becomes layers of its own, as SVG markup and Mermaid diagrams do. */
+export function isLayerText(text: string): boolean {
+  return isSVGMarkup(text) || detectMermaidDiagram(text) !== null
+}
+
+/**
+ * Paste a Mermaid flowchart as FigJam layers laid out around the point; false when the text is
+ * not one. A flowchart Mermaid cannot read reports why, its first line being Mermaid's summary.
+ */
+export async function pasteMermaidText(
+  editor: Editor,
+  text: string,
+  cursorPos?: Vector
+): Promise<boolean> {
+  if (!detectMermaidDiagram(text)) return false
+  const { x, y } = pastePoint(editor, cursorPos)
+  try {
+    return await editor.pasteMermaid(text, x, y)
+  } catch (error) {
+    const reason = error instanceof Error ? (error.message.split('\n')[0] ?? '') : ''
+    toast.error(filesMessages.get().mermaidPasteFailed({ error: reason }))
+    return true
+  }
+}
+
+/** Paste text that becomes layers of its own; false for any other text. */
+export async function pasteLayerText(
+  editor: Editor,
+  text: string,
+  cursorPos?: Vector
+): Promise<boolean> {
+  return (
+    (await pasteSVGText(editor, text, cursorPos)) ||
+    (await pasteMermaidText(editor, text, cursorPos))
+  )
 }

@@ -66,7 +66,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
  * builds that sync the layer tree or variables differently, or encode what they send
  * differently, never join each other's rooms; change it with either.
  */
-export const COLLAB_APP_ID = 'openpencil/6'
+export const COLLAB_APP_ID = 'openpencil/7'
 
 // 32 base36 characters provide roughly 165 bits of entropy. The room ID is a
 // bearer credential and must resist offline enumeration from public signaling topics.

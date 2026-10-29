@@ -28,7 +28,22 @@ export function useLibraryManager(
   const showAllPages = ref(false)
   const applying = ref<string | null>(null)
   const updateGroups = ref<LibraryAssetUpdateGroup[]>([])
+  /**
+   * Whether this opening's first read has finished. The dialog shows once it has, so it never
+   * opens on the previous opening's updates, or on none, and then fills in.
+   */
+  const ready = ref(false)
   let requestId = 0
+  watch(
+    open,
+    (isOpen) => {
+      if (!isOpen) return
+      ready.value = false
+      // A read still running from before this opening must not mark it ready.
+      requestId++
+    },
+    { flush: 'sync' }
+  )
   const visibleUpdateGroups = computed(() =>
     scopeLibraryUpdateGroups(editor, updateGroups.value, showAllPages.value)
   )
@@ -36,16 +51,23 @@ export function useLibraryManager(
   async function refresh() {
     const request = ++requestId
     loading.value = true
+    let read = false
     try {
       await service.refresh(editor)
       const groups = await service.getUpdateGroups(editor)
       if (request === requestId) updateGroups.value = groups
+      read = true
     } catch (cause) {
       if (request === requestId) {
         toast.error(notificationMessages.get().operationFailed({ error: errorDetail(cause) }))
       }
     } finally {
-      if (request === requestId) loading.value = false
+      if (request === requestId) {
+        loading.value = false
+        // A first read that failed has nothing current to show, so the dialog does not open.
+        if (read || ready.value) ready.value = true
+        else open.value = false
+      }
     }
   }
 
@@ -142,6 +164,7 @@ export function useLibraryManager(
   return {
     section,
     loading,
+    ready,
     showAllPages,
     applying,
     visibleUpdateGroups,

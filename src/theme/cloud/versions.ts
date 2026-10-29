@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** Version history in the right sidebar: the document's versions on a timeline, as in Figma. */
-export const cloudVersions = tv({
+export default {
   slots: {
     panel: 'flex min-h-0 flex-1 flex-col',
     list: 'scrollbar-thin min-h-0 flex-1 overflow-y-auto py-1',
@@ -27,4 +25,4 @@ export const cloudVersions = tv({
     form: 'flex flex-col gap-3',
     label: 'sr-only'
   }
-})
+} as const

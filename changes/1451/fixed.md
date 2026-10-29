@@ -1,0 +1,1 @@
+- Text whose first line has a line height of its own keeps the text's line height when a `.fig` file is reopened, instead of taking the first line's.

@@ -13,9 +13,9 @@ import {
   rgbaToOkHCL
 } from '@open-pencil/scene-graph/color'
 
-import { solidFill, solidStroke } from '#tests/engine/figma/api/helpers'
 import { expectDefined } from '#tests/helpers/assert'
 import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
+import { solidFill } from '#tests/helpers/plugin-api'
 
 describe('OkHCL metadata', () => {
   test('applies rgba rendering color while preserving fill metadata', () => {
@@ -27,7 +27,9 @@ describe('OkHCL metadata', () => {
 
     openpencil.setFillOkHCL(frame, { h: 240, c: 0.12, l: 0.7, a: 0.8 })
 
-    expect(frame.fills[0]?.color).toEqual(okhclToRGBA({ h: 240, c: 0.12, l: 0.7, a: 0.8 }))
+    // The plugin API reads the alpha as the paint's opacity, as Figma does.
+    const { a: alpha, ...fillColor } = okhclToRGBA({ h: 240, c: 0.12, l: 0.7, a: 0.8 })
+    expect(frame.fills[0]).toMatchObject({ color: fillColor, opacity: alpha })
     expect(openpencil.getFillOkHCL(frame)).toMatchObject({
       version: 1,
       kind: 'fill',
@@ -41,11 +43,14 @@ describe('OkHCL metadata', () => {
     const api = new FigmaAPI(graph)
     const openpencil = new OpenPencilAPI(api)
     const frame = api.createFrame()
-    frame.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 1, align: 'INSIDE' })]
+    frame.strokes = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+    frame.strokeWeight = 1
+    frame.strokeAlign = 'INSIDE'
 
     openpencil.setStrokeOkHCL(frame, { h: 20, c: 0.08, l: 0.6 })
 
-    expect(frame.strokes[0]?.color).toEqual(okhclToRGBA({ h: 20, c: 0.08, l: 0.6 }))
+    const { a: alpha, ...strokeColor } = okhclToRGBA({ h: 20, c: 0.08, l: 0.6 })
+    expect(frame.strokes[0]).toMatchObject({ color: strokeColor, opacity: alpha })
     expect(openpencil.getStrokeOkHCL(frame)).toMatchObject({
       version: 1,
       kind: 'stroke',
@@ -72,7 +77,9 @@ describe('OkHCL metadata', () => {
     const frame = api.createFrame()
     frame.name = 'OKHCL frame'
     frame.fills = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
-    frame.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 1, align: 'INSIDE' })]
+    frame.strokes = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+    frame.strokeWeight = 1
+    frame.strokeAlign = 'INSIDE'
     openpencil.setFillOkHCL(frame, { h: 210, c: 0.1, l: 0.65 })
     openpencil.setStrokeOkHCL(frame, { h: 320, c: 0.09, l: 0.55, a: 0.9 })
 

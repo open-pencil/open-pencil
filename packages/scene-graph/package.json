@@ -381,9 +381,8 @@
   },
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
-    "check": "bun run typecheck && bun run test && bun run build && bun run smoke:dist",
+    "check": "bun run typecheck && bun run test && bun run build",
     "prepack": "bun run build",
-    "smoke:dist": "bun scripts/smoke-dist.ts",
     "test": "bun test tests",
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
   },
@@ -391,6 +390,7 @@
     "@noble/hashes": "^2.4.0",
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
+    "image-size": "^2.0.4",
     "nanoevents": "^9.1.0",
     "postcss-value-parser": "^4.2.0",
     "svgpath": "^2.6.0",

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { useDesignCheckMessages, useI18n } from '@open-pencil/vue/i18n'
@@ -9,7 +10,7 @@ import { isVersionHistoryOpen } from '@/app/cloud/integration'
 import { useEditorStore } from '@/app/editor/active-store'
 import { countIssues } from '@/app/editor/design-check/issues'
 import { CloudVersionHistory } from '@/components/cloud/integration'
-import { propertiesTabs } from '@/theme/panel/properties-tabs'
+import propertiesTabsTheme from '@/theme/panel/properties-tabs'
 
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
@@ -17,6 +18,8 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+
+const propertiesTabs = tv(propertiesTabsTheme)
 
 const { activeTab } = useAIChat()
 const { panels } = useI18n()

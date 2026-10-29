@@ -5,6 +5,9 @@ on:
     branches: [master]
     paths:
       - packages/feedback/**
+      # The waitlist's email layout, which Cloud's email module shares with the Worker.
+      - packages/cloud/src/email/**
+      - packages/cloud/src/contract/**
       # The metrics dashboard page the Worker serves under /admin. Its bundle is built from the
       # app's src/ (views, components, theme, styles, and the build target in
       # src/app/shell/support) and this package, so any change there redeploys it.

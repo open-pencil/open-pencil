@@ -1,9 +1,7 @@
-import { tv } from 'tailwind-variants'
-
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
-export const designCheck = tv({
+export const designCheckTheme = {
   slots: {
     root: 'flex min-h-0 flex-1 flex-col',
     toolbar: 'flex shrink-0 flex-col gap-2 border-b border-border px-3 pt-2 pb-2',
@@ -40,10 +38,10 @@ export const designCheck = tv({
     swatch: 'size-2.5 shrink-0 rounded-[3px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]',
     more: 'mb-1 ml-6'
   }
-})
+} as const
 
 /** The Layers panel mark: a severity icon on a layer, a dot on a collapsed layer holding issues. */
-export const layerIssueMark = tv({
+export const layerIssueMarkTheme = {
   slots: {
     root: 'flex size-4 shrink-0 items-center justify-center',
     dot: 'size-1.5 rounded-full'
@@ -55,10 +53,10 @@ export const layerIssueMark = tv({
       info: { dot: 'bg-muted' }
     }
   }
-})
+} as const
 
 /** The page list badge: the count of errors and warnings, in the most severe color. */
-export const pageIssueBadge = tv({
+export const pageIssueBadgeTheme = {
   base: 'flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full px-1 text-[9px] leading-none font-semibold tabular-nums',
   variants: {
     severity: {
@@ -66,9 +64,9 @@ export const pageIssueBadge = tv({
       warning: 'bg-warning text-panel'
     }
   }
-})
+} as const
 
-export const issueTooltip = tv({
+export const issueTooltipTheme = {
   slots: {
     content: [
       'pointer-events-none z-50 w-64 py-1.5 text-[11px]',
@@ -86,4 +84,4 @@ export const issueTooltip = tv({
     more: 'px-2.5 py-1 pl-7 text-muted',
     hint: 'mt-1 border-t border-border px-2.5 pt-1.5 text-muted'
   }
-})
+} as const

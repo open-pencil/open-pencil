@@ -49,6 +49,22 @@
         "role": "Editor",
         "mimeType": "application/x-figma",
         "rank": "Alternate"
+      },
+      {
+        "ext": ["drawio", "dio"],
+        "name": "draw.io Diagram",
+        "description": "draw.io diagram",
+        "role": "Editor",
+        "mimeType": "application/vnd.jgraph.mxfile",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["mmd", "mermaid"],
+        "name": "Mermaid Diagram",
+        "description": "Mermaid diagram",
+        "role": "Viewer",
+        "mimeType": "text/vnd.mermaid",
+        "rank": "Alternate"
       }
     ],
     "linux": {

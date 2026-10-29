@@ -5,7 +5,6 @@ export type StorageDiagnosticOperation = 'upload' | 'download' | 'delete' | 'lis
 export function storageOperationForJob(type: OutboxJobType): StorageDiagnosticOperation {
   switch (type) {
     case 'putCanvas':
-    case 'putThumb':
       return 'upload'
     case 'deleteCanvas':
       return 'delete'

@@ -1,0 +1,1 @@
+- `arrange` spreads overlapping layers apart by default instead of placing them in a grid; pass `mode: "grid"` for the grid.

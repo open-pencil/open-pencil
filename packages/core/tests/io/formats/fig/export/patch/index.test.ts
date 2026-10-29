@@ -375,6 +375,15 @@ describe('writing an edited document into its archive', () => {
     })
   })
 
+  test('keeps a change to the libraries the document enables', async () => {
+    const binding = { libraryId: 'ds', revisionId: 'two', enabled: true }
+    const { patched } = await exportBothWays((graph) => {
+      graph.enabledLibraries.set('ds', binding)
+    })
+    const reopened = await open(patched)
+    expect(reopened.enabledLibraries.get('ds')).toEqual(binding)
+  })
+
   test('keeps every archive record its own when a new variable takes an ID it uses', async () => {
     const bytes = await fixtureBytes()
     const graph = await open(bytes)
@@ -408,7 +417,8 @@ describe('writing an edited document into its archive', () => {
     const before = recordsOf(bytes)
     const after = recordsOf(patched)
     expect([...after.keys()].toSorted()).toEqual([...before.keys()].toSorted())
-    for (const [guid, record] of before) expect(after.get(guid)?.parentIndex).toEqual(record.parentIndex)
+    for (const [guid, record] of before)
+      expect(after.get(guid)?.parentIndex).toEqual(record.parentIndex)
   })
 
   test('keeps layers on unopened pages bound to a variable whose value changes', async () => {

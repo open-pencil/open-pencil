@@ -1,0 +1,2 @@
+- `SceneNode.lineHeight` and `letterSpacing`, and the same style run fields, are `{ value, unit }` objects in pixels or percent; documents and rooms saved with the old numbers are not converted.
+- The plugin API reads and takes paints in Figma's shape, so image paints use `scaleMode`, `rotation`, and `scalingFactor` instead of `imageScaleMode`, and strokes refuse geometry keys such as `weight` or `align`, which belong on the node.

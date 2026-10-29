@@ -227,7 +227,41 @@ const noCoreFrameworkImports = createImportSourceRule({
     `@open-pencil/core must stay framework-agnostic; do not import '${source}'.`
 })
 
+/**
+ * An edit records what it changed through `recordEdit` or `recordEditAsync`, which push its undo
+ * step when the document's unsaved state expects it; capturing a change by hand elsewhere is how
+ * an edit's step came to land after an await and left undone documents unsaved.
+ */
+const noDocumentChangeCapture: RuleDefinition = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow captureDocumentChange outside core editor history — record edits with recordEdit or recordEditAsync'
+    },
+    schema: []
+  },
+  create(context: RuleContext) {
+    const file = normalizedFilename(context)
+    // The history module owns the capture, and its tests exercise it directly.
+    if (!file.includes('/src/') || file.includes('/packages/core/src/editor/history/')) return {}
+    return {
+      ImportSpecifier(node) {
+        const imported =
+          node.imported.type === 'Identifier' ? node.imported.name : node.imported.value
+        if (imported !== 'captureDocumentChange') return
+        context.report({
+          node,
+          message:
+            'Record the edit with recordEdit or recordEditAsync instead of capturing a document change by hand.'
+        })
+      }
+    }
+  }
+}
+
 export {
+  noDocumentChangeCapture,
   noVueSelfPackageImports,
   noCrossPackageSourceImports,
   noDeepParentRelativeImports,

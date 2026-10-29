@@ -12,7 +12,7 @@ import { randomIndex } from '@open-pencil/scene-graph/random'
  * name, the move clock, and the tree format. The document node's plugin data, comments,
  * libraries, and settings live in their own maps (`src/app/collab/document/sync.ts`).
  */
-export const TREE_FORMAT = 4
+export const TREE_FORMAT = 5
 export const PARENTS_FIELD = 'parents'
 export const ORDER_KEY_FIELD = 'orderKey'
 export const PAGE_FIELD = 'page'

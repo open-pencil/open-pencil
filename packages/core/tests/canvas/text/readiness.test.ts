@@ -15,10 +15,10 @@ import { fontManager } from '#core/text/fonts'
 describe('text readiness with characters no font has', () => {
   beforeAll(async () => {
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   test('draws the text with the fonts it has', async () => {

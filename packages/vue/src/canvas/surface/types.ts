@@ -43,6 +43,11 @@ export interface UseCanvasOptions {
    */
   onReady?: () => void
   /**
+   * Called instead of `onReady` when the surface cannot start, as when CanvasKit fails to
+   * load. Without it the failure is left unhandled.
+   */
+  onFailed?: (error: unknown) => void
+  /**
    * Reports the color space the canvas actually presents, including fallbacks, or null
    * when no surface could be configured.
    */

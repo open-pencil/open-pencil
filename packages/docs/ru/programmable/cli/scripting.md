@@ -140,7 +140,7 @@ API намеренно близок к Figma Plugin API, но работает �
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` ничего не делает, поскольку OpenPencil не блокирует изменение текста до загрузки шрифта плагином
+- `figma.loadFontAsync(fontName)` загружает шрифт; как в Figma, изменить текст, его размер или шрифт можно только после загрузки шрифтов, которые он использует
 - `figma.listAvailableFontsAsync()` возвращает доступные системные шрифты
 - `figma.notify(message)` записывает предупреждение в режиме без интерфейса
 - `figma.viewport`

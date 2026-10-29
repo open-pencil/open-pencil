@@ -18,9 +18,9 @@ import { characterFamily, laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/
 import { getCanvasKit } from '#core/canvaskit'
 import { shownText } from '#core/text/case'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
+import type { OutlineCommand } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/fonts'
 import { nextGraphemeBoundary } from '#core/text/graphemes'
-import type { OutlineCommand } from '#core/text/opentype'
 
 /**
  * Whether saved glyphs could stand for this text: case changes that alter its length move

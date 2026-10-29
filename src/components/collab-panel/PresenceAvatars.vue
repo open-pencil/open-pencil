@@ -9,6 +9,7 @@ import {
   PopoverRoot,
   PopoverTrigger
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -18,7 +19,9 @@ import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 import PresenceList from '@/components/presence/PresenceList.vue'
 import { isFollowing, type PresencePersonRow } from '@/components/presence/rows'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { presenceAvatars } from '@/theme/collaboration/presence-avatars'
+import presenceAvatarsTheme from '@/theme/collaboration/presence-avatars'
+
+const presenceAvatars = tv(presenceAvatarsTheme)
 
 /** How many collaborators the stack shows besides you before "+N". */
 const MAX_PEERS = 3

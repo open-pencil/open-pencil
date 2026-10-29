@@ -4,7 +4,9 @@ import {
   type FigmaClipboardAssetType
 } from '@open-pencil/fig/clipboard'
 import {
+  figmaLineHeight,
   placeSlotContent,
+  relinkConnectorEnds,
   type FigNodeChangeExportRuntime,
   sceneNodeToKiwi,
   makeDocumentNodeChange,
@@ -230,6 +232,8 @@ async function writeFigmaClipboardHTML(
   ).length
   placeSlotContent(slotContentRecords, dependencyCanvas, written, fractionalPosition)
   nodeChanges.push(...slotContentRecords)
+  // A connector copied before a layer its end joins is joined to it now that both have GUIDs.
+  relinkConnectorEnds(nodeChanges, graph, nodeIdToGuid)
   // Pair each text record with the node it was written from; instance content and slot
   // content are not emitted in traversal order.
   const textById = new Map(exportedTextNodes.map((node) => [node.id, node]))
@@ -242,10 +246,7 @@ async function writeFigmaClipboardHTML(
     if (change.type !== 'TEXT' || !change.guid) continue
     const source = sourceByGuid.get(`${change.guid.sessionID}:${change.guid.localID}`)
     if (!source) continue
-    change.lineHeight = {
-      value: source.lineHeight ?? 100,
-      units: source.lineHeight ? 'PIXELS' : 'PERCENT'
-    }
+    change.lineHeight = figmaLineHeight(source.lineHeight)
   }
   embedClipboardImages(nodeChanges, blobs, graph.images)
   return encodeFigmaClipboard(nodeChanges, blobs, randomInt(), assetType)

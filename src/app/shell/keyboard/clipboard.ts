@@ -1,12 +1,16 @@
 import { useEventListener } from '@vueuse/core'
 
-import { isSVGMarkup } from '@open-pencil/core/io/formats/svg'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue/canvas/drop'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
 import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
-import { pasteClipboardHTML, pastePoint, pasteSVGText } from '@/app/editor/clipboard/paste/content'
+import {
+  isLayerText,
+  pasteClipboardHTML,
+  pasteLayerText,
+  pastePoint
+} from '@/app/editor/clipboard/paste/content'
 import { browserSystemClipboard } from '@/app/editor/clipboard/system/browser'
 import { tauriSystemClipboard } from '@/app/editor/clipboard/system/tauri'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
@@ -86,8 +90,8 @@ export function bindEditorClipboard(store: EditorStore) {
     }
 
     const text = e.clipboardData?.getData('text/plain') ?? ''
-    if (isSVGMarkup(text)) {
-      void pasteSVGText(store, text, cursorPos)
+    if (isLayerText(text)) {
+      void pasteLayerText(store, text, cursorPos)
       return
     }
 

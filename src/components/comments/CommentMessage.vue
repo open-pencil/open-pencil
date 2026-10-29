@@ -3,10 +3,10 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
-import { comments } from '@/theme/comments'
 
 import { useCommentAuthor } from './author'
 import CommentTime from './CommentTime.vue'
+import { comments } from './ui'
 
 /** One message of a thread: who wrote it, when, and what. */
 const { author, color, at, text } = defineProps<{

@@ -1,9 +1,10 @@
 import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
-import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph, SceneNode, TextLength } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
 
 import { tryParseFigmaEffects } from '#core/figma-api/effects'
 import {
@@ -44,8 +45,8 @@ const ownTextSchema = v.object({
     fontWeight: v.number(),
     italic: v.boolean(),
     fontSize: v.number(),
-    lineHeight: v.nullable(v.number()),
-    letterSpacing: v.number(),
+    lineHeight: v.nullable(textLengthSchema),
+    letterSpacing: textLengthSchema,
     textDecoration: v.picklist(['NONE', 'UNDERLINE', 'STRIKETHROUGH']),
     textCase: v.picklist(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
   }),
@@ -99,6 +100,12 @@ function textFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | nu
   return fields && own ? { ...own.text, ...fields } : fields
 }
 
+/** A token's line height: a multiple of the font size follows it as a percent, pixels stay. */
+function tokenLineHeight(multiplier: number | null, pixels: number | null): TextLength | null {
+  if (multiplier !== null) return percentLength(multiplier * 100)
+  return pixels === null ? null : pixelLength(pixels)
+}
+
 function decodedTextFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
   if (!isPlainObject(token.value)) return null
   const value = token.value
@@ -113,8 +120,9 @@ function decodedTextFields(token: ReadToken, resolve: Resolve): Partial<SceneNod
     fontFamily,
     fontSize,
     fontWeight: fieldValue(value.fontWeight, resolve, decodeFontWeight) ?? 400,
-    lineHeight: multiplier !== null ? multiplier * fontSize : lineHeightPx,
-    letterSpacing: fieldValue(value.letterSpacing, resolve, pixels) ?? 0
+    // A unitless line height is a multiple of the font size, which follows the size as a percent.
+    lineHeight: tokenLineHeight(multiplier, lineHeightPx),
+    letterSpacing: pixelLength(fieldValue(value.letterSpacing, resolve, pixels) ?? 0)
   }
 }
 

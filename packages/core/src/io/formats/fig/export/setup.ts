@@ -30,7 +30,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { applyDocumentPluginData } from '#core/io/formats/fig/document-metadata'
-import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
+import { figThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/serialize'
 
@@ -116,8 +116,8 @@ function ownGuid(
   sourceOwners: ReadonlyMap<string, string>,
   assignedGuidValues: ReadonlySet<string>
 ): GUID | null {
-  if (!/^\d+:\d+$/.test(id)) return null
-  const guid = stringToGuid(id)
+  const guid = parseGuidOrNull(id)
+  if (!guid) return null
   const key = `${guid.sessionID}:${guid.localID}`
   const owner = sourceOwners.get(key)
   return (owner !== undefined && owner !== id) || assignedGuidValues.has(key) ? null : guid
@@ -161,9 +161,8 @@ export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly s
   }
   let last = 0
   for (const id of ids) {
-    if (!/^\d+:\d+$/.test(id)) continue
-    const guid = stringToGuid(id)
-    if (guid.sessionID <= 1) last = Math.max(last, guid.localID)
+    const guid = parseGuidOrNull(id)
+    if (guid && guid.sessionID <= 1) last = Math.max(last, guid.localID)
   }
   return last + 1
 }
@@ -550,7 +549,8 @@ export async function figFileExtras(
   imageNames: ReadonlyMap<string, string>,
   options: FigFileExtrasOptions
 ): Promise<FigFileExtras> {
-  const thumbnailPageId = options.pageId ?? findFigThumbnailPageId(graph.getPages(true))
+  // Internal pages hold library data, not anything a person drew, so the thumbnail skips them.
+  const thumbnailPageId = options.pageId ?? figThumbnailPageId(graph.getPages())
   const thumbnail = await renderFigThumbnail(graph, thumbnailPageId, options)
   const metaJSON = figArchiveMetaJSON({
     fileName: options.documentName || UNTITLED_FILE_NAME,

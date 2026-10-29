@@ -79,24 +79,20 @@ async function saveDiagnostics() {
     <template #title>{{ diagnosticMessages.title }}</template>
     <template #description>{{ diagnosticMessages.description }}</template>
     <SettingsGroup>
-      <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-        <span
-          ><span class="block text-xs text-surface">{{ diagnosticMessages.localDiagnostics }}</span
-          ><span class="block text-[10px] text-muted">{{
-            diagnosticMessages.localDiagnosticsDescription
-          }}</span></span
-        >
+      <SettingsRow
+        as="label"
+        :label="diagnosticMessages.localDiagnostics"
+        :description="diagnosticMessages.localDiagnosticsDescription"
+      >
         <AppSwitch v-model="diagnosticsEnabled" :label="diagnosticMessages.localDiagnostics" />
-      </label>
-      <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-        <span
-          ><span class="block text-xs text-surface">{{ diagnosticMessages.usageHistory }}</span
-          ><span v-if="usageEnabled" class="block text-[10px] text-muted">{{
-            diagnosticMessages.usageHistoryDescription
-          }}</span></span
-        >
+      </SettingsRow>
+      <SettingsRow
+        as="label"
+        :label="diagnosticMessages.usageHistory"
+        :description="usageEnabled ? diagnosticMessages.usageHistoryDescription : undefined"
+      >
         <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
-      </label>
+      </SettingsRow>
       <SettingsRow
         :label="diagnosticMessages.retention"
         :description="diagnosticMessages.retentionDescription"

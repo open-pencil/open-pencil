@@ -1,5 +1,7 @@
 import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
+import { paintBindingTarget } from '../variables/fields'
+import { overriddenBindingField } from './overrides'
 
 /**
  * The main component an instance shows. An instance nested in another instance points at the
@@ -23,8 +25,10 @@ export function ownsSelfFillField(target: SceneNode, field: string): boolean {
   const own = target.instanceOverrides.self
   if (field === 'fills' || field === 'fillStyleId') return own.has(field) || own.has('fills')
   // A paint the layer set itself owns its bindings too, bound or not.
+  const binding = overriddenBindingField(field)
   return (
-    field.startsWith('boundVariables/fills/') &&
+    binding !== null &&
+    paintBindingTarget(binding)?.list === 'fills' &&
     (own.has(field) || own.has('boundVariables') || own.has('fills'))
   )
 }

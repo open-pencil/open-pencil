@@ -96,14 +96,17 @@
     {
       "node": "P Icon weights",
       "penNodeId": "MOmt0",
-      "maximumDifferentPercent": 0.24,
-      "note": "Google's static Material Symbols faces for weights 100 and 200 both declare weight class 250, and the renderer picks a family's face by it, so with both loaded 200 draws as 100."
+      "maximumDifferentPercent": 0.05
     },
     {
       "node": "P Icon variables",
       "penNodeId": "alRyT",
-      "maximumDifferentPercent": 0.19,
-      "note": "Google's static Material Symbols faces for weights 100 and 200 both declare weight class 250, and the renderer picks a family's face by it, so with both loaded 200 draws as 100."
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Sized paths",
+      "penNodeId": "dqtl8",
+      "maximumDifferentPercent": 0.05
     }
   ]
 }

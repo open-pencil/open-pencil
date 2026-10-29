@@ -1,12 +1,18 @@
 import { expect, test } from 'bun:test'
 
+import { computed, effectScope } from 'vue'
+
 import { createEditor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { fontManager } from '@open-pencil/core/text'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createDocumentChanges } from '@/app/document/io/changes'
+
+import { createTypographyActions } from '#vue/controls/typography/actions'
+import { createTypographyAxes } from '#vue/controls/typography/axes'
 
 test('repainting and selection do not dirty a document; content mutations do', () => {
   const editor = createEditor()
@@ -214,4 +220,84 @@ test('an edit made after undoing past the save leaves the saved state out of rea
     await settle()
     expect(changes.hasUnsavedChanges()).toBe(true)
   })
+})
+
+test('undoing every arrange command returns a document to saved', async () => {
+  const editor = createEditor()
+  const changes = createDocumentChanges(editor)
+  try {
+    const ids = [0, 20, 40].map(
+      (x) =>
+        editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+          x,
+          y: x / 2,
+          width: 100,
+          height: 70
+        }).id
+    )
+    changes.markSaved()
+    await editor.arrangeNodes(ids, { layout: 'spread' })
+    editor.tidyNodes(ids)
+    editor.packNodes(ids, 'horizontal')
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+
+    editor.undo.undo()
+    editor.undo.undo()
+    editor.undo.undo()
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  } finally {
+    changes.dispose()
+    editor.dispose()
+  }
+})
+
+test('a dragged typography field undone back leaves the document saved', async () => {
+  await fontManager.loadFont('Inter', 'Regular')
+  const editor = createEditor()
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'a',
+    fontFamily: 'Inter'
+  })
+  const changes = createDocumentChanges(editor)
+  const scope = effectScope()
+  const nodes = computed(() => [editor.graph.getNode(text.id) ?? text])
+  const controls = scope.run(() => ({
+    actions: createTypographyActions({
+      editor,
+      nodes,
+      activeFormatting: computed(() => []),
+      supports: () => true,
+      options: {}
+    }),
+    axes: createTypographyAxes(editor, nodes)
+  }))
+  if (!controls) throw new Error('Expected the typography controls')
+  // Each drag step previews in a task of its own, as pointer moves do.
+  const nextTask = () =>
+    new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+  try {
+    changes.markSaved()
+    controls.actions.updateProp('fontSize', 20)
+    await nextTask()
+    controls.actions.updateProp('fontSize', 24)
+    await nextTask()
+    controls.actions.commitProp('fontSize', 24, 14)
+    controls.axes.previewAxis('wght', 500)
+    await nextTask()
+    controls.axes.setAxis('wght', 600)
+    await nextTask()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+    editor.undoAction()
+    editor.undoAction()
+    await nextTask()
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  } finally {
+    scope.stop()
+    changes.dispose()
+    editor.dispose()
+  }
 })

@@ -69,11 +69,11 @@ export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCa
       throw new CloudPortalAPIError('network', undefined, { cause })
     }
     if (response.status === 401) throw new CloudPortalAPIError('authentication-required')
-    if (response.status === 403) throw new CloudPortalAPIError('authorization-required')
     let body: unknown
     try {
       body = await response.json()
     } catch (cause) {
+      if (response.status === 403) throw new CloudPortalAPIError('authorization-required')
       throw new CloudPortalAPIError('protocol', undefined, { cause })
     }
     if (!response.ok) {
@@ -82,6 +82,11 @@ export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCa
       let code: AdminErrorCode | AccountSecurityErrorCode | undefined
       if (accountError.success) code = accountError.output.error.code
       else if (adminError.success) code = adminError.output.error.code
+      // A refusal that says why, such as a session that must sign in again, is the domain's;
+      // a bare or plain `forbidden` one is a missing permission.
+      if (response.status === 403 && (!code || code === 'forbidden')) {
+        throw new CloudPortalAPIError('authorization-required')
+      }
       throw new CloudPortalAPIError('domain', code)
     }
     const parsed = v.safeParse(schema, body)

@@ -1,0 +1,1 @@
+- Leaving a model you haven't changed no longer asks to discard changes.

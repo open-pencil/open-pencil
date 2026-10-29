@@ -8,11 +8,7 @@ const shared = {
   outDir: './dist',
   treeshake: { moduleSideEffects: false },
   outputOptions: { minifyInternalExports: false },
-  deps: {
-    neverBundle: [/^node:/],
-    // Dependencies stay imports, except the shared email layout, which ships as source.
-    alwaysBundle: [/^@open-pencil\/feedback\//]
-  }
+  deps: { neverBundle: [/^node:/] }
 }
 
 export default defineConfig([
@@ -43,7 +39,12 @@ export default defineConfig([
   {
     ...shared,
     name: 'node',
-    entry: { 'runtime-node': './src/runtime/node/index.ts' },
+    entry: {
+      'runtime-node': './src/runtime/node/index.ts',
+      // The package's commands, `openpencil-cloud` and `openpencil-ai-relay`.
+      'bin/server': './src/runtime/node/main.ts',
+      'bin/ai-relay': './src/runtime/node/ai-relay/main.ts'
+    },
     platform: 'node',
     clean: false
   }

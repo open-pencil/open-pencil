@@ -15,6 +15,7 @@ import {
 import { resolveFigmaClipboardImages } from '@/app/editor/clipboard/figma-images'
 import { bindClipboardNotifications } from '@/app/editor/clipboard/notifications'
 import { loadFont } from '@/app/editor/fonts'
+import { appIcons } from '@/app/editor/icons/provider'
 import { createRecentPages } from '@/app/editor/pages/recent'
 import { createCanvasPaneRegistry } from '@/app/editor/panes/registry'
 import { createEditorPreparationController } from '@/app/editor/preparation/controller'
@@ -49,6 +50,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     graph,
     state,
     loadFont,
+    icons: appIcons,
     shaderRasterizer: createShaderRasterizer(),
     resolveFigmaClipboardImages: IS_TAURI ? resolveFigmaClipboardImages : undefined,
     skipInitialGraphSetup: !!initialGraph,

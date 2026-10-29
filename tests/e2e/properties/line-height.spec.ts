@@ -34,7 +34,7 @@ test('automatic line height survives focus and can be restored with undo', async
     .poll(() =>
       page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.lineHeight, id)
     )
-    .toBe(32)
+    .toEqual({ value: 32, unit: 'PIXELS' })
   await page.getByRole('combobox', { name: 'Line height mode' }).click()
   await page.getByRole('option', { name: 'Auto', exact: true }).click()
   await expect(field).toContainText('Auto')
@@ -44,7 +44,7 @@ test('automatic line height survives focus and can be restored with undo', async
     .poll(() =>
       page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.lineHeight, id)
     )
-    .toBe(32)
+    .toEqual({ value: 32, unit: 'PIXELS' })
   await field.getByRole('button', { name: 'Apply variable' }).click()
   await page.getByRole('button', { name: 'Create number variable from 32', exact: true }).click()
   await page.getByPlaceholder('Variable name').fill('Typography/Line height/Body')

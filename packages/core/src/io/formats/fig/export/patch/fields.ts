@@ -48,6 +48,9 @@ function archivedGraph(source: SceneGraph, baseline: ArchiveBaseline): SceneGrap
   )
   graph.variableCollections = new Map(structuredClone(baseline.collections.collections))
   graph.activeMode = new Map(baseline.collections.activeMode)
+  // The document record compares with the settings the archive saved, as the layers do.
+  graph.documentColorSpace = baseline.settings.colorSpace
+  graph.enabledLibraries = new Map(structuredClone(baseline.settings.libraries))
   return graph
 }
 

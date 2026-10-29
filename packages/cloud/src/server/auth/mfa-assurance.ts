@@ -16,7 +16,7 @@ export function createMFAAssuranceService(
       method: 'totp' | 'recovery-code' | 'passkey'
     }): Promise<void> {
       await database
-        .insertInto('cloudMfaAssurance')
+        .insertInto('mfaAssurance')
         .values({ ...input, verifiedAt: new Date() })
         .onConflict((conflict) =>
           conflict.column('sessionId').doUpdateSet({ method: input.method, verifiedAt: new Date() })
@@ -31,7 +31,7 @@ export function createMFAAssuranceService(
       passkeyCount: number
     }): Promise<CloudMFAStatus> {
       const assurance = await database
-        .selectFrom('cloudMfaAssurance')
+        .selectFrom('mfaAssurance')
         .select('verifiedAt')
         .where('sessionId', '=', input.sessionId)
         .where('userId', '=', input.userId)

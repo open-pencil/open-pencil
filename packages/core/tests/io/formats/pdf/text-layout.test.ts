@@ -3,6 +3,7 @@ import { beforeAll, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { withPDFTextLayout } from '#core/io/formats/pdf/prepare'
 import { renderNodesToSVG } from '#core/io/formats/svg'
@@ -11,8 +12,8 @@ import { fontManager } from '#core/text/fonts'
 const SENTENCE = 'A sentence long enough that it has to wrap onto a second line.'
 
 beforeAll(async () => {
-  const inter = expectDefined(await fontManager.fetchBundledFont('/Inter-Regular.ttf'), 'Inter')
-  fontManager.markLoaded('Inter', 'Regular', inter)
+  const inter = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'Inter')
+  await fontManager.markLoaded('Inter', 'Regular', inter)
 })
 
 test('a paragraph wrapped on the canvas keeps its lines in the SVG drawn into a PDF', async () => {
@@ -22,7 +23,7 @@ test('a paragraph wrapped on the canvas keeps its lines in the SVG drawn into a 
     text: SENTENCE,
     fontFamily: 'Inter',
     fontSize: 13,
-    lineHeight: 16,
+    lineHeight: pixelLength(16),
     width: 230,
     height: 32,
     textAutoResize: 'HEIGHT'
@@ -51,7 +52,7 @@ test('a style run that starts mid-word is placed where the canvas draws its firs
     fontSize: 20,
     width: 200,
     height: 24,
-    styleRuns: [{ start: 1, length: 3, style: { letterSpacing: 4 } }]
+    styleRuns: [{ start: 1, length: 3, style: { letterSpacing: pixelLength(4) } }]
   })
 
   const svg = await withPDFTextLayout(async (textLayout) => {

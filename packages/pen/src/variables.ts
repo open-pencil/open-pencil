@@ -25,6 +25,8 @@ export interface VarContext {
   byName: Map<string, Variable>
   resolveColor(ref: string): Color
   resolveNumber(ref: string): number
+  /** The number the variable holds, or nothing when it holds none. */
+  numberValue(ref: string): number | undefined
   resolveString(ref: string): string
   resolveBoolean(ref: string): boolean
   /** Merges a layer's theme over its parent's until the returned function is called. */
@@ -56,6 +58,18 @@ export function resolveNumber(value: PenNumber | undefined, ctx: VarContext, fal
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
+/** A number, or the value of the number variable it references; nothing where there is none. */
+export function resolveOptionalNumber(
+  value: PenNumber | undefined,
+  ctx: VarContext
+): number | undefined {
+  if (value === undefined) return undefined
+  if (typeof value === 'number') return value
+  if (isVarRef(value)) return ctx.numberValue(value)
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
 /** A boolean, or the value of the variable it references. */
 export function resolveBoolean(
   value: boolean | string | undefined,
@@ -73,10 +87,12 @@ export function resolveString(value: string | undefined, ctx: VarContext): strin
 }
 
 /**
- * Every value a field can take: the value itself, or each value its variable has in any theme,
- * through aliases. For loading what a document may draw before it is read in a theme.
+ * Every value a field can take: the value itself, or the value its variable has in each theme,
+ * through aliases, with the empty value where a theme has none, as reading resolves it. For
+ * loading what a document may draw before it is read in a theme.
  */
 export function possibleValues(value: string | undefined, doc: PenDocument): string[] {
+  const themes = combinations(themeAxes(doc))
   const found = new Set<string>()
   const seen = new Set<string>()
   const visit = (raw: PenVariableScalar | undefined) => {
@@ -89,10 +105,12 @@ export function possibleValues(value: string | undefined, doc: PenDocument): str
     const definition = doc.variables?.[name]
     if (!definition || seen.has(name)) return
     seen.add(name)
-    const entries = Array.isArray(definition.value)
-      ? definition.value
-      : [{ value: definition.value }]
-    for (const entry of entries) visit(entry.value)
+    const empty = emptyValue(sceneType(definition.type))
+    for (const theme of themes) {
+      const themed = rawValue(definition, theme)
+      if (themed !== undefined) visit(themed)
+      else if (typeof empty !== 'object') found.add(String(empty))
+    }
   }
   visit(value)
   return [...found]
@@ -119,6 +137,11 @@ function emptyValue(type: VariableType): VariableValue {
 }
 
 type Axis = [name: string, values: string[]]
+
+/** The document's theme axes that have values. */
+function themeAxes(doc: PenDocument): Axis[] {
+  return Object.entries(doc.themes ?? {}).filter(([, values]) => values.length > 0)
+}
 
 /** Every combination of one value per axis, the first values first. */
 function combinations(axes: Axis[]): Theme[] {
@@ -164,7 +187,7 @@ function themeKey(theme: Theme, axes: Axis[]): string {
 }
 
 export function buildVarContext(graph: SceneGraph, doc: PenDocument): VarContext {
-  const axes: Axis[] = Object.entries(doc.themes ?? {}).filter(([, values]) => values.length > 0)
+  const axes = themeAxes(doc)
   const themes = combinations(axes)
   const modes: VariableCollectionMode[] = themes.map((theme) => ({
     modeId: generateId(),
@@ -227,8 +250,11 @@ export function buildVarContext(graph: SceneGraph, doc: PenDocument): VarContext
       return typeof value === 'object' && 'r' in value ? value : { ...BLACK }
     },
     resolveNumber(ref) {
+      return this.numberValue(ref) ?? 0
+    },
+    numberValue(ref) {
       const value = resolve(ref)
-      return typeof value === 'number' ? value : 0
+      return typeof value === 'number' ? value : undefined
     },
     resolveString(ref) {
       const value = resolve(ref)

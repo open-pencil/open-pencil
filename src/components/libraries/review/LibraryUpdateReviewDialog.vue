@@ -13,6 +13,7 @@ import LibraryComparisonPreview from '@/components/libraries/review/LibraryCompa
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const editor = useEditorStore()
@@ -34,6 +35,8 @@ interface ReviewOrigin {
 let origin: ReviewOrigin | null = null
 let accepted = false
 let requestId = 0
+/** The canvas move toward the reviewed instance, which restoring the origin waits for. */
+let focusing: Promise<void> | null = null
 const operationFailed = (cause: unknown) =>
   notificationMessages.get().operationFailed({
     error: cause instanceof Error ? cause.message : String(cause)
@@ -48,7 +51,8 @@ const modeOptions = computed(() => [
   { value: 'side-by-side', label: panels.value.sideBySide },
   { value: 'overlay', label: panels.value.overlay }
 ])
-const request = computed(() => libraryReviewRequest.value)
+// Closing clears the request; the dialog keeps reviewing it while it animates closed.
+const request = useHeldContent(libraryReviewRequest)
 const currentInstanceId = computed(() => request.value?.instanceIds[instanceIndex.value] ?? null)
 
 function pageIdForNode(nodeId: string): string | null {
@@ -61,11 +65,12 @@ function pageIdForNode(nodeId: string): string | null {
   return null
 }
 
-async function focusCurrentInstance() {
+async function focusCurrentInstance(currentRequest: number) {
   const instanceId = currentInstanceId.value
   if (!instanceId) return
   const pageId = pageIdForNode(instanceId)
   if (pageId && pageId !== editor.state.currentPageId) await editor.switchPage(pageId)
+  if (currentRequest !== requestId) return
   editor.select([instanceId])
   editor.zoomToSelection()
 }
@@ -81,10 +86,11 @@ async function loadPreview() {
     const next = createLibraryUpdatePreview(editor.graph, instanceId, revision)
     if (currentRequest === requestId) {
       preview.value = next
-      await focusCurrentInstance()
+      focusing = focusCurrentInstance(currentRequest)
+      await focusing
     }
   } catch (cause) {
-    toast.error(operationFailed(cause))
+    if (currentRequest === requestId) toast.error(operationFailed(cause))
   } finally {
     if (currentRequest === requestId) loading.value = false
   }
@@ -94,7 +100,12 @@ async function restoreOrigin() {
   const value = origin
   origin = null
   if (!value || accepted) return
+  // A page switch already under way lands first, then the origin replaces it.
+  await focusing?.catch(() => undefined)
+  // A review opened meanwhile owns the canvas now.
+  if (libraryReviewRequest.value) return
   if (editor.state.currentPageId !== value.pageId) await editor.switchPage(value.pageId)
+  if (libraryReviewRequest.value) return
   editor.select(value.selectedIds)
   editor.state.panX = value.panX
   editor.state.panY = value.panY
@@ -137,8 +148,12 @@ async function updateAll() {
   }
 }
 
-watch(request, (value, previous) => {
+// The live request, not the held one, which stays set while the dialog animates closed.
+watch(libraryReviewRequest, (value, previous) => {
   if (!value) {
+    // A preview still loading must not move the canvas away from where it is restored to. Its
+    // loading message stays while the dialog animates closed; the next review loads afresh.
+    requestId++
     if (previous) void restoreOrigin()
     return
   }

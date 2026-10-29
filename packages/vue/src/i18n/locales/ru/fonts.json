@@ -5,6 +5,11 @@
   "localFonts": "Локальные шрифты",
   "onlineFonts": "Онлайн-шрифты",
   "downloadedCache": "Кэш загрузок",
+  "cachedFontCount": {
+    "one": "{count} шрифт",
+    "few": "{count} шрифта",
+    "many": "{count} шрифтов"
+  },
   "systemFontAccess": "Доступ к системным шрифтам",
   "systemFontsAvailable": "Системные шрифты доступны.",
   "allowBrowserFontAccess": "Разрешите доступ браузера к шрифтам, если системные шрифты отсутствуют.",

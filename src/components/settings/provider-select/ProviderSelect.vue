@@ -11,6 +11,8 @@ import {
 } from '@open-pencil/core/constants'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudAIAvailable } from '@/app/cloud/integration'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'
 
@@ -89,8 +91,15 @@ const groups = computed(() => {
 
   result.push({
     label: acpAgents.value.length ? ai.value.providerGroupProviders : undefined,
-    // Signing in returns to a port on this computer, which only the desktop app can open.
-    options: AI_PROVIDERS.filter((provider) => IS_TAURI || !provider.signInOnly)
+    options: AI_PROVIDERS.filter(
+      (provider) =>
+        // Signing in returns to a port on this computer, which only the desktop app can open.
+        (IS_TAURI || !provider.signInOnly) &&
+        // Cloud's AI service is offered while the Home server has one, and kept when chosen.
+        (provider.id !== OPENPENCIL_AI_PROVIDER ||
+          cloudAIAvailable.value ||
+          providerID.value === OPENPENCIL_AI_PROVIDER)
+    )
       .sort((left, right) => left.name.localeCompare(right.name))
       .map((provider) => ({
         value: provider.id,

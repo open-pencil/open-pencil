@@ -1,0 +1,2 @@
+- SVG import keeps content hidden by `visibility` or `display` as hidden layers, as Figma does, instead of painting it, and icons, inline SVG in design JSX, and image vectorization leave it out (#1166).
+- Groups span only their visible layers and refit when a layer inside is hidden or shown, as in Figma.

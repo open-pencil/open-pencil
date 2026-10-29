@@ -3,10 +3,13 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG, type SVGExportOptions, type SVGTextLayout } from '#core/io/formats/svg'
 
+import { withPDFDOM, type SVGPageParser } from './dom'
 import {
+  cutFontInstances,
   embeddedFontAlias,
   planFontEmbedding,
   registerEmbeddedFonts,
+  type PDFFallbackFontFile,
   type PDFFontFace,
   type PDFFontReport
 } from './fonts'
@@ -18,6 +21,8 @@ export interface PDFExportOptions {
   fonts?: readonly PDFFontFace[]
   /** Line breaks of text nodes as the editor laid them out, so paragraphs stay wrapped. */
   textLayout?: SVGTextLayout
+  /** The files of fallback faces the text layout draws characters in, to embed them too. */
+  fallbackFile?: PDFFallbackFontFile
 }
 
 export interface PDFExportResult {
@@ -40,7 +45,8 @@ type PageSVGOptions = Pick<SVGExportOptions, 'textLayout' | 'fontAlias'>
 function preparePage(
   graph: SceneGraph,
   spec: PDFPageSpec,
-  svgOptions: PageSVGOptions
+  svgOptions: PageSVGOptions,
+  parse: SVGPageParser
 ): PreparedPage | null {
   const svg = renderNodesToSVG(graph, spec.pageId, spec.nodeIds, {
     xmlDeclaration: false,
@@ -55,10 +61,8 @@ function preparePage(
   const height = bounds.maxY - bounds.minY
   if (width <= 0 || height <= 0) return null
 
-  const svgDoc = new DOMParser().parseFromString(svg, 'image/svg+xml')
-  if (svgDoc.querySelector('parsererror')) return null
-
-  return { spec, svgElement: svgDoc.documentElement, width, height }
+  const svgElement = parse(svg)
+  return svgElement ? { spec, svgElement, width, height } : null
 }
 
 const orientationOf = (page: PreparedPage) => (page.width > page.height ? 'landscape' : 'portrait')
@@ -66,19 +70,28 @@ const orientationOf = (page: PreparedPage) => (page.width > page.height ? 'lands
 /**
  * A PDF with one page per spec, each sized to its content. Null when no page has anything visible.
  */
-export async function renderPagesToPDFDetailed(
+export function renderPagesToPDFDetailed(
   graph: SceneGraph,
   specs: readonly PDFPageSpec[],
   options: PDFExportOptions = {}
 ): Promise<PDFExportResult | null> {
-  const embedding = options.fonts ? planFontEmbedding(options.fonts) : null
+  return withPDFDOM((parse) => renderPages(graph, specs, options, parse))
+}
+
+async function renderPages(
+  graph: SceneGraph,
+  specs: readonly PDFPageSpec[],
+  options: PDFExportOptions,
+  parse: SVGPageParser
+): Promise<PDFExportResult | null> {
+  const embedding = options.fonts ? planFontEmbedding(options.fonts, options.fallbackFile) : null
   const svgOptions: PageSVGOptions = {
     textLayout: options.textLayout,
     fontAlias: embedding ? embeddedFontAlias(embedding) : undefined
   }
   const preparePages = () =>
     specs
-      .map((spec) => preparePage(graph, spec, svgOptions))
+      .map((spec) => preparePage(graph, spec, svgOptions, parse))
       .filter((page): page is PreparedPage => page !== null)
   let prepared = preparePages()
   if (prepared.length === 0) return null
@@ -97,9 +110,13 @@ export async function renderPagesToPDFDetailed(
     doc.setProperties({ title: options.title })
   }
 
-  // jsPDF reads a font file when it is registered, so a face it refuses is only known now: the
-  // pages are written again without that face's name.
-  if (embedding && !registerEmbeddedFonts(doc, embedding)) prepared = preparePages()
+  // The pages name the variable instances they draw, which are cut now. jsPDF reads a font file
+  // when it is registered, so a face it refuses is only known then. Either way, the pages are
+  // written again without the names of faces that are not embedded.
+  if (embedding) {
+    const cut = await cutFontInstances(embedding)
+    if (!registerEmbeddedFonts(doc, embedding) || !cut) prepared = preparePages()
+  }
 
   for (const [index, page] of prepared.entries()) {
     if (index > 0) doc.addPage([page.width, page.height], orientationOf(page))
@@ -115,15 +132,4 @@ export async function renderPagesToPDFDetailed(
     })),
     ...(embedding ? { fonts: embedding.report } : {})
   }
-}
-
-/** One PDF page holding all `nodeIds`. */
-export async function renderNodesToPDF(
-  graph: SceneGraph,
-  pageId: string,
-  nodeIds: string[],
-  options: PDFExportOptions = {}
-): Promise<Uint8Array | null> {
-  const result = await renderPagesToPDFDetailed(graph, [{ pageId, nodeIds }], options)
-  return result?.data ?? null
 }

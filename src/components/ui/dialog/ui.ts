@@ -1,22 +1,13 @@
 import { tv, type VariantProps } from 'tailwind-variants'
 
+import type { ComponentUI } from '@/components/ui/types'
 import dialogTheme from '@/theme/dialog/index'
 
 export const dialog = tv(dialogTheme)
 
 export type DialogVariants = VariantProps<typeof dialog>
 
-export interface DialogUI {
-  overlay?: string
-  content?: string
-  header?: string
-  heading?: string
-  title?: string
-  description?: string
-  close?: string
-  body?: string
-  footer?: string
-}
+export type DialogUI = ComponentUI<typeof dialogTheme>
 
 export function useDialogUI(ui?: DialogUI, variants?: DialogVariants) {
   const cls = dialog(variants)

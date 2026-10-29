@@ -10,7 +10,8 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { cloudWorkspace } from '@/theme/cloud/workspace'
+
+import { cloudWorkspace } from './ui'
 
 /** Naming a new workspace on a Cloud server; the person who creates it administers it. */
 const { busy = false, failed = false } = defineProps<{ busy?: boolean; failed?: boolean }>()

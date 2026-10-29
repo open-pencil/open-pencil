@@ -13,6 +13,7 @@ describe('export setting formats', () => {
 
   test('recognizes only persisted export formats', () => {
     expect(isExportFormatId('pptx')).toBe(true)
+    expect(isExportFormatId('drawio')).toBe(true)
     expect(isExportFormatId('fig')).toBe(false)
     expect(isExportFormatId('PNG')).toBe(false)
   })

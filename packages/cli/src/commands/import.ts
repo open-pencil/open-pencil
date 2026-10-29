@@ -3,13 +3,12 @@ import { basename, dirname, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
 
 import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
+import { writeFigDocument } from '#cli/headless'
 
-const io = new IORegistry(BUILTIN_IO_FORMATS)
 const OUTPUT_FORMATS = new Set(['fig', 'json'])
 
 interface ImportArgs {
@@ -69,8 +68,7 @@ async function writeOutput(args: ImportArgs, { styled, graph }: ReadHTMLResult) 
     return output
   }
 
-  const result = await io.writeDocument('fig', graph)
-  await writeFile(output, result.data as Uint8Array)
+  await writeFigDocument(graph, output)
   return output
 }
 

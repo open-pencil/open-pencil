@@ -46,9 +46,11 @@ describe('set_image_fill tool', () => {
 
     const fills = expectFills(expectDefined(figma.getNodeById(node.id), 'image-filled node').fills)
     expect(fills).toHaveLength(1)
-    expect(fills[0].type).toBe('IMAGE')
-    expect(fills[0].imageHash).toBe(result.imageHash)
-    expect(fills[0].imageScaleMode).toBe('FILL')
+    expect(fills[0]).toMatchObject({
+      type: 'IMAGE',
+      imageHash: result.imageHash,
+      scaleMode: 'FILL'
+    })
   })
 
   test('returns error for non-existent node', () => {
@@ -101,7 +103,7 @@ describe('set_image_fill tool', () => {
       const fills = expectFills(
         expectDefined(figma.getNodeById(node.id), 'image-filled node').fills
       )
-      expect(fills[0].imageScaleMode).toBe(mode)
+      expect(fills[0]).toMatchObject({ scaleMode: mode })
     }
   })
 

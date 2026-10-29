@@ -1,6 +1,7 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
   acceptedInvitationSchema,
+  aiTokenSchema,
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
@@ -21,6 +22,7 @@ import {
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
   type AcceptDocumentInvitationInput,
+  type AIToken,
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
@@ -134,6 +136,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = await client.session.$get()
       if (response.status === 401) return null
       return v.parse(cloudSessionSchema, await responseBody(response, options.onDiagnostic))
+    },
+    /** A short-lived token for the deployment's AI service, on the workspace's behalf. */
+    async requestAIToken(workspaceId: string): Promise<AIToken> {
+      return parseResponse(
+        client.ai.token.$post({ json: { workspaceId } }),
+        aiTokenSchema,
+        options.onDiagnostic
+      )
     },
     async lookupUser(
       documentId: string,

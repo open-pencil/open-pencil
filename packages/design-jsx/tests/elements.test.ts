@@ -20,6 +20,9 @@ const renderer = createDesignJSXRenderer<never>({
   },
   layout: () => {
     // Element types do not depend on layout.
+  },
+  vectorBounds: () => {
+    throw new Error('No vectors in these tests')
   }
 })
 

@@ -1,5 +1,8 @@
 import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { isIdentityGradientTransform } from '@open-pencil/scene-graph/gradient'
+import {
+  gradientTransformRows,
+  isIdentityGradientTransform
+} from '@open-pencil/scene-graph/gradient'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '../enums'
@@ -15,6 +18,11 @@ const GRADIENT_HELPERS: Partial<Record<Fill['type'], string>> = {
 
 function isIdentity(transform: GradientTransform | undefined): boolean {
   return !transform || isIdentityGradientTransform(transform)
+}
+
+/** A paint transform as authors write it, in Figma's rows. */
+function rows(transform: GradientTransform | undefined) {
+  return transform && gradientTransformRows(transform)
 }
 
 /** Paints and effects imported from Figma often spell out the default blend mode. */
@@ -69,12 +77,16 @@ function fillValue(fill: Fill, node: SceneNode): JSXValue {
         blendMode: blendMode(fill.blendMode),
         transform: isIdentity(fill.gradientTransform)
           ? undefined
-          : plainValue(fill.gradientTransform)
+          : plainValue(rows(fill.gradientTransform))
       })
     )
   }
   // Image, pattern, and other paints have no helper; they render back from their fields.
-  return plainValue(fill)
+  return plainValue({
+    ...fill,
+    gradientTransform: rows(fill.gradientTransform),
+    imageTransform: rows(fill.imageTransform)
+  })
 }
 
 /** A single visible solid paint fits the `bg` or text `color` shorthand. */

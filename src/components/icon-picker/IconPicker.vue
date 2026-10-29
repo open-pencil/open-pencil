@@ -7,7 +7,7 @@ import { useIconSearch } from '@open-pencil/vue/controls/icon'
 import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icon-picker/history'
+import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icons/history'
 import { formatNumber } from '@/app/i18n/number'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import type { AppComboboxOption } from '@/components/ui/select/AppCombobox.vue'

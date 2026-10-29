@@ -21,6 +21,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { fuzzySearch } from '@open-pencil/vue/shared/search'
 
 import type { ComponentUI } from '@/components/ui/types'
+import type { ControlSize } from '@/theme/control'
 import theme from '@/theme/select/combobox'
 import type { AppComboboxTheme } from '@/theme/select/combobox'
 
@@ -43,6 +44,8 @@ interface AppComboboxProps {
   resultLimit?: number
   /** How the open list lines up with the trigger; `end` for a trigger at the end of a field. */
   align?: 'start' | 'center' | 'end'
+  /** The height on the control scale; the design panel's dense `xs` unless a form asks. */
+  size?: ControlSize
   ui?: ComponentUI<AppComboboxTheme>
 }
 
@@ -57,6 +60,7 @@ const {
   disabled = false,
   resultLimit = 100,
   align = 'start',
+  size,
   ui
 } = defineProps<AppComboboxProps>()
 
@@ -110,10 +114,10 @@ function updateOpen(value: boolean): void {
       <ComboboxTrigger
         v-bind="$attrs"
         :aria-label="label"
-        :class="styles.trigger({ class: ui?.trigger })"
+        :class="styles.trigger({ size, class: ui?.trigger })"
       >
         <slot name="value" :option="selectedOption">
-          <span :class="styles.value({ class: ui?.value })">
+          <span :class="styles.value({ size, class: ui?.value })">
             {{ selectedOption?.label ?? (modelValue || placeholder) }}
           </span>
         </slot>

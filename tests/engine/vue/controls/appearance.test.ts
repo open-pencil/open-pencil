@@ -109,6 +109,32 @@ describe('appearance control state', () => {
     expect(createAppearanceState(options).showIndependentCorners.value).toBe(false)
   })
 
+  test('splitting a radius bound as a whole binds each corner, undoably', () => {
+    const graph = makeSceneGraph()
+    const rect = graph.createNode('RECTANGLE', firstPageId(graph), {
+      cornerRadius: 8,
+      boundVariables: { cornerRadius: 'radius' }
+    })
+    const editor = createEditor({ graph })
+    const actions = createAppearanceActions({
+      expandedCornerNodeId: ref<string | null>(null),
+      editor,
+      node: computed(() => graph.getNode(rect.id) ?? null),
+      nodes: computed(() => []),
+      isMulti: computed(() => false),
+      merged: <K extends keyof SceneNode>(): MixedValue<SceneNode[K]> => MIXED
+    })
+    actions.toggleIndependentCorners()
+    expect(graph.getNode(rect.id)?.boundVariables).toEqual({
+      topLeftRadius: 'radius',
+      topRightRadius: 'radius',
+      bottomLeftRadius: 'radius',
+      bottomRightRadius: 'radius'
+    })
+    editor.undo.undo()
+    expect(graph.getNode(rect.id)?.boundVariables).toEqual({ cornerRadius: 'radius' })
+  })
+
   test('keeps equal independent corners expanded for distinct bindings', () => {
     const node = rectangle()
     node.independentCorners = true

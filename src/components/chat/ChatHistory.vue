@@ -23,7 +23,9 @@ import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
-import { chatHistoryTheme } from '@/theme/chat/history'
+import historyTheme from '@/theme/chat/history'
+
+const chatHistoryTheme = tv(historyTheme)
 
 const {
   conversations,

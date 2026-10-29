@@ -14,7 +14,8 @@ export {
   nodeSummary,
   requireNode,
   NodeNotFoundError,
-  toolChangesDocument
+  toolChangesDocument,
+  toolFailure
 } from './schema'
 export type { ToolDef, ToolExecution, ToolCapability } from './schema'
 export {
@@ -44,7 +45,8 @@ export {
   parseOverlapSeverity
 } from './analyze/overlaps/params'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo'
-export { importSVG } from './create'
+export { importMermaid, importSVG } from './create'
+export { arrangeNodes } from './structure'
 export {
   getStockPhotoProviders,
   registerStockPhotoProvider,

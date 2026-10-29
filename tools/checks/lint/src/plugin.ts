@@ -17,6 +17,7 @@ import { noUnknownTailwindClassesRule } from '#lint/rules/quality/tailwind-class
 import { valibotSchemaConventionsRule } from '#lint/rules/quality/valibot-schemas.ts'
 import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
 import { noRawSQLRule } from '#lint/rules/sql.ts'
+import { noOverlayContentFromOpenState } from '#lint/rules/vue/overlays.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
 import type { PluginRule, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
@@ -384,6 +385,7 @@ import {
   noDeepParentRelativeImports,
   noDeepParentRelativePaths,
   noCoreParentRelativeImports,
+  noDocumentChangeCapture,
   noMcpParentRelativeImports,
   noVueParentRelativeImports,
   noCliParentRelativeImports,
@@ -436,6 +438,7 @@ const plugin = {
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
+    'no-overlay-content-from-open-state': noOverlayContentFromOpenState,
     'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
     'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates,
     'no-ui-helper-calls-in-vue-templates': noUiHelperCallsInVueTemplates,
@@ -461,6 +464,7 @@ const plugin = {
     'no-deep-parent-relative-imports': noDeepParentRelativeImports,
     'no-deep-parent-relative-paths': noDeepParentRelativePaths,
     'no-core-parent-relative-imports': noCoreParentRelativeImports,
+    'no-document-change-capture': noDocumentChangeCapture,
     'no-mcp-parent-relative-imports': noMcpParentRelativeImports,
     'no-vue-parent-relative-imports': noVueParentRelativeImports,
     'no-cli-parent-relative-imports': noCliParentRelativeImports,

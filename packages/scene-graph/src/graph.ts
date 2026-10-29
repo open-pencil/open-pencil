@@ -477,7 +477,8 @@ export class SceneGraph {
 
   /**
    * Runs `fn` as layout. Its updates are published once the outermost layout ends, still as
-   * layout, and without values a pass changed and a later pass put back (`LayoutWrites`).
+   * layout, and without values a pass changed and a later pass put back (`LayoutWrites`). Outside
+   * derived layout, the positions and sizes it publishes count as edited, so formats save them.
    */
   withLayoutMutations(fn: () => void): void {
     const outermost = this.scopeDepths.layout === 0
@@ -498,8 +499,9 @@ export class SceneGraph {
     const writes = this.layoutWrites
     this.layoutWrites = null
     if (!writes) return
-    for (const [id, changes] of writes.updates((nodeId) => this.nodes.get(nodeId))) {
-      this.emitter.emit('node:updated', id, changes)
+    for (const [node, changes, edited] of writes.updates((nodeId) => this.nodes.get(nodeId))) {
+      markSourceFieldsEdited(node, edited)
+      this.emitter.emit('node:updated', node.id, changes)
     }
   }
   get isApplyingLayout(): boolean {
@@ -577,7 +579,11 @@ export class SceneGraph {
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
-    this.layoutWrites?.record(node, changes)
+    this.layoutWrites?.record(
+      node,
+      changes,
+      this.scopeDepths.sourceMetadata === 0 && !this.isApplyingDerivedLayout
+    )
     Object.assign(node, changes)
     if (changes.fills) removeStaleBindings(node, 'fills', changes)
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)

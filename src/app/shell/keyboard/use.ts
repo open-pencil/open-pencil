@@ -12,7 +12,13 @@ import { isInputElement } from '@/app/shell/keyboard/focus'
 import { bindNudgeKeys } from '@/app/shell/keyboard/nudging'
 import { registerKeyboardShortcuts } from '@/app/shell/keyboard/registry'
 import { openFileDialog } from '@/app/shell/menu/use'
-import { closeTab, createHomeTab, activeTab as activeTabRef } from '@/app/tabs'
+import {
+  closeTab,
+  createHomeTab,
+  createTab,
+  switchAdjacentTab,
+  activeTab as activeTabRef
+} from '@/app/tabs'
 
 export function useKeyboard() {
   const { activeTab } = useAIChat()
@@ -44,6 +50,8 @@ export function useKeyboard() {
     closeActiveTab: () => {
       if (activeTabRef.value) void closeTab(activeTabRef.value.id)
     },
-    createTab: () => createHomeTab()
+    createTab: () => createTab(),
+    showHome: () => createHomeTab(),
+    switchAdjacentTab
   })
 }

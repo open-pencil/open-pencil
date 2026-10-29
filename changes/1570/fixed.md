@@ -1,0 +1,1 @@
+- Claude models used through OpenRouter mark the chat's prompt for caching, also with a thinking level set, so repeated turns can be billed at the cached-input rate when the provider has the prompt cached.

@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** The home tab's location picker on phones, in place of the sidebar. */
-export const homeLocationMenu = tv({
+export default {
   slots: {
     trigger:
       'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-panel-field px-3 text-left text-sm text-surface outline-none hover:bg-panel-field-hover focus-visible:ring-2 focus-visible:ring-accent/50',
@@ -14,4 +12,4 @@ export const homeLocationMenu = tv({
     check: 'size-3.5 shrink-0 text-surface',
     attention: 'size-3.5 shrink-0 text-warning'
   }
-})
+} as const

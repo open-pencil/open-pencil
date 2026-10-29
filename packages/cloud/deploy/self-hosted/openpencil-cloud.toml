@@ -1,0 +1,94 @@
+# Settings for compose.self-hosted.yml: one machine, open email sign-up, mail captured by Mailpit.
+# openpencil-cloud.example.toml documents every setting.
+schema_version = 2
+
+[deployment]
+mode = "self-hosted"
+public_url = "http://localhost:8787"
+indexing = "deny"
+local_editor = true
+
+[database]
+
+[authentication.enrollment]
+mode = "open"
+notification_emails = []
+
+[authentication.email_password]
+enabled = true
+sign_up = true
+minimum_password_length = 8
+maximum_password_length = 128
+verification_link_lifetime_minutes = 60
+password_reset_link_lifetime_minutes = 60
+compromised_password_check = false
+
+[authentication.mfa]
+required_for_admins = false
+totp = true
+recovery_codes = true
+trusted_device_lifetime_days = 14
+
+[authentication.passkeys]
+enabled = true
+rp_name = "OpenPencil Cloud"
+
+[authentication.trusted_proxies]
+headers = []
+addresses = []
+
+[object_storage]
+endpoint = "http://localhost:8333"
+region = "us-east-1"
+bucket = "openpencil"
+force_path_style = true
+checksum_verification = "metadata"
+maximum_upload_bytes = 1073741824
+
+[collaboration]
+maximum_message_bytes = 1048576
+maximum_connections_per_room = 1000
+
+[documents]
+retention_days = 30
+
+[email]
+transport = "smtp"
+from = "OpenPencil Cloud <cloud@localhost>"
+
+[email.smtp]
+host = "mailpit"
+port = 1025
+secure = false
+
+[workers.email]
+batch_size = 50
+interval_ms = 5000
+lease_ms = 300000
+maximum_attempts = 5
+
+[workers.cleanup]
+enabled = true
+batch_size = 100
+interval_ms = 60000
+lease_ms = 300000
+
+[entitlements]
+source = "static"
+
+[entitlements.documents]
+maximum_file_bytes = 1073741824
+revision_history = true
+
+[entitlements.storage]
+maximum_bytes = 1099511627776
+
+[entitlements.sharing]
+links = true
+guest_view = true
+guest_edit = true
+guest_presence = true
+
+[entitlements.collaboration]
+enabled = true
+maximum_participants = 100

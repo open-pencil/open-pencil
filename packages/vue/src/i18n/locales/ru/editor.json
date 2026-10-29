@@ -8,6 +8,7 @@
   "arcSweep": "Охват",
   "arcRatio": "Соотношение",
   "stickyPlaceholder": "Пишите что угодно, @упоминайте кого угодно",
+  "connectorLabelPlaceholder": "Добавить текст",
   "showUI": "Показать интерфейс ({shortcut})",
   "previewing": "Просмотр",
   "resetPreview": "Сбросить",

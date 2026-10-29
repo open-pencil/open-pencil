@@ -1,21 +1,53 @@
 import { noop, useAsyncState } from '@vueuse/core'
-import { computed, shallowRef } from 'vue'
+import { computed, getCurrentInstance, onActivated, shallowRef } from 'vue'
 
 import { usePortalFailureMessages } from './failure'
 
 /**
+ * Where a load stands: nothing to show yet, the last value shown while a newer one loads, or done.
+ * A failure is `failed` before anything loaded and `ready` with an error after, since the page
+ * then still has something to show.
+ */
+export type PortalLoadStatus = 'loading' | 'failed' | 'refreshing' | 'ready'
+
+/**
  * Something the page reads from the server. A newer load replaces an older one still running,
  * a failure is kept in words until the next load starts, and the last good value stays shown.
+ * A page the console keeps alive loads again when it comes back, showing what it had meanwhile.
  */
 export function usePortalLoad<T>(load: () => Promise<T>, initial: T) {
   const failures = usePortalFailureMessages()
-  const { state, isLoading, error, execute } = useAsyncState(load, initial, {
-    resetOnExecute: false,
-    onError: noop
+  // `useAsyncState` resets its own `isReady` on every run, so whether anything ever loaded is kept
+  // here: it tells a first load, with nothing to show, from a refresh. Only the newest request
+  // counts, as for the value: an older one that succeeds after a newer one failed shows nothing.
+  const loaded = shallowRef(false)
+  let latest = 0
+  const { state, isLoading, error, execute } = useAsyncState(
+    async () => {
+      const request = ++latest
+      const value = await load()
+      if (request === latest) loaded.value = true
+      return value
+    },
+    initial,
+    { resetOnExecute: false, onError: noop }
+  )
+  const status = computed<PortalLoadStatus>(() => {
+    if (loaded.value) return isLoading.value ? 'refreshing' : 'ready'
+    return isLoading.value ? 'loading' : 'failed'
   })
+  // `onActivated` also runs when the page first appears, which has just started its own load.
+  let shown = false
+  if (getCurrentInstance()) {
+    onActivated(() => {
+      if (shown) void execute()
+      shown = true
+    })
+  }
   return {
     data: state,
     loading: isLoading,
+    status,
     error: computed(() => (error.value === undefined ? null : failures.api(error.value))),
     reload: async () => {
       await execute()

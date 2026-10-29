@@ -8,6 +8,8 @@ How the built-in AI chat turns a message into edits, how a reply ends, and how w
 
 `chat/history/continuation.ts` (`requestMessages`) leaves tool calls without a result out of the request. They stay in the saved transcript.
 
+The model comes from `createAIModelRuntime` (`src/app/ai/models/runtime.ts`), with the connection's saved key. An `openpencil` connection has no key: it names a workspace on the Home Cloud server, and its model talks to the AI service that server's discovery advertises, through `@/app/cloud/integration` (`src/app/cloud/ai/`). Each request carries a short-lived token Cloud signs for that workspace, replaced shortly before it expires and once more when the service refuses it (`cloudAIFetch` in `packages/cloud/src/client/ai.ts`), so the service never sees the person's Cloud session.
+
 ## A run
 
 `transports/tool-loop.ts` starts a run (`reply/run.ts`) when the message is sent, before the model is reached, so a Stop at any point ends a run that exists. A `Run` belongs to one reply and holds:

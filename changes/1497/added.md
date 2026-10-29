@@ -1,0 +1,1 @@
+- Self-hosted OpenPencil Cloud runs from a published image, `ghcr.io/open-pencil/cloud`, with the server and the editor it serves, and `compose.self-hosted.yml` starts it on one machine with a database, storage, and email.

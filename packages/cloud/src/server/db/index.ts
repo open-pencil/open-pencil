@@ -15,6 +15,7 @@ export type {
   TransactionalEmailStatus,
   Upload,
   UploadStatus,
+  UserPictureFormat,
   Workspace,
   WorkspaceUpdate
 } from './tables'

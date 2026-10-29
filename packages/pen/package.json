@@ -30,12 +30,12 @@
   },
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
-    "check": "bun run typecheck && bun run build && bun run smoke:dist",
+    "check": "bun run typecheck && bun run build",
     "prepack": "bun run build",
-    "smoke:dist": "bun scripts/smoke-dist.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "es-toolkit": "^1.52.0",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

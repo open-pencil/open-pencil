@@ -85,13 +85,8 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
 </script>
 
 <template>
-  <PanelDrillIn
-    :open="editing"
-    :back="common.back"
-    :parent="ai.modelsTitle"
-    @back="closeEditor"
-    @open-auto-focus="focusEditor"
-  >
+  <!-- The Settings window's breadcrumb is the way back, so the drill-in draws no back bar. -->
+  <PanelDrillIn :open="editing" @open-auto-focus="focusEditor">
     <template #detail>
       <ProfileEditor
         ref="editor"

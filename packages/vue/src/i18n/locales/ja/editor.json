@@ -8,6 +8,7 @@
   "arcSweep": "スイープ",
   "arcRatio": "比率",
   "stickyPlaceholder": "自由に入力、@で誰かをメンション",
+  "connectorLabelPlaceholder": "テキストを追加",
   "showUI": "UIを表示 ({shortcut})",
   "previewing": "プレビュー中",
   "resetPreview": "リセット",

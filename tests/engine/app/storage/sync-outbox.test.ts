@@ -19,7 +19,7 @@ describe('supersedePutCanvasJobs', () => {
       {
         id: 'b',
         canvasId: 'c1',
-        type: 'putThumb',
+        type: 'deleteCanvas',
         revision: 1,
         createdAt: 2,
         attempts: 0,

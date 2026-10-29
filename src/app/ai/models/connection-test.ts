@@ -8,7 +8,9 @@ import {
   resolveLanguageModelID,
   type ModelConfig
 } from '@/app/ai/models/language-model'
-import type { ModelCredentialStore } from '@/app/ai/providers/types'
+import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import type { ModelProviderRuntime } from '@/app/ai/providers/types'
 import { isTauri } from '@/app/tauri/env'
 
 export type ProviderConnectionTestResult =
@@ -29,6 +31,8 @@ export type ProviderConnectionTestFailureReason =
   | 'api-type'
   | 'browser-network'
   | 'network'
+  | 'cloud-unavailable'
+  | 'cloud-credits-exhausted'
   | 'unknown'
 
 function isCompatibleProvider(providerID: ModelConfig['providerID']): boolean {
@@ -99,33 +103,41 @@ function classifyMessage(text: string): ProviderConnectionTestFailureReason | nu
   return null
 }
 
-function classifyError(error: unknown): ProviderConnectionTestFailureReason {
+function classifyError(
+  error: unknown,
+  providerID: ModelConfig['providerID']
+): ProviderConnectionTestFailureReason {
+  // The workspace's plan holds Cloud's credits, not a provider account to top up.
+  if (providerID === OPENPENCIL_AI_PROVIDER && cloudCreditRefusal(error)) {
+    return 'cloud-credits-exhausted'
+  }
   if (isInsufficientCreditError(error)) return 'insufficient-credit'
   const text = errorText(error).toLowerCase()
   return classifyStatus(providerErrorStatus(error), text) ?? classifyMessage(text) ?? 'unknown'
 }
 
 /**
- * Sends a one-token request. A test of a saved credential passes its store, so a sign-in the
- * request refreshes keeps the new tokens instead of leaving a spent refresh token saved.
+ * Sends a one-token request. A test of a saved credential passes its store in `runtime`, so a
+ * sign-in the request refreshes keeps the new tokens instead of leaving a spent refresh token
+ * saved; a `runtime` with its own fetch, such as Cloud's AI service, is used instead of the default.
  */
 export async function testProviderConnection(
   config: ModelConfig,
-  credentials?: ModelCredentialStore
+  runtime?: ModelProviderRuntime
 ): Promise<ProviderConnectionTestResult> {
   const invalidReason = validateConfig(config)
   if (invalidReason) return { ok: false, reason: invalidReason }
 
   try {
     await generateText({
-      model: createLanguageModel(config, credentials),
+      model: createLanguageModel(config, runtime),
       prompt: 'Reply with OK.',
       maxOutputTokens: 1,
       abortSignal: AbortSignal.timeout(15_000)
     })
     return { ok: true }
   } catch (error) {
-    const reason = classifyError(error)
+    const reason = classifyError(error, config.providerID)
     if (reason !== 'auth' || !isSignInOnly(config.providerID)) return { ok: false, reason }
     // A provider signed in to has no key: a 403 is the plan, anything else the sign-in.
     const planForbidden = providerErrorStatus(error) === 403

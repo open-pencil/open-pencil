@@ -1,0 +1,1 @@
+- Design JSX takes a gradient's `transform`, and a paint's `gradientTransform` and `imageTransform`, as Figma's rows such as `[[0, 1, 0], [-1, 0, 1]]` as well as the matrix fields, refuses any other shape instead of drawing nothing, and exports them as rows.

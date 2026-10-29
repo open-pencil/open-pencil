@@ -67,7 +67,13 @@ export async function verifyRuntimeScenarios(
 
 export async function verifyPackageBinaries(consumerDirectory: string): Promise<void> {
   const binaryDirectory = join(consumerDirectory, 'node_modules', '.bin')
-  const binaries = ['openpencil', 'openpencil-mcp', 'openpencil-mcp-http']
+  const binaries = [
+    'openpencil',
+    'openpencil-mcp',
+    'openpencil-mcp-http',
+    'openpencil-cloud',
+    'openpencil-ai-relay'
+  ]
   for (const runtime of RUNTIMES) {
     for (const binary of binaries) {
       await runCommand({

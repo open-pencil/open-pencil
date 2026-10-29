@@ -9,6 +9,7 @@ export type SettingsSection =
   | 'privacy'
   | 'mcp'
   | 'tools'
+  | 'fonts'
   | 'media'
   | 'storage'
   | 'cloud'

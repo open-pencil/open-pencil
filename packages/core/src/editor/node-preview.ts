@@ -101,6 +101,9 @@ export function createNodePreviewActions(
           if (originals.size) ctx.requestRender()
           return
         }
+        // Back to what the layers held, so the commit reports each to graph observers before it
+        // changes them, as the other previews do; otherwise a saved .fig sees no change.
+        for (const edit of edits) graph.updateNodePreview(edit.id, structuredClone(edit.before))
         function apply(direction: 'before' | 'after') {
           for (const edit of edits) {
             const update = () => graph.updateNode(edit.id, structuredClone(edit[direction]))

@@ -1,0 +1,1 @@
+- Outline stroke works as in Figma: each stroked layer is replaced by its fill and, above it, its stroke filled with the stroke's paints where the stroke is drawn, both keeping the layer's rotation, opacity, and effects; inside a selected group or frame each stroked layer is outlined in place, and stroked text becomes groups of glyph outlines (#1524).

@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { CODEGEN_PROMPT as BARREL_CODEGEN, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 import { AUTHORING_EXAMPLES, JSX_REFERENCE } from '@open-pencil/design-jsx'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 
@@ -75,8 +76,8 @@ test('shared bound example retains bindings and resolves the initial inherited m
   })
   const [text] = graph.getChildren(bound.id)
   expect(text.fontSize).toBe(11)
-  expect(text.lineHeight).toBe(16)
-  expect(text.letterSpacing).toBe(0)
+  expect(text.lineHeight).toEqual(pixelLength(16))
+  expect(text.letterSpacing).toEqual(pixelLength(0))
   expect(text.boundVariables).toMatchObject({
     fontSize: 'Type/body',
     lineHeight: 'Type/body-leading',

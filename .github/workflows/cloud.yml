@@ -34,7 +34,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
-      - run: bunx playwright install --with-deps chromium
+      - uses: ./.github/actions/setup-playwright
 
       # The Worker serves the editor and the portal as static assets. The editor names this
       # deployment as the official server and, like app.openpencil.dev, sends the daily ping.

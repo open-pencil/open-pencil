@@ -1,0 +1,1 @@
+- A connector's loose end no longer moves when the group holding it resizes around its other layers.

@@ -1,12 +1,11 @@
-import * as opentype from 'opentype.js'
+import * as hb from 'harfbuzzjs'
 
 import type { OutlineCommand } from '@open-pencil/core/text'
 
 /** The combining enclosing keycap, which draws a keycap's frame around the character before it. */
 export const COMBINING_KEYCAP = 0x20e3
 
-const round = (value: number | undefined) =>
-  value === undefined ? undefined : Math.round(value * 10000) / 10000
+const round = (value: number) => Math.round(value * 10000) / 10000
 
 /**
  * The keycap frame of a font, in em with y down from the baseline as Core's outline commands
@@ -14,20 +13,35 @@ const round = (value: number | undefined) =>
  * ends.
  */
 export function keycapOutline(font: Uint8Array): OutlineCommand[] {
-  const parsed = opentype.parse(
-    font.buffer.slice(font.byteOffset, font.byteOffset + font.byteLength)
-  )
-  const glyph = parsed.charToGlyph(String.fromCodePoint(COMBINING_KEYCAP))
-  if (!glyph.index) throw new Error('The source font has no keycap')
-  const em = parsed.unitsPerEm
-  return glyph.path.commands.map((command) => {
-    const scaled: OutlineCommand = { type: command.type }
-    for (const key of ['x', 'y', 'x1', 'y1', 'x2', 'y2'] as const) {
-      const value = (command as Record<string, number | undefined>)[key]
-      if (value !== undefined) scaled[key] = round(key.startsWith('y') ? -value / em : value / em)
-    }
-    return scaled
+  const face = new hb.Face(new hb.Blob(font))
+  const parsed = new hb.Font(face)
+  const glyph = parsed.glyph(COMBINING_KEYCAP)
+  if (!glyph) throw new Error('The source font has no keycap')
+  const em = face.upem
+  const point = (x: number, y: number) => ({ x: round(x / em), y: round(-y / em) })
+  const commands: OutlineCommand[] = []
+  const draw = new hb.DrawFuncs()
+  draw.setMoveToFunc((x, y) => commands.push({ type: 'M', ...point(x, y) }))
+  draw.setLineToFunc((x, y) => commands.push({ type: 'L', ...point(x, y) }))
+  draw.setQuadraticToFunc((cx, cy, x, y) => {
+    const control = point(cx, cy)
+    commands.push({ type: 'Q', x1: control.x, y1: control.y, ...point(x, y) })
   })
+  draw.setCubicToFunc((c1x, c1y, c2x, c2y, x, y) => {
+    const first = point(c1x, c1y)
+    const second = point(c2x, c2y)
+    commands.push({
+      type: 'C',
+      x1: first.x,
+      y1: first.y,
+      x2: second.x,
+      y2: second.y,
+      ...point(x, y)
+    })
+  })
+  draw.setClosePathFunc(() => commands.push({ type: 'Z' }))
+  parsed.drawGlyph(glyph, draw)
+  return commands
 }
 
 /** Core's source holding the frame, with where it came from and its licence. */
@@ -36,7 +50,7 @@ export function keycapModule(commands: OutlineCommand[], copyright: string): str
 // ${copyright}
 // Licensed under the SIL Open Font License, Version 1.1 (packages/core/assets/NotoSansSymbols-OFL.txt).
 
-import type { OutlineCommand } from './opentype'
+import type { OutlineCommand } from './font/glyphs'
 
 /**
  * The frame Figma draws a keycap with: Noto Sans Symbols' combining enclosing keycap (U+20E3),

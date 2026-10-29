@@ -155,6 +155,7 @@
     "open-pencil/no-structuredclone-scene-arrays": "error",
     "open-pencil/no-vue-style-blocks": "error",
     "open-pencil/no-native-title-attributes-in-vue": "error",
+    "open-pencil/no-overlay-content-from-open-state": "error",
     "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
     "open-pencil/no-raw-svg-in-app-vue-templates": "error",
     "open-pencil/no-ui-helper-calls-in-vue-templates": "error",
@@ -201,6 +202,7 @@
       }
     ],
     "open-pencil/no-core-parent-relative-imports": "error",
+    "open-pencil/no-document-change-capture": "error",
     "open-pencil/no-mcp-parent-relative-imports": "error",
     "open-pencil/no-vue-parent-relative-imports": "error",
     "open-pencil/no-cli-parent-relative-imports": "error",
@@ -618,10 +620,21 @@
       "files": [
         "packages/core/src/io/formats/fig/export/index.ts",
         "packages/core/src/io/formats/fig/export/worker.ts",
-        "packages/core/src/kiwi/fig/parse/worker.ts"
+        "packages/core/src/kiwi/fig/parse/worker.ts",
+        "src/app/code/sandbox/frame.ts",
+        "src/app/code/sandbox/worker/index.ts"
       ],
       "rules": {
         "unicorn/require-post-message-target-origin": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/code/sandbox/evaluate.ts",
+        "src/app/code/sandbox/frame.ts"
+      ],
+      "rules": {
+        "import/default": "off"
       }
     }
   ],
@@ -629,6 +642,7 @@
     "node_modules",
     "dist",
     "desktop",
+    "packages/mermaid/src/upstream",
     "*.config.*"
   ],
   "categories": {

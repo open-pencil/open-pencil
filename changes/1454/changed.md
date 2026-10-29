@@ -1,0 +1,1 @@
+- Web fonts from Google Fonts and Fontsource load as their variable files, one download per family with every axis, and Material Symbols load from Google's icon catalogue with all four axes.

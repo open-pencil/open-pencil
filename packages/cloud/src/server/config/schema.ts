@@ -11,7 +11,7 @@ import {
   CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
 } from './limits'
 
-const httpURLSchema = v.pipe(
+export const httpURLSchema = v.pipe(
   v.string(),
   v.url(),
   v.check((value) => {

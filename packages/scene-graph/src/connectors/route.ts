@@ -1,5 +1,6 @@
 import type { Rect, Vector } from '../primitives'
-import type { ConnectorLineType } from '../types'
+import type { ConnectorControlPoint, ConnectorLineType } from '../types'
+import { controlledCurveRoute, controlledElbowRoute } from './controls'
 import { elbowRoute } from './elbow'
 import { connectorEndGap } from './gaps'
 import { along, EPSILON, exitPoint, straightPieces, ZERO, type ConnectorPiece } from './pieces'
@@ -99,16 +100,27 @@ function gapped(end: ConnectorRouteEnd): boolean {
   return end.magnet !== 'NONE'
 }
 
+/** Where a connector's line was dragged to, in the connector's parent's axes. */
+export interface ConnectorRouteControls {
+  /** An elbow's dragged segments, in order. */
+  points: ConnectorControlPoint[]
+  /** A curve's two control points. */
+  curve: [Vector, Vector] | null
+}
+
 /**
  * The pieces of a connector's line between its two ends, in the connector's parent's axes. Ends
  * attached by a magnet stop short by their caps' gaps; free ends sit on their points. Layers that
- * touch or overlap leave an elbow or a curve nothing to route but the start, as in Figma.
+ * touch or overlap leave an elbow or a curve nothing to route but the start, as in Figma. An elbow
+ * runs along the segments it was dragged to and a curve bends to its dragged control points,
+ * leaving their ends by the sides they would take anyway.
  */
 export function routeConnector(
   lineType: ConnectorLineType,
   start: ConnectorRouteEnd,
   end: ConnectorRouteEnd,
-  strokeWeight: number
+  strokeWeight: number,
+  controls: ConnectorRouteControls = { points: [], curve: null }
 ): ConnectorPiece[] {
   const gaps: [number, number] = [
     gapped(start) ? connectorEndGap(start, strokeWeight, 'start') : 0,
@@ -120,11 +132,17 @@ export function routeConnector(
     const at = sideMidpoint(start.box, startSide)
     return [{ from: at, to: at, handleFrom: ZERO, handleTo: ZERO }]
   }
+  if (lineType === 'CURVED' && controls.curve) {
+    return controlledCurveRoute(start, end, [startSide, endSide], gaps, controls.curve)
+  }
   if (lineType === 'CURVED') {
     // A curve to a free point arrives facing the way it left, where an elbow arrives along the
     // longer axis.
     const curveEndSide = end.box || !start.box ? endSide : opposite(startSide)
     return curvedRoute(start, end, [startSide, curveEndSide], gaps)
+  }
+  if (controls.points.length > 0) {
+    return controlledElbowRoute(start, end, [startSide, endSide], gaps, controls.points)
   }
   return elbowRoute(start, end, [startSide, endSide], gaps) ?? []
 }

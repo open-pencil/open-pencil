@@ -31,10 +31,13 @@ export { MIN_EXPORT_SCALE, MAX_EXPORT_SCALE, clampExportScale }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
+/** Formats known by a product name rather than their extension. */
+const PRODUCT_LABELS: Partial<Record<ExportFormatId, string>> = { drawio: 'draw.io' }
+
 /** Short, extension-style labels for the node export formats (PNG, PDF, PPTX, …). */
 export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = EXPORT_FORMATS.map((id) => ({
   value: id,
-  label: (io.getFormat(id)?.extensions[0] ?? id).toUpperCase()
+  label: PRODUCT_LABELS[id] ?? (io.getFormat(id)?.extensions[0] ?? id).toUpperCase()
 }))
 
 export function createDefaultExportSetting(): ExportSetting {

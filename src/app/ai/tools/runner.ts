@@ -1,6 +1,11 @@
-import { isEmptyDocumentChange } from '@open-pencil/core'
+import { executeAtomicTool, isEmptyDocumentChange, type DocumentChange } from '@open-pencil/core'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { isAtomicTool, toolChangesDocument, type ToolDef } from '@open-pencil/core/tools'
+import {
+  isAtomicTool,
+  toolChangesDocument,
+  toolFailure,
+  type ToolDef
+} from '@open-pencil/core/tools'
 
 import {
   AI_UNDO_PREFIX,
@@ -10,7 +15,7 @@ import {
   recordRunUndoEntry,
   type Run
 } from '@/app/ai/reply/run'
-import { AUTOMATION_UNDO_LABEL, executeAtomicEditorTool } from '@/app/automation/execution/editor'
+import { AUTOMATION_UNDO_LABEL, loadAtomicToolFonts } from '@/app/automation/execution/editor'
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 
@@ -66,15 +71,8 @@ function writtenPageId(figma: FigmaAPI, args: Record<string, unknown>): string {
   return page?.id ?? figma.currentPageId
 }
 
-async function execute(call: EditorToolCall, pageId: string, prefix: string): Promise<unknown> {
+async function execute(call: EditorToolCall, pageId: string): Promise<unknown> {
   const { store, figma, def, args } = call
-  if (isAtomicTool(def)) {
-    return executeAtomicEditorTool(store, figma, def, args, {
-      label: prefix,
-      signal: call.signal,
-      isLive: call.isLive
-    })
-  }
   return store.runMutationWithLayout(
     () => def.execute(figma, args),
     pageId,
@@ -89,7 +87,7 @@ async function execute(call: EditorToolCall, pageId: string, prefix: string): Pr
 async function recordReplyCall(
   call: EditorToolCall,
   reply: ReplyCall,
-  change: ReturnType<ReturnType<EditorStore['captureDocumentChange']>>,
+  change: DocumentChange,
   undoBefore: ReturnType<EditorStore['undo']['peekUndo']>,
   viewPageId: string
 ): Promise<void> {
@@ -124,20 +122,32 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
   }
   const prefix = reply ? AI_UNDO_PREFIX : (call.source ?? AUTOMATION_UNDO_LABEL)
   const undoBefore = store.undo.peekUndo()
-  const finishChange = store.captureDocumentChange(pageId)
-  try {
-    return await execute(call, pageId, prefix)
-  } finally {
-    const change = finishChange()
-    // Atomic tools record their own entry; an edit that changed nothing records none.
-    if (!isAtomicTool(def) && !isEmptyDocumentChange(change)) {
-      store.pushUndoStep({
-        label: `${prefix}: ${def.name}`,
-        forward: () => store.restoreDocumentChange(change, 'after'),
-        inverse: () => store.restoreDocumentChange(change, 'before')
-      })
+  const recorded: { change?: DocumentChange } = {}
+  const options = {
+    label: `${prefix}: ${def.name}`,
+    pageId,
+    onRecorded: (change: DocumentChange) => {
+      recorded.change = change
     }
-    if (reply) await recordReplyCall(call, reply, change, undoBefore, viewPageId)
+  }
+  try {
+    if (isAtomicTool(def)) {
+      // An atomic tool commits its own step at once; loading its fonts after is not part of it.
+      const result = store.recordEdit({ ...options, push: false }, () =>
+        executeAtomicTool(store, figma, def, args, {
+          label: prefix,
+          signal: call.signal,
+          isLive: call.isLive
+        })
+      )
+      await loadAtomicToolFonts(store, figma, args, { isLive: call.isLive })
+      return result
+    }
+    return await store.recordEditAsync(options, () => execute(call, pageId))
+  } finally {
+    if (reply && recorded.change) {
+      await recordReplyCall(call, reply, recorded.change, undoBefore, viewPageId)
+    }
   }
 }
 
@@ -149,6 +159,12 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
 export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
   const { store, figma, def, args } = call
   if (!def.mutates) return def.execute(figma, args)
+  // Fonts load before the edit takes its turn, so an edit never waits on the network.
+  try {
+    await def.loadFonts(figma, args)
+  } catch (error) {
+    return toolFailure(error)
+  }
   const reply = call.reply ?? null
   const release = await editLock(store)()
   // Whatever fails from here, the lock and the reply's count of running tools are released.

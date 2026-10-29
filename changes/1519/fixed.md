@@ -1,0 +1,1 @@
+- SVG and PDF exports draw FigJam shapes in their own outlines, with inner lines such as a database's rim, instead of as rounded rectangles, and arrows and connectors keep their arrow heads and rounded corners.

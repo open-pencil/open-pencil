@@ -15,14 +15,16 @@ import { parseCloudLinkPath, type CloudAccountStatus } from '@open-pencil/cloud/
  */
 export const WELCOME_PATH = '/welcome'
 
+/** The server's sign-in page, which goes on to its `redirect` afterwards. */
+const SIGN_IN_PATH = '/auth/sign-in'
+
 /**
- * Whether an address is a link to a document, a shared file, or an invitation, which sign in on
- * their own; a shared file or invitation carries its secret.
+ * Whether an address is a link to a shared file or an invitation, which carries its secret and
+ * opens on its own, signed in or not.
  */
-export function isCloudLink(url: URL): boolean {
+export function isSecretCloudLink(url: URL): boolean {
   const path = parseCloudLinkPath(url.pathname)
-  if (!path) return false
-  return path.kind === 'documents' || url.hash.length > 1
+  return path !== null && path.kind !== 'documents' && url.hash.length > 1
 }
 
 /** Whether this browser chose to use the server's editor without an account. */
@@ -45,17 +47,25 @@ export type SiteAccount = CloudAccountStatus | null | 'unreachable'
  * Where a visit to an editor page belongs: null for the editor, or the welcome page, which sends
  * an account waiting for review on to its standing page. An account that may use the server
  * gets the editor, and so does an unreachable server, since the editor works without it.
+ * A document's link needs an account: signed out, it goes to sign in and comes back after.
  * Without an account, the root asks first unless this browser chose the local editor, and every
  * page does where the server does not allow it.
  */
 export function siteDestination(visit: {
   path: string
+  /** The address's query, which a document link keeps through signing in. */
+  search?: string
   account: SiteAccount
   localEditor: boolean
   choseLocalEditor: boolean
 }): string | null {
   const { path, account } = visit
   if (account === 'unreachable' || account?.state === 'active') return null
+  if (parseCloudLinkPath(path)?.kind === 'documents') {
+    if (account) return WELCOME_PATH
+    const redirect = path + (visit.search ?? '')
+    return `${SIGN_IN_PATH}?${new URLSearchParams({ redirect })}`
+  }
   if (visit.localEditor && (path !== '/' || visit.choseLocalEditor)) return null
   return WELCOME_PATH
 }
@@ -95,13 +105,14 @@ async function signedInAccount(api: CloudPortalClient): Promise<SiteAccount> {
  * unreachable, and the editor opens.
  */
 export async function enterCloudSite(location: Location = globalThis.location): Promise<boolean> {
-  if (isCloudLink(new URL(location.href))) return true
+  if (isSecretCloudLink(new URL(location.href))) return true
   const [discovery, account] = await Promise.all([
     discoverCloud(location.origin).catch(() => null),
     signedInAccount(createCloudPortalClient({ baseURL: location.origin }))
   ])
   const destination = siteDestination({
     path: location.pathname,
+    search: location.search,
     account,
     localEditor: discovery?.localEditor ?? false,
     choseLocalEditor: localEditor.value

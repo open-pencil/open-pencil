@@ -1,7 +1,7 @@
 import { render } from '@vue-email/render'
 import { defineComponent } from 'vue'
 
-import { emailLayout } from './layout'
+import { emailLayout } from '@open-pencil/cloud/email'
 
 const ConfirmationEmail = defineComponent({
   props: {

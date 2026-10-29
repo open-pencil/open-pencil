@@ -14,12 +14,10 @@ import {
   type BooleanOperation
 } from './structure/boolean'
 import { wrapSelectionInContainer as wrapSelectionInContainerImpl } from './structure/container-wrap'
-import {
-  flattenSelected as flattenSelectedImpl,
-  outlineStrokeSelected as outlineStrokeSelectedImpl
-} from './structure/flatten'
+import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
 import { ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
+import { outlineStrokeSelected as outlineStrokeSelectedImpl } from './structure/outline-stroke'
 import {
   defaultNodeName,
   previewRenamedNodes,

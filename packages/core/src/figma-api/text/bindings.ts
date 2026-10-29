@@ -10,9 +10,9 @@ import {
   type Variable
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
+import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 import { getSharedStyles, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
 
-import { styleNameToWeight } from '#core/figma-api/fonts'
 import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
 import { styleRunsWithPatch } from '#core/text/character-style'
 
@@ -88,7 +88,7 @@ function boundValue(
     const value = graph.resolveVariableForNode(node.id, variable.id)
     if (typeof value !== 'string') return {}
     if (field === 'fontFamily') return { fontFamily: value }
-    const { weight, italic } = styleNameToWeight(value)
+    const { weight, italic } = parseFontStyle(value)
     return { fontWeight: weight, italic }
   }
   const value = graph.resolveNumberVariableForNode(node.id, variable.id)

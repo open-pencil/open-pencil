@@ -1,0 +1,1 @@
+- Designs save as draw.io files: FigJam shapes, connectors, text, sections, frames, and groups as their draw.io counterparts, turned and mirrored where they are, and anything else as an image, from **File › Export selection** and the Export panel, for a selection or a page.

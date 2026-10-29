@@ -36,30 +36,23 @@ export function usePortalFailureMessages() {
       case 'domain':
         break
     }
-    switch (error.code) {
-      case 'current_password_invalid':
-        return value.failureInvalidCredentials
-      case 'password_too_short':
-        return value.failurePasswordTooShort
-      case 'password_too_long':
-        return value.failurePasswordTooLong
-      case 'last_authentication_method':
-        return value.errorLastMethod
-      case 'session_not_fresh':
-        return value.errorSessionNotFresh
-      case 'last_admin_required':
-        return value.errorLastAdmin
-      case 'self_admin_action_forbidden':
-        return value.errorSelfAction
-      case 'mfa_required':
-        return value.errorTwoStepRequired
-      case 'invalid_enrollment_transition':
-        return value.errorAlreadyDecided
-      case 'rate_limited':
-        return value.failureRateLimited
-      default:
-        return value.failureUnavailable
+    const words: Partial<Record<NonNullable<CloudPortalAPIError['code']>, string>> = {
+      current_password_invalid: value.failureInvalidCredentials,
+      password_too_short: value.failurePasswordTooShort,
+      password_too_long: value.failurePasswordTooLong,
+      last_authentication_method: value.errorLastMethod,
+      session_not_fresh: value.errorSessionNotFresh,
+      last_admin_required: value.errorLastAdmin,
+      self_admin_action_forbidden: value.errorSelfAction,
+      mfa_required: value.errorTwoStepRequired,
+      invalid_enrollment_transition: value.errorAlreadyDecided,
+      rate_limited: value.failureRateLimited,
+      email_unchanged: value.errorEmailUnchanged,
+      email_change_unavailable: value.emailChangeUnavailable,
+      current_session: value.errorCurrentSession,
+      picture_invalid: value.errorPictureInvalid
     }
+    return (error.code && words[error.code]) ?? value.failureUnavailable
   }
   return { failure, callback, api }
 }

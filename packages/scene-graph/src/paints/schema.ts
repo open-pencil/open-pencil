@@ -2,9 +2,39 @@ import * as v from 'valibot'
 
 import { colorSchema } from '../color/schema'
 import { finiteNumberSchema, matrixSchema, vectorSchema } from '../primitives/schema'
-import type { FillType } from '../types'
+import type { FillType, GradientTransform } from '../types'
 
 export const gradientStopSchema = v.object({ position: finiteNumberSchema, color: colorSchema })
+
+const transformRowSchema = v.strictTuple([
+  finiteNumberSchema,
+  finiteNumberSchema,
+  finiteNumberSchema
+])
+
+/**
+ * A paint's `gradientTransform` or `imageTransform` as an author writes it, read into the matrix
+ * fields: Figma's two rows of three, as its plugin API gives them, or the fields themselves. An
+ * extra row, value, or field is refused rather than dropped.
+ */
+export const paintTransformSchema = v.union(
+  [
+    v.pipe(
+      v.strictTuple([transformRowSchema, transformRowSchema]),
+      v.transform(([[m00, m01, m02], [m10, m11, m12]]): GradientTransform => ({
+        m00,
+        m01,
+        m02,
+        m10,
+        m11,
+        m12
+      }))
+    ),
+    v.strictObject(matrixSchema.entries)
+  ],
+  (issue) =>
+    `Expected [[a, b, c], [d, e, f]] or { m00, m01, m02, m10, m11, m12 } but received ${issue.received}`
+)
 
 /** Every fill type, as a record so a type added to `FillType` fails to compile until listed. */
 const FILL_TYPES = {

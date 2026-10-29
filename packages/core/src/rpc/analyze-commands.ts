@@ -3,6 +3,7 @@ import { orderBy, sortBy } from 'es-toolkit/array'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex, colorDistance as colorDist } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { formatTextLength } from '@open-pencil/scene-graph/text'
 
 import type { ColorUsageEntry } from '#core/tools/analyze/colors'
 import {
@@ -156,7 +157,7 @@ export const analyzeTypographyCommand: RPCCommand<AnalyzeTypographyArgs, Analyze
         if (node.type !== 'TEXT') continue
         totalTextNodes++
 
-        const lh = node.lineHeight === null ? 'auto' : `${node.lineHeight}px`
+        const lh = node.lineHeight === null ? 'auto' : formatTextLength(node.lineHeight)
         const key = `${node.fontFamily}|${node.fontSize}|${node.fontWeight}|${lh}`
         const existing = styleMap.get(key)
         if (existing) {

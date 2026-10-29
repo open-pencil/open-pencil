@@ -1,11 +1,14 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { CONNECTOR_LABEL_PADDING, labelledConnector } from '@open-pencil/scene-graph/connectors'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
+import { paintFills } from '#core/canvas/fills'
 import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { connectorLabelPlaceholderNode } from '#core/canvas/text/placeholder'
 import {
   DROP_HIGHLIGHT_ALPHA,
   DROP_HIGHLIGHT_STROKE,
@@ -176,7 +179,21 @@ export function drawEditingText(
   const node = overlays.editingTextId ? graph.getNode(overlays.editingTextId) : undefined
   const editor = overlays.textEditor
   if (!node || !editor?.state?.paragraph) return
-  inNodeSpace(r, canvas, createSceneGeometry(graph, overlays.rotationPreview), node, () =>
-    r.drawTextEditOverlay(canvas, node, editor)
+  // A connector label is outlined by its plate, as FigJam outlines it, and shows its
+  // placeholder while it is empty.
+  const outset = labelledConnector(graph, node) ? CONNECTOR_LABEL_PADDING : 0
+  const placeholder = connectorLabelPlaceholderNode(
+    graph,
+    node,
+    r.connectorLabelPlaceholder,
+    node.id
   )
+  inNodeSpace(r, canvas, createSceneGeometry(graph, overlays.rotationPreview), node, () => {
+    if (placeholder) {
+      paintFills(r, placeholder.fills, placeholder, graph, (fill) =>
+        r.renderText(canvas, placeholder, fill)
+      )
+    }
+    r.drawTextEditOverlay(canvas, node, editor, outset)
+  })
 }

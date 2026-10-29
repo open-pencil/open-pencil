@@ -20,10 +20,11 @@ import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
+import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
+import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 const storage = useStorageMessages()
 const settings = useSettingsMessages()
@@ -50,7 +51,15 @@ const {
   saveResult,
   clearCredential
 } = connection
-useSettingsFormGuard({ dirty, busy, cancel }, editing)
+useSettingsFormGuard(
+  {
+    dirty,
+    busy,
+    cancel,
+    crumb: { parent: () => settings.value.storage, title: () => provider.value.label }
+  },
+  editing
+)
 
 function preferenceLabel(field: string) {
   if (field === 'endpoint') return storage.value.endpoint
@@ -70,8 +79,14 @@ function edit() {
   editing.value = true
 }
 function cancel() {
-  connection.cancel()
   editing.value = false
+}
+/**
+ * The drafts are reset once the editor has slid away, so it never shows them reverting; an
+ * editor opened again meanwhile has begun its own.
+ */
+function closed() {
+  if (!editing.value) connection.cancel()
 }
 async function save() {
   if (busy.value) return
@@ -99,16 +114,108 @@ async function testConnection() {
 </script>
 
 <template>
-  <form
-    ref="formElement"
-    class="flex min-h-0 min-w-0 flex-1 flex-col"
-    novalidate
-    :aria-busy="busy"
-    @submit.prevent="save"
-  >
-    <SettingsPage data-test-id="settings-storage-panel">
+  <PanelDrillIn :open="editing" data-test-id="settings-storage-panel" @closed="closed">
+    <template #detail>
+      <form
+        ref="formElement"
+        class="flex min-h-0 min-w-0 flex-1 flex-col"
+        novalidate
+        :aria-busy="busy"
+        @submit.prevent="save"
+      >
+        <SettingsPage>
+          <div class="flex flex-col gap-3">
+            <fieldset :disabled="busy" class="flex min-w-0 flex-col gap-4">
+              <ProviderSettingsField
+                v-for="field in provider.preferenceFields"
+                :key="field.id"
+                v-slot="{ control }"
+                :label="preferenceLabel(field.id)"
+                :hint="field.kind === 'url' ? settings.baseURLHint : field.placeholder"
+                :error="fieldErrors[field.id]"
+                @blur="feedback.blur(field.id)"
+              >
+                <ProviderSettingsInput
+                  v-bind="control"
+                  :model-value="preferenceDrafts[field.id] ?? ''"
+                  @update:model-value="preferenceDrafts[field.id] = String($event)"
+                  :type="field.kind"
+                  :placeholder="field.placeholder"
+                  :aria-label="preferenceLabel(field.id)"
+                />
+              </ProviderSettingsField>
+              <ProviderSettingsField
+                v-for="field in provider.credentialFields"
+                :key="field.id"
+                v-slot="{ control }"
+                :label="credentialLabel(field.id)"
+                :label-for="`storage-${field.id}`"
+                :hint="
+                  credentialStatuses[field.id] === 'configured'
+                    ? settings.savedCredentialHint
+                    : field.placeholder
+                "
+                :error="fieldErrors[`credential:${field.id}`]"
+                :clear-label="
+                  credentialStatuses[field.id] === 'configured' ? common.clear : undefined
+                "
+                @clear="clearCredential(field.id)"
+                @blur="feedback.blur(`credential:${field.id}`)"
+              >
+                <ProviderSettingsInput
+                  v-bind="control"
+                  :model-value="credentialDrafts[field.id] ?? ''"
+                  @update:model-value="credentialDrafts[field.id] = String($event)"
+                  type="password"
+                  :aria-label="credentialLabel(field.id)"
+                  :placeholder="
+                    credentialStatuses[field.id] === 'configured'
+                      ? credentials.savedReplace
+                      : field.placeholder
+                  "
+                  autocomplete="new-password"
+                />
+              </ProviderSettingsField>
+            </fieldset>
+            <AppButton
+              class="self-start"
+              variant="outline"
+              :loading="testing"
+              :disabled="busy"
+              data-test-id="settings-storage-test"
+              @click="testConnection"
+            >
+              <template #leading><icon-lucide-plug-zap aria-hidden="true" /></template>
+              {{ testing ? common.testingConnection : common.testConnection }}
+            </AppButton>
+            <AppAlert
+              v-if="testResult"
+              :tone="testResult === 'success' ? 'success' : 'error'"
+              :heading="
+                testResult === 'success'
+                  ? notifications.storageConnected
+                  : settings.connectionFailed
+              "
+            />
+            <SettingsSaveFeedback :error="error" :result="saveResult" />
+          </div>
+          <template #footer>
+            <AppButton :disabled="busy" @click="cancel">{{ common.cancel }}</AppButton>
+            <AppButton
+              type="submit"
+              color="primary"
+              variant="solid"
+              :loading="busy && !testing"
+              :disabled="busy"
+              >{{ common.save }}</AppButton
+            >
+          </template>
+        </SettingsPage>
+      </form>
+    </template>
+    <SettingsPage>
       <!-- Sections are spaced as other multi-section pages space them. -->
-      <div v-if="!editing" class="flex flex-col gap-6">
+      <div class="flex flex-col gap-6">
         <SettingsSection>
           <template #title>{{ settings.storage }}</template>
           <template #description>{{ provider.description }}</template>
@@ -134,92 +241,6 @@ async function testConnection() {
           </p>
         </SettingsSection>
       </div>
-      <SettingsSection v-else>
-        <template #title>{{ settings.storage }}</template>
-        <template #description>{{ settings.saveChangesDescription }}</template>
-        <fieldset :disabled="busy" class="flex min-w-0 flex-col gap-4">
-          <ProviderSettingsField
-            v-for="field in provider.preferenceFields"
-            :key="field.id"
-            v-slot="{ control }"
-            :label="preferenceLabel(field.id)"
-            :hint="field.kind === 'url' ? settings.baseURLHint : field.placeholder"
-            :error="fieldErrors[field.id]"
-            @blur="feedback.blur(field.id)"
-          >
-            <AppInput
-              v-bind="control"
-              :model-value="preferenceDrafts[field.id] ?? ''"
-              @update:model-value="preferenceDrafts[field.id] = String($event)"
-              :type="field.kind"
-              :placeholder="field.placeholder"
-              :aria-label="preferenceLabel(field.id)"
-              tone="panel"
-            />
-          </ProviderSettingsField>
-          <ProviderSettingsField
-            v-for="field in provider.credentialFields"
-            :key="field.id"
-            v-slot="{ control }"
-            :label="credentialLabel(field.id)"
-            :label-for="`storage-${field.id}`"
-            :hint="
-              credentialStatuses[field.id] === 'configured'
-                ? settings.savedCredentialHint
-                : field.placeholder
-            "
-            :error="fieldErrors[`credential:${field.id}`]"
-            :clear-label="credentialStatuses[field.id] === 'configured' ? common.clear : undefined"
-            @clear="clearCredential(field.id)"
-            @blur="feedback.blur(`credential:${field.id}`)"
-          >
-            <AppInput
-              v-bind="control"
-              :model-value="credentialDrafts[field.id] ?? ''"
-              @update:model-value="credentialDrafts[field.id] = String($event)"
-              type="password"
-              :aria-label="credentialLabel(field.id)"
-              :placeholder="
-                credentialStatuses[field.id] === 'configured'
-                  ? credentials.savedReplace
-                  : field.placeholder
-              "
-              tone="panel"
-              autocomplete="new-password"
-            />
-          </ProviderSettingsField>
-        </fieldset>
-        <AppButton
-          class="self-start"
-          variant="outline"
-          :loading="testing"
-          :disabled="busy"
-          data-test-id="settings-storage-test"
-          @click="testConnection"
-        >
-          <template #leading><icon-lucide-plug-zap aria-hidden="true" /></template>
-          {{ testing ? common.testingConnection : common.testConnection }}
-        </AppButton>
-        <AppAlert
-          v-if="testResult"
-          :tone="testResult === 'success' ? 'success' : 'error'"
-          :heading="
-            testResult === 'success' ? notifications.storageConnected : settings.connectionFailed
-          "
-        />
-        <SettingsSaveFeedback :error="error" :result="saveResult" />
-      </SettingsSection>
-      <template v-if="editing" #footer>
-        <AppButton :disabled="busy" @click="cancel">{{ common.cancel }}</AppButton>
-        <AppButton
-          type="submit"
-          color="primary"
-          variant="solid"
-          :loading="busy && !testing"
-          :disabled="busy"
-          >{{ common.save }}</AppButton
-        >
-      </template>
     </SettingsPage>
-  </form>
+  </PanelDrillIn>
 </template>

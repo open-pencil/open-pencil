@@ -16,8 +16,9 @@ import {
   updateDesignCheckPreferences,
   type AppPreferences
 } from '@/app/settings/preferences/store'
+import { APP_THEMES, type AppTheme } from '@/app/settings/theme'
 import { accentPreferenceSchema } from '@/app/shell/accent/schema'
-import { APP_THEMES, getAppTheme, setAppTheme, type AppTheme } from '@/app/shell/theme'
+import { getAppTheme, setAppTheme } from '@/app/shell/theme'
 
 /**
  * The editor preferences that automation clients (CLI, MCP) may read and change.

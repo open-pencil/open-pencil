@@ -22,6 +22,7 @@ export type AppMenuPaletteLabel =
   | 'exportSelectionAsPNG'
   | 'exportSelectionAsSVG'
   | 'exportSelectionAsPPTX'
+  | 'exportSelectionAsDrawIO'
   | 'exportSelectionAsFig'
 
 export interface AppMenuPaletteMetadata {
@@ -118,6 +119,11 @@ export const APP_MENU_SCHEMA = [
             palette: { icon: 'download', label: 'exportSelectionAsPPTX' }
           },
           {
+            id: 'export-drawio',
+            label: 'draw.io',
+            palette: { icon: 'download', label: 'exportSelectionAsDrawIO' }
+          },
+          {
             id: 'export-fig',
             label: '.fig',
             palette: { icon: 'download', label: 'exportSelectionAsFig' }
@@ -127,6 +133,9 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       { id: 'autosave', label: 'Autosave', checkbox: true, feature: 'local-file' },
       { id: 'close', label: 'Close Tab', shortcut: 'MOD+W' },
+      // ⌃Tab on every platform, as in Figma's desktop app, so it is not a MOD shortcut.
+      { id: 'previous-tab', label: 'Select Previous Tab', accelerator: 'Ctrl+Shift+Tab' },
+      { id: 'next-tab', label: 'Select Next Tab', accelerator: 'Ctrl+Tab' },
       // Windows, Linux, and the browser menu; macOS shows it in the application menu instead.
       { type: 'separator' },
       { ...SETTINGS_MENU_ITEM, handler: 'shell' }
@@ -468,6 +477,62 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.distributeVertical',
         label: 'Distribute Vertical Spacing',
         command: 'selection.distributeVertical'
+      },
+      { type: 'separator' },
+      { id: 'selection.tidyUp', label: 'Tidy Up', command: 'selection.tidyUp' },
+      {
+        id: 'selection.packHorizontal',
+        label: 'Pack Horizontal',
+        command: 'selection.packHorizontal'
+      },
+      { id: 'selection.packVertical', label: 'Pack Vertical', command: 'selection.packVertical' },
+      {
+        id: 'arrange-layout',
+        label: 'Auto Arrange',
+        sub: [
+          {
+            id: 'selection.arrangeSpread',
+            label: 'Spread Apart',
+            command: 'selection.arrangeSpread'
+          },
+          {
+            id: 'selection.arrangeCompact',
+            label: 'Spread and Compact',
+            command: 'selection.arrangeCompact'
+          },
+          {
+            id: 'selection.arrangePack',
+            label: 'Pack into Rows',
+            command: 'selection.arrangePack'
+          },
+          { type: 'separator' },
+          {
+            id: 'selection.arrangeFlowDown',
+            label: 'Flow, Top to Bottom',
+            command: 'selection.arrangeFlowDown'
+          },
+          {
+            id: 'selection.arrangeFlowRight',
+            label: 'Flow, Left to Right',
+            command: 'selection.arrangeFlowRight'
+          },
+          {
+            id: 'selection.arrangeTreeDown',
+            label: 'Tree, Top to Bottom',
+            command: 'selection.arrangeTreeDown'
+          },
+          {
+            id: 'selection.arrangeTreeRight',
+            label: 'Tree, Left to Right',
+            command: 'selection.arrangeTreeRight'
+          },
+          {
+            id: 'selection.arrangeRadial',
+            label: 'Radial Map',
+            command: 'selection.arrangeRadial'
+          },
+          { id: 'selection.arrangeNetwork', label: 'Network', command: 'selection.arrangeNetwork' }
+        ]
       }
     ]
   }

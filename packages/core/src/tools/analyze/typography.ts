@@ -1,6 +1,8 @@
 import { orderBy, sortBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
+import { formatTextLength } from '@open-pencil/scene-graph/text'
+
 import { defineTool } from '#core/tools/schema'
 
 import { analysisLimitInputSchema } from './schema'
@@ -30,7 +32,7 @@ export const analyzeTypography = defineTool({
       totalTextNodes++
       const raw = figma.graph.getNode(node.id)
       if (!raw) return false
-      const lh = raw.lineHeight === null ? 'auto' : `${raw.lineHeight}`
+      const lh = raw.lineHeight === null ? 'auto' : formatTextLength(raw.lineHeight)
       const key = `${raw.fontFamily}|${raw.fontSize}|${raw.fontWeight}|${lh}`
       const entry = styleMap.get(key)
       if (entry) {

@@ -1,5 +1,6 @@
 import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit/array'
+import { basename } from 'pathe'
 import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
@@ -63,7 +64,7 @@ if (IS_BROWSER && 'window' in globalThis) {
  * escape stays as written.
  */
 function fileNameFromURL(url: URL): string {
-  return decode(url.pathname.split('/').pop() ?? '') || 'file.fig'
+  return decode(basename(url.pathname)) || 'file.fig'
 }
 
 /** Fetches a document over HTTP and opens it in a new tab. Browser builds only. */
@@ -124,7 +125,7 @@ export async function readTauriDesignFile(path: string): Promise<File> {
   assertSupportedDesignFile(path)
   const { readFile } = await import('@tauri-apps/plugin-fs')
   const bytes = await readFile(path)
-  return new File([bytes], path.split('/').pop() ?? 'file.fig')
+  return new File([bytes], basename(path) || 'file.fig')
 }
 
 export async function chooseTauriOpenPaths(): Promise<string[]> {
@@ -161,7 +162,7 @@ export async function activateTabForPath(path: string): Promise<boolean> {
 export async function openFileDialog() {
   if (isTauri()) {
     const paths = await chooseTauriOpenPaths()
-    await openDesignFileBatch(paths, (path) => path.split(/[/\\]/).pop() ?? path, openFileFromPath)
+    await openDesignFileBatch(paths, (path) => basename(path) || path, openFileFromPath)
     return
   }
 

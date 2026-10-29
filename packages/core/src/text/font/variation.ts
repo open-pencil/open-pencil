@@ -30,6 +30,12 @@ function sfntTable(view: DataView, tag: string): TableRange | null {
   return null
 }
 
+/** One of the font's tables, or `null` when it has none. */
+export function fontTableView(data: ArrayBuffer, tag: string): DataView | null {
+  const table = sfntTable(new DataView(data), tag)
+  return table ? new DataView(data, table.offset, table.length) : null
+}
+
 export function isVariableFont(data: ArrayBuffer): boolean {
   return sfntTable(new DataView(data), 'fvar') !== null
 }
@@ -79,12 +85,24 @@ function fontName(view: DataView, name: TableRange, nameId: number): string | nu
   return fallback
 }
 
-/**
- * Returns the axis coordinates a variable font needs to render `style`, preferring the named
- * instance with that name (for example SF Pro `Medium` is `wght` 510) and otherwise clamping the
- * style's weight to the `wght` axis. Returns `null` for static fonts.
- */
-export function namedInstanceVariations(data: ArrayBuffer, style: string): FontVariation[] | null {
+/** A variation axis of a font: its tag, its range and default, and the name the font gives it. */
+export interface FontAxis {
+  tag: string
+  min: number
+  default: number
+  max: number
+  name: string
+}
+
+interface VariationTable {
+  view: DataView
+  axes: FontAxis[]
+  /** Where each named instance's record starts. */
+  instances: number[]
+  name: TableRange | null
+}
+
+function variationTable(data: ArrayBuffer): VariationTable | null {
   const view = new DataView(data)
   const fvar = sfntTable(view, 'fvar')
   if (!fvar || fvar.length < FVAR_HEADER_SIZE) return null
@@ -102,21 +120,66 @@ export function namedInstanceVariations(data: ArrayBuffer, style: string): FontV
     return null
   }
 
+  const name = sfntTable(view, 'name')
   const axes = Array.from({ length: axisCount }, (_, index) => {
     const axis = axesOffset + index * axisSize
     let tag = ''
     for (let c = 0; c < 4; c++) tag += String.fromCharCode(view.getUint8(axis + c))
-    return { tag, min: fixed(view, axis + 4), max: fixed(view, axis + 12) }
+    return {
+      tag,
+      min: fixed(view, axis + 4),
+      default: fixed(view, axis + 8),
+      max: fixed(view, axis + 12),
+      name: (name && fontName(view, name, view.getUint16(axis + 18))) ?? tag
+    }
   })
-
-  const name = sfntTable(view, 'name')
-  const requested = normalizeStyleName(style)
   const instancesOffset = axesOffset + axisCount * axisSize
+  const instances = Array.from(
+    { length: instanceCount },
+    (_, index) => instancesOffset + index * instanceSize
+  )
+  return { view, axes, instances, name }
+}
+
+/** The variation axes of a font, in its order, or `null` for a static font. */
+export function fontAxes(data: ArrayBuffer): FontAxis[] | null {
+  return variationTable(data)?.axes ?? null
+}
+
+/** A named instance of a variable font, such as Inter's `Semi Bold`, with every axis' value. */
+export interface NamedInstance {
+  name: string
+  variations: FontVariation[]
+}
+
+/** A variable font's named instances, in its order. */
+export function namedInstances(data: ArrayBuffer): NamedInstance[] {
+  const table = variationTable(data)
+  if (!table?.name) return []
+  const { view, axes, instances, name } = table
+  return instances.flatMap((offset) => {
+    const instanceName = fontName(view, name, view.getUint16(offset))
+    if (instanceName === null) return []
+    const variations = axes.map((axis, axisIndex) => ({
+      axis: axis.tag,
+      value: fixed(view, offset + 4 + axisIndex * 4)
+    }))
+    return [{ name: instanceName, variations }]
+  })
+}
+
+/**
+ * Returns the axis coordinates a variable font needs to render `style`, preferring the named
+ * instance with that name (for example SF Pro `Medium` is `wght` 510) and otherwise clamping the
+ * style's weight to the `wght` axis. Returns `null` for static fonts.
+ */
+export function namedInstanceVariations(data: ArrayBuffer, style: string): FontVariation[] | null {
+  const table = variationTable(data)
+  if (!table) return null
+  const { view, axes, instances, name } = table
+  const requested = normalizeStyleName(style)
   const instance = name
-    ? Array.from(
-        { length: instanceCount },
-        (_, index) => instancesOffset + index * instanceSize
-      ).find((offset) => {
+    ? instances.find((offset) => {
         const instanceName = fontName(view, name, view.getUint16(offset))
         return instanceName !== null && normalizeStyleName(instanceName) === requested
       })

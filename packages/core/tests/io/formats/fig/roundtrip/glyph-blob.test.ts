@@ -12,6 +12,7 @@ import { fontManager } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 const INTER_ASSETS = corePackagePath('assets')
 
@@ -35,14 +36,12 @@ function countGlyphBlobs(bytes: Uint8Array) {
   return { glyphs, glyphsWithBlob, uniqueGlyphBlobs: uniqueGlyphBlobs.size }
 }
 
-function loadInterFonts() {
+/** Inter as the app bundles it: one variable file draws every weight. */
+async function loadInterFonts() {
+  const bytes = readFileSync(resolve(INTER_ASSETS, 'InterVariable.ttf'))
+  const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
   for (const style of ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-    const bytes = readFileSync(resolve(INTER_ASSETS, `Inter-${style}.ttf`))
-    fontManager.markLoaded(
-      'Inter',
-      style,
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    await fontManager.markLoaded('Inter', style, data)
   }
 }
 
@@ -77,7 +76,7 @@ heavy('roundtrip: text glyph blobs', () => {
   )
 
   test('deduplicates generated glyph blobs across repeated text', async () => {
-    loadInterFonts()
+    await loadInterFonts()
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -103,7 +102,7 @@ heavy('roundtrip: text glyph blobs', () => {
   })
 
   test('reopens wrapped text on the lines it was drawn on (#914)', async () => {
-    loadInterFonts()
+    await loadInterFonts()
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -125,7 +124,7 @@ heavy('roundtrip: text glyph blobs', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 13,
-      lineHeight: 16,
+      lineHeight: pixelLength(16),
       textAutoResize: 'HEIGHT'
     })
 

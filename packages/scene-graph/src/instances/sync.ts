@@ -20,8 +20,10 @@ import {
 import { INSTANCE_SYNC_FIELD_OWNERS, INSTANCE_SYNC_FIELDS } from './fields'
 import { ownsSelfFillField, sourceWithEffectiveFill } from './main-component'
 import {
-  getInstanceOverride,
+  bindingOverrideField,
+  copiedComponentLayerId,
   hasInstanceOverride as hasNodeInstanceOverride,
+  overriddenBindingField,
   setInstanceOverride,
   type InstanceOverrideState
 } from './overrides'
@@ -69,7 +71,7 @@ export function copyProp(
 export function bindingProtection(scopes: ReadonlySet<string>[]): (field: string) => boolean {
   const fields = new Set<string>()
   for (const scope of scopes) {
-    const perField = [...scope].some((field) => field.startsWith('boundVariables/'))
+    const perField = [...scope].some((field) => overriddenBindingField(field) !== null)
     for (const field of scope) {
       if (field !== 'boundVariables' || !perField) fields.add(field)
     }
@@ -91,7 +93,7 @@ export function syncBindingFields(
     ...Object.keys(target.boundVariables),
     ...Object.keys(target.variableBindingScales)
   ])) {
-    if (!protectedField(`boundVariables/${field}`)) continue
+    if (!protectedField(bindingOverrideField(field))) continue
     if (!Object.hasOwn(target.boundVariables, field)) Reflect.deleteProperty(bindings, field)
     else bindings[field] = target.boundVariables[field]
     if (target.variableBindingScales[field] === undefined) Reflect.deleteProperty(scales, field)
@@ -109,7 +111,7 @@ export function isProtectedSyncField(
   return (
     protectedField(key) ||
     (key in node.boundVariables &&
-      (protectedField('boundVariables') || protectedField(`boundVariables/${key}`)))
+      (protectedField('boundVariables') || protectedField(bindingOverrideField(key))))
   )
 }
 
@@ -318,10 +320,7 @@ function sortInstanceChildren(
   for (let index = 0; index < instParent.childIds.length; index++) {
     const childId = instParent.childIds[index]
     const node = graph.nodes.get(childId)
-    const source = node
-      ? getInstanceOverride(overrides, instParentId, node.id, 'sourceComponentId')
-      : undefined
-    const mapped = typeof source === 'string' ? source : node?.componentId
+    const mapped = node && copiedComponentLayerId(overrides, instParentId, node)
     const componentIndex = mapped ? orderMap.get(mapped) : undefined
     ranks.set(childId, componentIndex ?? compChildOrder.length + index)
   }
@@ -352,14 +351,7 @@ function matchLinkedChildren(
   for (const childId of instParent.childIds) {
     const child = graph.nodes.get(childId)
     if (!child) continue
-    const sourceComponentId = getInstanceOverride(
-      overrides,
-      instParentId,
-      child.id,
-      'sourceComponentId'
-    )
-    const mappedComponentId =
-      typeof sourceComponentId === 'string' ? sourceComponentId : child.componentId
+    const mappedComponentId = copiedComponentLayerId(overrides, instParentId, child)
     if (mappedComponentId && compChildIdSet.has(mappedComponentId)) {
       instChildMap.set(mappedComponentId, child)
       usedInstChildIds.add(child.id)

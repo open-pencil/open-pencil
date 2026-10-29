@@ -92,7 +92,6 @@ ja:automation.bearerToken
 ja:automation.bearerTokenPlaceholder
 ja:automation.bearerTokenRequired
 ja:automation.builtInAI
-ja:automation.connectionEditorDescription
 ja:automation.connectionNameHint
 ja:automation.connectionNameInvalid
 ja:automation.connections
@@ -170,6 +169,7 @@ ja:files.clipboardImagesFetchFailed
 ja:files.importFailed
 ja:files.importHTMLCSS
 ja:files.importHTMLCSSDescription
+ja:files.mermaidPasteFailed
 ja:fonts.downloadFallbackPacksDescription
 ja:fonts.unsupportedFormat
 ja:media.getPexelsAPIKey
@@ -186,6 +186,7 @@ ja:menu.copyNodeId
 ja:menu.copyXPath
 ja:menu.exportSelectionAsFig
 ja:menu.exportSelectionAsPNG
+ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.toggleUI
@@ -317,7 +318,6 @@ zh-cn:automation.bearerToken
 zh-cn:automation.bearerTokenPlaceholder
 zh-cn:automation.bearerTokenRequired
 zh-cn:automation.builtInAI
-zh-cn:automation.connectionEditorDescription
 zh-cn:automation.connectionNameHint
 zh-cn:automation.connectionNameInvalid
 zh-cn:automation.connections
@@ -394,6 +394,7 @@ zh-cn:files.clipboardImagesFetchFailed
 zh-cn:files.importFailed
 zh-cn:files.importHTMLCSS
 zh-cn:files.importHTMLCSSDescription
+zh-cn:files.mermaidPasteFailed
 zh-cn:fonts.downloadFallbackPacksDescription
 zh-cn:fonts.unsupportedFormat
 zh-cn:media.getPexelsAPIKey
@@ -410,6 +411,7 @@ zh-cn:menu.copyNodeId
 zh-cn:menu.copyXPath
 zh-cn:menu.exportSelectionAsFig
 zh-cn:menu.exportSelectionAsPNG
+zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
 zh-cn:panels.behaviourAddVariants
@@ -483,6 +485,7 @@ zh-cn:storage.waitlistOpenWebsite
 zh-cn:storage.waitlistUnavailable
 zh-cn:statuses.figmaShows
 zh-cn:statuses.presetHandoff
+ja:cloudPortal.columnAddress
 ja:cloudPortal.signInTitle
 ja:cloudPortal.newHere
 ja:cloudPortal.returnsToDesktop
@@ -494,6 +497,7 @@ ja:cloudPortal.deviceWarningDescription
 ja:cloudPortal.deviceApprovedDescription
 ja:cloudPortal.deviceExpiredDescription
 ja:cloudPortal.authenticatorOff
+zh-cn:cloudPortal.columnAddress
 zh-cn:cloudPortal.signInTitle
 zh-cn:cloudPortal.newHere
 zh-cn:cloudPortal.returnsToDesktop
@@ -522,6 +526,10 @@ ja:cloud.settingsSelfHostedDescription
 ja:cloudPortal.errorEmailInvalid
 ja:cloudPortal.verifiedDescription
 ja:cloudPortal.welcomeTitle
+ja:cloudPortal.accountId
+ja:cloudPortal.desktopApp
+ja:cloudPortal.methodDesktop
+ja:cloudPortal.pictureUnreadable
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -539,3 +547,26 @@ zh-cn:cloud.settingsSelfHostedDescription
 zh-cn:cloudPortal.errorEmailInvalid
 zh-cn:cloudPortal.verifiedDescription
 zh-cn:cloudPortal.welcomeTitle
+zh-cn:cloudPortal.accountId
+zh-cn:cloudPortal.accountIdDescription
+zh-cn:cloudPortal.desktopApp
+zh-cn:cloudPortal.methodDesktop
+zh-cn:cloudPortal.pictureUnreadable
+ja:ai.cloudAIUnavailable
+ja:ai.cloudAINoWorkspace
+ja:ai.chatCloudCreditsExhausted
+ja:ai.chatCloudUnavailable
+zh-cn:ai.cloudAIUnavailable
+zh-cn:ai.cloudAINoWorkspace
+zh-cn:ai.chatCloudCreditsExhausted
+zh-cn:ai.chatCloudUnavailable
+ja:ai.cloudAICatalogFailed
+zh-cn:ai.cloudAICatalogFailed
+ja:ai.cloudAIWorkspacesFailed
+zh-cn:ai.cloudAIWorkspacesFailed
+ja:ai.chatCloudAllowanceUsed
+ja:ai.chatCloudAllowanceUsedUntil
+ja:ai.connectionTestCloudCreditsExhausted
+zh-cn:ai.chatCloudAllowanceUsed
+zh-cn:ai.chatCloudAllowanceUsedUntil
+zh-cn:ai.connectionTestCloudCreditsExhausted

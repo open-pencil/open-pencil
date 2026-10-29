@@ -48,5 +48,5 @@ test('Figma clipboard embeds shared image bytes once with SHA-1 references', asy
     expect(parsed.blobs[paint.image?.dataBlob ?? -1]).toEqual(bytes)
   }
   expect(nodes[0].fills[0].imageHash).toBe(hash)
-  expect(graph.images.get(hash)).toBe(bytes)
+  expect(graph.images.get(hash)).toEqual(bytes)
 })

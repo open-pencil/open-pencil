@@ -23,6 +23,10 @@ function parseSVGVectorPath(path: string): VectorPathResult {
   }
 
   const bounds = computeAccurateBounds(network)
+  // Figma's vectors cannot be 0×0, so a path that never leaves its start is not one.
+  if (bounds.width === 0 && bounds.height === 0) {
+    return { error: 'SVG path data must span some width or height' }
+  }
   return {
     network: transformVectorNetwork([1, 0, -bounds.x, 0, 1, -bounds.y, 0, 0, 1], network),
     size: { width: bounds.width, height: bounds.height }
@@ -70,11 +74,11 @@ export const createVector = defineTool({
     node.y = args.y
     if (args.name) node.name = args.name
     if (parsedPath) {
-      figma.graph.updateNode(node.id, { vectorNetwork: parsedPath.network })
       if (parsedPath.size) node.resize(parsedPath.size.width, parsedPath.size.height)
+      figma.graph.updateNode(node.id, { vectorNetwork: parsedPath.network })
     }
     if (args.fill) {
-      node.fills = [{ type: 'SOLID', color: parseColor(args.fill), opacity: 1, visible: true }]
+      node.fills = [{ type: 'SOLID', color: parseColor(args.fill) }]
     }
     if (args.stroke) {
       figma.graph.updateNode(node.id, {

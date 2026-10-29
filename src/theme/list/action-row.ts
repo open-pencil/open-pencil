@@ -1,6 +1,4 @@
-import { tv } from 'tailwind-variants'
-
-export const actionRow = tv({
+export default {
   slots: {
     root: 'group flex w-full cursor-pointer items-center gap-3 rounded border border-border bg-panel-field px-3 py-2 text-left whitespace-normal transition-colors enabled:hover:bg-panel-field-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50',
     leading: 'flex shrink-0 items-center justify-center text-muted',
@@ -9,4 +7,4 @@ export const actionRow = tv({
     description: 'block text-[10px] break-words text-muted',
     trailing: 'flex shrink-0 items-center gap-1 text-muted'
   }
-})
+} as const

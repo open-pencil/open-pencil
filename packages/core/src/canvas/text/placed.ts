@@ -4,15 +4,22 @@ import { uniq } from 'es-toolkit/array'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
-import { loadedFace, resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import {
+  drawnFontVariations,
+  loadedFace,
+  paragraphSourceFamilies
+} from '#core/canvas/text/font-families'
 import { laidOutText } from '#core/canvas/text/keycap'
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
-import { textFontVariations } from '#core/canvas/text/paragraph'
 import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { ELLIPSIS } from '#core/text/ellipsis'
+import {
+  glyphOutlineSourceSync,
+  shardCovers,
+  type GlyphOutlineSource
+} from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/fonts'
-import { glyphOutlineSourceSync, type GlyphOutlineSource } from '#core/text/opentype'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
 
@@ -50,39 +57,77 @@ function fontAt(node: SceneNode, index: number) {
   const weight = run?.style.fontWeight ?? node.fontWeight
   const italic = run?.style.italic ?? node.italic
   const style = weightToStyle(weight, italic)
-  const variations =
-    textFontVariations(
-      run?.style.fontVariations ?? node.fontVariations,
-      fontManager.namedInstanceVariations(family, style)
-    ) ?? []
+  const variations = drawnFontVariations({
+    family,
+    weight,
+    italic,
+    fontSize: run?.style.fontSize ?? node.fontSize,
+    variations: run?.style.fontVariations ?? node.fontVariations,
+    opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
+  })
   const drawn = loadedFace(family, weight, italic) ?? { weight, italic }
   return { family, weight, italic, style, variations, drawn }
 }
 
+/**
+ * The style a family of the paragraph is drawn in: the face its own family draws the asked style
+ * in, and Regular for the Arabic and CJK fallbacks, as the paragraph asks CanvasKit for them.
+ */
+function sourceStyle(family: string, font: ReturnType<typeof fontAt>): string | null {
+  const scriptFallback =
+    family !== font.family &&
+    (fontManager.getArabicFallbackFamilies().includes(family) ||
+      fontManager.getCJKFallbackFamilies().includes(family))
+  if (scriptFallback) return fontManager.isStyleLoaded(family, 'Regular') ? 'Regular' : null
+  return loadedStyle(family, font.drawn.weight, font.drawn.italic)
+}
+
 /** The outline source of each font the paragraph may have drawn a character in, in its order. */
 function* candidateSources(font: ReturnType<typeof fontAt>) {
-  for (const family of resolveParagraphFontFamilies(font.family, font.style)) {
-    const style = loadedStyle(family, font.drawn.weight, font.drawn.italic)
+  for (const family of paragraphSourceFamilies(font.family)) {
+    const style = sourceStyle(family, font)
     const source = style ? glyphOutlineSourceSync(family, style, font.variations) : null
     if (source) yield source
   }
 }
 
+/** The face and file the paragraph draws a character in. */
+export interface CharacterFace {
+  family: string
+  style: string
+  /** Which of the style's files: 0 for its own, then its shards, as `FontManager.shardData` lists them. */
+  file: number
+  /** Whether it is not the character's own family. */
+  fallback: boolean
+}
+
 /**
- * The family the paragraph draws the character at `index` of `text` in, as it falls back: the
- * first of the fonts it lists, the style's own then its fallbacks, that maps the character.
+ * The loaded face the paragraph draws the character at `index` of `text` in, as it falls back:
+ * of the fonts it lists, the style's own then its fallbacks, each file then its shards, the first
+ * that maps the character.
  */
-export function characterFamily(node: SceneNode, text: string, index: number): string | null {
+export function characterFace(node: SceneNode, text: string, index: number): CharacterFace | null {
   const codePoint = text.codePointAt(index)
   if (codePoint === undefined) return null
   const character = String.fromCodePoint(codePoint)
   const font = fontAt(node, index)
-  for (const family of resolveParagraphFontFamilies(font.family, font.style)) {
-    const style = loadedStyle(family, font.drawn.weight, font.drawn.italic)
-    if (style && glyphOutlineSourceSync(family, style, font.variations)?.covers(character))
-      return family
+  for (const family of paragraphSourceFamilies(font.family)) {
+    const style = sourceStyle(family, font)
+    if (!style) continue
+    const fallback = family !== font.family
+    if (glyphOutlineSourceSync(family, style, font.variations)?.covers(character))
+      return { family, style, file: 0, fallback }
+    const shard = fontManager
+      .shardData(family, style)
+      .findIndex((data) => shardCovers(data, character))
+    if (shard !== -1) return { family, style, file: shard + 1, fallback }
   }
   return null
+}
+
+/** The family the paragraph draws the character at `index` of `text` in; see {@link characterFace}. */
+export function characterFamily(node: SceneNode, text: string, index: number): string | null {
+  return characterFace(node, text, index)?.family ?? null
 }
 
 /** Whether a glyph the shaper chose is the one the font maps its character to. */

@@ -136,7 +136,7 @@ describe('rich text round trip', () => {
   <Paragraph spacing={12}>Hello <Span weight={700} color="#EE2222">bold <Span italic>world</Span></Span>!</Paragraph>
   <Paragraph list="ordered">First <Span textDecoration="underline" letterSpacing={1}>item</Span></Paragraph>
   <Paragraph list="ordered" level={2} listSpacing={4} indent={8}>Nested</Paragraph>
-  <Paragraph list="unordered"><Span size={18} font="Roboto" lineHeight={28}>Dot</Span></Paragraph>
+  <Paragraph list="unordered"><Span size={18} font="Roboto" lineHeight={28}>Dot</Span> <Span fontFeatures={{ tnum: true, liga: false }} fontVariations={{ wght: 650 }} lang="de">0123</Span></Paragraph>
   <Paragraph />
 </Text>`
     )

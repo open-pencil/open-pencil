@@ -28,6 +28,20 @@ function shapedOutlines(r: SkiaRenderer, node: SceneNode): TextOutlineGlyph[] | 
   return outlines
 }
 
+/** Each glyph the text draws as a path of its own, in the text's box. */
+export function textGlyphPaths(r: SkiaRenderer, node: SceneNode): Path[] | null {
+  const glyphs = shapedOutlines(r, node) ?? textNodeToOutlineLayout(node)?.glyphs
+  if (!glyphs) return null
+  return glyphs.flatMap((glyph) => {
+    const path = new r.ck.PathBuilder()
+    for (const command of glyph.commands) appendOutlineCommand(path, command, glyph.x, glyph.y)
+    const detached = path.detachAndDelete()
+    if (!detached.isEmpty()) return [detached]
+    detached.delete()
+    return []
+  })
+}
+
 export function textNodeToOutlinePath(r: SkiaRenderer, node: SceneNode): Path | null {
   const glyphs = shapedOutlines(r, node) ?? textNodeToOutlineLayout(node)?.glyphs
   if (!glyphs) return null

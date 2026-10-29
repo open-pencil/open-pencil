@@ -1,6 +1,7 @@
 import { isEmptyObject, isPlainObject } from 'es-toolkit/predicate'
 
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import { toFigmaEffect } from '#core/figma-api/effects'
 
@@ -38,16 +39,20 @@ export function typographyValue(
   text: TypographyFields,
   bound: Partial<Record<(typeof TEXT_BINDING_FIELDS)[number], string>>
 ) {
+  // A typography token writes a line height as a multiple of the font size.
+  const lineHeightPx = lineHeightPixels(text.lineHeight, text.fontSize)
   const lineHeight =
-    text.lineHeight === null || text.fontSize <= 0
+    lineHeightPx === null || text.fontSize <= 0
       ? AUTO_LINE_HEIGHT
-      : trimNumber(text.lineHeight / text.fontSize)
+      : trimNumber(lineHeightPx / text.fontSize)
   return {
     fontFamily: bound.fontFamily ?? text.fontFamily,
     fontSize: bound.fontSize ?? dimensionTokenValue(text.fontSize),
     fontWeight: text.fontWeight,
     lineHeight,
-    letterSpacing: bound.letterSpacing ?? dimensionTokenValue(text.letterSpacing)
+    letterSpacing:
+      bound.letterSpacing ??
+      dimensionTokenValue(textLengthPixels(text.letterSpacing, text.fontSize))
   }
 }
 

@@ -6,6 +6,7 @@ import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -16,7 +17,8 @@ function expectFigmaEditableTextDefaults(
   expect(textNode.textExplicitLayoutVersion).toBe(1)
   expect(textNode.textBidiVersion).toBe(1)
   expect(textNode.lineHeight).toEqual({ value: 100, units: 'PERCENT' })
-  expect(textNode.letterSpacing).toEqual({ value: 0, units: 'PIXELS' })
+  // Figma writes no letter spacing as zero percent.
+  expect(textNode.letterSpacing).toEqual({ value: 0, units: 'PERCENT' })
   expect(textNode.fontVariantCommonLigatures).toBe(true)
   expect(textNode.fontVariantContextualLigatures).toBe(true)
   expect(textNode.textDecorationSkipInk).toBe(true)
@@ -27,10 +29,10 @@ describe('buildFigmaClipboardHTML', () => {
   beforeAll(async () => {
     await initCodec()
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   it('encodes a simple frame without throwing', async () => {
@@ -173,7 +175,7 @@ describe('buildFigmaClipboardHTML', () => {
       fontFamily: 'Missing Preview Font',
       fontWeight: 700,
       fontSize: 56,
-      lineHeight: 67,
+      lineHeight: pixelLength(67),
       textAutoResize: 'HEIGHT'
     })
 

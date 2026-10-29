@@ -146,8 +146,8 @@ const rendererMethods = {
     Overlays.drawAutoLayoutHover(this, canvas, graph, hover)
   },
 
-  drawTextEditOverlay(canvas: Canvas, node: SceneNode, editor: TextEditor): void {
-    Overlays.drawTextEditOverlay(this, canvas, node, editor)
+  drawTextEditOverlay(canvas: Canvas, node: SceneNode, editor: TextEditor, outset = 0): void {
+    Overlays.drawTextEditOverlay(this, canvas, node, editor, outset)
   },
 
   drawNodeEditOverlay(

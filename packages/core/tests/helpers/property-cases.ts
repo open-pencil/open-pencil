@@ -1,4 +1,5 @@
 import type { SceneGraph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined } from './assert'
 
@@ -258,8 +259,8 @@ export const PROPERTY_CASES: RoundTripCase[] = [
     textAlignHorizontal: 'CENTER',
     textAlignVertical: 'BOTTOM',
     textAutoResize: 'NONE',
-    letterSpacing: 1,
-    lineHeight: 28,
+    letterSpacing: pixelLength(1),
+    lineHeight: pixelLength(28),
     textCase: 'UPPER',
     textDecoration: 'UNDERLINE'
   }),
@@ -271,6 +272,19 @@ export const PROPERTY_CASES: RoundTripCase[] = [
     textDecorationThickness: 2,
     textUnderlineOffset: 3,
     textDecorationSkipInk: false
+  }),
+  leafCase('text font settings', 'TEXT', {
+    text: 'Numbers 0123',
+    fontFeatures: [
+      { tag: 'TNUM', enabled: true },
+      { tag: 'LIGA', enabled: false }
+    ],
+    fontVariations: [
+      { axis: 'wght', value: 650 },
+      { axis: 'opsz', value: 14 }
+    ],
+    opticalSizeFromFontSize: false,
+    textLanguage: 'de'
   }),
   leafCase('text paragraph spacing', 'TEXT', {
     text: 'One\nTwo',

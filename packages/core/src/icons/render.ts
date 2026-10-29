@@ -9,6 +9,7 @@ import {
   readIconTint,
   withIcon,
   withIconTint,
+  type IconOptions,
   type IconPaint
 } from '@open-pencil/scene-graph/icons'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -40,8 +41,8 @@ export interface PlaceIconOptions {
   identity?: boolean
 }
 
-function solid(color: Color) {
-  return [{ type: 'SOLID' as const, color, opacity: 1, visible: true }]
+function solid(color: Color, opacity = 1) {
+  return [{ type: 'SOLID' as const, color, opacity, visible: true }]
 }
 
 /** One path of an icon as a vector filling the icon's box, marked where the icon's color paints. */
@@ -62,7 +63,7 @@ function addPath(graph: SceneGraph, frameId: string, path: IconPath, size: numbe
     // Resizing the icon resizes its glyph, as the frame is the icon.
     horizontalConstraint: 'SCALE',
     verticalConstraint: 'SCALE',
-    fills: path.fill ? solid(paint(path.fill, 'fill')) : []
+    fills: path.fill ? solid(paint(path.fill, 'fill'), path.fillOpacity) : []
   })
   if (path.stroke) {
     const stroke = createPathStroke(
@@ -98,7 +99,7 @@ export function placeIcon(
     ...overrides
   })
   for (const path of icon.paths) addPath(graph, frame.id, path, size, color)
-  if (identity) recordIcon(graph, frame.id, name)
+  if (identity) recordIcon(graph, frame.id, name, icon.options)
   return graph.getNode(frame.id) ?? frame
 }
 
@@ -125,15 +126,19 @@ export function drawIcon(
   color: Color
 ): void {
   for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, size, color)
-  recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`)
+  recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`, icon.options)
 }
 
-/** Writes the icon `name` on its frame with a fingerprint of the paths it draws now. */
-function recordIcon(graph: SceneGraph, frameId: string, name: string): void {
+/**
+ * Writes the icon `name` on its frame with a fingerprint of the paths it draws now, and how a set
+ * we draw ourselves drew it.
+ */
+function recordIcon(graph: SceneGraph, frameId: string, name: string, options?: IconOptions): void {
   const frame = graph.getNode(frameId)
   if (!frame) return
   const glyph = iconGlyph(graph, frame)
-  graph.updateNode(frameId, { pluginData: withIcon(frame, { name, glyph }) })
+  const icon = options ? { name, glyph, options } : { name, glyph }
+  graph.updateNode(frameId, { pluginData: withIcon(frame, icon) })
 }
 
 /**
@@ -190,7 +195,7 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
   })
   for (const path of icon.paths) addPath(graph, frameId, path, size, color)
   fitPaths(graph, frameId, size)
-  recordIcon(graph, frameId, name)
+  recordIcon(graph, frameId, name, icon.options)
 }
 
 /**

@@ -4,16 +4,37 @@ import {
   adminMutationResponseSchema,
   adminOperationsResponseSchema,
   cloudAdminSessionResponseSchema,
+  cloudAdminUserDetailSchema,
   cloudAdminUsersResponseSchema,
   enrollmentReviewResponseSchema,
   enrollmentsResponseSchema,
-  type enrollmentStatusSchema
+  type CloudAdminAuditFilter,
+  type CloudAdminEmailFilter,
+  type CloudAdminUserFilter,
+  type EnrollmentStatus
 } from '#cloud/contract'
-import type * as v from 'valibot'
 
 import type { CloudCall, PortalRouteClients } from './request'
 
-type EnrollmentStatus = v.InferOutput<typeof enrollmentStatusSchema>
+/** A page of an admin list: words to search for, one of its filters, and where the page starts. */
+export type AdminListRequest<Filter extends string> = {
+  search?: string
+  filter?: Filter
+  limit?: number
+  offset?: number
+}
+
+/** The query string for `request`; an empty search asks for everything. */
+function listQuery<Filter extends string>(request: AdminListRequest<Filter>) {
+  return {
+    query: {
+      search: request.search || undefined,
+      filter: request.filter,
+      limit: request.limit,
+      offset: request.offset
+    }
+  }
+}
 
 export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalRouteClients) {
   return {
@@ -24,9 +45,9 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
-    enrollments(status?: EnrollmentStatus, signal?: AbortSignal) {
+    enrollments(request: AdminListRequest<EnrollmentStatus>, signal?: AbortSignal) {
       return call(
-        (options) => admin.enrollments.$get({ query: { status } }, options),
+        (options) => admin.enrollments.$get(listQuery(request), options),
         enrollmentsResponseSchema,
         signal
       )
@@ -44,15 +65,22 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
-    users(search?: string, signal?: AbortSignal) {
+    users(request: AdminListRequest<CloudAdminUserFilter>, signal?: AbortSignal) {
       return call(
-        (options) => admin.users.$get({ query: { search: search || undefined } }, options),
+        (options) => admin.users.$get(listQuery(request), options),
         cloudAdminUsersResponseSchema,
         signal
       )
     },
+    user(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => admin.users[':id'].$get({ param: { id } }, options),
+        cloudAdminUserDetailSchema,
+        signal
+      )
+    },
     userAction(
-      action: 'ban' | 'unban' | 'revoke-sessions',
+      action: 'ban' | 'unban' | 'revoke-sessions' | 'reset-two-step' | 'remove-picture',
       userId: string,
       reason?: string,
       signal?: AbortSignal
@@ -70,9 +98,9 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
-    email(signal?: AbortSignal) {
+    email(request: AdminListRequest<CloudAdminEmailFilter>, signal?: AbortSignal) {
       return call(
-        (options) => admin.email.$get({ query: {} }, options),
+        (options) => admin.email.$get(listQuery(request), options),
         adminEmailResponseSchema,
         signal
       )
@@ -84,9 +112,9 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
-    audit(signal?: AbortSignal) {
+    audit(request: AdminListRequest<CloudAdminAuditFilter>, signal?: AbortSignal) {
       return call(
-        (options) => admin.audit.$get({ query: {} }, options),
+        (options) => admin.audit.$get(listQuery(request), options),
         adminAuditResponseSchema,
         signal
       )

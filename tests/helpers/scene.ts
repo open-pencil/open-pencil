@@ -1,4 +1,5 @@
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export function makeSceneGraph(pageName = 'Test'): SceneGraph {
@@ -9,6 +10,13 @@ export function makeSceneGraph(pageName = 'Test'): SceneGraph {
 
 export function firstPageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
+}
+
+/** Stores `bytes` as an image under their hash, whatever they encode, and returns the hash. */
+export function storeImageBytes(graph: SceneGraph, bytes: Uint8Array): string {
+  const hash = computeImageHash(bytes)
+  graph.images.set(hash, bytes)
+  return hash
 }
 
 export function addTestColorVariable(

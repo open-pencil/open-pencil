@@ -32,7 +32,7 @@ jobs:
 
       # The demo document the landing's stages open draws its shader stills in headless Chromium.
       - name: Install Chromium for the demo document
-        run: bunx playwright install --with-deps chromium
+        uses: ./.github/actions/setup-playwright
 
       - run: bun run --filter @open-pencil/docs build:site
 
@@ -63,7 +63,7 @@ jobs:
           cache-save: 'false'
 
       - name: Install Chromium for landing posters
-        run: bunx playwright install --with-deps chromium
+        uses: ./.github/actions/setup-playwright
 
       - uses: actions/download-artifact@v8
         with:

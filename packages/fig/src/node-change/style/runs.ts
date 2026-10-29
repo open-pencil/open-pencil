@@ -72,7 +72,6 @@ function applyTextDecorationOverride(style: CharacterStyleOverride, override: No
 }
 
 function convertStyleOverride(override: NodeChange, text: NodeChange): CharacterStyleOverride {
-  const fallbackFontSize = text.fontSize
   const style: CharacterStyleOverride = {}
   if (override.fontName) {
     style.fontFamily = override.fontName.family
@@ -82,17 +81,15 @@ function convertStyleOverride(override: NodeChange, text: NodeChange): Character
   if (override.fontSize !== undefined) style.fontSize = override.fontSize
   const fontVariations = convertFontVariations(override)
   if (fontVariations.length > 0) style.fontVariations = fontVariations
+  // Figma detaches a range's optical size from its font size in the range's own override.
+  if (override.detachOpticalSizeFromFontSize !== undefined)
+    style.opticalSizeFromFontSize = !override.detachOpticalSizeFromFontSize
   const fontFeatures = convertFontFeatures(override)
   if (fontFeatures.length > 0) style.fontFeatures = fontFeatures
-  if (override.letterSpacing) {
-    style.letterSpacing = convertLetterSpacing(
-      override.letterSpacing,
-      override.fontSize ?? fallbackFontSize
-    )
-  }
+  if (override.letterSpacing) style.letterSpacing = convertLetterSpacing(override.letterSpacing)
   if (override.lineHeight) {
     // A run in auto lines up at its own font's height, even in text with a fixed one.
-    style.lineHeight = convertLineHeight(override.lineHeight, override.fontSize ?? fallbackFontSize)
+    style.lineHeight = convertLineHeight(override.lineHeight)
   }
   applyTextDecorationOverride(style, override)
   if (override.fillPaints) {

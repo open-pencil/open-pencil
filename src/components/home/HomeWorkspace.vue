@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED, CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/integration'
@@ -11,41 +10,35 @@ import { useHomeLocations } from '@/app/home/locations'
 import { useDateFormat } from '@/app/i18n/date'
 import {
   activeStorageProviderID,
-  createStorageAdapter,
   readStoragePreferences,
   storagePreferencesComplete,
-  sameStorageLocation,
-  storageLocationOf,
   storageProviderRegistry,
   type StorageDocument,
   type StorageLocation
 } from '@/app/integrations/storage'
+import type { RecentDocument } from '@/app/recent-files'
 import {
-  clearRecentFiles,
-  forgetRecentDocument,
-  loadRecentFileThumbnail,
-  recentFiles,
-  type RecentDocument
-} from '@/app/recent-files'
+  matchingRecentFiles,
+  openRecentDocument,
+  useRecentFilesWorkspace
+} from '@/app/recent-files/workspace'
 import { useCredentialSettings } from '@/app/settings/credentials/preferences/use'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { openFileFromPath } from '@/app/shell/menu/use'
 import { createStoredDocument } from '@/app/storage/workspace/create'
-import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
+import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import { CloudSharedSection, CloudWorkspaceSection } from '@/components/cloud/integration'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import HomeLayout from '@/components/home/HomeLayout.vue'
+import RecentFilesSection from '@/components/home/recent/RecentFilesSection.vue'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
 import HomeLocationMenu from '@/components/home/sidebar/HomeLocationMenu.vue'
 import HomeSidebar from '@/components/home/sidebar/HomeSidebar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const emit = defineEmits<{ 'new-document': [] }>()
-const { panels, locale, storage, files, common, settings, credentials } = useI18n()
-const { isMobile } = useViewportKind()
+const { locale, storage, files, common, settings, credentials } = useI18n()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const query = ref('')
 const openError = ref<string | null>(null)
@@ -59,29 +52,9 @@ function newDocument() {
   else emit('new-document')
 }
 
-const workspace = useDocumentWorkspace<RecentDocument>({
-  source: {
-    async refresh() {
-      return recentFiles.value
-    },
-    loadPreview(documentId) {
-      const document = recentFiles.value.find((candidate) => candidate.id === documentId)
-      if (!document) return Promise.resolve(null)
-      if (document.kind === 'local') return loadRecentFileThumbnail(document.path)
-      return createStorageWorkspaceSource(
-        () => undefined,
-        () => storageLocationOf(document)
-      ).loadPreview(document.documentId)
-    }
-  },
-  refreshOnFocus: false,
-  refreshOnReconnect: false,
-  previewConcurrency: 2
-})
+const workspace = useRecentFilesWorkspace()
 
 const documents = workspace.documents
-const previewURL = workspace.previewURL
-const vWorkspacePreview = workspace.previewDirective
 
 const storageWorkspace = useDocumentWorkspace<StorageDocument>({
   source: createStorageWorkspaceSource((snapshot) => {
@@ -162,21 +135,15 @@ const newDesignTarget = computed<{ location: StorageLocation; label: string } | 
 const storagePreviewURL = storageWorkspace.previewURL
 const vStoragePreview = storageWorkspace.previewDirective
 const normalizedQuery = computed(() => query.value.trim().toLocaleLowerCase(locale.value))
-const filteredRecentFiles = computed(() => {
-  if (!normalizedQuery.value) return documents.value
-  return documents.value.filter((document) =>
-    `${document.name}\n${document.kind === 'local' ? document.path : document.documentId}`
-      .toLocaleLowerCase(locale.value)
-      .includes(normalizedQuery.value)
-  )
-})
+const filteredRecentFiles = computed(() =>
+  matchingRecentFiles(documents.value, normalizedQuery.value, locale.value)
+)
 const filteredStorageDocuments = computed(() => {
   if (!normalizedQuery.value) return storageDocuments.value
   return storageDocuments.value.filter((document) =>
     document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
   )
 })
-const hasRecentFiles = computed(() => documents.value.length > 0)
 const noSearchMatches = computed(
   () =>
     Boolean(normalizedQuery.value) &&
@@ -184,30 +151,13 @@ const noSearchMatches = computed(
     filteredStorageDocuments.value.length === 0
 )
 
-watch(recentFiles, () => void workspace.invalidate())
-
 async function openRecent(document: RecentDocument): Promise<void> {
   openError.value = null
   try {
-    if (document.kind === 'local') {
-      await openFileFromPath(document.path)
-      return
-    }
-    const location = storageLocationOf(document)
-    // The listing carries the revision that tells whether this device's copy is still current;
-    // offline, the copy opens as it is.
-    const listing = sameStorageLocation(location, activeStorageLocation())
-      ? storageDocuments.value
-      : await createStorageAdapter(location)
-          .listDocuments()
-          .catch(() => [])
-    const listed = listing.find((candidate) => candidate.id === document.documentId)
-    await openStorageDocumentInNewTab(
-      listed ?? { id: document.documentId, name: document.name, updatedAt: document.updatedAt },
-      location
-    )
+    // Before the storage list first loads, an empty list would hide the revision to check.
+    const listed = storageWorkspace.lastRefreshedAt.value ? storageDocuments.value : undefined
+    await openRecentDocument(document, listed)
   } catch (error) {
-    forgetRecentDocument(document.id)
     openError.value = error instanceof Error ? error.message : String(error)
   }
 }
@@ -239,7 +189,7 @@ function formattedDate(updatedAt: string): string {
         :storage="sidebarStorage"
         @select="places.select"
         @connect="places.connect"
-        @account-settings="places.accountSettings"
+        @open-account="places.openAccount"
         @storage-settings="places.storageSettings"
         @switch-server="places.connect"
         @new-workspace="places.newWorkspace"
@@ -286,77 +236,14 @@ function formattedDate(updatedAt: string): string {
         {{ files.noMatchingFiles({ query: query.trim() }) }}
       </p>
 
-      <section v-if="!noSearchMatches && places.location.value.kind === 'recent'">
-        <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
-          <div class="col-span-2 min-w-0 sm:col-span-1">
-            <h1 class="text-base font-semibold">{{ files.recentFiles }}</h1>
-            <p class="mt-0.5 text-pretty text-xs text-muted">{{ files.recentFilesDescription }}</p>
-          </div>
-          <div class="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
-            <IconButton
-              v-if="hasRecentFiles"
-              :label="common.clear"
-              class="size-10 sm:size-7"
-              data-test-id="recent-files-clear"
-              @click="clearRecentFiles"
-            >
-              <icon-lucide-trash-2 class="size-3.5" />
-            </IconButton>
-            <SegmentedControl
-              v-model="view"
-              required
-              :label="files.recentFiles"
-              :size="isMobile ? 'touch' : 'md'"
-              :options="[
-                { value: 'grid', label: panels.gridView },
-                { value: 'list', label: panels.listView }
-              ]"
-            >
-              <template #option="{ option }">
-                <icon-lucide-layout-grid v-if="option.value === 'grid'" class="size-3.5" />
-                <icon-lucide-list v-else class="size-3.5" />
-              </template>
-            </SegmentedControl>
-          </div>
-        </div>
-
-        <div
-          v-if="filteredRecentFiles.length && view === 'grid'"
-          class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
-        >
-          <DocumentEntry
-            v-for="document in filteredRecentFiles"
-            :key="document.id"
-            v-workspace-preview="document.id"
-            :name="document.name"
-            :metadata="formattedDate(document.updatedAt)"
-            :previewURL="previewURL(document.id)"
-            @open="openRecent(document)"
-          />
-        </div>
-
-        <div
-          v-else-if="filteredRecentFiles.length"
-          class="overflow-hidden rounded-lg border border-border"
-        >
-          <DocumentEntry
-            v-for="document in filteredRecentFiles"
-            :key="document.id"
-            view="list"
-            :name="document.name"
-            :metadata="formattedDate(document.updatedAt)"
-            @open="openRecent(document)"
-          />
-        </div>
-
-        <div
-          v-else-if="!normalizedQuery"
-          class="rounded-lg border border-dashed border-border px-4 py-4 text-center sm:py-6"
-        >
-          <p class="text-xs font-medium">{{ files.noRecentFiles }}</p>
-          <p class="mt-1 text-xs text-muted">{{ files.noRecentFilesDescription }}</p>
-        </div>
-      </section>
+      <RecentFilesSection
+        v-if="!noSearchMatches && places.location.value.kind === 'recent'"
+        v-model:view="view"
+        :workspace="workspace"
+        :documents="filteredRecentFiles"
+        :query="normalizedQuery"
+        @open="openRecent"
+      />
 
       <section v-if="places.location.value.kind === 'storage'">
         <div class="mb-3 flex items-start gap-3">

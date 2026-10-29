@@ -1,0 +1,1 @@
+- AI and MCP agents tidy layers with more `arrange` modes: `spread` pushes overlapping layers apart and keeps each near where it was, `compact` also closes the gaps, `pack` packs screens into rows, and `flow`, `tree`, `radial`, and `network` lay shapes out along the connectors joining them, rerouting the connectors.

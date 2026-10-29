@@ -12,6 +12,7 @@ import {
   writeFigContainer
 } from '#fig/index'
 import { deflateSync } from 'fflate'
+import { toUint8Array } from 'js-base64'
 
 import {
   createNodeChangesMessage,
@@ -21,6 +22,9 @@ import {
 } from '@open-pencil/kiwi/fig/codec'
 
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+/** A 3 × 2 PNG, as a `.fig` thumbnail chunk holds one. */
+const PNG_3X2 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAEElEQVR4nGP4z8AAQQxwFgBB0gX7h/C5SAAAAABJRU5ErkJggg=='
 
 function appendChunk(container: Uint8Array, chunk: Uint8Array): Uint8Array {
   const bytes = new Uint8Array(container.byteLength + 4 + chunk.byteLength)
@@ -146,7 +150,7 @@ describe('@open-pencil/fig package API', () => {
       },
       { version: 1 }
     )
-    const thumbnailPNG = new Uint8Array([...PNG_SIGNATURE, 1, 2, 3])
+    const thumbnailPNG = toUint8Array(PNG_3X2)
     const bytes = appendChunk(container, thumbnailPNG)
     const parsed = parseFigBuffer(bytes.buffer as ArrayBuffer)
 

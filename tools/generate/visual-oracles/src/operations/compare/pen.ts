@@ -10,23 +10,30 @@
  * Replaces the fixture folder (tests/fixtures/pen-oracles by default) with:
  *   probes.pen and its images    — the document
  *   <frame id>.png               — pen.dev's export of each frame, at scale 1
- *   iconify/<prefix>.json        — the icons the document draws, as Iconify sets
- *   fonts/<family>--<style>.font — the font faces its text is drawn with, icon fonts subset to
- *                                  the icons it draws
+ *   iconify/<prefix>.json        — the Iconify icons the document draws, as Iconify sets
+ *   google/                      — Google's answers for its Material Symbols, by URL in index.json
+ *   fonts/<family>--<style>.font — the font faces its text is drawn with
  * keeping manifest.json, and writes pen.png, openpencil.png, diff.png, and metrics.json per frame
  * to --output.
  */
 
-import { copyFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
 import { Client } from '@modelcontextprotocol/client'
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
-import { groupBy, omit, pick, uniq } from 'es-toolkit'
+import { groupBy, omit, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { createIconifyProvider, parseIconName } from '@open-pencil/core/icons'
+import {
+  createIconifyProvider,
+  createIconSetsProvider,
+  createMaterialSymbolsProvider,
+  MATERIAL_SYMBOLS_PREFIXES,
+  parseIconName
+} from '@open-pencil/core/icons'
 import { IORegistry, penFormat } from '@open-pencil/core/io'
 import {
   comparePNGs,
@@ -37,19 +44,17 @@ import {
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager, prepareGraphFonts } from '@open-pencil/core/text'
 import {
-  iconFontFamily,
   isDocumentAssetPath,
   parsePenDocument,
   penAssets,
   type PenNode,
   type PenOverride
 } from '@open-pencil/pen'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
 
 const PEN_MCP_SERVER =
   '/Applications/Pen.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64'
 const ICONIFY_API = 'https://api.iconify.design'
-const GOOGLE_FONTS_CSS = 'https://fonts.googleapis.com/css2'
+const EXPORT_TIMEOUT_MS = 300_000
 
 const iconSetSchema = v.pipe(
   v.string(),
@@ -109,43 +114,75 @@ const missing = [...wanted].filter((id) => !frames.some((frame) => frame.id === 
 if (missing.length > 0) throw new Error(`The document has no top-level ${missing.join(', ')}`)
 const assets = penAssets(doc)
 
-clearFixtures()
-writeFileSync(join(fixtures, 'probes.pen'), text)
-for (const image of assets.images.filter(isDocumentAssetPath)) {
-  mkdirSync(dirname(join(fixtures, image)), { recursive: true })
-  copyFileSync(join(dirname(source), image), join(fixtures, image))
+// pen.dev exports first, so a failed export leaves the fixtures as they were, and into a
+// directory of its own, which clearing the fixtures cannot reach.
+const exported = mkdtempSync(join(tmpdir(), 'pen-export-'))
+try {
+  await exportFromPen(
+    source,
+    frames.map((frame) => frame.id),
+    exported
+  )
+  clearFixtures()
+  writeFileSync(join(fixtures, 'probes.pen'), text)
+  for (const image of assets.images.filter(isDocumentAssetPath)) {
+    mkdirSync(dirname(join(fixtures, image)), { recursive: true })
+    copyFileSync(join(dirname(source), image), join(fixtures, image))
+  }
+  for (const frame of frames) {
+    copyFileSync(join(exported, `${frame.id}.png`), join(fixtures, `${frame.id}.png`))
+  }
+} finally {
+  rmSync(exported, { recursive: true, force: true })
 }
-await exportFromPen(
-  source,
-  frames.map((frame) => frame.id),
-  fixtures
-)
 
-const iconSets = await fetchIconSets(assets.icons)
+const iconifyNames = assets.icons
+  .map((request) => request.name)
+  .filter((name) => !MATERIAL_SYMBOLS_PREFIXES.some((prefix) => name.startsWith(`${prefix}:`)))
+const iconSets = await fetchIconSets(iconifyNames)
 for (const set of iconSets.values()) {
   writeFileSync(
     join(fixtures, 'iconify', `${set.prefix}.json`),
     `${JSON.stringify(set, null, 2)}\n`
   )
 }
-const fonts = new Map<string, { family: string; style: string; data: ArrayBuffer }>()
+const fonts = new Map<string, { data: ArrayBuffer }>()
 fontManager.setDownloadedFontCache({
   read: () => Promise.resolve(null),
   write(family, style, data) {
-    fonts.set(`${family}--${style}`, { family, style, data })
+    fonts.set(`${family}--${style}`, { data })
     return Promise.resolve()
   }
 })
 
-const icons = createIconifyProvider({
-  fetchCollection: (prefix, names) => {
-    const set = iconSets.get(prefix)
-    if (!set) return Promise.reject(new Error(`No "${prefix}" icons were recorded`))
-    return Promise.resolve({ ...set, icons: pick(set.icons, names) })
+// Google's answers for the Material Symbols the document draws, kept to be served back offline.
+const google = new Map<string, Uint8Array>()
+const recordingFetch: typeof fetch = Object.assign(
+  async (input: RequestInfo | URL, init?: RequestInit) => {
+    const response = await fetch(input, init)
+    const url = input instanceof Request ? input.url : String(input)
+    if (response.ok) google.set(url, await response.clone().bytes())
+    return response
   },
-  search: () => Promise.resolve({ icons: [], total: 0, collections: {} }),
-  collections: () => Promise.resolve([]),
-  collectionIcons: () => Promise.resolve([])
+  { preconnect: fetch.preconnect }
+)
+const icons = createIconSetsProvider({
+  sources: [
+    {
+      prefixes: MATERIAL_SYMBOLS_PREFIXES,
+      provider: createMaterialSymbolsProvider(recordingFetch)
+    }
+  ],
+  fallback: createIconifyProvider({
+    fetchCollection: (prefix, names) => {
+      const set = iconSets.get(prefix)
+      if (!set) return Promise.reject(new Error(`No "${prefix}" icons were recorded`))
+      return Promise.resolve({ ...set, icons: pick(set.icons, names) })
+    },
+    search: () => Promise.resolve({ icons: [], total: 0, collections: {} }),
+    collections: () => Promise.resolve([]),
+    collectionIcons: () => Promise.resolve([])
+  })
 })
 const { graph } = await new IORegistry([penFormat]).readDocument(
   {
@@ -187,24 +224,15 @@ for (const frame of frames) {
   console.log(`${name} (${frame.id}): ${differentPercent.toFixed(2)}% pixels differ`)
 }
 
-// Icon fonts are recorded as just the icons the document draws; whole, each weight is a megabyte.
-const iconsByFamily = groupBy(
-  [...graph.getAllNodes()].filter(
-    (node) => node.type === 'TEXT' && iconFontFamily(node.fontFamily) !== null
-  ),
-  (node) => node.fontFamily
-)
-for (const [face, { family, style, data }] of fonts) {
-  const bytes = Object.hasOwn(iconsByFamily, family)
-    ? await iconFontSubset(
-        family,
-        style,
-        iconsByFamily[family].map((node) => node.text)
-      )
-    : new Uint8Array(data)
-  writeFileSync(join(fixtures, 'fonts', `${face}.font`), bytes)
+for (const [face, { data }] of fonts) {
+  writeFileSync(join(fixtures, 'fonts', `${face}.font`), new Uint8Array(data))
 }
-console.log(`Recorded ${iconSets.size} icon sets and ${fonts.size} font faces in ${fixtures}`)
+const index = Object.fromEntries([...google.keys()].map((url, at) => [url, `${at}.bin`]))
+for (const [url, bytes] of google) writeFileSync(join(fixtures, 'google', index[url]), bytes)
+writeFileSync(join(fixtures, 'google', 'index.json'), `${JSON.stringify(index, null, 2)}\n`)
+console.log(
+  `Recorded ${iconSets.size} icon sets, ${google.size} Google answers, and ${fonts.size} font faces in ${fixtures}`
+)
 
 /** Empties the fixture folder except its manifest, which holds the comparison's thresholds. */
 function clearFixtures() {
@@ -213,6 +241,7 @@ function clearFixtures() {
     if (entry !== 'manifest.json') rmSync(join(fixtures, entry), { recursive: true, force: true })
   }
   mkdirSync(join(fixtures, 'iconify'))
+  mkdirSync(join(fixtures, 'google'))
   mkdirSync(join(fixtures, 'fonts'))
   mkdirSync(output, { recursive: true })
 }
@@ -248,32 +277,21 @@ async function exportFromPen(document: string, frameIds: string[], directory: st
     new StdioClientTransport({ command: values.server, args: ['--app', 'desktop'] })
   )
   try {
-    const result = await client.callTool({
-      name: 'execute',
-      arguments: {
-        filePath: document,
-        input: `Export(${JSON.stringify(frameIds)}, "png", ${JSON.stringify(directory)}, { scale: 1 })`
-      }
-    })
+    const result = await client.callTool(
+      {
+        name: 'execute',
+        arguments: {
+          filePath: document,
+          input: `Export(${JSON.stringify(frameIds)}, "png", ${JSON.stringify(directory)}, { scale: 1 })`
+        }
+      },
+      // Exporting every frame takes pen.dev a while.
+      { timeout: EXPORT_TIMEOUT_MS }
+    )
     if (result.isError) throw new Error(`pen.dev export failed: ${JSON.stringify(result.content)}`)
   } finally {
     await client.close()
   }
-}
-
-/**
- * Google's own subset of an icon font face holding only `names`, in the TrueType it serves to
- * clients that do not ask for WOFF2.
- */
-async function iconFontSubset(family: string, style: string, names: string[]): Promise<Uint8Array> {
-  const query = new URLSearchParams({
-    family: `${family}:wght@${styleToWeight(style)}`,
-    icon_names: uniq(names).sort().join(',')
-  })
-  const css = await (await fetch(`${GOOGLE_FONTS_CSS}?${query}`)).text()
-  const url = /src: url\((https:[^)]+)\) format\('truetype'\)/.exec(css)?.[1]
-  if (!url) throw new Error(`Google Fonts has no subset of ${family} ${style}`)
-  return (await fetch(url)).bytes()
 }
 
 /** The Iconify sets holding `names`, each with just the icons named from it. */

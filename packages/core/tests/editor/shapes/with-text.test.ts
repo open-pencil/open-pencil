@@ -2,10 +2,11 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { setTextMeasurer } from '@open-pencil/core/layout'
 import { createEditor } from '@open-pencil/core'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { setTextMeasurer } from '@open-pencil/core/layout'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
 
@@ -17,7 +18,9 @@ function setup() {
 beforeEach(() => {
   setTextMeasurer((node, maxWidth) => ({
     width: maxWidth ?? node.width,
-    height: node.text.split('\n').length * (node.lineHeight ?? node.fontSize)
+    height:
+      node.text.split('\n').length *
+      (lineHeightPixels(node.lineHeight, node.fontSize) ?? node.fontSize)
   }))
 })
 afterEach(() => setTextMeasurer(null))

@@ -3,6 +3,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
@@ -44,5 +45,16 @@ describe('import CLI', () => {
     const [first, second] = (column?.childIds ?? []).map((id) => graph.getNode(id))
     expect(first).toMatchObject({ x: 24, y: 24, width: 100, height: 40 })
     expect(second).toMatchObject({ x: 24, y: 80, width: 200, height: 60 })
+  })
+
+  test('saves a thumbnail of the imported layers', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const htmlPath = join(dir, 'tall.html')
+    const figPath = join(dir, 'tall.fig')
+    await writeFile(htmlPath, '<div style="width:100px;height:400px;background:#000"></div>')
+    expect((await cli(['import', htmlPath, '-o', figPath])).exitCode).toBe(0)
+
+    const { width, height } = figThumbnailSize(await readFile(figPath))
+    expect(width / height).toBeCloseTo(100 / 400, 2)
   })
 })

@@ -1,6 +1,4 @@
-import { tv } from 'tailwind-variants'
-
-export const documentEntry = tv({
+export default {
   slots: {
     root: 'group min-w-0',
     trigger:
@@ -29,4 +27,4 @@ export const documentEntry = tv({
     }
   },
   defaultVariants: { view: 'grid' }
-})
+} as const

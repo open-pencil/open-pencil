@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { formatStorageBytes } from '@/app/storage/format-bytes'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -75,6 +76,25 @@ const email = computed(() => {
           >
             {{ messages.open }}
           </AppButton>
+        </SettingsRow>
+      </SettingsGroup>
+    </SettingsSection>
+    <SettingsSection>
+      <template #title>{{ messages.usageSection }}</template>
+      <SettingsGroup>
+        <SettingsRow :label="messages.accounts">
+          <span class="text-xs text-muted tabular-nums">{{ status.accounts }}</span>
+        </SettingsRow>
+        <SettingsRow :label="messages.workspaces">
+          <span class="text-xs text-muted tabular-nums">{{ status.workspaces }}</span>
+        </SettingsRow>
+        <SettingsRow :label="messages.documents">
+          <span class="text-xs text-muted tabular-nums">{{ status.documents }}</span>
+        </SettingsRow>
+        <SettingsRow :label="messages.storedFiles">
+          <span class="text-xs text-muted tabular-nums">{{
+            formatStorageBytes(status.storedBytes)
+          }}</span>
         </SettingsRow>
       </SettingsGroup>
     </SettingsSection>

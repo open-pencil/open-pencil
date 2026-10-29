@@ -1,0 +1,13 @@
+# The build installs and builds everything itself, so only sources go in.
+**/node_modules
+**/dist
+**/dist-*
+**/.cache
+**/.publish
+**/.npm-packages
+**/test-results
+**/playwright-report
+.git
+desktop/target
+packages/cloud/deploy/generated
+scratch

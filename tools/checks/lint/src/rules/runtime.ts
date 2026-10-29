@@ -24,6 +24,7 @@ const noDirectStorageAccess = {
       '/src/app/ai/chat/storage.ts',
       '/src/app/cache/index.ts',
       '/src/app/settings/credentials/storage.ts',
+      '/src/app/settings/theme.ts',
       '/src/app/shell/layout-storage.ts',
       '/packages/vue/src/i18n/locale.ts'
     ]
@@ -198,7 +199,8 @@ const noCoreBrowserGlobals = {
       '/packages/core/src/canvas/renderer.ts',
       '/packages/core/src/text/fonts.ts',
       '/packages/core/src/profiler/render-profiler.ts',
-      '/packages/core/src/figma-api/index.ts'
+      '/packages/core/src/figma-api/index.ts',
+      '/packages/core/src/io/formats/pdf/dom.ts'
     ]
     if (allowedFiles.some((suffix) => file.endsWith(suffix))) return {}
 

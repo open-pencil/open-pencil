@@ -15,7 +15,7 @@ import { isTauri } from '@/app/tauri/env'
 import { bindDesktopLinkQueue } from '@/app/tauri/link-queue'
 import { IS_BROWSER } from '@/constants'
 
-import { cloudSignedIn, openCloudConnect } from './connect/flow'
+import { cloudSignedIn, signInToOpen } from './connect/flow'
 import { beginCloudInvitation } from './invitations/flow'
 import { cloudServerHost, normalizeCloudServerURL } from './servers/address'
 import { cloudServerForLink, findCloudServer } from './servers/store'
@@ -80,7 +80,7 @@ async function signInForLink(link: CloudLink): Promise<void> {
     return
   }
   signingIn.value = JSON.stringify(link satisfies CloudLink)
-  openCloudConnect({ serverId: server.id })
+  await signInToOpen(server.id)
 }
 
 /** Opens an invitation's dialog, or a shared document. */
@@ -114,17 +114,22 @@ export async function openCloudLink(link: CloudLink): Promise<void> {
   }
 }
 
+/** Opens the shared link kept while signing in to `serverId`, if one was. */
+export async function reopenCloudLink(serverId: string): Promise<void> {
+  const parsed = v.safeParse(
+    v.pipe(v.string(), v.parseJson(), cloudLinkSchema),
+    signingIn.value ?? ''
+  )
+  if (!parsed.success) return
+  const url = normalizeCloudServerURL(parsed.output.server)
+  if (url !== findCloudServer(serverId)?.url) return
+  await openCloudLink(parsed.output)
+}
+
 /** Opens a shared link again once signing in for it finished. */
 export function resumeCloudLink(): () => void {
   return watch(cloudSignedIn, (signedIn) => {
-    const parsed = v.safeParse(
-      v.pipe(v.string(), v.parseJson(), cloudLinkSchema),
-      signingIn.value ?? ''
-    )
-    if (!signedIn || !parsed.success) return
-    const url = normalizeCloudServerURL(parsed.output.server)
-    if (url !== findCloudServer(signedIn.serverId)?.url) return
-    void openCloudLink(parsed.output)
+    if (signedIn) void reopenCloudLink(signedIn.serverId)
   })
 }
 

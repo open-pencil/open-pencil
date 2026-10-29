@@ -1,0 +1,5 @@
+export { default as AppTabsContent } from './AppTabsContent.vue'
+export { default as AppTabsList } from './AppTabsList.vue'
+export { default as AppTabsRoot } from './AppTabsRoot.vue'
+export { default as AppTabsTrigger } from './AppTabsTrigger.vue'
+export { tabs, useTabsUI, type TabsUI } from './ui'

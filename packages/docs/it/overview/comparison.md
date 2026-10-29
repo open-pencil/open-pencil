@@ -151,12 +151,11 @@ Penpot usa Potok. `UpdateEvent` cambia lo stato, `WatchEvent` esegue gli effetti
 ## 10. Vantaggi di Penpot
 
 1. **Collaborazione tramite server:** account, controllo degli accessi e archiviazione centrale.
-2. **Export PDF:** esportatore Chromium dedicato.
-3. **Sistema di plugin:** esecuzione isolata e API dei plugin.
-4. **Token di design:** supporto integrato.
-5. **CSS Grid:** implementazione propria; OpenPencil usa una variante di Yoga con Grid.
-6. **Installazione autonoma:** piattaforma di gruppo distribuibile con Docker.
-7. **Maturità:** diversi anni di uso in produzione.
+2. **Sistema di plugin:** esecuzione isolata e API dei plugin.
+3. **Token di design:** supporto integrato.
+4. **CSS Grid:** implementazione propria; OpenPencil usa una variante di Yoga con Grid.
+5. **Installazione autonoma:** piattaforma di gruppo distribuibile con Docker.
+6. **Maturità:** diversi anni di uso in produzione.
 
 ## 11. Script ed estensibilità
 

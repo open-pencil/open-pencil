@@ -1,6 +1,6 @@
 import type { VNode } from 'vue'
 
-import { emailLayout } from '@open-pencil/feedback/email'
+import { emailLayout } from './brand'
 
 export type TransactionalEmailLayout = {
   preview: string

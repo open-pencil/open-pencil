@@ -1,6 +1,4 @@
-import { tv } from 'tailwind-variants'
-
-export const cloudShare = tv({
+export default {
   slots: {
     invite: 'flex items-center gap-2',
     heading: 'mb-2 text-[11px] font-semibold text-muted',
@@ -22,4 +20,4 @@ export const cloudShare = tv({
     accessDetail: 'text-[11px] text-muted',
     footnote: 'text-[11px] text-muted'
   }
-})
+} as const

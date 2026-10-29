@@ -4,8 +4,9 @@ import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
 import type { DerivedTextGlyph, SceneNode, TextPathData } from '@open-pencil/scene-graph'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
-import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
+import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
 import {
   calibratePathTextLayout,
   getTextPathData,
@@ -39,7 +40,8 @@ function layOutPathText(
   type: PathTextType,
   layout: PathTextLayout
 ): DerivedTextGlyph[] | null {
-  const { fontSize, letterSpacing } = type
+  const { fontSize } = type
+  const letterSpacing = textLengthPixels(type.letterSpacing, fontSize)
   const metrics = getGlyphOutlineMetricsSync(
     type.fontFamily,
     weightToStyle(type.fontWeight, type.italic),
@@ -236,7 +238,7 @@ function alignedRun(
   if (!old) return all
   const shift = alignmentShift(
     align,
-    runWidth(old, node.letterSpacing),
+    runWidth(old, textLengthPixels(node.letterSpacing, node.fontSize)),
     runWidth(metrics, letterSpacing)
   )
   return { anchor: anchor + (direction * shift) / path.length, count: metrics.length }

@@ -68,7 +68,7 @@ export function useHomeLocations() {
       homeLocation.value = fromView(next)
     },
     connect: cloud.connect,
-    accountSettings: () => openSettingsDialog('cloud'),
+    openAccount: cloud.openAccount,
     newWorkspace: cloud.newWorkspace,
     storageSettings: () => openSettingsDialog('storage'),
     signOut: cloud.signOut

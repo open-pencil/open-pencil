@@ -18,7 +18,7 @@ import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
 import type { PreparedText } from '#core/canvas/text/preparation/cache'
 import { shownCharacters, shownText } from '#core/text/case'
 import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from '#core/text/character-style'
-import { fontDecorationMetricsSync, type FontDecorationMetrics } from '#core/text/opentype'
+import { fontDecorationMetricsSync, type FontDecorationMetrics } from '#core/text/font/glyphs'
 
 /**
  * Figma's Inter, measured from the decorations it saves, for text drawn without its font: its

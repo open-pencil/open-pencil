@@ -12,8 +12,7 @@ import {
   STORAGE_NAMESPACE_MARKER,
   documentFigKey,
   documentIdFromFigKey,
-  documentMetaKey,
-  documentThumbnailKey
+  documentMetaKey
 } from '../namespace'
 import type {
   StorageAdapter,
@@ -248,8 +247,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       const config = await resolveConfig(runtime)
       const results = await Promise.allSettled([
         deleteObject(config, documentFigKey(id)),
-        deleteObject(config, documentMetaKey(id)),
-        deleteObject(config, documentThumbnailKey(id))
+        deleteObject(config, documentMetaKey(id))
       ])
       const failure = results.find(
         (result): result is PromiseRejectedResult => result.status === 'rejected'
@@ -265,11 +263,6 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         objectCount: objects.length,
         documentCount: objects.filter((object) => documentIdFromFigKey(object.key)).length
       }
-    },
-
-    async putThumbnail(id, bytes) {
-      const config = await resolveConfig(runtime)
-      await putObject(config, documentThumbnailKey(id), bytes, 'image/jpeg')
     },
 
     async getThumbnail(id) {

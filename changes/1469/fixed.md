@@ -1,0 +1,1 @@
+- `openpencil libraries publish` gives a component without an asset key a valid one made from its name instead of failing, and keeps those keys in the `.fig` source with `--write`.

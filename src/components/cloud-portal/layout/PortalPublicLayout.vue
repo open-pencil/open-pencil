@@ -2,8 +2,8 @@
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
+import { portalPublic } from '@/components/cloud-portal/ui'
 import { CLOUD_DOCS_URL } from '@/constants'
-import { portalPublic } from '@/theme/cloud-portal/public'
 
 /**
  * A Cloud page for people who are signing in or answering a request, laid out as the app's

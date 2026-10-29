@@ -10,7 +10,6 @@ export {
   paintBindings,
   setLayerBinding,
   setPaintBindings,
-  withPaintBinding,
   type FigmaBindableField
 } from './bindings'
 

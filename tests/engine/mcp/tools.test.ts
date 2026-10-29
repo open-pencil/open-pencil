@@ -147,9 +147,7 @@ describe('MCP tool execution', () => {
     findTool('set_fill').execute(api, { id: frame.id, color: '#ff0000' })
     const node = expectDefined(api.getNodeById(frame.id), 'filled rectangle')
     expect(node.fills).toHaveLength(1)
-    expect(expectFills(node.fills)[0].color.r).toBeCloseTo(1)
-    expect(expectFills(node.fills)[0].color.g).toBeCloseTo(0)
-    expect(expectFills(node.fills)[0].color.b).toBeCloseTo(0)
+    expect(expectFills(node.fills)[0]).toMatchObject({ color: { r: 1, g: 0, b: 0 } })
   })
 
   test('set_layout configures auto-layout', () => {

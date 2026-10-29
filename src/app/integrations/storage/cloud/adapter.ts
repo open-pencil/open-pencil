@@ -3,11 +3,7 @@ import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
-import {
-  cloudAPIClient,
-  cloudConnection,
-  refreshCloudConnection
-} from '@/app/cloud/sessions/connection'
+import { cloudAPIClient, recheckedCloudConnection } from '@/app/cloud/sessions/connection'
 
 import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
@@ -32,12 +28,11 @@ export type CloudStorageDependencies = {
   objectFetch(input: string, init: RequestInit): Promise<Response>
 }
 
-/** The API client of a signed-in server, checking once more before giving up. */
+/** The API client of a signed-in server, asking it once more before giving up. */
 async function signedInClient(serverId: string): Promise<CloudAPIClient> {
   const server = findCloudServer(serverId)
   if (!server) throw new StorageUnavailableError('This Cloud server was removed from the app')
-  let connection = cloudConnection(server.id)
-  if (connection.state !== 'signed-in') connection = await refreshCloudConnection(server)
+  const connection = await recheckedCloudConnection(server)
   if (connection.state !== 'signed-in' || !connection.discovery) {
     throw new StorageUnavailableError(`Sign in to ${cloudServerHost(server.url)} to sync`)
   }

@@ -8,7 +8,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeNodeShapePath, makePolygonPath, makeRRect } from '#core/canvas/shapes'
 import { BLACK } from '#core/constants'
 
-import { asPageNode, createAPI } from '#tests/engine/figma/api/helpers'
+import { asPageNode, createAPI } from '#tests/helpers/plugin-api'
 
 import { asRenderer } from './helpers'
 

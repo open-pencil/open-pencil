@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
@@ -7,7 +7,8 @@ import {
   changeWorkspaceRole,
   deleteWorkspace,
   inviteToWorkspace,
-  lastInvitationLink,
+  lastInvitation,
+  lastResent,
   leaveWorkspace,
   membersBusy,
   membersFailure,
@@ -17,15 +18,22 @@ import {
   membersWorkspace,
   removeWorkspaceMember,
   renameWorkspace,
+  resendWorkspaceInvitation,
   revokeWorkspaceInvitation,
   workspaceMembers,
   type WorkspaceFailure
 } from '@/app/cloud/workspaces/manage'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import CloudWorkspaceMembersDialog from './CloudWorkspaceMembersDialog.vue'
 
 /** The one Members dialog, for whichever workspace Home opened it from. */
 const t = useCloudMessages()
+// Leaving or deleting the workspace drops it; the dialog closes and keeps drawing it as it fades.
+const workspace = useHeldContent(membersWorkspace)
+watch(membersWorkspace, (current) => {
+  if (!current) membersOpen.value = false
+})
 const failure = computed(() => {
   const kind = membersFailure.value
   if (!kind) return null
@@ -44,19 +52,21 @@ const failure = computed(() => {
 
 <template>
   <CloudWorkspaceMembersDialog
-    v-if="membersWorkspace"
+    v-if="workspace"
     v-model:open="membersOpen"
-    :workspace-name="membersWorkspace.name"
-    :can-manage="membersWorkspace.role === 'admin'"
+    :workspace-name="workspace.name"
+    :can-manage="workspace.role === 'admin'"
     :self="membersSelf"
     :members="workspaceMembers"
     :loading="membersLoading"
     :busy="membersBusy"
     :failure="failure"
-    :invitation-link="lastInvitationLink"
+    :invitation-link="lastInvitation?.link ?? null"
+    :resent="lastResent"
     @rename="renameWorkspace"
     @invite="inviteToWorkspace"
     @revoke="revokeWorkspaceInvitation"
+    @resend="resendWorkspaceInvitation"
     @change-role="changeWorkspaceRole"
     @remove="removeWorkspaceMember"
     @leave="leaveWorkspace"

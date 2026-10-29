@@ -24,7 +24,6 @@ export const FIGMA_API_HOST_MEMBERS = [
  */
 export const FIGMA_API_INCOMPLETE_MEMBERS = [
   'createComponentFromNode',
-  'createImage',
   'createPage',
   'currentPage',
   'getNodeById',

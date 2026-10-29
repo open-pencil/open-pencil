@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** People overlapping in a row, each with their agent count, then "+N". */
-export const avatarStack = tv({
+export default {
   slots: {
     root: 'flex items-center -space-x-1.5',
     person: 'relative inline-flex shrink-0',
@@ -22,4 +20,4 @@ export const avatarStack = tv({
     }
   },
   defaultVariants: { size: 'sm' }
-})
+} as const

@@ -8,6 +8,7 @@ import type { DesignElement, DesignNode } from '#dom-css/index'
 import { createHeadlessCSSRuntime, htmlToDesignDocument, htmlToSceneGraph } from '#dom-css/index'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { TEST_COLORS, cardCSS, cardHTML, fixtureCSS, fixtureHTML } from '../helpers'
 
@@ -107,8 +108,8 @@ function expectStyleRoundTripText(graph: SceneGraph, panel: SceneNode) {
   const heading = expectText(graph.getChildren(panel.id)[0])
   expect(heading.fontSize).toBe(18)
   expect(heading.fontWeight).toBe(700)
-  expect(heading.lineHeight).toBe(24)
-  expect(heading.letterSpacing).toBe(0.2)
+  expect(heading.lineHeight).toEqual(pixelLength(24))
+  expect(heading.letterSpacing).toEqual(pixelLength(0.2))
   expect(heading.textAlignHorizontal).toBe('CENTER')
   expect(heading.textCase).toBe('UPPER')
   expect(heading.maxLines).toBe(1)

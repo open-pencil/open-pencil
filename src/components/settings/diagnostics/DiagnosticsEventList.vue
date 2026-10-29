@@ -89,7 +89,7 @@ const categoryOptions = computed(() => [
             <icon-lucide-info v-else class="size-3.5 shrink-0 text-muted" />
             <span class="min-w-0">
               <span class="block truncate text-surface">{{ event.label }}</span>
-              <span v-if="event.detail" class="block truncate text-[10px] text-muted">{{
+              <span v-if="event.detail" class="block truncate text-[11px] text-muted">{{
                 event.detail
               }}</span>
             </span>
@@ -97,7 +97,7 @@ const categoryOptions = computed(() => [
           <span class="shrink-0 text-muted">{{ dates.format(event.timestamp, 'clock') }}</span>
         </CollapsibleTrigger>
         <CollapsibleContent :class="collapsibleContentMotion">
-          <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-[10px] text-muted">
+          <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-[11px] text-muted">
             <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
               <template v-for="[name, value] in event.fields" :key="name">
                 <dt>{{ name }}</dt>

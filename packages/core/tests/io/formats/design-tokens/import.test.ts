@@ -81,6 +81,39 @@ describe('reading token files', () => {
     expect(bundle.collections[0].modes[0].tokens.map((token) => token.name)).toEqual(['gap'])
   })
 
+  test('a resolver ref is relative to its file, from the top with `/`, and never above the top', () => {
+    const tokens = (name: string) => ({ [name]: { $type: 'number', $value: 1 } })
+    const bundle = readDesignTokens(
+      files({
+        'Theme\\Sub\\tokens.resolver.json': {
+          version: '2025-11-01',
+          sets: {
+            Nested: { sources: [{ $ref: 'shared.json' }] },
+            Sibling: { sources: [{ $ref: '../shared.json' }] },
+            Top: { sources: [{ $ref: '/shared.json' }] },
+            Above: { sources: [{ $ref: '../../../../shared.json' }] }
+          },
+          resolutionOrder: ['Nested', 'Sibling', 'Top', 'Above'].map((name) => ({
+            $ref: `#/sets/${name}`
+          }))
+        },
+        'shared.json': tokens('top'),
+        'Theme/shared.json': tokens('theme'),
+        'Theme/Sub/shared.json': tokens('sub')
+      })
+    )
+
+    expect(bundle.issues).toEqual([])
+    expect(
+      bundle.collections.map((collection) => [collection.name, collection.modes[0].tokens[0].name])
+    ).toEqual([
+      ['Nested', 'sub'],
+      ['Sibling', 'theme'],
+      ['Top', 'top'],
+      ['Above', 'top']
+    ])
+  })
+
   test('Tokens Studio themes become modes of their group, and the sets they refer to collections', () => {
     const bundle = readDesignTokens(
       files({

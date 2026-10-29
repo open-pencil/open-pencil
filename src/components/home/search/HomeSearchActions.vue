@@ -52,6 +52,7 @@ watch(
       name="file-search"
       autocomplete="off"
       class="md:flex-1"
+      size="md"
       :density="isMobile ? 'comfortable' : 'compact'"
       :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
       :aria-label="files.searchFiles"

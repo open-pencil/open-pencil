@@ -12,6 +12,8 @@ import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
 import { currentRun } from '@/app/ai/tools'
 import type { AgentTurnUsage } from '@/app/ai/transports/acp'
@@ -239,6 +241,8 @@ export function createChatSessionManager({
     if (!chat || transportDirty || currentChatStore !== store) {
       const messages = initialMessages ?? currentChatMessages.get(store)
       const diagnosticContext: AIDiagnosticContext = { sessionId, runId: crypto.randomUUID() }
+      // Failures belong to the provider this chat was created for, even if the profile changes.
+      const chatProviderID = providerID.value
       let transport: ChatTransport<UIMessage>
       // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`).
       let agentKind: 'acp' | 'harness' | null = null
@@ -264,9 +268,18 @@ export function createChatSessionManager({
           const reportedError = activeProviderError ?? error
           activeProviderError = null
           const signInOnly = AI_PROVIDERS.some(
-            (provider) => provider.id === providerID.value && provider.signInOnly
+            (provider) => provider.id === chatProviderID && provider.signInOnly
           )
-          failure.value = classifyAIChatError(reportedError, { signInOnly })
+          const classified = classifyAIChatError(reportedError, { signInOnly })
+          const refusal =
+            chatProviderID === OPENPENCIL_AI_PROVIDER ? cloudCreditRefusal(reportedError) : null
+          failure.value = refusal
+            ? {
+                ...classified,
+                reason: 'cloud-credits-exhausted',
+                resetsAt: refusal.resetsAt ?? undefined
+              }
+            : classified
           const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
           recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },

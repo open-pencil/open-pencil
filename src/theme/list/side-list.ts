@@ -1,18 +1,16 @@
-import { tv } from 'tailwind-variants'
-
-/** A side list of places, drawn like the editor's Pages panel: headings, 24px rows, hover selection. */
-export const sideList = tv({
+/** A side list of places, drawn like the Settings dialog's sections: groups split by rules, headings, 28px rows with icons. */
+export default {
   slots: {
-    root: 'flex h-full w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-panel pb-2',
-    group: 'flex flex-col',
-    header: 'flex h-8 shrink-0 items-center justify-between pr-1.5 pl-3',
-    title: 'text-[11px] font-semibold text-surface',
+    root: 'flex h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-panel',
+    group: 'flex flex-col gap-0.5 border-t border-border p-2 first:border-t-0',
+    header: 'flex h-7 shrink-0 items-center justify-between pr-0.5 pl-2',
+    title: 'text-[11px] font-semibold text-muted',
     actions: 'flex items-center gap-0.5',
-    items: 'flex flex-col px-1 pb-1',
-    item: 'group flex h-6 w-full cursor-pointer items-center gap-1.5 rounded border-none bg-transparent px-2 text-left text-[11px] text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus data-[active=true]:bg-hover data-[active=true]:text-surface',
-    icon: 'size-3 shrink-0 opacity-70',
+    items: 'flex flex-col gap-0.5',
+    item: 'group flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded border-none bg-transparent px-2 text-left text-xs text-muted outline-none transition-colors hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 data-[active=true]:bg-hover data-[active=true]:text-surface',
+    icon: 'size-3.5 shrink-0',
     label: 'min-w-0 flex-1 truncate',
-    trailing: 'flex shrink-0 items-center gap-1.5 text-[10px] text-muted tabular-nums',
-    attention: 'size-3 text-warning'
+    trailing: 'flex shrink-0 items-center gap-1.5 text-[11px] text-muted tabular-nums',
+    attention: 'size-3.5 text-warning'
   }
-})
+} as const

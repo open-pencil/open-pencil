@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 import { Markdown } from 'vue-stream-markdown'
 
@@ -10,7 +11,9 @@ import { resolvedAppTheme } from '@/app/shell/theme'
 import InlineCode from '@/components/markdown/InlineCode.vue'
 import MarkdownTooltip from '@/components/markdown/MarkdownTooltip.vue'
 import TaskCheckbox from '@/components/markdown/TaskCheckbox.vue'
-import { markdownTheme, type MarkdownDensity } from '@/theme/markdown'
+import theme, { type MarkdownDensity } from '@/theme/markdown'
+
+const markdownTheme = tv(theme)
 
 const {
   content,

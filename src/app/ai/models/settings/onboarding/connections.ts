@@ -189,7 +189,7 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
           customBaseURL: state.customBaseURL.trim(),
           customAPIType: saved?.customAPIType ?? 'completions'
         },
-        savedKey && saved ? modelConnectionCredentialStore(saved.id) : undefined
+        savedKey && saved ? { credentials: modelConnectionCredentialStore(saved.id) } : undefined
       )
       if (!current()) return
       state.test = result.ok ? 'success' : 'error'

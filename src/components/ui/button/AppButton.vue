@@ -8,7 +8,7 @@ import {
   type AppButtonShape,
   type AppButtonSize,
   type AppButtonVariant
-} from '@/theme/button/button'
+} from '@/components/ui/button/button'
 import { motionStyles } from '@/theme/motion/styles'
 
 const {

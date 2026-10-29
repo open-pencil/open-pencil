@@ -9,6 +9,7 @@ import type {
 import { localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import type { SVGElementLayer } from '#core/icons/types'
 import { measureTextForLayout } from '#core/layout/text-measurement'
@@ -46,7 +47,7 @@ function runStyle(
     fontSize: run.fontSize * scale,
     fontWeight: run.fontWeight,
     italic: run.italic,
-    letterSpacing: run.letterSpacing * scale,
+    letterSpacing: pixelLength(run.letterSpacing * scale),
     textDecoration: run.textDecoration,
     fills: run.fills
   }
@@ -120,13 +121,15 @@ export function createSVGText(
   if (text.pieces.length === 1) {
     createTextPiece(graph, parentId, text.pieces[0], text.matrix, {
       ...(element.name ? { name: element.name } : {}),
-      opacity: element.opacity
+      opacity: element.opacity,
+      visible: element.visible
     })
     return
   }
   const groupId = createGroup(parentId, {
     name: element.name ?? 'Group',
-    opacity: element.opacity
+    opacity: element.opacity,
+    visible: element.visible
   })
   for (const piece of text.pieces) createTextPiece(graph, groupId, piece, text.matrix, {})
 }

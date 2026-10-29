@@ -18,6 +18,7 @@ import {
   type PluginDataField
 } from '@open-pencil/scene-graph/plugin-data'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import {
@@ -91,6 +92,17 @@ export function extractTextPathBox(nc: NodeChange): Rect | null {
 
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
   let bindings = readNodeChangePluginData(nc, boundVariables) ?? {}
+  // Each paint carries its colour's alias. An instance's copy pairs its component's plugin data
+  // with paints an override set, so the plugin data can name a binding those paints dropped.
+  const decidedByPaints = (field: string) => {
+    const list = paintBindingTarget(field)?.list
+    return list === 'fills'
+      ? nc.fillPaints !== undefined
+      : list === 'strokes' && nc.strokePaints !== undefined
+  }
+  bindings = Object.fromEntries(
+    Object.entries(bindings).filter(([field]) => !decidedByPaints(field))
+  )
   for (const entry of variableConsumptionEntries(nc)) {
     const binding = resolveVariableConsumptionEntry(entry)
     if (binding) bindings[binding.field] = binding.variableId

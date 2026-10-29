@@ -6,7 +6,7 @@ import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
 import type { FontFaceRef } from '#core/text/face'
-import { cjkFallbackScriptForLanguage, type FontFallbackScript } from '#core/text/fallbacks'
+import { fontFallbackScriptForCharacter, type FontFallbackScript } from '#core/text/fallbacks'
 
 /** The face a text draws in, or the face a style run over it draws in. */
 export function textFontFace(node: SceneNode, style: CharacterStyleOverride = {}): FontFaceRef {
@@ -48,20 +48,9 @@ export function collectGraphFontKeys(
   return Array.from(fontKeys, (key) => key.split('\0') as [string, string])
 }
 
-function fallbackScriptForCharacter(
-  character: string,
-  language?: string | null
-): FontFallbackScript | null {
-  if (/\p{Script=Arabic}/u.test(character)) return 'arabic'
-  if (/\p{Script=Hangul}/u.test(character)) return 'cjk-kr'
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(character)) return 'cjk-jp'
-  if (/\p{Script=Han}/u.test(character)) return cjkFallbackScriptForLanguage(language) ?? 'cjk-sc'
-  return null
-}
-
 function textLanguageAt(node: SceneNode, index: number): string | null {
   const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-  return run?.style.textLanguage ?? node.textLanguage
+  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
 }
 
 export interface GraphFontRequirements {
@@ -84,7 +73,7 @@ export function collectGraphFontRequirements(
     if (node.type === 'TEXT') {
       for (const { character, sourceIndex } of shownCharacters(node)) {
         characters.add(character)
-        const script = fallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
+        const script = fontFallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
         if (script) scripts.add(script)
       }
     }

@@ -9,6 +9,8 @@ import {
 } from '@/app/ai/agents/setup/detection'
 import { useAgentSetup } from '@/app/ai/agents/setup/use'
 import { agentSetupView } from '@/app/ai/agents/setup/view'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudAIAvailable } from '@/app/cloud/integration'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 
 /** How a model's connection stands, in one vocabulary for keys, sign-ins, and agents. */
@@ -32,6 +34,8 @@ export interface ModelConnectionInput {
   /** What setup found of a coding agent or Pi; null for other providers and outside the desktop app. */
   agent: AgentDetection | null
   toolsUnreachable: boolean
+  /** Whether the Home server offers Cloud's AI service to someone signed in there. */
+  cloudAI?: boolean
 }
 
 function isAgentProvider(providerID: string): boolean {
@@ -42,8 +46,11 @@ export function modelConnectionState({
   providerID,
   credential,
   agent,
-  toolsUnreachable
+  toolsUnreachable,
+  cloudAI = false
 }: ModelConnectionInput): ModelConnectionState {
+  // Cloud's AI service signs in with the Home server, not a saved key.
+  if (providerID === OPENPENCIL_AI_PROVIDER) return cloudAI ? 'connected' : 'unavailable'
   // Pi uses its own sign-ins unless an AI Gateway key is saved.
   if (credential === 'configured' && !providerID.startsWith('acp:')) return 'connected'
   if (isAgentProvider(providerID)) {
@@ -63,6 +70,8 @@ export function modelConnectionState({
     }
   }
   if (credential === 'locked' || credential === 'unavailable') return 'unavailable'
+  // Not read yet: saying the key is missing before knowing would flash a wrong state.
+  if (credential === undefined) return 'checking'
   return 'needs-credential'
 }
 
@@ -97,6 +106,7 @@ export function useModelConnectionStates(
     return modelConnectionState({
       providerID,
       credential: credentials.value[connectionId],
+      cloudAI: cloudAIAvailable.value,
       ...agentState(providerID)
     })
   }

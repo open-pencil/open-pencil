@@ -5,6 +5,7 @@ import {
   DEFAULT_STROKE_WEIGHT
 } from './constants'
 import { createInstanceOverrideState } from './instances/overrides'
+import { NO_LETTER_SPACING } from './text/lengths'
 import type { NodeType, SceneNode, SourceMetadata } from './types'
 
 export function createDefaultSourceMetadata(): SourceMetadata {
@@ -102,7 +103,7 @@ export function createDefaultNode(
     textLanguage: null,
     leadingTrim: 'NONE',
     lineHeight: null,
-    letterSpacing: 0,
+    letterSpacing: NO_LETTER_SPACING,
     layoutMode: 'NONE',
     layoutDirection: 'AUTO',
     layoutWrap: 'NO_WRAP',
@@ -142,6 +143,7 @@ export function createDefaultNode(
     hangingList: false,
     styleRuns: [],
     fontVariations: [],
+    opticalSizeFromFontSize: true,
     fontFeatures: [],
     horizontalConstraint: 'MIN',
     verticalConstraint: 'MIN',
@@ -166,6 +168,9 @@ export function createDefaultNode(
     connectorLineType: 'ELBOWED',
     connectorStartCap: 'ROUND',
     connectorEndCap: 'ARROW_LINES',
+    connectorControlPoints: [],
+    connectorCurveHandles: null,
+    connectorLabelPosition: null,
     isMask: false,
     maskType: 'ALPHA',
     maskIsOutline: false,

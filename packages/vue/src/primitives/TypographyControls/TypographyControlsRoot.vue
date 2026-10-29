@@ -36,7 +36,11 @@ const actions = {
   formatting: onFormattingChange,
   toggleBold: ctx.toggleBold,
   toggleItalic: ctx.toggleItalic,
-  toggleDecoration: ctx.toggleDecoration
+  toggleDecoration: ctx.toggleDecoration,
+  previewAxis: ctx.previewAxis,
+  cancelAxis: ctx.cancelAxis,
+  setAxis: ctx.setAxis,
+  setOpticalSizeAuto: ctx.setOpticalSizeAuto
 }
 </script>
 
@@ -52,6 +56,8 @@ const actions = {
     :has-missing-fonts="ctx.hasMissingFonts"
     :active-formatting="ctx.activeFormatting"
     :list-type="ctx.listType"
+    :axes="ctx.axes"
+    :optical-size-auto="ctx.opticalSizeAuto"
     :actions="actions"
   />
 </template>

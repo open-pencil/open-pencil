@@ -108,8 +108,7 @@ describe('AI adapter', () => {
     await setFill.execute({ id: rect.id, color: '#00ff00' })
 
     const fills = expectFills(expectDefined(figma.getNodeById(rect.id), 'filled rectangle').fills)
-    expect(fills.length).toBe(1)
-    expect(fills[0].color.g).toBeCloseTo(1)
+    expect(fills).toEqual([expect.objectContaining({ color: { r: 0, g: 1, b: 0 } })])
   })
 
   test('get_page_tree tool returns structure', async () => {

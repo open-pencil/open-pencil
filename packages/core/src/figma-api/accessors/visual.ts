@@ -1,9 +1,6 @@
-import type { Fill, GradientStop, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { normalizeColor } from '@open-pencil/scene-graph/color'
-import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
+import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 import {
   graph,
@@ -14,14 +11,9 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
-import { sceneTransforms, toFigmaPaint, type WithFigmaTransforms } from '#core/figma-api/paints'
+import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
-import {
-  paintBindings,
-  setPaintBindings,
-  withPaintBinding
-} from '#core/figma-api/variables/bindings'
-import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
+import { paintBindings, setPaintBindings } from '#core/figma-api/variables/bindings'
 import { textStyleChanges } from '#core/text/character-style'
 
 function styleReference(
@@ -50,45 +42,25 @@ function styleReference(
   }
 }
 
-/** Figma treats a paint's `opacity` and `visible` as optional, defaulting to 1 and `true`. */
-function paintDefaults(paint: Partial<Pick<Fill, 'opacity' | 'visible'>>) {
-  return { opacity: paint.opacity ?? 1, visible: paint.visible ?? true }
+/**
+ * `node`'s fills as Figma's plugin API reads them, bound colours resolved and carrying the
+ * variable they are bound to.
+ */
+export function figmaFills(sceneGraph: SceneGraph, node: SceneNode): FigmaPaint[] {
+  const bound = paintBindings(node, 'fills')
+  const fills = bound.size
+    ? (resolvedPaintBindings(sceneGraph, node).fills ?? node.fills)
+    : node.fills
+  return fills.map((fill, index) => toFigmaPaint(fill, bound.get(index)))
 }
 
-/** A colour as Figma's plugin API takes it, RGB with an optional alpha. */
-type FigmaColor = Omit<Color, 'a'> & Partial<Pick<Color, 'a'>>
-
-/**
- * A paint as Figma's plugin API takes it: RGB colours, optional opacity and visibility, transforms
- * as two rows of three, and the variable its colour is bound to.
- */
-export type FigmaPaint = WithFigmaTransforms<
-  Omit<Fill, 'color' | 'opacity' | 'visible' | 'gradientStops'>
-> &
-  Partial<Pick<Fill, 'opacity' | 'visible'>> & {
-    color?: FigmaColor
-    gradientStops?: Array<Omit<GradientStop, 'color'> & { color: FigmaColor }>
-    boundVariables?: { color?: FigmaVariableAlias }
-  }
-
-/** The scene paint for a Figma paint at `index` in the list a script passes to `method`. */
-export function figmaPaintToFill(
-  paint: FigmaPaint,
-  index = 0,
-  method = 'set_fills',
-  property = 'fills'
-): Fill {
-  const { boundVariables: _bound, gradientTransform: _g, imageTransform: _i, ...fill } = paint
-  return {
-    ...fill,
-    ...paintDefaults(fill),
-    ...sceneTransforms(paint, index, method, property),
-    color: normalizeColor(fill.color),
-    gradientStops: fill.gradientStops?.map((stop) => ({
-      ...stop,
-      color: normalizeColor(stop.color)
-    }))
-  }
+/** `node`'s strokes as Figma's plugin API reads them, as {@link figmaFills} reads fills. */
+export function figmaStrokes(sceneGraph: SceneGraph, node: SceneNode): FigmaPaint[] {
+  const bound = paintBindings(node, 'strokes')
+  const strokes = bound.size
+    ? (resolvedPaintBindings(sceneGraph, node).strokes ?? node.strokes)
+    : node.strokes
+  return strokes.map((stroke, index) => toFigmaPaint(stroke, bound.get(index)))
 }
 
 export function installVisualNodeProxyAccessors(
@@ -99,28 +71,16 @@ export function installVisualNodeProxyAccessors(
   Object.defineProperties(prototype, {
     fills: {
       // Text reads mixed while its characters are filled differently, and setting it fills them all.
-      get(this: ProxyThis): readonly WithFigmaTransforms<Fill>[] | symbol {
+      get(this: ProxyThis): readonly FigmaPaint[] | symbol {
         const node = raw(this, internals)
-        if (node.type !== 'TEXT') {
-          const bound = paintBindings(node, 'fills')
-          const fills = bound.size
-            ? (resolvedPaintBindings(graph(this, internals), node).fills ?? node.fills)
-            : node.fills
-          return Object.freeze(
-            copyFills(fills).map((fill, index) =>
-              toFigmaPaint(withPaintBinding(fill, bound.get(index)))
-            )
-          )
-        }
+        if (node.type !== 'TEXT') return Object.freeze(figmaFills(graph(this, internals), node))
         const fills = getTextStyle(node, 'fills', mixed)
         // Text styles read for scripts already give Figma's paints.
-        return typeof fills === 'symbol'
-          ? fills
-          : Object.freeze(fills as WithFigmaTransforms<Fill>[])
+        return typeof fills === 'symbol' ? fills : Object.freeze(fills as FigmaPaint[])
       },
       set(this: ProxyThis, value: readonly FigmaPaint[]) {
         const node = raw(this, internals)
-        const fills = value.map((paint, index) => figmaPaintToFill(paint, index))
+        const fills = parseFigmaPaints(value)
         updateNode(
           this,
           internals,
@@ -130,48 +90,20 @@ export function installVisualNodeProxyAccessors(
       }
     },
     strokes: {
-      get(this: ProxyThis): readonly WithFigmaTransforms<Stroke>[] {
+      get(this: ProxyThis): readonly FigmaPaint[] {
         const owner = raw(strokeOwner(this, internals), internals)
-        const bound = paintBindings(owner, 'strokes')
-        const strokes = bound.size
-          ? (resolvedPaintBindings(graph(this, internals), owner).strokes ?? owner.strokes)
-          : owner.strokes
-        return Object.freeze(
-          copyStrokes(strokes).map((stroke, index) =>
-            toFigmaPaint(withPaintBinding(stroke, bound.get(index)))
-          )
-        )
+        return Object.freeze(figmaStrokes(graph(this, internals), owner))
       },
       // Figma paints carry no geometry; a stroke takes the node's weight and alignment, which
       // outlast its strokes.
-      set(
-        this: ProxyThis,
-        value: readonly (WithFigmaTransforms<Omit<Stroke, 'weight' | 'align'>> &
-          Partial<Pick<Stroke, 'weight' | 'align'>> & {
-            boundVariables?: { color?: FigmaVariableAlias }
-          })[]
-      ) {
+      set(this: ProxyThis, value: readonly FigmaPaint[]) {
         const owner = strokeOwner(this, internals)
         const geometry = newStrokeGeometry(raw(owner, internals))
-        // The script keeps its paint objects; the node gets its own copies of every nested value.
-        const strokes = copyStrokes(
-          value.map((paint, index) => {
-            const {
-              boundVariables: _bound,
-              gradientTransform: _g,
-              imageTransform: _i,
-              ...stroke
-            } = paint
-            return {
-              ...stroke,
-              ...paintDefaults(stroke),
-              ...sceneTransforms(paint, index, 'set_strokes', 'strokes'),
-              weight: stroke.weight ?? geometry.weight,
-              align: stroke.align ?? geometry.align,
-              color: normalizeColor(stroke.color)
-            }
-          })
-        )
+        const strokes = parseFigmaPaints(value, 'set_strokes', 'strokes').map((paint): Stroke => ({
+          ...paint,
+          weight: geometry.weight,
+          align: geometry.align
+        }))
         const kept = newStrokeGeometry({
           strokes,
           strokeWeight: geometry.weight,
@@ -241,8 +173,13 @@ export function installVisualNodeProxyAccessors(
     cornerRadius: {
       get(this: ProxyThis): number | symbol {
         const node = raw(this, internals)
-        if (node.independentCorners) return mixed
-        return node.cornerRadius
+        if (!node.independentCorners) return node.cornerRadius
+        // Corners set or bound one by one read as one radius while they agree, as in Figma.
+        const { topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius } = node
+        const agree = [topRightRadius, bottomLeftRadius, bottomRightRadius].every(
+          (radius) => radius === topLeftRadius
+        )
+        return agree ? topLeftRadius : mixed
       },
       set(this: ProxyThis, value: number | symbol) {
         if (value === mixed) return
@@ -280,7 +217,10 @@ function cornerAccessor(
       return raw(this, internals)[field]
     },
     set(this: ProxyThis, value: number) {
-      updateNode(this, internals, { [field]: value, independentCorners: true })
+      updateNode(this, internals, {
+        ...independentCornerChanges(raw(this, internals)),
+        [field]: value
+      })
     }
   }
 }

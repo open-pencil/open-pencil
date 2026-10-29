@@ -1,3 +1,4 @@
+export { startNodeAIRelay, type NodeAIRelayOptions } from './ai-relay/server'
 export { createMigratedNodeCloudDatabase } from './bootstrap'
 export { createNodeCloudApplication, type NodeCloudApplicationOptions } from './application'
 export { loadNodeCloudServerConfig } from './config'

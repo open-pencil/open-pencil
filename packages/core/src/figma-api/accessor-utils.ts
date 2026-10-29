@@ -82,8 +82,9 @@ export function prepareFollowedFieldEdit(
   if (scope.kind === 'slot') claimSlotContent(scene, scope)
 }
 
-/** Fields whose change can move a node's bounds, so the groups around it refit. */
+/** Fields whose change can move a node's bounds or drop it from its group's, so groups refit. */
 const GEOMETRY_FIELDS: ReadonlySet<string> = new Set([
+  'visible',
   'x',
   'y',
   'width',

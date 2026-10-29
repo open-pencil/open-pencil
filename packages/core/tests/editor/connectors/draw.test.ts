@@ -19,31 +19,40 @@ function connectors(editor: ReturnType<typeof createEditor>) {
 
 const BOX = { x: 0, y: 0, width: 200, height: 200 }
 
-// Measured with FigJam's connector tool on a 200 px square at 100% on 2026-10-15.
+// Measured by dragging a connector end in Figma Design onto 200 and 400 px squares at 100% and
+// 200% on 2026-10-25.
 describe('where a connector end attaches', () => {
-  test('the centre attaches by any side, and points inside take the nearest side', () => {
-    expect(magnetAt(BOX, { x: 100, y: 100 }, 1)).toBe('AUTO')
-    expect(magnetAt(BOX, { x: 16, y: 30 }, 1)).toBe('LEFT')
-    expect(magnetAt(BOX, { x: 30, y: 16 }, 1)).toBe('TOP')
-    expect(magnetAt(BOX, { x: 100, y: 50 }, 1)).toBe('TOP')
+  test('points inside take the nearest side, ties going top, right, bottom, then left', () => {
+    expect(magnetAt(BOX, { x: 100, y: 30 }, 1)).toBe('TOP')
+    expect(magnetAt(BOX, { x: 30, y: 100 }, 1)).toBe('LEFT')
+    expect(magnetAt(BOX, { x: 150, y: 60 }, 1)).toBe('RIGHT')
+    expect(magnetAt(BOX, { x: 40, y: 4 }, 1)).toBe('TOP')
+    expect(magnetAt(BOX, { x: 196, y: 10 }, 1)).toBe('RIGHT')
+    expect(magnetAt(BOX, { x: 50, y: 50 }, 1)).toBe('TOP')
+    expect(magnetAt(BOX, { x: 60, y: 140 }, 1)).toBe('BOTTOM')
+    expect(magnetAt(BOX, { x: 200, y: 0 }, 1)).toBe('TOP')
   })
 
-  test('near the outline an end holds to it, by a side when at its midpoint', () => {
-    expect(magnetAt(BOX, { x: 4, y: 50 }, 1)).toBe('AUTO_HORIZONTAL')
-    expect(magnetAt(BOX, { x: -8, y: 30 }, 1)).toBe('AUTO_HORIZONTAL')
-    expect(magnetAt(BOX, { x: 4, y: 100 }, 1)).toBe('LEFT')
-    expect(magnetAt(BOX, { x: 100, y: -8 }, 1)).toBe('TOP')
+  test('within 24 units of the centre an end attaches by any side, at any size and zoom', () => {
+    expect(magnetAt(BOX, { x: 100, y: 77 }, 1)).toBe('AUTO')
+    expect(magnetAt(BOX, { x: 115, y: 115 }, 1)).toBe('AUTO')
+    expect(magnetAt(BOX, { x: 100, y: 76 }, 1)).toBe('TOP')
+    expect(magnetAt(BOX, { x: 80, y: 80 }, 1)).toBe('TOP')
+    expect(magnetAt(BOX, { x: 100, y: 77 }, 2)).toBe('AUTO')
+    const large = { x: 0, y: 0, width: 400, height: 400 }
+    expect(magnetAt(large, { x: 200, y: 177 }, 1)).toBe('AUTO')
+    expect(magnetAt(large, { x: 200, y: 176 }, 1)).toBe('TOP')
   })
 
-  test('on a layer so small that midpoints overlap, the nearest one wins', () => {
-    const small = { x: 0, y: 0, width: 10, height: 10 }
-    expect(magnetAt(small, { x: 5, y: 10 }, 1)).toBe('BOTTOM')
-    expect(magnetAt(small, { x: 5, y: 0 }, 1)).toBe('TOP')
-  })
-
-  test('further outside an end stays free', () => {
-    expect(magnetAt(BOX, { x: 210, y: 100 }, 1)).toBeNull()
+  test('within 8 screen px outside an end takes the side it is past, and further out stays free', () => {
+    expect(magnetAt(BOX, { x: 40, y: -7 }, 1)).toBe('TOP')
+    expect(magnetAt(BOX, { x: 204, y: 0 }, 1)).toBe('RIGHT')
+    expect(magnetAt(BOX, { x: -4, y: -4 }, 1)).toBe('TOP')
+    expect(magnetAt(BOX, { x: -5, y: 0 }, 1)).toBe('LEFT')
+    expect(magnetAt(BOX, { x: 100, y: -8.5 }, 1)).toBeNull()
     expect(magnetAt(BOX, { x: -8, y: -8 }, 1)).toBeNull()
+    expect(magnetAt(BOX, { x: 100, y: -3 }, 2)).toBe('TOP')
+    expect(magnetAt(BOX, { x: 100, y: -4.5 }, 2)).toBeNull()
   })
 
   test('a straight connector attaches by centres', () => {
@@ -58,6 +67,16 @@ describe('where a connector end attaches', () => {
       }
     )
     expect(endpoint).toEqual({ nodeId: a.id, magnet: 'CENTER', position: { x: 0, y: 0 } })
+  })
+
+  test('⌘ pins an end at the point, held within the layer, and Shift centres it', () => {
+    const { editor, page, a } = setup()
+    const at = (x: number, y: number, modifiers: { pin?: boolean; centre?: boolean }) =>
+      connectorAttachment(editor.graph, page, { x, y }, { zoom: 1, ...modifiers }).endpoint
+    expect(at(60, 40, { pin: true })).toEqual({ nodeId: a.id, magnet: 'NONE', position: { x: 60, y: 40 } })
+    expect(at(100, -4, { pin: true })).toEqual({ nodeId: a.id, magnet: 'NONE', position: { x: 100, y: 0 } })
+    expect(at(100, -20, { pin: true }).nodeId).toBeNull()
+    expect(at(60, 40, { centre: true })).toMatchObject({ nodeId: a.id, magnet: 'CENTER' })
   })
 })
 

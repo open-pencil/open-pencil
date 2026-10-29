@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DesignIssueSeverity } from '@open-pencil/core/canvas'
 
-import { severityIcon } from '@/theme/feedback/severity'
+import { severityIcon } from './severity'
 
 const { severity, class: className } = defineProps<{
   severity: DesignIssueSeverity

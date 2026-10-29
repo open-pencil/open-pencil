@@ -1,0 +1,1 @@
+- The CLI saves a `.fig` with a rendered thumbnail, as `openpencil export` does, instead of a blank 1×1 placeholder: `convert`, `import`, `lint --fix`, and `eval`, `tool call`, and `diff apply` with `--write` or `--output`.

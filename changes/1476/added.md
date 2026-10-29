@@ -1,0 +1,1 @@
+- Plugins and the `set_font` tools read and set variable font axes: `fontName.variationSettings`, a `fontWeight` that follows `wght`, fonts given by axes alone taking the nearest named style, `loadFontAsync` for a whole family, and `getFontFamilyVariationAxes`.

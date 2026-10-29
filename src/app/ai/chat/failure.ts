@@ -4,6 +4,7 @@ export type AIChatFailureReason =
   | 'authentication'
   | 'forbidden'
   | 'insufficient-credit'
+  | 'cloud-credits-exhausted'
   | 'model-not-found'
   | 'network'
   | 'output-limit'
@@ -17,6 +18,8 @@ export type AIChatFailure = {
   detail?: string
   statusCode?: number
   retryable?: boolean
+  /** With `cloud-credits-exhausted`: when the workspace's allowance renews, if the service said. */
+  resetsAt?: string
 }
 
 export type ProviderErrorShape = {

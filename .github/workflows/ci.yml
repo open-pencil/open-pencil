@@ -343,7 +343,7 @@ jobs:
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
       - name: Install Chromium for the demo document
         if: matrix.worker
-        run: bunx playwright install --with-deps chromium
+        uses: ./.github/actions/setup-playwright
 
       # The Worker serves the editor and the portal as static assets, and every official
       # deployment bundles them.

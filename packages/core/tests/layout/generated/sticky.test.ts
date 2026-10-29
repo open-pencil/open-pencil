@@ -5,12 +5,15 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { createSticky, stickySublayers } from '@open-pencil/scene-graph/generated'
+import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
 /** One line per line break, each as tall as the text's line height. */
 function measureLines(): void {
   setTextMeasurer((node, maxWidth) => ({
     width: maxWidth ?? node.width,
-    height: node.text.split('\n').length * (node.lineHeight ?? node.fontSize)
+    height:
+      node.text.split('\n').length *
+      (lineHeightPixels(node.lineHeight, node.fontSize) ?? node.fontSize)
   }))
 }
 

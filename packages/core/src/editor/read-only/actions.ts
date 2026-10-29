@@ -9,7 +9,6 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'acceptingParent',
   'acceptsChildren',
   'canDistributeNodes',
-  'captureDocumentChange',
   'collectVariantOptions',
   'findVariantByValues',
   'getChildren',
@@ -43,6 +42,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'isTopLevel',
   'pageSwitchCount',
   'previewRenameSelected',
+  // Recording only: what the edit runs is refused or allowed on its own.
+  'recordEdit',
+  'recordEditAsync',
   'resolveColorVariable',
   'resolveNumberVariable',
   'screenToCanvas',

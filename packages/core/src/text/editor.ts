@@ -7,8 +7,8 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/directio
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { TextLayout } from '#core/canvas/text/layout'
+import { fontVerticalMetricsSync } from '#core/text/font/glyphs'
 import { nextGraphemeBoundary, previousGraphemeBoundary } from '#core/text/graphemes'
-import { fontVerticalMetricsSync } from '#core/text/opentype'
 import {
   pathTextCaret,
   pathTextIndexAt,

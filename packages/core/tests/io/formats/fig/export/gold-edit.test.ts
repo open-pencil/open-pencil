@@ -42,9 +42,8 @@ test('Gold document exposes effective Boolean assignments and supports editor un
     if (!avatar) throw new Error('Missing original avatar')
     return { width: avatar.width, height: avatar.height }
   })
-  const originalInput = graph.getNode(inputId)
-  if (!originalInput) throw new Error('Missing original input')
-  const originalInputSize = { width: originalInput.width, height: originalInput.height }
+  const liveInput = graph.getNode(inputId)
+  if (!liveInput) throw new Error('Missing input')
   const editor = createEditor({ graph })
   editor.setInstanceComponentProperty(first.id, '4270:0', 'false')
   expect(avatar.visible).toBe(false)
@@ -95,9 +94,9 @@ test('Gold document exposes effective Boolean assignments and supports editor un
       return avatar?.componentId ? restored.getNode(avatar.componentId)?.name : undefined
     })
   ).toEqual(originalComponents)
-  // Setting the property lays the instance out again, which may move the size by float error.
-  expect(input.width).toBeCloseTo(originalInputSize.width, 3)
-  expect(input.height).toBeCloseTo(originalInputSize.height, 3)
+  // Hiding the avatar lays the hugging input out again, and the file keeps that size.
+  expect(input.width).toBeCloseTo(liveInput.width, 3)
+  expect(input.height).toBeCloseTo(liveInput.height, 3)
   expect(
     restoredContents.map((node) => {
       const avatar = restored

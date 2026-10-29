@@ -108,7 +108,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     const originalRender = renderer.renderFromEditorState.bind(renderer)
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
       await fallbackGate
-      fontManager.markLoaded('Noto Sans CJK SC', 'Regular', fallbackData)
+      await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', fallbackData)
       fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
       return Object.fromEntries(scripts.map((script) => [script, ['Noto Sans CJK SC']]))
     }

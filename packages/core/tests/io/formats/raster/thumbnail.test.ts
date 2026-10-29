@@ -29,3 +29,22 @@ test('a thumbnail shows the page background between its layers', async () => {
 
   expect([...image.data.subarray(gap, gap + 4)]).toEqual([30, 30, 30, 255])
 })
+
+test('a thumbnail loads the faces its text is set in before drawing it', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  // Inter Bold is bundled, so loading it needs no network, but a renderer loads only Regular.
+  graph.createNode('TEXT', page.id, {
+    width: 200,
+    height: 60,
+    text: 'Hello',
+    fontSize: 48,
+    fontWeight: 700
+  })
+
+  const png = expectDefined(await headlessRenderThumbnail(graph, page.id, 200, 60), 'thumbnail')
+  const image = expectDefined(createCanvasKitRasterCodec(await initCanvasKit()).decode(png))
+  const inked = image.data.filter((red, index) => index % 4 === 0 && red < 128).length
+
+  expect(inked).toBeGreaterThan(0)
+})

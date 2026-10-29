@@ -35,7 +35,7 @@ const totals = computed(() => {
 
     <div class="grid grid-cols-2 gap-2">
       <div v-for="total in totals" :key="total.label" class="rounded border border-border p-3">
-        <div class="text-[10px] text-muted">{{ total.label }}</div>
+        <div class="text-[11px] text-muted">{{ total.label }}</div>
         <div class="mt-1 text-sm font-semibold text-surface">{{ total.value }}</div>
       </div>
     </div>
@@ -62,6 +62,6 @@ const totals = computed(() => {
       </div>
     </div>
 
-    <p class="text-[10px] text-muted">{{ diagnosticMessages.usageCacheNote }}</p>
+    <p class="text-[11px] text-muted">{{ diagnosticMessages.usageCacheNote }}</p>
   </SettingsSection>
 </template>

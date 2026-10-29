@@ -1,4 +1,4 @@
-import type { Effect, Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Effect, Fill, Stroke, TextLength } from '@open-pencil/scene-graph'
 import { colorToCSS, colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -43,4 +43,14 @@ export function effectsToCSS(effects: Effect[]): DesignStyleDeclaration {
     if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = `blur(${effect.radius}px)`
   }
   return style
+}
+
+/** A line height as CSS writes it: a percent as the unitless multiple that follows the font size. */
+export function lineHeightToCSS(length: TextLength): string {
+  return length.unit === 'PIXELS' ? `${length.value}px` : String(length.value / 100)
+}
+
+/** A letter spacing as CSS writes it: a percent of the font size in `em`. */
+export function letterSpacingToCSS(length: TextLength): string {
+  return length.unit === 'PIXELS' ? `${length.value}px` : `${length.value / 100}em`
 }

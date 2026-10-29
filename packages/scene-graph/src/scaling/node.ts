@@ -1,4 +1,5 @@
 import { scaleGeometryPaths } from '../copy'
+import { scaledTextLength } from '../text/lengths'
 import { TEXT_PARAGRAPH_SPACING_FIELDS } from '../text/paragraphs'
 import {
   type Effect,
@@ -53,8 +54,8 @@ function scaledStyleRuns(styleRuns: readonly StyleRun[], scale: number): StyleRu
     style: {
       ...structuredClone(run.style),
       fontSize: run.style.fontSize == null ? undefined : run.style.fontSize * scale,
-      letterSpacing: run.style.letterSpacing == null ? undefined : run.style.letterSpacing * scale,
-      lineHeight: scaledOptional(run.style.lineHeight ?? null, scale),
+      letterSpacing: run.style.letterSpacing && scaledTextLength(run.style.letterSpacing, scale),
+      lineHeight: run.style.lineHeight && scaledTextLength(run.style.lineHeight, scale),
       textDecorationThickness: scaledOptional(run.style.textDecorationThickness ?? null, scale),
       textUnderlineOffset: scaledOptional(run.style.textUnderlineOffset ?? null, scale)
     }
@@ -127,8 +128,8 @@ export function scaleNodeChanges(
     bottomRightRadius: node.bottomRightRadius * scale,
     bottomLeftRadius: node.bottomLeftRadius * scale,
     fontSize: node.fontSize * scale,
-    letterSpacing: node.letterSpacing * scale,
-    lineHeight: scaledOptional(node.lineHeight, scale),
+    letterSpacing: scaledTextLength(node.letterSpacing, scale),
+    lineHeight: node.lineHeight && scaledTextLength(node.lineHeight, scale),
     textDecorationThickness: scaledOptional(node.textDecorationThickness, scale),
     textUnderlineOffset: scaledOptional(node.textUnderlineOffset, scale),
     styleRuns: scaledStyleRuns(node.styleRuns, scale),

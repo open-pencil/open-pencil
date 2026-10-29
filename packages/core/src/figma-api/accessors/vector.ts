@@ -6,13 +6,13 @@ import type {
   VectorVertex,
   WindingRule
 } from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
 import { parsePluginVectorPath } from '@open-pencil/scene-graph/parse-path'
 import {
   mergeVectorNetworks,
   normalizeVectorNetwork,
   transformVectorNetwork,
-  validateVectorNetwork
+  validateVectorNetwork,
+  vectorNetworkPaths
 } from '@open-pencil/scene-graph/vector-network'
 
 import {
@@ -23,9 +23,8 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { figmaPaintToFill, type FigmaPaint } from '#core/figma-api/accessors/visual'
-import { toFigmaPaint } from '#core/figma-api/paints'
-import { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from '#core/io/formats/svg/paths'
+import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import { geometryBlobToSVGPath } from '#core/io/formats/svg/paths'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 import { regenerateFillGeometry } from '#core/vector/fill-geometry'
 
@@ -116,9 +115,7 @@ function geometryForRegions(regions: readonly FigmaVectorRegion[]): GeometryPath
   return regions.map((region) => ({
     windingRule: region.windingRule,
     commandsBlob: new Uint8Array(),
-    fills: (region.fills ?? []).map((paint, index) =>
-      figmaPaintToFill(paint, index, 'set_vectorNetwork', 'vectorNetwork')
-    ),
+    fills: parseFigmaPaints(region.fills ?? [], 'set_vectorNetwork', 'vectorNetwork'),
     fillStyleId: region.fillStyleId ?? ''
   }))
 }
@@ -174,39 +171,6 @@ function assignVectorNetwork(
   setGeometry(target, internals, network, fillGeometry)
 }
 
-function vectorPathsForNetwork(network: SceneVectorNetwork): FigmaVectorPath[] {
-  if (network.segments.length === 0) return []
-  const regions = (network as Partial<SceneVectorNetwork>).regions ?? []
-  if (regions.length === 0) {
-    return vectorNetworkToSVGPaths({ ...network, regions }, null).map((data) => ({
-      windingRule: 'NONE',
-      data
-    }))
-  }
-
-  const paths: FigmaVectorPath[] = []
-  const usedSegments = new Set<number>()
-  for (const region of regions) {
-    for (const loop of region.loops) for (const segmentIndex of loop) usedSegments.add(segmentIndex)
-    const data = vectorNetworkToSVGPaths({ ...network, regions: [region] }, null)[0]
-    if (data) paths.push({ windingRule: region.windingRule, data })
-  }
-
-  const remainingSegments = network.segments.filter((_, index) => !usedSegments.has(index))
-  if (remainingSegments.length > 0) {
-    const data = vectorNetworkToSVGPaths(
-      {
-        vertices: network.vertices,
-        segments: remainingSegments,
-        regions: []
-      },
-      null
-    )[0]
-    if (data) paths.push({ windingRule: 'NONE', data })
-  }
-  return paths
-}
-
 function readVectorPaths(
   target: ProxyThis,
   internals: NodeProxyInternals
@@ -214,7 +178,7 @@ function readVectorPaths(
   const node = raw(target, internals)
   const paths =
     node.vectorNetwork && node.vectorNetwork.segments.length > 0
-      ? vectorPathsForNetwork(node.vectorNetwork)
+      ? vectorNetworkPaths(node.vectorNetwork)
       : node.fillGeometry.map((geometry) => ({
           windingRule: geometry.windingRule,
           data: geometryBlobToSVGPath(geometry.commandsBlob, null)
@@ -248,7 +212,7 @@ function readVectorNetwork(target: ProxyThis, internals: NodeProxyInternals): Fi
       windingRule: region.windingRule,
       loops: Object.freeze(region.loops.map((loop) => Object.freeze([...loop]))),
       fillStyleId: geometry?.fillStyleId ?? '',
-      fills: Object.freeze(copyFills(geometry?.fills ?? []).map(toFigmaPaint))
+      fills: Object.freeze((geometry?.fills ?? []).map((paint) => toFigmaPaint(paint)))
     })
   })
   return Object.freeze({

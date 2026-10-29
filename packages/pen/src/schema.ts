@@ -159,7 +159,7 @@ const nodeFields = {
   ref: v.optional(strSchema)
 }
 
-type NodeFields = v.InferOutput<v.ObjectSchema<typeof nodeFields, undefined>>
+export type NodeFields = v.InferOutput<v.ObjectSchema<typeof nodeFields, undefined>>
 
 /** Properties an instance sets on one of its component's descendants, or a node replacing it. */
 export interface PenOverride extends NodeFields {

@@ -36,7 +36,7 @@ test('text case vertical alignment and ending truncation', async () => {
         height: 106,
         text: item.label,
         fontSize: 20,
-        lineHeight: 36,
+        lineHeight: { value: 36, unit: 'PIXELS' },
         textCase: item.textCase,
         textAlignVertical: item.vertical
       })
@@ -63,7 +63,7 @@ test('text case vertical alignment and ending truncation', async () => {
       height: 60,
       text: 'This paragraph demonstrates a deterministic two-line ending truncation with an ellipsis.',
       fontSize: 17,
-      lineHeight: 22,
+      lineHeight: { value: 22, unit: 'PIXELS' },
       textTruncation: 'ENDING',
       maxLines: 2,
       textAlignHorizontal: 'JUSTIFIED'

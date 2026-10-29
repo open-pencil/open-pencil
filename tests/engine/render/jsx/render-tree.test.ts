@@ -13,7 +13,6 @@ import {
   Component,
   ComponentSet,
   Instance,
-  defineVars,
   designVar,
   dropShadow,
   innerShadow,
@@ -177,8 +176,10 @@ describe('renderTree', () => {
       hiddenFromPublishing: false
     })
 
-    const vars = defineVars({ bg: { id: 'var-bg', name: 'Background' } })
-    const result = await renderTree(g, Frame({ name: 'Bound', w: 100, h: 100, fill: vars.bg }))
+    const result = await renderTree(
+      g,
+      Frame({ name: 'Bound', w: 100, h: 100, fill: designVar('Background') })
+    )
     const node = getNodeOrThrow(g, result.id)
 
     expect(node.boundVariables['fills/0/color']).toBe('var-bg')
@@ -189,7 +190,7 @@ describe('renderTree', () => {
     const g = makeSceneGraph()
     addTestColorVariable(g, 'var-shadow', 'Shadow', { r: 0, g: 0, b: 0, a: 1 })
     addTestColorVariable(g, 'var-bg', 'Background')
-    const variable = designVar('var-shadow', '#000000')
+    const variable = designVar('var-shadow')
     const result = await renderTree(
       g,
       Frame({
@@ -212,7 +213,7 @@ describe('renderTree', () => {
     addTestColorVariable(g, 'var-bg', 'Background')
     const [result] = await renderJSX(
       g,
-      `<Frame name="Bound JSX" w={100} h={100} fill={designVar('var-bg', '#ffffff')} />`
+      `<Frame name="Bound JSX" w={100} h={100} fill={designVar('var-bg')} />`
     )
     const node = getNodeOrThrow(g, result.id)
 

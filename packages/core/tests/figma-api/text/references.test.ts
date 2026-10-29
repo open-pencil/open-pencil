@@ -1,8 +1,15 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(async () => {
+  await registerTestFont()
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Bold' })
+})
 
 // Shapes and messages follow `@figma/plugin-typings` and the Plugin API documentation for the
 // range methods; validation messages follow those Figma reports for the other range setters.
@@ -168,7 +175,7 @@ describe('style ranges', () => {
 
     await text.setRangeFillStyleIdAsync(0, 5, '1:30')
     expect(text.getRangeFillStyleId(0, 5)).toBe('1:30')
-    expect(text.getRangeFills(0, 5)).toMatchObject([{ type: 'SOLID', color: RED }])
+    expect(text.getRangeFills(0, 5)).toMatchObject([{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }])
     expect(typeof text.fillStyleId).toBe('symbol')
 
     text.setRangeFills(0, 5, [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 } }])

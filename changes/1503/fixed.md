@@ -1,0 +1,1 @@
+- A change to the libraries a `.fig` document enables, such as updating one, is kept when the document is saved again.

@@ -1,8 +1,6 @@
-import { createServer } from 'node:http'
-
 import { defaultRelayURL } from '#cloud/contract'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
-import { createCloudServer } from '#cloud/runtime/site/server'
+import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import {
   createCloudApp,
   loadAISigningKey,
@@ -16,16 +14,30 @@ import {
   startCleanupWorker,
   startTransactionalEmailWorker
 } from '#cloud/server'
-import { getRequestListener } from '@hono/node-server'
 
 import { createMigratedNodeCloudDatabase } from './bootstrap'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
+import { listen } from './listen'
 import { attachCollaborationRelay } from './relay'
-import { nodeSiteFiles } from './site'
+import { developmentSiteFiles, nodeSiteFiles } from './site'
 
 export type NodeCloudServerOptions = {
   environment?: Readonly<Record<string, string | undefined>>
   port?: number
+}
+
+/** The site the server serves: a build, or in `cloud:dev` a development server's source. */
+function siteFiles(
+  environment: Readonly<Record<string, string | undefined>>
+): SiteFiles | undefined {
+  const developmentSite = environment.OPENPENCIL_CLOUD_DEV_SITE_URL
+  if (developmentSite) return developmentSiteFiles(developmentSite)
+  const siteDirectory = environment.OPENPENCIL_CLOUD_SITE_DIR
+  if (siteDirectory) return nodeSiteFiles(siteDirectory)
+  console.warn(
+    '[Cloud] OPENPENCIL_CLOUD_SITE_DIR is not set; the editor and sign-in pages are off.'
+  )
+  return undefined
 }
 
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
@@ -80,13 +92,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
         onError: (error) => console.error('[Cloud] Email worker failed:', error)
       })
     : undefined
-  const siteDirectory = environment.OPENPENCIL_CLOUD_SITE_DIR
-  if (!siteDirectory)
-    console.warn(
-      '[Cloud] OPENPENCIL_CLOUD_SITE_DIR is not set; the editor and sign-in pages are off.'
-    )
   const cloudServer = createCloudServer(app, {
-    site: siteDirectory ? nodeSiteFiles(siteDirectory) : undefined,
+    site: siteFiles(environment),
     indexingPolicy: config.indexingPolicy
   })
   const server = await listen(
@@ -110,36 +117,5 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
       await emailWorker?.stop()
       await database.destroy()
     }
-  }
-}
-
-async function listen(
-  fetch: (request: Request) => Promise<Response>,
-  port: number,
-  hostname: string
-) {
-  const listener = getRequestListener(fetch)
-  const server = createServer((request, response) => {
-    void listener(request, response)
-  })
-  await new Promise<void>((resolve, reject) => {
-    server.once('error', reject)
-    server.listen(port, hostname, () => {
-      server.off('error', reject)
-      resolve()
-    })
-  })
-  const address = server.address()
-  const boundPort = typeof address === 'object' && address ? address.port : port
-  return {
-    url: new URL(`http://localhost:${boundPort}`),
-    http: server,
-    close: () =>
-      new Promise<void>((done, fail) => {
-        server.close((error) => {
-          if (error) fail(error)
-          else done()
-        })
-      })
   }
 }

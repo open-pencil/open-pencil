@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { boundEndpoint, createConnector } from '@open-pencil/scene-graph/connectors'
+import { boundEndpoint, createConnector, layoutConnector } from '@open-pencil/scene-graph/connectors'
 import { createSticky } from '@open-pencil/scene-graph/generated'
 
 import {
@@ -93,4 +93,21 @@ test("a line's ends show the move cursor, and its length takes no resize", () =>
   expect(updateHoverCursor(200, 0, editor, NO_HITS)).toBe(MOVE_CURSOR)
   expect(updateHoverCursor(0, 2, editor, NO_HITS)).toBe(MOVE_CURSOR)
   expect(updateHoverCursor(100, 3, editor, NO_HITS)).toBeNull()
+})
+
+test("an elbow's segment handles show the way they slide, as in FigJam", () => {
+  editor = createEditor()
+  const page = editor.state.currentPageId
+  const a = editor.graph.createNode('RECTANGLE', page, { x: 0, y: 0, width: 100, height: 100 })
+  const b = editor.graph.createNode('RECTANGLE', page, { x: 300, y: 200, width: 100, height: 100 })
+  const connector = createConnector(editor.graph, page, {
+    start: boundEndpoint(a.id),
+    end: boundEndpoint(b.id),
+    lineType: 'ELBOWED'
+  })
+  layoutConnector(editor.graph, connector)
+  editor.select([connector.id])
+  // Right out of the first box, down the middle, then right into the second.
+  expect(updateHoverCursor(200, 150, editor, NO_HITS)).toBe(buildResizeCursor(0))
+  expect(updateHoverCursor(150, 50, editor, NO_HITS)).toBe(buildResizeCursor(90))
 })

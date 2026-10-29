@@ -12,6 +12,7 @@ import { applyBoundVisibilityEdit, bindsVisibility } from './components/authorin
 import { createLayoutModeActions } from './layout-mode'
 import { createNodePreviewActions } from './node-preview'
 import { createNudgeActions } from './nudge'
+import { refitGroupsAroundLayers } from './structure/group/bounds'
 import { pathTextEditChanges } from './text/path-edit'
 import type { EditorContext } from './types'
 import { createVariableBindingActions } from './variable-bindings'
@@ -35,6 +36,7 @@ export function createNodeActions(ctx: EditorContext) {
   function runChangedLayout(id: string, changes: Partial<SceneNode>) {
     // A layer's modes reach the layers inside it.
     if (changes.variableModes) reconcileVariableLayouts(ctx.graph, { subtrees: [id] })
+    if (changes.visible !== undefined) refitGroupsAroundLayers(ctx, [id])
     ctx.runLayoutForNode(id)
   }
 

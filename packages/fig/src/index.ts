@@ -37,7 +37,6 @@ export {
 } from './record-patch'
 export {
   extractFigThumbnailFromReader,
-  pngSize,
   type FigRangeReader,
   type FigThumbnailLimits
 } from './thumbnail'

@@ -2,7 +2,14 @@ import * as v from 'valibot'
 
 import { parseColor } from '@open-pencil/scene-graph/color'
 
+import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
+import type {
+  FigmaFontName,
+  FigmaFontNameInput,
+  FigmaVariationSettings
+} from '#core/figma-api/fonts'
 import { OpenPencilAPI } from '#core/openpencil-api'
+import { collectNodeFontFaces } from '#core/text/requirements'
 import {
   toolNumber,
   nodeIdInputSchema,
@@ -10,6 +17,12 @@ import {
   nodeNotFound,
   toolFailure
 } from '#core/tools/schema'
+
+/** The fonts a text layer uses, which an edit that lays it out again needs loaded. */
+export function textFonts(figma: FigmaAPI, id: string): FigmaFontNameInput[] {
+  const node = figma.graph.getNode(id)
+  return node ? collectNodeFontFaces(node) : []
+}
 
 export const setText = defineTool({
   name: 'set_text',
@@ -20,6 +33,7 @@ export const setText = defineTool({
     id: nodeIdInputSchema,
     text: v.pipe(v.string(), v.description('Text content'))
   }),
+  fonts: (figma, { id }) => textFonts(figma, id),
   execute: (figma, { id, text }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
@@ -27,6 +41,54 @@ export const setText = defineTool({
     return { id, text }
   }
 })
+
+/** Variable font axes a font tool can set, as Figma's `variationSettings`. */
+const variationsInputSchema = v.optional(
+  v.pipe(
+    v.record(v.pipe(v.string(), v.length(4)), v.number()),
+    v.description(
+      'Variable font axis values by OpenType tag (e.g. {"wght": 550, "wdth": 75}); axes left out keep the style\'s values. Without a style, the nearest named style is picked.'
+    )
+  )
+)
+
+/**
+ * The font a font tool gives text: what it names, the rest from `current`. Axes without a style
+ * leave the style out, for the nearest named style to be picked.
+ */
+function fontNameInput(
+  args: { family?: string; style?: string; variations?: FigmaVariationSettings },
+  current: FigmaFontName | null
+): FigmaFontNameInput {
+  return {
+    family: args.family ?? current?.family ?? '',
+    style: args.style ?? (args.variations ? undefined : (current?.style ?? 'Regular')),
+    variationSettings: args.variations
+  }
+}
+
+/**
+ * The font `set_font` gives the text, or null when it keeps the text's. Text set in several fonts
+ * takes the given family or style for all of it, keeping the rest from its first character. Axes
+ * without a style are set per range, each range taking its nearest named style, as in Figma.
+ */
+function requestedFont(
+  node: FigmaNodeProxy,
+  args: { family?: string; style?: string; variations?: FigmaVariationSettings }
+): { whole: FigmaFontName } | { perRange: FigmaFontNameInput } | null {
+  if (!args.family && !args.style && !args.variations) return null
+  const fontName =
+    typeof node.fontName === 'symbol' && node.characters.length > 0
+      ? node.getRangeFontName(0, 1)
+      : node.fontName
+  const current = typeof fontName === 'symbol' ? null : fontName
+  const family = args.family ?? current?.family ?? ''
+  if (args.variations && !args.style && node.characters.length > 0) {
+    return { perRange: { family, variationSettings: args.variations } }
+  }
+  const style = args.style ?? current?.style ?? 'Regular'
+  return { whole: { family, style, variationSettings: args.variations } }
+}
 
 export const setFont = defineTool({
   name: 'set_font',
@@ -39,28 +101,42 @@ export const setFont = defineTool({
     size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Font size')))),
     style: v.optional(
       v.pipe(v.string(), v.description('Font style (e.g. "Bold", "Regular", "Bold Italic")'))
-    )
+    ),
+    variations: variationsInputSchema
   }),
+  // A new font replaces the text's, which then need not be loaded, so a missing font can be
+  // replaced; a size or per-range axes lay out the text in its own fonts.
+  fonts: (figma, args) => {
+    const node = figma.getNodeById(args.id)
+    const font = node && requestedFont(node, args)
+    if (font && 'whole' in font) return [font.whole]
+    return [...(font ? [font.perRange] : []), ...textFonts(figma, args.id)]
+  },
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
-    if (args.size !== undefined) node.fontSize = args.size
-    if (args.family || args.style) {
-      // Text set in several fonts takes the given family or style for all of it, keeping the
-      // rest from its first character.
-      const fontName =
-        typeof node.fontName === 'symbol' && node.characters.length > 0
-          ? node.getRangeFontName(0, 1)
-          : node.fontName
-      const current = typeof fontName === 'symbol' ? null : fontName
-      node.fontName = {
-        family: args.family ?? current?.family ?? '',
-        style: args.style ?? current?.style ?? 'Regular'
-      }
+    const font = requestedFont(node, args)
+    try {
+      if (font && 'whole' in font) node.fontName = font.whole
+      else if (font) node.setRangeFontName(0, node.characters.length, font.perRange)
+      // The size comes after the font, so it lays the text out in the font it ends up in.
+      if (args.size !== undefined) node.fontSize = args.size
+    } catch (error) {
+      return toolFailure(error)
     }
     return { id: args.id, fontName: node.fontName, fontSize: node.fontSize }
   }
 })
+
+/** The font `set_font_range` gives its range: what it names, the rest from the range's start. */
+function rangeFont(
+  node: FigmaNodeProxy,
+  args: { start: number; family?: string; style?: string; variations?: FigmaVariationSettings }
+): FigmaFontNameInput {
+  const inText = args.start < node.characters.length
+  const current = inText ? node.getRangeFontName(args.start, args.start + 1) : node.fontName
+  return fontNameInput(args, typeof current === 'symbol' ? null : current)
+}
 
 export const setFontRange = defineTool({
   name: 'set_font_range',
@@ -74,30 +150,34 @@ export const setFontRange = defineTool({
     family: v.optional(v.pipe(v.string(), v.description('Font family name'))),
     size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Font size')))),
     style: v.optional(v.pipe(v.string(), v.description('Font style'))),
+    variations: variationsInputSchema,
     color: v.optional(v.pipe(v.string(), v.description('Text color (hex)')))
   }),
+  fonts: (figma, args) => {
+    const node = figma.getNodeById(args.id)
+    if (!node) return []
+    const font = args.family || args.style || args.variations ? rangeFont(node, args) : null
+    // A colour alone is a paint and lays nothing out, so text in a missing font can still take it.
+    const laysOut = font !== null || args.size !== undefined
+    return [...(font ? [font] : []), ...(laysOut ? textFonts(figma, args.id) : [])]
+  },
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
     const { start, end } = args
-    if (!args.family && !args.size && !args.style && !args.color) {
-      return { error: 'set_font_range needs at least one of family, size, style, or color' }
+    if (!args.family && !args.size && !args.style && !args.variations && !args.color) {
+      return {
+        error: 'set_font_range needs at least one of family, size, style, variations, or color'
+      }
     }
     // The range methods reject an empty range or one past the text, before changing anything.
     try {
       if (args.size) node.setRangeFontSize(start, end, args.size)
-      if (args.family || args.style) {
-        const current = node.getRangeFontName(start, start + 1)
-        const fontName = typeof current === 'symbol' ? null : current
-        node.setRangeFontName(start, end, {
-          family: args.family ?? fontName?.family ?? '',
-          style: args.style ?? fontName?.style ?? 'Regular'
-        })
+      if (args.family || args.style || args.variations) {
+        node.setRangeFontName(start, end, rangeFont(node, args))
       }
       if (args.color) {
-        node.setRangeFills(start, end, [
-          { type: 'SOLID', color: parseColor(args.color), opacity: 1, visible: true }
-        ])
+        node.setRangeFills(start, end, [{ type: 'SOLID', color: parseColor(args.color) }])
       }
     } catch (error) {
       return toolFailure(error)
@@ -118,6 +198,7 @@ export const setTextResize = defineTool({
       v.description('Resize mode')
     )
   }),
+  fonts: (figma, { id }) => textFonts(figma, id),
   execute: (figma, { id, mode }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
@@ -156,6 +237,7 @@ export const setTextProperties = defineTool({
       v.pipe(v.picklist(['NONE', 'UNDERLINE', 'STRIKETHROUGH']), v.description('Text decoration'))
     )
   }),
+  fonts: (figma, { id }) => textFonts(figma, id),
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)

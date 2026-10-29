@@ -1,8 +1,6 @@
-import { tv } from 'tailwind-variants'
-
 import { motionStyles } from '../motion/styles'
 
-export const chatProfileTheme = tv({
+export default {
   slots: {
     trigger:
       'min-w-0 max-w-full gap-1 rounded border-none bg-transparent px-1.5 py-0.5 text-[10px] text-muted',
@@ -25,4 +23,4 @@ export const chatProfileTheme = tv({
       'mt-1 flex w-full cursor-pointer items-center gap-1.5 border-t border-border px-2 py-1.5 text-left text-[10px] text-muted hover:bg-hover hover:text-surface',
     footerIcon: 'size-3 shrink-0'
   }
-})
+} as const

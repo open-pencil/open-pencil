@@ -3,7 +3,12 @@ import { groupBy } from 'es-toolkit/array'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
 import { normalizeFontFamily, weightToStyle } from '@open-pencil/scene-graph/font-style'
-import { hasTextList, paragraphIndexAt, textParagraphRanges } from '@open-pencil/scene-graph/text'
+import {
+  hasTextList,
+  lineHeightPixels,
+  paragraphIndexAt,
+  textParagraphRanges
+} from '@open-pencil/scene-graph/text'
 
 import { bytesToHex } from '../bytes'
 import type { PlacedTextGlyph, TextDecorationRecord } from '../export/runtime'
@@ -162,7 +167,8 @@ function savedGlyphLayout(
   node: SceneNode,
   glyphs: DerivedTextGlyph[]
 ): Pick<ShapedText, 'baselines' | 'logicalIndexToCharacterOffsetMap'> {
-  const lineHeight = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
+  const lineHeight =
+    lineHeightPixels(node.lineHeight, node.fontSize) ?? Math.ceil(node.fontSize * 1.2)
   const offsets = Array.from({ length: node.text.length }, () => 0)
   const characters = savedGlyphCharacters(node, glyphs)
   const lines = savedGlyphLines(

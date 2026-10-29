@@ -11,6 +11,7 @@ export { createDefaultEditorSharedState } from './state/shared'
 export { editedGradient, editedGradientLayout } from './gradient-edit'
 export type { SelectionSpacing } from './alignment'
 export type { MovePlace } from './undo'
+export type { AttachModifiers } from './connectors/attach'
 export {
   replaceSelectionColor,
   selectionColors,
@@ -25,6 +26,7 @@ export {
 export { createDefaultEditorState, createEditor } from './create'
 export { executeAtomicTool } from './history/atomic-tool'
 export { isEmptyDocumentChange, type DocumentChange } from './history/document-change'
+export type { RecordEditOptions } from './history/edit'
 export type { PageSnapshot } from './history/snapshot/page'
 export { graphFromDocumentChange, graphFromPageSnapshot } from './history/snapshot/graph'
 export type { ClipboardPayload, ClipboardSnapshot, CopyOptions } from './clipboard/copy'

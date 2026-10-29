@@ -13,7 +13,7 @@ import type { HeaderFields } from '@open-pencil/kiwi/schema-runtime'
 import type { Color, Rect, Size } from '@open-pencil/scene-graph/primitives'
 
 import { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
-import { hasPNGSignature } from './thumbnail'
+import { isPNG } from './thumbnail'
 
 export interface FigImageEntry {
   name: string
@@ -72,7 +72,7 @@ function parseRawFigKiwi(
   if (!chunks) return null
 
   const decoded = decodeFigKiwiCanvas(bytes, onPages, headers)
-  const thumbnailPNG = chunks.slice(2).find(hasPNGSignature) ?? null
+  const thumbnailPNG = chunks.slice(2).find(isPNG) ?? null
   return { ...decoded, images: [], thumbnailPNG, metaJSON: null }
 }
 
@@ -145,7 +145,7 @@ export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
   const bytes = new Uint8Array(buffer)
   const chunks = parseFigKiwiChunks(bytes)
   if (chunks) {
-    const thumbnailPNG = chunks.slice(2).find(hasPNGSignature) ?? null
+    const thumbnailPNG = chunks.slice(2).find(isPNG) ?? null
     return { ...canvasParts(bytes), images: [], thumbnailPNG, metaJSON: null }
   }
   const canvasArchive = unzipSync(bytes, { filter: ({ name }) => isCanonicalCanvasEntry(name) })

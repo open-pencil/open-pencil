@@ -139,6 +139,11 @@ export interface IOFormatAdapter<Id extends string = string> {
   mimeTypes: string[]
   support: IOFormatSupport
   exportOptions?: IOFormatExportOptions
+  /**
+   * The format stores layout intent rather than the sizes it implies, so reading lays the layers
+   * out, measuring text with whatever measurer is installed.
+   */
+  laysOutOnRead?: boolean
 
   matchesFile?(fileName: string, mimeType?: string): boolean
 

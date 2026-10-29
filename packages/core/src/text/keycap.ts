@@ -2,7 +2,7 @@
 // Copyright 2022 The Noto Project Authors (https://github.com/notofonts/symbols)
 // Licensed under the SIL Open Font License, Version 1.1 (packages/core/assets/NotoSansSymbols-OFL.txt).
 
-import type { OutlineCommand } from './opentype'
+import type { OutlineCommand } from './font/glyphs'
 
 /**
  * The frame Figma draws a keycap with: Noto Sans Symbols' combining enclosing keycap (U+20E3),
@@ -12,30 +12,20 @@ import type { OutlineCommand } from './opentype'
 export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   {
     type: 'M',
-    x: 0.336,
-    y: 0.01
-  },
-  {
-    type: 'L',
     x: -0.335,
     y: 0.01
   },
   {
     type: 'Q',
-    x: -0.398,
-    y: -0.0135,
     x1: -0.374,
-    y1: 0.01
+    y1: 0.01,
+    x: -0.398,
+    y: -0.0135
   },
   {
     type: 'Q',
-    x: -0.422,
-    y: -0.076,
     x1: -0.422,
-    y1: -0.037
-  },
-  {
-    type: 'L',
+    y1: -0.037,
     x: -0.422,
     y: -0.076
   },
@@ -46,20 +36,15 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: -0.398,
-    y: -0.8085,
     x1: -0.422,
-    y1: -0.785
+    y1: -0.785,
+    x: -0.398,
+    y: -0.8085
   },
   {
     type: 'Q',
-    x: -0.335,
-    y: -0.832,
     x1: -0.374,
-    y1: -0.832
-  },
-  {
-    type: 'L',
+    y1: -0.832,
     x: -0.335,
     y: -0.832
   },
@@ -70,20 +55,15 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: 0.3985,
-    y: -0.8085,
     x1: 0.375,
-    y1: -0.832
+    y1: -0.832,
+    x: 0.3985,
+    y: -0.8085
   },
   {
     type: 'Q',
-    x: 0.422,
-    y: -0.746,
     x1: 0.422,
-    y1: -0.785
-  },
-  {
-    type: 'L',
+    y1: -0.785,
     x: 0.422,
     y: -0.746
   },
@@ -94,21 +74,21 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: 0.3985,
-    y: -0.0135,
     x1: 0.422,
-    y1: -0.037
+    y1: -0.037,
+    x: 0.3985,
+    y: -0.0135
   },
   {
     type: 'Q',
-    x: 0.336,
-    y: 0.01,
     x1: 0.375,
-    y1: 0.01
+    y1: 0.01,
+    x: 0.336,
+    y: 0.01
   },
   {
     type: 'L',
-    x: 0.336,
+    x: -0.335,
     y: 0.01
   },
   {
@@ -121,30 +101,20 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'L',
-    x: -0.197,
-    y: -0.122
-  },
-  {
-    type: 'L',
     x: 0.198,
     y: -0.122
   },
   {
     type: 'Q',
-    x: 0.251,
-    y: -0.137,
     x1: 0.236,
-    y1: -0.122
+    y1: -0.122,
+    x: 0.251,
+    y: -0.137
   },
   {
     type: 'Q',
-    x: 0.266,
-    y: -0.19,
     x1: 0.266,
-    y1: -0.152
-  },
-  {
-    type: 'L',
+    y1: -0.152,
     x: 0.266,
     y: -0.19
   },
@@ -155,20 +125,15 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: 0.251,
-    y: -0.6845,
     x1: 0.266,
-    y1: -0.669
+    y1: -0.669,
+    x: 0.251,
+    y: -0.6845
   },
   {
     type: 'Q',
-    x: 0.198,
-    y: -0.7,
     x1: 0.236,
-    y1: -0.7
-  },
-  {
-    type: 'L',
+    y1: -0.7,
     x: 0.198,
     y: -0.7
   },
@@ -179,20 +144,15 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: -0.2495,
-    y: -0.684,
     x1: -0.234,
-    y1: -0.7
+    y1: -0.7,
+    x: -0.2495,
+    y: -0.684
   },
   {
     type: 'Q',
-    x: -0.265,
-    y: -0.631,
     x1: -0.265,
-    y1: -0.668
-  },
-  {
-    type: 'L',
+    y1: -0.668,
     x: -0.265,
     y: -0.631
   },
@@ -203,28 +163,23 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: -0.2495,
-    y: -0.1375,
     x1: -0.265,
-    y1: -0.153
+    y1: -0.153,
+    x: -0.2495,
+    y: -0.1375
   },
   {
     type: 'Q',
-    x: -0.197,
-    y: -0.122,
     x1: -0.234,
-    y1: -0.122
+    y1: -0.122,
+    x: -0.197,
+    y: -0.122
   },
   {
     type: 'Z'
   },
   {
     type: 'M',
-    x: 0.314,
-    y: -0.093
-  },
-  {
-    type: 'L',
     x: 0.398,
     y: -0.052
   },
@@ -235,20 +190,15 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: 0.3785,
-    y: -0.7865,
     x1: 0.398,
-    y1: -0.765
+    y1: -0.765,
+    x: 0.3785,
+    y: -0.7865
   },
   {
     type: 'Q',
-    x: 0.327,
-    y: -0.808,
     x1: 0.359,
-    y1: -0.808
-  },
-  {
-    type: 'L',
+    y1: -0.808,
     x: 0.327,
     y: -0.808
   },
@@ -269,27 +219,22 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
   },
   {
     type: 'Q',
-    x: 0.2845,
-    y: -0.7405,
     x1: 0.27,
-    y1: -0.748
+    y1: -0.748,
+    x: 0.2845,
+    y: -0.7405
   },
   {
     type: 'Q',
-    x: 0.3065,
-    y: -0.7175,
     x1: 0.299,
-    y1: -0.733
+    y1: -0.733,
+    x: 0.3065,
+    y: -0.7175
   },
   {
     type: 'Q',
-    x: 0.314,
-    y: -0.678,
     x1: 0.314,
-    y1: -0.702
-  },
-  {
-    type: 'L',
+    y1: -0.702,
     x: 0.314,
     y: -0.678
   },
@@ -297,6 +242,11 @@ export const KEYCAP_FRAME: readonly OutlineCommand[] = [
     type: 'L',
     x: 0.314,
     y: -0.093
+  },
+  {
+    type: 'L',
+    x: 0.398,
+    y: -0.052
   },
   {
     type: 'Z'

@@ -22,6 +22,13 @@ const tabBarTheme = {
     scrollIcon: 'size-3.5'
   },
   variants: {
+    // Home is pinned first as an icon, the way Figma's desktop app shows it.
+    home: {
+      true: {
+        item: 'max-w-none min-w-0 pr-0',
+        trigger: 'px-3.5'
+      }
+    },
     active: {
       true: {
         item: 'bg-panel text-surface',
@@ -36,7 +43,8 @@ const tabBarTheme = {
     }
   },
   defaultVariants: {
-    active: false
+    active: false,
+    home: false
   }
 }
 

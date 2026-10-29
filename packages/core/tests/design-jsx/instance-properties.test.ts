@@ -2,22 +2,21 @@ import { expect, test } from 'bun:test'
 
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { Component, Instance, Text } from '@open-pencil/design-jsx'
+import { Component, Instance, Text, property } from '@open-pencil/design-jsx'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 
 const CARD = `
-<ComponentSet name="Card" properties={[
-  { id: "title", name: "Title", type: "TEXT", defaultValue: "Default title" },
-  { id: "badge", name: "Badge", type: "BOOLEAN", defaultValue: "true" }
-]}>
+const title = property("Title", "Default title")
+const badge = property("Badge", true)
+return <ComponentSet name="Card">
   <Component name="state=default">
-    <Text propertyRefs={[{ propertyId: "title", field: "TEXT" }]}>Default title</Text>
-    <Text propertyRefs={[{ propertyId: "badge", field: "VISIBLE" }]}>New</Text>
+    <Text text={title} />
+    <Text visible={badge}>New</Text>
   </Component>
   <Component name="state=selected">
-    <Text propertyRefs={[{ propertyId: "title", field: "TEXT" }]}>Default title</Text>
-    <Text propertyRefs={[{ propertyId: "badge", field: "VISIBLE" }]}>New</Text>
+    <Text text={title} />
+    <Text visible={badge}>New</Text>
   </Component>
 </ComponentSet>`
 
@@ -51,7 +50,6 @@ test('assigns properties by ID or by name', async () => {
   const set = [...graph.getAllNodes()].find((node) => node.type === 'COMPONENT_SET')
   const title = set?.componentPropertyDefinitions.find((item) => item.name === 'Title')
   if (!title) throw new Error('Missing Title property')
-  expect(title.id).not.toBe('title')
 
   for (const key of [title.id, 'Title']) {
     const [instance] = await renderJSX(
@@ -65,22 +63,26 @@ test('assigns properties by ID or by name', async () => {
   ).rejects.toThrow('Unknown component property: title')
 })
 
-test('properties prefers an ID; a prop always names the property', async () => {
-  const graph = new SceneGraph()
+/** A component with property definitions as a file can hold them, IDs and names chosen. */
+async function noteWith(graph: SceneGraph, definitions: ComponentPropertyDefinition[]) {
   const component = await renderTree(
     graph,
-    Component({
-      name: 'Note',
-      properties: [
-        { id: 'label', name: 'Title', type: 'TEXT', defaultValue: 'Label' },
-        { id: 'Title', name: 'Heading', type: 'TEXT', defaultValue: 'Heading' }
-      ],
-      children: Text({
-        children: 'Label',
-        propertyRefs: [{ propertyId: 'label', field: 'TEXT' }]
-      })
-    })
+    Component({ name: 'Note', children: Text({ text: property('Label', 'Label') }) })
   )
+  const [text] = graph.getChildren(component.id)
+  graph.updateNode(component.id, { componentPropertyDefinitions: definitions })
+  graph.updateNode(text.id, {
+    componentPropertyReferences: [{ propertyId: definitions[0].id, field: 'TEXT' }]
+  })
+  return component
+}
+
+test('properties prefers an ID; a prop always names the property', async () => {
+  const graph = new SceneGraph()
+  const component = await noteWith(graph, [
+    { id: 'label', name: 'Title', type: 'TEXT', defaultValue: 'Label' },
+    { id: 'Title', name: 'Heading', type: 'TEXT', defaultValue: 'Heading' }
+  ])
   const instance = await renderTree(
     graph,
     Instance({ of: component.id, properties: { Title: 'Changed' } })
@@ -95,16 +97,10 @@ test('properties prefers an ID; a prop always names the property', async () => {
 
 test('rejects a property name that more than one property has', async () => {
   const graph = new SceneGraph()
-  const component = await renderTree(
-    graph,
-    Component({
-      name: 'Note',
-      properties: [
-        { id: 'a', name: 'Title', type: 'TEXT', defaultValue: 'A' },
-        { id: 'b', name: 'Title', type: 'TEXT', defaultValue: 'B' }
-      ]
-    })
-  )
+  const component = await noteWith(graph, [
+    { id: 'a', name: 'Title', type: 'TEXT', defaultValue: 'A' },
+    { id: 'b', name: 'Title', type: 'TEXT', defaultValue: 'B' }
+  ])
   await expect(renderTree(graph, Instance({ of: component.id, Title: 'Changed' }))).rejects.toThrow(
     'Component property name Title is ambiguous; use one of the IDs: a, b'
   )

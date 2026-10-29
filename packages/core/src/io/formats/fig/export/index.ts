@@ -238,7 +238,7 @@ function compressViaWorker(
   compressionLevel?: number
 ): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('./worker.ts', import.meta.url), {
+    const worker = new Worker(new URL('./worker.js', import.meta.url), {
       type: 'module'
     })
 

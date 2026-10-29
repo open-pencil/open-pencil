@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
@@ -7,8 +7,10 @@ import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import type { PortalLinkedMethod, PortalSignInMethod } from '../types'
 
@@ -55,6 +57,36 @@ const social = computed(() =>
   )
 )
 const password = computed(() => methods.find((method) => method.provider === 'credential') ?? null)
+
+/** Unlinking or removing a way to sign in is asked once more. */
+const confirming = ref<
+  | { kind: 'unlink'; id: string; provider: PortalSignInMethod }
+  | { kind: 'passkey'; id: string; name: string }
+  | null
+>(null)
+const confirmingShown = useHeldContent(confirming)
+const confirmation = computed(() => {
+  const pending = confirmingShown.value
+  if (!pending) return null
+  const words = messages.value
+  return pending.kind === 'unlink'
+    ? {
+        heading: words.unlinkHeading({ provider: providerLabel(pending.provider) }),
+        description: words.unlinkDescription,
+        confirm: words.unlink
+      }
+    : {
+        heading: words.removePasskeyHeading({ name: pending.name }),
+        description: words.removePasskeyDescription,
+        confirm: words.remove
+      }
+})
+function confirm() {
+  const pending = confirming.value
+  confirming.value = null
+  if (pending?.kind === 'unlink') emit('unlink', pending.id)
+  else if (pending) emit('removePasskey', pending.id)
+}
 </script>
 
 <template>
@@ -80,7 +112,7 @@ const password = computed(() => methods.find((method) => method.provider === 'cr
             size="sm"
             variant="ghost"
             :disabled="busy || !method.canUnlink"
-            @click="emit('unlink', method.id)"
+            @click="confirming = { kind: 'unlink', id: method.id, provider: method.provider }"
           >
             {{ messages.unlink }}
           </AppButton>
@@ -163,7 +195,13 @@ const password = computed(() => methods.find((method) => method.provider === 'cr
             size="sm"
             variant="ghost"
             :disabled="busy"
-            @click="emit('removePasskey', passkey.id)"
+            @click="
+              confirming = {
+                kind: 'passkey',
+                id: passkey.id,
+                name: passkey.name ?? messages.unnamedPasskey
+              }
+            "
           >
             {{ messages.remove }}
           </AppButton>
@@ -173,5 +211,16 @@ const password = computed(() => methods.find((method) => method.provider === 'cr
         {{ messages.noPasskeys }}
       </p>
     </SettingsSection>
+
+    <AppConfirmationDialog
+      :open="confirming !== null"
+      tone="danger"
+      :heading="confirmation?.heading ?? ''"
+      :description="confirmation?.description"
+      :cancel-label="messages.cancel"
+      :confirm-label="confirmation?.confirm ?? ''"
+      @update:open="(open) => !open && (confirming = null)"
+      @confirm="confirm"
+    />
   </div>
 </template>

@@ -1,3 +1,7 @@
+import { filename } from 'pathe/utils'
+
+import { isSVGFile } from '@open-pencil/scene-graph/images'
+
 import type {
   ImageAttachmentMediaType,
   PreparedImageAttachment
@@ -58,13 +62,6 @@ function canvasToBlob(
   })
 }
 
-/** Whether a file is an SVG image, which some systems report without a media type. */
-export function isSVGFile(file: File): boolean {
-  return (
-    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
-  )
-}
-
 /** Whether a file can be attached as an image, as it is or after drawing an SVG as PNG. */
 export function isAttachableImageFile(file: File): boolean {
   return file.type.startsWith('image/') || isSVGFile(file)
@@ -95,7 +92,7 @@ export async function rasterizeSVGAttachment(
     if (!context) throw new Error('Could not prepare the image.')
     context.drawImage(image, 0, 0, canvas.width, canvas.height)
     const blob = await canvasToBlob(canvas, 'image/png')
-    const name = file.name.replace(/\.svg$/i, '') + '.png'
+    const name = `${filename(file.name) ?? file.name}.png`
     return new File([blob], name, { type: 'image/png' })
   } finally {
     revokeImagePreviewURL(sourceURL)

@@ -46,6 +46,15 @@ typography.toggleItalic()
 typography.toggleDecoration('UNDERLINE')
 ```
 
+### Ustawianie osi czcionek zmiennych
+
+`axes` wymienia osie zmiennej czcionki zaznaczonego tekstu, każdą z `tag`, `name`, zakresem i `value`, w jakiej jest rysowana (`MIXED`, gdy warstwy się różnią); lista jest pusta dla czcionki statycznej lub warstw z różnych rodzin. `previewAxis` pokazuje wartość podczas przeciągania, `setAxis` ustawia ją w jednym kroku cofania, a `setOpticalSizeAuto` każe rozmiarowi optycznemu podążać za rozmiarem czcionki albo go zatrzymuje. Zmiana grubości, pochylenia lub rodziny przywraca osie danej odmiany.
+
+```ts
+typography.setAxis('wght', 560)
+typography.setOpticalSizeAuto(false)
+```
+
 ## Zobacz też
 
 - [useTextEdit](./use-text-edit)

@@ -123,6 +123,7 @@ function services() {
       list: notUsed,
       invite: notUsed,
       revokeInvitation: notUsed,
+      resendInvitation: notUsed,
       updateRole: notUsed,
       remove: notUsed,
       delete: notUsed,

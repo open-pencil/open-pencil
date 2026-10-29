@@ -18,9 +18,9 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import { menu } from '@/components/ui/menu/menu'
-import { cloudServers } from '@/theme/cloud/servers'
 
 import type { CloudServerEntry } from './types'
+import { cloudServers } from './ui'
 
 /**
  * The Cloud servers this app syncs with: who is signed in to each, which one Home shows, and
@@ -117,7 +117,11 @@ const title = (server: CloudServerEntry) =>
               {{ t.settingsAccessClosed }}
             </p>
             <p v-else-if="server.account && server.session === 'signed-in'" :class="ui.account()">
-              <AccountAvatar :id="server.account.id" :name="server.account.name" />
+              <AccountAvatar
+                :id="server.account.id"
+                :name="server.account.name"
+                :image="server.account.image ?? null"
+              />
               <span :class="ui.accountText()">
                 {{ server.account.name }} · {{ server.account.email }}
               </span>

@@ -1,15 +1,16 @@
+import { percentLength } from '../text/lengths'
 import type { SceneNode } from '../types'
 
 /**
- * FigJam's text sizes for sticky notes and shapes, each with the tracking it sets, as a fraction
+ * FigJam's text sizes for sticky notes and shapes, each with the tracking it sets, as a percent
  * of the size; the line stays one and a half times the size.
  */
 export const FIGJAM_TEXT_SIZES = {
-  small: { fontSize: 16, tracking: -0.011 },
-  medium: { fontSize: 24, tracking: -0.019 },
-  large: { fontSize: 40, tracking: -0.022 },
-  extraLarge: { fontSize: 64, tracking: -0.022 },
-  huge: { fontSize: 96, tracking: -0.023 }
+  small: { fontSize: 16, tracking: -1.1 },
+  medium: { fontSize: 24, tracking: -1.9 },
+  large: { fontSize: 40, tracking: -2.2 },
+  extraLarge: { fontSize: 64, tracking: -2.2 },
+  huge: { fontSize: 96, tracking: -2.3 }
 } as const
 
 export type FigJamTextSize = keyof typeof FIGJAM_TEXT_SIZES
@@ -38,7 +39,12 @@ export function figJamTextSizeFields(
 ): Partial<SceneNode> {
   const { fontSize, tracking } = FIGJAM_TEXT_SIZES[size]
   const tracked = FIGJAM_TYPEFACES[typeface].tracked
-  return { fontSize, lineHeight: fontSize * 1.5, letterSpacing: tracked ? fontSize * tracking : 0 }
+  return {
+    fontSize,
+    // FigJam writes both relative to the size, a line at 150% and tracking in percent.
+    lineHeight: percentLength(150),
+    letterSpacing: percentLength(tracked ? tracking : 0)
+  }
 }
 
 /** The preset a text is closest to, as FigJam's size menu shows a rescaled one. */

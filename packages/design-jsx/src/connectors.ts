@@ -2,6 +2,7 @@ import { compact, countBy } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
 import type * as v from 'valibot'
 
+import { es } from '@open-pencil/emit'
 import type { ConnectorEndpoint, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
@@ -91,7 +92,7 @@ function styleLine(graph: SceneGraph, line: SceneNode, props: ConnectorPropValue
  * The layers JSX writes under `rootIds`, in order, each before its descendants: the layers a
  * connector or sticky note generates are not, so an end never names them.
  */
-function layersUnder(graph: SceneGraph, rootIds: readonly string[]): SceneNode[] {
+export function layersUnder(graph: SceneGraph, rootIds: readonly string[]): SceneNode[] {
   const layers: SceneNode[] = []
   const visit = (id: string) => {
     const node = graph.getNode(id)
@@ -172,7 +173,7 @@ export function resolveConnectorEnds(
 /** `card1` for a layer named "Card": a name a declaration can take, numbered to stay unique. */
 function refName(layerName: string, taken: Set<string>): string {
   const camel = camelCase(layerName)
-  const base = /^[A-Za-z_$][\w$]*$/.test(camel) ? camel : 'layer'
+  const base = es.isIdentifierName(camel) ? camel : 'layer'
   let count = 1
   while (taken.has(`${base}${count}`)) count++
   const name = `${base}${count}`

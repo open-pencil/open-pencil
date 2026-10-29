@@ -14,9 +14,11 @@ import { saveChatTrace } from '@/app/ai/chat/trace/export'
 import { useAIChat } from '@/app/ai/chat/use'
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { didHitStepLimit } from '@/app/ai/tools'
+import { cloudBillingURL } from '@/app/cloud/integration'
 import { getActiveEditorStore } from '@/app/editor/active-store'
+import { useDateFormat } from '@/app/i18n/date'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { toast } from '@/app/shell/ui'
+import { openExternalLink, toast } from '@/app/shell/ui'
 import { activeTab } from '@/app/tabs'
 import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
@@ -29,6 +31,7 @@ import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
 const { ai } = useI18n()
+const dates = useDateFormat()
 const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
@@ -42,6 +45,7 @@ const submission = useChatSubmission({
     openSettings: ai.value.openProviderSettingsAction,
     requestFailed: ai.value.chatRequestFailed,
     visionUnavailable: ai.value.visionModelUnavailable,
+    cloudUnavailable: ai.value.chatCloudUnavailable,
     runSetup: ai.value.aiSetupRun,
     agentSetup: {
       'companion-missing': ai.value.chatPiCompanionMissing,
@@ -124,6 +128,15 @@ async function saveTrace(id: string) {
   }
 }
 
+/**
+ * A Cloud that bills sells more credits; a self-hosted one has only the allowance its
+ * administrator set, which renews or is raised.
+ */
+function cloudCreditsMessage(resetsAt: string | undefined): string {
+  if (cloudBillingURL.value) return ai.value.chatCloudCreditsExhausted
+  if (!resetsAt) return ai.value.chatCloudAllowanceUsed
+  return ai.value.chatCloudAllowanceUsedUntil({ date: dates.format(resetsAt, 'dayTime') })
+}
 const failureMessage = computed(() => {
   switch (chatFailure.value?.reason) {
     case 'authentication':
@@ -132,6 +145,8 @@ const failureMessage = computed(() => {
       return ai.value.chatForbidden
     case 'insufficient-credit':
       return ai.value.chatInsufficientCredit
+    case 'cloud-credits-exhausted':
+      return cloudCreditsMessage(chatFailure.value.resetsAt)
     case 'model-not-found':
       return ai.value.chatModelNotFound
     case 'network':
@@ -179,15 +194,19 @@ watch(
     const failedId = chat.value?.messages.at(-1)?.id
     failureToast = toast.error(
       failureMessage.value ?? ai.value.chatRequestFailed,
-      failureHasSettingsAction.value
-        ? {
-            label: ai.value.openProviderSettingsAction,
-            run: () => openSettingsDialog('ai')
-          }
-        : { label: ai.value.retryRequest, run: () => retryFailed(failedId) }
+      failureAction(failedId)
     )
   }
 )
+function failureAction(failedId: string | undefined): { label: string; run: () => void } {
+  const billingURL = cloudBillingURL.value
+  if (chatFailure.value?.reason === 'cloud-credits-exhausted' && billingURL) {
+    return { label: ai.value.manageCloudPlanAction, run: () => void openExternalLink(billingURL) }
+  }
+  return failureHasSettingsAction.value
+    ? { label: ai.value.openProviderSettingsAction, run: () => openSettingsDialog('ai') }
+    : { label: ai.value.retryRequest, run: () => retryFailed(failedId) }
+}
 watch(
   () => [activeTab.value?.id, activeTab.value?.store.state.preparation] as const,
   async ([tabId, preparation], [previousTabId]) => {

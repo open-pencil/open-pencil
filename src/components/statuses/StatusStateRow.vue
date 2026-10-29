@@ -10,7 +10,8 @@ import StatusDot from '@/components/statuses/StatusDot.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { statusRows } from '@/theme/statuses'
+
+import { statusRows } from './ui'
 
 /** One status in the Statuses dialog: its color and name. */
 const { state, states } = defineProps<{

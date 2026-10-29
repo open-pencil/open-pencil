@@ -1,0 +1,1 @@
+- A Cloud server's Profile page uploads a picture, which you drag and zoom into the circle people see, and removes it again; administrators can take a person's picture down. The server keeps every picture itself, copying a linked Google account's picture at sign-in, so pages never load pictures from Google or Gravatar.

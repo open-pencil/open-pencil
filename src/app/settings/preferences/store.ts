@@ -29,6 +29,10 @@ export type ChangePreviewSize = (typeof CHANGE_PREVIEW_SIZES)[number]
 export const CANVAS_RENDERING_MODES = ['retained', 'tiled'] as const
 export type CanvasRenderingMode = (typeof CANVAS_RENDERING_MODES)[number]
 
+/** Multipliers for how far each wheel or pinch event zooms the canvas; 1 is Figma's rate. */
+export const ZOOM_SPEEDS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2] as const
+export type ZoomSpeed = (typeof ZOOM_SPEEDS)[number]
+
 export const DESIGN_CHECK_PRESETS = ['recommended', 'strict', 'accessibility'] as const
 export type DesignCheckPreset = (typeof DESIGN_CHECK_PRESETS)[number]
 
@@ -84,6 +88,9 @@ export interface AppPreferences {
   editing: {
     snapping: SnappingPreferences
   }
+  navigation: {
+    zoomSpeed: ZoomSpeed
+  }
   rendering: {
     canvasMode: CanvasRenderingMode
   }
@@ -110,6 +117,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   editing: {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
+  navigation: { zoomSpeed: 1 },
   rendering: { canvasMode: 'retained' },
   designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
   comments: {
@@ -164,6 +172,9 @@ const appPreferencesSchema = section({
       objects: v.fallback(v.boolean(), snapping.objects),
       pixelGrid: v.fallback(v.boolean(), snapping.pixelGrid)
     })
+  }),
+  navigation: section({
+    zoomSpeed: v.fallback(v.picklist(ZOOM_SPEEDS), defaults.navigation.zoomSpeed)
   }),
   rendering: section({
     canvasMode: v.fallback(v.picklist(CANVAS_RENDERING_MODES), defaults.rendering.canvasMode)
@@ -254,6 +265,10 @@ export function updateCanvasRenderingMode(canvasMode: CanvasRenderingMode): void
     ...appPreferences.value,
     rendering: { canvasMode }
   }
+}
+
+export function updateZoomSpeed(zoomSpeed: ZoomSpeed): void {
+  appPreferences.value = { ...appPreferences.value, navigation: { zoomSpeed } }
 }
 
 export function updateSnappingPreferences(changes: Partial<SnappingPreferences>): void {

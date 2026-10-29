@@ -35,7 +35,7 @@ const failure = computed(() => {
 
 <template>
   <div class="flex flex-col gap-2" data-test-id="settings-chatgpt-sign-in">
-    <p class="text-[10px] text-muted">{{ ai.aiSetupChatGPTUsage }}</p>
+    <p class="text-[11px] text-muted">{{ ai.aiSetupChatGPTUsage }}</p>
     <div v-if="status === 'waiting'" class="flex flex-wrap items-center gap-2">
       <p role="status" class="flex items-center gap-1.5 text-[11px] text-muted">
         <icon-lucide-loader-2 class="size-3.5 animate-spin" aria-hidden="true" />

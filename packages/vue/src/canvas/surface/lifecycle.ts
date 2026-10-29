@@ -57,19 +57,27 @@ export function createCanvasSurfaceManager({
   }
   let sceneBackingRenderTimer: ReturnType<typeof setTimeout> | null = null
 
-  // The scene of an editing canvas shows an empty sticky note's placeholder in the interface
-  // language, and draws it again when the language changes.
+  // The scene of an editing canvas shows an empty sticky note's placeholder, and every layer an
+  // empty connector label's while it is typed into, as the overlays draw the text being edited,
+  // in the interface language, and draws them again when the language changes.
   const showsStickyPlaceholder = options?.layer !== 'overlays'
   let stickyPlaceholder: string = editorMessages.get().stickyPlaceholder
-  const stopStickyPlaceholder = editorMessages.subscribe((messages) => {
-    if (messages.stickyPlaceholder === stickyPlaceholder) return
-    stickyPlaceholder = messages.stickyPlaceholder
-    if (!state.renderer || !showsStickyPlaceholder) return
-    state.renderer.stickyPlaceholder = stickyPlaceholder
+  let connectorLabelPlaceholder: string = editorMessages.get().connectorLabelPlaceholder
+  const stopPlaceholders = editorMessages.subscribe((messages) => {
+    if (
+      messages.stickyPlaceholder === stickyPlaceholder &&
+      messages.connectorLabelPlaceholder === connectorLabelPlaceholder
+    ) {
+      return
+    }
+    ;({ stickyPlaceholder, connectorLabelPlaceholder } = messages)
+    if (!state.renderer) return
+    showPlaceholders(state.renderer)
     editor.requestRender()
   })
 
-  function showStickyPlaceholder(renderer: SkiaRenderer) {
+  function showPlaceholders(renderer: SkiaRenderer) {
+    renderer.connectorLabelPlaceholder = connectorLabelPlaceholder
     if (showsStickyPlaceholder) renderer.stickyPlaceholder = stickyPlaceholder
   }
 
@@ -92,9 +100,9 @@ export function createCanvasSurfaceManager({
   function createSurface(
     canvas: HTMLCanvasElement,
     { reloadFonts = false }: { reloadFonts?: boolean } = {}
-  ) {
+  ): boolean {
     const ck = getCanvasKit()
-    if (!ck) return
+    if (!ck) return false
 
     if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
@@ -118,7 +126,7 @@ export function createCanvasSurfaceManager({
     const surface = result.surface
     if (!surface) {
       canvas.dataset.surfaceError = 'webgl'
-      return
+      return false
     }
 
     const glCtx = canvas.getContext('webgl2') ?? null
@@ -128,7 +136,7 @@ export function createCanvasSurfaceManager({
     state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
     state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
     state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'
-    showStickyPlaceholder(state.renderer)
+    showPlaceholders(state.renderer)
     editor.setCanvasKit(ck, state.renderer)
     // The scene surface draws shader frames; an overlay surface has none to draw.
     if (options?.layer !== 'overlays' && !editor.hasShaderRasterizer())
@@ -144,6 +152,7 @@ export function createCanvasSurfaceManager({
         return undefined
       })
     }
+    return true
   }
 
   function acknowledgePresentation() {
@@ -241,7 +250,7 @@ export function createCanvasSurfaceManager({
   )
 
   function destroy() {
-    stopStickyPlaceholder()
+    stopPlaceholders()
     stopPresentationRefresh()
     stopColorSpaceRefresh()
     clearSceneBackingRenderTimer()
@@ -268,7 +277,8 @@ export function useCanvasSurfaceLifecycle({
   setCanvasKit,
   getCanvasKitValue,
   lifecycle,
-  onReady
+  onReady,
+  onFailed
 }: {
   canvasRef: Ref<HTMLCanvasElement | null>
   surface: ReturnType<typeof createCanvasSurfaceManager>
@@ -276,6 +286,7 @@ export function useCanvasSurfaceLifecycle({
   getCanvasKitValue: () => CanvasKit | null
   lifecycle: { destroyed: boolean }
   onReady?: () => void
+  onFailed?: (error: unknown) => void
 }) {
   useCanvasKitLoader({
     canvasRef,
@@ -284,7 +295,8 @@ export function useCanvasSurfaceLifecycle({
     createSurface: surface.createSurface,
     loadFonts: () => surface.getRenderer()?.loadFonts(surface.renderNow),
     renderNow: surface.renderNow,
-    onReady
+    onReady,
+    onFailed
   })
 
   const { cancelResize } = useCanvasResizeObserver({

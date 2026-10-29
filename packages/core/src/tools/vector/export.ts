@@ -71,11 +71,11 @@ export const exportSVG = defineTool({
   exposure: { webmcp: false },
   input: v.strictObject({ ...exportInputs }),
   execute: async (figma, args) => {
-    const { renderNodesToSVG } = await import('#core/io/formats/svg')
+    const { renderNodesToLaidOutSVG } = await import('#core/io/formats/svg/text/layout')
     const pageId = figma.currentPageId
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const svg = renderNodesToSVG(figma.graph, pageId, ids)
+    const svg = await renderNodesToLaidOutSVG(figma.graph, pageId, ids)
     if (!svg) return { error: 'No visible nodes to export' }
     return { svg }
   }
@@ -86,7 +86,7 @@ export const exportPDF = defineTool({
   description:
     'Export nodes as a vector PDF document. Text remains selectable and keeps its line breaks, paths stay sharp at any zoom. Returns base64-encoded PDF data and the size of each PDF page. ' +
     'mode "single" (default) puts all ids on one PDF page; "frames" makes one PDF page per id (or per top-level frame of the current page); "pages" makes one PDF page per design page (all pages, or page_ids). ' +
-    'embed_fonts embeds the TrueType file of each font face the text uses and reports which faces were embedded and which fell back to a standard PDF font.',
+    'embed_fonts embeds the TrueType file of each font face the text uses, and of a variable font a static file of each instance the text draws (its weight, optical size, and other axes), and reports which faces were embedded and which fell back to a standard PDF font.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({
@@ -117,26 +117,22 @@ export const exportPDF = defineTool({
     )
   }),
   execute: async (figma, args) => {
-    const [{ renderPagesToPDFDetailed }, pdfPrepare] = await Promise.all([
-      import('#core/io/formats/pdf'),
+    const [{ exportPDFDocument }, { readPDFPages }] = await Promise.all([
+      import('#core/io/formats/pdf/document'),
       import('#core/io/formats/pdf/prepare')
     ])
     try {
-      if (args.mode === 'pages') pdfPrepare.readPDFPages(figma.graph, args.page_ids)
+      if (args.mode === 'pages') readPDFPages(figma.graph, args.page_ids)
       const specs = planPDFPages(figma.graph, {
         mode: args.mode,
         ids: args.ids,
         pageIds: args.page_ids,
         currentPageId: figma.currentPageId
       })
-      const fontStatus =
-        args.mode === 'pages'
-          ? await pdfPrepare.preparePagesForPDF(figma.graph, specs)
-          : await pdfPrepare.preparePDFFonts(figma.graph, specs)
-      const fonts = args.embed_fonts ? pdfPrepare.pdfFontFaces(fontStatus) : undefined
-      const result = await pdfPrepare.withPDFTextLayout((textLayout) =>
-        renderPagesToPDFDetailed(figma.graph, specs, { fonts, textLayout })
-      )
+      const result = await exportPDFDocument(figma.graph, specs, {
+        embedFonts: args.embed_fonts,
+        layOutPages: args.mode === 'pages'
+      })
       if (!result || result.data.length === 0) return { error: 'No visible nodes to export' }
       return {
         mimeType: 'application/pdf',

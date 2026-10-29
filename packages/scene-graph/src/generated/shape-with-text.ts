@@ -3,6 +3,7 @@ import { FIGJAM_TYPEFACES, figJamTextSizeFields } from '../figjam/text'
 import type { SceneGraph } from '../index'
 import { shapeWithTextLabelBox } from '../shape-with-text/fit'
 import type { ShapeWithTextType } from '../shape-with-text/kinds'
+import { lineHeightPixels } from '../text/lengths'
 import type { Fill, SceneNode } from '../types'
 import type { GeneratedFrameKind } from './kind'
 
@@ -100,7 +101,7 @@ export function buildShapeWithTextLabel(
     x: box.x,
     y: box.y,
     width: box.width,
-    height: fields.lineHeight ?? undefined,
+    height: lineHeightPixels(fields.lineHeight ?? null, fields.fontSize ?? 0) ?? undefined,
     text: '',
     ...props
   })

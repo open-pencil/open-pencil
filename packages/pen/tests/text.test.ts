@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { PenDocument, PenNode } from '@open-pencil/pen'
+import { percentLength } from '@open-pencil/scene-graph/text'
 
 import { getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
@@ -52,9 +53,14 @@ describe('parsePenFile — text', () => {
     expect(node.textAlignVertical).toBe('CENTER')
   })
 
-  test('multiplies the font size by the line height', () => {
-    expect(textOf({ fontSize: 28, lineHeight: 2 }).lineHeight).toBe(56)
-    expect(textOf({ fontSize: 10, lineHeight: 6 }).lineHeight).toBe(60)
+  // A multiple of the font size follows it, as a percent does.
+  test('reads the line height as a multiple of the font size', () => {
+    expect(textOf({ fontSize: 28, lineHeight: 2 }).lineHeight).toEqual(percentLength(200))
+    expect(textOf({ fontSize: 10, lineHeight: 6 }).lineHeight).toEqual(percentLength(600))
+  })
+
+  test('keeps every font at its default optical size, as pen.dev draws it', () => {
+    expect(textOf({ fontSize: 96 }).opticalSizeFromFontSize).toBe(false)
   })
 
   test('draws no text stroke, as pen.dev does not', () => {

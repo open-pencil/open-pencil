@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 
+import { openExternalLink } from '@/app/shell/ui'
 import { IS_CLOUD_SITE } from '@/constants'
 
 import { openCloudConnect } from './connect/flow'
@@ -33,6 +34,11 @@ export function useHomeCloud() {
     serverId: computed(() => signedIn.value?.server.id ?? null),
     // Signing back in goes straight to the server Home shows; without one, choose a server.
     connect: () => openCloudConnect({ serverId: homeCloudServer.value?.id }),
+    /** The server's own account pages, in the browser. */
+    openAccount: () => {
+      const server = signedIn.value?.server
+      if (server) void openExternalLink(new URL('/account', server.url).href)
+    },
     newWorkspace: () => {
       const server = signedIn.value?.server
       if (server) openNewWorkspace(server.id)

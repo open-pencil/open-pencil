@@ -1,4 +1,5 @@
 import type { SceneNode, TextAlignVertical, TextAutoResize } from '@open-pencil/scene-graph'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 import type { PenNode } from './schema'
 import { bindIfVar, isVarRef, resolveNumber, resolveString, type VarContext } from './variables'
@@ -67,10 +68,15 @@ export function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): 
   node.italic = resolveString(pen.fontStyle, ctx)?.toLowerCase() === 'italic'
   node.textAlignHorizontal = TEXT_ALIGN[pen.textAlign ?? 'left'] ?? 'LEFT'
   node.textAlignVertical = TEXT_ALIGN_VERTICAL[pen.textAlignVertical ?? 'top'] ?? 'TOP'
-  // pen.dev's line height multiplies the font size.
-  if (pen.lineHeight !== undefined)
-    node.lineHeight = resolveNumber(pen.lineHeight, ctx) * node.fontSize
-  if (pen.letterSpacing !== undefined) node.letterSpacing = resolveNumber(pen.letterSpacing, ctx)
+  // pen.dev's line height multiplies the font size, so it follows the size as a percent.
+  if (pen.lineHeight !== undefined) {
+    node.lineHeight = percentLength(resolveNumber(pen.lineHeight, ctx) * 100)
+  }
+  if (pen.letterSpacing !== undefined) {
+    node.letterSpacing = pixelLength(resolveNumber(pen.letterSpacing, ctx))
+  }
   node.textAutoResize = TEXT_GROWTH[pen.textGrowth ?? 'auto'] ?? 'WIDTH_AND_HEIGHT'
+  // pen.dev draws every font at its default optical size, whatever the text's size.
+  node.opticalSizeFromFontSize = false
   node.strokes = []
 }

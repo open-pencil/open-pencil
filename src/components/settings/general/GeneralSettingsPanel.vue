@@ -7,7 +7,12 @@ import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/pre
 import { recentFilesAvailable, recentFilesLimit } from '@/app/recent-files/preferences'
 import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-files/schema'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
-import { appPreferences } from '@/app/settings/preferences/store'
+import {
+  appPreferences,
+  updateZoomSpeed,
+  ZOOM_SPEEDS,
+  type ZoomSpeed
+} from '@/app/settings/preferences/store'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
@@ -60,6 +65,19 @@ const snapToObjects = computed({
 const snapToPixelGrid = computed({
   get: () => appPreferences.value.editing.snapping.pixelGrid,
   set: (enabled: boolean) => setSnappingPreference('pixelGrid', enabled)
+})
+
+const zoomSpeed = computed<ZoomSpeed>({
+  get: () => appPreferences.value.navigation.zoomSpeed,
+  set: updateZoomSpeed
+})
+
+const zoomSpeedOptions = computed(() => {
+  const format = new Intl.NumberFormat(locale.value)
+  return ZOOM_SPEEDS.map((value) => {
+    const speed = `${format.format(value)}×`
+    return { value, label: value === 1 ? settings.value.zoomSpeedDefault({ speed }) : speed }
+  })
 })
 </script>
 
@@ -123,19 +141,17 @@ const snapToPixelGrid = computed({
       <template #title>{{ recovery.settingsTitle }}</template>
 
       <SettingsGroup>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ recovery.preserveUnsavedWork }}</span>
-            <span class="block text-[10px] text-muted">{{
-              recovery.preserveUnsavedWorkDescription
-            }}</span>
-          </span>
+        <SettingsRow
+          as="label"
+          :label="recovery.preserveUnsavedWork"
+          :description="recovery.preserveUnsavedWorkDescription"
+        >
           <AppSwitch
             v-model="preserveUnsavedWork"
             :label="recovery.preserveUnsavedWork"
             data-test-id="settings-recovery-enabled"
           />
-        </label>
+        </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
 
@@ -144,48 +160,59 @@ const snapToPixelGrid = computed({
       <template #description>{{ settings.snappingDescription }}</template>
 
       <SettingsGroup>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ settings.snapToGeometry }}</span>
-            <span class="block text-[10px] text-muted">{{
-              settings.snapToGeometryDescription
-            }}</span>
-          </span>
+        <SettingsRow
+          as="label"
+          :label="settings.snapToGeometry"
+          :description="settings.snapToGeometryDescription"
+        >
           <AppSwitch
             v-model="snapToGeometry"
             :label="settings.snapToGeometry"
             data-test-id="settings-snap-geometry"
           />
-        </label>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ settings.snapToObjects }}</span>
-            <span class="block text-[10px] text-muted">{{
-              settings.snapToObjectsDescription
-            }}</span>
-          </span>
+        </SettingsRow>
+        <SettingsRow
+          as="label"
+          :label="settings.snapToObjects"
+          :description="settings.snapToObjectsDescription"
+        >
           <AppSwitch
             v-model="snapToObjects"
             :label="settings.snapToObjects"
             data-test-id="settings-snap-objects"
           />
-        </label>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ settings.snapToPixelGrid }}</span>
-            <span class="block text-[10px] text-muted">{{
-              settings.snapToPixelGridDescription
-            }}</span>
-          </span>
+        </SettingsRow>
+        <SettingsRow
+          as="label"
+          :label="settings.snapToPixelGrid"
+          :description="settings.snapToPixelGridDescription"
+        >
           <AppSwitch
             v-model="snapToPixelGrid"
             :label="settings.snapToPixelGrid"
             data-test-id="settings-snap-pixel-grid"
           />
-        </label>
+        </SettingsRow>
       </SettingsGroup>
 
       <p class="text-[11px] text-muted">{{ settings.temporaryDisableSnappingHint }}</p>
+    </SettingsSection>
+
+    <SettingsSection>
+      <template #title>{{ settings.navigation }}</template>
+      <template #description>{{ settings.navigationDescription }}</template>
+
+      <SettingsGroup>
+        <SettingsRow :label="settings.zoomSpeed" :description="settings.zoomSpeedDescription">
+          <AppSelect
+            v-model="zoomSpeed"
+            :label="settings.zoomSpeed"
+            :options="zoomSpeedOptions"
+            :ui="selectUI"
+            data-test-id="settings-zoom-speed"
+          />
+        </SettingsRow>
+      </SettingsGroup>
     </SettingsSection>
 
     <SettingsSection v-if="showRecentFiles">

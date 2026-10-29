@@ -25,7 +25,7 @@ import { applyEffectOverrides } from './overrides/effects'
 import { fillFromValue, isColor, isFillValue } from './overrides/fills'
 import { applyStateOverrides } from './overrides/state'
 import { applyStrokeOverrides } from './overrides/strokes'
-import { applyTextDetailOverrides, AUTO } from './overrides/text'
+import { applyTextDetailOverrides, AUTO, textLengthProp } from './overrides/text'
 import { isShaderFill } from './paints'
 
 const WEIGHT_MAP: Record<string, number> = {
@@ -44,7 +44,8 @@ function numberFromPx(value: unknown): number | undefined {
   return typeof value === 'string' ? (parseCSSNumber(value) ?? undefined) : undefined
 }
 
-function normalizeStyleProps(props: Record<string, unknown>): Record<string, unknown> {
+/** `props` with the sizes and styles its `style` object gives, where the props leave them unset. */
+export function normalizeStyleProps(props: Record<string, unknown>): Record<string, unknown> {
   const style = props.style
   if (style === null || typeof style !== 'object' || Array.isArray(style)) return props
 
@@ -349,9 +350,11 @@ function applyTextStyleOverrides(props: Record<string, unknown>, o: Partial<Scen
     o.fills = [colorToFill(props.color)]
   }
 
-  if (props.lineHeight === AUTO) o.lineHeight = null
-  else if (props.lineHeight !== undefined) o.lineHeight = props.lineHeight as number
-  if (props.letterSpacing !== undefined) o.letterSpacing = props.letterSpacing as number
+  // A value it cannot read is left out, so the text keeps its own.
+  const lineHeight = props.lineHeight === AUTO ? null : textLengthProp(props.lineHeight)
+  if (lineHeight !== undefined) o.lineHeight = lineHeight
+  const letterSpacing = textLengthProp(props.letterSpacing)
+  if (letterSpacing) o.letterSpacing = letterSpacing
   const textDecoration = TEXT_DECORATION.parse(props.textDecoration)
   if (textDecoration) o.textDecoration = textDecoration
   applyTextDetailOverrides(props, o)

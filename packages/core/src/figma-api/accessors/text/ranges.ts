@@ -9,8 +9,10 @@ import type {
   TextBindableField,
   TextCase,
   TextDecoration,
-  TextDecorationStyle
+  TextDecorationStyle,
+  TextLength
 } from '@open-pencil/scene-graph'
+import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
   assertProxyEditable,
@@ -20,8 +22,16 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { figmaPaintToFill, type FigmaPaint } from '#core/figma-api/accessors/visual'
-import { styleNameToWeight, type FigmaFontName } from '#core/figma-api/fonts'
+import {
+  fontNameInputStyle,
+  readVariationSettings,
+  weightToStyleName,
+  type CurrentFont,
+  type FigmaFontName,
+  type FigmaFontNameInput,
+  type FigmaVariationSettings
+} from '#core/figma-api/fonts'
+import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
 import {
   getRangeIndentation,
   getRangeListOptions,
@@ -31,6 +41,7 @@ import {
   setRangeParagraphSpacing,
   type FigmaLetterSpacing
 } from '#core/figma-api/text'
+import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/text/loaded-fonts'
 import {
   assertTextRange,
   getRangeTextStyle,
@@ -42,7 +53,13 @@ import {
   type TextSegmentField
 } from '#core/figma-api/text/style'
 import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
-import { styleRunsWithPatch, type TextStylePatch } from '#core/text/character-style'
+import {
+  characterStyles,
+  nodeStyle,
+  styleRunsWithPatch,
+  type TextStylePatch
+} from '#core/text/character-style'
+import { textFontFace } from '#core/text/requirements'
 
 import { hyperlinkTarget } from './hyperlink'
 import { invalid, received } from './messages'
@@ -84,12 +101,17 @@ function numberProblem(value: unknown, at = ''): string | null {
 /** A length in pixels for a font size: a percent is of the size of the characters it styles. */
 type SizedLength<T> = (fontSize: number) => T
 
-function lengthFor(value: { unit: 'PIXELS' | 'PERCENT'; value: number }): SizedLength<number> {
-  return (fontSize) => (value.unit === 'PERCENT' ? (value.value / 100) * fontSize : value.value)
+function lengthFor(value: { unit: 'PIXELS' | 'PERCENT'; value: number }): TextLength {
+  return { unit: value.unit, value: value.value }
+}
+
+/** `length` in pixels at the size of the characters it styles, for fields kept in pixels. */
+function sized(length: TextLength | null): SizedLength<number | null> {
+  return (fontSize) => length && textLengthPixels(length, fontSize)
 }
 
 /** A letter spacing Figma takes: pixels or percent, never automatic. */
-function letterSpacingLength(method: string, value: unknown): SizedLength<number> {
+function letterSpacingLength(method: string, value: unknown): TextLength {
   const length = value as Partial<FigmaTextLength & { value: number }> | null
   if (!length || typeof length !== 'object') {
     throw invalid(method, `Expected object, received ${received(value)}`)
@@ -106,12 +128,12 @@ function letterSpacingLength(method: string, value: unknown): SizedLength<number
 }
 
 /** A length that may also be automatic, as line heights and decoration sizes are. */
-function lengthOrAuto(method: string, value: unknown): SizedLength<number | null> {
+function lengthOrAuto(method: string, value: unknown): TextLength | null {
   const length = value as Partial<FigmaTextLength & { value: number }> | null
   if (!length || typeof length !== 'object') {
     throw invalid(method, `Expected object, received ${received(value)}`)
   }
-  if (length.unit === 'AUTO') return () => null
+  if (length.unit === 'AUTO') return null
   if (!LENGTH_UNITS.has(String(length.unit))) {
     throw invalid(
       method,
@@ -127,17 +149,65 @@ function stringProblem(value: unknown, at: string): string | null {
   return typeof value === 'string' ? null : `Expected string, received ${received(value)} at ${at}`
 }
 
-/** A font name Figma takes: a family and style; a style left out reads as regular. */
-function fontNameStyle(method: string, value: unknown): CharacterStyleOverride {
+/** The font Figma reads for the character at `index`, as a font name left out reads from. */
+/** The font of the character at `index`, and the axes it sets itself. */
+function currentFont(node: SceneNode, index: number): CurrentFont {
+  const at = Math.min(index, node.text.length - 1)
+  const [style] = at < 0 ? [nodeStyle(node)] : characterStyles(node, at, at + 1)
+  const name = weightToStyleName(style.fontWeight, style.italic)
+  return {
+    style: name,
+    fontVariations: style.fontVariations,
+    variationSettings: readVariationSettings(
+      style.fontFamily,
+      name,
+      style.fontVariations,
+      style.opticalSizeFromFontSize
+    )
+  }
+}
+
+/**
+ * A font name Figma takes: a family, and a style and variation settings that may be left out, as
+ * in `FontNameInput`. What is left out reads from the font of the character at `start`.
+ */
+export function fontNameStyle(
+  method: string,
+  node: SceneNode,
+  start: number,
+  value: unknown
+): CharacterStyleOverride {
   if (!value || typeof value !== 'object') {
     throw invalid(method, `Expected object, received ${received(value)}`)
   }
   const fontName = value as Partial<Record<keyof FigmaFontName, unknown>>
-  const style = fontName.style ?? 'Regular'
-  const problem = stringProblem(fontName.family, '.family') ?? stringProblem(style, '.style')
+  const problem =
+    stringProblem(fontName.family, '.family') ??
+    (fontName.style === undefined ? null : stringProblem(fontName.style, '.style')) ??
+    variationSettingsProblem(fontName.variationSettings)
   if (problem) throw invalid(method, problem)
-  const { weight, italic } = styleNameToWeight(style as string)
-  return { fontFamily: fontName.family as string, fontWeight: weight, italic }
+  return fontNameInputStyle(
+    method,
+    {
+      family: fontName.family as string,
+      style: fontName.style as string | undefined,
+      variationSettings: fontName.variationSettings as FigmaVariationSettings | undefined
+    },
+    currentFont(node, start)
+  )
+}
+
+/** Variation settings Figma takes: numbers by axis tag. */
+function variationSettingsProblem(value: unknown): string | null {
+  if (value === undefined) return null
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return `Expected object, received ${received(value)} at .variationSettings`
+  }
+  for (const [tag, setting] of Object.entries(value)) {
+    const problem = numberProblem(setting, ` at .variationSettings.${tag}`)
+    if (problem) return problem
+  }
+  return null
 }
 
 /** A number from 0 to 1, as Figma takes colour channels and opacity. */
@@ -182,9 +252,7 @@ function fillsFromPaints(method: string, value: unknown): CharacterStyleOverride
     const problem = paintProblem(paint, index)
     if (problem) throw invalid(method, problem)
   }
-  return (value as FigmaPaint[]).map((paint, index) =>
-    figmaPaintToFill(paint, index, method, 'value')
-  )
+  return parseFigmaPaints(value, method, 'value')
 }
 
 /**
@@ -222,7 +290,7 @@ function decorationColorFills(method: string, value: unknown): Fill[] {
     // A solid paint whose channels are out of range fails on them alone.
     const problem = solidPaintProblem(color as { color?: unknown; opacity?: unknown }, '.value')
     if (problem) throw invalid(method, problem, 'textDecorationColor')
-    return [figmaPaintToFill(color as FigmaPaint)]
+    return parseFigmaPaints([color], method, 'textDecorationColor')
   }
   const paintIssues =
     issues.length === 1
@@ -279,18 +347,21 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     if ((value as number) < 1) throw invalid(method, 'Number must be greater than or equal to 1')
     return { fontSize: value as number }
   },
-  setRangeFontName: (method, _node, _start, _end, value) => fontNameStyle(method, value),
+  setRangeFontName: (method, node, start, _end, value) => {
+    const style = fontNameStyle(method, node, start, value)
+    assertFontLoaded(method, textFontFace(node, style))
+    return style
+  },
   setRangeFills: (method, _node, _start, _end, value) => ({
     fills: fillsFromPaints(method, value)
   }),
-  setRangeLetterSpacing: (method, _node, _start, _end, value) => {
-    const length = letterSpacingLength(method, value)
-    return (fontSize) => ({ letterSpacing: length(fontSize) })
-  },
-  setRangeLineHeight: (method, _node, _start, _end, value) => {
-    const length = lengthOrAuto(method, value)
-    return (fontSize) => ({ lineHeight: length(fontSize) })
-  },
+  // A percent stays a percent, following the size of the characters it styles, as in Figma.
+  setRangeLetterSpacing: (method, _node, _start, _end, value) => ({
+    letterSpacing: letterSpacingLength(method, value)
+  }),
+  setRangeLineHeight: (method, _node, _start, _end, value) => ({
+    lineHeight: lengthOrAuto(method, value)
+  }),
   setRangeTextDecoration: (method, _node, _start, _end, value) => ({
     textDecoration: enumValue(method, value, DECORATIONS)
   }),
@@ -298,11 +369,11 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     textDecorationStyle: enumValue(method, value, DECORATION_STYLES)
   })),
   setRangeTextDecorationOffset: underlineStyle('offset', (method, value) => {
-    const length = lengthOrAuto(method, value)
+    const length = sized(lengthOrAuto(method, value))
     return (fontSize) => ({ textUnderlineOffset: length(fontSize) })
   }),
   setRangeTextDecorationThickness: underlineStyle('thickness', (method, value) => {
-    const length = lengthOrAuto(method, value)
+    const length = sized(lengthOrAuto(method, value))
     return (fontSize) => ({ textDecorationThickness: length(fontSize) })
   }),
   setRangeTextDecorationColor: underlineStyle('color', (method, value) => ({
@@ -329,6 +400,13 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     hyperlink: hyperlinkTarget(method, value, graph)
   })
 }
+
+/** Range setters Figma takes with the text's fonts unloaded: paints and links, measured live. */
+const RANGE_SETTERS_WITHOUT_FONTS = new Set([
+  'setRangeFills',
+  'setRangeHyperlink',
+  'setRangeTextDecorationColor'
+])
 
 /** Range getters by method and the segment field each reads. */
 const RANGE_GETTERS: Record<string, TextSegmentField> = {
@@ -365,9 +443,9 @@ export interface TextRangeMethods {
   getRangeFontSize: RangeGetter<number>
   setRangeFontSize: RangeSetterMethod<number>
   getRangeFontName: RangeGetter<FigmaFontName>
-  setRangeFontName: RangeSetterMethod<FigmaFontName>
+  setRangeFontName: RangeSetterMethod<FigmaFontNameInput>
   getRangeFontWeight: RangeGetter<number>
-  getRangeFills: RangeGetter<Fill[]>
+  getRangeFills: RangeGetter<FigmaPaint[]>
   setRangeFills: RangeSetterMethod<FigmaPaint[]>
   getRangeLetterSpacing: RangeGetter<FigmaLetterSpacing>
   setRangeLetterSpacing: RangeSetterMethod<FigmaLetterSpacing>
@@ -445,6 +523,7 @@ export function installTextRangeMethods(
         const node = raw(this, internals)
         assertTextRange(method, node, start, end)
         const patch = setter(method, node, start, end, value, graph(this, internals))
+        if (!RANGE_SETTERS_WITHOUT_FONTS.has(method)) assertTextFontsLoaded(method, node)
         updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
       }
     }

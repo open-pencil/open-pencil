@@ -6,7 +6,7 @@ import {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
+import { CLOUD_RATE_LIMITS, createRouteRateLimiter } from '#cloud/server/rate-limit'
 import { validatedJSON } from '#cloud/server/validation'
 import {
   WorkspaceAlreadyMemberError,
@@ -61,16 +61,27 @@ export function createWorkspaceRoutes(
   if (rateLimit) {
     router.use(
       '/',
-      createActorRateLimiter(
+      createRouteRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.workspaceCreation,
         (context) => context.req.method !== 'POST'
       )
     )
+    // Resending mails the invitation again, so it counts against the same budget as sending.
+    router.use(
+      '/:workspaceId/invitations/:invitationId/resend',
+      createRouteRateLimiter(
+        rateLimit.database,
+        rateLimit.secret,
+        CLOUD_RATE_LIMITS.invitationMutation,
+        () => false,
+        (context) => context.req.param('workspaceId') ?? 'unknown'
+      )
+    )
     router.use(
       '/:workspaceId/invitations',
-      createActorRateLimiter(
+      createRouteRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
@@ -139,6 +150,17 @@ export function createWorkspaceRoutes(
             context.req.valid('json')
           ),
           201
+        )
+      )
+    )
+    .post('/:workspaceId/invitations/:invitationId/resend', (context) =>
+      memberRoute(context, async () =>
+        context.json(
+          await members.resendInvitation(
+            context.get('actor').userId,
+            context.req.param('workspaceId'),
+            context.req.param('invitationId')
+          )
         )
       )
     )

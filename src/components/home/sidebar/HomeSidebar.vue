@@ -12,10 +12,11 @@ import { computed } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
+import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { sideList } from '@/components/ui/list/side-list'
 import { menu } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { sideList } from '@/theme/list/side-list'
 
 import type { HomeCloudAccount, HomeLocation } from '../cloud/types'
 
@@ -44,7 +45,7 @@ const {
 const emit = defineEmits<{
   select: [location: HomeLocation]
   connect: []
-  accountSettings: []
+  openAccount: []
   storageSettings: []
   switchServer: []
   newWorkspace: []
@@ -66,7 +67,7 @@ const workspaceLocations = computed(() =>
 
 <template>
   <nav :class="ui.root()" :aria-label="t.homeLocations">
-    <div :class="[ui.items(), 'pt-1']">
+    <div :class="ui.group()">
       <button
         type="button"
         :class="ui.item()"
@@ -98,14 +99,20 @@ const workspaceLocations = computed(() =>
                 :side-offset="4"
                 :class="[menuUI.content(), 'w-56']"
               >
-                <DropdownMenuLabel :class="menuUI.label()">
-                  {{ account.email }} · {{ account.host }}
+                <DropdownMenuLabel :class="[menuUI.label(), 'flex items-center gap-2 pb-1.5']">
+                  <AccountAvatar :id="account.id" :name="account.name" :image="account.image" />
+                  <span class="min-w-0">
+                    <span class="block truncate text-xs text-surface">{{ account.name }}</span>
+                    <span class="block truncate">{{ account.email }}</span>
+                    <span class="block truncate">{{ account.host }}</span>
+                  </span>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator :class="menuUI.separator()" />
                 <DropdownMenuItem
                   :class="menuUI.item({ justify: 'start' })"
-                  @select="emit('accountSettings')"
+                  @select="emit('openAccount')"
                 >
-                  <icon-lucide-settings-2 :class="menuUI.icon()" />
+                  <icon-lucide-external-link :class="menuUI.icon()" />
                   {{ t.homeAccountSettings }}
                 </DropdownMenuItem>
                 <DropdownMenuItem

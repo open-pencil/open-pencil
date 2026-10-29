@@ -2,7 +2,7 @@ import { isEqual, omit } from 'es-toolkit'
 import { watch } from 'vue'
 import type { LocationQuery, RouteLocationNormalizedLoaded, Router } from 'vue-router'
 
-import { cloudDocumentAddress } from '@/app/cloud/integration'
+import { cloudDocumentAddress, openingCloudLink } from '@/app/cloud/integration'
 import { isRoomId } from '@/app/collab/room/id'
 import { activeRoom } from '@/app/collab/rooms'
 
@@ -44,16 +44,21 @@ export function tabAddressFor(
  * screen.
  */
 export function syncTabAddress(router: Router, route: RouteLocationNormalizedLoaded): () => void {
-  let opening = true
+  let first = true
   return watch(
     () => {
       const store = activeTab.value?.store
-      return [activeRoom.value?.roomId ?? null, store ? cloudDocumentAddress(store) : null] as const
+      return [
+        activeRoom.value?.roomId ?? null,
+        store ? cloudDocumentAddress(store) : null,
+        openingCloudLink.value
+      ] as const
     },
-    ([roomId, cloud]) => {
+    ([roomId, cloud, opening]) => {
       const current = { path: route.path, query: route.query }
-      const next = tabAddressFor(roomId, cloud, current, opening)
-      opening = false
+      // Until the link the tab started with has opened, its address stays, for a reload too.
+      const next = tabAddressFor(roomId, cloud, current, first || opening)
+      first = false
       if (next.path === current.path && isEqual(next.query, current.query)) return
       void router.replace({ ...next, hash: route.hash })
     },

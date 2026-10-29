@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 
-import { documentEntry } from '@/theme/home/document-entry'
+import documentEntryTheme from '@/theme/home/document-entry'
+
+const documentEntry = tv(documentEntryTheme)
 
 const {
   name,

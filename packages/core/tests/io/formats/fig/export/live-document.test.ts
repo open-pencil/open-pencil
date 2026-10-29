@@ -15,11 +15,11 @@ import { fontManager } from '#core/text/fonts'
 // a font an edit brought in while they loaded.
 test('font digests cover a font added while they load', async () => {
   const inter = expectDefined(
-    await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
-  fontManager.markLoaded('Inter', 'Regular', inter)
-  fontManager.markLoaded('Inter', 'Bold', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Bold', inter)
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   graph.createNode('TEXT', pageId, { text: 'Body', fontFamily: 'Inter', fontWeight: 400 })

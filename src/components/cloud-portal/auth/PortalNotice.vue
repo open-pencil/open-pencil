@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { portalPublic } from '@/theme/cloud-portal/public'
+import { portalPublic } from '@/components/cloud-portal/ui'
 
 import PortalPublicLayout from '../layout/PortalPublicLayout.vue'
 

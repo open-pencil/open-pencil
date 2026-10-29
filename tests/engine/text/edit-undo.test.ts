@@ -85,10 +85,10 @@ function straightTextPathNetwork() {
 }
 
 async function setupPathText() {
-  const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+  const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
   expect(font).toBeTruthy()
   if (!font) return null
-  fontManager.markLoaded('Inter', 'Regular', font)
+  await fontManager.markLoaded('Inter', 'Regular', font)
 
   const setupResult = setup()
   const glyphs: DerivedTextGlyph[] = [
@@ -161,6 +161,29 @@ describe('text edit undo', () => {
 
     undo.redo()
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello World')
+  })
+
+  test('ends the edit when an undo takes the text away, and leaves its redo in place', () => {
+    const { graph, undo, textEditor, state, textNode, actions } = setup()
+    const pageId = state.currentPageId
+    const snapshot = structuredClone(textNode)
+    // The step that made the text, as a duplicate or a paste records one.
+    undo.push({
+      label: 'Duplicate',
+      forward: () => graph.createNodeWithId(snapshot.id, 'TEXT', pageId, snapshot),
+      inverse: () => graph.deleteNode(snapshot.id)
+    })
+    actions.startTextEditing(textNode.id)
+
+    actions.runTextEditStep(() => undo.undo())
+    expect(graph.getNode(textNode.id)).toBeUndefined()
+    expect(textEditor.isActive).toBe(false)
+    expect(state.editingTextId).toBeNull()
+
+    actions.runTextEditStep(() => undo.redo())
+    expect(graph.getNode(textNode.id)).toBeDefined()
+    expect(undo.canUndo).toBe(true)
+    expect(undo.undoLabel).toBe('Duplicate')
   })
 
   test('undoes a change made while editing on its own, then the typing before it', () => {

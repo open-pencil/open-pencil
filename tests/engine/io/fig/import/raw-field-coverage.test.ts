@@ -11,6 +11,7 @@ const RAW_FIELD_COVERAGE = {
     'borderStrokeWeightsIndependent',
     'borderTopWeight',
     'derivedTextData',
+    'detachOpticalSizeFromFontSize',
     'backgroundPaints',
     'effects',
     'fillGeometry',

@@ -1,0 +1,2 @@
+- Text on a path is shaped with HarfBuzz, so it keeps every kerning, ligature, and contextual form its font defines, where it used to fall back to plain advances for fonts with OpenType lookups the old parser could not apply.
+- `fontManager.markLoaded` returns a promise that resolves once the font's glyph outlines can be read; Core's glyph readers answer as for an unloaded font until then.

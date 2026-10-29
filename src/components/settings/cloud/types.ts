@@ -3,7 +3,7 @@ export type CloudServerEntry = {
   id: string
   host: string
   kind: 'official' | 'self-hosted'
-  account: { id: string; name: string; email: string } | null
+  account: { id: string; name: string; email: string; image?: string | null } | null
   /** `expired` keeps the account so the person can sign back in to the same one. */
   session: 'signed-in' | 'pending' | 'closed' | 'expired' | 'signed-out'
   /** The server whose workspaces Home shows. */

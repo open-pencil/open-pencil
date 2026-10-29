@@ -24,6 +24,8 @@ export type KeyboardShortcutOptions = {
   openFileDialog: () => void
   closeActiveTab: () => void
   createTab: () => void
+  showHome: () => void
+  switchAdjacentTab: (step: 1 | -1) => void
 }
 
 export type KeyboardShortcutRunOptions = KeyboardShortcutOptions & {

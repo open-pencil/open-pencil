@@ -73,9 +73,7 @@ describe('diff_visual', () => {
     const copy = card.clone()
     copy.x = 300
     const copiedSwatch = expectDefined(copy.children[0], 'copied swatch')
-    copiedSwatch.fills = [
-      { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
-    ]
+    copiedSwatch.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 }, opacity: 1, visible: true }]
 
     const result = await visualDiff(figma, { from: card.id, to: copy.id, scale: 2 })
     expect(result.width).toBe(200)

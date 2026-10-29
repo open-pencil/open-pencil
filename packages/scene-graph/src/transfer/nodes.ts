@@ -1,5 +1,5 @@
 import { cloneNodeProps } from '../copy'
-import { remapInstanceOverrideState } from '../instances/overrides'
+import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
 import { remapStyleRunReferences, styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
@@ -37,7 +37,7 @@ export function semanticTransferReferences(node: SceneNode): string[] {
       typeof value === 'string' &&
       (field === 'componentId' ||
         field === 'sourceComponentId' ||
-        field.startsWith('boundVariables/'))
+        overriddenBindingField(field) !== null)
         ? [value]
         : []
     )

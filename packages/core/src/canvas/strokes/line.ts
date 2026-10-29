@@ -24,7 +24,7 @@ import { sideDashSpans } from './sides'
  * The path Figma strokes for a LINE, as a one-segment network its arrow heads follow, and the ends
  * of its shaft, which stops short of a triangle or equilateral head.
  */
-function lineStrokePath(node: SceneNode, weight: number, cap: StrokeCap) {
+export function lineStrokePath(node: SceneNode, weight: number, cap: StrokeCap) {
   const { start, end } = lineStrokeEnds(node.width, node.height, weight, cap)
   const still = { x: 0, y: 0 }
   const network: VectorNetwork = {

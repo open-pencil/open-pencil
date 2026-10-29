@@ -13,7 +13,7 @@ import {
   hasStoredBackground,
   setDefaultPageBackground
 } from '#core/figma-api/page-backgrounds'
-import { iconify } from '#core/icons'
+import { defaultIcons } from '#core/icons'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
 import { installTextMeasurer } from '#core/layout'
@@ -36,6 +36,7 @@ import { createColorSpaceActions } from './color-space'
 import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
 import { createConnectorDrawActions, createConnectorEndpointActions } from './connectors/draw'
+import { createConnectorLineActions } from './connectors/line'
 import { createConnectorRouting } from './connectors/routing'
 import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
@@ -258,7 +259,7 @@ export function createEditor(options?: EditorOptions) {
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
     getUserName: () => options?.getUserName?.() ?? '',
-    icons: options?.icons ?? iconify,
+    icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,
     getRenderer: () => _renderer,
     getRenderers: () => _renderers,
@@ -314,6 +315,7 @@ export function createEditor(options?: EditorOptions) {
     nodes.beginNodePreview,
     clipboard.deleteNodes
   )
+  const connectorLines = createConnectorLineActions(ctx, nodes.beginNodePreview)
   const connectorStyles = createConnectorStyleActions(ctx)
   const lineEnds = createLineEndActions(ctx, nodes.beginNodePreview)
   const shaders = createShaderActions(ctx, nodes)
@@ -491,6 +493,7 @@ export function createEditor(options?: EditorOptions) {
     setStatusWorkflow: statuses.setStatusWorkflow,
     ...connectorDrawing,
     ...connectorEndpoints,
+    ...connectorLines,
     ...lineEnds,
     ...connectorStyles,
     ...shaders,

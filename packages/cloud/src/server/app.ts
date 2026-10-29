@@ -14,13 +14,15 @@ import {
   type CloudDiscovery
 } from '#cloud/contract'
 import { createAccountRoutes } from '#cloud/server/account/routes'
-import { createAIRoutes, createAITokenService, type AISigningKey } from '#cloud/server/ai'
+import { createAITokenService, type AISigningKey } from '#cloud/server/ai'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
   type CloudAPIEnvironment
 } from '#cloud/server/api'
 import {
+  AUTH_BASE_PATH,
+  createAuthenticationEmailService,
   createCloudIdentityResolver,
   createCloudSessionResolver,
   type CloudAuthAdapter,
@@ -40,6 +42,7 @@ import type { TransactionalEmailService } from '#cloud/server/email'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
+import { createPictureRoutes, createUserPictures } from '#cloud/server/pictures'
 import {
   createConfiguredCloudPolicy,
   createDefaultCloudPolicy,
@@ -51,7 +54,8 @@ import {
 import {
   CLOUD_RATE_LIMITS,
   createActorRateLimiter,
-  createTrustedIPRateLimiter
+  createTrustedIPRateLimiter,
+  routeHasOwnBudget
 } from '#cloud/server/rate-limit'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
@@ -90,36 +94,6 @@ type CloudEnvironment = CloudAPIEnvironment
 function discoveryFromServices(services: CloudServices): CloudDiscovery {
   return cloudDiscoveryFromConfig(services.config)
 }
-
-const POLICY_MANAGED_AUTH_PATHS = new Set([
-  '/api/auth/passkey/delete-passkey',
-  '/api/auth/two-factor/disable'
-])
-
-const ACTIVE_ACCOUNT_AUTH_PATHS = new Set([
-  '/api/auth/passkey/delete-passkey',
-  '/api/auth/passkey/generate-register-options',
-  '/api/auth/passkey/list-user-passkeys',
-  '/api/auth/passkey/update-passkey',
-  '/api/auth/passkey/verify-registration',
-  '/api/auth/two-factor/disable',
-  '/api/auth/two-factor/enable',
-  '/api/auth/two-factor/generate-backup-codes',
-  '/api/auth/two-factor/get-totp-uri',
-  '/api/auth/account-info',
-  '/api/auth/change-email',
-  '/api/auth/change-password',
-  '/api/auth/delete-user',
-  '/api/auth/get-access-token',
-  '/api/auth/link-social',
-  '/api/auth/list-accounts',
-  '/api/auth/list-sessions',
-  '/api/auth/refresh-token',
-  '/api/auth/revoke-other-sessions',
-  '/api/auth/revoke-session',
-  '/api/auth/revoke-sessions',
-  '/api/auth/unlink-account'
-])
 
 export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {
   return (
@@ -168,6 +142,7 @@ export function createCloudApp(services: CloudServices) {
     maxAge: 600
   })
   const workspaces = createWorkspaceService(services.database)
+  const pictures = createUserPictures(services.database, { publicURL: services.config.publicURL })
   const workspaceMembers = createWorkspaceMemberService(services.database, {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL
@@ -186,7 +161,11 @@ export function createCloudApp(services: CloudServices) {
       }),
       enrollment,
       users: createAdminUserService(services.database, services.auth, {
-        requireMFA: services.config.deploymentAdminMFARequired
+        requireMFA: services.config.deploymentAdminMFARequired,
+        pictures,
+        notify: services.transactionalEmail
+          ? createAuthenticationEmailService(services.transactionalEmail, services.config.publicURL)
+          : undefined
       }),
       audit: createAdminAuditService(services.database),
       operations: createAdminOperationsService(services.database, services.config)
@@ -267,7 +246,7 @@ export function createCloudApp(services: CloudServices) {
     {
       resource: (context) => context.req.path,
       // Guests refresh collaboration tickets on their own budget, `publicCollaborationLimiter`.
-      skip: (context) => context.req.path.endsWith('/collaboration-ticket')
+      skip: routeHasOwnBudget
     }
   )
   const publicCollaborationLimiter = createTrustedIPRateLimiter(
@@ -276,23 +255,20 @@ export function createCloudApp(services: CloudServices) {
     CLOUD_RATE_LIMITS.collaborationTicket,
     { trustedHeaders: services.config.authTrustedIPHeaders },
     (context) => context.json({ error: { code: 'not_found' as const } }, 404),
-    { resource: (context) => context.req.path }
+    { resource: (context) => context.req.path, route: true }
   )
   const authenticatedMutationLimiter = createActorRateLimiter(
     services.database,
     services.config.authSecret,
     CLOUD_RATE_LIMITS.authenticatedMutation,
-    (context) =>
-      context.req.method === 'GET' ||
-      context.req.path.endsWith('/collaboration-ticket') ||
-      context.req.path === '/api/ai/token' ||
-      context.req.path.endsWith('/invitations') ||
-      context.req.path.endsWith('/uploads') ||
-      /^\/api\/workspaces(?:\/[^/]+\/documents)?$/.test(context.req.path)
+    // Reads are free, and a route with a budget of its own, such as creating documents, counts
+    // against that instead.
+    (context) => context.req.method === 'GET' || routeHasOwnBudget(context)
   )
 
   const accountRoutes = createAccountRoutes({
     auth: services.auth,
+    pictures,
     config: services.config,
     enrollment,
     workspaces,
@@ -308,6 +284,7 @@ export function createCloudApp(services: CloudServices) {
     documents,
     versions,
     entitlements,
+    aiTokens,
     sharing,
     workspaces,
     workspaceMembers,
@@ -380,19 +357,9 @@ export function createCloudApp(services: CloudServices) {
     .get(CLOUD_AI_JWKS_PATH, async (context) =>
       aiTokens ? context.json(aiTokens.jwks()) : context.notFound()
     )
-    .on(['GET', 'POST'], '/api/auth/*', async (context) => {
-      if (POLICY_MANAGED_AUTH_PATHS.has(context.req.path)) {
-        return context.json({ error: { code: 'forbidden' as const } }, 403)
-      }
-      if (
-        ACTIVE_ACCOUNT_AUTH_PATHS.has(context.req.path) &&
-        !(await resolveSession(context.req.raw))
-      ) {
-        return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      }
-      return services.auth.handler(context.req.raw)
-    })
+    .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', accountRoutes)
+    .route('/', createPictureRoutes(pictures))
     .use('/api/shares/:shareId/collaboration-ticket', publicCollaborationLimiter)
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
@@ -402,10 +369,6 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/*', requireActiveSession)
     .route('/api/admin', admin)
     .use('/api/*', authenticatedMutationLimiter)
-    .route(
-      '/api',
-      createAIRoutes(aiTokens, { database: services.database, secret: services.config.authSecret })
-    )
     .route('/api', cloudAPI)
 }
 

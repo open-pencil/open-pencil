@@ -2,11 +2,13 @@ import type { Ref } from 'vue'
 
 import { AgentSetupError, type AgentSetupProblem } from '@/app/ai/agents/setup/readiness'
 import { VisionModelUnavailableError } from '@/app/ai/attachment/image/analyze'
+import { CloudAIUnavailableError } from '@/app/ai/models/runtime'
 
 export interface SubmissionMessages {
   openSettings: string
   requestFailed: string
   visionUnavailable: string
+  cloudUnavailable: string
   runSetup: string
   agentSetup: Record<AgentSetupProblem, string>
 }
@@ -25,6 +27,13 @@ export function reportSubmissionError(options: SubmissionErrorOptions, error: un
     options.reportError(options.messages.value.agentSetup[error.problem], {
       label: options.messages.value.runSetup,
       run: options.openSetup
+    })
+    return
+  }
+  if (error instanceof CloudAIUnavailableError) {
+    options.reportError(options.messages.value.cloudUnavailable, {
+      label: options.messages.value.openSettings,
+      run: options.openModelSettings
     })
     return
   }

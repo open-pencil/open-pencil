@@ -8,7 +8,13 @@ import type {
   StyleRun,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
-import { parseCSSColor, parseCSSNumber } from '@open-pencil/scene-graph/css'
+import {
+  parseCSSColor,
+  parseCSSFontFamily,
+  parseCSSLetterSpacing,
+  parseCSSLineHeight,
+  parseCSSNumber
+} from '@open-pencil/scene-graph/css'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, mergedStyle, pickStyle } from './css-values'
@@ -105,20 +111,22 @@ export function characterStyleFromCSS(
   base: CSSCharacterStyle
 ): CSSCharacterStyle {
   const fills = colorToFillFromCSS(pickStyle(style, 'color'))
-  const family = pickStyle(style, 'font-family')?.split(',')[0]?.replaceAll('"', '').trim()
+  const family = parseCSSFontFamily(pickStyle(style, 'font-family'))
   const decorationColor = pickStyle(style, 'text-decoration-color')
   const decorationFills = parseCSSColor(decorationColor) ? colorToFillFromCSS(decorationColor) : []
   const line = pickStyle(style, 'text-decoration-line')
   const fontStyle = pickStyle(style, 'font-style')
   const lineHeight = pickStyle(style, 'line-height')
+  // `normal` is automatic, a null; a value CSS writes some other way keeps the base.
+  const parsedLineHeight = parseCSSLineHeight(lineHeight)
   const textTransform = pickStyle(style, 'text-transform')
   return {
     fontFamily: family || base.fontFamily,
     fontSize: parseCSSNumber(pickStyle(style, 'font-size')) ?? base.fontSize,
     fontWeight: parseCSSNumber(pickStyle(style, 'font-weight')) ?? base.fontWeight,
     italic: fontStyle === undefined ? base.italic : fontStyle === 'italic',
-    letterSpacing: pixels(pickStyle(style, 'letter-spacing')) ?? base.letterSpacing,
-    lineHeight: lineHeight === 'normal' ? null : (pixels(lineHeight) ?? base.lineHeight),
+    letterSpacing: parseCSSLetterSpacing(pickStyle(style, 'letter-spacing')) ?? base.letterSpacing,
+    lineHeight: parsedLineHeight === undefined ? base.lineHeight : parsedLineHeight,
     fills: fills.length > 0 ? fills : base.fills,
     textDecoration: line === undefined ? base.textDecoration : decorationLine(line),
     textDecorationStyle:

@@ -14,7 +14,8 @@ import {
   normalizeSVGPaint,
   num,
   opacityValue,
-  presentationFor
+  presentationFor,
+  presentationVisible
 } from './svg/presentation'
 import { elementLayer, type Scope, type Traversal } from './svg/scope'
 import { textInfo } from './svg/text'
@@ -193,8 +194,14 @@ function collectClipPath(
   )
   return {
     id: match[1],
-    paths: paths.map(({ d, fillRule, transform }) => ({ d, fillRule, transform })),
-    units
+    paths: paths.map((path) => ({
+      d: path.d,
+      fillRule: path.fillRule,
+      transform: path.transform,
+      visible: isSVGPathShown(path)
+    })),
+    units,
+    visible: presentationVisible(presentationFor(target, DEFAULT_PRESENTATION))
   }
 }
 
@@ -305,7 +312,7 @@ export function extractPathsFromElements(
   const root = svgDocument.documentElement
   if (!root) return []
   appendSVGElement(svgDocument, root, { type: 'svg', props: rootProps, children: elements })
-  return collectDocument(root).paths
+  return collectDocument(root).paths.filter(isSVGPathShown)
 }
 
 export function extractSVGContent(svgBody: string): SVGContent {
@@ -313,8 +320,14 @@ export function extractSVGContent(svgBody: string): SVGContent {
   return root ? collectDocument(root) : { paths: [], texts: [] }
 }
 
+/** Whether a shape shows: a hidden element hides everything in it, as a hidden layer does. */
+export function isSVGPathShown(path: Pick<IconPathInfo, 'elements'>): boolean {
+  return path.elements.every((element) => element.visible)
+}
+
+/** The shapes an SVG shows, for drawing it as one icon rather than importing its layers. */
 export function extractPaths(svgBody: string): IconPathInfo[] {
-  return extractSVGContent(svgBody).paths
+  return extractSVGContent(svgBody).paths.filter(isSVGPathShown)
 }
 
 export function buildIconData(

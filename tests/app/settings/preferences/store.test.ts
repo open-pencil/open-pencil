@@ -84,6 +84,13 @@ describe('parseAppPreferences', () => {
     )
   })
 
+  test('keeps a listed zoom speed and defaults any other value to 1', () => {
+    expect(parseAppPreferences({ navigation: { zoomSpeed: 0.25 } }).navigation.zoomSpeed).toBe(0.25)
+    for (const zoomSpeed of [undefined, '0.5', 0, 0.3, 5, Number.NaN]) {
+      expect(parseAppPreferences({ navigation: { zoomSpeed } }).navigation.zoomSpeed).toBe(1)
+    }
+  })
+
   test('keeps comment view choices and drops an unknown sort order', () => {
     const { comments } = parseAppPreferences({
       comments: { showOnCanvas: false, showResolved: true, sort: 'loudest' }

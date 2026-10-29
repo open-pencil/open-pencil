@@ -1,4 +1,5 @@
 import { useLocalStorage } from '@vueuse/core'
+import { basename } from 'pathe'
 import { computed } from 'vue'
 
 import {
@@ -38,7 +39,7 @@ export type RecentDocument = RecentLocalDocument | RecentStorageDocument
 export const recentDocuments = useLocalStorage<RecentDocument[]>(RECENT_DOCUMENTS_STORAGE_KEY, [])
 
 function fileName(path: string): string {
-  return path.split(/[\\/]/).pop() ?? path
+  return basename(path) || path
 }
 
 function localDocumentId(path: string): string {

@@ -1,0 +1,1 @@
+- Connector ends attach as in Figma Design: to the nearest side inside a layer, only within 8 px outside it, pinned at the exact point with ⌘ or Ctrl, and to the centre with Shift.

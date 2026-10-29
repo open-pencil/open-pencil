@@ -48,7 +48,8 @@ export function useCanvas(
     setCanvasKit: (value) => {
       ck = value
     },
-    onReady: options?.onReady
+    onReady: options?.onReady,
+    onFailed: options?.onFailed
   })
 
   // The scene surface plays shaders in preview; an overlay surface draws none.

@@ -1,0 +1,1 @@
+- Design JSX `<Text>` and `<Span>` take `fontFeatures`, `fontVariations`, and `lang`, and `<Text>` takes `fontOpticalSizing`; JSX export keeps OpenType features, variable-font axes, a fixed optical size, and language instead of dropping them.

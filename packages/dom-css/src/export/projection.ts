@@ -10,7 +10,15 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/directio
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { cssColor, dropShadowToCSS, effectsToCSS, fillToCSS, strokeColorToCSS } from './css'
+import {
+  cssColor,
+  dropShadowToCSS,
+  effectsToCSS,
+  fillToCSS,
+  letterSpacingToCSS,
+  lineHeightToCSS,
+  strokeColorToCSS
+} from './css'
 import { addGridContainer, addGridPlacement } from './grid'
 import { textCaseToCSS, textElementContent } from './text'
 
@@ -357,9 +365,12 @@ function styleFromTextNode(
   style['font-size'] = css('fontSize', px(node.fontSize))
   style['font-weight'] = String(node.fontWeight)
   if (node.italic) style['font-style'] = 'italic'
-  if (node.lineHeight !== null) style['line-height'] = css('lineHeight', px(node.lineHeight))
-  if (node.letterSpacing !== 0)
-    style['letter-spacing'] = css('letterSpacing', px(node.letterSpacing))
+  if (node.lineHeight !== null) {
+    style['line-height'] = css('lineHeight', lineHeightToCSS(node.lineHeight))
+  }
+  if (node.letterSpacing.value !== 0) {
+    style['letter-spacing'] = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
+  }
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))

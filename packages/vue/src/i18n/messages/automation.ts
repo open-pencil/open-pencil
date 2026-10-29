@@ -67,12 +67,11 @@ export const automationMessageDefaults = {
   addConnection: 'Add connection',
   addServerConnection: 'Add MCP connection',
   editConnection: 'Edit MCP connection',
-  connectionEditorDescription: 'Configure a Streamable HTTP server and optional authentication.',
   connectionName: 'Connection name',
   connectionNameHint: 'Use a unique name, up to 80 characters. The name open-pencil is reserved.',
   connectionNameInvalid: 'Choose a unique name of at most 80 characters, other than open-pencil.',
   serverURLHint:
-    'Use HTTPS. HTTP is allowed only for localhost or a loopback address. Do not include credentials in the URL.',
+    'The server must support Streamable HTTP. Use HTTPS. HTTP is allowed only for localhost or a loopback address. Do not include credentials in the URL.',
   serverURL: 'MCP server URL',
   enableConnection: 'Enable for ACP agents',
   bearerAuthentication: 'Use bearer authentication',

@@ -6,7 +6,12 @@ import { FIXTURES } from '#core-tests/helpers/paths'
 import { once, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { createIconifyProvider } from '@open-pencil/core/icons'
+import {
+  createIconifyProvider,
+  createIconSetsProvider,
+  createMaterialSymbolsProvider,
+  MATERIAL_SYMBOLS_PREFIXES
+} from '@open-pencil/core/icons'
 import { IORegistry, penFormat } from '@open-pencil/core/io'
 import {
   comparePNGs,
@@ -53,18 +58,41 @@ const iconSetSchema = v.pipe(
 const manifest = v.parse(manifestSchema, await Bun.file(join(ORACLES, 'manifest.json')).text())
 const source = await Bun.file(join(ORACLES, manifest.document)).text()
 
-/** Icons from the recorded Iconify sets only. */
+const googleIndexSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.string()))
+
+/** Google's recorded answers for the Material Symbols the probes draw, served back by URL. */
+async function recordedGoogle(input: RequestInfo | URL): Promise<Response> {
+  const index = v.parse(
+    googleIndexSchema,
+    await Bun.file(join(ORACLES, 'google', 'index.json')).text()
+  )
+  const file = index[input instanceof Request ? input.url : String(input)]
+  if (!file) return new Response(null, { status: 404 })
+  return new Response(await Bun.file(join(ORACLES, 'google', file)).arrayBuffer())
+}
+
+/** Icons from the recorded Iconify sets and Google answers only. */
 function recordedIcons() {
-  return createIconifyProvider({
-    async fetchCollection(prefix, names) {
-      const file = Bun.file(join(ORACLES, 'iconify', `${prefix}.json`))
-      if (!(await file.exists())) throw new Error(`No "${prefix}" icons were recorded`)
-      const set = v.parse(iconSetSchema, await file.text())
-      return { ...set, icons: pick(set.icons, names) }
-    },
-    search: () => Promise.resolve({ icons: [], total: 0, collections: {} }),
-    collections: () => Promise.resolve([]),
-    collectionIcons: () => Promise.resolve([])
+  return createIconSetsProvider({
+    sources: [
+      {
+        prefixes: MATERIAL_SYMBOLS_PREFIXES,
+        provider: createMaterialSymbolsProvider(
+          Object.assign(recordedGoogle, { preconnect: fetch.preconnect })
+        )
+      }
+    ],
+    fallback: createIconifyProvider({
+      async fetchCollection(prefix, names) {
+        const file = Bun.file(join(ORACLES, 'iconify', `${prefix}.json`))
+        if (!(await file.exists())) throw new Error(`No "${prefix}" icons were recorded`)
+        const set = v.parse(iconSetSchema, await file.text())
+        return { ...set, icons: pick(set.icons, names) }
+      },
+      search: () => Promise.resolve({ icons: [], total: 0, collections: {} }),
+      collections: () => Promise.resolve([]),
+      collectionIcons: () => Promise.resolve([])
+    })
   })
 }
 

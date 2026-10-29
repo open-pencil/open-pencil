@@ -11,8 +11,7 @@
   },
   "exports": {
     "./contract": "./src/contract/index.ts",
-    "./client": "./src/client.ts",
-    "./email": "./src/waitlist/email/layout.ts"
+    "./client": "./src/client.ts"
   },
   "scripts": {
     "dev": "wrangler dev",
@@ -23,6 +22,7 @@
   },
   "dependencies": {
     "@internationalized/date": "^3.12.3",
+    "@open-pencil/cloud": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",

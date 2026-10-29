@@ -1,8 +1,9 @@
 import { promiseTimeout } from '@vueuse/core'
+import { filename } from 'pathe/utils'
 import { shallowRef, computed, triggerRef } from 'vue'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { findFigThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -18,6 +19,7 @@ import { applyImportedDocument } from '@/app/document/io/imported-document'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { setActiveEditorStore } from '@/app/editor/active-store'
+import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
@@ -107,35 +109,41 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   return tab
 }
 
+/**
+ * Shows Home, the one tab pinned first that never closes and never turns into a design, as in
+ * Figma's desktop app; it is made the first time it is asked for.
+ */
 export function createHomeTab(): Tab {
+  const existing = tabsRef.value.find((tab) => tab.kind === 'home')
+  if (existing) {
+    activateTab(existing)
+    return existing
+  }
   const tab: Tab = { id: generateTabId(), store: createEditorStore(), kind: 'home' }
-  tabsRef.value = [...tabsRef.value, tab]
+  tabsRef.value = [tab, ...tabsRef.value]
   activateTab(tab)
   return tab
 }
 
-export function leaveHome(tabId: string): void {
-  const tabIndex = tabsRef.value.findIndex((candidate) => candidate.id === tabId)
-  if (tabIndex === -1) return
-  const tab = tabsRef.value[tabIndex]
-  if (tab.kind !== 'home') return
-  tabsRef.value = tabsRef.value.with(tabIndex, { ...tab, kind: 'document' })
-}
-
-export function createDocumentInCurrentTab(): Tab {
-  const current = activeTab.value
-  if (current?.kind !== 'home') return createTab()
-  leaveHome(current.id)
-  return getTabById(current.id) ?? current
-}
-
 export function showNewTab(): void {
-  const homeTab = tabsRef.value.find((tab) => tab.kind === 'home')
-  if (homeTab) {
-    switchTab(homeTab.id)
-    return
-  }
   createHomeTab()
+}
+
+/** `tabs` with Home first: as they are when it is, with their Home moved there, or `home()` added. */
+export function withHomePinned(tabs: readonly Tab[], home: () => Tab): readonly Tab[] {
+  if (tabs[0]?.kind === 'home') return tabs
+  const existing = tabs.find((tab) => tab.kind === 'home')
+  return existing ? [existing, ...tabs.filter((tab) => tab !== existing)] : [home(), ...tabs]
+}
+
+/** Pins Home first when it is missing, leaving the tab in front where it is. */
+export function ensureHomeTab(): void {
+  const pinned = withHomePinned(tabsRef.value, () => ({
+    id: generateTabId(),
+    store: createEditorStore(),
+    kind: 'home'
+  }))
+  if (pinned !== tabsRef.value) tabsRef.value = [...pinned]
 }
 
 function activateTab(tab: Tab) {
@@ -158,6 +166,24 @@ export function switchTab(tabId: string): boolean {
 }
 
 /**
+ * Activates the tab `step` places from the one in front, wrapping around the ends, as Figma's
+ * ⌃Tab and ⌃⇧Tab do; Home counts, so the tab after the last is Home.
+ */
+export function switchAdjacentTab(step: 1 | -1): void {
+  const tabs = tabsRef.value
+  if (tabs.length < 2) return
+  const index = tabs.findIndex((tab) => tab.id === activeTabId.value)
+  activateTab(tabs[(index + step + tabs.length) % tabs.length])
+}
+
+function disposeTabStore(store: EditorStore): void {
+  coverThumbnailListeners.get(store)?.()
+  coverThumbnailListeners.delete(store)
+  store.preparationController.dispose()
+  store.dispose()
+}
+
+/**
  * Close a tab, asking whether to save unsaved changes. Pass `unsaved` to decide without
  * asking, as automation must: nobody may be there to answer.
  */
@@ -166,7 +192,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
-  if (closingTab.kind === 'home' && tabsRef.value.length === 1) return
+  if (closingTab.kind === 'home') return
   const choice = unsaved
     ? await confirmDocumentClose(closingTab.store, async () => unsaved)
     : await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
@@ -175,12 +201,16 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   else await closingTab.store.persistRecoveryNow()
   if (!tabsRef.value.includes(closingTab)) return
   if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
-  const wasActive = activeTabId.value === tabId
-  coverThumbnailListeners.get(closingTab.store)?.()
-  coverThumbnailListeners.delete(closingTab.store)
-  closingTab.store.preparationController.dispose()
-  closingTab.store.dispose()
-  tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
+  removeTab(closingTab)
+}
+
+/** Takes a tab out of the window and disposes its store, showing a neighbour or a new Home. */
+function removeTab(closingTab: Tab): void {
+  const idx = tabsRef.value.indexOf(closingTab)
+  if (idx === -1) return
+  const wasActive = activeTabId.value === closingTab.id
+  disposeTabStore(closingTab.store)
+  tabsRef.value = tabsRef.value.filter((t) => t !== closingTab)
 
   if (tabsRef.value.length === 0) {
     createHomeTab()
@@ -203,19 +233,53 @@ function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
-function reusableTabStore(): { store: EditorStore; created: boolean } {
+/**
+ * A tab a document opens in: a new one, or an untouched empty design in front; never Home. `from`
+ * is the tab in front when the open began, which comes back to the front if the open fails.
+ */
+type OpeningTab = { store: EditorStore; created: boolean; from: Tab | undefined }
+
+function reusableTabStore(): OpeningTab {
   const current = activeTab.value
-  if (current?.kind === 'home') {
-    leaveHome(current.id)
-    return { store: current.store, created: false }
-  }
+  const source = current?.store.getSourceIdentity()
   const isUntouched =
-    current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-  if (isUntouched) {
-    leaveHome(current.id)
-    return { store: current.store, created: false }
-  }
-  return { store: createTab().store, created: true }
+    current?.kind === 'document' &&
+    current.store.state.documentName === 'Untitled' &&
+    !current.store.undo.canUndo &&
+    current.store.getStorageBinding() === null &&
+    source?.path === null &&
+    source.handle === null
+  if (current && isUntouched) return { store: current.store, created: false, from: current }
+  return { store: createTab().store, created: true, from: current }
+}
+
+/**
+ * After a document failed to open, a tab opened for it closes and the tab in front before it, such
+ * as Home, comes back; an empty design it reused stays. `keepRecovery` leaves the recovery copy,
+ * as a failed restore must: that copy is the work being restored.
+ */
+async function releaseOpeningTab(
+  opening: OpeningTab,
+  { keepRecovery = false }: { keepRecovery?: boolean } = {}
+): Promise<void> {
+  if (!opening.created) return
+  const tab = getTabForStore(opening.store)
+  if (!tab) return
+  // The tab goes even when the recovery copy stays behind, which the next start offers again;
+  // the open's own error is the one to report.
+  if (!keepRecovery) await discardFailedRecovery(tab.store)
+  const wasActive = activeTabId.value === tab.id
+  removeTab(tab)
+  if (wasActive && opening.from && tabsRef.value.includes(opening.from)) activateTab(opening.from)
+}
+
+async function discardFailedRecovery(store: EditorStore): Promise<void> {
+  await store.discardRecovery().catch((error: unknown) => {
+    console.warn(
+      '[Tabs] Failed to discard the recovery copy of a document that failed to open',
+      error
+    )
+  })
 }
 
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
@@ -224,10 +288,10 @@ async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGra
   const layOut = (pageId: string) =>
     imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
   if (firstPageId) layOut(firstPageId)
-  const coverPageId = findFigThumbnailPageId(imported.getPages())
-  if (coverPageId && coverPageId !== firstPageId) {
-    populateFigPage(imported, coverPageId)
-    layOut(coverPageId)
+  const thumbnailPageId = figThumbnailPageId(imported.getPages())
+  if (thumbnailPageId && thumbnailPageId !== firstPageId) {
+    populateFigPage(imported, thumbnailPageId)
+    layOut(thumbnailPageId)
   }
   return imported
 }
@@ -253,26 +317,26 @@ async function showImportedGraph(
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
-  const coverPageId = findFigThumbnailPageId(store.graph.getPages())
-  if (!coverPageId) return
+  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
+  if (!thumbnailPageId) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }
   const renderer = store.renderer
   if (!renderer) {
-    console.warn('[Recent files] Cover thumbnail skipped because the renderer was unavailable')
+    console.warn('[Recent files] Thumbnail skipped because the renderer was unavailable')
     return
   }
   const bytes = renderThumbnail(
     renderer.ck,
     renderer,
     store.graph,
-    coverPageId,
+    thumbnailPageId,
     RECENT_FILE_THUMBNAIL_SIZE,
     RECENT_FILE_THUMBNAIL_SIZE
   )
   if (!bytes) {
-    console.warn('[Recent files] Cover thumbnail skipped because the Cover page was empty')
+    console.warn('[Recent files] Thumbnail skipped because its page was empty')
     return
   }
   await cacheRecentFileThumbnail(path, bytes)
@@ -280,14 +344,14 @@ async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<vo
 
 function watchOpenedFigCover(path: string, store: EditorStore): void {
   coverThumbnailListeners.get(store)?.()
-  const coverPageId = findFigThumbnailPageId(store.graph.getPages())
-  if (!coverPageId) return
+  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
+  if (!thumbnailPageId) return
   coverThumbnailListeners.set(
     store,
     store.onEditorEvent('page:changed', (pageId) => {
-      if (pageId !== coverPageId) return
+      if (pageId !== thumbnailPageId) return
       void cacheOpenedFigCover(path, store).catch((error) => {
-        console.warn('[Recent files] Failed to cache the Cover thumbnail', error)
+        console.warn('[Recent files] Failed to cache the thumbnail', error)
       })
     })
   )
@@ -393,7 +457,8 @@ export async function openStorageDocumentInNewTab(
     return existing.store
   }
 
-  const { store, created } = reusableTabStore()
+  const opening = reusableTabStore()
+  const { store } = opening
   store.state.documentName = document.name
   const load = store.preparationController.begin({
     kind: 'storage-open',
@@ -420,10 +485,7 @@ export async function openStorageDocumentInNewTab(
         })
       )
     }
-    if (created) {
-      const tab = getTabForStore(store)
-      if (tab) await closeTab(tab.id)
-    }
+    await releaseOpeningTab(opening)
     throw error
   } finally {
     if (succeeded) load.complete()
@@ -454,14 +516,15 @@ export async function openFileInNewTab(
       if (path?.toLowerCase().endsWith('.fig')) {
         watchOpenedFigCover(path, existing.store)
         void cacheOpenedFigCover(path, existing.store).catch((error) => {
-          console.warn('[Recent files] Failed to cache the Cover thumbnail', error)
+          console.warn('[Recent files] Failed to cache the thumbnail', error)
         })
       }
       return { kind: 'existing' as const, store: existing.store }
     }
 
-    const { store, created } = reusableTabStore()
-    store.state.documentName = file.name.replace(/\.[^.]+$/i, '')
+    const opening = reusableTabStore()
+    const { store } = opening
+    store.state.documentName = filename(file.name) ?? file.name
     const load = store.preparationController.begin({
       kind: isDOMImportFile(file) ? 'dom-import' : 'document-open',
       subject: file.name
@@ -471,7 +534,7 @@ export async function openFileInNewTab(
     void completion.promise.catch(() => undefined)
     const pendingOpen = { completion: completion.promise, identity, store }
     fileOpenCoordinator.add(pendingOpen)
-    return { kind: 'owner' as const, completion, pendingOpen, store, created, load }
+    return { kind: 'owner' as const, completion, pendingOpen, store, opening, load }
   })
 
   if (decision.kind === 'existing') return decision.store
@@ -480,7 +543,7 @@ export async function openFileInNewTab(
     return decision.store
   }
 
-  const { completion, pendingOpen, store, created, load } = decision
+  const { completion, pendingOpen, store, opening, load } = decision
   let succeeded = false
   try {
     if (isDOMImportFile(file)) {
@@ -500,12 +563,15 @@ export async function openFileInNewTab(
       imported = await readFigForTab(file, load.signal)
       sourceFormat = 'fig'
     } else {
-      const result = await io.readDocument({
-        name: file.name,
-        mimeType: file.type || undefined,
-        data: new Uint8Array(await file.arrayBuffer()),
-        readAsset: documentAssetReader(path)
-      })
+      const result = await io.readDocument(
+        {
+          name: file.name,
+          mimeType: file.type || undefined,
+          data: new Uint8Array(await file.arrayBuffer()),
+          readAsset: documentAssetReader(path)
+        },
+        { icons: appIcons }
+      )
       imported = result.graph
       sourceFormat = result.sourceFormat
     }
@@ -521,7 +587,7 @@ export async function openFileInNewTab(
     )
     if (isFig && path) {
       void cacheOpenedFigCover(path, store).catch((error) => {
-        console.warn('[Recent files] Failed to cache the Cover thumbnail', error)
+        console.warn('[Recent files] Failed to cache the thumbnail', error)
       })
     }
     completion.resolve(undefined)
@@ -530,10 +596,7 @@ export async function openFileInNewTab(
   } catch (error) {
     failPreparation(load, 'decode-failed', error)
     completion.reject(error)
-    if (created) {
-      const tab = getTabForStore(store)
-      if (tab) await closeTab(tab.id)
-    }
+    await releaseOpeningTab(opening)
     throw error
   } finally {
     if (succeeded) load.complete()
@@ -553,7 +616,8 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
   const snapshot = await getRecoveryStore().read(id)
   if (!snapshot) throw new Error('Recovery snapshot is no longer available')
 
-  const { store } = reusableTabStore()
+  const opening = reusableTabStore()
+  const { store } = opening
   const load = store.preparationController.begin({
     kind: 'recovery-restore',
     subject: snapshot.documentName
@@ -580,6 +644,7 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
     succeeded = true
   } catch (error) {
     failPreparation(load, 'decode-failed', error)
+    await releaseOpeningTab(opening, { keepRecovery: true })
     throw error
   } finally {
     if (succeeded) load.complete()
@@ -605,9 +670,7 @@ export function useTabsStore() {
     tabs: allTabs,
     activeTabId,
     createHomeTab,
-    createDocumentInCurrentTab,
     createTab,
-    leaveHome,
     switchTab,
     closeTab,
     getActiveTabId,

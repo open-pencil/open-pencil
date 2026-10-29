@@ -70,6 +70,30 @@ describe('replaceNodeWithVectorFrame', () => {
     expect(editor.graph.getNode(source.id)).toBeUndefined()
   })
 
+  test('leaves out paths the SVG hides', () => {
+    const editor = createEditor()
+    const page = expectDefined(editor.graph.getPages()[0], 'page')
+    const source = editor.graph.createNode('RECTANGLE', page.id, { width: 100, height: 100 })
+    const vectorized = expectDefined(
+      svgToVectorPaths(
+        `<svg viewBox="0 0 100 100">
+          <path d="M0 0 H100 V100 H0 Z" visibility="hidden"/>
+          <path d="M25 25 H75 V75 H25 Z" fill="#336699"/>
+        </svg>`,
+        { width: 100, height: 100 }
+      ),
+      'vectorized SVG'
+    )
+
+    const frameId = expectDefined(
+      editor.replaceNodeWithVectorFrame(source.id, vectorized),
+      'replacement frame'
+    )
+    const frame = getNodeOrThrow(editor.graph, frameId)
+    expect(frame).toMatchObject({ x: 25, y: 25, width: 50, height: 50 })
+    expect(frame.childIds).toHaveLength(1)
+  })
+
   test('preserves the coordinate box and rotation of rotated images', () => {
     const editor = createEditor()
     const page = expectDefined(editor.graph.getPages()[0], 'page')

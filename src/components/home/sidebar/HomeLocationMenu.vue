@@ -9,14 +9,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { menu } from '@/components/ui/menu/menu'
-import { homeLocationMenu } from '@/theme/home/location-menu'
+import homeLocationMenuTheme from '@/theme/home/location-menu'
 
 import type { HomeCloudAccount, HomeLocation } from '../cloud/types'
+
+const homeLocationMenu = tv(homeLocationMenuTheme)
 
 /**
  * The home tab's locations on a phone, where the sidebar does not fit: the current one as a

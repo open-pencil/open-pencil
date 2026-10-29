@@ -49,6 +49,10 @@ const resultMessage = computed(() => {
       return ai.value.connectionTestBrowserNetworkFailed
     case 'network':
       return ai.value.connectionTestNetworkFailed
+    case 'cloud-unavailable':
+      return ai.value.cloudAIUnavailable
+    case 'cloud-credits-exhausted':
+      return ai.value.connectionTestCloudCreditsExhausted
     default:
       return ai.value.connectionTestUnknownFailed
   }
@@ -62,6 +66,7 @@ const statusStyles = computed(() => tv(statusTheme)({ tone: resultTone.value }))
 <template>
   <div class="flex flex-col gap-1">
     <AppButton
+      class="self-start"
       variant="outline"
       data-test-id="provider-test-connection"
       :loading="isTesting"

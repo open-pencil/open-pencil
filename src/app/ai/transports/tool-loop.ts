@@ -1,6 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { createUIMessageStream, DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
 import type { ChatTransport, LanguageModel, ToolExecutionOptions, UIMessage } from 'ai'
+import { toMerged } from 'es-toolkit'
 
 import type { AIProviderID, ReasoningEffort } from '@open-pencil/core/constants'
 
@@ -8,6 +9,7 @@ import { resumableTransport } from '@/app/ai/chat/history/continuation'
 import { maxAgentSteps } from '@/app/ai/chat/preferences'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import type { RunRecorder, RunRecording } from '@/app/ai/chat/trace/recorder'
+import { promptCachingOptions } from '@/app/ai/models/caching'
 import { reasoningCallSettings, type AIProviderOptions } from '@/app/ai/models/reasoning/settings'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createRunPreview } from '@/app/ai/preview/run'
@@ -35,29 +37,9 @@ export type ToolLoopTransportOptions = {
   recorder?: RunRecorder
 }
 
-const ANTHROPIC_CACHE_CONTROL = {
-  anthropic: { cacheControl: { type: 'ephemeral' } }
-} as const
-
-function supportsAnthropicCaching(providerID: AIProviderID, modelID: string): boolean {
-  return (
-    providerID === 'anthropic' ||
-    providerID === 'anthropic-compatible' ||
-    (providerID === 'openrouter' && modelID.startsWith('anthropic/'))
-  )
-}
-
-function mergeProviderOptions(
-  cacheOptions: typeof ANTHROPIC_CACHE_CONTROL | undefined,
-  reasoningOptions: AIProviderOptions | undefined
-): AIProviderOptions | undefined {
-  if (!cacheOptions && !reasoningOptions) return undefined
-  return { ...cacheOptions, ...reasoningOptions }
-}
-
 function callSettings(
   providerID: AIProviderID,
-  cacheOptions: typeof ANTHROPIC_CACHE_CONTROL | undefined,
+  cacheOptions: AIProviderOptions | undefined,
   thinkingLevel: ThinkingLevel,
   minReasoningEffort: ReasoningEffort | undefined
 ) {
@@ -66,7 +48,12 @@ function callSettings(
     thinkingLevel,
     minReasoningEffort
   )
-  return { reasoning, providerOptions: mergeProviderOptions(cacheOptions, providerOptions) }
+  // OpenRouter reads caching and reasoning from the same namespace, so merge them per key.
+  const merged =
+    cacheOptions || providerOptions
+      ? toMerged(cacheOptions ?? {}, providerOptions ?? {})
+      : undefined
+  return { reasoning, providerOptions: merged }
 }
 
 export function createToolLoopTransport({
@@ -93,9 +80,7 @@ export function createToolLoopTransport({
     preview.delta(toolCallId, inputTextDelta)
   renderTool.onInputAvailable = ({ toolCallId }: ToolExecutionOptions<unknown>) =>
     preview.finish(toolCallId)
-  const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
-    ? ANTHROPIC_CACHE_CONTROL
-    : undefined
+  const cacheProviderOptions = promptCachingOptions(providerID, effectiveModelID)
   let recording: RunRecording | undefined
   const agent = new ToolLoopAgent({
     model,

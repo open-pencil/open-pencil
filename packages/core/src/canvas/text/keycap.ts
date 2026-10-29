@@ -1,7 +1,7 @@
 import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
 
+import type { OutlineCommand } from '#core/text/font/glyphs'
 import { KEYCAP_FRAME } from '#core/text/keycap'
-import type { OutlineCommand } from '#core/text/opentype'
 
 import { appendOutlineCommand } from './outline-path'
 

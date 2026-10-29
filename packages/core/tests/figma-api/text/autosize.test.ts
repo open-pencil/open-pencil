@@ -1,19 +1,20 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { fontManager } from '#core/text/fonts'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { fontManager } from '#core/text/fonts'
 
 // Recorded with the same script in live Figma on 2026-10-07, Inter Regular. Line metrics round
 // differently by up to a pixel.
 
 beforeAll(async () => {
-  fontManager.markLoaded(
+  await fontManager.markLoaded(
     'Inter',
     'Regular',
-    expectDefined(await fontManager.fetchBundledFont('/Inter-Regular.ttf'), 'bundled Inter font')
+    expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'bundled Inter font')
   )
 })
 

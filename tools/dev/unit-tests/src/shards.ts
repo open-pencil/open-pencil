@@ -45,18 +45,14 @@ export const UNIT_TEST_GROUPS = {
   ],
   dom: [
     'packages/emit/tests',
+    'packages/drawio/tests',
+    'packages/mermaid/tests',
     'packages/design-jsx/tests',
     'packages/dom-css/tests',
     'packages/pen/tests',
     'tests/engine/dom-css'
   ],
-  fig: [
-    'packages/fig/tests',
-    'packages/kiwi/tests',
-    'tests/engine/figma',
-    'tests/engine/io',
-    'tests/engine/kiwi'
-  ],
+  fig: ['packages/fig/tests', 'packages/kiwi/tests', 'tests/engine/io', 'tests/engine/kiwi'],
   mcp: ['packages/mcp/tests', 'tests/engine/mcp'],
   render: ['tests/engine/render'],
   'scene-graph': [

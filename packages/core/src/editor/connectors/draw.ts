@@ -2,7 +2,11 @@ import type { ConnectorEndpoint } from '@open-pencil/scene-graph'
 import { createConnector, layoutConnector } from '@open-pencil/scene-graph/connectors'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { connectorAttachment, type ConnectorTarget } from '#core/editor/connectors/attach'
+import {
+  connectorAttachment,
+  type AttachModifiers,
+  type ConnectorTarget
+} from '#core/editor/connectors/attach'
 import type { NodePreview } from '#core/editor/node-preview'
 import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
@@ -30,33 +34,34 @@ export function createConnectorDrawActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
-  function attach(point: Vector, connectorId?: string) {
+  function attach(point: Vector, modifiers: AttachModifiers, connectorId?: string) {
     return connectorAttachment(ctx.graph, ctx.state.currentPageId, point, {
       zoom: ctx.state.zoom,
-      connectorId
+      connectorId,
+      ...modifiers
     })
   }
 
   /** Outlines the layer a connector end at `point` would attach to; a clicked start follows. */
-  function connectorHover(x: number, y: number) {
-    if (draft?.clicked) connectorDrag(x, y)
-    else setTarget(attach({ x, y }).target)
+  function connectorHover(x: number, y: number, modifiers: AttachModifiers = {}) {
+    if (draft?.clicked) connectorDrag(x, y, modifiers)
+    else setTarget(attach({ x, y }, modifiers).target)
   }
 
   /** Starts a connector at `point`, or ends the one a click started. */
-  function connectorBegin(x: number, y: number) {
+  function connectorBegin(x: number, y: number, modifiers: AttachModifiers = {}) {
     if (draft) return
     draft = {
-      start: attach({ x, y }).endpoint,
+      start: attach({ x, y }, modifiers).endpoint,
       connectorId: null,
       previousSelection: new Set(ctx.state.selectedIds),
       clicked: false
     }
   }
 
-  function connectorDrag(x: number, y: number) {
+  function connectorDrag(x: number, y: number, modifiers: AttachModifiers = {}) {
     if (!draft) return
-    const { endpoint, target } = attach({ x, y }, draft.connectorId ?? undefined)
+    const { endpoint, target } = attach({ x, y }, modifiers, draft.connectorId ?? undefined)
     setTarget(target)
     const graph = ctx.graph
     if (!draft.connectorId) {
@@ -82,13 +87,13 @@ export function createConnectorDrawActions(ctx: EditorContext) {
    * Ends the connector at `point`. A release where the press was, with nothing drawn yet, leaves
    * the start waiting for a second click.
    */
-  function connectorRelease(x: number, y: number, moved: boolean) {
+  function connectorRelease(x: number, y: number, moved: boolean, modifiers: AttachModifiers = {}) {
     if (!draft) return
     if (!draft.connectorId && !moved && !draft.clicked) {
       draft.clicked = true
       return
     }
-    connectorDrag(x, y)
+    connectorDrag(x, y, modifiers)
     const { connectorId, previousSelection } = draft
     draft = null
     setTarget(null)
@@ -121,9 +126,9 @@ export function createConnectorDrawActions(ctx: EditorContext) {
 type BeginNodePreview = (label?: string) => NodePreview
 
 /**
- * Dragging an end of a selected connector, as FigJam does: the end follows the pointer, attaches
- * to the layer under it by the magnet its position picks, and the connector routes as it goes.
- * One undo step puts the end back.
+ * Dragging an end of a selected connector, as Figma does: the end follows the pointer, attaches
+ * to the layer under it by the magnet its position picks, or pinned or centred as the keys held
+ * say, and the connector routes as it goes. One undo step puts the end back.
  */
 export function createConnectorEndpointActions(
   ctx: EditorContext,
@@ -144,7 +149,7 @@ export function createConnectorEndpointActions(
     drag = { connectorId, end, joined, preview: beginNodePreview('Move connector end') }
   }
 
-  function connectorEndpointDrag(x: number, y: number) {
+  function connectorEndpointDrag(x: number, y: number, modifiers: AttachModifiers = {}) {
     if (!drag) return
     const connector = ctx.graph.getNode(drag.connectorId)
     if (!connector) return
@@ -155,7 +160,8 @@ export function createConnectorEndpointActions(
       {
         zoom: ctx.state.zoom,
         straight: connector.connectorLineType === 'STRAIGHT',
-        connectorId: connector.id
+        connectorId: connector.id,
+        ...modifiers
       }
     )
     ctx.state.connectorTarget = target

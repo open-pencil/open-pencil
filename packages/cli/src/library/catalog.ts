@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
 
 import * as v from 'valibot'
@@ -13,13 +13,14 @@ import type {
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
+  encodeStoredLibraryRevision,
   librarySummarySchema,
   MAX_LIBRARY_REVISION_BYTES,
-  serializedLibraryRevisionSchema,
-  serializeLibraryRevision,
   storedLibraryLatestManifestSchema,
+  storedLibraryRevisionSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 
 const catalogPublicationQueues = new Map<string, Promise<void>>()
 
@@ -63,7 +64,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
         .summary.latestRevisionId
     const data = await this.#readJSON(
       `${libraryId}/revisions/${resolvedRevisionId}.json`,
-      serializedLibraryRevisionSchema,
+      storedLibraryRevisionSchema,
       MAX_LIBRARY_REVISION_BYTES
     )
     const revision = deserializeLibraryRevision(data)
@@ -89,7 +90,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
       const manifest = revision.manifest
       await this.#writeJSON(
         `${manifest.libraryId}/revisions/${manifest.revisionId}.json`,
-        serializeLibraryRevision(revision)
+        encodeStoredLibraryRevision(revision)
       )
       const summary: LibrarySummary = {
         libraryId: manifest.libraryId,
@@ -140,9 +141,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
 
   async #writeJSON(relative: string, value: unknown): Promise<void> {
     const path = this.#path(relative)
-    const temporaryPath = `${path}.${crypto.randomUUID()}.tmp`
     await mkdir(dirname(path), { recursive: true })
-    await writeFile(temporaryPath, JSON.stringify(value, null, 2))
-    await rename(temporaryPath, path)
+    await writeFileAtomic(path, JSON.stringify(value, null, 2))
   }
 }

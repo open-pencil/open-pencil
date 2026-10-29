@@ -8,7 +8,8 @@ import {
 
 export interface ModelProfileValidationContext {
   customModel: boolean
-  providerKind: 'api' | 'acp' | 'harness'
+  /** `cloud` is Cloud's AI service, which needs a workspace instead of a key. */
+  providerKind: 'api' | 'acp' | 'harness' | 'cloud'
   supportsCustomBaseURL: boolean
   design: boolean
   intent: 'save' | 'test'
@@ -25,7 +26,7 @@ export function modelProfileSchema(
   const modelField = context.customModel ? 'customModelID' : 'modelID'
   // Agents choose their own model, and Pi falls back to the default model set in Pi.
   const requiresAPI = context.providerKind === 'api'
-  const requiresModel = requiresAPI
+  const requiresModel = requiresAPI || context.providerKind === 'cloud'
   return v.pipe(
     v.object({
       name: context.intent === 'save' ? requiredSetting(messages.requiredField) : v.string(),
@@ -44,6 +45,10 @@ export function modelProfileSchema(
               v.check((value: boolean) => value, messages.requiredField)
             )
           : v.boolean(),
+      cloudWorkspace:
+        context.providerKind === 'cloud'
+          ? requiredSetting(messages.requiredField)
+          : v.optional(v.string()),
       tools: v.boolean()
     }),
     v.forward(

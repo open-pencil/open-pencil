@@ -6,7 +6,7 @@ import { isNodeFontLoaded } from '#core/canvas/text'
 import { fontManager } from '#core/text/fonts'
 
 describe('canvas text font readiness', () => {
-  test('requires the exact requested font weight before rendering text', () => {
+  test('requires the exact requested font weight before rendering text', async () => {
     const family = `ExactWeight_${Date.now()}`
     const node = createDefaultNode(() => 'text', 'TEXT', {
       text: 'Bold title',
@@ -16,10 +16,10 @@ describe('canvas text font readiness', () => {
       styleRuns: []
     })
 
-    fontManager.markLoaded(family, 'Regular', new ArrayBuffer(8))
+    await fontManager.markLoaded(family, 'Regular', new ArrayBuffer(8))
     expect(isNodeFontLoaded({} as Parameters<typeof isNodeFontLoaded>[0], node)).toBe(false)
 
-    fontManager.markLoaded(family, 'Bold', new ArrayBuffer(8))
+    await fontManager.markLoaded(family, 'Bold', new ArrayBuffer(8))
     expect(isNodeFontLoaded({} as Parameters<typeof isNodeFontLoaded>[0], node)).toBe(true)
   })
 })

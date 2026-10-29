@@ -1,0 +1,3 @@
+- `open-pencil export -f pdf` exports PDFs instead of failing with "DOMParser is not defined".
+- Japanese, Chinese, and Korean text in web fonts draws in the browser app, in a CJK family and as a fallback for other fonts, instead of drawing missing-glyph boxes or nothing.
+- Text a CLI script writes in characters its font had not loaded yet, such as Japanese, is saved with its glyphs and at its size, instead of with missing-glyph boxes in a box of the wrong size.

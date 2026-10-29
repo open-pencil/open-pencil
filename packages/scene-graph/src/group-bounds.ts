@@ -1,10 +1,12 @@
 import { getAxisAlignedBoundsInParent } from './coordinate'
 import type { SceneGraph } from './graph'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
-import type { Rect } from './primitives'
+import type { Rect, Vector } from './primitives'
 import type { SceneNode } from './types'
 
-type Placement = Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>
+/** Where a layer sits, with a connector's ends, since a free end is in the parent's axes too. */
+type Placement = Pick<SceneNode, 'x' | 'y' | 'width' | 'height'> &
+  Partial<Pick<SceneNode, 'connectorStart' | 'connectorEnd'>>
 
 /** What `fitEnclosingGroups` changed, so a caller can undo and redo it. */
 export interface GroupFit {
@@ -23,7 +25,23 @@ export interface GroupFitOptions {
 }
 
 function placement(node: SceneNode): Placement {
-  return { x: node.x, y: node.y, width: node.width, height: node.height }
+  const box = { x: node.x, y: node.y, width: node.width, height: node.height }
+  if (node.type !== 'CONNECTOR') return box
+  return {
+    ...box,
+    connectorStart: structuredClone(node.connectorStart),
+    connectorEnd: structuredClone(node.connectorEnd)
+  }
+}
+
+/** A connector end moved by `dx`, `dy` when it is free, as its point is in the parent's axes. */
+function shiftedEnd(
+  end: SceneNode['connectorStart'],
+  dx: number,
+  dy: number
+): SceneNode['connectorStart'] {
+  if (end?.nodeId !== null) return end
+  return { ...end, position: { x: end.position.x - dx, y: end.position.y - dy } }
 }
 
 /** Groups and booleans holding the parents, innermost first. */
@@ -46,13 +64,42 @@ function fittedAncestors(graph: SceneGraph, parentIds: Iterable<string>): SceneN
 }
 
 /**
- * The layers a group's box covers. A mask hides the layers above it outside its shape, so, as in
- * Figma, they count only through the mask: the box is the layers below it and the masks.
+ * The layers a group's box covers, bottom to top. Hidden layers do not count, as in Figma. A mask
+ * hides the layers above it outside its shape, so they count only through the mask: the box is
+ * the layers below it and the masks.
  */
-function boundingChildren(children: SceneNode[]): SceneNode[] {
-  const firstMask = children.findIndex((child) => child.isMask)
-  if (firstMask === -1) return children
-  return [...children.slice(0, firstMask), ...children.slice(firstMask).filter((c) => c.isMask)]
+function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
+  const shown = children.filter((child) => child.visible)
+  const firstMask = shown.findIndex((child) => child.isMask)
+  if (firstMask === -1) return shown
+  return [...shown.slice(0, firstMask), ...shown.slice(firstMask).filter((c) => c.isMask)]
+}
+
+/**
+ * A group's box in its parent's space: around the layers it shows, or, with every layer hidden,
+ * empty at `origin`, where Figma leaves it.
+ */
+export function groupBounds(
+  graph: SceneGraph,
+  children: readonly SceneNode[],
+  parentId: string,
+  origin: Vector
+): Rect {
+  const layers = groupBoundingLayers(children)
+  return layers.length > 0
+    ? getAxisAlignedBoundsInParent(layers, parentId, graph)
+    : { x: origin.x, y: origin.y, width: 0, height: 0 }
+}
+
+/** A child moved back by the group's shift, a connector's free ends with it. */
+function shiftedBack(child: SceneNode, dx: number, dy: number): Partial<SceneNode> {
+  const moved = { x: child.x - dx, y: child.y - dy }
+  if (child.type !== 'CONNECTOR') return moved
+  return {
+    ...moved,
+    connectorStart: shiftedEnd(child.connectorStart, dx, dy),
+    connectorEnd: shiftedEnd(child.connectorEnd, dx, dy)
+  }
 }
 
 /** Moves the group to its children's bounds, shifting them back so they stay put. */
@@ -66,7 +113,7 @@ function fitGroup(
   if (!group.parentId || group.rotation !== 0 || group.flipX || group.flipY) return
   const bounds =
     (group.type === 'BOOLEAN_OPERATION' ? options.booleanBounds?.(group) : null) ??
-    getAxisAlignedBoundsInParent(boundingChildren(children), group.parentId, graph)
+    groupBounds(graph, children, group.parentId, group)
   const dx = bounds.x - group.x
   const dy = bounds.y - group.y
   if (dx === 0 && dy === 0 && bounds.width === group.width && bounds.height === group.height) {
@@ -77,7 +124,7 @@ function fitGroup(
   }
   graph.updateNode(group.id, bounds)
   for (const child of children) {
-    graph.updateNode(child.id, { x: child.x - dx, y: child.y - dy })
+    graph.updateNode(child.id, shiftedBack(child, dx, dy))
   }
   for (const node of [group, ...children]) {
     const current = graph.getNode(node.id)

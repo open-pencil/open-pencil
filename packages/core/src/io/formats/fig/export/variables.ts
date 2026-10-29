@@ -43,15 +43,10 @@ export function assignVariableGuid(
   nodeSourceGuidValues: Set<string>,
   keepsGuid: (id: string) => boolean = () => true
 ): GUID {
-  if (
-    keepsGuid(id) &&
-    /^\d+:\d+$/.test(id) &&
-    !assignedGuidValues.has(id) &&
-    !nodeSourceGuidValues.has(id)
-  ) {
-    const guid = stringToGuid(id)
+  const own = keepsGuid(id) ? parseGuidOrNull(id) : null
+  if (own && !assignedGuidValues.has(id) && !nodeSourceGuidValues.has(id)) {
     assignedGuidValues.add(id)
-    return guid
+    return own
   }
   const guid = { sessionID: 0, localID: localIdCounter.value++ }
   assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)

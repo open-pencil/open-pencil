@@ -8,12 +8,12 @@ import { heavy } from '#core-tests/helpers/test-utils'
 import { unzipSync } from 'fflate'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { pngSize } from '@open-pencil/fig'
 import { isZstdCompressed } from '@open-pencil/kiwi/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { imageSize } from '@open-pencil/scene-graph/images'
 
 import {
   type Mismatch,
@@ -472,7 +472,7 @@ function verifyFixture(spec: FixtureSpec): void {
       await g0Ready
       const thumb = g0Zip['thumbnail.png']
       expect(thumb.byteLength).toBe(spec.thumbnailSize)
-      expect(pngSize(thumb)).toEqual({ width: spec.thumbnailWidth, height: spec.thumbnailHeight })
+      expect(imageSize(thumb)).toEqual({ width: spec.thumbnailWidth, height: spec.thumbnailHeight })
     })
 
     test('original fig-kiwi container', async () => {

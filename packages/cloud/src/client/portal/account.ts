@@ -1,5 +1,6 @@
 import {
   cloudAccountMutationResponseSchema,
+  cloudAccountSessionsResponseSchema,
   cloudAccountStatusResponseSchema,
   cloudAuthenticationMethodsResponseSchema,
   cloudMFAEnableResponseSchema,
@@ -7,6 +8,9 @@ import {
   cloudMFAStatusResponseSchema,
   cloudMFAVerifyResponseSchema,
   cloudPasskeysResponseSchema,
+  cloudPictureResponseSchema,
+  cloudProfileResponseSchema,
+  cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema
 } from '#cloud/contract'
 
@@ -100,6 +104,71 @@ export function createAccountAPI(call: CloudCall, { account }: PortalRouteClient
         (options) =>
           account.authentication['link-social'].$post({ json: { provider, callbackURL } }, options),
         cloudSocialLinkResponseSchema,
+        signal
+      )
+    },
+    profile(signal?: AbortSignal) {
+      return call(
+        (options) => account.profile.$get(undefined, options),
+        cloudProfileResponseSchema,
+        signal
+      )
+    },
+    updateProfile(name: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.profile.$post({ json: { name } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    /** Shows `data`, a Base64 PNG or JPEG the page cropped and shrank, as the account's picture. */
+    uploadPicture(data: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.profile.picture.$put({ json: { data } }, options),
+        cloudPictureResponseSchema,
+        signal
+      )
+    },
+    removePicture(signal?: AbortSignal) {
+      return call(
+        (options) => account.profile.picture.$delete(undefined, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    /** Sends a confirmation to the new address; the email changes once it is followed. */
+    changeEmail(newEmail: string, callbackURL: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.profile.email.$post({ json: { newEmail, callbackURL } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    sessions(signal?: AbortSignal) {
+      return call(
+        (options) => account.sessions.$get(undefined, options),
+        cloudAccountSessionsResponseSchema,
+        signal
+      )
+    },
+    revokeSession(sessionId: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.sessions.revoke.$post({ json: { sessionId } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    revokeOtherSessions(signal?: AbortSignal) {
+      return call(
+        (options) => account.sessions['revoke-others'].$post(undefined, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    signIns(signal?: AbortSignal) {
+      return call(
+        (options) => account['sign-ins'].$get(undefined, options),
+        cloudSignInsResponseSchema,
         signal
       )
     },

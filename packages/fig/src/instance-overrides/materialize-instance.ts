@@ -2,7 +2,10 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import {
+  bindingOverrideField,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { nodeChangeToProps } from '../node-change'
@@ -249,7 +252,7 @@ function recordPaintBindingClaims(
   for (const [index, paint] of paints.entries()) {
     const alias = (paint as Paint).colorVar?.value?.alias
     if (!alias) continue
-    const field = `boundVariables/${scene}/${index}/color`
+    const field = bindingOverrideField(`${scene}/${index}/color`)
     setInstanceOverride(
       owner.instanceOverrides,
       owner.id,

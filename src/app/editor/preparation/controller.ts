@@ -37,6 +37,11 @@ export interface EditorPreparationController {
    * canvas, so its scene waits to be presented until the tab is shown, without timing out.
    */
   attachCanvas(): () => void
+  /**
+   * A canvas could not start, so nothing presents the scene until one attaches: waiting for it
+   * fails with this error rather than waiting with no time limit.
+   */
+  failCanvas(error: Error): void
   dispose(): void
 }
 
@@ -51,6 +56,7 @@ export function createEditorPreparationController(
   let activeCancel: ((reason: EditorPreparationCancelReason) => void) | null = null
   let presentedSceneVersion = -1
   let canvases = 0
+  let canvasFailure: Error | null = null
   const presentationWaiters = new Map<number, PresentationWaiter>()
 
   function settle(id: number, outcome: Error | null) {
@@ -171,10 +177,12 @@ export function createEditorPreparationController(
         }
         presentationWaiters.set(id, waiter)
         if (canvases > 0) startTimer(id, waiter)
+        else if (canvasFailure) settle(id, canvasFailure)
       })
     },
     attachCanvas() {
       canvases += 1
+      canvasFailure = null
       for (const [id, waiter] of presentationWaiters) startTimer(id, waiter)
       let attached = true
       return () => {
@@ -182,8 +190,17 @@ export function createEditorPreparationController(
         attached = false
         canvases -= 1
         if (canvases > 0) return
+        if (canvasFailure) {
+          for (const id of presentationWaiters.keys()) settle(id, canvasFailure)
+          return
+        }
         for (const waiter of presentationWaiters.values()) pauseTimer(waiter)
       }
+    },
+    failCanvas(error) {
+      canvasFailure = error
+      if (canvases > 0) return
+      for (const id of presentationWaiters.keys()) settle(id, error)
     },
     dispose() {
       activeCancel?.('tab-closed')

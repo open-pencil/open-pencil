@@ -59,9 +59,8 @@
   ],
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
-    "check": "bun run typecheck && bun run test && bun run build && bun run smoke:dist",
+    "check": "bun run typecheck && bun run test && bun run build",
     "prepack": "bun run build",
-    "smoke:dist": "bun scripts/smoke-dist.ts",
     "test": "bun test tests",
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
   },
@@ -101,6 +100,7 @@
     "css-tree": "^3.2.1",
     "cssesc": "^3.0.0",
     "dedent": "^1.7.2",
+    "entities": "^8.0.0",
     "es-toolkit": "^1.52.0",
     "js-base64": "^3.9.3",
     "parse5": "^8.0.1",

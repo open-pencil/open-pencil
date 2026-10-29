@@ -22,6 +22,15 @@ function insertIcon(graph: SceneGraph, body: string, viewBox = 24, size = 24) {
 }
 
 describe('placeIcon', () => {
+  test('leaves out shapes the SVG hides', () => {
+    const body = (hidden: string, none: string) =>
+      `<g ${hidden}><path d="M2 2h8v8H2z"/></g><path ${none} d="M14 2h8v8h-8z"/><path d="M2 14h8v8H2z"/>`
+    expect(insertIcon(new SceneGraph(), body('', '')).vectors).toHaveLength(3)
+    expect(
+      insertIcon(new SceneGraph(), body('visibility="hidden"', 'display="none"')).vectors
+    ).toHaveLength(1)
+  })
+
   test('keeps round stroke caps and joins after a .fig round trip', async () => {
     const graph = new SceneGraph()
     insertIcon(

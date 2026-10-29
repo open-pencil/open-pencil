@@ -10,7 +10,7 @@ import {
 } from './sides'
 
 /** How far an elbow runs out of a layer before it may turn, unless the layers are closer. */
-const ELBOW_STUB = 48
+export const ELBOW_STUB = 48
 /** What a turn costs against length, so that of two equally long routes the simpler wins. */
 const BEND_COST = 1
 /** What a run off the line midway between the layers costs, so turns land on that line. */
@@ -190,7 +190,7 @@ function cheapestWalk(grid: Grid, startSide: ConnectorSide, endSide: ConnectorSi
 }
 
 /** Drops repeated points and points in the middle of a straight run. */
-function simplify(points: Vector[]): Vector[] {
+export function simplify(points: Vector[]): Vector[] {
   const result: Vector[] = []
   const same = (a: number, b: number) => Math.abs(a - b) < EPSILON
   for (const point of points) {

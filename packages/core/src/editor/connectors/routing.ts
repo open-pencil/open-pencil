@@ -28,8 +28,16 @@ const CONNECTOR_FIELDS: ReadonlySet<string> = new Set<keyof SceneNode>([
   'connectorEnd',
   'connectorLineType',
   'connectorStartCap',
-  'connectorEndCap'
+  'connectorEndCap',
+  'connectorControlPoints',
+  'connectorCurveHandles',
+  'connectorLabelPosition'
 ])
+
+/** What keeping a dragged elbow's new route as its control points changes on the connector. */
+const CAPTURED_FIELDS = ['x', 'y', 'connectorControlPoints'] as const
+
+type Captured = Pick<SceneNode, (typeof CAPTURED_FIELDS)[number]>
 
 /** Fields of a connector's sublayers that change its route: the line's weight, the label's size. */
 const SUBLAYER_FIELDS: ReadonlySet<string> = new Set<string>([
@@ -64,8 +72,13 @@ function carriedFreeEnds(graph: SceneGraph, connector: SceneNode): Partial<Scene
  * once the page it is on is shown.
  */
 export function createConnectorRouting(ctx: EditorContext) {
-  /** Layers changed since the last pass, and whether any change was more than a preview. */
-  let pending: { ids: Set<string>; committed: boolean } | null = null
+  /**
+   * Layers changed since the last pass, whether any change was more than a preview, and whether
+   * undo or redo made any.
+   */
+  let pending: { ids: Set<string>; committed: boolean; replayed: boolean } | null = null
+  /** The step an edit just recorded, which the pass that follows the edit may join. */
+  let freshStep: UndoEntry | null = null
   let routing = false
   /**
    * The ends of connectors moved since the last undo step, as they were before the move. A move
@@ -79,11 +92,12 @@ export function createConnectorRouting(ctx: EditorContext) {
   function schedule(id: string, committed: boolean) {
     if (routing || ctx.graph.isApplyingImportedState) return
     if (!pending) {
-      pending = { ids: new Set(), committed: false }
+      pending = { ids: new Set(), committed: false, replayed: false }
       queueMicrotask(flush)
     }
     pending.ids.add(id)
     pending.committed ||= committed
+    pending.replayed ||= ctx.undo.isReplaying
   }
 
   function changed(id: string, changes: Partial<SceneNode>, committed: boolean) {
@@ -147,6 +161,16 @@ export function createConnectorRouting(ctx: EditorContext) {
     const step = ctx.undo.peekUndo()
     const fresh = step !== undefined && !seenSteps.has(step)
     if (step) seenSteps.add(step)
+    if (step && fresh) {
+      freshStep = step
+      // The pass an edit schedules runs in a microtask queued while the edit runs, before or
+      // after it records its step, so both come before this one's inner microtask.
+      queueMicrotask(() =>
+        queueMicrotask(() => {
+          if (freshStep === step) freshStep = null
+        })
+      )
+    }
     const graph = ctx.graph
     const moves = fresh
       ? [...unrecorded].flatMap(([id, before]) => {
@@ -168,6 +192,29 @@ export function createConnectorRouting(ctx: EditorContext) {
     })
   }
 
+  /**
+   * Whether the pass follows an edit that recorded a new undo step, which a dragged elbow's route
+   * joins as its new control points, as FigJam keeps them after an edit. Undo, redo, previews,
+   * and changes that record no step leave the control points as they are.
+   */
+  function capturesEdit(batch: NonNullable<typeof pending>): boolean {
+    if (!batch.committed || batch.replayed || ctx.undo.isReplaying) return false
+    return ctx.undo.isBatching || (freshStep !== null && ctx.undo.peekUndo() === freshStep)
+  }
+
+  /** Records the control points edits gave dragged elbows into the step that made the edits. */
+  function recordCaptured(captured: { id: string; before: Captured; after: Captured }[]) {
+    if (captured.length === 0) return
+    const apply = (state: 'before' | 'after') => {
+      for (const change of captured) ctx.graph.updateNode(change.id, structuredClone(change[state]))
+    }
+    ctx.undo.extendLastStep({
+      label: 'Route connector',
+      forward: () => apply('after'),
+      inverse: () => apply('before')
+    })
+  }
+
   function flush() {
     const batch = pending
     pending = null
@@ -175,6 +222,8 @@ export function createConnectorRouting(ctx: EditorContext) {
     const graph = ctx.graph
     const affected = connectorsAffectedBy(graph, batch.ids)
     if (affected.length === 0) return
+    const capture = capturesEdit(batch)
+    const captured: { id: string; before: Captured; after: Captured }[] = []
     routing = true
     try {
       const update = batch.committed
@@ -186,12 +235,19 @@ export function createConnectorRouting(ctx: EditorContext) {
       const keepBox = !batch.committed
       let moved = false
       for (const connector of affected) {
-        moved = layoutConnector(graph, connector, update, { keepBox }) || moved
+        const before = structuredClone(pick(connector, CAPTURED_FIELDS))
+        moved = layoutConnector(graph, connector, update, { keepBox, capture }) || moved
+        if (!capture || connector.connectorControlPoints.length === 0) continue
+        const after = structuredClone(pick(connector, CAPTURED_FIELDS))
+        if (!isEqual(before.connectorControlPoints, after.connectorControlPoints)) {
+          captured.push({ id: connector.id, before, after })
+        }
       }
       if (moved) ctx.requestRender()
     } finally {
       routing = false
     }
+    recordCaptured(captured)
   }
 
   // A document read without layout, as a `.fig` is, routes such connectors when shown.

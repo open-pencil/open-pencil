@@ -4,7 +4,7 @@ import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
 import { DEFAULT_HISTORY_LIMIT } from '../undo'
 import {
-  getInstanceOverride,
+  copiedComponentLayerId,
   hasInstanceOverride as hasNodeInstanceOverride,
   type InstanceOverrideState
 } from './overrides'
@@ -33,11 +33,7 @@ export function createInstanceSyncContext(
 
 /** The component layer a copy in the instance stands for. */
 function copiedLayerId(node: SceneNode, context: InstanceSyncContext): string | undefined {
-  const source =
-    node.type === 'INSTANCE'
-      ? getInstanceOverride(context.overrides, context.instanceId, node.id, 'sourceComponentId')
-      : undefined
-  return typeof source === 'string' ? source : (node.componentId ?? undefined)
+  return copiedComponentLayerId(context.overrides, context.instanceId, node)
 }
 
 /** Whether sync goes inside a copy: not into slot content, a swapped instance, or an instance. */

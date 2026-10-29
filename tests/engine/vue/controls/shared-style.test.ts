@@ -4,6 +4,7 @@ import { createEditor } from '@open-pencil/core'
 import { effectiveFigmaRawNodeFields } from '@open-pencil/fig'
 import type { Effect, Fill, SceneNode } from '@open-pencil/scene-graph'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { sharedStyleDetachPatch, sharedStylePatch } from '#vue/controls/shared-style/model'
 
@@ -58,7 +59,7 @@ describe('shared style model', () => {
       fontFamily: 'Inter',
       fontSize: 24,
       fontWeight: 700,
-      lineHeight: 32,
+      lineHeight: pixelLength(32),
       textCase: 'UPPER'
     })
     const effect: Effect = {
@@ -78,7 +79,7 @@ describe('shared style model', () => {
       textStyleId: '1:21',
       fontSize: 24,
       fontWeight: 700,
-      lineHeight: 32,
+      lineHeight: pixelLength(32),
       textCase: 'UPPER'
     })
     expect(sharedStylePatch('effect', target, '1:22', effectStyle)).toMatchObject({

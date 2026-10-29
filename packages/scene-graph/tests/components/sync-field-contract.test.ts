@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined } from '../helpers/assert'
 
@@ -323,11 +324,11 @@ test('a copy that sizes itself to its own content keeps that size through a comp
   graph.updateNode(instance.id, { width: 24 })
   setInstanceOverride(instance.instanceOverrides, instance.id, copyText.id, 'text', true)
 
-  graph.updateNode(text.id, { width: 64, letterSpacing: 1 })
+  graph.updateNode(text.id, { width: 64, letterSpacing: pixelLength(1) })
   graph.updateNode(label.id, { width: 64 })
   graph.syncInstances(badge.id)
   expect([copyText.text, copyText.width, copyLabel.width, instance.width]).toEqual(['2', 8, 8, 24])
-  expect(copyText.letterSpacing).toBe(1)
+  expect(copyText.letterSpacing).toEqual(pixelLength(1))
 })
 
 test('content-sized copies retain their constraint anchor through live component edits', () => {

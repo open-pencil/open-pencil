@@ -1,14 +1,19 @@
 import { describe, expect, test } from 'bun:test'
 
 import { layoutAuthoredNodes } from '@open-pencil/core/layout'
-import { parsePenFile, type PenDocument, type PenNode } from '@open-pencil/pen'
+import { parsePenFile, type PenDocument, type PenIconSource, type PenNode } from '@open-pencil/pen'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-function parseLayoutDocument(children: PenNode[]) {
-  const document: PenDocument = { version: '2.17', children }
+function parseLayoutDocument(
+  children: PenNode[],
+  icons?: PenIconSource,
+  fields: Partial<PenDocument> = {}
+) {
+  const document: PenDocument = { version: '2.17', ...fields, children }
   // As Core's .pen reader lays out what it reads.
   return parsePenFile(JSON.stringify(document), {
+    icons,
     layout: (graph) =>
       layoutAuthoredNodes(
         graph,
@@ -265,7 +270,17 @@ describe('parsePenFile — turned layers sized by layout', () => {
         layout: 'none',
         width: 400,
         height: 300,
-        children: [{ id: 'label', type: 'text', x: 100, y: 200, rotation: 90, content: 'Revenue', fontSize: 14 }]
+        children: [
+          {
+            id: 'label',
+            type: 'text',
+            x: 100,
+            y: 200,
+            rotation: 90,
+            content: 'Revenue',
+            fontSize: 14
+          }
+        ]
       }
     ])
     const label = graph.getNode('label')
@@ -296,5 +311,170 @@ describe('parsePenFile — space around', () => {
     ])
     // 210 of free space: 70 per child, 35 on each side of each.
     expect(['a', 'b', 'c'].map((id) => graph.getNode(id)?.x)).toEqual([35, 135, 235])
+  })
+})
+
+describe('parsePenFile — paths sized by layout', () => {
+  test('draws a filling path at its laid-out size in a component and a resized instance', () => {
+    const graph = parseLayoutDocument([
+      {
+        id: 'mark',
+        type: 'frame',
+        reusable: true,
+        width: 64,
+        height: 64,
+        layout: 'vertical',
+        children: [
+          {
+            id: 'glyph',
+            type: 'path',
+            geometry: 'M0 0H10V10H0Z',
+            viewBox: [0, 0, 10, 10],
+            width: 'fill_container',
+            height: 'fill_container'
+          }
+        ]
+      },
+      { id: 'small', type: 'ref', ref: 'mark', width: 16, height: 16 }
+    ])
+
+    const extent = (id: string) => {
+      const vertices = graph.getNode(id)?.vectorNetwork?.vertices ?? []
+      return {
+        width: Math.max(...vertices.map((vertex) => vertex.x)),
+        height: Math.max(...vertices.map((vertex) => vertex.y))
+      }
+    }
+    const copy = graph.getNode('small')?.childIds[0] ?? ''
+    expect(extent('glyph')).toEqual({ width: 64, height: 64 })
+    expect(graph.getNode(copy)).toMatchObject({ width: 16, height: 16 })
+    expect(extent(copy)).toEqual({ width: 16, height: 16 })
+  })
+
+  test('draws a filling path at the size a second layout gives it', () => {
+    // Fitting the group to its 40 wide layer lays the row out again, widening the path.
+    const graph = parseLayoutDocument([
+      {
+        id: 'row',
+        type: 'frame',
+        width: 200,
+        height: 50,
+        children: [
+          {
+            id: 'group',
+            type: 'group',
+            children: [{ id: 'swatch', type: 'rectangle', width: 40, height: 20 }]
+          },
+          {
+            id: 'line',
+            type: 'path',
+            geometry: 'M0 0H10V10H0Z',
+            viewBox: [0, 0, 10, 10],
+            width: 'fill_container',
+            height: 50
+          }
+        ]
+      }
+    ])
+
+    const line = graph.getNode('line')
+    const xs = line?.vectorNetwork?.vertices.map((vertex) => vertex.x) ?? []
+    expect(line?.width).toBe(160)
+    expect(Math.max(...xs)).toBe(160)
+  })
+})
+
+describe('parsePenFile — icons sized by layout', () => {
+  /** Draws each glyph as one square path, `size` wide, as the Iconify source does. */
+  const icons: PenIconSource = {
+    draw(graph, frameId, name, size, color) {
+      graph.createNode('VECTOR', frameId, {
+        name,
+        width: size,
+        height: size,
+        fills: [{ type: 'SOLID', color, opacity: 1, visible: true }]
+      })
+      return true
+    }
+  }
+  const icon: PenNode = {
+    id: 'icon',
+    type: 'icon',
+    library: 'lucide',
+    icon: 'zap',
+    width: 'fill_container',
+    height: 'fill_container',
+    fill: '#FF0000'
+  }
+  const box = (id: string, children: PenNode[]): PenNode => ({
+    id,
+    type: 'frame',
+    width: 24,
+    height: 24,
+    layout: 'vertical',
+    children
+  })
+
+  test('draws a filling icon at its laid-out size in its own colour', () => {
+    const graph = parseLayoutDocument([box('box', [icon])], icons)
+    const [glyph] = graph.getChildren('icon')
+    expect(glyph).toMatchObject({ width: 24, height: 24 })
+    expect(glyph.fills[0]?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+  })
+
+  test('redraws a filling icon in the theme it was read in', () => {
+    const graph = parseLayoutDocument(
+      [{ ...box('box', [{ ...icon, fill: '$ink' }]), theme: { mode: 'dark' } }],
+      icons,
+      {
+        themes: { mode: ['light', 'dark'] },
+        variables: {
+          ink: {
+            type: 'color',
+            value: [
+              { value: '#FF0000', theme: { mode: 'light' } },
+              { value: '#00FF00', theme: { mode: 'dark' } }
+            ]
+          }
+        }
+      }
+    )
+    const [glyph] = graph.getChildren('icon')
+    expect(glyph).toMatchObject({ width: 24, height: 24 })
+    expect(glyph.fills[0]?.color).toEqual({ r: 0, g: 1, b: 0, a: 1 })
+  })
+
+  test('draws a filling icon in a component at the size of each instance', () => {
+    const graph = parseLayoutDocument(
+      [
+        { ...box('mark', [icon]), reusable: true },
+        { id: 'same', type: 'ref', ref: 'mark' },
+        { id: 'large', type: 'ref', ref: 'mark', width: 40, height: 40 }
+      ],
+      icons
+    )
+    const glyphSize = (iconId: string) => {
+      const [glyph] = graph.getChildren(iconId)
+      return { width: glyph.width, height: glyph.height }
+    }
+    const copy = (instanceId: string) => graph.getNode(instanceId)?.childIds[0] ?? ''
+    expect(glyphSize('icon')).toEqual({ width: 24, height: 24 })
+    expect(glyphSize(copy('same'))).toEqual({ width: 24, height: 24 })
+    expect(glyphSize(copy('large'))).toEqual({ width: 40, height: 40 })
+  })
+
+  test('keeps only the icon components a laid-out icon shows', () => {
+    const graph = parseLayoutDocument(
+      [
+        { ...box('mark', [icon]), reusable: true },
+        { id: 'large', type: 'ref', ref: 'mark', width: 40, height: 40 }
+      ],
+      icons
+    )
+    const iconPage = graph.getPages(true).find((page) => page.name === 'Icons')
+    expect(graph.getChildren(iconPage?.id ?? '').map((component) => component.name)).toEqual([
+      'lucide/zap/24x24',
+      'lucide/zap/40x40'
+    ])
   })
 })

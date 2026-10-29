@@ -1,5 +1,10 @@
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
-import { createCloudApp, createBetterAuthAdapter, parseCloudServerConfig } from '#cloud/server'
+import {
+  createCloudApp,
+  createBetterAuthAdapter,
+  parseCloudServerConfig,
+  type AuthenticationEmailService
+} from '#cloud/server'
 
 export const accountAuthenticationConfig = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -24,16 +29,24 @@ const ignore = async (): Promise<void> => {
   await Promise.resolve()
 }
 
+/** Security notices for an account email service whose test does not read them. */
+export const ignoredSecurityNotices = {
+  sendEmailChangeRequested: ignore,
+  sendNewSignIn: ignore,
+  sendTwoStepChanged: ignore
+}
+
 export function accountAuthenticationRequest(
   path: string,
   body?: object,
-  cookie?: string
+  cookie?: string,
+  init: { headers?: Record<string, string>; method?: string } = {}
 ): Request {
-  const headers = new Headers()
+  const headers = new Headers(init.headers)
   if (body) headers.set('Content-Type', 'application/json')
   if (cookie) headers.set('Cookie', cookie)
   return new Request(new URL(path, accountAuthenticationConfig.publicURL), {
-    method: body ? 'POST' : 'GET',
+    method: init.method ?? (body ? 'POST' : 'GET'),
     headers,
     body: body ? JSON.stringify(body) : undefined
   })
@@ -70,17 +83,21 @@ export async function createAccountAuthenticationFixture(
   options: {
     config?: typeof accountAuthenticationConfig
     onPasswordChanged?: () => void
+    /** Account emails the test reads; the rest go nowhere. */
+    email?: Partial<AuthenticationEmailService>
   } = {}
 ) {
   const config = options.config ?? accountAuthenticationConfig
   const runtime = await createCloudTestDatabase()
   const auth = createBetterAuthAdapter(config, runtime.database, undefined, {
     email: {
+      ...ignoredSecurityNotices,
       sendVerification: ignore,
       sendPasswordReset: ignore,
       async sendPasswordChanged() {
         options.onPasswordChanged?.()
-      }
+      },
+      ...options.email
     }
   })
   return {
@@ -99,7 +116,7 @@ export async function approveAccount(
   input: { email: string; name: string; userId: string }
 ): Promise<void> {
   await database
-    .insertInto('cloudEnrollment')
+    .insertInto('enrollment')
     .values({
       id: crypto.randomUUID(),
       emailNormalized: input.email,
@@ -116,13 +133,14 @@ export async function approveAccount(
 
 export async function createVerifiedCredentialAccount(
   fixture: Awaited<ReturnType<typeof createAccountAuthenticationFixture>>,
-  input: { email: string; name: string; password: string; approved: boolean }
+  input: { email: string; name: string; password: string; approved: boolean; image?: string }
 ): Promise<{ userId: string; sessionCookie: string }> {
   await fixture.app.fetch(
     accountAuthenticationRequest('/api/auth/sign-up/email', {
       name: input.name,
       email: input.email,
-      password: input.password
+      password: input.password,
+      image: input.image
     })
   )
   const user = await fixture.database

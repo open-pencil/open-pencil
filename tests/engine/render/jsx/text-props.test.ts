@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 import { getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'
@@ -11,7 +12,7 @@ describe('text props round-trip', () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" lineHeight={24}>Hello</Text>')
     const n = getNodeOrThrow(g, result.id)
-    expect(n.lineHeight).toBe(24)
+    expect(n.lineHeight).toEqual(pixelLength(24))
     const jsx = sceneNodeToJSX(n.id, g)
     expect(jsx).toContain('lineHeight={24}')
   })
@@ -20,7 +21,7 @@ describe('text props round-trip', () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" letterSpacing={2}>Spaced</Text>')
     const n = getNodeOrThrow(g, result.id)
-    expect(n.letterSpacing).toBe(2)
+    expect(n.letterSpacing).toEqual(pixelLength(2))
     const jsx = sceneNodeToJSX(n.id, g)
     expect(jsx).toContain('letterSpacing={2}')
   })
@@ -97,7 +98,7 @@ describe('text props round-trip', () => {
     const [result] = await renderJSX(g, '<Text color="#000">Plain</Text>')
     const n = getNodeOrThrow(g, result.id)
     expect(n.lineHeight).toBeNull()
-    expect(n.letterSpacing).toBe(0)
+    expect(n.letterSpacing).toEqual(percentLength(0))
     expect(n.textDecoration).toBe('NONE')
     expect(n.textCase).toBe('ORIGINAL')
     expect(n.maxLines).toBeNull()

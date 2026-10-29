@@ -116,7 +116,6 @@ export interface StorageAdapter {
   getDocumentMetadata?(id: string): Promise<StorageDocumentMetadata | null>
   getUsage(): Promise<StorageUsage>
   getThumbnail?(id: string): Promise<Uint8Array | null>
-  putThumbnail?(id: string, bytes: Uint8Array): Promise<void>
   libraryObjects?: LibraryObjectStore
 }
 

@@ -7,6 +7,7 @@ import type {
   FigmaInstanceNode,
   FigmaSlotNode
 } from './node-types'
+import type { OpenPencilPaint } from './paints'
 import type { FigmaNodeProxy } from './proxy'
 import type {
   FIGMA_API_HOST_MEMBERS,
@@ -25,12 +26,20 @@ export type SupportedPluginAPI = Pick<
   PluginAPI,
   | 'base64Decode'
   | 'base64Encode'
+  | 'closePlugin'
+  | 'getFontFamilyVariationAxes'
+  | 'getImageByHash'
+  | 'loadAllPagesAsync'
   | 'loadFontAsync'
   | 'notify'
+  | 'util'
+  | 'setCurrentPageAsync'
   | 'createComponent'
   | 'createConnector'
   | 'createEllipse'
   | 'createFrame'
+  | 'createImage'
+  | 'createImageAsync'
   | 'createLine'
   | 'createNodeFromSvg'
   | 'createPolygon'
@@ -117,6 +126,24 @@ const _slotSurfaceMatch: SlotSurfaceMatch = true
 type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>
 const _effectShapeMatch: EffectShapeMatch = true
 
+// `Paint` here is Figma's plugin-typings union. `fills`, `strokes`, and `backgrounds` share one
+// paint type: every paint they read is one of Figma's, apart from the noise and custom paints
+// OpenPencil models and Figma has no type for, and they take every paint Figma's types allow but
+// for the linear burn and dodge blend modes, which OpenPencil does not model.
+type ReadPaint = Exclude<Exclude<FigmaNodeProxy['fills'], symbol>[number], OpenPencilPaint>
+type WithoutLinearBlends<T> = T extends unknown
+  ? Omit<T, 'blendMode'> & { blendMode?: Exclude<BlendMode, 'LINEAR_BURN' | 'LINEAR_DODGE'> }
+  : never
+type PaintShapeMatch = Expect<Extends<ReadPaint, Paint>>
+const _paintShapeMatch: PaintShapeMatch = true
+type PaintArgumentMatch = Expect<
+  Extends<
+    WithoutLinearBlends<SolidPaint | GradientPaint | ImagePaint | VideoPaint | PatternPaint>,
+    ReadPaint
+  >
+>
+const _paintArgumentMatch: PaintArgumentMatch = true
+
 type TextListKeys =
   | 'setRangeListOptions'
   | 'setRangeIndentation'
@@ -145,7 +172,7 @@ type TextListSurfaceMatch = Expect<
 const _textListSurfaceMatch: TextListSurfaceMatch = true
 
 // Figma's mixed values are its own `figma.mixed` unique symbol; ours are a plain symbol. Fills
-// and decoration colours read and take the paints OpenPencil models, as `fills` does, and Figma
+// and decoration colours can read OpenPencil's noise and custom paints, as `fills` can, and Figma
 // types OpenType features as every feature while it returns only those set, so they stay out.
 type WithoutMixed<T> = T extends (...args: infer A) => infer R
   ? (...args: A) => Exclude<R, symbol>

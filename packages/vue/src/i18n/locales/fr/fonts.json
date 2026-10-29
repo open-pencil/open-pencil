@@ -5,6 +5,10 @@
   "localFonts": "Polices locales",
   "onlineFonts": "Polices en ligne",
   "downloadedCache": "Cache téléchargé",
+  "cachedFontCount": {
+    "one": "{count} police",
+    "many": "{count} polices"
+  },
   "systemFontAccess": "Accès aux polices système",
   "systemFontsAvailable": "Les polices système sont disponibles.",
   "allowBrowserFontAccess": "Autorisez l’accès du navigateur aux polices lorsque des polices système manquent.",

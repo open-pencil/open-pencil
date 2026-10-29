@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** The metrics dashboard: a bar like Cloud's console, then cards on a grid. */
-export const metricsDashboard = tv({
+export const metricsDashboardTheme = {
   slots: {
     page: 'chart-theme flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-surface',
     bar: 'flex h-11 shrink-0 items-center gap-2 border-b border-border bg-panel px-4',
@@ -20,10 +18,10 @@ export const metricsDashboard = tv({
     section: 'flex flex-col gap-4',
     sectionHeading: 'mt-2 text-[11px] font-semibold tracking-wide text-muted uppercase'
   }
-})
+} as const
 
 /** A bordered panel with a title, an optional note, and its chart or list. */
-export const metricsCard = tv({
+export const metricsCardTheme = {
   slots: {
     root: 'flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-panel p-4',
     header: 'flex flex-wrap items-start justify-between gap-x-3 gap-y-1',
@@ -32,10 +30,10 @@ export const metricsCard = tv({
     note: 'text-[11px] text-muted',
     aside: 'shrink-0 text-[11px] text-muted tabular-nums'
   }
-})
+} as const
 
 /** A headline number above a word-sized trend. */
-export const metricsTile = tv({
+export const metricsTileTheme = {
   slots: {
     root: 'flex min-w-0 flex-col gap-1 rounded-lg border border-border bg-panel p-4',
     label: 'text-[11px] text-muted',
@@ -44,10 +42,10 @@ export const metricsTile = tv({
     change: 'font-medium data-[direction=up]:text-success data-[direction=down]:text-error',
     trend: 'mt-2 h-8'
   }
-})
+} as const
 
 /** Recent sign-ups, drawn like the Cloud console's lists. */
-export const metricsWaitlist = tv({
+export const metricsWaitlistTheme = {
   slots: {
     list: 'flex flex-col',
     row: 'flex min-h-9 items-center gap-3 border-b border-border py-1.5 text-xs last:border-b-0',
@@ -57,10 +55,10 @@ export const metricsWaitlist = tv({
     status:
       'shrink-0 rounded px-1.5 py-px text-[10px] font-medium data-[confirmed=false]:bg-panel-field data-[confirmed=false]:text-muted data-[confirmed=true]:bg-success/10 data-[confirmed=true]:text-success'
   }
-})
+} as const
 
 /** Presets as rows beside a month calendar; the trigger shows the preset and its days. */
-export const metricsRangePicker = tv({
+export const metricsRangePickerTheme = {
   slots: {
     triggerSpan: 'text-muted tabular-nums max-sm:hidden',
     body: 'flex max-sm:flex-col',
@@ -70,10 +68,10 @@ export const metricsRangePicker = tv({
       'flex h-7 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2 text-xs outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus data-[selected=true]:font-semibold',
     calendar: 'p-3'
   }
-})
+} as const
 
 /** Day 1, 7, and 30 above the retention curve; a day without data yet is a quiet dash. */
-export const metricsRetention = tv({
+export const metricsRetentionTheme = {
   slots: {
     root: 'flex flex-col gap-3',
     stats: 'grid grid-cols-3 gap-4',
@@ -82,4 +80,4 @@ export const metricsRetention = tv({
     statValue:
       'flex h-7 items-center text-lg font-semibold tabular-nums data-[empty=true]:text-xs data-[empty=true]:font-normal data-[empty=true]:text-muted'
   }
-})
+} as const

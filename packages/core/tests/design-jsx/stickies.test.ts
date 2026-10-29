@@ -98,7 +98,7 @@ describe('sticky notes in design JSX', () => {
     const [result] = await renderJSX(
       graph,
       `<Frame name="Board" flex="col" w={600} h={600}>
-  <Sticky opacity={designVar('var-faded', 0.5)}>Faded</Sticky>
+  <Sticky opacity={designVar('var-faded')}>Faded</Sticky>
   <Sticky x={300} y={40}>Placed</Sticky>
 </Frame>`
     )

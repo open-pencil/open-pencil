@@ -141,7 +141,9 @@ function reviewConflicts() {
 
 function open(row: CloudDocumentRow) {
   const document = listed.value.find((candidate) => candidate.id === row.id)
-  if (document) void openStorageDocumentInNewTab(document, location.value)
+  if (!document) return
+  // Opening reports its own failure.
+  void openStorageDocumentInNewTab(document, location.value).catch(() => undefined)
 }
 </script>
 

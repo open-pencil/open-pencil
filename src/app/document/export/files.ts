@@ -1,4 +1,5 @@
 import { zipSync, type Zippable } from 'fflate'
+import { extname } from 'pathe'
 
 import type { Editor, EditorState } from '@open-pencil/core'
 import {
@@ -52,9 +53,8 @@ export function bundleExportFiles(files: ExportedFile[]): Uint8Array {
   for (const file of files) {
     let name = sanitizeZipEntryName(file.fileName)
     if (used.has(name)) {
-      const dot = name.lastIndexOf('.')
-      const stem = dot === -1 ? name : name.slice(0, dot)
-      const tail = dot === -1 ? '' : name.slice(dot)
+      const tail = extname(name)
+      const stem = name.slice(0, name.length - tail.length)
       let i = 2
       while (used.has(`${stem} (${i})${tail}`)) i++
       name = `${stem} (${i})${tail}`

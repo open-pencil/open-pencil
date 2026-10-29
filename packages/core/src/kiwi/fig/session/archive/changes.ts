@@ -1,6 +1,13 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import type {
+  DocumentColorSpace,
+  EnabledLibraryBinding,
+  SceneGraph,
+  SceneNode,
+  Variable,
+  VariableCollection
+} from '@open-pencil/scene-graph'
 
 /**
  * How a document opened from a `.fig` archive has diverged from it, for writing only what
@@ -23,7 +30,13 @@ interface ArchiveChanges {
   resourceIds: Set<string>
   variables: Map<string, Variable>
   collections: CollectionsSnapshot
-  settings: unknown
+  settings: SettingsSnapshot
+}
+
+/** The document's own settings, which its record holds rather than any layer. */
+interface SettingsSnapshot {
+  colorSpace: DocumentColorSpace
+  libraries: Array<[string, EnabledLibraryBinding]>
 }
 
 /** The variable collections and the modes the document shows them in. */
@@ -34,7 +47,7 @@ interface CollectionsSnapshot {
 
 const changes = new WeakMap<SceneGraph, ArchiveChanges>()
 
-function settingsSnapshot(graph: SceneGraph): unknown {
+function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
   return structuredClone({
     colorSpace: graph.documentColorSpace,
     libraries: [...graph.enabledLibraries]
@@ -137,6 +150,7 @@ export interface ArchiveBaseline {
   loadedAfterEdits: ReadonlySet<string>
   variables: ReadonlyMap<string, Variable>
   collections: CollectionsSnapshot
+  settings: SettingsSnapshot
 }
 
 export function archiveBaseline(graph: SceneGraph): ArchiveBaseline | undefined {
@@ -147,6 +161,7 @@ export function archiveBaseline(graph: SceneGraph): ArchiveBaseline | undefined 
     created: entry.created,
     loadedAfterEdits: entry.loadedAfterEdits,
     variables: entry.variables,
-    collections: entry.collections
+    collections: entry.collections,
+    settings: entry.settings
   }
 }

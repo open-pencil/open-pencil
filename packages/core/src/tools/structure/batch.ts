@@ -1,12 +1,21 @@
-import { safeDestr } from 'destr'
 import * as v from 'valibot'
 
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { textFonts } from '#core/tools/modify/text'
 import { defineTool } from '#core/tools/schema'
 
-interface BatchOp {
-  id: string
-  props: Record<string, unknown>
+const batchOpsSchema = v.array(
+  v.object({ id: v.string(), props: v.record(v.string(), v.unknown()) })
+)
+type BatchOp = v.InferOutput<typeof batchOpsSchema>[number]
+
+/** The operations a call names, or why they cannot be read. */
+function parseOperations(operations: string): BatchOp[] | { error: string } {
+  const json = v.safeParse(v.pipe(v.string(), v.parseJson()), operations)
+  if (!json.success) return { error: 'Invalid JSON in operations' }
+  const ops = v.safeParse(batchOpsSchema, json.output)
+  if (!ops.success) return { error: 'operations must be a JSON array of {id, props}' }
+  return ops.output
 }
 
 function str(value: unknown): string {
@@ -104,14 +113,15 @@ export const batchUpdate = defineTool({
       )
     )
   }),
+  // Text that resizes itself lays out again, so its fonts load first.
+  fonts: (figma, { operations }) => {
+    const ops = parseOperations(operations)
+    if (!Array.isArray(ops)) return []
+    return ops.flatMap((op) => (op.props.auto_resize === undefined ? [] : textFonts(figma, op.id)))
+  },
   execute: (figma, { operations }) => {
-    let ops: BatchOp[]
-    try {
-      ops = safeDestr<BatchOp[]>(String(operations))
-    } catch {
-      return { error: 'Invalid JSON in operations' }
-    }
-    if (!Array.isArray(ops)) return { error: 'operations must be a JSON array' }
+    const ops = parseOperations(operations)
+    if (!Array.isArray(ops)) return ops
 
     const results: Array<{ id: string; updated: string[] }> = []
     const errors: string[] = []

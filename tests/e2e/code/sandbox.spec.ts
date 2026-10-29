@@ -42,6 +42,7 @@ test('evaluates JSX into plain inert data', async ({ page }) => {
         source: 1
       }
     ],
+    collections: [],
     lineOffset: 0
   })
 })
@@ -76,22 +77,40 @@ return <Card title="Hello" visible />`
         source: 3
       }
     ],
+    collections: [],
     lineOffset: 0
   })
 })
 
-test('converts variable helpers without executing host capabilities', async ({ page }) => {
+test('writes each defineVars() collection once, with the modes defineMode() adds', async ({
+  page
+}) => {
   const result = await evaluate(
     page,
-    `const vars = defineVars({ primary: { name: 'Primary', value: '#ff0000' } })
-return <Frame fill={vars.primary}><Text color={designVar('text', '#000')}>Hello</Text></Frame>`
+    `const theme = defineVars('Theme', { Page: '#ffffff', Text: '#111111' }, { mode: 'Light' })
+const dark = defineMode(theme, 'Dark', { Page: '#111111', Text: theme.Page })
+return <Frame mode={dark} fill={theme.Page}><Text color={designVar('Ink')}>Hello</Text></Frame>`
   )
   expect(result.ok).toBe(true)
   if (!result.ok) return
+  expect(result.collections).toEqual([
+    {
+      collection: 'Theme',
+      values: { Page: '#ffffff', Text: '#111111' },
+      options: { mode: 'Light' },
+      modes: [
+        {
+          mode: 'Dark',
+          values: { Page: '#111111', Text: { __openPencilHelper: 'variable', args: [0, 'Page'] } }
+        }
+      ]
+    }
+  ])
   expect(result.roots[0]).toMatchObject({
     type: 'frame',
     props: {
-      fill: { __openPencilHelper: 'designVar' }
+      mode: { __openPencilHelper: 'mode', args: [0, 'Dark'] },
+      fill: { __openPencilHelper: 'variable', args: [0, 'Page'] }
     }
   })
 })
@@ -127,6 +146,7 @@ test('supports multiple roots through fragments', async ({ page }) => {
       { type: 'rectangle', props: { name: 'One' }, children: [], source: 1 },
       { type: 'ellipse', props: { name: 'Two' }, children: [], source: 1 }
     ],
+    collections: [],
     lineOffset: 0
   })
 })

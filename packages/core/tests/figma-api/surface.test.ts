@@ -3,10 +3,10 @@ import { fileURLToPath } from 'node:url'
 
 import ts from 'typescript'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { FigmaAPI } from '#core/figma-api/index'
 import { FIGMA_API_HOST_MEMBERS, SERIALIZATION_MEMBERS } from '#core/figma-api/surface'
-
-import { SceneGraph } from '@open-pencil/scene-graph'
 
 // `compatibility.ts` checks the declared types; this checks what a script can actually reach,
 // including members installed on prototypes, against the names Figma's typings declare.
