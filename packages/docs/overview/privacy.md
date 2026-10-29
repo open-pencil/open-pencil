@@ -48,7 +48,7 @@ POST https://feedback.openpencil.dev/ping
 
 <SdkDataTable :columns="columns" :rows="pingRows" />
 
-It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day. The server adds one to a counter for that day and build, and keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
+It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day. The server adds one to a counter for that day and build. It also adds one to a counter for that day and the network the ping came from: the network's number and operator name as Cloudflare reports them, such as a home internet provider, a university, or a cloud host. That tells real people apart from automated installs running in data centers, without anything that identifies a device. The server keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
 
 The ping is on by default. Turn it off in **Settings → Privacy**.
 

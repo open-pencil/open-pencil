@@ -16,6 +16,7 @@ const POSTHOG_QUERY = 'https://eu.posthog.com/api/projects/267806/query/'
 const NOW = new Date('2026-10-20T12:00:00.000Z')
 const TABLES = [
   'usagePings',
+  'pingNetworks',
   'waitlist',
   'githubStars',
   'releaseDownloads',
@@ -215,6 +216,39 @@ describe('metrics snapshot API', () => {
       { day: '2026-10-15', desktop: 400, web: 300 },
       { day: '2026-10-16', desktop: 0, web: 0 }
     ])
+  })
+
+  test('networks rank the range by pings under their commonest name', async () => {
+    const counts = [
+      ['2026-10-18', 9299, 'PLDT', 'desktop', 30],
+      ['2026-10-18', 136907, 'Huawei-Cloud-SG', 'desktop', 50],
+      ['2026-10-19', 136907, 'Huawei Cloud Singapore Region', 'desktop', 400],
+      ['2026-10-19', 9299, 'PLDT', 'web', 20],
+      ['2026-10-19', 0, '', 'desktop', 5]
+    ] as const
+    await database()
+      .insertInto('pingNetworks')
+      .values(
+        counts.map(([day, asn, name, app, count]) => ({
+          day,
+          asn,
+          name,
+          app,
+          platform: 'macos',
+          count
+        }))
+      )
+      .execute()
+
+    const { networks } = await snapshot()
+    expect(networks).toEqual({
+      total: 505,
+      top: [
+        { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 450, web: 0 },
+        { asn: 9299, name: 'PLDT', desktop: 30, web: 20 },
+        { asn: 0, name: '', desktop: 5, web: 0 }
+      ]
+    })
   })
 
   test('earliest is the first day with pings or backfilled visits', async () => {
