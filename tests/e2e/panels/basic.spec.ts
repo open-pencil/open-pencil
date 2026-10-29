@@ -62,3 +62,26 @@ test('Cmd+Backslash shows panels again', async () => {
   await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
   editor.canvas.assertNoErrors()
 })
+
+// The right panel opens at one width on any window, rather than as a share that grows with it.
+test('the properties panel opens at the same width on a narrow and a wide window', async ({
+  browser,
+  baseURL
+}) => {
+  const widths: number[] = []
+  for (const width of [1280, 1920]) {
+    const context = await browser.newContext({ baseURL, viewport: { width, height: 900 } })
+    try {
+      const page = await context.newPage()
+      await page.goto('/?test')
+      const panel = page.getByTestId('properties-panel')
+      await expect(panel).toBeVisible()
+      widths.push(expectDefined(await panel.boundingBox(), 'properties panel bounds').width)
+    } finally {
+      await context.close()
+    }
+  }
+  expect(Math.abs(widths[0] - widths[1])).toBeLessThanOrEqual(1)
+  expect(widths[0]).toBeGreaterThan(240)
+  expect(widths[0]).toBeLessThan(270)
+})
