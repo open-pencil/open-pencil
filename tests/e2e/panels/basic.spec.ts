@@ -64,24 +64,28 @@ test('Cmd+Backslash shows panels again', async () => {
 })
 
 // The right panel opens at one width on any window, rather than as a share that grows with it.
-test('the properties panel opens at the same width on a narrow and a wide window', async ({
+test('the properties panel reopens at one width on a narrow and a wide window', async ({
   browser,
   baseURL
 }) => {
-  const widths: number[] = []
-  for (const width of [1280, 1920]) {
-    const context = await browser.newContext({ baseURL, viewport: { width, height: 900 } })
-    try {
-      const page = await context.newPage()
-      await page.goto('/?test')
-      const panel = page.getByTestId('properties-panel')
-      await expect(panel).toBeVisible()
-      widths.push(expectDefined(await panel.boundingBox(), 'properties panel bounds').width)
-    } finally {
-      await context.close()
-    }
+  const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 900 } })
+  try {
+    const page = await context.newPage()
+    const panel = page.getByTestId('properties-panel')
+    const panelWidth = async () =>
+      expectDefined(await panel.boundingBox(), 'properties panel bounds').width
+
+    await page.goto('/?test')
+    await expect(panel).toBeVisible()
+    const narrow = await panelWidth()
+    expect(narrow).toBeGreaterThan(240)
+    expect(narrow).toBeLessThan(270)
+
+    await page.setViewportSize({ width: 1920, height: 900 })
+    await page.reload()
+    await expect(panel).toBeVisible()
+    expect(Math.abs((await panelWidth()) - narrow)).toBeLessThanOrEqual(1)
+  } finally {
+    await context.close()
   }
-  expect(Math.abs(widths[0] - widths[1])).toBeLessThanOrEqual(1)
-  expect(widths[0]).toBeGreaterThan(240)
-  expect(widths[0]).toBeLessThan(270)
 })

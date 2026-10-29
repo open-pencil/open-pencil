@@ -41,6 +41,18 @@ const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
 const initialEditorLayout = loadEditorLayout()
+/**
+ * Whether a handle has resized the panels. The splitter also reports the layout it opens with,
+ * which must not be saved: the right panel's default is a fixed width, and saved as a share of
+ * this window it would open wider on a wider one.
+ */
+let resizedByHandle = false
+function markResized() {
+  resizedByHandle = true
+}
+function saveResizedLayout(layout: number[]) {
+  if (resizedByHandle) saveEditorLayout(layout)
+}
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 /** One canvas previewing takes the whole window, in the canvas-only layout; split view keeps panels. */
 const playingAlone = computed(() => store.state.play !== null && store.visiblePaneCount.value <= 1)
@@ -59,7 +71,7 @@ const { pending: roomPending } = useRoomActions()
     :key="tab.id"
     direction="horizontal"
     class="flex-1 overflow-hidden"
-    @layout="saveEditorLayout"
+    @layout="saveResizedLayout"
   >
     <SplitterPanel
       id="layers"
@@ -73,6 +85,8 @@ const { pending: roomPending } = useRoomActions()
     <SplitterResizeHandle
       data-test-id="left-splitter-handle"
       :class="horizontalSplitterStyles.handle()"
+      @dragging="markResized"
+      @keydown="markResized"
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
@@ -83,7 +97,11 @@ const { pending: roomPending } = useRoomActions()
         <Toolbar />
       </div>
     </SplitterPanel>
-    <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
+    <SplitterResizeHandle
+      :class="horizontalSplitterStyles.handle()"
+      @dragging="markResized"
+      @keydown="markResized"
+    >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
     <SplitterPanel
