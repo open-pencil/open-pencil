@@ -141,7 +141,7 @@ describe('sizing after a resize', () => {
 
   test('a text keeps sizing itself along the sides a resize leaves alone', () => {
     const figma = new FigmaAPI(new SceneGraph())
-    const after = (mode: 'WIDTH_AND_HEIGHT' | 'HEIGHT', width: number, height: number) => {
+    const after = (mode: 'WIDTH_AND_HEIGHT' | 'HEIGHT', width: number, height: number): string => {
       const text = figma.createText()
       text.characters = 'Label'
       text.textAutoResize = mode
