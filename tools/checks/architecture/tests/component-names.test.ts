@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { duplicateComponentNames } from '../src/steiger-rules/component-names'
+import {
+  duplicateComponentNames,
+  singleWordComponentNames
+} from '../src/steiger-rules/component-names'
 
 describe('unique component names', () => {
   test('finds app components that share a file name', () => {
@@ -31,5 +34,17 @@ describe('unique component names', () => {
         'src/components/chat/state/index.ts'
       ])
     ).toEqual(new Map())
+  })
+
+  test('finds one-word component names, except the allowed ones and story examples', () => {
+    expect(
+      singleWordComponentNames([
+        'src/components/shell/Toaster.vue',
+        'src/components/shell/AppToaster.vue',
+        'src/components/ui/overlay/Tip.vue',
+        'src/components/navigation/examples/States.vue',
+        'src/views/Editor.vue'
+      ])
+    ).toEqual(['src/components/shell/Toaster.vue'])
   })
 })

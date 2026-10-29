@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { uniqueComponentNames } from './component-names.ts'
+import { multiWordComponentNames, uniqueComponentNames } from './component-names.ts'
 import { noCrossPackageReexportShims } from './cross-package-reexport-shims.ts'
 import {
   noDynamicTailwindStateClasses,
@@ -552,6 +552,7 @@ export const openPencilArchitecturePlugin = {
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
     noUIImportsInCore,
-    uniqueComponentNames
+    uniqueComponentNames,
+    multiWordComponentNames
   ]
 }

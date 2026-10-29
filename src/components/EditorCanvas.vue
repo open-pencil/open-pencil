@@ -45,7 +45,7 @@ import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
-import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+import PreparationCanvasOverlay from '@/components/preparation/canvas/PreparationCanvasOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
@@ -350,7 +350,7 @@ const cursor = computed(() =>
           @stop="followView.stop"
         />
         <CommentsLayer v-if="isActivePane" :canvas-el="canvasRef" :drawn="drawnView" />
-        <PreparationOverlay
+        <PreparationCanvasOverlay
           v-if="store.state.preparation && store.state.preparation.kind !== 'font-retry'"
           :preparation="store.state.preparation"
         />

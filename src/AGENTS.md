@@ -64,6 +64,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 
 - Every component under `src/components/` has a file name of its own; story examples under `examples/` are exempt (`open-pencil/unique-component-names`, `check:arch`).
 - Name a component from the most general word to the most specific, starting with its feature: `ChatMessageQueued`, `ChatToolCallCard`, not `QueuedMessage` or `ToolCallCard` (`src/components/chat/`).
+- Component names have at least two words, so they never clash with HTML elements; `Tip` is the one exception (`open-pencil/multi-word-component-names`, `check:arch`).
 - A component used only inside one parent starts with that parent's name; existing domains migrate when touched (`src/components/chat/turn/ChatMessageEditor.vue`).
 
 ### Building blocks
