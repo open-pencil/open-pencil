@@ -11,6 +11,7 @@ export function createCanvasContextSelection(
   function selectAtContextPoint(event: MouseEvent) {
     const canvas = canvasRef.value
     if (!canvas) return
+    if (store.state.activeTool === 'COMMENT') return
     // Overlays such as comment pins handle their own right-click.
     const target = event.target instanceof Element ? event.target : null
     if (target?.closest('[data-canvas-overlay]')) return

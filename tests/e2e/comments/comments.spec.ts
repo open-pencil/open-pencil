@@ -9,6 +9,13 @@ const moveTool = () => editor.page.getByTestId(toolbarToolTestId('SELECT'))
 const list = () => editor.page.locator('[data-slot="comments-panel"]')
 const items = () => list().locator('[data-slot="comment-list-item"]')
 const pins = () => editor.page.locator('[data-slot="comment-pin"]:not([data-draft])')
+async function selectedIds() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return [...store.state.selectedIds]
+  })
+}
 const thread = () => editor.page.locator('[data-slot="comment-thread"]')
 
 async function placeComment(x: number, y: number, text: string) {
@@ -142,11 +149,29 @@ test('middle mouse pans the canvas while the Comment tool is selected', async ()
   await expect(editor.page.getByRole('textbox', { name: 'Add a comment' })).toHaveCount(0)
 })
 
-test('right-clicking empty canvas in the Comment tool does not open the layer menu', async () => {
+test('right-clicking empty canvas in the Comment tool preserves selection and prevents the browser menu', async () => {
+  await editor.canvas.drawRect(100, 100, 120, 80)
   await commentTool().click()
+  const selection = await selectedIds()
+  expect(selection).toHaveLength(1)
+
+  const contextMenuEvent = editor.page.waitForEvent('console', {
+    predicate: (message) => message.text().startsWith('contextmenu-default-prevented:')
+  })
+  const canvasElement = editor.page.getByTestId('canvas-element')
+  await canvasElement.evaluate((canvas) => {
+    canvas.addEventListener(
+      'contextmenu',
+      (event) => console.debug(`contextmenu-default-prevented:${event.defaultPrevented}`),
+      { once: true }
+    )
+  })
+
   const canvas = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
   await editor.page.mouse.click(canvas.x + canvas.width * 0.75, canvas.y + canvas.height * 0.75, {
     button: 'right'
   })
   await expect(editor.page.getByRole('menu')).toHaveCount(0)
+  expect((await contextMenuEvent).text()).toBe('contextmenu-default-prevented:true')
+  expect(await selectedIds()).toEqual(selection)
 })
