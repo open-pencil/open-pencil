@@ -29,7 +29,8 @@ export function duplicateComponentNames(sourceRels: readonly string[]): Map<stri
 export function singleWordComponentNames(sourceRels: readonly string[]): string[] {
   return appComponents(sourceRels).filter((sourceRel) => {
     const name = path.basename(sourceRel, '.vue')
-    return /^[A-Z][a-z0-9]*$/.test(name) && !SINGLE_WORD_ALLOWLIST.has(name)
+    // `Toaster`, or an acronym alone such as `SVG`; `SVGIcon` has two words.
+    return /^(?:[A-Z][a-z0-9]*|[A-Z0-9]+)$/.test(name) && !SINGLE_WORD_ALLOWLIST.has(name)
   })
 }
 
