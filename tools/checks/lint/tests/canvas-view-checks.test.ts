@@ -5,6 +5,7 @@ import { lint, ruleDiagnostics } from './helpers/lint.ts'
 const rule = 'no-canvas-view-checks'
 const rules = { [`open-pencil/${rule}`]: 'error' }
 const check = "export const previewing = editor.state.canvasView.id === 'play'"
+const path = 'packages/vue/src/canvas/useCanvasInput.ts'
 
 describe('no-canvas-view-checks', () => {
   test.each([
@@ -22,9 +23,20 @@ describe('no-canvas-view-checks', () => {
     expect(ruleDiagnostics(await lint(check, rules, path), rule)).toHaveLength(0)
   })
 
+  test.each([
+    "export const previewing = editor.state['canvasView']['id'] === 'play'",
+    "export const previewing = editor.state.canvasView['id'] === 'play'"
+  ])('rejects a fixed bracket key: %s', async (source) => {
+    expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(1)
+  })
+
+  test('accepts a key read from a variable', async () => {
+    const source = 'export const read = (id: string) => editor.state.canvasView[id]'
+    expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(0)
+  })
+
   test('accepts reading the profile anywhere', async () => {
     const source = "export const panOnly = resolveEditorProfile(state).pointer === 'pan'"
-    const path = 'packages/vue/src/canvas/useCanvasInput.ts'
     expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(0)
   })
 })

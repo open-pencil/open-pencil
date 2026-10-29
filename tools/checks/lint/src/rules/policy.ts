@@ -137,6 +137,12 @@ const noConditionalObjectSpreads = {
  * than which view is showing; checks of the view's id outside the views module are how preview
  * came to branch at every place it behaves differently.
  */
+/** The key a member expression reads when it is fixed: `a.key` or `a['key']`, not `a[key]`. */
+function memberName(node: TSESTree.MemberExpression): string | null {
+  if (node.computed && node.property.type !== 'Literal') return null
+  return staticPropertyName(node.property)
+}
+
 const noCanvasViewChecks: RuleDefinition = {
   meta: {
     type: 'problem',
@@ -151,13 +157,9 @@ const noCanvasViewChecks: RuleDefinition = {
     if (!file.includes('/src/') || file.includes('/packages/core/src/editor/views/')) return {}
     return {
       MemberExpression(node) {
-        if (node.computed || staticPropertyName(node.property) !== 'id') return
+        if (memberName(node) !== 'id') return
         const owner = node.object
-        if (
-          owner.type !== 'MemberExpression' ||
-          staticPropertyName(owner.property) !== 'canvasView'
-        )
-          return
+        if (owner.type !== 'MemberExpression' || memberName(owner) !== 'canvasView') return
         context.report({
           node,
           message:
