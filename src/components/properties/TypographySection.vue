@@ -169,6 +169,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
             :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('lineHeight', $event)"
             @commit="(v, p) => ctx.actions.commitProp('lineHeight', v, p)"
+            @cancel="ctx.actions.cancelProp('lineHeight')"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.letterSpacing">
@@ -176,6 +177,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
             :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('letterSpacing', $event)"
             @commit="(v, p) => ctx.actions.commitProp('letterSpacing', v, p)"
+            @cancel="ctx.actions.cancelProp('letterSpacing')"
           />
         </PanelFieldGroup>
       </PanelGrid>

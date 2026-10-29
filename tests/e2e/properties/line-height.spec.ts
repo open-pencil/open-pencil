@@ -134,4 +134,12 @@ test('a typed % or px switches the unit of line height and letter spacing', asyn
   await letterSpacing.press('ArrowUp')
   await letterSpacing.press('Enter')
   await expect.poll(() => read('letterSpacing')).toEqual({ value: -1, unit: 'PIXELS' })
+
+  // Escape puts back the value and unit the layer had, whatever unit the preview showed.
+  await letterSpacing.focus()
+  await letterSpacing.fill('3%')
+  await letterSpacing.press('ArrowUp')
+  await expect.poll(() => read('letterSpacing')).toEqual({ value: 4, unit: 'PERCENT' })
+  await letterSpacing.press('Escape')
+  await expect.poll(() => read('letterSpacing')).toEqual({ value: -1, unit: 'PIXELS' })
 })

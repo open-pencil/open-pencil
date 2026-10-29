@@ -410,6 +410,18 @@ export function createTypographyActions({
     batch.flush()
   }
 
+  /** Puts back what a cancelled field previewed, as `cancelAxis` does for a font axis. */
+  function cancelProp(key: keyof SceneNode) {
+    if (previewKey === key) {
+      for (const [id, before] of beforePreview)
+        editor.updateNode(id, { [key]: before.value, textStyleId: before.textStyleId })
+    }
+    previewKey = undefined
+    beforePreview.clear()
+    batch.flush()
+    editor.requestRender()
+  }
+
   return {
     setFamily,
     setWeight,
@@ -428,6 +440,7 @@ export function createTypographyActions({
     toggleDecoration,
     onFormattingChange,
     updateProp,
-    commitProp
+    commitProp,
+    cancelProp
   }
 }

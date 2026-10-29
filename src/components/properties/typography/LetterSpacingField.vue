@@ -11,6 +11,7 @@ const { nodes } = defineProps<{ nodes: readonly SceneNode[] }>()
 const emit = defineEmits<{
   update: [value: TextLength]
   commit: [value: TextLength, previous: TextLength]
+  cancel: []
 }>()
 const { panels } = useI18n()
 const { value, suffix, length } = useTextLength(
@@ -36,6 +37,7 @@ function commit(current: number, previous: number, unit?: string) {
     binding-path="letterSpacing"
     @update:model-value="(value, unit) => emit('update', length(value, unit))"
     @commit="commit"
+    @cancel="emit('cancel')"
   >
     <template #icon>
       <icon-lucide-a-large-small class="size-3" />

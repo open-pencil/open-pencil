@@ -19,6 +19,7 @@ const { nodes } = defineProps<{ nodes: readonly SceneNode[] }>()
 const emit = defineEmits<{
   update: [value: TextLength]
   commit: [value: TextLength, previous: TextLength]
+  cancel: []
 }>()
 const editor = useEditor()
 const { open: popupOpen, portalActive } = useRetainedPopup()
@@ -68,6 +69,7 @@ function setMode(mode: string) {
     binding-path="lineHeight"
     @update:model-value="(value, unit) => emit('update', length(value, unit))"
     @commit="commit"
+    @cancel="emit('cancel')"
   >
     <template #icon><icon-lucide-baseline class="size-3" /></template>
     <template v-if="automatic" #display
