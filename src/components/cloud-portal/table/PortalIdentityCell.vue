@@ -2,7 +2,8 @@
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
-import { portalTable } from '@/theme/cloud-portal/table'
+
+import { portalTable } from './ui'
 
 /**
  * Who a row is about: their picture, name, and a line under it such as their email. With `link`

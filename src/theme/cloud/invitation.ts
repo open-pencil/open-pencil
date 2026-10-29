@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** The document an invitation opens, shown before anyone signs in or accepts. */
-export const cloudInvitation = tv({
+export default {
   slots: {
     document: 'flex items-center gap-3 rounded-lg border border-border bg-panel-field px-3 py-3',
     documentIcon: 'flex size-9 shrink-0 items-center justify-center rounded-md bg-panel text-muted',
@@ -18,4 +16,4 @@ export const cloudInvitation = tv({
     loading: 'flex items-center justify-center gap-2 py-6 text-[11px] text-muted',
     spinner: 'size-3.5 shrink-0 animate-spin motion-reduce:animate-none'
   }
-})
+} as const

@@ -61,7 +61,6 @@ tests/engine/app/editor/preparation/multi-tab.test.ts
 tests/engine/app/editor/selection/focus.test.ts
 tests/engine/app/editor/store-path.test.ts
 tests/engine/app/editor/variables.test.ts
-tests/engine/app/editor/vectorize/providers.test.ts
 tests/engine/app/external-link.test.ts
 tests/engine/app/font-loading.test.ts
 tests/engine/app/integrations/mcp-connections.test.ts
@@ -354,8 +353,6 @@ tests/engine/render/canvas/tiles/scheduler.test.ts
 tests/engine/render/canvas/variable-modes.test.ts
 tests/engine/render/canvas/visual/boolean-matrix.test.ts
 tests/engine/render/jsx/component/properties.test.ts
-tests/engine/render/jsx/component/property-references.test.ts
-tests/engine/render/jsx/component/set-properties.test.ts
 tests/engine/render/jsx/gaps.test.ts
 tests/engine/render/jsx/grid-layout.test.ts
 tests/engine/render/jsx/instance-sizing.test.ts

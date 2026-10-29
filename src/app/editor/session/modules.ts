@@ -84,6 +84,7 @@ export function createEditorStoreModules(
     getViewportSize: documentIO.getViewportSize,
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
+    renameDocument: documentIO.renameDocument,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
     /** Counts the document changed by something outside its history, so it gets saved. */

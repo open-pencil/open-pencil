@@ -10,7 +10,7 @@ import {
   getInMemoryClipboardHTML,
   setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
-import { pasteClipboardHTML, pasteSVGText } from '@/app/editor/clipboard/paste/content'
+import { pasteClipboardHTML, pasteLayerText } from '@/app/editor/clipboard/paste/content'
 import type {
   BrowserClipboardIO,
   BrowserClipboardReadResult,
@@ -109,7 +109,7 @@ async function pasteSelection(
       await pasteClipboardHTML(store, result.html, cursorPos)
       return true
     }
-    return result.text !== null && (await pasteSVGText(store, result.text, cursorPos))
+    return result.text !== null && (await pasteLayerText(store, result.text, cursorPos))
   }
 
   const memoryHTML = getInMemoryClipboardHTML()

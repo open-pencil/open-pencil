@@ -11,9 +11,9 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 import AppTablePagination from '@/components/ui/table/AppTablePagination.vue'
-import { portalTable } from '@/theme/cloud-portal/table'
 
 import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import { portalTable } from './ui'
 
 /**
  * A console list the server searches, filters, and pages: a search box when `searchLabel` is

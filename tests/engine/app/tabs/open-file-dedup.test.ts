@@ -17,6 +17,8 @@ import {
   openFileInNewTab,
   showNewTab,
   restoreRecoverySnapshot,
+  switchAdjacentTab,
+  switchTab,
   tabCount,
   withHomePinned,
   type Tab
@@ -185,6 +187,23 @@ describe('openFileInNewTab deduplication', () => {
     expect(getTabsSnapshot()[0]?.id).toBe(home.id)
     await closeTab(home.id)
     expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toEqual([home])
+  })
+
+  test('cycles through the tabs both ways, wrapping between the last tab and Home', () => {
+    createTab()
+    const home = createHomeTab()
+    const tabs = getTabsSnapshot()
+    const last = expectDefined(tabs.at(-1), 'last tab')
+    const second = expectDefined(tabs[1], 'tab after Home')
+    switchTab(last.id)
+
+    switchAdjacentTab(1)
+    expect(getActiveStore()).toBe(home.store)
+    switchAdjacentTab(1)
+    expect(getActiveStore()).toBe(second.store)
+    switchAdjacentTab(-1)
+    switchAdjacentTab(-1)
+    expect(getActiveStore()).toBe(last.store)
   })
 
   test('pins Home first, moving it there or adding it when the tabs have none', () => {

@@ -60,6 +60,7 @@ export function useShellMenu() {
       openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
     },
     settings: openSettingsDialog,
+    diagnostics: () => openSettingsDialog('diagnostics'),
     'snap-geometry': () => {
       const current = appPreferences.value.editing.snapping.geometry
       setSnappingPreference('geometry', !current)

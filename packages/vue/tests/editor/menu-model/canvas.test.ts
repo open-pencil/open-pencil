@@ -20,9 +20,10 @@ function menuIds(isIcon: boolean) {
       isInstance: ref(false),
       isIcon: ref(isIcon),
       canCreateComponentSet: ref(false),
-      canCreateSlot: ref(false)
+      canCreateSlot: ref(false),
+      canAutoArrange: ref(false)
     } as CanvasMenuOptions['selection'],
-    t: { moveToPage: 'Move to page' }
+    t: { moveToPage: 'Move to page', autoArrange: 'Auto arrange' }
   })
   return menu.flatMap((item) => (item.separator ? [] : [item.id]))
 }

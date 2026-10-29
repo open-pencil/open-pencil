@@ -7,6 +7,7 @@ import { ResourceCache } from '#core/cache/resource'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { FamilyFace } from '#core/text/font/faces'
+import type { FontAxis } from '#core/text/font/variation'
 import { fontManager, fontWeightMatchOrder } from '#core/text/fonts'
 
 const familiesCache = new ResourceCache<string, string[]>({ maxEntries: 256 })
@@ -38,6 +39,25 @@ export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
     : font.variations
   const axes = new Map([...named, ...set].map(({ axis, value }) => [axis, value]))
   return [...axes].map(([axis, value]) => ({ axis, value }))
+}
+
+/** An axis of the variable font text is drawn in, with the value it is drawn at. */
+export interface DrawnFontAxis extends FontAxis {
+  value: number
+}
+
+/**
+ * The axes of the variable font text is drawn in, in the font's order, each at the value it is
+ * drawn at, within its range. `null` when the family's loaded faces are static or it has none.
+ */
+export function drawnFontAxes(font: DrawnFontAxes): DrawnFontAxis[] | null {
+  const variation = fontManager.familyVariation(font.family, font.italic)
+  if (!variation) return null
+  const drawn = new Map(drawnFontVariations(font).map(({ axis, value }) => [axis, value]))
+  return variation.axes.map((axis) => ({
+    ...axis,
+    value: Math.min(axis.max, Math.max(axis.min, drawn.get(axis.tag) ?? axis.default))
+  }))
 }
 
 /**
@@ -75,9 +95,17 @@ export function paragraphSourceFamilies(
   ])
 }
 
+/** `style` of `family` by the names CanvasKit draws it under: its own file, then its shards. */
+function renderFamilies(family: string, style: string): string[] {
+  return [
+    fontManager.renderFamily(family, style),
+    ...fontManager.renderShardFamilies(family, style)
+  ]
+}
+
 /**
  * The paragraph's families as CanvasKit is asked for them: the family in the face it draws the
- * style in, and its fallbacks, each by the name `fontManager.renderFamily` gives it.
+ * style in, and its fallbacks, each by the names `renderFamilies` gives it.
  */
 export function resolveParagraphFontFamilies(
   primary: string,
@@ -88,21 +116,26 @@ export function resolveParagraphFontFamilies(
   // The face the family draws the style in, which may be the nearest one loaded.
   const asked = parseFontStyle(style)
   const drawn = loadedFace(primary, asked.weight, asked.italic)
-  const renderPrimary = fontManager.renderFamily(
+  const renderPrimary = renderFamilies(
     primary,
     drawn ? weightToStyle(drawn.weight, drawn.italic) : style
   )
-  const renderArabicFallbacks = arabicFallbacks.map((family) =>
-    fontManager.renderFamily(family, 'Regular')
+  const renderArabicFallbacks = arabicFallbacks.flatMap((family) =>
+    renderFamilies(family, 'Regular')
   )
-  const renderCJKFallbacks = cjkFallbacks.map((family) =>
-    fontManager.renderFamily(family, 'Regular')
-  )
-  const key = `${primary}\0${renderPrimary}\0${renderArabicFallbacks.join('\0')}\0${renderCJKFallbacks.join('\0')}`
+  const renderCJKFallbacks = cjkFallbacks.flatMap((family) => renderFamilies(family, 'Regular'))
+  const key = [
+    primary,
+    ...renderPrimary,
+    '',
+    ...renderArabicFallbacks,
+    '',
+    ...renderCJKFallbacks
+  ].join('\0')
   const cached = familiesCache.peek(key)
   if (cached) return cached
   const resolved = uniq([
-    renderPrimary,
+    ...renderPrimary,
     ...(primary === DEFAULT_FONT_FAMILY ? [] : [DEFAULT_FONT_FAMILY]),
     ...renderArabicFallbacks,
     ...renderCJKFallbacks,

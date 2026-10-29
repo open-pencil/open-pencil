@@ -99,13 +99,13 @@ function spacing(field: 'paragraphSpacing' | 'listSpacing' | 'paragraphIndent') 
  */
 const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown> = {
   fontSize: ({ style }) => style.fontSize,
-  fontName: ({ node, style }) => {
+  fontName: ({ style }) => {
     const name = weightToStyleName(style.fontWeight, style.italic)
     const variationSettings = readVariationSettings(
       style.fontFamily,
       name,
       style.fontVariations,
-      node.opticalSizeFromFontSize
+      style.opticalSizeFromFontSize
     )
     return variationSettings
       ? { family: style.fontFamily, style: name, variationSettings }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
@@ -9,9 +10,11 @@ import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
-import { cloudConflict } from '@/theme/cloud/conflict'
+import cloudConflictTheme from '@/theme/cloud/conflict'
 
 import type { ConflictChoice, ConflictVersion } from './types'
+
+const cloudConflict = tv(cloudConflictTheme)
 
 /**
  * A Cloud document saved elsewhere while this device held unsent changes. Both versions are kept

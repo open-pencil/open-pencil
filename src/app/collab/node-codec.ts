@@ -84,7 +84,7 @@ export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {
   if ('fillGeometry' in props) props.fillGeometry = normalizeGeometryPaths(props.fillGeometry)
   if ('strokeGeometry' in props) props.strokeGeometry = normalizeGeometryPaths(props.strokeGeometry)
   props.textPicture = null
-  return props as Partial<SceneNode>
+  return props
 }
 
 export function normalizeSourceMetadata(source: unknown): SourceMetadata {

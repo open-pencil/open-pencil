@@ -9,7 +9,7 @@ Press <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) to open the AI
 
 ## Setup
 
-The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Gemini CLI, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → AI & agents → Run guided setup**. To configure models by hand:
+The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Gemini CLI, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → Models → Run guided setup**. To configure models by hand:
 
 1. Open the AI chat panel (<kbd>⌘</kbd><kbd>J</kbd>)
 2. Click the settings icon
@@ -18,11 +18,11 @@ The first time you open OpenPencil, guided setup asks what AI should help with a
 
 You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. Models using the same provider connection reuse its stored credential.
 
-The chat composer grows with multiline prompts and can pin the current canvas selection as explicit node context. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
+The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, or use the selection button to mention the selected layers, and `/` at the start of a message to run a skill, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
 
 ## Step limit
 
-In **Settings → AI & agents → Chat**, set **Maximum steps per message** to a whole number from 1 to 1,000. The default is 50. Press Enter or leave the field to save a valid value; invalid drafts do not replace the saved preference. Higher limits allow longer tool-driven tasks but can increase latency and provider cost.
+In **Settings → Models → Chat**, set **Maximum steps per message** to a whole number from 1 to 1,000. The default is 50. Press Enter or leave the field to save a valid value; invalid drafts do not replace the saved preference. Higher limits allow longer tool-driven tasks but can increase latency and provider cost.
 
 The built-in AI captures this limit when each message starts. Stopping, remaining-step warnings, and the **Continue** action use that same budget. Changing it does not interrupt an ongoing request; the next message or continuation uses the new limit. A step is one model iteration and can include multiple tool calls. ACP and Pi agents manage their own limits.
 
@@ -35,6 +35,20 @@ Preferences are saved locally and apply to the next message, including in an exi
 The **Local MCP** segment has independent settings for clients connected to OpenPencil's MCP server, including ACP and Pi agents. Restart the server and reconnect stdio clients after changing those settings. Remote MCP connections, WebMCP access, and Pi's shell/filesystem permissions remain separate.
 
 Tool toggles control which tools are offered, not which operations scripts may perform. An enabled `eval` or other script-capable tool can perform design operations whose dedicated tools are disabled; these switches are not a sandbox.
+
+## Skills
+
+Skills are folders with a `SKILL.md` in the [Agent Skills](https://agentskills.io/specification) format: instructions for a kind of work, with optional reference files. The built-in AI sees each enabled skill's name and description and loads its instructions when a request matches. It can read the skill's files, but scripts in a skill do not run.
+
+Open **Settings → Skills** to see where skills come from:
+
+- **Uploaded**: upload a ZIP of a skill's folder or a single `SKILL.md`. Uploads stay in OpenPencil and work in the browser too.
+- **Next to this document** (desktop): `.agents/skills` and `.claude/skills` folders from the open document's folder up to its repository. They stay off until you choose **Trust folder**, because a skill gives the AI instructions it follows.
+- **Shared agent skills** and **Claude Code skills** (desktop): `~/.agents/skills` and `~/.claude/skills`, where other coding agents install skills. Most of those are coding workflows, so these folders start off; the review step of the AI setup lists their skills for you to pick the ones that help with design.
+
+Uploads are on as soon as you add them, and any folder or skill can be switched on or off. The page lists them as Tool access lists tools: each source is a group with its own switch, and each skill has a switch beside it. Open a skill to read its instructions, see its files, or check warnings about how it departs from the specification. When two skills share a name, the first in that order is used.
+
+To run a skill yourself, type `/` at the start of a message and pick it, which starts the message with `/skill:name`. Pi gets the enabled skills as its own. ACP agents such as Claude Code and Codex load their own skills.
 
 ## Saved Conversations
 
@@ -88,13 +102,17 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 
 The assistant can verify its work visually. With `export_image`, on by default, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss. `diff_visual`, enabled by default, compares an edited node with a reference copy and returns the changed pixels and region, so the assistant can confirm an edit stayed within its target.
 
+## Messages while the assistant works
+
+You can keep typing while a reply runs. **Enter** sends the message as soon as the current step's tool calls finish, so the built-in AI can change course without being stopped; **Alt+Enter** waits until it has finished all work. Waiting messages show dimmed below the reply, with a button to remove each. **Escape** stops the reply and sends what is waiting at once, and **Up** on the first line takes waiting messages back to edit. ACP agents and Pi take a waiting message once their turn ends.
+
 ## Stopping a reply
 
-**Stop** ends a reply at once. A tool call already running finishes, and its edit counts as part of the reply; calls still waiting for their turn change nothing. The reply is marked *Stopped*, its reasoning and any unfinished calls stop showing as running, and your next message tells the assistant whether those calls changed the document.
+**Stop** ends a reply at once. A tool call already running finishes, and its edit counts as part of the reply; calls still waiting for their turn change nothing. The reply is marked _Stopped_, its reasoning and any unfinished calls stop showing as running, and your next message tells the assistant whether those calls changed the document.
 
 ## Undoing the assistant's edits
 
-Each tool call that changes the document is one step in Edit → Undo. Undoing it with <kbd>⌘</kbd><kbd>Z</kbd> marks the call *Undone* in the chat. A reply with only some edits undone says how many; one with all of them undone is dimmed and marked *Changes reverted*. Redo removes the marks. The marks are saved with the conversation.
+Each tool call that changes the document is one step in Edit → Undo. Undoing it with <kbd>⌘</kbd><kbd>Z</kbd> marks the call _Undone_ in the chat. A reply with only some edits undone says how many; one with all of them undone is dimmed and marked _Changes reverted_. Redo removes the marks. The marks are saved with the conversation.
 
 **Revert changes** on a reply undoes its edits while nothing has been edited since, and **Restore changes** brings undone edits back while Redo still can. **Regenerate** and editing your last message undo the replaced reply's edits first when they can.
 

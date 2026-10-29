@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
+
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -6,10 +8,12 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { initials } from '@/app/presence/initials'
 import type { FollowTarget } from '@/app/presence/types'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { avatar } from '@/theme/collaboration/avatar/person'
-import { presenceList } from '@/theme/collaboration/presence-list'
+import presenceListTheme from '@/theme/collaboration/presence-list'
 
 import { isFollowing, type PresenceAgentRow, type PresencePersonRow } from './rows'
+import { avatar } from './ui'
+
+const presenceList = tv(presenceListTheme)
 
 const { rows, following } = defineProps<{
   rows: PresencePersonRow[]

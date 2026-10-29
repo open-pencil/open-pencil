@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": ["packages/mermaid/src/upstream/"],
   "trailingComma": "none",
   "tabWidth": 2,
   "semi": false,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { portalTable } from '@/theme/cloud-portal/table'
+import { portalTable } from './ui'
 
 /**
  * Where a row stands, as coloured badges, or `fallback` in plain words when no badge applies, with

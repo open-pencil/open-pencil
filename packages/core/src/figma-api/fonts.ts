@@ -1,6 +1,12 @@
+import { uniq, uniqBy } from 'es-toolkit/array'
+
 import type { FontVariation } from '@open-pencil/scene-graph'
 import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
-import { FONT_WEIGHT_NAMES, parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import {
+  FONT_WEIGHT_NAMES,
+  parseFontStyle,
+  weightToStyle
+} from '@open-pencil/scene-graph/font-style'
 
 import {
   namedInstanceVariations,
@@ -16,6 +22,53 @@ export type FigmaFont = { fontName: FigmaFontName }
 export function weightToStyleName(weight: number, italic: boolean): string {
   const base = FONT_WEIGHT_NAMES[weight] ?? 'Regular'
   return italic ? `${base} Italic` : base
+}
+
+/**
+ * The style name text asks the font manager for, whichever way a script spells it ("Italic",
+ * "Semi Bold"), so a font a script loaded is the one its text edits find loaded.
+ */
+function textFaceStyle(style: string): string {
+  const { weight, italic } = parseFontStyle(style)
+  return weightToStyle(weight, italic)
+}
+
+/** Figma's rejection for a font it cannot load. */
+function fontLoadError(family: string, style: string): Error {
+  return new Error(`The font "${family} ${style}" could not be loaded`)
+}
+
+/**
+ * Loads a font as Figma's `loadFontAsync` does, so text measures and draws with it from then on,
+ * and rejects when it cannot load. A family named alone loads every style it has: one style of
+ * each slant first, so the rest reuse its file where one variable file draws the whole slant, and
+ * then the named styles a variable file draws, which text set by its axes alone takes.
+ */
+export async function loadFigmaFont({ family, style }: FigmaFontNameInput): Promise<void> {
+  if (style !== undefined) {
+    const face = textFaceStyle(style)
+    await fontManager.loadFont(family, face).catch(() => null)
+    if (!fontManager.isStyleLoaded(family, face)) throw fontLoadError(family, style)
+    return
+  }
+  const faces = (await fontManager.familyFaces(family).catch(() => null)) ?? [
+    { weight: 400, italic: false }
+  ]
+  const load = (face: string) => fontManager.loadFont(family, face).catch(() => null)
+  const first = uniqBy(faces, (face) => face.italic)
+  await Promise.all(first.map((face) => load(weightToStyle(face.weight, face.italic))))
+  await Promise.all(
+    faces
+      .filter((face) => !first.includes(face))
+      .map((face) => load(weightToStyle(face.weight, face.italic)))
+  )
+  if (!fontManager.isLoaded(family)) throw fontLoadError(family, 'Regular')
+  const named = [false, true].flatMap((italic) =>
+    (fontManager.familyVariation(family, italic)?.instances ?? []).map((instance) =>
+      weightToStyle(parseFontStyle(instance.name).weight, italic)
+    )
+  )
+  await Promise.all(uniq(named).map(load))
 }
 
 /** Variable font axis values by axis tag, as `FontName.variationSettings` holds them. */

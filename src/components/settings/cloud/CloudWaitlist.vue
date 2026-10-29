@@ -10,7 +10,8 @@ import ProviderSettingsInput from '@/components/settings/provider/ProviderSettin
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { CLOUD_WAITLIST_URL, IS_TAURI } from '@/constants'
-import { cloudServers } from '@/theme/cloud/servers'
+
+import { cloudServers } from './ui'
 
 /**
  * The hosted OpenPencil Cloud before it opens: its waitlist, in place of connecting to it. The web

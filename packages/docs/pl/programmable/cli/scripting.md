@@ -101,7 +101,7 @@ Najczęściej używane właściwości można odczytywać i zapisywać przez poś
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` niczego nie wykonuje, ponieważ OpenPencil nie blokuje zmiany tekstu do czasu załadowania czcionki przez wtyczkę
+- `figma.loadFontAsync(fontName)` wczytuje czcionkę; jak w Figmie, zmiana tekstu, jego rozmiaru lub czcionki wymaga wcześniejszego wczytania używanych czcionek
 - `figma.listAvailableFontsAsync()` zwraca dostępne czcionki systemowe
 - `figma.notify(message)` zapisuje ostrzeżenie w trybie bez interfejsu
 - `figma.viewport`

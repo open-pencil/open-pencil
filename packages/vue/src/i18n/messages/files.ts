@@ -27,6 +27,7 @@ export const filesMessageDefaults = {
   clipboardImagesFetchFailed: params(
     'Failed to fetch {count} images from Figma. Check that the source file is accessible and try again.'
   ),
+  mermaidPasteFailed: params('Could not read the Mermaid diagram. {error}'),
   recentFiles: 'Recent files',
   recentFilesDescription: 'Continue working on a design or start a new one.',
   noRecentFiles: 'No recent files yet',

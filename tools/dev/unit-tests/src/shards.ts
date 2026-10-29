@@ -46,6 +46,7 @@ export const UNIT_TEST_GROUPS = {
   dom: [
     'packages/emit/tests',
     'packages/drawio/tests',
+    'packages/mermaid/tests',
     'packages/design-jsx/tests',
     'packages/dom-css/tests',
     'packages/pen/tests',

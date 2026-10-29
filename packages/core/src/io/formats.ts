@@ -385,6 +385,31 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
   }
 }
 
+export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
+  id: 'mermaid',
+  label: 'Mermaid Diagram',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['mmd', 'mermaid'],
+  mimeTypes: ['text/vnd.mermaid'],
+  support: {
+    readDocument: true
+  },
+  laysOutOnRead: true,
+  matchesFile(fileName, mimeType) {
+    const ext = lowerExt(fileName)
+    return ext === 'mmd' || ext === 'mermaid' || mimeType === 'text/vnd.mermaid'
+  },
+  async readDocument(input) {
+    const { detectMermaidDiagram } = await import('@open-pencil/mermaid')
+    const text = new TextDecoder().decode(input.data)
+    if (!detectMermaidDiagram(text)) throw new Error('This file holds no Mermaid flowchart')
+    // Mermaid stores a diagram's structure, which reading lays out with its text measured.
+    const { mermaidToSceneGraph } = await import('./formats/mermaid')
+    return { graph: await mermaidToSceneGraph(text), sourceFormat: 'mermaid' }
+  }
+}
+
 /** Pages or layers as a draw.io file, loading the writer only when one is saved. */
 async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promise<ExportResult> {
   const { writeDrawIOFile } = await import('@open-pencil/drawio')
@@ -588,6 +613,7 @@ export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
   drawioFormat,
+  mermaidFormat,
   pngFormat,
   jpgFormat,
   webpFormat,

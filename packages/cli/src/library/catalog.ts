@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
 
 import * as v from 'valibot'
@@ -20,6 +20,7 @@ import {
   storedLibraryRevisionSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 
 const catalogPublicationQueues = new Map<string, Promise<void>>()
 
@@ -140,9 +141,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
 
   async #writeJSON(relative: string, value: unknown): Promise<void> {
     const path = this.#path(relative)
-    const temporaryPath = `${path}.${crypto.randomUUID()}.tmp`
     await mkdir(dirname(path), { recursive: true })
-    await writeFile(temporaryPath, JSON.stringify(value, null, 2))
-    await rename(temporaryPath, path)
+    await writeFileAtomic(path, JSON.stringify(value, null, 2))
   }
 }

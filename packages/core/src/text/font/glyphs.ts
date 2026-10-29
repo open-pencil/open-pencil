@@ -31,6 +31,20 @@ interface ParsedFontCacheEntry {
 
 const parsedFontCache = new Map<string, ParsedFontCacheEntry>()
 
+/** Shards of a style, read only to tell which one maps a character. */
+const shardFontCache = new WeakMap<ArrayBuffer, HarfBuzzFont | null>()
+
+/** Whether a shard of a style, one of `FontManager.shardData`'s files, maps `character`. */
+export function shardCovers(data: ArrayBuffer, character: string): boolean {
+  if (!isHarfBuzzLoaded()) return false
+  let parsed = shardFontCache.get(data)
+  if (parsed === undefined) {
+    parsed = harfBuzzFont(data)
+    shardFontCache.set(data, parsed)
+  }
+  return parsed !== null && glyphIndex(parsed, character) !== 0
+}
+
 function getParsedFont(family: string, style: string): HarfBuzzFont | null {
   if (!isHarfBuzzLoaded()) return null
   const key = `${family}|${style}`

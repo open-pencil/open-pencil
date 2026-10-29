@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { countBy, maxBy, meanBy, sumBy } from 'es-toolkit'
+import { tv } from 'tailwind-variants'
 import { BarList } from 'vccs'
 import { computed } from 'vue'
 
@@ -19,7 +20,7 @@ import type { MetricsRange } from '@/app/metrics/range'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import { metricsDashboard } from '@/theme/metrics/dashboard'
+import { metricsDashboardTheme } from '@/theme/metrics/dashboard'
 
 import DailyChart from './DailyChart.vue'
 import type { DailySeries } from './DailyChart.vue'
@@ -31,6 +32,8 @@ import PlatformsChart from './PlatformsChart.vue'
 import RetentionChart from './RetentionChart.vue'
 import type { DailyActiveDay, DailyPulls, DailyTraffic, DailyVersions, DailyVisits } from './types'
 import WaitlistList from './WaitlistList.vue'
+
+const metricsDashboard = tv(metricsDashboardTheme)
 
 /**
  * Day-to-day numbers in one place: anonymous daily pings and Cloudflare visits for reach,

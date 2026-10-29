@@ -36,15 +36,16 @@ async function shape(props: Partial<SceneNode>): Promise<ShapedText | null> {
   )
 }
 
-describe('text shaping for saved glyphs', () => {
-  beforeAll(async () => {
-    const inter = expectDefined(
-      await fontManager.fetchBundledFont('/InterVariable.ttf'),
-      'bundled Inter font'
-    )
-    await fontManager.markLoaded('Inter', 'Regular', inter)
-  })
+// Every test here shapes Inter, in whatever order they run.
+beforeAll(async () => {
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
+    'bundled Inter font'
+  )
+  await fontManager.markLoaded('Inter', 'Regular', inter)
+})
 
+describe('text shaping for saved glyphs', () => {
   /**
    * Figma saves every emoji as a 1 em square, a joined sequence or a flag as one: the layout
    * falls back to the emoji metrics font for them, which gives them that width.

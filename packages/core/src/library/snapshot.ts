@@ -2,6 +2,7 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
 
+import { existingAssetKey } from './asset-keys'
 import { remapCopiedReferences } from './copied-references'
 import { contentHash } from './hash'
 import { assertLibraryAssetKey } from './identity'
@@ -21,7 +22,7 @@ const VOLATILE_NODE_FIELDS = new Set([
 ])
 
 function assetKey(node: SceneNode): string {
-  const key = node.componentKey ?? node.sourceLibraryKey ?? node.publishId ?? node.source.id
+  const key = existingAssetKey(node)
   if (!key) throw new Error(`Component ${node.name} has no stable library asset key`)
   assertLibraryAssetKey(key)
   return key

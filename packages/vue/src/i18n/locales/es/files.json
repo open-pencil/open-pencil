@@ -17,6 +17,7 @@
   "clipboardImagesUnavailableWeb": "El diseño pegado contiene {count} imágenes que no se pueden cargar en la aplicación web. Usa la aplicación de escritorio para incluirlas.",
   "clipboardImageFetchFailed": "No se ha podido obtener 1 imagen de Figma. Comprueba que el archivo de origen sea accesible e inténtalo de nuevo.",
   "clipboardImagesFetchFailed": "No se han podido obtener {count} imágenes de Figma. Comprueba que el archivo de origen sea accesible e inténtalo de nuevo.",
+  "mermaidPasteFailed": "No se ha podido leer el diagrama de Mermaid. {error}",
   "recentFiles": "Archivos recientes",
   "recentFilesDescription": "Continúa trabajando en un diseño o crea uno nuevo.",
   "noRecentFiles": "Aún no hay archivos recientes",

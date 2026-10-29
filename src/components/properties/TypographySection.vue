@@ -11,6 +11,7 @@ import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import FontAxisField from '@/components/properties/typography/FontAxisField.vue'
 import LetterSpacingField from '@/components/properties/typography/LetterSpacingField.vue'
 import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
@@ -144,12 +145,31 @@ function picked<T>(value: MixedValue<T>): T | '' {
         </PanelFieldGroup>
       </PanelGrid>
 
+      <PanelGrid
+        v-if="ctx.axes.value.length > 0"
+        :columns="2"
+        class="mb-3"
+        data-property="variable-axes"
+      >
+        <PanelFieldGroup v-for="axis in ctx.axes.value" :key="axis.tag" :label="axis.name">
+          <FontAxisField
+            :axis="axis"
+            :optical-size-auto="ctx.opticalSizeAuto.value"
+            @preview="ctx.actions.previewAxis(axis.tag, $event)"
+            @commit="ctx.actions.setAxis(axis.tag, $event)"
+            @cancel="ctx.actions.cancelAxis()"
+            @update:optical-size-auto="ctx.actions.setOpticalSizeAuto($event)"
+          />
+        </PanelFieldGroup>
+      </PanelGrid>
+
       <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.lineHeight">
           <LineHeightField
             :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('lineHeight', $event)"
             @commit="(v, p) => ctx.actions.commitProp('lineHeight', v, p)"
+            @cancel="ctx.actions.cancelProp('lineHeight')"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.letterSpacing">
@@ -157,6 +177,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
             :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('letterSpacing', $event)"
             @commit="(v, p) => ctx.actions.commitProp('letterSpacing', v, p)"
+            @cancel="ctx.actions.cancelProp('letterSpacing')"
           />
         </PanelFieldGroup>
       </PanelGrid>

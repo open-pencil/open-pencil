@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { brandMark } from '@/theme/brand'
+import brandMarkTheme from '@/theme/brand'
 
 import type { BrandMarkProps } from './types'
+
+const brandMark = tv(brandMarkTheme)
 
 const {
   variant = 'micro',

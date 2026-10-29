@@ -2,6 +2,7 @@ import { useEventListener } from '@vueuse/core'
 import { createKeybindingsHandler } from 'tinykeys'
 import type { KeyBindingMap } from 'tinykeys'
 
+import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
 import { editorCommandMetadata, type EditorCommandId } from '@open-pencil/vue/editor/commands'
 
 import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
@@ -114,6 +115,16 @@ function hasOpenDismissableLayer(allowPickers = false) {
 }
 
 /**
+ * While text is edited its input handles the keys, undo and redo among them. Focus can leave it
+ * for a panel field while the edit stays open, as after a typed font size; undo and redo then
+ * run on the editor's history, which records the text edit's steps, rather than go nowhere.
+ */
+function editingTextHandles(options: KeyboardShortcutOptions, history: boolean) {
+  if (!options.store.state.editingTextId) return false
+  return !history || isCanvasTextInput(document.activeElement)
+}
+
+/**
  * Other shortcuts wait for open popovers to close, but undo and redo work while a fill, stroke,
  * or colour picker is open, as in Figma; a text field in it keeps its own undo.
  */
@@ -128,7 +139,7 @@ function shouldIgnoreShortcut(
     originatedInOverlay(event, history) ||
     isEditing(event) ||
     options.inputFocused.value ||
-    !!options.store.state.editingTextId ||
+    editingTextHandles(options, history) ||
     !!options.store.state.numberFieldFocused
   )
 }
@@ -169,7 +180,10 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       'selection.toggleVisibility',
       'selection.toggleLock',
       'selection.flipHorizontal',
-      'selection.flipVertical'
+      'selection.flipVertical',
+      'selection.tidyUp',
+      'selection.distributeHorizontal',
+      'selection.distributeVertical'
     ),
     {
       id: 'copy-properties',
@@ -280,7 +294,24 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('close') ?? '$mod+KeyW',
       run: ({ closeActiveTab }) => closeActiveTab()
     },
-    { id: 'new-tab', keys: ['$mod+KeyN', '$mod+KeyT'], run: ({ createTab }) => createTab() },
+    {
+      id: 'new-design',
+      keys: appMenuTinykeysShortcut('new') ?? '$mod+KeyN',
+      run: ({ createTab }) => createTab()
+    },
+    { id: 'show-home', keys: '$mod+KeyT', run: ({ showHome }) => showHome() },
+    {
+      id: 'next-tab',
+      keys: 'Control+Tab',
+      run: ({ switchAdjacentTab }) => switchAdjacentTab(1),
+      global: true
+    },
+    {
+      id: 'previous-tab',
+      keys: 'Control+Shift+Tab',
+      run: ({ switchAdjacentTab }) => switchAdjacentTab(-1),
+      global: true
+    },
     {
       id: 'rename-selection',
       keys: appMenuTinykeysShortcut('selection.rename') ?? '$mod+KeyR',

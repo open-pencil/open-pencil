@@ -20,11 +20,9 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
-import { cloudWorkspace } from '@/theme/cloud/workspace'
+import { AppTabsContent, AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
+
+import { cloudWorkspace } from './ui'
 
 /** Past this many members the list gets a search field. */
 const MEMBER_SEARCH_THRESHOLD = 8

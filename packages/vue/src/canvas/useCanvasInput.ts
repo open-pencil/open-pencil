@@ -415,11 +415,7 @@ export function useCanvasInput(
       return
     } else if (d.type === 'resize') commitResizePreview(d, editor)
     else if (d.type === 'pen-drag') {
-      const penState = editor.state.penState as
-        | (typeof editor.state.penState & {
-            pendingClose?: boolean
-          })
-        | null
+      const penState = editor.state.penState
       if (penState?.pendingClose) {
         editor.penCommit(true)
       }

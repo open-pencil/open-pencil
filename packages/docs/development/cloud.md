@@ -227,10 +227,12 @@ picture's SHA-256: a new picture is a new address. Responses are cached for one 
 picture an administrator removes may stay visible until the cache expires. The
 page crops and shrinks a picture to a 256-pixel JPEG; the server accepts PNG or JPEG of at most
 256 KB and 1024 pixels a side, reading the type and size from the bytes. A Google picture is
-fetched once a sign-in issues its session and kept the same way; one that cannot be fetched leaves
-initials, never a link to Google. The server fetches only from Google's picture host and follows no
-redirects. Only a provider's sign-in may write `user.image` through Better Auth; an address
-sent with email sign-up or a user update is dropped.
+fetched when Better Auth writes the account's ID token, as it does when the account is linked and
+at each sign-in with it, from the token's `picture` claim, and kept the same way unless the person
+already shows a picture of their own; one that cannot be fetched leaves initials, never a link to
+Google. The server fetches only from Google's picture host and follows no redirects. Nothing written
+through Better Auth sets `user.image`; the server writes the addresses of the pictures it keeps
+itself.
 
 ## Portal
 
@@ -250,7 +252,11 @@ framed. Both runtimes put the API behind the same Hono router, `createCloudServe
 `src/runtime/site`, which answers portal pages before the API, and only where the API returns 404
 the site's files, then the editor's `index.html` for any other page, so the editor's router keeps
 its own addresses. Node reads the build named by `OPENPENCIL_CLOUD_SITE_DIR`, and the Worker reads
-its static assets. `bun run cloud:dev` keeps a watched site build next to the server.
+its static assets. `bun run cloud:dev` builds nothing: it runs Vite's development server for the
+site under its own portless name and points the Node server at it with
+`OPENPENCIL_CLOUD_DEV_SITE_URL`, so the server takes each file from source, uncached, and pages
+update in place. Vite's update socket connects to its own address, since the server accepts
+WebSockets only for collaboration.
 
 The editor a server serves knows it from the build (`__OPENPENCIL_CLOUD_SITE__`). Before it boots,
 it asks who is signed in: an account that may use the server gets the editor, and anyone else at

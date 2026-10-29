@@ -162,24 +162,32 @@ describe('Cloud document routes', () => {
         const commit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksum })
+          body: JSON.stringify({ checksum, name: 'Updated homepage' })
         })
         expect(commit.status).toBe(200)
         const committed = await responseJSON(
           commit,
-          v.object({ document: v.object({ currentRevisionId: v.string(), version: v.number() }) })
+          v.object({
+            document: v.object({
+              currentRevisionId: v.string(),
+              version: v.number(),
+              name: v.string()
+            })
+          })
         )
         expect(committed.document.currentRevisionId).toBeString()
         expect(committed.document.version).toBe(1)
+        expect(committed.document.name).toBe('Updated homepage')
 
         const repeatedCommit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksum })
+          body: JSON.stringify({ checksum, name: 'Stale retry' })
         })
         expect(repeatedCommit.status).toBe(200)
         expect(await repeatedCommit.json()).toMatchObject({
           document: {
+            name: 'Updated homepage',
             currentRevisionId: committed.document.currentRevisionId,
             version: 1
           }
@@ -198,7 +206,7 @@ describe('Cloud document routes', () => {
         expect(downloadResponse.status).toBe(200)
         expect(await downloadResponse.json()).toMatchObject({
           document: {
-            document: { id: document.document.id, version: 1 },
+            document: { id: document.document.id, version: 1, name: 'Updated homepage' },
             revisionId: committed.document.currentRevisionId,
             byteSize: 128,
             checksum,

@@ -1,5 +1,7 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { fontManager } from '#core/text/fonts'
+
 import { renderPagesToPDFDetailed, type PDFExportResult } from './export'
 import type { PDFPageSpec } from './plan'
 import { pdfFontFaces, preparePagesForPDF, preparePDFFonts, withPDFTextLayout } from './prepare'
@@ -26,6 +28,14 @@ export async function exportPDFDocument(
     : await preparePDFFonts(graph, specs)
   const fonts = options.embedFonts ? pdfFontFaces(status) : undefined
   return withPDFTextLayout((textLayout) =>
-    renderPagesToPDFDetailed(graph, specs, { fonts, textLayout, title: options.title })
+    renderPagesToPDFDetailed(graph, specs, {
+      fonts,
+      textLayout,
+      fallbackFile: (family, style, file) =>
+        file === 0
+          ? fontManager.loadedData(family, style)
+          : (fontManager.shardData(family, style)[file - 1] ?? null),
+      title: options.title
+    })
   )
 }

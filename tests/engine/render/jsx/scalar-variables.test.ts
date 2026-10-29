@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
-import { Frame, Text, Rectangle, defineVars, designVar } from '@open-pencil/design-jsx'
+import { Frame, Text, Rectangle, designMode, designVar } from '@open-pencil/design-jsx'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { addTestColorVariable, makeSceneGraph } from '#tests/helpers/scene'
@@ -80,16 +80,16 @@ describe('Design JSX scalar variables', () => {
     expect(node.boundVariables).toEqual({ gridRowGap: 'space', gridColumnGap: 'space' })
   })
 
-  it('supports numeric fallback types, name lookup, typography, and fixed sizes', async () => {
+  it('binds typography and fixed sizes, finding a variable by name', async () => {
     const { graph } = setup()
-    const vars = defineVars({ space: { name: 'Space/medium', value: 16 } })
+    const space = designVar('Space/medium')
     const result = await renderTree(
       graph,
       Text({
-        w: vars.space,
-        size: vars.space,
-        lineHeight: vars.space,
-        letterSpacing: vars.space,
+        w: space,
+        size: space,
+        lineHeight: space,
+        letterSpacing: space,
         children: 'A'
       })
     )
@@ -107,7 +107,7 @@ describe('Design JSX scalar variables', () => {
     const { graph } = setup()
     const [result] = await renderJSX(
       graph,
-      '<Frame w={100} h="hug" flex="col" p={designVar("space", 16)} />'
+      '<Frame w={100} h="hug" flex="col" p={designVar("space")} />'
     )
     expect(result).toBeDefined()
     expect(getNodeOrThrow(graph, result.id).boundVariables.paddingTop).toBe('space')
@@ -128,14 +128,33 @@ describe('Design JSX scalar variables', () => {
     expect(node.height).toBe(36)
   })
 
+  it('resolves a layer’s own values in the mode it pins', async () => {
+    const { graph, token } = setup()
+    const result = await renderTree(
+      graph,
+      Frame({
+        w: 100,
+        h: 'hug',
+        flex: 'col',
+        p: token,
+        mode: designMode('Spacing', 'Compact'),
+        children: Rectangle({ w: 20, h: 20 })
+      })
+    )
+    const node = getNodeOrThrow(graph, result.id)
+    expect(node.variableModes).toEqual({ spacing: 'compact' })
+    expect(node.paddingTop).toBe(8)
+    expect(node.height).toBe(36)
+  })
+
   it('rejects missing and nonnumeric variables instead of storing objects in numeric fields', async () => {
     const { graph } = setup()
     addTestColorVariable(graph, 'color', 'Color')
     await expect(renderTree(graph, Frame({ gap: designVar('color') }))).rejects.toThrow(
       'Expected a FLOAT variable'
     )
-    await expect(renderTree(graph, Frame({ gap: designVar('missing', 16) }))).rejects.toThrow(
-      'Expected a FLOAT variable'
+    await expect(renderTree(graph, Frame({ gap: designVar('missing') }))).rejects.toThrow(
+      'Unknown variable: missing'
     )
   })
 })

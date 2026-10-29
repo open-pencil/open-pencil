@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import { uniq } from 'es-toolkit'
+import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
+import { useAppButtonUI } from '@/components/ui/button/button'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import { skeleton } from '@/components/ui/feedback/skeleton'
+import { sideList } from '@/components/ui/list/side-list'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
-import { useAppButtonUI } from '@/theme/button/button'
-import { portalLayout } from '@/theme/cloud-portal/layout'
-import { sideList } from '@/theme/list/side-list'
+import portalLayoutTheme from '@/theme/cloud-portal/layout'
 
 import type { PortalSection } from '../types'
+
+const portalLayout = tv(portalLayoutTheme)
 
 /**
  * Signed-in Cloud pages: account settings and, for operators, the deployment console. The bar

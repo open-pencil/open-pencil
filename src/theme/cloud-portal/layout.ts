@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** The Cloud console: a bar with the server and account, sections in a sidebar. */
-export const portalLayout = tv({
+export default {
   slots: {
     page: 'flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-surface',
     bar: 'flex h-11 shrink-0 items-center gap-2 border-b border-border bg-panel px-4',
@@ -28,4 +26,4 @@ export const portalLayout = tv({
     pageTitle: 'text-base font-semibold',
     pageDescription: 'mt-0.5 text-xs text-muted'
   }
-})
+} as const

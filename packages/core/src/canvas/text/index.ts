@@ -56,7 +56,7 @@ function languageForCharacter(node: SceneNode, sourceIndex: number): string | nu
   const run = node.styleRuns.find(
     (item) => sourceIndex >= item.start && sourceIndex < item.start + item.length
   )
-  return run?.style.textLanguage ?? node.textLanguage
+  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
 }
 
 function transformedSourceOffsets(node: SceneNode): number[] {

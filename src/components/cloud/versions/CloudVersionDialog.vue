@@ -18,7 +18,8 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
-import { cloudVersions } from '@/theme/cloud/versions'
+
+import { cloudVersions } from './ui'
 
 /**
  * Figma's Add to version history: a title and what changed, for the document as it is now, or

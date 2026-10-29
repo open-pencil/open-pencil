@@ -5,7 +5,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { REKA_ELEMENTS } from './behaviours'
 import { elementBindings, elementProps, elementSchema } from './elements'
 import { ENUM_PROPS } from './enums'
-import { designJSXHelpers } from './helpers'
+import { DESIGN_JSX_HELPERS, designJSXHelpers } from './helpers'
 import * as React from './mini-react'
 import { renderRoots, renderTree, componentPropNames, type RenderResult } from './renderer'
 import { elementPropWarnings } from './schema'
@@ -24,6 +24,11 @@ const REKA_ALIASES = Object.entries(REKA_ELEMENTS)
       )}`
   )
   .join('\n')
+
+/** `const solid = __helpers.solid`, …: every helper in the scope of the code. */
+const HELPER_BINDINGS = DESIGN_JSX_HELPERS.map(
+  ({ name }) => `const ${name} = __helpers.${name}`
+).join('\n')
 
 function stripHTMLComments(jsxString: string): string {
   return jsxString.replace(/<!--[\s\S]*?-->/g, '')
@@ -81,26 +86,7 @@ export function buildComponent(jsxString: string, warnings: string[] = []): Reac
     ${elementBindings()}
     const svg = 'svg'
     ${REKA_ALIASES}
-    const dropShadow = __helpers.dropShadow
-    const innerShadow = __helpers.innerShadow
-    const layerBlur = __helpers.layerBlur
-    const backgroundBlur = __helpers.backgroundBlur
-    const foregroundBlur = __helpers.foregroundBlur
-    const solid = __helpers.solid
-    const shader = __helpers.shader
-    const gradient = __helpers.gradient
-    const linearGradient = __helpers.linearGradient
-    const radialGradient = __helpers.radialGradient
-    const angularGradient = __helpers.angularGradient
-    const diamondGradient = __helpers.diamondGradient
-    const ref = __helpers.ref
-    const __varSymbol = Symbol.for('open-pencil.variable')
-    const designVar = (def, value) => typeof def === 'string'
-      ? ({ [__varSymbol]: true, id: def, name: def, value })
-      : ({ [__varSymbol]: true, id: def.id, name: def.name ?? def.id ?? '', value: def.value })
-    const defineVars = (vars) => Object.fromEntries(
-      Object.entries(vars).map(([key, def]) => [key, designVar(def)])
-    )
+    ${HELPER_BINDINGS}
   `
 
   const body = transformDesignJSXExpression(trimmed)

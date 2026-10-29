@@ -20,7 +20,7 @@ describe('Tauri file actions', () => {
           filters: [
             {
               name: 'Design file',
-              extensions: ['fig', 'pen', 'drawio', 'dio', 'html', 'htm', 'xhtml']
+              extensions: ['fig', 'pen', 'drawio', 'dio', 'mmd', 'mermaid', 'html', 'htm', 'xhtml']
             }
           ],
           multiple: true

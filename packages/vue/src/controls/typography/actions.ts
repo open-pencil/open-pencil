@@ -5,7 +5,6 @@ import type { Editor } from '@open-pencil/core'
 import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
-  TextDecoration,
   TextLength,
   TextListType,
   TextParagraphSpacingField
@@ -20,8 +19,10 @@ import {
   paragraphSpacingOf
 } from '#vue/canvas/text-edit/paragraphs'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
+import { styleFontVariations } from '#vue/controls/typography/axes'
 import { useFamilyFaces } from '#vue/controls/typography/faces'
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
+import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { selectedNodesAsShown } from '#vue/editor/selection-state/nodes'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { useNodeFontStatus } from '#vue/shared/font-status/use'
@@ -141,6 +142,9 @@ export function createTypographyActions({
   options
 }: TypographyActionOptions) {
   const lists = createTextListActions(editor)
+  // A dragged field's previews belong to the step its commit records, so they are not edits of
+  // their own that keep the document unsaved after that step is undone.
+  const batch = useUndoBatch(editor.undo, () => editor.beginInteractiveEdit())
   type Preview = { value: SceneNode[keyof SceneNode]; textStyleId: string | null }
   let previewKey: keyof SceneNode | undefined
   const beforePreview = new Map<string, Preview>()
@@ -208,7 +212,12 @@ export function createTypographyActions({
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic
         await options.fontLoader?.load(family, weightToStyle(fontWeight, italic))
-        return { fontFamily: family, fontWeight, italic }
+        return {
+          fontFamily: family,
+          fontWeight,
+          italic,
+          fontVariations: styleFontVariations(target)
+        }
       }
     )
   }
@@ -220,7 +229,7 @@ export function createTypographyActions({
       ['fontWeight'],
       async (target) => {
         await options.fontLoader?.load(target.fontFamily, weightToStyle(weight, target.italic))
-        return { fontWeight: weight }
+        return { fontWeight: weight, fontVariations: styleFontVariations(target) }
       },
       targets
     )
@@ -340,7 +349,7 @@ export function createTypographyActions({
       ['italic'],
       async (target) => {
         await options.fontLoader?.load(target.fontFamily, weightToStyle(target.fontWeight, italic))
-        return { italic }
+        return { italic, fontVariations: styleFontVariations(target) }
       },
       nodes.value.filter((target) => supports(target, target.fontWeight, italic))
     )
@@ -349,7 +358,7 @@ export function createTypographyActions({
   function toggleDecoration(deco: 'UNDERLINE' | 'STRIKETHROUGH') {
     const on = activeFormatting.value.includes(deco.toLowerCase())
     update(`Toggle ${deco.toLowerCase()}`, {
-      textDecoration: (on ? 'NONE' : deco) as TextDecoration
+      textDecoration: on ? 'NONE' : deco
     })
   }
 
@@ -366,6 +375,7 @@ export function createTypographyActions({
   }
 
   function updateProp(key: keyof SceneNode, value: PropValue) {
+    batch.ensure(`typography:${String(key)}`, `Change ${String(key)}`)
     if (previewKey !== key) {
       previewKey = key
       beforePreview.clear()
@@ -373,7 +383,7 @@ export function createTypographyActions({
     for (const target of nodes.value) {
       if (!beforePreview.has(target.id))
         beforePreview.set(target.id, { value: target[key], textStyleId: target.textStyleId })
-      editor.updateNode(target.id, { [key]: value } as Partial<SceneNode>)
+      editor.updateNode(target.id, { [key]: value })
     }
   }
 
@@ -389,13 +399,26 @@ export function createTypographyActions({
           {
             [key]: snapshot ? snapshot.value : previous,
             ...(snapshot ? { textStyleId: snapshot.textStyleId } : {})
-          } as Partial<SceneNode>,
+          },
           `Change ${String(key)}`
         )
       }
     })
     previewKey = undefined
     beforePreview.clear()
+    batch.flush()
+  }
+
+  /** Puts back what a cancelled field previewed, as `cancelAxis` does for a font axis. */
+  function cancelProp(key: keyof SceneNode) {
+    if (previewKey === key) {
+      for (const [id, before] of beforePreview)
+        editor.updateNode(id, { [key]: before.value, textStyleId: before.textStyleId })
+    }
+    previewKey = undefined
+    beforePreview.clear()
+    batch.flush()
+    editor.requestRender()
   }
 
   return {
@@ -416,6 +439,7 @@ export function createTypographyActions({
     toggleDecoration,
     onFormattingChange,
     updateProp,
-    commitProp
+    commitProp,
+    cancelProp
   }
 }

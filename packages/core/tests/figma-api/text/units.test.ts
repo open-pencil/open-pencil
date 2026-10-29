@@ -1,10 +1,14 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { lineHeightPixels, percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 function text() {
   const graph = new SceneGraph()

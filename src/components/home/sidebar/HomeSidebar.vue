@@ -14,9 +14,9 @@ import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { sideList } from '@/components/ui/list/side-list'
 import { menu } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { sideList } from '@/theme/list/side-list'
 
 import type { HomeCloudAccount, HomeLocation } from '../cloud/types'
 

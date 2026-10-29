@@ -1,24 +1,39 @@
 import { describe, expect, test } from 'bun:test'
 
-import { signInMethod } from '#cloud/server/auth/activity'
+import { signInEndpoints, signInMethod } from '#cloud/server/auth/activity'
 import { describeUserAgent } from '#cloud/server/auth/user-agent'
+import { passkey } from '@better-auth/passkey'
+import { deviceAuthorization, twoFactor } from 'better-auth/plugins'
+
+// The sign-in endpoints of the plugins the server mounts, from the plugins' own paths.
+const methods = signInEndpoints({
+  twoStep: twoFactor().endpoints,
+  passkeys: passkey({
+    rpID: 'cloud.example.com',
+    rpName: 'Cloud',
+    origin: 'https://cloud.example.com'
+  }).endpoints,
+  devices: deviceAuthorization().endpoints
+})
 
 describe('sign-in activity', () => {
   test('names how each Better Auth endpoint signed someone in', () => {
-    expect(signInMethod({ path: '/sign-in/email' })).toBe('password')
-    expect(signInMethod({ path: '/callback/:id', params: { id: 'google' } })).toBe('google')
-    expect(signInMethod({ path: '/callback/:id', params: { id: 'apple' } })).toBe('apple')
-    expect(signInMethod({ path: '/callback/:id', params: { id: 'github' } })).toBe('other')
-    expect(signInMethod({ path: '/passkey/verify-authentication' })).toBe('passkey')
-    expect(signInMethod({ path: '/two-factor/verify-totp' })).toBe('two-step')
-    expect(signInMethod({ path: '/verify-email' })).toBe('email-link')
-    expect(signInMethod({ path: '/device/token' })).toBe('desktop')
+    expect(signInMethod({ path: '/sign-in/email' }, methods)).toBe('password')
+    expect(signInMethod({ path: '/callback/:id', params: { id: 'google' } }, methods)).toBe(
+      'google'
+    )
+    expect(signInMethod({ path: '/callback/:id', params: { id: 'apple' } }, methods)).toBe('apple')
+    expect(signInMethod({ path: '/callback/:id', params: { id: 'github' } }, methods)).toBe('other')
+    expect(signInMethod({ path: '/passkey/verify-authentication' }, methods)).toBe('passkey')
+    expect(signInMethod({ path: '/two-factor/verify-totp' }, methods)).toBe('two-step')
+    expect(signInMethod({ path: '/verify-email' }, methods)).toBe('email-link')
+    expect(signInMethod({ path: '/device/token' }, methods)).toBe('desktop')
   })
 
   test('ignores endpoints that only refresh or change a session', () => {
-    expect(signInMethod({ path: '/get-session' })).toBeNull()
-    expect(signInMethod({ path: '/update-user' })).toBeNull()
-    expect(signInMethod({})).toBeNull()
+    expect(signInMethod({ path: '/get-session' }, methods)).toBeNull()
+    expect(signInMethod({ path: '/update-user' }, methods)).toBeNull()
+    expect(signInMethod({}, methods)).toBeNull()
   })
 
   test('reads a browser and system from a user agent, and nothing from none', () => {

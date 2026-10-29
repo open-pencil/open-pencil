@@ -1,5 +1,7 @@
 import type { DesignJSXProgram } from '@open-pencil/design-jsx'
 
+import type { DesignJSXValidationLimits } from '@/app/code/sandbox/schema'
+
 export const DESIGN_JSX_MAX_SOURCE_BYTES = 256_000
 export const DESIGN_JSX_MAX_OUTPUT_BYTES = 2_000_000
 export const DESIGN_JSX_MAX_ELEMENTS = 5_000
@@ -9,15 +11,6 @@ export const DESIGN_JSX_MAX_OBJECT_KEYS = 1_000
 export const DESIGN_JSX_MAX_STRING_LENGTH = 100_000
 export const DESIGN_JSX_DEFAULT_TIMEOUT_MS = 1_000
 export const DESIGN_JSX_DEFAULT_READY_TIMEOUT_MS = 5_000
-
-export type DesignJSXValidationLimits = {
-  outputBytes: number
-  elements: number
-  depth: number
-  arrayLength: number
-  objectKeys: number
-  stringLength: number
-}
 
 export type DesignJSXSandboxLimits = {
   sourceBytes?: number
@@ -50,5 +43,11 @@ export type DesignJSXHelperDescriptor = {
 }
 
 export type DesignJSXSandboxResult =
-  | { ok: true; roots: unknown[]; lineOffset: DesignJSXProgram['lineOffset'] }
+  | {
+      ok: true
+      roots: unknown[]
+      /** The collections the run's `defineVars` calls wrote, which its variables name by index. */
+      collections: unknown[]
+      lineOffset: DesignJSXProgram['lineOffset']
+    }
   | { ok: false; error: string }

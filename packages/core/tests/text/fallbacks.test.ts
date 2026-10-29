@@ -29,4 +29,18 @@ describe('fallback scripts', () => {
     // A Traditional-only character draws in the Traditional Chinese fallback, so that one loads.
     expect(collectGraphFontRequirements(graph, [text.id]).scripts).toEqual(['cjk-tc'])
   })
+
+  test('read characters a run clears the language of without the text language', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: '中中',
+      fontFamily: 'Inter',
+      textLanguage: 'ja',
+      styleRuns: [{ start: 1, length: 1, style: { textLanguage: null } }]
+    })
+    expect(collectGraphFontRequirements(graph, [text.id]).scripts.toSorted()).toEqual([
+      'cjk-jp',
+      'cjk-sc'
+    ])
+  })
 })

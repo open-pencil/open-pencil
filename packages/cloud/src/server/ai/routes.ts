@@ -2,7 +2,7 @@ import { parseCreateAIToken } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents'
-import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
+import { CLOUD_RATE_LIMITS, createRouteRateLimiter } from '#cloud/server/rate-limit'
 import { validatedJSON } from '#cloud/server/validation'
 import { Hono } from 'hono'
 import type { Kysely } from 'kysely'
@@ -21,7 +21,7 @@ export function createAIRoutes(
   if (service && rateLimit) {
     router.use(
       '/ai/token',
-      createActorRateLimiter(rateLimit.database, rateLimit.secret, CLOUD_RATE_LIMITS.aiToken)
+      createRouteRateLimiter(rateLimit.database, rateLimit.secret, CLOUD_RATE_LIMITS.aiToken)
     )
   }
   return router.post('/ai/token', validatedJSON(parseCreateAIToken), async (context) => {

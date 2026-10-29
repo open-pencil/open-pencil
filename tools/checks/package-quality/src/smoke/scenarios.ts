@@ -37,6 +37,10 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: 'const { parseDrawIOFile, writeDrawIOFile } = await import(\'@open-pencil/drawio\'); const file = parseDrawIOFile(\'<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="a" vertex="1" parent="1"/></root></mxGraphModel>\'); if (file?.pages[0]?.cells.length !== 1 || !writeDrawIOFile(file).startsWith(\'<mxfile\')) throw new Error(\'draw.io package smoke failed\')'
   },
   {
+    name: 'Mermaid parser',
+    code: "const { parseFlowchart } = await import('@open-pencil/mermaid'); const chart = parseFlowchart('flowchart LR\\n  A[Start] --> B{Done?}'); if (chart.direction !== 'LR' || chart.nodes[1]?.shape !== 'diam' || chart.edges.length !== 1) throw new Error('Mermaid package smoke failed')"
+  },
+  {
     name: 'Emit package',
     code: "const { jsx } = await import('@open-pencil/emit'); const code = jsx.printJSX(jsx.element('Card', [jsx.attribute('wide', null)], [], 0)); if (code !== '<Card wide />') throw new Error('Codegen package smoke failed: ' + code)"
   },

@@ -43,3 +43,4 @@ export type {
 export { hitTestStatusLabels, type PlacedStatusLabel } from './labels/status'
 export { LabelCache, type CachedComponent, type CachedSection } from './labels/cache'
 export { withFigExportRuntime } from './text/shape'
+export { drawnFontAxes, type DrawnFontAxes, type DrawnFontAxis } from './text/font-families'

@@ -47,7 +47,7 @@ openpencil convert design.pen --font-policy strict
 
 Run [`openpencil fonts`](./inspecting#font-diagnostics) first to inspect affected faces. Export preparation may use configured font providers, so its result can differ from the offline file diagnostic.
 
-`convert` loads fonts for `.pen` and draw.io files, which store layout intent rather than sizes: it lays them out again with their text measured in their own fonts before writing, so `strict` stops it before anything is written.
+`convert` loads fonts for `.pen`, draw.io, and Mermaid files, which store layout intent rather than sizes: it lays them out again with their text measured in their own fonts before writing, so `strict` stops it before anything is written. A Mermaid flowchart (`.mmd` or `.mermaid`) is laid out as it is read, its text measured in the fonts it is drawn in.
 
 This policy does not apply to exports from the running app, or to SVG, PowerPoint, JSX, HTML, and `.fig` exports. It checks font resolution, not complete visual equivalence with Figma.
 

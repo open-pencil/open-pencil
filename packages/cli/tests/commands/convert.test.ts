@@ -1,8 +1,9 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
+import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 
 import { getTextMeasurer } from '@open-pencil/core/layout'
@@ -89,5 +90,22 @@ describe('convert CLI', () => {
     ])
     expect(strict.exitCode).not.toBe(0)
     expect(await Bun.file(join(dir, 'strict.fig')).exists()).toBe(false)
+  })
+
+  test('saves a .fig with a thumbnail of its layers', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-convert-'))
+    const source = join(dir, 'card.pen')
+    const output = join(dir, 'card.fig')
+    await Bun.write(
+      source,
+      JSON.stringify({
+        version: '2.21',
+        children: [{ id: 'card', type: 'rectangle', width: 300, height: 200, fill: '#111111' }]
+      })
+    )
+    expect((await cli(['convert', source, '-o', output])).exitCode).toBe(0)
+
+    const { width, height } = figThumbnailSize(await readFile(output))
+    expect(width / height).toBeCloseTo(300 / 200, 2)
   })
 })

@@ -4,7 +4,8 @@ import { computed, normalizeClass, useAttrs } from 'vue'
 import type { Fill } from '@open-pencil/scene-graph'
 
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
-import { fillSwatchTrigger } from '@/theme/paint/swatch-trigger'
+
+import { fillSwatchTrigger } from './swatch-trigger'
 
 const {
   fill,

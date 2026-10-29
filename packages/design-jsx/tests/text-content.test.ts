@@ -14,6 +14,9 @@ const renderer = createDesignJSXRenderer<never>({
   },
   layout: () => {
     // Text content does not depend on layout.
+  },
+  vectorBounds: () => {
+    throw new Error('No vectors in these tests')
   }
 })
 
@@ -110,6 +113,55 @@ describe('Span', () => {
       }
     ])
     expect(warnings).toEqual([])
+  })
+
+  test('takes font features, variations, and language', async () => {
+    const { node, warnings } = await renderText(
+      '<Text fontFeatures={{ liga: false }} fontVariations={{ wght: 450 }} lang="en">a<Span fontFeatures={{ tnum: true, liga: false }} fontVariations={{ wght: 650, wdth: 90 }} lang="de">b</Span></Text>'
+    )
+    expect(node.fontFeatures).toEqual([{ tag: 'LIGA', enabled: false }])
+    expect(node.fontVariations).toEqual([{ axis: 'wght', value: 450 }])
+    expect(node.textLanguage).toBe('en')
+    expect(node.styleRuns).toEqual([
+      {
+        start: 1,
+        length: 1,
+        style: {
+          fontFeatures: [
+            { tag: 'TNUM', enabled: true },
+            { tag: 'LIGA', enabled: false }
+          ],
+          fontVariations: [
+            { axis: 'wght', value: 650 },
+            { axis: 'wdth', value: 90 }
+          ],
+          textLanguage: 'de'
+        }
+      }
+    ])
+    expect(warnings).toEqual([])
+  })
+
+  test('takes the optical size from fontVariations only with fontOpticalSizing none', async () => {
+    const { node } = await renderText(
+      '<Text fontOpticalSizing="none" fontVariations={{ opsz: 14 }}>a</Text>'
+    )
+    expect(node.opticalSizeFromFontSize).toBe(false)
+    expect(node.fontVariations).toEqual([{ axis: 'opsz', value: 14 }])
+    const auto = await renderText('<Text fontVariations={{ opsz: 14 }}>a</Text>')
+    expect(auto.node.opticalSizeFromFontSize).toBe(true)
+  })
+
+  test('rejects a feature tag given twice in different cases', async () => {
+    await expect(
+      renderText('<Text fontFeatures={{ liga: true, LIGA: false }}>a</Text>')
+    ).rejects.toThrow('Expected each feature tag once')
+  })
+
+  test('rejects a font setting tag that is not four characters', async () => {
+    await expect(renderText('<Text fontFeatures={{ tabular: true }}>a</Text>')).rejects.toThrow(
+      'Invalid <Text> props'
+    )
   })
 
   test('warns about a decoration style it cannot draw', async () => {

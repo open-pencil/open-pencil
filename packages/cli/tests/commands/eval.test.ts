@@ -1,8 +1,9 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
 import * as v from 'valibot'
 
@@ -136,5 +137,27 @@ describe('eval CLI', () => {
     ])
     const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), v.array(v.boolean())), read.stdout)
     expect(parsed.success && parsed.output).toEqual([true, true])
+  })
+
+  test('--write saves a thumbnail of the Cover page', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-eval-'))
+    const html = join(dir, 'tall.html')
+    const file = join(dir, 'cover.fig')
+    await writeFile(html, '<div style="width:100px;height:400px;background:#000"></div>')
+    expect((await cli(['import', html, '-o', file])).exitCode).toBe(0)
+
+    const script = `
+      const cover = figma.createPage()
+      cover.name = 'Cover'
+      const card = figma.createRectangle()
+      card.resize(300, 200)
+      cover.appendChild(card)
+    `
+    expect((await cli(['eval', file, '--stdin', '-w', '-q'], script)).exitCode).toBe(0)
+
+    const { width, height } = figThumbnailSize(await readFile(file))
+    // Not the 1 × 1 placeholder, and the Cover page's 3:2 card rather than the first page's.
+    expect(Math.min(width, height)).toBeGreaterThan(1)
+    expect(width / height).toBeCloseTo(300 / 200, 2)
   })
 })

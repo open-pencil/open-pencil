@@ -1,21 +1,22 @@
 import { omitBy } from 'es-toolkit/object'
 
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneGraph, SceneNode, VariableModeMap } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
-import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { RekaScope } from './behaviours'
 import { renderRekaNode } from './behaviours/render'
 import {
   assignComponentProperties,
-  componentMetadata,
   assignNamedProperties,
-  componentPropertyScope,
+  bindProperties,
+  componentPropNames as namesOnInstance,
+  exposeInstance,
   inferComponentSetProperties
 } from './component-properties'
 import { CONNECTOR_ELEMENT, resolveConnectorEnds } from './connectors'
 import { elementNodeType, elementOwnLayer, type OwnLayerRenderer } from './elements'
+import { placeVectorPaths } from './overrides/vector'
 import { applySizeOverrides, propsToOverrides, shapeOverrides } from './props-overrides'
 import { LayerRefs } from './refs'
 import { prepareScalarBindings } from './scalar-bindings'
@@ -25,7 +26,16 @@ import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from './text-con
 import { FRAGMENT, isTreeNode } from './tree'
 import type { TreeNode } from './tree'
 import type { RenderOptions } from './types'
-import { isVariable, resolveVariableId, type DesignVariable } from './vars'
+import { isVariable } from './variables'
+import {
+  applyVariableDefinitions,
+  bindVariableProp,
+  requireVariableId,
+  resolveForLayer,
+  variableModes,
+  type LayerContext
+} from './variables/graph'
+import { paintProps } from './variables/props'
 
 export interface RenderResult {
   id: string
@@ -34,8 +44,6 @@ export interface RenderResult {
   childIds: string[]
   warnings?: string[]
 }
-
-/** Component property ids only need to be unique within a document. */
 
 /** The nodes a tree renders as: a fragment's children, or the tree itself. */
 function treeRoots(tree: TreeNode): TreeNode[] {
@@ -52,6 +60,7 @@ export async function renderRoots<Artwork>(
   const roots = treeRoots(tree)
   if (roots.length === 0) throw new Error('JSX must return a Figma element (Frame, Text, etc)')
   const parentId = options.parentId ?? graph.getPages()[0].id
+  applyVariableDefinitions(graph, tree)
 
   const nodes: SceneNode[] = []
   const connectors: Array<{ node: SceneNode; tree: TreeNode }> = []
@@ -101,85 +110,45 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function variableFallback(graph: SceneGraph, variable: DesignVariable): string | Color | undefined {
-  if (variable.value !== undefined && typeof variable.value !== 'number') return variable.value
-  const variableId = resolveVariableId(graph, variable)
-  return variableId ? graph.resolveColorVariable(variableId) : undefined
-}
-
-function bindVariableProp(
-  graph: SceneGraph,
-  props: Record<string, unknown>,
-  bindings: Record<string, string>,
-  key: string,
-  field: string
-): void {
-  const value = props[key]
-  if (!isVariable(value)) return
-  const variableId = resolveVariableId(graph, value)
-  if (variableId) bindings[field] = variableId
-  const fallback = variableFallback(graph, value)
-  if (fallback !== undefined) props[key] = fallback
-}
-
-function bindStyleVariableProp(
-  graph: SceneGraph,
-  style: Record<string, unknown>,
-  bindings: Record<string, string>,
-  key: string,
-  field: string
-): void {
-  const value = style[key]
-  if (!isVariable(value)) return
-  const variableId = resolveVariableId(graph, value)
-  if (variableId) bindings[field] = variableId
-  const fallback = variableFallback(graph, value)
-  if (fallback !== undefined) style[key] = fallback
-}
-
 function preparePropsForRender(
   graph: SceneGraph,
   source: Record<string, unknown>,
   isText: boolean,
-  parentId: string
+  layer: LayerContext
 ): PreparedProps {
   const props = { ...source }
   const bindings: Record<string, string> = {}
 
   if (Array.isArray(props.fills)) {
-    props.fills = props.fills.map((value, index) => {
-      if (!isVariable(value)) return value
-      const variableId = resolveVariableId(graph, value)
-      if (variableId) bindings[`fills/${index}/color`] = variableId
-      return variableFallback(graph, value) ?? value
+    props.fills = props.fills.map((value: unknown, index) => {
+      const fill = { value }
+      bindVariableProp(graph, fill, bindings, 'value', `fills/${index}/color`, layer)
+      return fill.value
     })
   }
 
-  for (const key of ['bg', 'fill', 'background', 'backgroundColor']) {
-    bindVariableProp(graph, props, bindings, key, 'fills/0/color')
-  }
-  if (isText) bindVariableProp(graph, props, bindings, 'color', 'fills/0/color')
-  for (const key of ['stroke', 'border', 'borderColor']) {
-    bindVariableProp(graph, props, bindings, key, 'strokes/0/color')
+  for (const { prop, fields } of paintProps({ text: isText })) {
+    bindVariableProp(graph, props, bindings, prop, fields[0], layer)
   }
 
   if (isObjectRecord(props.style)) {
     const style = { ...props.style }
     for (const key of ['background', 'backgroundColor']) {
-      bindStyleVariableProp(graph, style, bindings, key, 'fills/0/color')
+      bindVariableProp(graph, style, bindings, key, 'fills/0/color', layer)
     }
-    if (isText) bindStyleVariableProp(graph, style, bindings, 'color', 'fills/0/color')
-    bindStyleVariableProp(graph, style, bindings, 'borderColor', 'strokes/0/color')
+    if (isText) bindVariableProp(graph, style, bindings, 'color', 'fills/0/color', layer)
+    bindVariableProp(graph, style, bindings, 'borderColor', 'strokes/0/color', layer)
     props.style = style
   }
 
-  prepareScalarBindings(graph, props, bindings, isText, parentId)
+  prepareScalarBindings(graph, props, bindings, isText, (variableId) =>
+    resolveForLayer(graph, variableId, layer.parentId, layer.modes)
+  )
 
   if (isObjectRecord(props.bind)) {
     for (const [field, value] of Object.entries(props.bind)) {
       if (isVariable(value)) {
-        const variableId = resolveVariableId(graph, value)
-        if (variableId) bindings[field] = variableId
+        bindings[field] = requireVariableId(graph, value)
       } else if (typeof value === 'string') {
         bindings[field] = value
       }
@@ -200,10 +169,14 @@ function renderOwnLayerElement(
   parentId: string,
   element: OwnLayerRenderer
 ): SceneNode {
-  const { props, bindings } = preparePropsForRender(graph, tree.props, false, parentId)
+  const modes = variableModes(graph, tree.props.mode)
+  const { props, bindings } = preparePropsForRender(graph, tree.props, false, { parentId, modes })
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const layer = omitBy(
-    propsToOverrides(readElementProps(element.layer, props), false, parentLayout),
+    {
+      ...propsToOverrides(readElementProps(element.layer, props), false, parentLayout),
+      ...(modes && { variableModes: modes })
+    },
     (value) => value === undefined
   )
   const node = element.render(graph, { ...tree, props }, parentId, layer)
@@ -258,8 +231,29 @@ function placeArtwork<Artwork>(
   const overrides: Partial<SceneNode> = {}
   if (props.label) overrides.name = props.label as string
   applyIconSize(props, overrides, parentLayout, size)
-  const color = parseColor((props.color as string | undefined) ?? '#000000')
-  return services.createArtwork(graph, artwork, { parentId, size, color, overrides })
+  const modes = variableModes(graph, props.mode)
+  if (modes) overrides.variableModes = modes
+  const variableId = isVariable(props.color) ? requireVariableId(graph, props.color) : undefined
+  const resolved = variableId && resolveForLayer(graph, variableId, parentId, modes)
+  if (isVariable(props.color) && typeof resolved !== 'object')
+    throw new Error(`Cannot resolve color variable ${props.color.name} for color`)
+  const color =
+    typeof resolved === 'object'
+      ? resolved
+      : parseColor(typeof props.color === 'string' ? props.color : '#000000')
+  const node = services.createArtwork(graph, artwork, { parentId, size, color, overrides })
+  if (variableId) bindSolidPaints(graph, node, variableId)
+  return node
+}
+
+/** Bind every solid paint of an artwork's paths, so it follows the variable it was drawn in. */
+function bindSolidPaints(graph: SceneGraph, node: SceneNode, variableId: string): void {
+  for (const field of ['fills', 'strokes'] as const) {
+    node[field].forEach((paint, index) => {
+      if (paint.type === 'SOLID') graph.bindVariable(node.id, `${field}/${index}/color`, variableId)
+    })
+  }
+  for (const child of graph.getChildren(node.id)) bindSolidPaints(graph, child, variableId)
 }
 
 /**
@@ -345,11 +339,13 @@ function resolveComponent(
   return named?.type === 'COMPONENT_SET' ? findVariantInSet(graph, named, props) : named
 }
 
-/** The component properties an element sets by name, such as `State` or `Title`. */
+/**
+ * The names an element sets on its component by prop: properties such as `State` or `Title`, and
+ * exposed instances.
+ */
 export function componentPropNames(graph: SceneGraph, props: Record<string, unknown>): string[] {
   const component = resolveComponent(graph, props)
-  if (!component) return []
-  return (componentPropertyScope(graph, component.id) ?? []).map((definition) => definition.name)
+  return component ? namesOnInstance(graph, component) : []
 }
 
 async function renderInstanceNode(
@@ -359,7 +355,9 @@ async function renderInstanceNode(
 ): Promise<SceneNode> {
   const parent = graph.getNode(parentId)
   const parentLayout = parent?.layoutMode ?? 'NONE'
-  const { props, bindings } = preparePropsForRender(graph, tree.props, false, parentId)
+  const modes = variableModes(graph, tree.props.mode)
+  const bound = bindProperties(graph, tree.props, 'INSTANCE', parentId, componentIdNamed(graph))
+  const { props, bindings } = preparePropsForRender(graph, bound.props, false, { parentId, modes })
   const component = resolveComponent(graph, props)
   if (!component) {
     const ref = props.component ?? props.componentId ?? props.of
@@ -368,7 +366,7 @@ async function renderInstanceNode(
   }
   const overrides: Partial<SceneNode> = {
     ...propsToOverrides(props, false, parentLayout),
-    ...componentMetadata(props, 'INSTANCE', componentPropertyScope(graph, parentId))
+    ...layerMetadata(modes, bound.references)
   }
   // Instances inherit their container layout, but explicitly authored dimensions
   // must also replace the inherited sizing mode on that axis.
@@ -396,8 +394,9 @@ async function renderInstanceNode(
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
     applyBindings(graph, instance.id, bindings)
     applyInstanceOverrides(graph, instance, tree.props.overrides)
-    assignNamedProperties(graph, instance, props)
-    assignComponentProperties(graph, instance, props.properties)
+    assignNamedProperties(graph, instance, props, componentIdNamed(graph))
+    assignComponentProperties(graph, instance, props.properties, componentIdNamed(graph))
+    if (props.exposed === true) exposeInstance(graph, instance)
     return instance
   } catch (error) {
     graph.deleteNode(instance.id)
@@ -438,7 +437,7 @@ function applyInstanceOverrides(
     const prop = key.slice(sep + 1)
     const child = descendants.find((n) => n.name === childName)
     if (!child || !(prop in child)) continue
-    graph.updateNode(child.id, { [prop]: value } as Partial<SceneNode>)
+    graph.updateNode(child.id, { [prop]: value })
     setInstanceOverride(instance.instanceOverrides, instance.id, child.id, prop, value)
     mutated = true
   }
@@ -453,13 +452,32 @@ async function renderArtworkNode<Artwork>(
   tree: TreeNode,
   parentId: string
 ): Promise<SceneNode> {
-  const metadata = componentMetadata(tree.props, 'VECTOR', componentPropertyScope(graph, parentId))
+  const bound = bindProperties(graph, tree.props, 'VECTOR', parentId, componentIdNamed(graph))
+  const artwork = { ...tree, props: bound.props }
   const node =
     tree.type === 'icon'
-      ? await renderIconNode(services, graph, tree, parentId)
-      : renderSVGNode(services, graph, tree, parentId)
+      ? await renderIconNode(services, graph, artwork, parentId)
+      : renderSVGNode(services, graph, artwork, parentId)
+  const metadata: Partial<SceneNode> = layerMetadata(undefined, bound.references)
+  if (typeof bound.props.visible === 'boolean') metadata.visible = bound.props.visible
   if (Object.keys(metadata).length > 0) graph.updateNode(node.id, metadata)
   return node
+}
+
+/** The modes a layer pins and the component properties its fields are bound to. */
+function layerMetadata(
+  modes: VariableModeMap | undefined,
+  references: SceneNode['componentPropertyReferences']
+): Partial<SceneNode> {
+  return {
+    ...(modes && { variableModes: modes }),
+    ...(references.length > 0 && { componentPropertyReferences: references })
+  }
+}
+
+/** The component a swap property's default names, by ID or name, as `<Instance of>` finds it. */
+function componentIdNamed(graph: SceneGraph) {
+  return (name: string) => resolveComponent(graph, { of: name })?.id
 }
 
 export interface ElementOverrides {
@@ -477,17 +495,20 @@ export function elementOverrides(
 ): ElementOverrides {
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const isText = nodeType === 'TEXT'
-  const { props, bindings } = preparePropsForRender(graph, tree.props, isText, parentId)
+  const modes = variableModes(graph, tree.props.mode)
+  const bound = bindProperties(graph, tree.props, nodeType, parentId, componentIdNamed(graph))
+  const layer = { parentId, modes }
+  const { props, bindings } = preparePropsForRender(graph, bound.props, isText, layer)
   const overrides = {
     ...propsToOverrides(props, isText, parentLayout),
     ...shapeOverrides(nodeType, props),
-    ...componentMetadata(props, nodeType, componentPropertyScope(graph, parentId))
+    ...layerMetadata(modes, bound.references)
   }
 
   if (isText) {
     // A span's variables give their values; characters keep no bindings of their own.
     const spanOverrides = (spanProps: Record<string, unknown>) =>
-      propsToOverrides(preparePropsForRender(graph, spanProps, true, parentId).props, true, 'NONE')
+      propsToOverrides(preparePropsForRender(graph, spanProps, true, layer).props, true, 'NONE')
     Object.assign(overrides, textContentFields(tree, props, overrides, spanOverrides))
   }
   return { overrides, bindings }
@@ -546,6 +567,7 @@ async function renderNodeContent<Artwork>(
       const { overrides, bindings } = elementOverrides(graph, nodeType, element, elementParentId)
       const created = graph.createNode(nodeType, elementParentId, overrides)
       applyBindings(graph, created.id, bindings)
+      placeVectorPaths(graph, created, element.props, (network) => services.vectorBounds(network))
       return created
     },
     instance: (element, elementParentId) => renderInstanceNode(graph, element, elementParentId),
@@ -561,6 +583,7 @@ async function renderNodeContent<Artwork>(
   const { overrides, bindings } = elementOverrides(graph, nodeType, tree, parentId)
   const node = graph.createNode(nodeType, parentId, overrides)
   applyBindings(graph, node.id, bindings)
+  placeVectorPaths(graph, node, tree.props, (network) => services.vectorBounds(network))
 
   for (const child of tree.children) {
     if (typeof child === 'string' || (node.type === 'TEXT' && isTextContent(child))) continue

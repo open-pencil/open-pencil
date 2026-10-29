@@ -17,6 +17,7 @@
   "clipboardImagesUnavailableWeb": "Das eingefügte Design enthält {count} Bilder, die in der Web-App nicht geladen werden können. Verwende die Desktop-App, um sie einzuschließen.",
   "clipboardImageFetchFailed": "1 Bild konnte nicht aus Figma abgerufen werden. Prüfe, ob die Quelldatei zugänglich ist, und versuche es erneut.",
   "clipboardImagesFetchFailed": "{count} Bilder konnten nicht aus Figma abgerufen werden. Prüfe, ob die Quelldatei zugänglich ist, und versuche es erneut.",
+  "mermaidPasteFailed": "Das Mermaid-Diagramm konnte nicht gelesen werden. {error}",
   "recentFiles": "Zuletzt verwendete Dateien",
   "recentFilesDescription": "Arbeite an einem Entwurf weiter oder beginne einen neuen.",
   "noRecentFiles": "Noch keine zuletzt verwendeten Dateien",

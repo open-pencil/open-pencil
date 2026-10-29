@@ -1,23 +1,21 @@
 import { tv } from 'tailwind-variants'
 
+import type { ComponentUI } from '@/components/ui/types'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
-export const popover = tv({
+const popoverTheme = {
   slots: {
     content: ['z-[100]', floatingSurface, motionStyles.floating],
     header: '',
     body: '',
     footer: ''
   }
-})
+} as const
 
-interface PopoverUI {
-  content?: string
-  header?: string
-  body?: string
-  footer?: string
-}
+export const popover = tv(popoverTheme)
+
+type PopoverUI = ComponentUI<typeof popoverTheme>
 
 export function usePopoverUI(ui?: PopoverUI) {
   const cls = popover()

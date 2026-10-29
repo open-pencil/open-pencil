@@ -17,11 +17,12 @@ const { destination = null } = defineProps<{ destination?: string | null }>()
 const emit = defineEmits<{ 'new-document': [] }>()
 const query = defineModel<string>({ required: true })
 const { menu, files } = useI18n()
-const { isMobile } = useViewportKind()
+const { isMobile, isTouch } = useViewportKind()
 const searchInput = templateRef<{ focus: (options?: FocusOptions) => void }>('searchInput')
 
 function focusSearch(onCleanup: (cleanup: () => void) => void): void {
-  if (isMobile.value || activeTab.value?.kind !== 'home') return
+  // Focusing the field would raise a touch screen's keyboard over the page.
+  if (isTouch.value || activeTab.value?.kind !== 'home') return
   const tabId = activeTab.value.id
   const previousFocus = document.activeElement
   if (previousFocus instanceof HTMLElement && previousFocus.closest('[role="tablist"]')) return
@@ -30,7 +31,7 @@ function focusSearch(onCleanup: (cleanup: () => void) => void): void {
     cancelled = true
   })
   void nextTick(() => {
-    if (cancelled || isMobile.value || activeTab.value?.id !== tabId) return
+    if (cancelled || isTouch.value || activeTab.value?.id !== tabId) return
     if (document.activeElement !== previousFocus) return
     searchInput.value?.focus({ preventScroll: true })
   })
@@ -53,7 +54,7 @@ watch(
       autocomplete="off"
       class="md:flex-1"
       size="md"
-      :density="isMobile ? 'comfortable' : 'compact'"
+      :density="isTouch ? 'comfortable' : 'compact'"
       :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
       :aria-label="files.searchFiles"
     >
@@ -61,10 +62,10 @@ watch(
     </AppInput>
     <div class="grid grid-cols-2 gap-2 md:contents">
       <div class="col-span-2 grid md:contents">
-        <HomeJoinRoom :size="isMobile ? 'lg' : 'md'" />
+        <HomeJoinRoom :size="isTouch ? 'lg' : 'md'" />
       </div>
       <AppButton
-        :size="isMobile ? 'lg' : 'md'"
+        :size="isTouch ? 'lg' : 'md'"
         variant="outline"
         data-test-id="home-open-file"
         @click="openFileDialog"
@@ -73,7 +74,7 @@ watch(
         {{ menu.open }}
       </AppButton>
       <AppButton
-        :size="isMobile ? 'lg' : 'md'"
+        :size="isTouch ? 'lg' : 'md'"
         color="primary"
         variant="solid"
         data-test-id="home-new-document"

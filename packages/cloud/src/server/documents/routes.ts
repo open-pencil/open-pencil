@@ -16,7 +16,7 @@ import {
 } from '#cloud/server/documents/errors'
 import type { DocumentService } from '#cloud/server/documents/service'
 import { StorageQuotaExceededError } from '#cloud/server/quota'
-import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
+import { CLOUD_RATE_LIMITS, createRouteRateLimiter } from '#cloud/server/rate-limit'
 import { validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 import type { Kysely } from 'kysely'
@@ -69,7 +69,7 @@ export function createDocumentRoutes(
   if (rateLimit) {
     router.use(
       '/workspaces/:workspaceId/documents',
-      createActorRateLimiter(
+      createRouteRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.documentCreation,
@@ -79,7 +79,7 @@ export function createDocumentRoutes(
     )
     router.use(
       '/documents/:documentId/images',
-      createActorRateLimiter(
+      createRouteRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.uploadCreation,
@@ -89,7 +89,7 @@ export function createDocumentRoutes(
     )
     router.use(
       '/documents/:documentId/uploads',
-      createActorRateLimiter(
+      createRouteRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.uploadCreation,

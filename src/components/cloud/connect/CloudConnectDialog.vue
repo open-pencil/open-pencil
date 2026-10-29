@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { useCloudMessages, useCloudPortalMessages, useCommonMessages } from '@open-pencil/vue/i18n'
@@ -18,7 +19,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
-import { cloudConnect } from '@/theme/cloud/connect'
+import cloudConnectTheme from '@/theme/cloud/connect'
 
 import type {
   CloudAuthFailure,
@@ -28,6 +29,8 @@ import type {
   CloudServerKind,
   CloudSignInMethod
 } from './types'
+
+const cloudConnect = tv(cloudConnectTheme)
 
 /**
  * Connecting the editor to an OpenPencil Cloud server and signing in: the server's address when

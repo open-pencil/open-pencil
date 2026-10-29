@@ -149,6 +149,7 @@ function cloudServer() {
         const revision = crypto.randomUUID()
         objects.set(revision, objects.get(uploadId) ?? new Uint8Array())
         Object.assign(doc, {
+          ...(typeof body.name === 'string' ? { name: body.name } : {}),
           revision,
           version: doc.version + 1,
           checksum: String(body.checksum),
@@ -287,6 +288,32 @@ function adapter(server: ReturnType<typeof cloudServer>) {
 }
 
 describe('Cloud storage adapter', () => {
+  test('saves an edited title with an existing document revision', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    const bytes = new TextEncoder().encode('design')
+    const first = await storage.putDocument(id, bytes, { name: 'Untitled', updatedAt: '' })
+    await storage.putDocument(id, bytes, { name: 'Checkout', updatedAt: '' }, undefined, {
+      baseRevision: first.revision
+    })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: 'Checkout' })
+    expect(await storage.listDocuments()).toMatchObject([{ id, name: 'Checkout' }])
+  })
+
+  test('saves a name Cloud accepts, whatever the editor calls the document', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    const bytes = new TextEncoder().encode('design')
+    const first = await storage.putDocument(id, bytes, { name: '   ', updatedAt: '' })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: 'Untitled' })
+    // Cloud keeps 255 UTF-16 units; the emoji's second half would be the 256th, so it goes whole.
+    const kept = 'a'.repeat(254)
+    await storage.putDocument(id, bytes, { name: `${kept}😀 tail`, updatedAt: '' }, undefined, {
+      baseRevision: first.revision
+    })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: kept })
+  })
+
   test('creates the document on its first save and opens what it saved', async () => {
     const server = cloudServer()
     const storage = adapter(server)

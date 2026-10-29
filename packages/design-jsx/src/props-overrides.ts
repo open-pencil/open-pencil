@@ -44,7 +44,8 @@ function numberFromPx(value: unknown): number | undefined {
   return typeof value === 'string' ? (parseCSSNumber(value) ?? undefined) : undefined
 }
 
-function normalizeStyleProps(props: Record<string, unknown>): Record<string, unknown> {
+/** `props` with the sizes and styles its `style` object gives, where the props leave them unset. */
+export function normalizeStyleProps(props: Record<string, unknown>): Record<string, unknown> {
   const style = props.style
   if (style === null || typeof style !== 'object' || Array.isArray(style)) return props
 

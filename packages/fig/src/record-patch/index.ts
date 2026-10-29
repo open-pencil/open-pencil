@@ -432,7 +432,7 @@ export function patchFigMessage(
   // Only the records an edit changed some fields of are decoded; the rest stay bytes.
   const decode = (bytes: Uint8Array): NodeChange => {
     if (recordsPart?.kind !== 'records') throw new Error('The archive has no records')
-    return schema.decode(schema.definition(recordsPart.type), new ByteBuffer(bytes)) as NodeChange
+    return schema.decode(schema.definition(recordsPart.type), new ByteBuffer(bytes))
   }
   const merged = mergeRecords(scanned.records, patch, decode)
   const blobs = (type: string) => [

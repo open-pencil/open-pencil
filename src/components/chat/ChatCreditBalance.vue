@@ -11,7 +11,8 @@ import { useDateFormat } from '@/app/i18n/date'
 import { formatNumber } from '@/app/i18n/number'
 import { openExternalLink } from '@/app/shell/ui'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { chatProfileTheme } from '@/theme/chat/profile'
+
+import { chatProfileTheme } from './ui'
 
 const { replying } = defineProps<{ replying: boolean }>()
 const { ai } = useI18n()

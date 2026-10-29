@@ -15,12 +15,15 @@ import {
   RangeCalendarPrev,
   RangeCalendarRoot
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, shallowRef, watch } from 'vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { rangeCalendar } from '@/theme/date/range-calendar'
+import rangeCalendarTheme from '@/theme/date/range-calendar'
 
 import type { DayRange } from './range'
+
+const rangeCalendar = tv(rangeCalendarTheme)
 
 /**
  * One month for picking a span of days. The model changes only once both ends are chosen, so a

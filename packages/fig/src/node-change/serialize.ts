@@ -363,33 +363,38 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
     if (node.maskIsOutline) nc.maskIsOutline = true
   }
 
-  let styleOverrides: StyleOverride[] = []
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  const { table: styleOverrides, styleToId } = network
+    ? buildStyleOverrideTable(network)
+    : { table: [] as StyleOverride[], styleToId: undefined }
+  // A fill geometry entry with its own paints gets a style override of its own.
+  const fillStyleIds = node.fillGeometry.map((geometry) => {
+    if (!geometry.fills || geometry.fills.length === 0) return 0
+    const styleID = styleOverrides.length + 1
+    styleOverrides.push({ styleID, fillPaints: geometry.fills.map(fillToKiwiPaint) })
+    return styleID
+  })
+
   const vectorData: Record<string, unknown> = {}
-  if (node.vectorNetwork && node.type === 'VECTOR') {
-    const { table, styleToId } = buildStyleOverrideTable(node.vectorNetwork)
-    styleOverrides = table
+  if (network) {
+    // fillGeometry[i] is region i's fill when the counts match (see regenerateFillGeometry), and
+    // Figma gives both the same style ID: its edit mode refills regions from the network alone.
+    const regionStyleIds = network.regions.length === fillStyleIds.length ? fillStyleIds : undefined
     const blobIdx = blobs.length
-    blobs.push(encodeVectorNetworkBlob(node.vectorNetwork, styleToId))
+    blobs.push(encodeVectorNetworkBlob(network, styleToId, regionStyleIds))
     vectorData.vectorNetworkBlob = blobIdx
     vectorData.normalizedSize = { x: node.width, y: node.height }
   }
 
   if (node.fillGeometry.length > 0) {
-    nc.fillGeometry = node.fillGeometry.map((geometry) => {
+    nc.fillGeometry = node.fillGeometry.map((geometry, index) => {
       const blobIdx = blobs.length
       blobs.push(geometry.commandsBlob)
-      if (!geometry.fills || geometry.fills.length === 0) {
-        return {
-          windingRule: toKiwiWindingRule(geometry.windingRule),
-          commandsBlob: blobIdx
-        }
-      }
-      const styleID = styleOverrides.length + 1
-      styleOverrides.push({ styleID, fillPaints: geometry.fills.map(fillToKiwiPaint) })
+      const styleID = fillStyleIds[index]
       return {
         windingRule: toKiwiWindingRule(geometry.windingRule),
         commandsBlob: blobIdx,
-        styleID
+        ...(styleID ? { styleID } : {})
       }
     })
   }

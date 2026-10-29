@@ -223,6 +223,7 @@ export function createDefaultNode(
     flipY: false,
     textPicture: null,
     derivedTextGlyphs: null,
+    derivedTextHeight: null,
     textPathData: null,
     textPathBox: null,
     booleanOperation: undefined,

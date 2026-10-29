@@ -1,4 +1,3 @@
-import { uniqBy } from 'es-toolkit/array'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import type { SceneGraph, SceneNode as CoreSceneNode, NodeType } from '@open-pencil/scene-graph'
@@ -23,7 +22,7 @@ import { fontManager } from '#core/text/fonts'
 
 import { componentFromNode } from './components'
 import { flattenSceneNodes } from './flatten'
-import { variationAxisTags, weightToStyleName, type FigmaFontNameInput } from './fonts'
+import { loadFigmaFont, variationAxisTags, type FigmaFontNameInput } from './fonts'
 import * as images from './images'
 import type {
   FigmaBooleanOperationNode,
@@ -532,25 +531,9 @@ export class FigmaAPI implements NodeProxyHost {
 
   // --- Stubs ---
 
-  /**
-   * Loads the font so text measures and draws with it from then on. Hosts with their own font
-   * sources replace this; a font that cannot load is skipped, where Figma would reject.
-   */
+  /** Loads the font so text measures and draws with it from then on; rejects as Figma does. */
   async loadFontAsync(fontName: FigmaFontNameInput): Promise<void> {
-    if (fontName.style !== undefined) {
-      await fontManager.loadFont(fontName.family, fontName.style).catch(() => null)
-      return
-    }
-    // A family named alone loads every style it has. One style of each slant loads first, so the
-    // rest reuse its file where one variable file draws the whole slant.
-    const faces = (await fontManager.familyFaces(fontName.family).catch(() => null)) ?? [
-      { weight: 400, italic: false }
-    ]
-    const load = ({ weight, italic }: { weight: number; italic: boolean }) =>
-      fontManager.loadFont(fontName.family, weightToStyleName(weight, italic)).catch(() => null)
-    const first = uniqBy(faces, (face) => face.italic)
-    await Promise.all(first.map(load))
-    await Promise.all(faces.filter((face) => !first.includes(face)).map(load))
+    await loadFigmaFont(fontName)
   }
 
   /**

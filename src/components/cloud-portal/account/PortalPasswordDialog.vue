@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -11,7 +12,6 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPasswordInput from '@/components/ui/input/AppPasswordInput.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
 
 /**
  * Asks for passwords: the current one to confirm a sensitive change, and a new one when the

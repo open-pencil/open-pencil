@@ -29,6 +29,7 @@ beforeAll(async () => {
     'bundled Inter font'
   )
   await fontManager.markLoaded('Inter', 'Regular', inter)
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Bold' })
 })
 
 describe('styled text segments', () => {

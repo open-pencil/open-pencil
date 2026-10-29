@@ -77,6 +77,10 @@ Imported Figma text-on-path layers retain their curved glyph layout. You can edi
 
 Change the font weight in the Typography section of the properties panel. Available weights depend on the selected font family (e.g., Regular, Medium, Bold, Black).
 
+## Variable Fonts
+
+When the text's font is variable, such as Inter, the Typography section lists its axes (weight, optical size, width, and any others the font has) with the value each is drawn at. Type or drag a value to set it; choosing a weight, slant, or family puts the axes back at that style's own. Optical size reads **Auto** while it follows the font size; set a value, or choose **Fixed** from its menu, to hold it, and **Auto** to follow the size again.
+
 ## Font Sources
 
 - **Default font** — Inter is loaded automatically

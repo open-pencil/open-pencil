@@ -3,7 +3,8 @@ import * as v from 'valibot'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 const EDITOR_LAYOUT_KEY = 'open-pencil:editor-layout'
-const DEFAULT_EDITOR_LAYOUT = [18, 64, 18]
+/** Left panel, canvas, and right panel, in percent; the right one is wider for the AI chat. */
+const DEFAULT_EDITOR_LAYOUT = [18, 60, 22]
 const editorLayoutSchema = v.pipe(
   v.string(),
   v.parseJson(),

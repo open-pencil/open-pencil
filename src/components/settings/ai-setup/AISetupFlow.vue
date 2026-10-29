@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, ref } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -19,6 +19,7 @@ import AISetupAccess from './AISetupAccess.vue'
 import AISetupConnection from './AISetupConnection.vue'
 import AISetupReview from './AISetupReview.vue'
 import AISetupRoles from './AISetupRoles.vue'
+import AISetupSkills from './AISetupSkills.vue'
 
 const {
   entry,
@@ -98,8 +99,12 @@ function back(): void {
   else emit('close')
 }
 
+const skills = useTemplateRef<{ apply: () => void }>('skills')
+
 async function finish(): Promise<void> {
-  if ((await onboarding.apply()) === 'saved') phase.value = 'saved'
+  if ((await onboarding.apply()) !== 'saved') return
+  skills.value?.apply()
+  phase.value = 'saved'
 }
 </script>
 
@@ -225,6 +230,7 @@ async function finish(): Promise<void> {
           @choose="roles.choose"
           @use-recommended="roles.useRecommended"
         />
+        <AISetupSkills v-if="agentsAvailable" ref="skills" />
         <SettingsSaveFeedback
           :result="saveResult"
           :error="saveResult === 'saved' ? null : saveResult"

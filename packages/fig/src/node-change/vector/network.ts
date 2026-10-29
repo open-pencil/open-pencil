@@ -151,9 +151,14 @@ export function buildStyleOverrideTable(network: VectorNetwork): {
   return { table, styleToId }
 }
 
+/**
+ * Encodes a network as Figma's vector network blob. `regionStyleIds[i]` names the style override
+ * that fills region `i`; Figma rebuilds a region's fill from it when the vector is edited.
+ */
 export function encodeVectorNetworkBlob(
   network: VectorNetwork,
-  styleToId?: Map<string, number>
+  styleToId?: Map<string, number>,
+  regionStyleIds?: readonly number[]
 ): Uint8Array {
   let regionBytes = 0
   for (const region of network.regions) {
@@ -199,8 +204,10 @@ export function encodeVectorNetworkBlob(
     offset += 4
   }
 
-  for (const region of network.regions) {
-    view.setUint32(offset, region.windingRule === 'EVENODD' ? 0 : 1, true)
+  for (const [index, region] of network.regions.entries()) {
+    // The low bit is the winding rule; the rest is the region's style ID.
+    const styleID = regionStyleIds?.[index] ?? 0
+    view.setUint32(offset, (styleID << 1) | (region.windingRule === 'EVENODD' ? 0 : 1), true)
     offset += 4
     view.setUint32(offset, region.loops.length, true)
     offset += 4

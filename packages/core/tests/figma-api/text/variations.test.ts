@@ -17,7 +17,10 @@ beforeAll(async () => {
   const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
   const static_ = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
   await fontManager.markLoaded(VARIABLE, 'Regular', variable)
+  await fontManager.markLoaded(VARIABLE, 'Regular Italic', variable)
   await fontManager.markLoaded(STATIC, 'Regular', static_)
+  // Text edits need their fonts loaded, as in Figma: the family alone loads its named styles.
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: VARIABLE })
 })
 
 function text(family = VARIABLE) {

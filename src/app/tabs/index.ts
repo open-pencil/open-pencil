@@ -10,6 +10,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
+import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { confirmAllDocuments } from '@/app/document/close/all'
 import { confirmDocumentClose } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
@@ -163,6 +164,17 @@ export function switchTab(tabId: string): boolean {
   if (!tab) return false
   activateTab(tab)
   return true
+}
+
+/**
+ * Activates the tab `step` places from the one in front, wrapping around the ends, as Figma's
+ * ⌃Tab and ⌃⇧Tab do; Home counts, so the tab after the last is Home.
+ */
+export function switchAdjacentTab(step: 1 | -1): void {
+  const tabs = tabsRef.value
+  if (tabs.length < 2) return
+  const index = tabs.findIndex((tab) => tab.id === activeTabId.value)
+  activateTab(tabs[(index + step + tabs.length) % tabs.length])
 }
 
 function disposeTabStore(store: EditorStore): void {
@@ -471,7 +483,8 @@ export async function openStorageDocumentInNewTab(
         notificationMessages.get().openFileFailed({
           name: document.name,
           error: error instanceof Error ? error.message : String(error)
-        })
+        }),
+        viewDiagnosticsAction()
       )
     }
     await releaseOpeningTab(opening)

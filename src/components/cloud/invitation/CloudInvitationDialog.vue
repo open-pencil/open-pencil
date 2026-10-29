@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
@@ -9,9 +10,11 @@ import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import { cloudInvitation } from '@/theme/cloud/invitation'
+import cloudInvitationTheme from '@/theme/cloud/invitation'
 
 import type { CloudInvitationState, CloudInvitationSummary } from './types'
+
+const cloudInvitation = tv(cloudInvitationTheme)
 
 /**
  * Opening an invitation link: who invited you to which document or workspace and on which

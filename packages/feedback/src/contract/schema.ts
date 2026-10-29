@@ -13,6 +13,7 @@ export const DOCUMENT_FORMATS = [
   'fig',
   'pen',
   'drawio',
+  'mermaid',
   'png',
   'jpg',
   'webp',

@@ -17,6 +17,7 @@
   "clipboardImagesUnavailableWeb": "粘贴的设计包含 {count} 张无法在网页应用中加载的图片。请使用桌面应用以包含这些图片。",
   "clipboardImageFetchFailed": "无法从 Figma 获取 1 张图片。请检查源文件是否可访问，然后重试。",
   "clipboardImagesFetchFailed": "无法从 Figma 获取 {count} 张图片。请检查源文件是否可访问，然后重试。",
+  "mermaidPasteFailed": "无法读取 Mermaid 图表。{error}",
   "recentFiles": "最近使用的文件",
   "recentFilesDescription": "继续编辑设计或新建设计。",
   "noRecentFiles": "暂无最近使用的文件",

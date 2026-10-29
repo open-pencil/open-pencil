@@ -2,8 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { pngHeader } from '#cloud-tests/helpers/pictures'
 import { CLOUD_PICTURE_MAX_BYTES } from '#cloud/contract'
-import { pictureFormat } from '#cloud/server/pictures'
+import { pictureFormat, providerPicture } from '#cloud/server/pictures'
 import { utf8ToBytes } from '@noble/hashes/utils.js'
+import { UnsecuredJWT } from 'jose'
 
 describe('picture format', () => {
   test('keeps PNG and JPEG pictures of a reasonable size', () => {
@@ -22,5 +23,22 @@ describe('picture format', () => {
     const padded = new Uint8Array(CLOUD_PICTURE_MAX_BYTES + 1)
     padded.set(pngHeader(256, 256))
     expect(pictureFormat(padded)).toBeNull()
+  })
+})
+
+describe('provider picture', () => {
+  const token = (claims: Record<string, unknown>) => new UnsecuredJWT(claims).encode()
+
+  test("reads the picture a Google account's ID token names", () => {
+    const picture = 'https://lh3.googleusercontent.com/a/picture=s96-c'
+    expect(providerPicture({ providerId: 'google', idToken: token({ picture }) })).toBe(picture)
+  })
+
+  test('names nothing for other providers, missing tokens, or unreadable claims', () => {
+    const picture = 'https://lh3.googleusercontent.com/a/picture=s96-c'
+    expect(providerPicture({ providerId: 'apple', idToken: token({ picture }) })).toBeNull()
+    expect(providerPicture({ providerId: 'google', idToken: null })).toBeNull()
+    expect(providerPicture({ providerId: 'google', idToken: 'not a token' })).toBeNull()
+    expect(providerPicture({ providerId: 'google', idToken: token({ picture: 42 }) })).toBeNull()
   })
 })

@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** A side list of places, drawn like the Settings dialog's sections: groups split by rules, headings, 28px rows with icons. */
-export const sideList = tv({
+export default {
   slots: {
     root: 'flex h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-panel',
     group: 'flex flex-col gap-0.5 border-t border-border p-2 first:border-t-0',
@@ -15,4 +13,4 @@ export const sideList = tv({
     trailing: 'flex shrink-0 items-center gap-1.5 text-[11px] text-muted tabular-nums',
     attention: 'size-3.5 text-warning'
   }
-})
+} as const

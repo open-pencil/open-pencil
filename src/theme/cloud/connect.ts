@@ -1,6 +1,4 @@
-import { tv } from 'tailwind-variants'
-
-export const cloudConnect = tv({
+export default {
   slots: {
     choices: 'flex flex-col gap-2',
     choice:
@@ -30,4 +28,4 @@ export const cloudConnect = tv({
     deviceStatus: 'flex items-center gap-2 text-[11px] text-muted',
     spinner: 'size-3.5 shrink-0 animate-spin motion-reduce:animate-none'
   }
-})
+} as const

@@ -2,17 +2,19 @@ import { createGlobalState } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { shallowRef } from 'vue'
 
+import type { ComponentUI } from '@/components/ui/types'
 import { tooltipSurface } from '@/theme/overlay'
 
-export const tooltip = tv({
+const tooltipTheme = {
   slots: {
-    content: ['z-50 px-2 py-1 text-[11px]', tooltipSurface]
+    // Long text wraps rather than running across the window.
+    content: ['z-50 max-w-80 px-2 py-1 text-[11px] break-words', tooltipSurface]
   }
-})
+} as const
 
-interface TooltipUI {
-  content?: string
-}
+export const tooltip = tv(tooltipTheme)
+
+type TooltipUI = ComponentUI<typeof tooltipTheme>
 
 export function useTooltipUI(ui?: TooltipUI) {
   const cls = tooltip()

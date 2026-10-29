@@ -92,7 +92,7 @@ function styleLine(graph: SceneGraph, line: SceneNode, props: ConnectorPropValue
  * The layers JSX writes under `rootIds`, in order, each before its descendants: the layers a
  * connector or sticky note generates are not, so an end never names them.
  */
-function layersUnder(graph: SceneGraph, rootIds: readonly string[]): SceneNode[] {
+export function layersUnder(graph: SceneGraph, rootIds: readonly string[]): SceneNode[] {
   const layers: SceneNode[] = []
   const visit = (id: string) => {
     const node = graph.getNode(id)

@@ -2,6 +2,7 @@ import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { Context, Env, Input } from 'hono'
 import { rateLimiter, type RateLimitExceededEventHandler } from 'hono-rate-limiter'
+import { matchedRoutes } from 'hono/route'
 import type { Kysely } from 'kysely'
 
 import { trustedClientIP, type ClientIdentityOptions } from './keys'
@@ -25,6 +26,26 @@ export const CLOUD_RATE_LIMITS = {
   adminRead: { namespace: 'admin-read', windowMs: 60_000, limit: 300 },
   adminMutation: { namespace: 'admin-mutation', windowMs: 60_000, limit: 30 }
 } as const satisfies Record<string, RateLimitPolicy>
+
+/**
+ * The limiters routes mount for their own budget, each with which requests it counts. A general
+ * limiter leaves those requests to it rather than counting them twice; the routes themselves say
+ * which have one, so the general limiter never matches paths.
+ */
+const routeBudgets = new WeakMap<object, (context: Context) => boolean>()
+
+/** Whether a limiter the request's route mounts for its own budget counts this request. */
+export function routeHasOwnBudget(context: Context): boolean {
+  return matchedRoutes(context).some((route) => routeBudgets.get(route.handler)?.(context))
+}
+
+function ownBudget<Limiter extends object>(
+  limiter: Limiter,
+  skip?: (context: Context) => boolean
+): Limiter {
+  routeBudgets.set(limiter, (context) => !skip?.(context))
+  return limiter
+}
 
 type RateLimitOptions<E extends Env, P extends string, I extends Input> = {
   database: Kysely<CloudDatabase>
@@ -63,9 +84,11 @@ export function createTrustedIPRateLimiter(
   options?: {
     resource?: (context: Context) => string
     skip?: (context: Context) => boolean
+    /** The limiter is a route's own budget, which general limiters leave to it. */
+    route?: boolean
   }
 ) {
-  return createCloudRateLimiter({
+  const limiter = createCloudRateLimiter({
     database,
     secret,
     policy,
@@ -77,13 +100,14 @@ export function createTrustedIPRateLimiter(
       trustedClientIP(context, client) === null || Boolean(options?.skip?.(context)),
     handler
   })
+  return options?.route ? ownBudget(limiter, options.skip) : limiter
 }
 
 export function createActorRateLimiter(
   database: Kysely<CloudDatabase>,
   secret: string,
   policy: RateLimitPolicy,
-  skip?: (context: Context<CloudAPIEnvironment, '*'>) => boolean,
+  skip?: (context: Context) => boolean,
   resource?: (context: Context<CloudAPIEnvironment, '*'>) => string
 ) {
   return createCloudRateLimiter<CloudAPIEnvironment, '*'>({
@@ -96,4 +120,18 @@ export function createActorRateLimiter(
         : `actor:${context.get('actor').userId}`,
     skip
   })
+}
+
+/**
+ * A limiter a route mounts for its own budget, such as document creation; general limiters leave
+ * the requests it counts to it.
+ */
+export function createRouteRateLimiter(
+  database: Kysely<CloudDatabase>,
+  secret: string,
+  policy: RateLimitPolicy,
+  skip?: (context: Context) => boolean,
+  resource?: (context: Context<CloudAPIEnvironment, '*'>) => string
+) {
+  return ownBudget(createActorRateLimiter(database, secret, policy, skip, resource), skip)
 }

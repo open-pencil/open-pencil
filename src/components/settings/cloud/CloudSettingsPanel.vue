@@ -18,9 +18,9 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import { menu } from '@/components/ui/menu/menu'
-import { cloudServers } from '@/theme/cloud/servers'
 
 import type { CloudServerEntry } from './types'
+import { cloudServers } from './ui'
 
 /**
  * The Cloud servers this app syncs with: who is signed in to each, which one Home shows, and

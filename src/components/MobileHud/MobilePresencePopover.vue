@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
 import PresenceList from '@/components/presence/PresenceList.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { presencePopover } from '@/theme/mobile/presence-popover'
+import presencePopoverTheme from '@/theme/mobile/presence-popover'
+
+const presencePopover = tv(presencePopoverTheme)
 
 const hud = useMobileHudContext()
 const styles = presencePopover()

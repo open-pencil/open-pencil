@@ -1,7 +1,11 @@
-import { expect, test } from 'bun:test'
+import { beforeAll, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 // Recorded with the same script in Figma desktop 126.
 

@@ -199,7 +199,8 @@ const noCoreBrowserGlobals = {
       '/packages/core/src/canvas/renderer.ts',
       '/packages/core/src/text/fonts.ts',
       '/packages/core/src/profiler/render-profiler.ts',
-      '/packages/core/src/figma-api/index.ts'
+      '/packages/core/src/figma-api/index.ts',
+      '/packages/core/src/io/formats/pdf/dom.ts'
     ]
     if (allowedFiles.some((suffix) => file.endsWith(suffix))) return {}
 

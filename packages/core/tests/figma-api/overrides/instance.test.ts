@@ -1,7 +1,11 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 // Each case repeats a script run in Figma desktop 126; the lists are what Figma returned.
 

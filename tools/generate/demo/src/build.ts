@@ -58,7 +58,7 @@ export async function withMeasuredText<T>(
 export function buildDemoGraph(renderer: SkiaRenderer): Promise<SceneGraph> {
   return withMeasuredText(renderer, async () => {
     const graph = new SceneGraph()
-    const theme = createTheme(graph)
+    const theme = createTheme()
     const [page] = graph.getPages()
     graph.updateNode(page.id, { name: PAGE_NAME })
     setPageBackgrounds(graph, page, [

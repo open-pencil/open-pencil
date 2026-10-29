@@ -10,6 +10,7 @@ import { parseDrawIOFile, type DrawIOFile } from '@open-pencil/drawio'
 import { FIG_PACKAGE_STATUS, type FigContainerDocument } from '@open-pencil/fig'
 import { FIG_KIWI_DEFAULT_VERSION, buildFigKiwi } from '@open-pencil/kiwi/fig/container'
 import type { GUID as KiwiGUID } from '@open-pencil/kiwi/fig'
+import { parseFlowchart, type Flowchart } from '@open-pencil/mermaid'
 import { parsePenFile, type PenDocument } from '@open-pencil/pen'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
@@ -27,10 +28,11 @@ const penDocument: PenDocument = { version: '1', children: [] }
 const figDocument: FigContainerDocument = { schemaDeflated: new Uint8Array([1]), dataRaw: new Uint8Array([2]) }
 const kiwiGuid: KiwiGUID = { sessionID: 1, localID: 2 }
 const drawioFile: DrawIOFile | null = parseDrawIOFile('<mxfile/>')
+const flowchart: Flowchart = parseFlowchart('flowchart LR\\n  A --> B')
 void editorFactory; void editor; void designDocument; void color; void vector; void maybeNode
 void penDocument; void figDocument; void kiwiGuid; void FIG_PACKAGE_STATUS
 void FIG_KIWI_DEFAULT_VERSION; void buildFigKiwi; void parsePenFile; void htmlToDesignDocument
-void testIdSelector; void tree; void drawioFile
+void testIdSelector; void tree; void drawioFile; void flowchart
 `
 
 export async function verifyTypeConsumer(root: string, consumerDirectory: string): Promise<void> {
@@ -59,7 +61,7 @@ export async function verifyTypeConsumer(root: string, consumerDirectory: string
     root,
     'node_modules',
     '.bin',
-    process.platform === 'win32' ? 'tsgo.cmd' : 'tsgo'
+    process.platform === 'win32' ? 'tsc.cmd' : 'tsc'
   )
   await runCommand({
     command: executable,

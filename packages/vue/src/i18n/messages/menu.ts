@@ -12,6 +12,7 @@ export const menuMessageDefaults = {
   open: 'Open…',
   browseFiles: 'Browse files…',
   openTour: 'Open the Tour',
+  diagnostics: 'Diagnostics…',
   save: 'Save',
   saveAs: 'Save as…',
   saveTo: 'Save to…',
@@ -25,6 +26,8 @@ export const menuMessageDefaults = {
   exportSelectionAsFig: 'Export selection as .fig',
   autosave: 'Auto-save to local file',
   closeTab: 'Close tab',
+  selectPreviousTab: 'Select previous tab',
+  selectNextTab: 'Select next tab',
 
   copy: 'Copy',
   paste: 'Paste',
@@ -50,6 +53,7 @@ export const menuMessageDefaults = {
   checkUpdates: 'Check for updates…',
 
   moveToPage: 'Move to page',
+  autoArrange: 'Auto arrange',
   createInstance: 'Create instance',
   hide: 'Hide',
   show: 'Show',

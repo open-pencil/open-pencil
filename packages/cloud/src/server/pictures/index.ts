@@ -1,4 +1,4 @@
-export { providerPictures } from './provider'
+export { providerPicture, providerPictures } from './provider'
 export { createPictureRoutes } from './routes'
 export {
   createUserPictures,

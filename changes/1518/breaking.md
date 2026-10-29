@@ -1,0 +1,2 @@
+- Design JSX binds component properties with `property(name, default)` in a layer's `text`, `visible`, or an instance's `of`, creating them on the component; `propertyRefs` and `properties` on `<Component>` and `<ComponentSet>` are removed.
+- Design JSX's `defineVars(collection, values, options)` defines a collection instead of grouping references, and the `VarDef` type is removed. `designVar` takes a variable's name or ID, or its collection and name as `designVar('Theme', 'Line')`, without a fallback value; a missing, unresolvable, or ambiguous variable is an error.

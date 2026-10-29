@@ -5,6 +5,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { readIconTint } from '@open-pencil/scene-graph/icons'
 import {
+  getInstances,
   INSTANCE_SYNC_PROPS,
   instanceMainComponent,
   populateInstanceChildren,
@@ -124,6 +125,17 @@ function keepOwnFields(
 }
 
 /**
+ * Whether a copy of an icon still shows the glyph its source showed when it was copied: drawing
+ * the source again at its laid-out size gives it a new glyph, which the copy does not follow.
+ */
+function showsReplacedGlyph(graph: SceneGraph, copy: SceneNode, sourceId: string): boolean {
+  const sourceChildIds = graph.getNode(sourceId)?.childIds ?? []
+  return graph
+    .getChildren(copy.id)
+    .some((glyph) => !glyph.componentId || !sourceChildIds.includes(glyph.componentId))
+}
+
+/**
  * Makes the icon instance `node` show its icon: the icon component for its glyph and size,
  * swapped in when an override changed either, with the glyph in the icon's fill colour.
  */
@@ -140,7 +152,22 @@ export function useIconComponent(node: SceneNode, pen: PenNode, build: Build): v
     swapInstanceComponent(graph, node.id, componentId, { keepName: true })
     // The layer keeps its own name rather than the icon's, which a saved file keeps as an override.
     recordInstanceOverride(graph, node.id, ['name'])
+  } else if (showsReplacedGlyph(graph, node, node.componentId)) {
+    for (const childId of node.childIds) graph.deleteNode(childId)
+    populateInstanceChildren(graph, node.id, node.componentId)
   }
   keepOwnFields(graph, node.id, own, componentId)
   recolorGlyph(graph, node.id, color)
+}
+
+/**
+ * Removes the icon components no icon shows any more: those for the sizes reading guessed before
+ * laying out gave the icons theirs.
+ */
+export function removeUnusedIconComponents(build: Build): void {
+  for (const [key, id] of build.iconComponents) {
+    if (getInstances(build.graph, id).length > 0) continue
+    build.graph.deleteNode(id)
+    build.iconComponents.delete(key)
+  }
 }

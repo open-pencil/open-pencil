@@ -1,7 +1,9 @@
-import { readFile, rename, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { isAbsolute, join, posix } from 'node:path'
 
 import * as v from 'valibot'
+
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 
 /**
  * Records which document and page generated each file in a Storybook output folder, so a
@@ -58,9 +60,7 @@ export async function readManifest(outputDir: string): Promise<StoryManifest> {
   return result.output
 }
 
-/** Written beside the stories and renamed into place, so a failed write keeps the old one. */
+/** Written all at once, so a failed write keeps the old one. */
 export async function writeManifest(outputDir: string, manifest: StoryManifest): Promise<void> {
-  const path = join(outputDir, MANIFEST_FILE)
-  await writeFile(`${path}.tmp`, `${JSON.stringify(manifest, null, 2)}\n`)
-  await rename(`${path}.tmp`, path)
+  await writeFileAtomic(join(outputDir, MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`)
 }

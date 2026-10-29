@@ -9,6 +9,7 @@ import {
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { projectedNode, type RotationPreview } from '#core/geometry'
 
@@ -41,13 +42,14 @@ export function worldNodeVisualBounds(graph: SceneGraph, node: SceneNode): Visua
     minX: -stroke - effects.left,
     minY: -stroke - effects.top,
     maxX: node.width + stroke + effects.right,
-    maxY: node.height + stroke + effects.bottom
+    maxY: node.height + textLinesOverflow(node) + stroke + effects.bottom
   })
 }
 
 /**
  * What a node draws itself, in its own axes before position, rotation, and flips: the box grown
- * by strokes and effects, its path geometry, and text decoration. Children are not included.
+ * by strokes and effects, its path geometry, and text lines and decoration. Children are not
+ * included.
  */
 function localVisualBounds(node: SceneNode): VisualBounds {
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
@@ -56,7 +58,8 @@ function localVisualBounds(node: SceneNode): VisualBounds {
     minX: -stroke - effects.left,
     minY: -stroke - effects.top,
     maxX: node.width + stroke + effects.right,
-    maxY: node.height + stroke + effects.bottom + textDecorationOverflow(node)
+    maxY:
+      node.height + textLinesOverflow(node) + stroke + effects.bottom + textDecorationOverflow(node)
   }
   const hasNonInsideStroke = node.strokes.some(
     (stroke) => stroke.visible && stroke.align !== 'INSIDE'

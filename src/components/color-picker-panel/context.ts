@@ -2,11 +2,7 @@ import { computed, inject, provide, proxyRefs } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import {
-  useColorModel,
-  type ColorFieldFormat,
-  type OkHCLControls
-} from '@open-pencil/vue/controls/color-model'
+import { useColorModel, type OkHCLControls } from '@open-pencil/vue/controls/color-model'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 interface ColorPanelProps {
@@ -39,7 +35,7 @@ function createColorPickerPanelContext(props: ColorPanelProps, emit: ColorPanelE
   const isOkHCLFormat = computed(() => colorModel.format.value === 'okhcl' && okhcl.value)
 
   function setFieldFormat(value: string) {
-    colorModel.setFormat(value as ColorFieldFormat)
+    colorModel.setFormat(value)
   }
 
   return {

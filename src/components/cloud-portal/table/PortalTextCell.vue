@@ -2,7 +2,8 @@
 import type { Component } from 'vue'
 
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
-import { portalTable } from '@/theme/cloud-portal/table'
+
+import { portalTable } from './ui'
 
 /**
  * A cell of words: a line of text, optionally strong, with an icon or badge beside it, a line under

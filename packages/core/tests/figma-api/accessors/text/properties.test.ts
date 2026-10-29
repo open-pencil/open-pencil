@@ -1,6 +1,11 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { createAPI } from '#core-tests/helpers/figma-api'
+import { createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(async () => {
+  await registerTestFont('Inter')
+  await registerTestFont('Roboto')
+})
 
 describe('text', () => {
   test('characters maps to text content', () => {
@@ -17,17 +22,19 @@ describe('text', () => {
     expect(text.fontSize).toBe(24)
   })
 
-  test('fontName get/set', () => {
+  test('fontName get/set', async () => {
     const api = createAPI()
     const text = api.createText()
+    await api.loadFontAsync({ family: 'Roboto', style: 'Bold' })
     text.fontName = { family: 'Roboto', style: 'Bold' }
     expect(text.fontName.family).toBe('Roboto')
     expect(text.fontWeight).toBe(700)
   })
 
-  test('fontName italic', () => {
+  test('fontName italic', async () => {
     const api = createAPI()
     const text = api.createText()
+    await api.loadFontAsync({ family: 'Inter', style: 'Bold Italic' })
     text.fontName = { family: 'Inter', style: 'Bold Italic' }
     expect(text.fontName.family).toBe('Inter')
     expect(text.fontWeight).toBe(700)

@@ -11,7 +11,7 @@ import { fillSizingFields } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { convertEffects } from './effects'
-import { ellipseArc, pathNetwork } from './geometry'
+import { ellipseArc } from './geometry'
 import { drawIcon, insideComponent, useIconComponent } from './icons'
 import type { PenImages } from './images'
 import {
@@ -222,6 +222,22 @@ export function fieldsSetBy(pen: PenOverride): (keyof SceneNode)[] {
   return Object.keys(pen).flatMap((key) => (isProperty(key) ? PROPERTY_FIELDS[key] : []))
 }
 
+function drawIconLayer(node: SceneNode, pen: PenNode, build: Build): void {
+  if (node.type === 'INSTANCE') useIconComponent(node, pen, build)
+  else drawIcon(node, pen, build)
+}
+
+/**
+ * Draws a filling or fitting icon again at its laid-out size, which reading it could only guess.
+ * Drawing takes the icon's colour from its fill and moves it to the glyph, so the fill is read again.
+ */
+export function redrawIconAtLaidOutSize(node: SceneNode, pen: PenNode, build: Build): void {
+  const { w, h } = resolveSizing(pen, build.ctx)
+  if (w.sizing === 'FIXED' && h.sizing === 'FIXED') return
+  node.fills = convertPaints(pen.fill, 'fills', build.ctx, node, build.images)
+  drawIconLayer(node, pen, build)
+}
+
 /**
  * Sets every field a layer takes from its pen.dev fields, so a layer copied from a component can be
  * given its overrides by applying its merged fields again. Turned and mirrored layers are built
@@ -285,14 +301,9 @@ export function applyPenProperties(node: SceneNode, pen: PenNode, build: Build):
   // Text without a width resizes to its content, which laying out the document measures.
   if (isTextLike) applyTextProps(node, pen, ctx)
 
-  if (pen.type === 'icon' && node.type === 'INSTANCE') useIconComponent(node, pen, build)
-  else if (pen.type === 'icon') drawIcon(node, pen, build)
+  if (pen.type === 'icon') drawIconLayer(node, pen, build)
   if (pen.type === 'ellipse') node.arcData = ellipseArc(pen, ctx)
   if (pen.type === 'polygon') node.pointCount = Math.max(3, resolveNumber(pen.polygonCount, ctx, 3))
-  if (pen.type === 'path') {
-    const network = pathNetwork(pen, node.width, node.height)
-    if (network) node.vectorNetwork = network
-  }
 
   if (flowLayout !== 'NONE') {
     if (w.sizing === 'FILL') Object.assign(node, fillSizingFields(flowLayout, 'HORIZONTAL'))

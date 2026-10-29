@@ -17,6 +17,7 @@
   "clipboardImagesUnavailableWeb": "Wklejony projekt zawiera {count} obrazy, których nie można wczytać w aplikacji internetowej. Użyj aplikacji komputerowej, aby je dołączyć.",
   "clipboardImageFetchFailed": "Nie udało się pobrać 1 obrazu z Figmy. Sprawdź, czy plik źródłowy jest dostępny, i spróbuj ponownie.",
   "clipboardImagesFetchFailed": "Nie udało się pobrać {count} obrazów z Figmy. Sprawdź, czy plik źródłowy jest dostępny, i spróbuj ponownie.",
+  "mermaidPasteFailed": "Nie udało się odczytać diagramu Mermaid. {error}",
   "recentFiles": "Ostatnie pliki",
   "recentFilesDescription": "Kontynuuj pracę nad projektem lub rozpocznij nowy.",
   "noRecentFiles": "Brak ostatnich plików",

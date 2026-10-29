@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
@@ -12,7 +13,6 @@ import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
 
 /** Pairing an authenticator app: scan the code or type the key, then prove it works. */
 const {

@@ -19,6 +19,7 @@ import { iconProps } from './icons'
 import { collectProps, positionProps, presenceProps } from './props'
 import { textChildren } from './text'
 import { plainValue, propAttribute, Reference, type JSXProp } from './value'
+import { variableExport, type VariableExport } from './variables'
 
 /** Design JSX with the layer behind each element, in the order elements open. */
 export interface DesignJSXWithLayers {
@@ -120,6 +121,7 @@ function nodeToJSX(
   graph: SceneGraph,
   depth: number,
   scope: ConnectorExportScope,
+  variables: VariableExport,
   layerIds?: Array<string | null>,
   outer: RekaExport = NO_REKA
 ): SyntaxNode[] {
@@ -132,7 +134,7 @@ function nodeToJSX(
   const children = (childDepth: number) =>
     graph
       .getChildren(node.id)
-      .flatMap((child) => nodeToJSX(child, graph, childDepth, scope, layerIds, reka))
+      .flatMap((child) => nodeToJSX(child, graph, childDepth, scope, variables, layerIds, reka))
   if (reka.flatten.has(node.id)) return children(depth)
   // An icon is written by name; its paths are the icon set's to draw again.
   const icon = iconProps(node, graph)
@@ -152,7 +154,9 @@ function nodeToJSX(
   // An item names its component; the instance's own layers are the component's to write.
   if (ownProps?.some(([name]) => name === 'of'))
     return [jsx.element(tag, withRef(ownProps).map(propAttribute), [], depth)]
-  const attributes = withRef([...collectProps(node, graph), ...(ownProps ?? [])]).map(propAttribute)
+  const attributes = withRef([...collectProps(node, graph, variables), ...(ownProps ?? [])]).map(
+    propAttribute
+  )
   if (node.type === 'TEXT') {
     const { children: content, inline } = textChildren(node, depth)
     for (let count = elementCount(content); count > 0; count--) layerIds?.push(null)
@@ -250,7 +254,9 @@ export function designJSXElement(nodeId: string, graph: SceneGraph): DesignJSXEl
 export interface JSXExportOptions {
   /**
    * `false` writes only JSX, for code that places it inside other JSX: a connector end whose
-   * layer would need a declared `ref()` is then written as the point it is drawn at.
+   * layer would need a declared `ref()` is then written as the point it is drawn at, and the
+   * variables layers bind are written by reference (`designVar`) instead of with the
+   * `defineVars` and `defineMode` that define them.
    */
   declarations?: boolean
 }
@@ -269,16 +275,21 @@ export function selectionToJSXWithLayers(
   options: JSXExportOptions = {}
 ): DesignJSXWithLayers {
   const layerIds: Array<string | null> = []
-  const scope = connectorExportScope(graph, nodeIds, options.declarations ?? true)
+  const declare = options.declarations ?? true
+  const scope = connectorExportScope(graph, nodeIds, declare)
+  const variables = variableExport(graph, nodeIds, declare)
   const roots = compact(
     nodeIds.map((id) => {
       const node = graph.getNode(id)
-      const syntax = node ? nodeToJSX(node, graph, 0, scope, layerIds).at(0) : undefined
+      const syntax = node ? nodeToJSX(node, graph, 0, scope, variables, layerIds).at(0) : undefined
       return syntax ? jsx.printJSX(syntax) : ''
     })
   )
   const elements = roots.join('\n\n')
-  const declarations = connectorRefDeclarations(scope)
+  // Variables first: a ref names a layer, and nothing in a variable's definition refers to one.
+  const declarations = compact([variables.declarations(), connectorRefDeclarations(scope)]).join(
+    '\n\n'
+  )
   if (!declarations || !elements) return { code: elements, layerIds }
   // Statements end with `return` and the JSX; several roots return as siblings in a fragment.
   const returned = roots.length > 1 ? `<>\n${elements}\n</>` : elements

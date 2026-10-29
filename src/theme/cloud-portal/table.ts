@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** What console tables put in their cells and above them. */
-export const portalTable = tv({
+export default {
   slots: {
     toolbar: 'flex flex-wrap items-center gap-2',
     title: 'flex min-w-0 items-center gap-1.5 truncate text-xs font-medium text-surface',
@@ -11,4 +9,4 @@ export const portalTable = tv({
     status:
       'inline-block shrink-0 rounded px-1.5 py-px text-[10px] font-medium whitespace-nowrap data-[tone=neutral]:bg-panel-field data-[tone=neutral]:text-muted data-[tone=success]:bg-success/10 data-[tone=success]:text-success data-[tone=warning]:bg-warning-bg data-[tone=warning]:text-warning data-[tone=error]:bg-error-bg data-[tone=error]:text-error'
   }
-})
+} as const

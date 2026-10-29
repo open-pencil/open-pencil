@@ -2,19 +2,24 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { setTextMeasurer } from '@open-pencil/core/layout'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import {
   createPendingTextLayout,
   type PendingLayoutRenderer
 } from '#core/editor/text/pending-layout'
 import { createLayoutRunner } from '#core/layout/mutations'
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 
 afterEach(() => {
   setTextMeasurer(null)
 })
 
-/** A Hug row around auto-width text whose face loads after the first layout. */
-function setup() {
+/**
+ * A Hug row around auto-width text whose face loads after the first layout; `outside` puts the
+ * text on the page instead, where only its own measurement sizes it.
+ */
+function setup({ outside = false, text: values = {} }: { outside?: boolean; text?: Partial<SceneNode> } = {}) {
   const editor = createEditor()
   const graph = editor.graph
   const frame = graph.createNode('FRAME', editor.state.currentPageId, {
@@ -26,10 +31,11 @@ function setup() {
     paddingTop: 12,
     paddingBottom: 12
   })
-  const text = graph.createNode('TEXT', frame.id, {
+  const text = graph.createNode('TEXT', outside ? editor.state.currentPageId : frame.id, {
     text: 'Weighted label',
     fontWeight: 900,
-    textAutoResize: 'WIDTH_AND_HEIGHT'
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    ...values
   })
   let loaded = false
   const renderer: PendingLayoutRenderer = {
@@ -98,4 +104,42 @@ test('layers whose faces are still loading or that were removed are left alone',
   graph.deleteNode(text.id)
   pending.relayoutReady(renderer)
   expect(renders()).toBe(0)
+})
+
+/** Edits the text as the editor and the plugin API do, measuring it as it changes. */
+function edit(graph: ReturnType<typeof setup>['graph'], text: SceneNode, changes: Partial<SceneNode>) {
+  graph.updateNode(text.id, { ...changes, ...textAutoResizeChanges(text, changes) })
+}
+
+test('text outside auto layout edited before its face loads takes its size when it loads', () => {
+  const { graph, text, load, editor } = setup({ outside: true })
+  edit(graph, text, { text: 'Heavier label' })
+  expect(text.width).not.toBe(234)
+
+  load()
+  expect([text.width, text.height]).toEqual([234, 29])
+  expect(editor.undo.canUndo).toBe(false)
+})
+
+test('wrapping text outside auto layout takes its height when its face loads', () => {
+  const { graph, text, load } = setup({ outside: true, text: { textAutoResize: 'HEIGHT', width: 200 } })
+  edit(graph, text, { text: 'Heavier label' })
+  load()
+  expect([text.width, text.height]).toEqual([200, 29])
+})
+
+test('text that keeps the glyphs its file saved keeps the size the file gave it', () => {
+  const { graph, text, runLayoutForNode, load } = setup({
+    outside: true,
+    text: {
+      width: 120,
+      height: 20,
+      derivedTextGlyphs: [{ commandsBlob: new Uint8Array(), x: 0, y: 16, fontSize: 16, firstCharacter: 0 }]
+    }
+  })
+  graph.applyDerivedLayoutDuring(() => runLayoutForNode(text.id))
+  // Measured while it loads, as layout measures text in a flow, without changing it.
+  graph.applyDerivedLayoutDuring(() => textAutoResizeChanges(text, { text: text.text }))
+  load()
+  expect([text.width, text.height]).toEqual([120, 20])
 })

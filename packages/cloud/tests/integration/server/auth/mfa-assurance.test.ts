@@ -115,7 +115,7 @@ describe('deployment administrator MFA assurance', () => {
             )
           )
         ).status
-      ).toBe(403)
+      ).toBe(404)
     } finally {
       await fixture.close()
     }
@@ -187,7 +187,8 @@ describe('deployment administrator MFA assurance', () => {
             account.sessionCookie
           )
         )
-        expect(response.status).toBe(403)
+        // Cloud does not serve Better Auth's own administration at all.
+        expect(response.status).toBe(404)
       }
       const user = await fixture.database
         .selectFrom('user')

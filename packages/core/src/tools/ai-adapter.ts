@@ -190,7 +190,7 @@ export function toolsToAI(
         try {
           let execResult = options.executeTool
             ? await options.executeTool(def, figma, args, { toolCallId })
-            : await def.execute(figma, args)
+            : await def.loadFonts(figma, args).then(() => def.execute(figma, args))
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)

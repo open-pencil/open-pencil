@@ -32,7 +32,7 @@ export function fitTextPathBoxToGlyphs(
   // until resize/reflow produces new objects. Memoize on the glyphs array (the
   // WeakMap entry drops when that array is replaced) and re-check box0 identity.
   const memo = fittedBoxCache.get(glyphs)
-  if (memo && memo.box0 === box0) return memo.result
+  if (memo?.box0 === box0) return memo.result
   const result = computeFittedBox(data, box0, glyphs)
   fittedBoxCache.set(glyphs, { box0, result })
   return result

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
@@ -14,9 +15,11 @@ import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { cloudShare } from '@/theme/cloud/share'
+import cloudShareTheme from '@/theme/cloud/share'
 
 import type { SharePermission, ShareMember, ShareLinkState } from './types'
+
+const cloudShare = tv(cloudShareTheme)
 
 /**
  * Who can open a Cloud document and how: people invited by email, the workspace it lives in, and

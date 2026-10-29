@@ -50,7 +50,7 @@ function styleForCharacter(
     family = run.style.fontFamily ?? family
     weight = run.style.fontWeight ?? weight
     italic = run.style.italic ?? italic
-    language = run.style.textLanguage ?? language
+    if (run.style.textLanguage !== undefined) language = run.style.textLanguage
   }
 
   return { family, style: weightToStyle(weight, italic), language }

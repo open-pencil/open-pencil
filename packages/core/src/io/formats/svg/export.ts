@@ -23,19 +23,13 @@ import {
   hasRadius,
   roundedRectPath,
   arcPath,
-  shapeWithTextOutlinePath,
-  regionSVGPaths,
-  looseSegments
+  shapeWithTextOutlinePath
 } from './paths'
 
-export {
-  geometryBlobToSVGPath,
-  nodeOutlinePath,
-  vectorNetworkToSVGPaths,
-  type OutlineNode
-} from './paths'
+export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import { looseSegments, regionSVGPaths } from '@open-pencil/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias } from './defs'
@@ -111,7 +105,7 @@ function vectorShapeElements(
         elements.push(
           svg('path', {
             d,
-            fill: strokeAttrs.stroke as string,
+            fill: strokeAttrs.stroke,
             'fill-opacity': strokeAttrs['stroke-opacity'],
             stroke: 'none'
           })

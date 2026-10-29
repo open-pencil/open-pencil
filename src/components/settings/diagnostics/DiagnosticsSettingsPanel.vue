@@ -8,6 +8,7 @@ import { diagnostics } from '@/app/diagnostics'
 import { diagnosticsEnvironment } from '@/app/diagnostics/environment'
 import { saveDiagnosticsReport } from '@/app/diagnostics/save'
 import {
+  DIAGNOSTICS_RETENTION_DEFAULT,
   DIAGNOSTICS_RETENTION_MAX,
   DIAGNOSTICS_RETENTION_MIN,
   diagnosticsRetentionPresets,
@@ -30,7 +31,6 @@ const clearOpen = ref(false)
 
 const {
   diagnosticsEnabled,
-  usageEnabled,
   diagnosticsCount,
   diagnosticsSize,
   diagnosticsRetention,
@@ -48,6 +48,11 @@ const retentionValue = computed({
 async function commitRetention(value: number): Promise<void> {
   await pruneDiagnostics(value)
   await refreshDiagnosticsStats()
+}
+
+async function resetRetention(): Promise<void> {
+  retentionValue.value = DIAGNOSTICS_RETENTION_DEFAULT
+  await commitRetention(DIAGNOSTICS_RETENTION_DEFAULT)
 }
 
 async function clearDiagnostics() {
@@ -83,20 +88,17 @@ async function saveDiagnostics() {
         as="label"
         :label="diagnosticMessages.localDiagnostics"
         :description="diagnosticMessages.localDiagnosticsDescription"
+        :modified="!diagnosticsEnabled"
+        @reset="diagnosticsEnabled = true"
       >
         <AppSwitch v-model="diagnosticsEnabled" :label="diagnosticMessages.localDiagnostics" />
-      </SettingsRow>
-      <SettingsRow
-        as="label"
-        :label="diagnosticMessages.usageHistory"
-        :description="usageEnabled ? diagnosticMessages.usageHistoryDescription : undefined"
-      >
-        <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
       </SettingsRow>
       <SettingsRow
         :label="diagnosticMessages.retention"
         :description="diagnosticMessages.retentionDescription"
         class="max-sm:flex-col max-sm:items-stretch"
+        :modified="retentionValue !== DIAGNOSTICS_RETENTION_DEFAULT"
+        @reset="resetRetention"
       >
         <PresetNumberField
           v-model:number="retentionValue"
@@ -116,14 +118,15 @@ async function saveDiagnostics() {
       </SettingsRow>
     </SettingsGroup>
     <DiagnosticsEventList :refresh-stats="refreshDiagnosticsStats" />
-    <div class="flex items-center justify-between text-[11px] text-muted">
-      <span>{{
+    <!-- On a narrow page the buttons wrap below the count rather than squeezing it. -->
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-muted">
+      <span class="whitespace-nowrap">{{
         diagnosticMessages.eventCount({
           count: diagnosticsCount,
           size: Math.ceil(diagnosticsSize / 1024)
         })
       }}</span>
-      <div class="flex items-center gap-1.5">
+      <div class="flex flex-wrap items-center gap-1.5">
         <AppButton size="xs" color="neutral" variant="ghost" @click="exportDiagnostics"
           ><template #leading
             ><icon-lucide-check v-if="copied" /><icon-lucide-copy v-else /></template

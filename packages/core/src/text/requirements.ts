@@ -50,7 +50,7 @@ export function collectGraphFontKeys(
 
 function textLanguageAt(node: SceneNode, index: number): string | null {
   const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-  return run?.style.textLanguage ?? node.textLanguage
+  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
 }
 
 export interface GraphFontRequirements {

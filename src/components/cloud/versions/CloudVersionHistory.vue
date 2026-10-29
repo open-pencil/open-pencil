@@ -36,9 +36,9 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import { cloudVersions } from '@/theme/cloud/versions'
 
 import CloudVersionListItem from './CloudVersionListItem.vue'
+import { cloudVersions } from './ui'
 
 /**
  * Version history, taking the right sidebar as in Figma: Current version first, then the

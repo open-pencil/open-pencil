@@ -31,6 +31,7 @@ export type CharacterStyle = Required<
     | 'textDecorationSkipInk'
     | 'fontFeatures'
     | 'fontVariations'
+    | 'opticalSizeFromFontSize'
     | 'textCase'
   >
 > & {
@@ -61,6 +62,7 @@ export const TEXT_STYLE_KEYS = [
   'textUnderlineOffset',
   'fontFeatures',
   'fontVariations',
+  'opticalSizeFromFontSize',
   'textCase'
 ] as const satisfies readonly (keyof CharacterStyle)[]
 
@@ -93,6 +95,7 @@ export function nodeStyle(node: SceneNode): CharacterStyle {
     textUnderlineOffset: node.textUnderlineOffset,
     fontFeatures: node.fontFeatures,
     fontVariations: node.fontVariations,
+    opticalSizeFromFontSize: node.opticalSizeFromFontSize,
     textCase: node.textCase,
     hyperlink: null,
     textStyleId: node.textStyleId,

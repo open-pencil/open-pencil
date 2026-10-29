@@ -3,7 +3,7 @@ import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
-import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
 type ResolveGuid = (id: string) => GUID | undefined
@@ -39,13 +39,7 @@ export function instanceExportAddress(
 }
 
 function sourceOf(scope: SceneNode, node: SceneNode): string | null {
-  const mapped = getInstanceOverride(
-    scope.instanceOverrides,
-    scope.id,
-    node.id,
-    'sourceComponentId'
-  )
-  return typeof mapped === 'string' ? mapped : node.componentId
+  return copiedComponentLayerId(scope.instanceOverrides, scope.id, node) ?? null
 }
 
 /**

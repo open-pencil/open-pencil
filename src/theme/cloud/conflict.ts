@@ -1,6 +1,4 @@
-import { tv } from 'tailwind-variants'
-
-export const cloudConflict = tv({
+export default {
   slots: {
     versions: 'grid grid-cols-2 gap-3',
     version: 'm-0 min-w-0',
@@ -18,4 +16,4 @@ export const cloudConflict = tv({
     optionLabel: 'block text-xs font-medium text-surface',
     optionDescription: 'mt-0.5 block text-[11px] leading-relaxed text-muted'
   }
-})
+} as const

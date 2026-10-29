@@ -52,7 +52,7 @@ function resolvePath(graph: SceneGraph, instance: SceneNode, path: string): Scen
 }
 
 /** Runs `apply` in the merged theme of a layer's ancestors, as the layer was read in. */
-function inAncestorThemes<T>(build: Build, node: SceneNode, apply: () => T): T {
+export function inAncestorThemes<T>(build: Build, node: SceneNode, apply: () => T): T {
   const chain: Record<string, string>[] = []
   for (let id = node.parentId; id; id = build.graph.getNode(id)?.parentId ?? null) {
     const theme = build.effective.get(id)?.theme

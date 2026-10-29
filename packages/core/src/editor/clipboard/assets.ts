@@ -192,6 +192,27 @@ export function createClipboardAssetActions(
     return placeAssets([asset], cx, cy, 'Paste SVG')
   }
 
+  /**
+   * Paste a Mermaid flowchart as FigJam shapes, sections, and connectors, laid out and centred on
+   * the point; false when the text is not one.
+   */
+  async function pasteMermaid(text: string, cx: number, cy: number): Promise<boolean> {
+    const { detectMermaidDiagram, parseFlowchart } = await import('@open-pencil/mermaid')
+    if (!detectMermaidDiagram(text)) return false
+    const chart = parseFlowchart(text)
+    const { addFlowchart } = await import('#core/io/formats/mermaid')
+    const previousSelection = new Set(ctx.state.selectedIds)
+    const parentId = resolvePasteTarget(ctx)
+    const { ids: created } = await addFlowchart(ctx.graph, parentId, chart, {
+      center: parentLocalPoint(parentId, cx, cy)
+    })
+    if (created.length === 0) return false
+    ctx.setSelectedIds(new Set(created))
+    pushCreatedNodesUndo(created, previousSelection, 'Paste Mermaid')
+    ctx.requestRender()
+    return true
+  }
+
   function placeImageFiles(files: File[], cx: number, cy: number) {
     return placeFiles(
       files.filter((file) => IMPORTABLE_RASTER_TYPES.has(file.type)),
@@ -200,5 +221,5 @@ export function createClipboardAssetActions(
     )
   }
 
-  return { storeImage, placeFiles, placeImageFiles, pasteSVG }
+  return { storeImage, placeFiles, placeImageFiles, pasteSVG, pasteMermaid }
 }

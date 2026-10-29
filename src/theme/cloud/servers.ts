@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** Connected Cloud servers in Settings, one row each with its account and session. */
-export const cloudServers = tv({
+export default {
   slots: {
     row: 'flex items-center gap-3 px-3 py-2.5',
     icon: 'flex size-8 shrink-0 items-center justify-center rounded-md bg-panel-field text-muted',
@@ -20,4 +18,4 @@ export const cloudServers = tv({
     waitlistHeader: 'flex items-start gap-3',
     waitlistDescription: 'mt-0.5 text-[11px] text-muted'
   }
-})
+} as const

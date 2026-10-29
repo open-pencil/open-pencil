@@ -106,6 +106,12 @@
       "@open-pencil/drawio": [
         "./packages/drawio/src/index.ts"
       ],
+      "#mermaid/*": [
+        "./packages/mermaid/src/*"
+      ],
+      "@open-pencil/mermaid": [
+        "./packages/mermaid/src/index.ts"
+      ],
       "#emit/*": [
         "./packages/emit/src/*"
       ],

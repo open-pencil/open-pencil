@@ -3,10 +3,10 @@ import { ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
 
 import PortalPublicLayout from '../layout/PortalPublicLayout.vue'
 

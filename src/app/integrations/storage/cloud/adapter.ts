@@ -1,4 +1,5 @@
 import { CloudAPIError, type CloudAPIClient } from '@open-pencil/cloud/client'
+import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@open-pencil/cloud/contract'
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
@@ -19,6 +20,22 @@ function revisionConflict(error: unknown): boolean {
 /** The server refused the save as declared, as when an image it named was released meanwhile. */
 function invalidUpload(error: unknown): boolean {
   return error instanceof CloudAPIError && error.code === 'invalid_upload'
+}
+
+/**
+ * The name as Cloud accepts it: trimmed and cut to its limit, so a long name never fails every save.
+ * The cut never splits a character in two.
+ */
+function cloudDocumentName(name: string): string {
+  const trimmed = name.trim()
+  const cut =
+    trimmed.length > CLOUD_DOCUMENT_NAME_MAX_LENGTH
+      ? trimmed
+          .slice(0, CLOUD_DOCUMENT_NAME_MAX_LENGTH)
+          .replace(/[\uD800-\uDBFF]$/, '')
+          .trimEnd()
+      : trimmed
+  return cut || 'Untitled'
 }
 
 export type CloudStorageDependencies = {
@@ -103,9 +120,10 @@ export function createCloudStorageAdapter(
     async putDocument(id, bytes, metadata, onProgress, options) {
       const cloud = await client()
       const baseRevision = options?.baseRevision ?? null
+      const name = cloudDocumentName(metadata.name)
       // Without a revision this is the first save; the document may not exist on the server yet.
       if (!baseRevision && !(await listed(id))) {
-        await cloud.createDocument(workspaceId(), { id, name: metadata.name })
+        await cloud.createDocument(workspaceId(), { id, name })
       }
       // The workspace keeps images once; the stored file names them and uploads only those it lacks.
       const { lean, images } = splitCloudDocument(bytes)
@@ -128,6 +146,7 @@ export function createCloudStorageAdapter(
         })
         const committed = await cloud.commitUpload(upload.uploadId, {
           checksum,
+          name,
           multipart: upload.multipart,
           images: named.map((image) => ({ name: image.name, checksum: image.checksum }))
         })

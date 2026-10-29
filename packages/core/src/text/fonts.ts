@@ -75,6 +75,41 @@ export type BundledFontLocator = (file: string) => string
 
 const defaultBundledFontLocator: BundledFontLocator = (file) => `/${file}`
 
+/**
+ * Shares the in-flight and successful reads of a key, and forgets a null answer so it can be
+ * retried. A host or browser read copies the whole face again each time, tens of megabytes for a
+ * system CJK face, only for registration to find the same bytes and drop it.
+ */
+class SharedReads {
+  private readonly reads = new Map<string, Promise<ArrayBuffer | null>>()
+
+  read(key: string, load: () => Promise<ArrayBuffer | null>): Promise<ArrayBuffer | null> {
+    const existing = this.reads.get(key)
+    if (existing) return existing
+    const pending = load()
+    this.reads.set(key, pending)
+    void pending.then((data) => {
+      if (!data && this.reads.get(key) === pending) this.reads.delete(key)
+      return undefined
+    })
+    return pending
+  }
+
+  clear(): void {
+    this.reads.clear()
+  }
+}
+
+/** Whether two font files hold the same bytes, as one downloaded or read again does. */
+function sameFontFile(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a === b) return true
+  if (a.byteLength !== b.byteLength) return false
+  const left = new Uint8Array(a)
+  const right = new Uint8Array(b)
+  for (let index = 0; index < left.length; index++) if (left[index] !== right[index]) return false
+  return true
+}
+
 /** `load`'s answer once HarfBuzz has loaded too, the two loading side by side. */
 async function withHarfBuzz<T>(load: Promise<T>): Promise<T> {
   const [answer] = await Promise.all([load, loadHarfBuzz()])
@@ -88,6 +123,12 @@ export class FontManager {
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
   /** The name each file of a family loaded from several files is registered under. */
   private fileFamilies = new Map<ArrayBuffer, string>()
+  /**
+   * Families a style's file was replaced in, such as a web font fetched again for more characters.
+   * The old file stays registered first under the family's name, and CanvasKit draws with the
+   * first file it has for a style, so these draw from each file's own name.
+   */
+  private replacedFamilies = new Set<string>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private variations = new WeakMap<
@@ -103,6 +144,7 @@ export class FontManager {
   private registrationGeneration = 0
   private providerRegistrations = new WeakMap<TypefaceFontProvider, Map<string, Set<ArrayBuffer>>>()
   private localFonts: FontInfo[] | null = null
+  private readonly localFontRequests = new SharedReads()
   private hostStyles = new Map<string, readonly string[]>()
   private familyFaceLoads = new Map<string, Promise<FamilyFace[] | null>>()
   private knownFamilyFaces = new Map<string, FamilyFace[] | null>()
@@ -111,6 +153,7 @@ export class FontManager {
   private downloadedFontCache: DownloadedFontCache | null = null
   private fallbackUserAgent: string | undefined
   private hostFontLoader: HostFontLoader | null = null
+  private readonly hostFontRequests = new SharedReads()
   private webFonts = new WebFontResolver()
   private cjkFallbackFamilies: string[] = []
   private cjkFallbackPromise: Promise<string[]> | null = null
@@ -133,13 +176,7 @@ export class FontManager {
     }
   }
 
-  detachProvider(provider?: TypefaceFontProvider | null): void {
-    if (!provider) {
-      this.fontProviders.clear()
-      this.fontProvider = null
-      this.providerRegistrations = new WeakMap()
-      return
-    }
+  detachProvider(provider: TypefaceFontProvider): void {
     this.fontProviders.delete(provider)
     this.providerRegistrations.delete(provider)
     if (this.fontProvider === provider) {
@@ -190,6 +227,7 @@ export class FontManager {
 
   setHostFontLoader(loader: HostFontLoader | null): void {
     this.hostFontLoader = loader
+    this.hostFontRequests.clear()
   }
 
   /** Lets a host that bundles `@open-pencil/core/assets` itself say where each file ended up. */
@@ -631,19 +669,43 @@ export class FontManager {
    * paint. Loaded from several files, such as a bundled static face beside a downloaded variable
    * one, CanvasKit would pick among them by the weight each file declares, which can tie; each
    * style then draws from the file loaded for it, registered with its shards under a name of the
-   * file's own.
+   * file's own. So does a family a style's file was replaced in, whose old file CanvasKit would
+   * keep drawing under the family's name.
    */
   renderFamily(family: string, style: string): string {
     const data = this.loadedData(family, style)
-    if (!data || this.familyFileCount(family) < 2) return family
+    if (!data || (this.familyFileCount(family) < 2 && !this.replacedFamilies.has(family)))
+      return family
+    const name = this.fileFamily(family, data)
+    for (const shard of this.supplementalFamilyData.get(`${family}|${style}`) ?? [])
+      this.registerFontInCanvasKit(name, shard)
+    return name
+  }
+
+  /**
+   * The names CanvasKit draws the other files of `style` of `family` under, such as the coverage
+   * shards of a web font split by unicode-range. CanvasKit draws a character only from the first
+   * file registered under a name, so each shard is a family of its own that text falls back to.
+   */
+  renderShardFamilies(family: string, style: string): string[] {
+    return (this.supplementalFamilyData.get(`${family}|${style}`) ?? []).map((data) =>
+      this.fileFamily(family, data)
+    )
+  }
+
+  /** The files of `style` of `family` after its own, such as the shards of a split web font. */
+  shardData(family: string, style: string): readonly ArrayBuffer[] {
+    return this.supplementalFamilyData.get(`${family}|${style}`) ?? []
+  }
+
+  /** The name one file of `family` is registered under on its own. */
+  private fileFamily(family: string, data: ArrayBuffer): string {
     let name = this.fileFamilies.get(data)
     if (!name) {
       name = fontFaceRenderFamily(family, `file ${this.fileFamilies.size + 1}`)
       this.fileFamilies.set(data, name)
     }
     this.registerFontInCanvasKit(name, data)
-    for (const shard of this.supplementalFamilyData.get(`${family}|${style}`) ?? [])
-      this.registerFontInCanvasKit(name, shard)
     return name
   }
 
@@ -741,6 +803,7 @@ export class FontManager {
       signal?.throwIfAborted()
       const buffer =
         (await this.loadHostFont(family, 'Regular')) ?? (await this.findLocalFont(family))
+      signal?.throwIfAborted()
       if (
         buffer &&
         this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
@@ -773,14 +836,29 @@ export class FontManager {
     return targetFamilies
   }
 
-  private async loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
-    if (!this.hostFontLoader) return null
+  private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
+    const loader = this.hostFontLoader
+    if (!loader) return Promise.resolve(null)
+    return this.hostFontRequests.read(`${family}|${style}`, () =>
+      this.readHostFont(loader, family, style)
+    )
+  }
+
+  private async readHostFont(
+    loader: HostFontLoader,
+    family: string,
+    style: string
+  ): Promise<ArrayBuffer | null> {
     const key = `${family}|${style}`
     try {
-      const data = await this.hostFontLoader(family, style)
+      const data = await loader(family, style)
+      // A read that started under a loader the host has replaced must not register its bytes.
+      if (this.hostFontLoader !== loader) return null
       if (data) this.unavailableFaces.delete(key)
       return data
     } catch (e) {
+      // A failure from a replaced loader says nothing about the face the new loader serves.
+      if (this.hostFontLoader !== loader) return null
       if (e instanceof UnsupportedFontFormatError) {
         this.unavailableFaces.set(key, e.reason)
         return null
@@ -818,11 +896,19 @@ export class FontManager {
     }
   }
 
-  private async findLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
-    if (!IS_BROWSER || !window.queryLocalFonts) return null
-    if (this.localFontAccessState !== 'granted') return null
+  private findLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
+    if (!IS_BROWSER || !window.queryLocalFonts) return Promise.resolve(null)
+    if (this.localFontAccessState !== 'granted') return Promise.resolve(null)
+    // A query answers with a new blob, and so new bytes, every time; the face decides the match.
+    return this.localFontRequests.read(`${family}|${style ?? ''}`, () =>
+      this.readLocalFont(family, style)
+    )
+  }
+
+  private async readLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
     try {
-      const fonts = await window.queryLocalFonts()
+      const fonts = await window.queryLocalFonts?.()
+      if (!fonts) return null
       const match = chooseLocalFontMatch(fonts, family, style)
       if (!match) return null
       const blob: Blob = await match.blob()
@@ -836,7 +922,7 @@ export class FontManager {
   private registerSupplemental(family: string, style: string, buffer: ArrayBuffer): void {
     const key = `${family}|${style}`
     const supplemental = this.supplementalFamilyData.get(key) ?? []
-    if (supplemental.includes(buffer)) return
+    if (supplemental.some((file) => sameFontFile(file, buffer))) return
     supplemental.push(buffer)
     this.supplementalFamilyData.set(key, supplemental)
     this.registerFontInCanvasKit(family, buffer)
@@ -851,12 +937,15 @@ export class FontManager {
   ): ArrayBuffer | null {
     const key = `${family}|${style}`
     const existing = this.loadedFamilies.get(key)
-    if (existing === buffer) {
+    if (existing && sameFontFile(existing, buffer)) {
       if (source) this.loadedFamilySources.set(key, source)
-      this.registerFontInCanvasKit(family, buffer)
-      return buffer
+      this.registerFontInCanvasKit(family, existing)
+      return existing
     }
-    if (existing) this.registerSupplemental(family, style, existing)
+    if (existing) {
+      this.registerSupplemental(family, style, existing)
+      this.replacedFamilies.add(family)
+    }
     this.loadedFamilies.set(key, buffer)
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)

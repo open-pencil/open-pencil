@@ -42,6 +42,7 @@ export {
   type TreeNode,
   type BaseProps,
   type EllipseProps,
+  type VectorProps,
   type ComponentProps,
   type InstanceProps,
   type TextProps,
@@ -82,7 +83,19 @@ export {
   type SolidPaintOptions
 } from './paints'
 
-export { defineVars, designVar, isVariable, type DesignVariable, type VarDef } from './vars'
+export {
+  defineMode,
+  defineVars,
+  designMode,
+  designVar,
+  isMode,
+  isVariable,
+  isVariableInput,
+  type DesignMode,
+  type DesignVariable,
+  type VariableInput
+} from './variables'
+export { isComponentProperty, property, type ComponentProperty } from './component-properties'
 export { isLayerRef, ref, type LayerRef } from './refs'
 
 export { createElement } from './mini-react'
@@ -95,8 +108,8 @@ export {
   elementPropsByName,
   type DesignJSXElementDefinition
 } from './elements'
+export { DESIGN_JSX_HELPERS, designJSXHelpers, type DesignJSXHelperName } from './helpers'
 export {
-  DESIGN_JSX_HELPERS,
   DESIGN_JSX_PROPERTIES,
   DESIGN_JSX_SUPPORTED_PROPERTIES,
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,

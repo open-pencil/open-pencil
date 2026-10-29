@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { mapValues } from 'es-toolkit'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -17,7 +18,9 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppProgress from '@/components/ui/feedback/AppProgress.vue'
 import { releaseNotesURL } from '@/constants'
 import { motionStyles } from '@/theme/motion/styles'
-import { updatePromptTheme, updateStatusUI } from '@/theme/updater'
+import updatePromptStyles, { updateStatusUI } from '@/theme/updater'
+
+const updatePromptTheme = tv(updatePromptStyles)
 
 const {
   state,

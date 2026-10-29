@@ -8,6 +8,7 @@ import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
 import { printError } from '#cli/format'
 import {
   documentWriteOptions,
+  editDocument,
   loadDocument,
   measureDocumentText,
   populateWholeDocument,
@@ -76,7 +77,7 @@ export default defineCommand({
 
     let result: unknown
     try {
-      result = await compileScript(code)(figma)
+      result = await editDocument(graph, () => compileScript(code)(figma))
     } catch (err) {
       printError(err instanceof Error ? err.message : String(err))
       process.exit(1)

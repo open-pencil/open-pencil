@@ -102,6 +102,11 @@
       "node": "P Icon variables",
       "penNodeId": "alRyT",
       "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Sized paths",
+      "penNodeId": "dqtl8",
+      "maximumDifferentPercent": 0.05
     }
   ]
 }

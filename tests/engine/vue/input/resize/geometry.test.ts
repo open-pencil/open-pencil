@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
-import type { Fill, GeometryPath, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import type { Fill, GeometryPath, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { collectResizeDescendants } from '@open-pencil/scene-graph/resize'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
@@ -33,6 +33,18 @@ const NETWORK: VectorNetwork = {
     { start: 3, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
   ],
   regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
+}
+
+const STROKE: Stroke = {
+  type: 'SOLID',
+  color: { r: 0, g: 0, b: 0, a: 1 },
+  weight: 4,
+  opacity: 1,
+  visible: true,
+  align: 'CENTER',
+  cap: 'NONE',
+  join: 'MITER',
+  dashPattern: []
 }
 
 function movePath(x: number, y: number, fills?: Fill[]): GeometryPath {
@@ -75,7 +87,7 @@ function dragFor(node: SceneNode, origChildren: DragResize['origChildren'] = nul
     origFillGeometry: geometry.fills,
     origStrokeGeometry: geometry.strokes,
     origDerivedTextGlyphs: null,
-    origStrokes: [],
+    origStrokes: copyStrokes(node.strokes),
     origTextPathData: null,
     origTextPathBox: null,
     lockedAspectRatio: null,
@@ -83,12 +95,17 @@ function dragFor(node: SceneNode, origChildren: DragResize['origChildren'] = nul
   }
 }
 
+/**
+ * The vector at `size`. Resized, its saved stroke outline is gone, so the stroke draws from the
+ * scaled path at its own weight; undo brings the outline back.
+ */
 function expectGeometry(node: SceneNode, size: number) {
   expect(node.width).toBe(size)
   expect(node.height).toBe(size)
   expect(node.vectorNetwork?.vertices[2]).toMatchObject({ x: size, y: size })
   expect(pathPoint(node.fillGeometry[0])).toEqual([size, size])
-  expect(pathPoint(node.strokeGeometry[0])).toEqual([size / 2, size / 2])
+  if (size === 10) expect(pathPoint(node.strokeGeometry[0])).toEqual([5, 5])
+  else expect(node.strokeGeometry).toEqual([])
   expect(node.fillGeometry[0]?.fills?.[0]?.color.r).toBe(1)
 }
 
@@ -140,5 +157,38 @@ describe('vector resize geometry', () => {
 
     editor.undo.redo()
     expectGeometry(getNodeOrThrow(editor.graph, vector.id), 20)
+  })
+
+  // Figma keeps the weight through a resize; only its Scale tool (K) changes it.
+  test('keeps the stroke weight of a resized vector and of one in a resized group', () => {
+    const editor = createEditor()
+    const page = editor.graph.getPages()[0]
+    const vector = editor.graph.createNode('VECTOR', page.id, {
+      width: 10,
+      height: 10,
+      vectorNetwork: cloneVectorNetwork(NETWORK),
+      strokes: [STROKE]
+    })
+    const group = editor.graph.createNode('GROUP', page.id, { width: 10, height: 10 })
+    const grouped = editor.graph.createNode('VECTOR', group.id, {
+      width: 10,
+      height: 10,
+      vectorNetwork: cloneVectorNetwork(NETWORK),
+      strokes: [STROKE]
+    })
+
+    for (const drag of [
+      dragFor(vector),
+      dragFor(group, collectResizeDescendants(editor.graph, group.id))
+    ]) {
+      applyResize(drag, 20, 40, false, editor)
+      commitResizePreview(drag, editor)
+    }
+
+    for (const id of [vector.id, grouped.id]) {
+      const node = getNodeOrThrow(editor.graph, id)
+      expect([node.width, node.height]).toEqual([20, 40])
+      expect(node.strokes[0]?.weight).toBe(4)
+    }
   })
 })

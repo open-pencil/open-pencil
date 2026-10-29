@@ -1,0 +1,1 @@
+- The undo shortcut undoes a panel edit made while text is edited, such as a typed font size, instead of doing nothing.

@@ -28,7 +28,8 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatProfileItem from '@/components/chat/ChatProfileItem.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useSelectUI } from '@/components/ui/select/select'
-import { chatProfileTheme } from '@/theme/chat/profile'
+
+import { chatProfileTheme } from './ui'
 
 const { ai } = useI18n()
 const open = ref(false)

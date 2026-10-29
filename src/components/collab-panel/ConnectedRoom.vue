@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { selectTarget } from '@open-pencil/vue/shared/dom-events'
@@ -8,7 +9,9 @@ import { roomStatusText } from '@/components/collab-room/statusText'
 import { useRoomActions } from '@/components/collab-room/useRoomActions'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { roomStatus } from '@/theme/collaboration/room-status'
+import roomStatusTheme from '@/theme/collaboration/room-status'
+
+const roomStatus = tv(roomStatusTheme)
 
 const collab = useCollabPanelContext()
 const room = useRoomActions()

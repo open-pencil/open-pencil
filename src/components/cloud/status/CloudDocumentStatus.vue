@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
@@ -8,7 +9,9 @@ import type { CloudSyncState } from '@/components/home/cloud/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { cloudStatus } from '@/theme/cloud/status'
+import cloudStatusTheme from '@/theme/cloud/status'
+
+const cloudStatus = tv(cloudStatusTheme)
 
 /**
  * Where the open Cloud document stands, beside its name: saved, saving, waiting on this device,

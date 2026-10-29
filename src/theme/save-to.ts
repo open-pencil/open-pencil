@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** Choosing where a document from this device goes: a Cloud workspace or the storage bucket. */
-export const saveTo = tv({
+export default {
   slots: {
     field: 'flex flex-col gap-1.5',
     label: 'text-[11px] font-medium text-muted',
@@ -21,4 +19,4 @@ export const saveTo = tv({
     progressBar: 'h-full rounded-full bg-accent transition-[width] motion-reduce:transition-none',
     progressText: 'text-[11px] text-muted tabular-nums'
   }
-})
+} as const

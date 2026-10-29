@@ -17,7 +17,8 @@ import AppDialog from '@/components/ui/dialog/AppDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { statusRows } from '@/theme/statuses'
+
+import { statusRows } from './ui'
 
 /**
  * The document's statuses: their order, colors, names, categories, and what editing does to each.

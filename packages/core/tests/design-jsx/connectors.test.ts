@@ -301,7 +301,7 @@ return <Frame name="Flow" w={800} h={400}>
       `<Frame name="Flow" w={800} h={400}>
         <Frame name="A" x={0} y={0} w={100} h={100} />
         <Frame name="B" x={400} y={0} w={100} h={100} />
-        <Connector from="A" to="B" stroke={designVar('var-line', '#FF0000')} />
+        <Connector from="A" to="B" stroke={designVar('var-line')} />
       </Frame>`
     )
     const connector = getNodeOrThrow(graph, graph.getChildren(result.id)[2].id)

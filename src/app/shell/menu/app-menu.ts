@@ -51,7 +51,7 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab } from '@/app/tabs'
+import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -112,6 +112,7 @@ export function useAppMenu() {
     open: 'open',
     'browse-files': 'browseFiles',
     'open-tour': 'openTour',
+    diagnostics: 'diagnostics',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -120,12 +121,15 @@ export function useAppMenu() {
     'export-selection': 'exportSelection',
     autosave: 'autosave',
     close: 'closeTab',
+    'previous-tab': 'selectPreviousTab',
+    'next-tab': 'selectNextTab',
     copy: 'copy',
     cut: 'cut',
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
+    'arrange-layout': 'autoArrange',
     language: 'language',
     preferences: 'preferences',
     settings: 'settings',
@@ -190,7 +194,10 @@ export function useAppMenu() {
     close: () => {
       if (activeTab.value) void closeTab(activeTab.value.id)
     },
+    'previous-tab': () => switchAdjacentTab(-1),
+    'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
+    diagnostics: () => openSettingsDialog('diagnostics'),
     variables: () => openVariablesDialog(store),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
@@ -349,8 +356,8 @@ export function useAppMenu() {
   }
 
   function groupLabel(group: AppMenuGroupSchema): string {
-    const key = group.label.toLowerCase() as keyof typeof menu.value
-    return menu.value[key] ?? group.label
+    const key = group.label.toLowerCase()
+    return key in menu.value ? menu.value[key as keyof typeof menu.value] : group.label
   }
 
   function buildGroup(group: AppMenuGroupSchema): AppMenuGroup | null {

@@ -9,7 +9,12 @@ import { layoutAuthoredNodes } from '@open-pencil/core/layout'
 import { requireFile } from '#cli/app/client'
 import { FONT_POLICIES, reportFontStatus } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
-import { loadDocument, measureDocumentText, populateWholeDocument } from '#cli/headless'
+import {
+  loadDocument,
+  measureDocumentText,
+  populateWholeDocument,
+  writeFigDocument
+} from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -75,9 +80,9 @@ export default defineCommand({
         graph.getPages(true).map((page) => page.id)
       )
     }
-    const result = await io.writeDocument(format, graph)
     const output = args.output ? resolve(args.output) : defaultOutput(file, format)
-    await writeFile(output, result.data as Uint8Array)
+    if (format === 'fig') await writeFigDocument(graph, output)
+    else await writeFile(output, (await io.writeDocument(format, graph)).data as Uint8Array)
     console.log(ok(`Converted ${file} → ${output}`))
   }
 })

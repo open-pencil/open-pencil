@@ -24,10 +24,12 @@ export function graphFromPageSnapshot(
   snapshot: PageSnapshot
 ): SceneGraph | null {
   // `snapshotPage` records the page first.
-  const page = snapshot.values().next().value
+  const page = snapshot.nodes.values().next().value
   if (!page || !source.getNode(page.id)) return null
   const graph = pageContext(source, page.id, [])
-  for (const node of snapshot.values()) graph.nodes.set(node.id, structuredClone(node))
+  graph.variables = structuredClone(snapshot.variables)
+  graph.variableCollections = structuredClone(snapshot.collections)
+  for (const node of snapshot.nodes.values()) graph.nodes.set(node.id, structuredClone(node))
   graph.clearAbsPosCache()
   return graph
 }

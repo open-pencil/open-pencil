@@ -77,6 +77,9 @@ pub fn run() {
             credential_store_availability,
             credential_write,
             agents::mcp::mcp_lookup,
+            agents::skills::skill_folders,
+            agents::skills::project_skill_folders,
+            agents::skills::skill_folder_file,
             #[cfg(feature = "native-test")]
             launch::native_test_open_deep_link,
             system::opener::open_external_url,

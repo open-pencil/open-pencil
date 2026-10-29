@@ -1,4 +1,4 @@
-import { readFile, realpath, writeFile } from 'node:fs/promises'
+import { readFile, realpath } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
@@ -6,9 +6,15 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout'
+import {
+  computeAllLayouts,
+  installTextMeasurer,
+  sizeAutoResizingText
+} from '@open-pencil/core/layout'
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 import { prepareGraphFonts, type DocumentFontStatus } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
 import { printError } from '#cli/format'
 
@@ -34,6 +40,9 @@ function documentAssetReader(filePath: string) {
 
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))
+  // A format laid out as it is read places its layers by their text's size, which is measured
+  // as an export draws it rather than estimated.
+  if (io.findReader(filePath)?.laysOutOnRead) await measureTextHeadlessly()
   const { graph } = await io.readDocument({
     name: filePath,
     data: bytes,
@@ -85,10 +94,10 @@ export const documentWriteOptions = {
   output: { type: 'string', alias: 'o', description: 'Write to a different file', required: false }
 } as const
 
-/** Save a headless document as `.fig`, as `eval --write` and `diff apply --write` do. */
+/** Save a headless document as `.fig`, with the thumbnail `export --format fig` renders. */
 export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
-  const result = await io.writeDocument('fig', graph)
-  await writeFile(filePath, result.data as Uint8Array)
+  const result = await io.writeDocument('fig', graph, { renderThumbnail: true })
+  await writeFileAtomic(filePath, result.data, { symlink: 'follow' })
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {
@@ -146,4 +155,19 @@ export function requirePage(graph: SceneGraph, pageName?: string) {
     process.exit(1)
   }
   return page
+}
+
+/**
+ * Runs `edit` on `graph`, then loads the fonts the text it touched needs and sizes that text again
+ * in them. Text is sized as it is edited, before the fonts for new characters (Japanese in a
+ * Latin-only web font, say) can load, so without this it would save the size and glyphs of a
+ * stand-in.
+ */
+export async function editDocument<T>(graph: SceneGraph, edit: () => T | Promise<T>): Promise<T> {
+  const { result, impact } = await collectSceneMutation(graph, edit)
+  const textIds = [...impact.changedNodeIds].filter((id) => graph.getNode(id)?.type === 'TEXT')
+  if (textIds.length === 0) return result
+  await prepareGraphFonts(graph, textIds)
+  for (const id of textIds) sizeAutoResizingText(graph, id)
+  return result
 }

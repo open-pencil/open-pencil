@@ -26,6 +26,8 @@ import type { SVGTextLayout } from './text/lines'
  * `opticalSizeFromFontSize` is off, and the axes the text sets.
  */
 export interface SVGFontRequest extends FontFaceRef {
+  /** Which of the style's files draws the text, 0 for its own then its shards; 0 when left out. */
+  file?: number
   fontSize: number
   variations: readonly FontVariation[]
   opticalSizeFromFontSize: boolean

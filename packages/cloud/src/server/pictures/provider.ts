@@ -1,25 +1,40 @@
-import { signInMethod } from '#cloud/server/auth/activity'
 import type { BetterAuthPlugin } from 'better-auth'
-import { createAuthMiddleware } from 'better-auth/api'
+import { decodeJwt } from 'jose'
+import * as v from 'valibot'
 
 import type { UserPictureService } from './service'
 
-/** Whether an endpoint signs in with another service, which may name the person's picture. */
-function providerSignIn(context: { path?: string } | null): boolean {
-  const path = context?.path ?? ''
-  return path.startsWith('/callback/') || path === '/sign-in/social'
+/** The providers whose ID token names the person's picture. */
+const PICTURE_PROVIDERS = new Set(['google'])
+const pictureClaimSchema = v.object({ picture: v.pipe(v.string(), v.url()) })
+
+/**
+ * The picture a linked account's provider names in the ID token Better Auth keeps on its account
+ * row, or null. The token came to Better Auth from the provider during its sign-in flow, which no
+ * client can write to the row.
+ */
+export function providerPicture(account: { providerId: string; idToken?: string | null }) {
+  if (!PICTURE_PROVIDERS.has(account.providerId) || !account.idToken) return null
+  try {
+    const claims = v.safeParse(pictureClaimSchema, decodeJwt(account.idToken))
+    return claims.success ? claims.output.picture : null
+  } catch {
+    return null
+  }
 }
 
 /**
- * Keeps the picture a Google account gave the person once a sign-in issues their session, so pages
- * show the server's copy and never load it from Google. Accounts made before the server kept
- * pictures move over the next time they sign in this way. Better Auth also takes an `image` on
- * email sign-up and user updates; only a provider's sign-in may set one through it, since the
- * server fetches it, and the server writes its own addresses itself.
+ * Keeps the picture a Google account names, so pages show the server's copy and never load it
+ * from Google. Better Auth writes the account's ID token when it is linked and at each sign-in
+ * with it, so accounts made before the server kept pictures move over the next time they sign in
+ * this way. Better Auth also takes an `image` on sign-up and user updates; none of those reach the
+ * account, since the server writes the addresses of the pictures it keeps itself.
  */
 export function providerPictures(pictures: UserPictureService): BetterAuthPlugin {
-  const refused = (image: unknown, context: { path?: string } | null) =>
-    image !== undefined && image !== null && !providerSignIn(context)
+  const keep = async (account: { userId: string; providerId: string; idToken?: string | null }) => {
+    const picture = providerPicture(account)
+    if (picture) await pictures.copyFromProvider(account.userId, picture)
+  }
   return {
     id: 'openpencil-provider-pictures',
     init: () => ({
@@ -27,30 +42,20 @@ export function providerPictures(pictures: UserPictureService): BetterAuthPlugin
         databaseHooks: {
           user: {
             create: {
-              before: async (user, context) =>
-                refused(user.image, context) ? { data: { ...user, image: null } } : true
+              before: async (user) => ({ data: { ...user, image: null } })
             },
             update: {
               // Better Auth merges what a hook returns into the update, so `image` is unset.
-              before: async (user, context) =>
-                refused(user.image, context) ? { data: { image: undefined } } : true
+              before: async (user) =>
+                user.image === undefined ? true : { data: { image: undefined } }
             }
+          },
+          account: {
+            create: { after: keep },
+            update: { after: keep }
           }
         }
       }
-    }),
-    hooks: {
-      after: [
-        {
-          matcher: (context) => signInMethod(context) !== null,
-          handler: createAuthMiddleware(async (context) => {
-            const user = context.context.newSession?.user
-            if (user?.image && !pictures.served(user.image)) {
-              await pictures.copyFromProvider(user.id, user.image)
-            }
-          })
-        }
-      ]
-    }
+    })
   }
 }

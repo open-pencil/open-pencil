@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** Creating a Cloud workspace and managing who belongs to it. */
-export const cloudWorkspace = tv({
+export default {
   slots: {
     form: 'flex flex-col gap-1.5',
     label: 'text-[11px] font-medium text-muted',
@@ -30,4 +28,4 @@ export const cloudWorkspace = tv({
     pendingIcon:
       'flex size-6 shrink-0 items-center justify-center rounded-full bg-panel-field text-muted'
   }
-})
+} as const

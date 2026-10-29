@@ -2,6 +2,7 @@ import {
   node,
   type BaseProps,
   type EllipseProps,
+  type VectorProps,
   type ComponentProps,
   type InstanceProps,
   type ParagraphProps,
@@ -61,7 +62,7 @@ export function Polygon(
   return withChildren('polygon', props, children)
 }
 
-export function Vector(props: BaseProps, ...children: Child[]): TreeNode {
+export function Vector(props: BaseProps & VectorProps, ...children: Child[]): TreeNode {
   return withChildren('vector', props, children)
 }
 

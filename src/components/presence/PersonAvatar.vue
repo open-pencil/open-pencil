@@ -6,10 +6,9 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
-import { avatar } from '@/theme/collaboration/avatar/person'
-import { avatarStack } from '@/theme/collaboration/avatar/stack'
 
 import type { PresenceVoice } from './rows'
+import { avatar, avatarStack } from './ui'
 
 /** A person's initials on their color, with how many agents they run and how they are in the call. */
 const {

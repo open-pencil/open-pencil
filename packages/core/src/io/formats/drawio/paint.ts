@@ -2,6 +2,7 @@ import { styleNumber, type DrawIOStyle } from '@open-pencil/drawio'
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { tryParseColor } from '@open-pencil/scene-graph/color'
 import { BLACK, WHITE } from '@open-pencil/scene-graph/constants'
+import { parseCSSFontFamily } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { LabelFormat } from './label'
@@ -86,7 +87,7 @@ export function labelFormat(style: DrawIOStyle): LabelFormat {
     underline: (fontStyle & 4) !== 0,
     size: styleNumber(style, 'fontSize', DEFAULT_FONT_SIZE),
     color: styleColor(style, 'fontColor', BLACK) ?? BLACK,
-    family: style.values.fontFamily?.split(',')[0]?.trim() || DEFAULT_FONT_FAMILY
+    family: parseCSSFontFamily(style.values.fontFamily) ?? DEFAULT_FONT_FAMILY
   }
 }
 

@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
+import type { Paint } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   bindingOverrideField,
@@ -289,7 +289,7 @@ function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>)
         if (field.kind === 'paint')
           recordPaintBindingClaims(owner, target, field.scene[0], claim.properties[raw])
       }
-      recordVariableBindingClaims(owner, target, claim.properties as NodeChange)
+      recordVariableBindingClaims(owner, target, claim.properties)
     }
   }
 }

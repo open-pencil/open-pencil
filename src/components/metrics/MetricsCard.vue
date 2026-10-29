@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { metricsCard } from '@/theme/metrics/dashboard'
+import { tv } from 'tailwind-variants'
+
+import { metricsCardTheme } from '@/theme/metrics/dashboard'
+
+const metricsCard = tv(metricsCardTheme)
 
 const { heading, note } = defineProps<{ heading: string; note?: string }>()
 const ui = metricsCard()

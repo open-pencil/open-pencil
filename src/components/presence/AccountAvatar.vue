@@ -3,7 +3,8 @@ import { computed, ref, watch } from 'vue'
 
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 import { PEER_COLORS } from '@/constants'
-import { avatar } from '@/theme/collaboration/avatar/person'
+
+import { avatar } from './ui'
 
 /**
  * An account's picture, such as one its sign-in provider gave it, or else its initials on a color

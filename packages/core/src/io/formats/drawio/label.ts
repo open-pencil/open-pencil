@@ -2,6 +2,7 @@ import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
 
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
 import { tryParseColor } from '@open-pencil/scene-graph/color'
+import { parseCSSFontFamily } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** How a stretch of a label looks: the cell's style, as tags inside the label change it. */
@@ -50,7 +51,7 @@ function tagFormat(element: Element, format: LabelFormat): LabelFormat {
   if (tag === 'u') next.underline = true
   if (tag === 'font') {
     next.color = tryParseColor(attribute(element, 'color') ?? '') ?? next.color
-    next.family = attribute(element, 'face')?.split(',')[0]?.trim() || next.family
+    next.family = parseCSSFontFamily(attribute(element, 'face') ?? undefined) ?? next.family
   }
   return next
 }
@@ -69,7 +70,7 @@ function cssFormat(css: Map<string, string>, format: LabelFormat): LabelFormat {
   if (style) next.italic = style === 'italic'
   const decoration = css.get('text-decoration') ?? css.get('text-decoration-line')
   if (decoration) next.underline = decoration.includes('underline')
-  const family = css.get('font-family')?.split(',')[0]?.replace(/["']/g, '').trim()
+  const family = parseCSSFontFamily(css.get('font-family'))
   if (family) next.family = family
   return next
 }

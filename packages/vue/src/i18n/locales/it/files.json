@@ -17,6 +17,7 @@
   "clipboardImagesUnavailableWeb": "Il design incollato contiene {count} immagini che non possono essere caricate nell’app web. Usa l’app desktop per includerle.",
   "clipboardImageFetchFailed": "Impossibile recuperare 1 immagine da Figma. Controlla che il file sorgente sia accessibile e riprova.",
   "clipboardImagesFetchFailed": "Impossibile recuperare {count} immagini da Figma. Controlla che il file sorgente sia accessibile e riprova.",
+  "mermaidPasteFailed": "Impossibile leggere il diagramma Mermaid. {error}",
   "recentFiles": "File recenti",
   "recentFilesDescription": "Continua a lavorare su un progetto o iniziane uno nuovo.",
   "noRecentFiles": "Nessun file recente",

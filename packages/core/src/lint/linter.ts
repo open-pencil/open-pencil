@@ -119,6 +119,7 @@ export class Linter {
       rotation: raw.rotation,
       visible: raw.visible,
       locked: raw.locked,
+      opacity: raw.opacity,
       layoutMode: raw.layoutMode,
       layoutPositioning: raw.layoutPositioning,
       layoutGrow: raw.layoutGrow,

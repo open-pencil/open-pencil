@@ -361,6 +361,7 @@ it:variables.formula
 it:variables.unitAuto
 pl:variables.unitAuto
 es:menu.variables
+fr:menu.diagnostics
 fr:menu.variables
 fr:variables.collections
 de:panels.gridAuto
@@ -477,9 +478,6 @@ ru:cloudPortal.methodApple
 ru:cloudPortal.deploymentOfficial
 ru:cloudPortal.emailTransportSMTP
 ru:cloudPortal.emailTransportCloudflare
-de:settings.cloud
-fr:settings.cloud
-it:settings.cloud
 es:cloud.productName
 es:cloud.roleEditor
 es:cloud.homeCloudOnHost
@@ -527,3 +525,17 @@ pl:shapes.engFolder
 ru:cloud.productName
 ru:cloud.homeCloudOnHost
 ru:cloud.inviteEmailPlaceholder
+de:settings.skills
+de:ai.chatReferenceSkills
+fr:ai.chatReferencePages
+de:settings.groupApp
+de:settings.editor
+es:settings.editor
+it:settings.groupApp
+it:settings.editor
+ja:settings.groupAI
+pl:settings.groupAI
+zh-cn:settings.groupAI
+de:settings.cloud
+fr:settings.cloud
+it:settings.cloud

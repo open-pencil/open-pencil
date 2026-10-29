@@ -4,6 +4,7 @@ import { ref, useId, watch } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -11,7 +12,6 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
 
 /**
  * Changes one detail of the account, such as its name or email: the field starts from `initial`,

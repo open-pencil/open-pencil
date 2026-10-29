@@ -81,6 +81,9 @@ function convertStyleOverride(override: NodeChange, text: NodeChange): Character
   if (override.fontSize !== undefined) style.fontSize = override.fontSize
   const fontVariations = convertFontVariations(override)
   if (fontVariations.length > 0) style.fontVariations = fontVariations
+  // Figma detaches a range's optical size from its font size in the range's own override.
+  if (override.detachOpticalSizeFromFontSize !== undefined)
+    style.opticalSizeFromFontSize = !override.detachOpticalSizeFromFontSize
   const fontFeatures = convertFontFeatures(override)
   if (fontFeatures.length > 0) style.fontFeatures = fontFeatures
   if (override.letterSpacing) style.letterSpacing = convertLetterSpacing(override.letterSpacing)

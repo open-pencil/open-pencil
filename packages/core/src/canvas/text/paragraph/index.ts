@@ -1,7 +1,6 @@
 import type {
   CanvasKit,
   FontStyle,
-  FontWeight,
   Paint,
   Paragraph,
   ParagraphBuilder,
@@ -41,18 +40,12 @@ export function resolveParagraphLayoutWidth(node: ParagraphNode, maxWidth?: numb
   return node.width || 1e6
 }
 
-export function buildTruncateOpts(
-  node: ParagraphNode,
-  baseFontSize: number
-): { maxLines?: number; ellipsis?: string } {
+export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ellipsis?: string } {
   if (node.textTruncation !== 'ENDING') return {}
 
   const opts: { maxLines?: number; ellipsis: string } = { ellipsis: ELLIPSIS }
   if (node.maxLines != null && node.maxLines > 0) {
     opts.maxLines = node.maxLines
-  } else if (node.height > 0) {
-    const lineH = lineHeightPixels(node.lineHeight, baseFontSize) || baseFontSize * 1.2
-    opts.maxLines = Math.max(1, Math.floor(node.height / lineH))
   }
   return opts
 }
@@ -134,7 +127,7 @@ function blockHeightBehavior(
 function drawnFontStyle(ck: CanvasKit, family: string, weight: number, italic: boolean): FontStyle {
   const face = loadedFace(family, weight, italic) ?? { weight, italic }
   return {
-    weight: { value: face.weight } as FontWeight,
+    weight: { value: face.weight },
     slant: face.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
   }
 }
@@ -155,7 +148,7 @@ function styleRunLanguage(
   style: SceneNode['styleRuns'][number]['style'],
   node: Pick<ParagraphNode, 'textLanguage'>
 ): string | undefined {
-  return style.textLanguage ?? node.textLanguage ?? undefined
+  return (style.textLanguage !== undefined ? style.textLanguage : node.textLanguage) ?? undefined
 }
 
 function pushStyleRun(
@@ -194,7 +187,7 @@ function pushStyleRun(
         italic: runItalic,
         fontSize: runFontSize,
         variations: style.fontVariations ?? node.fontVariations,
-        opticalSizeFromFontSize: node.opticalSizeFromFontSize
+        opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
       })
     ),
     fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
@@ -282,7 +275,7 @@ export function buildSkParagraph(
   const arabicFallbacks = fontManager.getArabicFallbackFamilies()
   const textDirection = resolveNodeTextDirection(node)
 
-  const truncateOpts = block.truncation ?? buildTruncateOpts(node, baseFontSize)
+  const truncateOpts = block.truncation ?? buildTruncateOpts(node)
 
   const fontFamilies = (primary: string, weight: number, italic = false) =>
     resolveParagraphFontFamilies(

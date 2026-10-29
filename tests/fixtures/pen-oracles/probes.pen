@@ -3558,6 +3558,143 @@
           "fill": "#AA0000"
         }
       ]
+    },
+    {
+      "id": "dqtl8",
+      "type": "frame",
+      "x": 0,
+      "y": 5490,
+      "name": "P Sized paths",
+      "width": 420,
+      "height": 200,
+      "fill": "#FFFFFF",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "TnUMH",
+          "x": 16,
+          "y": 16,
+          "name": "Icon mark",
+          "reusable": true,
+          "width": 32,
+          "height": 32,
+          "fill": "#F1F5F9",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "icon",
+              "id": "wmolH",
+              "name": "Glyph",
+              "width": "fill_container",
+              "height": "fill_container",
+              "icon": "house",
+              "library": "lucide",
+              "fill": "#E11D48"
+            }
+          ]
+        },
+        {
+          "id": "AnkZJ",
+          "type": "ref",
+          "ref": "TnUMH",
+          "name": "Icon same",
+          "x": 64,
+          "y": 16
+        },
+        {
+          "id": "PtK4O",
+          "type": "ref",
+          "ref": "TnUMH",
+          "name": "Icon large",
+          "x": 112,
+          "y": 16,
+          "width": 64,
+          "height": 64
+        },
+        {
+          "type": "frame",
+          "id": "FuncN",
+          "x": 16,
+          "y": 100,
+          "name": "Path mark",
+          "reusable": true,
+          "width": 32,
+          "height": 32,
+          "fill": "#F1F5F9",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "path",
+              "id": "GlszO",
+              "name": "Shape",
+              "geometry": "M0 10l5-10 5 10z",
+              "viewBox": [
+                0,
+                0,
+                10,
+                10
+              ],
+              "fill": "#2563EB",
+              "width": "fill_container",
+              "height": "fill_container"
+            }
+          ]
+        },
+        {
+          "id": "L4Vzwh",
+          "type": "ref",
+          "ref": "FuncN",
+          "name": "Path same",
+          "x": 64,
+          "y": 100
+        },
+        {
+          "id": "Lc9IU",
+          "type": "ref",
+          "ref": "FuncN",
+          "name": "Path large",
+          "x": 112,
+          "y": 100,
+          "width": 64,
+          "height": 64
+        },
+        {
+          "type": "frame",
+          "id": "p07zHx",
+          "x": 200,
+          "y": 16,
+          "name": "Row",
+          "width": 200,
+          "height": 48,
+          "fill": "#F1F5F9",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "OKBgC",
+              "name": "Swatch",
+              "fill": "#16A34A",
+              "width": 40,
+              "height": 20
+            },
+            {
+              "type": "path",
+              "id": "zwP4n",
+              "name": "Line",
+              "geometry": "M0 0h10v10h-10z",
+              "viewBox": [
+                0,
+                0,
+                10,
+                10
+              ],
+              "fill": "#F59E0B",
+              "width": "fill_container",
+              "height": 48
+            }
+          ]
+        }
+      ]
     }
   ],
   "version": "2.21",

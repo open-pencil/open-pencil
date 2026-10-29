@@ -1,6 +1,6 @@
 {
   "vectorization": "图像矢量化",
-  "vectorizationDescription": "将图像图层发送到 Recraft 或 fal.ai，并返回可编辑的矢量。服务商可能收费。",
+  "vectorizationDescription": "将图像图层发送到 Recraft、fal.ai 或 QuiverAI，并返回可编辑的矢量。服务商可能收费。",
   "vectorizeProvider": "矢量化服务",
   "pexelsAPIKey": "Pexels API 密钥（图库照片）",
   "unsplashAccessKey": "Unsplash 访问密钥",

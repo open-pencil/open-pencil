@@ -18,6 +18,8 @@ import { hasTrueTypeOutlines, isVariableFont } from '#core/text/font/variation'
 export interface PDFFontFace {
   family: string
   style: string
+  /** Which of the style's files, 0 for its own then its shards; 0 when left out. */
+  file?: number
   data: ArrayBuffer | null
   /** Why there is no file, when `data` is null. */
   missing?: string
@@ -51,11 +53,25 @@ interface PendingInstance {
 }
 
 /**
+ * A file the canvas draws characters from for want of glyphs in their text's own: of a fallback
+ * face, or a shard of a split one, `file` 0 for the style's own then its shards.
+ */
+export type PDFFallbackFontFile = (
+  family: string,
+  style: string,
+  file: number
+) => ArrayBuffer | null
+
+/**
  * The faces to embed, by family and style, and what happened to each face. Instances of variable
- * faces are named as the pages ask for them, and cut by {@link cutFontInstances}.
+ * faces are named as the pages ask for them, and cut by {@link cutFontInstances}; so are fallback
+ * faces, whose files `fallbackFile` gives.
  */
 export interface PDFFontEmbedding {
   faces: Map<string, EmbeddedFace>
+  /** Every face planned, embedded or not, so each is looked at once. */
+  planned: Set<string>
+  fallbackFile?: PDFFallbackFontFile
   variable: Map<string, { data: ArrayBuffer; label: string }>
   /** Each instance's alias, or null once it could not be cut. */
   instances: Map<string, string | null>
@@ -64,7 +80,14 @@ export interface PDFFontEmbedding {
   report: PDFFontReport
 }
 
-const faceKey = (family: string, style: string) => `${family}\0${style}`
+const faceKey = (face: { family: string; style: string; file?: number }) =>
+  `${face.family}\0${face.style}\0${face.file ?? 0}`
+
+/** A face as the report names it; a shard by its place among the style's files. */
+const faceLabel = (face: { family: string; style: string; file?: number }) =>
+  face.file
+    ? `${face.family} ${face.style} (file ${face.file + 1})`
+    : `${face.family} ${face.style}`
 
 /** Why jsPDF cannot embed a font file, or null when it can. */
 function unsupportedReason(data: ArrayBuffer): string | null {
@@ -81,37 +104,46 @@ function dropInstance(embedding: PDFFontEmbedding, alias: string): void {
   }
 }
 
+/** Plans one face: a static file to embed, a variable file to cut, or a reported fallback. */
+function planFace(embedding: PDFFontEmbedding, face: PDFFontFace): void {
+  const key = faceKey(face)
+  embedding.planned.add(key)
+  const label = faceLabel(face)
+  if (!face.data) {
+    embedding.report.fallback.push({
+      face: label,
+      reason: face.missing ?? 'font file not available'
+    })
+    return
+  }
+  const reason = unsupportedReason(face.data)
+  if (reason) {
+    embedding.report.fallback.push({ face: label, reason })
+    return
+  }
+  if (isVariableFont(face.data)) {
+    embedding.variable.set(key, { data: face.data, label })
+    return
+  }
+  embedding.faces.set(key, { alias: aliasOf(embedding), data: face.data, label })
+}
+
 /** Picks the faces jsPDF can embed, each under a family name of its own. */
-export function planFontEmbedding(faces: readonly PDFFontFace[]): PDFFontEmbedding {
+export function planFontEmbedding(
+  faces: readonly PDFFontFace[],
+  fallbackFile?: PDFFallbackFontFile
+): PDFFontEmbedding {
   const embedding: PDFFontEmbedding = {
     faces: new Map(),
+    planned: new Set(),
+    fallbackFile,
     variable: new Map(),
     instances: new Map(),
     pending: [],
     aliases: 0,
     report: { embedded: [], fallback: [] }
   }
-  for (const face of faces) {
-    const label = `${face.family} ${face.style}`
-    if (!face.data) {
-      embedding.report.fallback.push({
-        face: label,
-        reason: face.missing ?? 'font file not available'
-      })
-      continue
-    }
-    const reason = unsupportedReason(face.data)
-    if (reason) {
-      embedding.report.fallback.push({ face: label, reason })
-      continue
-    }
-    const key = faceKey(face.family, face.style)
-    if (isVariableFont(face.data)) {
-      embedding.variable.set(key, { data: face.data, label })
-      continue
-    }
-    embedding.faces.set(key, { alias: aliasOf(embedding), data: face.data, label })
-  }
+  for (const face of faces) planFace(embedding, face)
   return embedding
 }
 
@@ -123,7 +155,7 @@ function instanceAlias(
 ): string | null {
   const variations = fontInstanceVariations(face.data, drawnFontVariations(font))
   const axes = variations.map(({ axis, value }) => `${axis} ${value}`).join(', ')
-  const key = `${faceKey(font.family, font.style)}\0${axes}`
+  const key = `${faceKey(font)}\0${axes}`
   const known = embedding.instances.get(key)
   if (known !== undefined) return known
   const alias = aliasOf(embedding)
@@ -136,7 +168,13 @@ function instanceAlias(
 /** The family the SVG names each embedded face by. */
 export function embeddedFontAlias(embedding: PDFFontEmbedding): SVGFontAlias {
   return (font) => {
-    const key = faceKey(font.family, font.style)
+    const key = faceKey(font)
+    // A fallback face or shard is planned the first time the pages draw characters in it.
+    if (!embedding.planned.has(key) && embedding.fallbackFile) {
+      const file = font.file ?? 0
+      const data = embedding.fallbackFile(font.family, font.style, file)
+      planFace(embedding, { family: font.family, style: font.style, file, data })
+    }
     const variable = embedding.variable.get(key)
     if (variable) return instanceAlias(embedding, variable, font)
     return embedding.faces.get(key)?.alias ?? null

@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
+
 import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { roomNotice } from '@/theme/collaboration/room-screen'
+import { roomNoticeTheme } from '@/theme/collaboration/room-screen'
+
+const roomNotice = tv(roomNoticeTheme)
 
 const emit = defineEmits<{ dismiss: [] }>()
 

@@ -30,3 +30,41 @@ test('writes the detached optical size only when the text has one', () => {
   expect(write(false).detachOpticalSizeFromFontSize).toBe(true)
   expect(write(true).detachOpticalSizeFromFontSize).toBeUndefined()
 })
+
+test('reads and writes an optical size detached for a range, as Figma saves one', () => {
+  // As Figma saved "Auto Fixed" with automatic optical size turned off for "Fixed" alone.
+  const props = nodeChangeToProps(
+    {
+      type: 'TEXT',
+      textData: {
+        characters: 'Auto Fixed',
+        characterStyleIDs: [0, 0, 0, 0, 0, 3, 3, 3, 3, 3],
+        styleOverrideTable: [
+          {
+            styleID: 3,
+            detachOpticalSizeFromFontSize: true,
+            fontVariations: [{ axisTag: OPSZ, axisName: 'OPTICAL SIZE', value: 40 }]
+          }
+        ]
+      }
+    } as NodeChange,
+    []
+  )
+  expect(props.opticalSizeFromFontSize).toBe(true)
+  expect(props.styleRuns).toEqual([
+    {
+      start: 5,
+      length: 5,
+      style: { opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 40 }] }
+    }
+  ])
+
+  const graph = new SceneGraph()
+  const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+    text: 'Auto Fixed',
+    styleRuns: props.styleRuns
+  })
+  const [written] = sceneNodeToKiwi(node, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [])
+  expect(written.detachOpticalSizeFromFontSize).toBeUndefined()
+  expect(written.textData?.styleOverrideTable?.[0]?.detachOpticalSizeFromFontSize).toBe(true)
+})

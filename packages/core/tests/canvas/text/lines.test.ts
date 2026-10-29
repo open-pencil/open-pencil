@@ -205,4 +205,27 @@ describe('lines of mixed sizes', () => {
       }
     }
   })
+
+  test('fits the number of lines whose individual heights fit the box', () => {
+    const smaller = layOut({
+      text: 'small\nsmall\nsmall',
+      fontSize: 40,
+      height: 34,
+      textAutoResize: 'NONE',
+      textTruncation: 'ENDING',
+      styleRuns: [run(0, 17, { fontSize: 12 })]
+    })
+    expect(smaller.getLineMetrics()).toHaveLength(2)
+    expect(smaller.didExceedMaxLines()).toBe(true)
+
+    const larger = layOut({
+      text: 'small\nLARGE\nsmall',
+      height: 70,
+      textAutoResize: 'NONE',
+      textTruncation: 'ENDING',
+      styleRuns: [run(6, 5, { fontSize: 40 })]
+    })
+    expect(larger.getLineMetrics()).toHaveLength(1)
+    expect(larger.didExceedMaxLines()).toBe(true)
+  })
 })

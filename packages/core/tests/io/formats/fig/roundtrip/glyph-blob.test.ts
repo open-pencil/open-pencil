@@ -36,14 +36,12 @@ function countGlyphBlobs(bytes: Uint8Array) {
   return { glyphs, glyphsWithBlob, uniqueGlyphBlobs: uniqueGlyphBlobs.size }
 }
 
+/** Inter as the app bundles it: one variable file draws every weight. */
 async function loadInterFonts() {
+  const bytes = readFileSync(resolve(INTER_ASSETS, 'InterVariable.ttf'))
+  const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
   for (const style of ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-    const bytes = readFileSync(resolve(INTER_ASSETS, `Inter-${style}.ttf`))
-    await fontManager.markLoaded(
-      'Inter',
-      style,
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    await fontManager.markLoaded('Inter', style, data)
   }
 }
 

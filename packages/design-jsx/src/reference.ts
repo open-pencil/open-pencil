@@ -1,5 +1,6 @@
-import { DESIGN_JSX_HELPERS, DESIGN_JSX_SUPPORTED_PROPERTY_NAMES } from './definitions'
+import { DESIGN_JSX_SUPPORTED_PROPERTY_NAMES } from './definitions'
 import { DESIGN_JSX_ELEMENTS } from './elements'
+import { DESIGN_JSX_HELPERS } from './helpers'
 import authoring from './reference/authoring.md?raw'
 import { AUTHORING_EXAMPLES } from './reference/examples'
 

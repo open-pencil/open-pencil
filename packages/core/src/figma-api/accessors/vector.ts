@@ -11,7 +11,8 @@ import {
   mergeVectorNetworks,
   normalizeVectorNetwork,
   transformVectorNetwork,
-  validateVectorNetwork
+  validateVectorNetwork,
+  vectorNetworkPaths
 } from '@open-pencil/scene-graph/vector-network'
 
 import {
@@ -23,7 +24,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
-import { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from '#core/io/formats/svg/paths'
+import { geometryBlobToSVGPath } from '#core/io/formats/svg/paths'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 import { regenerateFillGeometry } from '#core/vector/fill-geometry'
 
@@ -170,39 +171,6 @@ function assignVectorNetwork(
   setGeometry(target, internals, network, fillGeometry)
 }
 
-function vectorPathsForNetwork(network: SceneVectorNetwork): FigmaVectorPath[] {
-  if (network.segments.length === 0) return []
-  const regions = (network as Partial<SceneVectorNetwork>).regions ?? []
-  if (regions.length === 0) {
-    return vectorNetworkToSVGPaths({ ...network, regions }, null).map((data) => ({
-      windingRule: 'NONE',
-      data
-    }))
-  }
-
-  const paths: FigmaVectorPath[] = []
-  const usedSegments = new Set<number>()
-  for (const region of regions) {
-    for (const loop of region.loops) for (const segmentIndex of loop) usedSegments.add(segmentIndex)
-    const data = vectorNetworkToSVGPaths({ ...network, regions: [region] }, null)[0]
-    if (data) paths.push({ windingRule: region.windingRule, data })
-  }
-
-  const remainingSegments = network.segments.filter((_, index) => !usedSegments.has(index))
-  if (remainingSegments.length > 0) {
-    const data = vectorNetworkToSVGPaths(
-      {
-        vertices: network.vertices,
-        segments: remainingSegments,
-        regions: []
-      },
-      null
-    )[0]
-    if (data) paths.push({ windingRule: 'NONE', data })
-  }
-  return paths
-}
-
 function readVectorPaths(
   target: ProxyThis,
   internals: NodeProxyInternals
@@ -210,7 +178,7 @@ function readVectorPaths(
   const node = raw(target, internals)
   const paths =
     node.vectorNetwork && node.vectorNetwork.segments.length > 0
-      ? vectorPathsForNetwork(node.vectorNetwork)
+      ? vectorNetworkPaths(node.vectorNetwork)
       : node.fillGeometry.map((geometry) => ({
           windingRule: geometry.windingRule,
           data: geometryBlobToSVGPath(geometry.commandsBlob, null)

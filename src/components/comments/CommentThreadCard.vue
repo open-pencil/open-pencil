@@ -15,10 +15,10 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import { comments } from '@/theme/comments'
 
 import CommentComposer from './CommentComposer.vue'
 import CommentMessage from './CommentMessage.vue'
+import { comments } from './ui'
 
 /** An open thread: the comment, its replies, and a reply box, as in Figma's comment card. */
 const { thread } = defineProps<{ thread: CommentThread }>()

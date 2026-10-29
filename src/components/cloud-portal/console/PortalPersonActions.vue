@@ -4,10 +4,10 @@ import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
-import { portalForm } from '@/theme/cloud-portal/form'
 
 import PortalRowMenu from '../table/PortalRowMenu.vue'
 import type { PortalPerson, PortalPersonAction } from '../types'
