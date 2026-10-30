@@ -67,5 +67,5 @@ export function collectNamedNodeFontFaces(
     const { family, style: load } = textFontFace(node, style)
     return { family, style: load, name: textFaceName(node, style) }
   })
-  return uniqBy(faces, (face) => `${face.family}\0${face.name}`)
+  return uniqBy(faces, (face) => `${face.family}\0${face.style}\0${face.name}`)
 }

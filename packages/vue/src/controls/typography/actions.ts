@@ -206,7 +206,9 @@ export function createTypographyActions({
       'Change font',
       ['fontFamily', 'fontWeight', 'italic'],
       async (target) => {
-        const known = await faces
+        await faces
+        // Asked again, so faces forgotten while loading (a catalog arriving) are read anew.
+        const known = await fontManager.familyFaces(family)
         const face = known ? nearestFamilyFace(known, target.fontWeight, target.italic) : null
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic

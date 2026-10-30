@@ -36,8 +36,9 @@ interface MutableFontFaceUse {
   nodeNames: Set<string>
 }
 
-function faceKey(family: string, name: string): string {
-  return `${family}\0${name}`
+/** A face by its name and the style it loads as; one name may load as two styles. */
+function faceKey(family: string, style: string, name: string): string {
+  return `${family}\0${style}\0${name}`
 }
 
 /** The text nodes under each root, and each root that is itself text. */
@@ -55,7 +56,7 @@ function collectFaceUses(graph: SceneGraph, rootIds: readonly string[]): Mutable
   for (const node of rootTextNodes(graph, rootIds)) {
     // Faces that load as one style ("Book" and "Roman" at 400) are still faces of their own.
     for (const { family, style, name } of collectNamedNodeFontFaces(node)) {
-      const key = faceKey(family, name)
+      const key = faceKey(family, style, name)
       const use = uses.get(key) ?? {
         family,
         style,

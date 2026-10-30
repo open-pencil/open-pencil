@@ -191,4 +191,21 @@ describe('documentFontStatus', () => {
       ['Roman', 'Regular']
     ])
   })
+
+  test('a named face is available once the style it loads as is loaded', async () => {
+    const graph = new SceneGraph()
+    graph.createNode('TEXT', pageId(graph), {
+      name: 'Book',
+      text: 'Book',
+      fontFamily: 'Avenir',
+      fontStyle: 'Book'
+    })
+    const manager = new FontManager()
+    await manager.markLoaded('Avenir', 'Regular', new ArrayBuffer(8), 'local')
+
+    expect(documentFontStatus(graph, pageId(graph), manager)).toMatchObject({
+      faithful: true,
+      faces: [{ family: 'Avenir', name: 'Book', style: 'Regular', status: 'available' }]
+    })
+  })
 })
