@@ -75,6 +75,7 @@ describe('ping', () => {
   test('counts pings per day by the network and wording Cloudflare reports, never the address', async () => {
     const huawei = { asn: 136907, asOrganization: 'Huawei Cloud Singapore Region' }
     await service.postJSON('/ping', BUILD, { 'CF-Connecting-IP': '203.0.113.7' }, huawei)
+    await service.postJSON('/ping', BUILD, {}, huawei)
     await service.postJSON('/ping', BUILD, {}, { ...huawei, asOrganization: 'Huawei-Cloud-SG' })
     await service.postJSON('/ping', { ...BUILD, app: 'web' }, {}, { asn: 9299 })
 
@@ -92,7 +93,7 @@ describe('ping', () => {
         app: 'desktop',
         platform: 'macos',
         name: 'Huawei Cloud Singapore Region',
-        count: 1
+        count: 2
       },
       {
         day: '2026-10-12',

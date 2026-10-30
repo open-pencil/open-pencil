@@ -227,6 +227,8 @@ describe('metrics snapshot API', () => {
       ['2026-10-18', 136907, 'Huawei Cloud Singapore Region', 'web', 150],
       ['2026-10-19', 136907, 'Huawei-Cloud-SG', 'desktop', 300],
       ['2026-10-19', 9299, 'PLDT', 'web', 20],
+      // Pings without an operator name outnumber the named ones but never name the network.
+      ['2026-10-19', 9299, '', 'desktop', 60],
       ['2026-10-19', 0, '', 'desktop', 5]
     ] as const
     await database()
@@ -245,10 +247,10 @@ describe('metrics snapshot API', () => {
 
     const { networks } = await snapshot()
     expect(networks).toEqual({
-      total: 705,
+      total: 765,
       top: [
         { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 500, web: 150 },
-        { asn: 9299, name: 'PLDT', desktop: 30, web: 20 },
+        { asn: 9299, name: 'PLDT', desktop: 90, web: 20 },
         { asn: 0, name: '', desktop: 5, web: 0 }
       ]
     })

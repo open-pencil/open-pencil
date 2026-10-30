@@ -119,10 +119,17 @@ async function networks(db: Kysely<FeedbackDatabase>, range: MetricsQuery) {
   const ranked = Object.values(groupBy(rows, (row) => String(row.asn)))
     .map((network) => ({
       asn: network[0]?.asn ?? 0,
-      // Cloudflare words an operator's name differently between requests; the commonest one names it.
+      // Cloudflare words an operator's name differently between requests, and sometimes leaves it
+      // out; the commonest reported one names it.
       name:
-        maxBy(Object.values(groupBy(network, (row) => row.name)), (wording) =>
-          sumBy(wording, (row) => Number(row.pings))
+        maxBy(
+          Object.values(
+            groupBy(
+              network.filter((row) => row.name !== ''),
+              (row) => row.name
+            )
+          ),
+          (wording) => sumBy(wording, (row) => Number(row.pings))
         )?.[0]?.name ?? '',
       desktop: sumBy(network, (row) => (row.app === 'desktop' ? Number(row.pings) : 0)),
       web: sumBy(network, (row) => (row.app === 'web' ? Number(row.pings) : 0))
