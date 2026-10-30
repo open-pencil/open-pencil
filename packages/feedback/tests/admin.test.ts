@@ -256,6 +256,28 @@ describe('metrics snapshot API', () => {
     })
   })
 
+  test('the network total counts the networks the ranking leaves out', async () => {
+    await database()
+      .insertInto('pingNetworks')
+      .values(
+        Array.from({ length: 12 }, (_, index) => ({
+          day: '2026-10-19',
+          asn: 64500 + index,
+          name: `Network ${index}`,
+          app: 'desktop',
+          platform: 'linux',
+          count: 12 - index
+        }))
+      )
+      .execute()
+
+    const { networks } = await snapshot()
+    expect(networks.top.map((network) => network.asn)).toEqual(
+      Array.from({ length: 10 }, (_, index) => 64500 + index)
+    )
+    expect(networks.total).toBe(78)
+  })
+
   test('earliest is the first day with pings or backfilled visits', async () => {
     expect((await snapshot()).earliest).toBeNull()
     await ping('2026-10-12', { version: '0.16.0-beta.2', platform: 'macos', app: 'desktop' }, 6)
