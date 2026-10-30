@@ -58,6 +58,7 @@ function cloneIntoGraph(
   graph.figKiwiVersion = source.figKiwiVersion
   graph.figSchemaDeflated = source.figSchemaDeflated
   graph.documentColorSpace = source.documentColorSpace
+  graph.documentKind = source.documentKind
 
   includeReferencedStyles(source, ids)
 

@@ -3,6 +3,7 @@ export { extractExportGraph, findPageId } from './subgraph'
 export {
   BUILTIN_IO_FORMATS,
   type BuiltinIOFormatId,
+  DOCUMENT_EXTENSIONS,
   figFormat,
   penFormat,
   pngFormat,

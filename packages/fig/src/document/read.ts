@@ -53,6 +53,7 @@ export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: Readon
   return {
     figKiwiVersion: parsed.figKiwiVersion,
     figSchemaDeflated: parsed.figSchemaDeflated,
+    kind: parsed.kind,
     reader: createScopedReader(archiveRecords(parsed.nodeChanges), pageIds),
     blobs: parsed.blobs,
     images: parsed.images,

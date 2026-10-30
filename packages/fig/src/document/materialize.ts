@@ -155,6 +155,7 @@ export function createFigDocumentSession(
     ? restoreAssemblyState(resume, archive.reader, sessionOptions)
     : materializeReader(archive.reader, archive.blobs, sessionOptions)
   state.graph.figKiwiVersion = archive.figKiwiVersion
+  state.graph.documentKind = archive.kind
   state.graph.figSchemaDeflated = archive.figSchemaDeflated
   const loaded = new Set<string>(resume?.checkpoint.loadedPageIds)
   const edits = watchGraphEdits(state.graph, resume !== undefined)

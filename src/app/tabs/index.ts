@@ -2,11 +2,12 @@ import { promiseTimeout } from '@vueuse/core'
 import { filename } from 'pathe/utils'
 import { shallowRef, computed, triggerRef } from 'vue'
 
+import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
@@ -17,6 +18,7 @@ import { requestDocumentClose } from '@/app/document/close/prompt'
 import { documentAssetReader } from '@/app/document/io/assets'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { isFigArchiveName } from '@/app/document/io/names'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { setActiveEditorStore } from '@/app/editor/active-store'
@@ -108,6 +110,11 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   tabsRef.value = [...tabsRef.value, tab]
   activateTab(tab)
   return tab
+}
+
+/** Opens an empty document of this kind in a tab of its own: a design, or a board. */
+export function createDocumentTab(kind: DocumentKind): Tab {
+  return createTab(undefined, createDocumentGraph(kind))
 }
 
 /**
@@ -515,7 +522,7 @@ export async function openFileInNewTab(
     const existing = await findTabByFileIdentity(tabsRef.value, identity)
     if (existing) {
       switchTab(existing.id)
-      if (path?.toLowerCase().endsWith('.fig')) {
+      if (path && isFigArchiveName(path)) {
         watchOpenedFigCover(path, existing.store)
         void cacheOpenedFigCover(path, existing.store).catch((error) => {
           console.warn('[Recent files] Failed to cache the thumbnail', error)
@@ -557,7 +564,7 @@ export async function openFileInNewTab(
 
     await yieldToUI()
     load.update({ phase: 'reading', detail: file.name })
-    const isFig = file.name.toLowerCase().endsWith('.fig')
+    const isFig = isFigArchiveName(file.name)
     let imported: SceneGraph
     let sourceFormat: string
     if (isFig) {

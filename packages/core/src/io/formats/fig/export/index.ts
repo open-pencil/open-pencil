@@ -7,7 +7,7 @@ import {
 } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
+import { loadFigDataCompressor, type FigFileKind } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
@@ -200,13 +200,16 @@ async function writeFigFile(
     const { invoke } = await import('@tauri-apps/api/core')
     return new Uint8Array(
       await invoke<ArrayBuffer>('build_fig_file', {
-        schemaDeflated: Array.from(schemaDeflated),
-        kiwiData: Array.from(kiwiData),
-        thumbnailPng: Array.from(extras.thumbnailPNG),
-        metaJson: extras.metaJSON,
-        images: extras.images.map((e) => ({ name: e.name, data: Array.from(e.data) })),
-        figKiwiVersion: version,
-        compressionLevel
+        file: {
+          schemaDeflated: Array.from(schemaDeflated),
+          kiwiData: Array.from(kiwiData),
+          thumbnailPng: Array.from(extras.thumbnailPNG),
+          metaJson: extras.metaJSON,
+          images: extras.images.map((e) => ({ name: e.name, data: Array.from(e.data) })),
+          figKiwiVersion: version,
+          compressionLevel,
+          board: graph.documentKind === 'board'
+        }
       })
     )
   }
@@ -218,7 +221,8 @@ async function writeFigFile(
     extras.metaJSON,
     extras.images,
     version,
-    compressionLevel
+    compressionLevel,
+    graph.documentKind
   )
 }
 
@@ -235,7 +239,8 @@ function compressViaWorker(
   metaJSON: string,
   imageEntries: Array<{ name: string; data: Uint8Array }>,
   figKiwiVersion?: number,
-  compressionLevel?: number
+  compressionLevel?: number,
+  kind?: FigFileKind
 ): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./worker.js', import.meta.url), {
@@ -263,7 +268,8 @@ function compressViaWorker(
       metaJSON,
       images: imageEntries,
       figKiwiVersion,
-      compressionLevel
+      compressionLevel,
+      kind
     })
   })
 }
@@ -276,7 +282,8 @@ export async function compressFigData(
   metaJSON: string,
   imageEntries: Array<{ name: string; data: Uint8Array }>,
   figKiwiVersion?: number,
-  compressionLevel?: number
+  compressionLevel?: number,
+  kind?: FigFileKind
 ): Promise<Uint8Array> {
   if (canUseWorker()) {
     return compressViaWorker(
@@ -286,7 +293,8 @@ export async function compressFigData(
       metaJSON,
       imageEntries,
       figKiwiVersion,
-      compressionLevel
+      compressionLevel,
+      kind
     )
   }
   return compressFigDataSync(
@@ -296,6 +304,7 @@ export async function compressFigData(
     metaJSON,
     imageEntries,
     figKiwiVersion,
-    await loadFigDataCompressor(compressionLevel)
+    await loadFigDataCompressor(compressionLevel),
+    kind
   )
 }

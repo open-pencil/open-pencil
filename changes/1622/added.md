@@ -1,0 +1,1 @@
+- Boards: New board on Home and in the File menu opens a FigJam-style board with FigJam's tools (sticky note, shape, connector, section, text), its keys (S, R, X), and a 16-unit snap grid; boards save and open as FigJam `.jam` files, which the desktop app also opens from Finder.

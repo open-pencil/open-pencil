@@ -2,6 +2,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed, ref, shallowRef } from 'vue'
 
+import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -38,7 +39,7 @@ import HomeSidebar from '@/components/home/sidebar/HomeSidebar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
-const emit = defineEmits<{ 'new-document': [] }>()
+const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 const { locale, storage, files, common, settings, credentials } = useI18n()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const query = ref('')
@@ -46,11 +47,11 @@ const openError = ref<string | null>(null)
 const storageConfigured = ref(storagePreferencesComplete(activeStorageProviderID.value))
 const places = useHomeLocations()
 
-/** A new design lands in the place Home shows: a Cloud workspace, the bucket, or a local file. */
-function newDocument() {
+/** A new document lands in the place Home shows: a Cloud workspace, the bucket, or a local file. */
+function newDocument(kind: DocumentKind) {
   const target = newDesignTarget.value
-  if (target) void createStoredDocument(target.location)
-  else emit('new-document')
+  if (target) void createStoredDocument(target.location, kind)
+  else emit('new-document', kind)
 }
 
 const workspace = useRecentFilesWorkspace()

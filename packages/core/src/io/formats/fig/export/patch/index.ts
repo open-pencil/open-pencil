@@ -436,6 +436,7 @@ export async function writePatchedFigFile(
     thumbnailPNG: extras.thumbnailPNG,
     metaJSON: extras.metaJSON,
     images: extras.images.filter((image) => !archivedImages.has(image.name)),
-    compressionLevel: figCompressionLevel(source)
+    compressionLevel: figCompressionLevel(source),
+    kind: source.documentKind
   })
 }

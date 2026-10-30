@@ -6,6 +6,7 @@ import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { createAutosave } from '@/app/document/autosave'
 import { createDocumentChanges } from '@/app/document/io/changes'
 import {
+  documentFileName,
   documentNameFromFigPath,
   downloadNameFromPath,
   figDownloadName
@@ -167,7 +168,7 @@ export function createDocumentSourceActions({
     stopWatchingFile()
     setFileHandle(null)
     setFilePath(null)
-    setDownloadName(`${documentName}.fig`)
+    setDownloadName(documentFileName(documentName, state.documentKind))
     setSourceIdentity({ handle: null, path: null })
     setStorageBinding(binding)
     state.documentName = documentName
@@ -248,7 +249,7 @@ export function createDocumentSourceActions({
       stopWatchingFile()
       setFileHandle(null)
       setFilePath(null)
-      setDownloadName(`${state.documentName}.fig`)
+      setDownloadName(documentFileName(state.documentName, state.documentKind))
       setStorageBinding({ ...storageLocationOf(location), documentId: createCanvasId() })
     })
     if (saved) {

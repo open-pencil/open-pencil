@@ -52,6 +52,14 @@
         "rank": "Alternate"
       },
       {
+        "ext": ["jam"],
+        "name": "FigJam Board",
+        "description": "FigJam board",
+        "role": "Editor",
+        "mimeType": "application/x-figjam",
+        "rank": "Alternate"
+      },
+      {
         "ext": ["drawio", "dio"],
         "name": "draw.io Diagram",
         "description": "draw.io diagram",

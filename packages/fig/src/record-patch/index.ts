@@ -2,7 +2,7 @@ import { inflateSync } from 'fflate'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { FigDataCompressor } from '@open-pencil/kiwi/fig/container'
+import type { FigDataCompressor, FigFileKind } from '@open-pencil/kiwi/fig/container'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   ByteBuffer,
@@ -61,6 +61,8 @@ export interface FigPatchedArchiveInput {
   images: FigImageEntry[]
   /** The zstd level the document data is written at; the archive is read whatever it used. */
   compressionLevel?: number
+  /** A design file or a FigJam board; the archive's own kind when omitted. */
+  kind?: FigFileKind
 }
 
 const VARIABLE_TYPES = new Set(['VARIABLE', 'VARIABLE_SET'])
@@ -485,7 +487,8 @@ export function patchFigArchive(
       ...input.images.filter((image) => !archiveImages.has(image.name.replace(/^images\//, '')))
     ],
     figKiwiVersion: parts.figKiwiVersion,
-    compress
+    compress,
+    kind: input.kind ?? parts.kind
   })
 }
 

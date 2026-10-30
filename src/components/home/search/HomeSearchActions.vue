@@ -2,6 +2,7 @@
 import { templateRef } from '@vueuse/core'
 import { nextTick, watch } from 'vue'
 
+import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -14,7 +15,7 @@ import HomeJoinRoom from './HomeJoinRoom.vue'
 
 /** The place a new design is created in, when it is not a local file. */
 const { destination = null } = defineProps<{ destination?: string | null }>()
-const emit = defineEmits<{ 'new-document': [] }>()
+const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 const query = defineModel<string>({ required: true })
 const { menu, files } = useI18n()
 const { isMobile, isTouch } = useViewportKind()
@@ -75,10 +76,20 @@ watch(
       </AppButton>
       <AppButton
         :size="isTouch ? 'lg' : 'md'"
+        variant="outline"
+        data-test-id="home-new-board"
+        @click="emit('new-document', 'board')"
+      >
+        <template #leading><icon-lucide-sticky-note class="size-3.5" /></template>
+        {{ menu.newBoard }}
+      </AppButton>
+      <AppButton
+        :size="isTouch ? 'lg' : 'md'"
         color="primary"
         variant="solid"
+        class="col-span-2 md:col-span-1"
         data-test-id="home-new-document"
-        @click="emit('new-document')"
+        @click="emit('new-document', 'design')"
       >
         <template #leading><icon-lucide-plus class="size-3.5" /></template>
         <span class="max-w-56 truncate">{{

@@ -7,6 +7,7 @@ import {
   decompressFigKiwiData,
   decompressFigKiwiDataAsync,
   FIG_KIWI_DEFAULT_VERSION,
+  figFileKind,
   loadFigDataCompressor,
   loadFigDataDecompressor,
   loadWasmFigDataCompressor,
@@ -120,6 +121,24 @@ describe('Figma FIG Kiwi container helpers', () => {
 
   test('rejects non fig-kiwi data', () => {
     expect(parseFigKiwiChunks(new TextEncoder().encode('not-fig-kiwi'))).toBeNull()
+  })
+
+  // Figma's "Save local copy" of a FigJam board writes `fig-jam.` where a design has `fig-kiwi`.
+  test('writes and reads a FigJam board under its own header', () => {
+    const schema = new Uint8Array([1, 2, 3])
+    const board = buildFigKiwi(
+      schema,
+      sampleDocument(),
+      FIG_KIWI_DEFAULT_VERSION,
+      undefined,
+      'board'
+    )
+    expect(new TextDecoder().decode(board.slice(0, 8))).toBe('fig-jam.')
+    expect([figFileKind(board), figFileKind(buildFigKiwi(schema, sampleDocument()))]).toEqual([
+      'board',
+      'design'
+    ])
+    expect(parseFigKiwiChunks(board)?.[0]).toEqual(schema)
   })
 
   // Bun's own zstd where it runs, and the WebAssembly build browsers and webviews read with.

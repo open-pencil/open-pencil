@@ -6,13 +6,17 @@ installTauriMockWindow()
 
 mockIPC((cmd, args) => {
   if (cmd !== 'build_fig_file') throw new Error(`Unexpected command: ${cmd}`)
-  const payload = args as {
-    schemaDeflated: number[]
-    kiwiData: number[]
-    thumbnailPng: number[]
-    metaJson: string
-    images: Array<{ name: string; data: number[] }>
+  const { file: payload } = args as {
+    file: {
+      schemaDeflated: number[]
+      kiwiData: number[]
+      thumbnailPng: number[]
+      metaJson: string
+      images: Array<{ name: string; data: number[] }>
+      board: boolean
+    }
   }
+  if (payload.board) throw new Error('a new design is no board')
   if (payload.schemaDeflated.length === 0) throw new Error('schemaDeflated is empty')
   if (payload.kiwiData.length === 0) throw new Error('kiwiData is empty')
   if (payload.thumbnailPng.length === 0) throw new Error('thumbnailPng is empty')

@@ -1,10 +1,26 @@
 import { isEqual } from 'es-toolkit'
 
-import type { DocumentKind, EnabledLibraryBinding } from '@open-pencil/scene-graph'
+import { SceneGraph, type DocumentKind, type EnabledLibraryBinding } from '@open-pencil/scene-graph'
 
 import { resolveEditorProfile } from '#core/editor/views'
+import { setPageBackgrounds } from '#core/figma-api/page-backgrounds'
 
 import type { EditorContext } from './types'
+
+/** A FigJam board's page, #F5F5F5 as Figma saves it. */
+const BOARD_PAGE_COLOR = { r: 245 / 255, g: 245 / 255, b: 245 / 255, a: 1 }
+
+/** An empty document of this kind: a board starts on FigJam's light page. */
+export function createDocumentGraph(kind: DocumentKind): SceneGraph {
+  const graph = new SceneGraph()
+  graph.documentKind = kind
+  if (kind === 'board') {
+    setPageBackgrounds(graph, graph.getPages()[0], [
+      { type: 'SOLID', color: BOARD_PAGE_COLOR, opacity: 1, visible: true, blendMode: 'NORMAL' }
+    ])
+  }
+  return graph
+}
 
 export function createDocumentSettingsActions(ctx: EditorContext) {
   /**
