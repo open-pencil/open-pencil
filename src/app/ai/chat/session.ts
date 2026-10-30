@@ -8,6 +8,7 @@ import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
+import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
@@ -295,6 +296,9 @@ export function createChatSessionManager({
           if (event.isAbort || event.isDisconnect || event.isError) {
             void settleEndedReply(created, store, event.message.id, event.isAbort)
           }
+          // A reply stopped by the person, or cut off with its connection, ends unannounced.
+          if (!event.isAbort && !event.isDisconnect)
+            notifyReplyEnded(store, event.isError ? null : event.message)
         }
       })
       chat = created

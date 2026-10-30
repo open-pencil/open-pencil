@@ -5,7 +5,7 @@ import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 import type { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
-import type { PropertiesTab } from '@/app/ai/chat/use'
+import type { PropertiesTab } from '@/app/ai/chat/panel'
 import { useComments } from '@/app/comments/use'
 import type { EditorStore } from '@/app/editor/active-store'
 

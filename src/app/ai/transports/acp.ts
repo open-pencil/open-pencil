@@ -295,13 +295,21 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     // Set once the session exists; the client reads it to record the model the agent names.
     let sessionRef: ACPSession | null = null
     const agentId = this.agentDef.id
+    const { agentDef, store } = this
 
     const clientImpl: Client = {
       async requestPermission(
         params: RequestPermissionRequest
       ): Promise<RequestPermissionResponse> {
-        const { requestPermissionFromUser } = await import('@/app/ai/agents/acp/permission')
-        return requestPermissionFromUser(params)
+        const [{ requestPermissionFromUser }, { notifyPermissionWaiting }] = await Promise.all([
+          import('@/app/ai/agents/acp/permission'),
+          import('@/app/ai/chat/notifications')
+        ])
+        const title = params.toolCall.title ?? ''
+        return requestPermissionFromUser(
+          params,
+          store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
+        )
       },
 
       async sessionUpdate(params: SessionNotification): Promise<void> {

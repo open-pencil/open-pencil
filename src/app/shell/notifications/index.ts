@@ -1,0 +1,113 @@
+import { IS_TAURI } from '@open-pencil/core/constants'
+import { randomInt } from '@open-pencil/scene-graph/random'
+
+import { appPreferences, type NotificationPreferences } from '@/app/settings/preferences/store'
+import { getActiveTabId } from '@/app/tabs'
+
+import { browserNotificationPermission } from './permission'
+
+/** Each kind of event a notification reports, named by the preference that turns it on. */
+export type NotificationEvent = keyof NotificationPreferences
+
+export interface AppNotification {
+  event: NotificationEvent
+  title: string
+  body: string
+  /** The tab the event happened in; it is shown when the notification is clicked. */
+  tabId: string | null
+  /** A newer notification with the same tag replaces an older one that is still shown. */
+  tag: string
+  /** Shows what the notification is about, after the window comes forward. */
+  open: () => void
+}
+
+/** Notifications the desktop shell showed, by id, kept to open them when clicked. */
+const shownOnDesktop = new Map<number, () => void>()
+/** Browser notifications still shown, closed once the person is back in the window. */
+const shownInBrowser = new Set<Notification>()
+let desktopClicks: Promise<void> | null = null
+let closesOnReturn = false
+
+/** The person is looking at this tab of the focused window, so a notification would only repeat it. */
+function isWatching(tabId: string | null): boolean {
+  if (document.visibilityState !== 'visible' || !document.hasFocus()) return false
+  return tabId === null || tabId === getActiveTabId()
+}
+
+async function focusDesktopWindow(): Promise<void> {
+  const { getCurrentWindow } = await import('@tauri-apps/api/window')
+  const window = getCurrentWindow()
+  await window.unminimize()
+  await window.setFocus()
+}
+
+/**
+ * Clicks reach the shell only for notifications shown after a listener exists, so it is added
+ * before the first one. Windows reports a click only while the toast is on screen, not once it
+ * moved to the Action Center.
+ */
+async function addDesktopClickListener(): Promise<void> {
+  const { onAction } = await import('@tauri-apps/plugin-notification')
+  await onAction(({ actionId, notification }) => {
+    const id = notification?.id
+    const open = id === undefined ? undefined : shownOnDesktop.get(id)
+    if (actionId !== 'tap' || !open || id === undefined) return
+    shownOnDesktop.delete(id)
+    void focusDesktopWindow().finally(open)
+  })
+}
+
+function listenForDesktopClicks(): Promise<void> {
+  // A listener that could not be added is tried again with the next notification.
+  desktopClicks ??= addDesktopClickListener().catch((error: unknown) => {
+    desktopClicks = null
+    throw error
+  })
+  return desktopClicks
+}
+
+async function showOnDesktop(notification: AppNotification): Promise<void> {
+  await listenForDesktopClicks()
+  const { sendNotification } = await import('@tauri-apps/plugin-notification')
+  const id = randomInt()
+  shownOnDesktop.set(id, notification.open)
+  sendNotification({ id, title: notification.title, body: notification.body })
+}
+
+function showInBrowser(notification: AppNotification): void {
+  if (browserNotificationPermission.value !== 'granted') return
+  const shown = new Notification(notification.title, {
+    body: notification.body,
+    tag: notification.tag
+  })
+  if (!closesOnReturn) {
+    closesOnReturn = true
+    // What a notification reports is in view once the window is, so it no longer needs one.
+    window.addEventListener('focus', () => {
+      for (const open of shownInBrowser) open.close()
+      shownInBrowser.clear()
+    })
+  }
+  shownInBrowser.add(shown)
+  shown.addEventListener('close', () => shownInBrowser.delete(shown))
+  shown.addEventListener('click', () => {
+    window.focus()
+    shown.close()
+    notification.open()
+  })
+}
+
+/**
+ * Sends a system notification for `event` when its preference is on and the person is away:
+ * the window is hidden or unfocused, or shows another tab. Browsers show it only once the person
+ * allowed notifications; the desktop shell always may, unless the system settings turned them off.
+ */
+export function notify(notification: AppNotification): void {
+  if (!appPreferences.value.notifications[notification.event]) return
+  if (isWatching(notification.tabId)) return
+  if (IS_TAURI)
+    void showOnDesktop(notification).catch((error) =>
+      console.warn('[Notifications] Not shown:', error)
+    )
+  else showInBrowser(notification)
+}

@@ -528,6 +528,7 @@ ru:cloud.inviteEmailPlaceholder
 de:settings.skills
 de:ai.chatReferenceSkills
 fr:ai.chatReferencePages
+fr:ai.notifications
 de:settings.groupApp
 de:settings.editor
 es:settings.editor

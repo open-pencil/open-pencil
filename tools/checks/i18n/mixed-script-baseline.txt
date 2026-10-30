@@ -596,4 +596,14 @@ zh-cn:ai.skillsTrustDescription
 zh-cn:ai.queueMessage
 ja:ai.queueMessage
 ja:ai.skillsDescription
+ja:ai.notificationsHint
+ja:ai.notificationsAllowHint
+ja:ai.notificationsSystemHint
+ja:ai.notifyReplyFinished
+ja:ai.notifyReplyFailed
 zh-cn:ai.skillsDescription
+zh-cn:ai.notificationsHint
+zh-cn:ai.notificationsAllowHint
+zh-cn:ai.notificationsSystemHint
+zh-cn:ai.notifyReplyFinished
+zh-cn:ai.notifyReplyFailed

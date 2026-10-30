@@ -35,6 +35,7 @@ tokio = { version = "1", features = ["sync"] }
 tauri-plugin-dialog = "2.6.0"
 tauri-plugin-fs = { version = "2.4.5", features = ["watch"] }
 tauri-plugin-shell = "2"
+tauri-plugin-notification = "2.8.0"
 zstd = "0.13"
 zip = { version = "2", default-features = false }
 which = "7.0.3"

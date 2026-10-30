@@ -38,6 +38,7 @@ import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
 import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
+import NotificationSettingsSection from '@/components/settings/notifications/NotificationSettingsSection.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
 import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
@@ -208,6 +209,7 @@ function onOpenChange(open: boolean): void {
         <section class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-ai-panel">
           <ModelsPanel>
             <ChatSettingsSection />
+            <NotificationSettingsSection />
           </ModelsPanel>
         </section>
       </AppTabsContent>
