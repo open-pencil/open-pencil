@@ -1,7 +1,6 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -31,6 +30,7 @@ import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
+import { textFontFace } from '#core/text/requirements/collect'
 
 /** A list item's indent per level, in ems of the list's first character. */
 const LIST_INDENT_EMS = 1.5
@@ -162,7 +162,7 @@ function listStyle(node: ParagraphNode, firstCharacter: number): ListStyle {
   return {
     em: override?.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE),
     family: override?.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
-    style: faceLoadKey(override?.fontWeight ?? node.fontWeight, override?.italic ?? node.italic),
+    style: textFontFace(node, override).style,
     override
   }
 }

@@ -19,6 +19,19 @@ describe('chooseLocalFontMatch', () => {
     expect(chooseLocalFontMatch(fonts, 'Inter', 'Bold')).toBeUndefined()
   })
 
+  test('finds a face named apart from its weight by that name, never another face of its weight', () => {
+    const helvetica = [
+      { family: 'Helvetica Neue', style: 'Regular' },
+      { family: 'Helvetica Neue', style: 'Bold' },
+      { family: 'Helvetica Neue', style: 'Condensed Bold' }
+    ]
+    expect(chooseLocalFontMatch(helvetica, 'Helvetica Neue', 'Condensed Bold')?.style).toBe(
+      'Condensed Bold'
+    )
+    expect(chooseLocalFontMatch(helvetica, 'Helvetica Neue', 'Condensed Black')).toBeUndefined()
+    expect(chooseLocalFontMatch(helvetica, 'Helvetica Neue', 'Book')).toBeUndefined()
+  })
+
   test('without a style, takes the face CSS font matching picks for regular', () => {
     const faces = [
       { family: 'Inter', style: 'Black' },

@@ -247,6 +247,7 @@ describe('text preparation cache', () => {
         fontSize: 20,
         fontWeight: 700,
         italic: true,
+        fontStyle: 'Condensed Bold',
         fontFeatures: [{ tag: 'liga', enabled: false }],
         fontVariations: [{ axis: 'wght', value: 700 }],
         opticalSizeFromFontSize: false,

@@ -3262,6 +3262,7 @@ dependencies = [
  "keyring",
  "objc2-core-foundation",
  "objc2-core-text",
+ "read-fonts",
  "reqwest 0.12.28",
  "security-framework",
  "semver",

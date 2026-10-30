@@ -17,6 +17,7 @@ export * from './web-font/resolver'
 export * from './path'
 export * from './prepare'
 export * from './font/faces'
+export type { HostFontFamily } from './font/catalog'
 export * from './font/names'
 export {
   probeGlyphOutlineCommands,

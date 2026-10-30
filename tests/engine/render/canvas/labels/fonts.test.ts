@@ -56,7 +56,7 @@ test.each([
   const families = () =>
     resolveParagraphFontFamilies(
       'Inter',
-      'Regular',
+      { weight: 400, italic: false, style: 'Regular' },
       loaded && fixture.arabic ? [fixture.family] : [],
       loaded && !fixture.arabic ? [fixture.family] : []
     )

@@ -1,10 +1,17 @@
-import { uniq } from 'es-toolkit'
+import { uniq, uniqBy } from 'es-toolkit'
 import { computed, onScopeDispose, ref, watch, type ComputedRef } from 'vue'
 
-import { faceStyleName, fontManager, textStyleName } from '@open-pencil/core/text'
+import { fontManager, standardFace, textStyleName } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { styleSpelling } from '@open-pencil/scene-graph/font-style'
 
 import { TYPOGRAPHY_WEIGHTS } from '#vue/controls/typography/weights'
+
+/** A face the style menu offers: its name, which is also what choosing it sets. */
+export interface FaceOption {
+  value: string
+  label: string
+}
 
 /**
  * The faces of the selected text layers' families, read as they arrive. A family whose faces are
@@ -36,29 +43,40 @@ export function useFamilyFaces(nodes: ComputedRef<SceneNode[]>) {
     return fontManager.offersFace(node.fontFamily, weight, italic)
   }
 
+  /** Whether a layer's family has a face of this name, or nothing says it has not. */
+  function offersStyle(node: SceneNode, style: string): boolean {
+    const faces = fontManager.loadedFamilyFaces(node.fontFamily)
+    return !faces || faces.some((face) => styleSpelling(face.style) === styleSpelling(style))
+  }
+
   /**
-   * The weights every selected layer's family has at that layer's slant, and the weights the
-   * layers already use, so the field still names one their family lacks. Each is named as the
-   * first layer's font names that face, as Figma's style menu lists a family's own names.
+   * The faces of the first layer's family in its slant, lightest first, by the names its fonts
+   * give them, as Figma's style menu lists a family's faces ("Book" and "Roman" apart), and only
+   * those every selected layer's family has. A family whose faces are unknown offers every
+   * standard weight. The faces the layers are set in stay listed, by the layers' own names, so
+   * the field still names one their family lacks or a file spells its own way.
    */
-  const weights = computed(() => {
+  const faces = computed<FaceOption[]>(() => {
     void arrived.value
     const first = nodes.value.at(0)
-    return TYPOGRAPHY_WEIGHTS.filter(
-      ({ value }) =>
-        nodes.value.some((node) => node.fontWeight === value) ||
-        nodes.value.every((node) => supports(node, value, node.italic))
-    ).map(({ value, label }) => ({
-      value,
-      label: first ? weightName(first, value) : label
-    }))
+    if (!first) return []
+    const known =
+      fontManager.loadedFamilyFaces(first.fontFamily) ??
+      TYPOGRAPHY_WEIGHTS.map(({ value }) => standardFace(value, first.italic))
+    const listed = known
+      .filter((face) => face.italic === first.italic)
+      .toSorted((a, b) => a.weight - b.weight)
+      .map((face) => face.style)
+      .filter((style) => nodes.value.every((node) => offersStyle(node, style)))
+    const own = nodes.value.map((node) => textStyleName(node))
+    const names = uniqBy(
+      [...listed, ...own].map(
+        (style) => own.find((name) => styleSpelling(name) === styleSpelling(style)) ?? style
+      ),
+      styleSpelling
+    )
+    return names.map((style) => ({ value: style, label: style }))
   })
-
-  /** A weight's name in a layer's family; its own weight keeps the name the layer has for it. */
-  function weightName(node: SceneNode, weight: number): string {
-    if (weight === node.fontWeight) return textStyleName(node)
-    return faceStyleName(node.fontFamily, weight, node.italic)
-  }
 
   /** The name of the face a layer is set in, as its font names it once its faces arrive. */
   function styleName(node: SceneNode): string {
@@ -66,5 +84,5 @@ export function useFamilyFaces(nodes: ComputedRef<SceneNode[]>) {
     return textStyleName(node)
   }
 
-  return { weights, supports, styleName }
+  return { faces, supports, styleName }
 }

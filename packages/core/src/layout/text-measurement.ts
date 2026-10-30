@@ -1,5 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
 import { measureTextWithFont } from '#core/text/font/glyphs'
@@ -19,7 +19,7 @@ export function estimateTextSize(
 ): { width: number; height: number } {
   const fontSize = node.fontSize || 14
   const family = node.fontFamily || 'Inter'
-  const style = faceLoadKey(node.fontWeight || 400, node.italic)
+  const style = faceStyleKey({ ...node, fontWeight: node.fontWeight || 400 })
   const text = node.text || ''
 
   const ownLineH = lineHeightPixels(node.lineHeight, fontSize) ?? 0

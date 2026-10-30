@@ -185,14 +185,15 @@ describe('documentFontStatus', () => {
     })
 
     const issues = documentFontStatus(graph, pageId(graph), new FontManager()).issues
+    // Faces their weight cannot pick load by their own names.
     expect(issues.map(({ name, style }) => [name, style])).toEqual([
       ['Bold', 'Bold'],
-      ['Book', 'Regular'],
-      ['Roman', 'Regular']
+      ['Book', 'Book'],
+      ['Roman', 'Roman']
     ])
   })
 
-  test('a named face is available once the style it loads as is loaded', async () => {
+  test('a named face is available once it is loaded by its name', async () => {
     const graph = new SceneGraph()
     graph.createNode('TEXT', pageId(graph), {
       name: 'Book',
@@ -201,11 +202,11 @@ describe('documentFontStatus', () => {
       fontStyle: 'Book'
     })
     const manager = new FontManager()
-    await manager.markLoaded('Avenir', 'Regular', new ArrayBuffer(8), 'local')
+    await manager.markLoaded('Avenir', 'Book', new ArrayBuffer(8), 'local')
 
     expect(documentFontStatus(graph, pageId(graph), manager)).toMatchObject({
       faithful: true,
-      faces: [{ family: 'Avenir', name: 'Book', style: 'Regular', status: 'available' }]
+      faces: [{ family: 'Avenir', name: 'Book', style: 'Book', status: 'available' }]
     })
   })
 })

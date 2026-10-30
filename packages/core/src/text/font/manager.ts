@@ -5,6 +5,7 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 import {
   faceLoadKey,
+  namesWeight,
   normalizeFontFamily,
   parseFontStyle,
   styleToWeight
@@ -13,7 +14,7 @@ import {
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { fontFallbackEntry, type FontFallbackScript } from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
-import { FamilyFaceCatalog } from '#core/text/font/catalog'
+import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
 import { fontFaceRenderFamily, type FamilyFace } from '#core/text/font/faces'
 import { loadHarfBuzz } from '#core/text/font/harfbuzz'
 import { LocalFonts } from '#core/text/font/local'
@@ -30,6 +31,7 @@ import {
 } from '#core/text/font/sources'
 import {
   fontAxes,
+  hasNamedInstance,
   namedInstances,
   namedInstanceVariations,
   type FontAxis,
@@ -71,6 +73,7 @@ export class FontManager {
   private hostFontLoader: HostFontLoader | null = null
   private readonly hostFontRequests = new SharedReads()
   private webFonts = new WebFontResolver()
+  private readonly faceListeners = new Set<(family: string, style: string) => void>()
   private readonly bundled = new BundledFonts()
   private readonly localFonts = new LocalFonts()
   private readonly faces = new FamilyFaceCatalog({
@@ -164,7 +167,7 @@ export class FontManager {
   }
 
   /** The system fonts a desktop host lists, by family, with the style names of their faces. */
-  setHostFontCatalog(fonts: readonly { family: string; styles: readonly string[] }[]): void {
+  setHostFontCatalog(fonts: readonly HostFontFamily[]): void {
     this.faces.setHostCatalog(fonts)
   }
 
@@ -337,6 +340,8 @@ export class FontManager {
       const resolved = await this.webFonts.fetchFont(families, style, requestedCharacters, signal)
       if (!resolved || resolved.buffers.length === 0) return null
       const primary = resolved.buffers[0]
+      // Providers serve faces by weight; a named face comes only from a variable file that has it.
+      if (!namesWeight(style) && !hasNamedInstance(primary, style)) return null
       await this.writeDownloadedFont(family, style, primary, requestedCharacters)
       const registered = this.registerAndCache(family, style, primary, resolved.provider)
       const loadedCoverage = this.remoteCoverage.get(`${family}|${style}`) ?? new Set<string>()
@@ -416,11 +421,14 @@ export class FontManager {
    */
   private sharedVariableFace(family: string, style: string): ArrayBuffer | null {
     const { weight, italic } = parseFontStyle(style)
+    // A face named apart from its weight ("Condensed Bold") is drawn by a file that has it.
+    const named = !namesWeight(style)
     for (const [key, data] of this.loadedFamilies) {
       if (!key.startsWith(`${family}|`)) continue
       if (parseFontStyle(key.slice(family.length + 1)).italic !== italic) continue
+      if (named && !hasNamedInstance(data, style)) continue
       const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
-      if (!wght || weight < wght.min || weight > wght.max) continue
+      if (!wght || (!named && (weight < wght.min || weight > wght.max))) continue
       const coverage = this.remoteCoverage.get(key)
       if (coverage) this.remoteCoverage.set(`${family}|${style}`, new Set(coverage))
       return this.registerAndCache(family, style, data, this.loadedFamilySources.get(key))
@@ -774,7 +782,17 @@ export class FontManager {
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
     this.registerFontInBrowser(family, style, buffer)
+    for (const listener of this.faceListeners) listener(family, style)
     return buffer
+  }
+
+  /**
+   * Calls the listener with each face once its file is registered, by whatever path it loaded:
+   * a paste, a script, a retry, or the renderer.
+   */
+  onFaceLoaded(listener: (family: string, style: string) => void): () => void {
+    this.faceListeners.add(listener)
+    return () => this.faceListeners.delete(listener)
   }
 
   private registerFontInCanvasKit(family: string, data: ArrayBuffer): boolean {

@@ -2,8 +2,9 @@ import { mean } from 'es-toolkit'
 
 import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
 import type { DerivedTextGlyph, SceneNode, TextPathData } from '@open-pencil/scene-graph'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
@@ -22,6 +23,7 @@ const PATH_TEXT_LAYOUT_FIELDS = [
   'fontFamily',
   'fontWeight',
   'italic',
+  'fontStyle',
   'fontSize',
   'letterSpacing',
   'textAlignHorizontal'
@@ -44,7 +46,7 @@ function layOutPathText(
   const letterSpacing = textLengthPixels(type.letterSpacing, fontSize)
   const metrics = getGlyphOutlineMetricsSync(
     type.fontFamily,
-    faceLoadKey(type.fontWeight, type.italic),
+    faceStyleKey(type),
     type.text,
     fontSize
   )
@@ -110,6 +112,8 @@ export function pathTextEditChanges(
       fontFamily: changes.fontFamily ?? node.fontFamily,
       fontWeight: changes.fontWeight ?? node.fontWeight,
       italic: changes.italic ?? node.italic,
+      // A pending face change without a name names no face of the old one.
+      fontStyle: rangeFontStyle(node, changes),
       fontSize: changes.fontSize ?? node.fontSize,
       letterSpacing: changes.letterSpacing ?? node.letterSpacing,
       textAlignHorizontal: changes.textAlignHorizontal ?? node.textAlignHorizontal
@@ -231,7 +235,7 @@ function alignedRun(
   if (align !== 'CENTER' && align !== 'RIGHT') return all
   const old = getGlyphOutlineMetricsSync(
     node.fontFamily,
-    faceLoadKey(node.fontWeight, node.italic),
+    faceStyleKey(node),
     node.text,
     node.fontSize
   )

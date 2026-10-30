@@ -9,9 +9,9 @@ import type {
   StyleRun,
   TextCase
 } from '@open-pencil/scene-graph'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
 
 import { convertFontFeatures } from '../font/features'
+import { savedFace } from '../font/style'
 import { convertFontVariations } from '../font/variations'
 import { convertFills } from '../paint'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from '../text/values'
@@ -75,8 +75,9 @@ function convertStyleOverride(override: NodeChange, text: NodeChange): Character
   const style: CharacterStyleOverride = {}
   if (override.fontName) {
     style.fontFamily = override.fontName.family
-    style.fontWeight = styleToWeight(override.fontName.style)
-    style.italic = override.fontName.style.toLowerCase().includes('italic')
+    const face = savedFace(text, override.fontName)
+    style.fontWeight = face.fontWeight
+    style.italic = face.italic
     style.fontStyle = override.fontName.style || null
   }
   if (override.fontSize !== undefined) style.fontSize = override.fontSize

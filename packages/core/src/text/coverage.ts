@@ -1,5 +1,4 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {
@@ -13,6 +12,7 @@ import {
   type FontFallbackScript
 } from '#core/text/fallbacks'
 import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
+import { textFontFace } from '#core/text/requirements/collect'
 
 const CJK_CHAR_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
 
@@ -41,19 +41,15 @@ function styleForCharacter(
 ): { family: string; style: string; language: string | null } {
   const baseFamily = node.fontFamily || DEFAULT_FONT_FAMILY
   let family = baseFamily
-  let weight = node.fontWeight
-  let italic = node.italic
   let language = node.textLanguage
 
   const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
   if (run) {
     family = run.style.fontFamily ?? family
-    weight = run.style.fontWeight ?? weight
-    italic = run.style.italic ?? italic
     if (run.style.textLanguage !== undefined) language = run.style.textLanguage
   }
 
-  return { family, style: faceLoadKey(weight, italic), language }
+  return { family, style: textFontFace(node, run?.style).style, language }
 }
 
 /**

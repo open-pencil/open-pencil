@@ -6,6 +6,12 @@ import {
 } from '#core/text/font/faces'
 import type { FontInfo } from '#core/text/font/sources'
 
+/** A family a desktop host has installed, with its faces by the names their fonts give them. */
+export interface HostFontFamily {
+  family: string
+  faces: readonly FamilyFace[]
+}
+
 /** Where a family's faces come from besides the host's catalog. */
 export interface FamilyFaceSources {
   /** The browser's installed fonts, once listed. */
@@ -18,16 +24,16 @@ export interface FamilyFaceSources {
 
 /** The faces each family has, as its installed, web, or bundled fonts list them. */
 export class FamilyFaceCatalog {
-  private hostStyles = new Map<string, readonly string[]>()
+  private hostFaces = new Map<string, readonly FamilyFace[]>()
   private lookups = new Map<string, Promise<FamilyFace[] | null>>()
   private found = new Map<string, FamilyFace[] | null>()
   private listeners = new Set<() => void>()
 
   constructor(private readonly sources: FamilyFaceSources) {}
 
-  /** The system fonts a desktop host lists, by family, with the style names of their faces. */
-  setHostCatalog(fonts: readonly { family: string; styles: readonly string[] }[]): void {
-    this.hostStyles = new Map(fonts.map((font) => [font.family, [...font.styles]]))
+  /** The system fonts a desktop host lists, by family, with their faces. */
+  setHostCatalog(fonts: readonly HostFontFamily[]): void {
+    this.hostFaces = new Map(fonts.map((font) => [font.family, [...font.faces]]))
     this.forget()
   }
 
@@ -95,9 +101,8 @@ export class FamilyFaceCatalog {
 
   /** The faces of an installed family, from the host's catalog or the browser's local fonts. */
   private installedFaces(family: string): FamilyFace[] | null {
-    // The desktop host lists weights by generated names, so its faces take the standard names.
-    const host = this.hostStyles.get(family)
-    if (host && host.length > 0) return standardFaces(host)
+    const host = this.hostFaces.get(family)
+    if (host && host.length > 0) return [...host]
     const local = this.sources.localFonts()?.filter((font) => font.family === family) ?? []
     return local.length > 0 ? facesFromStyles(local.map((font) => font.style)) : null
   }

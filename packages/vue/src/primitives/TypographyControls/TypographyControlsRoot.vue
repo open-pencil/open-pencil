@@ -21,6 +21,7 @@ function onFormattingChange(val: AcceptableValue | AcceptableValue[]) {
 const actions = {
   setFamily: ctx.setFamily,
   setWeight: ctx.setWeight,
+  setFace: ctx.setFace,
   setDirection: ctx.setDirection,
   setVerticalAlign: ctx.setVerticalAlign,
   setTextCase: ctx.setTextCase,
@@ -52,7 +53,8 @@ const actions = {
     :merged="ctx.merged"
     :paragraph-spacing="ctx.paragraphSpacing"
     :font-feature="ctx.fontFeature"
-    :weights="ctx.weights"
+    :faces="ctx.faces"
+    :face-name="ctx.faceName"
     :missing-fonts="ctx.missingFonts"
     :has-missing-fonts="ctx.hasMissingFonts"
     :active-formatting="ctx.activeFormatting"

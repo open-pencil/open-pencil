@@ -101,6 +101,9 @@ export function createEditor(options?: EditorOptions) {
     if (event === 'settled') pendingTextLayout.relayoutReady(_renderer)
     events.emit('font:resolution-changed', event, snapshot)
   })
+  const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
+    events.emit('font:loaded', family, style)
+  )
 
   void prefetchFigmaSchema()
 
@@ -404,6 +407,7 @@ export function createEditor(options?: EditorOptions) {
     nodes.cancelNodePreviews()
     interactiveEdits.clear()
     stopFontResolutionEvents()
+    stopFontLoadEvents()
     unsubscribeFromGraph()
   }
 

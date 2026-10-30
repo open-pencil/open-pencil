@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit/array'
 
 import type { FontVariation } from '@open-pencil/scene-graph'
-import { parseFontStyle, faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { ResourceCache } from '#core/cache/resource'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
@@ -18,6 +18,8 @@ export interface DrawnFontAxes {
   family: string
   weight: number
   italic: boolean
+  /** The face's key, as {@link faceStyleKey} gives it; its weight's key when left out. */
+  style?: string
   fontSize: number
   /** The axes the text sets. */
   variations: readonly FontVariation[]
@@ -30,8 +32,12 @@ export interface DrawnFontAxes {
  * a stored `opsz` is ignored. Fonts without an axis ignore its value.
  */
 export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
+  // A face named apart from its weight ("Condensed Bold") is the instance of that name.
+  const weightKey = faceLoadKey(font.weight, font.italic)
   const named =
-    fontManager.namedInstanceVariations(font.family, faceLoadKey(font.weight, font.italic)) ?? []
+    fontManager.namedInstanceVariations(font.family, font.style ?? weightKey) ??
+    fontManager.namedInstanceVariations(font.family, weightKey) ??
+    []
   const set = font.opticalSizeFromFontSize
     ? [
         ...font.variations.filter((variation) => variation.axis !== 'opsz'),
@@ -61,16 +67,28 @@ export function drawnFontAxes(font: DrawnFontAxes): DrawnFontAxis[] | null {
   }))
 }
 
+/** A loaded face text is drawn in: its weight and slant, and the key it is loaded under. */
+export interface LoadedFace extends FaceWeight {
+  style: string
+}
+
 /**
- * The loaded face of a family that text asking for a style is drawn in: that style, or the
- * nearest loaded weight in the same slant, then the other, as font matching picks it; `null`
- * when the family has none loaded.
+ * The loaded face of a family that text asking for a face is drawn in: that face, by its key,
+ * or the nearest loaded weight in the same slant, then the other, as font matching picks it;
+ * `null` when the family has none loaded.
  */
-export function loadedFace(family: string, weight: number, italic: boolean): FaceWeight | null {
+export function loadedFace(
+  family: string,
+  weight: number,
+  italic: boolean,
+  style = faceLoadKey(weight, italic)
+): LoadedFace | null {
+  if (fontManager.isStyleLoaded(family, style)) return { weight, italic, style }
   for (const slant of [italic, !italic]) {
     for (const candidate of fontWeightMatchOrder(weight)) {
-      if (fontManager.isStyleLoaded(family, faceLoadKey(candidate, slant)))
-        return { weight: candidate, italic: slant }
+      const key = faceLoadKey(candidate, slant)
+      if (fontManager.isStyleLoaded(family, key))
+        return { weight: candidate, italic: slant, style: key }
     }
   }
   return null
@@ -106,21 +124,17 @@ function renderFamilies(family: string, style: string): string[] {
 
 /**
  * The paragraph's families as CanvasKit is asked for them: the family in the face it draws the
- * style in, and its fallbacks, each by the names `renderFamilies` gives it.
+ * face in, and its fallbacks, each by the names `renderFamilies` gives it.
  */
 export function resolveParagraphFontFamilies(
   primary: string,
-  style: string,
+  face: { weight: number; italic: boolean; style: string },
   arabicFallbacks: readonly string[] = fontManager.getArabicFallbackFamilies(),
   cjkFallbacks: readonly string[] = fontManager.getCJKFallbackFamilies()
 ): string[] {
-  // The face the family draws the style in, which may be the nearest one loaded.
-  const asked = parseFontStyle(style)
-  const drawn = loadedFace(primary, asked.weight, asked.italic)
-  const renderPrimary = renderFamilies(
-    primary,
-    drawn ? faceLoadKey(drawn.weight, drawn.italic) : style
-  )
+  // The face the family draws it in, which may be the nearest one loaded.
+  const drawn = loadedFace(primary, face.weight, face.italic, face.style)
+  const renderPrimary = renderFamilies(primary, drawn?.style ?? face.style)
   const renderArabicFallbacks = arabicFallbacks.flatMap((family) =>
     renderFamilies(family, 'Regular')
   )

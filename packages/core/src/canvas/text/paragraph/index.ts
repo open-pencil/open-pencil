@@ -11,7 +11,8 @@ import type {
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -124,8 +125,14 @@ function blockHeightBehavior(
  * native text stack draws the same, so a missing face is drawn as the face that exists and
  * reported missing, as Figma does. A family with no face loaded asks for the style as given.
  */
-function drawnFontStyle(ck: CanvasKit, family: string, weight: number, italic: boolean): FontStyle {
-  const face = loadedFace(family, weight, italic) ?? { weight, italic }
+function drawnFontStyle(
+  ck: CanvasKit,
+  family: string,
+  weight: number,
+  italic: boolean,
+  style: string
+): FontStyle {
+  const face = loadedFace(family, weight, italic, style) ?? { weight, italic }
   return {
     weight: { value: face.weight },
     slant: face.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
@@ -158,7 +165,7 @@ function pushStyleRun(
   run: SceneNode['styleRuns'][number],
   baseColor: Float32Array,
   baseFontSize: number,
-  fontFamilies: (primary: string, weight: number, italic?: boolean) => string[],
+  fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
   paintStyle?: ParagraphPaintStyle
 ): void {
@@ -173,18 +180,25 @@ function pushStyleRun(
   const runFamily = style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const runWeight = style.fontWeight ?? node.fontWeight
   const runItalic = style.italic ?? node.italic
+  const runFace = {
+    fontWeight: runWeight,
+    italic: runItalic,
+    fontStyle: rangeFontStyle(node, style)
+  }
+  const runKey = faceStyleKey(runFace)
 
   const textStyle = new ck.TextStyle({
     color: styleRunColor(ck, style, baseColor),
-    fontFamilies: fontFamilies(runFamily, runWeight, runItalic),
+    fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
-    fontStyle: drawnFontStyle(ck, runFamily, runWeight, runItalic),
+    fontStyle: drawnFontStyle(ck, runFamily, runWeight, runItalic, runKey),
     fontVariations: textFontVariations(
       drawnFontVariations({
         family: runFamily,
         weight: runWeight,
         italic: runItalic,
+        style: runKey,
         fontSize: runFontSize,
         variations: style.fontVariations ?? node.fontVariations,
         opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
@@ -214,7 +228,7 @@ function addStyledRuns(
   node: ParagraphNode,
   baseColor: Float32Array,
   baseFontSize: number,
-  fontFamilies: (primary: string, weight: number, italic?: boolean) => string[],
+  fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
   paintStyle?: ParagraphPaintStyle
 ): void {
@@ -277,34 +291,33 @@ export function buildSkParagraph(
 
   const truncateOpts = block.truncation ?? buildTruncateOpts(node)
 
-  const fontFamilies = (primary: string, weight: number, italic = false) =>
+  const fontFamilies = (primary: string, face: NamedFace) =>
     resolveParagraphFontFamilies(
       primary,
-      faceLoadKey(weight, italic),
+      { weight: face.fontWeight, italic: face.italic, style: faceStyleKey(face) },
       arabicFallbacks,
       cjkFallbacks
     )
+  const nodeKey = faceStyleKey(node)
 
   const baseTextStyle = {
     color: baseColor,
-    fontFamilies: fontFamilies(
-      node.fontFamily || DEFAULT_FONT_FAMILY,
-      node.fontWeight,
-      node.italic
-    ),
+    fontFamilies: fontFamilies(node.fontFamily || DEFAULT_FONT_FAMILY, node),
     fontSize: baseFontSize,
     locale: node.textLanguage ?? undefined,
     fontStyle: drawnFontStyle(
       ck,
       node.fontFamily || DEFAULT_FONT_FAMILY,
       node.fontWeight,
-      node.italic
+      node.italic,
+      nodeKey
     ),
     fontVariations: textFontVariations(
       drawnFontVariations({
         family: node.fontFamily || DEFAULT_FONT_FAMILY,
         weight: node.fontWeight,
         italic: node.italic,
+        style: nodeKey,
         fontSize: baseFontSize,
         variations: node.fontVariations,
         opticalSizeFromFontSize: node.opticalSizeFromFontSize

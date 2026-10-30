@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   faceLoadKey,
+  faceStyleKey,
+  namesWeight,
   normalizeFontFamily,
   standardStyleName,
   styleToWeight
@@ -103,5 +105,34 @@ describe('normalizeFontFamily', () => {
 
   test('does not strip size units in the middle', () => {
     expect(normalizeFontFamily('12pt Serif')).toBe('12pt Serif')
+  })
+})
+
+describe('faceStyleKey', () => {
+  const face = (fontWeight: number, fontStyle: string | null, italic = false) =>
+    faceStyleKey({ fontWeight, italic, fontStyle })
+
+  test('loads a face its weight already names by the weight, however its name is spelled', () => {
+    expect(face(600, null)).toBe('SemiBold')
+    expect(face(600, 'Semi Bold')).toBe('SemiBold')
+    expect(face(400, 'Italic', true)).toBe('Regular Italic')
+    expect(face(700, 'bold')).toBe('Bold')
+  })
+
+  test('loads a face its weight cannot pick by its own name', () => {
+    expect(face(350, 'Book')).toBe('Book')
+    expect(face(400, 'Roman')).toBe('Roman')
+    expect(face(800, 'Heavy')).toBe('Heavy')
+    expect(face(700, 'Condensed Bold')).toBe('Condensed Bold')
+    expect(face(450, 'Retina')).toBe('Retina')
+  })
+})
+
+describe('namesWeight', () => {
+  test('tells names of a weight and slant from names of a face of their own', () => {
+    for (const name of ['Regular', 'Italic', 'Regular Italic', 'Semi Bold', 'ExtraBold Italic'])
+      expect(namesWeight(name)).toBe(true)
+    for (const name of ['Book', 'Roman', 'Heavy', 'Oblique', 'Condensed Bold', 'Retina'])
+      expect(namesWeight(name)).toBe(false)
   })
 })

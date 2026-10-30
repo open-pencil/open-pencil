@@ -40,6 +40,8 @@ zip = { version = "2", default-features = false }
 which = "7.0.3"
 semver = "1"
 fontique = "0.11"
+# The same read-fonts fontique uses, to read each face's style names and named instances.
+read-fonts = "0.41"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch = "dev" }
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"

@@ -81,3 +81,41 @@ export function standardStyleName(weight: number, italic = false): string {
   if (!italic) return label
   return label === 'Regular' ? 'Italic' : `${label} Italic`
 }
+
+/** A style name compared without case or spaces, so "Semi Bold" and "SemiBold" name one face. */
+export function styleSpelling(style: string): string {
+  return style.toLowerCase().replace(/\s+/gu, '')
+}
+
+/**
+ * Whether `style` only names a weight and slant ("Bold Italic", "Semi Bold"), so any face of that
+ * weight is it; a name such as "Book" or "Condensed Bold" is one face of its own.
+ */
+export function namesWeight(style: string): boolean {
+  const { weight, italic } = parseFontStyle(style)
+  const spelling = styleSpelling(style)
+  return [faceLoadKey(weight, italic), standardStyleName(weight, italic)]
+    .map(styleSpelling)
+    .includes(spelling)
+}
+
+/** A face as text sets it: a weight and slant, and the name it was given, if any. */
+export interface NamedFace {
+  fontWeight: number
+  italic: boolean
+  fontStyle: string | null
+}
+
+/**
+ * The style a face loads and draws as. A name that only spells its weight and slant ("Semi Bold",
+ * "Italic") loads as the weight's key, so whichever font of the family draws that weight draws
+ * it; any other name ("Book", "Condensed Bold", "Retina") is a face the weight cannot pick, and
+ * it loads and draws by that name.
+ */
+export function faceStyleKey({ fontWeight, italic, fontStyle }: NamedFace): string {
+  const key = faceLoadKey(fontWeight, italic)
+  if (!fontStyle) return key
+  const spelling = styleSpelling(fontStyle)
+  const weightNames = [key, standardStyleName(fontWeight, italic)].map(styleSpelling)
+  return weightNames.includes(spelling) ? key : fontStyle
+}

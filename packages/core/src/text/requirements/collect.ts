@@ -1,20 +1,27 @@
 import { uniqBy } from 'es-toolkit/array'
 
 import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
 import { fontFallbackScriptForCharacter, type FontFallbackScript } from '#core/text/fallbacks'
 import type { FontFaceRef } from '#core/text/font/faces'
 
-/** The face a text draws in, or the face a style run over it draws in. */
-export function textFontFace(node: SceneNode, style: CharacterStyleOverride = {}): FontFaceRef {
+/**
+ * The face a text draws in, or the face a style run over it draws in, keyed as it loads: by its
+ * weight, or by its own name where the weight cannot pick it.
+ */
+export function textFontFace(
+  node: Pick<SceneNode, 'fontFamily' | 'fontWeight' | 'italic' | 'fontStyle'>,
+  style: CharacterStyleOverride = {}
+): FontFaceRef {
   const weight = style.fontWeight ?? (node.fontWeight || 400)
   const italic = style.italic ?? node.italic
   return {
     family: style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
-    style: faceLoadKey(weight, italic),
+    style: faceStyleKey({ fontWeight: weight, italic, fontStyle: rangeFontStyle(node, style) }),
     weight,
     italic
   }

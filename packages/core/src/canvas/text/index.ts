@@ -1,9 +1,9 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters, shownText } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
+import { textFontFace } from '#core/text/requirements/collect'
 import {
   fontCoverageDemand,
   fontFaceDemand,
@@ -42,12 +42,9 @@ function requiredNodeFaces(node: SceneNode): Array<{ family: string; style: stri
   const baseFamily = node.fontFamily || DEFAULT_FONT_FAMILY
   const faces = new Map<string, { family: string; style: string }>()
   const add = (family: string, style: string) => faces.set(`${family}\0${style}`, { family, style })
-  add(baseFamily, faceLoadKey(node.fontWeight, node.italic))
+  add(baseFamily, textFontFace(node).style)
   for (const run of node.styleRuns) {
-    const family = run.style.fontFamily ?? baseFamily
-    const weight = run.style.fontWeight ?? node.fontWeight
-    const italic = run.style.italic ?? node.italic
-    add(family, faceLoadKey(weight, italic))
+    add(run.style.fontFamily ?? baseFamily, textFontFace(node, run.style).style)
   }
   return Array.from(faces.values())
 }

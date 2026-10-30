@@ -124,10 +124,10 @@ function picked<T>(value: MixedValue<T>): T | '' {
         <PanelFieldGroup :label="panels.fontWeight">
           <AppSelect
             :label="panels.fontWeight"
-            :model-value="picked(ctx.merged('fontWeight'))"
-            :options="ctx.weights.value"
+            :model-value="picked(ctx.faceName.value)"
+            :options="ctx.faces.value"
             :placeholder="panels.mixed"
-            @update:model-value="ctx.actions.setWeight(+$event)"
+            @update:model-value="ctx.actions.setFace(String($event))"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.fontSize">

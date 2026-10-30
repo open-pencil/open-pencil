@@ -226,6 +226,8 @@ export interface EditorEvents extends SceneGraphEvents {
   'guides:changed': (ownerId: string, guides: readonly CanvasGuide[]) => void
   'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
   'font:resolution-changed': (event: FontResolutionEvent, snapshot: FontResolutionSnapshot) => void
+  /** A font face finished loading, however it was asked for. */
+  'font:loaded': (family: string, style: string) => void
   'viewport:changed': (
     viewport: { panX: number; panY: number; zoom: number },
     previous: { panX: number; panY: number; zoom: number }

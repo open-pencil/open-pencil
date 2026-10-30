@@ -5,7 +5,7 @@ import { FIXTURES } from '#core-tests/helpers/paths'
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { FontManager } from '@open-pencil/core/text'
+import { FontManager, facesFromStyles } from '@open-pencil/core/text'
 
 /** A font manager that asks no web provider, so a family's faces come from its catalog. */
 function offlineManager() {
@@ -28,7 +28,7 @@ function countingProvider() {
 test('a face lookup that outlives a new catalog does not overwrite what the catalog says', async () => {
   const manager = offlineManager()
   const before = manager.familyFaces('Oswald')
-  manager.setHostFontCatalog([{ family: 'Oswald', styles: ['Regular', 'Bold'] }])
+  manager.setHostFontCatalog([{ family: 'Oswald', faces: facesFromStyles(['Regular', 'Bold']) }])
   expect(await before).toBeNull()
   expect(manager.loadedFamilyFaces('Oswald')).toBeUndefined()
   expect(await manager.familyFaces('Oswald')).toEqual([
@@ -37,14 +37,16 @@ test('a face lookup that outlives a new catalog does not overwrite what the cata
   ])
 })
 
-test('names faces as each source can: local fonts by their own names, the rest as Google does', async () => {
+test('names faces as each source does: installed fonts by their own names, the rest as Google does', async () => {
   const manager = offlineManager()
-  // The desktop catalog lists generated names, so its italic takes the standard "Italic".
-  manager.setHostFontCatalog([{ family: 'Host Sans', styles: ['Regular Italic', 'SemiBold'] }])
-  expect(await manager.familyFaces('Host Sans')).toEqual([
-    { weight: 400, italic: true, style: 'Italic' },
-    { weight: 600, italic: false, style: 'SemiBold' }
-  ])
+  // The desktop catalog reads each face's name and weight from its font file.
+  const avenir = [
+    { style: 'Book', weight: 350, italic: false },
+    { style: 'Roman', weight: 400, italic: false },
+    { style: 'Oblique', weight: 400, italic: true }
+  ]
+  manager.setHostFontCatalog([{ family: 'Avenir', faces: avenir }])
+  expect(await manager.familyFaces('Avenir')).toEqual(avenir)
   // Bundled Inter names its instances as Google Fonts does.
   expect(await manager.familyFaces('Inter')).toContainEqual({
     weight: 400,
@@ -57,7 +59,7 @@ test('a new catalog tells listeners to ask for their families again', () => {
   const manager = offlineManager()
   let resets = 0
   const stop = manager.onFamilyFacesReset(() => resets++)
-  manager.setHostFontCatalog([{ family: 'Oswald', styles: ['Regular'] }])
+  manager.setHostFontCatalog([{ family: 'Oswald', faces: facesFromStyles(['Regular']) }])
   stop()
   manager.setHostFontCatalog([])
   expect(resets).toBe(1)

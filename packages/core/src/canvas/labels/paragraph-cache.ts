@@ -26,7 +26,11 @@ export interface LabelFontOptions {
 
 /** Semibold labels are section titles, drawn in their own face; the rest in Inter. */
 function labelFontFamilies(weight: number): string[] {
-  const families = resolveParagraphFontFamilies(DEFAULT_FONT_FAMILY, faceLoadKey(weight))
+  const families = resolveParagraphFontFamilies(DEFAULT_FONT_FAMILY, {
+    weight,
+    italic: false,
+    style: faceLoadKey(weight)
+  })
   return weight >= 600 ? [SECTION_TITLE_FONT_FAMILY, ...families] : families
 }
 

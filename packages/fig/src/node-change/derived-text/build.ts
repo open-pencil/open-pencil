@@ -2,7 +2,8 @@ import { groupBy } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { CharacterStyleOverride, DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
-import { normalizeFontFamily, faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey, normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
   hasTextList,
   lineHeightPixels,
@@ -88,7 +89,9 @@ function fontMetaData(
     fonts.push({
       key: { family: normalized, style: name, postscript: '' },
       fontLineHeight: 1.2,
-      fontDigest: digestMap.get(`${normalized}|${faceLoadKey(weight, italic)}`),
+      fontDigest: digestMap.get(
+        `${normalized}|${faceStyleKey({ fontWeight: weight, italic, fontStyle: rangeFontStyle(node, style) })}`
+      ),
       fontStyle: italic ? 'ITALIC' : 'NORMAL',
       fontWeight: weight
     })

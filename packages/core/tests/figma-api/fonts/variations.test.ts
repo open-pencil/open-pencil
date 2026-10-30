@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { FIXTURES } from '#core-tests/helpers/paths'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { fontManager } from '@open-pencil/core/text'
+import { facesFromStyles, fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 // Behaviour measured in live Figma (2026-10-25) with its variable Inter and Roboto Flex. These
@@ -152,7 +152,10 @@ describe('variable fonts in the plugin API', () => {
     const providers = fontManager.enabledOnlineFontProviders()
     fontManager.setOnlineFontProviders({})
     fontManager.setHostFontCatalog([
-      { family: 'Variations Load', styles: ['Regular', 'Bold', 'Regular Italic', 'Bold Italic'] }
+      {
+        family: 'Variations Load',
+        faces: facesFromStyles(['Regular', 'Bold', 'Regular Italic', 'Bold Italic'])
+      }
     ])
     const data = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
     fontManager.setHostFontLoader(async (family, style) => {

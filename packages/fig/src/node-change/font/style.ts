@@ -1,5 +1,10 @@
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { normalizeFontFamily, standardStyleName } from '@open-pencil/scene-graph/font-style'
+import {
+  normalizeFontFamily,
+  parseFontStyle,
+  standardStyleName
+} from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 
 /** The name a family's font gives its face at a weight and slant. */
@@ -39,4 +44,23 @@ export function figmaStyleName(
   const name =
     own ?? nameFace(family, style.fontWeight ?? node.fontWeight, style.italic ?? node.italic)
   return FIGMA_STYLE_NAMES[normalizeFontFamily(family)]?.[name] ?? name
+}
+
+/**
+ * The weight and slant of the face `fontName` names in `text`, as Figma saved them beside its
+ * glyphs (Avenir Book 350, Fira Code Retina 450, Roboto Condensed Bold 700); the name's own
+ * words where the file saved no glyphs.
+ */
+export function savedFace(
+  text: NodeChange,
+  fontName: { family: string; style: string }
+): { fontWeight: number; italic: boolean } {
+  const meta = text.derivedTextData?.fontMetaData?.find(
+    ({ key }) => key.family === fontName.family && key.style === fontName.style
+  )
+  if (meta?.fontWeight !== undefined) {
+    return { fontWeight: meta.fontWeight, italic: meta.fontStyle === 'ITALIC' }
+  }
+  const { weight, italic } = parseFontStyle(fontName.style)
+  return { fontWeight: weight, italic }
 }
