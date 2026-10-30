@@ -16,6 +16,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     transforming: false,
     measurementMode: 'off',
     editingTextId: null,
+    renamingLabelId: null,
     penState: null,
     penCursorX: null,
     penCursorY: null,

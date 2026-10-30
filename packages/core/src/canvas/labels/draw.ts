@@ -38,6 +38,7 @@ export function drawSectionTitles(
   if (sections.length === 0) return
 
   for (const { node, nested } of sections) {
+    if (node.id === overlays?.renamingLabelId) continue
     drawSectionTitle(r, canvas, provider, node, graph, nested, overlays)
   }
 }
@@ -143,6 +144,7 @@ export function drawComponentLabels(
   const compColor = r.compColor()
 
   for (const { node, inside } of components) {
+    if (node.id === overlays?.renamingLabelId) continue
     const transform = labelTransform(node, graph, overlays?.rotationPreview)
     const room = shownStatusState(graph, node) ? TITLE_STATUS_ROOM : 0
     const layout = labelLayout('component', node.width * r.zoom - room, inside)
@@ -233,6 +235,7 @@ export function drawFrameTitles(
     overlays?.rotationPreview
   )
   for (const { node } of frames) {
+    if (node.id === overlays?.renamingLabelId) continue
     const transform = frameLabelPlacement(node, graph, overlays?.rotationPreview)
     const room = shownStatusState(graph, node) ? TITLE_STATUS_ROOM : 0
     const layout = labelLayout('frame', transform.width * r.zoom - room)

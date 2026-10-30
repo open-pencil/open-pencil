@@ -152,6 +152,8 @@ export interface EditorViewState {
   transforming: boolean
   measurementMode: MeasurementMode
   editingTextId: string | null
+  /** The layer whose name a field over the canvas renames; the canvas leaves its title to the field. */
+  renamingLabelId: string | null
   penState: {
     vertices: VectorVertex[]
     segments: VectorSegment[]

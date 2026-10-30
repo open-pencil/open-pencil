@@ -83,6 +83,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setHoveredGuide',
   'setHoveredIssueMarker',
   'setLayoutInsertIndicator',
+  'setRenamingLabel',
   'setRotationPreview',
   'setSelectedGuide',
   'setShapeHandleHover',
