@@ -176,8 +176,6 @@ export function openRoomSession({
   /** Whether a tab that holds a stored document has given way to the room's copy of it. */
   let followsRoom = false
   let disposed = false
-  /** A rename made before this tab follows the room's copy, written to the room once it does. */
-  let heldBackName: string | null = null
 
   const status = computed(() =>
     deriveRoomStatus({
@@ -226,12 +224,6 @@ export function openRoomSession({
     if (awareness.getLocalState()?.hasFile !== hasDocument.value) {
       awareness.setLocalStateField('hasFile', hasDocument.value)
     }
-    if (heldBackName !== null && followsRoomCopy()) {
-      const name = heldBackName
-      heldBackName = null
-      publishName(name)
-      return
-    }
     const name = readRoomName(meta)
     if (hasDocument.value && name) store.state.documentName = name
   }
@@ -265,14 +257,12 @@ export function openRoomSession({
     }
   })
   meta.observe(refreshDocument)
-  const followsRoomCopy = () => hasDocument.value && readRoot(meta) === store.graph.rootId
+  // A rename reaches the room once the tab shows the room's copy; before that the room's name
+  // wins, as the room's other document data does when the tab starts following it.
   function publishName(name: string) {
-    if (disposed || store.state.readOnly) return
-    if (!followsRoomCopy()) {
-      heldBackName = name
-      return
-    }
-    if (name !== readRoomName(meta)) writeRoomName(meta, name)
+    if (disposed || store.state.readOnly || !hasDocument.value) return
+    if (readRoot(meta) !== store.graph.rootId || name === readRoomName(meta)) return
+    writeRoomName(meta, name)
   }
   const stopName = store.onDocumentRenamed(publishName).off
   awareness.on('change', updatePeers)
@@ -342,7 +332,6 @@ export function openRoomSession({
       documentSync.share()
       sync.syncAllNodesToYjs()
       variableSync.share()
-      heldBackName = null
       writeRoomName(meta, store.state.documentName)
       refreshDocument()
     },
