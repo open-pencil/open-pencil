@@ -177,6 +177,17 @@ describe('lines of mixed sizes', () => {
     expect(Math.ceil(empty.getHeight())).toBe(106)
   })
 
+  // Typing Enter at the end grows the box at once, and the caret starts the new line.
+  test('counts the empty line a closing newline makes', () => {
+    const closed = layOut({ text: 'abc\n' })
+    const open = layOut({ text: 'abc\nx' })
+    expect(Math.ceil(closed.getHeight())).toBe(Math.ceil(open.getHeight()))
+    const caret = expectDefined(closed.getCaretRect(4, false), 'caret after the newline')
+    const lineTwo = expectDefined(open.getCaretRect(4, false), 'caret before x')
+    expect(caret.x).toBe(lineTwo.x)
+    expect(caret.top).toBeCloseTo(lineTwo.top, 2)
+  })
+
   test('draws, selects, and hits each line where it is placed', () => {
     const layout = layOut({
       text: 'first line\nSmall LARGE',
