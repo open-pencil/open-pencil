@@ -37,6 +37,17 @@ describe('roundtrip: layer blend modes', () => {
         blendMode,
         fills: [
           { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode }
+        ],
+        strokes: [
+          {
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 1, a: 1 },
+            opacity: 1,
+            visible: true,
+            weight: 2,
+            align: 'INSIDE',
+            blendMode
+          }
         ]
       })
     }
@@ -48,5 +59,9 @@ describe('roundtrip: layer blend modes', () => {
     const children = reImported.getChildren(reImportedPage.id)
     expect(children.map((node) => node.blendMode)).toEqual(['LINEAR_BURN', 'LINEAR_DODGE'])
     expect(children.map((node) => node.fills[0].blendMode)).toEqual(['LINEAR_BURN', 'LINEAR_DODGE'])
+    expect(children.map((node) => node.strokes[0].blendMode)).toEqual([
+      'LINEAR_BURN',
+      'LINEAR_DODGE'
+    ])
   })
 })
