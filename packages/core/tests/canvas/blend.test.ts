@@ -63,7 +63,8 @@ function expectChannelsNear(actual: number[], expected: number[]) {
   expected.forEach((channel, index) => expect(Math.abs(actual[index] - channel)).toBeLessThan(2))
 }
 
-const LINEAR_DODGE = [204, 255, 230]
+// Live-measured in Figma: SOURCE over BACKDROP, opaque and at half opacity.
+const LINEAR_DODGE = [204, 255, 229]
 const LINEAR_BURN = [0, 51, 0]
 
 describe('linear blend modes, as Figma draws them', () => {
@@ -87,12 +88,12 @@ describe('linear blend modes, as Figma draws them', () => {
 
   test('a half transparent plus lighter fill mixes its sum with what is under it', () => {
     const halfDodge = { ...solid(SOURCE, 'LINEAR_DODGE'), opacity: 0.5 }
-    expectChannelsNear(renderCenter(overlay([halfDodge])), [179, 179, 140, 255])
+    expectChannelsNear(renderCenter(overlay([halfDodge])), [179, 204, 140, 255])
   })
 
-  test('a half transparent plus darker fill keeps an opaque backdrop opaque', () => {
+  test('a half transparent plus darker fill takes the overlap off the sum, not off the blend', () => {
     const halfBurn = { ...solid(SOURCE, 'LINEAR_BURN'), opacity: 0.5 }
-    expectChannelsNear(renderCenter(overlay([halfBurn])), [77, 77, 26, 255])
+    expectChannelsNear(renderCenter(overlay([halfBurn])), [51, 76, 12, 255])
   })
 
   test('a drop shadow blends the same way as a fill', () => {

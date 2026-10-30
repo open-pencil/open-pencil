@@ -6,26 +6,32 @@ import type { SkiaRenderer } from './renderer'
 
 type LinearBlendMode = 'LINEAR_BURN' | 'LINEAR_DODGE'
 
-const LINEAR_BLEND_TERMS: Record<LinearBlendMode, string> = {
-  LINEAR_BURN: 'max(src.rgb * dst.a + dst.rgb * src.a - src.a * dst.a, half3(0))',
-  LINEAR_DODGE: 'min(src.rgb * dst.a + dst.rgb * src.a, half3(src.a * dst.a))'
+/**
+ * Figma's plus darker and plus lighter, in premultiplied sRGB with source-over coverage: the sum
+ * less the overlap clamped at zero, and the sum clamped at the coverage (live-measured).
+ */
+const LINEAR_BLEND_COLORS: Record<LinearBlendMode, string> = {
+  LINEAR_BURN: 'max(src.rgb + dst.rgb - src.a * dst.a, half3(0))',
+  LINEAR_DODGE: 'min(src.rgb + dst.rgb, half3(alpha))'
 }
 
-function separableBlender(blended: string): string {
+function linearBlendSource(mode: LinearBlendMode): string {
   return `half4 main(half4 src, half4 dst) {
-  half3 blended = ${blended};
-  return half4(src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a) + blended, src.a + dst.a * (1 - src.a));
+  half alpha = src.a + dst.a * (1 - src.a);
+  return half4(${LINEAR_BLEND_COLORS[mode]}, alpha);
 }`
 }
 
-export function figmaBlendModeToSkia(ck: CanvasKit, mode?: BlendMode): SkBlendMode {
+export function figmaBlendModeToSkia(
+  ck: CanvasKit,
+  mode?: Exclude<BlendMode, LinearBlendMode>
+): SkBlendMode {
   switch (mode) {
     case 'DARKEN':
       return ck.BlendMode.Darken
     case 'MULTIPLY':
       return ck.BlendMode.Multiply
     case 'COLOR_BURN':
-    case 'LINEAR_BURN':
       return ck.BlendMode.ColorBurn
     case 'LIGHTEN':
       return ck.BlendMode.Lighten
@@ -33,8 +39,6 @@ export function figmaBlendModeToSkia(ck: CanvasKit, mode?: BlendMode): SkBlendMo
       return ck.BlendMode.Screen
     case 'COLOR_DODGE':
       return ck.BlendMode.ColorDodge
-    case 'LINEAR_DODGE':
-      return ck.BlendMode.Plus
     case 'OVERLAY':
       return ck.BlendMode.Overlay
     case 'SOFT_LIGHT':
@@ -66,31 +70,18 @@ export function setPaintBlendMode(r: SkiaRenderer, paint: Paint, mode?: BlendMod
   paint.setBlendMode(figmaBlendModeToSkia(r.ck, mode))
 }
 
+/** Skia has no blend mode for either: they are runtime blenders, compiled once per renderer. */
 function linearBlender(r: SkiaRenderer, mode: LinearBlendMode): Blender {
-  const cached = mode === 'LINEAR_BURN' ? r.linearBurnBlender : r.linearDodgeBlender
-  if (cached) {
-    return cached
-  }
-  const blender = compileLinearBlender(r, mode)
-  if (mode === 'LINEAR_BURN') {
-    r.linearBurnBlender = blender
-  } else {
-    r.linearDodgeBlender = blender
-  }
-  return blender
+  if (mode === 'LINEAR_BURN') return (r.linearBurnBlender ??= compileLinearBlender(r.ck, mode))
+  return (r.linearDodgeBlender ??= compileLinearBlender(r.ck, mode))
 }
 
-function compileLinearBlender(r: SkiaRenderer, mode: LinearBlendMode): Blender {
+function compileLinearBlender(ck: CanvasKit, mode: LinearBlendMode): Blender {
   let error = ''
-  const effect = r.ck.RuntimeEffect.MakeForBlender(
-    separableBlender(LINEAR_BLEND_TERMS[mode]),
-    (message) => {
-      error = message
-    }
-  )
-  if (!effect) {
-    throw new Error(`Cannot compile ${mode} blender: ${error}`)
-  }
+  const effect = ck.RuntimeEffect.MakeForBlender(linearBlendSource(mode), (message) => {
+    error = message
+  })
+  if (!effect) throw new Error(`Cannot compile ${mode} blender: ${error}`)
   const blender = effect.makeBlender([])
   effect.delete()
   return blender
