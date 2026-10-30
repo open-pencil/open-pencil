@@ -50,6 +50,18 @@ let resizedByHandle = false
 function markResized() {
   resizedByHandle = true
 }
+/** The keys a focused splitter handle resizes the panels with. */
+const SPLITTER_RESIZE_KEYS = new Set([
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+  'Home',
+  'End'
+])
+function markResizedByKey(event: KeyboardEvent) {
+  if (SPLITTER_RESIZE_KEYS.has(event.key)) markResized()
+}
 function saveResizedLayout(layout: number[]) {
   if (resizedByHandle) saveEditorLayout(layout)
 }
@@ -86,7 +98,7 @@ const { pending: roomPending } = useRoomActions()
       data-test-id="left-splitter-handle"
       :class="horizontalSplitterStyles.handle()"
       @dragging="markResized"
-      @keydown="markResized"
+      @keydown="markResizedByKey"
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
@@ -100,7 +112,7 @@ const { pending: roomPending } = useRoomActions()
     <SplitterResizeHandle
       :class="horizontalSplitterStyles.handle()"
       @dragging="markResized"
-      @keydown="markResized"
+      @keydown="markResizedByKey"
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
