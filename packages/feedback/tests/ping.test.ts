@@ -72,7 +72,7 @@ describe('ping', () => {
     ])
   })
 
-  test('counts pings per day by the network Cloudflare reports, never the address', async () => {
+  test('counts pings per day by the network and wording Cloudflare reports, never the address', async () => {
     const huawei = { asn: 136907, asOrganization: 'Huawei Cloud Singapore Region' }
     await service.postJSON('/ping', BUILD, { 'CF-Connecting-IP': '203.0.113.7' }, huawei)
     await service.postJSON('/ping', BUILD, {}, { ...huawei, asOrganization: 'Huawei-Cloud-SG' })
@@ -82,7 +82,7 @@ describe('ping', () => {
       .selectFrom('pingNetworks')
       .selectAll()
       .where('asn', '!=', 0)
-      .orderBy(['asn', 'app'])
+      .orderBy(['asn', 'app', 'name'])
       .execute()
     expect(networks).toEqual([
       { day: '2026-10-12', asn: 9299, app: 'web', platform: 'macos', name: '', count: 1 },
@@ -91,8 +91,16 @@ describe('ping', () => {
         asn: 136907,
         app: 'desktop',
         platform: 'macos',
+        name: 'Huawei Cloud Singapore Region',
+        count: 1
+      },
+      {
+        day: '2026-10-12',
+        asn: 136907,
+        app: 'desktop',
+        platform: 'macos',
         name: 'Huawei-Cloud-SG',
-        count: 2
+        count: 1
       }
     ])
     expect(JSON.stringify(networks)).not.toContain('203.0.113.7')

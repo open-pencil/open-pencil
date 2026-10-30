@@ -30,7 +30,7 @@ const rows = computed(() =>
     const pings = network.desktop + network.web
     return {
       asn: network.asn,
-      name: network.asn ? network.name : 'Not reported',
+      name: network.asn && network.name ? network.name : 'Not reported',
       pings,
       share: total ? pings / total : 0
     }

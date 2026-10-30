@@ -55,10 +55,9 @@ export async function recordPing(
       .insertInto('pingNetworks')
       .values({ day, ...network, app: ping.app, platform: ping.platform, count: 1 })
       .onConflict((conflict) =>
-        conflict.columns(['day', 'asn', 'app', 'platform']).doUpdateSet((eb) => ({
-          count: eb('pingNetworks.count', '+', 1),
-          name: eb.ref('excluded.name')
-        }))
+        conflict
+          .columns(['day', 'asn', 'app', 'platform', 'name'])
+          .doUpdateSet((eb) => ({ count: eb('pingNetworks.count', '+', 1) }))
       )
       .compile()
   ])

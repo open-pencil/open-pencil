@@ -221,8 +221,9 @@ describe('metrics snapshot API', () => {
   test('networks rank the range by pings under their commonest name', async () => {
     const counts = [
       ['2026-10-18', 9299, 'PLDT', 'desktop', 30],
-      ['2026-10-18', 136907, 'Huawei-Cloud-SG', 'desktop', 50],
-      ['2026-10-19', 136907, 'Huawei Cloud Singapore Region', 'desktop', 400],
+      ['2026-10-18', 136907, 'Huawei-Cloud-SG', 'desktop', 300],
+      ['2026-10-19', 136907, 'Huawei Cloud Singapore Region', 'desktop', 200],
+      ['2026-10-19', 136907, 'Huawei Cloud Singapore Region', 'web', 150],
       ['2026-10-19', 9299, 'PLDT', 'web', 20],
       ['2026-10-19', 0, '', 'desktop', 5]
     ] as const
@@ -242,9 +243,9 @@ describe('metrics snapshot API', () => {
 
     const { networks } = await snapshot()
     expect(networks).toEqual({
-      total: 505,
+      total: 705,
       top: [
-        { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 450, web: 0 },
+        { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 500, web: 150 },
         { asn: 9299, name: 'PLDT', desktop: 30, web: 20 },
         { asn: 0, name: '', desktop: 5, web: 0 }
       ]

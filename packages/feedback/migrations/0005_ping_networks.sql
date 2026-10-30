@@ -6,8 +6,9 @@ CREATE TABLE ping_networks (
   asn INTEGER NOT NULL,
   app TEXT NOT NULL,
   platform TEXT NOT NULL,
-  -- The operator's name as last reported; Cloudflare words it differently between requests.
+  -- The operator's name as reported; Cloudflare words it differently between requests, so each
+  -- wording keeps its own count and the dashboard names the network by the commonest.
   name TEXT NOT NULL,
   count INTEGER NOT NULL DEFAULT 0,
-  PRIMARY KEY (day, asn, app, platform)
+  PRIMARY KEY (day, asn, app, platform, name)
 ) WITHOUT ROWID;

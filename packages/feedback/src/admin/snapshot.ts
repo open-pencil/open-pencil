@@ -120,7 +120,10 @@ async function networks(db: Kysely<FeedbackDatabase>, range: MetricsQuery) {
     .map((network) => ({
       asn: network[0]?.asn ?? 0,
       // Cloudflare words an operator's name differently between requests; the commonest one names it.
-      name: maxBy(network, (row) => Number(row.pings))?.name ?? '',
+      name:
+        maxBy(Object.values(groupBy(network, (row) => row.name)), (wording) =>
+          sumBy(wording, (row) => Number(row.pings))
+        )?.[0]?.name ?? '',
       desktop: sumBy(network, (row) => (row.app === 'desktop' ? Number(row.pings) : 0)),
       web: sumBy(network, (row) => (row.app === 'web' ? Number(row.pings) : 0))
     }))
