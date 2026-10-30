@@ -105,6 +105,7 @@ export function createEditor(options?: EditorOptions) {
   void prefetchFigmaSchema()
 
   const state: EditorState = options?.state ?? createDefaultEditorState(_graph.getPages()[0].id)
+  state.documentKind = _graph.documentKind
 
   function emitEditorEvent<K extends EditorEventName>(
     event: K,
@@ -381,6 +382,7 @@ export function createEditor(options?: EditorOptions) {
     nodes.cancelNodePreviews()
     undo.discardBatches()
     _graph = newGraph
+    state.documentKind = _graph.documentKind
     pendingTextLayout.clear()
     subscribeToGraph()
     const previousPageId = state.currentPageId
@@ -529,6 +531,7 @@ export function createEditor(options?: EditorOptions) {
     setDocumentColorSpace: colorSpace.setDocumentColorSpace,
     updateEnabledLibraries: documentSettings.updateEnabledLibraries,
     refreshDocumentSettings: documentSettings.refreshDocumentSettings,
+    setDocumentKind: documentSettings.setDocumentKind,
     figCompression: figCompression.figCompression,
     setFigCompression: figCompression.setFigCompression,
 

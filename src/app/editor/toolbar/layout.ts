@@ -110,8 +110,8 @@ export type ToolbarItem =
 
 /**
  * The layout narrowed to the tools the editor's profile offers: the whole layout when it names
- * none, and otherwise only those tools, with no actions, as a read-only document keeps Move and
- * Hand in Figma.
+ * none, and otherwise every one of those tools, shown even where the layout hides them, with no
+ * actions, as a read-only document keeps Move and Hand in Figma and a board offers FigJam's tools.
  */
 export function toolbarLayoutFor(
   layout: ToolbarLayout,
@@ -122,7 +122,7 @@ export function toolbarLayoutFor(
     groups: layout.groups
       .map((group) => group.filter((entry) => !isToolbarAction(entry) && tools.has(entry)))
       .filter((group) => group.length > 0),
-    hidden: layout.hidden
+    hidden: []
   }
 }
 

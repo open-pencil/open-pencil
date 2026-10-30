@@ -28,6 +28,7 @@ import { markSourceFieldsEdited } from './source-metadata'
 import { invalidateTextCaches } from './text/picture'
 import type {
   DocumentColorSpace,
+  DocumentKind,
   EnabledLibraryBinding,
   NodeChangeObserver,
   NodeType,
@@ -57,6 +58,7 @@ export class SceneGraph {
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
   documentColorSpace: DocumentColorSpace = 'srgb'
+  documentKind: DocumentKind = 'design'
   enabledLibraries = new Map<string, EnabledLibraryBinding>()
   readonly emitter = new BufferedSceneEmitter()
   private absPosCache = new Map<string, Vector>()

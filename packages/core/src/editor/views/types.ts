@@ -1,4 +1,4 @@
-import type { Tool } from '#core/editor/types'
+import type { EditorState, Tool } from '#core/editor/types'
 
 /**
  * What the host takes away from every view, whatever the canvas shows: a read-only document, as
@@ -15,7 +15,8 @@ export interface EditorRestrictions {
 export type CanvasView = { id: 'edit' } | { id: 'play'; revision: number }
 
 /**
- * How the editor behaves for a canvas, resolved from its view. Front ends read these values
+ * How the editor behaves for a canvas, resolved from what the document is for and the view it
+ * shows. Front ends read these values
  * rather than asking which view is showing, so a new view is a new profile, not a new branch at
  * every place that behaves differently.
  */
@@ -42,4 +43,17 @@ export interface EditorProfile {
   edits: boolean
   /** The tools on offer, or null for every tool. */
   tools: ReadonlySet<Tool> | null
+  /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
+  toolKeys: Readonly<Partial<Record<string, Tool>>>
+  /**
+   * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas
+   * units: whole pixels in a design, FigJam's 16 on a board.
+   */
+  snapGrid: number
 }
+
+/** The state a profile resolves from: the document's kind, the pane's view, and the host's limits. */
+export type EditorProfileInputs = Pick<
+  EditorState,
+  'documentKind' | 'canvasView' | 'hostRestrictions'
+>

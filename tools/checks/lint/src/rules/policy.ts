@@ -152,16 +152,33 @@ function fixedKey(key: TSESTree.Node, computed: boolean): string | null {
 
 const CORE_PROFILE = ['/packages/core/src/editor/views/', '/packages/core/src/editor/state/']
 
+/** The app's own services, as opposed to its views and components. */
+function isAppService(file: string): boolean {
+  return file.includes('/src/app/') && !file.includes('/packages/')
+}
+
+/** Front ends: the Vue SDK, the app's views and components, and the docs site's theme. */
+function isFrontEnd(file: string): boolean {
+  return (
+    file.includes('/packages/vue/src/') ||
+    (!file.includes('/packages/') && file.includes('/src/') && !isAppService(file)) ||
+    file.includes('/packages/docs/.vitepress/theme/')
+  )
+}
+
 /**
  * What the editor profile resolves from, and the code that may read each: Core's views and state
- * own both, the read-only module applies the restrictions, and the app, as the host, sets them.
+ * own them all, the read-only module applies the restrictions, the app, as the host, sets them,
+ * and the document's kind is the graph's own field, which formats save; front ends read the
+ * profile instead.
  */
 const PROFILE_INPUTS: Record<string, (file: string) => boolean> = {
   canvasView: (file) => CORE_PROFILE.some((owner) => file.includes(owner)),
   hostRestrictions: (file) =>
     CORE_PROFILE.some((owner) => file.includes(owner)) ||
     file.includes('/packages/core/src/editor/read-only/') ||
-    (file.includes('/src/app/') && !file.includes('/packages/'))
+    isAppService(file),
+  documentKind: (file) => !isFrontEnd(file)
 }
 
 /** The fixed key a template member expression reads (`a.key`, `a['key']`), or null. */

@@ -1,6 +1,8 @@
 import { isEqual } from 'es-toolkit'
 
-import type { EnabledLibraryBinding } from '@open-pencil/scene-graph'
+import type { DocumentKind, EnabledLibraryBinding } from '@open-pencil/scene-graph'
+
+import { resolveEditorProfile } from '#core/editor/views'
 
 import type { EditorContext } from './types'
 
@@ -31,5 +33,19 @@ export function createDocumentSettingsActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
-  return { updateEnabledLibraries, refreshDocumentSettings }
+  /**
+   * Makes the document a design or a board, which decides the tools, keys, and grid the editor
+   * offers; a tool the new kind does not offer gives way to Move.
+   */
+  function setDocumentKind(kind: DocumentKind) {
+    if (ctx.graph.documentKind === kind) return
+    ctx.graph.documentKind = kind
+    ctx.state.documentKind = kind
+    const { tools } = resolveEditorProfile(ctx.state)
+    if (tools && !tools.has(ctx.state.activeTool)) ctx.setActiveTool('SELECT')
+    ctx.emitEditorEvent('document:kind-changed', kind)
+    ctx.requestRepaint()
+  }
+
+  return { updateEnabledLibraries, refreshDocumentSettings, setDocumentKind }
 }

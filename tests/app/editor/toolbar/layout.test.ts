@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolveEditorProfile } from '@open-pencil/core'
+import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@open-pencil/core'
+import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import {
   combineToolbarEntry,
@@ -21,7 +22,7 @@ import {
 import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
 
 const SHAPES: ToolbarEntry[] = ['RECTANGLE', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR']
-const SHORTCUTS = toolShortcutLabels('mac')
+const SHORTCUTS = toolShortcutLabels(TOOL_SHORTCUTS, 'mac')
 const LABELS = { ...SHORTCUTS }
 
 function layout(groups: ToolbarEntry[][], hidden: ToolbarEntry[] = []): ToolbarLayout {
@@ -243,8 +244,12 @@ describe('dragging', () => {
 })
 
 describe('toolbarLayoutFor', () => {
-  const profileTools = (readOnly: boolean) =>
-    resolveEditorProfile({ canvasView: { id: 'edit' }, hostRestrictions: { readOnly } }).tools
+  const profileTools = (readOnly: boolean, documentKind: DocumentKind = 'design') =>
+    resolveEditorProfile({
+      documentKind,
+      canvasView: { id: 'edit' },
+      hostRestrictions: { readOnly }
+    }).tools
 
   test('keeps the whole layout when the profile offers every tool', () => {
     const base = layout([['SELECT', 'HAND'], ['FRAME'], ['insert-icon']])
@@ -261,5 +266,35 @@ describe('toolbarLayoutFor', () => {
       ['SELECT', 'SELECT', 'HAND']
     ])
     expect(keys(DEFAULT_TOOLBAR_LAYOUT.groups)).toEqual([['SELECT'], ['HAND']])
+  })
+
+  test('shows every tool a board offers, even those the layout hides', () => {
+    const board = toolbarLayoutFor(DEFAULT_TOOLBAR_LAYOUT, profileTools(false, 'board'))
+    expect(
+      toolbarItems(board, LABELS, SHORTCUTS).map((item) => item.kind === 'tool' && item.tool.key)
+    ).toEqual([
+      'SELECT',
+      'SECTION',
+      'TEXT',
+      'STICKY',
+      'SHAPE_WITH_TEXT',
+      'CONNECTOR',
+      'HAND',
+      'COMMENT'
+    ])
+  })
+})
+
+describe('toolShortcutLabels', () => {
+  test('names each tool by the first key that picks it in the profile', () => {
+    const design = toolShortcutLabels(TOOL_SHORTCUTS, 'mac')
+    const board = toolShortcutLabels(BOARD_TOOL_SHORTCUTS, 'mac')
+    expect([
+      design.RECTANGLE,
+      design.STICKY,
+      board.RECTANGLE,
+      board.STICKY,
+      board.SHAPE_WITH_TEXT
+    ]).toEqual(['R', '', '', 'S', 'R'])
   })
 })

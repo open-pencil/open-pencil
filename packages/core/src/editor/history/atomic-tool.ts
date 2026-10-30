@@ -3,8 +3,7 @@ import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
 import type { Editor } from '#core/editor/create'
 import { ReadOnlyDocumentError } from '#core/editor/read-only'
-import type { EditorState } from '#core/editor/types'
-import { resolveEditorProfile } from '#core/editor/views'
+import { resolveEditorProfile, type EditorProfileInputs } from '#core/editor/views'
 import type { FigmaAPI } from '#core/figma-api'
 import { isAtomicTool, type ToolDef } from '#core/tools/schema'
 
@@ -17,7 +16,7 @@ type MutationEditor = Pick<
   Editor,
   'graph' | 'runLayoutForNode' | 'requestRender' | 'pushUndoStep'
 > & {
-  state: Pick<EditorState, 'canvasView' | 'hostRestrictions'>
+  state: EditorProfileInputs
 }
 
 function changes<T extends object>(

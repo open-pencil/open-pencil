@@ -1,8 +1,9 @@
 import { useEventListener } from '@vueuse/core'
+import { uniq } from 'es-toolkit'
 import { createKeybindingsHandler } from 'tinykeys'
 import type { KeyBindingMap } from 'tinykeys'
 
-import { resolveEditorProfile } from '@open-pencil/core'
+import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile } from '@open-pencil/core'
 import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
 import { editorCommandMetadata, type EditorCommandId } from '@open-pencil/vue/editor/commands'
 
@@ -153,10 +154,16 @@ function bindShortcut(
   for (const key of Array.isArray(keys) ? keys : [keys]) bindings[key] = run
 }
 
+/**
+ * Binds every key a design or a board picks a tool with; which tool a key picks, if any, comes
+ * from the editor profile's key map when it is pressed.
+ */
 function bindToolShortcuts(bindings: KeyBindingMap, options: KeyboardShortcutRunOptions) {
-  for (const [code, tool] of Object.entries(TOOL_SHORTCUTS)) {
-    if (!tool) continue
+  const codes = uniq([...Object.keys(TOOL_SHORTCUTS), ...Object.keys(BOARD_TOOL_SHORTCUTS)])
+  for (const code of codes) {
     bindings[code] = (event: KeyboardEvent) => {
+      const tool = resolveEditorProfile(options.store.state).toolKeys[code]
+      if (!tool) return
       event.preventDefault()
       options.spaceTool.resetToolBeforeSpace()
       options.store.setTool(tool)

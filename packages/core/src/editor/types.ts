@@ -2,6 +2,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import type {
   DocumentColorSpace,
+  DocumentKind,
   SceneGraph,
   SceneGraphEvents,
   SceneNode,
@@ -82,6 +83,8 @@ export interface EditorSharedState {
    * What the host takes away from every canvas, such as editing for a viewer or an earlier version;
    * read through `resolveEditorProfile`, set with `setReadOnly`.
    */
+  /** What the open document is for, as its graph records it; set with `setDocumentKind`. */
+  documentKind: DocumentKind
   hostRestrictions: EditorRestrictions
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
@@ -218,6 +221,7 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
+  'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void

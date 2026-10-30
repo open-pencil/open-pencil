@@ -30,13 +30,14 @@ const { menu } = useI18n()
 
 const toolLabels = useToolLabels()
 
-const toolShortcuts = toolShortcutLabels()
+const profile = computed(() => resolveEditorProfile(store.state))
+const toolShortcuts = computed(() => toolShortcutLabels(profile.value.toolKeys))
 const items = computed(() => {
   const layout = appPreferences.value.toolbar
   return toolbarItems(
-    toolbarLayoutFor(layout, resolveEditorProfile(store.state).tools),
+    toolbarLayoutFor(layout, profile.value.tools),
     toolLabels.value,
-    toolShortcuts
+    toolShortcuts.value
   )
 })
 const tools = computed(() =>

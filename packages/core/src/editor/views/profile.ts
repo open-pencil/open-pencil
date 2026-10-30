@@ -1,42 +1,57 @@
-import type { EditorState, Tool } from '#core/editor/types'
+import type { DocumentKind } from '@open-pencil/scene-graph'
 
-import type { CanvasView, EditorProfile, EditorRestrictions } from './types'
+import {
+  BOARD_GRID,
+  BOARD_TOOL_SHORTCUTS,
+  BOARD_TOOLS,
+  TOOL_SHORTCUTS
+} from '#core/editor/tool-registry'
+import type { Tool } from '#core/editor/types'
+
+import type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './types'
 
 export const EDIT_VIEW: CanvasView = { id: 'edit' }
 
 /** The tools a read-only document keeps, as Figma's toolbar shows while a version is viewed. */
 export const READ_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['SELECT', 'HAND'])
 
-const EDIT_PROFILE: EditorProfile = {
+/** What the document's kind decides: the tools and keys it offers and the grid it snaps to. */
+type DocumentBehaviour = Pick<EditorProfile, 'edits' | 'tools' | 'toolKeys' | 'snapGrid'>
+
+/** What the canvas's view decides: how the pointer, keys, chrome, and panels behave. */
+type ViewBehaviour = Omit<EditorProfile, keyof DocumentBehaviour>
+
+const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
+  design: { edits: true, tools: null, toolKeys: TOOL_SHORTCUTS, snapGrid: 1 },
+  board: { edits: true, tools: BOARD_TOOLS, toolKeys: BOARD_TOOL_SHORTCUTS, snapGrid: BOARD_GRID }
+}
+
+const EDIT_BEHAVIOUR: ViewBehaviour = {
   pointer: 'tools',
   shortcuts: 'all',
   editChrome: true,
   live: null,
   panels: true,
-  leaveTo: null,
-  edits: true,
-  tools: null
+  leaveTo: null
 }
 
 /** A preview runs the design: the canvas only pans, and its controls take the pointer. */
-function playProfile(revision: number): EditorProfile {
+function playBehaviour(revision: number): ViewBehaviour {
   return {
     pointer: 'pan',
     shortcuts: 'view',
     editChrome: false,
     live: { revision },
     panels: false,
-    leaveTo: EDIT_VIEW,
-    edits: true,
-    tools: null
+    leaveTo: EDIT_VIEW
   }
 }
 
-function viewProfile(view: CanvasView): EditorProfile {
-  return view.id === 'play' ? playProfile(view.revision) : EDIT_PROFILE
+function viewBehaviour(view: CanvasView): ViewBehaviour {
+  return view.id === 'play' ? playBehaviour(view.revision) : EDIT_BEHAVIOUR
 }
 
-/** Narrows a view's profile by the host's restrictions; a restriction only ever takes away. */
+/** Narrows a profile by the host's restrictions; a restriction only ever takes away. */
 function restrict(profile: EditorProfile, restrictions: EditorRestrictions): EditorProfile {
   if (!restrictions.readOnly) return profile
   const tools = profile.tools
@@ -46,11 +61,10 @@ function restrict(profile: EditorProfile, restrictions: EditorRestrictions): Edi
 }
 
 /**
- * The profile a canvas behaves by: its view's, narrowed by the host's restrictions. Pass the
- * pane's own state, since each pane shows its own view.
+ * The profile a canvas behaves by: what its document is for, then the view it shows, narrowed by
+ * the host's restrictions. Pass the pane's own state, since each pane shows its own view.
  */
-export function resolveEditorProfile(
-  state: Pick<EditorState, 'canvasView' | 'hostRestrictions'>
-): EditorProfile {
-  return restrict(viewProfile(state.canvasView), state.hostRestrictions)
+export function resolveEditorProfile(state: EditorProfileInputs): EditorProfile {
+  const profile = { ...DOCUMENT_BEHAVIOURS[state.documentKind], ...viewBehaviour(state.canvasView) }
+  return restrict(profile, state.hostRestrictions)
 }

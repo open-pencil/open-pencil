@@ -2,7 +2,12 @@ import { useRafFn, watchThrottled } from '@vueuse/core'
 import type { createRendererFromJSON } from 'shaders/core'
 import { onScopeDispose, watch } from 'vue'
 
-import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import {
+  resolveEditorProfile,
+  type Editor,
+  type EditorProfileInputs,
+  type EditorState
+} from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
@@ -85,10 +90,7 @@ export function useShaderPlayback(options: {
   editor: Editor
   getRenderer: () => SkiaRenderer | null
   /** The view this canvas draws: its pan, zoom, page, and whether it previews. */
-  getView: () => Pick<
-    EditorState,
-    'panX' | 'panY' | 'zoom' | 'currentPageId' | 'canvasView' | 'hostRestrictions'
-  >
+  getView: () => Pick<EditorState, 'panX' | 'panY' | 'zoom' | 'currentPageId'> & EditorProfileInputs
   getViewport: () => { width: number; height: number }
   markDirty: () => void
 }) {

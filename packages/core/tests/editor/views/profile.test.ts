@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, resolveEditorProfile } from '@open-pencil/core'
+import {
+  BOARD_TOOL_SHORTCUTS,
+  createEditor,
+  resolveEditorProfile,
+  TOOL_SHORTCUTS
+} from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('canvas view profiles', () => {
   test('an editing canvas takes every tool and shortcut and draws its chrome', () => {
@@ -13,7 +19,9 @@ describe('canvas view profiles', () => {
       panels: true,
       leaveTo: null,
       edits: true,
-      tools: null
+      tools: null,
+      toolKeys: TOOL_SHORTCUTS,
+      snapGrid: 1
     })
   })
 
@@ -28,7 +36,9 @@ describe('canvas view profiles', () => {
       panels: false,
       leaveTo: { id: 'edit' },
       edits: true,
-      tools: null
+      tools: null,
+      toolKeys: TOOL_SHORTCUTS,
+      snapGrid: 1
     })
   })
 
@@ -90,5 +100,55 @@ describe('host restrictions', () => {
     editor.setReadOnly(true)
     editor.setReadOnly(false)
     expect(resolveEditorProfile(editor.state)).toMatchObject({ edits: true, tools: null })
+  })
+})
+
+describe('document kinds', () => {
+  test('a board offers FigJam\'s tools and keys and snaps to its 16-unit grid', () => {
+    const editor = createEditor()
+    editor.setDocumentKind('board')
+    const profile = resolveEditorProfile(editor.state)
+    expect(profile.tools && [...profile.tools]).toEqual([
+      'SELECT',
+      'HAND',
+      'STICKY',
+      'SHAPE_WITH_TEXT',
+      'CONNECTOR',
+      'SECTION',
+      'TEXT',
+      'COMMENT'
+    ])
+    expect([profile.toolKeys, profile.snapGrid]).toEqual([BOARD_TOOL_SHORTCUTS, 16])
+  })
+
+  test('becoming a board drops a design tool, and refuses picking one', () => {
+    const editor = createEditor()
+    editor.setTool('RECTANGLE')
+    editor.setDocumentKind('board')
+    expect(editor.state.activeTool).toBe('SELECT')
+    editor.setTool('PEN')
+    expect(editor.state.activeTool).toBe('SELECT')
+    editor.setTool('STICKY')
+    expect(editor.state.activeTool).toBe('STICKY')
+  })
+
+  test('the kind belongs to the document, so a replaced graph brings its own', () => {
+    const editor = createEditor()
+    editor.setDocumentKind('board')
+    expect(editor.graph.documentKind).toBe('board')
+    editor.replaceGraph(new SceneGraph())
+    expect(editor.state.documentKind).toBe('design')
+  })
+
+  test('a read-only board keeps only Move and Hand of its tools', () => {
+    const editor = createEditor()
+    editor.setDocumentKind('board')
+    editor.setReadOnly(true)
+    const profile = resolveEditorProfile(editor.state)
+    expect([profile.edits, profile.tools && [...profile.tools], profile.snapGrid]).toEqual([
+      false,
+      ['SELECT', 'HAND'],
+      16
+    ])
   })
 })

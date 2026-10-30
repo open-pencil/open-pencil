@@ -35,7 +35,7 @@ export { resolvePasteTarget } from './clipboard/paste/target'
 export { playIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
 export { EDIT_VIEW, resolveEditorProfile } from './views'
-export type { CanvasView, EditorProfile, EditorRestrictions } from './views'
+export type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './views'
 export type { ShaderRasterizer } from './shaders/types'
 export type { ShaderPaintList } from './shaders/actions'
 export type { Editor } from './create'
@@ -54,7 +54,13 @@ export { resizedPathTextGlyphs } from './text/path-edit'
 export { opacityFromBuffer } from './nodes'
 export { layerTypeOptions, type LayerType } from './structure/layer-type'
 export type { NodePreview } from './node-preview'
-export { EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
+export {
+  BOARD_GRID,
+  BOARD_TOOL_SHORTCUTS,
+  BOARD_TOOLS,
+  EDITOR_TOOLS,
+  TOOL_SHORTCUTS
+} from './tool-registry'
 export type { RenameSelectionOptions, RenameSelectionPreview } from './structure/rename'
 export type { EditorToolDef } from './tool-registry'
 export type {

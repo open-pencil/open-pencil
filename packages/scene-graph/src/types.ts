@@ -44,6 +44,9 @@ export interface NodeChangeObserver {
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'
 
+/** What a document is for, as Figma keeps design files and FigJam boards apart. */
+export type DocumentKind = 'design' | 'board'
+
 export interface FigmaSourcePayload {
   rawSize: Vector | null
   rawTransform: Matrix | null

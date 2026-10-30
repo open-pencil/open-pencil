@@ -88,6 +88,23 @@ describe('no-editor-profile-inputs', () => {
     expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(0)
   })
 
+  const kind = "export const board = editor.state.documentKind === 'board'"
+
+  test.each(['packages/vue/src/canvas/useCanvasInput.ts', 'src/components/toolbar/Toolbar.ts'])(
+    'rejects reading the document kind in the front end %s',
+    async (path) => {
+      expect(ruleDiagnostics(await lint(kind, rules, path), rule)).toHaveLength(1)
+    }
+  )
+
+  test.each([
+    'packages/fig/src/archive.ts',
+    'packages/core/src/editor/document-settings.ts',
+    'src/app/editor/session/create.ts'
+  ])('accepts reading the document kind in %s, which keeps or saves it', async (path) => {
+    expect(ruleDiagnostics(await lint(kind, rules, path), rule)).toHaveLength(0)
+  })
+
   test('accepts reading the profile anywhere', async () => {
     const source = "export const panOnly = resolveEditorProfile(state).pointer === 'pan'"
     expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(0)
