@@ -4,6 +4,7 @@ import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-gr
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { mergeVectorNetworks } from '@open-pencil/scene-graph/vector-network'
 
 import { makeBooleanSourcePath, placedPath, windingRuleOf } from './boolean'
@@ -48,7 +49,7 @@ function nodesToVectorProps(
   }
 }
 
-function boundsOf(paths: Path[]): { x: number; y: number; width: number; height: number } | null {
+function boundsOf(paths: Path[]): Rect | null {
   if (paths.length === 0) return null
   const all = paths.map((path) => path.getBounds())
   const left = Math.min(...all.map((bounds) => bounds[0]))
@@ -59,11 +60,7 @@ function boundsOf(paths: Path[]): { x: number; y: number; width: number; height:
   return { x: left, y: top, width: right - left, height: bottom - top }
 }
 
-function networkIn(
-  renderer: SkiaRenderer,
-  path: Path,
-  box: { x: number; y: number }
-): VectorNetwork {
+function networkIn(renderer: SkiaRenderer, path: Path, box: Vector): VectorNetwork {
   const moved = placedPath(renderer, path, renderer.ck.Matrix.translated(-box.x, -box.y))
   const network = parseSVGPath(moved.toSVGString(), windingRuleOf(renderer, moved))
   moved.delete()
