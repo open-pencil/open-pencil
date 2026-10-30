@@ -15,6 +15,7 @@ import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import {
+  glyphOutlineSourceForDataSync,
   glyphOutlineSourceSync,
   shardCovers,
   type GlyphOutlineSource
@@ -84,10 +85,18 @@ function sourceStyle(family: string, font: ReturnType<typeof fontAt>): string | 
 
 /** The outline source of each font the paragraph may have drawn a character in, in its order. */
 function* candidateSources(font: ReturnType<typeof fontAt>) {
+  const variations = font.variations.some(({ axis }) => axis === 'wght')
+    ? font.variations
+    : [...font.variations, { axis: 'wght', value: font.drawn.weight }]
   for (const family of paragraphSourceFamilies(font.family)) {
     const style = sourceStyle(family, font)
-    const source = style ? glyphOutlineSourceSync(family, style, font.variations) : null
+    if (!style) continue
+    const source = glyphOutlineSourceSync(family, style, variations)
     if (source) yield source
+    for (const data of fontManager.shardData(family, style)) {
+      const shard = glyphOutlineSourceForDataSync(data, variations)
+      if (shard) yield shard
+    }
   }
 }
 

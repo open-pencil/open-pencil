@@ -24,37 +24,23 @@ export interface GlyphOutlineProbe {
   firstGlyphCommandSample: OutlineCommand[]
 }
 
-interface ParsedFontCacheEntry {
-  bytes: ArrayBuffer
-  font: HarfBuzzFont | null
-}
-
-const parsedFontCache = new Map<string, ParsedFontCacheEntry>()
-
-/** Shards of a style, read only to tell which one maps a character. */
-const shardFontCache = new WeakMap<ArrayBuffer, HarfBuzzFont | null>()
+const parsedFontCache = new WeakMap<ArrayBuffer, HarfBuzzFont | null>()
 
 /** Whether a shard of a style, one of `FontManager.shardData`'s files, maps `character`. */
 export function shardCovers(data: ArrayBuffer, character: string): boolean {
-  if (!isHarfBuzzLoaded()) return false
-  let parsed = shardFontCache.get(data)
-  if (parsed === undefined) {
-    parsed = harfBuzzFont(data)
-    shardFontCache.set(data, parsed)
-  }
+  const parsed = getParsedFontData(data)
   return parsed !== null && glyphIndex(parsed, character) !== 0
 }
 
 function getParsedFont(family: string, style: string): HarfBuzzFont | null {
-  if (!isHarfBuzzLoaded()) return null
-  const key = `${family}|${style}`
   const bytes = fontManager.loadedData(family, style)
-  if (!bytes) return null
-  const cached = parsedFontCache.get(key)
-  if (cached?.bytes === bytes) return cached.font
-  const font = harfBuzzFont(bytes)
-  parsedFontCache.set(key, { bytes, font })
-  return font
+  return bytes ? getParsedFontData(bytes) : null
+}
+
+function getParsedFontData(bytes: ArrayBuffer): HarfBuzzFont | null {
+  if (!isHarfBuzzLoaded()) return null
+  if (!parsedFontCache.has(bytes)) parsedFontCache.set(bytes, harfBuzzFont(bytes))
+  return parsedFontCache.get(bytes) ?? null
 }
 
 /** The glyph the font maps a character to, 0 (`.notdef`) when it has none. */
@@ -265,7 +251,16 @@ export function glyphOutlineSourceSync(
   style: string,
   variations: readonly FontVariation[] = []
 ): GlyphOutlineSource | null {
-  const parsed = getParsedFont(family, style)
+  const data = fontManager.loadedData(family, style)
+  return data ? glyphOutlineSourceForDataSync(data, variations) : null
+}
+
+/** Outlines from a paragraph's font file, including a coverage shard. */
+export function glyphOutlineSourceForDataSync(
+  data: ArrayBuffer,
+  variations: readonly FontVariation[] = []
+): GlyphOutlineSource | null {
+  const parsed = getParsedFontData(data)
   if (!parsed) return null
   const instance = fontInstance(parsed, variations)
   return {
