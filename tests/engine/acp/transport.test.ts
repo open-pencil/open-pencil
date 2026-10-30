@@ -6,7 +6,12 @@ import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
-import { agentTurnUsage, buildCrashChunks, formatConnectionError } from '@/app/ai/transports/acp'
+import {
+  agentTurnUsage,
+  buildCrashChunks,
+  promptBlocks,
+  formatConnectionError
+} from '@/app/ai/transports/acp'
 import { classifyToolState } from '@/components/chat/tool/state'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -357,5 +362,28 @@ describe('buildCrashChunks', () => {
       type: 'error',
       errorText: 'Agent process exited unexpectedly.'
     })
+  })
+})
+
+describe('promptBlocks', () => {
+  const message = {
+    id: 'm',
+    role: 'user',
+    parts: [
+      { type: 'text', text: 'hi' },
+      { type: 'file', mediaType: 'image/png', url: 'data:image/png;base64,QUJD' },
+      { type: 'file', mediaType: 'application/pdf', url: 'data:application/pdf;base64,QUJD' }
+    ]
+  } satisfies UIMessage
+
+  test('attaches image parts as image blocks when the agent takes images', () => {
+    expect(promptBlocks(message, 'hi', true)).toEqual([
+      { type: 'text', text: 'hi' },
+      { type: 'image', mimeType: 'image/png', data: 'QUJD' }
+    ])
+  })
+
+  test('sends text only when the agent does not take images', () => {
+    expect(promptBlocks(message, 'hi', false)).toEqual([{ type: 'text', text: 'hi' }])
   })
 })
