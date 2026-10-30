@@ -307,7 +307,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('new') ?? '$mod+KeyN',
       run: ({ createTab }) => createTab()
     },
-    { id: 'show-home', keys: '$mod+KeyT', run: ({ showHome }) => showHome() },
+    {
+      id: 'new-tab',
+      keys: appMenuTinykeysShortcut('new-tab') ?? '$mod+KeyT',
+      run: ({ openNewFileTab }) => openNewFileTab()
+    },
     {
       id: 'next-tab',
       keys: 'Control+Tab',

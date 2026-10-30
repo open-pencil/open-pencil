@@ -302,9 +302,16 @@ onUnmounted(() => {
     <RenameSelectionDialog />
     <CommandPalette />
     <TabBar />
-    <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentTab" />
+    <HomeWorkspace
+      v-show="activeTab && activeTab.kind !== 'document'"
+      @new-document="createDocumentTab"
+    />
     <CloudVersionDialog />
-    <EditorWorkspace v-if="shown && shown.tab.kind !== 'home'" :key="shown.key" :tab="shown.tab" />
+    <EditorWorkspace
+      v-if="shown && shown.tab.kind === 'document'"
+      :key="shown.key"
+      :tab="shown.tab"
+    />
     <LoadingScreen v-if="openingCloudLink" />
   </div>
 </template>

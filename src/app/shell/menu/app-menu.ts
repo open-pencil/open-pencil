@@ -109,7 +109,7 @@ export function useAppMenu() {
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
-    'new-board': 'newBoard',
+    'new-tab': 'newTab',
     open: 'open',
     'browse-files': 'browseFiles',
     'open-tour': 'openTour',
@@ -184,8 +184,8 @@ export function useAppMenu() {
     new: () => {
       void import('@/app/tabs').then((m) => m.createTab())
     },
-    'new-board': () => {
-      void import('@/app/tabs').then((m) => m.createDocumentTab('board'))
+    'new-tab': () => {
+      void import('@/app/tabs').then((m) => m.openNewFileTab())
     },
     open: () => void openFileDialog(),
     'browse-files': () => browseFiles(router),

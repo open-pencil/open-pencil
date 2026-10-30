@@ -67,7 +67,7 @@ test.describe('on a phone', () => {
     await expect(search).not.toBeFocused()
     await expect(search).toHaveAttribute('placeholder', 'Search files…')
     await expect(page.getByTestId('home-open-file')).toBeVisible()
-    await expect(page.getByTestId('home-new-document')).toBeVisible()
+    await expect(page.getByTestId('home-new-design')).toBeVisible()
     await expect(page.getByTestId('recent-files-home')).toHaveJSProperty(
       'scrollWidth',
       await page.getByTestId('recent-files-home').evaluate((element) => element.clientWidth)
@@ -93,7 +93,7 @@ test('opens to the recent-files home and starts a new document', async ({ page }
   await expect(page.getByText('No recent files yet')).toBeVisible()
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 
-  await page.getByTestId('home-new-document').click()
+  await page.getByTestId('home-new-design').click()
 
   await expect(page.getByTestId('recent-files-home')).toBeHidden()
   const tab = page.getByTestId('tabbar-tab')
@@ -105,7 +105,7 @@ test('opens to the recent-files home and starts a new document', async ({ page }
 
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(2)
-  await expect(page.getByTestId('tabbar-tab').last()).toContainText('New tab')
+  await expect(page.getByTestId('tabbar-tab').last()).toContainText('New file')
   await expect(page.getByLabel('Search files…')).toBeFocused()
   await expect(page.getByTestId('tabbar-close')).toHaveCount(2)
 

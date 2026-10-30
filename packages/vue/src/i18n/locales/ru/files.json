@@ -25,6 +25,10 @@
   "searchFiles": "Поиск файлов…",
   "searchRecentAndStorageFiles": "Поиск в недавних файлах и хранилище…",
   "newDesign": "Новый дизайн",
+  "newFile": "Новый файл",
+  "createDesign": "Дизайн",
+  "createBoard": "Доска",
+  "createIn": "Создаётся в {place}",
   "noMatchingFiles": "Нет файлов по запросу «{query}».",
   "documentActions": "Действия с {name}",
   "deleteDocument": "Удалить",
@@ -32,6 +36,5 @@
   "deleteDocumentDescription": "Документ будет удалён для всех, кто может его открыть. Это действие нельзя отменить.",
   "deleteDocumentFailed": "Не удалось удалить «{name}». Попробуйте ещё раз.",
   "saveAsPrompt": "Сохранить как:",
-  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться.",
-  "newDesignIn": "Новый дизайн в {place}"
+  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться."
 }

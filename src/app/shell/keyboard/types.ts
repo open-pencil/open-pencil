@@ -24,7 +24,8 @@ export type KeyboardShortcutOptions = {
   openFileDialog: () => void
   closeActiveTab: () => void
   createTab: () => void
-  showHome: () => void
+  /** Opens a New file tab, as Figma's ⌘T does. */
+  openNewFileTab: () => void
   switchAdjacentTab: (step: 1 | -1) => void
 }
 

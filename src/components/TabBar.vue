@@ -6,7 +6,7 @@ import { computed, useTemplateRef, watch } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { animationsEnabled } from '@/app/shell/motion'
-import { useTabsStore, createTab } from '@/app/tabs'
+import { openNewFileTab, useTabsStore } from '@/app/tabs'
 import PreparationIndicator from '@/components/preparation/tab/PreparationIndicator.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -46,11 +46,11 @@ const modelValue = computed({
   set: (id: string) => switchTab(id)
 })
 
-/** A new design in a tab of its own, as Figma's + does; Home stays pinned first. */
+/** A New file tab, as Figma's + opens: what to create, and the recent files. */
 function createNewTab(event: MouseEvent): void {
   event.preventDefault()
   if (event.currentTarget instanceof HTMLElement) event.currentTarget.blur()
-  createTab()
+  openNewFileTab()
 }
 
 function onMiddleClick(e: MouseEvent, tabId: string, isHome: boolean) {
@@ -100,12 +100,18 @@ function onClose(e: MouseEvent, tabId: string) {
             <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
             <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
             <icon-lucide-file v-else :class="baseStyles.icon()" />
-            <span v-if="!tab.isHome" :class="baseStyles.label()">{{ tab.name }}</span>
+            <span v-if="!tab.isHome" :class="baseStyles.label()">{{
+              tab.isNewFile ? files.newFile : tab.name
+            }}</span>
             <Tip v-if="tab.isDirty" :label="files.unsavedChanges" side="bottom">
               <span role="img" :aria-label="files.unsavedChanges" :class="baseStyles.dirtyDot()" />
             </Tip>
           </TabsTrigger>
-          <Tip v-if="!tab.isHome" :label="files.closeTab({ name: tab.name })" side="bottom">
+          <Tip
+            v-if="!tab.isHome"
+            :label="files.closeTab({ name: tab.isNewFile ? files.newFile : tab.name })"
+            side="bottom"
+          >
             <button
               type="button"
               data-test-id="tabbar-close"
@@ -136,11 +142,11 @@ function onClose(e: MouseEvent, tabId: string) {
       <icon-lucide-chevron-right v-if="overflowEnd" :class="baseStyles.scrollIcon()" />
       <icon-lucide-chevron-left v-else :class="baseStyles.scrollIcon()" />
     </button>
-    <Tip :label="files.newDesign" side="bottom">
+    <Tip :label="files.newFile" side="bottom">
       <button
         type="button"
         data-test-id="tabbar-new"
-        :aria-label="files.newDesign"
+        :aria-label="files.newFile"
         :class="baseStyles.newTab()"
         @click="createNewTab"
       >

@@ -9,7 +9,7 @@ export const menuMessageDefaults = {
   text: 'Text',
 
   new: 'New',
-  newBoard: 'New board',
+  newTab: 'New tab',
   open: 'Open…',
   browseFiles: 'Browse files…',
   openTour: 'Open the Tour',

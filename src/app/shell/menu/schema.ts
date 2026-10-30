@@ -81,7 +81,7 @@ export const APP_MENU_SCHEMA = [
     paletteIcon: 'file',
     items: [
       { id: 'new', label: 'New', shortcut: 'MOD+N' },
-      { id: 'new-board', label: 'New Board' },
+      { id: 'new-tab', label: 'New Tab', shortcut: 'MOD+T' },
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
       { id: 'open-recent', label: 'Open Recent', target: 'native' },
       { id: 'browse-files', label: 'Browse Files…', handler: 'shell' },

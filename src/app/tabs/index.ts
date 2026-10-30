@@ -46,7 +46,11 @@ import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 import { readStorageDocument } from '@/app/tabs/open/storage'
 
-export type TabKind = 'home' | 'document'
+/**
+ * Home, pinned first; a New file tab, which offers what to create and the recent files, as
+ * Figma's ⌘T and + do, and becomes the document picked there; or a document.
+ */
+export type TabKind = 'home' | 'new-file' | 'document'
 
 export interface Tab {
   id: string
@@ -75,6 +79,7 @@ export const allTabs = computed(() =>
     id: t.id,
     name: t.store.state.documentName,
     isHome: t.kind === 'home',
+    isNewFile: t.kind === 'new-file',
     isDirty: t.kind === 'document' && t.store.hasUnsavedChanges(),
     isPreparing: t.store.state.preparation !== null,
     preparationProgress: t.store.state.preparation?.progress ?? null,
@@ -112,9 +117,27 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   return tab
 }
 
-/** Opens an empty document of this kind in a tab of its own: a design, or a board. */
+/**
+ * Opens an empty document of this kind: a design or a board. Picked in a New file tab, it takes
+ * that tab's place; otherwise it gets a tab of its own.
+ */
 export function createDocumentTab(kind: DocumentKind): Tab {
-  return createTab(undefined, createDocumentGraph(kind))
+  const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
+  const tab = createTab(undefined, createDocumentGraph(kind))
+  if (picker) {
+    const rest = tabsRef.value.filter((entry) => entry !== tab)
+    tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))
+    disposeTabStore(picker.store)
+  }
+  return tab
+}
+
+/** Opens a New file tab, as Figma's + and ⌘T do. */
+export function openNewFileTab(): Tab {
+  const tab: Tab = { id: generateTabId(), store: createEditorStore(), kind: 'new-file' }
+  tabsRef.value = [...tabsRef.value, tab]
+  activateTab(tab)
+  return tab
 }
 
 /**
@@ -201,6 +224,11 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
 
   const closingTab = tabsRef.value[idx]
   if (closingTab.kind === 'home') return
+  // A New file tab holds no document to save or recover.
+  if (closingTab.kind === 'new-file') {
+    removeTab(closingTab)
+    return
+  }
   const choice = unsaved
     ? await confirmDocumentClose(closingTab.store, async () => unsaved)
     : await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
