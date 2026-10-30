@@ -5,6 +5,7 @@ import { aiMessages } from '@open-pencil/vue/i18n'
 
 import { showChatPanel } from '@/app/ai/chat/panel'
 import type { EditorStore } from '@/app/editor/session'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { notify, type NotificationEvent } from '@/app/shell/notifications'
 import { getTabForStore, switchTab } from '@/app/tabs'
 
@@ -44,7 +45,8 @@ async function replyPreview(message: UIMessage): Promise<string> {
 
 /**
  * Notifies about the chat of `store`'s document, titled with who replied and where; a click shows
- * that tab's chat.
+ * that tab's chat, with the panels the person may have hidden. A document whose tab closed has no
+ * chat to show, so it sends nothing, and a click after its tab closed does nothing.
  */
 function notifyChat(
   event: NotificationEvent,
@@ -52,16 +54,18 @@ function notifyChat(
   agent: string,
   body: string
 ): void {
-  const tabId = getTabForStore(store)?.id ?? null
+  const tabId = getTabForStore(store)?.id
+  if (!tabId) return
   notify({
     event,
     title: aiMessages.get().notifyTitle({ agent, document: store.state.documentName }),
     body,
     tabId,
     // One per tab, so an agent that keeps working replaces its last notification.
-    tag: `agent:${tabId ?? 'none'}`,
+    tag: `agent:${tabId}`,
     open: () => {
-      if (tabId) switchTab(tabId)
+      if (!switchTab(tabId)) return
+      store.state.showUI = true
       showChatPanel()
     }
   })
@@ -78,6 +82,8 @@ export async function notifyReplyEnded(
     notifyChat('agentFailed', store, agent, messages.notifyReplyFailed)
     return
   }
+  // The preview loads a Markdown parser, which a reply nobody asked to hear about does not need.
+  if (!appPreferences.value.notifications.agentFinished) return
   const preview = await replyPreview(message)
   notifyChat('agentFinished', store, agent, preview || messages.notifyReplyFinished)
 }

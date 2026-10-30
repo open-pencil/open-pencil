@@ -45,7 +45,7 @@ async function shownNotifications(page: Page) {
 
 async function turnOnInSettings(page: Page, label: string) {
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
-  await page.getByTestId('settings-section-notifications').click()
+  await page.getByRole('tab', { name: 'Notifications' }).click()
   await page.getByTestId('settings-notifications').getByRole('switch', { name: label }).click()
   await page.getByTestId('app-settings-done').click()
 }
@@ -70,7 +70,12 @@ test('a finished reply notifies only when turned on and away, and its click show
   await expect
     .poll(() => shownNotifications(page))
     .toEqual([
-      { title: 'OpenRouter · Untitled', body: 'Second', tag: expect.stringMatching(/^agent:/) }
+      {
+        // The title names who replied and where.
+        title: expect.stringMatching(/OpenRouter.*Untitled/),
+        body: 'Second',
+        tag: expect.stringMatching(/^agent:/)
+      }
     ])
 
   // Markdown reads as its text, without tables, task boxes, code ticks, or link targets.
@@ -92,6 +97,13 @@ test('a finished reply notifies only when turned on and away, and its click show
   await chat.designTab.click()
   await page.evaluate(() => document.dispatchEvent(new Event('notification-click')))
   await expect(chatDocument).toHaveAttribute('aria-selected', 'true')
+  await expect(chat.chatTab).toHaveAttribute('aria-selected', 'true')
+
+  // With the panels hidden, the click shows them again.
+  await chat.designTab.click()
+  await page.keyboard.press('ControlOrMeta+Backslash')
+  await expect(chat.chatTab).toBeHidden()
+  await page.evaluate(() => document.dispatchEvent(new Event('notification-click')))
   await expect(chat.chatTab).toHaveAttribute('aria-selected', 'true')
 })
 
@@ -116,5 +128,12 @@ test('a failed reply notifies when turned on, but not while its chat is in view'
   await chat.submit('Use the expired key again')
   await expect
     .poll(() => shownNotifications(page))
-    .toEqual([expect.objectContaining({ body: 'The AI reply stopped with an error.' })])
+    .toEqual([
+      {
+        title: expect.stringMatching(/OpenRouter.*Untitled/),
+        // A failure is announced as one, not quoted from the reply.
+        body: expect.not.stringContaining('expired key'),
+        tag: expect.stringMatching(/^agent:/)
+      }
+    ])
 })

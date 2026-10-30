@@ -26,15 +26,6 @@ const failed = notificationPreference('agentFailed')
     <template #description>{{
       IS_TAURI ? `${ai.notificationsHint} ${ai.notificationsSystemHint}` : ai.notificationsHint
     }}</template>
-    <AppAlert
-      v-if="browserNotificationPermission === 'denied'"
-      tone="warning"
-      :heading="ai.notificationsBlocked"
-    />
-    <AppAlert
-      v-else-if="browserNotificationPermission === 'unsupported'"
-      :heading="ai.notificationsUnsupported"
-    />
     <SettingsGroup>
       <SettingsRow
         v-if="browserNotificationPermission === 'default'"
@@ -59,5 +50,14 @@ const failed = notificationPreference('agentFailed')
         <AppSwitch v-model="failed" :label="ai.notifyFailed" />
       </SettingsRow>
     </SettingsGroup>
+    <AppAlert
+      v-if="browserNotificationPermission === 'denied'"
+      tone="warning"
+      :heading="ai.notificationsBlocked"
+    />
+    <AppAlert
+      v-else-if="browserNotificationPermission === 'unsupported'"
+      :heading="ai.notificationsUnsupported"
+    />
   </SettingsSection>
 </template>

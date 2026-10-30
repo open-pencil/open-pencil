@@ -21,8 +21,13 @@ export interface AppNotification {
   open: () => void
 }
 
-/** Notifications the desktop shell showed, by id, kept to open them when clicked. */
+/**
+ * Notifications the desktop shell showed, by id, kept to open them when clicked. macOS and Windows
+ * do not report a dismissed one, so only the latest are kept; an older one brings the window
+ * forward when clicked, as the system does for any notification of the app.
+ */
 const shownOnDesktop = new Map<number, () => void>()
+const DESKTOP_CLICKS_KEPT = 50
 /** Browser notifications still shown, closed once the person is back in the window. */
 const shownInBrowser = new Set<Notification>()
 let desktopClicks: Promise<void> | null = null
@@ -71,15 +76,25 @@ async function showOnDesktop(notification: AppNotification): Promise<void> {
   const { sendNotification } = await import('@tauri-apps/plugin-notification')
   const id = randomInt()
   shownOnDesktop.set(id, notification.open)
+  for (const old of shownOnDesktop.keys()) {
+    if (shownOnDesktop.size <= DESKTOP_CLICKS_KEPT) break
+    shownOnDesktop.delete(old)
+  }
   sendNotification({ id, title: notification.title, body: notification.body })
 }
 
 function showInBrowser(notification: AppNotification): void {
   if (browserNotificationPermission.value !== 'granted') return
-  const shown = new Notification(notification.title, {
-    body: notification.body,
-    tag: notification.tag
-  })
+  let shown: Notification
+  try {
+    shown = new Notification(notification.title, {
+      body: notification.body,
+      tag: notification.tag
+    })
+  } catch {
+    // Mobile browsers show notifications only through a service worker and throw here.
+    return
+  }
   if (!closesOnReturn) {
     closesOnReturn = true
     // What a notification reports is in view once the window is, so it no longer needs one.
