@@ -1,24 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
+import { propertyBinding } from '#fig-tests/helpers/component-props'
 import { guid } from '#fig-tests/helpers/guid'
 import { createDocumentReader } from '#fig/document/read'
 
-import type { NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 const SHOW_ICON = guid(10)
 
-function visibilityBinding(): VariableConsumptionEntry {
-  return {
-    variableField: 'VISIBLE',
-    variableData: {
-      value: { propRefValue: { defId: SHOW_ICON } },
-      dataType: 'PROP_REF',
-      resolvedDataType: 'BOOLEAN'
-    }
-  }
-}
-
-function iconShownWhenHidden(parameterEntries?: VariableConsumptionEntry[]): boolean | undefined {
+/** Whether the icon an instance hides through a boolean property still draws. */
+function iconShownWhenHidden(binding: Partial<NodeChange>): boolean | undefined {
   const changes: NodeChange[] = [
     {
       guid: guid(1),
@@ -34,8 +25,7 @@ function iconShownWhenHidden(parameterEntries?: VariableConsumptionEntry[]): boo
       name: 'Icon',
       parentIndex: { guid: guid(1), position: '!' },
       visible: true,
-      componentPropRefs: [{ defID: SHOW_ICON, componentPropNodeField: 'VISIBLE' }],
-      ...(parameterEntries ? { parameterConsumptionMap: { entries: parameterEntries } } : {})
+      ...binding
     },
     { guid: guid(3), type: 'CANVAS' },
     {
@@ -50,16 +40,23 @@ function iconShownWhenHidden(parameterEntries?: VariableConsumptionEntry[]): boo
   return card.children[0].properties.visible
 }
 
+const LEGACY_REF = { componentPropRefs: [{ defID: SHOW_ICON, componentPropNodeField: 'VISIBLE' }] }
+
+// Figma reads a layer's property bindings from its parameter map only (live-verified).
 describe('component property references', () => {
   test('a property binding in the parameter map drives the layer', () => {
-    expect(iconShownWhenHidden([visibilityBinding()])).toBe(false)
+    expect(iconShownWhenHidden({ ...LEGACY_REF, ...propertyBinding(SHOW_ICON, 'VISIBLE') })).toBe(
+      false
+    )
   })
 
-  test('a reference the parameter map no longer carries is stale', () => {
-    expect(iconShownWhenHidden([])).toBe(true)
+  test('a legacy reference the parameter map no longer carries is stale', () => {
+    expect(iconShownWhenHidden({ ...LEGACY_REF, parameterConsumptionMap: { entries: [] } })).toBe(
+      true
+    )
   })
 
-  test('a legacy reference drives the layer when the record has no parameter map', () => {
-    expect(iconShownWhenHidden()).toBe(false)
+  test('a legacy reference without a parameter map is stale too', () => {
+    expect(iconShownWhenHidden(LEGACY_REF)).toBe(true)
   })
 })

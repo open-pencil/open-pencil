@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { propertyBinding } from '#fig-tests/helpers/component-props'
 import { guid } from '#fig-tests/helpers/guid'
 import { createDocumentReader } from '#fig/document/read'
 
@@ -26,7 +27,7 @@ test('inherits parent definition semantics without replacing local property iden
       type: 'INSTANCE',
       parentIndex: { guid: guid(2), position: '!' },
       symbolData: { symbolID: guid(4) },
-      componentPropRefs: [{ defID: guid(11), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+      ...propertyBinding(guid(11), 'OVERRIDDEN_SYMBOL_ID')
     },
     { guid: guid(4), type: 'SYMBOL', name: 'Default' },
     { guid: guid(5), type: 'SYMBOL', name: 'Replacement' },

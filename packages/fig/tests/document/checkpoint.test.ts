@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { propertyBinding } from '#fig-tests/helpers/component-props'
 import { guid } from '#fig-tests/helpers/guid'
 import { checkpointComponent, restoreComponentCheckpoint } from '#fig/document/component/checkpoint'
 import { interpretComponent } from '#fig/instance-overrides/interpret'
@@ -50,7 +51,7 @@ test('checkpoint recovery keeps the effective fill of a swapped instance on a la
       parentIndex: { guid: guid(4), position: '!' },
       fillPaints: paint(1),
       symbolData: { symbolID: guid(2) },
-      componentPropRefs: [{ defID: guid(90), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+      ...propertyBinding(guid(90), 'OVERRIDDEN_SYMBOL_ID')
     },
     {
       guid: guid(6),
