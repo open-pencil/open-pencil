@@ -213,7 +213,6 @@
   "chatActions": "对话操作",
   "continueChat": "继续",
   "chatSettings": "聊天",
-  "notifications": "通知",
   "notificationsHint": "仅在 OpenPencil 处于后台或显示其他文档时发送。",
   "notifyNeedsInput": "智能体需要你处理",
   "notifyNeedsInputHint": "一个权限请求已等待几秒仍未回复。",

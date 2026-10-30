@@ -14,7 +14,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { ai } = useI18n()
+const { ai, settings } = useI18n()
 const needsInput = notificationPreference('agentNeedsInput')
 const finished = notificationPreference('agentFinished')
 const failed = notificationPreference('agentFailed')
@@ -22,7 +22,7 @@ const failed = notificationPreference('agentFailed')
 
 <template>
   <SettingsSection data-test-id="settings-notifications">
-    <template #title>{{ ai.notifications }}</template>
+    <template #title>{{ settings.notifications }}</template>
     <template #description>{{
       IS_TAURI ? `${ai.notificationsHint} ${ai.notificationsSystemHint}` : ai.notificationsHint
     }}</template>

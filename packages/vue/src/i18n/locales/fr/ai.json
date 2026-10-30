@@ -213,7 +213,6 @@
   "chatActions": "Actions de la discussion",
   "continueChat": "Continuer",
   "chatSettings": "Discussion",
-  "notifications": "Notifications",
   "notificationsHint": "Uniquement quand OpenPencil est en arrière-plan ou affiche un autre document.",
   "notifyNeedsInput": "Un agent a besoin de vous",
   "notifyNeedsInputHint": "Une demande d’autorisation attend une réponse depuis quelques secondes.",

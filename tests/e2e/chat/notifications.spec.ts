@@ -45,7 +45,7 @@ async function shownNotifications(page: Page) {
 
 async function turnOnInSettings(page: Page, label: string) {
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
-  await page.getByTestId('settings-section-ai').click()
+  await page.getByTestId('settings-section-notifications').click()
   await page.getByTestId('settings-notifications').getByRole('switch', { name: label }).click()
   await page.getByTestId('app-settings-done').click()
 }

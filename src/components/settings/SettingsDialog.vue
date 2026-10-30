@@ -3,6 +3,7 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import { AlertDialogCancel, DialogClose } from 'reka-ui'
 import { computed, type Component } from 'vue'
 import IconActivity from '~icons/lucide/activity'
+import IconBell from '~icons/lucide/bell'
 import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
 import IconCloud from '~icons/lucide/cloud'
@@ -80,6 +81,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'editor', label: settings.value.editor, icon: IconPenTool },
       { value: 'fonts', label: settings.value.fonts, icon: IconType },
       { value: 'storage', label: settings.value.storage, icon: IconDatabase },
+      { value: 'notifications', label: settings.value.notifications, icon: IconBell },
       ...(CLOUD_INCLUDED
         ? [{ value: 'cloud' as const, label: settings.value.cloud, icon: IconCloud }]
         : [])
@@ -202,6 +204,9 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="storage" as-child>
         <StorageSettingsPanel />
       </AppTabsContent>
+      <AppTabsContent value="notifications" as-child>
+        <SettingsPage><NotificationSettingsSection /></SettingsPage>
+      </AppTabsContent>
       <AppTabsContent v-if="CLOUD_INCLUDED" value="cloud" as-child>
         <CloudSettingsSection />
       </AppTabsContent>
@@ -209,7 +214,6 @@ function onOpenChange(open: boolean): void {
         <section class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-ai-panel">
           <ModelsPanel>
             <ChatSettingsSection />
-            <NotificationSettingsSection />
           </ModelsPanel>
         </section>
       </AppTabsContent>

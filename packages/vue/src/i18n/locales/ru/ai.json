@@ -213,7 +213,6 @@
   "chatActions": "Действия с чатом",
   "continueChat": "Продолжить",
   "chatSettings": "Чат",
-  "notifications": "Уведомления",
   "notificationsHint": "Только когда OpenPencil в фоне или показывает другой документ.",
   "notifyNeedsInput": "Агенту нужен ваш ответ",
   "notifyNeedsInputHint": "Запрос разрешения несколько секунд ждёт ответа.",

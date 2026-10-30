@@ -213,7 +213,6 @@
   "chatActions": "会話の操作",
   "continueChat": "続ける",
   "chatSettings": "チャット",
-  "notifications": "通知",
   "notificationsHint": "OpenPencil がバックグラウンドにあるか、別のドキュメントを表示しているときだけ送ります。",
   "notifyNeedsInput": "エージェントが応答を待っているとき",
   "notifyNeedsInputHint": "許可のリクエストが数秒間応答されていないとき。",

@@ -5,7 +5,6 @@ import { i18n } from '#vue/i18n/create'
 export const aiMessageDefaults = {
   jumpToLatest: 'Jump to latest',
   chatSettings: 'Chat',
-  notifications: 'Notifications',
   notificationsHint: 'Sent only while OpenPencil is in the background or shows another document.',
   notifyNeedsInput: 'An agent needs you',
   notifyNeedsInputHint: 'A permission request has waited a few seconds without an answer.',
