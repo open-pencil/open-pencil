@@ -434,6 +434,107 @@ describe('a vector boolean operand', () => {
   })
 })
 
+function insideStrokedSquareWithTail(graph: SceneGraph, hostId: string) {
+  const operation = graph.createNode('BOOLEAN_OPERATION', hostId, {
+    x: 120,
+    y: 70,
+    width: SIZE,
+    height: SIZE,
+    booleanOperation: 'UNION',
+    fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: true }]
+  })
+  const zero = { x: 0, y: 0 }
+  const edge = (start: number, end: number) => ({
+    start,
+    end,
+    tangentStart: zero,
+    tangentEnd: zero
+  })
+  graph.createNode('VECTOR', operation.id, {
+    width: SIZE,
+    height: SIZE,
+    fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: false }],
+    strokes: [
+      { type: 'SOLID', color: RED, opacity: 1, visible: true, weight: WEIGHT, align: 'INSIDE' }
+    ],
+    strokeWeight: WEIGHT,
+    strokeAlign: 'INSIDE',
+    vectorNetwork: {
+      vertices: [...box(0, 0, SIZE, SIZE), [SIZE, SIZE + 40] as const].map(([x, y]) => ({ x, y })),
+      segments: [edge(0, 1), edge(1, 2), edge(2, 3), edge(3, 0), edge(2, 4)],
+      regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
+    }
+  })
+}
+
+function openOperandPath(cornerRadius: number) {
+  const graph = new SceneGraph()
+  const operation = graph.createNode('BOOLEAN_OPERATION', graph.getPages()[0].id, {
+    width: SIZE,
+    height: SIZE,
+    booleanOperation: 'UNION',
+    cornerRadius,
+    fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: true }]
+  })
+  const zero = { x: 0, y: 0 }
+  graph.createNode('VECTOR', operation.id, {
+    width: SIZE,
+    height: SIZE,
+    fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: true }],
+    vectorNetwork: {
+      vertices: box(0, 0, SIZE, SIZE)
+        .slice(0, 3)
+        .map(([x, y]) => ({ x, y })),
+      segments: [
+        { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
+        { start: 1, end: 2, tangentStart: zero, tangentEnd: zero }
+      ],
+      regions: []
+    }
+  })
+  return withFreshRenderer((fresh) =>
+    expectDefined(makeBooleanOperationPath(fresh, operation, graph))
+  )
+}
+
+function overlappingRegionsPathWithoutUnions() {
+  const graph = new SceneGraph()
+  unionWithOverlappingNetworkRegions(graph, graph.getPages()[0].id)
+  const operation = expectDefined(graph.getNode(graph.getPages()[0].childIds[0]))
+  const pathOps = spyOn(ck.Path, 'MakeFromOp').mockReturnValue(null)
+  try {
+    return withFreshRenderer((fresh) =>
+      expectDefined(makeBooleanOperationPath(fresh, operation, graph))
+    )
+  } finally {
+    pathOps.mockRestore()
+  }
+}
+
+describe('a vector boolean operand whose regions do not unite', () => {
+  test('keeps every region of its outline', () => {
+    const path = overlappingRegionsPathWithoutUnions()
+    expect([path.contains(20, 20), path.contains(140, 140)]).toEqual([true, true])
+    path.delete()
+  })
+})
+
+describe('a vector boolean operand with a region and a loose segment', () => {
+  test('strokes the loose segment on its centre line', () => {
+    expect(renderRow(ck, renderer, insideStrokedSquareWithTail, 250, 270, 290)).toEqual([
+      0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0
+    ])
+  })
+})
+
+describe('a rounded boolean operation of a single open path', () => {
+  test('fills the path with its corner rounded', () => {
+    const path = openOperandPath(20)
+    expect([path.contains(SIZE - 10, 10), path.contains(SIZE - 1, 1)]).toEqual([true, false])
+    path.delete()
+  })
+})
+
 const BLUE_CHANNEL = 2
 
 function strokedUnion(align: Stroke['align']) {

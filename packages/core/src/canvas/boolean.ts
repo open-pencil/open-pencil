@@ -46,14 +46,15 @@ export function canMakeBooleanSourceNode(node: SceneNode, graph: SceneGraph): bo
   })
 }
 
-function unitedPath(r: SkiaRenderer, regions: Path[]): Path {
+function unitedPath(r: SkiaRenderer, regions: Path[]): Path | null {
   let merged = regions[0].copy()
   for (let index = 1; index < regions.length; index++) {
     const union = r.ck.Path.MakeFromOp(merged, regions[index], r.ck.PathOp.Union)
-    if (union) {
-      merged.delete()
-      merged = union
+    merged.delete()
+    if (!union) {
+      return null
     }
+    merged = union
   }
   const winding = merged.makeAsWinding()
   if (!winding) {
@@ -105,11 +106,47 @@ function strokeSourcePath(r: SkiaRenderer, node: SceneNode): Path | null {
   if (!network || network.length === 0) {
     return baseShapePath(r, node)
   }
+  return joinedPath(r, network)
+}
+
+function joinedPath(r: SkiaRenderer, parts: Path[]): Path {
   const path = new r.ck.PathBuilder()
-  for (const part of network) {
+  for (const part of parts) {
     path.addPath(part)
   }
   return path.detachAndDelete()
+}
+
+interface VectorStrokeSides {
+  fill: Path
+  regions: Path
+  looseSegments: Path | null
+}
+
+function addVectorStrokeOutlines(
+  r: SkiaRenderer,
+  target: PathBuilder,
+  outline: Path,
+  node: SceneNode,
+  fill: Path
+): void {
+  const regionCount = node.vectorNetwork?.regions.length ?? 0
+  const parts = regionCount > 0 ? r.getVectorPaths(node) : null
+  if (!parts || parts.length <= regionCount) {
+    addVisibleStrokeOutlines(r, target, outline, node, {
+      fill,
+      regions: outline,
+      looseSegments: null
+    })
+    return
+  }
+  const regions = joinedPath(r, parts.slice(0, regionCount))
+  addVisibleStrokeOutlines(r, target, outline, node, {
+    fill,
+    regions,
+    looseSegments: parts[regionCount]
+  })
+  regions.delete()
 }
 
 export function nodeHasVisibleFill(node: SceneNode): boolean {
@@ -163,24 +200,39 @@ function addVisibleStrokeOutlines(
   target: PathBuilder,
   source: Path,
   node: SceneNode,
-  vectorFill: Path | null
+  vectorSides: VectorStrokeSides | null
 ): void {
   for (const stroke of node.strokes) {
     if (!stroke.visible || stroke.weight <= 0) continue
     const side = strokeSide(node, stroke)
-    if (vectorFill && side !== 'CENTER') {
-      const sharedArea = vectorStrokeArea(r, source, node, stroke.weight, side, vectorFill)
-      if (sharedArea) {
-        target.addPath(sharedArea)
-        sharedArea.delete()
-      }
+    if (vectorSides && side !== 'CENTER') {
+      addSidedVectorStroke(r, target, node, stroke.weight, side, vectorSides)
       continue
     }
-    const area = strokeArea(r, source, stroke.weight, side)
-    if (!area) continue
-    target.addPath(area)
-    area.delete()
+    addOwnedPath(target, strokeArea(r, source, stroke.weight, side))
   }
+}
+
+function addSidedVectorStroke(
+  r: SkiaRenderer,
+  target: PathBuilder,
+  node: SceneNode,
+  weight: number,
+  side: Stroke['align'],
+  sides: VectorStrokeSides
+): void {
+  addOwnedPath(target, vectorStrokeArea(r, sides.regions, node, weight, side, sides.fill))
+  if (sides.looseSegments) {
+    addOwnedPath(target, strokeArea(r, sides.looseSegments, weight, 'CENTER'))
+  }
+}
+
+function addOwnedPath(target: PathBuilder, path: Path | null): void {
+  if (!path) {
+    return
+  }
+  target.addPath(path)
+  path.delete()
 }
 
 function vectorStrokeArea(
@@ -293,8 +345,11 @@ export function makeBooleanSourcePath(
   if (nodeHasVisibleFill(node)) {
     combined.addPath(savedFill ?? outline)
   }
-  const vectorFill = node.type === 'VECTOR' ? (savedFill ?? outline) : null
-  addVisibleStrokeOutlines(r, combined, outline, node, vectorFill)
+  if (node.type === 'VECTOR') {
+    addVectorStrokeOutlines(r, combined, outline, node, savedFill ?? outline)
+  } else {
+    addVisibleStrokeOutlines(r, combined, outline, node, null)
+  }
   savedFill?.delete()
   outline.delete()
   return combined.detachAndDelete()
@@ -371,7 +426,9 @@ function combinedOperands(r: SkiaRenderer, node: SceneNode, operands: Path[]): P
 }
 
 function withRoundedCorners(r: SkiaRenderer, path: Path, radius: number): Path {
-  const { vertices, segments, regions } = parseSVGPath(path.toSVGString())
+  const { vertices, segments, regions } = parseSVGPath(path.toSVGString(), 'NONZERO', {
+    includeOpenRegions: true
+  })
   const rounded = new r.ck.PathBuilder()
   for (const region of regions) {
     for (const loop of region.loops) {
