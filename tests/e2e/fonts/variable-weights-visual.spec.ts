@@ -163,3 +163,24 @@ test('a face named apart from its weight draws at the named instance of that nam
   expect(result.readiness).toEqual(['ready', 'ready', 'ready'])
   expect(Buffer.from(result.image)).toMatchSnapshot('variable-font-named-instance.png')
 })
+
+test('a list marker draws in its item’s face, named apart from its weight too', async ({
+  page
+}) => {
+  await openEditor(page)
+
+  // The number follows the face of its item's first character, as Figma draws it.
+  const list = { textParagraphs: [{ listType: 'ORDERED' as const, indentation: 1 }] }
+  const heavy = { fontWeight: 850, fontStyle: 'Display Heavy' }
+  const result = await exportLines(
+    page,
+    [
+      { text: 'Display Heavy item', ...list, styleRuns: [{ start: 0, length: 18, style: heavy }] },
+      { text: 'Regular item', ...list }
+    ],
+    { file: 'InterVariable-Named.ttf', family: 'Inter Named', styles: ['Regular'] }
+  )
+
+  expect(result.readiness).toEqual(['ready', 'ready'])
+  expect(Buffer.from(result.image)).toMatchSnapshot('variable-font-named-list-marker.png')
+})

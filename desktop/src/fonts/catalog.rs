@@ -119,9 +119,10 @@ pub fn listed_faces(traits: &FaceTraits, names: &FaceNames) -> Vec<ListedFace> {
 /// weight's face, as before faces had names; any other name is that face or none.
 pub fn choose_named_face(faces: &[(FaceTraits, FaceNames)], style: &str) -> Option<usize> {
     let wanted = spelling(style);
-    let named = faces.iter().position(|(_, names)| {
-        names.style.as_deref().map(spelling) == Some(wanted.clone()) && names.instances.is_empty()
-    });
+    // A variable font's own face is listed beside its instances, so it loads by its name too.
+    let named = faces
+        .iter()
+        .position(|(_, names)| names.style.as_deref().map(spelling) == Some(wanted.clone()));
     let instance = || {
         faces.iter().position(|(_, names)| {
             names
@@ -292,6 +293,20 @@ mod tests {
         let faces = [(face(400.0, false), variable)];
         assert_eq!(choose_named_face(&faces, "Condensed Bold"), Some(0));
         assert_eq!(choose_named_face(&faces, "Condensed Black"), None);
+    }
+
+    #[test]
+    fn loads_a_variable_face_by_its_own_name_beside_its_instances() {
+        let variable = FaceNames {
+            style: Some("Text".to_string()),
+            instances: vec![NamedInstance {
+                name: "Display".to_string(),
+                weight: Some(400.0),
+            }],
+        };
+        let faces = [(face(400.0, false), variable)];
+        assert_eq!(choose_named_face(&faces, "Text"), Some(0));
+        assert_eq!(choose_named_face(&faces, "Display"), Some(0));
     }
 
     #[test]

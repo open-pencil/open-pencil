@@ -9,6 +9,9 @@ use read_fonts::{FontRef, TableProvider};
 const WINDOWS_PLATFORM: u16 = 3;
 /// US English, on the Windows platform.
 const ENGLISH: u16 = 0x0409;
+/// The Macintosh platform, and English on it.
+const MAC_PLATFORM: u16 = 1;
+const MAC_ENGLISH: u16 = 0;
 const WEIGHT_AXIS: Tag = Tag::new(b"wght");
 
 /// A named instance of a variable font, with the weight it is drawn at.
@@ -34,9 +37,14 @@ fn name_string(name: &Name, id: NameId) -> Option<String> {
         .iter()
         .filter(|record| record.name_id() == id)
         .collect();
-    records.sort_by_key(|record| {
-        !(record.platform_id() == WINDOWS_PLATFORM && record.language_id() == ENGLISH)
-    });
+    // Windows English, then Mac English, then the rest, each in table order.
+    records.sort_by_key(
+        |record| match (record.platform_id(), record.language_id()) {
+            (WINDOWS_PLATFORM, ENGLISH) => 0,
+            (MAC_PLATFORM, MAC_ENGLISH) => 1,
+            _ => 2,
+        },
+    );
     records.iter().find_map(|record| {
         let text = record.string(data).ok()?.to_string();
         let text = text.trim();
@@ -191,6 +199,19 @@ mod tests {
             &[],
         );
         assert_eq!(face_names(&data, 0).style.as_deref(), Some("Book"));
+    }
+
+    #[test]
+    fn reads_the_mac_english_record_before_another_language() {
+        let data = font(
+            &[
+                record(WINDOWS_ENGLISH, 17, ""),
+                record((3, 1, 0x0407), 17, "Fett"),
+                record(MAC_ROMAN, 17, "Bold"),
+            ],
+            &[],
+        );
+        assert_eq!(face_names(&data, 0).style.as_deref(), Some("Bold"));
     }
 
     #[test]

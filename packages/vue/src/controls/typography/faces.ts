@@ -37,10 +37,18 @@ export function useFamilyFaces(nodes: ComputedRef<SceneNode[]>) {
     return fontManager.offersFace(node.fontFamily, weight, italic)
   }
 
-  /** Whether a layer's family has a face of this name, or nothing says it has not. */
+  /**
+   * Whether a layer's family has a face of this name in the layer's slant, which choosing it
+   * keeps, or nothing says it has not.
+   */
   function offersStyle(node: SceneNode, style: string): boolean {
     const faces = fontManager.loadedFamilyFaces(node.fontFamily)
-    return !faces || faces.some((face) => styleSpelling(face.style) === styleSpelling(style))
+    return (
+      !faces ||
+      faces.some(
+        (face) => face.italic === node.italic && styleSpelling(face.style) === styleSpelling(style)
+      )
+    )
   }
 
   /**

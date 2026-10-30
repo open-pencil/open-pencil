@@ -218,6 +218,33 @@ test('italic does nothing on a family without italics, and bold goes to Bold', a
   expect(texts[0].fontWeight).toBe(700)
 })
 
+test('offers a face only where every selected layer has it in its own slant', async () => {
+  const family = 'Slant Sans'
+  fontManager.setHostFontCatalog([
+    ...CATALOG,
+    {
+      family,
+      faces: [
+        { style: 'Regular', weight: 400, italic: false },
+        { style: 'Black', weight: 900, italic: false },
+        { style: 'Italic', weight: 400, italic: true }
+      ]
+    }
+  ])
+  try {
+    const { faces } = styled(
+      { fontWeight: 400, fontFamily: family },
+      { fontWeight: 400, italic: true, fontFamily: family }
+    )
+    await fontManager.familyFaces(family)
+    await nextTick()
+    // Black exists only upright, so choosing it would turn the italic layer upright.
+    expect(faces.value.map((face) => face.value)).not.toContain('Black')
+  } finally {
+    fontManager.setHostFontCatalog(CATALOG)
+  }
+})
+
 test('the style list follows a font catalog that arrives after the first lookup', async () => {
   const { faces, stop } = styled({ fontWeight: 400, fontFamily: 'Late Sans' })
   await fontManager.familyFaces('Late Sans')
