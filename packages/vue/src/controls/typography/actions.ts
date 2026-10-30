@@ -247,7 +247,8 @@ export function createTypographyActions({
       'Change font style',
       ['fontWeight', 'italic', 'fontStyle'],
       async (target) => {
-        const face = faceForStyle(target.fontFamily, style)
+        // The menu lists the faces of the layer's slant, so a name in both slants is that one.
+        const face = faceForStyle(target.fontFamily, style, target.italic)
         const fields = { fontWeight: face.weight, italic: face.italic, fontStyle: face.style }
         await options.fontLoader?.load(target.fontFamily, faceStyleKey(fields))
         return { ...fields, fontVariations: styleFontVariations(target) }

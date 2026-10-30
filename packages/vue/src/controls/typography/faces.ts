@@ -7,12 +7,6 @@ import { styleSpelling } from '@open-pencil/scene-graph/font-style'
 
 import { TYPOGRAPHY_WEIGHTS } from '#vue/controls/typography/weights'
 
-/** A face the style menu offers: its name, which is also what choosing it sets. */
-export interface FaceOption {
-  value: string
-  label: string
-}
-
 /**
  * The faces of the selected text layers' families, read as they arrive. A family whose faces are
  * not known yet, or cannot be, offers every weight, as Figma shows a generic style list for a
@@ -56,7 +50,8 @@ export function useFamilyFaces(nodes: ComputedRef<SceneNode[]>) {
    * standard weight. The faces the layers are set in stay listed, by the layers' own names, so
    * the field still names one their family lacks or a file spells its own way.
    */
-  const faces = computed<FaceOption[]>(() => {
+  // Each option's value is the face's name, which is also what choosing it sets.
+  const faces = computed(() => {
     void arrived.value
     const first = nodes.value.at(0)
     if (!first) return []

@@ -25,21 +25,23 @@ pub struct FaceNames {
     pub instances: Vec<NamedInstance>,
 }
 
-/// The string a name record holds for `id`: the Windows English record first, then any record.
+/// The string a name record holds for `id`: the Windows English record first, then the others
+/// in their order, skipping any that is blank or cannot be read.
 fn name_string(name: &Name, id: NameId) -> Option<String> {
     let data = name.string_data();
-    let records: Vec<_> = name
+    let mut records: Vec<_> = name
         .name_record()
         .iter()
         .filter(|record| record.name_id() == id)
         .collect();
-    let preferred = records
-        .iter()
-        .find(|record| record.platform_id() == WINDOWS_PLATFORM && record.language_id() == ENGLISH)
-        .or_else(|| records.first())?;
-    let text = preferred.string(data).ok()?.to_string();
-    let text = text.trim();
-    (!text.is_empty()).then(|| text.to_string())
+    records.sort_by_key(|record| {
+        !(record.platform_id() == WINDOWS_PLATFORM && record.language_id() == ENGLISH)
+    });
+    records.iter().find_map(|record| {
+        let text = record.string(data).ok()?.to_string();
+        let text = text.trim();
+        (!text.is_empty()).then(|| text.to_string())
+    })
 }
 
 /// The names of the face at `index` in `data`: its typographic subfamily (name ID 17), else its

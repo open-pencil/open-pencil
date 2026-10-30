@@ -87,25 +87,31 @@ pub struct ListedFace {
 /// font, at its weight, else the face's own style name. A face whose font names it nothing takes
 /// the standard name of its weight.
 pub fn listed_faces(traits: &FaceTraits, names: &FaceNames) -> Vec<ListedFace> {
-    if !names.instances.is_empty() {
-        return names
-            .instances
-            .iter()
-            .map(|instance| ListedFace {
-                style: instance.name.clone(),
-                weight: instance.weight.unwrap_or(traits.weight),
-                italic: traits.italic,
-            })
-            .collect();
+    let mut faces: Vec<ListedFace> = names
+        .instances
+        .iter()
+        .map(|instance| ListedFace {
+            style: instance.name.clone(),
+            weight: instance.weight.unwrap_or(traits.weight),
+            italic: traits.italic,
+        })
+        .collect();
+    // The face the file draws by default, unless one of its instances already names it.
+    let own = names
+        .style
+        .clone()
+        .unwrap_or_else(|| style_name(traits.weight, traits.italic));
+    if !faces
+        .iter()
+        .any(|face| spelling(&face.style) == spelling(&own))
+    {
+        faces.push(ListedFace {
+            style: own,
+            weight: traits.weight,
+            italic: traits.italic,
+        });
     }
-    vec![ListedFace {
-        style: names
-            .style
-            .clone()
-            .unwrap_or_else(|| style_name(traits.weight, traits.italic)),
-        weight: traits.weight,
-        italic: traits.italic,
-    }]
+    faces
 }
 
 /// Picks the face `style` names: the face of that name, or a variable face with an instance of
@@ -157,10 +163,11 @@ pub fn families() -> Vec<(String, Vec<ListedFace>)> {
                 let mut faces: Vec<ListedFace> = Vec::new();
                 for font in family.fonts() {
                     for face in listed_faces(&FaceTraits::of(font), &names_of(font)) {
-                        if !faces
-                            .iter()
-                            .any(|listed| spelling(&listed.style) == spelling(&face.style))
-                        {
+                        // An upright and an italic file may each name an instance "Bold".
+                        if !faces.iter().any(|listed| {
+                            spelling(&listed.style) == spelling(&face.style)
+                                && listed.italic == face.italic
+                        }) {
                             faces.push(face);
                         }
                     }
@@ -288,9 +295,25 @@ mod tests {
     }
 
     #[test]
+    fn keeps_a_variable_face_s_default_when_no_instance_names_it() {
+        let variable = FaceNames {
+            style: Some("Text".to_string()),
+            instances: vec![NamedInstance {
+                name: "Display".to_string(),
+                weight: Some(400.0),
+            }],
+        };
+        let styles: Vec<String> = listed_faces(&face(400.0, false), &variable)
+            .into_iter()
+            .map(|listed| listed.style)
+            .collect();
+        assert_eq!(styles, ["Display", "Text"]);
+    }
+
+    #[test]
     fn lists_a_variable_face_by_its_instances_and_a_static_one_by_its_name() {
         let variable = FaceNames {
-            style: Some("Regular".to_string()),
+            style: Some("Retina".to_string()),
             instances: vec![NamedInstance {
                 name: "Retina".to_string(),
                 weight: Some(450.0),

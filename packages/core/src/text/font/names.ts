@@ -49,14 +49,19 @@ function instanceFace(family: string, style: string): FamilyFace | null {
 /**
  * The face `style` names in the family, by the family's own name for it, where the family names
  * it alike but for case and spaces, as Inter 3's "Semi Bold" names Inter 4's "SemiBold"; else
- * the named instance of that name in its loaded variable font. A name neither holds, or while
- * the family is unknown, stays as asked, with the weight and slant its words stand for.
+ * the named instance of that name in its loaded variable font. Of two faces of one name, as an
+ * upright and an italic file can both name an instance "Bold", the one in `italic`'s slant is
+ * it. A name neither holds, or while the family is unknown, stays as asked, with the weight and
+ * slant its words stand for.
  */
-export function faceForStyle(family: string, style: string): FamilyFace {
-  const faces = fontManager.familyFacesSync(family) ?? []
+export function faceForStyle(family: string, style: string, italic?: boolean): FamilyFace {
+  const named = (fontManager.familyFacesSync(family) ?? []).filter(
+    (candidate) => styleSpelling(candidate.style) === styleSpelling(style)
+  )
   const face =
-    faces.find((candidate) => candidate.style === style) ??
-    faces.find((candidate) => styleSpelling(candidate.style) === styleSpelling(style)) ??
+    named.find((candidate) => candidate.italic === italic) ??
+    named.find((candidate) => candidate.style === style) ??
+    named.at(0) ??
     instanceFace(family, style)
   return face ?? { ...parseFontStyle(style), style }
 }

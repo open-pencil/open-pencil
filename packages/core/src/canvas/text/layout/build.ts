@@ -1,6 +1,7 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -153,6 +154,8 @@ interface ListStyle {
   em: number
   family: string
   style: string
+  /** The name of the first character's face, which its markers are drawn in. */
+  faceName: string | null
   /** The list's first character's style, which its markers take. */
   override: CharacterStyleOverride | undefined
 }
@@ -163,6 +166,7 @@ function listStyle(node: ParagraphNode, firstCharacter: number): ListStyle {
     em: override?.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE),
     family: override?.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
     style: textFontFace(node, override).style,
+    faceName: rangeFontStyle(node, override ?? {}),
     override
   }
 }
@@ -178,6 +182,7 @@ function markerNode(node: ParagraphNode, item: TextListItem, style: ListStyle): 
     fontFamily: style.family,
     fontWeight: override?.fontWeight ?? node.fontWeight,
     italic: override?.italic ?? node.italic,
+    fontStyle: style.faceName,
     letterSpacing: override?.letterSpacing ?? node.letterSpacing,
     lineHeight: override?.lineHeight !== undefined ? override.lineHeight : node.lineHeight,
     fontVariations: override?.fontVariations ?? node.fontVariations,

@@ -70,3 +70,22 @@ test('a range in a new weight takes no name, and a new weight for all of it clea
     editor.dispose()
   }
 })
+
+test('of two faces of one name, finds the one in the slant asked for', () => {
+  // An upright and an italic variable file can each name an instance "Bold".
+  fontManager.setHostFontCatalog([
+    {
+      family: 'Two Slants',
+      faces: [
+        { style: 'Bold', weight: 700, italic: false },
+        { style: 'Bold', weight: 700, italic: true }
+      ]
+    }
+  ])
+  try {
+    expect(faceForStyle('Two Slants', 'Bold', true)).toMatchObject({ italic: true })
+    expect(faceForStyle('Two Slants', 'Bold', false)).toMatchObject({ italic: false })
+  } finally {
+    fontManager.setHostFontCatalog([])
+  }
+})

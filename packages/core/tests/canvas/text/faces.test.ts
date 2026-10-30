@@ -134,6 +134,8 @@ describe('text faces', () => {
     const named = face({ fontWeight: 850, fontStyle: 'Display Heavy' })
     expect(named).toEqual(face({ fontVariations: [{ axis: 'wght', value: 850 }] }))
     expect(named).not.toEqual(face({}))
+    // Its weight alone picks the instance its weight is nearest, Black at 900, not this face.
+    expect(named).not.toEqual(face({ fontWeight: 850 }))
   })
 
   test('draws optical size at the font size unless the text detaches it, as Figma does', async () => {
