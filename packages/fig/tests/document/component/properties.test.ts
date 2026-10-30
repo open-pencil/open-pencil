@@ -1,30 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { propertyBinding } from '#fig-tests/helpers/component-props'
+
 import { materializeDocument } from '@open-pencil/fig'
 import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-/** A layer's binding to a component property, written as Figma does: in its parameter map. */
-function propertyBinding(
-  defId: NonNullable<NodeChange['guid']>,
-  field: 'VISIBLE' | 'TEXT_DATA' | 'OVERRIDDEN_SYMBOL_ID',
-  resolvedDataType: 'BOOLEAN' | 'STRING' | 'SYMBOL_ID'
-): Pick<NodeChange, 'parameterConsumptionMap'> {
-  return {
-    parameterConsumptionMap: {
-      entries: [
-        {
-          variableField: field,
-          variableData: {
-            value: { propRefValue: { defId } },
-            dataType: 'PROP_REF',
-            resolvedDataType
-          }
-        }
-      ]
-    }
-  }
-}
 
 const documentGuid = { sessionID: 0, localID: 0 }
 const pageGuid = { sessionID: 0, localID: 1 }
@@ -54,7 +34,7 @@ function baseTextChange(): NodeChange {
     fontSize: 14,
     fontName: { family: 'Inter', style: 'Regular', postscript: '' },
     textData: { characters: 'Menu Item', lines: [{ lineType: 'PLAIN' }] },
-    ...propertyBinding(textPropGuid, 'TEXT_DATA', 'STRING')
+    ...propertyBinding(textPropGuid, 'TEXT_DATA')
   }
 }
 
@@ -160,7 +140,7 @@ describe('Figma component property import', () => {
         type: 'FRAME',
         name: 'Icon',
         visible: true,
-        ...propertyBinding(visibilityPropGuid, 'VISIBLE', 'BOOLEAN')
+        ...propertyBinding(visibilityPropGuid, 'VISIBLE')
       },
       {
         guid: plainIconGuid,
@@ -318,7 +298,7 @@ describe('Figma component property import', () => {
         symbolData: { symbolID: mailIconGuid },
         size: { x: 16, y: 16 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        ...propertyBinding(iconPropGuid, 'OVERRIDDEN_SYMBOL_ID', 'SYMBOL_ID')
+        ...propertyBinding(iconPropGuid, 'OVERRIDDEN_SYMBOL_ID')
       },
       {
         guid: sourceInstanceGuid,

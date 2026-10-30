@@ -174,7 +174,6 @@ tests/engine/io/fig/heavy/fixtures.test.ts
 tests/engine/io/fig/import/basic.test.ts
 tests/engine/io/fig/import/boolean-operation.test.ts
 tests/engine/io/fig/import/cancellation.test.ts
-tests/engine/io/fig/import/component-props.test.ts
 tests/engine/io/fig/import/derived-symbol-data.test.ts
 tests/engine/io/fig/import/edge-cases.test.ts
 tests/engine/io/fig/import/field-protection.test.ts
