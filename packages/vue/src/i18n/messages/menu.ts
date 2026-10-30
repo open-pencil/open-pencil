@@ -8,10 +8,9 @@ export const menuMessageDefaults = {
   arrange: 'Arrange',
   text: 'Text',
 
-  new: 'New',
+  new: 'New design',
   newTab: 'New tab',
   open: 'Open…',
-  browseFiles: 'Browse files…',
   openTour: 'Open the Tour',
   diagnostics: 'Diagnostics…',
   save: 'Save',

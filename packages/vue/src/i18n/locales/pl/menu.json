@@ -5,7 +5,7 @@
   "object": "Obiekt",
   "arrange": "Rozmieszczenie",
   "text": "Tekst",
-  "new": "Nowy",
+  "new": "Nowy projekt",
   "newTab": "Nowa karta",
   "open": "Otwórz…",
   "openTour": "Otwórz przewodnik",
@@ -85,7 +85,6 @@
   "exportSelectionAsDrawIO": "Eksportuj zaznaczenie jako draw.io",
   "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig",
   "togglePreview": "Podgląd",
-  "browseFiles": "Przeglądaj pliki…",
   "saveTo": "Zapisz w…",
   "showVersionHistory": "Pokaż historię wersji",
   "saveToVersionHistory": "Zapisz w historii wersji…"

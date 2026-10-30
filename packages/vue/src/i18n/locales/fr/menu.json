@@ -5,7 +5,7 @@
   "object": "Objet",
   "arrange": "Disposition",
   "text": "Texte",
-  "new": "Nouveau",
+  "new": "Nouveau design",
   "newTab": "Nouvel onglet",
   "open": "Ouvrir…",
   "openTour": "Ouvrir la visite",
@@ -85,7 +85,6 @@
   "exportSelectionAsDrawIO": "Exporter la sélection en draw.io",
   "exportSelectionAsFig": "Exporter la sélection en .fig",
   "togglePreview": "Aperçu",
-  "browseFiles": "Parcourir les fichiers…",
   "saveTo": "Enregistrer dans…",
   "showVersionHistory": "Afficher l’historique des versions",
   "saveToVersionHistory": "Enregistrer dans l’historique des versions…"

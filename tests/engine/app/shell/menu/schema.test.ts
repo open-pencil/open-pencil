@@ -49,7 +49,6 @@ describe('APP_MENU_SCHEMA', () => {
     ).filter((entry) => !('type' in entry) && entry.handler === 'shell')
 
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
-      'browse-files',
       'open-tour',
       'diagnostics',
       'settings',
@@ -63,13 +62,15 @@ describe('APP_MENU_SCHEMA', () => {
     ])
   })
 
-  test('browses and saves to places from one File menu item each', () => {
+  // As in Figma, files are browsed on Home and in a New tab, so the File menu creates and saves.
+  test('starts documents and saves to places from the File menu', () => {
     const fileMenu = APP_MENU_SCHEMA.find((group) => group.label === 'File')
     const ids = (fileMenu ? actionItems(fileMenu.items) : []).map((entry) =>
       'type' in entry ? '' : entry.id
     )
 
-    expect(ids).toContain('browse-files')
+    expect(ids.slice(0, 3)).toEqual(['new', 'new-tab', 'open'])
+    expect(ids).not.toContain('browse-files')
     expect(ids).toContain('save-to')
     expect(ids).not.toContain('save-to-cloud')
   })

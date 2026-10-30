@@ -25,7 +25,6 @@ import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
-import { recentFilesAvailable } from '@/app/recent-files/preferences'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
@@ -55,7 +54,7 @@ import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import LoadingScreen from '@/components/shell/LoadingScreen.vue'
 import TabBar from '@/components/TabBar.vue'
-import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
+import { IS_BROWSER } from '@/constants'
 
 const route = useRoute()
 /**
@@ -79,10 +78,10 @@ watch(
 )
 const router = useRouter()
 const createdInitialTab = tabCount() === 0
-// Home is pinned first everywhere but tests and the demo, and opens in front where it lists
-// something: recent files, or the workspaces of the Cloud server that serves the editor.
+// Home is pinned first everywhere but tests and the demo, and opens in front, as Figma's does:
+// it is where a design or a board is started, with or without recent files to list.
 const pinHome = !appRuntimeConfig.test && !route.meta.demo
-const showHomeFirst = route.path === '/' && pinHome && (recentFilesAvailable() || IS_CLOUD_SITE)
+const showHomeFirst = route.path === '/' && pinHome
 // The view stays mounted from /demo to /, so Home is pinned once a route that has it is reached.
 watch(
   () => !appRuntimeConfig.test && !route.meta.demo,

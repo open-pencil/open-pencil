@@ -5,7 +5,7 @@
   "object": "オブジェクト",
   "arrange": "配置",
   "text": "テキスト",
-  "new": "新規作成",
+  "new": "新規デザイン",
   "newTab": "新規タブ",
   "open": "開く…",
   "openTour": "ツアーを開く",
@@ -85,7 +85,6 @@
   "exportSelectionAsDrawIO": "選択範囲を draw.io としてエクスポート",
   "exportSelectionAsFig": "選択範囲を .fig としてエクスポート",
   "togglePreview": "プレビュー",
-  "browseFiles": "ファイルを表示…",
   "saveTo": "保存先を選んで保存…",
   "showVersionHistory": "バージョン履歴を表示",
   "saveToVersionHistory": "バージョン履歴に保存…"

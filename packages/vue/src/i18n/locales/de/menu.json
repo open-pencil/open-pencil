@@ -5,7 +5,7 @@
   "object": "Objekt",
   "arrange": "Anordnen",
   "text": "Text",
-  "new": "Neu",
+  "new": "Neues Design",
   "newTab": "Neuer Tab",
   "open": "Öffnen…",
   "openTour": "Rundgang öffnen",
@@ -85,7 +85,6 @@
   "exportSelectionAsDrawIO": "Auswahl als draw.io exportieren",
   "exportSelectionAsFig": "Auswahl als .fig exportieren",
   "togglePreview": "Vorschau",
-  "browseFiles": "Dateien durchsuchen…",
   "saveTo": "Speichern in…",
   "showVersionHistory": "Versionsverlauf anzeigen",
   "saveToVersionHistory": "Im Versionsverlauf speichern…"
