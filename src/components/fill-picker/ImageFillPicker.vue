@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useFileDialog } from '@vueuse/core'
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import type { StockPhotoResult } from '@open-pencil/core/tools'
 import type { Fill, ImageScaleMode } from '@open-pencil/scene-graph'
@@ -15,6 +15,7 @@ import NumberField from '@/components/inputs/NumberField.vue'
 import PhotoPicker from '@/components/photo-picker/PhotoPicker.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import { useImageFill } from './useImageFill'
@@ -40,8 +41,10 @@ const { url: imagePreviewURL, size: imageSize } = useImageFill(() => fill.imageH
   measure: true
 })
 
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp']
+
 const { open: pickImage, onChange: onFileChange } = useFileDialog({
-  accept: 'image/png,image/jpeg,image/webp',
+  accept: IMAGE_TYPES.join(','),
   multiple: false
 })
 
@@ -55,9 +58,22 @@ function fillWith(bytes: Uint8Array) {
   })
 }
 
-onFileChange(async (files) => {
+async function fillWithFile(file: File) {
+  fillWith(new Uint8Array(await file.arrayBuffer()))
+}
+
+onFileChange((files) => {
   const file = files?.[0]
-  if (file) fillWith(new Uint8Array(await file.arrayBuffer()))
+  if (file) void fillWithFile(file)
+})
+
+// An image dropped on the well fills as one chosen with the button does; with several, the first.
+const well = useTemplateRef<HTMLElement>('well')
+const { dragging } = useImageDrop(well, {
+  accepts: (file) => IMAGE_TYPES.includes(file.type),
+  onImages: ([file]) => {
+    if (file) void fillWithFile(file)
+  }
 })
 
 async function fillWithPhoto(photo: StockPhotoResult, service: PhotoService) {
@@ -106,8 +122,10 @@ function rotate() {
       once; over an image they show on hover or when the keyboard reaches them.
     -->
     <div
-      class="group relative flex h-28 items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary"
+      ref="well"
+      class="group relative flex h-28 items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary data-[dragging]:border-accent"
       :data-empty="imagePreviewURL ? undefined : ''"
+      :data-dragging="dragging ? '' : undefined"
       data-test-id="fill-picker-image-well"
     >
       <img

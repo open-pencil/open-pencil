@@ -1,12 +1,10 @@
 import { useEventListener } from '@vueuse/core'
 import { shallowRef, toValue, type MaybeRefOrGetter, type Ref } from 'vue'
 
-import { isAttachableImageFile } from '@/app/ai/attachment/image/prepare'
-
 /**
- * Takes images dropped anywhere on `target` for the chat. A drag carrying no image, such as a
- * `.fig`, is left to the window, which opens documents; the other files of a mixed drop go there
- * too, since nothing here stops the event.
+ * Takes images dropped anywhere on `target`, keeping the files `accepts` takes. A drag carrying no
+ * image, such as a `.fig`, is left to the window, which opens documents; the other files of a
+ * mixed drop go there too, since nothing here stops the event.
  *
  * Whether a drag carries an image is decided once, when it enters. VueUse's `useDropZone` checks
  * every event and skips its enter/leave count when one fails, which WebKit outside Safari does for
@@ -14,7 +12,11 @@ import { isAttachableImageFile } from '@/app/ai/attachment/image/prepare'
  */
 export function useImageDrop(
   target: Ref<HTMLElement | null>,
-  options: { enabled: MaybeRefOrGetter<boolean>; onImages: (files: File[]) => void }
+  options: {
+    enabled?: MaybeRefOrGetter<boolean>
+    accepts: (file: File) => boolean
+    onImages: (files: File[]) => void
+  }
 ) {
   const dragging = shallowRef(false)
   // Enter and leave fire for every element the drag crosses inside the target.
@@ -34,7 +36,7 @@ export function useImageDrop(
 
   useEventListener(target, 'dragenter', (event: DragEvent) => {
     depth += 1
-    if (depth === 1) dragging.value = toValue(options.enabled) && carriesImage(event)
+    if (depth === 1) dragging.value = (toValue(options.enabled) ?? true) && carriesImage(event)
     if (dragging.value) event.preventDefault()
   })
   useEventListener(target, 'dragover', (event: DragEvent) => {
@@ -51,7 +53,7 @@ export function useImageDrop(
     reset()
     if (!ours) return
     event.preventDefault()
-    const images = Array.from(event.dataTransfer?.files ?? []).filter(isAttachableImageFile)
+    const images = Array.from(event.dataTransfer?.files ?? []).filter(options.accepts)
     if (images.length > 0) options.onImages(images)
   })
   // No pointer events reach the page during a drag, so the first one means it ended, even when

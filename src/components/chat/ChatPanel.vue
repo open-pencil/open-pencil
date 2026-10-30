@@ -5,7 +5,7 @@ import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
+import { isAttachableImageFile, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
 import {
   clearQueuedMessages,
@@ -34,7 +34,7 @@ import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
 import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
-import { useImageDrop } from '@/components/chat/input/useImageDrop'
+import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure, providerID } = useAIChat()
 const { ai } = useI18n()
@@ -75,6 +75,7 @@ const panel = useTemplateRef<HTMLElement>('panel')
 // Images dropped anywhere on the chat go to the composer, when there is one to take them.
 const { dragging: draggingImages } = useImageDrop(panel, {
   enabled: () => chatInput.value !== null,
+  accepts: isAttachableImageFile,
   onImages: (files) => chatInput.value?.dropFiles(files)
 })
 let viewGeneration = 0

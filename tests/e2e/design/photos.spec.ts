@@ -90,7 +90,7 @@ async function openPicker(page: Page) {
 }
 
 /**
- * Follows the picker's Open Settings to Settings › Media, saves `service`'s key there, and comes
+ * Follows the picker's Open Settings to Settings › Image services, saves `service`'s key there, and comes
  * back to the picker.
  */
 async function addKeyInSettings(page: Page, service: 'Unsplash' | 'Pexels', label: string) {
@@ -173,4 +173,40 @@ test('the picker opens on a service with a key when the last one searched has no
   await page.getByTestId('fill-picker-stock-photo').click()
   await expect(picker.getByRole('combobox', { name: 'Photo service' })).toHaveText('Unsplash')
   await expect(picker.getByRole('option')).toHaveCount(1)
+})
+
+test('an image dropped on the image well fills the layer, and other files are left alone', async () => {
+  const page = ctx.page
+  await ctx.canvas.drawRect(120, 120, 160, 120)
+  await page.getByTestId('fill-picker-swatch').first().click()
+  await page.getByTestId('fill-picker-tab-image').click()
+  const well = page.getByTestId('fill-picker-image-well')
+
+  async function drop(name: string, type: string) {
+    return well.evaluate(
+      async (target, file) => {
+        const canvas = new OffscreenCanvas(8, 8)
+        const context = canvas.getContext('2d')
+        if (!context) throw new Error('Canvas context unavailable')
+        context.fillRect(0, 0, 8, 8)
+        const transfer = new DataTransfer()
+        transfer.items.add(
+          new File([await canvas.convertToBlob({ type: 'image/png' })], file.name, {
+            type: file.type
+          })
+        )
+        const options = { bubbles: true, cancelable: true, dataTransfer: transfer }
+        target.dispatchEvent(new DragEvent('dragenter', options))
+        const accepted = !target.dispatchEvent(new DragEvent('dragover', options))
+        target.dispatchEvent(new DragEvent('drop', options))
+        return accepted
+      },
+      { name, type }
+    )
+  }
+
+  await drop('anim.gif', 'image/gif')
+  expect((await imageFill(page))?.imageHash).toBeFalsy()
+  expect(await drop('photo.png', 'image/png')).toBe(true)
+  await expect.poll(async () => (await imageFill(page))?.imageHash).toBeTruthy()
 })

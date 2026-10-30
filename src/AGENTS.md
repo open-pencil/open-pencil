@@ -58,7 +58,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 
 ## UI
 
-`src/components/ui/**` is generic, store-free design-system code grouped by family: `{binding,button,collapsible,date,dialog,feedback,input,list,menu,overlay,paint,panel,select,table,tabs,toggle}/`. Do not create a folder named after a single component. Feature controls stay in their domain. Theme families mirror these under `src/theme/`; feature themes stay separate. Use explicit imports without old-path forwarding shims.
+`src/components/ui/**` is generic, store-free design-system code grouped by family: `{binding,button,collapsible,date,dialog,drop,feedback,input,list,menu,overlay,paint,panel,select,table,tabs,toggle}/`. Do not create a folder named after a single component. Feature controls stay in their domain. Theme families mirror these under `src/theme/`; feature themes stay separate. Use explicit imports without old-path forwarding shims.
 
 ### Naming
 
