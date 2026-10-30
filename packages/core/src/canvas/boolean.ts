@@ -114,7 +114,12 @@ function joinedPath(r: SkiaRenderer, parts: Path[]): Path {
   for (const part of parts) {
     path.addPath(part)
   }
-  return path.detachAndDelete()
+  const joined = path.detachAndDelete()
+  const fillType = parts[0].getFillType()
+  if (parts.every((part) => part.getFillType().value === fillType.value)) {
+    joined.setFillType(fillType)
+  }
+  return joined
 }
 
 interface VectorStrokeSides {
@@ -243,6 +248,16 @@ function addSidedVectorStroke(
   }
 }
 
+function addFilledArea(r: SkiaRenderer, target: PathBuilder, path: Path): void {
+  const winding =
+    path.getFillType().value === r.ck.FillType.EvenOdd.value ? path.makeAsWinding() : null
+  if (!winding) {
+    target.addPath(path)
+    return
+  }
+  addOwnedPath(target, winding)
+}
+
 function addOwnedPath(target: PathBuilder, path: Path | null): void {
   if (!path) {
     return
@@ -359,7 +374,7 @@ export function makeBooleanSourcePath(
   }
   const combined = new r.ck.PathBuilder()
   if (drawsFill(node)) {
-    combined.addPath(savedFill ?? outline)
+    addFilledArea(r, combined, savedFill ?? outline)
   }
   if (node.type === 'VECTOR') {
     addVectorStrokeOutlines(r, combined, outline, node, savedFill ?? outline)
@@ -376,8 +391,11 @@ function transformedShapePath(r: SkiaRenderer, child: SceneNode, graph: SceneGra
   if (!path) return null
   const transformed = new r.ck.PathBuilder()
   transformed.addPath(path, getNodeLocalMatrix(child))
+  const fillType = path.getFillType()
   path.delete()
-  return transformed.detachAndDelete()
+  const result = transformed.detachAndDelete()
+  result.setFillType(fillType)
+  return result
 }
 
 function operationForNode(r: SkiaRenderer, node: SceneNode): PathOp {
