@@ -38,19 +38,19 @@ export function installFigMutationJournal(graph: SceneGraph): FigMutationJournal
       if (!(field in snapshot)) Object.assign(snapshot, { [field]: structuredClone(node[field]) })
     }
   }
-  graph.createNode = ((type, parentId, overrides) => {
+  graph.createNode = (type, parentId, overrides) => {
     touch(parentId, ['childIds'])
     const node = original.createNode(type, parentId, overrides)
     created.add(node.id)
     return node
-  }) as SceneGraph['createNode']
-  graph.createNodeWithId = ((id, type, parentId, overrides) => {
+  }
+  graph.createNodeWithId = (id, type, parentId, overrides) => {
     touch(parentId, ['childIds'])
     const node = original.createNodeWithId(id, type, parentId, overrides)
     created.add(node.id)
     return node
-  }) as SceneGraph['createNodeWithId']
-  graph.updateNode = ((id, changes) => {
+  }
+  graph.updateNode = (id, changes) => {
     const node = graph.getNode(id)
     if (node) {
       const fields = (Object.keys(changes) as (keyof SceneNode)[]).filter(
@@ -62,8 +62,8 @@ export function installFigMutationJournal(graph: SceneGraph): FigMutationJournal
       touch(id, fields)
     }
     original.updateNode(id, changes)
-  }) as SceneGraph['updateNode']
-  graph.deleteNode = ((id) => {
+  }
+  graph.deleteNode = (id) => {
     const node = graph.getNode(id)
     touch(node?.parentId, ['childIds'])
     const pending = node ? [id] : []
@@ -78,7 +78,7 @@ export function installFigMutationJournal(graph: SceneGraph): FigMutationJournal
       } else deleted.add(currentId)
     }
     original.deleteNode(id)
-  }) as SceneGraph['deleteNode']
+  }
   return {
     before,
     created,

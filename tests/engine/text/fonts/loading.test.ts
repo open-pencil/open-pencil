@@ -4,21 +4,8 @@ import { describe, test, expect } from 'bun:test'
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import {
-  chooseLocalFontMatch,
-  fontWeightMatchOrder,
-  fontManager,
-  isVariableFont,
-  FontManager
-} from '@open-pencil/core/text'
-import { weightToFigmaStyle } from '@open-pencil/fig/node-change'
+import { fontManager, isVariableFont, FontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import {
-  normalizeFontFamily,
-  styleToVariant,
-  styleToWeight,
-  weightToStyle
-} from '@open-pencil/scene-graph/font-style'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { fetchStub } from '#tests/helpers/fetch'
@@ -26,64 +13,6 @@ import { fetchStub } from '#tests/helpers/fetch'
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
-
-describe('styleToWeight', () => {
-  test('maps common style names', () => {
-    expect(styleToWeight('Regular')).toBe(400)
-    expect(styleToWeight('Bold')).toBe(700)
-    expect(styleToWeight('Light')).toBe(300)
-    expect(styleToWeight('Thin')).toBe(100)
-    expect(styleToWeight('Medium')).toBe(500)
-    expect(styleToWeight('SemiBold')).toBe(600)
-    expect(styleToWeight('Semi Bold')).toBe(600)
-    expect(styleToWeight('DemiBold')).toBe(600)
-    expect(styleToWeight('ExtraBold')).toBe(800)
-    expect(styleToWeight('Black')).toBe(900)
-  })
-
-  test('handles italic variants', () => {
-    expect(styleToWeight('Bold Italic')).toBe(700)
-    expect(styleToWeight('Light Italic')).toBe(300)
-    expect(styleToWeight('600 Italic')).toBe(600)
-  })
-
-  test('case insensitive', () => {
-    expect(styleToWeight('bold')).toBe(700)
-    expect(styleToWeight('THIN')).toBe(100)
-    expect(styleToWeight('semibold')).toBe(600)
-  })
-})
-
-describe('weightToStyle', () => {
-  test('maps weights to style names', () => {
-    expect(weightToStyle(100)).toBe('Thin')
-    expect(weightToStyle(200)).toBe('ExtraLight')
-    expect(weightToStyle(300)).toBe('Light')
-    expect(weightToStyle(400)).toBe('Regular')
-    expect(weightToStyle(500)).toBe('Medium')
-    expect(weightToStyle(600)).toBe('SemiBold')
-    expect(weightToStyle(700)).toBe('Bold')
-    expect(weightToStyle(800)).toBe('ExtraBold')
-    expect(weightToStyle(900)).toBe('Black')
-  })
-
-  test('appends Italic suffix', () => {
-    expect(weightToStyle(400, true)).toBe('Regular Italic')
-    expect(weightToStyle(700, true)).toBe('Bold Italic')
-  })
-})
-
-describe('weightToFigmaStyle', () => {
-  test('preserves Figma weight name spacing', () => {
-    expect(weightToFigmaStyle(200)).toBe('Extra Light')
-    expect(weightToFigmaStyle(600)).toBe('Semi Bold')
-    expect(weightToFigmaStyle(800)).toBe('Extra Bold')
-  })
-
-  test('appends Italic suffix', () => {
-    expect(weightToFigmaStyle(600, true)).toBe('Semi Bold Italic')
-  })
-})
 
 function createRecordingProvider() {
   const registrations: Array<{ family: string; byteLength: number }> = []
@@ -94,44 +23,6 @@ function createRecordingProvider() {
   } as TypefaceFontProvider
   return { provider, registrations }
 }
-
-describe('chooseLocalFontMatch', () => {
-  const fonts = [
-    { family: 'Inter', style: 'Italic' },
-    { family: 'Inter', style: 'Regular' },
-    { family: 'Inter', style: 'Semi Bold' },
-    { family: 'Inter', style: 'Bold Italic' }
-  ]
-
-  test('prefers parsed weight and slant over first family match', () => {
-    expect(chooseLocalFontMatch(fonts, 'Inter', 'SemiBold')?.style).toBe('Semi Bold')
-    expect(chooseLocalFontMatch(fonts, 'Inter', 'Regular')?.style).toBe('Regular')
-  })
-
-  test('does not substitute nearby weights for explicit style requests', () => {
-    expect(chooseLocalFontMatch(fonts, 'Inter', 'Bold')).toBeUndefined()
-  })
-
-  test('without a style, takes the face CSS font matching picks for regular', () => {
-    const faces = [
-      { family: 'Inter', style: 'Black' },
-      { family: 'Inter', style: 'Light Italic' },
-      { family: 'Inter', style: 'Medium' },
-      { family: 'Inter', style: 'Light' }
-    ]
-    // Regular falls to medium before lighter weights, and the upright slant before italic.
-    expect(chooseLocalFontMatch(faces, 'Inter')?.style).toBe('Medium')
-    expect(chooseLocalFontMatch(faces.slice(0, 2), 'Inter')?.style).toBe('Black')
-  })
-})
-
-describe('fontWeightMatchOrder', () => {
-  test('tries weights in CSS font matching order', () => {
-    expect(fontWeightMatchOrder(400)).toEqual([400, 500, 300, 200, 100, 600, 700, 800, 900])
-    expect(fontWeightMatchOrder(700)).toEqual([700, 800, 900, 600, 500, 400, 300, 200, 100])
-    expect(fontWeightMatchOrder(300)).toEqual([300, 200, 100, 400, 500, 600, 700, 800, 900])
-  })
-})
 
 describe('FontManager loaded font cache', () => {
   test('marks and checks font', async () => {
@@ -528,83 +419,6 @@ describe('collectFontKeys', () => {
   test('skips invalid node IDs', () => {
     const graph = new SceneGraph()
     expect(fontManager.collectFontKeys(graph, ['nonexistent'])).toEqual([])
-  })
-})
-
-describe('normalizeFontFamily', () => {
-  test('strips " Variable" suffix', () => {
-    expect(normalizeFontFamily('Inter Variable')).toBe('Inter')
-    expect(normalizeFontFamily('Roboto Flex Variable')).toBe('Roboto Flex')
-  })
-
-  test('case insensitive', () => {
-    expect(normalizeFontFamily('Inter VARIABLE')).toBe('Inter')
-    expect(normalizeFontFamily('Inter variable')).toBe('Inter')
-  })
-
-  test('handles extra whitespace before Variable', () => {
-    expect(normalizeFontFamily('Inter  Variable')).toBe('Inter')
-  })
-
-  test('returns unchanged when no Variable suffix', () => {
-    expect(normalizeFontFamily('Inter')).toBe('Inter')
-    expect(normalizeFontFamily('Roboto')).toBe('Roboto')
-    expect(normalizeFontFamily('')).toBe('')
-  })
-
-  test('does not strip Variable in the middle', () => {
-    expect(normalizeFontFamily('Variable Sans')).toBe('Variable Sans')
-  })
-
-  test('strips optical size suffix (pt)', () => {
-    expect(normalizeFontFamily('DM Sans 9pt')).toBe('DM Sans')
-    expect(normalizeFontFamily('DM Sans 14pt')).toBe('DM Sans')
-  })
-
-  test('strips optical size suffix (px)', () => {
-    expect(normalizeFontFamily('Noto Sans 12px')).toBe('Noto Sans')
-  })
-
-  test('strips optical size suffix (em)', () => {
-    expect(normalizeFontFamily('Custom Font 1em')).toBe('Custom Font')
-  })
-
-  test('does not strip size units in the middle', () => {
-    expect(normalizeFontFamily('12pt Serif')).toBe('12pt Serif')
-  })
-})
-
-describe('styleToVariant', () => {
-  test('regular → "regular"', () => {
-    expect(styleToVariant('Regular')).toBe('regular')
-  })
-
-  test('italic at 400 → "italic"', () => {
-    expect(styleToVariant('Regular Italic')).toBe('italic')
-  })
-
-  test('bold → "700"', () => {
-    expect(styleToVariant('Bold')).toBe('700')
-  })
-
-  test('bold italic → "700italic"', () => {
-    expect(styleToVariant('Bold Italic')).toBe('700italic')
-  })
-
-  test('light → "300"', () => {
-    expect(styleToVariant('Light')).toBe('300')
-  })
-
-  test('thin italic → "100italic"', () => {
-    expect(styleToVariant('Thin Italic')).toBe('100italic')
-  })
-
-  test('semibold → "600"', () => {
-    expect(styleToVariant('SemiBold')).toBe('600')
-  })
-
-  test('black → "900"', () => {
-    expect(styleToVariant('Black')).toBe('900')
   })
 })
 

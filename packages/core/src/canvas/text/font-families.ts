@@ -1,14 +1,15 @@
 import { uniq } from 'es-toolkit/array'
 
 import type { FontVariation } from '@open-pencil/scene-graph'
-import { parseFontStyle, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { parseFontStyle, faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { ResourceCache } from '#core/cache/resource'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import type { FamilyFace } from '#core/text/font/faces'
+import type { FaceWeight } from '#core/text/font/faces'
+import { fontManager } from '#core/text/font/manager'
+import { fontWeightMatchOrder } from '#core/text/font/style'
 import type { FontAxis } from '#core/text/font/variation'
-import { fontManager, fontWeightMatchOrder } from '#core/text/fonts'
 
 const familiesCache = new ResourceCache<string, string[]>({ maxEntries: 256 })
 
@@ -30,7 +31,7 @@ export interface DrawnFontAxes {
  */
 export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
   const named =
-    fontManager.namedInstanceVariations(font.family, weightToStyle(font.weight, font.italic)) ?? []
+    fontManager.namedInstanceVariations(font.family, faceLoadKey(font.weight, font.italic)) ?? []
   const set = font.opticalSizeFromFontSize
     ? [
         ...font.variations.filter((variation) => variation.axis !== 'opsz'),
@@ -65,10 +66,10 @@ export function drawnFontAxes(font: DrawnFontAxes): DrawnFontAxis[] | null {
  * nearest loaded weight in the same slant, then the other, as font matching picks it; `null`
  * when the family has none loaded.
  */
-export function loadedFace(family: string, weight: number, italic: boolean): FamilyFace | null {
+export function loadedFace(family: string, weight: number, italic: boolean): FaceWeight | null {
   for (const slant of [italic, !italic]) {
     for (const candidate of fontWeightMatchOrder(weight)) {
-      if (fontManager.isStyleLoaded(family, weightToStyle(candidate, slant)))
+      if (fontManager.isStyleLoaded(family, faceLoadKey(candidate, slant)))
         return { weight: candidate, italic: slant }
     }
   }
@@ -118,7 +119,7 @@ export function resolveParagraphFontFamilies(
   const drawn = loadedFace(primary, asked.weight, asked.italic)
   const renderPrimary = renderFamilies(
     primary,
-    drawn ? weightToStyle(drawn.weight, drawn.italic) : style
+    drawn ? faceLoadKey(drawn.weight, drawn.italic) : style
   )
   const renderArabicFallbacks = arabicFallbacks.flatMap((family) =>
     renderFamilies(family, 'Regular')

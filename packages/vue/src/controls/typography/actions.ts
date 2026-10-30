@@ -5,12 +5,11 @@ import type { Editor } from '@open-pencil/core'
 import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
-  TextDecoration,
   TextLength,
   TextListType,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
-import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
 import {
@@ -72,11 +71,9 @@ export function createTypographyState(editor: Editor) {
   const fontFamily = computed(() => node.value?.fontFamily ?? '')
   const fontWeight = computed(() => node.value?.fontWeight ?? 400)
   const fontSize = computed(() => node.value?.fontSize ?? 16)
-  const currentWeightLabel = computed(
-    () => FONT_WEIGHT_NAMES[node.value?.fontWeight ?? 400] ?? 'Regular'
-  )
+  const { weights, supports, styleName } = useFamilyFaces(nodes)
+  const currentWeightLabel = computed(() => (node.value ? styleName(node.value) : 'Regular'))
   const activeFormatting = computed(() => sharedFormatting(nodes.value))
-  const { weights, supports } = useFamilyFaces(nodes)
   /**
    * The list style every selected text shares, or that of the paragraphs being edited; `null`
    * when they differ.
@@ -208,11 +205,13 @@ export function createTypographyActions({
       'Change font',
       ['fontFamily', 'fontWeight', 'italic'],
       async (target) => {
-        const known = await faces
+        await faces
+        // Asked again, so faces forgotten while loading (a catalog arriving) are read anew.
+        const known = await fontManager.familyFaces(family)
         const face = known ? nearestFamilyFace(known, target.fontWeight, target.italic) : null
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic
-        await options.fontLoader?.load(family, weightToStyle(fontWeight, italic))
+        await options.fontLoader?.load(family, faceLoadKey(fontWeight, italic))
         return {
           fontFamily: family,
           fontWeight,
@@ -229,7 +228,7 @@ export function createTypographyActions({
       'Change font weight',
       ['fontWeight'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(weight, target.italic))
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(weight, target.italic))
         return { fontWeight: weight, fontVariations: styleFontVariations(target) }
       },
       targets
@@ -349,7 +348,7 @@ export function createTypographyActions({
       'Toggle italic',
       ['italic'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(target.fontWeight, italic))
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(target.fontWeight, italic))
         return { italic, fontVariations: styleFontVariations(target) }
       },
       nodes.value.filter((target) => supports(target, target.fontWeight, italic))
@@ -359,7 +358,7 @@ export function createTypographyActions({
   function toggleDecoration(deco: 'UNDERLINE' | 'STRIKETHROUGH') {
     const on = activeFormatting.value.includes(deco.toLowerCase())
     update(`Toggle ${deco.toLowerCase()}`, {
-      textDecoration: (on ? 'NONE' : deco) as TextDecoration
+      textDecoration: on ? 'NONE' : deco
     })
   }
 
@@ -384,7 +383,7 @@ export function createTypographyActions({
     for (const target of nodes.value) {
       if (!beforePreview.has(target.id))
         beforePreview.set(target.id, { value: target[key], textStyleId: target.textStyleId })
-      editor.updateNode(target.id, { [key]: value } as Partial<SceneNode>)
+      editor.updateNode(target.id, { [key]: value })
     }
   }
 
@@ -400,7 +399,7 @@ export function createTypographyActions({
           {
             [key]: snapshot ? snapshot.value : previous,
             ...(snapshot ? { textStyleId: snapshot.textStyleId } : {})
-          } as Partial<SceneNode>,
+          },
           `Change ${String(key)}`
         )
       }
@@ -408,6 +407,18 @@ export function createTypographyActions({
     previewKey = undefined
     beforePreview.clear()
     batch.flush()
+  }
+
+  /** Puts back what a cancelled field previewed, as `cancelAxis` does for a font axis. */
+  function cancelProp(key: keyof SceneNode) {
+    if (previewKey === key) {
+      for (const [id, before] of beforePreview)
+        editor.updateNode(id, { [key]: before.value, textStyleId: before.textStyleId })
+    }
+    previewKey = undefined
+    beforePreview.clear()
+    batch.flush()
+    editor.requestRender()
   }
 
   return {
@@ -428,6 +439,7 @@ export function createTypographyActions({
     toggleDecoration,
     onFormattingChange,
     updateProp,
-    commitProp
+    commitProp,
+    cancelProp
   }
 }

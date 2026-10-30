@@ -127,8 +127,8 @@ function checkRoundedWithoutClip(
 function checkExcessiveNesting(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
   if (!CONTAINER_TYPES.has(node.type)) return
   let depth = 0
-  let current: SceneNode | undefined = node as SceneNode | undefined
-  while (current && CONTAINER_TYPES.has(current.type) && current.childIds.length === 1) {
+  let current = node
+  while (CONTAINER_TYPES.has(current.type) && current.childIds.length === 1) {
     const child = graph.getNode(current.childIds[0])
     if (!child || !CONTAINER_TYPES.has(child.type)) break
     if (current.fills.some((f) => f.visible) || current.cornerRadius > 0) break

@@ -112,7 +112,7 @@ function renderToSurface(
   quality: number,
   setup: (canvas: Canvas) => void,
   trimTransparent = false
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   const renderScale = 2
   const renderWidth = width * renderScale
   const renderHeight = height * renderScale
@@ -187,7 +187,7 @@ function renderToSurface(
         ])
       : downsampleSurface.makeImageSnapshot()
     const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
-    let resultBytes: Uint8Array | null = encoded ? new Uint8Array(encoded) : null
+    let resultBytes: Uint8Array<ArrayBuffer> | null = encoded ? new Uint8Array(encoded) : null
 
     // CanvasKit's `encodeToBytes` returns null for JPEG/WEBP in this build, so
     // fall back to encoding the raw pixels through the browser canvas.
@@ -275,7 +275,7 @@ export function renderNodesToImage(
   pageId: string,
   nodeIds: string[],
   options: RenderOptions
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
     throw new Error('Raster export selection must stay on a single page')
   }
@@ -363,7 +363,7 @@ export function renderThumbnail(
   pageId: string,
   width: number,
   height: number
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   const frame = thumbnailFrame(graph, pageId, width, height)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
@@ -385,7 +385,7 @@ export function drawRegionToImage(
   pageId: string,
   bounds: VisualBounds,
   scale: number
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   const pixelW = Math.max(1, Math.round((bounds.maxX - bounds.minX) * scale))
   const pixelH = Math.max(1, Math.round((bounds.maxY - bounds.minY) * scale))
   if (!graph.getNode(pageId) || !Number.isFinite(pixelW * pixelH)) return null

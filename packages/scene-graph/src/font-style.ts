@@ -8,15 +8,19 @@ export interface ParsedFontStyle {
   italic: boolean
 }
 
+/**
+ * The standard weights by the names Google Fonts gives them, which most fonts and Figma's font
+ * list use; a font's own names can differ ("Semi Bold", "Book", "Heavy").
+ */
 export const FONT_WEIGHT_NAMES: Record<number, string> = {
   100: 'Thin',
-  200: 'Extra Light',
+  200: 'ExtraLight',
   300: 'Light',
   400: 'Regular',
   500: 'Medium',
-  600: 'Semi Bold',
+  600: 'SemiBold',
   700: 'Bold',
-  800: 'Extra Bold',
+  800: 'ExtraBold',
   900: 'Black'
 }
 
@@ -36,7 +40,7 @@ const FONT_WEIGHT_BY_STYLE: ReadonlyMap<string, number> = new Map(
   FONT_WEIGHT_ALIASES.flatMap(({ names, weight }) => names.map((name) => [name, weight] as const))
 )
 
-export function normalizeFontStyleName(style: string): string {
+function normalizeFontStyleName(style: string): string {
   return style
     .toLowerCase()
     .replace(/italic|oblique/u, '')
@@ -62,16 +66,18 @@ export function normalizeFontFamily(family: string): string {
   return family.replace(/\s+(Variable|\d+(?:pt|px|em))$/i, '')
 }
 
-export function styleToVariant(style: string): string {
-  const weight = styleToWeight(style)
-  const italic = style.toLowerCase().includes('italic')
-  if (weight === 400 && !italic) return 'regular'
-  if (weight === 400 && italic) return 'italic'
-  return italic ? `${weight}italic` : `${weight}`
+export function faceLoadKey(weight: number, italic = false): string {
+  const rounded = Math.round(weight / 100) * 100
+  const label = FONT_WEIGHT_NAMES[rounded] ?? 'Regular'
+  return italic ? `${label} Italic` : label
 }
 
-export function weightToStyle(weight: number, italic = false): string {
-  const rounded = Math.round(weight / 100) * 100
-  const label = (FONT_WEIGHT_NAMES[rounded] ?? 'Regular').replace(/ /g, '')
-  return italic ? `${label} Italic` : label
+/**
+ * The name Google Fonts gives the face at `weight` and slant ("SemiBold Italic", and "Italic"
+ * for the regular weight), for a face whose font has not said its own.
+ */
+export function standardStyleName(weight: number, italic = false): string {
+  const label = FONT_WEIGHT_NAMES[Math.round(weight / 100) * 100] ?? 'Regular'
+  if (!italic) return label
+  return label === 'Regular' ? 'Italic' : `${label} Italic`
 }

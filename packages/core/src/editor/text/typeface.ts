@@ -3,7 +3,7 @@ import {
   figJamTypefaceFields,
   type FigJamTypeface
 } from '@open-pencil/scene-graph/figjam'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
@@ -17,7 +17,7 @@ export function createGeneratedTextActions(ctx: EditorContext) {
    */
   async function setGeneratedTextTypeface(ids: Iterable<string>, typeface: FigJamTypeface) {
     const { fontFamily, fontWeight } = FIGJAM_TYPEFACES[typeface]
-    await ctx.loadFont(fontFamily, weightToStyle(fontWeight, false))
+    await ctx.loadFont(fontFamily, faceLoadKey(fontWeight, false))
     const frames = [...ids].flatMap((id) => {
       const node = ctx.graph.getNode(id)
       return node && generatedFrameText(ctx.graph, node) ? [node] : []

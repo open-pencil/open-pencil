@@ -1,6 +1,6 @@
 {
   "vectorization": "Bildvektorisierung",
-  "vectorizationDescription": "Sendet Bildebenen an Recraft oder fal.ai und gibt bearbeitbare Vektoren zurück. Es können Anbietergebühren anfallen.",
+  "vectorizationDescription": "Sendet Bildebenen an Recraft, fal.ai oder QuiverAI und gibt bearbeitbare Vektoren zurück. Es können Anbietergebühren anfallen.",
   "vectorizeProvider": "Vektorisierungsdienst",
   "pexelsAPIKey": "Pexels-API-Schlüssel",
   "unsplashAccessKey": "Unsplash-Zugriffsschlüssel",

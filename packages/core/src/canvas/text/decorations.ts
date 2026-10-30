@@ -8,7 +8,7 @@ import type {
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { outlineInk, savedGlyphInk, type InkSpan } from '#core/canvas/text/ink'
 import { COMBINING_KEYCAP, drawKeycapFrame } from '#core/canvas/text/keycap'
@@ -166,7 +166,7 @@ function decorationRects(
   lines: LineSpan[]
 ): TextDecorationRect[] {
   const metrics =
-    fontDecorationMetricsSync(style.fontFamily, weightToStyle(style.fontWeight, style.italic)) ??
+    fontDecorationMetricsSync(style.fontFamily, faceLoadKey(style.fontWeight, style.italic)) ??
     UNLOADED_FONT_METRICS
   const size = style.fontSize
   const underline = style.textDecoration === 'UNDERLINE'

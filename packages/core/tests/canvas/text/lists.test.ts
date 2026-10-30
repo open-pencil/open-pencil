@@ -8,7 +8,7 @@ import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-penci
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 
 const ul = (indentation = 1): TextParagraphStyle => ({ listType: 'UNORDERED', indentation })

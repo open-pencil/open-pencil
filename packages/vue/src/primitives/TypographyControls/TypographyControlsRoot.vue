@@ -32,6 +32,7 @@ const actions = {
   setParagraphSpacing: ctx.setParagraphSpacing,
   updateProp: ctx.updateProp,
   commitProp: ctx.commitProp,
+  cancelProp: ctx.cancelProp,
   align: onAlignChange,
   formatting: onFormattingChange,
   toggleBold: ctx.toggleBold,

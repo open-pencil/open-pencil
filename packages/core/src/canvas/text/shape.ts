@@ -19,7 +19,8 @@ import { getCanvasKit } from '#core/canvaskit'
 import { shownText } from '#core/text/case'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { OutlineCommand } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
+import { faceStyleName } from '#core/text/font/names'
 import { nextGraphemeBoundary } from '#core/text/graphemes'
 
 /**
@@ -229,8 +230,7 @@ export async function withFigExportRuntime<T>(
   ck: CanvasKit | undefined,
   write: (runtime: FigNodeChangeExportRuntime) => Promise<T>
 ): Promise<T> {
-  if (!needsShaping(graph)) return write({ ...EMPTY_EXPORT_RUNTIME, textDecorations })
-  return withTextShaper(ck ?? (await getCanvasKit()), (shapeText) =>
-    write({ shapeText, textDecorations })
-  )
+  const named = { textDecorations, fontStyleName: faceStyleName }
+  if (!needsShaping(graph)) return write({ ...EMPTY_EXPORT_RUNTIME, ...named })
+  return withTextShaper(ck ?? (await getCanvasKit()), (shapeText) => write({ shapeText, ...named }))
 }

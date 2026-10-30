@@ -54,6 +54,32 @@ function firstPageId(store: EditorStore) {
 }
 
 describe('room sessions', () => {
+  test('renames reach the saver and count as edits without echoing back', async () => {
+    await withRooms(async (open, settle) => {
+      const host = newStore('Checkout')
+      const shared = open({ roomId: ROOM_A, store: host, origin: 'shared' })
+      shared.shareDocument()
+      const guest = newStore()
+      const joined = open({ roomId: ROOM_A, store: guest, origin: 'joined' })
+      await settle()
+      shared.saves.markSaved(shared.saves.counts())
+      await settle()
+      expect(joined.saves.unsaved()).toBe(false)
+
+      guest.renameDocument('Payment')
+      await settle()
+      expect(host.state.documentName).toBe('Payment')
+      expect(shared.saves.unsaved()).toBe(true)
+      const counts = shared.saves.counts()
+      await settle()
+      expect(shared.saves.counts()).toEqual(counts)
+
+      host.renameDocument('Receipt')
+      await settle()
+      expect(guest.state.documentName).toBe('Receipt')
+    })
+  })
+
   test("a joined tab shows the sharer's document, with its name, once it arrives", async () => {
     await withRooms(async (open, settle) => {
       const host = newStore('Checkout flow')

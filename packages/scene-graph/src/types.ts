@@ -366,6 +366,8 @@ export interface TextLength {
 export interface CharacterStyleOverride {
   fontWeight?: number
   italic?: boolean
+  /** The characters' face by its font's own name for it; `null` is the face their weight picks. */
+  fontStyle?: string | null
   textDecoration?: TextDecoration
   textDecorationStyle?: TextDecorationStyle
   textDecorationThickness?: number | null
@@ -649,6 +651,11 @@ export interface SceneNode {
   fontFamily: string
   fontWeight: number
   italic: boolean
+  /**
+   * The face by the name its font gives it ("Semi Bold", "Book", "Condensed Bold"), which Figma
+   * finds a font's face by; `null` is the face the weight and slant pick in the family.
+   */
+  fontStyle: string | null
   textAlignHorizontal: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED'
   textDirection: TextDirection
   textLanguage: string | null
@@ -847,6 +854,12 @@ export interface SceneNode {
 
   textPicture: Uint8Array | null
   derivedTextGlyphs: DerivedTextGlyph[] | null
+  /**
+   * How far a text's lines reach down from its top: measured at its width when its text or width
+   * changes, or read from the lines a file saved, and never saved itself. A fixed-size box does not
+   * clip them, as in Figma, so its visual bounds reach this far. Null when not known.
+   */
+  derivedTextHeight: number | null
   /** Format-neutral layout path for text-on-path nodes. */
   textPathData: TextPathData | null
   /** Node-local box that maps textPathData into the node coordinate space. */

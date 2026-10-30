@@ -2,7 +2,7 @@ import { mean } from 'es-toolkit'
 
 import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
 import type { DerivedTextGlyph, SceneNode, TextPathData } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
@@ -44,7 +44,7 @@ function layOutPathText(
   const letterSpacing = textLengthPixels(type.letterSpacing, fontSize)
   const metrics = getGlyphOutlineMetricsSync(
     type.fontFamily,
-    weightToStyle(type.fontWeight, type.italic),
+    faceLoadKey(type.fontWeight, type.italic),
     type.text,
     fontSize
   )
@@ -231,7 +231,7 @@ function alignedRun(
   if (align !== 'CENTER' && align !== 'RIGHT') return all
   const old = getGlyphOutlineMetricsSync(
     node.fontFamily,
-    weightToStyle(node.fontWeight, node.italic),
+    faceLoadKey(node.fontWeight, node.italic),
     node.text,
     node.fontSize
   )

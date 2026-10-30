@@ -25,6 +25,7 @@ describe('documentFontStatus', () => {
         {
           family: 'Inter',
           style: 'Regular',
+          name: 'Regular',
           status: 'available',
           source: 'bundled',
           substituteFamily: null,
@@ -71,6 +72,7 @@ describe('documentFontStatus', () => {
       {
         family: 'Missing Sans',
         style: 'Regular',
+        name: 'Regular',
         status: 'substituted',
         source: null,
         substituteFamily: 'Inter',
@@ -105,6 +107,7 @@ describe('documentFontStatus', () => {
       {
         family: 'Example Sans',
         style: 'Bold',
+        name: 'Bold',
         status: 'substituted',
         source: null,
         substituteFamily: 'Example Sans',
@@ -115,6 +118,7 @@ describe('documentFontStatus', () => {
       {
         family: 'Missing Serif',
         style: 'Regular',
+        name: 'Regular',
         status: 'unresolved',
         source: null,
         substituteFamily: null,
@@ -146,6 +150,7 @@ describe('documentFontStatus', () => {
       {
         family: 'PingFang SC',
         style: 'Regular',
+        name: 'Regular',
         status: 'substituted',
         source: null,
         substituteFamily: 'Inter',
@@ -162,5 +167,45 @@ describe('documentFontStatus', () => {
     host = 'drawable'
     expect(await manager.loadLocalFont('PingFang SC', 'Regular')).not.toBeNull()
     expect(documentFontStatus(graph, pageId(graph), manager).faithful).toBe(true)
+  })
+
+  test('names faces as their text does, and keeps two faces of one weight apart', () => {
+    const graph = new SceneGraph()
+    // As pasted from Figma: Avenir's Roman and Book are both weight 400.
+    graph.createNode('TEXT', pageId(graph), {
+      name: 'Mixed',
+      text: 'Roman then Book then Bold',
+      fontFamily: 'Avenir',
+      fontStyle: 'Roman',
+      styleRuns: [
+        { start: 10, length: 4, style: { fontStyle: 'Book' } },
+        // A range from HTML sets a weight and no name, so it takes no name of the text's.
+        { start: 20, length: 5, style: { fontWeight: 700 } }
+      ]
+    })
+
+    const issues = documentFontStatus(graph, pageId(graph), new FontManager()).issues
+    expect(issues.map(({ name, style }) => [name, style])).toEqual([
+      ['Bold', 'Bold'],
+      ['Book', 'Regular'],
+      ['Roman', 'Regular']
+    ])
+  })
+
+  test('a named face is available once the style it loads as is loaded', async () => {
+    const graph = new SceneGraph()
+    graph.createNode('TEXT', pageId(graph), {
+      name: 'Book',
+      text: 'Book',
+      fontFamily: 'Avenir',
+      fontStyle: 'Book'
+    })
+    const manager = new FontManager()
+    await manager.markLoaded('Avenir', 'Regular', new ArrayBuffer(8), 'local')
+
+    expect(documentFontStatus(graph, pageId(graph), manager)).toMatchObject({
+      faithful: true,
+      faces: [{ family: 'Avenir', name: 'Book', style: 'Regular', status: 'available' }]
+    })
   })
 })

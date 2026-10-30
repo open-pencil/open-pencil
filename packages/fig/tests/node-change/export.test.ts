@@ -5,6 +5,7 @@ import { componentPropDefsOf, componentPropRefsOf } from '#fig-tests/helpers/com
 import { symbolDataOf } from '#fig/instance-overrides/types'
 import {
   buildComponentPropIndex,
+  EMPTY_EXPORT_RUNTIME,
   mapToFigmaType,
   sceneNodeToKiwi,
   type FigNodeChangeExportRuntime
@@ -256,7 +257,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     })
     const blobs: Uint8Array[] = []
     const runtime: FigNodeChangeExportRuntime = {
-      textDecorations: () => [],
+      ...EMPTY_EXPORT_RUNTIME,
       shapeText: () => ({
         glyphs: [
           {

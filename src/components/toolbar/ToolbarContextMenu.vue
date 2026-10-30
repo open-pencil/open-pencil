@@ -26,7 +26,7 @@ const menu = useMenuUI({ content: 'w-48', item: 'justify-start gap-2' })
     <ContextMenuPortal>
       <ContextMenuContent :class="menu.content">
         <MenuScrollArea>
-          <ContextMenuItem :class="menu.item" @select="openSettingsDialog('toolbar')">
+          <ContextMenuItem :class="menu.item" @select="openSettingsDialog('editor', 'toolbar')">
             <icon-lucide-sliders-horizontal :class="menu.icon" />
             {{ settings.customizeToolbar }}
           </ContextMenuItem>

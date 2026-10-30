@@ -1,4 +1,4 @@
-import type { WebFontProviderId } from '#core/text/web-fonts'
+import type { WebFontProviderId } from '#core/text/web-font/resolver'
 
 export interface FontInfo {
   family: string

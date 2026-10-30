@@ -1,5 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {
@@ -53,7 +53,7 @@ function styleForCharacter(
     if (run.style.textLanguage !== undefined) language = run.style.textLanguage
   }
 
-  return { family, style: weightToStyle(weight, italic), language }
+  return { family, style: faceLoadKey(weight, italic), language }
 }
 
 /**

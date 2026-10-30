@@ -10,6 +10,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
+import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { confirmAllDocuments } from '@/app/document/close/all'
 import { confirmDocumentClose } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
@@ -482,7 +483,8 @@ export async function openStorageDocumentInNewTab(
         notificationMessages.get().openFileFailed({
           name: document.name,
           error: error instanceof Error ? error.message : String(error)
-        })
+        }),
+        viewDiagnosticsAction()
       )
     }
     await releaseOpeningTab(opening)

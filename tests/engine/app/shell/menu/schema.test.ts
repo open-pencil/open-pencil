@@ -51,6 +51,7 @@ describe('APP_MENU_SCHEMA', () => {
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
       'browse-files',
       'open-tour',
+      'diagnostics',
       'settings',
       'view-design-issues',
       'theme-light',

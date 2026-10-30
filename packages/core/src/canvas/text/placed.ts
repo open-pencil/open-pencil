@@ -2,7 +2,7 @@ import type { Paragraph } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import {
   drawnFontVariations,
@@ -19,7 +19,7 @@ import {
   shardCovers,
   type GlyphOutlineSource
 } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
 
@@ -43,7 +43,7 @@ export interface LaidOutGlyph {
 /** The loaded face of a family the paragraph draws a style in, as its style name. */
 function loadedStyle(family: string, weight: number, italic: boolean): string | null {
   const face = loadedFace(family, weight, italic)
-  return face ? weightToStyle(face.weight, face.italic) : null
+  return face ? faceLoadKey(face.weight, face.italic) : null
 }
 
 /**
@@ -56,7 +56,7 @@ function fontAt(node: SceneNode, index: number) {
   const family = run?.style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const weight = run?.style.fontWeight ?? node.fontWeight
   const italic = run?.style.italic ?? node.italic
-  const style = weightToStyle(weight, italic)
+  const style = faceLoadKey(weight, italic)
   const variations = drawnFontVariations({
     family,
     weight,

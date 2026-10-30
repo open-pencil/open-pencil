@@ -8,6 +8,7 @@ import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
+import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
@@ -159,11 +160,13 @@ export function createChatSessionManager({
     const runtime = await createAIModelRuntime('design')
     if (runtime?.kind !== 'harness') throw new Error('The Design agent is not configured for Pi')
     await assertAgentReady('pi')
-    const [{ HarnessChatTransport }, { buildPiMCPServers }, { readPiAccount }] = await Promise.all([
-      import('@/app/ai/transports/pi'),
-      import('@/app/integrations/mcp'),
-      import('@/app/ai/agents/pi/settings')
-    ])
+    const [{ HarnessChatTransport }, { buildPiMCPServers }, { readPiAccount }, { harnessSkills }] =
+      await Promise.all([
+        import('@/app/ai/transports/pi'),
+        import('@/app/integrations/mcp'),
+        import('@/app/ai/agents/pi/settings'),
+        import('@/app/ai/skills/harness')
+      ])
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
@@ -187,7 +190,8 @@ export function createChatSessionManager({
           permissionMode: runtime.role.profile.harnessPermissionMode ?? 'allow-edits'
         },
         instructions: SYSTEM_PROMPT,
-        mcpServers: await buildPiMCPServers()
+        mcpServers: await buildPiMCPServers(),
+        skills: await harnessSkills()
       },
       apiKey
         ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
@@ -222,7 +226,8 @@ export function createChatSessionManager({
       thinkingLevel: () => chatThinkingLevel.value,
       onError: captureProviderError,
       diagnosticContext,
-      recorder: runRecorder
+      recorder: runRecorder,
+      yieldWhen: hasSteeringMessage
     })
   }
 

@@ -1,6 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import { renderPagesToPDFDetailed, type PDFExportResult } from './export'
 import type { PDFPageSpec } from './plan'

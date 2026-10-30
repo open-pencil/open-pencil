@@ -92,7 +92,8 @@ export function createDocumentService(
       stored,
       revisionId,
       storageObjectId,
-      images: revisionImages
+      images: revisionImages,
+      name
     }: {
       userId: string
       uploadId: string
@@ -106,6 +107,7 @@ export function createDocumentService(
       revisionId: string
       storageObjectId: string
       images: CommitUploadInput['images']
+      name: CommitUploadInput['name']
     }
   ): Promise<boolean> {
     const lockedUpload = await transaction
@@ -154,6 +156,7 @@ export function createDocumentService(
     await transaction
       .updateTable('document')
       .set({
+        ...(name === undefined ? {} : { name }),
         currentRevisionId: revisionId,
         version: (expression) => expression('version', '+', 1)
       })
@@ -324,7 +327,8 @@ export function createDocumentService(
                   stored,
                   revisionId: crypto.randomUUID(),
                   storageObjectId: crypto.randomUUID(),
-                  images: input.images
+                  images: input.images,
+                  name: input.name
                 })
               )
             )

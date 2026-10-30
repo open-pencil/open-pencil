@@ -61,7 +61,6 @@ tests/engine/app/editor/preparation/multi-tab.test.ts
 tests/engine/app/editor/selection/focus.test.ts
 tests/engine/app/editor/store-path.test.ts
 tests/engine/app/editor/variables.test.ts
-tests/engine/app/editor/vectorize/providers.test.ts
 tests/engine/app/external-link.test.ts
 tests/engine/app/font-loading.test.ts
 tests/engine/app/integrations/mcp-connections.test.ts

@@ -6,6 +6,7 @@ import {
   setMessageAttachments
 } from '@/app/ai/attachment/presentation/store'
 import { visibleMessageText, setVisibleMessageText } from '@/app/ai/chat/presentation'
+import { withReferenceLabels } from '@/app/ai/chat/references/link'
 import { settleMessage } from '@/app/ai/reply/settle'
 import { readToolChange, setToolChange } from '@/app/ai/tools/changes/store'
 
@@ -48,5 +49,8 @@ export function fallbackTitle(messages: UIMessage[]): string {
     .filter((part) => part.type === 'text')
     .map((part) => part.text)
     .join(' ')
-  return visibleMessageText(first.id, text).replace(/\s+/g, ' ').trim().slice(0, 120)
+  return withReferenceLabels(visibleMessageText(first.id, text))
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120)
 }

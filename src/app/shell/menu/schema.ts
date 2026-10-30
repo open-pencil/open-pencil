@@ -85,6 +85,12 @@ export const APP_MENU_SCHEMA = [
       { id: 'open-recent', label: 'Open Recent', target: 'native' },
       { id: 'browse-files', label: 'Browse Files…', handler: 'shell' },
       { id: 'open-tour', label: 'Open the Tour', handler: 'shell' },
+      {
+        id: 'diagnostics',
+        label: 'Diagnostics…',
+        handler: 'shell',
+        palette: { keywords: ['log', 'report', 'bug', 'problem', 'troubleshoot'] }
+      },
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },

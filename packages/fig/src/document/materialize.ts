@@ -496,7 +496,8 @@ function materializeReaderInto(
         populateInstances(child)
       const id = sources.get(child.sourceId)
       if (!id) throw new Error(`Missing assembled child ${child.sourceId}`)
-      ordered.push(id)
+      // A layer moved live to another parent stays there; this only orders what the parent holds.
+      if (graph.getNode(id)?.parentId === parentId) ordered.push(id)
     }
     const parent = graph.getNode(parentId)
     if (parent)

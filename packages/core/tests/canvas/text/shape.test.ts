@@ -13,7 +13,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 import { withFigExportRuntime, withTextShaper } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
 
 const testFont = (name: string) => join(FIXTURES, 'fonts', name)

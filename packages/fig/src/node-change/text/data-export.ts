@@ -3,7 +3,7 @@ import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 
 import { applyFontFeaturesToKiwi } from '../font/features'
-import { weightToFigmaStyle } from '../font/style'
+import { figmaStyleName, standardStyleNamer, type StyleNamer } from '../font/style'
 import { stringToFigmaAxisTag } from '../font/variations'
 import { exportTextLines } from './lines'
 import { figmaLetterSpacing, figmaLineHeight } from './values'
@@ -39,14 +39,13 @@ function textStyleOverrideToKiwi(
   id: number,
   style: CharacterStyleOverride,
   node: SceneNode,
-  fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint
+  fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint,
+  nameFace: StyleNamer
 ): NodeChange {
   const override: Record<string, unknown> = { styleID: id }
-  const weight = style.fontWeight ?? node.fontWeight
-  const italic = style.italic ?? node.italic
   override.fontName = {
     family: normalizeFontFamily(style.fontFamily ?? node.fontFamily),
-    style: weightToFigmaStyle(weight, italic),
+    style: figmaStyleName(node, style, nameFace),
     postscript: ''
   }
   if (style.fontSize !== undefined) override.fontSize = style.fontSize
@@ -56,7 +55,7 @@ function textStyleOverrideToKiwi(
   if (style.opticalSizeFromFontSize !== undefined)
     override.detachOpticalSizeFromFontSize = !style.opticalSizeFromFontSize
   if (style.fontFeatures && style.fontFeatures.length > 0) {
-    applyFontFeaturesToKiwi(override as NodeChange, style.fontFeatures)
+    applyFontFeaturesToKiwi(override, style.fontFeatures)
   }
   if (style.letterSpacing !== undefined) {
     override.letterSpacing = figmaLetterSpacing(style.letterSpacing)
@@ -67,7 +66,7 @@ function textStyleOverrideToKiwi(
   if (style.fills && style.fills.length > 0) {
     override.fillPaints = style.fills.map(fillToKiwiPaint)
   }
-  return override as NodeChange
+  return override
 }
 
 function collectTextStyleOverrides(node: SceneNode): {
@@ -107,11 +106,12 @@ export function characterStyleIDs(node: SceneNode): number[] {
 
 export function exportTextData(
   node: SceneNode,
-  fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint
+  fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint,
+  nameFace: StyleNamer = standardStyleNamer
 ): NodeChange['textData'] {
   const { charIds, styleMap } = collectTextStyleOverrides(node)
   const characterOverrides = [...styleMap.values()].map(({ id, style }) =>
-    textStyleOverrideToKiwi(id, style, node, fillToKiwiPaint)
+    textStyleOverrideToKiwi(id, style, node, fillToKiwiPaint, nameFace)
   )
   // Paragraph spacing shares the override table, numbered after the character styles.
   const paragraphs = exportTextLines(node, styleMap.size + 1)

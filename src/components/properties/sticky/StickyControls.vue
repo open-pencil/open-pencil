@@ -8,7 +8,7 @@ import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
 
-import Swatches from '@/components/figjam/Swatches.vue'
+import FigJamSwatches from '@/components/figjam/FigJamSwatches.vue'
 import { typefaceModel, useFigJamTextOptions } from '@/components/figjam/text-options'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -79,7 +79,7 @@ const selectedTypeface = typefaceModel(
 <template>
   <div :class="styles().root()">
     <PanelFieldGroup :label="panels.stickyColor">
-      <Swatches
+      <FigJamSwatches
         :label="panels.stickyColor"
         :swatches="swatches"
         :selected="selectedColor"

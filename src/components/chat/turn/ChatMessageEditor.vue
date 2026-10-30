@@ -1,48 +1,45 @@
 <script setup lang="ts">
-import { useTextareaAutosize } from '@vueuse/core'
-import { onMounted, ref, useTemplateRef } from 'vue'
+import { onMounted, useTemplateRef } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { useChatEditor } from '@/components/chat/composer/useChatEditor'
+import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
-const { text } = defineProps<{ text: string }>()
+const { text: initial } = defineProps<{ text: string }>()
 const emit = defineEmits<{ save: [text: string]; cancel: [] }>()
 const { ai } = useI18n()
 
-const draft = ref(text)
-const textarea = useTemplateRef<HTMLTextAreaElement>('textarea')
-useTextareaAutosize({ element: textarea, input: draft, maxHeight: 200 })
-
-onMounted(() => {
-  textarea.value?.focus()
-  textarea.value?.setSelectionRange(draft.value.length, draft.value.length)
+/** The composer's field, so a sent message edits with the same chips and completions. */
+const host = useTemplateRef<HTMLDivElement>('host')
+const editor = useChatEditor(host, {
+  initial,
+  label: () => ai.value.editMessage,
+  placeholder: () => '',
+  editable: () => true,
+  attributes: {},
+  completions: useComposerCompletions(),
+  onSubmit: save,
+  onCancel: () => {
+    emit('cancel')
+    return true
+  }
 })
+const { text: draft } = editor
+
+onMounted(() => editor.focusEnd())
 
 function save(): void {
   if (draft.value.trim()) emit('save', draft.value)
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  if (event.code === 'Escape') {
-    event.preventDefault()
-    emit('cancel')
-  } else if (event.code === 'Enter' && !event.shiftKey && !event.isComposing) {
-    event.preventDefault()
-    save()
-  }
 }
 </script>
 
 <template>
   <div class="w-72 max-w-full space-y-1.5" data-slot="chat-message-editor">
-    <textarea
-      ref="textarea"
-      v-model="draft"
-      rows="2"
-      :aria-label="ai.editMessage"
-      class="block w-full resize-none rounded-xl border border-accent bg-input px-3 py-2 text-xs leading-relaxed text-surface outline-none"
-      @keydown="onKeydown"
+    <div
+      ref="host"
+      class="rounded-xl border border-accent bg-input"
       @copy.stop
       @cut.stop
       @paste.stop

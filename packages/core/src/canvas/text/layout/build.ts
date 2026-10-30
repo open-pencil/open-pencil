@@ -1,7 +1,7 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -67,7 +67,7 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
     // Runs at one line height measure as one, whatever else they style.
-    if (last && last.end === start && last.lineHeight === lineHeight) last.end = end
+    if (last?.end === start && last.lineHeight === lineHeight) last.end = end
     else runs.push({ start, end, lineHeight })
   }
   let position = 0
@@ -162,7 +162,7 @@ function listStyle(node: ParagraphNode, firstCharacter: number): ListStyle {
   return {
     em: override?.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE),
     family: override?.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
-    style: weightToStyle(override?.fontWeight ?? node.fontWeight, override?.italic ?? node.italic),
+    style: faceLoadKey(override?.fontWeight ?? node.fontWeight, override?.italic ?? node.italic),
     override
   }
 }

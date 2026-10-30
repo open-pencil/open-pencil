@@ -1,8 +1,8 @@
 import { groupBy } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
-import { normalizeFontFamily, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import type { CharacterStyleOverride, DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import { normalizeFontFamily, faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import {
   hasTextList,
   lineHeightPixels,
@@ -12,7 +12,7 @@ import {
 
 import { bytesToHex } from '../bytes'
 import type { PlacedTextGlyph, TextDecorationRecord } from '../export/runtime'
-import { weightToFigmaStyle } from '../font/style'
+import { figmaStyleName, standardStyleNamer, type StyleNamer } from '../font/style'
 import { bakeGlyphScale, encodePathCommandsBlob, type OutlineCommand } from '../path/commands'
 import { characterStyleIDs } from '../text/data-export'
 import { buildDerivedTextData } from './data'
@@ -54,6 +54,8 @@ export interface DerivedTextBuildContext {
   glyphBlobMap: Map<string, number>
   shapeText(node: SceneNode): ShapedText | null
   textDecorations(node: SceneNode, glyphs: readonly PlacedTextGlyph[]): TextDecorationRecord[]
+  /** The name a family's font gives a face; Google Fonts' names when left out. */
+  fontStyleName?: StyleNamer
 }
 
 // Figma stores a whitespace glyph as a lone close command.
@@ -70,31 +72,29 @@ function appendGlyphBlob(context: DerivedTextBuildContext, blob: Uint8Array): nu
 
 function fontMetaData(
   node: SceneNode,
-  digestMap: Map<string, Uint8Array>
+  digestMap: Map<string, Uint8Array>,
+  nameFace: StyleNamer
 ): DerivedTextData['fontMetaData'] {
   const fonts: NonNullable<DerivedTextData['fontMetaData']> = []
   const seen = new Set<string>()
-  const addFont = (family: string, weight: number, italic: boolean) => {
-    const normalized = normalizeFontFamily(family)
-    const key = `${normalized}|${weightToStyle(weight, italic)}`
-    if (seen.has(key)) return
-    seen.add(key)
+  const addFont = (style: CharacterStyleOverride) => {
+    const normalized = normalizeFontFamily(style.fontFamily ?? node.fontFamily)
+    const weight = style.fontWeight ?? node.fontWeight
+    const italic = style.italic ?? node.italic
+    const name = figmaStyleName(node, style, nameFace)
+    // Two faces at one weight and slant ("Roman", "Book") are fonts of their own.
+    if (seen.has(`${normalized}|${name}`)) return
+    seen.add(`${normalized}|${name}`)
     fonts.push({
-      key: { family: normalized, style: weightToFigmaStyle(weight, italic), postscript: '' },
+      key: { family: normalized, style: name, postscript: '' },
       fontLineHeight: 1.2,
-      fontDigest: digestMap.get(key),
+      fontDigest: digestMap.get(`${normalized}|${faceLoadKey(weight, italic)}`),
       fontStyle: italic ? 'ITALIC' : 'NORMAL',
       fontWeight: weight
     })
   }
-  addFont(node.fontFamily, node.fontWeight, node.italic)
-  for (const run of node.styleRuns) {
-    addFont(
-      run.style.fontFamily ?? node.fontFamily,
-      run.style.fontWeight ?? node.fontWeight,
-      run.style.italic ?? node.italic
-    )
-  }
+  addFont({})
+  for (const run of node.styleRuns) addFont(run.style)
   return fonts
 }
 
@@ -289,7 +289,7 @@ export function buildNodeDerivedTextData(
   node: SceneNode,
   context: DerivedTextBuildContext
 ): NodeChange['derivedTextData'] {
-  const fonts = fontMetaData(node, context.digestMap)
+  const fonts = fontMetaData(node, context.digestMap, context.fontStyleName ?? standardStyleNamer)
   const saved = node.derivedTextGlyphs ?? []
   if (saved.length > 0) {
     return buildDerivedTextData({
