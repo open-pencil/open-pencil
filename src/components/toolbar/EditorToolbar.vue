@@ -51,7 +51,7 @@ const actionItems = computed(() =>
  * a read-only document leaves them out, as it does the buttons.
  */
 const hiddenActions = computed(() =>
-  !resolveEditorProfile(store.state).edits
+  !profile.value.edits
     ? []
     : TOOLBAR_ACTIONS.filter((action) => !actionItems.value.includes(action))
 )
