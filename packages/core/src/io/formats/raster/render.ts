@@ -258,18 +258,6 @@ function applyWorldTransform(node: SceneNode, matrix: Mat3): void {
   node.flipY = false
 }
 
-function isolateSelection(
-  graph: SceneGraph,
-  nodeIds: string[]
-): { graph: SceneGraph; pageId: string } | null {
-  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
-  if (!extracted.pageId) {
-    return null
-  }
-  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
-  return { graph: extracted.graph, pageId: extracted.pageId }
-}
-
 export function renderNodesToImage(
   ck: CanvasKit,
   renderer: SkiaRenderer,
@@ -293,17 +281,17 @@ export function renderNodesToImage(
   const pixelH = Math.ceil(contentH * options.scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
-  const selection = isolateSelection(graph, nodeIds)
-  if (!selection) {
-    return null
-  }
+  // Figma exports a layer by itself, without the page behind it, even when it blends.
+  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
+  if (!extracted.pageId) return null
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
   return renderToSurface(
     ck,
     renderer,
-    selection.graph,
-    selection.pageId,
+    extracted.graph,
+    extracted.pageId,
     pixelW,
     pixelH,
     options.format,
