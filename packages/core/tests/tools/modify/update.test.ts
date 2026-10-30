@@ -1,9 +1,14 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { updateNode } from '#core/tools/modify/update'
+
+// Text edits need the text's font loaded, as in Figma; this file must not rely on another's.
+beforeAll(() => registerTestFont())
 
 describe('update_node', () => {
   test('does not report a size it could not set on a layer inside an instance', async () => {
