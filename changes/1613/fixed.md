@@ -1,1 +1,1 @@
-- `.fig` import ignores component property references Figma no longer applies, so the layers it draws are no longer hidden or retexted.
+- `.fig` import binds layers to component properties only through their parameter map, as Figma does, so legacy property references no longer hide or retext layers Figma draws.
