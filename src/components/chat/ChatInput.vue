@@ -12,6 +12,7 @@ import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
+import ChatACPControls from '@/components/chat/ChatACPControls.vue'
 import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
@@ -207,6 +208,7 @@ const selectedProfileName = computed(
             <icon-lucide-bot class="size-3 shrink-0" />
             <span class="truncate">{{ agentName }}</span>
           </div>
+          <ChatACPControls v-if="providerID.startsWith('acp:')" />
         </template>
         <template v-else>
           <ChatProfileSelect>
