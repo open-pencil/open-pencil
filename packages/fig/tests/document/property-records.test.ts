@@ -18,7 +18,7 @@ function visibilityBinding(): VariableConsumptionEntry {
   }
 }
 
-function iconShownWhenHidden(parameterEntries: VariableConsumptionEntry[]): boolean | undefined {
+function iconShownWhenHidden(parameterEntries?: VariableConsumptionEntry[]): boolean | undefined {
   const changes: NodeChange[] = [
     {
       guid: guid(1),
@@ -35,7 +35,7 @@ function iconShownWhenHidden(parameterEntries: VariableConsumptionEntry[]): bool
       parentIndex: { guid: guid(1), position: '!' },
       visible: true,
       componentPropRefs: [{ defID: SHOW_ICON, componentPropNodeField: 'VISIBLE' }],
-      parameterConsumptionMap: { entries: parameterEntries }
+      ...(parameterEntries ? { parameterConsumptionMap: { entries: parameterEntries } } : {})
     },
     { guid: guid(3), type: 'CANVAS' },
     {
@@ -57,5 +57,9 @@ describe('component property references', () => {
 
   test('a reference the parameter map no longer carries is stale', () => {
     expect(iconShownWhenHidden([])).toBe(true)
+  })
+
+  test('a legacy reference drives the layer when the record has no parameter map', () => {
+    expect(iconShownWhenHidden()).toBe(false)
   })
 })
