@@ -91,16 +91,19 @@ test('the properties panel reopens at one width on a narrow and a wide window', 
     await page.keyboard.press('Meta+\\')
     await expect(panel).toBeVisible()
 
-    await page.setViewportSize({ width: 1920, height: 900 })
-    await page.reload()
-    await expect(panel).toBeVisible()
-    expect(Math.abs((await panelWidth()) - narrow)).toBeLessThanOrEqual(1)
+    // A fixed width is a repeating share of 1920 px; saved, it would reopen narrower at 1280 px.
+    for (const width of [1920, 1280]) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.reload()
+      await expect(panel).toBeVisible()
+      expect(Math.abs((await panelWidth()) - narrow)).toBeLessThanOrEqual(1)
+    }
   } finally {
     await context.close()
   }
 })
 
-test('a keyboard resize survives hiding the panels and a reload', async () => {
+test('a keyboard resize survives a reload and hiding the panels', async () => {
   const panel = editor.page.getByTestId('layers-panel')
   const panelWidth = async () =>
     expectDefined(await panel.boundingBox(), 'layers panel bounds').width
@@ -111,13 +114,13 @@ test('a keyboard resize survives hiding the panels and a reload', async () => {
   const resized = await panelWidth()
   expect(resized).toBeGreaterThan(before + 2)
 
+  await editor.page.reload()
+  await editor.canvas.waitForInit()
+  expect(Math.abs((await panelWidth()) - resized)).toBeLessThanOrEqual(1)
+
   await editor.page.keyboard.press('Meta+\\')
   await editor.page.keyboard.press('Meta+\\')
   await expect(panel).toBeVisible()
-  expect(Math.abs((await panelWidth()) - resized)).toBeLessThanOrEqual(1)
-
-  await editor.page.reload()
-  await editor.canvas.waitForInit()
   expect(Math.abs((await panelWidth()) - resized)).toBeLessThanOrEqual(1)
   editor.canvas.assertNoErrors()
 })
