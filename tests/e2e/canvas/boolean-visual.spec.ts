@@ -64,3 +64,63 @@ test('boolean operations', async () => {
   await editor.canvas.waitForRender()
   await expectCanvas('boolean-operations')
 })
+
+test('boolean operation strokes keep their alignment and corner radius', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) {
+      throw new Error('OpenPencil store not initialized')
+    }
+    const pageId = store.state.currentPageId
+    const variants = [
+      { align: 'INSIDE', cornerRadius: 0 },
+      { align: 'CENTER', cornerRadius: 0 },
+      { align: 'OUTSIDE', cornerRadius: 0 },
+      { align: 'OUTSIDE', cornerRadius: 24 }
+    ] as const
+
+    for (const [index, { align, cornerRadius }] of variants.entries()) {
+      const group = store.graph.createNode('BOOLEAN_OPERATION', pageId, {
+        name: `${align} ${cornerRadius} boolean`,
+        x: 72 + index * 152,
+        y: 92,
+        width: 124,
+        height: 104,
+        booleanOperation: 'UNION',
+        cornerRadius,
+        fills: [
+          { type: 'SOLID', color: { r: 0.23, g: 0.51, b: 0.96, a: 1 }, visible: true, opacity: 1 }
+        ],
+        strokes: [
+          {
+            type: 'SOLID',
+            color: { r: 0.96, g: 0.35, b: 0.35, a: 1 },
+            weight: 10,
+            visible: true,
+            opacity: 0.6,
+            align
+          }
+        ]
+      })
+      store.graph.createNode('RECTANGLE', group.id, {
+        name: `${align} rectangle`,
+        x: 0,
+        y: 18,
+        width: 82,
+        height: 70
+      })
+      store.graph.createNode('RECTANGLE', group.id, {
+        name: `${align} square`,
+        x: 42,
+        y: 0,
+        width: 82,
+        height: 104
+      })
+    }
+
+    store.clearSelection()
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  await expectCanvas('boolean-stroke-alignment')
+})
