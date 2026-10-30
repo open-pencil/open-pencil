@@ -136,4 +136,5 @@ test('a failed reply notifies when turned on, but not while its chat is in view'
         tag: expect.stringMatching(/^agent:/)
       }
     ])
+  expect((await shownNotifications(page)).at(0)?.body.trim()).toBeTruthy()
 })

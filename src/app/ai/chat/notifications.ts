@@ -84,7 +84,8 @@ export async function notifyReplyEnded(
   }
   // The preview loads a Markdown parser, which a reply nobody asked to hear about does not need.
   if (!appPreferences.value.notifications.agentFinished) return
-  const preview = await replyPreview(message)
+  // A parser that fails to load leaves the plain announcement rather than no notification.
+  const preview = await replyPreview(message).catch(() => '')
   notifyChat('agentFinished', store, agent, preview || messages.notifyReplyFinished)
 }
 

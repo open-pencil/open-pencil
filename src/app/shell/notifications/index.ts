@@ -15,7 +15,10 @@ export interface AppNotification {
   body: string
   /** The tab the event happened in; it is shown when the notification is clicked. */
   tabId: string | null
-  /** A newer notification with the same tag replaces an older one that is still shown. */
+  /**
+   * In browsers a newer notification with the same tag replaces an older one that is still shown.
+   * The desktop shell cannot replace or remove one on macOS and Windows, so each stays.
+   */
   tag: string
   /** Shows what the notification is about, after the window comes forward. */
   open: () => void
@@ -28,8 +31,8 @@ export interface AppNotification {
  */
 const shownOnDesktop = new Map<number, () => void>()
 const DESKTOP_CLICKS_KEPT = 50
-/** Browser notifications still shown, closed once the person is back in the window. */
-const shownInBrowser = new Set<Notification>()
+/** Browser notifications still shown, with their tab, closed once the person sees that tab. */
+const shownInBrowser = new Map<Notification, string | null>()
 let desktopClicks: Promise<void> | null = null
 let closesOnReturn = false
 
@@ -97,13 +100,15 @@ function showInBrowser(notification: AppNotification): void {
   }
   if (!closesOnReturn) {
     closesOnReturn = true
-    // What a notification reports is in view once the window is, so it no longer needs one.
+    // What a notification reports is in view once the window shows its tab, so it no longer
+    // needs one; those about other tabs stay to be clicked.
     window.addEventListener('focus', () => {
-      for (const open of shownInBrowser) open.close()
-      shownInBrowser.clear()
+      const activeTabId = getActiveTabId()
+      for (const [open, tabId] of shownInBrowser)
+        if (tabId === null || tabId === activeTabId) open.close()
     })
   }
-  shownInBrowser.add(shown)
+  shownInBrowser.set(shown, notification.tabId)
   shown.addEventListener('close', () => shownInBrowser.delete(shown))
   shown.addEventListener('click', () => {
     window.focus()
