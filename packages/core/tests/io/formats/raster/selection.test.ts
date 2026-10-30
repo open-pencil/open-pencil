@@ -12,12 +12,15 @@ function solidFill(r: number, g: number, b: number) {
   return [{ type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }]
 }
 
-function exportedRgba(graph: SceneGraph, pageId: string, nodeId: string) {
+function exportedRgba(graph: SceneGraph, pageId: string, nodeIds: string | string[]) {
   const surface = expectDefined(ck.MakeSurface(1, 1), 'surface')
   const renderer = new SkiaRenderer(ck, surface)
   try {
     const png = expectDefined(
-      renderNodesToImage(ck, renderer, graph, pageId, [nodeId], { scale: 1, format: 'PNG' }),
+      renderNodesToImage(ck, renderer, graph, pageId, [nodeIds].flat(), {
+        scale: 1,
+        format: 'PNG'
+      }),
       'png'
     )
     const image = expectDefined(ck.MakeImageFromEncoded(png), 'image')
@@ -109,4 +112,75 @@ test('selection export leaves out page neighbours when the node blurs its backgr
 
   expect(pixelAt(5, 5)[3]).toBe(0)
   expect(pixelAt(30, 30)).toEqual([255, 255, 255, 255])
+})
+
+/** A blue square under a white one that overlaps its right half, both on the page. */
+function overlappingPair(topBlend: 'NORMAL' | 'MULTIPLY', topColor = solidFill(1, 1, 1)) {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const bottom = graph.createNode('RECTANGLE', page.id, {
+    width: 40,
+    height: 40,
+    fills: solidFill(0, 0, 1)
+  })
+  const top = graph.createNode('RECTANGLE', page.id, {
+    x: 20,
+    width: 40,
+    height: 40,
+    fills: topColor,
+    blendMode: topBlend
+  })
+  return { graph, pageId: page.id, ids: [top.id, bottom.id] }
+}
+
+test('a multi-layer export stacks the layers as the page does, whatever order they are given in', () => {
+  const { graph, pageId, ids } = overlappingPair('NORMAL', solidFill(1, 0, 0))
+  expect(exportedRgba(graph, pageId, ids)(30, 20)).toEqual([255, 0, 0, 255])
+})
+
+test('a layer blends with the selected layers under it', () => {
+  const multiply = overlappingPair('MULTIPLY')
+  expect(exportedRgba(multiply.graph, multiply.pageId, multiply.ids)(30, 20)).toEqual([
+    0, 0, 255, 255
+  ])
+  const normal = overlappingPair('NORMAL')
+  expect(exportedRgba(normal.graph, normal.pageId, normal.ids)(30, 20)).toEqual([
+    255, 255, 255, 255
+  ])
+})
+
+test('a background blur blurs the selected layers behind it', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const left = graph.createNode('RECTANGLE', page.id, {
+    width: 20,
+    height: 40,
+    fills: solidFill(0, 0, 0)
+  })
+  const right = graph.createNode('RECTANGLE', page.id, {
+    x: 20,
+    width: 20,
+    height: 40,
+    fills: solidFill(1, 1, 1)
+  })
+  const glass = graph.createNode('FRAME', page.id, {
+    width: 40,
+    height: 40,
+    fills: [{ ...solidFill(1, 1, 1)[0], opacity: 0.01 }],
+    effects: [
+      {
+        type: 'BACKGROUND_BLUR',
+        radius: 16,
+        spread: 0,
+        offset: { x: 0, y: 0 },
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        visible: true,
+        blendMode: 'NORMAL',
+        showShadowBehindNode: false
+      }
+    ]
+  })
+  const [red] = exportedRgba(graph, page.id, [left.id, right.id, glass.id])(18, 20)
+  // Sharp, the black half reads 0 beside the edge; blurred, the white half bleeds into it.
+  expect(red).toBeGreaterThan(40)
 })
