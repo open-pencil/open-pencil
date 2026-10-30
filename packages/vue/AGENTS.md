@@ -17,7 +17,7 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 
 ## Canvas tools
 
-- What a tool does on the canvas lives in its entry in `CANVAS_TOOLS` (`packages/vue/src/canvas/tools/registry.ts`): a press, and a hover while no drag is held. A new tool adds an entry, not a branch in `useCanvasInput`; the `Record<Tool, CanvasTool>` type makes a missing one a type error, and the editor profile's `tools` decides which are on offer.
+- What a tool does on the canvas lives in its entry in `CANVAS_TOOLS`: a press, and a hover while no drag is held. A new tool adds an entry, not a branch in `useCanvasInput`, and the editor profile's `tools` decides which are on offer; the `Record<Tool, CanvasTool>` type makes a missing entry a type error (`packages/vue/src/canvas/tools/registry.ts`).
 
 ## Preview islands
 
