@@ -5,7 +5,7 @@ import type * as Y from 'yjs'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { openRoomSession, type RoomSession, type RoomSessionOptions } from '@/app/collab/session'
-import { claimRoot } from '@/app/collab/shared-tree/fields'
+import { claimRoot, readRoomName, writeRoomName } from '@/app/collab/shared-tree/fields'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
 
@@ -77,6 +77,48 @@ describe('room sessions', () => {
       host.renameDocument('Receipt')
       await settle()
       expect(guest.state.documentName).toBe('Receipt')
+    })
+  })
+
+  test('a name the document takes without a rename stays out of the room', async () => {
+    await withRooms(async (open, settle) => {
+      const host = newStore('Checkout')
+      open({ roomId: ROOM_A, store: host, origin: 'shared' }).shareDocument()
+      const guest = newStore()
+      open({ roomId: ROOM_A, store: guest, origin: 'joined' })
+      await settle()
+
+      // As a save to a new place does while it writes, and undoes when the write fails.
+      host.state.documentName = 'Checkout copy'
+      await settle()
+      expect(guest.state.documentName).toBe('Checkout')
+    })
+  })
+
+  test("a rename made while the room's copy loads replaces the room's name", async () => {
+    await withRooms(async (open) => {
+      const room: { doc?: Y.Doc } = {}
+      const store = newStore('Poster')
+      open({
+        roomId: ROOM_A,
+        store,
+        origin: 'shared',
+        holdsDocument: true,
+        openSavedCopy: (_roomId, ydoc) => {
+          room.doc = ydoc
+          return noSavedCopy()
+        }
+      })
+      store.renameDocument('Spring poster')
+
+      // The room's saved copy of this document arrives, with the name it had.
+      const meta = expectDefined(room.doc, 'room document').getMap('meta')
+      expectDefined(room.doc, 'room document').transact(() => {
+        claimRoot(meta, store.graph.rootId)
+        writeRoomName(meta, 'Poster')
+      })
+      expect(store.state.documentName).toBe('Spring poster')
+      expect(readRoomName(meta)).toBe('Spring poster')
     })
   })
 
