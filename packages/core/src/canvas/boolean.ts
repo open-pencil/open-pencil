@@ -1,6 +1,6 @@
 import type { Canvas, Path, PathBuilder, PathOp } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
@@ -157,6 +157,22 @@ export function nodeHasVisibleStroke(node: SceneNode): boolean {
   return node.strokes.some((stroke) => stroke.visible && stroke.weight > 0)
 }
 
+/**
+ * Figma shapes a boolean operand by the paints that draw, visible and above 0%: a fill gives its
+ * area and each stroke its band. An operand none of whose paints draw gives its area (live-verified).
+ */
+function drawsPaint(paint: Fill | Stroke): boolean {
+  return paint.visible && paint.opacity > 0
+}
+
+function drawsFill(node: SceneNode): boolean {
+  return node.fills.some(drawsPaint)
+}
+
+function drawsStroke(node: SceneNode): boolean {
+  return node.strokes.some((stroke) => drawsPaint(stroke) && stroke.weight > 0)
+}
+
 function strokeSide(node: SceneNode, stroke: Stroke): Stroke['align'] {
   const network = node.type === 'VECTOR' ? node.vectorNetwork : null
   return network && isOpenVectorNetwork(network) ? 'CENTER' : stroke.align
@@ -203,7 +219,7 @@ function addVisibleStrokeOutlines(
   vectorSides: VectorStrokeSides | null
 ): void {
   for (const stroke of node.strokes) {
-    if (!stroke.visible || stroke.weight <= 0) continue
+    if (!drawsPaint(stroke) || stroke.weight <= 0) continue
     const side = strokeSide(node, stroke)
     if (vectorSides && side !== 'CENTER') {
       addSidedVectorStroke(r, target, node, stroke.weight, side, vectorSides)
@@ -329,7 +345,7 @@ export function makeBooleanSourcePath(
   if (node.type === 'LINE') return baseShapePath(r, node)
 
   const savedFill = node.type === 'VECTOR' ? savedFillShape(r, node) : null
-  const stroked = nodeHasVisibleStroke(node)
+  const stroked = drawsStroke(node)
   if (savedFill && !stroked) {
     return savedFill
   }
@@ -342,7 +358,7 @@ export function makeBooleanSourcePath(
     return outline
   }
   const combined = new r.ck.PathBuilder()
-  if (nodeHasVisibleFill(node)) {
+  if (drawsFill(node)) {
     combined.addPath(savedFill ?? outline)
   }
   if (node.type === 'VECTOR') {

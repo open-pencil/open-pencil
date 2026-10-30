@@ -1,13 +1,13 @@
 import { afterAll, describe, expect, spyOn, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+import { renderRow } from '#core-tests/helpers/figma-rows'
+
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
 
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
-
-import { expectDefined } from '#core-tests/helpers/assert'
-import { renderRow } from '#core-tests/helpers/figma-rows'
 
 const ck = await initCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -17,7 +17,17 @@ const SIZE = 160
 const WEIGHT = 8
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
-function unionWithStrokedOperand(align: Stroke['align'], operandFillVisible: boolean) {
+/** The opacities of the operand's fill and stroke. */
+interface OperandOpacity {
+  fill: number
+  stroke: number
+}
+
+function unionWithStrokedOperand(
+  align: Stroke['align'],
+  operandFillVisible: boolean,
+  opacity: OperandOpacity = { fill: 1, stroke: 1 }
+) {
   return (graph: SceneGraph, hostId: string) => {
     const operation = graph.createNode('BOOLEAN_OPERATION', hostId, {
       x: 120,
@@ -30,8 +40,10 @@ function unionWithStrokedOperand(align: Stroke['align'], operandFillVisible: boo
     graph.createNode('RECTANGLE', operation.id, {
       width: SIZE,
       height: SIZE,
-      fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: operandFillVisible }],
-      strokes: [{ type: 'SOLID', color: RED, opacity: 1, visible: true, weight: WEIGHT, align }],
+      fills: [{ type: 'SOLID', color: RED, opacity: opacity.fill, visible: operandFillVisible }],
+      strokes: [
+        { type: 'SOLID', color: RED, opacity: opacity.stroke, visible: true, weight: WEIGHT, align }
+      ],
       strokeWeight: WEIGHT,
       strokeAlign: align
     })
@@ -76,8 +88,13 @@ function unionWithOpenOutsideStroke(graph: SceneGraph, hostId: string) {
   })
 }
 
-function leftEdgeAlpha(align: Stroke['align'], operandFillVisible: boolean): number[] {
-  return renderRow(ck, renderer, unionWithStrokedOperand(align, operandFillVisible), 150, 104, 134)
+function leftEdgeAlpha(
+  align: Stroke['align'],
+  operandFillVisible: boolean,
+  opacity?: OperandOpacity
+): number[] {
+  const scene = unionWithStrokedOperand(align, operandFillVisible, opacity)
+  return renderRow(ck, renderer, scene, 150, 104, 134)
 }
 
 function unionWithOpenStrokedOperand(graph: SceneGraph, hostId: string) {
@@ -268,6 +285,19 @@ describe('a boolean operand with a stroke, as Figma combines it', () => {
   test('adds its visible fill with an outside stroke band around it', () => {
     expect(leftEdgeAlpha('OUTSIDE', true)).toEqual([
       0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+    ])
+  })
+
+  // A paint at 0% shapes nothing, as a hidden one (live-verified).
+  test('adds only its stroke band when its fill is at 0%', () => {
+    expect(leftEdgeAlpha('INSIDE', true, { fill: 0, stroke: 1 })).toEqual(
+      leftEdgeAlpha('INSIDE', false)
+    )
+  })
+
+  test('adds its whole area when its fill is hidden and its stroke at 0%', () => {
+    expect(leftEdgeAlpha('INSIDE', false, { fill: 1, stroke: 0 })).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255
     ])
   })
 
