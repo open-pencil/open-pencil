@@ -1,0 +1,1 @@
+- `.fig` import ignores component property references Figma no longer applies, so the layers it draws are no longer hidden or retexted.
