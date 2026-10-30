@@ -1,6 +1,14 @@
 import { normalizedFilename, staticPropertyName } from '#lint/support/context.ts'
 import { createProgramFilenameRule } from '#lint/support/factories.ts'
 import type { RuleDefinition } from '#lint/support/types.ts'
+import {
+  VUE_SIMPLE_EXPRESSION_NODE,
+  type ExpressionAstNode,
+  type VueTemplateNode,
+  vueTemplateAst,
+  walkExpressionAst,
+  walkVueTemplateAst
+} from '#lint/support/vue.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
 
 function isObjectKeyIdentifier(node: TSESTree.Identifier): boolean {
@@ -132,39 +140,75 @@ const noConditionalObjectSpreads = {
   }
 } satisfies RuleDefinition
 
-/**
- * A canvas behaves by the profile its view resolves to, so code reads the profile's values rather
- * than which view is showing; checks of the view's id outside the views module are how preview
- * came to branch at every place it behaves differently.
- */
-/** The key a member expression reads when it is fixed: `a.key` or `a['key']`, not `a[key]`. */
+/** The key a member expression reads when it is fixed (`a.key`, `a['key']`, ``a[`key`]``), not `a[key]`. */
 function memberName(node: TSESTree.MemberExpression): string | null {
-  if (node.computed && node.property.type !== 'Literal') return null
-  return staticPropertyName(node.property)
+  const key = node.property
+  if (!node.computed || key.type === 'Literal') return staticPropertyName(key)
+  if (key.type === 'TemplateLiteral' && key.expressions.length === 0) {
+    return key.quasis[0]?.value.cooked ?? null
+  }
+  return null
 }
 
+/** Whether a Vue template expression reads `canvasView` from anything. */
+function templateReadsCanvasView(expression: VueTemplateNode): boolean {
+  if (expression.type !== VUE_SIMPLE_EXPRESSION_NODE || !expression.ast) return false
+  let found = false
+  walkExpressionAst(expression.ast as ExpressionAstNode, (node) => {
+    if (node.type !== 'MemberExpression' && node.type !== 'OptionalMemberExpression') return
+    const key = node.property
+    if (node.computed !== true && key?.type === 'Identifier' && key.name === 'canvasView') {
+      found = true
+    }
+    if (key?.type === 'StringLiteral' && key.value === 'canvasView') found = true
+  })
+  return found
+}
+
+const CANVAS_VIEW_MESSAGE =
+  "Read the canvas's behaviour from resolveEditorProfile instead of reading which view it shows."
+
+/**
+ * A canvas behaves by the profile its view resolves to, so code outside Core's editor views and
+ * state reads the profile's values, never the view: checks of the view's id are how preview came to
+ * branch at every place it behaves differently.
+ */
 const noCanvasViewChecks: RuleDefinition = {
   meta: {
     type: 'problem',
     docs: {
       description:
-        "Disallow reading a canvas view's id outside core editor views — read resolveEditorProfile instead"
+        'Disallow reading the canvas view outside core editor views and state — read resolveEditorProfile instead'
     },
     schema: []
   },
   create(context) {
     const file = normalizedFilename(context)
-    if (!file.includes('/src/') || file.includes('/packages/core/src/editor/views/')) return {}
+    const checked = file.includes('/src/') || file.includes('/packages/docs/.vitepress/theme/')
+    const owner =
+      file.includes('/packages/core/src/editor/views/') ||
+      file.includes('/packages/core/src/editor/state/')
+    if (!checked || owner) return {}
     return {
-      MemberExpression(node) {
-        if (memberName(node) !== 'id') return
-        const owner = node.object
-        if (owner.type !== 'MemberExpression' || memberName(owner) !== 'canvasView') return
-        context.report({
-          node,
-          message:
-            "Read the canvas's behaviour from resolveEditorProfile instead of checking which view it shows."
+      Program(node) {
+        if (!file.endsWith('.vue')) return
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let reads = false
+        walkVueTemplateAst(template, (templateNode) => {
+          reads ||= templateReadsCanvasView(templateNode)
         })
+        if (reads) context.report({ node, message: CANVAS_VIEW_MESSAGE })
+      },
+      MemberExpression(node) {
+        if (memberName(node) === 'canvasView')
+          context.report({ node, message: CANVAS_VIEW_MESSAGE })
+      },
+      Property(node) {
+        if (node.parent.type !== 'ObjectPattern' || node.computed) return
+        if (staticPropertyName(node.key) === 'canvasView') {
+          context.report({ node, message: CANVAS_VIEW_MESSAGE })
+        }
       }
     }
   }
