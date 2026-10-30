@@ -150,17 +150,21 @@ function memberName(node: TSESTree.MemberExpression): string | null {
   return null
 }
 
+/** The fixed key a template member expression reads (`a.key`, `a['key']`), or null. */
+function templateMemberKey(node: ExpressionAstNode): string | null {
+  if (node.type !== 'MemberExpression' && node.type !== 'OptionalMemberExpression') return null
+  const key = node.property as ExpressionAstNode | undefined
+  if (node.computed !== true && key?.type === 'Identifier') return key.name ?? null
+  if (key?.type === 'StringLiteral' && typeof key.value === 'string') return key.value
+  return null
+}
+
 /** Whether a Vue template expression reads `canvasView` from anything. */
 function templateReadsCanvasView(expression: VueTemplateNode): boolean {
   if (expression.type !== VUE_SIMPLE_EXPRESSION_NODE || !expression.ast) return false
   let found = false
   walkExpressionAst(expression.ast as ExpressionAstNode, (node) => {
-    if (node.type !== 'MemberExpression' && node.type !== 'OptionalMemberExpression') return
-    const key = node.property
-    if (node.computed !== true && key?.type === 'Identifier' && key.name === 'canvasView') {
-      found = true
-    }
-    if (key?.type === 'StringLiteral' && key.value === 'canvasView') found = true
+    if (templateMemberKey(node) === 'canvasView') found = true
   })
   return found
 }
