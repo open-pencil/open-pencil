@@ -188,11 +188,20 @@ describe('a boolean operation’s result', () => {
   })
 
   test('follows a change of its corner radius', () => {
-    const { rebuilt, fresh } = resultAfterEdit((graph, operationId) => {
-      graph.updateNode(operandIds(graph, operationId)[1], { y: 20 })
+    const graph = new SceneGraph()
+    const operationId = overlappingSquares(graph, graph.getPages()[0].id)
+    const coversOuterCorner = (r: SkiaRenderer) => {
+      const operation = expectDefined(graph.getNode(operationId))
+      const path = expectDefined(makeBooleanOperationPath(r, operation, graph))
+      const covered = path.contains(1, 1)
+      path.delete()
+      return covered
+    }
+    withFreshRenderer((cached) => {
+      expect(coversOuterCorner(cached)).toBe(true)
       graph.updateNode(operationId, { cornerRadius: 20 })
+      expect(coversOuterCorner(cached)).toBe(false)
     })
-    expect(rebuilt).toEqual(fresh)
   })
 
   test('follows a hidden operand', () => {
