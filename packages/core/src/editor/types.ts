@@ -28,7 +28,7 @@ import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
-import type { CanvasView } from '#core/editor/views/types'
+import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
 import type { TextEditor } from '#core/text/editor'
@@ -79,10 +79,10 @@ export interface EditorSharedState {
   /** The kind the shape-with-text tool places: the one picked last, as in FigJam. */
   shapeWithTextKind: ShapeWithTextType
   /**
-   * The document can be looked at, selected in, and copied from but not changed, as for a viewer
-   * or an earlier version; set with `setReadOnly`.
+   * What the host takes away from every canvas, such as editing for a viewer or an earlier version;
+   * read through `resolveEditorProfile`, set with `setReadOnly`.
    */
-  readOnly: boolean
+  restrictions: EditorRestrictions
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
   showPixelGrid?: boolean

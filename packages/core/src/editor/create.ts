@@ -50,7 +50,7 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
-import { createReadOnlyActions, guardReadOnly, guardUndo, READ_ONLY_TOOLS } from './read-only'
+import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
@@ -75,7 +75,7 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
-import { createCanvasViewActions } from './views'
+import { createCanvasViewActions, resolveEditorProfile } from './views'
 
 export { createDefaultEditorState } from './state'
 
@@ -207,7 +207,8 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function setActiveTool(tool: EditorState['activeTool']) {
-    if (state.readOnly && !READ_ONLY_TOOLS.has(tool)) return
+    const { tools } = resolveEditorProfile(state)
+    if (tools && !tools.has(tool)) return
     const previous = state.activeTool
     state.activeTool = tool
     if (tool !== 'SELECT') state.measurementMode = 'off'
@@ -328,6 +329,8 @@ export function createEditor(options?: EditorOptions) {
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
+  /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
+  const readsOnly = () => !resolveEditorProfile(state).edits
   const readOnly = createReadOnlyActions(ctx, () => {
     nodes.flushNudge()
     nodes.cancelNodePreviews()
@@ -425,7 +428,7 @@ export function createEditor(options?: EditorOptions) {
     get textEditor() {
       return _textEditor
     },
-    undo: guardUndo(undo, () => state.readOnly),
+    undo: guardUndo(undo, readsOnly),
     state,
 
     // Graph reads
@@ -547,7 +550,7 @@ export function createEditor(options?: EditorOptions) {
     // Read-only documents, which refuse every action above that changes them
     ...readOnly
   }
-  return guardReadOnly(editor, () => state.readOnly)
+  return guardReadOnly(editor, readsOnly)
 }
 
 /**

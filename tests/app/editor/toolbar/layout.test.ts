@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { resolveEditorProfile } from '@open-pencil/core'
+
 import {
   combineToolbarEntry,
   DEFAULT_TOOLBAR_LAYOUT,
@@ -8,10 +10,10 @@ import {
   moveToolbarEntry,
   normalizeToolbarLayout,
   placeToolbarEntry,
-  readOnlyToolbarLayout,
   setToolbarEntryHidden,
   toolbarDropOperations,
   toolbarItems,
+  toolbarLayoutFor,
   toolbarRows,
   type ToolbarEntry,
   type ToolbarLayout
@@ -240,11 +242,20 @@ describe('dragging', () => {
   })
 })
 
-describe('readOnlyToolbarLayout', () => {
-  test('keeps Move and Hand, as Figma does while a version is viewed', () => {
+describe('toolbarLayoutFor', () => {
+  const profileTools = (readOnly: boolean) =>
+    resolveEditorProfile({ canvasView: { id: 'edit' }, restrictions: { readOnly } }).tools
+
+  test('keeps the whole layout when the profile offers every tool', () => {
+    const base = layout([['SELECT', 'HAND'], ['FRAME'], ['insert-icon']])
+    expect(toolbarLayoutFor(base, profileTools(false))).toBe(base)
+  })
+
+  test('keeps Move and Hand in a read-only document, as Figma does while a version is viewed', () => {
     const keys = (groups: ToolbarEntry[][]) =>
-      toolbarItems(readOnlyToolbarLayout(layout(groups)), LABELS, SHORTCUTS).map((item) =>
-        item.kind === 'tool' ? [item.tool.key, ...(item.tool.flyout ?? [])] : item.action
+      toolbarItems(toolbarLayoutFor(layout(groups), profileTools(true)), LABELS, SHORTCUTS).map(
+        (item) =>
+          item.kind === 'tool' ? [item.tool.key, ...(item.tool.flyout ?? [])] : item.action
       )
     expect(keys([['SELECT', 'HAND'], ['FRAME'], ['insert-icon']])).toEqual([
       ['SELECT', 'SELECT', 'HAND']

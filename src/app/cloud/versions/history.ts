@@ -101,7 +101,7 @@ export function openVersionHistory(store: EditorStore): void {
   if (histories.value.has(store)) return
   update(store, {
     store,
-    wasReadOnly: store.state.readOnly,
+    wasReadOnly: store.state.restrictions.readOnly,
     preview: null,
     opening: null,
     failed: false

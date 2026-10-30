@@ -69,6 +69,7 @@ export function useCanvasInput(
   zoomSpeed: () => number = () => 1
 ) {
   const drag = ref<DragState | null>(null)
+  const profile = () => resolveEditorProfile(editor.state)
   // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
   // layers move, resize, or rotate.
   watch(
@@ -132,11 +133,11 @@ export function useCanvasInput(
 
   // Handles that edit, which a read-only document does not offer.
   function autoLayoutHoverAt(cx: number, cy: number, mode: typeof editor.state.measurementMode) {
-    return mode === 'off' && !editor.state.readOnly ? resolveAutoLayoutHover(cx, cy, editor) : null
+    return mode === 'off' && profile().edits ? resolveAutoLayoutHover(cx, cy, editor) : null
   }
 
   function shapeHandleHoverAt(sx: number, sy: number, altKey: boolean) {
-    return editor.state.readOnly ? null : resolveShapeHandleHover(editor, sx, sy, altKey)
+    return profile().edits ? resolveShapeHandleHover(editor, sx, sy, altKey) : null
   }
 
   function updateModifier(code: string, held: boolean) {
@@ -193,9 +194,9 @@ export function useCanvasInput(
   } = createCanvasTransformInput(editor, setDrag)
 
   function onDblClick(e: MouseEvent) {
-    if (resolveEditorProfile(editor.state).pointer === 'pan') return
+    if (profile().pointer === 'pan') return
     const { cx, cy } = getCoords(e)
-    if (!editor.state.readOnly && valueEdit.start(cx, cy)) {
+    if (profile().edits && valueEdit.start(cx, cy)) {
       e.preventDefault()
       e.stopPropagation()
       return
@@ -207,7 +208,7 @@ export function useCanvasInput(
     onActivate?.()
     if (!isEnabled()) return
     // A canvas that only pans, as a preview's does, leaves its controls to the islands above it.
-    const panOnly = resolveEditorProfile(editor.state).pointer === 'pan'
+    const panOnly = profile().pointer === 'pan'
     if (panOnly && e.button === 0 && editor.state.activeTool !== 'HAND') {
       e.preventDefault()
       return
@@ -222,7 +223,7 @@ export function useCanvasInput(
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
     // Guides belong to the document, so a read-only one neither moves nor gains them.
-    const guidesEditable = e.button === 0 && !editor.state.readOnly
+    const guidesEditable = e.button === 0 && profile().edits
     if (guidesEditable && guideInput.tryStartExisting(sx, sy, e.altKey)) {
       e.preventDefault()
       return
@@ -262,7 +263,7 @@ export function useCanvasInput(
       onCursorMove(coords.cx, coords.cy)
     }
 
-    if (resolveEditorProfile(editor.state).pointer === 'pan' && !drag.value) return
+    if (profile().pointer === 'pan' && !drag.value) return
 
     if (!drag.value) {
       const { cx, cy } = coords
@@ -281,7 +282,7 @@ export function useCanvasInput(
 
     if (!drag.value && editor.state.activeTool === 'SELECT') {
       const { sx, sy, cx, cy } = coords
-      const guideCursor = editor.state.readOnly ? null : guideInput.updateHover(sx, sy)
+      const guideCursor = profile().edits ? guideInput.updateHover(sx, sy) : null
       cursorOverride.value =
         guideCursor ??
         updateHoverCursor(

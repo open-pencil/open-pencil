@@ -11,7 +11,9 @@ describe('canvas view profiles', () => {
       editChrome: true,
       live: null,
       panels: true,
-      leaveTo: null
+      leaveTo: null,
+      edits: true,
+      tools: null
     })
   })
 
@@ -24,7 +26,9 @@ describe('canvas view profiles', () => {
       editChrome: false,
       live: { revision: 0 },
       panels: false,
-      leaveTo: { id: 'edit' }
+      leaveTo: { id: 'edit' },
+      edits: true,
+      tools: null
     })
   })
 
@@ -48,5 +52,42 @@ describe('canvas view profiles', () => {
     editor.setReadOnly(true)
     editor.startPlay()
     expect(editor.leaveCanvasView()).toBe(true)
+  })
+})
+
+describe('host restrictions', () => {
+  test('a read-only document offers no edits and keeps Move and Hand in every view', () => {
+    const editor = createEditor()
+    editor.setReadOnly(true)
+    const editing = resolveEditorProfile(editor.state)
+    expect([editing.edits, editing.tools && [...editing.tools]]).toEqual([
+      false,
+      ['SELECT', 'HAND']
+    ])
+    editor.startPlay()
+    const previewing = resolveEditorProfile(editor.state)
+    expect([previewing.edits, previewing.pointer, previewing.live]).toEqual([
+      false,
+      'pan',
+      { revision: 0 }
+    ])
+  })
+
+  test('going read-only drops a tool it does not offer, and refuses picking one', () => {
+    const editor = createEditor()
+    editor.setTool('RECTANGLE')
+    editor.setReadOnly(true)
+    expect(editor.state.activeTool).toBe('SELECT')
+    editor.setTool('FRAME')
+    expect(editor.state.activeTool).toBe('SELECT')
+    editor.setTool('HAND')
+    expect(editor.state.activeTool).toBe('HAND')
+  })
+
+  test('lifting the restriction gives the view its own profile back', () => {
+    const editor = createEditor()
+    editor.setReadOnly(true)
+    editor.setReadOnly(false)
+    expect(resolveEditorProfile(editor.state)).toMatchObject({ edits: true, tools: null })
   })
 })

@@ -303,7 +303,7 @@ function drawBoundsHandles(
   maxY: number,
   stalk: RotationHandleLayout | null
 ): void {
-  if (r.readOnly || !hasTransformHandles((maxX - minX) * r.zoom, (maxY - minY) * r.zoom)) return
+  if (!r.editHandles || !hasTransformHandles((maxX - minX) * r.zoom, (maxY - minY) * r.zoom)) return
   r.drawHandle(canvas, minX, minY)
   r.drawHandle(canvas, maxX, minY)
   r.drawHandle(canvas, minX, maxY)

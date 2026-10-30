@@ -165,8 +165,8 @@ export class SkiaRenderer {
   sceneBackingLastViewportEventAt = 0
   navigationPhase: EditorState['navigation']['phase'] = 'idle'
   navigationGeneration = 0
-  /** The document is read-only: selections draw without handles to drag. */
-  readOnly = false
+  /** Selections draw handles to drag; off while the canvas offers no edits. */
+  editHandles = true
   tiledSceneEnabled = false
   /**
    * What an empty sticky note shows while it is edited on this canvas, in the interface language;

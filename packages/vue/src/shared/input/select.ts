@@ -2,7 +2,7 @@ import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/vector'
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { hitTestLabel, resolveHit, tinySelectionAt } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
-import { editedGradient, type Editor } from '@open-pencil/core'
+import { editedGradient, resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { tryStartConnectorEndDrag } from '#vue/shared/input/connector/end'
@@ -51,7 +51,7 @@ function tryStartHandleDrag(
   tryStartRotation: (cx: number, cy: number) => boolean,
   setDrag: (d: DragState) => void
 ): boolean {
-  if (editor.state.readOnly) return false
+  if (!resolveEditorProfile(editor.state).edits) return false
   if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
   // An open gradient's handles replace the layer's selection handles, which then do not respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
@@ -118,7 +118,7 @@ export function handleSelectDown(
   const keepsSelection = !e.shiftKey && pressesSelection(hit, cx, cy, editor)
   selectOnPress(hit, e.shiftKey, keepsSelection, editor)
 
-  if (editor.state.readOnly) {
+  if (!resolveEditorProfile(editor.state).edits) {
     selectInsideOnPress(hit, keepsSelection, editor)
     return
   }

@@ -2,7 +2,7 @@
 import { computedAsync } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import { playIslandRoots, resolveEditorProfile, type CanvasView } from '@open-pencil/core'
+import { playIslandRoots, resolveEditorProfile, type EditorState } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { tokenStylesheet } from '@open-pencil/dom-css/export'
 
@@ -15,7 +15,10 @@ import Island from './Island.vue'
  * canvas leaves these layers to the islands; wheel gestures over them still pan and zoom it.
  */
 const { view, canvas, drawn } = defineProps<{
-  view: { panX: number; panY: number; zoom: number; currentPageId: string; canvasView: CanvasView }
+  view: Pick<
+    EditorState,
+    'panX' | 'panY' | 'zoom' | 'currentPageId' | 'canvasView' | 'restrictions'
+  >
   /** The canvas that wheel gestures over the islands are passed on to. */
   canvas: HTMLElement | null
   /**

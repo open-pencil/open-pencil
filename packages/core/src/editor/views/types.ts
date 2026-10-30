@@ -1,3 +1,13 @@
+import type { Tool } from '#core/editor/types'
+
+/**
+ * What the host takes away from every view, whatever the canvas shows: a read-only document, as
+ * for a viewer or an earlier version, can be looked at, selected in, and copied from, not changed.
+ */
+export interface EditorRestrictions {
+  readOnly: boolean
+}
+
 /**
  * What a canvas pane shows: the design being edited, or the design running as a preview whose
  * controls respond to the pointer. Each pane has its own.
@@ -25,4 +35,11 @@ export interface EditorProfile {
   panels: boolean
   /** The view leaving this one returns to, as Escape does, or null when there is none. */
   leaveTo: CanvasView | null
+  /**
+   * Whether the document can change: actions that edit it, undo, and the canvas's edit handles,
+   * text editing, value scrubbing, guide editing, and layer drags.
+   */
+  edits: boolean
+  /** The tools on offer, or null for every tool. */
+  tools: ReadonlySet<Tool> | null
 }

@@ -78,8 +78,8 @@ export function renderFromEditorState(
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
-  r.readOnly = state.readOnly
-  const { editChrome, live } = resolveEditorProfile(state)
+  const { editChrome, live, edits } = resolveEditorProfile(state)
+  r.editHandles = edits
   render(
     r,
     graph,

@@ -150,6 +150,20 @@ function memberName(node: TSESTree.MemberExpression): string | null {
   return null
 }
 
+const CORE_PROFILE = ['/packages/core/src/editor/views/', '/packages/core/src/editor/state/']
+
+/**
+ * What the editor profile resolves from, and the code that may read each: Core's views and state
+ * own both, the read-only module applies the restrictions, and the app, as the host, sets them.
+ */
+const PROFILE_INPUTS: Record<string, (file: string) => boolean> = {
+  canvasView: (file) => CORE_PROFILE.some((owner) => file.includes(owner)),
+  restrictions: (file) =>
+    CORE_PROFILE.some((owner) => file.includes(owner)) ||
+    file.includes('/packages/core/src/editor/read-only/') ||
+    (file.includes('/src/app/') && !file.includes('/packages/'))
+}
+
 /** The fixed key a template member expression reads (`a.key`, `a['key']`), or null. */
 function templateMemberKey(node: ExpressionAstNode): string | null {
   if (node.type !== 'MemberExpression' && node.type !== 'OptionalMemberExpression') return null
@@ -159,67 +173,69 @@ function templateMemberKey(node: ExpressionAstNode): string | null {
   return null
 }
 
-/** Whether a Vue template expression reads `canvasView` from anything. */
-function templateReadsCanvasView(expression: VueTemplateNode): boolean {
-  if (expression.type !== VUE_SIMPLE_EXPRESSION_NODE || !expression.ast) return false
-  let found = false
+/** The profile inputs a Vue template expression reads. */
+function templateProfileInputs(expression: VueTemplateNode, inputs: Set<string>): string[] {
+  if (expression.type !== VUE_SIMPLE_EXPRESSION_NODE || !expression.ast) return []
+  const found: string[] = []
   walkExpressionAst(expression.ast as ExpressionAstNode, (node) => {
-    if (templateMemberKey(node) === 'canvasView') found = true
+    const key = templateMemberKey(node)
+    if (key && inputs.has(key)) found.push(key)
   })
   return found
 }
 
-const CANVAS_VIEW_MESSAGE =
-  "Read the canvas's behaviour from resolveEditorProfile instead of reading which view it shows."
+function profileInputMessage(input: string): string {
+  return `Read how the editor behaves from resolveEditorProfile instead of its ${input}.`
+}
 
 /**
- * A canvas behaves by the profile its view resolves to, so code outside Core's editor views and
- * state reads the profile's values, never the view: checks of the view's id are how preview came to
- * branch at every place it behaves differently.
+ * The editor behaves by the profile its canvas view resolves to, narrowed by the host's
+ * restrictions, so other code reads the profile's values, never those inputs: checks of the view
+ * and of read-only are how each came to branch at every place the editor behaves differently.
  */
-const noCanvasViewChecks: RuleDefinition = {
+const noEditorProfileInputs: RuleDefinition = {
   meta: {
     type: 'problem',
     docs: {
       description:
-        'Disallow reading the canvas view outside core editor views and state — read resolveEditorProfile instead'
+        "Disallow reading the editor profile's inputs (canvas view, restrictions) outside their owners — read resolveEditorProfile instead"
     },
     schema: []
   },
   create(context) {
     const file = normalizedFilename(context)
-    const checked = file.includes('/src/') || file.includes('/packages/docs/.vitepress/theme/')
-    const owner =
-      file.includes('/packages/core/src/editor/views/') ||
-      file.includes('/packages/core/src/editor/state/')
-    if (!checked || owner) return {}
+    if (!file.includes('/src/') && !file.includes('/packages/docs/.vitepress/theme/')) return {}
+    const inputs = new Set(
+      Object.keys(PROFILE_INPUTS).filter((input) => !PROFILE_INPUTS[input]?.(file))
+    )
+    if (inputs.size === 0) return {}
+    const report = (node: TSESTree.Node, input: string | null) => {
+      if (input && inputs.has(input)) context.report({ node, message: profileInputMessage(input) })
+    }
     return {
       Program(node) {
         if (!file.endsWith('.vue')) return
         const template = vueTemplateAst(context.sourceCode.getText(), file)
         if (!template) return
-        let reads = false
+        const read = new Set<string>()
         walkVueTemplateAst(template, (templateNode) => {
-          reads ||= templateReadsCanvasView(templateNode)
+          for (const input of templateProfileInputs(templateNode, inputs)) read.add(input)
         })
-        if (reads) context.report({ node, message: CANVAS_VIEW_MESSAGE })
+        for (const input of read) report(node, input)
       },
       MemberExpression(node) {
-        if (memberName(node) === 'canvasView')
-          context.report({ node, message: CANVAS_VIEW_MESSAGE })
+        report(node, memberName(node))
       },
       Property(node) {
         if (node.parent.type !== 'ObjectPattern' || node.computed) return
-        if (staticPropertyName(node.key) === 'canvasView') {
-          context.report({ node, message: CANVAS_VIEW_MESSAGE })
-        }
+        report(node, staticPropertyName(node.key))
       }
     }
   }
 }
 
 export {
-  noCanvasViewChecks,
+  noEditorProfileInputs,
   noMixedCaseAcronymIdentifiers,
   noFlatKiwiModules,
   noConditionalObjectSpreads
