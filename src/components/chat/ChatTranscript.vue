@@ -7,7 +7,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
-import type { QueuedMessage as QueuedMessageItem } from '@/app/ai/chat/queue'
+import type { QueuedMessage } from '@/app/ai/chat/queue'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -16,7 +16,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
 import ChatMessage from './ChatMessage.vue'
 import { useScrollFollowing } from './transcript/useScrollFollowing'
-import QueuedMessage from './turn/QueuedMessage.vue'
+import ChatMessageQueued from './turn/ChatMessageQueued.vue'
 
 const {
   messages,
@@ -40,7 +40,7 @@ const {
   /** Overrides the reasoning display preference, for a surface that always shows it. */
   reasoningDisplay?: ReasoningDisplay
   /** Messages written while the agent works, shown after its reply until it takes them in. */
-  queued?: readonly QueuedMessageItem[]
+  queued?: readonly QueuedMessage[]
   /** Whether the agent takes a waiting message mid-turn. */
   steers?: boolean
 }>()
@@ -147,7 +147,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           </div>
         </div>
 
-        <QueuedMessage
+        <ChatMessageQueued
           v-for="item in queued"
           :key="item.id"
           :message="item"

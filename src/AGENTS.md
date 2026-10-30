@@ -60,6 +60,11 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 
 `src/components/ui/**` is generic, store-free design-system code grouped by family: `{binding,button,collapsible,date,dialog,feedback,input,list,menu,overlay,paint,panel,select,table,tabs,toggle}/`. Do not create a folder named after a single component. Feature controls stay in their domain. Theme families mirror these under `src/theme/`; feature themes stay separate. Use explicit imports without old-path forwarding shims.
 
+### Naming
+
+- Name a component from the most general word to the most specific, starting with its feature: `ChatMessageQueued`, `ChatToolCallCard`, not `QueuedMessage` or `ToolCallCard` (`src/components/chat/`).
+- A component used only inside one parent starts with that parent's name; existing domains migrate when touched (`src/components/chat/turn/ChatMessageEditor.vue`).
+
 ### Building blocks
 
 - Use Reka UI primitives and typed Tailwind Variants themes under `src/theme/**`; merge per-instance `ui` slot overrides, expose `class` for single-root components, and do not add one-off class props. Use `UI` casing in type names. App wrappers around SDK primitives use shared UI helpers rather than scattered raw classes.
@@ -88,7 +93,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - `SettingsSaveFeedback` maps domain outcomes (`saved`, `failed`, `partial`) to `AppAlert`. `SettingsLink` owns external-link styling, the icon, and native opening for provider key pages and setup guides; keep arrow glyphs out of translated labels.
 - A section's header-level action (Add, Reset, Restart) goes in its `actions` slot; a link to another settings tab is a `SettingsRow` with an outline `xs` button; status, warning, and error `AppAlert`s come last inside the section they describe, offering only the fix (`src/components/settings/mcp/MCPSettingsPanel.vue`).
 - An integration section links its guide once, as `common.learnMore` at the end of its description; alerts link only to the fix (Node.js, the desktop app), never to docs. Guide URLs live in `src/constants.ts`, except the unsupported-browser guidance, which stays self-contained (`src/app/shell/support/guidance.ts`).
-- Empty lists use `AppPlaceholder`: `size="compact" :fill="false"` for no results or nothing added yet, an icon, description, and action for a feature that still needs setting up (`src/components/assets-panel/AssetsPanel.vue`, `src/components/chat/ProviderSetup.vue`).
+- Empty lists use `AppPlaceholder`: `size="compact" :fill="false"` for no results or nothing added yet, an icon, description, and action for a feature that still needs setting up (`src/components/assets-panel/AssetsPanel.vue`, `src/components/chat/ChatProviderSetup.vue`).
 
 ### Feedback and forms
 

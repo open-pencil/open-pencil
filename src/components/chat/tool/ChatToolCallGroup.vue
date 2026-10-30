@@ -5,8 +5,8 @@ import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { toolDisplayName, type ToolCallPart } from '@/app/ai/chat/tool-calls/display'
+import ChatToolCallCard from '@/components/chat/tool/ChatToolCallCard.vue'
 import { toolCallState } from '@/components/chat/tool/state'
-import ToolCallCard from '@/components/chat/tool/ToolCallCard.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
@@ -35,7 +35,7 @@ const label = computed(() => {
 
 <template>
   <div v-if="parts.length <= INLINE_CALLS" class="space-y-1.5">
-    <ToolCallCard
+    <ChatToolCallCard
       v-for="part in parts"
       :key="part.toolCallId"
       :part="part"
@@ -55,7 +55,7 @@ const label = computed(() => {
       </CollapsibleTrigger>
       <CollapsibleContent :class="collapsibleContentMotion">
         <div :class="ui.groupItems()">
-          <ToolCallCard
+          <ChatToolCallCard
             v-for="part in earlier"
             :key="part.toolCallId"
             :part="part"
@@ -64,7 +64,7 @@ const label = computed(() => {
         </div>
       </CollapsibleContent>
     </CollapsibleRoot>
-    <ToolCallCard
+    <ChatToolCallCard
       v-if="latest"
       :key="latest.toolCallId"
       :part="latest"

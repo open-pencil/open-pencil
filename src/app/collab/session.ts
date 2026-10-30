@@ -229,10 +229,7 @@ export function openRoomSession({
   }
 
   function updatePeers() {
-    const next = buildRemotePeers(
-      awareness.getStates() as Map<number, Record<string, unknown>>,
-      awareness.clientID
-    )
+    const next = buildRemotePeers(awareness.getStates(), awareness.clientID)
     peers.value = next
     setPeers(store, next)
   }
@@ -338,7 +335,7 @@ export function openRoomSession({
     roomHasDocument: () => readRoot(meta) !== undefined,
     onSynced: (handler) => connection.onSynced(handler),
     onVersionsChanged: (handler) => connection.onVersionsChanged(handler),
-    presence: () => awareness.getStates() as Map<number, Record<string, unknown>>,
+    presence: () => awareness.getStates(),
     clientId: awareness.clientID,
     peerForClient: (clientId) => connection.peerForClient(clientId),
     upload: connection.upload,

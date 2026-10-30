@@ -56,7 +56,7 @@ function textStyleOverrideToKiwi(
   if (style.opticalSizeFromFontSize !== undefined)
     override.detachOpticalSizeFromFontSize = !style.opticalSizeFromFontSize
   if (style.fontFeatures && style.fontFeatures.length > 0) {
-    applyFontFeaturesToKiwi(override as NodeChange, style.fontFeatures)
+    applyFontFeaturesToKiwi(override, style.fontFeatures)
   }
   if (style.letterSpacing !== undefined) {
     override.letterSpacing = figmaLetterSpacing(style.letterSpacing)
@@ -67,7 +67,7 @@ function textStyleOverrideToKiwi(
   if (style.fills && style.fills.length > 0) {
     override.fillPaints = style.fills.map(fillToKiwiPaint)
   }
-  return override as NodeChange
+  return override
 }
 
 function collectTextStyleOverrides(node: SceneNode): {

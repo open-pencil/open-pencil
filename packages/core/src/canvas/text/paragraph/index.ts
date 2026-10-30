@@ -1,7 +1,6 @@
 import type {
   CanvasKit,
   FontStyle,
-  FontWeight,
   Paint,
   Paragraph,
   ParagraphBuilder,
@@ -128,7 +127,7 @@ function blockHeightBehavior(
 function drawnFontStyle(ck: CanvasKit, family: string, weight: number, italic: boolean): FontStyle {
   const face = loadedFace(family, weight, italic) ?? { weight, italic }
   return {
-    weight: { value: face.weight } as FontWeight,
+    weight: { value: face.weight },
     slant: face.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
   }
 }

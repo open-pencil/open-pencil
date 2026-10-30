@@ -3,7 +3,7 @@ import { toUint8Array } from 'js-base64'
 
 import type { ToolChange } from '@/app/ai/tools/changes/types'
 
-import ToolChangeView from './ToolChangeView.vue'
+import ChatToolChangeView from './ChatToolChangeView.vue'
 
 const BEFORE_PNG =
   'iVBORw0KGgoAAAANSUhEUgAAAGAAAAA4CAYAAAACRf2iAAAAgklEQVR42u3bsQkAIAxE0ewquH8KCysdQUgThFf8Be7VF7n2UV9hBAAABACAAAAQAAACAODVmPltAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8BFz0hMAAAIAQAAACAAAVburId+HNheO5AAAAABJRU5ErkJggg=='
@@ -41,12 +41,12 @@ interface Args {
 
 const meta = {
   title: 'App/Chat/Tool Change',
-  component: ToolChangeView,
+  component: ChatToolChangeView,
   args: { change },
   render: (args) => ({
-    components: { ToolChangeView },
+    components: { ChatToolChangeView },
     setup: () => ({ args }),
-    template: '<div class="w-80"><ToolChangeView v-bind="args" /></div>'
+    template: '<div class="w-80"><ChatToolChangeView v-bind="args" /></div>'
   })
 } satisfies Meta<Args>
 export default meta

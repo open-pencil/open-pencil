@@ -109,7 +109,7 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const assets = assetIds(records)
   const resolveStyles = (node: NodeChange): void => {
     applyStyleRefsToFields(index.sources, node, assets)
-    for (const override of symbolOverridesOf(node)) resolveStyles(override as NodeChange)
+    for (const override of symbolOverridesOf(node)) resolveStyles(override)
   }
   for (const node of records) resolveStyles(node)
   const same: WholeRecord = (record) => record
@@ -173,7 +173,7 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
       inheritFromAncestors(record, ancestors)
       const resolveStyles = (node: NodeChange): void => {
         applyStyleRefsToFields(styles, node, assets)
-        for (const override of symbolOverridesOf(node)) resolveStyles(override as NodeChange)
+        for (const override of symbolOverridesOf(node)) resolveStyles(override)
       }
       resolveStyles(record)
       return record

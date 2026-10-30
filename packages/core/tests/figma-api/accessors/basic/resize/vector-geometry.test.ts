@@ -1,7 +1,5 @@
 import { expect, test } from 'bun:test'
 
-import { uniqBy } from 'es-toolkit'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { createSVGNodes } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -47,12 +45,9 @@ for (const method of ['resize', 'resizeWithoutConstraints'] as const) {
     if (!resizedNetwork) throw new Error('Resized vector has no vector network')
     expect(vector.width).toBe(318)
     expect(vector.height).toBe(64)
-    // Our SVG import keeps the closing point as its own vertex, which Figma merges.
-    const vertices = uniqBy(
-      resizedNetwork.vertices.map(({ x, y }) => [round(x), round(y)]),
-      (point) => point.join(',')
+    expect(resizedNetwork.vertices.map(({ x, y }) => [round(x), round(y)])).toEqual(
+      RESIZED_VERTICES
     )
-    expect(vertices).toEqual(RESIZED_VERTICES)
   })
 }
 

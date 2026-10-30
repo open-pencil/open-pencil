@@ -13,8 +13,6 @@ import { computed, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import type { TableColumnMeta } from '@/components/ui/table/columns'
-
 import { usePortalLoad } from './state'
 
 /** The rows a console list shows at a time. */
@@ -26,7 +24,7 @@ const SEARCH_DELAY_MS = 250
 export const portalTableFeatures = tableFeatures({
   rowPaginationFeature,
   // A type-only slot: TanStack reads the columns' `meta` type from it.
-  columnMeta: {} as TableColumnMeta
+  columnMeta: {}
 })
 export type PortalTableFeatures = typeof portalTableFeatures
 export type PortalColumn<Row extends RowData> = ColumnDef<PortalTableFeatures, Row>

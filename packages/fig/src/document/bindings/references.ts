@@ -23,10 +23,10 @@ function visitChildren(
   visit: (node: NodeChange, path: readonly GUID[]) => void
 ): void {
   for (const override of symbolOverridesOf(node)) {
-    visit(override as NodeChange, [...path, ...(override.guidPath?.guids ?? [])])
+    visit(override, [...path, ...(override.guidPath?.guids ?? [])])
   }
   for (const derived of (node.derivedSymbolData as SymbolOverride[] | undefined) ?? []) {
-    visit(derived as NodeChange, [...path, ...(derived.guidPath?.guids ?? [])])
+    visit(derived, [...path, ...(derived.guidPath?.guids ?? [])])
   }
 }
 
@@ -70,7 +70,7 @@ function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolve
         normalize(entry.variableSetID, 'variableModeBySetMap', path)
       }
       for (const field of STYLE_REFERENCE_FIELDS) {
-        normalize(node[field] as NodeChange['variableSetID'], field, path)
+        normalize(node[field], field, path)
       }
       // A text's ranges bind variables and use styles in their own style overrides.
       for (const override of node.textData?.styleOverrideTable ?? []) visit(override, path)

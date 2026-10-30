@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 
 import type { ToolCallPart } from '@/app/ai/chat/tool-calls/display'
 
-import ToolCallGroup from './ToolCallGroup.vue'
+import ChatToolCallGroup from './ChatToolCallGroup.vue'
 
 const PREVIEW_PNG =
   'iVBORw0KGgoAAAANSUhEUgAAAGAAAAA4CAYAAAACRf2iAAAAgElEQVR42u3boQ0AIAxE0e5Kwv4VCBRMQCqbkCf+Avf0Ra591FcYAQAAAQAgAAAEAIAAAKgaM/UIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAActIDIAAABACAAAAQgH+7S7Yd8vOtmqgAAAAASUVORK5CYII='
@@ -63,12 +63,12 @@ interface Args {
 
 const meta = {
   title: 'App/Chat/Tool Calls',
-  component: ToolCallGroup,
+  component: ChatToolCallGroup,
   args: { parts: [rendered] },
   render: (args) => ({
-    components: { ToolCallGroup },
+    components: { ChatToolCallGroup },
     setup: () => ({ args }),
-    template: '<div class="w-80"><ToolCallGroup v-bind="args" /></div>'
+    template: '<div class="w-80"><ChatToolCallGroup v-bind="args" /></div>'
   })
 } satisfies Meta<Args>
 export default meta

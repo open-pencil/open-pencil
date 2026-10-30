@@ -1,7 +1,5 @@
 import * as v from 'valibot'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaNodeProxy } from '#core/figma-api'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
@@ -107,13 +105,13 @@ export const updateNode = defineTool({
     }
     if (args.text_direction !== undefined) {
       figma.graph.updateNode(node.id, {
-        textDirection: args.text_direction as SceneNode['textDirection']
+        textDirection: args.text_direction
       })
       updated.push('textDirection')
     }
     if (args.flow_direction !== undefined) {
       figma.graph.updateNode(node.id, {
-        layoutDirection: args.flow_direction as SceneNode['layoutDirection']
+        layoutDirection: args.flow_direction
       })
       updated.push('layoutDirection')
     }

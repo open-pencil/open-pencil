@@ -141,6 +141,16 @@
     ],
     "vue/require-default-export": "error",
     "vue/require-typed-ref": "error",
+    "vue/no-side-effects-in-computed-properties": "error",
+    "vue/no-async-in-computed-properties": "error",
+    "vue/no-watch-after-await": "error",
+    "vue/no-expose-after-await": "error",
+    "vue/no-dupe-keys": "error",
+    "vue/no-reserved-props": "error",
+    "vue/no-reserved-component-names": "error",
+    "vue/prop-name-casing": "error",
+    "vue/valid-define-options": "error",
+    "vue/valid-next-tick": "error",
     "open-pencil/no-import-type-annotations": "error",
     "open-pencil/no-inline-named-types": [
       "error",
@@ -427,6 +437,12 @@
     "open-pencil/no-widen-then-assert": "error"
   },
   "overrides": [
+    {
+      "files": ["packages/cloud/src/server/db/migrations/*.ts"],
+      "rules": {
+        "typescript/no-unnecessary-type-assertion": "off"
+      }
+    },
     {
       "files": ["packages/docs/.vitepress/theme/landing/**/*.{ts,vue}"],
       "rules": {

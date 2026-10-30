@@ -16,9 +16,9 @@ import {
   type ToolCallPart
 } from '@/app/ai/chat/tool-calls/display'
 import { readToolChange } from '@/app/ai/tools/changes/store'
+import ChatToolChangeView from '@/components/chat/tool/ChatToolChangeView.vue'
+import ChatToolNodeChips from '@/components/chat/tool/ChatToolNodeChips.vue'
 import { toolCallState } from '@/components/chat/tool/state'
-import ToolChangeView from '@/components/chat/tool/ToolChangeView.vue'
-import ToolNodeChips from '@/components/chat/tool/ToolNodeChips.vue'
 import { loadCodeViewer } from '@/components/code-editor/lazy'
 import CodeViewer from '@/components/code-editor/LazyCodeViewer.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -113,7 +113,7 @@ function json(value: unknown): string {
     <CollapsibleContent :class="collapsibleContentMotion">
       <div :class="ui.body()">
         <AppAlert v-if="error" tone="error" :heading="ai.toolError" :description="error" />
-        <ToolNodeChips :ids="nodeIds" />
+        <ChatToolNodeChips :ids="nodeIds" />
         <SegmentedControl
           v-if="views.length > 1"
           v-model="viewModel"
@@ -121,7 +121,7 @@ function json(value: unknown): string {
           :label="ai.toolDetails"
           size="sm"
         />
-        <ToolChangeView v-if="shownView === 'changes' && change" :change="change" />
+        <ChatToolChangeView v-if="shownView === 'changes' && change" :change="change" />
         <template v-else-if="shownView === 'input'">
           <CodeViewer
             v-if="source"

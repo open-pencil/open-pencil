@@ -32,7 +32,7 @@ export function expectRgbaPixels(
     throw new Error(`${label} were expected to be read back`)
   }
   if (!(pixels instanceof Uint8Array)) {
-    throw new Error(`${label} were expected to be 8-bit RGBA data`)
+    throw new TypeError(`${label} were expected to be 8-bit RGBA data`)
   }
   return pixels
 }

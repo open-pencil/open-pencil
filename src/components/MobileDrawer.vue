@@ -9,6 +9,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useMotionTransition } from '@/app/shell/motion/transitions'
+import ChatPanel from '@/components/chat/ChatPanel.vue'
 import {
   DRAWER_SPRING_DAMPING,
   DRAWER_SPRING_STIFFNESS,
@@ -18,7 +19,6 @@ import {
   SWIPE_VELOCITY_THRESHOLD
 } from '@/constants'
 
-import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
 import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignPanel from './DesignPanel.vue'

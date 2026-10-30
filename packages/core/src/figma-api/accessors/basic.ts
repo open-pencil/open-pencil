@@ -1,5 +1,3 @@
-import { isEmptyObject } from 'es-toolkit'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
@@ -265,32 +263,23 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 
 /**
  * A vector's path scaled to its new size, as Figma's resize does. The stroke keeps its weight: with
- * a network to stroke, the saved stroke outline goes and the stroke draws from the scaled path, as
- * when the path is set; without one, the outline is all that draws the stroke, so it scales too.
+ * a path to stroke, the saved stroke outline goes and the stroke draws from the scaled path, as
+ * when the path is set; without one, the outline is all that draws the stroke, so it scales.
  */
 function resizedVectorGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
   if (node.type !== 'VECTOR') return {}
-  const strokesPath = (node.vectorNetwork?.vertices.length ?? 0) > 0
-  const snapshot = createResizeSnapshot(node)
-  const path = {
-    ...snapshot,
-    strokes: [],
-    strokeGeometry: strokesPath ? [] : snapshot.strokeGeometry
-  }
   // A side at zero keeps the path along it, as in Figma, so the next resize scales the path from
   // its own extent and gets the shape back.
   const bounds = node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
   const fromWidth = node.width > 0 ? node.width : (bounds?.width ?? 0)
   const fromHeight = node.height > 0 ? node.height : (bounds?.height ?? 0)
-  const geometry = scaledGeometryChanges(
-    path,
+  return scaledGeometryChanges(
+    createResizeSnapshot(node),
     fromWidth,
     fromHeight,
     width || fromWidth,
     height || fromHeight
   )
-  if (!strokesPath || isEmptyObject(geometry) || node.strokeGeometry.length === 0) return geometry
-  return { ...geometry, strokeGeometry: [] }
 }
 
 /** The least size Figma's `resize` gives a side; `resizeWithoutConstraints` allows zero. */

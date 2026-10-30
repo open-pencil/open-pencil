@@ -1,0 +1,4 @@
+- Resizing a layer on the canvas keeps its stroke weight, as in Figma; imported text on a path that kept only its glyphs still scales as a whole.
+- Inside and outside strokes on a vector drawn from its path stay on their side instead of drawing centred.
+- An SVG rounded rectangle imports with its outline closed on its first point, as in Figma, instead of an extra point that left it open.
+- Typing `%` or `px` after a line height or letter spacing switches its unit.

@@ -6,7 +6,7 @@ export type NumberFieldPartName = 'leading' | 'unit' | 'trailing' | 'menu'
 
 function createNumberFieldPart(part: NumberFieldPartName) {
   return defineComponent({
-    name: `NumberField${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`,
+    name: `NumberField${part.charAt(0).toUpperCase()}${part.slice(1)}`,
     inheritAttrs: false,
     setup(_props, { attrs, slots }) {
       const ctx = useNumberField()

@@ -3,7 +3,7 @@ import { toUint8Array } from 'js-base64'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 
-import AttachmentList from './AttachmentList.vue'
+import ChatAttachmentList from './ChatAttachmentList.vue'
 
 const pixel = new Blob(
   [
@@ -43,12 +43,12 @@ type AttachmentListStoryArgs = {
 
 const meta = {
   title: 'App/Chat/Attachments',
-  component: AttachmentList,
+  component: ChatAttachmentList,
   parameters: { layout: 'centered' },
   render: (args) => ({
-    components: { AttachmentList },
+    components: { ChatAttachmentList },
     setup: () => ({ args }),
-    template: '<div class="w-96 rounded-xl bg-panel p-3"><AttachmentList v-bind="args" /></div>'
+    template: '<div class="w-96 rounded-xl bg-panel p-3"><ChatAttachmentList v-bind="args" /></div>'
   })
 } satisfies Meta<AttachmentListStoryArgs>
 

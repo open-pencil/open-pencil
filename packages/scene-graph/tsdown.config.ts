@@ -39,6 +39,7 @@ export default defineConfig({
     'paints/index': './src/paints/index.ts',
     'parse-path': './src/parse-path.ts',
     'plugin-data/index': './src/plugin-data/index.ts',
+    clipping: './src/clipping.ts',
     polygon: './src/polygon.ts',
     preview: './src/preview.ts',
     'primitives/index': './src/primitives/index.ts',

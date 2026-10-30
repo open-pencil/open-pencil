@@ -55,7 +55,7 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
   }
 
   function updateArray(node: SceneNode, value: PropertyListItemFor<K>[], label: string) {
-    editor.updateNodeWithUndo(node.id, { [propKey]: value } as Partial<SceneNode>, label)
+    editor.updateNodeWithUndo(node.id, { [propKey]: value }, label)
   }
 
   function add(item: PropertyListItemFor<K>) {

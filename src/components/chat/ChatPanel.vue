@@ -27,14 +27,14 @@ import { useDateFormat } from '@/app/i18n/date'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { openExternalLink, toast } from '@/app/shell/ui'
 import { activeTab } from '@/app/tabs'
-import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
+import ChatFollowAgentsToggle from '@/components/chat/ChatFollowAgentsToggle.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
+import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
+import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
-import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
 import { useImageDrop } from '@/components/chat/input/useImageDrop'
-import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure, providerID } = useAIChat()
 const { ai } = useI18n()
@@ -305,12 +305,12 @@ function handleStop() {
       @save-trace="saveTrace"
       @delete="historyAction(() => history.remove($event))"
     >
-      <template #actions><FollowAgentsToggle /></template>
+      <template #actions><ChatFollowAgentsToggle /></template>
     </ChatHistory>
     <p v-if="history.storageError.value" role="alert" class="px-3 py-2 text-xs text-error">
       {{ ai.chatStorageFailed }}
     </p>
-    <ProviderSetup v-if="!isConfigured" />
+    <ChatProviderSetup v-if="!isConfigured" />
 
     <template v-if="isConfigured || messages.length">
       <p
@@ -367,7 +367,7 @@ function handleStop() {
         @error="toast.error"
       />
 
-      <ACPPermissionDialog />
+      <ChatPermissionDialog />
     </template>
   </div>
 </template>
