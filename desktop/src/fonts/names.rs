@@ -95,6 +95,12 @@ pub fn spelling(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use write_fonts::tables::fvar::{
+        AxisInstanceArrays, Fvar, InstanceRecord, VariationAxisRecord,
+    };
+    use write_fonts::tables::name::{Name, NameRecord};
+    use write_fonts::types::{Fixed, NameId as WriteNameId, Tag as WriteTag};
+    use write_fonts::{FontBuilder, OffsetMarker};
 
     #[test]
     fn compares_names_without_case_or_spaces() {
@@ -102,22 +108,114 @@ mod tests {
         assert_ne!(spelling("Book"), spelling("Roman"));
     }
 
+    /// A name record: platform, encoding, language, name ID, and the string.
+    type Record<'a> = (u16, u16, u16, u16, &'a str);
+
+    const WINDOWS_ENGLISH: (u16, u16, u16) = (3, 1, 0x0409);
+    const MAC_ROMAN: (u16, u16, u16) = (1, 0, 0);
+
+    fn record(platform: (u16, u16, u16), id: u16, text: &str) -> Record<'_> {
+        (platform.0, platform.1, platform.2, id, text)
+    }
+
+    /// A font of only a name table and, when `instances` has any, an fvar table with a weight
+    /// axis and those instances, each by the name ID it is named under and its weight.
+    fn font(records: &[Record], instances: &[(u16, i32)]) -> Vec<u8> {
+        // A name table holds its records sorted, by platform, encoding, language, and ID.
+        let mut records = records.to_vec();
+        records.sort_by_key(|&(platform, encoding, language, id, _)| {
+            (platform, encoding, language, id)
+        });
+        let name = Name::new(
+            records
+                .iter()
+                .map(|&(platform, encoding, language, id, text)| {
+                    NameRecord::new(
+                        platform,
+                        encoding,
+                        language,
+                        WriteNameId::new(id),
+                        OffsetMarker::new(text.to_string()),
+                    )
+                })
+                .collect(),
+        );
+        let mut builder = FontBuilder::new();
+        builder.add_table(&name).expect("name table");
+        if !instances.is_empty() {
+            let axis = VariationAxisRecord::new(
+                WriteTag::new(b"wght"),
+                Fixed::from_i32(100),
+                Fixed::from_i32(400),
+                Fixed::from_i32(900),
+                0,
+                WriteNameId::new(255),
+            );
+            let instances = instances
+                .iter()
+                .map(|&(id, weight)| InstanceRecord {
+                    subfamily_name_id: WriteNameId::new(id),
+                    flags: 0,
+                    coordinates: vec![Fixed::from_i32(weight)],
+                    post_script_name_id: None,
+                })
+                .collect();
+            let fvar = Fvar::new(AxisInstanceArrays::new(vec![axis], instances));
+            builder.add_table(&fvar).expect("fvar table");
+        }
+        builder.build()
+    }
+
     #[test]
     fn reads_the_typographic_name_over_the_legacy_one() {
-        // Its legacy subfamily (ID 2) says "Regular", as in a family of more than four faces.
-        let data = include_bytes!("../../../packages/core/assets/Inter-SemiBold.ttf");
-        assert_eq!(face_names(data, 0).style.as_deref(), Some("SemiBold"));
+        // A family of more than four faces leaves the legacy subfamily at "Regular".
+        let data = font(
+            &[
+                record(WINDOWS_ENGLISH, 2, "Regular"),
+                record(WINDOWS_ENGLISH, 17, "SemiBold"),
+            ],
+            &[],
+        );
+        assert_eq!(face_names(&data, 0).style.as_deref(), Some("SemiBold"));
+        let legacy = font(&[record(WINDOWS_ENGLISH, 2, "Bold")], &[]);
+        assert_eq!(face_names(&legacy, 0).style.as_deref(), Some("Bold"));
+    }
+
+    #[test]
+    fn reads_another_record_when_the_windows_english_one_is_blank() {
+        let data = font(
+            &[
+                record(WINDOWS_ENGLISH, 17, " "),
+                record(MAC_ROMAN, 17, "Book"),
+            ],
+            &[],
+        );
+        assert_eq!(face_names(&data, 0).style.as_deref(), Some("Book"));
     }
 
     #[test]
     fn reads_a_variable_font_s_instances_at_their_weights() {
-        let data = include_bytes!("../../../tests/fixtures/fonts/InterVariable-Latin.ttf");
-        let instances = face_names(data, 0).instances;
-        let semibold = instances
-            .iter()
-            .find(|instance| instance.name == "SemiBold");
-        assert_eq!(semibold.and_then(|instance| instance.weight), Some(600.0));
-        assert_eq!(instances.len(), 9);
+        let data = font(
+            &[
+                record(WINDOWS_ENGLISH, 17, "Regular"),
+                record(WINDOWS_ENGLISH, 256, "Bold"),
+                record(WINDOWS_ENGLISH, 257, "Retina"),
+            ],
+            &[(256, 700), (257, 450)],
+        );
+        assert_eq!(
+            face_names(&data, 0).instances,
+            [
+                NamedInstance {
+                    name: "Bold".to_string(),
+                    weight: Some(700.0)
+                },
+                NamedInstance {
+                    name: "Retina".to_string(),
+                    weight: Some(450.0)
+                },
+            ]
+        );
     }
 
     #[test]
