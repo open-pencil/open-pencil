@@ -5,6 +5,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BLACK, TRANSPARENT } from '@open-pencil/core/constants'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { fontManager } from '@open-pencil/core/text'
+import { vectorNetworkToPath } from '@open-pencil/core/vector'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
 
@@ -101,6 +102,28 @@ describe('flattenSelected', () => {
 
     const vector = editor.graph.getNode([...editor.state.selectedIds][0])
     expect([vector?.x, vector?.y, vector?.width, vector?.height]).toEqual([50, 22, 8, 8])
+  })
+
+  test('keeps the shape an outside stroke surrounds empty', async () => {
+    const { editor } = await createEditorWithRenderer()
+    const solid = { type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }
+    const ellipse = editor.graph.createNode('ELLIPSE', editor.state.currentPageId, {
+      width: 120,
+      height: 70,
+      fills: [{ ...solid, visible: false }],
+      strokes: [{ ...solid, weight: 4, align: 'OUTSIDE' as const }]
+    })
+
+    editor.select([ellipse.id])
+    editor.flattenSelected()
+
+    const vector = editor.graph.getNode([...editor.state.selectedIds][0])
+    const network = vector?.vectorNetwork
+    if (!vector || !network) throw new Error('Expected a flattened vector')
+    const [path] = vectorNetworkToPath(await initCanvasKit(), network)
+    expect(path?.contains(60 - vector.x, 35 - vector.y)).toBe(false)
+    expect(path?.contains(60 - vector.x, -2 - vector.y)).toBe(true)
+    path?.delete()
   })
 
   test('outlines loaded text through the shared text outline path', async () => {

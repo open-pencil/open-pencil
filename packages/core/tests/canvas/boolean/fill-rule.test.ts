@@ -31,7 +31,7 @@ function square(first: number, from: number, to: number) {
   }
 }
 
-function unionWithEvenOddRing(graph: SceneGraph, strokes: Stroke[]): string {
+function unionWithEvenOddRing(graph: SceneGraph, strokes: Stroke[], fillVisible: boolean): string {
   const operation = graph.createNode('BOOLEAN_OPERATION', graph.getPages()[0].id, {
     width: 200,
     height: 100,
@@ -43,7 +43,7 @@ function unionWithEvenOddRing(graph: SceneGraph, strokes: Stroke[]): string {
   graph.createNode('VECTOR', operation.id, {
     width: 100,
     height: 100,
-    fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: true }],
+    fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: fillVisible }],
     strokes,
     strokeWeight: strokes[0]?.weight ?? 0,
     vectorNetwork: {
@@ -69,17 +69,23 @@ function unionWithEvenOddRing(graph: SceneGraph, strokes: Stroke[]): string {
   return operation.id
 }
 
-function coveredPoints(strokes: Stroke[]) {
+function covers(strokes: Stroke[], fillVisible: boolean, points: Record<string, [number, number]>) {
   const graph = new SceneGraph()
-  const operation = expectDefined(graph.getNode(unionWithEvenOddRing(graph, strokes)))
+  const operation = expectDefined(graph.getNode(unionWithEvenOddRing(graph, strokes, fillVisible)))
   const path = expectDefined(makeBooleanOperationPath(renderer, operation, graph))
-  const covered = {
-    ring: path.contains(15, 50),
-    hole: path.contains(50, 50),
-    rectangle: path.contains(160, 10)
-  }
+  const covered = Object.fromEntries(
+    Object.entries(points).map(([name, [x, y]]) => [name, path.contains(x, y)])
+  )
   path.delete()
   return covered
+}
+
+function coveredPoints(strokes: Stroke[]) {
+  return covers(strokes, true, { ring: [15, 50], hole: [50, 50], rectangle: [160, 10] })
+}
+
+function stroke(align: Stroke['align']): Stroke {
+  return { type: 'SOLID', color: RED, opacity: 1, visible: true, weight: 4, align }
 }
 
 describe('a vector boolean operand with one even-odd region', () => {
@@ -88,14 +94,27 @@ describe('a vector boolean operand with one even-odd region', () => {
   })
 
   test('keeps the hole when it also draws a stroke', () => {
-    const stroke: Stroke = {
-      type: 'SOLID',
-      color: RED,
-      opacity: 1,
-      visible: true,
-      weight: 4,
-      align: 'CENTER'
-    }
-    expect(coveredPoints([stroke])).toEqual({ ring: true, hole: false, rectangle: true })
+    expect(coveredPoints([stroke('CENTER')])).toEqual({ ring: true, hole: false, rectangle: true })
+  })
+
+  test('keeps the hole under an inside stroke alone', () => {
+    expect(
+      covers([stroke('INSIDE')], false, {
+        outerBand: [2, 50],
+        innerBand: [28, 50],
+        ring: [15, 50],
+        hole: [32, 50]
+      })
+    ).toEqual({ outerBand: true, innerBand: true, ring: false, hole: false })
+  })
+
+  test('keeps the hole under an outside stroke alone', () => {
+    expect(
+      covers([stroke('OUTSIDE')], false, {
+        innerBand: [32, 50],
+        ring: [15, 50],
+        hole: [50, 50]
+      })
+    ).toEqual({ innerBand: true, ring: false, hole: false })
   })
 })

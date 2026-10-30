@@ -1,6 +1,6 @@
-import type { Canvas, Path, PathBuilder, PathOp } from 'canvaskit-wasm'
+import type { Canvas, Path, PathOp } from 'canvaskit-wasm'
 
-import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode, Stroke, WindingRule } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
@@ -56,12 +56,7 @@ function unitedPath(r: SkiaRenderer, regions: Path[]): Path | null {
     }
     merged = union
   }
-  const winding = merged.makeAsWinding()
-  if (!winding) {
-    return merged
-  }
-  merged.delete()
-  return winding
+  return merged
 }
 
 function fillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | null {
@@ -130,7 +125,7 @@ interface VectorStrokeSides {
 
 function addVectorStrokeOutlines(
   r: SkiaRenderer,
-  target: PathBuilder,
+  pieces: Path[],
   outline: Path,
   node: SceneNode,
   fill: Path
@@ -138,7 +133,7 @@ function addVectorStrokeOutlines(
   const regionCount = node.vectorNetwork?.regions.length ?? 0
   const parts = regionCount > 0 ? r.getVectorPaths(node) : null
   if (!parts || parts.length <= regionCount) {
-    addVisibleStrokeOutlines(r, target, outline, node, {
+    addVisibleStrokeOutlines(r, pieces, outline, node, {
       fill,
       regions: outline,
       looseSegments: null
@@ -146,7 +141,7 @@ function addVectorStrokeOutlines(
     return
   }
   const regions = joinedPath(r, parts.slice(0, regionCount))
-  addVisibleStrokeOutlines(r, target, outline, node, {
+  addVisibleStrokeOutlines(r, pieces, outline, node, {
     fill,
     regions,
     looseSegments: parts[regionCount]
@@ -200,25 +195,22 @@ function strokeArea(
   const keptSide = side === 'INSIDE' ? r.ck.PathOp.Intersect : r.ck.PathOp.Difference
   const area = r.ck.Path.MakeFromOp(band, filledShape, keptSide)
   band.delete()
-  // An op's result fills even-odd; turned to non-zero, it keeps its holes when added to others.
-  const winding = area?.makeAsWinding() ?? null
-  area?.delete()
-  return winding
+  return area
 }
 
 /** The area every visible stroke of `node` paints along `source`, or null when none paints. */
 export function strokeAreaPath(r: SkiaRenderer, source: Path, node: SceneNode): Path | null {
-  const builder = new r.ck.PathBuilder()
-  addVisibleStrokeOutlines(r, builder, source, node, null)
-  const path = builder.detachAndDelete()
-  if (!path.isEmpty()) return path
-  path.delete()
+  const pieces: Path[] = []
+  addVisibleStrokeOutlines(r, pieces, source, node, null)
+  const path = unitedPieces(r, pieces)
+  if (path && !path.isEmpty()) return path
+  path?.delete()
   return null
 }
 
 function addVisibleStrokeOutlines(
   r: SkiaRenderer,
-  target: PathBuilder,
+  pieces: Path[],
   source: Path,
   node: SceneNode,
   vectorSides: VectorStrokeSides | null
@@ -227,53 +219,66 @@ function addVisibleStrokeOutlines(
     if (!drawsPaint(stroke) || stroke.weight <= 0) continue
     const side = strokeSide(node, stroke)
     if (vectorSides && side !== 'CENTER') {
-      addSidedVectorStroke(r, target, node, stroke.weight, side, vectorSides)
+      addSidedVectorStroke(r, pieces, node, stroke.weight, side, vectorSides)
       continue
     }
-    addOwnedPath(target, strokeArea(r, source, stroke.weight, side))
+    keepPiece(pieces, strokeArea(r, source, stroke.weight, side))
   }
 }
 
 function addSidedVectorStroke(
   r: SkiaRenderer,
-  target: PathBuilder,
+  pieces: Path[],
   node: SceneNode,
   weight: number,
   side: Stroke['align'],
   sides: VectorStrokeSides
 ): void {
-  addOwnedPath(target, vectorStrokeArea(r, sides.regions, node, weight, side, sides.fill))
+  keepPiece(pieces, vectorStrokeArea(r, sides.regions, node, weight, side, sides.fill))
   if (sides.looseSegments) {
-    addOwnedPath(target, strokeArea(r, sides.looseSegments, weight, 'CENTER'))
+    keepPiece(pieces, strokeArea(r, sides.looseSegments, weight, 'CENTER'))
   }
 }
 
-function strokeOutlinesPath(r: SkiaRenderer, outline: Path, node: SceneNode, fill: Path): Path {
-  const strokes = new r.ck.PathBuilder()
+function addStrokePieces(
+  r: SkiaRenderer,
+  pieces: Path[],
+  outline: Path,
+  node: SceneNode,
+  fill: Path
+): void {
   if (node.type === 'VECTOR') {
-    addVectorStrokeOutlines(r, strokes, outline, node, fill)
+    addVectorStrokeOutlines(r, pieces, outline, node, fill)
   } else {
-    addVisibleStrokeOutlines(r, strokes, outline, node, null)
+    addVisibleStrokeOutlines(r, pieces, outline, node, null)
   }
-  return strokes.detachAndDelete()
 }
 
-function filledAreaWithStrokes(r: SkiaRenderer, fill: Path, strokes: Path): Path | null {
-  if (fill.getFillType().value === r.ck.FillType.EvenOdd.value) {
-    return r.ck.Path.MakeFromOp(fill, strokes, r.ck.PathOp.Union)
+function keepPiece(pieces: Path[], path: Path | null): void {
+  if (path) {
+    pieces.push(path)
   }
-  const joined = new r.ck.PathBuilder()
-  joined.addPath(fill)
-  joined.addPath(strokes)
-  return joined.detachAndDelete()
 }
 
-function addOwnedPath(target: PathBuilder, path: Path | null): void {
-  if (!path) {
-    return
+// A union op reads each piece's own fill rule; concatenating them under one rule fills their holes.
+function unitedPieces(r: SkiaRenderer, pieces: Path[]): Path | null {
+  if (pieces.length <= 1) {
+    return pieces[0] ?? null
   }
-  target.addPath(path)
-  path.delete()
+  const united = unitedPath(r, pieces)
+  deletePaths(pieces)
+  return united
+}
+
+function operandPath(r: SkiaRenderer, node: SceneNode, pieces: Path[]): Path | null {
+  if (pieces.length <= 1) {
+    return pieces[0] ?? null
+  }
+  const united = sharedPath(r.nodePaths, `${node.id}|operand`, 'operand', pieces, () =>
+    unitedPath(r, pieces)
+  )
+  deletePaths(pieces)
+  return united
 }
 
 function vectorStrokeArea(
@@ -302,47 +307,23 @@ export function canContainFlattenableChildren(node: SceneNode): boolean {
   )
 }
 
-function appendVisibleChildPaths(
-  graph: SceneGraph,
-  parent: SceneNode,
-  target: PathBuilder,
-  makeChildPath: (child: SceneNode) => Path | null,
-  failOnMissing: boolean
-): boolean | null {
-  let hasPath = false
-  for (const childId of parent.childIds) {
-    const child = graph.getNode(childId)
-    if (!child || !child.visible) continue
-    const childPath = makeChildPath(child)
-    if (!childPath) {
-      if (failOnMissing) return null
-      continue
-    }
-    target.addPath(childPath, getNodeLocalMatrix(child))
-    childPath.delete()
-    hasPath = true
-  }
-  return hasPath
-}
-
 /**
  * A frame, group, component or instance gives a boolean operation, or Flatten, only its children's
  * shapes: Figma leaves its own fill and stroke out (live-verified).
  */
 function containerSourcePath(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path | null {
-  const path = new r.ck.PathBuilder()
-  const childPaths = appendVisibleChildPaths(
-    graph,
-    node,
-    path,
-    (child) => makeBooleanSourcePath(r, child, graph),
-    true
-  )
-  if (!childPaths) {
-    path.delete()
-    return null
+  const pieces: Path[] = []
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (!child || !child.visible) continue
+    const childPath = transformedShapePath(r, child, graph)
+    if (!childPath) {
+      deletePaths(pieces)
+      return null
+    }
+    pieces.push(childPath)
   }
-  return path.detachAndDelete()
+  return operandPath(r, node, pieces)
 }
 
 export function makeBooleanSourcePath(
@@ -369,24 +350,32 @@ export function makeBooleanSourcePath(
     return outline
   }
   const fill = savedFill ?? outline
-  const strokes = strokeOutlinesPath(r, outline, node, fill)
-  const result = drawsFill(node) ? filledAreaWithStrokes(r, fill, strokes) : strokes.copy()
-  strokes.delete()
+  const pieces = drawsFill(node) ? [fill.copy()] : []
+  addStrokePieces(r, pieces, outline, node, fill)
   savedFill?.delete()
   outline.delete()
-  return result
+  return operandPath(r, node, pieces)
 }
 
 function transformedShapePath(r: SkiaRenderer, child: SceneNode, graph: SceneGraph): Path | null {
   const path = makeBooleanSourcePath(r, child, graph)
   if (!path) return null
-  const transformed = new r.ck.PathBuilder()
-  transformed.addPath(path, getNodeLocalMatrix(child))
-  const fillType = path.getFillType()
+  const placed = placedPath(r, path, getNodeLocalMatrix(child))
   path.delete()
-  const result = transformed.detachAndDelete()
-  result.setFillType(fillType)
-  return result
+  return placed
+}
+
+/** `path` moved by `matrix`; a builder drops the fill rule, so it is set back. */
+export function placedPath(r: SkiaRenderer, path: Path, matrix: number[]): Path {
+  const builder = new r.ck.PathBuilder()
+  builder.addPath(path, matrix)
+  const placed = builder.detachAndDelete()
+  placed.setFillType(path.getFillType())
+  return placed
+}
+
+export function windingRuleOf(r: SkiaRenderer, path: Path): WindingRule {
+  return path.getFillType().value === r.ck.FillType.EvenOdd.value ? 'EVENODD' : 'NONZERO'
 }
 
 function operationForNode(r: SkiaRenderer, node: SceneNode): PathOp {
