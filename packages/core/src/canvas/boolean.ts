@@ -315,20 +315,12 @@ function appendVisibleChildPaths(
   return hasPath
 }
 
+/**
+ * A frame, group, component or instance gives a boolean operation, or Flatten, only its children's
+ * shapes: Figma leaves its own fill and stroke out (live-verified).
+ */
 function containerSourcePath(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path | null {
   const path = new r.ck.PathBuilder()
-  let hasPath = false
-
-  if (nodeHasVisibleFill(node) || nodeHasVisibleStroke(node)) {
-    const ownPath = baseShapePath(r, node)
-    if (ownPath) {
-      if (nodeHasVisibleFill(node)) path.addPath(ownPath)
-      addVisibleStrokeOutlines(r, path, ownPath, node, null)
-      ownPath.delete()
-      hasPath = true
-    }
-  }
-
   const childPaths = appendVisibleChildPaths(
     graph,
     node,
@@ -336,13 +328,7 @@ function containerSourcePath(r: SkiaRenderer, node: SceneNode, graph: SceneGraph
     (child) => makeBooleanSourcePath(r, child, graph),
     true
   )
-  if (childPaths === null) {
-    path.delete()
-    return null
-  }
-  hasPath ||= childPaths
-
-  if (!hasPath) {
+  if (!childPaths) {
     path.delete()
     return null
   }

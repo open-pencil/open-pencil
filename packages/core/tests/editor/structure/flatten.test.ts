@@ -82,6 +82,27 @@ describe('flattenSelected', () => {
     expect(editor.graph.getNode(second.id)).toBeUndefined()
   })
 
+  test("keeps a frame's children and leaves its own fill and stroke out, as Figma does", async () => {
+    const { editor } = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const solid = { type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: [solid],
+      strokes: [{ ...solid, weight: 4, align: 'INSIDE' as const }]
+    })
+    editor.graph.createNode('RECTANGLE', frame.id, { x: 30, y: 2, width: 8, height: 8 })
+
+    editor.select([frame.id])
+    editor.flattenSelected()
+
+    const vector = editor.graph.getNode([...editor.state.selectedIds][0])
+    expect([vector?.x, vector?.y, vector?.width, vector?.height]).toEqual([50, 22, 8, 8])
+  })
+
   test('outlines loaded text through the shared text outline path', async () => {
     await loadInterRegular()
     const { editor } = await createEditorWithRenderer()
