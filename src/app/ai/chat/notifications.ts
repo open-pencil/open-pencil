@@ -1,4 +1,5 @@
 import type { UIMessage } from 'ai'
+import type { RootContent } from 'mdast'
 
 import { aiMessages } from '@open-pencil/vue/i18n'
 
@@ -7,27 +8,54 @@ import type { EditorStore } from '@/app/editor/session'
 import { notify, type NotificationEvent } from '@/app/shell/notifications'
 import { getTabForStore, switchTab } from '@/app/tabs'
 
-/** How much of a finished reply the notification quotes. */
-const REPLY_EXCERPT_LENGTH = 160
+/** How much of a finished reply the notification quotes, as Codex quotes 200 characters. */
+const REPLY_PREVIEW_LENGTH = 200
 
-/** The reply's text, cut at a word near the length a notification shows. */
-function replyExcerpt(message: UIMessage): string {
-  const text = message.parts
-    .flatMap((part) => (part.type === 'text' ? [part.text] : []))
-    .join(' ')
-    .replaceAll(/\s+/g, ' ')
-    .trim()
-  if (text.length <= REPLY_EXCERPT_LENGTH) return text
-  const cut = text.slice(0, REPLY_EXCERPT_LENGTH)
-  return `${cut.slice(0, cut.lastIndexOf(' ') + 1 || REPLY_EXCERPT_LENGTH).trimEnd()}…`
+/**
+ * The reply's last text, which is its answer, as plain text: text before its tool calls only
+ * announced them, and a notification shows markdown, links, and code as their raw source.
+ */
+async function replyPreview(message: UIMessage): Promise<string> {
+  const answer = message.parts.findLast((part) => part.type === 'text')
+  if (!answer) return ''
+  const [{ fromMarkdown }, { toString }, { gfmFromMarkdown }, { gfm }] = await Promise.all([
+    import('mdast-util-from-markdown'),
+    import('mdast-util-to-string'),
+    import('mdast-util-gfm'),
+    import('micromark-extension-gfm')
+  ])
+  const root = fromMarkdown(answer.text, {
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()]
+  })
+  // Lines of text read as their words; lists and quotes as their lines in turn, while tables
+  // and code do not read as a sentence, so the preview keeps to the prose.
+  const lines = (node: RootContent): string[] => {
+    if (node.type === 'paragraph' || node.type === 'heading') return [toString(node)]
+    if (node.type === 'list' || node.type === 'listItem' || node.type === 'blockquote')
+      return node.children.flatMap(lines)
+    return []
+  }
+  const text = root.children.flatMap(lines).join(' ').replaceAll(/\s+/g, ' ').trim()
+  if (text.length <= REPLY_PREVIEW_LENGTH) return text
+  const cut = text.slice(0, REPLY_PREVIEW_LENGTH)
+  return `${cut.slice(0, cut.lastIndexOf(' ') + 1 || REPLY_PREVIEW_LENGTH).trimEnd()}…`
 }
 
-/** Notifies about the chat of `store`'s document; a click shows that tab's chat. */
-function notifyChat(event: NotificationEvent, store: EditorStore, body: string): void {
+/**
+ * Notifies about the chat of `store`'s document, titled with who replied and where; a click shows
+ * that tab's chat.
+ */
+function notifyChat(
+  event: NotificationEvent,
+  store: EditorStore,
+  agent: string,
+  body: string
+): void {
   const tabId = getTabForStore(store)?.id ?? null
   notify({
     event,
-    title: store.state.documentName,
+    title: aiMessages.get().notifyTitle({ agent, document: store.state.documentName }),
     body,
     tabId,
     // One per tab, so an agent that keeps working replaces its last notification.
@@ -39,12 +67,19 @@ function notifyChat(event: NotificationEvent, store: EditorStore, body: string):
   })
 }
 
-/** A reply ended on its own: `message` is the reply, or null when it failed. */
-export function notifyReplyEnded(store: EditorStore, message: UIMessage | null): void {
+/** A reply by `agent` ended on its own: `message` is the reply, or null when it failed. */
+export async function notifyReplyEnded(
+  store: EditorStore,
+  agent: string,
+  message: UIMessage | null
+): Promise<void> {
   const messages = aiMessages.get()
-  if (message)
-    notifyChat('agentFinished', store, replyExcerpt(message) || messages.notifyReplyFinished)
-  else notifyChat('agentFailed', store, messages.notifyReplyFailed)
+  if (!message) {
+    notifyChat('agentFailed', store, agent, messages.notifyReplyFailed)
+    return
+  }
+  const preview = await replyPreview(message)
+  notifyChat('agentFinished', store, agent, preview || messages.notifyReplyFinished)
 }
 
 /** An agent's permission request is still waiting for an answer. */
@@ -53,8 +88,7 @@ export function notifyPermissionWaiting(store: EditorStore, agent: string, actio
   notifyChat(
     'agentNeedsInput',
     store,
-    action
-      ? messages.notifyPermissionAction({ agent, action })
-      : messages.notifyPermission({ agent })
+    agent,
+    action ? messages.notifyPermissionAction({ action }) : messages.notifyPermission
   )
 }

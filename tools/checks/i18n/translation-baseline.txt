@@ -78,6 +78,7 @@ es:ai.chatSettings
 es:ai.completions
 es:ai.responses
 es:ai.toolError
+es:ai.notifyTitle
 es:automation.statusError
 es:code.editorDesignLabel
 es:code.sourceDesignJSX
@@ -204,6 +205,7 @@ it:ai.aiSetupAgentAccount
 it:ai.chatSettings
 it:ai.completions
 it:ai.responses
+it:ai.notifyTitle
 it:code.editorDesignLabel
 it:code.sourceDesignJSX
 it:code.sourceHTML
@@ -271,6 +273,7 @@ pl:ai.completions
 pl:ai.modelAgentConnection
 pl:ai.modelConfiguration
 pl:ai.responses
+pl:ai.notifyTitle
 pl:automation.port
 pl:code.editorDesignLabel
 pl:code.sourceDesignJSX
@@ -305,6 +308,7 @@ pl:storage.providerR2
 pl:storage.region
 ru:ai.completions
 ru:ai.responses
+ru:ai.notifyTitle
 ru:code.editorDesignLabel
 ru:code.sourceDesignJSX
 ru:code.sourceHTML
@@ -327,6 +331,7 @@ ru:storage.cloudTitle
 ru:storage.waitlistPlaceholder
 zh-cn:ai.completions
 zh-cn:ai.responses
+zh-cn:ai.notifyTitle
 zh-cn:code.editorDesignLabel
 zh-cn:code.sourceDesignJSX
 zh-cn:code.sourceHTML
@@ -527,13 +532,16 @@ ru:cloud.homeCloudOnHost
 ru:cloud.inviteEmailPlaceholder
 de:settings.skills
 de:ai.chatReferenceSkills
+de:ai.notifyTitle
 fr:ai.chatReferencePages
+fr:ai.notifyTitle
 de:settings.groupApp
 de:settings.editor
 es:settings.editor
 it:settings.groupApp
 it:settings.editor
 ja:settings.groupAI
+ja:ai.notifyTitle
 pl:settings.groupAI
 zh-cn:settings.groupAI
 de:settings.cloud

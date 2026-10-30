@@ -79,6 +79,12 @@ async function settleEndedReply(
   )
 }
 
+/** The agent or provider a chat runs on, as the composer names it. */
+function providerName(id: AIProviderID): string {
+  const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === id)
+  return agent?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
+}
+
 export function createChatSessionManager({
   isConfigured,
   isACPProvider,
@@ -298,7 +304,11 @@ export function createChatSessionManager({
           }
           // A reply stopped by the person, or cut off with its connection, ends unannounced.
           if (!event.isAbort && !event.isDisconnect)
-            notifyReplyEnded(store, event.isError ? null : event.message)
+            void notifyReplyEnded(
+              store,
+              providerName(chatProviderID),
+              event.isError ? null : event.message
+            )
         }
       })
       chat = created

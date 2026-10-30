@@ -65,16 +65,22 @@ test('a finished reply notifies only when turned on and away, and its click show
   expect(await shownNotifications(page)).toEqual([])
 
   await turnOnInSettings(page, 'A reply finished')
-  await reply(chat, 'Second request', 2)
+  // Text before a reply's tool calls only announces them; the answer is its last text.
+  await reply(chat, 'Answer in multiple parts', 2)
   await expect
     .poll(() => shownNotifications(page))
     .toEqual([
-      {
-        title: 'Untitled',
-        body: expect.stringContaining('Second request'),
-        tag: expect.stringMatching(/^agent:/)
-      }
+      { title: 'OpenRouter · Untitled', body: 'Second', tag: expect.stringMatching(/^agent:/) }
     ])
+
+  // Markdown reads as its text, without tables, task boxes, code ticks, or link targets.
+  await reply(chat, 'Show a markdown table', 3)
+  await expect.poll(() => shownNotifications(page)).toHaveLength(2)
+  const preview = (await shownNotifications(page)).at(-1)?.body ?? ''
+  expect(preview).toMatch(
+    /^The button now has these states: Variants created Checked in preview See the guide\.$/
+  )
+  expect(preview).not.toMatch(/[|*`[\]]/)
 
   // Another document and the Design tab are in view when the notification is clicked.
   // The tab bar starts with Home; the chat's document is the tab after it.

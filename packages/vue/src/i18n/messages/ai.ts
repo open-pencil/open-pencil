@@ -17,8 +17,9 @@ export const aiMessageDefaults = {
   notificationsUnsupported: 'This browser cannot show notifications.',
   notificationsSystemHint:
     'If none appear, allow OpenPencil in your system’s notification settings.',
-  notifyPermission: params('{agent} asks for permission.'),
-  notifyPermissionAction: params('{agent} asks for permission: {action}'),
+  notifyTitle: params('{agent} · {document}'),
+  notifyPermission: 'Asks for permission.',
+  notifyPermissionAction: params('Asks for permission: {action}'),
   notifyReplyFinished: 'The AI reply finished.',
   notifyReplyFailed: 'The AI reply stopped with an error.',
   maxAgentSteps: 'Maximum steps per message',
