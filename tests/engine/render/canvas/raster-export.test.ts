@@ -5,6 +5,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Effect } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
@@ -75,7 +76,8 @@ function exportedRgba(graph: SceneGraph, pageId: string, nodeId: string) {
 
 function frameOverNeighbour(
   frameBlend: 'PASS_THROUGH' | 'MULTIPLY',
-  childBlend: 'NORMAL' | 'MULTIPLY'
+  childBlend: 'NORMAL' | 'MULTIPLY',
+  frameEffects: Effect[] = []
 ) {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
@@ -92,7 +94,8 @@ function frameOverNeighbour(
     width: 40,
     height: 40,
     fills: [],
-    blendMode: frameBlend
+    blendMode: frameBlend,
+    effects: frameEffects
   })
   graph.createNode('RECTANGLE', frame.id, {
     x: 25,
@@ -271,6 +274,26 @@ describe('raster export', () => {
 
   test('selection export leaves out page neighbours when the node itself blends', () => {
     const { graph, pageId, frameId } = frameOverNeighbour('MULTIPLY', 'NORMAL')
+    const pixelAt = exportedRgba(graph, pageId, frameId)
+
+    expect(pixelAt(5, 5)[3]).toBe(0)
+    expect(pixelAt(30, 30)).toEqual([255, 255, 255, 255])
+  })
+
+  test('selection export leaves out page neighbours when the node blurs its background', () => {
+    const backgroundBlur: Effect = {
+      type: 'BACKGROUND_BLUR',
+      radius: 16,
+      spread: 0,
+      offset: { x: 0, y: 0 },
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      visible: true,
+      blendMode: 'NORMAL',
+      showShadowBehindNode: false
+    }
+    const { graph, pageId, frameId } = frameOverNeighbour('PASS_THROUGH', 'NORMAL', [
+      backgroundBlur
+    ])
     const pixelAt = exportedRgba(graph, pageId, frameId)
 
     expect(pixelAt(5, 5)[3]).toBe(0)
