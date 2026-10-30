@@ -221,9 +221,11 @@ describe('metrics snapshot API', () => {
   test('networks rank the range by pings under their commonest name', async () => {
     const counts = [
       ['2026-10-18', 9299, 'PLDT', 'desktop', 30],
-      ['2026-10-18', 136907, 'Huawei-Cloud-SG', 'desktop', 300],
-      ['2026-10-19', 136907, 'Huawei Cloud Singapore Region', 'desktop', 200],
-      ['2026-10-19', 136907, 'Huawei Cloud Singapore Region', 'web', 150],
+      // The commonest wording is split between apps and comes first, so neither the biggest row
+      // nor the latest day would pick it.
+      ['2026-10-18', 136907, 'Huawei Cloud Singapore Region', 'desktop', 200],
+      ['2026-10-18', 136907, 'Huawei Cloud Singapore Region', 'web', 150],
+      ['2026-10-19', 136907, 'Huawei-Cloud-SG', 'desktop', 300],
       ['2026-10-19', 9299, 'PLDT', 'web', 20],
       ['2026-10-19', 0, '', 'desktop', 5]
     ] as const
