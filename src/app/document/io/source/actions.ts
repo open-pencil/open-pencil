@@ -135,7 +135,7 @@ export function createDocumentSourceActions({
 
   function renameDocument(name: string) {
     const trimmed = name.trim()
-    if (state.readOnly || !trimmed || trimmed === state.documentName) return
+    if (state.hostRestrictions.readOnly || !trimmed || trimmed === state.documentName) return
     state.documentName = trimmed
     // Storage keeps the name with the document; a file's name is its path, which saving leaves as is.
     if (getStorageBinding()) changes.markChanged()
