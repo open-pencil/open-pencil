@@ -1,4 +1,4 @@
-import { normalizedFilename, staticPropertyName } from '#lint/support/context.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
 import { createProgramFilenameRule } from '#lint/support/factories.ts'
 import type { RuleDefinition } from '#lint/support/types.ts'
 import {
@@ -140,10 +140,10 @@ const noConditionalObjectSpreads = {
   }
 } satisfies RuleDefinition
 
-/** The key a member expression reads when it is fixed (`a.key`, `a['key']`, ``a[`key`]``), not `a[key]`. */
-function memberName(node: TSESTree.MemberExpression): string | null {
-  const key = node.property
-  if (!node.computed || key.type === 'Literal') return staticPropertyName(key)
+/** A key when it is fixed (`key`, `'key'`, `` `key` ``), not one read from a variable. */
+function fixedKey(key: TSESTree.Node, computed: boolean): string | null {
+  if (key.type === 'Identifier') return computed ? null : key.name
+  if (key.type === 'Literal') return typeof key.value === 'string' ? key.value : null
   if (key.type === 'TemplateLiteral' && key.expressions.length === 0) {
     return key.quasis[0]?.value.cooked ?? null
   }
@@ -158,7 +158,7 @@ const CORE_PROFILE = ['/packages/core/src/editor/views/', '/packages/core/src/ed
  */
 const PROFILE_INPUTS: Record<string, (file: string) => boolean> = {
   canvasView: (file) => CORE_PROFILE.some((owner) => file.includes(owner)),
-  restrictions: (file) =>
+  hostRestrictions: (file) =>
     CORE_PROFILE.some((owner) => file.includes(owner)) ||
     file.includes('/packages/core/src/editor/read-only/') ||
     (file.includes('/src/app/') && !file.includes('/packages/'))
@@ -224,11 +224,10 @@ const noEditorProfileInputs: RuleDefinition = {
         for (const input of read) report(node, input)
       },
       MemberExpression(node) {
-        report(node, memberName(node))
+        report(node, fixedKey(node.property, node.computed))
       },
       Property(node) {
-        if (node.parent.type !== 'ObjectPattern' || node.computed) return
-        report(node, staticPropertyName(node.key))
+        if (node.parent.type === 'ObjectPattern') report(node, fixedKey(node.key, node.computed))
       }
     }
   }

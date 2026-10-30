@@ -17,7 +17,7 @@ import Island from './Island.vue'
 const { view, canvas, drawn } = defineProps<{
   view: Pick<
     EditorState,
-    'panX' | 'panY' | 'zoom' | 'currentPageId' | 'canvasView' | 'restrictions'
+    'panX' | 'panY' | 'zoom' | 'currentPageId' | 'canvasView' | 'hostRestrictions'
   >
   /** The canvas that wheel gestures over the islands are passed on to. */
   canvas: HTMLElement | null

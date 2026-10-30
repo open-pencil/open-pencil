@@ -109,8 +109,9 @@ export type ToolbarItem =
   | { kind: 'action'; action: ToolbarAction }
 
 /**
- * The layout narrowed to the tools the editor's profile offers, or the whole layout when it offers
- * every tool; a read-only document keeps Move and Hand and no actions, as Figma shows.
+ * The layout narrowed to the tools the editor's profile offers: the whole layout when it names
+ * none, and otherwise only those tools, with no actions, as a read-only document keeps Move and
+ * Hand in Figma.
  */
 export function toolbarLayoutFor(
   layout: ToolbarLayout,

@@ -285,12 +285,12 @@ describe('Cloud document rooms, version history', () => {
     await until(() => versionListRevision(grace) > before)
 
     // Stopping the room leaves the tab as it was before it joined.
-    expect([grace.state.restrictions.readOnly, cloudRoomPermissions.value.get(grace)]).toEqual([
+    expect([grace.state.hostRestrictions.readOnly, cloudRoomPermissions.value.get(grace)]).toEqual([
       true,
       'view'
     ])
     room.stop()
-    expect([grace.state.restrictions.readOnly, cloudRoomPermissions.value.has(grace)]).toEqual([
+    expect([grace.state.hostRestrictions.readOnly, cloudRoomPermissions.value.has(grace)]).toEqual([
       false,
       false
     ])

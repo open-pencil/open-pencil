@@ -71,6 +71,7 @@ describe('host restrictions', () => {
       'pan',
       { revision: 0 }
     ])
+    expect(previewing.tools && [...previewing.tools]).toEqual(['SELECT', 'HAND'])
   })
 
   test('going read-only drops a tool it does not offer, and refuses picking one', () => {

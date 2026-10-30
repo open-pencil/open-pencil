@@ -13,7 +13,7 @@ function setup() {
   const figma = new FigmaAPI(graph)
   const editor = {
     graph,
-    state: { canvasView: EDIT_VIEW, restrictions: { readOnly: false } },
+    state: { canvasView: EDIT_VIEW, hostRestrictions: { readOnly: false } },
     runLayoutForNode: () => undefined,
     requestRender: () => undefined,
     pushUndoStep: undo.pushStep.bind(undo)

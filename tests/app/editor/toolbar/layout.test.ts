@@ -244,7 +244,7 @@ describe('dragging', () => {
 
 describe('toolbarLayoutFor', () => {
   const profileTools = (readOnly: boolean) =>
-    resolveEditorProfile({ canvasView: { id: 'edit' }, restrictions: { readOnly } }).tools
+    resolveEditorProfile({ canvasView: { id: 'edit' }, hostRestrictions: { readOnly } }).tools
 
   test('keeps the whole layout when the profile offers every tool', () => {
     const base = layout([['SELECT', 'HAND'], ['FRAME'], ['insert-icon']])

@@ -54,9 +54,9 @@ export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) 
    * drops a tool that would edit, as Figma does on opening version history.
    */
   function setReadOnly(readOnly: boolean): void {
-    if (ctx.state.restrictions.readOnly === readOnly) return
+    if (ctx.state.hostRestrictions.readOnly === readOnly) return
     if (readOnly) endEdits()
-    ctx.state.restrictions = { ...ctx.state.restrictions, readOnly }
+    ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, readOnly }
     const { tools } = resolveEditorProfile(ctx.state)
     if (tools && !tools.has(ctx.state.activeTool)) ctx.setActiveTool('SELECT')
     ctx.emitEditorEvent('document:read-only-changed', readOnly)

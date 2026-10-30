@@ -50,7 +50,7 @@ function restrict(profile: EditorProfile, restrictions: EditorRestrictions): Edi
  * pane's own state, since each pane shows its own view.
  */
 export function resolveEditorProfile(
-  state: Pick<EditorState, 'canvasView' | 'restrictions'>
+  state: Pick<EditorState, 'canvasView' | 'hostRestrictions'>
 ): EditorProfile {
-  return restrict(viewProfile(state.canvasView), state.restrictions)
+  return restrict(viewProfile(state.canvasView), state.hostRestrictions)
 }

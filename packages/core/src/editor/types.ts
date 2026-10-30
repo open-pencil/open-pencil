@@ -82,7 +82,7 @@ export interface EditorSharedState {
    * What the host takes away from every canvas, such as editing for a viewer or an earlier version;
    * read through `resolveEditorProfile`, set with `setReadOnly`.
    */
-  restrictions: EditorRestrictions
+  hostRestrictions: EditorRestrictions
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
   showPixelGrid?: boolean

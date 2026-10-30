@@ -17,7 +17,7 @@ type MutationEditor = Pick<
   Editor,
   'graph' | 'runLayoutForNode' | 'requestRender' | 'pushUndoStep'
 > & {
-  state: Pick<EditorState, 'canvasView' | 'restrictions'>
+  state: Pick<EditorState, 'canvasView' | 'hostRestrictions'>
 }
 
 function changes<T extends object>(

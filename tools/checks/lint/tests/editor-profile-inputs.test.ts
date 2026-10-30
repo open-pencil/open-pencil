@@ -32,7 +32,8 @@ describe('no-editor-profile-inputs', () => {
     'export const previewing = editor.state[`canvasView`].id',
     'export const view = editor.state.canvasView',
     'export const { id } = editor.state.canvasView',
-    'export const { canvasView } = editor.state'
+    'export const { canvasView } = editor.state',
+    "export const { ['hostRestrictions']: limits } = editor.state"
   ])('rejects reading the view: %s', async (source) => {
     expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(1)
   })
@@ -58,7 +59,7 @@ describe('no-editor-profile-inputs', () => {
     expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(0)
   })
 
-  const restriction = 'export const locked = editor.state.restrictions.readOnly'
+  const restriction = 'export const locked = editor.state.hostRestrictions.readOnly'
 
   test.each([
     'packages/vue/src/canvas/useCanvasInput.ts',
@@ -80,6 +81,11 @@ describe('no-editor-profile-inputs', () => {
   test('the host still reads the view through the profile', async () => {
     const path = 'src/app/collab/yjs-sync.ts'
     expect(ruleDiagnostics(await lint(check, rules, path), rule)).toHaveLength(1)
+  })
+
+  test('accepts an unrelated restrictions field', async () => {
+    const source = 'export const limits = account.restrictions'
+    expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(0)
   })
 
   test('accepts reading the profile anywhere', async () => {
