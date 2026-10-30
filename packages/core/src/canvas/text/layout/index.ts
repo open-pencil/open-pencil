@@ -387,6 +387,8 @@ export class TextLayout {
         bottom: top + first.height
       }
     }
+    const after = this.caretAfterLineBreak(block, local)
+    if (after) return after
     let lo = local
     let hi = local + 1
     let useRight = false
@@ -415,6 +417,21 @@ export class TextLayout {
       top: y + rect[1],
       bottom: y + rect[3]
     }
+  }
+
+  /**
+   * The caret after a line break that ends the paragraph: at the start of the empty line Skia
+   * lays out below it, where typing goes, not after the break on the line above.
+   */
+  private caretAfterLineBreak(block: TextLayoutBlock, local: number): TextCaretBox | null {
+    if (local < block.length) return null
+    const lines = block.paragraph.getLineMetrics()
+    const last = lines.at(-1)
+    const previous = lines.at(-2)
+    if (!last || !previous?.isHardBreak || last.endIndex > previous.endIncludingNewline) return null
+    const lineTop = last.baseline - last.ascent
+    const y = block.y + this.offsetAt(block, lineTop + last.height / 2)
+    return { x: block.x + last.left, top: y + lineTop, bottom: y + lineTop + last.height }
   }
 
   /**
