@@ -7,11 +7,12 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { createAutoLayoutValueEdit } from '#vue/canvas/auto-layout/value-edit'
 import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
 import { createCanvasLabelEdit } from '#vue/canvas/labels/edit'
-import { handlePenDragMove, updatePenHover } from '#vue/canvas/pen/input'
+import { handlePenDragMove } from '#vue/canvas/pen/input'
 import { finishPencilDrag, handlePencilDragMove } from '#vue/canvas/pencil/input'
 import { createCanvasPointer } from '#vue/canvas/pointer/use'
 import { createTextEditInput } from '#vue/canvas/text-edit/input'
-import { handleToolMouseDown } from '#vue/canvas/tools/input'
+import { hoverCanvasTool, pressCanvasTool } from '#vue/canvas/tools/input'
+import type { CanvasToolContext, CanvasToolPointer } from '#vue/canvas/tools/registry'
 import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { finishMarquee } from '#vue/canvas/transform/marquee'
 import {
@@ -204,6 +205,30 @@ export function useCanvasInput(
     onTextDblClick(e)
   }
 
+  function hoverLayers({ event, cx, cy, sx, sy }: CanvasToolPointer) {
+    const guideCursor = profile().edits ? guideInput.updateHover(sx, sy) : null
+    cursorOverride.value =
+      guideCursor ??
+      updateHoverCursor(
+        cx,
+        cy,
+        editor,
+        hitFns,
+        editor.state.measurementMode === 'deep' || hoverDeep(event)
+      )
+    editor.setAutoLayoutHover(autoLayoutHoverAt(cx, cy, editor.state.measurementMode))
+  }
+
+  const toolContext: CanvasToolContext = {
+    editor,
+    hitFns,
+    cursorOverride,
+    setDrag,
+    tryStartRotation,
+    handleTextEditClick,
+    hoverLayers
+  }
+
   function onMouseDown(e: MouseEvent) {
     onActivate?.()
     if (!isEnabled()) return
@@ -237,19 +262,7 @@ export function useCanvasInput(
     const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
     const clickCount = recordClick(sx, sy)
     if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
-    handleToolMouseDown({
-      event: e,
-      cx,
-      cy,
-      sx,
-      sy,
-      editor,
-      hitFns,
-      cursorOverride,
-      setDrag,
-      tryStartRotation,
-      handleTextEditClick
-    })
+    pressCanvasTool({ event: e, cx, cy, sx, sy }, toolContext)
   }
 
   // Dispatching the full drag union is intentionally centralized here.
@@ -266,33 +279,10 @@ export function useCanvasInput(
     if (profile().pointer === 'pan' && !drag.value) return
 
     if (!drag.value) {
-      const { cx, cy } = coords
-      updatePenHover(cx, cy, editor)
-    }
-
-    if (!drag.value) {
       const { cx, cy, sx, sy } = coords
       updateNodeEditHover(editor, cx, cy)
       editor.setShapeHandleHover(shapeHandleHoverAt(sx, sy, e.altKey))
-    }
-
-    if (!drag.value && editor.state.activeTool === 'CONNECTOR') {
-      editor.connectorHover(coords.cx, coords.cy, attachModifiers(e))
-    }
-
-    if (!drag.value && editor.state.activeTool === 'SELECT') {
-      const { sx, sy, cx, cy } = coords
-      const guideCursor = profile().edits ? guideInput.updateHover(sx, sy) : null
-      cursorOverride.value =
-        guideCursor ??
-        updateHoverCursor(
-          cx,
-          cy,
-          editor,
-          hitFns,
-          editor.state.measurementMode === 'deep' || hoverDeep(e)
-        )
-      editor.setAutoLayoutHover(autoLayoutHoverAt(cx, cy, editor.state.measurementMode))
+      hoverCanvasTool({ event: e, ...coords }, toolContext)
     }
 
     if (!drag.value) return
