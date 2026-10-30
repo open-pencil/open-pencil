@@ -54,6 +54,12 @@ export class FontManager {
    * first file it has for a style, so these draw from each file's own name.
    */
   private replacedFamilies = new Set<string>()
+  /**
+   * The files each style's own file replaced, by `family|style`. They stay its fallbacks under
+   * names of their own, never beside the file that replaced them, where CanvasKit would pick
+   * between the two by the weight each declares.
+   */
+  private replacedFileData = new Map<string, Set<ArrayBuffer>>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private variations = new WeakMap<
@@ -517,15 +523,19 @@ export class FontManager {
    * one, CanvasKit would pick among them by the weight each file declares, which can tie; each
    * style then draws from the file loaded for it, registered with its shards under a name of the
    * file's own. So does a family a style's file was replaced in, whose old file CanvasKit would
-   * keep drawing under the family's name.
+   * keep drawing under the family's name. Only the style's coverage shards join its file under
+   * that name: a file it replaced, such as a static face cached before a variable one was
+   * fetched, could declare the weight asked for and be drawn instead of the file it is outlined
+   * from, so it draws only as a fallback, from `renderShardFamilies`.
    */
   renderFamily(family: string, style: string): string {
     const data = this.loadedData(family, style)
     if (!data || (this.familyFileCount(family) < 2 && !this.replacedFamilies.has(family)))
       return family
     const name = this.fileFamily(family, data)
+    const replaced = this.replacedFileData.get(`${family}|${style}`)
     for (const shard of this.supplementalFamilyData.get(`${family}|${style}`) ?? [])
-      this.registerFontInCanvasKit(name, shard)
+      if (!replaced?.has(shard)) this.registerFontInCanvasKit(name, shard)
     return name
   }
 
@@ -743,14 +753,17 @@ export class FontManager {
     }
   }
 
-  private registerSupplemental(family: string, style: string, buffer: ArrayBuffer): void {
+  /** Adds `buffer` to the files of `style` after its own, returning the copy of it they keep. */
+  private registerSupplemental(family: string, style: string, buffer: ArrayBuffer): ArrayBuffer {
     const key = `${family}|${style}`
     const supplemental = this.supplementalFamilyData.get(key) ?? []
-    if (supplemental.some((file) => sameFontFile(file, buffer))) return
+    const kept = supplemental.find((file) => sameFontFile(file, buffer))
+    if (kept) return kept
     supplemental.push(buffer)
     this.supplementalFamilyData.set(key, supplemental)
     this.registerFontInCanvasKit(family, buffer)
     this.registerFontInBrowser(family, style, buffer)
+    return buffer
   }
 
   private registerAndCache(
@@ -767,7 +780,9 @@ export class FontManager {
       return existing
     }
     if (existing) {
-      this.registerSupplemental(family, style, existing)
+      const replaced = this.replacedFileData.get(key) ?? new Set<ArrayBuffer>()
+      replaced.add(this.registerSupplemental(family, style, existing))
+      this.replacedFileData.set(key, replaced)
       this.replacedFamilies.add(family)
     }
     this.loadedFamilies.set(key, buffer)

@@ -39,23 +39,28 @@ describe('font lifecycle', () => {
 
   test('draws a style from the cumulative subset that replaced its file', async () => {
     const manager = new FontManager()
-    const registrations: string[] = []
+    const registrations: Array<{ data: ArrayBuffer; family: string }> = []
     const provider = {
-      registerFont(_data: ArrayBuffer, family: string) {
-        registrations.push(family)
+      registerFont(data: ArrayBuffer, family: string) {
+        registrations.push({ data, family })
       }
     } as TypefaceFontProvider
 
     manager.attachProvider({} as CanvasKit, provider)
     await manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(8))
     const firstGeneration = manager.generation()
-    await manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(12))
+    const replacement = new ArrayBuffer(12)
+    await manager.markLoaded('Subset Font', 'Regular', replacement)
 
-    // CanvasKit draws from the first file registered under a name, which is the replaced one.
+    // CanvasKit draws from the first file registered under a name, which is the replaced one,
+    // and picks between files under one name by the weight each declares, so the name the
+    // style draws under holds the replacement alone.
     const drawn = manager.renderFamily('Subset Font', 'Regular')
     expect(drawn).not.toBe('Subset Font')
     expect(manager.generation()).toBeGreaterThan(firstGeneration)
-    expect(registrations).toEqual(['Subset Font', 'Subset Font', drawn, drawn])
+    expect(registrations.filter(({ family }) => family === drawn).map(({ data }) => data)).toEqual([
+      replacement
+    ])
   })
 
   test('tracks nodes gated by pre-render font resolution', () => {
