@@ -248,14 +248,24 @@ function addSidedVectorStroke(
   }
 }
 
-function addFilledArea(r: SkiaRenderer, target: PathBuilder, path: Path): void {
-  const winding =
-    path.getFillType().value === r.ck.FillType.EvenOdd.value ? path.makeAsWinding() : null
-  if (!winding) {
-    target.addPath(path)
-    return
+function strokeOutlinesPath(r: SkiaRenderer, outline: Path, node: SceneNode, fill: Path): Path {
+  const strokes = new r.ck.PathBuilder()
+  if (node.type === 'VECTOR') {
+    addVectorStrokeOutlines(r, strokes, outline, node, fill)
+  } else {
+    addVisibleStrokeOutlines(r, strokes, outline, node, null)
   }
-  addOwnedPath(target, winding)
+  return strokes.detachAndDelete()
+}
+
+function filledAreaWithStrokes(r: SkiaRenderer, fill: Path, strokes: Path): Path | null {
+  if (fill.getFillType().value === r.ck.FillType.EvenOdd.value) {
+    return r.ck.Path.MakeFromOp(fill, strokes, r.ck.PathOp.Union)
+  }
+  const joined = new r.ck.PathBuilder()
+  joined.addPath(fill)
+  joined.addPath(strokes)
+  return joined.detachAndDelete()
 }
 
 function addOwnedPath(target: PathBuilder, path: Path | null): void {
@@ -358,18 +368,13 @@ export function makeBooleanSourcePath(
   if (!stroked) {
     return outline
   }
-  const combined = new r.ck.PathBuilder()
-  if (drawsFill(node)) {
-    addFilledArea(r, combined, savedFill ?? outline)
-  }
-  if (node.type === 'VECTOR') {
-    addVectorStrokeOutlines(r, combined, outline, node, savedFill ?? outline)
-  } else {
-    addVisibleStrokeOutlines(r, combined, outline, node, null)
-  }
+  const fill = savedFill ?? outline
+  const strokes = strokeOutlinesPath(r, outline, node, fill)
+  const result = drawsFill(node) ? filledAreaWithStrokes(r, fill, strokes) : strokes.copy()
+  strokes.delete()
   savedFill?.delete()
   outline.delete()
-  return combined.detachAndDelete()
+  return result
 }
 
 function transformedShapePath(r: SkiaRenderer, child: SceneNode, graph: SceneGraph): Path | null {
