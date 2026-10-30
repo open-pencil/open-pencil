@@ -32,9 +32,25 @@ test('a face lookup that outlives a new catalog does not overwrite what the cata
   expect(await before).toBeNull()
   expect(manager.loadedFamilyFaces('Oswald')).toBeUndefined()
   expect(await manager.familyFaces('Oswald')).toEqual([
-    { weight: 400, italic: false },
-    { weight: 700, italic: false }
+    { weight: 400, italic: false, style: 'Regular' },
+    { weight: 700, italic: false, style: 'Bold' }
   ])
+})
+
+test('names faces as each source can: local fonts by their own names, the rest as Google does', async () => {
+  const manager = offlineManager()
+  // The desktop catalog lists generated names, so its italic takes the standard "Italic".
+  manager.setHostFontCatalog([{ family: 'Host Sans', styles: ['Regular Italic', 'SemiBold'] }])
+  expect(await manager.familyFaces('Host Sans')).toEqual([
+    { weight: 400, italic: true, style: 'Italic' },
+    { weight: 600, italic: false, style: 'SemiBold' }
+  ])
+  // Bundled Inter names its instances as Google Fonts does.
+  expect(await manager.familyFaces('Inter')).toContainEqual({
+    weight: 400,
+    italic: true,
+    style: 'Italic'
+  })
 })
 
 test('a new catalog tells listeners to ask for their families again', () => {

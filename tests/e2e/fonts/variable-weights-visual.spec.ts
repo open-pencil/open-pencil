@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import type { FontManager } from '#core/text/fonts'
+import type { FontManager } from '#core/text/font/manager'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -30,7 +30,7 @@ async function exportLines(page: Page, lines: Array<Partial<SceneNode> & { text:
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager

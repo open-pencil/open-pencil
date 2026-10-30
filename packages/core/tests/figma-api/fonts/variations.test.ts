@@ -52,10 +52,11 @@ describe('variable fonts in the plugin API', () => {
 
   test('picks the nearest named style for axes without a style, the heavier where two tie', () => {
     const { node } = text()
+    // Named as the font names its instances: Inter 4 joins "SemiBold".
     for (const [wght, style] of [
       [900, 'Black'],
       [650, 'Bold'],
-      [550, 'Semi Bold'],
+      [550, 'SemiBold'],
       [450, 'Medium'],
       [1, 'Thin']
     ] as const) {

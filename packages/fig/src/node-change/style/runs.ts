@@ -77,6 +77,7 @@ function convertStyleOverride(override: NodeChange, text: NodeChange): Character
     style.fontFamily = override.fontName.family
     style.fontWeight = styleToWeight(override.fontName.style)
     style.italic = override.fontName.style.toLowerCase().includes('italic')
+    style.fontStyle = override.fontName.style || null
   }
   if (override.fontSize !== undefined) style.fontSize = override.fontSize
   const fontVariations = convertFontVariations(override)

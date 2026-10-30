@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCommonMessages, useFileMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
@@ -28,7 +28,8 @@ const {
   documents,
   usage = null,
   state = 'ready',
-  canCreate = false
+  canCreate = false,
+  canDelete = false
 } = defineProps<{
   heading: string
   subtitle?: string
@@ -39,11 +40,14 @@ const {
   state?: 'loading' | 'ready' | 'offline' | 'error'
   /** The person may create designs here. */
   canCreate?: boolean
+  /** The person may delete the designs listed here. */
+  canDelete?: boolean
 }>()
 
 const view = defineModel<'grid' | 'list'>('view', { default: 'grid' })
 const emit = defineEmits<{
   open: [document: CloudDocumentRow]
+  delete: [document: CloudDocumentRow]
   newDesign: []
   members: []
   refresh: []
@@ -52,6 +56,14 @@ const emit = defineEmits<{
 
 const t = useCloudMessages()
 const common = useCommonMessages()
+const files = useFileMessages()
+const menu = (document: CloudDocumentRow) =>
+  canDelete
+    ? {
+        actions: files.value.documentActions({ name: document.name }),
+        delete: files.value.deleteDocument
+      }
+    : undefined
 const conflicts = computed(() => documents.filter((document) => document.sync === 'conflict'))
 const usageLabel = computed(() => {
   if (!usage) return null
@@ -191,7 +203,9 @@ const metadata = (document: CloudDocumentRow) =>
         :name="document.name"
         :metadata="metadata(document)"
         :previewURL="document.previewURL"
+        :menu="menu(document)"
         @open="emit('open', document)"
+        @delete="emit('delete', document)"
       >
         <template #status>
           <Tip v-if="document.permission === 'view'" :label="t.homeViewOnlyTip">

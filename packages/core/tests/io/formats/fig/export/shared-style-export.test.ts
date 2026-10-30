@@ -10,6 +10,49 @@ beforeAll(async () => {
   await initCodec()
 })
 
+test('variable-backed text styles survive repeated saves and reopening', async () => {
+  let graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const collection = graph.createCollection('Typography')
+  const size = graph.createVariable('Display size', 'FLOAT', collection.id, 48)
+  const tracking = graph.createVariable('Display tracking', 'FLOAT', collection.id, -0.96)
+  const definition = graph.createNode('TEXT', page.id, {
+    name: 'Display/Large',
+    sharedStyleType: 'TEXT',
+    internalOnly: true,
+    fontSize: 48,
+    letterSpacing: { value: -0.96, unit: 'PIXELS' },
+    boundVariables: { fontSize: size.id, letterSpacing: tracking.id }
+  })
+  definition.source.id = 'style:display-large'
+  const target = graph.createNode('TEXT', page.id, { name: 'Sample', text: 'Display sample' })
+  graph.updateNode(target.id, {
+    fontSize: 48,
+    letterSpacing: { value: -0.96, unit: 'PIXELS' },
+    boundVariables: { fontSize: size.id, letterSpacing: tracking.id },
+    textStyleId: definition.source.id
+  })
+
+  for (let save = 0; save < 3; save++) {
+    const saved = await exportFigFile(graph)
+    const parsed = parseFigBuffer(saved.slice().buffer)
+    const record = parsed.nodeChanges.find((node) => node.name === 'Sample')
+    expect(record?.styleIdForText?.guid).toBeDefined()
+    graph = await parseFigFile(saved.slice().buffer)
+    const sample = [...graph.nodes.values()].find((node) => node.name === 'Sample')
+    expect(sample).toBeDefined()
+    expect(
+      getSharedStyles(graph, 'text').find((style) => style.id === sample?.textStyleId)?.name
+    ).toBe('Display/Large')
+    expect(sample?.fontSize).toBe(48)
+    expect(sample?.letterSpacing?.unit).toBe('PIXELS')
+    expect(sample?.letterSpacing?.value).toBeCloseTo(-0.96)
+    expect(Object.keys(sample?.boundVariables ?? {}).sort()).toEqual(['fontSize', 'letterSpacing'])
+    // Force a patched write as well as the first full export.
+    if (sample) graph.updateNode(sample.id, { text: `Display sample ${save}` })
+  }
+})
+
 test('exports shared styles once even when present in a normal page subtree', async () => {
   await initCodec()
   const graph = new SceneGraph()

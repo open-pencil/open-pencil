@@ -26,6 +26,11 @@
   "searchRecentAndStorageFiles": "Szukaj w ostatnich i zapisanych plikach…",
   "newDesign": "Nowy projekt",
   "noMatchingFiles": "Brak plików pasujących do „{query}”.",
+  "documentActions": "Działania dla {name}",
+  "deleteDocument": "Usuń",
+  "deleteDocumentConfirmation": "Usunąć „{name}”?",
+  "deleteDocumentDescription": "Dokument zostanie usunięty dla wszystkich, którzy mogą go otworzyć. Tej operacji nie można cofnąć.",
+  "deleteDocumentFailed": "Nie udało się usunąć „{name}”. Spróbuj ponownie.",
   "saveAsPrompt": "Zapisz jako:",
   "browserFileAPINotSupported": "Twoja przeglądarka nie obsługuje interfejsu API plików lokalnych. Pliki będą pobierane zamiast zapisywane w bieżącym miejscu.",
   "newDesignIn": "Nowy projekt w {place}"

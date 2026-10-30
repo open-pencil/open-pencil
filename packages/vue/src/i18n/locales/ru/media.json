@@ -7,5 +7,11 @@
   "stockPhotoToolOptional": "Необязательно — включает инструмент стоковых фото",
   "pexelsAlternativeOptional": "Необязательно — альтернативный источник фото",
   "getPexelsAPIKey": "Получить бесплатный API-ключ Pexels →",
-  "getUnsplashAccessKey": "Получить бесплатный ключ доступа Unsplash →"
+  "getUnsplashAccessKey": "Получить бесплатный ключ доступа Unsplash →",
+  "photoKeyWorks": "{service} принял этот ключ.",
+  "photoKeyRejected": "{service} не принял этот ключ. Проверьте, что скопировали его целиком.",
+  "unsplashKeyRejected": "Unsplash не принял этот ключ. Вставьте Access Key вашего приложения, а не Secret key.",
+  "photoKeyRateLimited": "Этот ключ исчерпал запросы к {service} на этот час. Попробуйте позже.",
+  "photoKeyUnreachable": "Не удалось связаться с {service}. Проверьте подключение к сети.",
+  "photoKeyCheckFailed": "{service} не ответил на проверку. Попробуйте позже."
 }

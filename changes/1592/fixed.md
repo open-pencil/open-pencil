@@ -1,0 +1,1 @@
+- Home stops listing storage documents deleted from another device or through the Cloud API (#1533).

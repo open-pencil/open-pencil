@@ -1,9 +1,54 @@
 import { readFileSync } from 'node:fs'
 
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { openAppMenu } from '#tests/helpers/menu'
+
+/** An S3 bucket held in memory that lists, stores, reads, and deletes objects. */
+async function memoryBucket(page: Page): Promise<Map<string, Buffer>> {
+  const objects = new Map<string, Buffer>()
+  await page.route('https://s3.example.com/**', async (route) => {
+    const request = route.request()
+    const url = new URL(request.url())
+    const key = decodeURIComponent(url.pathname.replace(/^\/designs\/?/, ''))
+    const prefix = url.searchParams.get('prefix')
+    if (url.searchParams.get('list-type') === '2' && prefix !== null) {
+      const contents = [...objects]
+        .filter(([name]) => name.startsWith(prefix))
+        .map(
+          ([name, body]) =>
+            `<Contents><Key>${name}</Key><LastModified>2026-01-02T03:04:05.000Z</LastModified><Size>${body.byteLength}</Size></Contents>`
+        )
+      await route.fulfill({
+        contentType: 'application/xml',
+        body: `<ListBucketResult><IsTruncated>false</IsTruncated>${contents.join('')}</ListBucketResult>`
+      })
+      return
+    }
+    if (request.method() === 'DELETE') {
+      objects.delete(key)
+      await route.fulfill({ status: 204 })
+      return
+    }
+    if (request.method() === 'PUT') {
+      objects.set(key, request.postDataBuffer() ?? Buffer.alloc(0))
+      await route.fulfill({ status: 200, headers: { ETag: '"etag"' } })
+      return
+    }
+    const body = objects.get(key)
+    if (!body) {
+      await route.fulfill({ status: 404 })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      headers: { 'Content-Length': String(body.byteLength) },
+      body: request.method() === 'HEAD' ? undefined : body
+    })
+  })
+  return objects
+}
 
 test('configured storage lists previews through ranges before opening the document', async ({
   page
@@ -129,41 +174,7 @@ test('storage workspace directs unconfigured users to Settings', async ({ page }
 test('Save to storage uploads the open document and lists it in the workspace', async ({
   page
 }) => {
-  const objects = new Map<string, Buffer>()
-  await page.route('https://s3.example.com/**', async (route) => {
-    const request = route.request()
-    const url = new URL(request.url())
-    const key = decodeURIComponent(url.pathname.replace(/^\/designs\/?/, ''))
-    const prefix = url.searchParams.get('prefix')
-    if (url.searchParams.get('list-type') === '2' && prefix !== null) {
-      const contents = [...objects]
-        .filter(([name]) => name.startsWith(prefix))
-        .map(
-          ([name, body]) =>
-            `<Contents><Key>${name}</Key><LastModified>2026-01-02T03:04:05.000Z</LastModified><Size>${body.byteLength}</Size></Contents>`
-        )
-      await route.fulfill({
-        contentType: 'application/xml',
-        body: `<ListBucketResult><IsTruncated>false</IsTruncated>${contents.join('')}</ListBucketResult>`
-      })
-      return
-    }
-    if (request.method() === 'PUT') {
-      objects.set(key, request.postDataBuffer() ?? Buffer.alloc(0))
-      await route.fulfill({ status: 200, headers: { ETag: '"etag"' } })
-      return
-    }
-    const body = objects.get(key)
-    if (!body) {
-      await route.fulfill({ status: 404 })
-      return
-    }
-    await route.fulfill({
-      status: 200,
-      headers: { 'Content-Length': String(body.byteLength) },
-      body: request.method() === 'HEAD' ? undefined : body
-    })
-  })
+  const objects = await memoryBucket(page)
 
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
@@ -198,4 +209,53 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect(page.getByRole('button', { name: /^Untitled/ }).first()).toBeVisible()
+})
+
+test('Delete removes a stored document from the bucket, and a document deleted elsewhere drops out', async ({
+  page
+}) => {
+  const objects = await memoryBucket(page)
+  for (const [id, name] of [
+    ['poster', 'Poster'],
+    ['flyer', 'Flyer']
+  ]) {
+    objects.set(
+      `open_pencil_storage/canvases/${id}.fig`,
+      readFileSync('tests/fixtures/gold-preview.fig')
+    )
+    objects.set(
+      `open_pencil_storage/canvases/${id}.meta.json`,
+      Buffer.from(JSON.stringify({ name, updatedAt: '2026-01-02T03:04:05.000Z' }))
+    )
+  }
+
+  await page.goto('/?recent-files')
+  await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  await page.getByRole('button', { name: 'Settings' }).last().click()
+  await page.getByTestId('settings-section-storage').click()
+  const panel = page.getByTestId('settings-storage-panel')
+  await panel.getByRole('button', { name: /S3 storage/ }).click()
+  await panel.getByLabel('Endpoint').fill('https://s3.example.com')
+  await panel.getByLabel('Bucket').fill('designs')
+  await panel.getByLabel('Access key ID').fill('access-key')
+  await panel.getByLabel('Secret access key').fill('secret-key')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByTestId('settings-storage-open-workspace').click()
+
+  const poster = page.getByRole('button', { name: /^Poster/ })
+  await expect(poster).toBeVisible()
+  await poster.hover()
+  await page.getByRole('button', { name: 'Actions for Poster' }).click()
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  const dialog = page.getByRole('alertdialog', { name: 'Delete “Poster”?' })
+  await dialog.getByRole('button', { name: 'Delete' }).click()
+  await expect(poster).toBeHidden()
+  await expect.poll(() => [...objects.keys()].filter((key) => key.includes('/poster.'))).toEqual([])
+
+  objects.delete('open_pencil_storage/canvases/flyer.fig')
+  objects.delete('open_pencil_storage/canvases/flyer.meta.json')
+  await page.goto('/?recent-files')
+  await page.getByRole('button', { name: /^designs/ }).click()
+  await expect(page.getByText('No stored documents yet.')).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Poster|^Flyer/ })).toHaveCount(0)
 })

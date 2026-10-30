@@ -117,7 +117,9 @@ test('a family chosen while loading skips layers deleted in the meantime', async
 })
 
 /** Text layers in Inter at these styles, with typography actions and face lists over them. */
-function styled(...faces: { fontWeight: number; italic?: boolean; fontFamily?: string }[]) {
+function styled(
+  ...faces: { fontWeight: number; italic?: boolean; fontFamily?: string; fontStyle?: string }[]
+) {
   const editor = createEditor()
   const page = editor.state.currentPageId
   const texts = faces.map((face) =>
@@ -159,6 +161,15 @@ test('the weight list offers only the weights the family has', async () => {
   await fontManager.familyFaces('Oswald')
   await nextTick()
   expect(weights.value.map((weight) => weight.value)).toEqual([200, 300, 400, 500, 600, 700])
+})
+
+test('the weight list names faces as the family does, and the text’s own weight as the text does', async () => {
+  const { weights } = styled({ fontWeight: 600, fontStyle: 'Semi Bold' })
+  await fontManager.familyFaces('Inter')
+  await nextTick()
+  const label = (value: number) => weights.value.find((weight) => weight.value === value)?.label
+  // A file from Figma spells Inter 3's name; our Inter 4 names its other faces its own way.
+  expect([label(600), label(800), label(200)]).toEqual(['Semi Bold', 'ExtraBold', 'ExtraLight'])
 })
 
 test('italic does nothing on a family without italics, and bold goes to Bold', async () => {

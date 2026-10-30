@@ -9,7 +9,7 @@ import type {
   TextListType,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
-import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
 import {
@@ -71,11 +71,9 @@ export function createTypographyState(editor: Editor) {
   const fontFamily = computed(() => node.value?.fontFamily ?? '')
   const fontWeight = computed(() => node.value?.fontWeight ?? 400)
   const fontSize = computed(() => node.value?.fontSize ?? 16)
-  const currentWeightLabel = computed(
-    () => FONT_WEIGHT_NAMES[node.value?.fontWeight ?? 400] ?? 'Regular'
-  )
+  const { weights, supports, styleName } = useFamilyFaces(nodes)
+  const currentWeightLabel = computed(() => (node.value ? styleName(node.value) : 'Regular'))
   const activeFormatting = computed(() => sharedFormatting(nodes.value))
-  const { weights, supports } = useFamilyFaces(nodes)
   /**
    * The list style every selected text shares, or that of the paragraphs being edited; `null`
    * when they differ.
@@ -207,11 +205,13 @@ export function createTypographyActions({
       'Change font',
       ['fontFamily', 'fontWeight', 'italic'],
       async (target) => {
-        const known = await faces
+        await faces
+        // Asked again, so faces forgotten while loading (a catalog arriving) are read anew.
+        const known = await fontManager.familyFaces(family)
         const face = known ? nearestFamilyFace(known, target.fontWeight, target.italic) : null
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic
-        await options.fontLoader?.load(family, weightToStyle(fontWeight, italic))
+        await options.fontLoader?.load(family, faceLoadKey(fontWeight, italic))
         return {
           fontFamily: family,
           fontWeight,
@@ -228,7 +228,7 @@ export function createTypographyActions({
       'Change font weight',
       ['fontWeight'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(weight, target.italic))
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(weight, target.italic))
         return { fontWeight: weight, fontVariations: styleFontVariations(target) }
       },
       targets
@@ -348,7 +348,7 @@ export function createTypographyActions({
       'Toggle italic',
       ['italic'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(target.fontWeight, italic))
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(target.fontWeight, italic))
         return { italic, fontVariations: styleFontVariations(target) }
       },
       nodes.value.filter((target) => supports(target, target.fontWeight, italic))

@@ -11,7 +11,7 @@ import type {
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -30,7 +30,7 @@ import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownTextSlice } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import type { ParagraphNode } from './inputs'
 
@@ -280,7 +280,7 @@ export function buildSkParagraph(
   const fontFamilies = (primary: string, weight: number, italic = false) =>
     resolveParagraphFontFamilies(
       primary,
-      weightToStyle(weight, italic),
+      faceLoadKey(weight, italic),
       arabicFallbacks,
       cjkFallbacks
     )

@@ -1,7 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -69,7 +69,7 @@ export class TextEditor {
     if (!node?.textPathData || !node.derivedTextGlyphs?.length) return null
     const metrics = fontVerticalMetricsSync(
       node.fontFamily,
-      weightToStyle(node.fontWeight, node.italic)
+      faceLoadKey(node.fontWeight, node.italic)
     )
     return metrics ? { glyphs: node.derivedTextGlyphs, metrics } : null
   }

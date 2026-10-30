@@ -93,7 +93,6 @@ tests/engine/app/storage/cache-eviction.test.ts
 tests/engine/app/storage/format-bytes.test.ts
 tests/engine/app/storage/local-store.test.ts
 tests/engine/app/storage/persist.test.ts
-tests/engine/app/storage/reconcile.test.ts
 tests/engine/app/storage/sync-outbox.test.ts
 tests/engine/app/storage/unique-name.test.ts
 tests/engine/app/tabs/open-file-dedup.test.ts

@@ -368,6 +368,7 @@ type TextProps = Pick<
   | 'fontFamily'
   | 'fontWeight'
   | 'italic'
+  | 'fontStyle'
   | 'textAlignHorizontal'
   | 'textAlignVertical'
   | 'textAutoResize'
@@ -459,6 +460,8 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     fontFamily: nc.fontName?.family ?? DEFAULT_FONT_FAMILY,
     fontWeight: styleToWeight(nc.fontName?.style ?? ''),
     italic: nc.fontName?.style.toLowerCase().includes('italic') ?? false,
+    // Figma finds the face by this exact name, which the weight and slant cannot always name.
+    fontStyle: nc.fontName?.style || null,
     textAlignHorizontal: (nc.textAlignHorizontal ?? 'LEFT') as
       | 'LEFT'
       | 'CENTER'

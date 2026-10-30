@@ -1,7 +1,7 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -162,7 +162,7 @@ function listStyle(node: ParagraphNode, firstCharacter: number): ListStyle {
   return {
     em: override?.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE),
     family: override?.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
-    style: weightToStyle(override?.fontWeight ?? node.fontWeight, override?.italic ?? node.italic),
+    style: faceLoadKey(override?.fontWeight ?? node.fontWeight, override?.italic ?? node.italic),
     override
   }
 }

@@ -84,9 +84,12 @@ describe('text in a font that is not loaded', () => {
     expect(raw()?.textDecoration).toBe('UNDERLINE')
   })
 
-  test('names fonts in its messages as Figma does', () => {
+  test('names fonts in its messages by the name the text has for its face', () => {
     const { graph, node } = unloadedText()
     graph.updateNode(node.id, { fontWeight: 600 })
+    expect(() => (node.fontSize = 20)).toThrow(`unloaded font "${UNLOADED} SemiBold"`)
+    // A file names the face as its font does, which Figma's message repeats.
+    graph.updateNode(node.id, { fontStyle: 'Semi Bold' })
     expect(() => (node.fontSize = 20)).toThrow(`unloaded font "${UNLOADED} Semi Bold"`)
   })
 

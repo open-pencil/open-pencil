@@ -254,21 +254,14 @@ export function openRoomSession({
     }
   })
   meta.observe(refreshDocument)
-  const stopName = watch(
-    () => store.state.documentName,
-    (name) => {
-      if (
-        disposed ||
-        store.state.readOnly ||
-        !hasDocument.value ||
-        readRoot(meta) !== store.graph.rootId ||
-        name === readRoomName(meta)
-      )
-        return
-      writeRoomName(meta, name)
-    },
-    { flush: 'sync' }
-  )
+  // A rename reaches the room once the tab shows the room's copy; before that the room's name
+  // wins, as the room's other document data does when the tab starts following it.
+  function publishName(name: string) {
+    if (disposed || store.state.readOnly || !hasDocument.value) return
+    if (readRoot(meta) !== store.graph.rootId || name === readRoomName(meta)) return
+    writeRoomName(meta, name)
+  }
+  const stopName = store.onDocumentRenamed(publishName).off
   awareness.on('change', updatePeers)
 
   const connection = connectCollabRoom({

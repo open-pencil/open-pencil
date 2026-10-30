@@ -37,6 +37,12 @@ export const filesMessageDefaults = {
   newDesign: 'New design',
   newDesignIn: params('New design in {place}'),
   noMatchingFiles: params('No files match “{query}”.'),
+  documentActions: params('Actions for {name}'),
+  deleteDocument: 'Delete',
+  deleteDocumentConfirmation: params('Delete “{name}”?'),
+  deleteDocumentDescription:
+    'The document is deleted for everyone who can open it. This can’t be undone.',
+  deleteDocumentFailed: params('Couldn’t delete “{name}”. Try again.'),
   saveAsPrompt: 'Save as:',
   browserFileAPINotSupported:
     "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place."

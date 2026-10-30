@@ -6,7 +6,7 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { nodeFontReadiness } from '#core/canvas/text'
 import { getCanvasKit } from '#core/canvaskit'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 /**
  * A character no font has, once no fallback is left for it, shows as the font's missing glyph

@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride,
@@ -36,7 +36,7 @@ import { createVariableBindingActions } from './variable-bindings'
  */
 function isPathTextEditable(node: SceneNode): boolean {
   if (!node.textPathData) return true
-  return hasGlyphOutlines(node.fontFamily, weightToStyle(node.fontWeight, node.italic))
+  return hasGlyphOutlines(node.fontFamily, faceLoadKey(node.fontWeight, node.italic))
 }
 
 type PathTextEditSnapshot = Pick<

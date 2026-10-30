@@ -1,7 +1,7 @@
 import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
@@ -9,7 +9,7 @@ import {
   getGlyphOutlineMetricsSync,
   type OutlineCommand
 } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 export type TextOutlineUnsupportedReason =
   | 'not-text'
@@ -54,7 +54,7 @@ function baseTextStyle(node: SceneNode): TextStyle {
 }
 
 function styleName(style: Pick<TextStyle, 'fontWeight' | 'italic'>): string {
-  return weightToStyle(style.fontWeight, style.italic)
+  return faceLoadKey(style.fontWeight, style.italic)
 }
 
 function styleKey(style: TextStyle): string {

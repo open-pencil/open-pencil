@@ -26,6 +26,11 @@
   "searchRecentAndStorageFiles": "Zuletzt verwendete und gespeicherte Dateien suchen…",
   "newDesign": "Neues Design",
   "noMatchingFiles": "Keine Dateien entsprechen „{query}“.",
+  "documentActions": "Aktionen für {name}",
+  "deleteDocument": "Löschen",
+  "deleteDocumentConfirmation": "„{name}“ löschen?",
+  "deleteDocumentDescription": "Das Dokument wird für alle gelöscht, die es öffnen können. Das lässt sich nicht rückgängig machen.",
+  "deleteDocumentFailed": "„{name}“ konnte nicht gelöscht werden. Versuche es erneut.",
   "saveAsPrompt": "Speichern unter:",
   "browserFileAPINotSupported": "Dein Browser unterstützt die lokale Datei-API nicht. Dateien werden heruntergeladen, statt direkt gespeichert zu werden.",
   "newDesignIn": "Neues Design in {place}"

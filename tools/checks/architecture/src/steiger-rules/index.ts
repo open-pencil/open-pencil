@@ -146,7 +146,7 @@ const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
   {
     from: 'tests/engine/fonts/',
     to: 'tests/engine/text/fonts/',
-    source: 'packages/core/src/text/fonts.ts'
+    source: 'packages/core/src/text/font/manager.ts'
   },
   {
     from: 'tests/engine/figma-api/',

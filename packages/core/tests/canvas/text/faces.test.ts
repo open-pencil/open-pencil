@@ -11,8 +11,8 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { buildParagraph } from '#core/canvas/text'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
-import { FontManager, fontManager } from '#core/text/fonts'
-import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-fonts'
+import { FontManager, fontManager } from '#core/text/font/manager'
+import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-font/resolver'
 import { glyphOutlineSourceSync } from '#core/text/font/glyphs'
 
 /** A family only these tests load, so faces other tests load cannot answer for it. */

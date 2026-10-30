@@ -1,6 +1,6 @@
 import { textFallbackScriptsWithoutCoverage, textNeededFallbackScripts } from '#core/text/coverage'
 import type { FontFallbackScript } from '#core/text/fallbacks'
-import type { GraphFontRequirements } from '#core/text/requirements'
+import type { GraphFontRequirements } from '#core/text/requirements/collect'
 
 export interface MissingGraphFontScriptsOptions {
   treatUnknownCoverageAsMissing?: boolean

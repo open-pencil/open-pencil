@@ -20,7 +20,7 @@ import { installTextMeasurer } from '#core/layout'
 import { createLayoutRunner } from '#core/layout/mutations'
 import { emitNavigationTrace } from '#core/profiler'
 import { TextEditor } from '#core/text/editor'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { fontResolver } from '#core/text/resolver'
 
 import { createAlignmentActions } from './alignment'
@@ -303,9 +303,9 @@ export function createEditor(options?: EditorOptions) {
   const designTokens = createDesignTokenActions(ctx, variables, nodes)
   const vectorize = createVectorizeActions(ctx)
   const icons = createIconActions(ctx)
-  const stickies = createStickyActions(ctx)
-  const shapesWithText = createShapeWithTextActions(ctx)
-  const generatedText = createGeneratedTextActions(ctx)
+  const stickies = createStickyActions(ctx, nodes)
+  const shapesWithText = createShapeWithTextActions(ctx, nodes)
+  const generatedText = createGeneratedTextActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
@@ -316,7 +316,7 @@ export function createEditor(options?: EditorOptions) {
     clipboard.deleteNodes
   )
   const connectorLines = createConnectorLineActions(ctx, nodes.beginNodePreview)
-  const connectorStyles = createConnectorStyleActions(ctx)
+  const connectorStyles = createConnectorStyleActions(ctx, nodes)
   const lineEnds = createLineEndActions(ctx, nodes.beginNodePreview)
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)

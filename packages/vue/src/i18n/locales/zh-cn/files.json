@@ -26,6 +26,11 @@
   "searchRecentAndStorageFiles": "搜索最近使用和存储的文件…",
   "newDesign": "新建设计",
   "noMatchingFiles": "没有与“{query}”匹配的文件。",
+  "documentActions": "{name} 的操作",
+  "deleteDocument": "删除",
+  "deleteDocumentConfirmation": "删除“{name}”？",
+  "deleteDocumentDescription": "该文档将对所有可以打开它的人删除。此操作无法撤销。",
+  "deleteDocumentFailed": "无法删除“{name}”。请重试。",
   "saveAsPrompt": "另存为：",
   "browserFileAPINotSupported": "你的浏览器不支持本地文件 API。文件将被下载，而不是保存在原位置。",
   "newDesignIn": "在 {place} 中新建设计"

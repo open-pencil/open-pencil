@@ -10,7 +10,7 @@ import {
   HANGUL_CHARACTER,
   KANA_CHARACTER
 } from '#core/text/fallbacks'
-import type { FamilyFace } from '#core/text/font/faces'
+import { standardFace, type FamilyFace } from '#core/text/font/faces'
 import { sfntFont } from '#core/text/font/woff2'
 import {
   createProviderUnifont,
@@ -115,7 +115,7 @@ function familyFacesOf(result: ResolveFontResult): FamilyFace[] {
   for (const font of result.fonts) {
     const italic = font.style === 'italic' || font.style?.startsWith('oblique') === true
     for (const weight of faceWeights(font.weight))
-      faces.set(`${weight}${italic ? 'i' : ''}`, { weight, italic })
+      faces.set(`${weight}${italic ? 'i' : ''}`, standardFace(weight, italic))
   }
   return [...faces.values()]
 }

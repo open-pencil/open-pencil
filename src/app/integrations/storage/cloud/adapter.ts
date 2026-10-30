@@ -178,7 +178,10 @@ export function createCloudStorageAdapter(
     },
 
     async deleteDocument(id) {
-      await (await client()).deleteDocument(id)
+      // Already gone, deleted by someone else or by a try whose answer was lost, is deleted.
+      await (await client()).deleteDocument(id).catch((error: unknown) => {
+        if (!(error instanceof CloudAPIError && error.code === 'not_found')) throw error
+      })
     },
 
     async getDocumentMetadata(id) {

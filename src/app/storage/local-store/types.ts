@@ -56,3 +56,6 @@ export type LocalCanvasWriteInput = LocalCanvasLocation & {
   /** Replaces the base revision, as when the bytes come straight from the provider. */
   remoteRevision?: string | null
 }
+
+/** The state a copy must still be in for a conditional removal to go ahead. */
+export type LocalCanvasState = Pick<LocalCanvasMeta, 'revision' | 'syncStatus' | 'tombstoned'>

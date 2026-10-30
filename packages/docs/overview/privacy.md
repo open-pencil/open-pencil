@@ -90,6 +90,6 @@ OpenPencil is local-first, but some features reach the network. The desktop app 
 | Cloud storage           | The storage provider you configure                                                                                                                                                                      |
 | Fonts                   | Google Fonts, which can supply a font a document uses that is not installed                                                                                                                             |
 | Icons                   | The Iconify API, when you search or insert icons                                                                                                                                                        |
-| Stock images            | Unsplash or Pexels, when you search them                                                                                                                                                                |
+| Stock photos            | Unsplash or Pexels, with your own key, when you search them or place one of their photos                                                                                                                |
 
 The app, the feedback service, and this page are open source. The event list lives in [`packages/feedback/src/contract`](https://github.com/open-pencil/open-pencil/tree/master/packages/feedback/src/contract), and the tables above are generated from it.

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 /**
  * Path text can only be edited when the font's glyph OUTLINES are available to

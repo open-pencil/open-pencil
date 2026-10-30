@@ -60,4 +60,12 @@ describe('storage workspace reconciliation', () => {
     const confirmed = reconcileStorageDocuments([localMeta('deleted', 'synced', true)], [])
     expect(confirmed.localIdsToPurge).toEqual(['deleted'])
   })
+  test('drops a synced copy the provider no longer lists, and keeps unsent work', () => {
+    const result = reconcileStorageDocuments(
+      [localMeta('deleted', 'synced'), localMeta('unsent', 'pending'), localMeta('kept', 'synced')],
+      [remoteDocument('kept')]
+    )
+    expect(result.documents.map((document) => document.id).sort()).toEqual(['kept', 'unsent'])
+    expect(result.localIdsToPurge).toEqual(['deleted'])
+  })
 })

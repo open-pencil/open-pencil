@@ -1,5 +1,8 @@
 import * as v from 'valibot'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
+
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaNodeProxy } from '#core/figma-api'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
@@ -72,6 +75,12 @@ export const updateNode = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
     assertNodeEditable(figma.graph, args.id)
+    // Written to the layer directly, since the plugin setters need a loaded font; an edit to a
+    // text style's field leaves the style, as the editor's updates do.
+    const editTypography = (changes: Partial<SceneNode>) => {
+      const scene = figma.graph.getNode(args.id)
+      if (scene) figma.graph.updateNode(args.id, styleDetachmentChanges(scene, changes))
+    }
     const updated: string[] = []
     if (args.x !== undefined) {
       node.x = args.x
@@ -116,11 +125,11 @@ export const updateNode = defineTool({
       updated.push('layoutDirection')
     }
     if (args.font_size !== undefined) {
-      figma.graph.updateNode(node.id, { fontSize: args.font_size })
+      editTypography({ fontSize: args.font_size })
       updated.push('fontSize')
     }
     if (args.font_weight !== undefined) {
-      figma.graph.updateNode(node.id, { fontWeight: args.font_weight })
+      editTypography({ fontWeight: args.font_weight })
       updated.push('fontWeight')
     }
     return { id: args.id, updated }

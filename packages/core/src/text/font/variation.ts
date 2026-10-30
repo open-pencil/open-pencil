@@ -146,7 +146,7 @@ export function fontAxes(data: ArrayBuffer): FontAxis[] | null {
   return variationTable(data)?.axes ?? null
 }
 
-/** A named instance of a variable font, such as Inter's `Semi Bold`, with every axis' value. */
+/** A named instance of a variable font, such as Inter's `SemiBold`, with every axis' value. */
 export interface NamedInstance {
   name: string
   variations: FontVariation[]
