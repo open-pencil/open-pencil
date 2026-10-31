@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createDefaultEditorState, createEditor } from '@open-pencil/core'
+import { createDefaultEditorState, createDocumentGraph, createEditor } from '@open-pencil/core'
+import { BOARD_PAGE_BACKGROUND } from '@open-pencil/core/constants'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -136,6 +137,19 @@ describe('new page backgrounds follow the interface theme', () => {
     } finally {
       editor.dispose()
     }
+  })
+
+  test('a new design takes the theme it is made in, and a board FigJam’s page in any theme', () => {
+    // The app hands these to the editor as documents of their own, which it does not set up again.
+    const opened = (kind: 'design' | 'board') => {
+      const graph = createDocumentGraph(kind, 'dark')
+      const editor = createEditor({ graph, skipInitialGraphSetup: true })
+      const color = editor.state.pageColor
+      editor.dispose()
+      return color
+    }
+    expect(opened('design')).toEqual(dark)
+    expect(opened('board')).toEqual({ ...BOARD_PAGE_BACKGROUND, a: 1 })
   })
 
   test('pages made by scripts', () => {

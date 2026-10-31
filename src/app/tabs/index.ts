@@ -41,6 +41,7 @@ import {
   rememberRecentStorageDocument
 } from '@/app/recent-files'
 import { createDeferred } from '@/app/runtime/deferred'
+import { resolvedAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
@@ -128,7 +129,7 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
  */
 export function createDocumentTab(kind: DocumentKind): Tab {
   const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
-  const tab = createTab(undefined, createDocumentGraph(kind))
+  const tab = createTab(undefined, createDocumentGraph(kind, resolvedAppTheme.value))
   if (picker) {
     const rest = tabsRef.value.filter((entry) => entry !== tab)
     tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))
