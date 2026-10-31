@@ -168,6 +168,11 @@ export function createCanvasSurfaceManager({
     return options?.getOverlayObstacles?.() ?? []
   }
 
+  /** Tiles still to render, visible or in the background: the next frame continues them. */
+  function tileWorkPending(renderer: SkiaRenderer): boolean {
+    return renderer.tiledScenePending || renderer.tiledSceneBackgroundPending
+  }
+
   function renderNow() {
     if (!state.renderer || isDestroyed()) return
     state.renderer.overlayObstacles = overlayObstacles()
@@ -186,7 +191,7 @@ export function createCanvasSurfaceManager({
     options?.onFrame?.({ panX: view.panX, panY: view.panY, zoom: view.zoom })
     acknowledgePresentation()
     clearSceneBackingRenderTimer()
-    if (options?.layer === 'scene' && state.renderer.tiledScenePending) {
+    if (options?.layer === 'scene' && tileWorkPending(state.renderer)) {
       renderLoop.markDirty()
     }
     if (options?.layer === 'scene' && state.renderer.sceneBackingNeedsCrispRender) {

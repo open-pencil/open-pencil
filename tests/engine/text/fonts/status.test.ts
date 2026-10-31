@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FontManager, documentFontStatus, UnsupportedFontFormatError } from '@open-pencil/core/text'
+import {
+  DocumentFontUses,
+  FontManager,
+  documentFontStatus,
+  UnsupportedFontFormatError
+} from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 function pageId(graph: SceneGraph): string {
@@ -208,5 +213,71 @@ describe('documentFontStatus', () => {
       faithful: true,
       faces: [{ family: 'Avenir', name: 'Book', style: 'Book', status: 'available' }]
     })
+  })
+})
+
+describe('DocumentFontUses', () => {
+  test('follows a layer edited, added, moved off the page, and deleted', async () => {
+    const graph = new SceneGraph()
+    const manager = new FontManager()
+    await manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    await manager.markLoaded('Example Sans', 'Regular', new ArrayBuffer(8), 'local')
+    const page = pageId(graph)
+    const title = graph.createNode('TEXT', page, {
+      name: 'Title',
+      text: 'Hello',
+      fontFamily: 'Inter',
+      fontWeight: 400
+    })
+    const uses = new DocumentFontUses(graph, page)
+    const families = () => uses.status(manager).faces.map((face) => face.family)
+    expect(families()).toEqual(['Inter'])
+
+    graph.updateNode(title.id, { fontFamily: 'Example Sans' })
+    uses.update(title.id)
+    expect(families()).toEqual(['Example Sans'])
+
+    const frame = graph.createNode('FRAME', page, { name: 'Frame' })
+    const caption = graph.createNode('TEXT', frame.id, {
+      name: 'Caption',
+      text: 'Hi',
+      fontFamily: 'Inter',
+      fontWeight: 400
+    })
+    uses.update(caption.id)
+    expect(families()).toEqual(['Example Sans', 'Inter'])
+
+    const otherPage = graph.addPage('Other')
+    graph.reparentNode(caption.id, otherPage.id)
+    uses.update(caption.id)
+    expect(families()).toEqual(['Example Sans'])
+
+    graph.deleteNode(title.id)
+    uses.remove(title.id)
+    expect(families()).toEqual([])
+
+    // A frame moved off the page takes the text it holds with it, reported as the frame.
+    graph.reparentNode(frame.id, otherPage.id)
+    graph.createNode('TEXT', frame.id, { text: 'Hi', fontFamily: 'Inter', fontWeight: 400 })
+    uses.update(frame.id)
+    expect(families()).toEqual([])
+    graph.reparentNode(frame.id, page)
+    uses.update(frame.id)
+    expect(families()).toEqual(['Inter'])
+  })
+
+  test('skips the text under an ancestor that was deleted', async () => {
+    const graph = new SceneGraph()
+    const manager = new FontManager()
+    await manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    const page = pageId(graph)
+    const frame = graph.createNode('FRAME', page, { name: 'Frame' })
+    graph.createNode('TEXT', frame.id, { text: 'Hi', fontFamily: 'Inter', fontWeight: 400 })
+    const uses = new DocumentFontUses(graph, page)
+    expect(uses.status(manager).faces).toHaveLength(1)
+
+    graph.deleteNode(frame.id)
+    uses.remove(frame.id)
+    expect(uses.status(manager).faces).toEqual([])
   })
 })

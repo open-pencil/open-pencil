@@ -73,7 +73,7 @@ function drawSectionTitle(
       try {
         const matrix = labelScreenMatrix(labelTransform(node, graph, overlays?.rotationPreview), r)
         canvas.concat(matrix)
-        r.auxFill.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
+        r.auxFill.setColorComponents(background.r, background.g, background.b, background.a)
         const { x, y, width, height } = layout.bounds
         const bounds = r.ck.RRectXY(
           r.ck.LTRBRect(x, y, x + width, y + height),

@@ -31,6 +31,7 @@ function createRenderer() {
     fillPaint: {
       setShader: mock(() => undefined),
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setBlendMode: mock(() => undefined)
     },
@@ -80,7 +81,7 @@ describe('schema fill fallback rendering', () => {
     expect(renderer.fillPaint.setShader).toHaveBeenLastCalledWith(
       expect.objectContaining({ id: 'pattern-shader' })
     )
-    expect(renderer.fillPaint.setColor).not.toHaveBeenCalledWith(['color', 0.2, 0.3, 0.4, 0.8])
+    expect(renderer.fillPaint.setColorComponents).not.toHaveBeenCalledWith(0.2, 0.3, 0.4, 0.8)
   })
 
   test.each(['PATTERN', 'NOISE', 'CUSTOM'] as const)(
@@ -95,7 +96,7 @@ describe('schema fill fallback rendering', () => {
       }
 
       expect(applyFill(renderer, fill, node, new SceneGraph())).toBe(true)
-      expect(renderer.fillPaint.setColor).toHaveBeenCalledWith(['color', 0.2, 0.3, 0.4, 0.8])
+      expect(renderer.fillPaint.setColorComponents).toHaveBeenCalledWith(0.2, 0.3, 0.4, 0.8)
     }
   )
 })

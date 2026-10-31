@@ -118,31 +118,33 @@ function drawSilhouetteDropShadow(
         morphology
       )
     : r.getCachedDropShadow(effect.offset.x, effect.offset.y, sigma, color)
-  const paint = new ck.Paint()
+  // The layer copies the paint, so the shared one is reset at once for whatever draws inside.
+  const paint = r.effectLayerPaint
   paint.setImageFilter(filter)
   setPaintBlendMode(r, paint, blendMode)
   canvas.saveLayer(paint, bounds)
+  paint.setImageFilter(null)
+  paint.setBlendMode(ck.BlendMode.SrcOver)
   try {
     draw()
   } finally {
     canvas.restore()
-    paint.delete()
     if (morphology) {
-      filter.delete()
+      filter?.delete()
       morphology.delete()
     }
   }
 }
 
 function drawKnockout(r: SkiaRenderer, canvas: Canvas, bounds: Float32Array, draw: () => void) {
-  const paint = new r.ck.Paint()
+  const paint = r.effectLayerPaint
   paint.setBlendMode(r.ck.BlendMode.DstOut)
   canvas.saveLayer(paint, bounds)
+  paint.setBlendMode(r.ck.BlendMode.SrcOver)
   try {
     draw()
   } finally {
     canvas.restore()
-    paint.delete()
   }
 }
 
@@ -244,10 +246,10 @@ function renderDropShadow(
   }
 
   const bounds = shadowLayerBounds(r, graph, node, effect, spread, includeChildren)
-  const isolation = knockout ? new r.ck.Paint() : null
-  if (isolation) {
-    setPaintBlendMode(r, isolation, blendMode)
-    canvas.saveLayer(isolation, bounds)
+  if (knockout) {
+    setPaintBlendMode(r, r.effectLayerPaint, blendMode)
+    canvas.saveLayer(r.effectLayerPaint, bounds)
+    setPaintBlendMode(r, r.effectLayerPaint, 'NORMAL')
   }
   try {
     drawSilhouetteDropShadow(
@@ -256,7 +258,7 @@ function renderDropShadow(
       effect,
       spread,
       bounds,
-      isolation ? 'NORMAL' : blendMode,
+      knockout ? 'NORMAL' : blendMode,
       () => drawSilhouette(r, canvas, graph, node, 'cast', includeChildren)
     )
     if (knockout) {
@@ -265,10 +267,7 @@ function renderDropShadow(
       )
     }
   } finally {
-    if (isolation) {
-      canvas.restore()
-      isolation.delete()
-    }
+    if (knockout) canvas.restore()
     resetEffectLayerPaint(r)
   }
 }
@@ -317,7 +316,7 @@ function drawSilhouetteInnerShadow(
     canvas.saveLayer(r.effectLayerPaint, inverse)
     restoreCount++
 
-    r.auxFill.setColor(ck.Color4f(0, 0, 0, 1))
+    r.auxFill.setColorComponents(0, 0, 0, 1)
     canvas.drawRect(inverse, r.auxFill)
 
     r.effectLayerPaint.setImageFilter(null)

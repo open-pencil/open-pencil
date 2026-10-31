@@ -1,3 +1,4 @@
+import { dirname, homeDir } from '@tauri-apps/api/path'
 import { computed, shallowRef } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
@@ -50,7 +51,6 @@ async function readFolders(): Promise<{ project: SkillScan; home: SkillScan }> {
     projectSkillsFolders.value = []
     return { project: NO_SKILLS, home: NO_SKILLS }
   }
-  const { dirname, homeDir } = await import('@tauri-apps/api/path')
   const home = await homeDir()
   const reader = await nativeHomeSkillReader()
   const documentPath = getActiveEditorStoreOrNull()?.getDocumentFilePath() ?? null

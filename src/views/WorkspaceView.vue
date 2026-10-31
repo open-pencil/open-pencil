@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { useHead } from '@unhead/vue'
 import { useEventListener, whenever } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
@@ -224,7 +226,6 @@ async function selectNodeByName(name: string): Promise<boolean> {
 }
 
 async function openPendingAssociatedFiles(): Promise<void> {
-  const { invoke } = await import('@tauri-apps/api/core')
   const files = await invoke<PendingOpenFile[]>('take_pending_open')
   await openPendingFiles(files, {
     openPaths: openDocumentPaths,
@@ -244,7 +245,6 @@ function drainPendingOpens(): Promise<void> {
 
 async function bindAssociatedFileOpen(): Promise<void> {
   if (!isTauri()) return
-  const { listen } = await import('@tauri-apps/api/event')
   fileAssociationCleanup.value = await listen('open-associated-files', () => {
     void drainPendingOpens()
   })

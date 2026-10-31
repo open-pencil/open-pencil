@@ -1,3 +1,6 @@
+import { dirname, join, resolve, sep } from '@tauri-apps/api/path'
+import { lstat, readFile } from '@tauri-apps/plugin-fs'
+
 import { IS_TAURI } from '@open-pencil/core/constants'
 import type { ReadDocumentInput } from '@open-pencil/core/io'
 
@@ -10,10 +13,6 @@ import type { ReadDocumentInput } from '@open-pencil/core/io'
 export function documentAssetReader(path: string | undefined): ReadDocumentInput['readAsset'] {
   if (!IS_TAURI || !path) return undefined
   return async (relative) => {
-    const [{ dirname, join, resolve, sep }, { lstat, readFile }] = await Promise.all([
-      import('@tauri-apps/api/path'),
-      import('@tauri-apps/plugin-fs')
-    ])
     const folder = await dirname(path)
     const target = await resolve(folder, relative)
     if (!target.startsWith(folder + sep())) return null
