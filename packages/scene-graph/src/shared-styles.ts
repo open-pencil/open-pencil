@@ -1,6 +1,7 @@
-import { isEqual, omit } from 'es-toolkit'
+import { compact, isEqual, omit } from 'es-toolkit'
 
 import type { SceneGraph } from './graph'
+import { styleRunReferences } from './text/references'
 import type {
   CharacterStyleOverride,
   SceneNode,
@@ -20,6 +21,15 @@ const STYLE_REF_KEYS = {
 
 /** The fields that link a layer to its shared styles. */
 export const STYLE_LINK_FIELDS = Object.values(STYLE_REF_KEYS)
+
+/** The shared styles a layer uses: its own, its text ranges', and its vector regions'. */
+export function referencedStyleIds(node: SceneNode): string[] {
+  return compact([
+    ...STYLE_LINK_FIELDS.map((field) => node[field]),
+    ...styleRunReferences(node.styleRuns).styles,
+    ...(node.vectorNetwork?.regions ?? []).map((region) => region.fillStyleId)
+  ])
+}
 
 const STYLE_TYPES = {
   fill: 'FILL',

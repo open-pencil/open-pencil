@@ -1005,7 +1005,9 @@ export function sceneNodeToKiwiWithContext(
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
-  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs)
+  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs, (id) =>
+    exportedStyleReference(context, id)
+  )
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   mergeParameterBindings(nc)
   applyRawFigmaNodeFields(context, node, nc)

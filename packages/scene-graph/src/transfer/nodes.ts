@@ -1,5 +1,6 @@
 import { cloneNodeProps } from '../copy'
 import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
+import { referencedStyleIds } from '../shared-styles'
 import { remapStyleRunReferences, styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
@@ -11,17 +12,7 @@ export function semanticTransferReferences(node: SceneNode): string[] {
     ...(node.componentId ? [node.componentId] : []),
     ...Object.values(node.boundVariables),
     ...runs.variables,
-    ...runs.styles,
-    ...[
-      node.fillStyleId,
-      node.strokeStyleId,
-      node.textStyleId,
-      node.effectStyleId,
-      node.gridStyleId
-    ].filter((id): id is string => !!id),
-    ...(node.vectorNetwork?.regions ?? []).flatMap((region) =>
-      region.fillStyleId ? [region.fillStyleId] : []
-    ),
+    ...referencedStyleIds(node),
     ...Object.entries(node.componentPropertyAssignments).flatMap(([id, value]) => [id, value]),
     ...node.componentPropertyReferences.map((reference) => reference.propertyId),
     ...node.componentPropertyDefinitions.flatMap((definition) => [
