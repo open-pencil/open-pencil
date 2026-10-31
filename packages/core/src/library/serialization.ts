@@ -3,6 +3,7 @@ import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { repairHierarchy } from '@open-pencil/scene-graph/hierarchy'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
@@ -116,6 +117,7 @@ export function deserializeLibraryRevision(
   graph.variableCollections = new Map(revision.graph.variableCollections)
   graph.activeMode = new Map(revision.graph.activeMode)
   graph.documentColorSpace = revision.graph.documentColorSpace
+  repairHierarchy(graph)
   graph.instanceIndex = new Map()
   for (const node of graph.getAllNodes()) {
     if (node.type === 'CONNECTOR') graph.connectorIds.add(node.id)

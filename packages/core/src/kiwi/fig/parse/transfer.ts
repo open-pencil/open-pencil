@@ -1,5 +1,6 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { EnabledLibraryBinding, SceneNode } from '@open-pencil/scene-graph'
+import { repairHierarchy } from '@open-pencil/scene-graph/hierarchy'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
@@ -104,6 +105,10 @@ export function deserializeSceneGraph(data: SerializedSceneGraph): SceneGraph {
   graph.figSchemaDeflated = data.figSchemaDeflated
   graph.documentColorSpace = data.documentColorSpace
   graph.enabledLibraries = data.enabledLibraries ? new Map(data.enabledLibraries) : new Map()
+  // A child listed twice or under its own descendant must not hang or overflow the traversals
+  // that run next.
+  const repairs = repairHierarchy(graph)
+  if (repairs > 0) console.warn(`[fig] repaired ${repairs} broken parent/child links on load`)
 
   return graph
 }

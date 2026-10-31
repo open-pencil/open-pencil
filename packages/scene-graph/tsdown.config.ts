@@ -26,6 +26,7 @@ export default defineConfig({
     gradient: './src/gradient.ts',
     'group-bounds': './src/group-bounds.ts',
     guides: './src/guides.ts',
+    hierarchy: './src/hierarchy.ts',
     'hit-test': './src/hit-test.ts',
     'icons/index': './src/icons/index.ts',
     images: './src/images.ts',

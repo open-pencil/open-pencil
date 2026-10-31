@@ -164,6 +164,12 @@
       "import": "./dist/guides.js",
       "default": "./dist/guides.js"
     },
+    "./hierarchy": {
+      "types": "./dist/hierarchy.d.ts",
+      "bun": "./src/hierarchy.ts",
+      "import": "./dist/hierarchy.js",
+      "default": "./dist/hierarchy.js"
+    },
     "./hit-test": {
       "types": "./dist/hit-test.d.ts",
       "bun": "./src/hit-test.ts",

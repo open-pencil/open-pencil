@@ -1,0 +1,1 @@
+- A document whose layers are linked in a loop or listed twice opens as a tree instead of hanging.
