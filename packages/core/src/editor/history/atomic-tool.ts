@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode, Variable } from '@open-pencil/scene-graph'
-import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { captureTouchedCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
 import type { Editor } from '#core/editor/create'
 import { ReadOnlyDocumentError } from '#core/editor/read-only'
@@ -7,10 +7,16 @@ import { resolveEditorProfile, type EditorProfileInputs } from '#core/editor/vie
 import type { FigmaAPI } from '#core/figma-api'
 import { isAtomicTool, type ToolDef } from '#core/tools/schema'
 
-import { diffFields, type FieldChanges } from './diff'
+import {
+  applyDocumentChange,
+  documentChangeFromCheckpoint,
+  emptyDocumentChange,
+  recordChanges,
+  type DocumentChange
+} from './document-change'
 
-// Capture property changes across pages. Component synchronization remains editor-owned.
-const MAX_TRANSACTION_NODES = 10_000
+/** The most layers one atomic edit may change; layout that follows it is not counted. */
+const MAX_ATOMIC_CHANGED_LAYERS = 10_000
 
 type MutationEditor = Pick<
   Editor,
@@ -19,22 +25,23 @@ type MutationEditor = Pick<
   state: EditorProfileInputs
 }
 
-function changes<T extends object>(
-  before: Map<string, T>,
-  after: Map<string, T>
-): FieldChanges<T>[] {
-  const result: FieldChanges<T>[] = []
-  for (const [id, previous] of before) {
-    const current = after.get(id)
-    if (!current) throw new Error('Atomic tools must not remove nodes or variables')
-    const change = diffFields(id, previous, current)
-    if (change) result.push(change)
-  }
-  if (before.size !== after.size) throw new Error('Atomic tools must not create nodes or variables')
-  return result
+export interface AtomicToolOptions {
+  signal?: AbortSignal
+  isLive?: () => boolean
+  label?: string
+  /**
+   * Called once after preflight: the committed step's change, or an empty change for no-op,
+   * source-only or rolled-back calls.
+   */
+  onRecorded?: (change: DocumentChange) => void
 }
 
 /**
+ * Runs a tool that only changes properties of layers and variables, anywhere in the document, as
+ * one undo step, and rolls it back whole when it fails. It records the layers the graph reports
+ * it changing (`SceneGraph.observeNodeChanges`), so its cost follows what it touches rather than
+ * the document's size. Component synchronization remains editor-owned.
+ *
  * No await is permitted between snapshot and commit. Browser events, other agents and
  * cancellation cannot interleave with this bounded transaction. Async tools use their
  * existing execution path and are not exposed through WebMCP.
@@ -44,7 +51,7 @@ export function executeAtomicTool(
   figma: FigmaAPI,
   def: ToolDef,
   args: Record<string, unknown>,
-  options: { signal?: AbortSignal; isLive?: () => boolean; label?: string } = {}
+  options: AtomicToolOptions = {}
 ): unknown {
   if (!isAtomicTool(def)) throw new Error(`Not an atomic tool: ${def.name}`)
   if (!resolveEditorProfile(editor.state).edits) throw new ReadOnlyDocumentError()
@@ -53,40 +60,18 @@ export function executeAtomicTool(
     throw new Error('The target document is no longer open')
   }
   const graph = figma.graph
-  if (graph.nodes.size + graph.variables.size > MAX_TRANSACTION_NODES) {
-    throw new Error('Document too large for atomic agent editing (maximum 10000 nodes)')
-  }
-  const checkpoint = captureGraphCheckpoint(graph)
-  const { nodes, variables } = checkpoint
   const pageId = figma.currentPageId
+  const checkpoint = captureTouchedCheckpoint(graph)
+  let recorded = emptyDocumentChange(pageId)
 
-  const replay = (
-    nodeChanges: FieldChanges<SceneNode>[],
-    variableChanges: FieldChanges<Variable>[],
-    direction: 'before' | 'after'
-  ) => {
+  const replay = (change: DocumentChange, side: 'before' | 'after') => {
     if (editor.graph !== graph) throw new Error('The target document has been replaced')
-    for (const change of variableChanges) {
-      const variable = graph.variables.get(change.id)
-      if (variable) {
-        Object.assign(variable, structuredClone(change[direction]))
-        for (const key of change.absent[direction]) Reflect.deleteProperty(variable, key)
-      }
-    }
-    graph.preserveSourceMetadataDuring(() => {
-      for (const change of nodeChanges)
-        graph.restoreNodeProperties(
-          change.id,
-          structuredClone(change[direction]),
-          change.absent[direction]
-        )
-    })
+    applyDocumentChange(graph, change, side)
     layout(
       graph,
       editor,
-      pageId,
-      variableChanges.length > 0,
-      nodeChanges.map((change) => change.id)
+      change.variables.length > 0,
+      change.updated.map((update) => update.id)
     )
     editor.requestRender()
   }
@@ -98,25 +83,28 @@ export function executeAtomicTool(
       throw new Error(String(result.error))
     }
     checkpoint.assertPropertiesOnly()
-    const variableChanges = changes(variables, graph.variables)
-    layout(
-      graph,
-      editor,
-      pageId,
-      variableChanges.length > 0,
-      changes(nodes, graph.nodes).map((change) => change.id)
-    )
-    const nodeChanges = changes(nodes, graph.nodes)
+    const changed = checkpoint.reported.size
+    if (changed > MAX_ATOMIC_CHANGED_LAYERS) {
+      throw new Error(
+        `This edit changes ${changed} layers; one atomic agent edit may change at most ${MAX_ATOMIC_CHANGED_LAYERS}. Change fewer layers per call.`
+      )
+    }
+    const records = recordChanges(graph, checkpoint)
+    layout(graph, editor, records.variables.length > 0, checkpoint.reported)
+    // Layout must not restructure the document either.
+    checkpoint.assertPropertiesOnly()
+    checkpoint.stop()
+    const change = documentChangeFromCheckpoint(graph, pageId, checkpoint, records)
     const contentChanged =
-      variableChanges.length > 0 ||
-      nodeChanges.some((change) => Object.keys(change.after).some((key) => key !== 'source'))
-    if (!contentChanged && nodeChanges.length) replay(nodeChanges, [], 'before')
+      change.variables.length > 0 || change.updated.some((update) => update.fields)
+    if (!contentChanged && change.updated.length) replay(change, 'before')
     if (contentChanged) {
       editor.pushUndoStep({
         label: `${options.label ?? 'Agent'}: ${def.name}`,
-        inverse: () => replay(nodeChanges, variableChanges, 'before'),
-        forward: () => replay(nodeChanges, variableChanges, 'after')
+        inverse: () => replay(change, 'before'),
+        forward: () => replay(change, 'after')
       })
+      recorded = change
       editor.requestRender()
     }
     return result
@@ -124,22 +112,48 @@ export function executeAtomicTool(
     checkpoint.restore()
     editor.requestRender()
     throw error
+  } finally {
+    options.onRecorded?.(recorded)
   }
 }
 
+/**
+ * Lays out the layers an edit changed, as the editor lays out a user's edit: each changed layer
+ * with its subtree and the auto-layout frames around it. Bound values follow variables anywhere,
+ * so a variable change lays out every page.
+ */
 function layout(
   graph: SceneGraph,
   editor: MutationEditor,
-  pageId: string,
   allPages: boolean,
-  changedIds: string[]
+  changedIds: Iterable<string>
 ): void {
-  const scopes = new Set(allPages ? graph.getPages().map((page) => page.id) : [pageId])
-  for (const id of changedIds) {
-    let node = graph.getNode(id)
-    while (node && node.type !== 'CANVAS')
-      node = node.parentId ? graph.getNode(node.parentId) : undefined
-    if (node) scopes.add(node.id)
+  const pages = new Set(allPages ? graph.getPages().map((page) => page.id) : [])
+  for (const id of pages) editor.runLayoutForNode(id)
+  for (const id of layoutScopes(graph, changedIds)) {
+    const page = graph.pageOf(id)
+    if (!page || !pages.has(page)) editor.runLayoutForNode(id)
   }
-  for (const id of scopes) editor.runLayoutForNode(id)
+}
+
+/**
+ * The layers to lay out for `ids`, each once. A layer in an auto-layout frame is laid out with
+ * that frame, and the frame with any auto-layout frame around it, so changed siblings share one
+ * layout of their parent rather than each laying it out again. The document node is left out,
+ * as laying it out would lay out every page.
+ */
+function layoutScopes(graph: SceneGraph, ids: Iterable<string>): string[] {
+  const inAutoLayout = (node: SceneNode) => {
+    const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+    return parent !== undefined && parent.layoutMode !== 'NONE'
+  }
+  const scopes = new Set<string>()
+  for (const id of ids) {
+    const scope = graph.closest(id, (node) => !inAutoLayout(node))
+    if (scope && scope.id !== graph.rootId) scopes.add(scope.id)
+  }
+  return [...scopes].filter((id) => {
+    const parentId = graph.getNode(id)?.parentId
+    return !parentId || !graph.closest(parentId, (node) => scopes.has(node.id))
+  })
 }
