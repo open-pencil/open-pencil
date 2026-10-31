@@ -1,11 +1,7 @@
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
-import {
-  BOARD_GRID,
-  BOARD_TOOL_SHORTCUTS,
-  BOARD_TOOLS,
-  TOOL_SHORTCUTS
-} from '#core/editor/tool-registry'
+import { BOARD_GRID } from '#core/constants'
+import { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
 
 import type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './types'

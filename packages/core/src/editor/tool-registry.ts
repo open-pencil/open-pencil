@@ -69,6 +69,3 @@ export const BOARD_TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyT: 'TEXT',
   KeyC: 'COMMENT'
 }
-
-/** The grid a board's layers land on, as FigJam's dots every 16 units. */
-export const BOARD_GRID = 16
