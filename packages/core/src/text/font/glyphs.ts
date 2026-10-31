@@ -10,7 +10,8 @@ import {
   loadHarfBuzz,
   shapeText,
   type HarfBuzzFont,
-  type OutlineCommand
+  type OutlineCommand,
+  type ShapingFeature
 } from './harfbuzz'
 import { fontTableView } from './variation'
 
@@ -248,11 +249,20 @@ export function getGlyphOutlineMetricsSync(
 }
 
 /** Outlines of one loaded font, addressed by the glyph IDs a shaper produced. */
+/** A glyph HarfBuzz shaped text into: its ID, the UTF-16 index it starts at, and its advance in em. */
+export interface ShapedGlyph {
+  id: number
+  cluster: number
+  advance: number
+}
+
 export interface GlyphOutlineSource {
   /** Whether the font has a glyph for every code point, so a shaper used it rather than a fallback. */
   covers(text: string): boolean
   /** The glyph the font maps `character` to, to check a shaper's glyph IDs are this font's. */
   glyphOf(character: string): number
+  /** The glyphs HarfBuzz shapes `text` into in this font, at its axes and with `features`. */
+  shape(text: string, features: readonly ShapingFeature[]): ShapedGlyph[]
   outline(glyphId: number, fontSize: number): OutlineCommand[] | null
 }
 
@@ -271,6 +281,12 @@ export function glyphOutlineSourceSync(
   return {
     covers: (text) => Array.from(text).every((char) => glyphIndex(parsed, char) !== 0),
     glyphOf: (character) => glyphIndex(parsed, character),
+    shape: (text, features) =>
+      shapeText(parsed, text, { instance, features }).map((glyph) => ({
+        id: glyph.codepoint,
+        cluster: glyph.cluster,
+        advance: (glyph.xAdvance ?? 0) / parsed.face.upem
+      })),
     outline: (glyphId, fontSize) =>
       glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null
   }

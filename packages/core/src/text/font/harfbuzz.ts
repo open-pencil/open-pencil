@@ -270,15 +270,32 @@ export function glyphCommands(
 
 let shapingBuffer: HarfBuzzModule.Buffer | null = null
 
-/** The glyphs HarfBuzz shapes `text` into with the font's default instance, and their positions. */
+/** An OpenType feature set on or off for shaping, by its lowercase tag ("liga", "tnum"). */
+export interface ShapingFeature {
+  tag: string
+  value: number
+}
+
+/** How text is shaped: at a variable font's instance, and with features over the defaults. */
+export interface ShapingOptions {
+  instance?: HarfBuzzInstance
+  features?: readonly ShapingFeature[]
+}
+
+/**
+ * The glyphs HarfBuzz shapes `text` into, and their positions: at the font's default instance
+ * and HarfBuzz's default features unless `options` sets others, as CanvasKit shapes a run.
+ */
 export function shapeText(
   parsed: HarfBuzzFont,
-  text: string
+  text: string,
+  options: ShapingOptions = {}
 ): ReturnType<HarfBuzzModule.Buffer['getGlyphInfosAndPositions']> {
   shapingBuffer ??= new parsed.hb.Buffer()
   shapingBuffer.reset()
   shapingBuffer.addText(text)
   shapingBuffer.guessSegmentProperties()
-  parsed.hb.shape(parsed.font, shapingBuffer)
+  const features = options.features?.map(({ tag, value }) => new parsed.hb.Feature(tag, value))
+  parsed.hb.shape(options.instance?.font ?? parsed.font, shapingBuffer, features)
   return shapingBuffer.getGlyphInfosAndPositions()
 }

@@ -2,6 +2,7 @@ import type { Paragraph } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
   drawnFontVariations,
@@ -16,8 +17,10 @@ import { ELLIPSIS } from '#core/text/ellipsis'
 import {
   glyphOutlineSourceSync,
   shardCovers,
-  type GlyphOutlineSource
+  type GlyphOutlineSource,
+  type ShapedGlyph
 } from '#core/text/font/glyphs'
+import type { ShapingFeature } from '#core/text/font/harfbuzz'
 import { fontManager } from '#core/text/font/manager'
 import { textFontFace } from '#core/text/requirements/collect'
 
@@ -71,7 +74,18 @@ function fontAt(node: SceneNode, index: number) {
     opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
   })
   const drawn = loadedFace(family, weight, italic, style) ?? { weight, italic, style }
-  return { family, weight, italic, style, variations, drawn }
+  return { family, weight, italic, style, variations, drawn, ...shapingOf(node, run) }
+}
+
+/** The features and letter spacing a style run is shaped with, as CanvasKit is given them. */
+function shapingOf(node: SceneNode, run: SceneNode['styleRuns'][number] | undefined) {
+  const features = (run?.style.fontFeatures ?? node.fontFeatures).map((feature) => ({
+    tag: feature.tag.toLowerCase(),
+    value: feature.enabled ? 1 : 0
+  }))
+  const fontSize = run?.style.fontSize ?? node.fontSize
+  const letterSpacing = textLengthPixels(run?.style.letterSpacing ?? node.letterSpacing, fontSize)
+  return { features, letterSpacing }
 }
 
 /**
@@ -135,21 +149,41 @@ export function characterFamily(node: SceneNode, text: string, index: number): s
   return characterFace(node, text, index)?.family ?? null
 }
 
-/** Whether a glyph the shaper chose is the one the font maps its character to. */
-function drawsOwnGlyph(
-  source: GlyphOutlineSource,
-  run: GlyphRun,
-  text: string,
-  characterAt: (offset: number) => number
-): boolean {
-  for (let index = 0; index < run.glyphs.length; index++) {
-    const start = characterAt(run.offsets[index])
-    const end = characterAt(run.offsets[index + 1])
-    // A glyph for one character, not a ligature or a cluster, maps straight from it.
-    if (end - start !== 1 || /\s/.test(text[start])) continue
-    if (source.glyphOf(text[start]) === run.glyphs[index]) return true
-  }
-  return false
+/** The characters of a run as the paragraph laid them out, and the features it shaped them with. */
+interface RunShape {
+  text: string
+  runText: string
+  /** The character each glyph starts at. */
+  offsets: number[]
+  /** Where the characters a glyph starts at end. */
+  nextBoundary: Map<number, number>
+  start: number
+  end: number
+  features: readonly ShapingFeature[]
+}
+
+/**
+ * Whether the font drew the run. Every glyph of one character being the one the font maps it to
+ * says so. A run whose features or ligatures changed glyphs ("12:30", "->", Arabic forms) is the
+ * font's when HarfBuzz shapes its characters to the same glyphs in it, as CanvasKit, which
+ * shapes with HarfBuzz, shaped them. One matching glyph says nothing: two files of a family, such
+ * as a static instance and the variable font, number most glyphs alike.
+ */
+function drewRun(source: GlyphOutlineSource, run: GlyphRun, shape: RunShape): boolean {
+  const mapped = Array.from(run.glyphs).every((glyph, index) => {
+    const from = shape.offsets[index]
+    const character = shape.text.slice(from, shape.nextBoundary.get(from))
+    // A glyph for a ligature or a cluster does not map from one character.
+    const codePoint = character.codePointAt(0)
+    if (codePoint === undefined || String.fromCodePoint(codePoint) !== character) return false
+    // The missing glyph, like whitespace, says nothing about which font drew it.
+    return glyph === 0 || /\s/.test(character) || source.glyphOf(character) === glyph
+  })
+  if (mapped) return true
+  const glyphs = source.shape(shape.runText, shape.features)
+  return (
+    glyphs.length === run.glyphs.length && glyphs.every(({ id }, index) => id === run.glyphs[index])
+  )
 }
 
 /** Characters a shaper draws as nothing, such as variation selectors and joiners, whatever the font. */
@@ -161,19 +195,8 @@ const DRAWN_AS_NOTHING = /[\s\p{Default_Ignorable_Code_Point}]/u
  * (ID 0), which says nothing about which font that is, so it does not count against the font
  * the run's other characters confirm.
  */
-function drawnCharacters(
-  text: string,
-  run: GlyphRun,
-  offsets: number[],
-  start: number,
-  end: number
-): string {
-  // A glyph covers the characters up to the next greater offset in the run, whatever its
-  // direction; the sorted offsets give that once for every glyph.
-  const boundaries = uniq([...offsets, end]).sort((a, b) => a - b)
-  const nextBoundary = new Map(
-    boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
-  )
+function drawnCharacters(run: GlyphRun, shape: RunShape): string {
+  const { text, offsets, nextBoundary, start, end } = shape
   const missing = new Set<number>()
   for (const [index, glyph] of run.glyphs.entries()) {
     if (glyph !== 0) continue
@@ -192,28 +215,61 @@ function drawnCharacters(
 }
 
 /**
+ * The font a run's outlines come from, and the glyphs to save when it shaped them itself:
+ * HarfBuzz's, from the run's first character, with the run's letter spacing.
+ */
+type RunOutline =
+  | { source: GlyphOutlineSource; glyphs?: undefined }
+  | { source: GlyphOutlineSource; glyphs: ShapedGlyph[]; start: number; letterSpacing: number }
+
+/**
  * The font a run was shaped with. CanvasKit leaves `GlyphRun.typeface` null, so the run's font
  * is found as the paragraph falls back: the first of the fonts it lists, the style's own then
- * its fallbacks, that has every character of the run, confirmed by the glyph IDs it chose.
+ * its fallbacks, that has every character of the run, confirmed by the glyphs it chose. When no
+ * font confirms them their IDs name no outline, so the text keeps its characters in the first
+ * font that has them all, shaped by HarfBuzz as the paragraph would shape them in it.
  * The paragraph asks each family for a face it has loaded, so CanvasKit never fakes one.
  */
-function runOutlineSource(
+function runOutline(
   node: SceneNode,
-  text: string,
   shaped: string,
   run: GlyphRun,
   characterAt: (offset: number) => number
-): GlyphOutlineSource | null {
+): RunOutline | null {
   if (run.glyphs.length === 0) return null
   const offsets = Array.from(run.offsets, characterAt)
   const start = Math.min(...offsets)
   const end = Math.max(...offsets)
-  const characters = drawnCharacters(shaped, run, offsets, start, end)
-  for (const source of candidateSources(fontAt(node, start))) {
-    if (!source.covers(characters)) continue
-    if (characters === '' || drawsOwnGlyph(source, run, text, characterAt)) return source
+  // A glyph covers the characters up to the next greater offset in the run, whatever its
+  // direction; the sorted offsets give that once for every glyph.
+  const boundaries = uniq([...offsets, end]).sort((a, b) => a - b)
+  const nextBoundary = new Map(
+    boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
+  )
+  const font = fontAt(node, start)
+  const shape: RunShape = {
+    text: shaped,
+    runText: shaped.slice(start, end),
+    offsets,
+    nextBoundary,
+    start,
+    end,
+    features: font.features
   }
-  return null
+  const characters = drawnCharacters(run, shape)
+  let primary: GlyphOutlineSource | null = null
+  for (const source of candidateSources(font)) {
+    if (!source.covers(characters)) continue
+    if (characters === '' || drewRun(source, run, shape)) return { source }
+    primary ??= source
+  }
+  if (!primary) return null
+  return {
+    source: primary,
+    glyphs: primary.shape(shape.runText, font.features),
+    start,
+    letterSpacing: font.letterSpacing
+  }
 }
 
 /**
@@ -230,6 +286,34 @@ function ellipsisSource(
     if (source.glyphOf(ELLIPSIS) === run.glyphs[0]) return source
   }
   return null
+}
+
+/**
+ * The glyphs HarfBuzz shaped for a run, when they are not as many as CanvasKit's: placed one
+ * after another from where the run starts.
+ */
+function reshapedGlyphs(
+  run: GlyphRun,
+  outline: Extract<RunOutline, { glyphs: ShapedGlyph[] }>,
+  lineLeft: number,
+  y: number
+): LaidOutGlyph[] {
+  let x = run.positions[0]
+  return outline.glyphs.map((glyph) => {
+    const advance = glyph.advance * run.size + outline.letterSpacing
+    const placed: LaidOutGlyph = {
+      id: glyph.id,
+      x,
+      y,
+      fontSize: run.size,
+      firstCharacter: outline.start + glyph.cluster,
+      advance,
+      lineLeft,
+      source: outline.source
+    }
+    x += advance
+    return placed
+  })
 }
 
 /**
@@ -288,20 +372,27 @@ export function laidOutGlyphs(
         lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
           ? ellipsisSource(node, run, characterAt)
           : null
-      const source = ellipsis ?? runOutlineSource(node, text, shaped, run, characterAt)
+      const outline: RunOutline | null = ellipsis
+        ? { source: ellipsis }
+        : runOutline(node, shaped, run, characterAt)
+      // Run positions round the baseline to whole pixels; line metrics keep it exact.
+      const y = baseline + offsetY
+      if (outline?.glyphs && outline.glyphs.length !== run.glyphs.length) {
+        glyphs.push(...reshapedGlyphs(run, outline, left, y))
+        continue
+      }
       for (let index = 0; index < run.glyphs.length; index++) {
         const x = run.positions[index * 2]
         glyphs.push({
-          id: run.glyphs[index],
+          id: outline?.glyphs?.[index].id ?? run.glyphs[index],
           x,
-          // Run positions round the baseline to whole pixels; line metrics keep it exact.
-          y: baseline + offsetY,
+          y,
           fontSize: run.size,
           // The ellipsis truncation adds draws no character, as Figma saves it.
           firstCharacter: ellipsis ? undefined : characterAt(run.offsets[index]),
           advance: run.positions[(index + 1) * 2] - x,
           lineLeft: left,
-          source
+          source: outline?.source ?? null
         })
       }
     }
