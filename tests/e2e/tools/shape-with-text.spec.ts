@@ -15,6 +15,8 @@ test.beforeEach(async () => {
   await shapes.showOrigin()
 })
 
+test.afterEach(() => board.close())
+
 async function lastShape() {
   const shape = (await shapes.shapes()).at(-1)
   if (!shape) throw new Error('Missing shape with text')

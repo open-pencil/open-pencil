@@ -61,6 +61,11 @@ export interface EditorProfile {
   framesOpen: boolean
   /** Whether design lint checks the document; a FigJam board has none. */
   lint: boolean
+  /**
+   * Whether the side panels start open: a design's do, while a board starts on the canvas alone,
+   * as FigJam shows it, with the panels a click away.
+   */
+  panelsOpen: boolean
 }
 
 /** The state a profile resolves from: the document's kind, the pane's view, and the host's limits. */
