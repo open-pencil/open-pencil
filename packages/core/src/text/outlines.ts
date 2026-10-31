@@ -7,6 +7,7 @@ import { drawnFontVariations } from '#core/canvas/text/font-families'
 import {
   fontHasGlyphSync,
   getGlyphOutlineMetricsSync,
+  shapedAdvancesSync,
   type OutlineCommand
 } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'
@@ -171,32 +172,59 @@ function hardTextLines(text: string): TextLine[] {
   return lines
 }
 
-function glyphAdvance(node: SceneNode, absoluteIndex: number): number | null {
-  const char = node.text[absoluteIndex]
-  const style = resolvedGlyphStyle(textStyleAt(node, absoluteIndex), char)
-  if (!style) return null
-  const metrics = getGlyphOutlineMetricsSync(
-    style.fontFamily,
-    faceStyleKey(style),
-    char,
-    style.fontSize,
-    style.variations
-  )
-  const glyph = metrics?.[0]
-  return glyph ? glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize) : null
+interface StyleSegment {
+  start: number
+  end: number
+  style: TextStyle
+}
+
+/** `line` split where the style its characters are drawn in changes, or `null` when one has none. */
+function styleSegments(node: SceneNode, line: TextLine): StyleSegment[] | null {
+  const segments: StyleSegment[] = []
+  for (let index = 0; index < line.text.length; index++) {
+    const style = resolvedGlyphStyle(textStyleAt(node, line.start + index), line.text[index])
+    if (!style) return null
+    const last = segments.at(-1)
+    if (last && styleKey(last.style) === styleKey(style)) last.end = index + 1
+    else segments.push({ start: index, end: index + 1, style })
+  }
+  return segments
+}
+
+/**
+ * The width each character of `line` adds as its segments are shaped and drawn, kerning and
+ * ligatures included: a glyph's advance and spacing go to the character it starts at.
+ */
+function characterAdvances(node: SceneNode, line: TextLine): number[] | null {
+  const segments = styleSegments(node, line)
+  if (!segments) return null
+  const advances = Array.from<number>({ length: line.text.length }).fill(0)
+  for (const { start, end, style } of segments) {
+    const glyphs = shapedAdvancesSync(
+      style.fontFamily,
+      faceStyleKey(style),
+      line.text.slice(start, end),
+      style.fontSize,
+      style.variations
+    )
+    if (!glyphs) return null
+    const spacing = textLengthPixels(style.letterSpacing, style.fontSize)
+    for (const glyph of glyphs) advances[start + glyph.cluster] += glyph.advance + spacing
+  }
+  return advances
 }
 
 function wrapLine(node: SceneNode, line: TextLine): TextLine[] {
   if (!line.text || node.width <= 0) return [line]
+  const advances = characterAdvances(node, line)
+  if (!advances) return [line]
   const result: TextLine[] = []
   let lineStart = 0
   let cursor = 0
   let lastBreak = -1
 
   for (let index = 0; index < line.text.length; index++) {
-    const advance = glyphAdvance(node, line.start + index)
-    if (advance == null) return [line]
-    cursor += advance
+    cursor += advances[index]
     if (/\s/.test(line.text[index])) {
       lastBreak = index + 1
     }
@@ -248,27 +276,16 @@ function lineGlyphs(
   baseline: number,
   xOffset: number
 ): { glyphs: TextOutlineGlyph[]; width: number } | null {
+  const segments = styleSegments(node, line)
+  if (!segments) return null
   const glyphs: TextOutlineGlyph[] = []
   let cursorX = xOffset
-  let index = 0
 
-  while (index < line.text.length) {
-    const absoluteIndex = line.start + index
-    const style = resolvedGlyphStyle(textStyleAt(node, absoluteIndex), line.text[index])
-    if (!style) return null
-    const key = styleKey(style)
-    let end = index + 1
-    while (end < line.text.length) {
-      const nextStyle = resolvedGlyphStyle(textStyleAt(node, line.start + end), line.text[end])
-      if (!nextStyle || styleKey(nextStyle) !== key) break
-      end++
-    }
-
-    const segment = line.text.slice(index, end)
+  for (const { start, end, style } of segments) {
     const metrics = getGlyphOutlineMetricsSync(
       style.fontFamily,
       faceStyleKey(style),
-      segment,
+      line.text.slice(start, end),
       style.fontSize,
       style.variations
     )
@@ -278,7 +295,6 @@ function lineGlyphs(
       glyphs.push({ commands: glyph.commands, x: cursorX, y: baseline })
       cursorX += glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
     }
-    index = end
   }
 
   return { glyphs, width: cursorX - xOffset }

@@ -257,6 +257,27 @@ export function getGlyphOutlineMetricsSync(
   })
 }
 
+/**
+ * The advance of each glyph HarfBuzz shapes `text` into and the UTF-16 index it starts at, at
+ * `fontSize` and, in a variable font, the instance at `variations`.
+ */
+export function shapedAdvancesSync(
+  family: string,
+  style: string,
+  text: string,
+  fontSize: number,
+  variations: readonly FontVariation[] = []
+): { cluster: number; advance: number }[] | null {
+  const parsed = getParsedFont(family, style)
+  if (!parsed) return null
+  const scale = fontSize / parsed.face.upem
+  const instance = fontInstance(parsed, variations)
+  return shapeText(parsed, text, { instance }).map((glyph) => ({
+    cluster: glyph.cluster,
+    advance: (glyph.xAdvance ?? 0) * scale
+  }))
+}
+
 /** Outlines of one loaded font, addressed by the glyph IDs a shaper produced. */
 /** A glyph HarfBuzz shaped text into: its ID, the UTF-16 index it starts at, and its advance in em. */
 export interface ShapedGlyph {

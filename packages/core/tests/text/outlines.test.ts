@@ -39,7 +39,22 @@ function oneLineWidth(props: Partial<SceneNode>): number {
 
 describe('textNodeToOutlineLayout', () => {
   test('wraps text without style runs at its width', () => {
-    expect(lineCount(text({ width: 100, textAutoResize: 'HEIGHT' }))).toBe(2)
+    const wrapped = text({ width: 100, textAutoResize: 'HEIGHT' })
+    const unwrapped = text({ textAutoResize: 'WIDTH_AND_HEIGHT' })
+
+    expect(lineCount(wrapped)).toBe(2)
+    expect(textNodeToOutlineLayout(wrapped)?.glyphs).toHaveLength(
+      textNodeToOutlineLayout(unwrapped)?.glyphs.length ?? -1
+    )
+  })
+
+  test('keeps a kerned line that fits on one line', () => {
+    const kerned = { text: 'AVAVAVAV' }
+    const width = oneLineWidth(kerned)
+    const unkerned = 'AVAVAVAV'.length * 0.5 * (oneLineWidth({ text: 'AA' }) + oneLineWidth({ text: 'VV' }))
+    expect(unkerned).toBeGreaterThan(width)
+
+    expect(lineCount(text({ ...kerned, width, textAutoResize: 'HEIGHT' }))).toBe(1)
   })
 
   test('wraps by the advances of the text face', () => {
