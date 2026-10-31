@@ -439,8 +439,9 @@ export function applyImageFill(
   if (!hash) return false
   const live = r.liveImages.get(hash)
   if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
+  if (r.viewportImageRendering) r.noteImageFillUser(hash, node.id)
   const preview = r.viewportImageRendering
-    ? // eslint-disable-next-line open-pencil/no-zoom-in-scene-drawing -- picks the preview resolution, not a size; preview mode draws the scene uncached on every frame.
+    ? // eslint-disable-next-line open-pencil/no-zoom-in-scene-drawing -- picks the preview resolution, not a size; preview mode draws the scene uncached on every frame, and tiles redraw the node when a sharper preview decodes.
       r.imagePreviews.get(graph, hash, previewEdge(node, r.zoom, r.dpr))
     : undefined
   if (r.viewportImageRendering && !preview) return false

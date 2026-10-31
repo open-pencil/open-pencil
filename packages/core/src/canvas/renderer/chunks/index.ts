@@ -215,6 +215,22 @@ export class RenderChunkIndex {
     }
   }
 
+  /** The world bounds all chunks lie in, or null for an empty page. */
+  bounds(): Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'> | null {
+    let bounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'> | null = null
+    for (const chunk of this.chunks.values()) {
+      bounds = bounds
+        ? {
+            minX: Math.min(bounds.minX, chunk.minX),
+            minY: Math.min(bounds.minY, chunk.minY),
+            maxX: Math.max(bounds.maxX, chunk.maxX),
+            maxY: Math.max(bounds.maxY, chunk.maxY)
+          }
+        : { minX: chunk.minX, minY: chunk.minY, maxX: chunk.maxX, maxY: chunk.maxY }
+    }
+    return bounds
+  }
+
   search(bounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'>): RenderChunk[] {
     return this.tree.search(bounds).sort((a, b) => a.painterOrder - b.painterOrder)
   }

@@ -140,8 +140,15 @@ export class SkiaRenderer {
   viewportImageRendering = false
   imageMemoryGraph: SceneGraph | null = null
   imageMemoryPage: string | null = null
-  onImagePreviewReady: (() => void) | null = null
-  readonly imagePreviews = new ImagePreviewCache(() => this.onImagePreviewReady?.())
+  onImagePreviewReady: ((hash: string) => void) | null = null
+  readonly imagePreviews = new ImagePreviewCache((hash) => {
+    this.decodedPreviewHashes.add(hash)
+    this.onImagePreviewReady?.(hash)
+  })
+  /** Nodes whose image fills drew each image while previews were on, for redrawing them sharper. */
+  readonly imageFillUsers = new Map<string, Set<string>>()
+  /** Images whose sharper preview has decoded since the last frame. */
+  private readonly decodedPreviewHashes = new Set<string>()
   nodePaths = new NodePathCaches()
   /** Path-text glyph silhouettes (stroke-and-union, font units) keyed by blob hash + relative weight. */
   glyphSilhouetteCache = createGlyphSilhouetteCache()
@@ -179,6 +186,8 @@ export class SkiaRenderer {
   /** Colour space this renderer's surface presents; colours convert into it when painting. */
   presentationColorSpace: RenderColorSpace = 'srgb'
   tiledScenePending = false
+  /** Tile work beyond the visible tiles remains; the frame loop keeps idle frames coming. */
+  tiledSceneBackgroundPending = false
   tiledSceneCovered = false
   lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
   nodePictureCache = new Map<string, SkPicture | null>()
@@ -444,6 +453,52 @@ export class SkiaRenderer {
 
   invalidateScenePicture(): void {
     RendererState.invalidateScenePicture(this)
+  }
+
+  noteImageFillUser(hash: string, nodeId: string): void {
+    const users = this.imageFillUsers.get(hash)
+    if (users) users.add(nodeId)
+    else this.imageFillUsers.set(hash, new Set([nodeId]))
+  }
+
+  /**
+   * Redraws the nodes whose images gained a sharper preview since the last frame: their pictures
+   * and tiles are invalidated together, so one frame picks up every preview decoded in between.
+   */
+  flushDecodedPreviews(graph: SceneGraph): void {
+    if (this.decodedPreviewHashes.size === 0) return
+    for (const hash of this.decodedPreviewHashes) {
+      for (const nodeId of this.imageFillUsers.get(hash) ?? []) {
+        this.invalidateNodePicture(nodeId)
+        this.tiledScene.invalidateNode(nodeId, graph)
+      }
+    }
+    this.decodedPreviewHashes.clear()
+  }
+
+  /**
+   * Redraws the text that just gained its fonts. Tiles keep everything else; the retained
+   * renderer rebuilds its whole backing either way, so it drops every picture as before.
+   */
+  invalidateNodesForFonts(graph: SceneGraph, nodeIds: readonly string[]): void {
+    if (!this.tiledSceneEnabled) {
+      this.invalidateAllPictures()
+      return
+    }
+    const pending = [...nodeIds]
+    const seen = new Set<string>()
+    while (pending.length > 0) {
+      const id = pending.pop()
+      if (id === undefined || seen.has(id)) continue
+      seen.add(id)
+      const node = graph.getNode(id)
+      if (!node) continue
+      if (node.type === 'TEXT') {
+        this.invalidateNodePicture(id)
+        this.tiledScene.invalidateNode(id, graph)
+      }
+      pending.push(...node.childIds)
+    }
   }
 
   invalidateAllPictures(): void {

@@ -28,6 +28,11 @@ export class RenderChunkPictureCache {
     return recorded.picture
   }
 
+  /** Whether `chunk`'s picture is recorded for the renderer's current fonts. */
+  has(renderer: SkiaRenderer, chunk: RenderChunk): boolean {
+    return this.entries.get(chunk.id)?.fontGeneration === renderer.fontGeneration
+  }
+
   invalidate(chunkId: string): void {
     const entry = this.entries.get(chunkId)
     entry?.picture.delete()
