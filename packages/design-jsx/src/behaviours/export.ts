@@ -11,7 +11,7 @@ import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { REKA_ELEMENTS, rekaRole } from '.'
-import { componentProps } from '../export/components/instances'
+import { itemProps } from '../export/components/instances'
 import type { ComponentReference } from '../export/components/references'
 import type { JSXProp, JSXValue } from '../export/value'
 
@@ -96,9 +96,10 @@ function exportPart(
     if (repeated) result.tags.set(child.id, repeated)
     const item = child.type === 'INSTANCE' ? instanceMainComponent(graph, child) : undefined
     if (partId !== 'items' || !item) continue
-    // A group's items are written as the group's Item, naming their component and variant.
+    // A group's items are written as the group's Item, naming their component and variant, and
+    // what the item changes in it.
     result.tags.set(child.id, `${namespace}.Item`)
-    result.props.set(child.id, componentProps(graph, item, componentRef))
+    result.props.set(child.id, itemProps(graph, child, item, componentRef))
   }
 }
 

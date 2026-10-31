@@ -31,11 +31,19 @@ function renderOwnLayerElement(
   graph: SceneGraph,
   tree: TreeNode,
   parentId: string,
-  element: OwnLayerRenderer
+  element: OwnLayerRenderer,
+  context: RenderContext | undefined
 ): SceneNode {
   const modes = variableModes(graph, tree.props.mode)
   const nodeType = elementNodeType(tree.type) ?? 'FRAME'
-  const bound = bindProperties(graph, tree.props, nodeType, parentId, componentIdNamed(graph))
+  const bound = bindProperties(
+    graph,
+    tree.props,
+    nodeType,
+    parentId,
+    componentIdNamed(graph),
+    context?.properties
+  )
   const { props, bindings } = preparePropsForRender(graph, bound.props, false, { parentId, modes })
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const layer = omitBy(
@@ -147,9 +155,17 @@ async function renderArtworkNode<Artwork>(
   services: DesignJSXServices<Artwork>,
   graph: SceneGraph,
   tree: TreeNode,
-  parentId: string
+  parentId: string,
+  context: RenderContext | undefined
 ): Promise<SceneNode> {
-  const bound = bindProperties(graph, tree.props, 'VECTOR', parentId, componentIdNamed(graph))
+  const bound = bindProperties(
+    graph,
+    tree.props,
+    'VECTOR',
+    parentId,
+    componentIdNamed(graph),
+    context?.properties
+  )
   const artwork = { ...tree, props: bound.props }
   const node =
     tree.type === 'icon'
@@ -172,12 +188,20 @@ export function elementOverrides(
   graph: SceneGraph,
   nodeType: NodeType,
   tree: TreeNode,
-  parentId: string
+  parentId: string,
+  context?: RenderContext
 ): ElementOverrides {
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const isText = nodeType === 'TEXT'
   const modes = variableModes(graph, tree.props.mode)
-  const bound = bindProperties(graph, tree.props, nodeType, parentId, componentIdNamed(graph))
+  const bound = bindProperties(
+    graph,
+    tree.props,
+    nodeType,
+    parentId,
+    componentIdNamed(graph),
+    context?.properties
+  )
   const layer = { parentId, modes }
   const { props, bindings } = preparePropsForRender(graph, bound.props, isText, layer)
   const overrides = {
@@ -203,6 +227,8 @@ export interface RenderContext {
   warnings: string[]
   /** The layers the render created, which a failed render removes. */
   created: string[]
+  /** The component properties the render created, which a failed render removes. */
+  properties: string[]
 }
 
 /**
@@ -253,12 +279,14 @@ function renderOwnElement<Artwork>(
   switch (tree.type) {
     case 'icon':
     case 'svg':
-      return renderArtworkNode(services, graph, tree, parentId)
+      return renderArtworkNode(services, graph, tree, parentId, context)
     case 'instance':
       return renderInstanceNode(graph, tree, parentId, context)
     default: {
       const element = elementOwnLayer(tree.type)
-      return element ? Promise.resolve(renderOwnLayerElement(graph, tree, parentId, element)) : null
+      return element
+        ? Promise.resolve(renderOwnLayerElement(graph, tree, parentId, element, context))
+        : null
     }
   }
 }
@@ -284,15 +312,24 @@ async function renderNodeContent<Artwork>(
         renderNode(services, graph, child, childParentId, onNode, childScope, context)
       ),
     create: (nodeType, element, elementParentId) => {
-      const { overrides, bindings } = elementOverrides(graph, nodeType, element, elementParentId)
+      const { overrides, bindings } = elementOverrides(
+        graph,
+        nodeType,
+        element,
+        elementParentId,
+        context
+      )
       const created = graph.createNode(nodeType, elementParentId, overrides)
       context?.created.push(created.id)
       applyBindings(graph, created.id, bindings)
       placeVectorPaths(graph, created, element.props, (network) => services.vectorBounds(network))
       return created
     },
-    instance: (element, elementParentId) =>
-      renderInstanceNode(graph, element, elementParentId, context),
+    instance: async (element, elementParentId) => {
+      const instance = await renderInstanceNode(graph, element, elementParentId, context)
+      context?.created.push(instance.id)
+      return instance
+    },
     finishSet: (setId) => inferComponentSetProperties(graph, setId)
   })
   if (reka) return reka
@@ -302,7 +339,7 @@ async function renderNodeContent<Artwork>(
   const nodeType = elementNodeType(tree.type)
   if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
 
-  const { overrides, bindings } = elementOverrides(graph, nodeType, tree, parentId)
+  const { overrides, bindings } = elementOverrides(graph, nodeType, tree, parentId, context)
   const node = graph.createNode(nodeType, parentId, overrides)
   context?.created.push(node.id)
   applyBindings(graph, node.id, bindings)

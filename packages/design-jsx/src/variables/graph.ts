@@ -1,4 +1,4 @@
-import { isEqual, isPlainObject } from 'es-toolkit'
+import { isEqual, isPlainObject, omit, sortBy } from 'es-toolkit'
 
 import type {
   SceneGraph,
@@ -71,20 +71,42 @@ function variableNamed(
   return undefined
 }
 
+/** Steps that put back what applying definitions changed, run last to first. */
+type Undo = Array<() => void>
+
 /** The collection, with its modes in place, by the definition's names. */
-function ensureCollection(graph: SceneGraph, definition: CollectionDefinition): VariableCollection {
+function ensureCollection(
+  graph: SceneGraph,
+  definition: CollectionDefinition,
+  undo: Undo
+): VariableCollection {
   let collection = collectionNamed(graph, definition.name)
   if (!collection) {
-    collection = graph.createCollection(definition.name)
-    graph.renameMode(collection.id, collection.defaultModeId, definition.modes[0].name)
+    const created = graph.createCollection(definition.name)
+    undo.push(() => graph.removeCollection(created.id))
+    graph.renameMode(created.id, created.defaultModeId, definition.modes[0].name)
+    collection = created
   }
+  const { id } = collection
   for (const mode of definition.modes) {
-    if (!collection.modes.some((existing) => existing.name === mode.name))
-      graph.createMode(collection.id, mode.name)
+    if (collection.modes.some((existing) => existing.name === mode.name)) continue
+    const modeId = graph.createMode(id, mode.name)
+    if (modeId) undo.push(() => graph.removeMode(id, modeId))
   }
   const first = collection.modes.find((mode) => mode.name === definition.modes[0].name)
-  if (first && collection.defaultModeId !== first.modeId)
-    graph.setDefaultMode(collection.id, first.modeId)
+  if (first && collection.defaultModeId !== first.modeId) {
+    const target = collection
+    const previous = target.defaultModeId
+    const order = target.modes.map((mode) => mode.modeId)
+    graph.setDefaultMode(id, first.modeId)
+    // Modes added meanwhile keep their place after the ones it knew.
+    undo.push(() => {
+      target.defaultModeId = previous
+      target.modes = sortBy(target.modes, [
+        (mode) => (order.includes(mode.modeId) ? order.indexOf(mode.modeId) : order.length)
+      ])
+    })
+  }
   return collection
 }
 
@@ -130,20 +152,29 @@ function storedValue(
 
 /**
  * Create or update the collections a tree defines, by name: their modes, their variables, and
- * each variable's value in each mode, a mode's missing values taken from the first mode.
+ * each variable's value in each mode, a mode's missing values taken from the first mode. Returns
+ * what puts back only those changes, so edits made since are kept; a failure puts them back
+ * itself.
  */
-/** Whether `tree` defines variables, which rendering it adds to the graph or changes. */
-export function definesVariables(tree: TreeNode): boolean {
-  const found = new Map<string, CollectionDefinition>()
-  collectDefinitions(tree, found)
-  return found.size > 0
+export function applyVariableDefinitions(graph: SceneGraph, tree: TreeNode): () => void {
+  const undo: Undo = []
+  const revert = () => {
+    for (const step of undo.toReversed()) step()
+  }
+  try {
+    applyDefinitions(graph, tree, undo)
+  } catch (error) {
+    revert()
+    throw error
+  }
+  return revert
 }
 
-export function applyVariableDefinitions(graph: SceneGraph, tree: TreeNode): void {
+function applyDefinitions(graph: SceneGraph, tree: TreeNode, undo: Undo): void {
   const found = new Map<string, CollectionDefinition>()
   collectDefinitions(tree, found)
   const definitions = [...found.values()]
-  const collections = definitions.map((definition) => ensureCollection(graph, definition))
+  const collections = definitions.map((definition) => ensureCollection(graph, definition, undo))
 
   const variables = definitions.map((definition, index) => {
     const collection = collections[index]
@@ -152,7 +183,10 @@ export function applyVariableDefinitions(graph: SceneGraph, tree: TreeNode): voi
       const existing = variableNamed(graph, collection, name)
       if (existing && existing.type !== type)
         throw new Error(`Variable ${name} in ${definition.name} is ${existing.type}, not ${type}`)
-      return existing ?? graph.createVariable(name, type, collection.id)
+      if (existing) return existing
+      const created = graph.createVariable(name, type, collection.id)
+      undo.push(() => graph.removeVariable(created.id))
+      return created
     })
   })
 
@@ -164,7 +198,15 @@ export function applyVariableDefinitions(graph: SceneGraph, tree: TreeNode): voi
         const modeId = collection.modes.find((existing) => existing.name === mode.name)?.modeId
         if (!modeId) continue
         const value = mode.values[variable.name] ?? first.values[variable.name]
-        variable.valuesByMode[modeId] = storedValue(graph, variable.type, variable.name, value)
+        const stored = storedValue(graph, variable.type, variable.name, value)
+        const previous = Object.hasOwn(variable.valuesByMode, modeId)
+          ? variable.valuesByMode[modeId]
+          : undefined
+        undo.push(() => {
+          if (previous === undefined) variable.valuesByMode = omit(variable.valuesByMode, [modeId])
+          else variable.valuesByMode[modeId] = previous
+        })
+        variable.valuesByMode[modeId] = stored
       }
     }
   })

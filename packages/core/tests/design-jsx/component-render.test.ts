@@ -79,6 +79,84 @@ describe('component rendering', () => {
     expect(graph.activeMode.size).toBe(0)
   })
 
+  test('removes an instance a Reka root draws when a later root fails', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    await renderJSX(
+      graph,
+      `<Switch.Root name="Toggle" modelValue="State">
+        <Component name="State=Off" w={44} h={24} /><Component name="State=On" w={44} h={24} />
+      </Switch.Root>`
+    )
+    await expect(
+      renderJSX(graph, '<><Switch.Root of="Toggle" /><Instance of="Missing" /></>')
+    ).rejects.toThrow('component not found')
+    expect(graph.getChildren(page.id).map((node) => node.name)).toEqual(['Toggle'])
+  })
+
+  test('keeps variables and modes another hand changes while a failed render runs', async () => {
+    const graph = new SceneGraph()
+    const theme = graph.createCollection('Theme')
+    const dark = graph.createMode(theme.id, 'Dark') ?? ''
+    const accent = graph.createVariable('Accent', 'FLOAT', theme.id)
+    accent.valuesByMode = { [theme.defaultModeId]: 1, [dark]: 2 }
+    graph.setActiveMode(theme.id, dark)
+    let editor = ''
+    const unsubscribe = graph.onNodeEvents({
+      created: () => {
+        if (!editor) editor = graph.createCollection('Editor').id
+      }
+    })
+    await expect(
+      renderJSX(
+        graph,
+        `const theme = defineVars('Theme', { Accent: 5, Size: 8 }, { Dim: { Accent: 6 } })
+        return <><Frame w={theme.Size} /><Instance of="Missing" /></>`
+      )
+    ).rejects.toThrow('component not found')
+    unsubscribe()
+    expect([...graph.variableCollections.values()].map((item) => item.name)).toEqual([
+      'Theme',
+      'Editor'
+    ])
+    expect(theme.modes.map((mode) => mode.name)).toEqual(['Mode 1', 'Dark'])
+    expect(theme.defaultModeId).toBe(theme.modes[0]?.modeId)
+    expect(graph.activeMode.get(theme.id)).toBe(dark)
+    expect([...graph.variables.values()].map((item) => item.name)).toEqual(['Accent'])
+    expect(accent.valuesByMode).toEqual({ [theme.defaultModeId]: 1, [dark]: 2 })
+  })
+
+  test('keeps a property another hand adds to the component a failed render renders into', async () => {
+    const graph = new SceneGraph()
+    const [, card] = await renderJSX(
+      graph,
+      '<><Component name="Tile" w={4} h={4} /><Component name="Card" /></>'
+    )
+    const unsubscribe = graph.onNodeEvents({
+      created: (node) => {
+        if (node.name !== 'Copy') return
+        const owner = getNodeOrThrow(graph, card.id)
+        graph.updateNode(card.id, {
+          componentPropertyDefinitions: [
+            ...owner.componentPropertyDefinitions,
+            { id: 'editor', name: 'Editor', type: 'TEXT', defaultValue: '' }
+          ]
+        })
+      }
+    })
+    await expect(
+      renderJSX(
+        graph,
+        `<><Text name="Copy" text={property('Label', 'Hi')} /><Instance of="Missing" /></>`,
+        { parentId: card.id }
+      )
+    ).rejects.toThrow('component not found')
+    unsubscribe()
+    expect(
+      getNodeOrThrow(graph, card.id).componentPropertyDefinitions.map((item) => item.name)
+    ).toEqual(['Editor'])
+  })
+
   test('rejects an instance that would put its component inside itself', async () => {
     const graph = new SceneGraph()
     await expect(

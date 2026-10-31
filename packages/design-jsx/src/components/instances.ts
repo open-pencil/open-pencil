@@ -122,7 +122,7 @@ export async function renderInstanceNode(
   const parentLayout = parent?.layoutMode ?? 'NONE'
   const modes = variableModes(graph, tree.props.mode)
   const lookup = componentIdNamed(graph, context?.refs)
-  const bound = bindProperties(graph, tree.props, 'INSTANCE', parentId, lookup)
+  const bound = bindProperties(graph, tree.props, 'INSTANCE', parentId, lookup, context?.properties)
   const { props, bindings } = preparePropsForRender(graph, bound.props, false, { parentId, modes })
   const component = resolveComponent(graph, props, context?.refs)
   if (!component) throw componentNotFound(props)

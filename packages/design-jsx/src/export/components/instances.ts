@@ -1,5 +1,5 @@
 import { DESIGN_JSX_SUPPORTED_PROPERTIES } from '#design-jsx/definitions'
-import { countBy, isEqual } from 'es-toolkit'
+import { countBy, isEmptyObject, isEqual } from 'es-toolkit'
 
 import { es } from '@open-pencil/emit'
 import type {
@@ -128,6 +128,25 @@ export function componentProps(
   if (set?.type !== 'COMPONENT_SET' || !values.every(([name]) => isPropName(name)))
     return [['of', reference.of(component)]]
   return [['of', reference.of(set)], ...values]
+}
+
+/**
+ * A group's item as its `Item` props: the component it is of, the values it gives the component's
+ * properties, and what its layers override. The group places the item, so its own layer's props
+ * are not written; what cannot be written is left out.
+ */
+export function itemProps(
+  graph: SceneGraph,
+  item: SceneNode,
+  component: SceneNode,
+  reference: ComponentReference
+): JSXProp[] {
+  const overrides = layerOverrides(graph, item)
+  return [
+    ...componentProps(graph, component, reference),
+    ...(assignmentProps(graph, item, reference) ?? []),
+    ...(overrides && !isEmptyObject(overrides) ? [['overrides', overrides] as JSXProp] : [])
+  ]
 }
 
 /**

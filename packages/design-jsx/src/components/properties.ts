@@ -81,7 +81,8 @@ function ensureDefinition(
   owner: SceneNode,
   name: string,
   type: ComponentPropertyDefinition['type'],
-  defaultValue: string
+  defaultValue: string,
+  added: string[] | undefined
 ): string {
   const existing = owner.componentPropertyDefinitions.find((item) => item.name === name)
   if (existing) {
@@ -94,6 +95,7 @@ function ensureDefinition(
     return existing.id
   }
   const id = createComponentPropertyId()
+  added?.push(id)
   graph.updateNode(owner.id, {
     componentPropertyDefinitions: [
       ...owner.componentPropertyDefinitions,
@@ -111,14 +113,16 @@ export interface BoundProperties {
 
 /**
  * Bind the fields a layer's props place a `property()` in, creating the properties on its
- * component; `componentId` gives the ID a swap's default component has.
+ * component; `componentId` gives the ID a swap's default component has, and `added` takes the
+ * IDs of the properties it creates.
  */
 export function bindProperties(
   graph: SceneGraph,
   source: Record<string, unknown>,
   type: SceneNode['type'],
   parentId: string,
-  componentId: ComponentLookup
+  componentId: ComponentLookup,
+  added?: string[]
 ): BoundProperties {
   if (source.properties !== undefined && type !== 'INSTANCE')
     throw new Error('Only instances accept properties; bind a field to property() instead')
@@ -144,7 +148,7 @@ export function bindProperties(
       defaultValue = id
     }
     const owner = propertyOwner(graph, parentId)
-    const propertyId = ensureDefinition(graph, owner, value.name, bound.type, defaultValue)
+    const propertyId = ensureDefinition(graph, owner, value.name, bound.type, defaultValue, added)
     references.push({ propertyId, field: bound.field })
     props[key] = value.defaultValue
   }

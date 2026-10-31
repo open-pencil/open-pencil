@@ -4,7 +4,7 @@ import { CONNECTOR_ELEMENT, resolveConnectorEnds } from '../figjam/connectors'
 import { LayerRefs } from '../refs'
 import type { DesignJSXServices } from '../services'
 import { FRAGMENT, isTreeNode, type TreeNode } from '../tree'
-import { applyVariableDefinitions, definesVariables } from '../variables/graph'
+import { applyVariableDefinitions } from '../variables/graph'
 import { renderNode, type RenderContext } from './node'
 import { RenderOrder } from './order'
 import type { RenderOptions } from './types'
@@ -28,44 +28,26 @@ function treeRoots(tree: TreeNode): TreeNode[] {
   return tree.type === FRAGMENT ? tree.children.filter(isTreeNode) : [tree]
 }
 
-/** Put `entries` back in `map`, in place, so whoever holds the map sees them. */
-function restoreMap<K, V>(map: Map<K, V>, entries: [K, V][]): void {
-  map.clear()
-  for (const [key, value] of entries) map.set(key, value)
-}
-
 /**
- * What rendering `tree` into `parentId` changes, recorded so a failed render can put it back:
- * the layers it creates, the property definitions `property()` adds to the components around
- * the parent, and the variables the JSX defines, with their collections' active modes.
+ * What puts back the layers a render into `parentId` creates and the property definitions
+ * `property()` adds to the components around the parent. Only the render's own: another hand may
+ * add to the parent or its components while it renders.
  */
-function undoRender(
-  graph: SceneGraph,
-  parentId: string,
-  tree: TreeNode,
-  context: RenderContext
-): () => void {
+function undoRender(graph: SceneGraph, parentId: string, context: RenderContext): () => void {
   const owners = ancestors(graph, parentId).filter(
     (node) => node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'
   )
-  const definitions = owners.map((owner) => owner.componentPropertyDefinitions)
-  const variables = definesVariables(tree)
-    ? {
-        variables: structuredClone([...graph.variables]),
-        collections: structuredClone([...graph.variableCollections]),
-        activeMode: [...graph.activeMode]
-      }
-    : undefined
   return () => {
-    // Only its own layers: another hand may add to the parent while it renders.
     for (const id of context.created) graph.deleteNode(id)
-    owners.forEach((owner, index) =>
-      graph.updateNode(owner.id, { componentPropertyDefinitions: definitions[index] })
-    )
-    if (variables) {
-      restoreMap(graph.variables, variables.variables)
-      restoreMap(graph.variableCollections, variables.collections)
-      restoreMap(graph.activeMode, variables.activeMode)
+    const added = new Set(context.properties)
+    for (const { id } of owners) {
+      const owner = graph.getNode(id)
+      if (!owner) continue
+      const kept = owner.componentPropertyDefinitions.filter(
+        (definition) => !added.has(definition.id)
+      )
+      if (kept.length < owner.componentPropertyDefinitions.length)
+        graph.updateNode(id, { componentPropertyDefinitions: kept })
     }
   }
 }
@@ -104,14 +86,17 @@ async function renderRootsNow<Artwork>(
     refs: new LayerRefs(),
     order: new RenderOrder(),
     warnings: [],
-    created: []
+    created: [],
+    properties: []
   }
-  const undo = undoRender(graph, parentId, tree, context)
+  const undo = undoRender(graph, parentId, context)
+  const undoVariables = applyVariableDefinitions(graph, tree)
   try {
-    return await renderInto(services, graph, tree, roots, parentId, options, context)
+    return await renderInto(services, graph, roots, parentId, options, context)
   } catch (error) {
     // A failed render leaves nothing behind, roots rendered before the failing one included.
     undo()
+    undoVariables()
     throw error
   }
 }
@@ -119,13 +104,11 @@ async function renderRootsNow<Artwork>(
 async function renderInto<Artwork>(
   services: DesignJSXServices<Artwork>,
   graph: SceneGraph,
-  tree: TreeNode,
   roots: TreeNode[],
   parentId: string,
   options: RenderOptions,
   context: RenderContext
 ): Promise<RenderResult[]> {
-  applyVariableDefinitions(graph, tree)
   const originalChildCount = graph.getChildren(parentId).length
   // By each root's position in `roots`: a fragment may list one element twice.
   const nodes: SceneNode[] = []
