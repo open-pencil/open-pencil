@@ -29,7 +29,7 @@ export function useEditorSetup(url = '/?test') {
   }
 }
 
-export function useEditorSetupWithClear(url = '/') {
+export function useEditorSetupWithClear(url = '/?test') {
   const ctx = useEditorSetup(url)
 
   test.beforeEach(async () => {
