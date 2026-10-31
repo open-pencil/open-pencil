@@ -97,6 +97,8 @@ const shouldSuspendRender = () =>
 
 /** The pan and zoom of the scene's last drawn frame, which preview islands follow. */
 const drawnView = shallowRef<ViewportTransform | null>(null)
+/** Where popovers on the canvas are placed: the drawn frame, or the live view before one is drawn. */
+const overlayView = computed(() => drawnView.value ?? paneView.value)
 
 // The tab's scene is presented only here once the canvas can draw, so waiting for it times out
 // only while it is shown and drawing, not while the renderer and its fonts download.
@@ -244,7 +246,11 @@ const canvasLabelEditAnchor = computed(() => {
   }
   return { x: abs.x, y: abs.y }
 })
-const canvasLabelEditReference = useCanvasVirtualReference(canvasRef, store, canvasLabelEditAnchor)
+const canvasLabelEditReference = useCanvasVirtualReference(
+  canvasRef,
+  overlayView,
+  canvasLabelEditAnchor
+)
 const canvasLabelEditPresentation = computed(() =>
   canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
 )
@@ -263,7 +269,7 @@ const valueEditorAnchor = computed(() => {
   const edit = autoLayoutValueEdit.value
   return edit ? autoLayoutValueAnchor(store, edit.nodeId, edit.field, edit.gap) : null
 })
-const valueEditorReference = useCanvasVirtualReference(canvasRef, store, valueEditorAnchor)
+const valueEditorReference = useCanvasVirtualReference(canvasRef, overlayView, valueEditorAnchor)
 const valueEditorIcon = computed(() => {
   const edit = autoLayoutValueEdit.value
   if (!edit) return IconLucidePanelTop
@@ -329,6 +335,7 @@ const cursor = computed(() =>
         <SelectionToolbar
           v-if="selectionToolbar"
           :canvas="canvasRef"
+          :view="overlayView"
           :hidden="!!drag || !!canvasLabelEdit"
         />
         <PopoverRoot :open="!!autoLayoutValueEdit">

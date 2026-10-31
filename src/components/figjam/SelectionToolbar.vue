@@ -2,6 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
 import { computed } from 'vue'
 
+import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 
@@ -13,8 +14,10 @@ import ConnectorSection from './connector/ConnectorSection.vue'
 import ShapeWithTextSection from './shape-with-text/ShapeWithTextSection.vue'
 import StickySection from './sticky/StickySection.vue'
 
-const { canvas, hidden } = defineProps<{
+const { canvas, view, hidden } = defineProps<{
   canvas: HTMLCanvasElement | null
+  /** The pan and zoom the canvas was last drawn with, which the controls follow. */
+  view: ViewportTransform
   /** Whether something else owns the selection's surroundings now, such as a drag. */
   hidden: boolean
 }>()
@@ -37,7 +40,7 @@ const anchor = computed(() => {
 })
 const reference = useCanvasVirtualReference(
   computed(() => canvas),
-  store,
+  () => view,
   anchor
 )
 const open = computed(() => !hidden && store.state.editingTextId === null && !!reference.value)
