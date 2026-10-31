@@ -74,35 +74,50 @@ function variableNamed(
 /** Steps that put back what applying definitions changed, run last to first. */
 type Undo = Array<() => void>
 
+/** A new collection for the definition, its first mode named as the definition's. */
+function createCollection(
+  graph: SceneGraph,
+  definition: CollectionDefinition,
+  undo: Undo
+): VariableCollection {
+  const collection = graph.createCollection(definition.name)
+  graph.renameMode(collection.id, collection.defaultModeId, definition.modes[0].name)
+  // Undone after its variables, so one added since keeps it.
+  undo.push(() => {
+    if (collection.variableIds.length === 0) graph.removeCollection(collection.id)
+  })
+  return collection
+}
+
 /** The collection, with its modes in place, by the definition's names. */
 function ensureCollection(
   graph: SceneGraph,
   definition: CollectionDefinition,
   undo: Undo
 ): VariableCollection {
-  let collection = collectionNamed(graph, definition.name)
-  if (!collection) {
-    const created = graph.createCollection(definition.name)
-    undo.push(() => graph.removeCollection(created.id))
-    graph.renameMode(created.id, created.defaultModeId, definition.modes[0].name)
-    collection = created
-  }
+  const collection =
+    collectionNamed(graph, definition.name) ?? createCollection(graph, definition, undo)
   const { id } = collection
   for (const mode of definition.modes) {
     if (collection.modes.some((existing) => existing.name === mode.name)) continue
     const modeId = graph.createMode(id, mode.name)
-    if (modeId) undo.push(() => graph.removeMode(id, modeId))
+    if (!modeId) continue
+    // A mode chosen since is kept.
+    undo.push(() => {
+      if (graph.activeMode.get(id) !== modeId) graph.removeMode(id, modeId)
+    })
   }
   const first = collection.modes.find((mode) => mode.name === definition.modes[0].name)
   if (first && collection.defaultModeId !== first.modeId) {
-    const target = collection
-    const previous = target.defaultModeId
-    const order = target.modes.map((mode) => mode.modeId)
-    graph.setDefaultMode(id, first.modeId)
-    // Modes added meanwhile keep their place after the ones it knew.
+    const previous = collection.defaultModeId
+    const order = collection.modes.map((mode) => mode.modeId)
+    const chosen = first.modeId
+    graph.setDefaultMode(id, chosen)
+    // A default chosen since is kept; modes added since stay after the ones it knew.
     undo.push(() => {
-      target.defaultModeId = previous
-      target.modes = sortBy(target.modes, [
+      if (collection.defaultModeId !== chosen) return
+      collection.defaultModeId = previous
+      collection.modes = sortBy(collection.modes, [
         (mode) => (order.includes(mode.modeId) ? order.indexOf(mode.modeId) : order.length)
       ])
     })
@@ -203,6 +218,8 @@ function applyDefinitions(graph: SceneGraph, tree: TreeNode, undo: Undo): void {
           ? variable.valuesByMode[modeId]
           : undefined
         undo.push(() => {
+          // A value written since is kept.
+          if (variable.valuesByMode[modeId] !== stored) return
           if (previous === undefined) variable.valuesByMode = omit(variable.valuesByMode, [modeId])
           else variable.valuesByMode[modeId] = previous
         })

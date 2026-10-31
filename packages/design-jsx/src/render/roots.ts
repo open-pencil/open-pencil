@@ -1,4 +1,5 @@
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { removeComponentProperty } from '@open-pencil/scene-graph/components'
 
 import { CONNECTOR_ELEMENT, resolveConnectorEnds } from '../figjam/connectors'
 import { LayerRefs } from '../refs'
@@ -40,14 +41,11 @@ function undoRender(graph: SceneGraph, parentId: string, context: RenderContext)
   return () => {
     for (const id of context.created) graph.deleteNode(id)
     const added = new Set(context.properties)
+    // As removing a property in the editor does: layers bound to it meanwhile are unbound.
     for (const { id } of owners) {
-      const owner = graph.getNode(id)
-      if (!owner) continue
-      const kept = owner.componentPropertyDefinitions.filter(
-        (definition) => !added.has(definition.id)
-      )
-      if (kept.length < owner.componentPropertyDefinitions.length)
-        graph.updateNode(id, { componentPropertyDefinitions: kept })
+      for (const definition of graph.getNode(id)?.componentPropertyDefinitions ?? []) {
+        if (added.has(definition.id)) removeComponentProperty(graph, id, definition.id)
+      }
     }
   }
 }

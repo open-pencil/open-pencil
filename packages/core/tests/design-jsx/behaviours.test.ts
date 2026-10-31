@@ -222,6 +222,27 @@ describe('Reka UI elements in JSX export', () => {
     expect(code).not.toContain('name="Panels"')
   })
 
+  test('a group item whose changes JSX cannot write is written as the layer it draws', async () => {
+    const graph = new SceneGraph()
+    await renderJSX(
+      graph,
+      `<><Component name="Mark" w={4} h={4} />
+      <RadioGroup.Item name="Radio" modelValue="Checked">
+        <Component name="Checked=Off" w={20} h={20}><Instance name="Dot" of="Mark" /></Component>
+        <Component name="Checked=On" w={20} h={20}><Instance name="Dot" of="Mark" /></Component>
+      </RadioGroup.Item></>`
+    )
+    const [group] = await renderJSX(
+      graph,
+      `<RadioGroup.Root name="Plan">
+        <RadioGroup.Item of="Radio" overrides={{ 'Dot:opacity': 0.5 }} />
+      </RadioGroup.Root>`
+    )
+    const exported = sceneNodeToJSX(group.id, graph)
+    expect(exported).not.toContain('<RadioGroup.Item')
+    expect(exported).toContain('opacity={0.5}')
+  })
+
   test('a group item exports the property values and layer overrides it gives its component', async () => {
     const graph = new SceneGraph()
     await renderJSX(
@@ -239,12 +260,14 @@ describe('Reka UI elements in JSX export', () => {
       graph,
       `<RadioGroup.Root name="Plan">
         <RadioGroup.Item of="Radio" Checked="On" Label="Pro" overrides={{ 'Dot:opacity': 0.5 }} />
+        <RadioGroup.Item of="Radio" visible={false} />
       </RadioGroup.Root>`
     )
     const exported = sceneNodeToJSX(group.id, graph)
     expect(exported).toContain(
       '<RadioGroup.Item of="Radio" Checked="On" Label="Pro" overrides={{ "Dot:opacity": 0.5 }} />'
     )
+    expect(exported).toContain('<RadioGroup.Item of="Radio" Checked="Off" visible={false} />')
     const [copy] = await renderJSX(graph, exported)
     expect(sceneNodeToJSX(copy.id, graph)).toBe(exported)
   })

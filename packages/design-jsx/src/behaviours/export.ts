@@ -97,9 +97,11 @@ function exportPart(
     const item = child.type === 'INSTANCE' ? instanceMainComponent(graph, child) : undefined
     if (partId !== 'items' || !item) continue
     // A group's items are written as the group's Item, naming their component and variant, and
-    // what the item changes in it.
+    // what the item changes in it; an item whose changes cannot be written is written as a layer.
+    const props = itemProps(graph, child, item, componentRef)
+    if (!props) continue
     result.tags.set(child.id, `${namespace}.Item`)
-    result.props.set(child.id, itemProps(graph, child, item, componentRef))
+    result.props.set(child.id, props)
   }
 }
 

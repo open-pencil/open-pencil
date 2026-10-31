@@ -131,21 +131,25 @@ export function componentProps(
 }
 
 /**
- * A group's item as its `Item` props: the component it is of, the values it gives the component's
- * properties, and what its layers override. The group places the item, so its own layer's props
- * are not written; what cannot be written is left out.
+ * A group's item as its `Item` props: the component it is of, whether it is hidden, the values it
+ * gives the component's properties, and what its layers override. The group places the item, so
+ * its other layer props are not written. Null when some of that cannot be written, as for
+ * `instanceProps`.
  */
 export function itemProps(
   graph: SceneGraph,
   item: SceneNode,
   component: SceneNode,
   reference: ComponentReference
-): JSXProp[] {
+): JSXProp[] | null {
+  const assignments = assignmentProps(graph, item, reference)
   const overrides = layerOverrides(graph, item)
+  if (!assignments || !overrides) return null
   return [
     ...componentProps(graph, component, reference),
-    ...(assignmentProps(graph, item, reference) ?? []),
-    ...(overrides && !isEmptyObject(overrides) ? [['overrides', overrides] as JSXProp] : [])
+    ...(item.visible ? [] : [['visible', false] as JSXProp]),
+    ...assignments,
+    ...(isEmptyObject(overrides) ? [] : [['overrides', overrides] as JSXProp])
   ]
 }
 

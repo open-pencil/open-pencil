@@ -54,8 +54,13 @@ function renderOwnLayerElement(
     (value) => value === undefined
   )
   const node = element.render(graph, { ...tree, props }, parentId, layer)
-  for (const [field, variableId] of Object.entries(bindings)) {
-    graph.bindVariable(element.bindingTarget?.(graph, node, field) ?? node.id, field, variableId)
+  try {
+    for (const [field, variableId] of Object.entries(bindings)) {
+      graph.bindVariable(element.bindingTarget?.(graph, node, field) ?? node.id, field, variableId)
+    }
+  } catch (error) {
+    graph.deleteNode(node.id)
+    throw error
   }
   return node
 }

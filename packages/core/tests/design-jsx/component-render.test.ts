@@ -110,8 +110,9 @@ describe('component rendering', () => {
     await expect(
       renderJSX(
         graph,
-        `const theme = defineVars('Theme', { Accent: 5, Size: 8 }, { Dim: { Accent: 6 } })
-        return <><Frame w={theme.Size} /><Instance of="Missing" /></>`
+        `const theme = defineVars('Theme', { Accent: 5, Size: 8 }, { mode: 'Light' })
+        const dim = defineMode(theme, 'Dim', { Accent: 6 })
+        return <><Frame mode={dim} w={theme.Size} /><Instance of="Missing" /></>`
       )
     ).rejects.toThrow('component not found')
     unsubscribe()
@@ -124,6 +125,81 @@ describe('component rendering', () => {
     expect(graph.activeMode.get(theme.id)).toBe(dark)
     expect([...graph.variables.values()].map((item) => item.name)).toEqual(['Accent'])
     expect(accent.valuesByMode).toEqual({ [theme.defaultModeId]: 1, [dark]: 2 })
+  })
+
+  test('keeps the values, default, and modes another hand sets while a failed render runs', async () => {
+    const graph = new SceneGraph()
+    const theme = graph.createCollection('Theme')
+    const first = theme.defaultModeId
+    const dark = graph.createMode(theme.id, 'Dark') ?? ''
+    const extra = graph.createMode(theme.id, 'Extra') ?? ''
+    graph.setDefaultMode(theme.id, dark)
+    const accent = graph.createVariable('Accent', 'FLOAT', theme.id)
+    accent.valuesByMode = { [first]: 1, [dark]: 2, [extra]: 3 }
+    let dim = ''
+    const unsubscribe = graph.onNodeEvents({
+      created: () => {
+        if (dim) return
+        dim = theme.modes.find((mode) => mode.name === 'Dim')?.modeId ?? ''
+        graph.setActiveMode(theme.id, dim)
+        graph.setDefaultMode(theme.id, extra)
+        accent.valuesByMode[first] = 9
+      }
+    })
+    await expect(
+      renderJSX(
+        graph,
+        `const theme = defineVars('Theme', { Accent: 5 })
+        const dim = defineMode(theme, 'Dim', { Accent: 6 })
+        return <><Frame mode={dim} w={theme.Accent} /><Instance of="Missing" /></>`
+      )
+    ).rejects.toThrow('component not found')
+    unsubscribe()
+    expect(theme.modes.map((mode) => mode.name)).toEqual(['Extra', 'Mode 1', 'Dark', 'Dim'])
+    expect(theme.defaultModeId).toBe(extra)
+    expect(graph.activeMode.get(theme.id)).toBe(dim)
+    expect(accent.valuesByMode[first]).toBe(9)
+  })
+
+  test('unbinds the layers another hand binds to a property a failed render added', async () => {
+    const graph = new SceneGraph()
+    const [card] = await renderJSX(
+      graph,
+      '<Component name="Card"><Text name="Title" /></Component>'
+    )
+    const title = graph.getChildren(card.id)[0]
+    const unsubscribe = graph.onNodeEvents({
+      created: (node) => {
+        if (node.name !== 'Copy' || !title) return
+        const [label] = getNodeOrThrow(graph, card.id).componentPropertyDefinitions
+        graph.updateNode(title.id, {
+          componentPropertyReferences: [{ propertyId: label?.id ?? '', field: 'TEXT' }]
+        })
+      }
+    })
+    await expect(
+      renderJSX(
+        graph,
+        `<><Text name="Copy" text={property('Label', 'Hi')} /><Instance of="Missing" /></>`,
+        { parentId: card.id }
+      )
+    ).rejects.toThrow('component not found')
+    unsubscribe()
+    expect(getNodeOrThrow(graph, card.id).componentPropertyDefinitions).toEqual([])
+    expect(getNodeOrThrow(graph, title?.id ?? '').componentPropertyReferences).toEqual([])
+  })
+
+  test('removes a layer that draws itself when binding its variable fails', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    await expect(
+      renderJSX(
+        graph,
+        `const theme = defineVars('Theme', { Size: 4 })
+        return <Sticky bg={theme.Size}>Hi</Sticky>`
+      )
+    ).rejects.toThrow('Cannot bind FLOAT variable')
+    expect(graph.getChildren(page.id)).toEqual([])
   })
 
   test('keeps a property another hand adds to the component a failed render renders into', async () => {
