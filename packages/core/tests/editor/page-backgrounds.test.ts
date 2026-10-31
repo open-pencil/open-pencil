@@ -141,15 +141,16 @@ describe('new page backgrounds follow the interface theme', () => {
 
   test('a new design takes the theme it is made in, and a board FigJam’s page in any theme', () => {
     // The app hands these to the editor as documents of their own, which it does not set up again.
-    const opened = (kind: 'design' | 'board') => {
-      const graph = createDocumentGraph(kind, 'dark')
+    const opened = (kind: 'design' | 'board', theme: 'dark' | 'light') => {
+      const graph = createDocumentGraph(kind, theme)
       const editor = createEditor({ graph, skipInitialGraphSetup: true })
       const color = editor.state.pageColor
       editor.dispose()
       return color
     }
-    expect(opened('design')).toEqual(dark)
-    expect(opened('board')).toEqual({ ...BOARD_PAGE_BACKGROUND, a: 1 })
+    expect(opened('design', 'dark')).toEqual(dark)
+    expect(opened('design', 'light')).toEqual(light)
+    expect(opened('board', 'dark')).toEqual({ ...BOARD_PAGE_BACKGROUND, a: 1 })
   })
 
   test('pages made by scripts', () => {
