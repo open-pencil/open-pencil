@@ -41,6 +41,15 @@ const { ai } = useI18n()
 const dates = useDateFormat()
 const runLocation = useChatRunLocation()
 
+// Start an ACP agent as soon as it is selected, so its model options show before the first message.
+watch(
+  providerID,
+  (id) => {
+    if (id.startsWith('acp:')) void ensureChat().catch(() => undefined)
+  },
+  { immediate: true }
+)
+
 const chat = shallowRef<Chat<UIMessage> | null>(null)
 const submission = useChatSubmission({
   chat,
