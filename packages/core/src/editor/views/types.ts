@@ -50,6 +50,10 @@ export interface EditorProfile {
    * units: whole pixels in a design, FigJam's 16 on a board.
    */
   snapGrid: number
+  /** The grid of dots drawn under the page's layers, in canvas units, as a FigJam board's; null for none. */
+  dotGrid: number | null
+  /** Whether Figma's pixel grid shows when zoomed in far enough; a FigJam board has none. */
+  pixelGrid: boolean
 }
 
 /** The state a profile resolves from: the document's kind, the pane's view, and the host's limits. */

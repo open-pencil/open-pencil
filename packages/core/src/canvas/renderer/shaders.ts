@@ -6,6 +6,7 @@ export interface CompiledShaders {
   pixelGridEffect: RuntimeEffect | null
   /** The pixel grid's shader, kept while its uniforms hold. */
   pixelGrid: { key: string; shader: Shader } | null
+  dotGridEffect: RuntimeEffect | null
   linearBurn: Blender | null
   linearDodge: Blender | null
 }
@@ -15,6 +16,7 @@ export function createCompiledShaders(): CompiledShaders {
     diamondGradient: null,
     pixelGridEffect: null,
     pixelGrid: null,
+    dotGridEffect: null,
     linearBurn: null,
     linearDodge: null
   }
@@ -27,6 +29,8 @@ export function releaseCompiledShaders(shaders: CompiledShaders): void {
   shaders.pixelGridEffect = null
   shaders.pixelGrid?.shader.delete()
   shaders.pixelGrid = null
+  shaders.dotGridEffect?.delete()
+  shaders.dotGridEffect = null
   shaders.linearBurn?.delete()
   shaders.linearBurn = null
   shaders.linearDodge?.delete()

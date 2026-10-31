@@ -69,7 +69,7 @@ export function createDocumentSettingsActions(ctx: EditorContext) {
     ctx.state.documentKind = kind
     ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
     ctx.emitEditorEvent('document:kind-changed', kind)
-    ctx.requestRepaint()
+    ctx.requestRender()
   }
 
   return { updateEnabledLibraries, refreshDocumentSettings, setDocumentKind }
