@@ -7,6 +7,7 @@ import { createPublicationPlan } from '#release/workflow'
 import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { isChromiumAsset } from '../chromium/catalog.ts'
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'
 import { assertDraftReplacement, releaseChannelArgs, releaseSchema } from './draft.ts'
@@ -105,7 +106,10 @@ const remote = v.parse(
     ])
   )
 )
-const remoteNames = remote.assets.map((asset) => asset.name).sort()
+const remoteNames = remote.assets
+  .map((asset) => asset.name)
+  .filter((name) => !isChromiumAsset(name))
+  .sort()
 
 if (!remote.isDraft || !isEqual(remoteNames, names)) {
   throw new Error('Uploaded asset set mismatch')
@@ -118,7 +122,16 @@ const temporary = await mkdtemp(join(tmpdir(), 'open-pencil-release-verify-'))
 
 try {
   await github(
-    ['release', 'download', identity.tag, '--repo', repository, '--dir', temporary],
+    [
+      'release',
+      'download',
+      identity.tag,
+      '--repo',
+      repository,
+      '--dir',
+      temporary,
+      ...names.flatMap((name) => ['--pattern', name])
+    ],
     ARTIFACT_TRANSFER_TIMEOUT_MS
   )
 
