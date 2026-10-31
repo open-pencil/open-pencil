@@ -40,7 +40,11 @@ import { IS_BROWSER, IS_TAURI } from '@/constants'
 export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core'
 export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core'
 
-function buildEditorStore(initialGraph?: SceneGraph) {
+/**
+ * A store for `initialGraph`, an opened document unless `opened` says it is new: a new one gets the
+ * page background of the interface theme, unless its page has one, as a board's does.
+ */
+function buildEditorStore(initialGraph?: SceneGraph, opened = initialGraph !== undefined) {
   const graph = initialGraph ?? new SceneGraph()
 
   const state = shallowReactive<AppEditorState>(createInitialAppEditorState(graph.getPages()[0].id))
@@ -53,7 +57,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     icons: appIcons,
     shaderRasterizer: createShaderRasterizer(),
     resolveFigmaClipboardImages: IS_TAURI ? resolveFigmaClipboardImages : undefined,
-    skipInitialGraphSetup: !!initialGraph,
+    skipInitialGraphSetup: opened,
     getUserName: () => useCollabIdentity().name.value,
     getViewportSize: () =>
       viewportSize.width > 0 && viewportSize.height > 0
@@ -67,7 +71,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
   const io = new IORegistry(BUILTIN_IO_FORMATS)
   bindClipboardNotifications(editor)
 
-  if (initialGraph) {
+  if (opened) {
     editor.subscribeToGraph()
   }
 

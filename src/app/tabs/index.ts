@@ -128,7 +128,7 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
  */
 export function createDocumentTab(kind: DocumentKind): Tab {
   const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
-  const tab = createTab(undefined, createDocumentGraph(kind))
+  const tab = createTab(createEditorStore(createDocumentGraph(kind), false))
   if (picker) {
     const rest = tabsRef.value.filter((entry) => entry !== tab)
     tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))
