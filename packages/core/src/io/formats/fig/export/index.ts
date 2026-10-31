@@ -253,16 +253,18 @@ function canUseWorker(): boolean {
   return typeof Worker !== 'undefined' && IS_BROWSER
 }
 
-function compressViaWorker(
-  schemaDeflated: Uint8Array,
-  kiwiData: Uint8Array,
-  thumbnailPNG: Uint8Array,
-  metaJSON: string,
-  imageEntries: Array<{ name: string; data: Uint8Array }>,
-  figKiwiVersion?: number,
-  compressionLevel?: number,
-  kind?: FigFileKind
-): Promise<Uint8Array> {
+/** Compresses in a worker; it takes what `compressFigData` takes. */
+function compressViaWorker(...args: Parameters<typeof compressFigData>): Promise<Uint8Array> {
+  const [
+    schemaDeflated,
+    kiwiData,
+    thumbnailPNG,
+    metaJSON,
+    imageEntries,
+    figKiwiVersion,
+    compressionLevel,
+    kind
+  ] = args
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./worker.js', import.meta.url), {
       type: 'module'
