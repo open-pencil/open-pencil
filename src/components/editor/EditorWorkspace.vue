@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
@@ -14,6 +14,7 @@ import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import type { Tab } from '@/app/tabs'
 import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
+import FloatingChat from '@/components/chat/FloatingChat.vue'
 import CollabPanel from '@/components/collab-panel/CollabPanel.vue'
 import ActiveRoomOverlay from '@/components/collab-room/ActiveRoomOverlay.vue'
 import { useRoomActions } from '@/components/collab-room/useRoomActions'
@@ -41,6 +42,8 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
+/** Whether the AI chat floats over the canvas shown alone; the right panel holds it otherwise. */
+const floatingChat = ref(false)
 /**
  * The layout the panels have. The splitter opens with it, also when showing the panels again
  * remounts it, so its opening report matches and only a resize differs.
@@ -167,7 +170,13 @@ const { pending: roomPending } = useRoomActions()
         mode="collapsed"
         :document-name="store.state.documentName"
         :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
+        :chat-open="floatingChat"
         @show-ui="store.state.showUI = true"
+        @toggle-chat="floatingChat = !floatingChat"
+      />
+      <FloatingChat
+        v-if="!isMobile && !canvasAlone && floatingChat"
+        @close="floatingChat = false"
       />
     </div>
   </div>
