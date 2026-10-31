@@ -1,9 +1,9 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { reconcileVariableBindings, type BindingScope } from '@open-pencil/scene-graph/variables'
 
-import { computeAllLayouts, computeLayout } from '#core/layout'
+import { computeAllLayouts, computeLayout, setTextMeasurer } from '#core/layout'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
 function buildDocument() {
@@ -17,10 +17,12 @@ function buildDocument() {
   const gap = graph.createVariable('Gap', 'FLOAT', tokens.id, 12)
   const size = graph.createVariable('Size', 'FLOAT', tokens.id, 40)
   const inset = graph.createVariable('Inset', 'FLOAT', tokens.id, { aliasId: padding.id })
+  const label = graph.createVariable('Label', 'STRING', tokens.id, 'Save')
   padding.valuesByMode[compact] = 4
   gap.valuesByMode[compact] = 2
   size.valuesByMode[compact] = 24
   inset.valuesByMode[compact] = 6
+  label.valuesByMode[compact] = 'Save as draft'
 
   const autoLayout = (direction: 'HORIZONTAL' | 'VERTICAL'): Partial<SceneNode> => ({
     layoutMode: direction,
@@ -49,6 +51,11 @@ function buildDocument() {
       boundVariables: { width: size.id, height: size.id }
     })
     graph.createNode('RECTANGLE', rowFrame.id, { width: 20, height: 8 })
+    graph.createNode('TEXT', rowFrame.id, {
+      text: 'Save',
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      boundVariables: { text: label.id }
+    })
   }
   computeAllLayouts(graph)
   return { graph, tokens, compact, comfortable, padding, outer }
@@ -88,6 +95,9 @@ function expectSameLayoutAsPerLayer(change: (document: Document) => BindingScope
 }
 
 describe('reconcileVariableLayouts', () => {
+  beforeEach(() => setTextMeasurer((node) => ({ width: node.text.length * 8, height: 16 })))
+  afterEach(() => setTextMeasurer(null))
+
   test('an explicit mode on a container lays its layers out as one layer at a time would', () => {
     expectSameLayoutAsPerLayer(({ graph, tokens, compact, outer }) => {
       graph.updateNode(outer.id, { variableModes: { [tokens.id]: compact } })
