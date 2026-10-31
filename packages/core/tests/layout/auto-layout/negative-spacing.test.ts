@@ -87,6 +87,17 @@ describe('negative item spacing overlaps siblings', () => {
     expect(frame.width).toBe(74)
   })
 
+  test('an absolute child between flowing siblings keeps their overlap', () => {
+    const { frame, children, layout } = stack('HORIZONTAL', -6)
+    const [first, floating, last] = children
+    floating.layoutPositioning = 'ABSOLUTE'
+    floating.x = 5
+    layout()
+    expect(floating.x).toBe(5)
+    expect(xs([first, last])).toEqual([0, 34])
+    expect(frame.width).toBe(74)
+  })
+
   test('a right-to-left row overlaps toward its start', () => {
     const { graph, frame, children, layout } = stack('HORIZONTAL', -6)
     graph.updateNode(frame.id, { layoutDirection: 'RTL' })

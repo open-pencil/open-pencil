@@ -114,6 +114,16 @@ describe('a Hug frame laid out with its parent moves its constrained layers once
     expect([button.width, inner.width]).toEqual([60, 60])
     expect([badge.x, badge.width]).toEqual([6, 48])
   })
+
+  test('growing the label, then shrinking it, scales the badge from its grown size', () => {
+    const { graph, row, label, badge } = buttonInRow()
+    graph.updateNode(label.id, { width: 120 })
+    layOutTimes(graph, row.id, 1)
+    expect(rect(badge)).toEqual([12, 10, 96, 30])
+    graph.updateNode(label.id, { width: 60, height: 30 })
+    layOutTimes(graph, row.id, 1)
+    expect(rect(badge)).toEqual([6, 6, 48, 18])
+  })
 })
 
 test('laying a tree out again changes nothing', () => {
