@@ -2,7 +2,7 @@ import { isEqual } from 'es-toolkit'
 
 import { SceneGraph, type DocumentKind, type EnabledLibraryBinding } from '@open-pencil/scene-graph'
 
-import { resolveEditorProfile } from '#core/editor/views'
+import { offeredTool } from '#core/editor/views'
 import { setPageBackgrounds } from '#core/figma-api/page-backgrounds'
 
 import type { EditorContext } from './types'
@@ -57,8 +57,7 @@ export function createDocumentSettingsActions(ctx: EditorContext) {
     if (ctx.graph.documentKind === kind) return
     ctx.graph.documentKind = kind
     ctx.state.documentKind = kind
-    const { tools } = resolveEditorProfile(ctx.state)
-    if (tools && !tools.has(ctx.state.activeTool)) ctx.setActiveTool('SELECT')
+    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
     ctx.emitEditorEvent('document:kind-changed', kind)
     ctx.requestRepaint()
   }

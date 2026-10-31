@@ -117,7 +117,7 @@ function onClose(e: MouseEvent, tabId: string) {
               data-test-id="tabbar-close"
               :class="tabBarStyles({ active: tab.isActive }).close()"
               :data-active="tab.isActive || undefined"
-              :aria-label="files.closeTab({ name: tab.name })"
+              :aria-label="files.closeTab({ name: tab.isNewFile ? files.newFile : tab.name })"
               tabindex="-1"
               @click="onClose($event, tab.id)"
             >

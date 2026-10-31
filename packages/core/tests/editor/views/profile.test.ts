@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   BOARD_TOOL_SHORTCUTS,
+  createDefaultEditorState,
+  createDocumentGraph,
   createEditor,
   resolveEditorProfile,
   TOOL_SHORTCUTS
@@ -138,6 +140,18 @@ describe('document kinds', () => {
     expect(editor.graph.documentKind).toBe('board')
     editor.replaceGraph(new SceneGraph())
     expect(editor.state.documentKind).toBe('design')
+  })
+
+  test('a board opened or swapped in with a design tool active gives way to Move', () => {
+    const state = createDefaultEditorState(new SceneGraph().getPages()[0].id)
+    state.activeTool = 'RECTANGLE'
+    const opened = createEditor({ graph: createDocumentGraph('board'), state })
+    expect(opened.state.activeTool).toBe('SELECT')
+
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.replaceGraph(createDocumentGraph('board'))
+    expect(editor.state.activeTool).toBe('SELECT')
   })
 
   test('a read-only board keeps only Move and Hand of its tools', () => {

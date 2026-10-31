@@ -74,6 +74,11 @@ const activeTabId = shallowRef('')
 
 export const activeTab = computed(() => tabsRef.value.find((t) => t.id === activeTabId.value))
 
+/** Whether the tab in front holds a document: Home and a New file tab have none to save. */
+export function showsDocument(): boolean {
+  return activeTab.value?.kind === 'document'
+}
+
 export const allTabs = computed(() =>
   tabsRef.value.map((t) => ({
     id: t.id,

@@ -68,3 +68,12 @@ export function resolveEditorProfile(state: EditorProfileInputs): EditorProfile 
   const profile = { ...DOCUMENT_BEHAVIOURS[state.documentKind], ...viewBehaviour(state.canvasView) }
   return restrict(profile, state.hostRestrictions)
 }
+
+/**
+ * The tool, if the profile offers it, or Move: a tool the profile stops offering, as when a
+ * document opens as a board, turns into one, or goes read-only, gives way to Move.
+ */
+export function offeredTool(state: EditorProfileInputs, tool: Tool): Tool {
+  const { tools } = resolveEditorProfile(state)
+  return !tools || tools.has(tool) ? tool : 'SELECT'
+}

@@ -1,7 +1,7 @@
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { EditorContext } from '#core/editor/types'
-import { resolveEditorProfile } from '#core/editor/views'
+import { offeredTool } from '#core/editor/views'
 
 import { READ_ONLY_ACTIONS } from './actions'
 
@@ -57,8 +57,7 @@ export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) 
     if (ctx.state.hostRestrictions.readOnly === readOnly) return
     if (readOnly) endEdits()
     ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, readOnly }
-    const { tools } = resolveEditorProfile(ctx.state)
-    if (tools && !tools.has(ctx.state.activeTool)) ctx.setActiveTool('SELECT')
+    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
     ctx.emitEditorEvent('document:read-only-changed', readOnly)
     ctx.requestRepaint()
   }

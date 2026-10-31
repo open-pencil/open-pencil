@@ -144,7 +144,6 @@ export function drawComponentLabels(
   const compColor = r.compColor()
 
   for (const { node, inside } of components) {
-    if (node.id === overlays?.renamingLabelId) continue
     const transform = labelTransform(node, graph, overlays?.rotationPreview)
     const room = shownStatusState(graph, node) ? TITLE_STATUS_ROOM : 0
     const layout = labelLayout('component', node.width * r.zoom - room, inside)
@@ -196,20 +195,23 @@ export function drawComponentLabels(
       immutablePath.delete()
     }
 
-    const textWidth = r.labelParagraphCache.draw(
-      r.ck,
-      canvas,
-      provider,
-      node.name,
-      layout.fontSize,
-      layout.maxTextWidth,
-      compColor,
-      r.fontGeneration,
-      layout.text.x,
-      layout.text.y,
-      layout.fontWeight
-    )
-    drawTitleStatus(r, canvas, graph, node, layout, textWidth, node.width * r.zoom, matrix)
+    // The field renaming a component starts after its icon and stands in for its name.
+    if (node.id !== overlays?.renamingLabelId) {
+      const textWidth = r.labelParagraphCache.draw(
+        r.ck,
+        canvas,
+        provider,
+        node.name,
+        layout.fontSize,
+        layout.maxTextWidth,
+        compColor,
+        r.fontGeneration,
+        layout.text.x,
+        layout.text.y,
+        layout.fontWeight
+      )
+      drawTitleStatus(r, canvas, graph, node, layout, textWidth, node.width * r.zoom, matrix)
+    }
     canvas.restore()
   }
 }

@@ -82,7 +82,8 @@ export function figmaLineBox(
   ck: CanvasKit,
   paragraph: Paragraph,
   line: LineMetrics,
-  runs: readonly LineHeightRun[]
+  runs: readonly LineHeightRun[],
+  lines: readonly LineMetrics[] = paragraph.getLineMetrics()
 ): LineBox | null {
   // An empty line is as tall as the newline that makes it.
   const start = line.startIndex
@@ -90,7 +91,6 @@ export function figmaLineBox(
   let height = 0
   let natural = 0
   let ascent = 0
-  const lines = paragraph.getLineMetrics()
   for (const run of runs) {
     const from = Math.max(start, run.start)
     const to = Math.min(end, run.end)
@@ -136,7 +136,7 @@ function lineBoxes(
     if (!heights) return null
     const blockBoxes: LineBox[] = []
     for (const line of metrics[index]) {
-      const box = figmaLineBox(ck, block.paragraph, line, heights)
+      const box = figmaLineBox(ck, block.paragraph, line, heights, metrics[index])
       if (!box) return null
       blockBoxes.push(box)
     }

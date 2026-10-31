@@ -25,6 +25,7 @@ import type {
   KeyboardShortcutRunOptions
 } from '@/app/shell/keyboard/types'
 import { appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'
+import { showsDocument } from '@/app/tabs'
 
 type ShortcutAction = (options: KeyboardShortcutRunOptions) => void
 
@@ -211,7 +212,9 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     {
       id: 'save-as',
       keys: appMenuTinykeysShortcut('save-as') ?? '$mod+Shift+KeyS',
-      run: ({ store }) => void store.saveFigFileAs()
+      run: ({ store }) => {
+        if (showsDocument()) void store.saveFigFileAs()
+      }
     },
     {
       id: 'save-version',
@@ -346,7 +349,9 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     {
       id: 'save',
       keys: appMenuTinykeysShortcut('save') ?? '$mod+KeyS',
-      run: ({ store }) => void store.saveFigFile()
+      run: ({ store }) => {
+        if (showsDocument()) void store.saveFigFile()
+      }
     },
     {
       id: 'open-file',

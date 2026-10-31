@@ -5,8 +5,8 @@ import { createEditor } from '@open-pencil/core'
 import { createCanvasLabelEdit } from '#vue/canvas/labels/edit'
 
 describe('canvas label renaming', () => {
-  // Figma shows only the field while a name is renamed; the canvas title would show through.
-  test('the canvas leaves a renamed title to the field until the rename ends', () => {
+  // The canvas skips the title of `renamingLabelId` (tests/e2e/canvas/labels/name-editing.spec.ts).
+  test('marks the layer being renamed until the rename ends', () => {
     const editor = createEditor()
     const id = editor.createShape('SECTION', 0, 0, 224, 192)
     const node = editor.graph.getNode(id)

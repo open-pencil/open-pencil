@@ -75,7 +75,7 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
-import { createCanvasViewActions, resolveEditorProfile } from './views'
+import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
 
 export { createDefaultEditorState } from './state'
 
@@ -106,6 +106,7 @@ export function createEditor(options?: EditorOptions) {
 
   const state: EditorState = options?.state ?? createDefaultEditorState(_graph.getPages()[0].id)
   state.documentKind = _graph.documentKind
+  state.activeTool = offeredTool(state, state.activeTool)
 
   function emitEditorEvent<K extends EditorEventName>(
     event: K,
@@ -208,8 +209,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function setActiveTool(tool: EditorState['activeTool']) {
-    const { tools } = resolveEditorProfile(state)
-    if (tools && !tools.has(tool)) return
+    if (offeredTool(state, tool) !== tool) return
     const previous = state.activeTool
     state.activeTool = tool
     if (tool !== 'SELECT') state.measurementMode = 'off'
@@ -383,6 +383,7 @@ export function createEditor(options?: EditorOptions) {
     undo.discardBatches()
     _graph = newGraph
     state.documentKind = _graph.documentKind
+    setActiveTool(offeredTool(state, state.activeTool))
     pendingTextLayout.clear()
     subscribeToGraph()
     const previousPageId = state.currentPageId
