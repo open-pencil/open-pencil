@@ -60,6 +60,8 @@ When the chat's own `onFinish` reports a reply that was stopped, failed, or cut 
 
 Diagnostics record `chat.completed`, `chat.stopped`, or `chat.failed`.
 
+A reply that finished or failed on its own, rather than one you stopped or one cut off by a disconnect, also reaches `notifyReplyEnded` (`chat/notifications.ts`). It quotes the last text part as plain text and sends it through the shared notification service (`shell/notifications/`), which sends nothing while you are looking at that document. An ACP agent's permission request that is still unanswered after `AGENT_INPUT_NOTIFY_DELAY_MS` notifies through the same service, by the `onUnanswered` callback of `requestPermissionFromUser`.
+
 `reply/undo.ts` records the reply's turn (`reply/turns.ts`) once the run settles, so an edit landing after Stop belongs to the reply.
 
 ## An ACP reply

@@ -10,6 +10,8 @@ import { openExternalLink } from './ui'
  * `shell:allow-open`, which the app does not grant, even when the link handles its click itself,
  * as a chat link does to ask first; such a link opens with `window.open`, which the desktop shell
  * sends to the browser (`open_new_window_externally` in `desktop/src/system/opener.rs`).
+ * The shell plugin offers no way to leave its handler out on v2; once it does
+ * (tauri-apps/plugins-workspace#3753), turning it off replaces this listener.
  */
 export function useExternalLinks() {
   if (!isTauri()) return

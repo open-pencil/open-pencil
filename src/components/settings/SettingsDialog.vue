@@ -3,6 +3,7 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import { AlertDialogCancel, DialogClose } from 'reka-ui'
 import { computed, type Component } from 'vue'
 import IconActivity from '~icons/lucide/activity'
+import IconBell from '~icons/lucide/bell'
 import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
 import IconCloud from '~icons/lucide/cloud'
@@ -38,6 +39,7 @@ import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
 import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
+import NotificationSettingsSection from '@/components/settings/notifications/NotificationSettingsSection.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
 import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
@@ -79,6 +81,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'editor', label: settings.value.editor, icon: IconPenTool },
       { value: 'fonts', label: settings.value.fonts, icon: IconType },
       { value: 'storage', label: settings.value.storage, icon: IconDatabase },
+      { value: 'notifications', label: settings.value.notifications, icon: IconBell },
       ...(CLOUD_INCLUDED
         ? [{ value: 'cloud' as const, label: settings.value.cloud, icon: IconCloud }]
         : [])
@@ -200,6 +203,9 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
       <AppTabsContent value="storage" as-child>
         <StorageSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent value="notifications" as-child>
+        <SettingsPage><NotificationSettingsSection /></SettingsPage>
       </AppTabsContent>
       <AppTabsContent v-if="CLOUD_INCLUDED" value="cloud" as-child>
         <CloudSettingsSection />

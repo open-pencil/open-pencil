@@ -10,6 +10,7 @@
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
     "opener:default",
+    "notification:default",
     "dialog:default",
     "dialog:allow-save",
     "dialog:allow-open",

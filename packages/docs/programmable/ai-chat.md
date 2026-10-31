@@ -122,6 +122,10 @@ Your next message tells the assistant which of its edits you undid or redid, so 
 
 With **Follow agents** on, the crosshair button at the top of the AI panel, your view follows the assistant while it works, including to another page when it edits layers there. Following ends when the reply finishes, is stopped, or fails. Clicking, scrolling, zooming, switching pages, or Escape stops following yourself.
 
+## Notifications
+
+When an agent asks for permission and you have not answered for a few seconds, OpenPencil sends a system notification, so you can work in another app while it runs. **Settings → Notifications** also turns on notifications when a reply finishes or fails. They are sent only while OpenPencil is in the background or shows another document, and clicking one opens that document's chat. In the browser, click **Allow notifications** there first; the desktop app follows your system's notification settings.
+
 ## Example Prompts
 
 - "Create a card with a title, description, and a blue button"
