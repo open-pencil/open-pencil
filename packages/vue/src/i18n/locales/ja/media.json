@@ -7,5 +7,11 @@
   "stockPhotoToolOptional": "任意 — stock_photoツール用",
   "pexelsAlternativeOptional": "任意 — Pexelsの代替案",
   "getPexelsAPIKey": "Pexelsの無料APIキーを取得 →",
-  "getUnsplashAccessKey": "Unsplashの無料アクセスキーを取得 →"
+  "getUnsplashAccessKey": "Unsplashの無料アクセスキーを取得 →",
+  "photoKeyWorks": "{service} はこのキーを受け付けました。",
+  "photoKeyRejected": "{service} がこのキーを拒否しました。キー全体をコピーしたか確認してください。",
+  "unsplashKeyRejected": "Unsplash がこのキーを拒否しました。Secret key ではなく、アプリの Access Key を貼り付けてください。",
+  "photoKeyRateLimited": "このキーは今の 1 時間の {service} リクエスト上限に達しました。しばらくしてからお試しください。",
+  "photoKeyUnreachable": "{service} に接続できませんでした。ネットワーク接続を確認してください。",
+  "photoKeyCheckFailed": "{service} がテストに応答しませんでした。しばらくしてからお試しください。"
 }

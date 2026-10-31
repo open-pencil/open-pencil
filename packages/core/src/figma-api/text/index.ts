@@ -26,9 +26,9 @@ import {
 } from '@open-pencil/scene-graph/text'
 
 import { invalid, received } from '#core/figma-api/accessors/text/messages'
+import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text/style-runs'
 
-import { assertTextFontsLoaded } from './loaded-fonts'
 import { assertTextRange } from './style'
 
 /** Figma's plugin API line height: automatic, or a size in pixels or percent of the font size. */

@@ -510,6 +510,17 @@
   "recentIcons": "最近使用",
   "iconsInFile": "此文件中",
   "otherIconSets": "其他",
+  "stockPhoto": "图库照片",
+  "searchPhotos": "搜索照片...",
+  "noPhotosFound": "未找到照片",
+  "photoSearchHint": "输入以搜索 {service} 上的免费照片",
+  "photoSearchFailed": "无法搜索 {service}，请检查网络连接和密钥。",
+  "insertPhotoFailed": "无法插入照片。",
+  "photoService": "照片服务",
+  "photoCredit": "{photographer} 拍摄，来自 {service}",
+  "photoKeyHeading": "连接 {service}",
+  "photoKeyDescription": "{service} 的照片可免费使用。在设置中添加其免费 API 密钥即可在此搜索。",
+  "photoKeyAction": "打开设置",
   "iconResultCount": {
     "many": "{count} 个结果"
   },

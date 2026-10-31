@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -25,9 +25,10 @@ import {
 import { useCredentialSettings } from '@/app/settings/credentials/preferences/use'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { createStoredDocument } from '@/app/storage/workspace/create'
-import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
+import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import { CloudSharedSection, CloudWorkspaceSection } from '@/components/cloud/integration'
+import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import HomeLayout from '@/components/home/HomeLayout.vue'
 import RecentFilesSection from '@/components/home/recent/RecentFilesSection.vue'
@@ -64,6 +65,14 @@ const storageWorkspace = useDocumentWorkspace<StorageDocument>({
   previewConcurrency: 6
 })
 const storageDocuments = storageWorkspace.documents
+const storageLocation = computed(() => activeStorageLocation())
+const deletingStorageDocument = shallowRef<StorageDocument | null>(null)
+function documentMenu(document: StorageDocument) {
+  return {
+    actions: files.value.documentActions({ name: document.name }),
+    delete: files.value.deleteDocument
+  }
+}
 const storageLoading = storageWorkspace.loading
 // Paused credential access has its own fix, so the card offers it instead of the raw native error.
 const credentialAccess = useCredentialSettings()
@@ -323,7 +332,9 @@ function formattedDate(updatedAt: string): string {
             :name="document.name"
             :metadata="formattedDate(document.updatedAt)"
             :previewURL="storagePreviewURL(document.id)"
+            :menu="documentMenu(document)"
             @open="openStorageDocument(document)"
+            @delete="deletingStorageDocument = document"
           />
         </div>
 
@@ -337,7 +348,9 @@ function formattedDate(updatedAt: string): string {
             view="list"
             :name="document.name"
             :metadata="formattedDate(document.updatedAt)"
+            :menu="documentMenu(document)"
             @open="openStorageDocument(document)"
+            @delete="deletingStorageDocument = document"
           />
         </div>
 
@@ -357,6 +370,10 @@ function formattedDate(updatedAt: string): string {
         >
           {{ storage.emptyStorageWorkspace }}
         </div>
+        <DocumentDeleteDialog
+          v-model:document="deletingStorageDocument"
+          :location="storageLocation"
+        />
       </section>
     </template>
   </HomeLayout>

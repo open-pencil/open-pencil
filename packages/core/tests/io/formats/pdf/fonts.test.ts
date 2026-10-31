@@ -15,7 +15,7 @@ import {
 } from '#core/io/formats/pdf/fonts'
 import type { SVGFontRequest } from '#core/io/formats/svg'
 import { isVariableFont } from '#core/text/font/variation'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 /** Records what jsPDF would be asked to register. */
 function pdfDoc() {

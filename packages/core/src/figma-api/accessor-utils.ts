@@ -5,6 +5,7 @@ import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
 import { fitEnclosingGroups, type GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
+import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 import { claimSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
@@ -125,16 +126,18 @@ export function updateNode(
       .map((key) => [key, Reflect.get(changes, key)])
   ) as Partial<SceneNode>
   if (Object.keys(applied).length === 0) return
-  // Auto-sizing text measures its new content, as the editor's updates do.
-  Object.assign(applied, textAutoResizeChanges(g.getNode(id), applied))
   const before = g.getNode(id)
+  // Auto-sizing text measures its new content, as the editor's updates do.
+  Object.assign(applied, textAutoResizeChanges(before, applied))
+  // An edit to a style's fields leaves that style, as the editor's updates do.
+  const edit = before ? styleDetachmentChanges(before, applied) : applied
   // Figma overrides only what an edit changes, so setting a layer's own value claims nothing.
-  const changed = Object.keys(applied).filter(
-    (key) => !before || !isEqual(Reflect.get(applied, key), Reflect.get(before, key))
+  const changed = Object.keys(edit).filter(
+    (key) => !before || !isEqual(Reflect.get(edit, key), Reflect.get(before, key))
   )
-  g.updateNode(id, applied)
+  g.updateNode(id, edit)
   recordInstanceOverride(g, id, changed)
-  if (Object.keys(applied).some((key) => GEOMETRY_FIELDS.has(key))) {
+  if (Object.keys(edit).some((key) => GEOMETRY_FIELDS.has(key))) {
     fitGroupsAround(g, g.getNode(id)?.parentId, hostFitOptions(target, internals))
   }
 }

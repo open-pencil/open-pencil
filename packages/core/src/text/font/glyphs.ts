@@ -1,6 +1,6 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
 
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import {
   fontInstance,

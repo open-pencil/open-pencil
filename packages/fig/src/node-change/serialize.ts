@@ -24,7 +24,7 @@ import {
 } from './export/node'
 import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
 import { applyFontFeaturesToKiwi } from './font/features'
-import { weightToFigmaStyle } from './font/style'
+import { figmaStyleName } from './font/style'
 import { fillToKiwiPaint, safeColor } from './paint'
 import { exportTextData, fontVariationToKiwi } from './text/data-export'
 import { figmaLetterSpacing, figmaLineHeight } from './text/values'
@@ -94,10 +94,10 @@ function serializeTextProps(
   nc.fontSize = node.fontSize
   nc.fontName = {
     family: normalizeFontFamily(node.fontFamily),
-    style: weightToFigmaStyle(node.fontWeight, node.italic),
+    style: figmaStyleName(node, {}, runtime.fontStyleName),
     postscript: ''
   }
-  nc.textData = exportTextData(node, fillToKiwiPaint)
+  nc.textData = exportTextData(node, fillToKiwiPaint, runtime.fontStyleName)
   if (node.fontVariations.length > 0) {
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
@@ -129,7 +129,8 @@ function serializeTextProps(
       blobs,
       glyphBlobMap: glyphBlobMap ?? new Map(),
       shapeText: (textNode) => runtime.shapeText(textNode),
-      textDecorations: (textNode, glyphs) => runtime.textDecorations(textNode, glyphs)
+      textDecorations: (textNode, glyphs) => runtime.textDecorations(textNode, glyphs),
+      fontStyleName: runtime.fontStyleName
     })
   }
   if (node.leadingTrim !== 'NONE') nc.leadingTrim = node.leadingTrim

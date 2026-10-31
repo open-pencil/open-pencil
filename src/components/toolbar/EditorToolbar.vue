@@ -7,7 +7,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { ToolbarRoot, useToolbarState } from '@open-pencil/vue/primitives/Toolbar'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { readOnlyToolbarLayout, toolbarItems } from '@/app/editor/toolbar/layout'
+import { readOnlyToolbarLayout, TOOLBAR_ACTIONS, toolbarItems } from '@/app/editor/toolbar/layout'
 import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { useActionToast } from '@/app/shell/toast/action'
@@ -44,6 +44,15 @@ const tools = computed(() =>
 const actionItems = computed(() =>
   items.value.flatMap((item) => (item.kind === 'action' ? [item.action] : []))
 )
+/**
+ * Commands hidden from the toolbar keep their pickers, which the menu and the palette still open;
+ * a read-only document leaves them out, as it does the buttons.
+ */
+const hiddenActions = computed(() =>
+  store.state.readOnly
+    ? []
+    : TOOLBAR_ACTIONS.filter((action) => !actionItems.value.includes(action))
+)
 
 const flyoutMenuCls = useMenuUI({ content: 'min-w-32' })
 const toolbarUI = { flyoutContent: flyoutMenuCls.content }
@@ -74,6 +83,11 @@ function onActionTap(item: ToolbarActionItem) {
         <template #action="{ action }">
           <InsertIconButton v-if="action === 'insert-icon'" :ui="toolbarUI" />
         </template>
+        <template #hidden>
+          <template v-for="action in hiddenActions" :key="action">
+            <InsertIconButton v-if="action === 'insert-icon'" anchored />
+          </template>
+        </template>
       </DesktopToolbar>
 
       <MobileToolbar
@@ -99,6 +113,9 @@ function onActionTap(item: ToolbarActionItem) {
         <template #end>
           <template v-for="action in actionItems" :key="action">
             <InsertIconButton v-if="action === 'insert-icon'" mobile :ui="toolbarUI" />
+          </template>
+          <template v-for="action in hiddenActions" :key="action">
+            <InsertIconButton v-if="action === 'insert-icon'" anchored />
           </template>
         </template>
       </MobileToolbar>

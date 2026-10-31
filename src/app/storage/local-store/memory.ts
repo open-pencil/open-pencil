@@ -1,4 +1,9 @@
-import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
+import {
+  buildIndexMeta,
+  buildWriteMeta,
+  sameLocalCanvasState,
+  sortAndFilterMetas
+} from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
 
@@ -102,10 +107,14 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
       return meta
     },
 
-    async remove(id: string) {
+    async remove(id: string, options) {
+      const expected = options?.unchangedFrom
+      const existing = metas.get(id)
+      if (expected && (!existing || !sameLocalCanvasState(existing, expected))) return false
       metas.delete(id)
       figs.delete(id)
       thumbs.delete(id)
+      return true
     },
 
     async clearAll() {

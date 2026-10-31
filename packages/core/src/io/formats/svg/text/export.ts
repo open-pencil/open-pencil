@@ -20,7 +20,7 @@ import {
   type SVGFallbackFace
 } from '#core/io/formats/svg/text/lines'
 import { shownText } from '#core/text/case'
-import { textFontFace } from '#core/text/requirements'
+import { textFontFace } from '#core/text/requirements/collect'
 
 function styleOverrideToTspanAttrs(
   style: CharacterStyleOverride,

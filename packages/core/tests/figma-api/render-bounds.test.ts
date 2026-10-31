@@ -1,9 +1,12 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { solidFill } from '#core-tests/helpers/figma-api'
+import { registerTestFont, solidFill } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+// Text edits need the text's font loaded, as in Figma; this file must not rely on another's.
+beforeAll(() => registerTestFont())
 
 describe('absoluteRenderBounds', () => {
   test('absoluteRenderBounds includes strokes and effects and returns null for invisible pixels', () => {

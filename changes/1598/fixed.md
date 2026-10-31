@@ -1,0 +1,2 @@
+- Opening a `.fig` whose component contains another component with an instance inside no longer fails with a missing component error.
+- A component that encloses another keeps all its layers when a page using the inner component loads first, instead of losing its instances or failing to load the enclosing component's page.

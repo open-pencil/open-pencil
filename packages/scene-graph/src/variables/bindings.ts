@@ -47,7 +47,7 @@ export function assignVariableBindingUnits(
 const TEXT_LENGTH_FIELDS: ReadonlySet<string> = new Set(['lineHeight', 'letterSpacing'])
 
 /** A bound number as the field stores it. */
-function boundValue(field: string, value: number): number | TextLength {
+export function boundNumberValue(field: string, value: number): number | TextLength {
   return TEXT_LENGTH_FIELDS.has(field) ? pixelLength(value) : value
 }
 
@@ -70,7 +70,7 @@ export function resolvedNumericBindings(
     const scale = node.variableBindingScales[field] ?? 1
     const effective = value * scale
     if (!Number.isFinite(effective)) continue
-    const next = boundValue(
+    const next = boundNumberValue(
       field,
       field === 'opacity' ? Math.max(0, Math.min(1, effective)) : effective
     )
@@ -126,7 +126,7 @@ export function resolvedRunBindings(
       if (!variableId) continue
       const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
       if (value === undefined || !Number.isFinite(value)) continue
-      const next = boundValue(field, value)
+      const next = boundNumberValue(field, value)
       if (isEqual(style[field], next)) continue
       style = { ...style, [field]: next }
     }

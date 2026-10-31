@@ -40,7 +40,23 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
-const initialEditorLayout = loadEditorLayout()
+/**
+ * The layout the panels have. The splitter opens with it, also when showing the panels again
+ * remounts it, so its opening report matches and only a resize differs.
+ */
+let editorLayout = loadEditorLayout()
+/** How far apart two sizes, in percent, still count as one; the splitter rounds sizes finer. */
+const LAYOUT_TOLERANCE = 1e-6
+/**
+ * Saves a layout the panels were resized to. The splitter also reports the layout it opens with,
+ * which must not be saved: the right panel's default is a fixed width, and saved as a share of
+ * this window it would open wider on a wider one.
+ */
+function saveResizedLayout(layout: number[]) {
+  if (layout.every((size, index) => Math.abs(size - editorLayout[index]) < LAYOUT_TOLERANCE)) return
+  editorLayout = layout
+  saveEditorLayout(layout)
+}
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 /** One canvas previewing takes the whole window, in the canvas-only layout; split view keeps panels. */
 const playingAlone = computed(() => store.state.play !== null && store.visiblePaneCount.value <= 1)
@@ -59,11 +75,11 @@ const { pending: roomPending } = useRoomActions()
     :key="tab.id"
     direction="horizontal"
     class="flex-1 overflow-hidden"
-    @layout="saveEditorLayout"
+    @layout="saveResizedLayout"
   >
     <SplitterPanel
       id="layers"
-      :default-size="initialEditorLayout[0]"
+      :default-size="editorLayout[0]"
       :min-size="10"
       :max-size="30"
       class="flex"
@@ -76,19 +92,22 @@ const { pending: roomPending } = useRoomActions()
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
-    <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
+    <SplitterPanel id="canvas" :default-size="editorLayout[1]" :min-size="30" class="flex">
       <div class="relative flex min-w-0 flex-1">
         <CanvasSplitRoot />
         <ActiveRoomOverlay />
         <EditorToolbar />
       </div>
     </SplitterPanel>
-    <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
+    <SplitterResizeHandle
+      data-test-id="right-splitter-handle"
+      :class="horizontalSplitterStyles.handle()"
+    >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
     <SplitterPanel
       id="properties"
-      :default-size="initialEditorLayout[2]"
+      :default-size="editorLayout[2]"
       :min-size="10"
       :max-size="30"
       class="flex flex-col"

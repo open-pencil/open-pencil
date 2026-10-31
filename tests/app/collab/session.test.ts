@@ -80,6 +80,21 @@ describe('room sessions', () => {
     })
   })
 
+  test('a name the document takes without a rename stays out of the room', async () => {
+    await withRooms(async (open, settle) => {
+      const host = newStore('Checkout')
+      open({ roomId: ROOM_A, store: host, origin: 'shared' }).shareDocument()
+      const guest = newStore()
+      open({ roomId: ROOM_A, store: guest, origin: 'joined' })
+      await settle()
+
+      // As a save to a new place does while it writes, and undoes when the write fails.
+      host.state.documentName = 'Checkout copy'
+      await settle()
+      expect(guest.state.documentName).toBe('Checkout')
+    })
+  })
+
   test("a joined tab shows the sharer's document, with its name, once it arrives", async () => {
     await withRooms(async (open, settle) => {
       const host = newStore('Checkout flow')

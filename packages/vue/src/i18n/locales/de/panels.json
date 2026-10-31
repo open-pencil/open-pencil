@@ -516,6 +516,17 @@
   "recentIcons": "Zuletzt verwendet",
   "iconsInFile": "In dieser Datei",
   "otherIconSets": "Andere",
+  "stockPhoto": "Stockfoto",
+  "searchPhotos": "Fotos suchen...",
+  "noPhotosFound": "Keine Fotos gefunden",
+  "photoSearchHint": "Tippe, um kostenlose Fotos auf {service} zu suchen",
+  "photoSearchFailed": "{service} konnte nicht durchsucht werden. Prüfe deine Verbindung und deinen Schlüssel.",
+  "insertPhotoFailed": "Das Foto konnte nicht eingefügt werden.",
+  "photoService": "Fotodienst",
+  "photoCredit": "Foto von {photographer} auf {service}",
+  "photoKeyHeading": "{service} verbinden",
+  "photoKeyDescription": "{service}-Fotos sind kostenlos nutzbar. Füge in den Einstellungen den kostenlosen API-Schlüssel hinzu, um sie hier zu durchsuchen.",
+  "photoKeyAction": "Einstellungen öffnen",
   "iconResultCount": {
     "one": "{count} Ergebnis",
     "many": "{count} Ergebnisse"

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { renderNodesToSVG, type SVGFontRequest, type SVGTextLine } from '#core/io/formats/svg'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 const ALIASES: Record<string, string> = {
   'Inter\0Regular': 'EmbeddedFont0',

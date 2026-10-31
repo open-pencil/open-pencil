@@ -1,0 +1,1 @@
+- The desktop `list_system_fonts` command and `setHostFontCatalog` list each face with its style, weight, and slant instead of style names; the typography SDK's `weights` is `faces` (with `faceName` and `setFace`); `resolveParagraphFontFamilies` takes a face; `figma.loadFontAsync` rejects a style the family has no face of, as Figma does.

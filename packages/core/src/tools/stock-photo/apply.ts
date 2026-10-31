@@ -88,6 +88,8 @@ export async function applyPhoto(
 
   const imageHash = storeImage(figma.graph, imageBytes)
   node.fills = [{ type: 'IMAGE', imageHash, scaleMode: 'FILL' }]
+  // A missed report does not undo the photo the document already shows.
+  await provider.reportUse?.(photo).catch(() => undefined)
 
   return {
     id: node.id,

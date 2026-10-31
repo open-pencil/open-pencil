@@ -7,7 +7,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { withPDFTextLayout } from '#core/io/formats/pdf/prepare'
 import { renderNodesToSVG } from '#core/io/formats/svg'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 const SENTENCE = 'A sentence long enough that it has to wrap onto a second line.'
 

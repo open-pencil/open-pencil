@@ -23,7 +23,6 @@ import Matrix from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
-import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
 import { invalidateTextCaches } from './text/picture'
 import type {
@@ -519,6 +518,10 @@ export class SceneGraph {
     if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)
   }
 
+  /**
+   * Writes fields as given. Edits detach the shared styles whose fields they change before
+   * they get here (`styleDetachmentChanges`); resolving bindings or loading a file does not.
+   */
   updateNode(id: string, changes: Partial<SceneNode>): void {
     if (this.scopeDepths.preview > 0) {
       this.updateNodePreview(id, changes)
@@ -527,9 +530,7 @@ export class SceneGraph {
 
     const node = this.nodes.get(id)
     if (!node) return
-    const defined = omitBy(changes, isUndefined)
-    const detached = omitBy(styleDetachmentChanges(node, defined), isUndefined)
-    this.applyNodeChanges(node, this.sizedChanges(node, detached))
+    this.applyNodeChanges(node, this.sizedChanges(node, omitBy(changes, isUndefined)))
   }
 
   /** A size set from outside layout, with what it also sets on a generated frame. */

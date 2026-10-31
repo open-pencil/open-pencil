@@ -176,6 +176,7 @@ ja:media.pexelsAlternativeOptional
 ja:media.stockPhotoToolOptional
 ja:media.unsplashAccessKey
 ja:media.vectorizationDescription
+ja:media.unsplashKeyRejected
 ja:menu.copyAsJSX
 ja:menu.copyAsPNG
 ja:menu.copyAsSVG
@@ -193,6 +194,7 @@ ja:panels.colorHintHsl
 ja:panels.colorHintOkhcl
 ja:panels.libraryId
 ja:panels.localFontsAccessHint
+ja:panels.photoKeyDescription
 ja:panels.sizingFillFr
 ja:panels.sizingFixedPx
 ja:panels.xAxis
@@ -397,6 +399,7 @@ zh-cn:media.pexelsAlternativeOptional
 zh-cn:media.stockPhotoToolOptional
 zh-cn:media.unsplashAccessKey
 zh-cn:media.vectorizationDescription
+zh-cn:media.unsplashKeyRejected
 zh-cn:menu.copyAsJSX
 zh-cn:menu.copyAsPNG
 zh-cn:menu.copyAsSVG
@@ -413,6 +416,7 @@ zh-cn:panels.colorHintHsl
 zh-cn:panels.colorHintOkhcl
 zh-cn:panels.libraryId
 zh-cn:panels.localFontsAccessHint
+zh-cn:panels.photoKeyDescription
 zh-cn:panels.sizingFillFr
 zh-cn:panels.sizingFixedPx
 zh-cn:panels.xAxis

@@ -5,7 +5,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { pathTextEditChanges, resizedPathTextGlyphs } from '#core/editor/text/path-edit'
 import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { nearestArcPoint, pointAtArc, sampleTextPath, textPathStartArc } from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'

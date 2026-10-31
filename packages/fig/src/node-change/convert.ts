@@ -7,7 +7,6 @@ import {
   DEFAULT_STROKE_WEIGHT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
@@ -91,6 +90,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 
+import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
 
@@ -368,6 +368,7 @@ type TextProps = Pick<
   | 'fontFamily'
   | 'fontWeight'
   | 'italic'
+  | 'fontStyle'
   | 'textAlignHorizontal'
   | 'textAlignVertical'
   | 'textAutoResize'
@@ -453,12 +454,15 @@ function convertShapeWithTextProps(
 }
 
 function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
+  const face = nc.fontName ? savedFace(nc, nc.fontName) : { fontWeight: 400, italic: false }
   return {
     text: nc.textData?.characters ?? '',
     fontSize: nc.fontSize ?? 14,
     fontFamily: nc.fontName?.family ?? DEFAULT_FONT_FAMILY,
-    fontWeight: styleToWeight(nc.fontName?.style ?? ''),
-    italic: nc.fontName?.style.toLowerCase().includes('italic') ?? false,
+    fontWeight: face.fontWeight,
+    italic: face.italic,
+    // Figma finds the face by this exact name, which the weight and slant cannot always name.
+    fontStyle: nc.fontName?.style || null,
     textAlignHorizontal: (nc.textAlignHorizontal ?? 'LEFT') as
       | 'LEFT'
       | 'CENTER'

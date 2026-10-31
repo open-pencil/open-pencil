@@ -2,14 +2,14 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
+import { faceForStyle, fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
   TextLength,
   TextListType,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
-import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey, faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
 import {
@@ -71,11 +71,11 @@ export function createTypographyState(editor: Editor) {
   const fontFamily = computed(() => node.value?.fontFamily ?? '')
   const fontWeight = computed(() => node.value?.fontWeight ?? 400)
   const fontSize = computed(() => node.value?.fontSize ?? 16)
-  const currentWeightLabel = computed(
-    () => FONT_WEIGHT_NAMES[node.value?.fontWeight ?? 400] ?? 'Regular'
-  )
+  const { faces, supports, styleName } = useFamilyFaces(nodes)
+  const currentWeightLabel = computed(() => (node.value ? styleName(node.value) : 'Regular'))
+  /** The face every selected text layer is set in, by its name, or MIXED when they differ. */
+  const faceName = computed(() => sharedValue(nodes.value.map((text) => styleName(text))))
   const activeFormatting = computed(() => sharedFormatting(nodes.value))
-  const { weights, supports } = useFamilyFaces(nodes)
   /**
    * The list style every selected text shares, or that of the paragraphs being edited; `null`
    * when they differ.
@@ -116,9 +116,10 @@ export function createTypographyState(editor: Editor) {
     fontWeight,
     fontSize,
     currentWeightLabel,
+    faceName,
     activeFormatting,
     listType,
-    weights,
+    faces,
     supports,
     missingFonts,
     hasMissingFonts
@@ -207,11 +208,13 @@ export function createTypographyActions({
       'Change font',
       ['fontFamily', 'fontWeight', 'italic'],
       async (target) => {
-        const known = await faces
+        await faces
+        // Asked again, so faces forgotten while loading (a catalog arriving) are read anew.
+        const known = await fontManager.familyFaces(family)
         const face = known ? nearestFamilyFace(known, target.fontWeight, target.italic) : null
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic
-        await options.fontLoader?.load(family, weightToStyle(fontWeight, italic))
+        await options.fontLoader?.load(family, faceLoadKey(fontWeight, italic))
         return {
           fontFamily: family,
           fontWeight,
@@ -228,8 +231,27 @@ export function createTypographyActions({
       'Change font weight',
       ['fontWeight'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(weight, target.italic))
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(weight, target.italic))
         return { fontWeight: weight, fontVariations: styleFontVariations(target) }
+      },
+      targets
+    )
+  }
+
+  /**
+   * Sets the face `style` names in each layer's family, as the style menu sets one: its weight,
+   * slant, and name, loaded first so the text is laid out once with it.
+   */
+  async function setFace(style: string, targets = nodes.value) {
+    await updateAfterLoading(
+      'Change font style',
+      ['fontWeight', 'italic', 'fontStyle'],
+      async (target) => {
+        // The menu lists the faces of the layer's slant, so a name in both slants is that one.
+        const face = faceForStyle(target.fontFamily, style, target.italic)
+        const fields = { fontWeight: face.weight, italic: face.italic, fontStyle: face.style }
+        await options.fontLoader?.load(target.fontFamily, faceStyleKey(fields))
+        return { ...fields, fontVariations: styleFontVariations(target) }
       },
       targets
     )
@@ -348,7 +370,7 @@ export function createTypographyActions({
       'Toggle italic',
       ['italic'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(target.fontWeight, italic))
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(target.fontWeight, italic))
         return { italic, fontVariations: styleFontVariations(target) }
       },
       nodes.value.filter((target) => supports(target, target.fontWeight, italic))
@@ -424,6 +446,7 @@ export function createTypographyActions({
   return {
     setFamily,
     setWeight,
+    setFace,
     setAlign,
     setDirection,
     setVerticalAlign,

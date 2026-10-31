@@ -122,6 +122,34 @@ test('media explains optional keys and preserves input after a failed save', asy
   await expect(page.getByRole('button', { name: /Pexels/ })).toBeVisible()
 })
 
+test('Test connection tries the photo key typed against the service and says what it answered', async ({
+  page
+}) => {
+  await page.route('https://api.unsplash.com/photos?**', (route) =>
+    route.request().headers().authorization === 'Client-ID working-key'
+      ? route.fulfill({ json: [] })
+      : route.fulfill({ status: 401, body: 'OAuth error: The access token is invalid' })
+  )
+  await openSettings(page)
+  await page.getByTestId('settings-section-services').click()
+  await page.getByRole('button', { name: /Unsplash/ }).click()
+  const test = page.getByRole('button', { name: 'Test connection' })
+  const result = page.getByTestId('provider-test-connection-result')
+
+  await test.click()
+  await expect(result).toHaveText('Enter an API key before testing.')
+  await page.getByLabel('Access key').fill('secret-key')
+  await expect(result).toHaveCount(0)
+  await test.click()
+  await expect(result).toHaveText(
+    'Unsplash refused this key. Paste your app’s Access Key, not its Secret key.'
+  )
+  await page.getByLabel('Access key').fill('working-key')
+  await test.click()
+  await expect(result).toHaveText('Unsplash accepted this key.')
+  await expect(result).toHaveAttribute('data-tone', 'success')
+})
+
 test('MCP requires a token only for enabled bearer connections and preserves failed saves', async ({
   page
 }) => {

@@ -28,6 +28,7 @@ import DailyLevelChart from './DailyLevelChart.vue'
 import MetricsCard from './MetricsCard.vue'
 import MetricsRangePicker from './MetricsRangePicker.vue'
 import MetricsTile from './MetricsTile.vue'
+import NetworksTable from './NetworksTable.vue'
 import PlatformsChart from './PlatformsChart.vue'
 import RetentionChart from './RetentionChart.vue'
 import type { DailyActiveDay, DailyPulls, DailyTraffic, DailyVersions, DailyVisits } from './types'
@@ -258,22 +259,33 @@ const sharingNote = computed(() => {
               <PlatformsChart :platforms="snapshot.platforms" />
             </MetricsCard>
             <MetricsCard
-              heading="Versions"
-              note="Daily pings by version. Versions before 0.16.0 send no pings, so older installs show up from the next release on."
+              heading="Networks"
+              note="Daily pings added up by the network Cloudflare reports"
             >
-              <template v-if="latestShare !== undefined && snapshot.versions.latest" #aside>
-                {{ formatShare(latestShare) }} on {{ snapshot.versions.latest }}
-              </template>
-              <DailyChart
-                label="Daily pings on the latest version and on others"
-                :days="snapshot.versions.daily"
-                :series="versionSeries"
-                :today="snapshot.today"
-                :height="200"
-                stacked
+              <NetworksTable
+                v-if="snapshot.networks.top.length"
+                :networks="snapshot.networks.top"
+                :total="snapshot.networks.total"
               />
+              <p v-else :class="ui.sectionLabel()">No networks recorded in this range yet</p>
             </MetricsCard>
           </div>
+          <MetricsCard
+            heading="Versions"
+            note="Daily pings by version. Versions before 0.16.0 send no pings, so older installs show up from the next release on."
+          >
+            <template v-if="latestShare !== undefined && snapshot.versions.latest" #aside>
+              {{ formatShare(latestShare) }} on {{ snapshot.versions.latest }}
+            </template>
+            <DailyChart
+              label="Daily pings on the latest version and on others"
+              :days="snapshot.versions.daily"
+              :series="versionSeries"
+              :today="snapshot.today"
+              :height="200"
+              stacked
+            />
+          </MetricsCard>
           <MetricsCard heading="Website" note="Visits to openpencil.dev by page and country">
             <div :class="ui.breakdown()">
               <div>

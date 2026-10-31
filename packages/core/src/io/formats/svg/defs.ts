@@ -15,7 +15,7 @@ import {
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { FontFaceRef } from '#core/text/face'
+import type { FontFaceRef } from '#core/text/font/faces'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'

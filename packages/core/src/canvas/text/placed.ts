@@ -2,7 +2,6 @@ import type { Paragraph } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
 import {
   drawnFontVariations,
@@ -19,7 +18,8 @@ import {
   shardCovers,
   type GlyphOutlineSource
 } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
+import { textFontFace } from '#core/text/requirements/collect'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
 
@@ -40,10 +40,14 @@ export interface LaidOutGlyph {
   source: GlyphOutlineSource | null
 }
 
-/** The loaded face of a family the paragraph draws a style in, as its style name. */
-function loadedStyle(family: string, weight: number, italic: boolean): string | null {
-  const face = loadedFace(family, weight, italic)
-  return face ? weightToStyle(face.weight, face.italic) : null
+/** The loaded face of a family the paragraph draws a face in, as its key. */
+function loadedStyle(
+  family: string,
+  weight: number,
+  italic: boolean,
+  style: string
+): string | null {
+  return loadedFace(family, weight, italic, style)?.style ?? null
 }
 
 /**
@@ -56,16 +60,17 @@ function fontAt(node: SceneNode, index: number) {
   const family = run?.style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const weight = run?.style.fontWeight ?? node.fontWeight
   const italic = run?.style.italic ?? node.italic
-  const style = weightToStyle(weight, italic)
+  const style = textFontFace(node, run?.style).style
   const variations = drawnFontVariations({
     family,
     weight,
     italic,
+    style,
     fontSize: run?.style.fontSize ?? node.fontSize,
     variations: run?.style.fontVariations ?? node.fontVariations,
     opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
   })
-  const drawn = loadedFace(family, weight, italic) ?? { weight, italic }
+  const drawn = loadedFace(family, weight, italic, style) ?? { weight, italic, style }
   return { family, weight, italic, style, variations, drawn }
 }
 
@@ -79,7 +84,7 @@ function sourceStyle(family: string, font: ReturnType<typeof fontAt>): string | 
     (fontManager.getArabicFallbackFamilies().includes(family) ||
       fontManager.getCJKFallbackFamilies().includes(family))
   if (scriptFallback) return fontManager.isStyleLoaded(family, 'Regular') ? 'Regular' : null
-  return loadedStyle(family, font.drawn.weight, font.drawn.italic)
+  return loadedStyle(family, font.drawn.weight, font.drawn.italic, font.drawn.style)
 }
 
 /** The outline source of each font the paragraph may have drawn a character in, in its order. */

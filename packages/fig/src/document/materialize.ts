@@ -16,6 +16,7 @@ import type {
 import {
   reconcileOccurrenceStructure,
   linkInstanceSourceChildren,
+  mapMaterializedComponentNodes,
   mapInstanceSourceChildren,
   type MaterializedComponentOccurrence
 } from '../instance-overrides/source-children'
@@ -446,20 +447,34 @@ function materializeReaderInto(
     const parentId = sources.get(item.parentSourceId)
     if (!parentId) throw new Error(`Unmaterialized component parent ${item.parentSourceId}`)
     const existingNodes = new Map<InstanceOccurrence, SceneNode>()
+    /** Definitions an earlier step built inside this one: they keep the layers they have. */
+    const nested: Array<[InstanceOccurrence, MaterializedComponentOccurrence]> = []
     const collectExisting = (node: InstanceOccurrence): void => {
       const id = sources.get(node.sourceId)
       const existing = id ? graph.getNode(id) : undefined
       if (existing) existingNodes.set(node, existing)
-      if (node.mainComponentId === null) node.children.forEach(collectExisting)
+      // A definition deleted since it was built is built again, like any missing layer.
+      const component =
+        existing && node.properties.type === 'SYMBOL' ? components.get(node.sourceId) : undefined
+      if (component) nested.push([node, component])
+      else if (node.mainComponentId === null) node.children.forEach(collectExisting)
     }
     collectExisting(item.occurrence)
-    const materialized = materializeInstance(graph, parentId, item.occurrence, componentIds, {
+    const built = materializeInstance(graph, parentId, item.occurrence, componentIds, {
       blobs,
       sourceChildren: mapInstanceSourceChildren(item.occurrence, components),
       existingNodes,
       recordId
     })
-    rememberDerivedSizes(materialized.nodes)
+    rememberDerivedSizes(built.nodes)
+    // Linking and checkpoints address a nested definition's layers through this tree too.
+    const nodes = new Map(built.nodes)
+    for (const [node, component] of nested) {
+      for (const [occurrence, layer] of mapMaterializedComponentNodes(node, component)) {
+        nodes.set(occurrence, layer)
+      }
+    }
+    const materialized = { root: built.root, nodes }
     linkInstanceSourceChildren(item.occurrence, materialized, components)
     components.set(item.sourceId, { occurrence: item.occurrence, materialized })
     componentIds.set(item.sourceId, materialized.root.id)

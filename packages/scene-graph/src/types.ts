@@ -366,6 +366,8 @@ export interface TextLength {
 export interface CharacterStyleOverride {
   fontWeight?: number
   italic?: boolean
+  /** The characters' face by its font's own name for it; `null` is the face their weight picks. */
+  fontStyle?: string | null
   textDecoration?: TextDecoration
   textDecorationStyle?: TextDecorationStyle
   textDecorationThickness?: number | null
@@ -649,6 +651,11 @@ export interface SceneNode {
   fontFamily: string
   fontWeight: number
   italic: boolean
+  /**
+   * The face by the name its font gives it ("Semi Bold", "Book", "Condensed Bold"), which Figma
+   * finds a font's face by; `null` is the face the weight and slant pick in the family.
+   */
+  fontStyle: string | null
   textAlignHorizontal: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED'
   textDirection: TextDirection
   textLanguage: string | null

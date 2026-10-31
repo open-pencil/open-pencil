@@ -114,6 +114,21 @@ pub fn run() {
             handle_menu_event(app, event.id().0.as_str());
         })
         .setup(|app| {
+            // The main window is built here rather than from the config alone, so that pages it
+            // opens with `window.open` reach the system browser.
+            let main = app
+                .config()
+                .app
+                .windows
+                .first()
+                .cloned()
+                .ok_or("the main window is not configured")?;
+            tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+                .on_new_window(system::opener::open_new_window_externally(
+                    app.handle().clone(),
+                ))
+                .build()?;
+
             launch::queue_open_paths(app.handle(), args::startup_open_paths());
 
             use tauri_plugin_deep_link::DeepLinkExt;

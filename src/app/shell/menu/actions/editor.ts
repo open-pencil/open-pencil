@@ -86,6 +86,9 @@ export function createSharedEditorMenuActions(
       store.state.showUI = !store.state.showUI
     },
     'toggle-preview': () => store.togglePlay(),
+    'insert-icon': () => {
+      store.state.iconPickerOpen = true
+    },
     'theme-light': () => setTheme('light'),
     'theme-dark': () => setTheme('dark'),
     'theme-auto': () => setTheme('auto'),

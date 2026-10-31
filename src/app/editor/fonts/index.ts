@@ -8,6 +8,7 @@ import {
   fontManager,
   missingGraphFontScripts,
   type FontFamilyOption,
+  type HostFontFamily,
   type LocalFontAccessState,
   type WebFontProviderId,
   UnsupportedFontFormatError
@@ -66,19 +67,14 @@ function configureTauriFontCache() {
 configureTauriFontCache()
 if (!isTauri()) fontManager.setWebFontFetch(browserWebFontFetch)
 
-interface TauriFontFamily {
-  family: string
-  styles: string[]
-}
+let tauriFontsCache: HostFontFamily[] | null = null
+let tauriFontsPromise: Promise<HostFontFamily[]> | null = null
 
-let tauriFontsCache: TauriFontFamily[] | null = null
-let tauriFontsPromise: Promise<TauriFontFamily[]> | null = null
-
-async function getTauriFonts(): Promise<TauriFontFamily[]> {
+async function getTauriFonts(): Promise<HostFontFamily[]> {
   if (tauriFontsCache) return tauriFontsCache
   if (!tauriFontsPromise) {
     tauriFontsPromise = import('@tauri-apps/api/core')
-      .then(({ invoke }) => invoke<TauriFontFamily[]>('list_system_fonts'))
+      .then(({ invoke }) => invoke<HostFontFamily[]>('list_system_fonts'))
       .then((fonts) => {
         tauriFontsCache = fonts
         // The weight list and family switches read each family's faces from these.
@@ -125,7 +121,7 @@ export async function predownloadFallbackFonts() {
   return fontManager.ensureFallbackPack()
 }
 
-function registerFontFaces(fonts: TauriFontFamily[]): void {
+function registerFontFaces(fonts: HostFontFamily[]): void {
   if (typeof document === 'undefined') return
   for (const { family } of fonts) {
     const face = new FontFace(family, `local("${family}")`)
@@ -148,7 +144,7 @@ export async function listFamilies(): Promise<FontFamilyOption[]> {
   return fontManager.listFamilyOptions()
 }
 
-export async function listFonts(): Promise<TauriFontFamily[]> {
+export async function listFonts(): Promise<HostFontFamily[]> {
   configureTauriFontCache()
   if (isTauri()) {
     return getTauriFonts()

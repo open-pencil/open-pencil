@@ -26,6 +26,11 @@
   "searchRecentAndStorageFiles": "Cerca nei file recenti e archiviati…",
   "newDesign": "Nuovo design",
   "noMatchingFiles": "Nessun file corrisponde a «{query}».",
+  "documentActions": "Azioni per {name}",
+  "deleteDocument": "Elimina",
+  "deleteDocumentConfirmation": "Eliminare «{name}»?",
+  "deleteDocumentDescription": "Il documento viene eliminato per tutti coloro che possono aprirlo. L’operazione non può essere annullata.",
+  "deleteDocumentFailed": "Impossibile eliminare «{name}». Riprova.",
   "saveAsPrompt": "Salva con nome:",
   "browserFileAPINotSupported": "Il browser non supporta l’API dei file locali. I file verranno scaricati anziché salvati nella posizione corrente.",
   "newDesignIn": "Nuovo design in {place}"

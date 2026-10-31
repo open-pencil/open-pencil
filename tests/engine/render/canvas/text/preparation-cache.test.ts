@@ -10,7 +10,7 @@ import { buildParagraph, nodeFontReadiness } from '#core/canvas/text'
 import { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -247,6 +247,7 @@ describe('text preparation cache', () => {
         fontSize: 20,
         fontWeight: 700,
         italic: true,
+        fontStyle: 'Condensed Bold',
         fontFeatures: [{ tag: 'liga', enabled: false }],
         fontVariations: [{ axis: 'wght', value: 700 }],
         opticalSizeFromFontSize: false,

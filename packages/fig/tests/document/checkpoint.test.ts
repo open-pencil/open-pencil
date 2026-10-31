@@ -1,24 +1,17 @@
 import { expect, test } from 'bun:test'
 
 import { propertyBinding } from '#fig-tests/helpers/component-props'
+import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 import { guid } from '#fig-tests/helpers/guid'
 import { checkpointComponent, restoreComponentCheckpoint } from '#fig/document/component/checkpoint'
 import { interpretComponent } from '#fig/instance-overrides/interpret'
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
-import { deflateSync } from 'fflate'
 
-import { createFigDocumentSession, writeFigArchive } from '@open-pencil/fig'
-import {
-  createNodeChangesMessage,
-  encodeMessage,
-  getSchemaBytes,
-  initCodec,
-  type NodeChange
-} from '@open-pencil/kiwi/fig/codec'
+import { createFigDocumentSession } from '@open-pencil/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 test('checkpoint recovery keeps the effective fill of a swapped instance on a lazy page', async () => {
-  await initCodec()
   const paint = (r: number): NonNullable<NodeChange['fillPaints']> => [
     { type: 'SOLID', color: { r, g: 1 - r, b: 0, a: 1 }, visible: true, opacity: 1 }
   ]
@@ -61,13 +54,7 @@ test('checkpoint recovery keeps the effective fill of a swapped instance on a la
       componentPropAssignments: [{ defID: guid(90), value: { guidValue: guid(3) } }]
     }
   ]
-  const archive = writeFigArchive({
-    schemaDeflated: deflateSync(getSchemaBytes()),
-    kiwiData: encodeMessage(createNodeChangesMessage(0, 0, records)),
-    thumbnailPNG: new Uint8Array(),
-    metaJSON: '{}'
-  })
-  const bytes = new Uint8Array(archive).buffer
+  const bytes = await figArchiveOf(records)
   const initial = createFigDocumentSession(bytes)
   const recovered = createFigDocumentSession(
     bytes,

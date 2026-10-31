@@ -1,0 +1,2 @@
+- Text in a face that its weight alone cannot pick, such as Avenir Book, Roboto Condensed Bold, or Fira Code Retina, loads and draws in that face rather than the family's face of the same weight, keeps the weight Figma saved for it, and the style menu lists each face of a family by its name. On desktop, installed fonts are listed and loaded by the names their font files give each face.
+- The missing fonts banner updates as fonts finish loading after a paste or a script, instead of only after Retry fonts.

@@ -138,3 +138,6 @@ export function createNodeActions(ctx: EditorContext) {
     ...nudgeActions
   }
 }
+
+/** The editor's node writes; an edit made through them leaves the shared styles it changes. */
+export type NodeActions = ReturnType<typeof createNodeActions>

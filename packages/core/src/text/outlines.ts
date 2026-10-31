@@ -1,7 +1,8 @@
 import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
@@ -9,7 +10,7 @@ import {
   getGlyphOutlineMetricsSync,
   type OutlineCommand
 } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 export type TextOutlineUnsupportedReason =
   | 'not-text'
@@ -39,7 +40,7 @@ const COMPLEX_SCRIPT_PATTERN = /[\u0590-\u08ff\u0900-\u0dff\ufb1d-\ufdff\ufe70-\
 type TextStyle = Required<
   Pick<
     CharacterStyleOverride,
-    'fontFamily' | 'fontSize' | 'fontWeight' | 'italic' | 'letterSpacing'
+    'fontFamily' | 'fontSize' | 'fontWeight' | 'italic' | 'fontStyle' | 'letterSpacing'
   >
 >
 
@@ -49,17 +50,14 @@ function baseTextStyle(node: SceneNode): TextStyle {
     fontSize: node.fontSize,
     fontWeight: node.fontWeight,
     italic: node.italic,
+    fontStyle: node.fontStyle,
     letterSpacing: node.letterSpacing
   }
 }
 
-function styleName(style: Pick<TextStyle, 'fontWeight' | 'italic'>): string {
-  return weightToStyle(style.fontWeight, style.italic)
-}
-
 function styleKey(style: TextStyle): string {
   const spacing = textLengthPixels(style.letterSpacing, style.fontSize)
-  return `${style.fontFamily}|${styleName(style)}|${style.fontSize}|${spacing}`
+  return `${style.fontFamily}|${faceStyleKey(style)}|${style.fontSize}|${spacing}`
 }
 
 function textStyleAt(node: SceneNode, index: number): TextStyle {
@@ -71,17 +69,18 @@ function textStyleAt(node: SceneNode, index: number): TextStyle {
     fontSize: run.style.fontSize ?? base.fontSize,
     fontWeight: run.style.fontWeight ?? base.fontWeight,
     italic: run.style.italic ?? base.italic,
+    fontStyle: rangeFontStyle(node, run.style),
     letterSpacing: run.style.letterSpacing ?? base.letterSpacing
   }
 }
 
 function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
-  if (fontHasGlyphSync(style.fontFamily, styleName(style), char)) return style
+  if (fontHasGlyphSync(style.fontFamily, faceStyleKey(style), char)) return style
   const family = fallbackFamilies().find((candidate) => {
     const next = fallbackStyle(style, candidate)
     return (
-      fontManager.loadedData(next.fontFamily, styleName(next)) &&
-      fontHasGlyphSync(next.fontFamily, styleName(next), char)
+      fontManager.loadedData(next.fontFamily, faceStyleKey(next)) &&
+      fontHasGlyphSync(next.fontFamily, faceStyleKey(next), char)
     )
   })
   return family ? fallbackStyle(style, family) : null
@@ -91,8 +90,9 @@ function fallbackFamilies(): string[] {
   return [...fontManager.getCJKFallbackFamilies(), ...fontManager.getArabicFallbackFamilies()]
 }
 
+/** `style` in a script fallback family, which has none of the text family's named faces. */
 function fallbackStyle(style: TextStyle, family: string): TextStyle {
-  return { ...style, fontFamily: family }
+  return { ...style, fontFamily: family, fontStyle: null }
 }
 
 function textStyles(node: SceneNode): TextStyle[] {
@@ -110,7 +110,7 @@ export function getTextOutlineSupport(node: SceneNode): TextOutlineSupport {
   if (!node.text) return { supported: false, reason: 'empty-text' }
   if (COMPLEX_SCRIPT_PATTERN.test(node.text)) return { supported: false, reason: 'complex-script' }
   for (const style of textStyles(node)) {
-    if (!fontManager.loadedData(style.fontFamily, styleName(style))) {
+    if (!fontManager.loadedData(style.fontFamily, faceStyleKey(style))) {
       return { supported: false, reason: 'missing-font' }
     }
   }
@@ -148,7 +148,7 @@ function glyphAdvance(node: SceneNode, absoluteIndex: number): number | null {
   if (!style) return null
   const metrics = getGlyphOutlineMetricsSync(
     style.fontFamily,
-    styleName(style),
+    faceStyleKey(style),
     char,
     style.fontSize
   )
@@ -257,7 +257,7 @@ function lineGlyphs(
     const segment = line.text.slice(index, end)
     const metrics = getGlyphOutlineMetricsSync(
       style.fontFamily,
-      styleName(style),
+      faceStyleKey(style),
       segment,
       style.fontSize
     )

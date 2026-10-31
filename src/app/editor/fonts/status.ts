@@ -17,6 +17,8 @@ export function useDocumentFontStatus() {
   }
 
   useEditorEvent('font:resolution-changed', refresh)
+  // Fonts a paste or script loads reach no resolver, so their arrival refreshes the status too.
+  useEditorEvent('font:loaded', refresh)
   useEditorEvent('graph:replaced', refresh)
   useEditorEvent('page:changed', refresh)
   useEditorEvent('node:created', refresh)

@@ -7,5 +7,11 @@
   "stockPhotoToolOptional": "Optional — Zugangsdaten für das stock_photo-Werkzeug",
   "pexelsAlternativeOptional": "Optional — Alternative zu Pexels",
   "getPexelsAPIKey": "Kostenlosen Pexels-API-Schlüssel abrufen →",
-  "getUnsplashAccessKey": "Kostenlosen Unsplash-Zugriffsschlüssel abrufen →"
+  "getUnsplashAccessKey": "Kostenlosen Unsplash-Zugriffsschlüssel abrufen →",
+  "photoKeyWorks": "{service} hat diesen Schlüssel akzeptiert.",
+  "photoKeyRejected": "{service} hat diesen Schlüssel abgelehnt. Prüfe, ob du ihn vollständig kopiert hast.",
+  "unsplashKeyRejected": "Unsplash hat diesen Schlüssel abgelehnt. Füge den Access Key deiner App ein, nicht den Secret Key.",
+  "photoKeyRateLimited": "Dieser Schlüssel hat seine {service}-Anfragen für diese Stunde aufgebraucht. Versuche es später erneut.",
+  "photoKeyUnreachable": "{service} ist nicht erreichbar. Prüfe deine Netzwerkverbindung.",
+  "photoKeyCheckFailed": "{service} hat auf den Test nicht geantwortet. Versuche es später erneut."
 }
