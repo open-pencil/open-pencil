@@ -177,6 +177,20 @@ describe('document data in a room', () => {
     })
   })
 
+  test('a board reaches the other peer and a viewer, with its tools', async () => {
+    await withRoom(async ({ host, guest, settle }) => {
+      guest.setReadOnly(true)
+      host.setTool('STICKY')
+      host.setDocumentKind('board')
+      await settle()
+      expect([guest.graph.documentKind, guest.state.documentKind]).toEqual(['board', 'board'])
+      guest.setReadOnly(false)
+      guest.setTool('RECTANGLE')
+      // The board offers no rectangle, so the guest keeps Move.
+      expect(guest.state.activeTool).toBe('SELECT')
+    })
+  })
+
   test('a color space change is an edit the room has not saved', async () => {
     await withRoom(async ({ host, hostSession }) => {
       hostSession.saves.markSaved(hostSession.saves.counts())
