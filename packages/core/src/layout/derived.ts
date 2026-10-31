@@ -16,6 +16,8 @@ function hasEditedLayout(node: SceneNode): boolean {
 const savedFlows = new WeakMap<SceneGraph, Map<string, string>>()
 /** Frames whose flow, or a flow inside it, lost or gained a layer since; kept until reload. */
 const restructured = new WeakMap<SceneGraph, Set<string>>()
+/** Flow changes waiting for the layout pass that follows the edit. */
+const pendingFlowChanges = new WeakMap<SceneGraph, Set<string>>()
 /** Frames that last laid out without their saved geometry, for the frames around them. */
 const reflowed = new WeakMap<SceneGraph, Set<string>>()
 
@@ -51,6 +53,33 @@ function flowChanged(graph: SceneGraph, node: SceneNode, flow = flowOf(graph, no
  */
 export function markFlowChanged(graph: SceneGraph, parentId: string): void {
   graphState(restructured, graph, () => new Set<string>()).add(parentId)
+  graphState(pendingFlowChanges, graph, () => new Set<string>()).add(parentId)
+}
+
+/**
+ * Runs the next layout for a structurally edited flow as an edit, so its computed geometry is
+ * written to imported files. Other layout passes keep the source geometry they derive from.
+ */
+export function applyFlowChangeLayout(graph: SceneGraph, nodeId: string, layout: () => void): void {
+  const pending = graphState(pendingFlowChanges, graph, () => new Set<string>())
+  const changedFlows: string[] = []
+  let node = graph.getNode(nodeId)
+  while (node) {
+    if (pending.has(node.id)) changedFlows.push(node.id)
+    node = node.parentId ? graph.getNode(node.parentId) : undefined
+  }
+  if (changedFlows.length === 0) {
+    layout()
+    return
+  }
+
+  let completed = false
+  try {
+    graph.applyEditedLayoutDuring(layout)
+    completed = true
+  } finally {
+    if (completed) for (const id of changedFlows) pending.delete(id)
+  }
 }
 
 /**

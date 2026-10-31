@@ -43,7 +43,13 @@ import type { VariableModeFallback } from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
 /** Scopes that graph methods check while a caller's callback runs; scopes nest. */
-type GraphScope = 'preview' | 'sourceMetadata' | 'importedState' | 'layout' | 'derivedLayout'
+type GraphScope =
+  | 'preview'
+  | 'sourceMetadata'
+  | 'importedState'
+  | 'layout'
+  | 'derivedLayout'
+  | 'editedLayout'
 
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
@@ -64,7 +70,8 @@ export class SceneGraph {
     sourceMetadata: 0,
     importedState: 0,
     layout: 0,
-    derivedLayout: 0
+    derivedLayout: 0,
+    editedLayout: 0
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
@@ -474,6 +481,15 @@ export class SceneGraph {
     return this.scopeDepths.derivedLayout > 0
   }
 
+  /** Layout made necessary by an edit writes geometry back to the source file. */
+  applyEditedLayoutDuring(fn: () => void): void {
+    this.withScope('editedLayout', fn)
+  }
+
+  get isApplyingEditedLayout(): boolean {
+    return this.scopeDepths.editedLayout > 0
+  }
+
   /**
    * Runs `fn` as layout. Its updates are published once the outermost layout ends, still as
    * layout, and without values a pass changed and a later pass put back (`LayoutWrites`). Outside
@@ -574,7 +590,13 @@ export class SceneGraph {
       if (changes.componentId) this.indexInstance(changes.componentId, id)
     }
     if (node.type === 'TEXT') invalidateTextCaches(node, changes)
-    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
+    // Layout only invalidates imported geometry when the caller marks it as edit-caused;
+    // other layout passes preserve the source fields they derive from.
+    if (
+      this.scopeDepths.sourceMetadata === 0 &&
+      !this.isApplyingDerivedLayout &&
+      (!this.isApplyingLayout || this.isApplyingEditedLayout)
+    ) {
       markSourceFieldsEdited(node, Object.keys(changes))
     }
     if (changes.vectorNetwork) {

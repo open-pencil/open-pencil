@@ -9,22 +9,25 @@ import {
 } from '@open-pencil/scene-graph/mutation-impact'
 
 import { computeAllLayouts, computeLayout } from '#core/layout'
+import { applyFlowChangeLayout } from '#core/layout/derived'
 
 export function createLayoutRunner(getGraph: () => SceneGraph) {
   function runLayoutForNode(id: string) {
     const graph = getGraph()
-    const node = graph.getNode(id)
-    if (!node) return
+    applyFlowChangeLayout(graph, id, () => {
+      const node = graph.getNode(id)
+      if (!node) return
 
-    computeAllLayouts(graph, id)
+      computeAllLayouts(graph, id)
 
-    let parent = node.parentId ? graph.getNode(node.parentId) : undefined
-    while (parent) {
-      if (parent.layoutMode !== 'NONE') {
-        computeLayout(graph, parent.id)
+      let parent = node.parentId ? graph.getNode(node.parentId) : undefined
+      while (parent) {
+        if (parent.layoutMode !== 'NONE') {
+          computeLayout(graph, parent.id)
+        }
+        parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
       }
-      parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
-    }
+    })
   }
 
   function compactLayoutScope(impact: SceneMutationImpact): string[] {

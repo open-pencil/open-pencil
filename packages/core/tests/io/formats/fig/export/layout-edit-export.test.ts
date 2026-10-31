@@ -2,9 +2,14 @@ import { expect, test } from 'bun:test'
 
 import { guid } from '#core-tests/helpers/fig/guid'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { computeAllLayouts } from '@open-pencil/core/layout'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { markFlowChanged } from '#core/layout/derived'
+import { createLayoutRunner } from '#core/layout/mutations'
 
 test('retained implicit layout survives import but does not override an explicit sizing edit', async () => {
   await initCodec()
@@ -56,4 +61,61 @@ test('retained implicit layout survives import but does not override an explicit
   })
   graph.updateNode(id, { primaryAxisSizing: 'FIXED' })
   expect(await readSizing()).toBe('FIXED')
+})
+
+test('an edit-caused layout is saved to an imported FIG archive', async () => {
+  await initCodec()
+  const source = new SceneGraph()
+  const sourcePage = source.getPages()[0]
+  const parent = source.createNode('FRAME', sourcePage.id, {
+    name: 'Hug container',
+    width: 320,
+    height: 116,
+    layoutMode: 'VERTICAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'FIXED',
+    itemSpacing: 12,
+    paddingTop: 16,
+    paddingRight: 16,
+    paddingBottom: 16,
+    paddingLeft: 16
+  })
+  source.createNode('FRAME', parent.id, { name: 'First block', width: 288, height: 40 })
+  source.createNode('FRAME', parent.id, { name: 'Last block', width: 288, height: 32 })
+  computeAllLayouts(source, sourcePage.id)
+
+  const input = await exportFigFile(source)
+  const graph = await parseFigFile(input.slice().buffer as ArrayBuffer)
+  const layer = (name: string) => {
+    const found = [...graph.getAllNodes()].find((node) => node.name === name)
+    if (!found) throw new Error(`Missing ${name}`)
+    return found
+  }
+  const importedParent = layer('Hug container')
+  const inserted = graph.createNode('FRAME', importedParent.id, {
+    name: 'Inserted block',
+    width: 288,
+    height: 60
+  })
+  graph.insertChildAt(inserted.id, importedParent.id, 1)
+  // The editor's graph-event bridge marks the flow when children are inserted or reordered.
+  markFlowChanged(graph, importedParent.id)
+  createLayoutRunner(() => graph).runLayoutForNode(inserted.id)
+
+  expect(importedParent.height).toBe(188)
+  expect(layer('Last block').y).toBe(140)
+
+  const saved = await exportFigFile(graph)
+  const reopened = await parseFigFile(saved.slice().buffer as ArrayBuffer)
+  const reopenedPage = reopened.getPages()[0]
+  reopened.applyDerivedLayoutDuring(() => computeAllLayouts(reopened, reopenedPage.id))
+  const reopenedLayer = (name: string) => {
+    const found = [...reopened.getAllNodes()].find((node) => node.name === name)
+    if (!found) throw new Error(`Missing reopened ${name}`)
+    return found
+  }
+
+  expect(reopenedLayer('Hug container').height).toBe(188)
+  expect(reopenedLayer('Last block').y).toBe(140)
+  expect(reopenedLayer('Inserted block').y).toBe(68)
 })

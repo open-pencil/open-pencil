@@ -1,0 +1,1 @@
+- Saving an imported `.fig` after an auto-layout edit now preserves the computed geometry when the file is reopened.
