@@ -1,4 +1,5 @@
 import {
+  cloneVectorNetwork,
   copyDerivedGlyphs,
   copyGeometryPaths,
   copyStroke,
@@ -8,7 +9,6 @@ import {
 import { enforcedAspectRatio } from './layout/aspect-ratio'
 import type { Rect } from './primitives'
 import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
-import { cloneVectorNetwork } from './vector-network'
 
 /**
  * Drag-start state a live resize re-scales from. Path text needs more than the

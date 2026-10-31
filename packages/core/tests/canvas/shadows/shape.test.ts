@@ -1,13 +1,13 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpers/figma-rows'
+
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { isolatesInnerShadows } from '#core/canvas/shadows'
-
-import { expectDefined } from '#core-tests/helpers/assert'
-import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpers/figma-rows'
 
 const ck = await initCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -62,18 +62,16 @@ describe('fills and inner shadows take a layer of their own', () => {
       width: 100,
       height: 100,
       fills: [{ ...RED, opacity: 1 }],
-      fillGeometry: [
-        {
-          windingRule: 'NONZERO',
-          commandsBlob: new Uint8Array(),
-          fills: [{ ...RED, opacity: 1, blendMode }]
-        }
-      ],
+      vectorNetwork: {
+        vertices: [],
+        segments: [],
+        regions: [{ windingRule: 'NONZERO', loops: [], fills: [{ ...RED, opacity: 1, blendMode }] }]
+      },
       effects: [SHARP_INNER_SHADOW]
     })
   }
 
-  test('unless a path of a vector fills with a blend', () => {
+  test('unless a region of a vector fills with a blend', () => {
     expect(isolatesInnerShadows(vector('NORMAL'))).toBe(true)
     expect(isolatesInnerShadows(vector('MULTIPLY'))).toBe(false)
   })

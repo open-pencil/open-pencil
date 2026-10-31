@@ -8,6 +8,8 @@ import type {
   WindingRule
 } from '@open-pencil/scene-graph'
 
+import { convertFills, fillToKiwiPaint } from '../paint'
+
 export interface StyleOverride {
   styleID: number
   handleMirroring?: string
@@ -90,8 +92,10 @@ function readVectorNetworkBlob(
   const regions: VectorRegion[] = []
   for (let index = 0; index < regionCount; index++) {
     // The low bit is the winding rule; the rest is the region's style ID, which names its fill.
-    const windingRule: WindingRule =
-      (view.getUint32(offset, true) & 1) === 1 ? 'NONZERO' : 'EVENODD'
+    const word = view.getUint32(offset, true)
+    const windingRule: WindingRule = (word & 1) === 1 ? 'NONZERO' : 'EVENODD'
+    // An entry without paints is a region filled with nothing, not one that takes the layer's.
+    const paints = styles.get(word >>> 1)?.fillPaints
     offset += 4
     const loopCount = view.getUint32(offset, true)
     offset += 4
@@ -106,7 +110,9 @@ function readVectorNetworkBlob(
       }
       loops.push(loop)
     }
-    regions.push({ windingRule, loops })
+    const region: VectorRegion = { windingRule, loops }
+    if (paints) region.fills = convertFills(paints)
+    regions.push(region)
   }
 
   return { network: { vertices, segments, regions }, segmentStyles }
@@ -121,9 +127,14 @@ function vertexStyleKey(vertex: VectorVertex): string {
   ].join('|')
 }
 
+/**
+ * The style overrides a network's vertices and regions name: vertex entries are shared by equal
+ * styles, and each region with paints of its own gets an entry, as Figma writes them.
+ */
 export function buildStyleOverrideTable(network: VectorNetwork): {
   table: StyleOverride[]
   styleToId: Map<string, number>
+  regionStyleIds: number[]
 } {
   const styleToId = new Map<string, number>()
   const table: StyleOverride[] = []
@@ -148,7 +159,12 @@ export function buildStyleOverrideTable(network: VectorNetwork): {
     table.push(entry)
     nextId++
   }
-  return { table, styleToId }
+  const regionStyleIds = network.regions.map((region) => {
+    if (!region.fills) return 0
+    table.push({ styleID: nextId, fillPaints: region.fills.map(fillToKiwiPaint) })
+    return nextId++
+  })
+  return { table, styleToId, regionStyleIds }
 }
 
 /**

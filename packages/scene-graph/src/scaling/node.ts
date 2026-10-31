@@ -1,4 +1,4 @@
-import { scaleGeometryPaths } from '../copy'
+import { cloneVectorNetwork, scaleGeometryPaths } from '../copy'
 import { scaledTextLength } from '../text/lengths'
 import { TEXT_PARAGRAPH_SPACING_FIELDS } from '../text/paragraphs'
 import {
@@ -11,7 +11,6 @@ import {
   type StyleRun,
   type TextParagraphStyle
 } from '../types'
-import { cloneVectorNetwork } from '../vector-network'
 
 function scaledOptional(value: number | null, scale: number): number | null {
   return value == null ? null : value * scale

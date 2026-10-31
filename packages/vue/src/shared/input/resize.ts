@@ -7,7 +7,12 @@ import { resizedPathTextGlyphs, type Editor } from '@open-pencil/core'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
 import type { SceneNode, DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
-import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+import {
+  cloneVectorNetwork,
+  copyDerivedGlyphs,
+  copyGeometryPaths,
+  copyStrokes
+} from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import {
   cloneInstanceOverrideState,
@@ -21,7 +26,6 @@ import {
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
 import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
