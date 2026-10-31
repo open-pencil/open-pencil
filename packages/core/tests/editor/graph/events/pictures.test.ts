@@ -80,8 +80,10 @@ describe('graph event picture invalidation integration', () => {
     expect(renderer.invalidated).toContain(boolean.id)
 
     renderer.paths.length = 0
+    renderer.invalidated.length = 0
     graph.deleteNode(child.id)
     expect(renderer.paths).toContain(boolean.id)
+    expect(renderer.invalidated).toContain(boolean.id)
   })
 
   test('isolation changes are evaluated against live tiled chunk topology', () => {

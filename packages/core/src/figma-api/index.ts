@@ -133,6 +133,8 @@ export class FigmaAPI implements NodeProxyHost {
   setRenderer(renderer: SkiaRenderer | null): void {
     this._unbindRendererEvents?.()
     this._unbindRendererEvents = null
+    // Results kept while the API was not told of changes are not trusted again.
+    this._renderer?.nodePaths.boolean.clear()
     this._renderer = renderer
     if (!renderer) return
     const graph = this.graph
@@ -141,10 +143,15 @@ export class FigmaAPI implements NodeProxyHost {
     this._unbindRendererEvents = graph.onNodeEvents({
       created: (node) => invalidate(node.parentId),
       updated: (id) => invalidate(id),
+      previewUpdated: (id) => invalidate(id),
       deleted: (_id, parentId) => invalidate(parentId),
       reparented: (id, oldParentId) => {
         invalidate(oldParentId)
         invalidate(graph.getNode(id)?.parentId)
+      },
+      reordered: (_id, parentId, _index, previousParentId) => {
+        invalidate(parentId)
+        invalidate(previousParentId)
       }
     })
   }

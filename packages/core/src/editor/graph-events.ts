@@ -156,7 +156,8 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
     options.emitEditorEvent('node:previewUpdated', id, changes)
   }
 
-  function onNodeStructureChanged(nodeId: string, parentId?: string | null) {
+  /** Tells the renderers a layer was added, removed, or moved under `parentId`. */
+  function invalidateStructure(nodeId: string, parentId?: string | null) {
     const graph = options.getGraph()
     const parent = parentId ?? graph.getNode(nodeId)?.parentId ?? null
     invalidateBooleanAncestors(graph, options.getRenderers(), parent)
@@ -164,6 +165,10 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
       renderer.invalidateNodePicture(nodeId)
       renderer.tiledScene.invalidateStructure(nodeId, parent)
     }
+  }
+
+  function onNodeStructureChanged(nodeId: string, parentId?: string | null) {
+    invalidateStructure(nodeId, parentId)
     options.scheduleComponentSync(nodeId)
     requestRenderFor(options.getGraph())
   }
@@ -199,9 +204,11 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
       },
       reparented: (nodeId, oldParentId, newParentId) => {
         options.emitEditorEvent('node:reparented', nodeId, oldParentId, newParentId)
-        onNodeStructureChanged(nodeId, newParentId)
-        onNodeStructureChanged(nodeId, oldParentId)
-        invalidateBooleanAncestors(options.getGraph(), options.getRenderers(), oldParentId)
+        // Both parents are told; the frame is asked for once.
+        invalidateStructure(nodeId, newParentId)
+        invalidateStructure(nodeId, oldParentId)
+        options.scheduleComponentSync(nodeId)
+        requestRenderFor(options.getGraph())
         flowChanged(oldParentId)
         flowChanged(newParentId)
         if (oldParentId) options.scheduleComponentSync(oldParentId)
