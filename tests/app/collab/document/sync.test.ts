@@ -179,14 +179,15 @@ describe('document data in a room', () => {
 
   test('a board reaches the other peer and a viewer, with its tools', async () => {
     await withRoom(async ({ host, guest, settle }) => {
+      guest.setTool('RECTANGLE')
       guest.setReadOnly(true)
-      host.setTool('STICKY')
       host.setDocumentKind('board')
       await settle()
       expect([guest.graph.documentKind, guest.state.documentKind]).toEqual(['board', 'board'])
+      // The board offers no rectangle: the guest drops it for Move and cannot pick it again.
+      expect(guest.state.activeTool).toBe('SELECT')
       guest.setReadOnly(false)
       guest.setTool('RECTANGLE')
-      // The board offers no rectangle, so the guest keeps Move.
       expect(guest.state.activeTool).toBe('SELECT')
     })
   })

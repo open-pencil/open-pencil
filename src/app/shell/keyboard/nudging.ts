@@ -14,11 +14,12 @@ const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
   ArrowRight: [1, 0]
 }
 
-/** The selection's top-left corner on the canvas. */
+/** The top-left corner on the canvas of the selected layers a nudge moves: the unlocked ones. */
 function selectionOrigin(store: EditorStore): Vector {
   let x = Infinity
   let y = Infinity
   for (const id of store.state.selectedIds) {
+    if (store.graph.getNode(id)?.locked) continue
     const position = store.graph.getAbsolutePosition(id)
     x = Math.min(x, position.x)
     y = Math.min(y, position.y)

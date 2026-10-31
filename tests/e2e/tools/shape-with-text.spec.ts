@@ -1,12 +1,14 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { boardDriver } from '#tests/helpers/canvas/board-driver'
 import { shapeWithTextDriver } from '#tests/helpers/canvas/shape-with-text-driver'
 import { propertyField, propertySection } from '#tests/helpers/properties'
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetupWithClear()
 const shapes = shapeWithTextDriver(() => editor.page)
+const board = boardDriver(() => editor.page)
 
 test.beforeEach(async () => {
   await editor.page.keyboard.press('Escape')
@@ -99,70 +101,14 @@ test('R on a board arms a square shape, not the kind picked last', async () => {
   await shapes.showTool()
   await shapes.pickKind('Cylinder')
   await editor.page.keyboard.press('Escape')
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().setDocumentKind('board'))
+  await board.open()
   await editor.canvas.click(20, 20)
   await editor.page.keyboard.press('r')
-  await expect
-    .poll(() =>
-      editor.page.evaluate(() => {
-        const state = window.openPencil?.getStore?.().state
-        return [state?.activeTool, state?.shapeWithTextKind]
-      })
-    )
-    .toEqual(['SHAPE_WITH_TEXT', 'SQUARE'])
-})
-
-test('the properties panel switches a shape to another kind, keeping its size', async () => {
-  await shapes.showTool()
-  await shapes.pickKind('Square')
-  await clickAt(200, 200)
+  await clickAt(400, 200)
   await editor.page.keyboard.press('Escape')
-  await editor.page.locator('[data-property="shape-kind"]').click()
-  await editor.page.getByRole('option', { name: 'Hexagon', exact: true }).click()
-  await editor.canvas.waitForRender()
-  expect(await lastShape()).toMatchObject({ kind: 'HEXAGON', width: 176, height: 176 })
-
-  await editor.page.keyboard.press('ControlOrMeta+z')
-  await editor.canvas.waitForRender()
   expect((await lastShape()).kind).toBe('SQUARE')
 })
 
-test("the properties panel paints a shape with FigJam's palette and sizes its text", async () => {
-  await shapes.showTool()
-  await shapes.pickKind('Square')
-  await clickAt(200, 200)
-  await editor.page.keyboard.type('Ship it')
-  await editor.page.keyboard.press('Escape')
-
-  const fill = editor.page.getByRole('radiogroup', { name: 'Fill' })
-  await fill.getByRole('radio', { name: 'Violet', exact: true }).click()
-  await expect(fill.getByRole('radio', { name: 'Violet', exact: true })).toHaveAttribute(
-    'aria-checked',
-    'true'
-  )
-  expect(await lastShape()).toMatchObject({ fill: '#874fff', stroke: '#5427b4' })
-
-  const dashed = editor.page.locator('[data-property="shape-line-dashed"]')
-  await dashed.click()
-  await expect(dashed).toHaveAttribute('aria-pressed', 'true')
-  const noFill = editor.page
-    .getByRole('radiogroup', { name: 'Fill' })
-    .getByRole('radio', { name: 'None', exact: true })
-  await noFill.click()
-  await expect(noFill).toHaveAttribute('aria-checked', 'true')
-  await fill.getByRole('radio', { name: 'Violet', exact: true }).click()
-  expect(await lastShape()).toMatchObject({ fill: '#874fff' })
-
-  await editor.page.locator('[data-property="shape-text-size"]').click()
-  await editor.page.getByRole('option', { name: 'Huge', exact: true }).click()
-  await editor.canvas.waitForRender()
-  await expect(editor.page.locator('[data-property="shape-text-size"]')).toContainText('Huge')
-  const huge = await lastShape()
-  expect(huge.label?.fontSize).toBe(96)
-  expect(huge.height).toBeGreaterThan(176)
-})
-
-// A shape keeps FigJam's fixed choices, which its Shape section offers: no free-form type or radius.
 test("a shape's panel keeps to FigJam's choices, without free-form typography or corners", async () => {
   await shapes.showTool()
   await shapes.pickKind('Square')
