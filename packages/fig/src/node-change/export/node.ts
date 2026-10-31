@@ -24,7 +24,7 @@ import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 /* eslint-disable max-lines */
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
-import { snapshotInstanceGeometry } from '../instance/geometry'
+import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
 import {
   applyExportSettingsPluginData,
   applyLibrarySourcePluginData,
@@ -53,6 +53,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { generatedFrameRecord, writesGeneratedFrame } from './generated'
+import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
 import { slotDefinitionFields } from './slots'
@@ -481,6 +482,13 @@ function applyInstancePayload(
         overridableNodeFields(context, target)
       )
     )
+    const ownPath = instanceExportAddress(
+      context.graph,
+      node,
+      node,
+      instanceGuidResolver(context, localIdCounter)
+    )
+    if (ownPath) writeOwnInstanceName(context.graph, node, ownPath, symbolOverrides)
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (!Number.isFinite(node.componentScale) || node.componentScale <= 0)
       throw new Error('Invalid instance uniform scale')
