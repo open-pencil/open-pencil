@@ -12,6 +12,7 @@ import { openFileFromPath } from '@/app/shell/menu/use'
 import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 
+import { isRecentFileOpenCancellation } from './open-errors'
 import { forgetRecentDocument, recentFiles, type RecentDocument } from './store'
 import { loadRecentFileThumbnail } from './thumbnails'
 
@@ -59,16 +60,24 @@ export function matchingRecentFiles(
 /**
  * Opens a recent file. A stored one opens with the revision its storage lists, so a stale copy on
  * this device is not taken for current: `listed` is the active storage's listing when the caller
- * has it, and other places are listed here; offline, the copy opens as it is. A file that cannot
- * open is forgotten, and its error thrown.
+ * has it, and other places are listed here; offline, the copy opens as it is. A failed open is
+ * forgotten, except when closing its tab cancels the open.
  */
+type OpenRecentDocumentDependencies = {
+  openLocalFile?: typeof openFileFromPath
+  forgetRecentDocument?: typeof forgetRecentDocument
+}
+
 export async function openRecentDocument(
   document: RecentDocument,
-  listed?: readonly StorageDocument[]
+  listed?: readonly StorageDocument[],
+  dependencies: OpenRecentDocumentDependencies = {}
 ): Promise<void> {
+  const openLocalFile = dependencies.openLocalFile ?? openFileFromPath
+  const forget = dependencies.forgetRecentDocument ?? forgetRecentDocument
   try {
     if (document.kind === 'local') {
-      await openFileFromPath(document.path)
+      await openLocalFile(document.path)
       return
     }
     const location = storageLocationOf(document)
@@ -84,7 +93,7 @@ export async function openRecentDocument(
       location
     )
   } catch (error) {
-    forgetRecentDocument(document.id)
+    if (!isRecentFileOpenCancellation(error)) forget(document.id)
     throw error
   }
 }
