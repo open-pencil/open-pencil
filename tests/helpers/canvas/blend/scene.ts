@@ -54,5 +54,26 @@ export function createLinearBlendScene(graph: SceneGraph, pageId: string): void 
       fills: [],
       strokes: [{ ...paint, weight: 12, align: 'OUTSIDE', blendMode }]
     })
+    // A thin bar casting a blended shadow below it into the gap before the next row.
+    graph.createNode('RECTANGLE', pageId, {
+      name: `${blendMode} shadow`,
+      x: 80,
+      y: y + 124,
+      width: 420,
+      height: 6,
+      fills: [paint],
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { ...paint.color },
+          offset: { x: 0, y: 10 },
+          radius: 0,
+          spread: 0,
+          visible: true,
+          blendMode,
+          showShadowBehindNode: false
+        }
+      ]
+    })
   }
 }
