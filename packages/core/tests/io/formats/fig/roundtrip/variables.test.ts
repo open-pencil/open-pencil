@@ -474,6 +474,10 @@ describe('variable roundtrip', () => {
     const editor = createEditor({ graph })
 
     editor.removeMode('theme', 'b')
+    expect(graph.variableCollections.get('theme')?.modes.map((mode) => mode.modeId)).toEqual([
+      'a',
+      'c'
+    ])
     editor.undo.undo()
 
     expect(await reimportedTheme(graph)).toEqual({ defaultMode: 'A', modes: ['A', 'B', 'C'] })

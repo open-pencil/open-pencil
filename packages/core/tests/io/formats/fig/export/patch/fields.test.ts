@@ -102,7 +102,10 @@ test('a mode added to a collection of library aliases keeps the file as Figma sa
   )
   const set = expectDefined(after.get(guidToString(expectDefined(before.get(collection.id)?.guid))))
   const saved = expectDefined(before.get(collection.id)?.variableSetModes)
-  const listed = sortBy(saved, [(mode) => mode.sortPosition ?? ''])
+  const listed = sortBy(saved, [
+    (mode) => mode.sortPosition === undefined,
+    (mode) => mode.sortPosition ?? ''
+  ])
   const written = expectDefined(set.variableSetModes)
   expect(written.slice(0, -1)).toEqual(listed)
   const added = expectDefined(written.at(-1))
