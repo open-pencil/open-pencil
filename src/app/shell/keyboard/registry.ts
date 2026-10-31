@@ -15,7 +15,12 @@ import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
-import { isButtonActivation, isEditing } from '@/app/shell/keyboard/focus'
+import {
+  hasOpenDismissableLayer,
+  isButtonActivation,
+  isEditing,
+  originatedInOverlay
+} from '@/app/shell/keyboard/focus'
 import { shortcutEvent } from '@/app/shell/keyboard/layout'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
@@ -89,29 +94,6 @@ function siblingShortcut(
     },
     shouldPreventDefault: isCanvasFocus
   }
-}
-
-const EDITOR_SHORTCUT_OVERLAY_SELECTOR =
-  '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
-const PICKER_SELECTOR = '[data-picker-content]'
-const OPEN_LAYER_SELECTOR = '[data-dismissable-layer]:not([data-state="closed"])'
-
-function originatedInOverlay(event: KeyboardEvent, allowPickers = false) {
-  return event
-    .composedPath()
-    .some(
-      (target) =>
-        target instanceof Element &&
-        target.matches(EDITOR_SHORTCUT_OVERLAY_SELECTOR) &&
-        !(allowPickers && target.closest(PICKER_SELECTOR))
-    )
-}
-
-/** A popover, menu, or dialog that is open; one fading out after closing no longer counts. */
-function hasOpenDismissableLayer(allowPickers = false) {
-  return [...document.querySelectorAll(OPEN_LAYER_SELECTOR)].some(
-    (layer) => !(allowPickers && layer.closest(PICKER_SELECTOR))
-  )
 }
 
 /**

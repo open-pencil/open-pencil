@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { isEditing } from '@/app/shell/keyboard/focus'
+import { hasOpenDismissableLayer, isEditing, originatedInOverlay } from '@/app/shell/keyboard/focus'
 import { isReservedModShortcut } from '@/app/shell/keyboard/reserved'
 
 const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
@@ -19,6 +19,7 @@ export function bindNudgeKeys(store: EditorStore) {
 
     const delta = NUDGE_DELTAS[e.code]
     if (!delta || store.state.selectedIds.size === 0) return
+    if (hasOpenDismissableLayer() || originatedInOverlay(e)) return
 
     const step = e.shiftKey ? 10 : 1
     store.nudgeSelected(delta[0] * step, delta[1] * step)
