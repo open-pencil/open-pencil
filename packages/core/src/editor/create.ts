@@ -311,7 +311,7 @@ export function createEditor(options?: EditorOptions) {
   const icons = createIconActions(ctx)
   const stickies = createStickyActions(ctx, nodes)
   const shapesWithText = createShapeWithTextActions(ctx, nodes)
-  const figJamText = createFigJamTextActions(ctx, nodes)
+  const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
   const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
   const figCompression = createFigCompressionActions(ctx)

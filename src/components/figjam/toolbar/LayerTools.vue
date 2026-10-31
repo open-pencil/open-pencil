@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
-import { useFigJamToolbar } from '@open-pencil/vue/controls/figjam-toolbar'
+import { useFigJamStyle } from '@open-pencil/vue/controls/figjam-style'
 import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -18,8 +18,12 @@ import ToolbarMenu from './ToolbarMenu.vue'
  * FigJam's toolbar for text and plain layers: their colour, and for a group a way to ungroup it.
  * Text adds its text menus beside this.
  */
+const { ungroup = false } = defineProps<{
+  /** Whether a single group is selected, which the toolbar offers to ungroup. */
+  ungroup?: boolean
+}>()
 const store = useEditorStore()
-const toolbar = useFigJamToolbar()
+const toolbar = useFigJamStyle()
 const figjam = useFigJamMessages()
 const { commands } = useI18n()
 const styles = tv(theme)()
@@ -40,7 +44,7 @@ const hex = computed(() =>
       @select="toolbar.setColor($event)"
     />
   </ToolbarMenu>
-  <template v-if="toolbar.kind.value === 'group' && toolbar.layers.value.length === 1">
+  <template v-if="ungroup">
     <span :class="styles.divider()" />
     <IconButton
       size="md"

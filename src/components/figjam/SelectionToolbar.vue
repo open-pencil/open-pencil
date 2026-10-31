@@ -3,9 +3,9 @@ import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { figJamToolbarKind } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
-import { useFigJamToolbar } from '@open-pencil/vue/controls/figjam-toolbar'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import theme from '@/theme/figjam/toolbar'
@@ -38,7 +38,6 @@ const TOOLBAR_GAP = 16
 const TOOLBAR_GAP_OVER_HANDLES = 40
 
 const store = useEditorStore()
-const toolbar = useFigJamToolbar()
 const styles = tv(theme)()
 
 /** The top centre of the selection. */
@@ -56,18 +55,22 @@ const reference = useCanvasVirtualReference(
   () => view,
   anchor
 )
-const kind = computed(() => toolbar.kind.value)
+/** The selected layers, read again as the scene changes. */
+const layers = computed(() => {
+  void store.state.sceneVersion
+  return [...store.state.selectedIds].flatMap((id) => store.graph.getNode(id) ?? [])
+})
+const kind = computed(() => figJamToolbarKind(layers.value))
+const several = computed(() => layers.value.length > 1)
 const gap = computed(() =>
   kind.value === 'sticky' || kind.value === 'shape' || kind.value === 'section'
     ? TOOLBAR_GAP_OVER_HANDLES
     : TOOLBAR_GAP
 )
 /** Whether only text is selected, which takes a colour; text with sticky notes shares text menus. */
-const textOnly = computed(() => toolbar.layers.value.every((layer) => layer.type === 'TEXT'))
+const textOnly = computed(() => layers.value.every((layer) => layer.type === 'TEXT'))
 const hasTools = computed(
-  () =>
-    kind.value !== null &&
-    ((kind.value !== 'mixed' && kind.value !== 'image') || toolbar.several.value)
+  () => kind.value !== null && ((kind.value !== 'mixed' && kind.value !== 'image') || several.value)
 )
 const open = computed(
   () => !hidden && store.state.editingTextId === null && !!reference.value && hasTools.value
@@ -95,16 +98,24 @@ const open = computed(
         <StickyTools v-if="kind === 'sticky'" />
         <ShapeTools v-else-if="kind === 'shape'" />
         <ConnectorTools v-else-if="kind === 'connector'" />
-        <SectionTools v-else-if="kind === 'section'" @rename="emit('renameSection')" />
+        <SectionTools
+          v-else-if="kind === 'section'"
+          :single="!several"
+          :locked="layers.every((layer) => layer.locked)"
+          @rename="emit('renameSection')"
+        />
         <template v-else-if="kind === 'text'">
           <template v-if="textOnly">
             <LayerTools />
             <span :class="styles.divider()" />
           </template>
-          <TextTools :align="!toolbar.several.value" />
+          <TextTools :align="!several" />
         </template>
-        <LayerTools v-else-if="kind === 'layer' || kind === 'group'" />
-        <template v-if="toolbar.several.value">
+        <LayerTools
+          v-else-if="kind === 'layer' || kind === 'group'"
+          :ungroup="kind === 'group' && !several"
+        />
+        <template v-if="several">
           <span v-if="kind !== 'mixed' && kind !== 'image'" :class="styles.divider()" />
           <ArrangeTools />
         </template>

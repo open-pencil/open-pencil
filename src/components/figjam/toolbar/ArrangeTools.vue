@@ -7,9 +7,9 @@ import IconAlignEndVertical from '~icons/lucide/align-end-vertical'
 import IconAlignStartHorizontal from '~icons/lucide/align-start-horizontal'
 import IconAlignStartVertical from '~icons/lucide/align-start-vertical'
 
-import { useFigJamToolbar } from '@open-pencil/vue/controls/figjam-toolbar'
+import { usePosition } from '@open-pencil/vue/controls/position'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { toolIcons } from '@/components/icons'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -18,9 +18,8 @@ import ToolbarMenu from './ToolbarMenu.vue'
 import ToolbarOptions, { type ToolbarOption } from './ToolbarOptions.vue'
 
 /** What FigJam's toolbar offers any several layers: aligning them, and wrapping them in a section. */
-const toolbar = useFigJamToolbar()
+const position = usePosition()
 const { getCommand, runCommand } = useEditorCommands()
-const figjam = useFigJamMessages()
 const { panels } = useI18n()
 
 type Alignment =
@@ -62,7 +61,7 @@ function align(value: Alignment) {
     return
   }
   const [axis, to] = ALIGNMENTS[value]
-  toolbar.align(axis, to)
+  position.align(axis, to)
 }
 </script>
 
@@ -75,9 +74,9 @@ function align(value: Alignment) {
   </ToolbarMenu>
   <IconButton
     size="md"
-    :label="figjam.wrapInSection"
+    :label="getCommand('selection.wrapInSection').label"
     data-property="toolbar-wrap-section"
-    @click="toolbar.wrapInSection()"
+    @click="runCommand('selection.wrapInSection')"
   >
     <component :is="toolIcons.SECTION" class="size-4" />
   </IconButton>

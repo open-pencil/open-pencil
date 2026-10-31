@@ -41,4 +41,16 @@ describe('FigJam typefaces and sizes', () => {
     editor.setFigJamTextSize([id], 'large')
     expect(editor.graph.getNode(id)).toMatchObject({ fontFamily: 'Merriweather', fontSize: 40 })
   })
+
+  test('a FigJam size sets text and sticky notes together, in one undo step', () => {
+    const { editor, pageId } = setup()
+    const text = editor.createShape('TEXT', 0, 0, 100, 20, pageId)
+    const sticky = createSticky(editor.graph, pageId, {})
+    editor.setFigJamTextSize([text, sticky.id], 'huge')
+    const body = expectDefined(stickySublayers(editor.graph, sticky)).body
+    expect([editor.graph.getNode(text)?.fontSize, editor.graph.getNode(body.id)?.fontSize]).toEqual([96, 96])
+    editor.undo.undo()
+    expect(editor.graph.getNode(text)?.fontSize).not.toBe(96)
+    expect(editor.graph.getNode(body.id)?.fontSize).not.toBe(96)
+  })
 })

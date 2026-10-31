@@ -40,7 +40,6 @@ export const figJamMessageDefaults = {
   solid: 'Solid',
   thin: 'Thin',
   renameSection: 'Rename section',
-  wrapInSection: 'Wrap in new section',
   addText: 'Add text'
 } as const
 

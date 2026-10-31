@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
-import { useFigJamToolbar } from '@open-pencil/vue/controls/figjam-toolbar'
+import { useFigJamStyle } from '@open-pencil/vue/controls/figjam-style'
 import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -16,9 +16,15 @@ import LineStyleMenu from './LineStyleMenu.vue'
 import ToolbarMenu from './ToolbarMenu.vue'
 
 /** FigJam's section toolbar: its colour, its outline, renaming it, and locking it. */
+const { single, locked } = defineProps<{
+  /** Whether one section is selected, which can be renamed. */
+  single: boolean
+  /** Whether every selected section is locked. */
+  locked: boolean
+}>()
 const emit = defineEmits<{ rename: [] }>()
 const store = useEditorStore()
-const toolbar = useFigJamToolbar()
+const toolbar = useFigJamStyle()
 const figjam = useFigJamMessages()
 const { menu } = useI18n()
 const styles = tv(theme)()
@@ -26,7 +32,6 @@ const styles = tv(theme)()
 const hex = computed(() =>
   toolbar.color.value ? colorToHex(figJamColor(toolbar.color.value)) : undefined
 )
-const locked = computed(() => toolbar.layers.value.every((layer) => layer.locked))
 </script>
 
 <template>
@@ -48,7 +53,7 @@ const locked = computed(() => toolbar.layers.value.every((layer) => layer.locked
   />
   <span :class="styles.divider()" />
   <IconButton
-    v-if="toolbar.layers.value.length === 1"
+    v-if="single"
     size="md"
     :label="figjam.renameSection"
     data-property="toolbar-rename"

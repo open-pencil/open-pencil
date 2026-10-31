@@ -7,7 +7,7 @@ import IconAlignRight from '~icons/lucide/align-right'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { FigJamTextSize, FigJamTypeface } from '@open-pencil/scene-graph/figjam'
-import { useFigJamToolbar } from '@open-pencil/vue/controls/figjam-toolbar'
+import { useFigJamStyle } from '@open-pencil/vue/controls/figjam-style'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import { useTypography } from '@open-pencil/vue/controls/typography'
 import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
@@ -26,7 +26,7 @@ import ToolbarOptions, { type ToolbarOption } from './ToolbarOptions.vue'
  */
 const { align = false } = defineProps<{ align?: boolean }>()
 
-const toolbar = useFigJamToolbar()
+const toolbar = useFigJamStyle()
 const typography = useTypography({ fontLoader: { load: loadFont } })
 const figjam = useFigJamMessages()
 const { menu, panels } = useI18n()

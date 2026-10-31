@@ -14,11 +14,21 @@ import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
 
+/** How sticky notes and shapes take a FigJam size: each fits itself to its text as it does. */
+interface GeneratedTextSizes {
+  setStickyTextSize: (ids: Iterable<string>, size: FigJamTextSize) => void
+  setShapesWithTextTextSize: (ids: Iterable<string>, size: FigJamTextSize) => void
+}
+
 /**
  * FigJam's typefaces and text sizes for text layers and for the text generated frames are named
- * by, such as a sticky note's body or a shape's label.
+ * by, such as a sticky note's body or a shape's label, in any mix of them.
  */
-export function createFigJamTextActions(ctx: EditorContext, nodes: NodeActions) {
+export function createFigJamTextActions(
+  ctx: EditorContext,
+  nodes: NodeActions,
+  generated: GeneratedTextSizes
+) {
   /** The layers among `ids` FigJam's text menus change, with the text each one sets. */
   function textsAmong(ids: Iterable<string>) {
     return [...ids].flatMap((id) => {
@@ -56,14 +66,23 @@ export function createFigJamTextActions(ctx: EditorContext, nodes: NodeActions) 
   }
 
   /**
-   * Sets the text layers among `ids` to one of FigJam's sizes, in their typeface. Sticky notes and
-   * shapes size their text with their own commands, which also fit the layer to it.
+   * Sets the text of the layers among `ids` to one of FigJam's sizes, in its typeface, in one undo
+   * step: text layers directly, and sticky notes and shapes as their own commands size them.
    */
   function setFigJamTextSize(ids: Iterable<string>, size: FigJamTextSize) {
-    const texts = textsAmong(ids).filter(({ layer }) => layer.type === 'TEXT')
-    edit('Change text size', texts, (text) =>
-      nodes.updateNode(text.id, figJamTextSizeFields(size, figJamTypeface(text) ?? 'simple'))
-    )
+    const targets = textsAmong(ids)
+    const idsOf = (type: SceneNode['type']) =>
+      targets.filter(({ layer }) => layer.type === type).map(({ layer }) => layer.id)
+    ctx.undo.runBatch('Change text size', () => {
+      edit(
+        'Change text size',
+        targets.filter(({ layer }) => layer.type === 'TEXT'),
+        (text) =>
+          nodes.updateNode(text.id, figJamTextSizeFields(size, figJamTypeface(text) ?? 'simple'))
+      )
+      generated.setStickyTextSize(idsOf('STICKY'), size)
+      generated.setShapesWithTextTextSize(idsOf('SHAPE_WITH_TEXT'), size)
+    })
   }
 
   return { setFigJamTypeface, setFigJamTextSize }

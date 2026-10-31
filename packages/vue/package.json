@@ -94,10 +94,10 @@
       "import": "./dist/controls/effects/index.js",
       "default": "./dist/controls/effects/index.js"
     },
-    "./controls/figjam-toolbar": {
-      "types": "./dist/controls/figjam-toolbar/index.d.ts",
-      "import": "./dist/controls/figjam-toolbar/index.js",
-      "default": "./dist/controls/figjam-toolbar/index.js"
+    "./controls/figjam-style": {
+      "types": "./dist/controls/figjam-style/index.d.ts",
+      "import": "./dist/controls/figjam-style/index.js",
+      "default": "./dist/controls/figjam-style/index.js"
     },
     "./controls/fill": {
       "types": "./dist/controls/fill/index.d.ts",
