@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { hasInstanceOverride, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 
@@ -145,5 +147,52 @@ describe('SceneGraph.cloneTree', () => {
     // Original must be unaffected
     expect(original.source.fig.rawNodeFields).toEqual({ visible: true, opacity: 1 })
     expect(original.source.fig.rawSize).toEqual({ x: 100, y: 50 })
+  })
+
+  test('a copy of an instance keeps its overrides, on the layers copied with it', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { name: 'Button' })
+    graph.createNode('TEXT', component.id, { name: 'Label', text: 'Button' })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    const label = expectDefined(graph.getChildren(instance.id)[0], 'label')
+    graph.updateNode(label.id, { text: 'Continuar' })
+    recordInstanceOverride(graph, label.id, ['text'])
+
+    const copy = expectDefined(graph.cloneTree(instance.id, page.id), 'copy')
+    const copiedLabel = expectDefined(graph.getChildren(copy.id)[0], 'copied label')
+
+    expect(copiedLabel.text).toBe('Continuar')
+    expect(hasInstanceOverride(graph, copiedLabel.id, 'text')).toBe(true)
+    expect(getNodeOrThrow(graph, copy.id).instanceOverrides.descendants.has(label.id)).toBe(false)
+  })
+
+  test('a copy of a frame with a component and its instance keeps the instance on the original', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const board = graph.createNode('FRAME', page.id, { name: 'Board' })
+    const icon = graph.createNode('COMPONENT', board.id, { name: 'Icon' })
+    graph.createNode('ELLIPSE', icon.id, { name: 'Dot' })
+    const button = graph.createNode('COMPONENT', board.id, { name: 'Button' })
+    const glyph = expectDefined(graph.createInstance(icon.id, button.id, { name: 'Glyph' }), 'glyph')
+    const placed = expectDefined(
+      graph.createInstance(button.id, board.id, { name: 'Placed' }),
+      'placed button'
+    )
+    const placedGlyph = expectDefined(graph.getChildren(placed.id)[0], 'placed glyph')
+    // A file records the component layer each copy draws; this one was renamed, too.
+    setInstanceOverride(placed.instanceOverrides, placed.id, placedGlyph.id, 'sourceComponentId', glyph.id)
+    graph.updateNode(placedGlyph.id, { name: 'Renamed' })
+
+    const copy = expectDefined(graph.cloneTree(board.id, page.id), 'copy')
+    const copiedPlaced = expectDefined(
+      graph.getChildren(copy.id).find((node) => node.name === 'Placed'),
+      'copied button'
+    )
+    const copiedGlyph = expectDefined(graph.getChildren(copiedPlaced.id)[0], 'copied glyph')
+    graph.syncInstances(button.id)
+
+    expect(copiedPlaced.componentId).toBe(button.id)
+    expect(graph.getChildren(copiedPlaced.id).map((node) => node.id)).toEqual([copiedGlyph.id])
   })
 })

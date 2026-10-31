@@ -729,6 +729,33 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
+    const copies = new Map<string, string>()
+    const clone = this.cloneSubtree(sourceId, parentId, overrides, copies)
+    if (!clone) return null
+    // An instance's overrides name its own layers, so a copy's name the layers copied with it. What
+    // they point at stays: a copied instance draws the original component, never a copy of it.
+    for (const id of copies.values()) {
+      const node = this.nodes.get(id)
+      if (!node || node.instanceOverrides.descendants.size === 0) continue
+      const { self, descendants } = node.instanceOverrides
+      this.updateNode(id, {
+        instanceOverrides: {
+          self,
+          descendants: new Map(
+            [...descendants].map(([layerId, fields]) => [copies.get(layerId) ?? layerId, fields])
+          )
+        }
+      })
+    }
+    return clone
+  }
+
+  private cloneSubtree(
+    sourceId: string,
+    parentId: string,
+    overrides: Partial<SceneNode>,
+    copies: Map<string, string>
+  ): SceneNode | null {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
@@ -739,9 +766,10 @@ export class SceneGraph {
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
     if (src.status) markSourceFieldsEdited(clone, ['status'])
+    copies.set(sourceId, clone.id)
 
     for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
+      this.cloneSubtree(childId, clone.id, {}, copies)
     }
 
     return clone

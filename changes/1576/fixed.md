@@ -1,0 +1,1 @@
+- A copy of an instance keeps its overrides when the document is saved and reopened, instead of coming back with its component's defaults.
