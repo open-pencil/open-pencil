@@ -14,6 +14,7 @@ describe('no-inline-tauri-imports', () => {
         {
           'src/app/document/save.ts': source,
           'src/app/shell/support/gate.ts': source,
+          'src/app/shell/support/render.ts': source,
           'src/app/shell/support/detect.ts': source,
           'src/app/document/template.ts':
             'export const load = () => import(`@tauri-apps/api/core`)',
