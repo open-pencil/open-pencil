@@ -57,6 +57,7 @@ An image a call returns, such as `export_image`'s, reaches the model as a file, 
 - JPEG is never chosen for the model: our export paints transparent pixels black.
 - Core's adapter encodes the image as each request is built (`encodeModelImage` in `tools/ai-adapter.ts`), once per tool call, and the result keeps the tool's PNG, so a conversation continued on a PNG-only connection still sends PNG.
 - The app loads CanvasKit's full build, which encodes WebP and JPEG, because a WebView cannot be relied on: WKWebView answers a canvas asked for WebP with PNG.
+- Chat Completions takes only text in a tool message, and the AI SDK sends a tool's image there as its Base64 text. On the connections that use it (MiniMax, Cloud, and an OpenAI-compatible endpoint set to Chat Completions), `providers/tool-images.ts` moves each image into a user message after the step's tool results, as opencode does. The same history always gives the same messages, so cached prefixes still match.
 
 ## A reply ends
 
