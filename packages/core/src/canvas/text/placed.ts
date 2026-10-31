@@ -13,6 +13,7 @@ import { laidOutText } from '#core/canvas/text/keycap'
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
+import { shownCharacters } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import {
   glyphOutlineSourceSync,
@@ -234,7 +235,8 @@ function runOutline(
   node: SceneNode,
   shaped: string,
   run: GlyphRun,
-  characterAt: (offset: number) => number
+  characterAt: (offset: number) => number,
+  sourceAt: (index: number) => number
 ): RunOutline | null {
   if (run.glyphs.length === 0) return null
   const offsets = Array.from(run.offsets, characterAt)
@@ -246,7 +248,7 @@ function runOutline(
   const nextBoundary = new Map(
     boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
   )
-  const font = fontAt(node, start)
+  const font = fontAt(node, sourceAt(start))
   const shape: RunShape = {
     text: shaped,
     runText: shaped.slice(start, end),
@@ -279,18 +281,66 @@ function runOutline(
 function ellipsisSource(
   node: SceneNode,
   run: GlyphRun,
-  characterAt: (offset: number) => number
+  characterAt: (offset: number) => number,
+  sourceAt: (index: number) => number
 ): GlyphOutlineSource | null {
   if (run.glyphs.length !== 1) return null
-  for (const source of candidateSources(fontAt(node, characterAt(run.offsets[0])))) {
+  for (const source of candidateSources(fontAt(node, sourceAt(characterAt(run.offsets[0]))))) {
     if (source.glyphOf(ELLIPSIS) === run.glyphs[0]) return source
   }
   return null
 }
 
 /**
- * The glyphs HarfBuzz shaped for a run, when they are not as many as CanvasKit's: placed one
- * after another from where the run starts.
+ * The outline of a run of a line, and whether the run is the ellipsis that ends truncated text.
+ * An ellipsis no font confirms keeps its glyph, unoutlined: shaping it again would save the
+ * characters its offsets point at instead.
+ */
+function lineRunOutline(
+  node: SceneNode,
+  shaped: string,
+  run: GlyphRun,
+  endsTruncated: boolean,
+  indices: { characterAt: (offset: number) => number; sourceAt: (index: number) => number }
+): { outline: RunOutline | null; ellipsis: boolean } {
+  const { characterAt, sourceAt } = indices
+  const ellipsis = endsTruncated ? ellipsisSource(node, run, characterAt, sourceAt) : null
+  if (ellipsis) return { outline: { source: ellipsis }, ellipsis: true }
+  if (endsTruncated && run.glyphs.length === 1) return { outline: null, ellipsis: false }
+  return { outline: runOutline(node, shaped, run, characterAt, sourceAt), ellipsis: false }
+}
+
+/**
+ * The character of the node's own text each character of the shown `text` comes from, which
+ * its style run is found by: a case can show one character as several, as `ß` upper-cases to
+ * `SS`.
+ */
+function sourceIndices(node: SceneNode, text: string): (index: number) => number {
+  if (text === node.text) return (index) => index
+  const indices: number[] = []
+  for (const { character, sourceIndex } of shownCharacters(node)) {
+    indices.push(...Array.from({ length: character.length }, () => sourceIndex))
+  }
+  return (index) => indices.at(index) ?? index
+}
+
+/** Whether HarfBuzz shaped the run to glyphs of the same characters as CanvasKit's. */
+function sameClusters(
+  run: GlyphRun,
+  outline: Extract<RunOutline, { glyphs: ShapedGlyph[] }>,
+  characterAt: (offset: number) => number
+): boolean {
+  return (
+    outline.glyphs.length === run.glyphs.length &&
+    outline.glyphs.every(
+      (glyph, index) => outline.start + glyph.cluster === characterAt(run.offsets[index])
+    )
+  )
+}
+
+/**
+ * The glyphs HarfBuzz shaped for a run, when they are not as many as CanvasKit's or stand for
+ * other characters: placed one after another from where the run starts.
  */
 function reshapedGlyphs(
   run: GlyphRun,
@@ -303,8 +353,8 @@ function reshapedGlyphs(
     const advance = glyph.advance * run.size + outline.letterSpacing
     const placed: LaidOutGlyph = {
       id: glyph.id,
-      x,
-      y,
+      x: x + glyph.xOffset * run.size,
+      y: y - glyph.yOffset * run.size,
       fontSize: run.size,
       firstCharacter: outline.start + glyph.cluster,
       advance,
@@ -360,6 +410,7 @@ export function laidOutGlyphs(
   const characterAt = utf16IndicesByUtf8(text)
   // The runs drew the text as laid out, a keycap mark as a zero-width space.
   const shaped = laidOutText(text)
+  const sourceAt = sourceIndices(node, text)
   const markers = new Map(layout.getMarkers().map((marker) => [marker.lineNumber, marker]))
   const glyphs: LaidOutGlyph[] = []
   for (const [lineIndex, line] of lines.entries()) {
@@ -368,16 +419,15 @@ export function laidOutGlyphs(
     const { left, baseline } = metrics[lineIndex]
     const lastLine = lineIndex === lines.length - 1
     for (const [runIndex, run] of line.runs.entries()) {
-      const ellipsis =
+      const endsTruncated =
         lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
-          ? ellipsisSource(node, run, characterAt)
-          : null
-      const outline: RunOutline | null = ellipsis
-        ? { source: ellipsis }
-        : runOutline(node, shaped, run, characterAt)
+      const { outline, ellipsis } = lineRunOutline(node, shaped, run, endsTruncated, {
+        characterAt,
+        sourceAt
+      })
       // Run positions round the baseline to whole pixels; line metrics keep it exact.
       const y = baseline + offsetY
-      if (outline?.glyphs && outline.glyphs.length !== run.glyphs.length) {
+      if (outline?.glyphs && !sameClusters(run, outline, characterAt)) {
         glyphs.push(...reshapedGlyphs(run, outline, left, y))
         continue
       }

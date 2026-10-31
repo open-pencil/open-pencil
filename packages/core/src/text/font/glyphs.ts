@@ -254,6 +254,9 @@ export interface ShapedGlyph {
   id: number
   cluster: number
   advance: number
+  /** How far HarfBuzz moved it from the pen, in em, such as a mark onto its base; y runs up. */
+  xOffset: number
+  yOffset: number
 }
 
 export interface GlyphOutlineSource {
@@ -285,7 +288,9 @@ export function glyphOutlineSourceSync(
       shapeText(parsed, text, { instance, features }).map((glyph) => ({
         id: glyph.codepoint,
         cluster: glyph.cluster,
-        advance: (glyph.xAdvance ?? 0) / parsed.face.upem
+        advance: (glyph.xAdvance ?? 0) / parsed.face.upem,
+        xOffset: (glyph.xOffset ?? 0) / parsed.face.upem,
+        yOffset: (glyph.yOffset ?? 0) / parsed.face.upem
       })),
     outline: (glyphId, fontSize) =>
       glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null

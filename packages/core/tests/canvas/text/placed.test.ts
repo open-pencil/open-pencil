@@ -97,6 +97,7 @@ describe('the font saved glyphs are outlined from', () => {
         source.shape(text, []).map((glyph) => glyph.id)
       )
       expect(glyphs.some((glyph, index) => glyph.id !== source.glyphOf(text[index]))).toBe(true)
+      expect(glyphs.every((glyph) => glyph.source !== null)).toBe(true)
       expect(glyphs.every((glyph) => glyph.source === glyphs[0].source)).toBe(true)
     }
   })
@@ -114,5 +115,18 @@ describe('the font saved glyphs are outlined from', () => {
     for (const [index, glyph] of glyphs.slice(1).entries()) {
       expect(glyph.x).toBeCloseTo(glyphs[index].x + glyphs[index].advance, 3)
     }
+  })
+
+  test('shapes the run itself with the features the text sets', () => {
+    const source = variableSource()
+    // With contextual alternates off in the text too, the arrow stays its three characters.
+    const glyphs = placed('t->b', staticProvider, [{ name: 'calt', value: 0 }], {
+      fontFeatures: [{ tag: 'CALT', enabled: false }]
+    })
+
+    expect(glyphs.map((glyph) => glyph.id)).toEqual(
+      Array.from('t->b', (character) => source.glyphOf(character))
+    )
+    expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 2, 3])
   })
 })
