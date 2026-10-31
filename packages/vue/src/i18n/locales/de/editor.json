@@ -11,6 +11,8 @@
   "stickyPlaceholder": "Beliebigen Text eingeben, jemanden mit @ erwähnen",
   "connectorLabelPlaceholder": "Text hinzufügen",
   "showUI": "UI anzeigen ({shortcut})",
+  "openChat": "KI-Chat öffnen",
+  "closeChat": "KI-Chat schließen",
   "previewing": "Vorschau",
   "resetPreview": "Zurücksetzen",
   "leavePreview": "Vorschau verlassen ({shortcut})",

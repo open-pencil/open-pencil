@@ -27,7 +27,8 @@ describe('canvas view profiles', () => {
       dotGrid: null,
       pixelGrid: true,
       framesOpen: true,
-      lint: true
+      lint: true,
+      panelsOpen: true
     })
   })
 
@@ -48,7 +49,8 @@ describe('canvas view profiles', () => {
       dotGrid: null,
       pixelGrid: true,
       framesOpen: true,
-      lint: true
+      lint: true,
+      panelsOpen: true
     })
   })
 
@@ -114,7 +116,7 @@ describe('host restrictions', () => {
 })
 
 describe('document kinds', () => {
-  test('a board offers FigJam\'s tools and keys and snaps to its 16-unit grid', () => {
+  test("a board offers FigJam's tools and keys and snaps to its 16-unit grid", () => {
     const editor = createEditor()
     editor.setDocumentKind('board')
     const profile = resolveEditorProfile(editor.state)
@@ -130,8 +132,10 @@ describe('document kinds', () => {
     ])
     expect([profile.toolKeys, profile.snapGrid]).toEqual([BOARD_TOOL_SHORTCUTS, 16])
     // FigJam draws its dots every 16 units and has no pixel grid.
-    expect([profile.dotGrid, profile.pixelGrid, profile.framesOpen, profile.lint]).toEqual([
+    const { dotGrid, pixelGrid, framesOpen, lint, panelsOpen } = profile
+    expect([dotGrid, pixelGrid, framesOpen, lint, panelsOpen]).toEqual([
       16,
+      false,
       false,
       false,
       false
