@@ -104,6 +104,20 @@ describe('linear blend modes, as Figma draws them', () => {
     }
   })
 
+  test('a half transparent fill over a half transparent backdrop covers three quarters', () => {
+    const halfBackdrop: Scene = (graph, pageId) => {
+      graph.createNode('RECTANGLE', pageId, {
+        width: SIZE,
+        height: SIZE,
+        fills: [{ ...solid(BACKDROP), opacity: 0.5 }]
+      })
+    }
+    for (const blendMode of ['LINEAR_DODGE', 'LINEAR_BURN'] as const) {
+      const half = { ...solid(SOURCE, blendMode), opacity: 0.5 }
+      expect(Math.abs(renderCenter(overlay([half]), halfBackdrop)[3] - 191)).toBeLessThan(2)
+    }
+  })
+
   test('a drop shadow blends the same way as a fill', () => {
     const castsOntoCenter: Scene = (graph, pageId) => {
       graph.createNode('RECTANGLE', pageId, {
