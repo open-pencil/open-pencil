@@ -226,19 +226,23 @@ export function fontHasGlyphSync(family: string, style: string, char: string): b
   return fontGlyphCoverageSync(family, style, char) === 'has'
 }
 
-/** Each glyph HarfBuzz shapes `text` into, with its outline, pen position, and advance. */
+/**
+ * Each glyph HarfBuzz shapes `text` into, with its outline, pen position, and advance. A variable
+ * font shapes and draws the instance at `variations`.
+ */
 export function getGlyphOutlineMetricsSync(
   family: string,
   style: string,
   text: string,
-  fontSize: number
+  fontSize: number,
+  variations: readonly FontVariation[] = []
 ): GlyphOutlineMetrics[] | null {
   const parsed = getParsedFont(family, style)
   if (!parsed) return null
   const scale = fontSize / parsed.face.upem
-  const instance = fontInstance(parsed, [])
+  const instance = fontInstance(parsed, variations)
   let pen = 0
-  return shapeText(parsed, text).map((glyph) => {
+  return shapeText(parsed, text, { instance }).map((glyph) => {
     // Shaping moves some glyphs off the pen, such as marks onto their base letter.
     const offsetX = (glyph.xOffset ?? 0) * scale
     // y runs down; subtracting keeps an unmoved glyph's baseline 0 rather than -0.

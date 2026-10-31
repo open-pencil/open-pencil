@@ -1,10 +1,9 @@
-import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
-
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, FontVariation, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
+import { drawnFontVariations } from '#core/canvas/text/font-families'
 import {
   fontHasGlyphSync,
   getGlyphOutlineMetricsSync,
@@ -42,36 +41,66 @@ type TextStyle = Required<
     CharacterStyleOverride,
     'fontFamily' | 'fontSize' | 'fontWeight' | 'italic' | 'fontStyle' | 'letterSpacing'
   >
->
+> & {
+  /** The axes a variable font draws the text at; a script fallback draws at the text font's. */
+  variations: FontVariation[]
+}
+
+function withVariations(
+  style: Omit<TextStyle, 'variations'>,
+  variations: FontVariation[],
+  opticalSizeFromFontSize: boolean
+): TextStyle {
+  return {
+    ...style,
+    variations: drawnFontVariations({
+      family: style.fontFamily,
+      weight: style.fontWeight,
+      italic: style.italic,
+      style: faceStyleKey(style),
+      fontSize: style.fontSize,
+      variations,
+      opticalSizeFromFontSize
+    })
+  }
+}
 
 function baseTextStyle(node: SceneNode): TextStyle {
-  return {
-    fontFamily: node.fontFamily,
-    fontSize: node.fontSize,
-    fontWeight: node.fontWeight,
-    italic: node.italic,
-    fontStyle: node.fontStyle,
-    letterSpacing: node.letterSpacing
-  }
+  return withVariations(
+    {
+      fontFamily: node.fontFamily,
+      fontSize: node.fontSize,
+      fontWeight: node.fontWeight,
+      italic: node.italic,
+      fontStyle: node.fontStyle,
+      letterSpacing: node.letterSpacing
+    },
+    node.fontVariations,
+    node.opticalSizeFromFontSize
+  )
 }
 
 function styleKey(style: TextStyle): string {
   const spacing = textLengthPixels(style.letterSpacing, style.fontSize)
-  return `${style.fontFamily}|${faceStyleKey(style)}|${style.fontSize}|${spacing}`
+  const axes = style.variations.map(({ axis, value }) => `${axis}=${value}`).join(',')
+  return `${style.fontFamily}|${faceStyleKey(style)}|${style.fontSize}|${spacing}|${axes}`
 }
 
 function textStyleAt(node: SceneNode, index: number): TextStyle {
-  const base = baseTextStyle(node)
   const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-  if (!run) return base
-  return {
-    fontFamily: run.style.fontFamily ?? base.fontFamily,
-    fontSize: run.style.fontSize ?? base.fontSize,
-    fontWeight: run.style.fontWeight ?? base.fontWeight,
-    italic: run.style.italic ?? base.italic,
-    fontStyle: rangeFontStyle(node, run.style),
-    letterSpacing: run.style.letterSpacing ?? base.letterSpacing
-  }
+  if (!run) return baseTextStyle(node)
+  return withVariations(
+    {
+      fontFamily: run.style.fontFamily ?? node.fontFamily,
+      fontSize: run.style.fontSize ?? node.fontSize,
+      fontWeight: run.style.fontWeight ?? node.fontWeight,
+      italic: run.style.italic ?? node.italic,
+      fontStyle: rangeFontStyle(node, run.style),
+      letterSpacing: run.style.letterSpacing ?? node.letterSpacing
+    },
+    run.style.fontVariations ?? node.fontVariations,
+    run.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
+  )
 }
 
 function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
@@ -150,13 +179,14 @@ function glyphAdvance(node: SceneNode, absoluteIndex: number): number | null {
     style.fontFamily,
     faceStyleKey(style),
     char,
-    style.fontSize
+    style.fontSize,
+    style.variations
   )
   const glyph = metrics?.[0]
   return glyph ? glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize) : null
 }
 
-function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
+function wrapLine(node: SceneNode, line: TextLine): TextLine[] {
   if (!line.text || node.width <= 0) return [line]
   const result: TextLine[] = []
   let lineStart = 0
@@ -187,27 +217,7 @@ function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
 function textLines(node: SceneNode): TextLine[] {
   const hardLines = hardTextLines(node.text)
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return hardLines
-  if (node.styleRuns.length > 0) return hardLines.flatMap((line) => wrapStyledLine(node, line))
-
-  const result: TextLine[] = []
-  for (const hardLine of hardLines) {
-    if (!hardLine.text) {
-      result.push(hardLine)
-      continue
-    }
-    try {
-      const prepared = prepareWithSegments(hardLine.text, `${node.fontSize}px ${node.fontFamily}`)
-      const layout = layoutWithLines(prepared, node.width, lineHeight(node))
-      let start = hardLine.start
-      for (const line of layout.lines) {
-        result.push({ text: line.text, start })
-        start += line.text.length
-      }
-    } catch {
-      result.push(hardLine)
-    }
-  }
-  return result
+  return hardLines.flatMap((line) => wrapLine(node, line))
 }
 
 function lineOffsetX(node: SceneNode, width: number): number {
@@ -259,7 +269,8 @@ function lineGlyphs(
       style.fontFamily,
       faceStyleKey(style),
       segment,
-      style.fontSize
+      style.fontSize,
+      style.variations
     )
     if (!metrics) return null
 
