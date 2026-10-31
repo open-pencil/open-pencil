@@ -49,6 +49,7 @@ test.each(['first-page', 'none'] as const)(
         },
         [channel.port2]
       )
+      expect((await next('started')).type).toBe('started')
       expect((await next('page-manifest')).type).toBe('page-manifest')
       const opened = await next('graph')
       if (opened.type !== 'graph' || !opened.graph) throw new Error('Missing worker graph')
