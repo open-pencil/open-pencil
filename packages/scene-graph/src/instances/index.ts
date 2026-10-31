@@ -8,10 +8,12 @@ import { canCreateInstance } from './cycles'
 import { INSTANCE_OVERRIDE_FIELDS, INSTANCE_SYNC_PROPS } from './fields'
 import {
   clearInstanceOverrides,
+  cloneInstanceOverrideState,
   getInstanceOverride,
   hasInstanceOverride as hasNodeInstanceOverride,
   setInstanceOverride
 } from './overrides'
+import { walkInstanceSources } from './source-walk'
 import {
   bindingProtection,
   cloneChildrenWithMapping,
@@ -209,12 +211,57 @@ function syncInstancesOf(
 export function detachInstance(graph: SceneGraph, instanceId: string): void {
   const node = graph.nodes.get(instanceId)
   if (node?.type !== 'INSTANCE') return
+  for (const nested of outermostNestedInstances(graph, node))
+    adoptNestedOverrides(graph, node, nested)
   if (node.componentId) {
     graph.instanceIndex.get(node.componentId)?.delete(instanceId)
   }
   node.type = 'FRAME'
   node.componentId = null
   clearInstanceOverrides(node.instanceOverrides)
+}
+
+// A swap's bookkeeping belongs to the instance enclosing the swapped one, never to the swapped one.
+const OWNER_ONLY_FIELDS = new Set(['componentId', 'sourceComponentId'])
+
+function outermostNestedInstances(graph: SceneGraph, instance: SceneNode): SceneNode[] {
+  return graph
+    .getChildren(instance.id)
+    .flatMap((child) =>
+      child.type === 'INSTANCE' ? [child] : outermostNestedInstances(graph, child)
+    )
+}
+
+/**
+ * An instance a detached one holds stands on its own once that one is a frame, and so must what
+ * makes it differ from its component. Cloned in, it kept the overrides of the instance it copies,
+ * under that instance's layers; those, and the ones the detached instance recorded on its layers,
+ * now go under its own.
+ */
+function adoptNestedOverrides(graph: SceneGraph, detached: SceneNode, nested: SceneNode): void {
+  const ownLayer = new Map<string, string>()
+  walkInstanceSources(graph, nested, (source, target) => {
+    ownLayer.set(source.id, target.id)
+    return true
+  })
+  const { self, descendants: kept } = cloneInstanceOverrideState(nested.instanceOverrides)
+  const outer = cloneInstanceOverrideState(detached.instanceOverrides).descendants
+  const descendants = new Map<string, Map<string, unknown>>()
+  const claim = (layerId: string, fields: Map<string, unknown>): void => {
+    const merged = descendants.get(layerId)
+    if (!merged) descendants.set(layerId, fields)
+    else for (const [field, value] of fields) merged.set(field, value)
+  }
+  // What was recorded on its own layers is more recent than what it copied, so it is laid on top.
+  for (const [layerId, fields] of kept)
+    if (ownLayer.has(layerId)) claim(ownLayer.get(layerId) ?? layerId, fields)
+  for (const [layerId, fields] of kept) if (!ownLayer.has(layerId)) claim(layerId, fields)
+  for (const [layerId, fields] of outer) {
+    if (layerId === nested.id) {
+      for (const [field, value] of fields) if (!OWNER_ONLY_FIELDS.has(field)) self.set(field, value)
+    } else if (graph.isDescendant(layerId, nested.id)) claim(layerId, fields)
+  }
+  graph.updateNode(nested.id, { instanceOverrides: { self, descendants } })
 }
 
 export function getMainComponent(graph: SceneGraph, instanceId: string): SceneNode | undefined {
