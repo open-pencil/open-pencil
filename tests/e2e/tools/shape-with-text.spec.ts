@@ -94,6 +94,24 @@ test('the tool keeps the kind picked last, and a drag draws the shape as large a
   expect(await shapes.shapes()).toHaveLength(before)
 })
 
+// FigJam: on a board R arms a square, whatever kind the Shapes panel picked last.
+test('R on a board arms a square shape, not the kind picked last', async () => {
+  await shapes.showTool()
+  await shapes.pickKind('Cylinder')
+  await editor.page.keyboard.press('Escape')
+  await editor.page.evaluate(() => window.openPencil?.getStore?.().setDocumentKind('board'))
+  await editor.canvas.click(20, 20)
+  await editor.page.keyboard.press('r')
+  await expect
+    .poll(() =>
+      editor.page.evaluate(() => {
+        const state = window.openPencil?.getStore?.().state
+        return [state?.activeTool, state?.shapeWithTextKind]
+      })
+    )
+    .toEqual(['SHAPE_WITH_TEXT', 'SQUARE'])
+})
+
 test('the properties panel switches a shape to another kind, keeping its size', async () => {
   await shapes.showTool()
   await shapes.pickKind('Square')
