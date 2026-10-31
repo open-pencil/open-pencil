@@ -507,8 +507,14 @@ export class FigmaAPI implements NodeProxyHost {
         const padding = 80
         const contentW = b.width + padding * 2
         const contentH = b.height + padding * 2
-        const viewW = IS_BROWSER ? window.innerWidth : 1280
-        const viewH = IS_BROWSER ? window.innerHeight : 720
+        const rendererWidth = this._renderer?.viewportWidth
+        const rendererHeight = this._renderer?.viewportHeight
+        const fallbackViewport = IS_BROWSER
+          ? { width: window.innerWidth, height: window.innerHeight }
+          : { width: 1280, height: 720 }
+        const viewW = rendererWidth && rendererWidth > 0 ? rendererWidth : fallbackViewport.width
+        const viewH =
+          rendererHeight && rendererHeight > 0 ? rendererHeight : fallbackViewport.height
         const zoom = Math.min(viewW / contentW, viewH / contentH, 1)
         this._viewport = { x: b.x + b.width / 2, y: b.y + b.height / 2, zoom }
       }
