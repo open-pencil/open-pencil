@@ -96,6 +96,21 @@ describe('linear blend modes, as Figma draws them', () => {
     expectChannelsNear(renderCenter(overlay([halfBurn])), [51, 76, 12, 255])
   })
 
+  // Live-measured in Figma: a 60% grey backdrop at 50% opacity under (0.7, 0.2, 0.5).
+  test('blends over a half transparent backdrop as Figma does', () => {
+    const halfGrey: Scene = (graph, pageId) => {
+      const grey = { ...solid({ r: 0.6, g: 0.6, b: 0.6 }), opacity: 0.5 }
+      graph.createNode('RECTANGLE', pageId, { width: SIZE, height: SIZE, fills: [grey] })
+    }
+    const paint = { r: 0.7, g: 0.2, b: 0.5 }
+    expectChannelsNear(
+      renderCenter(overlay([solid(paint, 'LINEAR_BURN')]), halfGrey),
+      [127, 0, 77, 255]
+    )
+    const halfDodge = { ...solid(paint, 'LINEAR_DODGE'), opacity: 0.5 }
+    expectChannelsNear(renderCenter(overlay([halfDodge]), halfGrey), [220, 137, 187, 192])
+  })
+
   test('a half transparent fill over nothing stays half transparent', () => {
     const nothing: Scene = () => undefined
     for (const blendMode of ['LINEAR_DODGE', 'LINEAR_BURN'] as const) {
