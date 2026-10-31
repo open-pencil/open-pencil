@@ -1,0 +1,1 @@
+- Linux text inputs can receive letters and Backspace without triggering bare or Shift-only menu shortcuts.

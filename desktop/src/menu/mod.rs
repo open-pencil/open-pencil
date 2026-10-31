@@ -8,6 +8,10 @@ use tauri::menu::{
     CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, MenuItemKind, Submenu, SubmenuBuilder,
 };
 
+mod accelerator;
+
+use accelerator::should_attach_native_accelerator;
+
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use tauri::menu::PredefinedMenuItem;
 
@@ -152,7 +156,9 @@ fn build_submenu<R: tauri::Runtime>(
                 item = item.id(id);
             }
             if let Some(accelerator) = &entry.accelerator {
-                item = item.accelerator(accelerator);
+                if should_attach_native_accelerator(accelerator, cfg!(target_os = "linux")) {
+                    item = item.accelerator(accelerator);
+                }
             }
             builder = builder.item(&item.build(app)?);
             continue;
@@ -169,7 +175,9 @@ fn build_submenu<R: tauri::Runtime>(
             && matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
         if !webview_handles_accelerator {
             if let Some(accelerator) = &entry.accelerator {
-                item = item.accelerator(accelerator);
+                if should_attach_native_accelerator(accelerator, cfg!(target_os = "linux")) {
+                    item = item.accelerator(accelerator);
+                }
             }
         }
         builder = builder.item(&item.build(app)?);
