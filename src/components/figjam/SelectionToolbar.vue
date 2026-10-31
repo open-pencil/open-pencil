@@ -1,49 +1,77 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
+import { useFigJamToolbar } from '@open-pencil/vue/controls/figjam-toolbar'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import theme from '@/theme/figjam/toolbar'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
-import ConnectorSection from './connector/ConnectorSection.vue'
-import ShapeWithTextSection from './shape-with-text/ShapeWithTextSection.vue'
-import StickySection from './sticky/StickySection.vue'
+import ArrangeTools from './toolbar/ArrangeTools.vue'
+import ConnectorTools from './toolbar/ConnectorTools.vue'
+import LayerTools from './toolbar/LayerTools.vue'
+import SectionTools from './toolbar/SectionTools.vue'
+import ShapeTools from './toolbar/ShapeTools.vue'
+import StickyTools from './toolbar/StickyTools.vue'
+import TextTools from './toolbar/TextTools.vue'
 
+/**
+ * FigJam's selection toolbar: a bar centred above the selection with the menus its kind of layer
+ * has, and for several layers a way to align them and wrap them in a section.
+ */
 const { canvas, view, hidden } = defineProps<{
   canvas: HTMLCanvasElement | null
-  /** The pan and zoom the canvas was last drawn with, which the controls follow. */
+  /** The pan and zoom the canvas was last drawn with, which the toolbar follows. */
   view: ViewportTransform
   /** Whether something else owns the selection's surroundings now, such as a drag. */
   hidden: boolean
 }>()
+const emit = defineEmits<{ renameSection: [] }>()
 
-const SELECTION_TOOLBAR_GAP = 12
+/** Measured in FigJam: the bar's room above a selection, and above layers with handles there. */
+const TOOLBAR_GAP = 16
+const TOOLBAR_GAP_OVER_HANDLES = 40
 
 const store = useEditorStore()
+const toolbar = useFigJamToolbar()
+const styles = tv(theme)()
 
-/** The top-right corner of the selection, while every selected layer is a sticky, shape, or connector. */
+/** The top centre of the selection. */
 const anchor = computed(() => {
   void store.state.sceneVersion
   const ids = [...store.state.selectedIds]
-  const nodes = ids.map((id) => store.graph.getNode(id))
-  if (nodes.length === 0 || !nodes.every((node) => node && isGeneratedFrame(node))) return null
+  if (ids.length === 0 || ids.some((id) => !store.graph.getNode(id))) return null
   const bounds = ids.map((id) => store.graph.getAbsoluteBounds(id))
-  return {
-    x: Math.max(...bounds.map((b) => b.x + b.width)),
-    y: Math.min(...bounds.map((b) => b.y))
-  }
+  const left = Math.min(...bounds.map((b) => b.x))
+  const right = Math.max(...bounds.map((b) => b.x + b.width))
+  return { x: (left + right) / 2, y: Math.min(...bounds.map((b) => b.y)) }
 })
 const reference = useCanvasVirtualReference(
   computed(() => canvas),
   () => view,
   anchor
 )
-const open = computed(() => !hidden && store.state.editingTextId === null && !!reference.value)
+const kind = computed(() => toolbar.kind.value)
+const gap = computed(() =>
+  kind.value === 'sticky' || kind.value === 'shape' || kind.value === 'section'
+    ? TOOLBAR_GAP_OVER_HANDLES
+    : TOOLBAR_GAP
+)
+/** Whether only text is selected, which takes a colour; text with sticky notes shares text menus. */
+const textOnly = computed(() => toolbar.layers.value.every((layer) => layer.type === 'TEXT'))
+const hasTools = computed(
+  () =>
+    kind.value !== null &&
+    ((kind.value !== 'mixed' && kind.value !== 'image') || toolbar.several.value)
+)
+const open = computed(
+  () => !hidden && store.state.editingTextId === null && !!reference.value && hasTools.value
+)
 </script>
 
 <template>
@@ -52,18 +80,34 @@ const open = computed(() => !hidden && store.state.editingTextId === null && !!r
       <PopoverContent
         v-if="open && reference"
         :reference="reference"
-        side="right"
-        align="start"
-        :side-offset="SELECTION_TOOLBAR_GAP"
+        side="top"
+        align="center"
+        :side-offset="gap"
         :collision-padding="8"
-        :class="['z-40 w-[240px] py-1 [&>*]:border-b-0', floatingSurface, motionStyles.floating]"
+        :class="['z-40', styles.bar(), floatingSurface, motionStyles.floating]"
+        role="toolbar"
         data-test-id="selection-toolbar"
+        :data-kind="kind"
         @open-auto-focus.prevent
         @close-auto-focus.prevent
+        @interact-outside.prevent
       >
-        <StickySection />
-        <ShapeWithTextSection />
-        <ConnectorSection />
+        <StickyTools v-if="kind === 'sticky'" />
+        <ShapeTools v-else-if="kind === 'shape'" />
+        <ConnectorTools v-else-if="kind === 'connector'" />
+        <SectionTools v-else-if="kind === 'section'" @rename="emit('renameSection')" />
+        <template v-else-if="kind === 'text'">
+          <template v-if="textOnly">
+            <LayerTools />
+            <span :class="styles.divider()" />
+          </template>
+          <TextTools :align="!toolbar.several.value" />
+        </template>
+        <LayerTools v-else-if="kind === 'layer' || kind === 'group'" />
+        <template v-if="toolbar.several.value">
+          <span v-if="kind !== 'mixed' && kind !== 'image'" :class="styles.divider()" />
+          <ArrangeTools />
+        </template>
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>

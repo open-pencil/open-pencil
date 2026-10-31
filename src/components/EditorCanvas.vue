@@ -156,6 +156,7 @@ const {
   drag,
   cursorOverride,
   canvasLabelEdit,
+  startCanvasLabelEdit,
   updateCanvasLabelEdit,
   commitCanvasLabelEdit,
   cancelCanvasLabelEdit,
@@ -255,6 +256,13 @@ const canvasLabelEditPresentation = computed(() =>
   canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
 )
 
+/** Names the selected section on the canvas, as its title does on a double-click. */
+function renameSelectedSection() {
+  const [id] = store.state.selectedIds
+  const section = id ? store.graph.getNode(id) : undefined
+  if (section?.type === 'SECTION') startCanvasLabelEdit('section-title', section)
+}
+
 // With the side panels away, a sticky, shape, or connector shows its controls over the canvas,
 // as FigJam does.
 const selectionToolbar = computed(
@@ -337,6 +345,7 @@ const cursor = computed(() =>
           :canvas="canvasRef"
           :view="overlayView"
           :hidden="!!drag || !!canvasLabelEdit"
+          @rename-section="renameSelectedSection"
         />
         <PopoverRoot :open="!!autoLayoutValueEdit">
           <PopoverPortal>

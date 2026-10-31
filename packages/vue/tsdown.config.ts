@@ -74,6 +74,7 @@ export default defineConfig({
     'controls/connector/index': './src/controls/connector/index.ts',
     'controls/constraints/index': './src/controls/constraints/index.ts',
     'controls/effects/index': './src/controls/effects/index.ts',
+    'controls/figjam-toolbar/index': './src/controls/figjam-toolbar/index.ts',
     'controls/fill/index': './src/controls/fill/index.ts',
     'controls/icon/index': './src/controls/icon/index.ts',
     'controls/layout/index': './src/controls/layout/index.ts',

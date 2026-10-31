@@ -10,7 +10,7 @@ import type {
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
 import { faceLoadKey, faceStyleKey } from '@open-pencil/scene-graph/font-style'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 
 import {
   createTextListActions,
@@ -51,17 +51,17 @@ function sharedFormatting(nodes: readonly SceneNode[]) {
   return result
 }
 
-/** The text a selected layer's typography edits: its own, or a shape with text's label. */
+/** The text a selected layer's typography edits: its own, or the text a sticky note or shape is named by. */
 function typographyTargets(editor: Editor): SceneNode[] {
   return selectedNodesAsShown(editor).flatMap((n) => {
     if (n.type === 'TEXT') return [n]
-    const label = shapeWithTextLabel(editor.graph, n)
-    return label ? [label] : []
+    const text = generatedFrameText(editor.graph, n)
+    return text ? [text] : []
   })
 }
 
 /**
- * Typography of the selected text layers and shapes' labels. With other layers selected too,
+ * Typography of the selected text layers and the text of sticky notes and shapes. With other layers selected too,
  * Figma shows the text's typography and edits only the text, so `nodes` holds just the text.
  */
 export function createTypographyState(editor: Editor) {

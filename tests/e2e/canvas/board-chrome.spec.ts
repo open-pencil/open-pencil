@@ -15,6 +15,8 @@ test.beforeEach(async () => {
 test.afterEach(() => board.close())
 
 const toolbar = () => editor.page.getByTestId('selection-toolbar')
+/** The toolbar menu that is open, not one still closing. */
+const openMenu = () => editor.page.locator('[data-menu][data-state=open]')
 
 async function lastNote() {
   const note = (await sticky.notes()).at(-1)
@@ -38,8 +40,68 @@ test("a selected note offers FigJam's choices over the canvas", async () => {
   await sticky.add([{ x: 300, y: 200, text: 'Toolbar', author: 'Ada' }])
   await selectNoteAt(320, 220)
 
-  await toolbar().getByRole('radio', { name: 'Yellow' }).click()
+  await toolbar().locator('[data-property=toolbar-color]').click()
+  await openMenu().getByRole('radio', { name: 'Yellow', exact: true }).click()
   await expect.poll(async () => (await lastNote()).fill).toBe('#ffe299')
+})
+
+/** Adds a layer at canvas `x`,`y` and selects it, by the store's own commands. */
+async function addSelected(type: 'TEXT' | 'SECTION', x: number, y: number, w: number, h: number) {
+  await editor.page.evaluate(
+    ({ type, x, y, w, h }) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const id = store.createShape(type, x, y, w, h)
+      if (type === 'TEXT') store.graph.updateNode(id, { text: 'Board text' })
+      store.select([id])
+      store.requestRender()
+    },
+    { type, x, y, w, h }
+  )
+}
+
+async function selectedFill() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const id = store ? [...store.state.selectedIds][0] : undefined
+    const color = id ? store?.graph.getNode(id)?.fills[0]?.color : undefined
+    return color ? [color.r, color.g, color.b].map((c) => Math.round(c * 255)) : null
+  })
+}
+
+// Measured in FigJam: text takes a palette colour as is, a section a pale tint of it.
+test('text and sections take their colour from the toolbar', async () => {
+  await addSelected('TEXT', 300, 200, 200, 40)
+  await toolbar().locator('[data-property=toolbar-color]').click()
+  await openMenu().getByRole('radio', { name: 'Red', exact: true }).click()
+  await expect.poll(selectedFill).toEqual([242, 72, 34])
+
+  await addSelected('SECTION', 300, 300, 400, 300)
+  await expect(toolbar()).toHaveAttribute('data-kind', 'section')
+  await toolbar().locator('[data-property=toolbar-color]').click()
+  await openMenu().getByRole('radio', { name: 'Red', exact: true }).click()
+  await expect.poll(selectedFill).toEqual([255, 226, 224])
+})
+
+test('several layers wrap into a new section from the toolbar', async () => {
+  await sticky.add([
+    { x: 300, y: 200, text: 'One', author: 'Ada' },
+    { x: 600, y: 200, text: 'Two', author: 'Ada' }
+  ])
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.select(store.graph.getChildren(store.state.currentPageId).map((node) => node.id))
+  })
+  await toolbar().locator('[data-property=toolbar-wrap-section]').click()
+  await expect
+    .poll(() =>
+      editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        return store?.graph.getChildren(store.state.currentPageId).map((node) => node.type)
+      })
+    )
+    .toEqual(['SECTION'])
 })
 
 test('the controls step aside while a note is dragged', async () => {
