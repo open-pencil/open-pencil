@@ -61,7 +61,7 @@ test('vector edit overlay follows nested transforms and live path fills', async 
       fills: [blue],
       fillGeometry: [
         { windingRule: 'NONZERO', commandsBlob: rectBlob(0, 0, 100, 100) },
-        { windingRule: 'NONZERO', commandsBlob: rectBlob(100, 0, 100, 100), fills: [orange] }
+        { windingRule: 'NONZERO', commandsBlob: rectBlob(100, 0, 100, 100) }
       ],
       vectorNetwork: {
         vertices: [
@@ -86,7 +86,7 @@ test('vector edit overlay follows nested transforms and live path fills', async 
         ],
         regions: [
           { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] },
-          { windingRule: 'NONZERO', loops: [[4, 5, 6, 7]] }
+          { windingRule: 'NONZERO', loops: [[4, 5, 6, 7]], fills: [orange] }
         ]
       }
     })

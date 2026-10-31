@@ -2,6 +2,7 @@ import type { Canvas, ImageFilter } from 'canvaskit-wasm'
 
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
 
@@ -381,7 +382,7 @@ export function isolatesInnerShadows(node: SceneNode): boolean {
   return (
     shadows.length > 0 &&
     shadows.every((effect) => !needsIsolatedBlendLayer(effect.blendMode)) &&
-    [...node.fills, ...node.fillGeometry.flatMap((geometry) => geometry.fills ?? [])].every(
+    [...node.fills, ...regionFills(node.vectorNetwork)].every(
       (fill) => !fill.visible || !needsIsolatedBlendLayer(fill.blendMode)
     )
   )

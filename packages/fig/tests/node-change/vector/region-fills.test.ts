@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { sceneNodeToKiwi } from '#fig/node-change/index'
+import {
+  decodeVectorNetworkBlob,
+  sceneNodeToKiwi,
+  type StyleOverride
+} from '#fig/node-change/index'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -47,12 +51,12 @@ describe('a vector whose regions have their own colors', () => {
         ],
         segments: [line(0, 1), line(1, 2), line(2, 0), line(1, 3), line(3, 2)],
         regions: [
-          { windingRule: 'NONZERO', loops: [[0, 1, 2]] },
+          { windingRule: 'NONZERO', loops: [[0, 1, 2]], fills: [solid(1)] },
           { windingRule: 'EVENODD', loops: [[3, 4, 1]] }
         ]
       },
       fillGeometry: [
-        { windingRule: 'NONZERO', commandsBlob: new Uint8Array([0]), fills: [solid(1)] },
+        { windingRule: 'NONZERO', commandsBlob: new Uint8Array([0]) },
         { windingRule: 'EVENODD', commandsBlob: new Uint8Array([0]) }
       ]
     })
@@ -69,4 +73,54 @@ describe('a vector whose regions have their own colors', () => {
     // The red region takes the red fill's style; the plain one takes the layer's fill.
     expect(regionStyleIds(blobs[vectorData.vectorNetworkBlob])).toEqual([fillStyle, 0])
   })
+})
+
+test('a region keeps its own paints, an empty list, or none through export and import', () => {
+  const graph = new SceneGraph()
+  const regions = [
+    { windingRule: 'NONZERO' as const, loops: [[0, 1, 2]], fills: [solid(1)] },
+    { windingRule: 'NONZERO' as const, loops: [[3, 4, 1]] },
+    { windingRule: 'EVENODD' as const, loops: [[5, 6, 7]], fills: [] }
+  ]
+  const node = graph.createNode('VECTOR', graph.getPages()[0].id, {
+    width: 30,
+    height: 10,
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 10 },
+        { x: 20, y: 0 },
+        { x: 20, y: 10 },
+        { x: 30, y: 0 }
+      ],
+      segments: [
+        line(0, 1),
+        line(1, 2),
+        line(2, 0),
+        line(1, 3),
+        line(3, 2),
+        line(3, 5),
+        line(5, 4),
+        line(4, 3)
+      ],
+      regions
+    }
+  })
+  const blobs: Uint8Array[] = []
+  const [change] = sceneNodeToKiwi(node, ROOT_GUID, 0, { value: 100 }, graph, blobs)
+  const vectorData = change.vectorData as {
+    vectorNetworkBlob: number
+    styleOverrideTable: StyleOverride[]
+  }
+  const decoded = decodeVectorNetworkBlob(
+    blobs[vectorData.vectorNetworkBlob],
+    vectorData.styleOverrideTable
+  )
+
+  expect(decoded.regions.map((region) => region.fills?.map((fill) => fill.color.r))).toEqual([
+    [1],
+    undefined,
+    []
+  ])
 })

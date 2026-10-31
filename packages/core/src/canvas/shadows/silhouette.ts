@@ -4,6 +4,7 @@ import type { Fill, NodeType, SceneGraph, SceneNode, Stroke } from '@open-pencil
 import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
@@ -52,10 +53,7 @@ export function isLayerContainer(node: SceneNode): boolean {
 }
 
 export function fillsCastShadow(node: SceneNode): boolean {
-  return (
-    node.fills.some(paintCastsShadow) ||
-    node.fillGeometry.some((geometry) => geometry.fills?.some(paintCastsShadow) ?? false)
-  )
+  return node.fills.some(paintCastsShadow) || regionFills(node.vectorNetwork).some(paintCastsShadow)
 }
 
 export function paintsCastShadow(node: SceneNode): boolean {
@@ -96,14 +94,17 @@ function silhouetteProxy(node: SceneNode, mode: SilhouetteMode): SceneNode | nul
     ...node,
     fills,
     strokes,
-    fillGeometry: node.fillGeometry.map((geometry) =>
-      geometry.fills
-        ? {
-            ...geometry,
-            fills: coversArea || geometry.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
-          }
-        : geometry
-    ),
+    vectorNetwork: node.vectorNetwork && {
+      ...node.vectorNetwork,
+      regions: node.vectorNetwork.regions.map((region) =>
+        region.fills
+          ? {
+              ...region,
+              fills: coversArea || region.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
+            }
+          : region
+      )
+    },
     effects: [],
     boundVariables: {}
   }

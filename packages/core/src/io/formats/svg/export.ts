@@ -29,12 +29,17 @@ import {
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
-import { looseSegments, regionSVGPaths } from '@open-pencil/scene-graph/vector-network'
+import {
+  hasRegionFills,
+  looseSegments,
+  regionSVGPaths
+} from '@open-pencil/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
+import { fillOutlines, paintedOutline } from './regions'
 import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
@@ -55,49 +60,30 @@ function networkElements(
   return [...regions, ...openPathElements(node, network, common, looseSegments)]
 }
 
+type SVGAttrs = Record<string, string | number | undefined>
+
 function vectorShapeElements(
   node: SceneNode,
-  common: Record<string, string | number | undefined>,
-  strokeAttrs: Record<string, string | number | undefined>,
+  common: SVGAttrs,
+  strokeAttrs: SVGAttrs,
   ctx: SVGExportContext,
   fallbackFills?: Fill[]
 ): SVGNode[] {
   const elements: SVGNode[] = []
-  if (node.fillGeometry.length > 0) {
-    for (const geo of node.fillGeometry) {
-      const d = geometryBlobToSVGPath(geo.commandsBlob)
-      if (!d) continue
-      const attrs = {
-        d,
-        'fill-rule': geo.windingRule === 'EVENODD' ? 'evenodd' : undefined,
-        ...common
-      }
-      const pathFills = geo.fills?.length ? geo.fills : fallbackFills
-      if (!pathFills) {
-        elements.push(svg('path', attrs))
-        continue
-      }
-      const visibleFills = pathFills.filter((fill) => fill.visible)
-      if (visibleFills.length === 0) {
-        elements.push(svg('path', { ...attrs, fill: 'none' }))
-        continue
-      }
-      for (const [index, fill] of visibleFills.entries()) {
-        const fillAttr = resolveFill(fill, node, ctx)
-        if (!fillAttr) continue
-        elements.push(
-          svg('path', {
-            ...attrs,
-            fill: fillAttr,
-            'fill-opacity': solidFillOpacity(fill, ctx.colorSpace),
-            stroke: index === visibleFills.length - 1 ? common.stroke : 'none'
-          })
-        )
-      }
+  const filled = fillOutlines(node)
+  for (const outline of filled?.outlines ?? []) {
+    const attrs = {
+      d: outline.d,
+      'fill-rule': outline.windingRule === 'EVENODD' ? 'evenodd' : undefined,
+      ...common
     }
-  } else if (node.vectorNetwork) {
-    elements.push(...networkElements(node, node.vectorNetwork, common))
+    elements.push(...paintedOutline(node, attrs, ctx, outline.fills ?? fallbackFills))
   }
+  const network = node.vectorNetwork
+  if (network && !filled) elements.push(...networkElements(node, network, common))
+  // Traced regions leave the open segments, which the canvas strokes, to add here.
+  else if (network && filled?.traced && looseSegments(network).length > 0)
+    elements.push(...openPathElements(node, network, common, looseSegments))
   if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
     for (const geo of node.strokeGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
@@ -311,7 +297,7 @@ function buildSVGStrokeAttrs(
 }
 
 function hasPathLevelFills(node: SceneNode): boolean {
-  return node.type === 'VECTOR' && node.fillGeometry.some((geometry) => geometry.fills?.length)
+  return node.type === 'VECTOR' && hasRegionFills(node.vectorNetwork)
 }
 
 function buildShapeChildren(
