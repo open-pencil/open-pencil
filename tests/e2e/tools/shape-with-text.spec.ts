@@ -162,24 +162,18 @@ test("the properties panel paints a shape with FigJam's palette and sizes its te
   expect(huge.height).toBeGreaterThan(176)
 })
 
-test("a shape's panel styles its label and rounds its corners, as Figma's does", async () => {
+// A shape keeps FigJam's fixed choices, which its Shape section offers: no free-form type or radius.
+test("a shape's panel keeps to FigJam's choices, without free-form typography or corners", async () => {
   await shapes.showTool()
   await shapes.pickKind('Square')
   await clickAt(200, 200)
   await editor.page.keyboard.type('Ship it')
   await editor.page.keyboard.press('Escape')
 
-  await expect(propertySection(editor.page, 'Typography')).toBeVisible()
-  await expect(propertyField(editor.page, 'cornerRadius')).toBeVisible()
-  const size = propertySection(editor.page, 'Typography').getByRole('spinbutton', {
-    name: 'Font size'
-  })
-  await size.click()
-  await editor.page.keyboard.press('ControlOrMeta+a')
-  await editor.page.keyboard.type('24')
-  await size.press('Enter')
-  await editor.canvas.waitForRender()
-  expect((await lastShape()).label?.fontSize).toBe(24)
+  for (const section of ['Typography', 'Appearance', 'Fill', 'Stroke', 'Effects']) {
+    await expect(propertySection(editor.page, section)).toHaveCount(0)
+  }
+  await expect(propertyField(editor.page, 'cornerRadius')).toHaveCount(0)
 })
 
 test('a shape whose height was set keeps it, and cuts a long label off with "…"', async () => {

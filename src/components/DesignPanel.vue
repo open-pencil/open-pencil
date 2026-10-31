@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { getNodeEditCapability } from '@open-pencil/core'
-import { layerResizes, layerStrokesAndEffects } from '@open-pencil/scene-graph/generated'
+import { isGeneratedFrame, layerResizes } from '@open-pencil/scene-graph/generated'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
@@ -94,9 +94,10 @@ const supportsLayoutGuides = useSceneComputed(() => {
   const nodes = store.getSelectedNodes()
   return nodes.length > 0 && nodes.every((selected) => LAYOUT_GUIDE_TYPES.has(selected.type))
 })
-// A sticky note has no strokes or effects, so a selection holding one offers neither.
-const strokesAndEffects = useSceneComputed(() =>
-  store.getSelectedNodes().every((selected) => layerStrokesAndEffects(selected))
+// Sticky notes, shapes, and connectors keep FigJam's fixed choices, which their own sections
+// offer, so a selection holding one offers no free-form appearance, type, fill, stroke, or effects.
+const freeStyle = useSceneComputed(() =>
+  store.getSelectedNodes().every((selected) => !isGeneratedFrame(selected))
 )
 const { panels } = useI18n()
 </script>
@@ -132,14 +133,14 @@ const { panels } = useI18n()
     <PositionSection />
     <ConstraintsSection />
     <SelectionLayoutSection />
-    <AppearanceSection />
-    <TypographySection />
-    <FillSection />
-    <template v-if="strokesAndEffects">
+    <template v-if="freeStyle">
+      <AppearanceSection />
+      <TypographySection />
+      <FillSection />
       <StrokeSection />
       <EffectsSection />
+      <SelectionColorsSection />
     </template>
-    <SelectionColorsSection />
     <LayoutGridSection v-if="supportsLayoutGuides" />
     <ExportSection />
   </div>
@@ -238,18 +239,15 @@ const { panels } = useI18n()
         <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
         <LayoutSection v-if="layerResizes(node)" />
       </template>
-      <AppearanceSection />
-      <template v-if="node.type !== 'CONNECTOR'">
+      <template v-if="freeStyle">
+        <AppearanceSection />
         <MaskSection />
-        <!-- A shape with text's typography is its label's, as in Figma. -->
-        <TypographySection v-if="node.type === 'TEXT' || node.type === 'SHAPE_WITH_TEXT'" />
+        <TypographySection v-if="node.type === 'TEXT'" />
         <FillSection />
-        <template v-if="strokesAndEffects">
-          <StrokeSection />
-          <EffectsSection />
-        </template>
+        <StrokeSection />
+        <EffectsSection />
+        <SelectionColorsSection />
       </template>
-      <SelectionColorsSection />
       <LayoutGridSection v-if="supportsLayoutGuides" />
 
       <ExportSection />
