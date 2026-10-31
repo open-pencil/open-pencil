@@ -248,7 +248,8 @@ function frameChildAt(
 function openedBySelection(
   graph: SceneGraph,
   selectedIds: ReadonlySet<string>,
-  scopeId: string
+  scopeId: string,
+  framesOpen = true
 ): Set<string> {
   const ancestors = new Set<string>()
   for (const id of selectedIds) {
@@ -257,7 +258,9 @@ function openedBySelection(
       node &&
       node.childIds.length > 0 &&
       node.type !== 'GROUP' &&
-      node.type !== 'BOOLEAN_OPERATION'
+      node.type !== 'BOOLEAN_OPERATION' &&
+      // A board's frame stays closed when selected: a click inside keeps it selected.
+      (framesOpen || node.type !== 'FRAME' || !isTopLevel(graph, node))
     )
       ancestors.add(id)
     let parentId = node?.parentId
@@ -298,7 +301,7 @@ export function hitTestSelectable(
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
 
-  const opened = openedBySelection(graph, selectedIds, scopeId)
+  const opened = openedBySelection(graph, selectedIds, scopeId, framesOpen)
 
   for (const node of chain) {
     // A locked layer stands in for everything inside it.
