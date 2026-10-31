@@ -1,0 +1,1 @@
+- Choose and remember an interface size of 100%, 110%, 125%, or 150% without changing canvas zoom.

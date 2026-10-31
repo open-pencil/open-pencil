@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { useElementSize } from '@vueuse/core'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
@@ -10,6 +11,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { provideTabEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import { interfaceScaleFactor } from '@/app/shell/interface-scale'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import type { Tab } from '@/app/tabs'
@@ -41,6 +43,24 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
+const interfaceScale = computed(interfaceScaleFactor)
+const workspace = useTemplateRef('workspace')
+const { width: workspaceWidth } = useElementSize(() => {
+  const element: unknown = workspace.value?.$el
+  return element instanceof HTMLElement ? element : null
+})
+const MIN_SIDEBAR_WIDTH = 240
+const MAX_SCALED_SIDEBAR_PERCENT = 35
+// Retain usable fields at larger scales, while leaving at least 30% for the canvas.
+const sidebarMinimum = computed(() =>
+  interfaceScale.value > 1 && workspaceWidth.value > 0
+    ? Math.min(
+        MAX_SCALED_SIDEBAR_PERCENT,
+        (MIN_SIDEBAR_WIDTH * interfaceScale.value * 100) / workspaceWidth.value
+      )
+    : 10
+)
+const sidebarMaximum = computed(() => (interfaceScale.value > 1 ? MAX_SCALED_SIDEBAR_PERCENT : 30))
 /**
  * The layout the panels have. The splitter opens with it, also when showing the panels again
  * remounts it, so its opening report matches and only a resize differs.
@@ -79,6 +99,7 @@ const { pending: roomPending } = useRoomActions()
   <SplitterGroup
     v-else-if="!isMobile && showChrome && store.state.showUI && !canvasAlone"
     :key="tab.id"
+    ref="workspace"
     direction="horizontal"
     class="flex-1 overflow-hidden"
     @layout="saveResizedLayout"
@@ -86,8 +107,8 @@ const { pending: roomPending } = useRoomActions()
     <SplitterPanel
       id="layers"
       :default-size="editorLayout[0]"
-      :min-size="10"
-      :max-size="30"
+      :min-size="sidebarMinimum"
+      :max-size="sidebarMaximum"
       class="flex"
     >
       <LayersPanel />
@@ -114,11 +135,13 @@ const { pending: roomPending } = useRoomActions()
     <SplitterPanel
       id="properties"
       :default-size="editorLayout[2]"
-      :min-size="10"
-      :max-size="30"
+      :min-size="sidebarMinimum"
+      :max-size="sidebarMaximum"
       class="flex flex-col"
     >
-      <div class="flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5">
+      <div
+        class="interface-chrome flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5"
+      >
         <CollabPanel class="min-w-0 flex-1" />
         <IconButton
           :label="

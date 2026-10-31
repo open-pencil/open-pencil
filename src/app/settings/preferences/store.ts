@@ -16,6 +16,9 @@ import { recentFilesLimitSchema } from '@/app/recent-files/schema'
 import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
 import { accentPreferenceSchema, type AccentPreference } from '@/app/shell/accent/schema'
 
+export const INTERFACE_SCALES = [100, 110, 125, 150] as const
+export type InterfaceScale = (typeof INTERFACE_SCALES)[number]
+
 export const ANIMATION_PREFERENCES = ['system', 'off'] as const
 export type AnimationPreference = (typeof ANIMATION_PREFERENCES)[number]
 
@@ -72,7 +75,11 @@ export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
 
 export interface AppPreferences {
-  appearance: { animations: AnimationPreference; accent: AccentPreference }
+  appearance: {
+    animations: AnimationPreference
+    accent: AccentPreference
+    interfaceScale: InterfaceScale
+  }
   chat: {
     reasoningDisplay: ReasoningDisplay
     maxAgentSteps: number
@@ -104,7 +111,7 @@ export interface AppPreferences {
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
-  appearance: { animations: 'system', accent: { ...DEFAULT_ACCENT } },
+  appearance: { animations: 'system', accent: { ...DEFAULT_ACCENT }, interfaceScale: 100 },
   chat: {
     reasoningDisplay: 'collapsed',
     maxAgentSteps: DEFAULT_AGENT_STEPS,
@@ -146,6 +153,7 @@ const snapping = defaults.editing.snapping
 /** Stored preferences, read field by field so one bad value keeps the rest. */
 const appPreferencesSchema = section({
   appearance: section({
+    interfaceScale: v.fallback(v.picklist(INTERFACE_SCALES), defaults.appearance.interfaceScale),
     animations: v.fallback(v.picklist(ANIMATION_PREFERENCES), defaults.appearance.animations),
     accent: v.fallback(accentPreferenceSchema, () => ({ ...DEFAULT_ACCENT }))
   }),
@@ -300,4 +308,11 @@ export function updateCommentPreferences(changes: Partial<CommentPreferences>): 
 
 export function updateToolbarLayout(toolbar: ToolbarLayout): void {
   appPreferences.value = { ...appPreferences.value, toolbar }
+}
+
+export function updateInterfaceScale(interfaceScale: InterfaceScale): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    appearance: { ...appPreferences.value.appearance, interfaceScale }
+  }
 }

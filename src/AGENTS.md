@@ -50,6 +50,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 
 ## Shell
 
+- Interface size lives in `appearance.interfaceScale` and applies through `interface-chrome` boundaries, including portals; keep canvas and authored previews outside those boundaries, and use the same scale for layer virtualization and row geometry (`tests/e2e/settings/interface-scale.webkit.spec.ts`).
 - Browser and native menus share `src/app/shell/menu/schema.ts`; handle IDs in `use.ts` or editor commands, and regenerate `desktop/generated/menu.json` with `bun run generate:tauri-menu`.
 - Motion policy lives in `src/app/shell/motion/`: resolve the persisted System/Off preference and OS reduction once. The root `data-motion` attribute and the Tailwind `motion-safe`/`motion-reduce` variants represent the effective policy, including portalled content. Use the policy-aware Motion adapters rather than repeating preference conditionals in components.
 - Canvas shortcuts stop while a dialog, menu, or listbox is open. A dialog that edits the document listens for undo and redo on its own content with `useDocumentShortcuts`, so keys in menus it portals never reach it; there is one history, the editor's (`src/app/shell/keyboard/document.ts`, `src/components/variables/VariablesDialog.vue`).

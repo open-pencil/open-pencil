@@ -28,7 +28,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import CanvasMenu from '../canvas/CanvasMenu.vue'
-import { LAYER_TREE_ROW_HEIGHT } from './geometry'
+import { layerTreeGeometry } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
@@ -54,7 +54,7 @@ defineOptions({ inheritAttrs: false })
 
 const { ui } = defineProps<{ ui?: LayerTreeUI }>()
 
-const INDENT = 16
+const { rowHeight, indent } = layerTreeGeometry()
 const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
@@ -90,7 +90,7 @@ watch(
 
 /** Rename the pinned layer on its own row: scroll the list back to it, then start. */
 async function renamePinned(id: string, name: string, index: number) {
-  if (viewport.value) viewport.value.scrollTop = index * LAYER_TREE_ROW_HEIGHT
+  if (viewport.value) viewport.value.scrollTop = index * rowHeight.value
   await nextTick()
   rename.start(id, name)
 }
@@ -152,7 +152,7 @@ function chrome(scope: Omit<LayerTreeSlotScope, 'actions'>) {
     instruction: scope.instruction,
     instructionTargetId: scope.instructionTargetId,
     focused: scope.focused,
-    indent: INDENT
+    indent: indent.value
   }
 }
 
@@ -165,13 +165,13 @@ function revealRow(rows: readonly LayerRow[], index: number) {
   const row = rows.at(index)
   if (!el || !row) return
   // A layer showing as the pinned row is in view already, so selecting it keeps the list still.
-  if (stickyTopLevelRow(rows, el.scrollTop, LAYER_TREE_ROW_HEIGHT)?.index === index) return
-  const top = index * LAYER_TREE_ROW_HEIGHT
-  const pinned = row.level > 1 ? LAYER_TREE_ROW_HEIGHT : 0
+  if (stickyTopLevelRow(rows, el.scrollTop, rowHeight.value)?.index === index) return
+  const top = index * rowHeight.value
+  const pinned = row.level > 1 ? rowHeight.value : 0
   if (top - pinned < el.scrollTop) {
     el.scrollTop = Math.max(0, top - pinned)
-  } else if (top + LAYER_TREE_ROW_HEIGHT > el.scrollTop + el.clientHeight) {
-    el.scrollTop = top + LAYER_TREE_ROW_HEIGHT - el.clientHeight
+  } else if (top + rowHeight.value > el.scrollTop + el.clientHeight) {
+    el.scrollTop = top + rowHeight.value - el.clientHeight
   }
 }
 
@@ -203,7 +203,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
 </script>
 
 <template>
-  <LayerTreeRoot v-slot="scope" :indent-per-level="INDENT">
+  <LayerTreeRoot v-slot="scope" :indent-per-level="indent">
     <ContextMenuRoot :modal="false">
       <!-- The trigger covers the pinned row too, so right-clicking it opens the layer menu. -->
       <ContextMenuTrigger as-child @contextmenu="onLayerRightClick">
@@ -220,8 +220,9 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
             :class="styles.viewport({ class: ui?.viewport })"
           >
             <TreeVirtualizer
+              :key="rowHeight"
               v-slot="{ item, virtualizer }"
-              :estimate-size="LAYER_TREE_ROW_HEIGHT"
+              :estimate-size="rowHeight"
               :text-content="layerTextContent"
             >
               <template
