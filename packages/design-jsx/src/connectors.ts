@@ -171,7 +171,7 @@ export function resolveConnectorEnds(
 }
 
 /** `card1` for a layer named "Card": a name a declaration can take, numbered to stay unique. */
-function refName(layerName: string, taken: Set<string>): string {
+export function refName(layerName: string, taken: Set<string>): string {
   const camel = camelCase(layerName)
   const base = es.isIdentifierName(camel) ? camel : 'layer'
   let count = 1
@@ -194,12 +194,14 @@ export interface ConnectorExportScope {
 
 /**
  * Plans how the connectors under `rootIds` write their ends. With `declare`, a joined layer
- * whose name is not unique gets a `ref()` the export declares before its JSX.
+ * whose name is not unique gets a `ref()` the export declares before its JSX, named apart from
+ * the names in `taken`, which it adds to.
  */
 export function connectorExportScope(
   graph: SceneGraph,
   rootIds: readonly string[],
-  declare: boolean
+  declare: boolean,
+  taken = new Set<string>()
 ): ConnectorExportScope {
   const layers = layersUnder(graph, rootIds)
   const connectors = layers.filter((layer) => layer.type === 'CONNECTOR')
@@ -215,7 +217,6 @@ export function connectorExportScope(
     layers.filter((layer) => layer.type !== 'CONNECTOR'),
     (layer) => layer.name
   )
-  const taken = new Set<string>()
   for (const layer of layers) {
     if (!joined.has(layer.id) || (named[layer.name] ?? 0) < 2) continue
     refs.set(layer.id, declare ? refName(layer.name, taken) : null)
@@ -223,9 +224,9 @@ export function connectorExportScope(
   return { roots: new Set(rootIds), refs }
 }
 
-/** `const card1 = ref()` for each ref the scope declares, one per line. */
-export function connectorRefDeclarations(scope: ConnectorExportScope): string {
-  return compact([...scope.refs.values()])
+/** `const card1 = ref()` for each ref an export declares, one per line. */
+export function refDeclarations(refs: ReadonlyMap<string, string | null>): string {
+  return compact([...refs.values()])
     .map((name) => `const ${name} = ref()`)
     .join('\n')
 }

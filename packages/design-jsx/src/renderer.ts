@@ -2,6 +2,7 @@ import { omitBy } from 'es-toolkit/object'
 
 import type { NodeType, SceneGraph, SceneNode, VariableModeMap } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { INSTANCE_OVERRIDE_FIELDS } from '@open-pencil/scene-graph/instances'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 import type { RekaScope } from './behaviours'
@@ -12,23 +13,23 @@ import {
   bindProperties,
   componentPropNames as namesOnInstance,
   exposeInstance,
-  inferComponentSetProperties
+  inferComponentSetProperties,
+  type ComponentLookup
 } from './component-properties'
-import { CONNECTOR_ELEMENT, resolveConnectorEnds } from './connectors'
 import { elementNodeType, elementOwnLayer, type OwnLayerRenderer } from './elements'
+import type { RenderOrder } from './order'
 import { placeVectorPaths } from './overrides/vector'
 import { applySizeOverrides, propsToOverrides, shapeOverrides } from './props-overrides'
-import { LayerRefs } from './refs'
+import { isLayerRef, type LayerRefs } from './refs'
 import { prepareScalarBindings } from './scalar-bindings'
 import { readElementProps } from './schema'
 import type { DesignJSXServices } from './services'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from './text-content'
-import { FRAGMENT, isTreeNode } from './tree'
+import { isTreeNode } from './tree'
 import type { TreeNode } from './tree'
 import type { RenderOptions } from './types'
 import { isVariable } from './variables'
 import {
-  applyVariableDefinitions,
   bindVariableProp,
   requireVariableId,
   resolveForLayer,
@@ -36,70 +37,6 @@ import {
   type LayerContext
 } from './variables/graph'
 import { paintProps } from './variables/props'
-
-export interface RenderResult {
-  id: string
-  name: string
-  type: NodeType
-  childIds: string[]
-  warnings?: string[]
-}
-
-/** The nodes a tree renders as: a fragment's children, or the tree itself. */
-function treeRoots(tree: TreeNode): TreeNode[] {
-  return tree.type === FRAGMENT ? tree.children.filter(isTreeNode) : [tree]
-}
-
-/** Render every root of `tree` into the parent and lay out once. */
-export async function renderRoots<Artwork>(
-  services: DesignJSXServices<Artwork>,
-  graph: SceneGraph,
-  tree: TreeNode,
-  options: RenderOptions = {}
-): Promise<RenderResult[]> {
-  const roots = treeRoots(tree)
-  if (roots.length === 0) throw new Error('JSX must return a Figma element (Frame, Text, etc)')
-  const parentId = options.parentId ?? graph.getPages()[0].id
-  applyVariableDefinitions(graph, tree)
-
-  const nodes: SceneNode[] = []
-  const connectors: Array<{ node: SceneNode; tree: TreeNode }> = []
-  const refs = new LayerRefs()
-  const onNode = (element: TreeNode, node: SceneNode) => {
-    if (element.type === CONNECTOR_ELEMENT) connectors.push({ node, tree: element })
-    else refs.mark(element.props.ref, node)
-    options.onNode?.(element, node)
-  }
-  for (const root of roots) {
-    const node = await renderNode(services, graph, root, parentId, onNode)
-    if (options.x !== undefined) graph.updateNode(node.id, { x: options.x })
-    if (options.y !== undefined) graph.updateNode(node.id, { y: options.y })
-    nodes.push(node)
-  }
-
-  const rootIds = nodes.map((node) => node.id)
-  const warnings = [...refs.warnings, ...resolveConnectorEnds(graph, rootIds, connectors, refs)]
-  if (!options.deferLayout) services.layout(graph, rootIds)
-
-  return nodes.map((node) => ({
-    id: node.id,
-    name: node.name,
-    type: node.type,
-    childIds: node.childIds,
-    ...(warnings.length > 0 && { warnings })
-  }))
-}
-
-/** Render `tree` and return its first root; a fragment's other roots are rendered too. */
-export async function renderTree<Artwork>(
-  services: DesignJSXServices<Artwork>,
-  graph: SceneGraph,
-  tree: TreeNode,
-  options: RenderOptions = {}
-): Promise<RenderResult> {
-  const [first] = await renderRoots(services, graph, tree, options)
-  return first
-}
 
 interface PreparedProps {
   props: Record<string, unknown>
@@ -315,8 +252,16 @@ function findVariantInSet(
 }
 
 /** The component or component set an element names by id or name. */
-function namedComponent(graph: SceneGraph, props: Record<string, unknown>): SceneNode | undefined {
+function namedComponent(
+  graph: SceneGraph,
+  props: Record<string, unknown>,
+  refs?: LayerRefs
+): SceneNode | undefined {
   const ref = props.component ?? props.componentId ?? props.of
+  if (isLayerRef(ref)) {
+    const marked = graph.getNode(refs?.layerOf(ref) ?? '')
+    return marked?.type === 'COMPONENT' || marked?.type === 'COMPONENT_SET' ? marked : undefined
+  }
   if (typeof ref !== 'string') return undefined
 
   const byId = graph.getNode(ref)
@@ -333,37 +278,51 @@ function namedComponent(graph: SceneGraph, props: Record<string, unknown>): Scen
 
 function resolveComponent(
   graph: SceneGraph,
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
+  refs?: LayerRefs
 ): SceneNode | undefined {
-  const named = namedComponent(graph, props)
+  const named = namedComponent(graph, props, refs)
   return named?.type === 'COMPONENT_SET' ? findVariantInSet(graph, named, props) : named
 }
 
 /**
  * The names an element sets on its component by prop: properties such as `State` or `Title`, and
- * exposed instances.
+ * exposed instances. The instance it rendered as, if given, names its component.
  */
-export function componentPropNames(graph: SceneGraph, props: Record<string, unknown>): string[] {
-  const component = resolveComponent(graph, props)
+export function componentPropNames(
+  graph: SceneGraph,
+  props: Record<string, unknown>,
+  rendered?: SceneNode
+): string[] {
+  const component =
+    rendered?.type === 'INSTANCE'
+      ? graph.getNode(rendered.componentId ?? '')
+      : resolveComponent(graph, props)
   return component ? namesOnInstance(graph, component) : []
+}
+
+/** The error for an `<Instance>` whose component no name, ID, or ref finds. */
+function componentNotFound(props: Record<string, unknown>): Error {
+  const ref = props.component ?? props.componentId ?? props.of
+  if (isLayerRef(ref)) return new Error('<Instance> ref() marks no component rendered before it')
+  const label = typeof ref === 'string' || typeof ref === 'number' ? String(ref) : ''
+  return new Error(`<Instance> component not found: ${label}`)
 }
 
 async function renderInstanceNode(
   graph: SceneGraph,
   tree: TreeNode,
-  parentId: string
+  parentId: string,
+  context?: RenderContext
 ): Promise<SceneNode> {
   const parent = graph.getNode(parentId)
   const parentLayout = parent?.layoutMode ?? 'NONE'
   const modes = variableModes(graph, tree.props.mode)
-  const bound = bindProperties(graph, tree.props, 'INSTANCE', parentId, componentIdNamed(graph))
+  const lookup = componentIdNamed(graph, context?.refs)
+  const bound = bindProperties(graph, tree.props, 'INSTANCE', parentId, lookup)
   const { props, bindings } = preparePropsForRender(graph, bound.props, false, { parentId, modes })
-  const component = resolveComponent(graph, props)
-  if (!component) {
-    const ref = props.component ?? props.componentId ?? props.of
-    const label = typeof ref === 'string' || typeof ref === 'number' ? String(ref) : ''
-    throw new Error(`<Instance> component not found: ${label}`)
-  }
+  const component = resolveComponent(graph, props, context?.refs)
+  if (!component) throw componentNotFound(props)
   const overrides: Partial<SceneNode> = {
     ...propsToOverrides(props, false, parentLayout),
     ...layerMetadata(modes, bound.references)
@@ -394,8 +353,8 @@ async function renderInstanceNode(
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
     applyBindings(graph, instance.id, bindings)
     applyInstanceOverrides(graph, instance, tree.props.overrides)
-    assignNamedProperties(graph, instance, props, componentIdNamed(graph))
-    assignComponentProperties(graph, instance, props.properties, componentIdNamed(graph))
+    assignNamedProperties(graph, instance, props, lookup)
+    assignComponentProperties(graph, instance, props.properties, lookup)
     if (props.exposed === true) exposeInstance(graph, instance)
     return instance
   } catch (error) {
@@ -405,10 +364,17 @@ async function renderInstanceNode(
 }
 
 /**
+ * The fields an instance may override in its layers, as Figma allows; where a layer sits, its
+ * shape, its place in the tree, and its component follow the component.
+ */
+const OVERRIDE_FIELDS = new Set<string>(INSTANCE_OVERRIDE_FIELDS)
+
+/**
  * Apply child overrides to a freshly created instance. Keys are
  * `childName:prop` (e.g. 'label:text', 'icon:fills'); the child is resolved by
- * name among the instance's descendants, and the value is applied to both the
- * child node and the instance's overrides record so component sync keeps it.
+ * name among the instance's descendants, before any override renames one, and the
+ * value is applied to both the child node and the instance's overrides record so
+ * component sync keeps it. A name several descendants share is an error.
  */
 function applyInstanceOverrides(
   graph: SceneGraph,
@@ -427,21 +393,28 @@ function applyInstanceOverrides(
     descendants.push(node)
     for (const cid of node.childIds) walk(cid)
   }
-  walk(instance.id)
+  for (const cid of instance.childIds) walk(cid)
 
-  let mutated = false
-  for (const [key, value] of entries) {
-    const sep = key.indexOf(':')
-    if (sep === -1) continue
+  // A layer's name may hold a colon; a field's never does.
+  const targets = entries.flatMap(([key, value]) => {
+    const sep = key.lastIndexOf(':')
+    if (sep === -1) return []
     const childName = key.slice(0, sep)
     const prop = key.slice(sep + 1)
-    const child = descendants.find((n) => n.name === childName)
-    if (!child || !(prop in child)) continue
+    if (!OVERRIDE_FIELDS.has(prop)) return []
+    const matches = descendants.filter((n) => n.name === childName)
+    if (matches.length > 1)
+      throw new Error(
+        `overrides key ${key} is ambiguous: ${matches.length} layers are named ${childName}`
+      )
+    const child = matches.at(0)
+    return child ? [{ child, prop, value }] : []
+  })
+  for (const { child, prop, value } of targets) {
     graph.updateNode(child.id, { [prop]: value })
     setInstanceOverride(instance.instanceOverrides, instance.id, child.id, prop, value)
-    mutated = true
   }
-  if (mutated) {
+  if (targets.length > 0) {
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
   }
 }
@@ -476,8 +449,8 @@ function layerMetadata(
 }
 
 /** The component a swap property's default names, by ID or name, as `<Instance of>` finds it. */
-function componentIdNamed(graph: SceneGraph) {
-  return (name: string) => resolveComponent(graph, { of: name })?.id
+function componentIdNamed(graph: SceneGraph, refs?: LayerRefs): ComponentLookup {
+  return (reference) => resolveComponent(graph, { of: reference }, refs)?.id
 }
 
 export interface ElementOverrides {
@@ -514,15 +487,22 @@ export function elementOverrides(
   return { overrides, bindings }
 }
 
-async function renderNode<Artwork>(
+/** What one render call shares across its elements: the layers refs marked, and their order. */
+export interface RenderContext {
+  refs: LayerRefs
+  order: RenderOrder
+}
+
+export async function renderNode<Artwork>(
   services: DesignJSXServices<Artwork>,
   graph: SceneGraph,
   tree: TreeNode,
   parentId: string,
   onNode?: RenderOptions['onNode'],
-  scope?: RekaScope
+  scope?: RekaScope,
+  context?: RenderContext
 ): Promise<SceneNode> {
-  const node = await renderNodeContent(services, graph, tree, parentId, onNode, scope)
+  const node = await renderNodeContent(services, graph, tree, parentId, onNode, scope, context)
   onNode?.(tree, node)
   return node
 }
@@ -535,14 +515,15 @@ function renderOwnElement<Artwork>(
   services: DesignJSXServices<Artwork>,
   graph: SceneGraph,
   tree: TreeNode,
-  parentId: string
+  parentId: string,
+  context?: RenderContext
 ): Promise<SceneNode> | null {
   switch (tree.type) {
     case 'icon':
     case 'svg':
       return renderArtworkNode(services, graph, tree, parentId)
     case 'instance':
-      return renderInstanceNode(graph, tree, parentId)
+      return renderInstanceNode(graph, tree, parentId, context)
     default: {
       const element = elementOwnLayer(tree.type)
       return element ? Promise.resolve(renderOwnLayerElement(graph, tree, parentId, element)) : null
@@ -556,13 +537,14 @@ async function renderNodeContent<Artwork>(
   tree: TreeNode,
   parentId: string,
   onNode?: RenderOptions['onNode'],
-  scope?: RekaScope
+  scope?: RekaScope,
+  context?: RenderContext
 ): Promise<SceneNode> {
-  const own = renderOwnElement(services, graph, tree, parentId)
+  const own = renderOwnElement(services, graph, tree, parentId, context)
   if (own) return own
   const reka = await renderRekaNode(graph, tree, parentId, scope, {
     render: (child, childParentId, childScope) =>
-      renderNode(services, graph, child, childParentId, onNode, childScope),
+      renderNode(services, graph, child, childParentId, onNode, childScope, context),
     create: (nodeType, element, elementParentId) => {
       const { overrides, bindings } = elementOverrides(graph, nodeType, element, elementParentId)
       const created = graph.createNode(nodeType, elementParentId, overrides)
@@ -570,7 +552,8 @@ async function renderNodeContent<Artwork>(
       placeVectorPaths(graph, created, element.props, (network) => services.vectorBounds(network))
       return created
     },
-    instance: (element, elementParentId) => renderInstanceNode(graph, element, elementParentId),
+    instance: (element, elementParentId) =>
+      renderInstanceNode(graph, element, elementParentId, context),
     finishSet: (setId) => inferComponentSetProperties(graph, setId)
   })
   if (reka) return reka
@@ -585,12 +568,26 @@ async function renderNodeContent<Artwork>(
   applyBindings(graph, node.id, bindings)
   placeVectorPaths(graph, node, tree.props, (network) => services.vectorBounds(network))
 
-  for (const child of tree.children) {
-    if (typeof child === 'string' || (node.type === 'TEXT' && isTextContent(child))) continue
-    if (isTreeNode(child)) {
-      await renderNode(services, graph, child, node.id, onNode, scope)
-    }
+  const children = tree.children.filter(
+    (child): child is TreeNode =>
+      isTreeNode(child) && !(node.type === 'TEXT' && isTextContent(child))
+  )
+  // Components render before the siblings that use them, then the children take written order.
+  const order = context?.order.of(children) ?? children.map((_, index) => index)
+  const rendered: SceneNode[] = []
+  for (const index of order) {
+    rendered[index] = await renderNode(
+      services,
+      graph,
+      children[index],
+      node.id,
+      onNode,
+      scope,
+      context
+    )
   }
+  if (order.some((index, position) => index !== position))
+    rendered.forEach((child, index) => graph.insertChildAt(child.id, node.id, index))
 
   if (node.type === 'COMPONENT_SET') inferComponentSetProperties(graph, node.id)
 

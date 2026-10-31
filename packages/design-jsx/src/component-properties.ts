@@ -1,4 +1,5 @@
 import { compact } from 'es-toolkit/array'
+import { omitBy, pickBy } from 'es-toolkit/object'
 import { isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
@@ -19,6 +20,7 @@ import {
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 
 import { DESIGN_JSX_SUPPORTED_PROPERTIES } from './definitions'
+import { isLayerRef, type LayerRef } from './refs'
 import { parseScriptInput } from './schema'
 
 const PROPERTY_SYMBOL = Symbol.for('open-pencil.component-property')
@@ -26,9 +28,12 @@ const PROPERTY_SYMBOL = Symbol.for('open-pencil.component-property')
 /**
  * A component property, by its name in the component that holds it. Where it is placed picks
  * its type: `text` on a text layer makes a TEXT property, `visible` a BOOLEAN one, and `of` on an
- * instance an INSTANCE_SWAP one, whose default is the component that `of` names.
+ * instance an INSTANCE_SWAP one, whose default is the component that `of` names: by name, ID,
+ * or the `ref()` that marks it.
  */
-export interface ComponentProperty<T extends string | boolean = string | boolean> {
+export interface ComponentProperty<
+  T extends string | boolean | LayerRef = string | boolean | LayerRef
+> {
   readonly [PROPERTY_SYMBOL]: true
   readonly name: string
   readonly defaultValue: T
@@ -42,7 +47,7 @@ export function isComponentProperty(value: unknown): value is ComponentProperty 
  * Bind a field to a property of the component it is drawn in, created on first use: on the
  * component set, for a variant, as Figma keeps them, or else on the component.
  */
-export function property<T extends string | boolean>(
+export function property<T extends string | boolean | LayerRef>(
   name: string,
   defaultValue: T
 ): ComponentProperty<T> {
@@ -137,12 +142,13 @@ export function bindProperties(
         `property() in ${key} needs ${bound.node === 'TEXT' ? '<Text>' : '<Instance>'}`
       )
     const expected = bound.type === 'BOOLEAN' ? 'boolean' : 'string'
-    if (typeof value.defaultValue !== expected)
+    const swapRef = bound.type === 'INSTANCE_SWAP' && isLayerRef(value.defaultValue)
+    if (!swapRef && typeof value.defaultValue !== expected)
       throw new Error(`Component property ${value.name} in ${key} takes a ${expected} default`)
-    let defaultValue = String(value.defaultValue)
+    let defaultValue = isLayerRef(value.defaultValue) ? '' : String(value.defaultValue)
     if (bound.type === 'INSTANCE_SWAP') {
-      const id = componentId(defaultValue)
-      if (!id) throw new Error(`<Instance> component not found: ${defaultValue}`)
+      const id = componentId(isLayerRef(value.defaultValue) ? value.defaultValue : defaultValue)
+      if (!id) throw new Error(`<Instance> component not found: ${defaultValue || 'ref()'}`)
       defaultValue = id
     }
     const owner = propertyOwner(graph, parentId)
@@ -186,17 +192,31 @@ function namedDefinition(
   return matches[0]
 }
 
-/** The ID of the component a name or ID names, as `<Instance of>` finds it. */
-export type ComponentLookup = (nameOrId: string) => string | undefined
+/** The ID of the component a name, ID, or `ref()` names, as `<Instance of>` finds it. */
+export type ComponentLookup = (reference: string | LayerRef) => string | undefined
+
+/** A value as an assignment takes it: a swap's `ref()` as it is, anything else as text. */
+function assignable(value: unknown): string | LayerRef {
+  return isLayerRef(value) ? value : String(value)
+}
 
 function assignValue(
   graph: SceneGraph,
   instance: SceneNode,
   definition: ComponentPropertyDefinition,
   key: string,
-  value: string,
+  value: string | LayerRef,
   componentId: ComponentLookup
 ): void {
+  if (isLayerRef(value)) {
+    if (definition.type !== 'INSTANCE_SWAP')
+      throw new Error(`A ref() names a component, for a swap property, not ${key}`)
+    const id = componentId(value)
+    if (!id) throw new Error(`${key} names a ref() that marks no component rendered before it`)
+    if (!applyComponentPropertyValue(graph, instance.id, definition, id))
+      throw new Error(`Cannot assign component property: ${key}`)
+    return
+  }
   if (definition.type === 'VARIANT')
     throw new Error('Select a component-set variant when creating the instance')
   if (definition.type === 'BOOLEAN' && value !== 'true' && value !== 'false')
@@ -284,7 +304,7 @@ function assignExposedInstance(
     if (variantNames.has(key)) continue
     const definition = namedDefinition(definitions, key)
     if (!definition) throw new Error(`Unknown component property on ${name}: ${key}`)
-    assignValue(graph, nested, definition, key, String(value), componentId)
+    assignValue(graph, nested, definition, key, assignable(value), componentId)
   }
 }
 
@@ -310,9 +330,14 @@ export function assignNamedProperties(
     }
     const definition = namedDefinition(definitions, key)
     if (!definition) continue
-    if (typeof value !== 'string' && typeof value !== 'boolean' && typeof value !== 'number')
-      throw new Error(`Expected a string or boolean for component property: ${key}`)
-    assignValue(graph, instance, definition, key, String(value), componentId)
+    if (
+      typeof value !== 'string' &&
+      typeof value !== 'boolean' &&
+      typeof value !== 'number' &&
+      !isLayerRef(value)
+    )
+      throw new Error(`Expected a string, boolean, or ref() for component property: ${key}`)
+    assignValue(graph, instance, definition, key, assignable(value), componentId)
   }
 }
 
@@ -327,11 +352,16 @@ export function assignComponentProperties(
   componentId: ComponentLookup
 ): void {
   if (input === undefined) return
-  const assignments = parseScriptInput(
-    'Invalid properties on <Instance>',
-    v.record(v.string(), v.union([assignedValueSchema, exposedValuesSchema])),
-    input
-  )
+  // A swap's ref() is not data to validate; it is kept as it is.
+  const refs = isPlainObject(input) ? pickBy(input, (value) => isLayerRef(value)) : {}
+  const assignments = {
+    ...parseScriptInput(
+      'Invalid properties on <Instance>',
+      v.record(v.string(), v.union([assignedValueSchema, exposedValuesSchema])),
+      isPlainObject(input) ? omitBy(input, (value) => isLayerRef(value)) : input
+    ),
+    ...refs
+  }
   const definitions = componentPropertyDefinitions(graph, instance)
   for (const [key, value] of Object.entries(assignments)) {
     if (isPlainObject(value)) {
@@ -341,7 +371,7 @@ export function assignComponentProperties(
     const definition =
       definitions.find((item) => item.id === key) ?? namedDefinition(definitions, key)
     if (!definition) throw new Error(`Unknown component property: ${key}`)
-    assignValue(graph, instance, definition, key, String(value), componentId)
+    assignValue(graph, instance, definition, key, assignable(value), componentId)
   }
 }
 

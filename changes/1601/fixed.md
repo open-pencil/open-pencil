@@ -1,0 +1,2 @@
+- Node reads and `get_components` include component property definitions, and Design JSX export writes components, component sets, and instances with their `property()` bindings, property values, and layer overrides, so they render back as linked components; an instance whose changes JSX cannot write still exports as the frame it draws.
+- Instance `overrides` find layers among the instance's children by the names they had before any rename, accept layer names with a colon, ignore tree fields, and reject a name several layers share instead of changing the first.

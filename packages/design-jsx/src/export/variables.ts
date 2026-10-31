@@ -24,6 +24,8 @@ export interface VariableExport {
   mode(collectionId: string, modeId: string): JSXValue
   /** The `defineVars` and `defineMode` statements the JSX refers to, if it declares any. */
   declarations(): string
+  /** The names those statements declare, which other declarations must not take. */
+  names: ReadonlySet<string>
 }
 
 /**
@@ -48,6 +50,7 @@ export function variableReferences(graph: SceneGraph): VariableExport {
     }
   }
   return {
+    names: new Set(),
     variable(variableId) {
       const variable = graph.variables.get(variableId)
       if (!variable) return variableId
@@ -346,6 +349,7 @@ function definitionExport(graph: SceneGraph, rootIds: readonly string[]): Variab
     )
 
   return {
+    names: new Set([...defined.values()].flatMap((entry) => [entry.name, ...entry.modes.values()])),
     variable,
     mode(collectionId, modeId) {
       const name = defined.get(collectionId)?.modes.get(modeId)

@@ -1,13 +1,14 @@
 import { uniq } from 'es-toolkit/array'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { REKA_ELEMENTS } from './behaviours'
 import { elementBindings, elementProps, elementSchema } from './elements'
 import { ENUM_PROPS } from './enums'
 import { DESIGN_JSX_HELPERS, designJSXHelpers } from './helpers'
 import * as React from './mini-react'
-import { renderRoots, renderTree, componentPropNames, type RenderResult } from './renderer'
+import { componentPropNames } from './renderer'
+import { renderRoots, renderTree, type RenderResult } from './roots'
 import { elementPropWarnings } from './schema'
 import type { DesignJSXServices } from './services'
 import { TEXT_CONTENT_NAMES } from './text-content'
@@ -34,20 +35,25 @@ function stripHTMLComments(jsxString: string): string {
   return jsxString.replace(/<!--[\s\S]*?-->/g, '')
 }
 
-function unsupportedPropWarnings(graph: SceneGraph, tree: TreeNode): string[] {
+function unsupportedPropWarnings(
+  graph: SceneGraph,
+  tree: TreeNode,
+  rendered: ReadonlyMap<TreeNode, SceneNode>
+): string[] {
   const warnings: string[] = []
-  collectUnsupportedPropWarnings(graph, tree, warnings)
+  collectUnsupportedPropWarnings(graph, tree, rendered, warnings)
   return warnings
 }
 
 function collectUnsupportedPropWarnings(
   graph: SceneGraph,
   tree: TreeNode,
+  rendered: ReadonlyMap<TreeNode, SceneNode>,
   warnings: string[]
 ): void {
   const supported = elementProps(tree.type)
   // An instance sets its component's properties by name, such as `State="On"` or `Title="Hi"`.
-  const properties = componentPropNames(graph, tree.props)
+  const properties = componentPropNames(graph, tree.props, rendered.get(tree))
   const element = TEXT_CONTENT_NAMES[tree.type] ?? tree.type
   const schema = elementSchema(tree.type)
   if (schema) warnings.push(...elementPropWarnings(schema, tree.props, element))
@@ -68,7 +74,7 @@ function collectUnsupportedPropWarnings(
   if (tree.type === 'svg') return
 
   for (const child of tree.children) {
-    if (isTreeNode(child)) collectUnsupportedPropWarnings(graph, child, warnings)
+    if (isTreeNode(child)) collectUnsupportedPropWarnings(graph, child, rendered, warnings)
   }
 }
 
@@ -116,12 +122,19 @@ async function renderJSX<Artwork>(
     throw new Error('JSX must return a Figma element (Frame, Text, etc)')
   }
 
-  const results = await renderRoots(services, graph, tree, options)
+  const rendered = new Map<TreeNode, SceneNode>()
+  const results = await renderRoots(services, graph, tree, {
+    ...options,
+    onNode: (element, node) => {
+      rendered.set(element, node)
+      options?.onNode?.(element, node)
+    }
+  })
   // After rendering, so an instance's component set drawn in the same JSX names its variants.
   // A helper called in a loop reports each ignored option once.
   // Prop warnings come first, then the render's own, such as a connector end naming no layer.
   const warnings = uniq([
-    ...unsupportedPropWarnings(graph, tree),
+    ...unsupportedPropWarnings(graph, tree, rendered),
     ...helperWarnings,
     ...(results[0].warnings ?? [])
   ])
@@ -140,7 +153,10 @@ export function createDesignJSXRenderer<Artwork>(services: DesignJSXServices<Art
       renderJSX(services, graph, jsxString, options),
     /** Render a tree built with the element functions into the graph. */
     renderTree: (graph: SceneGraph, tree: TreeNode, options?: RenderJSXOptions) =>
-      renderTree(services, graph, tree, options)
+      renderTree(services, graph, tree, options),
+    /** Render every root of a tree, components before the roots that use them. */
+    renderRoots: (graph: SceneGraph, tree: TreeNode, options?: RenderJSXOptions) =>
+      renderRoots(services, graph, tree, options)
   }
 }
 

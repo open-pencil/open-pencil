@@ -198,7 +198,7 @@ describe('Reka UI elements in JSX export', () => {
       graph,
       `<RadioGroup.Root name="Plan"><RadioGroup.Item of="${radio.id}" /></RadioGroup.Root>`
     )
-    expect(sceneNodeToJSX(group.id, graph)).toContain(`<RadioGroup.Item of="${radio.id}" />`)
+    expect(sceneNodeToJSX(group.id, graph)).toContain('<RadioGroup.Item of="Radio" />')
 
     const [tabs] = await renderJSX(
       graph,
