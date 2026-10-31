@@ -34,6 +34,7 @@ export function useDocumentFontStatus() {
   useEditorEvent('node:created', (node) => updateNode(node.id))
   useEditorEvent('node:updated', updateNode)
   useEditorEvent('node:reparented', updateNode)
+  useEditorEvent('node:reordered', updateNode)
   useEditorEvent('node:deleted', (nodeId) => {
     uses.remove(nodeId)
     refresh()

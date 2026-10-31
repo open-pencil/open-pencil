@@ -73,10 +73,10 @@ export class DocumentFontUses {
    * where they are now, and those moved off the roots are forgotten.
    */
   update(nodeId: string): void {
-    if (!this.graph.getNode(nodeId)) {
-      this.byNode.delete(nodeId)
-      return
-    }
+    const node = this.graph.getNode(nodeId)
+    // Gone, or no longer text: whatever it was remembered as is forgotten.
+    if (node?.type !== 'TEXT') this.byNode.delete(nodeId)
+    if (!node) return
     const under = this.underRoots(nodeId)
     for (const node of rootTextNodes(this.graph, [nodeId])) {
       if (under) this.remember(node)
