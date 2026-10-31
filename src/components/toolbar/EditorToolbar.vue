@@ -70,7 +70,8 @@ function onActionTap(item: ToolbarActionItem) {
 
 <template>
   <ToolbarRoot v-slot="{ activeTool, flyoutSelections, actions }" :tools="tools">
-    <ToolbarContextMenu>
+    <!-- A profile that fixes the tools, as a board's does, has nothing to customize, as in FigJam. -->
+    <ToolbarContextMenu :disabled="profile.tools !== null">
       <DesktopToolbar
         v-if="!isMobile"
         :items="items"
