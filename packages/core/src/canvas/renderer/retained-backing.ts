@@ -8,6 +8,7 @@ import {
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 
+import { paintPageBackground } from '#core/canvas/page/background'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture } from '#core/canvas/renderer/picture'
 import { clearSubtreePictureCache } from '#core/canvas/renderer/state'
@@ -164,6 +165,12 @@ function sceneBackingGeometry(r: SkiaRenderer): SceneBackingGeometry {
     zoom: r.zoom,
     dpr: r.dpr
   }
+}
+
+/** The page under a backing's layers, painted at the backing's own pan and zoom. */
+function paintBackingPage(r: SkiaRenderer, canvas: Canvas, backing: SceneBackingGeometry): void {
+  const origin = { x: backing.panX * r.dpr, y: backing.panY * r.dpr }
+  paintPageBackground(r, canvas, origin, backing.zoom * r.dpr)
 }
 
 function createSceneBackingSurface(r: SkiaRenderer, width: number, height: number): Surface | null {
@@ -434,7 +441,7 @@ function startSceneBackingBuild(r: SkiaRenderer, graph: SceneGraph, sceneVersion
   const pageNode = graph.getNode(r.pageId ?? graph.rootId)
   const surface = createSceneBackingSurface(r, backing.width, backing.height)
   if (!surface) return
-  surface.getCanvas().clear(r.ck.Color4f(r.pageColor.r, r.pageColor.g, r.pageColor.b, 1))
+  paintBackingPage(r, surface.getCanvas(), backing)
   r.sceneBackingBuild = {
     surface,
     graph,
@@ -503,7 +510,7 @@ function recordSceneBacking(r: SkiaRenderer, graph: SceneGraph, sceneVersion: nu
   if (!surface) return
   const canvas = surface.getCanvas()
   try {
-    canvas.clear(r.ck.Color4f(r.pageColor.r, r.pageColor.g, r.pageColor.b, 1))
+    paintBackingPage(r, canvas, backing)
     const pageNode = graph.getNode(r.pageId ?? graph.rootId)
     if (pageNode) {
       for (const childId of pageNode.childIds) {
