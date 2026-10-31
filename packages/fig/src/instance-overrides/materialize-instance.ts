@@ -15,6 +15,7 @@ import {
   occurrenceAssignmentScales,
   occurrenceScale
 } from './bindings/variables'
+import { isClearedStyle } from './cleared-style'
 import { OVERRIDE_FIELDS, type OverrideField, type RawOverrideField } from './fields'
 import { resolveOccurrencePath } from './interpret'
 import type { InstanceOccurrence } from './occurrence/types'
@@ -233,7 +234,9 @@ export function materializeInstance(
 function claimApplies(field: OverrideField, value: unknown, target: SceneNode): boolean {
   if (field.kind === 'text')
     return typeof value === 'object' && value !== null && 'characters' in value
-  if (field.kind === 'text-style') return Boolean(target.textStyleId)
+  // A text style claim names the style the layer took, or clears the component's; one that
+  // resolved to neither, such as a library style missing here, is not claimed.
+  if (field.kind === 'text-style') return Boolean(target.textStyleId) || isClearedStyle(value)
   return true
 }
 
