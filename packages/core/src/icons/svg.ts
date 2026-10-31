@@ -377,6 +377,44 @@ function transformStrokeScale(transform: string | null | undefined): number {
   return Math.min(xScale, yScale)
 }
 
+interface ArcEndpoints {
+  x: number
+  y: number
+  endX: number
+  endY: number
+}
+
+/** Absolute ends of each arc, after relative commands are resolved. */
+function arcEndpoints(d: string): ArcEndpoints[] {
+  const arcs: ArcEndpoints[] = []
+  svgpath(d)
+    .abs()
+    .iterate((segment, _index, x, y) => {
+      if (segment[0] !== 'A') return
+      arcs.push({ x, y, endX: segment[6], endY: segment[7] })
+    })
+  return arcs
+}
+
+/**
+ * Rounding to two decimals can put an arc's end on its start. That arc is degenerate and becomes a
+ * point, so those paths are turned into curves first. Expand smooth commands before that
+ * conversion, as the path parser does, so a following S uses the arc's end as its first control.
+ * Every other path still rounds as before.
+ */
+function roundingCollapsesArc(precise: string): boolean {
+  if (!/[Aa]/.test(precise)) return false
+  const before = arcEndpoints(precise)
+  const after = arcEndpoints(svgpath(precise).round(2).toString())
+  if (before.length > after.length) return true
+  return before.some((arc, index) => {
+    const rounded = after[index]
+    const distinct = arc.x !== arc.endX || arc.y !== arc.endY
+    const coincident = rounded.x === rounded.endX && rounded.y === rounded.endY
+    return distinct && coincident
+  })
+}
+
 /** Scale extracted SVG path info into IconData paths (shared by buildIconData and design-jsx <svg>). */
 export function scalePathInfos(
   pathInfos: IconPathInfo[],
@@ -389,7 +427,10 @@ export function scalePathInfos(
       transformedPath = transformedPath.transform(path.transform)
     }
     if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
-    const scaledD = transformedPath.round(2).toString()
+    const precise = transformedPath.toString()
+    const scaledD = roundingCollapsesArc(precise)
+      ? svgpath(precise).abs().unshort().unarc().round(2).toString()
+      : transformedPath.round(2).toString()
     const fill = normalizeSVGPaint(path.fill)
     const stroke = normalizeSVGPaint(path.stroke)
     return {
