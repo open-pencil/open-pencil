@@ -1,5 +1,6 @@
 import { isEqual } from 'es-toolkit'
 
+import { equalInstanceIndexes } from './checkpoint/index-equality'
 import type { SceneGraph } from './graph'
 
 /** Capture rollback state without changing graph or surviving object identities. */
@@ -60,7 +61,7 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     if (
       !isEqual(snapshot.variableCollections, graph.variableCollections) ||
       !isEqual(snapshot.activeMode, graph.activeMode) ||
-      !isEqual(snapshot.instanceIndex, graph.instanceIndex) ||
+      !equalInstanceIndexes(snapshot.instanceIndex, graph.instanceIndex) ||
       !isEqual(snapshot.enabledLibraries, graph.enabledLibraries) ||
       images.size !== graph.images.size ||
       [...images].some(([id, bytes]) => graph.images.get(id) !== bytes) ||

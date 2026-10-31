@@ -1,0 +1,1 @@
+- Atomic AI, MCP, and WebMCP edits no longer fail solely because a document exceeds 10,000 nodes and variables combined.

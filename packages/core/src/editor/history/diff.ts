@@ -14,21 +14,24 @@ export function diffFields<T extends object>(
   id: string,
   previous: T,
   current: T,
-  skip: ReadonlySet<keyof T> = new Set()
+  skip?: ReadonlySet<keyof T>
 ): FieldChanges<T> | null {
-  const before: Partial<T> = {}
-  const after: Partial<T> = {}
-  const absent: FieldChanges<T>['absent'] = { before: [], after: [] }
+  let result: FieldChanges<T> | null = null
   const keys = new Set([...Object.keys(previous), ...Object.keys(current)] as (keyof T)[])
   for (const key of keys) {
-    if (skip.has(key)) continue
+    if (skip?.has(key)) continue
     const existed = Object.hasOwn(previous, key)
     const exists = Object.hasOwn(current, key)
-    if (existed === exists && isEqual(previous[key], current[key])) continue
-    before[key] = structuredClone(previous[key])
-    after[key] = structuredClone(current[key])
-    if (!existed) absent.before.push(key)
-    if (!exists) absent.after.push(key)
+    if (existed === exists) {
+      const beforeValue = previous[key]
+      const afterValue = current[key]
+      if (beforeValue === afterValue || isEqual(beforeValue, afterValue)) continue
+    }
+    result ??= { id, before: {}, after: {}, absent: { before: [], after: [] } }
+    result.before[key] = structuredClone(previous[key])
+    result.after[key] = structuredClone(current[key])
+    if (!existed) result.absent.before.push(key)
+    if (!exists) result.absent.after.push(key)
   }
-  return Object.keys(after).length ? { id, before, after, absent } : null
+  return result && Object.keys(result.after).length ? result : null
 }

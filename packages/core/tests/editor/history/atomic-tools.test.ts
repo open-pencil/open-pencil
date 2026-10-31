@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { createEditor, executeAtomicTool } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
@@ -28,6 +28,241 @@ function setup() {
 }
 
 describe('atomic agent tools', () => {
+  test('a late getter cannot make a Proxy acceptable on the next transaction', () => {
+    const { graph, figma, editor, undo, rectangle, tool } = setup()
+    const first = graph.getNode(rectangle.id)
+    if (!first) throw new Error('Missing first node')
+    const second = graph.createNode('RECTANGLE', figma.currentPageId)
+    first.source.fig.rawNodeFields.child = { value: 1 }
+    const raw = second.source.fig.rawNodeFields
+    Object.defineProperty(raw, 'trigger', {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        first.source.fig.rawNodeFields.child = new Proxy({ value: 1 }, {})
+        Object.defineProperty(raw, 'trigger', {
+          enumerable: true,
+          configurable: true,
+          writable: true,
+          value: 1
+        })
+        return 1
+      }
+    })
+    let executions = 0
+    const def: ToolDef = {
+      ...tool('set_opacity'),
+      execute: () => {
+        executions++
+        return { ok: true }
+      }
+    }
+    executeAtomicTool(editor, figma, def, {})
+    expect(executions).toBe(1)
+    expect(() => executeAtomicTool(editor, figma, def, {})).toThrow()
+    expect(executions).toBe(1)
+    expect(undo.canUndo).toBe(false)
+  })
+
+  test.each([
+    {
+      name: 'set_opacity',
+      type: 'RECTANGLE',
+      field: 'opacity',
+      args: { value: 0.5 },
+      expected: 0.5
+    },
+    {
+      name: 'update_node',
+      type: 'RECTANGLE',
+      field: 'name',
+      args: { name: 'Large edit' },
+      expected: 'Large edit'
+    },
+    {
+      name: 'set_text',
+      type: 'TEXT',
+      field: 'text',
+      args: { text: 'Large document' },
+      expected: 'Large document'
+    }
+  ] as const)(
+    '$name retains undo and redo above 10000 entries',
+    ({ name, type, field, args, expected }) => {
+      const { graph, figma, editor, undo, tool } = setup()
+      const target = graph.createNode(type, figma.currentPageId)
+      const before = target[field]
+      while (graph.nodes.size <= 10000) graph.createNode('RECTANGLE', figma.currentPageId)
+      executeAtomicTool(editor, figma, tool(name), { id: target.id, ...args })
+      expect(target[field]).toBe(expected)
+      undo.undo()
+      expect(target[field]).toBe(before)
+      undo.redo()
+      expect(target[field]).toBe(expected)
+    }
+  )
+
+  test('large atomic documents include variables without imposing an entry cap', () => {
+    const { graph, figma, editor, undo, tool } = setup()
+    const collection = graph.createCollection('Values')
+    const variable = graph.createVariable('First', 'STRING', collection.id, 'before')
+    while (graph.variables.size + graph.nodes.size <= 10000)
+      graph.createVariable(`Value ${graph.variables.size}`, 'STRING', collection.id, '')
+    executeAtomicTool(editor, figma, tool('set_variable'), {
+      id: variable.id,
+      mode: collection.defaultModeId,
+      value: 'after'
+    })
+    expect(variable.valuesByMode[collection.defaultModeId]).toBe('after')
+    undo.undo()
+    expect(variable.valuesByMode[collection.defaultModeId]).toBe('before')
+    undo.redo()
+    expect(variable.valuesByMode[collection.defaultModeId]).toBe('after')
+  })
+
+  test('nested commits do not replace an outer operation rollback state', () => {
+    const { graph, figma, editor, rectangle, tool } = setup()
+    const before = structuredClone(graph.nodes)
+    const original = graph.getNode(rectangle.id)
+    expect(() =>
+      executeAtomicTool(
+        editor,
+        figma,
+        {
+          ...tool('set_opacity'),
+          execute: () => {
+            rectangle.name = 'Outer'
+            executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.25 })
+            executeAtomicTool(editor, figma, tool('update_node'), { id: rectangle.id, x: 42 })
+            throw new Error('Outer failure')
+          }
+        },
+        {}
+      )
+    ).toThrow('Outer failure')
+    expect(graph.nodes).toEqual(before)
+    expect(graph.getNode(rectangle.id)).toBe(original)
+    executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.5 })
+    expect(rectangle.opacity).toBe(0.5)
+  })
+
+  test('layout errors restore late raw changes on another page and allow the next edit', () => {
+    const { graph, figma, editor, undo, rectangle, tool } = setup()
+    const page = graph.addPage('Other')
+    const sibling = graph.createNode('RECTANGLE', page.id)
+    sibling.source.fig.rawNodeFields = { nested: { values: [1, 2] } }
+    const before = structuredClone(graph.nodes)
+    const layout = editor.runLayoutForNode
+    Object.assign(editor, {
+      runLayoutForNode: () => {
+        sibling.x = 99
+        sibling.source.fig.rawNodeFields.nested = { values: [3, 4] }
+        throw new Error('Layout failure')
+      }
+    })
+    expect(() =>
+      executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.25 })
+    ).toThrow('Layout failure')
+    expect(graph.nodes).toEqual(before)
+    expect(graph.getNode(sibling.id)).toBe(sibling)
+    expect(undo.canUndo).toBe(false)
+    Object.assign(editor, { runLayoutForNode: layout })
+    executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.5 })
+    expect(rectangle.opacity).toBe(0.5)
+  })
+
+  test('native fallback preserves getter reads and undo', () => {
+    const { graph, figma, editor, undo, rectangle, tool } = setup()
+    const node = graph.getNode(rectangle.id)
+    if (!node) throw new Error('Missing node')
+    let reads = 0
+    Object.defineProperty(node.source.fig.rawNodeFields, 'value', {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        reads++
+        return 1
+      }
+    })
+    executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.5 })
+    expect(reads).toBe(3)
+    expect(rectangle.opacity).toBe(0.5)
+    undo.undo()
+    expect(rectangle.opacity).toBe(1)
+  })
+
+  test.each([false, true])(
+    'rejects Proxy data without inspecting it before capture, warm=%s',
+    (warm) => {
+      const { graph, figma, editor, rectangle, tool } = setup()
+      if (warm)
+        executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.75 })
+      const beforeOpacity = rectangle.opacity
+      const node = graph.getNode(rectangle.id)
+      if (!node) throw new Error('Missing node')
+      let inspections = 0
+      node.source.fig.rawNodeFields.value = new Proxy(
+        { value: 1 },
+        {
+          ownKeys: (target) => {
+            inspections++
+            rectangle.opacity = 0.25
+            return Reflect.ownKeys(target)
+          }
+        }
+      )
+      let executed = false
+      expect(() =>
+        executeAtomicTool(
+          editor,
+          figma,
+          {
+            ...tool('set_opacity'),
+            execute: () => {
+              executed = true
+            }
+          },
+          {}
+        )
+      ).toThrow()
+      expect(executed).toBe(false)
+      expect(inspections).toBe(0)
+      expect(rectangle.opacity).toBe(beforeOpacity)
+    }
+  )
+
+  test('uncloneable changes fail before layout and recording recovers', () => {
+    const { graph, figma, editor, undo, rectangle, tool } = setup()
+    const node = graph.getNode(rectangle.id)
+    if (!node) throw new Error('Missing node')
+    const before = structuredClone(graph.nodes)
+    let layouts = 0
+    Object.assign(editor, {
+      runLayoutForNode: () => {
+        layouts++
+        Reflect.deleteProperty(node.source.fig.rawNodeFields, 'uncopyable')
+      }
+    })
+    expect(() =>
+      executeAtomicTool(
+        editor,
+        figma,
+        {
+          ...tool('set_opacity'),
+          execute: () => {
+            node.source.fig.rawNodeFields.uncopyable = () => undefined
+          }
+        },
+        {}
+      )
+    ).toThrow()
+    expect(layouts).toBe(0)
+    expect(graph.nodes).toEqual(before)
+    expect(undo.canUndo).toBe(false)
+    executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.5 })
+    expect(rectangle.opacity).toBe(0.5)
+  })
+
   test('component edits and undo propagate through the editor synchronizer', async () => {
     const editor = createEditor()
     const figma = new FigmaAPI(editor.graph)

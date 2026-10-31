@@ -9,9 +9,6 @@ import { isAtomicTool, type ToolDef } from '#core/tools/schema'
 
 import { diffFields, type FieldChanges } from './diff'
 
-// Capture property changes across pages. Component synchronization remains editor-owned.
-const MAX_TRANSACTION_NODES = 10_000
-
 type MutationEditor = Pick<
   Editor,
   'graph' | 'runLayoutForNode' | 'requestRender' | 'pushUndoStep'
@@ -36,7 +33,7 @@ function changes<T extends object>(
 
 /**
  * No await is permitted between snapshot and commit. Browser events, other agents and
- * cancellation cannot interleave with this bounded transaction. Async tools use their
+ * cancellation cannot interleave with this transaction. Async tools use their
  * existing execution path and are not exposed through WebMCP.
  */
 export function executeAtomicTool(
@@ -53,9 +50,6 @@ export function executeAtomicTool(
     throw new Error('The target document is no longer open')
   }
   const graph = figma.graph
-  if (graph.nodes.size + graph.variables.size > MAX_TRANSACTION_NODES) {
-    throw new Error('Document too large for atomic agent editing (maximum 10000 nodes)')
-  }
   const checkpoint = captureGraphCheckpoint(graph)
   const { nodes, variables } = checkpoint
   const pageId = figma.currentPageId
