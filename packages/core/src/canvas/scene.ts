@@ -3,8 +3,10 @@ import type { Canvas } from 'canvaskit-wasm'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
+import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { fontManager } from '#core/text/font/manager'
 
@@ -18,10 +20,10 @@ import type { SkiaRenderer, RenderOverlays } from './renderer'
 import { renderShapeThroughEffectCaches } from './renderer/effect-raster-cache'
 import { mapVisualBounds, subtreeVisualBounds } from './renderer/visual-bounds'
 import { isolatesInnerShadows, renderLayerShadows } from './shadows'
-import { isLayerContainer } from './shadows/silhouette'
 import {
   configureStrokePaint,
   drawDashedRRectWithSolidCorners,
+  drawRRectStrokeWithAlign,
   drawStyledRRectStroke,
   forVisibleStrokes
 } from './strokes'
@@ -443,9 +445,9 @@ export function renderSection(
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     configureStrokePaint(r, node, stroke, color)
 
-    if (node.independentStrokeWeights) r.drawIndividualSideStrokes(canvas, node, stroke)
+    if (node.independentStrokeWeights) drawIndividualSideStrokes(r, canvas, node, stroke)
     else if (!drawFigmaDashes(r, canvas, node, stroke)) {
-      r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
+      drawRRectStrokeWithAlign(r, canvas, rrect, node, stroke)
     }
   })
 }
@@ -501,7 +503,9 @@ export function renderShape(
     return
   }
 
-  renderShapeThroughEffectCaches(r, canvas, node, graph)
+  renderShapeThroughEffectCaches(r, canvas, node, (target) =>
+    r.renderShapeUncached(target, node, graph)
+  )
 }
 
 /** Draws a shape with its own effects: Figma puts inner shadows over fills and under strokes. */

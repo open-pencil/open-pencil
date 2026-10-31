@@ -113,11 +113,11 @@ export function applyFill(
   }
 
   if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
-    return r.applyGradientFill(fill, node, graph)
+    return applyGradientFill(r, fill, node, graph)
   }
 
   if (fill.type === 'IMAGE' && fill.imageHash) {
-    return r.applyImageFill(fill, node, graph)
+    return applyImageFill(r, fill, node, graph)
   }
 
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true

@@ -1,6 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { arrowCapOverflow } from '@open-pencil/scene-graph/arrow-caps'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -14,7 +14,7 @@ export function renderShapeThroughEffectCaches(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  graph: SceneGraph
+  draw: (target: Canvas) => void
 ): void {
   const cached = r.nodePictureCache.get(node.id)
   const cachedGeneration = r.nodePictureCacheGenerations.get(node.id)
@@ -33,7 +33,7 @@ export function renderShapeThroughEffectCaches(
   const recorder = new r.ck.PictureRecorder()
   try {
     const recCanvas = recorder.beginRecording(bounds)
-    r.renderShapeUncached(recCanvas, node, graph)
+    draw(recCanvas)
     const picture = recorder.finishRecordingAsPicture()
     r.nodePictureCache.set(node.id, picture)
     r.nodePictureCacheGenerations.set(node.id, r.fontGeneration)

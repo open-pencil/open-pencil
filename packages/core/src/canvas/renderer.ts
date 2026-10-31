@@ -3,6 +3,7 @@ import { toUint8Array } from 'js-base64'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
@@ -34,7 +35,6 @@ import { NodePathCaches } from './paths/cache'
 import * as RenderColors from './renderer/colors'
 import * as RendererFonts from './renderer/fonts'
 import { destroyRenderer, releaseLiveImages } from './renderer/lifecycle'
-import { installRendererDomainMethods, type RendererDomainMethods } from './renderer/methods'
 import {
   initializeRendererPaints,
   initializeRulerPaintColors,
@@ -55,18 +55,21 @@ export type {
   SelectionTheme
 } from './renderer/types'
 import type {
-  CanvasKit,
-  Surface,
-  Canvas,
   Blender,
-  Paint,
+  Canvas,
+  CanvasKit,
   Font,
-  TypefaceFontProvider,
-  SkPicture,
+  Image,
+  ImageFilter,
+  MaskFilter,
+  Paint,
+  Path,
   RuntimeEffect,
   Shader,
-  Image,
-  TextureSource
+  SkPicture,
+  Surface,
+  TextureSource,
+  TypefaceFontProvider
 } from 'canvaskit-wasm'
 
 import { createSceneGeometry, type RotationPreview, type SceneGeometry } from '#core/geometry'
@@ -76,12 +79,19 @@ export interface PendingFontNode {
   keys: Set<string>
 }
 
+import * as Effects from './effects'
+import * as Fills from './fills'
 import type { PlacedIssueMarker } from './issues/types'
 import type { PlacedStatusLabel } from './labels/status'
 import type { NodeEditPaints } from './node-edit-overlay'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
 import type { RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
+import * as Scene from './scene'
+import { type EffectPass, renderEffects as renderShadowEffects } from './shadows'
+import * as Shapes from './shapes'
+import * as Strokes from './strokes'
+import * as TextRender from './text/render'
 
 /**
  * A picture uploaded as a texture that knows its size: an `ImageBitmap`, or a canvas, which
@@ -259,62 +269,6 @@ export class SkiaRenderer {
   readonly COMPONENT_SET_DASH = COMPONENT_SET_DASH
   readonly COMPONENT_SET_DASH_GAP = COMPONENT_SET_DASH_GAP
 
-  declare drawHoverHighlight: RendererDomainMethods['drawHoverHighlight']
-  declare drawMeasurements: RendererDomainMethods['drawMeasurements']
-  declare drawEnteredContainer: RendererDomainMethods['drawEnteredContainer']
-  declare drawSelection: RendererDomainMethods['drawSelection']
-  declare drawNodeSelection: RendererDomainMethods['drawNodeSelection']
-  declare drawSelectionLabels: RendererDomainMethods['drawSelectionLabels']
-  declare drawParentFrameOutlines: RendererDomainMethods['drawParentFrameOutlines']
-  declare drawNodeOutline: RendererDomainMethods['drawNodeOutline']
-  declare drawGroupBounds: RendererDomainMethods['drawGroupBounds']
-  declare drawHandle: RendererDomainMethods['drawHandle']
-  declare drawSnapGuides: RendererDomainMethods['drawSnapGuides']
-  declare drawSnapMarks: RendererDomainMethods['drawSnapMarks']
-  declare drawMarquee: RendererDomainMethods['drawMarquee']
-  declare drawFlashes: RendererDomainMethods['drawFlashes']
-  declare drawLayoutInsertIndicator: RendererDomainMethods['drawLayoutInsertIndicator']
-  declare drawAutoLayoutHover: RendererDomainMethods['drawAutoLayoutHover']
-  declare drawTextEditOverlay: RendererDomainMethods['drawTextEditOverlay']
-  declare drawNodeEditOverlay: RendererDomainMethods['drawNodeEditOverlay']
-  declare drawPenOverlay: RendererDomainMethods['drawPenOverlay']
-  declare drawPencilOverlay: RendererDomainMethods['drawPencilOverlay']
-  declare drawPresenceCursors: RendererDomainMethods['drawPresenceCursors']
-  declare drawRulers: RendererDomainMethods['drawRulers']
-  declare drawFrameTitles: RendererDomainMethods['drawFrameTitles']
-  declare drawSectionTitles: RendererDomainMethods['drawSectionTitles']
-  declare drawComponentLabels: RendererDomainMethods['drawComponentLabels']
-  declare renderNodeSelf: RendererDomainMethods['renderNodeSelf']
-  declare renderNode: RendererDomainMethods['renderNode']
-  declare renderSection: RendererDomainMethods['renderSection']
-  declare renderComponentSet: RendererDomainMethods['renderComponentSet']
-  declare renderShape: RendererDomainMethods['renderShape']
-  declare renderShapeUncached: RendererDomainMethods['renderShapeUncached']
-  declare paintShapeContent: RendererDomainMethods['paintShapeContent']
-  declare renderEffects: RendererDomainMethods['renderEffects']
-  declare renderText: RendererDomainMethods['renderText']
-  declare drawNodeFill: RendererDomainMethods['drawNodeFill']
-  declare applyFill: RendererDomainMethods['applyFill']
-  declare applyGradientFill: RendererDomainMethods['applyGradientFill']
-  declare applyImageFill: RendererDomainMethods['applyImageFill']
-  declare drawNodeStroke: RendererDomainMethods['drawNodeStroke']
-  declare drawStrokeWithAlign: RendererDomainMethods['drawStrokeWithAlign']
-  declare drawRRectStrokeWithAlign: RendererDomainMethods['drawRRectStrokeWithAlign']
-  declare drawIndividualSideStrokes: RendererDomainMethods['drawIndividualSideStrokes']
-  declare strokeNodeShape: RendererDomainMethods['strokeNodeShape']
-  declare makeNodeShapePath: RendererDomainMethods['makeNodeShapePath']
-  declare makePolygonPath: RendererDomainMethods['makePolygonPath']
-  declare makeRRect: RendererDomainMethods['makeRRect']
-  declare makeRRectWithSpread: RendererDomainMethods['makeRRectWithSpread']
-  declare clipNodeShape: RendererDomainMethods['clipNodeShape']
-  declare getVectorPaths: RendererDomainMethods['getVectorPaths']
-  declare getFillGeometry: RendererDomainMethods['getFillGeometry']
-  declare getStrokeGeometry: RendererDomainMethods['getStrokeGeometry']
-  declare getCachedDropShadow: RendererDomainMethods['getCachedDropShadow']
-  declare getCachedBlur: RendererDomainMethods['getCachedBlur']
-  declare getCachedDecalBlur: RendererDomainMethods['getCachedDecalBlur']
-  declare getCachedMaskBlur: RendererDomainMethods['getCachedMaskBlur']
-  declare applyClippedBlur: RendererDomainMethods['applyClippedBlur']
   color4f(r: number, g: number, b: number, a: number): Float32Array {
     const c = this._tmpColor
     c[0] = r
@@ -879,9 +833,137 @@ export class SkiaRenderer {
 
   destroyed: boolean = false
 
+  /**
+   * The scene walk's recursion and the geometry and effect caches, reached through the renderer:
+   * the modules below need not import one another in a cycle, and a test can stand a double in.
+   */
+  renderNode(
+    canvas: Canvas,
+    graph: SceneGraph,
+    nodeId: string,
+    overlays: RenderOverlays,
+    parentAbsX?: number,
+    parentAbsY?: number,
+    frame?: Mat3 | null
+  ): void {
+    Scene.renderNode(this, canvas, graph, nodeId, overlays, parentAbsX, parentAbsY, frame)
+  }
+
+  renderNodeSelf(
+    canvas: Canvas,
+    graph: SceneGraph,
+    nodeId: string,
+    overlays?: RenderOverlays
+  ): void {
+    Scene.renderNodeSelf(this, canvas, graph, nodeId, overlays)
+  }
+
+  renderSection(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    Scene.renderSection(this, canvas, node, graph)
+  }
+
+  renderComponentSet(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    Scene.renderComponentSet(this, canvas, node, graph)
+  }
+
+  renderShape(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    Scene.renderShape(this, canvas, node, graph)
+  }
+
+  renderShapeUncached(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    Scene.renderShapeUncached(this, canvas, node, graph)
+  }
+
+  paintShapeContent(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    Scene.paintShapeContent(this, canvas, node, graph)
+  }
+
+  renderEffects(canvas: Canvas, node: SceneNode, graph: SceneGraph, pass: EffectPass): void {
+    renderShadowEffects(this, canvas, node, graph, pass)
+  }
+
+  renderText(canvas: Canvas, node: SceneNode, fill?: Fill): void {
+    TextRender.renderText(this, canvas, node, fill)
+  }
+
+  applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): boolean {
+    return Fills.applyFill(this, fill, node, graph, fillIndex)
+  }
+
+  drawNodeFill(canvas: Canvas, node: SceneNode, fill?: Fill): void {
+    Fills.drawNodeFill(this, canvas, node, fill)
+  }
+
+  drawNodeStroke(canvas: Canvas, node: SceneNode): void {
+    Strokes.drawNodeStroke(this, canvas, node)
+  }
+
+  drawStrokeWithAlign(
+    canvas: Canvas,
+    node: SceneNode,
+    align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
+  ): void {
+    Strokes.drawStrokeWithAlign(this, canvas, node, align)
+  }
+
+  clipNodeShape(canvas: Canvas, node: SceneNode): void {
+    Shapes.clipNodeShape(this, canvas, node)
+  }
+
+  getVectorPaths(node: SceneNode): Path[] | null {
+    return Shapes.getVectorPaths(this, node)
+  }
+
+  getFillGeometry(node: SceneNode): Path[] | null {
+    return Shapes.getFillGeometry(this, node)
+  }
+
+  getStrokeGeometry(node: SceneNode): Path[] | null {
+    return Shapes.getStrokeGeometry(this, node)
+  }
+
+  makeNodeShapePath(node: SceneNode): Path {
+    return Shapes.makeNodeShapePath(this, node)
+  }
+
+  makePolygonPath(node: SceneNode): Path {
+    return Shapes.makePolygonPath(this, node)
+  }
+
+  makeRRect(node: SceneNode): Float32Array {
+    return Shapes.makeRRect(this, node)
+  }
+
+  makeRRectWithSpread(node: SceneNode, spread: number): Float32Array {
+    return Shapes.makeRRectWithSpread(this, node, spread)
+  }
+
+  getCachedBlur(sigma: number): ImageFilter | null {
+    return Effects.getCachedBlur(this, sigma)
+  }
+
+  getCachedDecalBlur(sigma: number): ImageFilter | null {
+    return Effects.getCachedDecalBlur(this, sigma)
+  }
+
+  getCachedDropShadow(
+    dx: number,
+    dy: number,
+    sigma: number,
+    color: Float32Array
+  ): ImageFilter | null {
+    return Effects.getCachedDropShadow(this, dx, dy, sigma, color)
+  }
+
+  getCachedMaskBlur(sigma: number): MaskFilter | null {
+    return Effects.getCachedMaskBlur(this, sigma)
+  }
+
+  applyClippedBlur(canvas: Canvas, node: SceneNode, sigma: number, shape?: Path | null): void {
+    Effects.applyClippedBlur(this, canvas, node, sigma, shape)
+  }
+
   destroy(): void {
     destroyRenderer(this)
   }
 }
-
-installRendererDomainMethods(SkiaRenderer.prototype)

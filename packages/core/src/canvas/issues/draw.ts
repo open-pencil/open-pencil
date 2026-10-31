@@ -6,6 +6,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { inNodeSpace, withScreenStroke } from '#core/canvas/overlays/outline'
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { strokeNodeShape } from '#core/canvas/strokes'
 import {
   ISSUE_EDGE_ARROW,
   ISSUE_ERROR_COLOR,
@@ -61,7 +62,7 @@ export function drawIssueHighlight(
     r.auxFill.setColor(color4f(r, color, ISSUE_HIGHLIGHT_FILL_ALPHA))
     canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxFill)
     const stroke = { color: color4f(r, color), width: ISSUE_HIGHLIGHT_STROKE_WIDTH }
-    withScreenStroke(r, stroke, (paint) => r.strokeNodeShape(canvas, node, paint))
+    withScreenStroke(r, stroke, (paint) => strokeNodeShape(r, canvas, node, paint))
 
     const minSize = highlight.minSize
     if (minSize && (node.width < minSize.width || node.height < minSize.height)) {

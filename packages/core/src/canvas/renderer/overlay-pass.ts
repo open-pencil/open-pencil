@@ -5,7 +5,22 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
+import { drawComponentLabels, drawFrameTitles, drawSectionTitles } from '#core/canvas/labels/draw'
 import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
+import { drawNodeEditOverlay } from '#core/canvas/node-edit-overlay'
+import {
+  drawAutoLayoutHover,
+  drawEnteredContainer,
+  drawFlashes,
+  drawHoverHighlight,
+  drawLayoutInsertIndicator,
+  drawMarquee,
+  drawMeasurements,
+  drawPresenceCursors,
+  drawSelection,
+  drawSnapGuides,
+  drawSnapMarks
+} from '#core/canvas/overlays'
 import { drawAIOverlays } from '#core/canvas/overlays/ai'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
@@ -17,7 +32,9 @@ import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
 import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
+import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/pen-overlay'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { drawRulers } from '#core/canvas/rulers'
 import { RULER_SIZE } from '#core/constants'
 import { editedGradient } from '#core/editor/gradient-edit'
 
@@ -40,13 +57,13 @@ export function drawLabelPass(
 ): void {
   const profiler = r.profiler
   profiler.beginPhase('render:frameTitles')
-  r.drawFrameTitles(canvas, graph, selectedIds, overlays)
+  drawFrameTitles(r, canvas, graph, selectedIds, overlays)
   profiler.endPhase('render:frameTitles')
   profiler.beginPhase('render:sectionTitles')
-  r.drawSectionTitles(canvas, graph, overlays)
+  drawSectionTitles(r, canvas, graph, overlays)
   profiler.endPhase('render:sectionTitles')
   profiler.beginPhase('render:componentLabels')
-  r.drawComponentLabels(canvas, graph, overlays)
+  drawComponentLabels(r, canvas, graph, overlays)
   profiler.endPhase('render:componentLabels')
 }
 
@@ -106,9 +123,9 @@ export function drawOverlayPass(
   if (!measuring)
     drawSlotOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays.rotationPreview)
   if (!measuring) drawLayoutOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays)
-  r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
+  drawHoverHighlight(r, canvas, graph, hoveredNodeId, overlays.rotationPreview)
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
-  r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
+  drawEnteredContainer(r, canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   drawDropTarget(r, canvas, graph, overlays.dropTargetId, overlays.rotationPreview)
   drawConnectorTarget(r, canvas, graph, overlays.connectorTarget, overlays.rotationPreview)
   drawEditingText(r, canvas, graph, overlays)
@@ -118,7 +135,7 @@ export function drawOverlayPass(
   if (!overlays.playing && editedGradient(graph, overlays.gradientEdit))
     drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
   else {
-    r.drawSelection(canvas, graph, selectedIds, overlays)
+    drawSelection(r, canvas, graph, selectedIds, overlays)
     if (!overlays.transforming && r.editHandles)
       drawShapeHandles(
         r,
@@ -129,26 +146,26 @@ export function drawOverlayPass(
         overlays.rotationPreview
       )
   }
-  if (measuring) r.drawMeasurements(canvas, graph, selectedIds, overlays.hoveredNodeId)
+  if (measuring) drawMeasurements(r, canvas, graph, selectedIds, overlays.hoveredNodeId)
   r.profiler.endPhase('render:selection')
 
-  r.drawFlashes(canvas, graph)
+  drawFlashes(r, canvas, graph)
   drawAIOverlays(r, canvas, graph)
   if (overlays.guides?.redline) drawMeasurementSegment(r, canvas, overlays.guides.redline.segment)
   drawGuides(r, canvas, graph, overlays.guides)
-  r.drawSnapGuides(canvas, overlays.snapGuides)
-  r.drawMarquee(canvas, overlays.marquee)
-  r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
+  drawSnapGuides(r, canvas, overlays.snapGuides)
+  drawMarquee(r, canvas, overlays.marquee)
+  drawLayoutInsertIndicator(r, canvas, overlays.layoutInsertIndicator)
   if (!measuring && !overlays.transforming && r.editHandles) {
-    r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
+    drawAutoLayoutHover(r, canvas, graph, overlays.autoLayoutHover)
   }
-  r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
-  r.drawPenOverlay(canvas, overlays.penState)
-  r.drawPencilOverlay(canvas, overlays.pencilState)
-  r.drawSnapMarks(canvas, overlays.snapGuides)
+  drawNodeEditOverlay(r, canvas, graph, overlays.nodeEditState)
+  drawPenOverlay(r, canvas, overlays.penState)
+  drawPencilOverlay(r, canvas, overlays.pencilState)
+  drawSnapMarks(r, canvas, overlays.snapGuides)
   updateIssueMarkers(r, graph, overlays)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)
-  r.drawPresenceCursors(canvas, graph, overlays.presenceCursors)
+  drawPresenceCursors(r, canvas, graph, overlays.presenceCursors)
 }
 
 export function drawChromePass(
@@ -159,7 +176,7 @@ export function drawChromePass(
   overlays: RenderOverlays
 ): void {
   r.profiler.beginPhase('render:rulers')
-  if (r.showRulers) r.drawRulers(canvas, graph, selectedIds, overlays.guides)
+  if (r.showRulers) drawRulers(r, canvas, graph, selectedIds, overlays.guides)
   r.profiler.endPhase('render:rulers')
   r.profiler.drawHUD(canvas, r.showRulers)
 }

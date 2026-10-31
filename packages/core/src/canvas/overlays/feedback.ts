@@ -25,6 +25,7 @@ import {
 import { createSceneGeometry, type RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, outlineNode } from './outline'
+import { drawTextEditOverlay } from './text-edit'
 
 export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
   if (!guides || guides.length === 0) return
@@ -194,6 +195,6 @@ export function drawEditingText(
         r.renderText(canvas, placeholder, fill)
       )
     }
-    r.drawTextEditOverlay(canvas, node, editor, outset)
+    drawTextEditOverlay(r, canvas, node, editor, outset)
   })
 }
