@@ -138,7 +138,12 @@ const {
   // The scene canvas reports a canvas that cannot start.
   onFailed: () => undefined,
   get showRulers() {
-    return appRuntimeConfig.showRulers && store.state.showRulers && paneProfile.value.editChrome
+    return (
+      appRuntimeConfig.showRulers &&
+      store.state.showRulers &&
+      paneProfile.value.editChrome &&
+      paneProfile.value.rulers
+    )
   },
   getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
   shouldSuspendRender,

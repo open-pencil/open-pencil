@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { computeGuideRedline, hitTestGuides } from '@open-pencil/core/canvas'
 import { RULER_SIZE } from '@open-pencil/core/constants'
 
@@ -108,6 +108,7 @@ export function createGuideInput({
 
   function tryStartFromRuler(sx: number, sy: number, cx: number, cy: number): boolean {
     if (!('showRulers' in editor.state) || editor.state.showRulers !== true) return false
+    if (!resolveEditorProfile(editor.state).rulers) return false
     const axis = rulerAxis(sx, sy)
     if (!axis) return false
     const ownerId = ownerAt(cx, cy)

@@ -22,6 +22,7 @@ type DocumentBehaviour = Pick<
   | 'pixelGrid'
   | 'framesOpen'
   | 'lint'
+  | 'rulers'
   | 'panelsOpen'
 >
 
@@ -38,6 +39,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     pixelGrid: true,
     framesOpen: true,
     lint: true,
+    rulers: true,
     panelsOpen: true
   },
   board: {
@@ -49,6 +51,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     pixelGrid: false,
     framesOpen: false,
     lint: false,
+    rulers: false,
     panelsOpen: false
   }
 }

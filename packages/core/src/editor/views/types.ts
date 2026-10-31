@@ -61,6 +61,8 @@ export interface EditorProfile {
   framesOpen: boolean
   /** Whether design lint checks the document; a FigJam board has none. */
   lint: boolean
+  /** Whether the canvas shows rulers, from which guides are dragged; a FigJam board has none. */
+  rulers: boolean
   /**
    * Whether the side panels start open: a design's do, while a board starts on the canvas alone,
    * as FigJam shows it, with the panels a click away.

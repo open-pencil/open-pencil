@@ -28,6 +28,7 @@ describe('canvas view profiles', () => {
       pixelGrid: true,
       framesOpen: true,
       lint: true,
+      rulers: true,
       panelsOpen: true
     })
   })
@@ -50,6 +51,7 @@ describe('canvas view profiles', () => {
       pixelGrid: true,
       framesOpen: true,
       lint: true,
+      rulers: true,
       panelsOpen: true
     })
   })
@@ -132,9 +134,10 @@ describe('document kinds', () => {
     ])
     expect([profile.toolKeys, profile.snapGrid]).toEqual([BOARD_TOOL_SHORTCUTS, 16])
     // FigJam draws its dots every 16 units and has no pixel grid.
-    const { dotGrid, pixelGrid, framesOpen, lint, panelsOpen } = profile
-    expect([dotGrid, pixelGrid, framesOpen, lint, panelsOpen]).toEqual([
+    const { dotGrid, pixelGrid, framesOpen, lint, rulers, panelsOpen } = profile
+    expect([dotGrid, pixelGrid, framesOpen, lint, rulers, panelsOpen]).toEqual([
       16,
+      false,
       false,
       false,
       false,

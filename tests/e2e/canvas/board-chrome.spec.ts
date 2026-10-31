@@ -28,8 +28,9 @@ async function selectNoteAt(x: number, y: number) {
   await editor.canvas.waitForRender()
 }
 
-test('a board opens on the canvas alone, with the panels one click away', async () => {
+test('a board opens on the canvas and its tools, with the panels one click away', async () => {
   await expect(editor.page.getByTestId('editor-show-ui')).toBeVisible()
+  await expect(editor.page.getByTestId('toolbar')).toBeVisible()
   await expect(editor.page.getByRole('region', { name: 'Sticky note' })).toHaveCount(0)
 })
 

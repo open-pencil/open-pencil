@@ -69,6 +69,8 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 const canvasAlone = computed(
   () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
 )
+// A board keeps its tools when its panels are away, as FigJam always shows them.
+const toolsStay = computed(() => !resolveEditorProfile(store.state).panelsOpen)
 const { editor } = useI18n()
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
@@ -157,6 +159,7 @@ const { pending: roomPending } = useRoomActions()
     <div class="relative flex min-w-0 flex-1">
       <EditorCanvas />
       <ActiveRoomOverlay />
+      <EditorToolbar v-if="toolsStay && !canvasAlone" />
       <WorkspacePill
         v-if="!isMobile && canvasAlone"
         mode="preview"
