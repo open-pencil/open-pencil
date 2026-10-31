@@ -1,10 +1,12 @@
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { openTour } from '@/app/demo/document'
+import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { requestAppExit } from '@/app/document/close/exit'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
 import {
+  followNativeCanvasViewMenu,
   syncNativeCommentsMenu,
   syncNativeDesignIssuesMenu,
   syncNativeSnappingMenu
@@ -48,6 +50,8 @@ export function useShellMenu() {
       console.error('[Menu] Failed to synchronize the native comments menu:', error)
     }
   )
+
+  followNativeCanvasViewMenu(useActiveEditorStoreRef())
 
   const { setTheme } = useAppTheme()
   const { updates } = useI18n()
