@@ -24,7 +24,7 @@ import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
-import { invalidateTextCaches } from './text/picture'
+import { textCacheInvalidationChanges } from './text/picture'
 import type {
   DocumentColorSpace,
   DocumentKind,
@@ -575,9 +575,16 @@ export class SceneGraph {
       if (node.componentId) this.unindexInstance(node.componentId, id)
       if (changes.componentId) this.indexInstance(changes.componentId, id)
     }
-    if (node.type === 'TEXT') invalidateTextCaches(node, changes)
     if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
       markSourceFieldsEdited(node, Object.keys(changes))
+    }
+    // Cache resets that change the node travel with the change, under the caller's own values,
+    // so a layout put-back cannot drop their event.
+    if (node.type === 'TEXT') {
+      const resets = omitBy(textCacheInvalidationChanges(node, changes), (value, key) =>
+        Object.is(node[key], value)
+      )
+      changes = { ...resets, ...changes }
     }
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }

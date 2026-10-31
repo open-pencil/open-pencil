@@ -2,7 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
-import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
+import {
+  captureGraphCheckpoint,
+  captureTouchedCheckpoint
+} from '@open-pencil/scene-graph/checkpoint'
 
 import { readPage } from '@/app/collab/shared-tree/fields'
 
@@ -151,6 +154,69 @@ describe('collab layer tree', () => {
           'rect:1',
           'rect:2'
         ])
+        expectSameLayerTree(stores, [pageId])
+      },
+      { bindGraphEvents: true }
+    )
+  })
+
+  test('a touched checkpoint rollback moves restored layers back on the other peer', async () => {
+    await withSyncedStores(
+      async (stores) => {
+        const { hostStore, peerStore } = stores
+        const pageId = expectDefined(hostStore.graph.getPages()[0], 'first page').id
+        hostStore.graph.createNode('FRAME', pageId, { id: 'frame:1' })
+        hostStore.graph.createNode('RECTANGLE', pageId, { id: 'rect:1' })
+        hostStore.graph.createNode('RECTANGLE', pageId, { id: 'rect:2' })
+        stores.hostSync.syncAllNodesToYjs()
+        await settleGraphSync()
+
+        const checkpoint = captureTouchedCheckpoint(hostStore.graph)
+        hostStore.graph.updateNode('rect:2', { opacity: 0.5 })
+        hostStore.graph.reparentNode('rect:1', 'frame:1')
+        await settleGraphSync()
+        expect(getNodeOrThrow(peerStore.graph, 'rect:1').parentId).toBe('frame:1')
+        expect(getNodeOrThrow(peerStore.graph, 'rect:2').opacity).toBe(0.5)
+
+        checkpoint.restore()
+        await settleGraphSync()
+        expect(getNodeOrThrow(peerStore.graph, 'rect:1').parentId).toBe(pageId)
+        expect(getNodeOrThrow(peerStore.graph, 'rect:2').opacity).toBe(1)
+        expect(getNodeOrThrow(peerStore.graph, pageId).childIds).toEqual([
+          'frame:1',
+          'rect:1',
+          'rect:2'
+        ])
+        expectSameLayerTree(stores, [pageId])
+      },
+      { bindGraphEvents: true }
+    )
+  })
+
+  test('a touched checkpoint rollback brings back deleted layers and removes created ones on the other peer', async () => {
+    await withSyncedStores(
+      async (stores) => {
+        const { hostStore, peerStore } = stores
+        const pageId = expectDefined(hostStore.graph.getPages()[0], 'first page').id
+        hostStore.graph.createNode('FRAME', pageId, { id: 'frame:1' })
+        hostStore.graph.createNode('RECTANGLE', 'frame:1', { id: 'rect:1' })
+        hostStore.graph.createNode('RECTANGLE', pageId, { id: 'rect:2' })
+        stores.hostSync.syncAllNodesToYjs()
+        await settleGraphSync()
+
+        const checkpoint = captureTouchedCheckpoint(hostStore.graph)
+        hostStore.graph.deleteNode('frame:1')
+        hostStore.graph.createNode('ELLIPSE', pageId, { id: 'ellipse:1' })
+        await settleGraphSync()
+        expect(peerStore.graph.getNode('frame:1')).toBeUndefined()
+        expect(peerStore.graph.getNode('ellipse:1')).toBeDefined()
+
+        checkpoint.restore()
+        await settleGraphSync()
+        expect(getNodeOrThrow(peerStore.graph, 'frame:1').childIds).toEqual(['rect:1'])
+        expect(getNodeOrThrow(peerStore.graph, 'rect:1').parentId).toBe('frame:1')
+        expect(peerStore.graph.getNode('ellipse:1')).toBeUndefined()
+        expect(getNodeOrThrow(peerStore.graph, pageId).childIds).toEqual(['frame:1', 'rect:2'])
         expectSameLayerTree(stores, [pageId])
       },
       { bindGraphEvents: true }
