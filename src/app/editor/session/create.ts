@@ -40,10 +40,6 @@ import { IS_BROWSER, IS_TAURI } from '@/constants'
 export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core'
 export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core'
 
-/**
- * A store for `initialGraph`, an opened document unless `opened` says it is new: a new one gets the
- * page background of the interface theme, unless its page has one, as a board's does.
- */
 function buildEditorStore(initialGraph?: SceneGraph, opened = initialGraph !== undefined) {
   const graph = initialGraph ?? new SceneGraph()
 
