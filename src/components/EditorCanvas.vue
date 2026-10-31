@@ -46,6 +46,7 @@ import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
+import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
 import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
@@ -145,6 +146,7 @@ const {
   onViewportResize
 })
 const {
+  drag,
   cursorOverride,
   canvasLabelEdit,
   updateCanvasLabelEdit,
@@ -242,6 +244,16 @@ const canvasLabelEditPresentation = computed(() =>
   canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
 )
 
+// With the side panels away, a sticky, shape, or connector shows its controls over the canvas,
+// as FigJam does.
+const selectionToolbar = computed(
+  () =>
+    isActivePane.value &&
+    !store.state.showUI &&
+    paneProfile.value.edits &&
+    paneProfile.value.editChrome
+)
+
 const valueEditorAnchor = computed(() => {
   const edit = autoLayoutValueEdit.value
   return edit ? autoLayoutValueAnchor(store, edit.nodeId, edit.field, edit.gap) : null
@@ -308,6 +320,11 @@ const cursor = computed(() =>
           @update="updateCanvasLabelEdit"
           @commit="commitCanvasLabelEdit"
           @cancel="cancelCanvasLabelEdit"
+        />
+        <SelectionToolbar
+          v-if="selectionToolbar"
+          :canvas="canvasRef"
+          :hidden="!!drag || !!canvasLabelEdit"
         />
         <PopoverRoot :open="!!autoLayoutValueEdit">
           <PopoverPortal>

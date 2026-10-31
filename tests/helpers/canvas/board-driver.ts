@@ -14,6 +14,13 @@ export function boardDriver(page: () => Page) {
       })
     },
 
+    /** Makes the open document a design again, which reopens its panels, for the tests after. */
+    async close() {
+      await page().evaluate(() => {
+        window.openPencil?.getStore?.().setDocumentKind('design')
+      })
+    },
+
     /** Shows the board at `zoom` with the canvas origin at the view's top-left corner. */
     async showAt(zoom: number) {
       await page().evaluate((zoom) => {
