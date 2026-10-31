@@ -31,3 +31,40 @@ test('outer sync preserves a nested edit without blocking sibling or other-field
   graph.syncInstances(outer.id)
   expect(firstText.text).toBe('Component edit')
 })
+
+test('outer sync preserves a nested label override over its badge text assignment', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const badge = graph.createNode('COMPONENT', page.id, {
+    componentPropertyDefinitions: [
+      { id: 'badge-label', name: 'Label', type: 'TEXT', defaultValue: 'Default' }
+    ]
+  })
+  graph.createNode('TEXT', badge.id, {
+    text: 'Default',
+    componentPropertyReferences: [{ propertyId: 'badge-label', field: 'TEXT' }]
+  })
+  const card = graph.createNode('COMPONENT', page.id)
+  const sourceBadge = graph.createInstance(badge.id, card.id, {
+    componentPropertyAssignments: { 'badge-label': 'Multiplier' }
+  })
+  const instance = graph.createInstance(card.id, page.id)
+  const sibling = graph.createInstance(card.id, page.id)
+  if (!sourceBadge || !instance || !sibling) throw new Error('Missing instances')
+  const nested = graph.getChildren(instance.id)[0]
+  const label = graph.getChildren(nested.id)[0]
+  const siblingLabel = graph.getChildren(graph.getChildren(sibling.id)[0].id)[0]
+  graph.updateNode(label.id, { text: 'Bonus amount' })
+  recordInstanceOverride(graph, label.id, ['text'])
+  graph.updateNode(graph.getChildren(badge.id)[0].id, { opacity: 0.5 })
+
+  for (const component of [card, badge, card]) {
+    graph.syncInstances(component.id)
+    expect(label.text).toBe('Bonus amount')
+    expect(siblingLabel.text).toBe('Multiplier')
+  }
+  expect(label.opacity).toBe(0.5)
+  deleteInstanceOverride(nested.instanceOverrides, nested.id, label.id, 'text')
+  graph.syncInstances(card.id)
+  expect(label.text).toBe('Multiplier')
+})

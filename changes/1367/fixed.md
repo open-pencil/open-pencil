@@ -1,0 +1,1 @@
+- Component synchronization preserves text overridden on an instance instead of replacing it with the component property value.
