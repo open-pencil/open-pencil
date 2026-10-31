@@ -79,17 +79,42 @@ function fontAt(node: SceneNode, index: number) {
     opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
   })
   const drawn = loadedFace(family, weight, italic, style) ?? { weight, italic, style }
-  const letterSpacing = textLengthPixels(
-    run?.style.letterSpacing ?? node.letterSpacing,
-    run?.style.fontSize ?? node.fontSize
-  )
-  return { family, weight, italic, style, variations, drawn, letterSpacing }
+  return { family, weight, italic, style, variations, drawn }
 }
 
 type StyleRun = SceneNode['styleRuns'][number]
 
 function styleRunAt(node: SceneNode, index: number): StyleRun | undefined {
   return node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
+}
+
+/**
+ * The style run of each code unit of the shown text from `start` to `end`, scanning the node's
+ * style runs only where one ends.
+ */
+function styleRunsOver(
+  node: SceneNode,
+  start: number,
+  end: number,
+  sourceAt: (index: number) => number
+): Array<StyleRun | undefined> {
+  const runs: Array<StyleRun | undefined> = []
+  let current: StyleRun | undefined
+  for (let index = start; index < end; index++) {
+    const source = sourceAt(index)
+    if (!current || source < current.start || source >= current.start + current.length)
+      current = styleRunAt(node, source)
+    runs.push(current)
+  }
+  return runs
+}
+
+/** The letter spacing a style run sets after each of its characters, in pixels. */
+function letterSpacingOf(node: SceneNode, run: StyleRun | undefined): number {
+  return textLengthPixels(
+    run?.style.letterSpacing ?? node.letterSpacing,
+    run?.style.fontSize ?? node.fontSize
+  )
 }
 
 /** The features a style run shapes its characters with, as CanvasKit is given them. */
@@ -234,11 +259,11 @@ function drawnCharacters(run: GlyphRun, shape: RunShape): string {
 
 /**
  * The font a run's outlines come from, and the glyphs to save when it shaped them itself:
- * HarfBuzz's, from the run's first character, with the run's letter spacing.
+ * HarfBuzz's, from the run's first character, with the letter spacing of each code unit's style.
  */
 type RunOutline =
   | { source: GlyphOutlineSource; glyphs?: undefined }
-  | { source: GlyphOutlineSource; glyphs: ShapedGlyph[]; start: number; letterSpacing: number }
+  | { source: GlyphOutlineSource; glyphs: ShapedGlyph[]; start: number; letterSpacing: number[] }
 
 /**
  * The font a run was shaped with. CanvasKit leaves `GlyphRun.typeface` null, so the run's font
@@ -266,6 +291,8 @@ function runOutline(
     boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
   )
   const font = fontAt(node, sourceAt(start))
+  let styles: Array<StyleRun | undefined> | undefined
+  const stylesOver = () => (styles ??= styleRunsOver(node, start, end, sourceAt))
   let shaping: RunShaping | undefined
   const shape: RunShape = {
     text: shaped,
@@ -274,7 +301,7 @@ function runOutline(
     nextBoundary,
     start,
     end,
-    shaping: () => (shaping ??= runShaping(node, run, offsets, sourceAt))
+    shaping: () => (shaping ??= runShaping(node, run, offsets, stylesOver()))
   }
   const characters = drawnCharacters(run, shape)
   let primary: GlyphOutlineSource | null = null
@@ -288,7 +315,7 @@ function runOutline(
     source: primary,
     glyphs: primary.shape(shape.runText, shape.shaping()),
     start,
-    letterSpacing: font.letterSpacing
+    letterSpacing: stylesOver().map((style) => letterSpacingOf(node, style))
   }
 }
 
@@ -301,15 +328,14 @@ function runShaping(
   node: SceneNode,
   run: GlyphRun,
   offsets: readonly number[],
-  sourceAt: (index: number) => number
+  styles: ReadonlyArray<StyleRun | undefined>
 ): RunShaping {
   const glyphCount = run.glyphs.length
-  const start = Math.min(...offsets)
-  const end = Math.max(...offsets)
   const ranges: Array<{ start: number; features: ShapingFeature[] }> = []
-  for (let index = start; index < end; index++) {
-    const features = featuresOf(node, styleRunAt(node, sourceAt(index)))
-    if (!isEqual(ranges.at(-1)?.features, features)) ranges.push({ start: index - start, features })
+  for (const [index, style] of styles.entries()) {
+    if (index > 0 && style === styles[index - 1]) continue
+    const features = featuresOf(node, style)
+    if (!isEqual(ranges.at(-1)?.features, features)) ranges.push({ start: index, features })
   }
   const features =
     ranges.length === 1
@@ -318,14 +344,14 @@ function runShaping(
           range.features.map((feature) => ({
             ...feature,
             start: range.start,
-            end: ranges.at(index + 1)?.start ?? end - start
+            end: ranges.at(index + 1)?.start ?? styles.length
           }))
         )
   const rtl =
     glyphCount > 1 && offsets[0] !== offsets[glyphCount - 1]
       ? offsets[0] > offsets[glyphCount - 1]
       : resolveNodeTextDirection(node) === 'RTL'
-  const style = styleRunAt(node, sourceAt(start))?.style
+  const style = styles.at(0)?.style
   const language =
     (style?.textLanguage !== undefined ? style.textLanguage : node.textLanguage) ?? undefined
   return { features, rtl, language }
@@ -406,8 +432,11 @@ function reshapedGlyphs(
   y: number
 ): LaidOutGlyph[] {
   let x = run.positions[0]
-  return outline.glyphs.map((glyph) => {
-    const advance = glyph.advance * run.size + outline.letterSpacing
+  return outline.glyphs.map((glyph, index) => {
+    // Spacing follows a character once, after its last glyph, so marks stay on their base.
+    const endsCharacter = outline.glyphs.at(index + 1)?.cluster !== glyph.cluster
+    const spacing = endsCharacter ? (outline.letterSpacing.at(glyph.cluster) ?? 0) : 0
+    const advance = glyph.advance * run.size + spacing
     const placed: LaidOutGlyph = {
       id: glyph.id,
       x: x + glyph.xOffset * run.size,

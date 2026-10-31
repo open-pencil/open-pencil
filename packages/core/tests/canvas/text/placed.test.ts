@@ -5,6 +5,7 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { TextLayout } from '#core/canvas/text/layout'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
@@ -140,6 +141,28 @@ describe('the font saved glyphs are outlined from', () => {
       Array.from('a->b', (character) => source.glyphOf(character))
     )
     expect(glyphs.every((glyph) => glyph.source !== null)).toBe(true)
+  })
+
+  test('spaces reshaped glyphs once per character, by the style of each', () => {
+    // The text draws Inter at the optical size of its font size.
+    const source = expectDefined(
+      glyphOutlineSourceSync(FAMILY, 'Regular', [{ axis: 'opsz', value: FONT_SIZE }])
+    )
+    // `q` has no precomposed acute, so the mark is a glyph of its own on the same character.
+    const text = 't->q\u0301'
+    const glyphs = placed(text, staticProvider, [{ name: 'calt', value: 0 }], {
+      letterSpacing: pixelLength(10),
+      styleRuns: [{ start: 3, length: 2, style: { letterSpacing: pixelLength(4) } }]
+    })
+    const advances = source.shape(text, {}).map((glyph) => glyph.advance * FONT_SIZE)
+
+    expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 3, 3])
+    expect(glyphs.map((glyph) => glyph.advance)).toEqual([
+      advances[0] + 10,
+      advances[1] + 10,
+      advances[2],
+      advances[3] + 4
+    ])
   })
 
   test('shapes the run itself with the features the text sets', () => {
