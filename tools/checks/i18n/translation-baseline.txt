@@ -23,6 +23,8 @@ de:diagnostics.categoryMCP
 de:diagnostics.categoryRenderer
 de:diagnostics.durationMs
 de:editor.cornerRadius
+de:files.createBoard
+de:files.createDesign
 de:menu.text
 de:panels.alpha
 de:panels.blendModeNormal
@@ -138,6 +140,7 @@ fr:designCheck.scopeDocument
 fr:designCheck.scopePage
 fr:designCheck.suggestions
 fr:diagnostics.title
+fr:files.createDesign
 fr:pages.pageName
 fr:pages.pages
 fr:panels.alpha
@@ -216,6 +219,7 @@ it:diagnostics.categoryMCP
 it:diagnostics.categoryRenderer
 it:diagnostics.categoryRuntime
 it:diagnostics.durationMs
+it:files.createDesign
 it:menu.file
 it:panels.ai
 it:panels.auto

@@ -4,8 +4,13 @@
     "items": [
       {
         "id": "new",
-        "label": "New",
+        "label": "New Design",
         "accelerator": "CmdOrCtrl+N"
+      },
+      {
+        "id": "new-tab",
+        "label": "New Tab",
+        "accelerator": "CmdOrCtrl+T"
       },
       {
         "id": "open",
@@ -15,10 +20,6 @@
       {
         "id": "open-recent",
         "label": "Open Recent"
-      },
-      {
-        "id": "browse-files",
-        "label": "Browse Files…"
       },
       {
         "id": "open-tour",
