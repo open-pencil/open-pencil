@@ -3,7 +3,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
 import { motion } from 'motion-v'
 import type { PanInfo } from 'motion-v'
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -87,6 +87,10 @@ function snapHeight(s: Snap): number {
 
 const targetHeight = ref(snapHeight(snap.value))
 
+watch(headerH, () => {
+  if (snap.value === 'closed') targetHeight.value = snapHeight('closed')
+})
+
 function onPan(_e: PointerEvent, info: PanInfo) {
   const maxHeight = snapHeight('full')
   const raw = snapHeight(snap.value) - info.offset.y
@@ -118,7 +122,7 @@ const drawerTransition = useMotionTransition({
 <template>
   <motion.div
     data-test-id="mobile-drawer"
-    class="fixed inset-x-0 bottom-0 z-30 flex touch-none flex-col rounded-t-3xl bg-panel pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.3)]"
+    class="interface-chrome fixed inset-x-0 bottom-0 z-30 flex touch-none flex-col rounded-t-3xl bg-panel pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.3)]"
     :animate="{ height: `${targetHeight}px` }"
     :transition="drawerTransition"
     @pan="onPan"

@@ -1,4 +1,7 @@
 {
+  "interfaceScale": "Oberflächengröße",
+  "interfaceScaleDescription": "Skaliert Bedienfelder, Text und Steuerelemente, ohne den Canvas-Zoom zu ändern.",
+  "interfaceScaleDefault": "{scale} (Standard)",
   "recentFiles": "Zuletzt verwendete Dateien",
   "recentFilesDescription": "Wähle, wie viele Dateien in der Liste und im Menü „Zuletzt verwendet“ gespeichert werden.",
   "recentFilesLimit": "Anzahl zuletzt verwendeter Dateien",

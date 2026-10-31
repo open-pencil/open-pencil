@@ -12,6 +12,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
@@ -39,6 +40,7 @@ useHead({
   titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
   htmlAttrs: {
     lang: locale,
+    'data-interface-scale': interfaceScalePreference,
     'data-motion': computed(() => (animationsEnabled.value ? 'full' : 'off'))
   }
 })

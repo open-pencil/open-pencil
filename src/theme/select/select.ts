@@ -11,7 +11,7 @@ export default {
     trigger: [panelFieldBase, 'flex items-center justify-between text-[11px]'],
     value: 'min-w-0 flex-1 truncate text-left',
     chevron: 'ml-1 size-3 shrink-0 text-muted',
-    content: ['z-[110] overflow-hidden text-[11px]', floatingSurface, motionStyles.floating],
+    content: ['z-[110] overflow-hidden text-interface-xs', floatingSurface, motionStyles.floating],
     viewport: '',
     scrollButton: 'flex h-5 cursor-default items-center justify-center text-muted',
     item: 'relative flex h-6 cursor-pointer items-center gap-2 rounded-md pr-2 pl-6 text-surface outline-none select-none data-[disabled]:pointer-events-none data-[highlighted]:bg-hover data-[disabled]:opacity-50',
