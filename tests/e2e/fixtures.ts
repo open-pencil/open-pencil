@@ -2,7 +2,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-export function useEditorSetup(url = '/') {
+export function useEditorSetup(url = '/?test') {
   let page: Page
   let canvas: CanvasHelper
 
