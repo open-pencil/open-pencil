@@ -83,7 +83,8 @@ describe('flattenSelected', () => {
     expect(editor.graph.getNode(second.id)).toBeUndefined()
   })
 
-  test("keeps a frame's children and leaves its own fill and stroke out, as Figma does", async () => {
+  // The shape only: Figma keeps each layer's fill on its own region, which needs region fills.
+  test("shapes a flattened frame by its children, leaving the frame's own area out", async () => {
     const { editor } = await createEditorWithRenderer()
     const pageId = editor.state.currentPageId
     const solid = { type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }
