@@ -109,6 +109,8 @@ describe('linear blend modes, as Figma draws them', () => {
     )
     const halfDodge = { ...solid(paint, 'LINEAR_DODGE'), opacity: 0.5 }
     expectChannelsNear(renderCenter(overlay([halfDodge]), halfGrey), [220, 137, 187, 192])
+    const halfBurn = { ...solid(paint, 'LINEAR_BURN'), opacity: 0.5 }
+    expectChannelsNear(renderCenter(overlay([halfBurn]), halfGrey), [136, 51, 103, 191])
   })
 
   test('a half transparent fill over nothing stays half transparent', () => {
