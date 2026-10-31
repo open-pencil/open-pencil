@@ -8,19 +8,6 @@ export function invalidateScenePicture(r: SkiaRenderer): void {
   r.scenePicture = null
   r.scenePictureVersion = -1
   r.scenePictureFontGeneration = -1
-  r.sceneBacking?.image.delete()
-  r.sceneBacking = null
-  r.sceneBackingBuild?.surface.delete()
-  r.sceneBackingBuild = null
-}
-
-export function clearSubtreePictureCache(r: SkiaRenderer): void {
-  for (const entry of r.subtreePictureCache.values()) entry.picture.delete()
-  r.subtreePictureCache.clear()
-  r.subtreePictureCachePageId = null
-  r.subtreePictureCacheSceneVersion = -1
-  r.subtreePictureCachePositionPreviewVersion = -1
-  r.subtreePictureCacheFontGeneration = -1
 }
 
 export function invalidateAllPictures(r: SkiaRenderer): void {
@@ -31,8 +18,6 @@ export function invalidateAllPictures(r: SkiaRenderer): void {
   for (const pic of r.nodePictureCache.values()) pic?.delete()
   r.nodePictureCache.clear()
   r.nodePictureCacheGenerations.clear()
-  r.effectRasterCache.clear()
-  clearSubtreePictureCache(r)
 }
 
 export function invalidateNodePicture(
@@ -44,17 +29,11 @@ export function invalidateNodePicture(
     keepShaping: changedKeys !== undefined && !changesShaping(changedKeys)
   })
   r.textReadiness.delete(nodeId)
-  r.effectRasterCache.delete(nodeId)
   const pic = r.nodePictureCache.get(nodeId)
   if (pic) {
     pic.delete()
     r.nodePictureCache.delete(nodeId)
     r.nodePictureCacheGenerations.delete(nodeId)
-  }
-  const subtree = r.subtreePictureCache.get(nodeId)
-  if (subtree) {
-    subtree.picture.delete()
-    r.subtreePictureCache.delete(nodeId)
   }
 }
 

@@ -11,7 +11,6 @@ import { resolveEditorProfile } from '#core/editor/views/profile'
 import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
-import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-backing'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
@@ -182,7 +181,7 @@ function getSceneRenderPolicy(
     sceneVersion === r.scenePictureVersion
   // Image previews arrive over time; the uncached path redraws everything to show each one, the
   // tiled path redraws only the nodes that drew the image (flushDecodedPreviews).
-  const tilesHoldPreviews = r.tiledSceneEnabled && layer === 'scene'
+  const tilesHoldPreviews = layer === 'scene'
   const requiresUncachedSceneRender =
     (r.viewportImageRendering && !tilesHoldPreviews) ||
     interactive ||
@@ -271,7 +270,6 @@ export function render(
     h: r.viewportHeight / r.zoom
   }
   r.imageDetailScale = r.zoom * r.dpr
-  updateSceneBackingPreviewState(r, layer)
 
   const { requiresUncachedSceneRender, canUsePicture, cacheMissReason } = getSceneRenderPolicy(
     r,
@@ -283,33 +281,19 @@ export function render(
   )
 
   if (layer !== 'overlays') {
-    if (requiresUncachedSceneRender) {
-      r.sceneBackingNeedsCrispRender = false
-      r.tiledScenePending = false
-    }
+    if (requiresUncachedSceneRender) r.tiledScenePending = false
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
 
     p.beginPhase('render:scene')
-    let renderedScene = false
-    if (layer === 'scene' && !requiresUncachedSceneRender && r.tiledSceneEnabled) {
-      // Tiles stand in for the retained backing, idle or moving.
+    if (layer === 'scene' && !requiresUncachedSceneRender) {
+      // The scene layer is tiles, idle or moving; the whole-scene picture serves one canvas.
       const tiled = r.tiledScene.renderFrame(r, canvas, graph, sceneVersion, r.navigationGeneration)
       r.tiledScenePending = tiled.pending
       r.tiledSceneBackgroundPending = tiled.backgroundPending
       r.tiledSceneCovered = tiled.covered
-      r.sceneBackingNeedsCrispRender = false
-      renderedScene = true
       p.setScenePictureMode('hit', tiled.covered ? 'tiled' : 'tiled-fallback')
-    }
-    if (!renderedScene && layer === 'scene' && !requiresUncachedSceneRender) {
-      const presentation = renderSceneBacking(r, canvas, graph, sceneVersion)
-      if (presentation) {
-        renderedScene = true
-        p.setScenePictureMode('hit', presentation)
-      }
-    }
-    if (!renderedScene) {
+    } else {
       canvas.translate(r.panX, r.panY)
       canvas.scale(r.zoom, r.zoom)
       renderSceneContent(
@@ -345,8 +329,7 @@ export function render(
     zoom: r.zoom,
     flushMs: flushDuration,
     nodes: r._nodeCount,
-    culledNodes: r._culledCount,
-    backingCrisp: !r.sceneBackingNeedsCrispRender
+    culledNodes: r._culledCount
   })
 }
 

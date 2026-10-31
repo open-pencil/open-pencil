@@ -41,7 +41,6 @@ import {
   initializeSelectionPaintColors
 } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
-import type { SceneBacking, SceneBackingBuild } from './renderer/retained-backing/types'
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 import type { SavedDecorationCache } from './text/decorations'
@@ -72,14 +71,6 @@ import type {
 
 import { createSceneGeometry, type RotationPreview, type SceneGeometry } from '#core/geometry'
 
-export interface SubtreePictureCacheEntry {
-  picture: SkPicture
-  pageId: string | null
-  sceneVersion: number
-  positionPreviewVersion: number
-  fontGeneration: number
-}
-
 export interface PendingFontNode {
   node: SceneNode
   keys: Set<string>
@@ -88,7 +79,6 @@ export interface PendingFontNode {
 import type { PlacedIssueMarker } from './issues/types'
 import type { PlacedStatusLabel } from './labels/status'
 import type { NodeEditPaints } from './node-edit-overlay'
-import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
 import type { RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
@@ -188,25 +178,15 @@ export class SkiaRenderer {
   derivedDecorationCache: SavedDecorationCache = new WeakMap()
   /** Images of the emoji saved text draws, by what drew them and the emoji. */
   emojiImageCache = createEmojiImageCache()
-  renderingSceneBacking = false
   scenePicture: SkPicture | null = null
   scenePictureVersion = -1
   scenePictureFontGeneration = -1
   scenePicturePositionPreviewVersion = -1
   scenePicturePageId: string | null = null
-  sceneBacking: SceneBacking | null = null
-  sceneBackingPreviewUntil = 0
-  sceneBackingNeedsCrispRender = false
-  sceneBackingAllocationFailed = false
-  sceneBackingBuild: SceneBackingBuild | null = null
-  sceneBackingAverageRecordMs = 40
-  sceneBackingAverageViewportIntervalMs = 80
-  sceneBackingLastViewportEventAt = 0
   navigationPhase: EditorState['navigation']['phase'] = 'idle'
   navigationGeneration = 0
   /** Selections draw handles to drag; off while the canvas offers no edits. */
   editHandles = true
-  tiledSceneEnabled = false
   /**
    * What an empty sticky note shows while it is edited on this canvas, in the interface language;
    * null for a canvas that draws only the document, such as an export.
@@ -224,12 +204,6 @@ export class SkiaRenderer {
   lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
   nodePictureCache = new Map<string, SkPicture | null>()
   nodePictureCacheGenerations = new Map<string, number>()
-  effectRasterCache = new EffectRasterCache()
-  subtreePictureCache = new Map<string, SubtreePictureCacheEntry>()
-  subtreePictureCachePageId: string | null = null
-  subtreePictureCacheSceneVersion = -1
-  subtreePictureCachePositionPreviewVersion = -1
-  subtreePictureCacheFontGeneration = -1
   readonly labelCache = new LabelCache()
   readonly labelParagraphCache = new LabelParagraphCache(undefined, undefined, {
     onMissingGlyphs: (missing) => RendererFonts.resolveLabelFontCoverage(this, missing)
@@ -514,7 +488,6 @@ export class SkiaRenderer {
     releaseLiveImages(this)
     this.surface.delete()
     this.surface = surface
-    this.sceneBackingAllocationFailed = false
     this.invalidateScenePicture()
   }
 
@@ -544,14 +517,10 @@ export class SkiaRenderer {
   }
 
   /**
-   * Redraws the text that just gained its fonts. Tiles keep everything else; the retained
+   * Redraws the text that just gained its fonts; tiles keep everything else.
    * renderer rebuilds its whole backing either way, so it drops every picture as before.
    */
   invalidateNodesForFonts(graph: SceneGraph, nodeIds: readonly string[]): void {
-    if (!this.tiledSceneEnabled) {
-      this.invalidateAllPictures()
-      return
-    }
     const pending = [...nodeIds]
     const seen = new Set<string>()
     while (pending.length > 0) {

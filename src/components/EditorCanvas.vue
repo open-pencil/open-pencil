@@ -111,7 +111,6 @@ useCanvas(sceneCanvasRef, store, {
   onFrame: (view) => {
     drawnView.value = view
   },
-  sceneRenderer: appRuntimeConfig.sceneRenderer,
   onReady: canvasReady,
   onFailed: (error) =>
     store.preparationController.failCanvas(

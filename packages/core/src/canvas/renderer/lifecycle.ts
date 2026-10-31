@@ -1,14 +1,9 @@
 import { disposeNodeEditPaints } from '#core/canvas/node-edit-overlay'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { clearSubtreePictureCache } from '#core/canvas/renderer/state'
 import { fontManager } from '#core/text/font/manager'
 
 function clearRetainedSceneState(r: SkiaRenderer): void {
   r.scenePicture?.delete()
-  r.sceneBacking?.image.delete()
-  r.sceneBacking = null
-  r.sceneBackingBuild?.surface.delete()
-  r.sceneBackingBuild = null
 }
 
 function disposePathCaches(r: SkiaRenderer): void {
@@ -92,9 +87,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.nodePictureCache.clear()
   r.labelParagraphCache.clear()
   r.textPreparationCache.clear()
-  r.effectRasterCache.clear()
   r.tiledScene.destroy()
-  clearSubtreePictureCache(r)
   clearRetainedSceneState(r)
   r.profiler.destroy()
   r.surface.delete()

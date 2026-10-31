@@ -355,7 +355,6 @@ describe('tiles with image previews', () => {
     const surface = expectDefined(ck.MakeSurface(320, 240), 'preview surface')
     const renderer = new SkiaRenderer(ck, surface)
     const controller = renderer.tiledScene
-    renderer.tiledSceneEnabled = true
     renderer.pageId = page.id
     renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
     renderer.viewportWidth = 320
@@ -646,7 +645,6 @@ describe('tiles with image previews', () => {
     const { graph, surface, renderer, pageId } = createGridScene()
     const text = graph.createNode('TEXT', pageId, { x: 20, y: 20, width: 100, height: 30 })
     const controller = renderer.tiledScene
-    renderer.tiledSceneEnabled = true
     try {
       let result = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
       for (let frame = 0; frame < 30 && (result.pending || result.backgroundPending); frame++) {

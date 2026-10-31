@@ -125,7 +125,7 @@ Use the exact imported node ID plus a deterministic property mutation to measure
 
 ```sh
 bun run benchmark:navigation \
-  --url 'http://localhost:1420/?renderer=tiled' \
+  --url 'http://localhost:1420/' \
   --gesture tests/fixtures/navigation/gestures/synthetic-repeated-pinch-reversal.json \
   --mode dom \
   --scenario current-document \

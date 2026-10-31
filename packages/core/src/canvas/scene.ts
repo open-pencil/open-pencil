@@ -501,7 +501,7 @@ export function renderShape(
     return
   }
 
-  renderShapeThroughEffectCaches(r, canvas, node, graph, effects)
+  renderShapeThroughEffectCaches(r, canvas, node, graph)
 }
 
 /** Draws a shape with its own effects: Figma puts inner shadows over fills and under strokes. */

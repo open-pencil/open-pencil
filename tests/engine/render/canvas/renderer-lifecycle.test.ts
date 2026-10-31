@@ -9,7 +9,6 @@ import type { NodeEditPaints } from '#core/canvas/node-edit-overlay'
 import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { EffectRasterCache } from '#core/canvas/renderer/effect-raster-cache'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
 import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from '#core/canvas/text/derived'
 import { createEmojiImageCache } from '#core/canvas/text/emoji'
@@ -69,11 +68,7 @@ function createRenderer() {
       techStrokePaint: deletable<Paint>()
     } as Partial<NodeEditPaints> as NodeEditPaints,
     nodePictureCache: new Map(),
-    effectRasterCache: new EffectRasterCache(),
-    subtreePictureCache: new Map(),
     scenePicture: null,
-    sceneBacking: null,
-    sceneBackingBuild: null,
     tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
     labelParagraphCache: asDouble<SkiaRenderer['labelParagraphCache']>({ clear: mock() }),
     profiler: { destroy: mock() } as Partial<SkiaRenderer['profiler']> as SkiaRenderer['profiler'],

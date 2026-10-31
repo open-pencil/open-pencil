@@ -1,4 +1,5 @@
 {
+  "wideGamutUnavailable": "Esta pantalla o este navegador no pueden mostrar colores Display-P3, así que el lienzo los previsualiza en sRGB. El documento conserva su espacio de color.",
   "toolOptions": "Opciones de {tool}",
   "removeGradientStop": "Eliminar parada de degradado",
   "cornerRadius": "Redondeado",
