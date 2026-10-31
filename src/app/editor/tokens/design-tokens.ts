@@ -81,9 +81,8 @@ async function readDesignTokenFiles(files: readonly File[]): Promise<DesignToken
 
 /** What picked token files, folders, or archives of them would define in the document. */
 export async function readDesignTokenImport(files: readonly File[]): Promise<DesignTokenBundle> {
-  const [sources, { readDesignTokens }] = await Promise.all([
-    readDesignTokenFiles(files),
-    loadDesignTokens()
-  ])
+  // Files that cannot be read leave the reader unloaded.
+  const sources = await readDesignTokenFiles(files)
+  const { readDesignTokens } = await loadDesignTokens()
   return readDesignTokens(sources)
 }
