@@ -1,8 +1,10 @@
 import type { Paragraph } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
+import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import {
   drawnFontVariations,
@@ -18,7 +20,9 @@ import { ELLIPSIS } from '#core/text/ellipsis'
 import {
   glyphOutlineSourceSync,
   shardCovers,
+  shardOutlineSources,
   type GlyphOutlineSource,
+  type RunShaping,
   type ShapedGlyph
 } from '#core/text/font/glyphs'
 import type { ShapingFeature } from '#core/text/font/harfbuzz'
@@ -60,7 +64,7 @@ function loadedStyle(
  * `drawnFontStyle` asks CanvasKit.
  */
 function fontAt(node: SceneNode, index: number) {
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
+  const run = styleRunAt(node, index)
   const family = run?.style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const weight = run?.style.fontWeight ?? node.fontWeight
   const italic = run?.style.italic ?? node.italic
@@ -75,18 +79,25 @@ function fontAt(node: SceneNode, index: number) {
     opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
   })
   const drawn = loadedFace(family, weight, italic, style) ?? { weight, italic, style }
-  return { family, weight, italic, style, variations, drawn, ...shapingOf(node, run) }
+  const letterSpacing = textLengthPixels(
+    run?.style.letterSpacing ?? node.letterSpacing,
+    run?.style.fontSize ?? node.fontSize
+  )
+  return { family, weight, italic, style, variations, drawn, letterSpacing }
 }
 
-/** The features and letter spacing a style run is shaped with, as CanvasKit is given them. */
-function shapingOf(node: SceneNode, run: SceneNode['styleRuns'][number] | undefined) {
-  const features = (run?.style.fontFeatures ?? node.fontFeatures).map((feature) => ({
+type StyleRun = SceneNode['styleRuns'][number]
+
+function styleRunAt(node: SceneNode, index: number): StyleRun | undefined {
+  return node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
+}
+
+/** The features a style run shapes its characters with, as CanvasKit is given them. */
+function featuresOf(node: SceneNode, run: StyleRun | undefined): ShapingFeature[] {
+  return (run?.style.fontFeatures ?? node.fontFeatures).map((feature) => ({
     tag: feature.tag.toLowerCase(),
     value: feature.enabled ? 1 : 0
   }))
-  const fontSize = run?.style.fontSize ?? node.fontSize
-  const letterSpacing = textLengthPixels(run?.style.letterSpacing ?? node.letterSpacing, fontSize)
-  return { features, letterSpacing }
 }
 
 /**
@@ -102,12 +113,17 @@ function sourceStyle(family: string, font: ReturnType<typeof fontAt>): string | 
   return loadedStyle(family, font.drawn.weight, font.drawn.italic, font.drawn.style)
 }
 
-/** The outline source of each font the paragraph may have drawn a character in, in its order. */
+/**
+ * The outline source of each file the paragraph may have drawn a character in, in its order:
+ * each family's own file, then its shards.
+ */
 function* candidateSources(font: ReturnType<typeof fontAt>) {
   for (const family of paragraphSourceFamilies(font.family)) {
     const style = sourceStyle(family, font)
-    const source = style ? glyphOutlineSourceSync(family, style, font.variations) : null
+    if (!style) continue
+    const source = glyphOutlineSourceSync(family, style, font.variations)
     if (source) yield source
+    yield* shardOutlineSources(family, style, font.variations)
   }
 }
 
@@ -160,7 +176,8 @@ interface RunShape {
   nextBoundary: Map<number, number>
   start: number
   end: number
-  features: readonly ShapingFeature[]
+  /** How the paragraph shaped the run, worked out when HarfBuzz shapes it. */
+  shaping: () => RunShaping
 }
 
 /**
@@ -181,7 +198,7 @@ function drewRun(source: GlyphOutlineSource, run: GlyphRun, shape: RunShape): bo
     return glyph === 0 || /\s/.test(character) || source.glyphOf(character) === glyph
   })
   if (mapped) return true
-  const glyphs = source.shape(shape.runText, shape.features)
+  const glyphs = source.shape(shape.runText, shape.shaping())
   return (
     glyphs.length === run.glyphs.length && glyphs.every(({ id }, index) => id === run.glyphs[index])
   )
@@ -249,6 +266,7 @@ function runOutline(
     boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
   )
   const font = fontAt(node, sourceAt(start))
+  let shaping: RunShaping | undefined
   const shape: RunShape = {
     text: shaped,
     runText: shaped.slice(start, end),
@@ -256,7 +274,7 @@ function runOutline(
     nextBoundary,
     start,
     end,
-    features: font.features
+    shaping: () => (shaping ??= runShaping(node, run, offsets, sourceAt))
   }
   const characters = drawnCharacters(run, shape)
   let primary: GlyphOutlineSource | null = null
@@ -268,10 +286,49 @@ function runOutline(
   if (!primary) return null
   return {
     source: primary,
-    glyphs: primary.shape(shape.runText, font.features),
+    glyphs: primary.shape(shape.runText, shape.shaping()),
     start,
     letterSpacing: font.letterSpacing
   }
+}
+
+/**
+ * How the paragraph shaped a run: with the features of each style run in it, as CanvasKit gives
+ * them for blocks it shapes as one run; in the direction its glyphs, in visual order, show by
+ * their characters, the paragraph's for one glyph; and in its style's language.
+ */
+function runShaping(
+  node: SceneNode,
+  run: GlyphRun,
+  offsets: readonly number[],
+  sourceAt: (index: number) => number
+): RunShaping {
+  const glyphCount = run.glyphs.length
+  const start = Math.min(...offsets)
+  const end = Math.max(...offsets)
+  const ranges: Array<{ start: number; features: ShapingFeature[] }> = []
+  for (let index = start; index < end; index++) {
+    const features = featuresOf(node, styleRunAt(node, sourceAt(index)))
+    if (!isEqual(ranges.at(-1)?.features, features)) ranges.push({ start: index - start, features })
+  }
+  const features =
+    ranges.length === 1
+      ? ranges[0].features
+      : ranges.flatMap((range, index) =>
+          range.features.map((feature) => ({
+            ...feature,
+            start: range.start,
+            end: ranges.at(index + 1)?.start ?? end - start
+          }))
+        )
+  const rtl =
+    glyphCount > 1 && offsets[0] !== offsets[glyphCount - 1]
+      ? offsets[0] > offsets[glyphCount - 1]
+      : resolveNodeTextDirection(node) === 'RTL'
+  const style = styleRunAt(node, sourceAt(start))?.style
+  const language =
+    (style?.textLanguage !== undefined ? style.textLanguage : node.textLanguage) ?? undefined
+  return { features, rtl, language }
 }
 
 /**
@@ -293,8 +350,8 @@ function ellipsisSource(
 
 /**
  * The outline of a run of a line, and whether the run is the ellipsis that ends truncated text.
- * An ellipsis no font confirms keeps its glyph, unoutlined: shaping it again would save the
- * characters its offsets point at instead.
+ * The last run of truncated text that no font confirms may be an ellipsis, which keeps its glyph
+ * unoutlined: shaping it again would save the characters its offsets point at instead.
  */
 function lineRunOutline(
   node: SceneNode,
@@ -306,8 +363,8 @@ function lineRunOutline(
   const { characterAt, sourceAt } = indices
   const ellipsis = endsTruncated ? ellipsisSource(node, run, characterAt, sourceAt) : null
   if (ellipsis) return { outline: { source: ellipsis }, ellipsis: true }
-  if (endsTruncated && run.glyphs.length === 1) return { outline: null, ellipsis: false }
-  return { outline: runOutline(node, shaped, run, characterAt, sourceAt), ellipsis: false }
+  const outline = runOutline(node, shaped, run, characterAt, sourceAt)
+  return { outline: endsTruncated && outline?.glyphs ? null : outline, ellipsis: false }
 }
 
 /**

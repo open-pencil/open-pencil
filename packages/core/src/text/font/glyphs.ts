@@ -11,7 +11,7 @@ import {
   shapeText,
   type HarfBuzzFont,
   type OutlineCommand,
-  type ShapingFeature
+  type ShapingOptions
 } from './harfbuzz'
 import { fontTableView } from './variation'
 
@@ -38,12 +38,17 @@ const shardFontCache = new WeakMap<ArrayBuffer, HarfBuzzFont | null>()
 /** Whether a shard of a style, one of `FontManager.shardData`'s files, maps `character`. */
 export function shardCovers(data: ArrayBuffer, character: string): boolean {
   if (!isHarfBuzzLoaded()) return false
+  const parsed = shardFont(data)
+  return parsed !== null && glyphIndex(parsed, character) !== 0
+}
+
+function shardFont(data: ArrayBuffer): HarfBuzzFont | null {
   let parsed = shardFontCache.get(data)
   if (parsed === undefined) {
     parsed = harfBuzzFont(data)
     shardFontCache.set(data, parsed)
   }
-  return parsed !== null && glyphIndex(parsed, character) !== 0
+  return parsed
 }
 
 function getParsedFont(family: string, style: string): HarfBuzzFont | null {
@@ -259,13 +264,16 @@ export interface ShapedGlyph {
   yOffset: number
 }
 
+/** How a run is shaped, apart from the font and its axes. */
+export type RunShaping = Omit<ShapingOptions, 'instance'>
+
 export interface GlyphOutlineSource {
   /** Whether the font has a glyph for every code point, so a shaper used it rather than a fallback. */
   covers(text: string): boolean
   /** The glyph the font maps `character` to, to check a shaper's glyph IDs are this font's. */
   glyphOf(character: string): number
-  /** The glyphs HarfBuzz shapes `text` into in this font, at its axes and with `features`. */
-  shape(text: string, features: readonly ShapingFeature[]): ShapedGlyph[]
+  /** The glyphs HarfBuzz shapes `text` into in this font, at its axes and as `shaping` asks. */
+  shape(text: string, shaping: RunShaping): ShapedGlyph[]
   outline(glyphId: number, fontSize: number): OutlineCommand[] | null
 }
 
@@ -279,13 +287,35 @@ export function glyphOutlineSourceSync(
   variations: readonly FontVariation[] = []
 ): GlyphOutlineSource | null {
   const parsed = getParsedFont(family, style)
-  if (!parsed) return null
+  return parsed ? outlineSource(parsed, variations) : null
+}
+
+/**
+ * Glyph outlines of each shard of a loaded style, the files `FontManager.shardData` lists for
+ * the characters its own file lacks, at `variations`.
+ */
+export function shardOutlineSources(
+  family: string,
+  style: string,
+  variations: readonly FontVariation[] = []
+): GlyphOutlineSource[] {
+  if (!isHarfBuzzLoaded()) return []
+  return fontManager.shardData(family, style).flatMap((data) => {
+    const parsed = shardFont(data)
+    return parsed ? [outlineSource(parsed, variations)] : []
+  })
+}
+
+function outlineSource(
+  parsed: HarfBuzzFont,
+  variations: readonly FontVariation[]
+): GlyphOutlineSource {
   const instance = fontInstance(parsed, variations)
   return {
     covers: (text) => Array.from(text).every((char) => glyphIndex(parsed, char) !== 0),
     glyphOf: (character) => glyphIndex(parsed, character),
-    shape: (text, features) =>
-      shapeText(parsed, text, { instance, features }).map((glyph) => ({
+    shape: (text, shaping) =>
+      shapeText(parsed, text, { ...shaping, instance }).map((glyph) => ({
         id: glyph.codepoint,
         cluster: glyph.cluster,
         advance: (glyph.xAdvance ?? 0) / parsed.face.upem,

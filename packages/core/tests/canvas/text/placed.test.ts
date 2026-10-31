@@ -39,12 +39,18 @@ afterAll(() => {
   variableProvider.delete()
 })
 
-/** Text in the family, its glyphs drawn from `provider` with `features`, as they are saved. */
+type PaintFeatures = { name: string; value: number }[]
+
+/**
+ * Text in the family, its glyphs drawn from `provider` with `features`, and with `restyled`'s
+ * from its index on, as they are saved.
+ */
 function placed(
   text: string,
   provider: TypefaceFontProvider,
-  features: { name: string; value: number }[] = [],
-  props: Partial<SceneNode> = {}
+  features: PaintFeatures = [],
+  props: Partial<SceneNode> = {},
+  restyled?: { from: number; features: PaintFeatures }
 ) {
   const graph = new SceneGraph()
   const node = graph.createNode('TEXT', graph.getPages()[0].id, {
@@ -53,13 +59,17 @@ function placed(
     fontSize: FONT_SIZE,
     ...props
   })
+  const textStyle = { fontFamilies: [FAMILY], fontSize: FONT_SIZE, fontFeatures: features }
   const builder = ck.ParagraphBuilder.MakeFromFontProvider(
-    new ck.ParagraphStyle({
-      textStyle: { fontFamilies: [FAMILY], fontSize: FONT_SIZE, fontFeatures: features }
-    }),
+    new ck.ParagraphStyle({ textStyle }),
     provider
   )
-  builder.addText(text)
+  builder.addText(text.slice(0, restyled?.from))
+  if (restyled) {
+    builder.pushStyle(new ck.TextStyle({ ...textStyle, fontFeatures: restyled.features }))
+    builder.addText(text.slice(restyled.from))
+    builder.pop()
+  }
   const paragraph = builder.build()
   builder.delete()
   try {
@@ -94,7 +104,7 @@ describe('the font saved glyphs are outlined from', () => {
     for (const text of ['12:30', 'a->b']) {
       const glyphs = placed(text, variableProvider)
       expect(glyphs.map((glyph) => glyph.id)).toEqual(
-        source.shape(text, []).map((glyph) => glyph.id)
+        source.shape(text, {}).map((glyph) => glyph.id)
       )
       expect(glyphs.some((glyph, index) => glyph.id !== source.glyphOf(text[index]))).toBe(true)
       expect(glyphs.every((glyph) => glyph.source !== null)).toBe(true)
@@ -108,13 +118,28 @@ describe('the font saved glyphs are outlined from', () => {
     const glyphs = placed('t->b', staticProvider, [{ name: 'calt', value: 0 }])
 
     expect(glyphs.map((glyph) => glyph.id)).toEqual(
-      source.shape('t->b', []).map((glyph) => glyph.id)
+      source.shape('t->b', {}).map((glyph) => glyph.id)
     )
     expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 3])
     expect(glyphs[0].x).toBe(0)
     for (const [index, glyph] of glyphs.slice(1).entries()) {
       expect(glyph.x).toBeCloseTo(glyphs[index].x + glyphs[index].advance, 3)
     }
+  })
+
+  test('confirms a run whose style runs set features of their own', () => {
+    const source = variableSource()
+    const text = 'a->b a->b'
+    // The second arrow keeps its characters: the run drawn from one font has both arrows.
+    const glyphs = placed(text, variableProvider, [], {
+      styleRuns: [{ start: 5, length: 4, style: { fontFeatures: [{ tag: 'CALT', enabled: false }] } }]
+    }, { from: 5, features: [{ name: 'calt', value: 0 }] })
+
+    expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 3, 4, 5, 6, 7, 8])
+    expect(glyphs.slice(4).map((glyph) => glyph.id)).toEqual(
+      Array.from('a->b', (character) => source.glyphOf(character))
+    )
+    expect(glyphs.every((glyph) => glyph.source !== null)).toBe(true)
   })
 
   test('shapes the run itself with the features the text sets', () => {
