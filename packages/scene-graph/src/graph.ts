@@ -699,9 +699,10 @@ export class SceneGraph {
     py: number,
     scopeId: string,
     selectedIds: ReadonlySet<string>,
-    pad = 0
+    pad = 0,
+    framesOpen = true
   ): SceneNode | null {
-    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, pad)
+    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, pad, framesOpen)
   }
 
   hitTestOpenContainer(px: number, py: number, scopeId: string): SceneNode | null {

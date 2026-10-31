@@ -25,7 +25,8 @@ describe('canvas view profiles', () => {
       toolKeys: TOOL_SHORTCUTS,
       snapGrid: 1,
       dotGrid: null,
-      pixelGrid: true
+      pixelGrid: true,
+      framesOpen: true
     })
   })
 
@@ -44,7 +45,8 @@ describe('canvas view profiles', () => {
       toolKeys: TOOL_SHORTCUTS,
       snapGrid: 1,
       dotGrid: null,
-      pixelGrid: true
+      pixelGrid: true,
+      framesOpen: true
     })
   })
 
@@ -126,7 +128,7 @@ describe('document kinds', () => {
     ])
     expect([profile.toolKeys, profile.snapGrid]).toEqual([BOARD_TOOL_SHORTCUTS, 16])
     // FigJam draws its dots every 16 units and has no pixel grid.
-    expect([profile.dotGrid, profile.pixelGrid]).toEqual([16, false])
+    expect([profile.dotGrid, profile.pixelGrid, profile.framesOpen]).toEqual([16, false, false])
   })
 
   test('becoming a board drops a design tool, and refuses picking one', () => {

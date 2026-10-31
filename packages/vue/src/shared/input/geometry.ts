@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { HANDLE_HIT_RADIUS, LAYER_HIT_PAD } from '@open-pencil/core/constants'
 import {
   createSceneGeometry,
@@ -63,7 +63,14 @@ export function hitTestInEditorScope(
   const scope = editor.state.enteredContainerId ?? editor.state.currentPageId
   return deep
     ? editor.graph.hitTestDeep(cx, cy, scope, pad)
-    : editor.graph.hitTestSelectable(cx, cy, scope, editor.state.selectedIds, pad)
+    : editor.graph.hitTestSelectable(
+        cx,
+        cy,
+        scope,
+        editor.state.selectedIds,
+        pad,
+        resolveEditorProfile(editor.state).framesOpen
+      )
 }
 
 export function isInsideEditorContainerBounds(
