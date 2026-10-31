@@ -1,10 +1,11 @@
+import { useDocumentVisibility, useWindowFocus } from '@vueuse/core'
 import { watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { randomInt } from '@open-pencil/scene-graph/random'
 
 import { appPreferences, type NotificationPreferences } from '@/app/settings/preferences/store'
-import { activeTab, getActiveTabId } from '@/app/tabs'
+import { activeTab } from '@/app/tabs'
 
 import { browserNotificationPermission } from './permission'
 
@@ -36,13 +37,21 @@ const DESKTOP_CLICKS_KEPT = 50
 /** Browser notifications still shown, with their tab, closed once the person sees that tab. */
 const shownInBrowser = new Map<Notification, string | null>()
 let desktopClicks: Promise<void> | null = null
-let closesOnReturn = false
+
+const windowFocused = useWindowFocus()
+const documentVisibility = useDocumentVisibility()
 
 /** The person is looking at this tab of the focused window, so a notification would only repeat it. */
 function isWatching(tabId: string | null): boolean {
-  if (document.visibilityState !== 'visible' || !document.hasFocus()) return false
-  return tabId === null || tabId === getActiveTabId()
+  if (documentVisibility.value !== 'visible' || !windowFocused.value) return false
+  return tabId === null || tabId === activeTab.value?.id
 }
+
+// What a browser notification reports is in view once the person looks at its tab, so it no
+// longer needs one; those about other tabs stay to be clicked.
+watch([windowFocused, documentVisibility, () => activeTab.value?.id], () => {
+  for (const [shown, tabId] of shownInBrowser) if (isWatching(tabId)) shown.close()
+})
 
 async function focusDesktopWindow(): Promise<void> {
   const { getCurrentWindow } = await import('@tauri-apps/api/window')
@@ -88,13 +97,6 @@ async function showOnDesktop(notification: AppNotification): Promise<void> {
   sendNotification({ id, title: notification.title, body: notification.body })
 }
 
-function closeShownForActiveTab(): void {
-  if (!document.hasFocus()) return
-  const activeTabId = getActiveTabId()
-  for (const [open, tabId] of shownInBrowser)
-    if (tabId === null || tabId === activeTabId) open.close()
-}
-
 function showInBrowser(notification: AppNotification): void {
   if (browserNotificationPermission.value !== 'granted') return
   let shown: Notification
@@ -106,13 +108,6 @@ function showInBrowser(notification: AppNotification): void {
   } catch {
     // Mobile browsers show notifications only through a service worker and throw here.
     return
-  }
-  if (!closesOnReturn) {
-    closesOnReturn = true
-    // What a notification reports is in view once the focused window shows its tab, so it no
-    // longer needs one; those about other tabs stay to be clicked.
-    window.addEventListener('focus', closeShownForActiveTab)
-    watch(() => activeTab.value?.id, closeShownForActiveTab)
   }
   shownInBrowser.set(shown, notification.tabId)
   shown.addEventListener('close', () => shownInBrowser.delete(shown))
