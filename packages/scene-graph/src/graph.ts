@@ -20,7 +20,8 @@ import { generateId } from './ids'
 import * as Instances from './instances'
 import { LayoutWrites } from './layout/writes'
 import Matrix from './matrix'
-import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
+import { CONTAINER_TYPES, createDefaultNode, createDefaultSourceMetadata } from './node-defaults'
+import { fractionalPosition, orderKeyBetween } from './order-keys'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
@@ -87,7 +88,14 @@ export class SceneGraph {
     this.addPage('Page 1')
   }
   addPage(name: string): SceneNode {
-    return this.createNode('CANVAS', this.rootId, { name, width: 0, height: 0 })
+    const pages = this.getPages(true)
+    const lastOrderKey = pages.reduce<string | null>((maximum, page, index) => {
+      const key = page.source.orderKey ?? fractionalPosition(index)
+      return maximum === null || key > maximum ? key : maximum
+    }, null)
+    const source = createDefaultSourceMetadata()
+    if (lastOrderKey !== null) source.orderKey = orderKeyBetween(lastOrderKey, null)
+    return this.createNode('CANVAS', this.rootId, { name, width: 0, height: 0, source })
   }
 
   getPages(includeInternal = false): SceneNode[] {

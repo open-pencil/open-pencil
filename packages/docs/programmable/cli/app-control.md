@@ -47,7 +47,12 @@ openpencil redo --document-id tab-123 --json
 ```json
 {
   "result": { "applied": true, "label": "Set opacity", "scope": "document" },
-  "target": { "documentId": "tab-123", "documentName": "Landing", "pageId": "0:1", "pageName": "Page 1" }
+  "target": {
+    "documentId": "tab-123",
+    "documentName": "Landing",
+    "pageId": "0:1",
+    "pageName": "Page 1"
+  }
 }
 ```
 
@@ -71,23 +76,23 @@ openpencil settings set chat.maxAgentSteps 100
 
 Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain strings otherwise. Invalid keys and values are rejected without changing anything.
 
-| Key | Values |
-|-----|--------|
-| `appearance.theme` | `dark`, `light`, `auto` |
-| `appearance.language` | `en`, `de`, `es`, `fr`, `it`, `ja`, `pl`, `ru`, `zh-CN` |
-| `appearance.animations` | `system`, `off` |
-| `appearance.accent` | JSON object: `{"kind":"preset","preset":"green"}` with `blue`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `graphite`, or `{"kind":"custom","color":"#FF6600"}` |
-| `editing.snapping.geometry` | `true`, `false` |
-| `editing.snapping.objects` | `true`, `false` |
-| `editing.snapping.pixelGrid` | `true`, `false` |
-| `rendering.canvasMode` | `retained`, `tiled` (applies after a reload) |
-| `recovery.enabled` | `true`, `false` |
-| `chat.reasoningDisplay` | `collapsed`, `while-thinking`, `expanded` |
-| `chat.maxAgentSteps` | integer 1–1000 |
-| `chat.changePreviewSize` | `off`, `small`, `medium`, `large` |
-| `designCheck.showOnCanvas` | `true`, `false` |
-| `designCheck.preset` | `recommended`, `strict`, `accessibility` |
-| `designCheck.disabledRules` | JSON array of rule IDs, e.g. `["no-default-names"]`; see `openpencil lint --list-rules` |
+| Key                          | Values                                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `appearance.theme`           | `dark`, `light`, `auto`                                                                                                                                                   |
+| `appearance.language`        | `en`, `de`, `es`, `fr`, `it`, `ja`, `pl`, `ru`, `zh-CN`                                                                                                                   |
+| `appearance.animations`      | `system`, `off`                                                                                                                                                           |
+| `appearance.accent`          | JSON object: `{"kind":"preset","preset":"green"}` with `blue`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `graphite`, or `{"kind":"custom","color":"#FF6600"}` |
+| `editing.snapping.geometry`  | `true`, `false`                                                                                                                                                           |
+| `editing.snapping.objects`   | `true`, `false`                                                                                                                                                           |
+| `editing.snapping.pixelGrid` | `true`, `false`                                                                                                                                                           |
+| `rendering.canvasMode`       | `retained`, `tiled` (applies after a reload)                                                                                                                              |
+| `recovery.enabled`           | `true`, `false`                                                                                                                                                           |
+| `chat.reasoningDisplay`      | `collapsed`, `while-thinking`, `expanded`                                                                                                                                 |
+| `chat.maxAgentSteps`         | integer 1–1000                                                                                                                                                            |
+| `chat.changePreviewSize`     | `off`, `small`, `medium`, `large`                                                                                                                                         |
+| `designCheck.showOnCanvas`   | `true`, `false`                                                                                                                                                           |
+| `designCheck.preset`         | `recommended`, `strict`, `accessibility`                                                                                                                                  |
+| `designCheck.disabledRules`  | JSON array of rule IDs, e.g. `["no-default-names"]`; see `openpencil lint --list-rules`                                                                                   |
 
 Credentials, AI models, MCP connections, storage, and tool access are deliberately not available here: an automation client can't read secrets or grant itself access.
 
@@ -100,6 +105,8 @@ openpencil tool list
 openpencil tool describe set_fill
 openpencil tool call set_fill --args '{"id":"0:5","color":"#2563eb"}'
 openpencil tool call set_fill --document-id tab-123 --args-file fill.json
+# Use a page ID from list_pages; index is zero-based.
+openpencil tool call move_page --document-id tab-123 --args '{"target_page_id":"page-id-from-list_pages","index":2}'
 echo '{"name":"Icons"}' | openpencil tool call create_page --args-file -
 ```
 
@@ -107,6 +114,7 @@ Pass a file to run a tool headlessly instead. Changes to a file are kept only wi
 
 ```sh
 openpencil tool call create_page design.fig --args '{"name":"Icons"}' --write
+openpencil tool call move_page design.fig --args '{"target_page_id":"page-id-from-list_pages","index":2}' --write
 openpencil tool call get_page_tree design.fig --json
 ```
 

@@ -1,0 +1,1 @@
+- The MCP and AI tools can now reorder document pages with `move_page` and its `target_page_id` argument; appended pages stay last after saving and reopening a `.fig` file.
