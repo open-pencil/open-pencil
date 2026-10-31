@@ -11,15 +11,36 @@ export const EDIT_VIEW: CanvasView = { id: 'edit' }
 /** The tools a read-only document keeps, as Figma's toolbar shows while a version is viewed. */
 export const READ_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['SELECT', 'HAND'])
 
-/** What the document's kind decides: the tools and keys it offers and the grid it snaps to. */
-type DocumentBehaviour = Pick<EditorProfile, 'edits' | 'tools' | 'toolKeys' | 'snapGrid'>
+/** What the document's kind decides: its tools and keys, its grids, and how deep a click goes. */
+type DocumentBehaviour = Pick<
+  EditorProfile,
+  'edits' | 'tools' | 'toolKeys' | 'snapGrid' | 'dotGrid' | 'pixelGrid' | 'framesOpen' | 'lint'
+>
 
 /** What the canvas's view decides: how the pointer, keys, chrome, and panels behave. */
 type ViewBehaviour = Omit<EditorProfile, keyof DocumentBehaviour>
 
 const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
-  design: { edits: true, tools: null, toolKeys: TOOL_SHORTCUTS, snapGrid: 1 },
-  board: { edits: true, tools: BOARD_TOOLS, toolKeys: BOARD_TOOL_SHORTCUTS, snapGrid: BOARD_GRID }
+  design: {
+    edits: true,
+    tools: null,
+    toolKeys: TOOL_SHORTCUTS,
+    snapGrid: 1,
+    dotGrid: null,
+    pixelGrid: true,
+    framesOpen: true,
+    lint: true
+  },
+  board: {
+    edits: true,
+    tools: BOARD_TOOLS,
+    toolKeys: BOARD_TOOL_SHORTCUTS,
+    snapGrid: BOARD_GRID,
+    dotGrid: BOARD_GRID,
+    pixelGrid: false,
+    framesOpen: false,
+    lint: false
+  }
 }
 
 const EDIT_BEHAVIOUR: ViewBehaviour = {

@@ -37,10 +37,15 @@ export class CanvasHelper {
   }
 
   async waitForInit() {
-    await this.page
-      .getByTestId('canvas-element')
-      .and(this.page.locator('[data-ready="1"]'))
-      .waitFor({ timeout: 30000 })
+    const ready = this.page.getByTestId('canvas-element').and(this.page.locator('[data-ready="1"]'))
+    // The app opens on Home, as Figma's does, so a page loaded at / starts a design from there.
+    const newDesign = this.page.getByTestId('home-new-design')
+    const shown = await Promise.race([
+      ready.waitFor({ timeout: 30000 }).then(() => 'canvas'),
+      newDesign.waitFor({ timeout: 30000 }).then(() => 'home')
+    ])
+    if (shown === 'home' && !(await ready.isVisible())) await newDesign.click()
+    await ready.waitFor({ timeout: 30000 })
     await this.page.getByTestId('canvas-loading').waitFor({ state: 'hidden', timeout: 30000 })
     await this.page.locator('#loader').waitFor({ state: 'detached', timeout: 30000 })
     await this.useLightPage()

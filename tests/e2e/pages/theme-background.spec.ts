@@ -6,9 +6,15 @@ import { expect, test, type Page } from '@playwright/test'
 const DARK = 0x1e / 255
 const LIGHT = 0.96
 
+/** Starts a new design from Home, where the app opens, as a person does. */
+async function startDesign(page: Page) {
+  await page.getByTestId('home-new-design').click()
+  await page.getByTestId('canvas-element').and(page.locator('[data-ready="1"]')).waitFor()
+}
+
 async function openFresh(page: Page) {
   await page.goto('/')
-  await page.getByTestId('canvas-element').and(page.locator('[data-ready="1"]')).waitFor()
+  await startDesign(page)
   await page.locator('#loader').waitFor({ state: 'detached' })
 }
 
@@ -35,7 +41,7 @@ test('the light theme starts documents on the light page', async ({ page }) => {
   })
   // The theme setting persists, so the reloaded app starts a new document in it.
   await page.reload()
-  await page.getByTestId('canvas-element').and(page.locator('[data-ready="1"]')).waitFor()
+  await startDesign(page)
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   expect(await currentPageColor(page)).toBeCloseTo(LIGHT, 3)
 })

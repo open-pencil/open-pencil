@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor, gridNudge } from '@open-pencil/core'
 
 import { getNodeOrThrow } from '../helpers/assert'
 
@@ -191,5 +191,15 @@ describe('arrow keys in an auto layout flow', () => {
     editor.redoAction()
     expect(order()).toBe('ACDB')
     editor.dispose()
+  })
+})
+
+describe('Shift+arrow on a board', () => {
+  // FigJam: Shift+arrow moves a layer to the next multiple of 16 that way, not by 10.
+  test('moves the top-left corner to the next grid line in the arrow’s direction', () => {
+    expect(gridNudge({ x: 37, y: 40 }, { x: 1, y: 0 }, 16)).toEqual({ x: 11, y: 0 })
+    expect(gridNudge({ x: 37, y: 40 }, { x: -1, y: 0 }, 16)).toEqual({ x: -5, y: 0 })
+    expect(gridNudge({ x: 32, y: 48 }, { x: 0, y: 1 }, 16)).toEqual({ x: 0, y: 16 })
+    expect(gridNudge({ x: 32, y: 48 }, { x: 0, y: -1 }, 16)).toEqual({ x: 0, y: -16 })
   })
 })

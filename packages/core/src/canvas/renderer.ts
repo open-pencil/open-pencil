@@ -102,6 +102,9 @@ export class SkiaRenderer {
   declare fillPaint: Paint
   diamondGradientEffect: RuntimeEffect | null = null
   pixelGridEffect: RuntimeEffect | null = null
+  dotGridEffect: RuntimeEffect | null = null
+  /** The board grid the page's dots follow, in canvas units, or null for a page without dots. */
+  pageDotGrid: number | null = null
   declare strokePaint: Paint
   declare selectionPaint: Paint
   declare parentOutlinePaint: Paint

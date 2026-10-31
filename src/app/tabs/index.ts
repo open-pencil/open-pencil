@@ -128,7 +128,8 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
  */
 export function createDocumentTab(kind: DocumentKind): Tab {
   const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
-  const tab = createTab(undefined, createDocumentGraph(kind))
+  // Not an opened file: a new document takes the theme's page, unless its page has one, as a board's.
+  const tab = createTab(createEditorStore(createDocumentGraph(kind), false))
   if (picker) {
     const rest = tabsRef.value.filter((entry) => entry !== tab)
     tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))
