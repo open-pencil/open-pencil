@@ -44,6 +44,14 @@ function resized(node: SceneNode): SceneNode {
   return { ...node, ...changes }
 }
 
+function changed(node: SceneNode, changes: Partial<SceneNode>): SceneNode {
+  const sized = withTextMeasurer(
+    (text, maxWidth) => measureTextNode(renderer(), text, maxWidth),
+    () => textAutoResizeChanges(node, changes)
+  )
+  return { ...node, ...changes, ...sized }
+}
+
 describe('text that sizes its own width', () => {
   beforeAll(async () => {
     ck = await getCanvasKit()
@@ -144,5 +152,28 @@ describe('text that sizes its own width', () => {
     } finally {
       layout.delete()
     }
+  })
+
+  test('re-measures when only its truncation changes', () => {
+    const wrapped = resized(autoWidthText({ maxWidth: MAX_WIDTH * 3, maxLines: 1 }))
+    const truncated = changed(wrapped, { textTruncation: 'ENDING' })
+    const fresh = resized(
+      autoWidthText({ maxWidth: MAX_WIDTH * 3, maxLines: 1, textTruncation: 'ENDING' })
+    )
+
+    expect(truncated.height).toBeLessThan(wrapped.height)
+    expect([truncated.width, truncated.height]).toEqual([fresh.width, fresh.height])
+  })
+
+  test('re-measures its width when its line cap changes', () => {
+    const threeLines = resized(
+      autoWidthText({ maxWidth: MAX_WIDTH * 3, textTruncation: 'ENDING', maxLines: 3 })
+    )
+    const oneLine = changed(threeLines, { maxLines: 1 })
+    const fresh = resized(
+      autoWidthText({ maxWidth: MAX_WIDTH * 3, textTruncation: 'ENDING', maxLines: 1 })
+    )
+
+    expect([oneLine.width, oneLine.height]).toEqual([fresh.width, fresh.height])
   })
 })

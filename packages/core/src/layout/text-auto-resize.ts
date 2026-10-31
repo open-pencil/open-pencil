@@ -14,6 +14,7 @@ export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
   ...WRAP_WIDTH_KEYS,
   'lineHeight',
   'textAutoResize',
+  'textTruncation',
   'width',
   'maxLines'
 ])
@@ -22,7 +23,9 @@ const TEXT_AUTO_WIDTH_KEYS = new Set<keyof SceneNode>([
   ...TEXT_METRIC_FIELDS,
   ...TEXT_CONTENT_FIELDS,
   ...WRAP_WIDTH_KEYS,
-  'textAutoResize'
+  'textAutoResize',
+  'textTruncation',
+  'maxLines'
 ])
 
 export function hasTextAutoResizeChange(changes: Partial<SceneNode>): boolean {
