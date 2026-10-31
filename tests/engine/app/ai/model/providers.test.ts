@@ -10,7 +10,7 @@ import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { reasoningCallSettings } from '@/app/ai/models/reasoning/settings'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createAnthropicCompatibleAdapter } from '@/app/ai/providers/compatible'
-import { modelProviderAdapter } from '@/app/ai/providers/registry'
+import { modelProviderAdapter, providerTakesWebPImages } from '@/app/ai/providers/registry'
 import type { ModelConfig } from '@/app/ai/providers/types'
 import type { FetchFunction } from '@/app/http/types'
 
@@ -155,6 +155,21 @@ describe('model provider registry', () => {
     expect(() => modelProviderAdapter('acp:claude-code')).toThrow(
       'ACP providers and Harness agents do not use direct API models'
     )
+  })
+
+  test('sends WebP tool images only where the provider itself documents WebP input', () => {
+    expect(providerTakesWebPImages('anthropic')).toBe(true)
+    // An endpoint behind a compatible API, a router, or Cloud may not decode WebP.
+    for (const providerID of [
+      'anthropic-compatible',
+      'openai-compatible',
+      'openrouter',
+      'openpencil',
+      'acp:claude-code',
+      'harness:pi'
+    ] as const) {
+      expect(providerTakesWebPImages(providerID)).toBe(false)
+    }
   })
 })
 

@@ -10,6 +10,8 @@ import type { SkiaRenderer } from '#core/canvas'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
+import { ckImageFormat } from './pixels'
+
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
 export type ExportFormat = RasterExportFormat | 'SVG'
 
@@ -31,17 +33,6 @@ export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
     (id) => graph.getNode(id),
     (id) => graph.getAbsolutePosition(id)
   )
-}
-
-function ckImageFormat(ck: CanvasKit, format: ExportFormat) {
-  switch (format) {
-    case 'JPG':
-      return ck.ImageFormat.JPEG
-    case 'WEBP':
-      return ck.ImageFormat.WEBP
-    default:
-      return ck.ImageFormat.PNG
-  }
 }
 
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {
@@ -177,34 +168,7 @@ function renderToSurface(
         ])
       : downsampleSurface.makeImageSnapshot()
     const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
-    let resultBytes: Uint8Array<ArrayBuffer> | null = encoded ? new Uint8Array(encoded) : null
-
-    // CanvasKit's `encodeToBytes` returns null for JPEG/WEBP in this build, so
-    // fall back to encoding the raw pixels through the browser canvas.
-    if (!resultBytes && (format === 'JPG' || format === 'WEBP')) {
-      const exportWidth = alphaBounds ? alphaBounds.maxX - alphaBounds.minX : width
-      const exportHeight = alphaBounds ? alphaBounds.maxY - alphaBounds.minY : height
-      const exportMinX = alphaBounds ? alphaBounds.minX : 0
-      const exportMinY = alphaBounds ? alphaBounds.minY : 0
-
-      const rawPixels = downsampleCanvas.readPixels(exportMinX, exportMinY, {
-        alphaType: ck.AlphaType.Unpremul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB,
-        width: exportWidth,
-        height: exportHeight
-      })
-
-      if (rawPixels instanceof Uint8Array) {
-        resultBytes = renderer.encodeRasterFallback(
-          rawPixels,
-          exportWidth,
-          exportHeight,
-          format,
-          quality
-        )
-      }
-    }
+    const resultBytes = encoded ? new Uint8Array(encoded) : null
 
     image.delete()
     downsampleSurface.delete()

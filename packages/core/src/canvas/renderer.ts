@@ -1,5 +1,4 @@
 import { isEqual } from 'es-toolkit'
-import { toUint8Array } from 'js-base64'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
@@ -702,44 +701,6 @@ export class SkiaRenderer {
     return {
       x: (sx - this.panX) / this.zoom,
       y: (sy - this.panY) / this.zoom
-    }
-  }
-
-  /**
-   * Browser fallback for raster formats CanvasKit cannot encode itself
-   * (this build returns null from `encodeToBytes` for JPEG/WEBP). Routes the
-   * RGBA pixels through an HTMLCanvasElement so `toDataURL` does the encoding.
-   * Returns null outside the browser or if encoding fails.
-   */
-  encodeRasterFallback(
-    pixels: Uint8Array,
-    width: number,
-    height: number,
-    format: 'JPG' | 'WEBP',
-    quality: number
-  ): Uint8Array<ArrayBuffer> | null {
-    if (!IS_BROWSER) return null
-    try {
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return null
-      const imageData = ctx.createImageData(width, height)
-      imageData.data.set(pixels)
-      ctx.putImageData(imageData, 0, 0)
-      const mime = format === 'JPG' ? 'image/jpeg' : 'image/webp'
-      const dataURL = canvas.toDataURL(mime, quality / 100)
-      // Browsers silently return a PNG data URL when the requested encoder is
-      // unsupported; reject that so we never write PNG bytes under a .jpg/.webp file.
-      if (!dataURL.startsWith(`data:${mime}`)) return null
-      const base64 = dataURL.split(',')[1]
-      if (!base64) return null
-      // js-base64 types its bytes as any buffer; a copy has the plain one a `Blob` takes.
-      return new Uint8Array(toUint8Array(base64))
-    } catch (err) {
-      console.warn('Raster encode fallback failed:', err)
-      return null
     }
   }
 

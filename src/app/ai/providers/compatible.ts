@@ -14,10 +14,12 @@ export type CompatibleEndpoint = string | ((config: ModelConfig) => string)
 type OpenAICompatibleOptions = {
   baseURL?: CompatibleEndpoint
   mode?: 'default' | 'chat' | 'configurable'
+  webpImages?: boolean
 }
 
 type AnthropicCompatibleOptions = {
   baseURL?: CompatibleEndpoint
+  webpImages?: boolean
 }
 
 function resolveEndpoint(endpoint: CompatibleEndpoint | undefined, config: ModelConfig) {
@@ -42,7 +44,8 @@ export function createOpenAICompatibleAdapter(
           : provider.chat(modelID)
       }
       return provider(modelID)
-    }
+    },
+    webpImages: options.webpImages
   }
 }
 
@@ -58,6 +61,7 @@ export function createAnthropicCompatibleAdapter(
         headers: IS_TAURI ? undefined : BROWSER_ACCESS_HEADERS
       })
       return provider(config.customModelID.trim() || config.modelID)
-    }
+    },
+    webpImages: options.webpImages
   }
 }
