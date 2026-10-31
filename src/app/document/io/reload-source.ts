@@ -1,3 +1,5 @@
+import { readFile as tauriRead } from '@tauri-apps/plugin-fs'
+
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 
 import { isTauri } from '@/app/tauri/env'
@@ -17,7 +19,6 @@ export async function readReloadSource({
 }: ReloadSourceOptions) {
   signal?.throwIfAborted()
   if (filePath && isTauri()) {
-    const { readFile: tauriRead } = await import('@tauri-apps/plugin-fs')
     const bytes = await tauriRead(filePath)
     signal?.throwIfAborted()
     const blob = new Blob([bytes])
