@@ -1,4 +1,4 @@
-import { afterAll, expect, test } from 'bun:test'
+import { afterAll, expect, spyOn, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
@@ -32,9 +32,12 @@ test("a text's font readiness is found once per layer until the layer or the fon
     graph.getNode(graph.createNode('TEXT', page.id, { text: 'hello' }).id),
     'text'
   )
+  // A reading that is found again is not decided again: the memo is written once.
+  const written = spyOn(renderer.textReadiness, 'set')
   const first = renderer.nodeFontReadiness(node)
   expect(renderer.textReadiness.get(node.id)?.readiness).toBe(first)
   expect(renderer.nodeFontReadiness(node)).toBe(first)
+  expect(written).toHaveBeenCalledTimes(1)
 
   // A change to the layer drops the memo; the next frame decides again.
   renderer.invalidateNodePicture(node.id)

@@ -100,21 +100,24 @@ export function renderShapeThroughEffectCaches(
     return
   }
 
-  const margin = Math.max(
-    r.effectOverflow(node),
-    arrowCapOverflow(node.strokes, node.strokeCap, node.vectorNetwork)
-  )
+  // An arrow head reaches past the shape, and its shadow reaches past the head: both margins.
+  const margin =
+    r.effectOverflow(node) + arrowCapOverflow(node.strokes, node.strokeCap, node.vectorNetwork)
   const width = node.width + margin * 2
   const height = node.height + margin * 2
   const scale = targetScale
-  if (canRasterCache && canCacheEffectRaster(width, height, scale)) {
-    const surface = r.surface.makeSurface({
-      width: Math.ceil(width * scale),
-      height: Math.ceil(height * scale),
-      colorType: r.ck.ColorType.RGBA_8888,
-      alphaType: r.ck.AlphaType.Premul,
-      colorSpace: r.ck.ColorSpace.SRGB
-    })
+  // A surface the GPU cannot give falls through to the picture path below.
+  const surface =
+    canRasterCache && canCacheEffectRaster(width, height, scale)
+      ? r.surface.makeSurface({
+          width: Math.ceil(width * scale),
+          height: Math.ceil(height * scale),
+          colorType: r.ck.ColorType.RGBA_8888,
+          alphaType: r.ck.AlphaType.Premul,
+          colorSpace: r.ck.ColorSpace.SRGB
+        })
+      : null
+  if (surface) {
     const rasterCanvas = surface.getCanvas()
     try {
       rasterCanvas.clear(r.ck.TRANSPARENT)

@@ -87,13 +87,12 @@ test('progressive tiled rendering preference persists and URL overrides take pre
   await expect(tiled).not.toBeChecked()
   await expect(
     page.evaluate(() =>
-      window.openPencil
-        ?.getStore?.()
-        .canvasRenderers.every(
-          (renderer) => !renderer.tracksSceneSettlement || !renderer.tiledSceneEnabled
-        )
+      window.openPencil?.getStore?.().canvasRenderers.map((renderer) => ({
+        scene: renderer.tracksSceneSettlement,
+        tiled: renderer.tiledSceneEnabled
+      }))
     )
-  ).resolves.toBe(true)
+  ).resolves.toEqual(expect.arrayContaining([{ scene: true, tiled: false }]))
 
   await page.goto('/?test&renderer=tiled')
   await canvas.waitForInit()

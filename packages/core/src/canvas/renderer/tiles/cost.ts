@@ -1,6 +1,8 @@
 import type { TileKey } from './geometry'
 
 const TILE_COST_SMOOTHING = 0.3
+/** Tiles whose own time is kept; past this the oldest reading goes, a session never clearing. */
+const MAX_MEASURED_TILES = 4096
 
 function smoothCost(previous: number | undefined, costMs: number): number {
   if (previous === undefined) return costMs
@@ -30,7 +32,13 @@ export class TileCostModel {
 
   record(key: TileKey, costMs: number, chunkCount: number): void {
     const id = this.id(key)
-    this.measured.set(id, smoothCost(this.measured.get(id), costMs))
+    const previous = this.measured.get(id)
+    if (previous !== undefined) this.measured.delete(id)
+    else if (this.measured.size >= MAX_MEASURED_TILES) {
+      const oldest = this.measured.keys().next().value
+      if (oldest !== undefined) this.measured.delete(oldest)
+    }
+    this.measured.set(id, smoothCost(previous, costMs))
     if (chunkCount === 0) return
     const perChunk = costMs / chunkCount
     this.perChunkMsByLevel.set(

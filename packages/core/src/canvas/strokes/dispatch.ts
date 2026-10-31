@@ -85,11 +85,9 @@ function drawVectorPathStrokes(
     r.strokePaint.setStrokeCap(getStrokeCapEntity(r, stroke.cap ?? 'NONE'))
     r.strokePaint.setStrokeJoin(getStrokeJoinEntity(r, stroke.join ?? 'MITER'))
     r.strokePaint.setStrokeMiter(miterLimit)
-    const effect = r.ck.PathEffect.MakeDash(dash, 0)
-    r.strokePaint.setPathEffect(effect)
-    for (const vp of vectorPaths) canvas.drawPath(vp, r.strokePaint)
-    r.strokePaint.setPathEffect(null)
-    effect.delete()
+    withStrokeDash(r, dash, 0, () => {
+      for (const vp of vectorPaths) canvas.drawPath(vp, r.strokePaint)
+    })
     return
   }
   const strokeOpts = {
@@ -200,12 +198,30 @@ function drawNodeStroke(
 
   canvas.save()
   if (clipPaths) {
-    for (const path of clipPaths) canvas.clipPath(path, r.ck.ClipOp.Intersect, true)
+    // The stroke stays inside every region at once: two apart would clip each other away.
+    const union = unionOfPaths(r, clipPaths)
+    try {
+      canvas.clipPath(union, r.ck.ClipOp.Intersect, true)
+    } finally {
+      union.delete()
+    }
   } else {
     r.clipNodeShape(canvas, node)
   }
   drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
   canvas.restore()
+}
+
+/** One path covering every one of `paths`, which the caller owns; the paths stay as they are. */
+function unionOfPaths(r: SkiaRenderer, paths: readonly Path[]): Path {
+  let union = new r.ck.Path()
+  for (const path of paths) {
+    const next = r.ck.Path.MakeFromOp(union, path, r.ck.PathOp.Union)
+    if (!next) continue
+    union.delete()
+    union = next
+  }
+  return union
 }
 
 export function isPathTextWithStrokeGeometry(node: SceneNode): boolean {

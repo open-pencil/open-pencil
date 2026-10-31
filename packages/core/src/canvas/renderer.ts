@@ -564,8 +564,27 @@ export class SkiaRenderer {
       if (node.type === 'TEXT') {
         this.invalidateNodePicture(id)
         this.tiledScene.invalidateNode(id, graph)
+        this.invalidateBooleanAncestors(graph, node)
       }
       pending.push(...node.childIds)
+    }
+  }
+
+  /**
+   * A boolean operation keeps its result between draws, and a text operand whose outline waited
+   * for its font gave it none: the fonts arriving drop the results of the operations above.
+   */
+  private invalidateBooleanAncestors(graph: SceneGraph, node: SceneNode): void {
+    const seen = new Set<string>()
+    let parent = node.parentId ? graph.getNode(node.parentId) : undefined
+    while (parent && !seen.has(parent.id)) {
+      seen.add(parent.id)
+      if (parent.type === 'BOOLEAN_OPERATION') {
+        this.invalidateVectorPath(parent.id)
+        this.invalidateNodePicture(parent.id)
+        this.tiledScene.invalidateNode(parent.id, graph)
+      }
+      parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
     }
   }
 
