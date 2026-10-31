@@ -1,0 +1,1 @@
+- Boards open on the canvas alone, as FigJam shows them, with the panels a click away and the AI chat floating over the canvas; a selected sticky note, shape, or connector shows its controls beside it while the panels are hidden.
