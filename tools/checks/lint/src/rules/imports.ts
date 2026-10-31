@@ -228,6 +228,35 @@ const noCoreFrameworkImports = createImportSourceRule({
 })
 
 /**
+ * Tauri's modules reach the native side only when one of their functions is called, so shipped
+ * code imports them statically like any other module. Only the startup support gate loads them
+ * inline: it must parse on engines that cannot run the app, which `src/main.ts` keeps free of the
+ * app bundle. Tests and tooling, which load Tauri's mocks and CLI in a set order, are not shipped.
+ */
+const noInlineTauriImports: RuleDefinition = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Import Tauri modules statically, outside the startup support gate' },
+    schema: []
+  },
+  create(context: RuleContext) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/src/') || /\/(tools|tests)\//.test(file)) return {}
+    if (file.includes('/src/app/shell/support/')) return {}
+    return {
+      ImportExpression(node) {
+        if (node.source.type !== 'Literal' || typeof node.source.value !== 'string') return
+        if (!node.source.value.startsWith('@tauri-apps/')) return
+        context.report({
+          node,
+          message: `Import '${node.source.value}' statically; Tauri's modules reach the native side only when called.`
+        })
+      }
+    }
+  }
+}
+
+/**
  * An edit records what it changed through `recordEdit` or `recordEditAsync`, which push its undo
  * step when the document's unsaved state expects it; capturing a change by hand elsewhere is how
  * an edit's step came to land after an await and left undone documents unsaved.
@@ -273,5 +302,6 @@ export {
   noCoreSelfPackageImports,
   noInlinePromptConstants,
   noAppImportsInPackages,
-  noCoreFrameworkImports
+  noCoreFrameworkImports,
+  noInlineTauriImports
 }
