@@ -1,0 +1,1 @@
+- The CLI reads the `.pen` libraries a `.pen` document imports, so instances of their components and their variables draw as in pen.dev instead of missing or black.
