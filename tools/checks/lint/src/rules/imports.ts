@@ -1,4 +1,4 @@
-import { importSource, normalizedFilename } from '#lint/support/context.ts'
+import { importSource, inlineImportSource, normalizedFilename } from '#lint/support/context.ts'
 import { createImportSourceRule } from '#lint/support/factories.ts'
 import type { RuleContext, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
@@ -242,14 +242,14 @@ const noInlineTauriImports: RuleDefinition = {
   create(context: RuleContext) {
     const file = normalizedFilename(context)
     if (!file.includes('/src/') || /\/(tools|tests)\//.test(file)) return {}
-    if (file.includes('/src/app/shell/support/')) return {}
+    if (/\/src\/app\/shell\/support\/(gate|render)\.ts$/.test(file)) return {}
     return {
       ImportExpression(node) {
-        if (node.source.type !== 'Literal' || typeof node.source.value !== 'string') return
-        if (!node.source.value.startsWith('@tauri-apps/')) return
+        const source = inlineImportSource(node)
+        if (!source?.startsWith('@tauri-apps/')) return
         context.report({
           node,
-          message: `Import '${node.source.value}' statically; Tauri's modules reach the native side only when called.`
+          message: `Import '${source}' statically; Tauri's modules reach the native side only when called.`
         })
       }
     }

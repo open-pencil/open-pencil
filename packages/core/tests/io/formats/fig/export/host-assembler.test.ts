@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
+import { unzipSync } from 'fflate'
 
 import {
   exportFigFile,
@@ -31,7 +32,7 @@ test('a host assembler packs the archive from the parts the export prepared', as
 
 test('without a host assembler the export packs the archive itself', async () => {
   const graph = new SceneGraph()
-  const bytes = await exportFigFile(graph)
-  // A `.fig` is a ZIP archive.
-  expect(Array.from(bytes.subarray(0, 2))).toEqual([0x50, 0x4b])
+  const entries = unzipSync(await exportFigFile(graph))
+  expect(Object.keys(entries)).toContain('canvas.fig')
+  expect(entries['canvas.fig'].length).toBeGreaterThan(0)
 })
