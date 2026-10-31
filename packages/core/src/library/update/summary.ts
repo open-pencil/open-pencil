@@ -1,8 +1,13 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { findLibraryDefinition } from './definitions'
-import { diffLibraryManifests } from './diff'
-import type { ComponentLibraryRevision, LibraryAssetChange, LibraryAssetDescriptor } from './types'
+import { findLibraryDefinition } from '#core/library/definitions'
+import { diffLibraryManifests } from '#core/library/diff'
+import type {
+  ComponentLibraryRevision,
+  LibraryAssetChange,
+  LibraryAssetDescriptor
+} from '#core/library/types'
+import { assetComponent, assetComponents } from '#core/library/variants'
 
 export interface LibraryUpdateSummary {
   libraryId: string
@@ -21,29 +26,6 @@ export interface LibraryInstanceUpdate {
   previousComponentId: string
   componentId: string
   fallback: boolean
-}
-
-function componentsForRoot(graph: SceneGraph, root: SceneNode): SceneNode[] {
-  if (root.type === 'COMPONENT') return [root]
-  if (root.type !== 'COMPONENT_SET') return []
-  return root.childIds.flatMap((id) => {
-    const child = graph.getNode(id)
-    return child?.type === 'COMPONENT' ? [child] : []
-  })
-}
-
-function sameVariant(left: SceneNode, right: SceneNode): boolean {
-  const leftEntries = Object.entries(left.componentPropertyValues)
-  return (
-    leftEntries.length === Object.keys(right.componentPropertyValues).length &&
-    leftEntries.every(([name, value]) => right.componentPropertyValues[name] === value)
-  )
-}
-
-function topLeft(components: SceneNode[]): SceneNode | undefined {
-  return [...components].sort(
-    (left, right) => left.y - right.y || left.x - right.x || left.name.localeCompare(right.name)
-  )[0]
 }
 
 export function summarizeLibraryUpdate(
@@ -81,20 +63,16 @@ export function planLibraryInstanceUpdates(
     const previousRoot = findLibraryDefinition(graph, libraryId, descriptor.key, previousRevisionId)
     const nextRoot = findLibraryDefinition(graph, libraryId, descriptor.key, nextRevisionId)
     if (!previousRoot || !nextRoot) continue
-    const previousComponents = componentsForRoot(graph, previousRoot)
-    const nextComponents = componentsForRoot(graph, nextRoot)
-    const fallback = topLeft(nextComponents)
-    if (!fallback) continue
 
-    for (const previousComponent of previousComponents) {
-      const target =
-        nextComponents.find((component) => sameVariant(previousComponent, component)) ?? fallback
+    for (const previousComponent of assetComponents(graph, previousRoot)) {
+      const target = assetComponent(graph, nextRoot, previousComponent)
+      if (!target) continue
       for (const instance of graph.getInstances(previousComponent.id)) {
         updates.push({
           instanceId: instance.id,
           previousComponentId: previousComponent.id,
-          componentId: target.id,
-          fallback: !sameVariant(previousComponent, target)
+          componentId: target.component.id,
+          fallback: target.fallback
         })
       }
     }

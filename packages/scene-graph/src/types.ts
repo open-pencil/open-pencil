@@ -817,6 +817,11 @@ export interface SceneNode {
   sharedSymbolVersion: string | null
   publishedVersion: string | null
   librarySource: LibraryAssetSource | null
+  /**
+   * The layer of a library's source document that a library definition's layer copies, which pairs
+   * it with the same layer in the library's next revision whatever that layer is called by then.
+   */
+  libraryLayerId: string | null
   isPublishable: boolean
   isSymbolPublishable: boolean
   /**

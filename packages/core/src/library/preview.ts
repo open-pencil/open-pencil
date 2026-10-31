@@ -3,9 +3,10 @@ import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 
-import { libraryAssetKeyForComponent } from './instance-updates'
 import { libraryDependencyRoots } from './materialize'
 import type { ComponentLibraryRevision } from './types'
+import { libraryAssetKeyForComponent } from './update/instances'
+import { assetComponent } from './variants'
 
 export interface LibraryUpdatePreview {
   graph: SceneGraph
@@ -60,23 +61,6 @@ function consumerDependencyRoots(graph: SceneGraph, component: SceneNode): Scene
   return [...roots.values()]
 }
 
-function revisionComponents(revision: ComponentLibraryRevision, assetKey: string): SceneNode[] {
-  const descriptor = revision.manifest.assets.find((asset) => asset.key === assetKey)
-  const root = descriptor ? revision.graph.getNode(descriptor.sourceNodeId) : null
-  if (!root) return []
-  return root.type === 'COMPONENT'
-    ? [root]
-    : revision.graph.getChildren(root.id).filter((node) => node.type === 'COMPONENT')
-}
-
-function sameVariant(left: SceneNode, right: SceneNode): boolean {
-  const entries = Object.entries(left.componentPropertyValues)
-  return (
-    entries.length === Object.keys(right.componentPropertyValues).length &&
-    entries.every(([name, value]) => right.componentPropertyValues[name] === value)
-  )
-}
-
 function propertyDefinitions(graph: SceneGraph, component: SceneNode) {
   const parent = component.parentId ? graph.getNode(component.parentId) : null
   return [
@@ -113,11 +97,11 @@ export function createLibraryUpdatePreview(
   if (!currentComponent) throw new Error('Linked component not found')
   const assetKey = libraryAssetKeyForComponent(consumer, currentComponent.id)
   if (!assetKey) throw new Error('Linked library asset not found')
-  const candidates = revisionComponents(latest, assetKey)
-  const exact = candidates.find((candidate) => sameVariant(currentComponent, candidate))
-  if (candidates.length === 0) throw new Error('Updated library component not found')
-  const fallback = [...candidates].sort((left, right) => left.y - right.y || left.x - right.x)[0]
-  const updatedComponent = exact ?? fallback
+  const descriptor = latest.manifest.assets.find((asset) => asset.key === assetKey)
+  const root = descriptor ? latest.graph.getNode(descriptor.sourceNodeId) : undefined
+  const target = root ? assetComponent(latest.graph, root, currentComponent) : undefined
+  if (!target) throw new Error('Updated library component not found')
+  const updatedComponent = target.component
 
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
@@ -143,5 +127,5 @@ export function createLibraryUpdatePreview(
   reapplyInstanceComponentProperties({ graph }, updatedNodeId)
   graph.updateNode(currentComponentId, { internalOnly: true })
   graph.updateNode(updatedComponentId, { internalOnly: true })
-  return { graph, currentNodeId, updatedNodeId, fallback: !exact }
+  return { graph, currentNodeId, updatedNodeId, fallback: target.fallback }
 }

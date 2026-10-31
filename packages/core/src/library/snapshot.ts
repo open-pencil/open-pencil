@@ -19,7 +19,8 @@ const VOLATILE_NODE_FIELDS = new Set([
   'textPicture',
   'derivedTextGlyphs',
   'derivedLayout',
-  'librarySource'
+  'librarySource',
+  'libraryLayerId'
 ])
 
 function assetKey(node: SceneNode): string {
@@ -44,23 +45,50 @@ function collectNodeClosure(graph: SceneGraph, rootIds: string[]): Set<string> {
   return ids
 }
 
+/**
+ * The identity each layer of `source` keeps across revisions: its id in the source document, or,
+ * for a layer an instance copies from its component, which a document rebuilds on every load, the
+ * identities of the instance and of the component layer it copies.
+ */
+function layerIdentities(source: SceneGraph): (node: SceneNode) => string {
+  const known = new Map<string, string>()
+  const identify = (node: SceneNode): string => {
+    const cached = known.get(node.id)
+    if (cached) return cached
+    let owner: SceneNode | undefined
+    for (let id = node.parentId; id && !owner;) {
+      const parent = source.getNode(id)
+      if (parent?.type === 'INSTANCE') owner = parent
+      id = parent?.parentId ?? null
+    }
+    const copied = node.componentId ? source.getNode(node.componentId) : undefined
+    const identity =
+      owner && copied ? `${identify(owner)}/${identify(copied)}` : (node.source.id ?? node.id)
+    known.set(node.id, identity)
+    return identity
+  }
+  return identify
+}
+
 function addSnapshotNode(
   source: SceneGraph,
   target: SceneGraph,
   sourceId: string,
   targetParentId: string,
-  mappedIds: Map<string, string>
+  mappedIds: Map<string, string>,
+  identify: (node: SceneNode) => string
 ): void {
   const node = source.getNode(sourceId)
   if (!node) return
   const created = target.createNode(node.type, targetParentId, {
     ...cloneNodeProps(node, node.componentId),
     // A behaviour or other plugin content belongs to the asset; where it came from does not.
-    pluginData: contentPluginData(node.pluginData)
+    pluginData: contentPluginData(node.pluginData),
+    libraryLayerId: identify(node)
   })
   mappedIds.set(sourceId, created.id)
   for (const childId of node.childIds)
-    addSnapshotNode(source, target, childId, created.id, mappedIds)
+    addSnapshotNode(source, target, childId, created.id, mappedIds, identify)
 }
 
 export function extractLibrarySnapshot(
@@ -87,7 +115,9 @@ export function extractLibrarySnapshot(
     .filter((node): node is SceneNode =>
       Boolean(node && (!node.parentId || !closure.has(node.parentId)))
     )
-  for (const root of closureRoots) addSnapshotNode(source, snapshot, root.id, page.id, mappedIds)
+  const identify = layerIdentities(source)
+  for (const root of closureRoots)
+    addSnapshotNode(source, snapshot, root.id, page.id, mappedIds, identify)
   for (const [sourceId, targetId] of mappedIds)
     if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
   remapCopiedReferences(snapshot, mappedIds)

@@ -158,6 +158,12 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBoxSchema),
   /** The library asset a node was inserted from. */
   librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySourceSchema),
+  /** The library source layer a library definition's layer copies, on every definition layer. */
+  libraryLayer: jsonPluginDataField(
+    'libraryLayer',
+    'bookkeeping',
+    v.pipe(v.string(), v.nonEmpty(), v.maxLength(1024))
+  ),
   /**
    * The document root's id, on the DOCUMENT node, whose own GUID is always Figma's `0:0`; the
    * root keeps it across a save as every layer keeps its GUID.

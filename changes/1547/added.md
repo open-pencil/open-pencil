@@ -1,0 +1,1 @@
+- Updating a library redraws the document's copies of its components in place, so instances keep their overrides, also on layers the library renamed: each layer is matched to the library layer it copies, which published revisions now record.
