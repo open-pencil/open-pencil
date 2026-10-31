@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { clipPolygon } from '@open-pencil/scene-graph/clipping'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
-  clipPolygon,
   effectOverflow,
   geometryBlobBounds,
   intersectVisualBounds,

@@ -1,7 +1,7 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -31,6 +31,7 @@ import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
+import { textFontFace } from '#core/text/requirements/collect'
 
 /** A list item's indent per level, in ems of the list's first character. */
 const LIST_INDENT_EMS = 1.5
@@ -67,7 +68,7 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
     // Runs at one line height measure as one, whatever else they style.
-    if (last && last.end === start && last.lineHeight === lineHeight) last.end = end
+    if (last?.end === start && last.lineHeight === lineHeight) last.end = end
     else runs.push({ start, end, lineHeight })
   }
   let position = 0
@@ -153,6 +154,8 @@ interface ListStyle {
   em: number
   family: string
   style: string
+  /** The name of the first character's face, which its markers are drawn in. */
+  faceName: string | null
   /** The list's first character's style, which its markers take. */
   override: CharacterStyleOverride | undefined
 }
@@ -162,7 +165,8 @@ function listStyle(node: ParagraphNode, firstCharacter: number): ListStyle {
   return {
     em: override?.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE),
     family: override?.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
-    style: weightToStyle(override?.fontWeight ?? node.fontWeight, override?.italic ?? node.italic),
+    style: textFontFace(node, override).style,
+    faceName: rangeFontStyle(node, override ?? {}),
     override
   }
 }
@@ -178,6 +182,7 @@ function markerNode(node: ParagraphNode, item: TextListItem, style: ListStyle): 
     fontFamily: style.family,
     fontWeight: override?.fontWeight ?? node.fontWeight,
     italic: override?.italic ?? node.italic,
+    fontStyle: style.faceName,
     letterSpacing: override?.letterSpacing ?? node.letterSpacing,
     lineHeight: override?.lineHeight !== undefined ? override.lineHeight : node.lineHeight,
     fontVariations: override?.fontVariations ?? node.fontVariations,

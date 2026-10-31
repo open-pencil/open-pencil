@@ -143,7 +143,7 @@ Not every provider works in the browser, and not every model streams tool calls 
 
 Use Claude Code, Codex, Gemini CLI, or Pi as the design agent in the chat panel. It runs with your own subscription and reaches the canvas through the editor's MCP server. Requires the desktop app.
 
-Install the agent's ACP program and `@open-pencil/mcp`, then open **Settings → AI & agents → Run guided setup**. It checks that both are installed, signs the agent in, and confirms a session reaches OpenPencil's tools. Pi runs through the `@open-pencil/harness` companion, which guided setup installs with one click. See [Coding agents](https://openpencil.dev/programmable/coding-agents) for each agent's install command.
+Install the agent's ACP program and `@open-pencil/mcp`, then open **Settings → Models → Run guided setup**. It checks that both are installed, signs the agent in, and confirms a session reaches OpenPencil's tools. Pi runs through the `@open-pencil/harness` companion, which guided setup installs with one click. See [Coding agents](https://openpencil.dev/programmable/coding-agents) for each agent's install command.
 
 ### MCP server
 

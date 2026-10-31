@@ -47,8 +47,8 @@ export function makeFigmaFromStore(
   if (store.renderer) api.rasterCodec = createCanvasKitRasterCodec(store.renderer.ck)
   api.listAvailableFontsAsync = async () => {
     const [systemFonts, familyOptions] = await Promise.all([listFonts(), listFamilies()])
-    const fonts = systemFonts.flatMap(({ family, styles }) =>
-      styles.map((style) => ({ fontName: { family, style } }))
+    const fonts = systemFonts.flatMap(({ family, faces }) =>
+      faces.map(({ style }) => ({ fontName: { family, style } }))
     )
     const seenFamilies = new Set(systemFonts.map(({ family }) => family))
     for (const { family } of familyOptions) {

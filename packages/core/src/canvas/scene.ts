@@ -3,11 +3,12 @@ import type { Canvas } from 'canvaskit-wasm'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
-import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
+import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { renderBooleanOperation } from './boolean'
 import { blurSigma } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
@@ -92,10 +93,12 @@ function isCulled(
     ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') &&
       node.clipsContent)
   if (!canCull || hasOverflowPathTextPaint(node)) return false
+  // Text lines past a fixed-size box still draw, as in Figma.
+  const linesOverflow = textLinesOverflow(node)
 
   const vp = r.worldViewport
   const bw = node.width
-  const bh = node.height
+  const bh = node.height + linesOverflow
   if (frame || projectedNode(node, preview).rotation !== 0) {
     const bounds = mapVisualBounds(
       worldMatrixIn(frame, node, absX - node.x, absY - node.y, preview),
@@ -355,7 +358,7 @@ export function renderNode(
   if (needsNodeLayer) {
     const layerBounds = nodeIsolationLayerBounds(r, graph, node, world(), overlays.rotationPreview)
     r.opacityPaint.setAlphaf(node.opacity)
-    r.opacityPaint.setBlendMode(figmaBlendModeToSkia(r.ck, node.blendMode))
+    setPaintBlendMode(r, r.opacityPaint, node.blendMode)
     canvas.saveLayer(r.opacityPaint, layerBounds)
   }
 

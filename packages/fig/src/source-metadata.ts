@@ -61,6 +61,7 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   fontFamily: ['fontName', 'fontVersion', ...TEXT_DERIVED_RAW_FIELDS],
   fontWeight: ['semanticWeight', ...TEXT_DERIVED_RAW_FIELDS],
   italic: ['semanticItalic', ...TEXT_DERIVED_RAW_FIELDS],
+  fontStyle: ['fontName', 'fontVersion', ...TEXT_DERIVED_RAW_FIELDS],
   textAlignHorizontal: ['textAlignHorizontal', ...TEXT_DERIVED_RAW_FIELDS],
   textAlignVertical: ['textAlignVertical', ...TEXT_DERIVED_RAW_FIELDS],
   lineHeight: ['lineHeight', ...TEXT_DERIVED_RAW_FIELDS],

@@ -4,6 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 const ck = await initCanvasKit()
@@ -25,7 +26,9 @@ test('forgetting a layer drops the fonts it was waiting for and its text picture
   expect(renderer.textPictureGenerations.has(node.id)).toBe(false)
 })
 
-test("a text's font readiness is found once per layer until the layer or the fonts change", () => {
+test("a text's font readiness is found once per layer until the layer or the fonts change", async () => {
+  // A loaded face reads as ready; a pending reading is asked again each frame and not kept.
+  await fontManager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')
   const node = expectDefined(

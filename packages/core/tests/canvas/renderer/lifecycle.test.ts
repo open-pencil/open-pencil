@@ -4,7 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 
 import { SkiaRenderer } from '#core/canvas'
 import { initCanvasKit } from '#core/io/formats/raster/headless'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 const ck = await initCanvasKit()
 

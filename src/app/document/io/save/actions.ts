@@ -3,7 +3,7 @@ import { filesMessages } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import { isFileWriteRefused } from '@/app/document/io/capability'
-import { documentNameFromFigPath } from '@/app/document/io/names'
+import { documentFileName, documentNameFromFigPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save/targets'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentWriter } from '@/app/document/io/write'
@@ -80,7 +80,7 @@ export function createSaveActions({
     const { data, version } = await buildVersionedFigFile()
 
     if (IS_TAURI) {
-      const path = await chooseTauriFigSavePath()
+      const path = await chooseTauriFigSavePath(state.documentKind)
       if (!path) return false
       setStorageBinding(null)
       setFilePath(path)
@@ -93,7 +93,7 @@ export function createSaveActions({
     }
 
     // The picker helper returns null when the browser has no File System Access API.
-    const handle = await chooseBrowserFigSaveHandle()
+    const handle = await chooseBrowserFigSaveHandle(state.documentKind)
     if (handle) {
       setStorageBinding(null)
       setFileHandle(handle)
@@ -114,7 +114,10 @@ export function createSaveActions({
       }
     }
 
-    const filename = prompt(filesMessages.get().saveAsPrompt, getDownloadName() ?? 'Untitled.fig')
+    const filename = prompt(
+      filesMessages.get().saveAsPrompt,
+      getDownloadName() ?? documentFileName('Untitled', state.documentKind)
+    )
     if (!filename) return false
     return downloadAs(filename, data, version)
   }

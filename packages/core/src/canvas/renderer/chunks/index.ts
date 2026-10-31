@@ -327,31 +327,35 @@ export class RenderChunkIndex {
     rootId: string,
     removed: RenderChunk[]
   ): { start: number; end: number } {
-    let start = -Infinity
-    let last = -Infinity
-    if (removed.length > 0) {
-      start = Math.min(...removed.map((chunk) => chunk.painterOrder))
-      last = Math.max(...removed.map((chunk) => chunk.painterOrder))
-      // Replaced chunks draw first in their window, so the lower bound is just before them.
-      start = this.orderBefore(topId, start)
-    } else {
-      const siblings = graph.getNode(ownerId)?.childIds ?? []
-      const at = siblings.indexOf(rootId)
-      for (let index = at - 1; index >= 0 && start === -Infinity; index--) {
-        for (const chunk of this.getChunksDependingOnNode(siblings[index])) {
-          start = Math.max(start, chunk.painterOrder)
-        }
-      }
-      if (start === -Infinity) start = this.getChunksForNode(ownerId)[0]?.painterOrder ?? -Infinity
-      last = start
-    }
+    // Replaced chunks draw first in their window, so the lower bound is just before them.
+    const first =
+      removed.length > 0
+        ? this.orderBefore(topId, Math.min(...removed.map((chunk) => chunk.painterOrder)))
+        : this.orderBeforeSibling(graph, ownerId, rootId)
+    const last =
+      removed.length > 0 ? Math.max(...removed.map((chunk) => chunk.painterOrder)) : first
     let end = painterOrderOf(topIndex + 1, 0)
     for (const id of this.chunkIdsByTop.get(topId) ?? []) {
       const chunk = this.chunks.get(id)
       if (chunk && chunk.painterOrder > last && chunk.painterOrder < end) end = chunk.painterOrder
     }
-    if (start === -Infinity) start = painterOrderOf(topIndex, 0) - 1
-    return { start, end }
+    return { start: first === -Infinity ? painterOrderOf(topIndex, 0) - 1 : first, end }
+  }
+
+  /**
+   * The greatest draw order among the siblings before `rootId` under `ownerId`, the owner's own
+   * when none of them draws, or minus infinity when nothing draws before the subtree.
+   */
+  private orderBeforeSibling(graph: SceneGraph, ownerId: string, rootId: string): number {
+    const siblings = graph.getNode(ownerId)?.childIds ?? []
+    let start = -Infinity
+    for (let index = siblings.indexOf(rootId) - 1; index >= 0 && start === -Infinity; index--) {
+      for (const chunk of this.getChunksDependingOnNode(siblings[index])) {
+        start = Math.max(start, chunk.painterOrder)
+      }
+    }
+    if (start === -Infinity) return this.getChunksForNode(ownerId)[0]?.painterOrder ?? -Infinity
+    return start
   }
 
   /** The greatest draw order on the page child below `order`, or the start of its range. */

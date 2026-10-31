@@ -37,7 +37,9 @@ function isOnline(): boolean {
 
 function backoffMs(attempts: number): number {
   const exp = Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** Math.max(0, attempts - 1))
-  const jitter = Math.floor(exp * 0.2 * ((crypto.getRandomValues(new Uint8Array(1))[0] ?? 0) / 255))
+  const jitter = Math.floor(
+    exp * 0.2 * ((crypto.getRandomValues(new Uint8Array(1)).at(0) ?? 0) / 255)
+  )
   return exp + jitter
 }
 

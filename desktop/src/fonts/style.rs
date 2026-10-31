@@ -1,4 +1,6 @@
-//! Named font styles the frontend uses and the weights they stand for.
+//! The standard weight names, and how a requested style name maps to a weight and slant.
+
+use super::names::spelling;
 
 /// Style names by the weight each stands for, lightest first.
 const WEIGHT_STYLES: [(f32, &str); 9] = [
@@ -36,28 +38,26 @@ pub fn style_name(weight: f32, italic: bool) -> String {
     }
 }
 
-/// The named weight and slant a style name such as `SemiBold Italic` asks for.
+/// The named weight and slant a style name such as `SemiBold Italic` asks for, compared without
+/// case or spaces; a name that is not a weight asks for 400.
 pub fn requested_face(style: &str) -> (f32, bool) {
-    let italic = style.contains("Italic");
-    let name = style.replace(" Italic", "").replace("Italic", "");
+    let spelled = spelling(style);
+    let italic = spelled.contains("italic");
+    let name = spelled.replace("italic", "");
     let weight = WEIGHT_STYLES
         .iter()
-        .find(|(_, candidate)| *candidate == name)
+        .find(|(_, candidate)| spelling(candidate) == name)
         .map_or(400.0, |(weight, _)| *weight);
     (weight, italic)
 }
 
-/// The styles a face can render: its own for a static face, and every named weight inside the
-/// `wght` axis for a variable one.
-pub fn face_styles(weight: f32, italic: bool, weight_axis: Option<(f32, f32)>) -> Vec<String> {
-    match weight_axis {
-        Some((min, max)) => WEIGHT_STYLES
-            .iter()
-            .filter(|(named, _)| (min..=max).contains(named))
-            .map(|(named, _)| style_name(*named, italic))
-            .collect(),
-        None => vec![style_name(weight, italic)],
-    }
+/// Whether `style` only names a weight and slant ("Bold Italic", "Semi Bold", "Italic"), so any
+/// face of that weight is it; "Book" or "Condensed Bold" names one face of its own.
+pub fn names_weight(style: &str) -> bool {
+    let (weight, italic) = requested_face(style);
+    let spelled = spelling(style);
+    spelled == spelling(&style_name(weight, italic))
+        || (italic && weight == 400.0 && spelled == "italic")
 }
 
 #[cfg(test)]
@@ -68,6 +68,7 @@ mod tests {
     fn maps_style_names_to_weight_and_slant() {
         assert_eq!(requested_face("Regular"), (400.0, false));
         assert_eq!(requested_face("SemiBold Italic"), (600.0, true));
+        assert_eq!(requested_face("Semi Bold Italic"), (600.0, true));
         assert_eq!(requested_face("Italic"), (400.0, true));
         assert_eq!(requested_face("Unknown"), (400.0, false));
     }
@@ -81,16 +82,25 @@ mod tests {
     }
 
     #[test]
-    fn lists_every_named_weight_a_variable_face_covers() {
-        assert_eq!(face_styles(510.0, false, None), ["Medium"]);
-        assert_eq!(
-            face_styles(400.0, true, Some((350.0, 700.0))),
-            [
-                "Regular Italic",
-                "Medium Italic",
-                "SemiBold Italic",
-                "Bold Italic"
-            ]
-        );
+    fn tells_weight_names_from_names_of_their_own() {
+        for name in [
+            "Regular",
+            "Italic",
+            "Regular Italic",
+            "Semi Bold",
+            "ExtraBold Italic",
+        ] {
+            assert!(names_weight(name), "{name}");
+        }
+        for name in [
+            "Book",
+            "Roman",
+            "Condensed Bold",
+            "Retina",
+            "Oblique",
+            "Heavy",
+        ] {
+            assert!(!names_weight(name), "{name}");
+        }
     }
 }

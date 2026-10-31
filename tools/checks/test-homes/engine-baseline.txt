@@ -61,7 +61,6 @@ tests/engine/app/editor/preparation/multi-tab.test.ts
 tests/engine/app/editor/selection/focus.test.ts
 tests/engine/app/editor/store-path.test.ts
 tests/engine/app/editor/variables.test.ts
-tests/engine/app/editor/vectorize/providers.test.ts
 tests/engine/app/external-link.test.ts
 tests/engine/app/font-loading.test.ts
 tests/engine/app/integrations/mcp-connections.test.ts
@@ -94,7 +93,6 @@ tests/engine/app/storage/cache-eviction.test.ts
 tests/engine/app/storage/format-bytes.test.ts
 tests/engine/app/storage/local-store.test.ts
 tests/engine/app/storage/persist.test.ts
-tests/engine/app/storage/reconcile.test.ts
 tests/engine/app/storage/sync-outbox.test.ts
 tests/engine/app/storage/unique-name.test.ts
 tests/engine/app/tabs/open-file-dedup.test.ts
@@ -175,7 +173,6 @@ tests/engine/io/fig/heavy/fixtures.test.ts
 tests/engine/io/fig/import/basic.test.ts
 tests/engine/io/fig/import/boolean-operation.test.ts
 tests/engine/io/fig/import/cancellation.test.ts
-tests/engine/io/fig/import/component-props.test.ts
 tests/engine/io/fig/import/derived-symbol-data.test.ts
 tests/engine/io/fig/import/edge-cases.test.ts
 tests/engine/io/fig/import/field-protection.test.ts

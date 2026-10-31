@@ -42,13 +42,6 @@ function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): bool
   )
 }
 
-function shouldClipTextToLayoutBox(node: SceneNode): boolean {
-  return (
-    !hasOverflowPathTextPaint(node) &&
-    (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
-  )
-}
-
 function drawResolvedPathText(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -72,13 +65,13 @@ function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
 }
 
 /**
- * The emoji of a text, once whatever fills it has, clipped as its glyphs are: over its saved
- * glyphs' placeholder squares, or over the blank squares the editor's layout gives them.
+ * The emoji of a text, once whatever fills it has: over its saved glyphs' placeholder squares, or
+ * over the blank squares the editor's layout gives them.
  */
 export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
   const saved = drawsSavedText(node)
   if (!saved && !drawsLaidOutText(r, node)) return
-  saveClippedToLayoutBox(r, canvas, node)
+  canvas.save()
   if (saved) drawSavedEmoji(r, canvas, node)
   else {
     // The paragraph the fills just drew with: its colour keys the prepared text, and a solid fill
@@ -92,14 +85,6 @@ export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode):
   canvas.restore()
 }
 
-/** Saves the canvas and clips to the text's box where its layout calls for it; the caller restores. */
-function saveClippedToLayoutBox(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
-  canvas.save()
-  if (shouldClipTextToLayoutBox(node)) {
-    canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
-  }
-}
-
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
   return canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node, fill)
 }
@@ -108,7 +93,8 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   const text = node.text
   if (!text) return
 
-  saveClippedToLayoutBox(r, canvas, node)
+  canvas.save()
+
   if (drawSavedText(r, canvas, node, fill)) {
     canvas.restore()
     return

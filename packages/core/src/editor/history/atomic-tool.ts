@@ -3,7 +3,7 @@ import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
 import type { Editor } from '#core/editor/create'
 import { ReadOnlyDocumentError } from '#core/editor/read-only'
-import type { EditorState } from '#core/editor/types'
+import { resolveEditorProfile, type EditorProfileInputs } from '#core/editor/views'
 import type { FigmaAPI } from '#core/figma-api'
 import { isAtomicTool, type ToolDef } from '#core/tools/schema'
 
@@ -16,7 +16,7 @@ type MutationEditor = Pick<
   Editor,
   'graph' | 'runLayoutForNode' | 'requestRender' | 'pushUndoStep'
 > & {
-  state: Pick<EditorState, 'readOnly'>
+  state: EditorProfileInputs
 }
 
 function changes<T extends object>(
@@ -47,7 +47,7 @@ export function executeAtomicTool(
   options: { signal?: AbortSignal; isLive?: () => boolean; label?: string } = {}
 ): unknown {
   if (!isAtomicTool(def)) throw new Error(`Not an atomic tool: ${def.name}`)
-  if (editor.state.readOnly) throw new ReadOnlyDocumentError()
+  if (!resolveEditorProfile(editor.state).edits) throw new ReadOnlyDocumentError()
   options.signal?.throwIfAborted()
   if (editor.graph !== figma.graph || options.isLive?.() === false) {
     throw new Error('The target document is no longer open')

@@ -1,15 +1,18 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
+import { fontManager, type FontManager } from '#core/text/font/manager'
+import { collectNamedNodeFontFaces } from '#core/text/font/names'
 import type { FontLoadedSource, FontUnavailableReason } from '#core/text/font/sources'
-import { fontManager, type FontManager } from '#core/text/fonts'
-import { collectNodeFontFaces } from '#core/text/requirements'
 
 export type FontFaceStatus = 'available' | 'substituted' | 'unresolved'
 
 export interface DocumentFontFaceStatus {
   family: string
+  /** The style the font manager loads the face as. */
   style: string
+  /** The face's name, as its text names it ("Book", "Semi Bold"). */
+  name: string
   status: FontFaceStatus
   source: FontLoadedSource | null
   substituteFamily: string | null
@@ -28,12 +31,14 @@ export interface DocumentFontStatus {
 interface MutableFontFaceUse {
   family: string
   style: string
+  name: string
   nodeIds: Set<string>
   nodeNames: Set<string>
 }
 
-function faceKey(family: string, style: string): string {
-  return `${family}\0${style}`
+/** A face by its name and the style it loads as; one name may load as two styles. */
+function faceKey(family: string, style: string, name: string): string {
+  return `${family}\0${style}\0${name}`
 }
 
 /** The text nodes under each root, and each root that is itself text. */
@@ -49,7 +54,10 @@ function rootTextNodes(graph: SceneGraph, rootIds: readonly string[]): SceneNode
   return texts
 }
 
-type TextFontFaces = { name: string; faces: Array<{ family: string; style: string }> }
+type TextFontFaces = {
+  name: string
+  faces: Array<{ family: string; style: string; name: string }>
+}
 
 /**
  * The faces each text under the roots uses, kept by layer: a status is read from the layers
@@ -94,11 +102,13 @@ export class DocumentFontUses {
     for (const [nodeId, { name, faces }] of this.byNode) {
       // A layer deleted under a deleted ancestor reported nothing itself; it is skipped here.
       if (!this.graph.getNode(nodeId)) continue
-      for (const { family, style } of faces) {
-        const key = faceKey(family, style)
+      // Faces that load as one style ("Book" and "Roman" at 400) are still faces of their own.
+      for (const { family, style, name: faceName } of faces) {
+        const key = faceKey(family, style, faceName)
         const use = uses.get(key) ?? {
           family,
           style,
+          name: faceName,
           nodeIds: new Set<string>(),
           nodeNames: new Set<string>()
         }
@@ -109,13 +119,13 @@ export class DocumentFontUses {
     }
     const faces = [...uses.values()]
       .map((use) => faceStatus(use, manager))
-      .sort((a, b) => a.family.localeCompare(b.family) || a.style.localeCompare(b.style))
+      .sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name))
     const issues = faces.filter((face) => face.status !== 'available')
     return { faithful: issues.length === 0, faces, issues }
   }
 
   private remember(node: SceneNode): void {
-    this.byNode.set(node.id, { name: node.name, faces: collectNodeFontFaces(node) })
+    this.byNode.set(node.id, { name: node.name, faces: collectNamedNodeFontFaces(node) })
   }
 
   private underRoots(nodeId: string): boolean {
@@ -134,6 +144,7 @@ function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFont
     return {
       family: use.family,
       style: use.style,
+      name: use.name,
       status: 'available',
       source: exactSource,
       substituteFamily: null,
@@ -147,6 +158,7 @@ function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFont
     return {
       family: use.family,
       style: use.style,
+      name: use.name,
       status: 'substituted',
       source: null,
       substituteFamily: use.family,
@@ -160,6 +172,7 @@ function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFont
   return {
     family: use.family,
     style: use.style,
+    name: use.name,
     status: defaultSource ? 'substituted' : 'unresolved',
     source: null,
     substituteFamily: defaultSource ? DEFAULT_FONT_FAMILY : null,

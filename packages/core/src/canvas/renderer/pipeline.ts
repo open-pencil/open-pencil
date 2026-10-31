@@ -7,6 +7,7 @@ import { needsImagePreviews } from '#core/canvas/images/previews'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
+import { resolveEditorProfile } from '#core/editor/views/profile'
 import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
@@ -80,23 +81,23 @@ export function renderFromEditorState(
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
-  r.readOnly = state.readOnly
-  // A previewing canvas shows the design as it runs: no selection, hover, or edit chrome.
-  const previewing = state.play !== null
+  const { editChrome, live, edits } = resolveEditorProfile(state)
+  r.editHandles = edits
   render(
     r,
     graph,
-    previewing ? new Set<string>() : state.selectedIds,
+    editChrome ? state.selectedIds : new Set<string>(),
     {
-      playing: previewing,
-      playIslands: previewing ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
-      hoveredNodeId: previewing ? null : state.hoveredNodeId,
-      showPixelGrid: !previewing && state.showPixelGrid !== false,
+      playing: !editChrome,
+      playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
+      hoveredNodeId: editChrome ? state.hoveredNodeId : null,
+      showPixelGrid: editChrome && state.showPixelGrid !== false,
       gradientEdit: state.gradientEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
+      renamingLabelId: state.renamingLabelId,
       textEditor: textEditor as RenderOverlays['textEditor'],
       marquee: state.marquee,
       snapGuides: state.snapGuides,
@@ -105,11 +106,11 @@ export function renderFromEditorState(
       dropTargetId: state.dropTargetId,
       layoutInsertIndicator: state.layoutInsertIndicator,
       penState: state.penState
-        ? ({
+        ? {
             ...state.penState,
             cursorX: state.penCursorX ?? undefined,
             cursorY: state.penCursorY ?? undefined
-          } as RenderOverlays['penState'])
+          }
         : null,
       pencilState: state.pencilState,
       nodeEditState: state.nodeEditState ?? null,

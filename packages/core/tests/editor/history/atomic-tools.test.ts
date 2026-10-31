@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
-import { createEditor, executeAtomicTool } from '@open-pencil/core'
+import {
+  createEditor,
+  EDIT_VIEW,
+  executeAtomicTool,
+  type EditorProfileInputs
+} from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -11,9 +16,14 @@ function setup() {
   const graph = new SceneGraph()
   const undo = new UndoManager()
   const figma = new FigmaAPI(graph)
+  const state: EditorProfileInputs = {
+    documentKind: 'design',
+    canvasView: EDIT_VIEW,
+    hostRestrictions: { readOnly: false }
+  }
   const editor = {
     graph,
-    state: { readOnly: false },
+    state,
     runLayoutForNode: () => undefined,
     requestRender: () => undefined,
     pushUndoStep: undo.pushStep.bind(undo)

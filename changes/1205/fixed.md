@@ -1,0 +1,2 @@
+- Layers keep their text, fill, and stroke styles when their variable bindings resolve, on `.fig` open and save and when a variable or mode changes.
+- Setting a stroke's weight or alignment through the plugin API keeps the layer's stroke style.

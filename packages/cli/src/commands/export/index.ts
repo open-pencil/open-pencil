@@ -163,12 +163,12 @@ type FileExportTarget = { scope: 'node'; nodeId: string } | { scope: 'page'; pag
 
 /** Writes the export and the files it refers to, which sit next to it. */
 async function writeExport(output: string, result: ExportResult) {
-  await writeAndLog(output, result.data as string | Uint8Array)
+  await writeAndLog(output, result.data)
   const assets = result.assets ?? []
   for (const asset of assets) {
     const assetPath = join(dirname(output), asset.path)
     await mkdir(dirname(assetPath), { recursive: true })
-    await writeFile(assetPath, asset.content as string | Uint8Array)
+    await writeFile(assetPath, asset.content)
   }
   if (assets.length > 0) console.log(ok(`Assets: ${assets.length} files`))
 }

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
@@ -115,6 +115,29 @@ describe('boolean operation paths', () => {
     path?.delete()
   })
 
+  test('reflects a turned child after turning it, as the canvas places it', async () => {
+    const r = await createRenderer()
+    const api = createAPI()
+    const first = api.createRectangle()
+    const second = api.createRectangle()
+    for (const stick of [first, second]) {
+      stick.resize(160, 20)
+      stick.y = 70
+    }
+    api.graph.updateNode(first.id, { rotation: 45 })
+    api.graph.updateNode(second.id, { rotation: 45, flipX: true })
+
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
+    const node = api.graph.getNode(booleanNode.id)
+    expect(node).toBeDefined()
+    if (!node) return
+    const path = makeBooleanOperationPath(r, node, api.graph)
+    const crossing = (x: number) => path?.contains(x, 30)
+
+    expect([crossing(30), crossing(node.width - 30)]).toEqual([true, true])
+    path?.delete()
+  })
+
   test('supports ellipse arc wedges', async () => {
     const r = await createRenderer()
     const api = createAPI()
@@ -215,32 +238,75 @@ describe('boolean operation paths', () => {
     expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 175, 100]))
     path?.delete()
   })
-})
 
-describe('boolean operation path cache', () => {
-  test('keeps the result until the operation is invalidated', async () => {
-    const renderer = await createRenderer()
+  test('rounds the combined outline by the operation’s own corner radius', async () => {
+    const r = await createRenderer()
     const api = createAPI()
     const first = api.createRectangle()
-    first.resize(100, 100)
     const second = api.createRectangle()
-    second.x = 50
-    second.resize(100, 100)
-    const boolean = api.union([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(boolean.id)
-    if (!node) throw new Error('Missing boolean')
+    first.resize(100, 100)
+    second.resize(50, 50)
+    second.x = 100
 
-    const path = makeBooleanOperationPath(renderer, node, api.graph)
-    expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 150, 100]))
-    expect(renderer.nodePaths.boolean.has(node.id)).toBe(true)
-    // A second draw copies the cached result rather than running the path ops again.
-    const again = makeBooleanOperationPath(renderer, node, api.graph)
-    expect(again?.getBounds()).toEqual(path?.getBounds())
-    expect(again).not.toBe(path)
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
+    api.graph.updateNode(booleanNode.id, { cornerRadius: 20 })
+    const node = api.graph.getNode(booleanNode.id)
+    expect(node).toBeDefined()
+    if (!node) return
+    const path = makeBooleanOperationPath(r, node, api.graph)
+
+    expect([path?.contains(2, 2), path?.contains(2, 50), path?.contains(125, 25)]).toEqual([
+      false,
+      true,
+      true
+    ])
     path?.delete()
-    again?.delete()
+  })
 
-    renderer.nodePaths.invalidate(node.id)
-    expect(renderer.nodePaths.boolean.has(node.id)).toBe(false)
+  test('rounds an unchanged outline once, not on every frame', async () => {
+    const r = await createRenderer()
+    const api = createAPI()
+    const first = api.createRectangle()
+    const second = api.createRectangle()
+    first.resize(100, 100)
+    second.resize(50, 50)
+    second.x = 100
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
+    api.graph.updateNode(booleanNode.id, { cornerRadius: 20 })
+    const node = api.graph.getNode(booleanNode.id)
+    expect(node).toBeDefined()
+    if (!node) return
+    makeBooleanOperationPath(r, node, api.graph)?.delete()
+
+    const outlineReads = spyOn(r.ck.Path.prototype, 'toSVGString')
+    try {
+      makeBooleanOperationPath(r, node, api.graph)?.delete()
+      expect(outlineReads).not.toHaveBeenCalled()
+    } finally {
+      outlineReads.mockRestore()
+    }
+  })
+
+  test('rounds the outline again after an operand changes', async () => {
+    const r = await createRenderer()
+    const api = createAPI()
+    const first = api.createRectangle()
+    const second = api.createRectangle()
+    first.resize(100, 100)
+    second.resize(50, 50)
+    second.x = 100
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
+    api.graph.updateNode(booleanNode.id, { cornerRadius: 20 })
+    const node = api.graph.getNode(booleanNode.id)
+    expect(node).toBeDefined()
+    if (!node) return
+    makeBooleanOperationPath(r, node, api.graph)?.delete()
+
+    second.resize(80, 50)
+    const path = makeBooleanOperationPath(r, node, api.graph)
+    const bounds = path?.computeTightBounds()
+
+    expect(bounds && bounds[2] - bounds[0]).toBe(180)
+    path?.delete()
   })
 })

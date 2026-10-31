@@ -1,3 +1,5 @@
+import { save } from '@tauri-apps/plugin-dialog'
+import { writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
 import { zipSync, type Zippable } from 'fflate'
 import { extname } from 'pathe'
 
@@ -106,7 +108,7 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     scale: number,
     format: RasterExportFormat,
     pageId = state.currentPageId
-  ): Promise<Uint8Array | null> {
+  ): Promise<Uint8Array<ArrayBuffer> | null> {
     const renderer = editor.renderer
     if (!renderer) return null
     const ids = nodeIds.length > 0 ? nodeIds : editor.graph.getChildren(pageId).map((n) => n.id)
@@ -132,7 +134,6 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
 }
 
 export async function chooseTauriExportPath(fileName: string, format: string, ext: string) {
-  const { save } = await import('@tauri-apps/plugin-dialog')
   return save({
     defaultPath: fileName,
     filters: [{ name: format, extensions: [ext.slice(1)] }]
@@ -140,7 +141,6 @@ export async function chooseTauriExportPath(fileName: string, format: string, ex
 }
 
 export async function writeTauriExportFile(path: string, data: Uint8Array) {
-  const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
   await tauriWrite(path, data)
 }
 

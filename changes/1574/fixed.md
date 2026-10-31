@@ -1,0 +1,1 @@
+- A fixed-size text grown past its box draws its other lines below it, as in Figma, instead of being cut off at the box.

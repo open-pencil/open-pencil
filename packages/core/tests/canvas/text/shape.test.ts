@@ -13,8 +13,8 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 import { withFigExportRuntime, withTextShaper } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import { fontManager } from '#core/text/fonts'
-import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
+import { getGlyphOutlineMetricsSync, glyphOutlineSourceSync } from '#core/text/font/glyphs'
+import { fontManager } from '#core/text/font/manager'
 
 const testFont = (name: string) => join(FIXTURES, 'fonts', name)
 
@@ -371,6 +371,35 @@ describe('text shaping for saved glyphs', () => {
       return Math.max(...xs) - Math.min(...xs)
     }
     expect(width(bold)).toBeGreaterThan(width(regular) * 1.2)
+  })
+
+  /**
+   * A style first drawn from a static file, such as a web font cached before variable families
+   * were fetched whole, and then from a variable file fetched for more characters. The static
+   * file declares the style's weight and the variable file its default, so the text must still
+   * be drawn, and outlined, from the file that replaced the static one.
+   */
+  test('outlines a style from the file that replaced its first, whatever weight each declares', async () => {
+    const family = 'Shape Test Replaced Static'
+    const semibold = expectDefined(await fontManager.fetchBundledFont('/Inter-SemiBold.ttf'))
+    const variable = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'))
+    await fontManager.markLoaded(family, 'SemiBold', semibold.slice(0))
+    await fontManager.markLoaded(family, 'SemiBold', variable.slice(0))
+    const text = 'Bat'
+    const shaped = expectDefined(
+      await shape({ text, fontFamily: family, fontWeight: 600 }),
+      'shaped text'
+    )
+    const replacement = expectDefined(
+      glyphOutlineSourceSync(family, 'SemiBold', [{ axis: 'wght', value: 600 }]),
+      'replacement outlines'
+    )
+
+    // The files number `B` and `a` alike but not `t`, which the static file would turn into
+    // another letter.
+    expect(shaped.glyphs.map((glyph) => glyph.commands)).toEqual(
+      Array.from(text, (character) => replacement.outline(replacement.glyphOf(character), 13))
+    )
   })
 })
 

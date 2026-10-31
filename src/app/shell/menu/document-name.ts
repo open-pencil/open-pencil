@@ -8,7 +8,7 @@ const DOCUMENT_NAME_ID = 'document-name'
 
 export function useDocumentNameRename(store: EditorStore) {
   const rename = useInlineRename<'document-name'>((_id, name) => {
-    store.state.documentName = name
+    store.renameDocument(name)
   })
   const editingName = computed(() => rename.editingId.value === DOCUMENT_NAME_ID)
 

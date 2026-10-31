@@ -14,7 +14,7 @@ import {
 } from '#core/constants'
 import { withTextMeasurer } from '#core/layout/text-measurement'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { prepareGraphFonts } from '#core/text/prepare'
 import {
   fontCoverageDemand,

@@ -22,6 +22,21 @@ describe('move snap guide presentation', () => {
     expect(result.correction.y).toBeCloseTo(0.4)
   })
 
+  // FigJam ends a move with the top-left on the board's 16-unit dot grid.
+  test('a board rounds a move to its 16-unit grid', () => {
+    const editor = createEditor()
+    editor.setDocumentKind('board')
+    editor.state.snappingPreferences = { geometry: false, objects: true, pixelGrid: true }
+    const result = resolveObjectPixelSnap(
+      new Set(['sticky']),
+      { x: 10.4, y: 41, width: 240, height: 240 },
+      [],
+      editor
+    )
+    expect(result.correction.x).toBeCloseTo(5.6)
+    expect(result.correction.y).toBeCloseTo(7)
+  })
+
   test('pixel rounding adjusts a lone frame without drawing self-alignment guides', () => {
     const pixel = computePixelGridSnap({ x: 10.25, y: 20.4, width: 100, height: 80 })
     expect(pixel.delta).toEqual({ x: -0.25, y: -0.3999999999999986 })

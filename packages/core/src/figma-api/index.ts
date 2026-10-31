@@ -19,11 +19,13 @@ import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { createSVGNodes } from '#core/io/formats/svg'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import { componentFromNode } from './components'
 import { flattenSceneNodes } from './flatten'
-import { loadFigmaFont, variationAxisTags, type FigmaFontNameInput } from './fonts'
+import { loadFigmaFont } from './fonts/load'
+import type { FigmaFontNameInput } from './fonts/names'
+import { variationAxisTags } from './fonts/variations'
 import * as images from './images'
 import type {
   FigmaBooleanOperationNode,
@@ -92,7 +94,8 @@ export type {
   FigmaVectorNode
 } from './node-types'
 export type { FigmaFont, FigmaFontName } from './proxy'
-export type { FigmaFontNameInput, FigmaVariationSettings } from './fonts'
+export type { FigmaFontNameInput } from './fonts/names'
+export type { FigmaVariationSettings } from './fonts/variations'
 
 // TODO(figma-api): Implement the full official PluginAPI interface once our compatibility
 // layer covers all required node-specific return types and unsupported APIs are modeled explicitly.
@@ -133,8 +136,6 @@ export class FigmaAPI implements NodeProxyHost {
   setRenderer(renderer: SkiaRenderer | null): void {
     this._unbindRendererEvents?.()
     this._unbindRendererEvents = null
-    // Results kept while the API was not told of changes are not trusted again.
-    this._renderer?.nodePaths.boolean.clear()
     this._renderer = renderer
     if (!renderer) return
     const graph = this.graph

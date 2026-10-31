@@ -5,6 +5,23 @@ import { isZstdCompressed } from './protocol'
 
 export const FIG_KIWI_DEFAULT_VERSION = 101
 
+/**
+ * The header a canvas starts with. Figma's design files and FigJam boards differ only here:
+ * a board's `.jam` archive holds the same records under `fig-jam.`.
+ */
+export const FIG_FILE_HEADERS = { design: 'fig-kiwi', board: 'fig-jam.' } as const
+
+/** What a canvas is for, by its header. */
+export type FigFileKind = keyof typeof FIG_FILE_HEADERS
+
+/** The kind a canvas's header names, or null when it is no Figma canvas. */
+export function figFileKind(binary: Uint8Array): FigFileKind | null {
+  const header = new TextDecoder().decode(binary.slice(0, 8))
+  if (header === FIG_FILE_HEADERS.design) return 'design'
+  if (header === FIG_FILE_HEADERS.board) return 'board'
+  return null
+}
+
 /** Compresses a fig-kiwi data chunk. */
 export type FigDataCompressor = (data: Uint8Array) => Uint8Array
 
@@ -108,8 +125,7 @@ function decompressZstd(compressed: Uint8Array): Uint8Array {
 }
 
 export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
-  const header = new TextDecoder().decode(binary.slice(0, 8))
-  if (header !== 'fig-kiwi') return null
+  if (!figFileKind(binary)) return null
 
   const view = new DataView(binary.buffer, binary.byteOffset, binary.byteLength)
   let offset = 12
@@ -138,7 +154,8 @@ export function buildFigKiwi(
   schemaDeflated: Uint8Array,
   dataRaw: Uint8Array,
   version = FIG_KIWI_DEFAULT_VERSION,
-  compress: FigDataCompressor = defaultFigDataCompressor
+  compress: FigDataCompressor = defaultFigDataCompressor,
+  kind: FigFileKind = 'design'
 ): Uint8Array {
   const dataCompressed = compress(dataRaw)
 
@@ -146,7 +163,7 @@ export function buildFigKiwi(
   const out = new Uint8Array(total)
   const view = new DataView(out.buffer)
 
-  out.set(new TextEncoder().encode('fig-kiwi'), 0)
+  out.set(new TextEncoder().encode(FIG_FILE_HEADERS[kind]), 0)
   view.setUint32(8, version, true)
 
   let offset = 12

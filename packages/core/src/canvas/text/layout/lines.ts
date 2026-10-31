@@ -75,11 +75,17 @@ function metric(value: number): number {
  * tallest font, centred in that height, puts it. Fonts' heights are the shaped runs' own, so a
  * fallback font counts with its metrics. Returns `null` for a line with nothing to measure.
  */
+/** The line a point `y` of the paragraph falls on, or `fallback` past them all. */
+function lineAt(lines: readonly LineMetrics[], y: number, fallback: LineMetrics): LineMetrics {
+  return lines.find((line) => y < line.baseline + line.descent) ?? fallback
+}
+
 export function figmaLineBox(
   ck: CanvasKit,
   paragraph: Paragraph,
   line: LineMetrics,
-  runs: readonly LineHeightRun[]
+  runs: readonly LineHeightRun[],
+  lines: readonly LineMetrics[] = paragraph.getLineMetrics()
 ): LineBox | null {
   // An empty line is as tall as the newline that makes it.
   const start = line.startIndex
@@ -104,7 +110,9 @@ export function figmaLineBox(
       height = Math.max(height, Math.round(run.lineHeight ?? runNatural))
       if (runNatural > natural) {
         natural = runNatural
-        ascent = metric(line.baseline - rect[1])
+        // The newline that makes an empty line stands on the line above, so its box is
+        // measured from the baseline of the line it stands on.
+        ascent = metric(lineAt(lines, (rect[1] + rect[3]) / 2, line).baseline - rect[1])
       }
     }
   }
@@ -130,7 +138,7 @@ function lineBoxes(
     if (!heights) return null
     const blockBoxes: LineBox[] = []
     for (const line of metrics[index]) {
-      const box = figmaLineBox(ck, block.paragraph, line, heights)
+      const box = figmaLineBox(ck, block.paragraph, line, heights, metrics[index])
       if (!box) return null
       blockBoxes.push(box)
     }

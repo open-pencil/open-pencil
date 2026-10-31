@@ -1,6 +1,6 @@
 import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { BlendMode, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
 import {
   arrowLinesSegments,
@@ -11,6 +11,7 @@ import {
 } from '@open-pencil/scene-graph/arrow-caps'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { setPaintBlendMode } from './blend'
 import { applyGradientFill, applyImageFill, clearFillShader, clearStrokeShader } from './fills'
 import type { SkiaRenderer } from './renderer'
 import {
@@ -288,10 +289,16 @@ export function applyStrokeShader(
   return true
 }
 
+export function setStrokeBlendMode(r: SkiaRenderer, mode: BlendMode | undefined): void {
+  setPaintBlendMode(r, r.strokePaint, mode)
+  setPaintBlendMode(r, r.fillPaint, mode)
+}
+
 /**
  * Every stroke a node draws passes through here, so a gradient or image stroke gets its shader
- * here rather than in each draw helper, and the shader and any dash are cleared before the next
- * stroke: the paints are shared, and a node must not inherit what the previous one set.
+ * here rather than in each draw helper, with its blend mode, and the shader, blend mode, and any
+ * dash are cleared before the next stroke: the paints are shared, and a node must not inherit
+ * what the previous one set.
  */
 export function forVisibleStrokes(
   r: SkiaRenderer,
@@ -303,12 +310,14 @@ export function forVisibleStrokes(
     const stroke = node.strokes[index]
     if (!stroke.visible) continue
     const draws = applyStrokeShader(r, stroke, index, node, graph)
+    setStrokeBlendMode(r, stroke.blendMode)
     try {
       if (draws) draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
     } finally {
       clearStrokeShader(r)
       clearFillShader(r)
       r.strokePaint.setPathEffect(null)
+      setStrokeBlendMode(r, 'NORMAL')
     }
   }
 }

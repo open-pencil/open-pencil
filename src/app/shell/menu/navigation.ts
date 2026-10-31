@@ -14,8 +14,3 @@ export function openHomeLocation(router: Router, location: HomeLocation): void {
   homeLocation.value = location
   showHome(router)
 }
-
-/** Home at the place the person browsed last: a Cloud workspace, the bucket, or Recent. */
-export function browseFiles(router: Router): void {
-  showHome(router)
-}

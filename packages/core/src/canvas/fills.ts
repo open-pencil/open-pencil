@@ -5,7 +5,7 @@ import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { figmaBlendModeToSkia } from './blend'
+import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
 import type { SkiaRenderer } from './renderer'
@@ -34,10 +34,10 @@ export function paintFills(
     if (!applied) continue
     r.fillPaint.setAlphaf(fill.opacity)
     const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
-    if (blends) r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
+    if (blends) setPaintBlendMode(r, r.fillPaint, fill.blendMode)
     draw(fill)
     clearFillShader(r)
-    if (blends) r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    if (blends) setPaintBlendMode(r, r.fillPaint, 'NORMAL')
   }
 }
 

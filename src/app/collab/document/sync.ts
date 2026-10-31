@@ -181,7 +181,7 @@ export function bindDocumentSync({
 
   function send() {
     // A joining tab's own document is not the room's until it follows the room.
-    if (receiving || store.state.readOnly || !holdsRoomRoot()) return
+    if (receiving || store.state.hostRestrictions.readOnly || !holdsRoomRoot()) return
     write()
   }
 
@@ -292,7 +292,7 @@ export function bindDocumentSync({
      * root, and the sharing tab is the room's source, so it has nothing to follow.
      */
     share() {
-      if (store.state.readOnly) return
+      if (store.state.hostRestrictions.readOnly) return
       followedRoot = store.graph.rootId
       sent = { entries: new Map(), threads: new Map(), libraries: new Map(), colorSpace: undefined }
       write()

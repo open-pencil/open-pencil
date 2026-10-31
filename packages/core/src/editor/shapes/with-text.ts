@@ -16,6 +16,7 @@ import { shapeWithTextFrameFields, shapeWithTextLabel } from '@open-pencil/scene
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
+import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
 
 const FILL_OPACITY: Record<FigJamFillMode, number> = { fill: 1, transparent: 0.5, none: 0 }
@@ -25,7 +26,7 @@ const FILL_OPACITY: Record<FigJamFillMode, number> = { fill: 1, transparent: 0.5
  * shapes already placed, as FigJam's selection toolbar sets them. Each change records the
  * shapes' whole subtrees as one step, since the label changes with the shape.
  */
-export function createShapeWithTextActions(ctx: EditorContext) {
+export function createShapeWithTextActions(ctx: EditorContext, nodes: NodeActions) {
   function shapesAmong(ids: Iterable<string>): SceneNode[] {
     return [...ids].flatMap((id) => {
       const node = ctx.graph.getNode(id)
@@ -59,7 +60,7 @@ export function createShapeWithTextActions(ctx: EditorContext) {
       'Change shape',
       changing.map((shape) => shape.id),
       (shape) => {
-        ctx.graph.updateNode(shape.id, {
+        nodes.updateNode(shape.id, {
           shapeWithTextType: kind,
           ...shapeWithTextFrameFields(kind, shape.width, shape.height)
         })
@@ -70,8 +71,8 @@ export function createShapeWithTextActions(ctx: EditorContext) {
   function paint(shape: SceneNode, name: FigJamColorName, mode: FigJamFillMode) {
     const label = shapeWithTextLabel(ctx.graph, shape)
     const painted = figJamShapePaint(shape, label, name, mode)
-    ctx.graph.updateNode(shape.id, painted.shape)
-    if (label) ctx.graph.updateNode(label.id, painted.label)
+    nodes.updateNode(shape.id, painted.shape)
+    if (label) nodes.updateNode(label.id, painted.label)
   }
 
   /**
@@ -92,7 +93,7 @@ export function createShapeWithTextActions(ctx: EditorContext) {
       const name = figJamColorName(fill?.color)
       if (name) paint(shape, name, mode)
       else if (fill) {
-        ctx.graph.updateNode(shape.id, {
+        nodes.updateNode(shape.id, {
           fills: [{ ...fill, opacity: FILL_OPACITY[mode] }, ...shape.fills.slice(1)]
         })
       }
@@ -102,14 +103,14 @@ export function createShapeWithTextActions(ctx: EditorContext) {
   /** Draws the shapes' outlines solid, dashed, or not at all. */
   function setShapesWithTextLineStyle(ids: Iterable<string>, style: FigJamLineStyle) {
     editShapes('Change shape line', ids, (shape) =>
-      ctx.graph.updateNode(shape.id, figJamLineStyleFields(shape, style))
+      nodes.updateNode(shape.id, figJamLineStyleFields(shape, style))
     )
   }
 
   /** Colours the shapes' outlines in palette colour `name`, which later fills leave alone. */
   function setShapesWithTextLineColor(ids: Iterable<string>, name: FigJamColorName) {
     editShapes('Change shape line color', ids, (shape) =>
-      ctx.graph.updateNode(shape.id, figJamLineColorFields(shape, name))
+      nodes.updateNode(shape.id, figJamLineColorFields(shape, name))
     )
   }
 
@@ -118,10 +119,7 @@ export function createShapeWithTextActions(ctx: EditorContext) {
     editShapes('Change shape text size', ids, (shape) => {
       const label = shapeWithTextLabel(ctx.graph, shape)
       if (label) {
-        ctx.graph.updateNode(
-          label.id,
-          figJamTextSizeFields(size, figJamTypeface(label) ?? 'simple')
-        )
+        nodes.updateNode(label.id, figJamTextSizeFields(size, figJamTypeface(label) ?? 'simple'))
       }
     })
   }

@@ -14,7 +14,7 @@ export interface ChatRunLocation {
 export function useChatRunLocation() {
   return computed<ChatRunLocation | null>(() => {
     const tab = activeTab.value
-    if (!tab || tab.kind === 'home') return null
+    if (tab?.kind !== 'document') return null
     const store = tab.store
     const agentId = runAgentId(store)
     const agent = presenceOf(store).agents.value.find((entry) => entry.id === agentId)

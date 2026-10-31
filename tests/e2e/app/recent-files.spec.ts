@@ -55,20 +55,35 @@ test.describe('a populated recent files list', () => {
   })
 })
 
-test('keeps the New tab layout usable on mobile', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
+test.describe('on a phone', () => {
+  // A touch screen: a narrow desktop window keeps mouse-sized controls and focuses the search.
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } })
+
+  test('keeps the New tab layout usable', async ({ page }) => {
+    await page.goto('/?recent-files')
+
+    const search = page.getByLabel('Search files…')
+    await expect(search).toBeVisible()
+    await expect(search).not.toBeFocused()
+    await expect(search).toHaveAttribute('placeholder', 'Search files…')
+    await expect(page.getByTestId('home-open-file')).toBeVisible()
+    await expect(page.getByTestId('home-new-design')).toBeVisible()
+    await expect(page.getByTestId('recent-files-home')).toHaveJSProperty(
+      'scrollWidth',
+      await page.getByTestId('recent-files-home').evaluate((element) => element.clientWidth)
+    )
+  })
+})
+
+test('a narrow window with a mouse keeps mouse-sized controls and focuses the search', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 600, height: 800 })
   await page.goto('/?recent-files')
 
-  const search = page.getByLabel('Search files…')
-  await expect(search).toBeVisible()
-  await expect(search).not.toBeFocused()
-  await expect(search).toHaveAttribute('placeholder', 'Search files…')
-  await expect(page.getByTestId('home-open-file')).toBeVisible()
-  await expect(page.getByTestId('home-new-document')).toBeVisible()
-  await expect(page.getByTestId('recent-files-home')).toHaveJSProperty(
-    'scrollWidth',
-    await page.getByTestId('recent-files-home').evaluate((element) => element.clientWidth)
-  )
+  await expect(page.getByLabel('Search files…')).toBeFocused()
+  // Medium buttons, 32 px tall; touch screens get the 36 px large ones.
+  expect((await page.getByTestId('home-open-file').boundingBox())?.height).toBe(32)
 })
 
 test('opens to the recent-files home and starts a new document', async ({ page }) => {
@@ -78,7 +93,7 @@ test('opens to the recent-files home and starts a new document', async ({ page }
   await expect(page.getByText('No recent files yet')).toBeVisible()
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 
-  await page.getByTestId('home-new-document').click()
+  await page.getByTestId('home-new-design').click()
 
   await expect(page.getByTestId('recent-files-home')).toBeHidden()
   const tab = page.getByTestId('tabbar-tab')
@@ -90,7 +105,7 @@ test('opens to the recent-files home and starts a new document', async ({ page }
 
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(2)
-  await expect(page.getByTestId('tabbar-tab').last()).toContainText('New tab')
+  await expect(page.getByTestId('tabbar-tab').last()).toContainText('New file')
   await expect(page.getByLabel('Search files…')).toBeFocused()
   await expect(page.getByTestId('tabbar-close')).toHaveCount(2)
 

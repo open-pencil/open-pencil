@@ -1,9 +1,11 @@
 import { expect, test } from 'bun:test'
 
+import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 import { guid } from '#fig-tests/helpers/guid'
 
-import { materializeDocument } from '@open-pencil/fig'
+import { createFigDocumentSession, materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 test('selected-page assembly excludes unrelated content but keeps cross-page components', () => {
   const changes: NodeChange[] = [
@@ -40,4 +42,151 @@ test('selected-page assembly excludes unrelated content but keeps cross-page com
   expect(() => materializeDocument(changes, [], { pageIds: new Set(['missing']) })).toThrow(
     'Unknown page'
   )
+})
+
+/**
+ * Page 1:2 places the inner component, which Outer encloses beside other layers on page 1:3.
+ * `placed` adds an instance of Outer to page 1:3; `extra` adds records.
+ */
+async function enclosedComponentArchive(
+  placed = true,
+  extra: NodeChange[] = []
+): Promise<ArrayBuffer> {
+  const records: NodeChange[] = [
+    { guid: guid(1), type: 'DOCUMENT' },
+    { guid: guid(2), type: 'CANVAS', parentIndex: { guid: guid(1), position: '!' } },
+    {
+      guid: guid(10),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(2), position: '!' },
+      symbolData: { symbolID: guid(5) }
+    },
+    { guid: guid(3), type: 'CANVAS', parentIndex: { guid: guid(1), position: '"' } },
+    { guid: guid(4), type: 'SYMBOL', name: 'Outer', parentIndex: { guid: guid(3), position: '!' } },
+    { guid: guid(5), type: 'SYMBOL', name: 'Inner', parentIndex: { guid: guid(4), position: '!' } },
+    {
+      guid: guid(6),
+      type: 'TEXT',
+      parentIndex: { guid: guid(5), position: '!' },
+      textData: { characters: 'Inner' }
+    },
+    {
+      guid: guid(7),
+      type: 'TEXT',
+      parentIndex: { guid: guid(4), position: '"' },
+      textData: { characters: 'Beside' }
+    },
+    {
+      guid: guid(8),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(4), position: '#' },
+      symbolData: { symbolID: guid(11) }
+    },
+    {
+      guid: guid(11),
+      type: 'SYMBOL',
+      name: 'Label',
+      parentIndex: { guid: guid(3), position: '"' }
+    },
+    {
+      guid: guid(12),
+      type: 'TEXT',
+      parentIndex: { guid: guid(11), position: '!' },
+      textData: { characters: 'Label' }
+    },
+    {
+      guid: guid(9),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(3), position: '#' },
+      symbolData: { symbolID: guid(4) }
+    }
+  ]
+  if (!placed) records.pop()
+  records.push(...extra)
+  return figArchiveOf(records)
+}
+
+function layers(graph: SceneGraph, id: string): unknown {
+  const node = graph.getNode(id)
+  if (!node) throw new Error(`Missing layer ${id}`)
+  return [node.type, node.text, graph.getChildren(id).map((child) => layers(graph, child.id))]
+}
+
+test.each([false, true])(
+  'builds a component enclosing a component placed on another page once its own page loads (resumed: %p)',
+  async (resumed) => {
+    const bytes = await enclosedComponentArchive()
+    const expected = createFigDocumentSession(bytes)
+    expected.loadPage('1:3')
+    let session = createFigDocumentSession(bytes)
+    session.loadPage('1:2')
+    if (resumed) {
+      session = createFigDocumentSession(
+        bytes,
+        {},
+        { graph: session.graph, checkpoint: session.checkpoint() }
+      )
+    }
+    session.loadPage('1:3')
+    for (const id of ['1:4', '1:9']) {
+      const loaded = new Map(session.checkpoint().sources).get(id)
+      const reference = new Map(expected.checkpoint().sources).get(id)
+      if (!loaded || !reference) throw new Error(`Missing ${id}`)
+      expect(layers(session.graph, loaded)).toEqual(layers(expected.graph, reference))
+    }
+    const components = (graph: SceneGraph) =>
+      [...graph.getAllNodes()].filter((node) => node.type === 'COMPONENT').length
+    expect(components(session.graph)).toBe(components(expected.graph))
+  }
+)
+
+test.each([false, true])(
+  'keeps a layer deleted from the enclosed component deleted when the enclosing page loads (resumed: %p)',
+  async (resumed) => {
+    const bytes = await enclosedComponentArchive(false)
+    let session = createFigDocumentSession(bytes)
+    session.loadPage('1:2')
+    const { graph } = session
+    const inner = new Map(session.checkpoint().componentIds).get('1:5')
+    if (!inner) throw new Error('Missing inner component')
+    graph.deleteNode(graph.getChildren(inner)[0].id)
+    if (resumed) {
+      session = createFigDocumentSession(bytes, {}, { graph, checkpoint: session.checkpoint() })
+    }
+    session.loadPage('1:3')
+    // Checkpointing after a resumed deletion is #1425; read the layers from the graph instead.
+    const outer = [...graph.getAllNodes()].find((node) => node.name === 'Outer')
+    if (!outer) throw new Error('Missing outer component')
+    expect(layers(graph, outer.id)).toEqual([
+      'COMPONENT',
+      '',
+      [
+        ['COMPONENT', '', []],
+        ['TEXT', 'Beside', []],
+        ['INSTANCE', '', [['TEXT', 'Label', []]]]
+      ]
+    ])
+    if (!resumed) expect(session.checkpoint().components.map(([id]) => id)).toContain('1:4')
+  }
+)
+
+test('builds again an enclosed component deleted before its enclosing page loads', async () => {
+  // Inner holds an instance, whose copied layers take fresh IDs each time they are built.
+  const bytes = await enclosedComponentArchive(true, [
+    {
+      guid: guid(13),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(5), position: '"' },
+      symbolData: { symbolID: guid(11) }
+    }
+  ])
+  const session = createFigDocumentSession(bytes)
+  session.loadPage('1:2')
+  const inner = new Map(session.checkpoint().componentIds).get('1:5')
+  if (!inner) throw new Error('Missing inner component')
+  session.graph.deleteNode(inner)
+  session.loadPage('1:3')
+  const outer = new Map(session.checkpoint().components).get('1:4')
+  if (!outer) throw new Error('Missing outer component')
+  for (const { nodeId } of outer.nodes) expect(session.graph.getNode(nodeId)).toBeDefined()
 })

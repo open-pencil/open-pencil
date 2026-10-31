@@ -15,7 +15,8 @@
         "title": "OpenPencil",
         "width": 1280,
         "height": 800,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "create": false
       }
     ],
     "security": {
@@ -48,6 +49,14 @@
         "description": "Figma design file",
         "role": "Editor",
         "mimeType": "application/x-figma",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["jam"],
+        "name": "FigJam Board",
+        "description": "FigJam board",
+        "role": "Editor",
+        "mimeType": "application/x-figjam",
         "rank": "Alternate"
       },
       {

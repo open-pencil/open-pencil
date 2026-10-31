@@ -15,7 +15,7 @@ import {
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { FontFaceRef } from '#core/text/face'
+import type { FontFaceRef } from '#core/text/font/faces'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
@@ -316,7 +316,9 @@ export const SVG_BLEND_MODE: Record<string, string> = {
   MULTIPLY: 'multiply',
   COLOR_BURN: 'color-burn',
   LIGHTEN: 'lighten',
+  LINEAR_BURN: 'plus-darker',
   SCREEN: 'screen',
+  LINEAR_DODGE: 'plus-lighter',
   COLOR_DODGE: 'color-dodge',
   OVERLAY: 'overlay',
   SOFT_LIGHT: 'soft-light',

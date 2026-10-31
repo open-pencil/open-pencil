@@ -59,6 +59,7 @@ import type {
   CanvasKit,
   Surface,
   Canvas,
+  Blender,
   Paint,
   Font,
   TypefaceFontProvider,
@@ -109,6 +110,8 @@ export class SkiaRenderer {
   declare fillPaint: Paint
   diamondGradientEffect: RuntimeEffect | null = null
   pixelGridEffect: RuntimeEffect | null = null
+  linearBurnBlender: Blender | null = null
+  linearDodgeBlender: Blender | null = null
   declare strokePaint: Paint
   declare selectionPaint: Paint
   declare snapPaint: Paint
@@ -201,8 +204,8 @@ export class SkiaRenderer {
   sceneBackingLastViewportEventAt = 0
   navigationPhase: EditorState['navigation']['phase'] = 'idle'
   navigationGeneration = 0
-  /** The document is read-only: selections draw without handles to drag. */
-  readOnly = false
+  /** Selections draw handles to drag; off while the canvas offers no edits. */
+  editHandles = true
   tiledSceneEnabled = false
   /**
    * What an empty sticky note shows while it is edited on this canvas, in the interface language;
@@ -395,11 +398,7 @@ export class SkiaRenderer {
     const current = this.frameGeometry
     // A caller that knows no preview takes the frame's geometry as it stands, previewed or not:
     // a flash follows the layer where it is shown, and the frame keeps one geometry.
-    if (
-      current &&
-      current.graph === graph &&
-      (preview === undefined || current.preview === preview)
-    ) {
+    if (current?.graph === graph && (preview === undefined || current.preview === preview)) {
       return current.geometry
     }
     const geometry = createSceneGeometry(graph, preview)
@@ -787,7 +786,7 @@ export class SkiaRenderer {
   nodeFontReadiness(node: SceneNode): RenderText.NodeFontReadiness {
     if (node.type !== 'TEXT') return 'ready'
     const cached = this.textReadiness.get(node.id)
-    if (cached && cached.node === node && cached.generation === this.fontGeneration) {
+    if (cached?.node === node && cached.generation === this.fontGeneration) {
       return cached.readiness
     }
     const readiness = RenderText.nodeFontReadiness(this, node)
@@ -883,7 +882,7 @@ export class SkiaRenderer {
     height: number,
     format: 'JPG' | 'WEBP',
     quality: number
-  ): Uint8Array | null {
+  ): Uint8Array<ArrayBuffer> | null {
     if (!IS_BROWSER) return null
     try {
       const canvas = document.createElement('canvas')
@@ -901,7 +900,8 @@ export class SkiaRenderer {
       if (!dataURL.startsWith(`data:${mime}`)) return null
       const base64 = dataURL.split(',')[1]
       if (!base64) return null
-      return toUint8Array(base64)
+      // js-base64 types its bytes as any buffer; a copy has the plain one a `Blob` takes.
+      return new Uint8Array(toUint8Array(base64))
     } catch (err) {
       console.warn('Raster encode fallback failed:', err)
       return null

@@ -6,7 +6,8 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import {
   buildFigKiwi,
   parseFigKiwiChunks,
-  type FigDataCompressor
+  type FigDataCompressor,
+  type FigFileKind
 } from '@open-pencil/kiwi/fig/container'
 import { decodeFigKiwiCanvas, parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
 import type { HeaderFields } from '@open-pencil/kiwi/schema-runtime'
@@ -29,6 +30,8 @@ export interface WriteFigArchiveInput {
   figKiwiVersion?: number
   /** Compresses the document data; Bun's zstd or deflate when omitted. */
   compress?: FigDataCompressor
+  /** A design file, or a FigJam board saved as `.jam`; a design when omitted. */
+  kind?: FigFileKind
 }
 
 export interface FigParseResult {
@@ -38,6 +41,8 @@ export interface FigParseResult {
   figKiwiVersion: number
   /** Deflated Kiwi schema bytes from the original file, retained for round-trip fidelity. */
   figSchemaDeflated: Uint8Array
+  /** A design file or a FigJam board, by the canvas's header. */
+  kind: FigFileKind
   thumbnailPNG: Uint8Array | null
   metaJSON: string | null
 }
@@ -126,6 +131,8 @@ export interface FigArchiveParts {
   /** The inflated Kiwi message. */
   dataRaw: Uint8Array
   figKiwiVersion: number
+  /** A design file or a FigJam board, by the canvas's header. */
+  kind: FigFileKind
   images: Array<[string, Uint8Array]>
   thumbnailPNG: Uint8Array | null
   metaJSON: string | null
@@ -137,7 +144,8 @@ function canvasParts(canvasData: Uint8Array) {
   return {
     schemaDeflated: payload.schemaDeflated,
     dataRaw: payload.dataRaw,
-    figKiwiVersion: payload.version
+    figKiwiVersion: payload.version,
+    kind: payload.kind
   }
 }
 
@@ -245,7 +253,8 @@ export function writeFigArchive(input: WriteFigArchiveInput): Uint8Array {
     input.schemaDeflated,
     input.kiwiData,
     input.figKiwiVersion,
-    input.compress
+    input.compress,
+    input.kind
   )
   const entries: Zippable = {
     'canvas.fig': [canvasData, { level: 0 }],
@@ -264,7 +273,8 @@ export function compressFigDataSync(
   metaJSON: string,
   imageEntries: FigImageEntry[],
   figKiwiVersion?: number,
-  compress?: FigDataCompressor
+  compress?: FigDataCompressor,
+  kind?: FigFileKind
 ): Uint8Array {
   return writeFigArchive({
     schemaDeflated,
@@ -273,6 +283,7 @@ export function compressFigDataSync(
     metaJSON,
     images: imageEntries,
     figKiwiVersion,
-    compress
+    compress,
+    kind
   })
 }
