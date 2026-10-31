@@ -849,9 +849,9 @@ function applyNodeVisualProps(
   if (node.verticalConstraint !== 'MIN') nc.verticalConstraint = node.verticalConstraint
   if (node.strokeCap !== 'NONE') nc.strokeCap = node.strokeCap
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
-  if (node.strokeJoin !== 'MITER' || 'strokeJoin' in rawNodeFields) {
-    nc.strokeJoin = node.strokeJoin
-  }
+  // Figma writes the join on every layer, MITER too: a vector's points without a join of their own
+  // take it, and without it they have none, which Figma's own network writes reject.
+  nc.strokeJoin = node.strokeJoin
   if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
