@@ -127,6 +127,28 @@ describe('reconcileVariableLayouts', () => {
     })
   })
 
+  test('a text outside auto layout resizes to a bound font size', () => {
+    setTextMeasurer((node) => ({ width: node.text.length * node.fontSize, height: node.fontSize }))
+    const graph = new SceneGraph()
+    const tokens = graph.createCollection('Tokens')
+    graph.addMode(tokens.id, 'large', 'Large')
+    const size = graph.createVariable('Size', 'FLOAT', tokens.id, 10)
+    size.valuesByMode.large = 20
+    const label = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Save',
+      fontSize: 10,
+      width: 40,
+      height: 10,
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      boundVariables: { fontSize: size.id }
+    })
+
+    graph.setActiveMode(tokens.id, 'large')
+    reconcileVariableLayouts(graph, { variables: [size.id] })
+
+    expect([label.fontSize, label.width, label.height]).toEqual([20, 80, 20])
+  })
+
   test('a layer scaled by its constraints follows its Hug frame once per change', () => {
     const graph = new SceneGraph()
     const tokens = graph.createCollection('Tokens')

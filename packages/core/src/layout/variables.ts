@@ -1,18 +1,37 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { reconcileVariableBindings, type BindingScope } from '@open-pencil/scene-graph/variables'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  reconcileVariableBindingUpdates,
+  type BindingScope
+} from '@open-pencil/scene-graph/variables'
 
 import { computeLayout, computeSubtreeLayouts } from '#core/layout'
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 
 /**
  * Binding evaluation is derived work, not an additional history entry. The scope names what
  * changed, so only the layers that change can reach are resolved and laid out again.
  */
 export function reconcileVariableLayouts(graph: SceneGraph, scope: BindingScope): void {
-  const changed = new Set(reconcileVariableBindings(graph, scope))
-  if (changed.size === 0) {
+  const updates = reconcileVariableBindingUpdates(graph, scope)
+  if (updates.size === 0) {
     return
   }
-  graph.withLayoutMutations(() => layOutChangedLayers(graph, changed))
+  graph.withLayoutMutations(() => {
+    resizeAutoResizingText(graph, updates)
+    layOutChangedLayers(graph, new Set(updates.keys()))
+  })
+}
+
+function resizeAutoResizingText(
+  graph: SceneGraph,
+  updates: ReadonlyMap<string, Partial<SceneNode>>
+): void {
+  for (const [id, changes] of updates) {
+    const resized = textAutoResizeChanges(graph.getNode(id), changes)
+    if (Object.keys(resized).length > 0) {
+      graph.updateNode(id, resized)
+    }
+  }
 }
 
 function layOutChangedLayers(graph: SceneGraph, changed: ReadonlySet<string>): void {
