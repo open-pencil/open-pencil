@@ -216,12 +216,18 @@ function renderToSurface(
   }
 }
 
-/** `nodeIds` in the order the source page paints them, bottom to top, whatever order they came in. */
+/**
+ * `nodeIds` in the order the source page paints them, bottom to top, whatever order they came in,
+ * without those a selected ancestor already paints.
+ */
 function inPaintOrder(source: SceneGraph, pageId: string, nodeIds: readonly string[]): string[] {
   const selected = new Set(nodeIds)
   const ordered: string[] = []
   const visit = (id: string): void => {
-    if (selected.has(id)) ordered.push(id)
+    if (selected.has(id)) {
+      ordered.push(id)
+      return
+    }
     for (const childId of source.getNode(id)?.childIds ?? []) visit(childId)
   }
   visit(pageId)

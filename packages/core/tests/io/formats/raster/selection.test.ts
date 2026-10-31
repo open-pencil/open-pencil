@@ -184,3 +184,27 @@ test('a background blur blurs the selected layers behind it', () => {
   // Sharp, the black half reads 0 beside the edge; blurred, the white half bleeds into it.
   expect(red).toBeGreaterThan(40)
 })
+
+test('selection export draws a selected layer once when its frame is selected too', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const frame = graph.createNode('FRAME', page.id, {
+    x: 20,
+    y: 20,
+    width: 40,
+    height: 40,
+    fills: []
+  })
+  const child = graph.createNode('RECTANGLE', frame.id, {
+    x: 0,
+    y: 0,
+    width: 20,
+    height: 20,
+    fills: solidFill(1, 1, 1),
+    opacity: 0.5
+  })
+  const pixelAt = exportedRgba(graph, page.id, [frame.id, child.id])
+
+  expect(pixelAt(10, 10)[3]).toBe(128)
+  expect(pixelAt(30, 30)[3]).toBe(0)
+})
