@@ -11,7 +11,7 @@ import {
 import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
-import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { proportionalResizeRect } from '#vue/shared/input/resize/snap'
 import type { DragStickyScale } from '#vue/shared/input/types'
 
 /** The smallest scale a corner drag takes a note to, so it never folds away. */
@@ -101,13 +101,15 @@ export function applyStickyScale(drag: DragStickyScale, cx: number, cy: number, 
     return
   }
   const { origRect } = d
-  // The note keeps its proportions, anchored as a resize from the same handle would be.
-  const rect = calculateResizeRect(
-    d.handle,
+  // The note keeps its proportions, anchored and snapped as a Shift-resize from the same handle.
+  const rect = proportionalResizeRect(
+    d,
     origRect,
     cx - d.startX,
     cy - d.startY,
-    origRect.width / origRect.height
+    origRect.width / origRect.height,
+    editor,
+    false
   )
   d.scale = Math.max(MIN_STICKY_SCALE, rect.width / origRect.width)
   d.position = { x: rect.x, y: rect.y }
