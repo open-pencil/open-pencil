@@ -96,6 +96,14 @@ describe('linear blend modes, as Figma draws them', () => {
     expectChannelsNear(renderCenter(overlay([halfBurn])), [51, 76, 12, 255])
   })
 
+  test('a half transparent fill over nothing stays half transparent', () => {
+    const nothing: Scene = () => undefined
+    for (const blendMode of ['LINEAR_DODGE', 'LINEAR_BURN'] as const) {
+      const half = { ...solid(SOURCE, blendMode), opacity: 0.5 }
+      expectChannelsNear(renderCenter(overlay([half]), nothing), [51, 204, 179, 128])
+    }
+  })
+
   test('a drop shadow blends the same way as a fill', () => {
     const castsOntoCenter: Scene = (graph, pageId) => {
       graph.createNode('RECTANGLE', pageId, {
