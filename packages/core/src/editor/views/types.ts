@@ -59,6 +59,8 @@ export interface EditorProfile {
    * board it selects the frame, and double-click or Enter goes inside.
    */
   framesOpen: boolean
+  /** Whether design lint checks the document; a FigJam board has none. */
+  lint: boolean
 }
 
 /** The state a profile resolves from: the document's kind, the pane's view, and the host's limits. */

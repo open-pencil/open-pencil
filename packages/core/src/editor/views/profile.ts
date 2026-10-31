@@ -14,7 +14,7 @@ export const READ_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['SELECT', 'HAND
 /** What the document's kind decides: its tools and keys, its grids, and how deep a click goes. */
 type DocumentBehaviour = Pick<
   EditorProfile,
-  'edits' | 'tools' | 'toolKeys' | 'snapGrid' | 'dotGrid' | 'pixelGrid' | 'framesOpen'
+  'edits' | 'tools' | 'toolKeys' | 'snapGrid' | 'dotGrid' | 'pixelGrid' | 'framesOpen' | 'lint'
 >
 
 /** What the canvas's view decides: how the pointer, keys, chrome, and panels behave. */
@@ -28,7 +28,8 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     snapGrid: 1,
     dotGrid: null,
     pixelGrid: true,
-    framesOpen: true
+    framesOpen: true,
+    lint: true
   },
   board: {
     edits: true,
@@ -37,7 +38,8 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     snapGrid: BOARD_GRID,
     dotGrid: BOARD_GRID,
     pixelGrid: false,
-    framesOpen: false
+    framesOpen: false,
+    lint: false
   }
 }
 
