@@ -89,7 +89,7 @@ describe('tile scheduling', () => {
     }
   })
 
-  test('zooms over the previous level scaled and renders the exact level once the zoom pauses', () => {
+  test('zooms over the quantized step rendered mid-gesture and the exact level once it pauses', () => {
     const { graph, surface, renderer, pageId } = createGridScene()
     const controller = new TiledSceneController({ now: () => 0 })
     try {
@@ -99,12 +99,15 @@ describe('tile scheduling', () => {
       }
       expect(result.covered).toBe(true)
 
-      // The level moves: nothing renders, the level-1 tiles stand in scaled.
+      // The level moves: the quantized step above 1.3, √2, renders under the moving budget and
+      // stands in for the exact level with the level-1 tiles.
       renderer.zoom = 1.3
       renderer.navigationPhase = 'zoom'
       const moving = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
       expect(moving.covered).toBe(false)
-      expect(moving.metrics.interruptibleCompleted).toBe(0)
+      expect(moving.metrics.interruptibleCompleted).toBeGreaterThan(0)
+      expect(controller.isRendered({ pageId, level: 2 ** 0.5, x: 0, y: 0 })).toBe(true)
+      expect(controller.isRendered({ pageId, level: 1.3, x: 0, y: 0 })).toBe(false)
       expect(moving.fallbackTileCount).toBeGreaterThan(0)
       expect(moving.uncoveredAreaCount).toBe(0)
 
@@ -119,7 +122,48 @@ describe('tile scheduling', () => {
       }
       expect(settled.covered).toBe(true)
       expect(settled.fallbackTileCount).toBe(0)
-      void pageId
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('presents a new level once every visible tile exists, then tiles as they land', () => {
+    const { graph, surface, renderer } = createGridScene()
+    // Free while settling; afterwards 10 ms a reading, so an idle frame renders one tile.
+    let step = 0
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += step) })
+    try {
+      for (let frame = 0; frame < 12; frame++) {
+        controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
+      // At 1.3 the viewport is three by two tiles, all inside the settled level-1 area.
+      step = 10
+      renderer.zoom = 1.3
+      renderer.navigationPhase = 'zoom'
+      controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      renderer.navigationPhase = 'idle'
+      const visibleTiles = 3 * 2
+      let settling = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      let frames = 0
+      // The exact tiles rendered so far stay hidden: the whole viewport is still a stand-in.
+      for (; !settling.covered && frames < 60; frames++) {
+        expect(settling.fallbackTileCount).toBe(visibleTiles)
+        expect(settling.uncoveredAreaCount).toBe(0)
+        settling = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      }
+      expect(frames).toBeGreaterThan(1)
+      expect(settling.covered).toBe(true)
+      expect(settling.fallbackTileCount).toBe(0)
+
+      // Committed, the level shows the tiles a pan reveals one by one over the stand-ins.
+      renderer.panX = -600
+      renderer.navigationPhase = 'pan'
+      const panning = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 2)
+      expect(panning.covered).toBe(false)
+      expect(panning.fallbackTileCount).toBeGreaterThan(0)
+      expect(panning.fallbackTileCount).toBeLessThan(visibleTiles)
     } finally {
       controller.destroy()
       renderer.destroy()
@@ -200,10 +244,11 @@ describe('tile scheduling', () => {
       for (let frame = 0; frame < 60 && idle.metrics.interruptibleCompleted === 0; frame++) {
         idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
       }
-      // The 1280 × 800 viewport at level 1 is three by two tiles of 512.
+      // The 1280 × 800 viewport at level 1 is three by two tiles of 512. The page is first
+      // shown whole, so the one tile stays hidden with the rest at the page colour.
       const visibleTiles = 3 * 2
       expect(idle.metrics.interruptibleCompleted).toBe(1)
-      expect(idle.uncoveredAreaCount).toBe(visibleTiles - 1)
+      expect(idle.uncoveredAreaCount).toBe(visibleTiles)
 
       // Panning, a job estimated over the budget is skipped and the holes stay page colour.
       renderer.navigationPhase = 'pan'
@@ -212,8 +257,17 @@ describe('tile scheduling', () => {
       // Every queued tile is too dear, and each is tried before the frame gives up.
       expect(panning.metrics.skippedWithFallback).toBe(visibleTiles - 1)
       expect(panning.fallbackTileCount).toBe(0)
-      expect(panning.uncoveredAreaCount).toBe(visibleTiles - 1)
+      expect(panning.uncoveredAreaCount).toBe(visibleTiles)
       expect(panning.pending).toBe(true)
+
+      // Idle again, the level presents once its last tile renders.
+      renderer.navigationPhase = 'idle'
+      let settled = panning
+      for (let frame = 0; frame < 60 && !settled.covered; frame++) {
+        settled = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+        expect(settled.uncoveredAreaCount).toBe(settled.covered ? 0 : visibleTiles)
+      }
+      expect(settled.covered).toBe(true)
     } finally {
       controller.destroy()
       renderer.destroy()
@@ -295,8 +349,10 @@ describe('tiles with image previews', () => {
     const decoded = new Promise<void>((resolve) => {
       release = resolve
     })
+    const edges: number[] = []
     const decoder: ImagePreviewDecoder = {
       decode: async (source, edge): Promise<ImagePreview> => {
+        edges.push(edge)
         await decoded
         return { bytes: new Uint8Array(source), originalWidth: edge, originalHeight: edge }
       },
@@ -333,6 +389,16 @@ describe('tiles with image previews', () => {
       }
       expect(result.covered).toBe(true)
       expect(centerPixel(renderer)).toEqual([255, 0, 0, 255])
+      expect(edges).toEqual([256])
+
+      // Four times closer, the tiles record the chunk again with a preview for their level.
+      renderer.zoom = 4
+      renderer.imageDetailScale = 4
+      result = controller.renderFrame(renderer, canvas, graph, 1, 1)
+      for (let frame = 0; frame < 10 && result.pending; frame++) {
+        result = controller.renderFrame(renderer, canvas, graph, 1, 1)
+      }
+      expect(edges).toEqual([256, 1024])
     } finally {
       renderer.destroy()
     }
@@ -398,6 +464,47 @@ describe('tiles with image previews', () => {
       expect(idle.backgroundPending).toBe(false)
     } finally {
       small.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('a layer added to one page child keeps the tiles of the others', () => {
+    const { graph, surface, renderer, pageId } = createGridScene()
+    const controller = new TiledSceneController({ now: () => 0 })
+    try {
+      let result = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      for (let frame = 0; frame < 30 && (result.pending || result.backgroundPending); frame++) {
+        result = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
+      expect(result.covered).toBe(true)
+      const farTile = { pageId, level: 1, x: 2, y: 1 }
+      expect(controller.isRendered(farTile)).toBe(true)
+
+      // A new layer inside the first grid square: only its tile re-renders.
+      const first = expectDefined(graph.getChildren(pageId)[0], 'first square')
+      const added = graph.createNode('RECTANGLE', first.id, {
+        x: 10,
+        y: 10,
+        width: 20,
+        height: 20,
+        fills: color(1, 0, 0)
+      })
+      controller.invalidateStructure(added.id, first.id)
+      expect(controller.hasPendingWork()).toBe(true)
+      const changed = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+      expect(controller.isRendered(farTile)).toBe(true)
+      expect(changed.metrics.interruptibleCompleted + changed.metrics.mandatoryCompleted).toBe(1)
+      expect(changed.covered).toBe(true)
+
+      // Deleting it again touches only that tile too.
+      graph.deleteNode(added.id)
+      controller.invalidateStructure(added.id, first.id)
+      const deleted = controller.renderFrame(renderer, surface.getCanvas(), graph, 3, 0)
+      expect(controller.isRendered(farTile)).toBe(true)
+      expect(deleted.metrics.interruptibleCompleted + deleted.metrics.mandatoryCompleted).toBe(1)
+      expect(deleted.covered).toBe(true)
+    } finally {
+      controller.destroy()
       renderer.destroy()
     }
   })

@@ -5,7 +5,14 @@ import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 
 import { getTextOutlineSupport } from '#core/text/outlines'
 
+import { clearFillShader } from './fills'
 import type { SkiaRenderer } from './renderer'
+import {
+  configureStrokePaint,
+  forVisibleStrokes,
+  normalizeDashPattern,
+  withStrokeDash
+} from './strokes'
 import { makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines'
 
@@ -231,7 +238,25 @@ function makeImportedFillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | 
   return result.detachAndDelete()
 }
 
+/**
+ * The operation's result, which the caller owns: a copy of the cached path, built once from the
+ * children's paths and kept until one of them or the operation changes. Fills, every shadow, a
+ * knockout, and a background blur each ask for it per draw, so without the cache a boolean ran
+ * its path ops up to five times per record.
+ */
 export function makeBooleanOperationPath(
+  r: SkiaRenderer,
+  node: SceneNode,
+  graph: SceneGraph
+): Path | null {
+  const cached = r.nodePaths.boolean.get(node.id)
+  if (cached) return cached[0]?.copy() ?? null
+  const built = buildBooleanOperationPath(r, node, graph)
+  r.nodePaths.store(r.nodePaths.boolean, node.id, built ? [built] : [])
+  return built ? built.copy() : null
+}
+
+function buildBooleanOperationPath(
   r: SkiaRenderer,
   node: SceneNode,
   graph: SceneGraph
@@ -305,19 +330,18 @@ export function paintBooleanOperation(
       try {
         canvas.drawPath(path, r.fillPaint)
       } finally {
-        r.fillPaint.setShader(null)
+        clearFillShader(r)
       }
     }
     between?.()
 
-    for (const stroke of node.strokes) {
-      if (!stroke.visible) continue
-      const color = r.resolveStrokeColor(stroke, 0, node, graph)
-      r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-      r.strokePaint.setStrokeWidth(stroke.weight)
-      r.strokePaint.setAlphaf(stroke.opacity)
-      canvas.drawPath(path, r.strokePaint)
-    }
+    // Each stroke resolves its own binding and shader, with its cap, join, and dash, as a shape's.
+    forVisibleStrokes(r, node, graph, (stroke, color) => {
+      configureStrokePaint(r, node, stroke, color)
+      withStrokeDash(r, normalizeDashPattern(stroke.dashPattern), 0, () =>
+        canvas.drawPath(path, r.strokePaint)
+      )
+    })
   } finally {
     path.delete()
   }

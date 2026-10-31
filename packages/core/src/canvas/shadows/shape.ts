@@ -241,7 +241,7 @@ export function drawShapeInnerShadow(
   isolated = false
 ): void {
   const sp = spread
-  r.auxFill.setColor(r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
+  r.auxFill.setColorComponents(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
   r.auxFill.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
 
   canvas.save()

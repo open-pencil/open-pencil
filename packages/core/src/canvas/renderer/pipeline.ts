@@ -75,7 +75,7 @@ export function renderFromEditorState(
   r.viewportHeight = viewportHeight
   r.showRulers = showRulers
   r.pageColor = state.pageColor
-  r.rulerTheme = state.rulerTheme ?? null
+  r.setRulerTheme(state.rulerTheme ?? null)
   r.setSelectionTheme(state.selectionTheme)
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
@@ -247,6 +247,7 @@ export function render(
   r.syncFontGeneration()
   r.flushDecodedPreviews(graph)
   r.nodePaths.releaseUncached()
+  r.frameGeometry = null
   const p = r.profiler
   p.beginFrame()
   p.setScenePictureDrawTime(0)
@@ -268,6 +269,7 @@ export function render(
     w: r.viewportWidth / r.zoom,
     h: r.viewportHeight / r.zoom
   }
+  r.imageDetailScale = r.zoom * r.dpr
   updateSceneBackingPreviewState(r, layer)
 
   const { requiresUncachedSceneRender, canUsePicture, cacheMissReason } = getSceneRenderPolicy(

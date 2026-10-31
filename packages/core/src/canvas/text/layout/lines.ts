@@ -24,6 +24,8 @@ export interface TextLayoutBlockLines {
 /** What placing a text layout block's lines reads of it. */
 interface LineBlock {
   paragraph: Paragraph
+  /** The paragraph's line metrics as laid out, so placing reads them from the block. */
+  metrics: LineMetrics[]
   lines?: TextLayoutBlockLines
   lead: number
   length: number
@@ -246,7 +248,7 @@ export function placeLines<Block extends LineBlock>(
   blocks: readonly Block[],
   width: number
 ): PlacedLines<Block> | null {
-  const metrics = blocks.map((block) => block.paragraph.getLineMetrics())
+  const metrics = blocks.map((block) => block.metrics)
   // A single line has none to be spaced from.
   if (metrics.flat().length < 2) return null
   const boxes = lineBoxes(ck, blocks, metrics)

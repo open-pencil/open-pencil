@@ -304,7 +304,6 @@ tests/engine/render/canvas/chunks/context.test.ts
 tests/engine/render/canvas/chunks/gold-preview.test.ts
 tests/engine/render/canvas/chunks/index.test.ts
 tests/engine/render/canvas/chunks/record.test.ts
-tests/engine/render/canvas/component-label-text.test.ts
 tests/engine/render/canvas/corner-smoothing.test.ts
 tests/engine/render/canvas/culling.test.ts
 tests/engine/render/canvas/derived-text.test.ts

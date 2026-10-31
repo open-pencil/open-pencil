@@ -118,7 +118,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   navigation: { zoomSpeed: 1 },
-  rendering: { canvasMode: 'retained' },
+  rendering: { canvasMode: 'tiled' },
   designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
   comments: {
     showOnCanvas: true,

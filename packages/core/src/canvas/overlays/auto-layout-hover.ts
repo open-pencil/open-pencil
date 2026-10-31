@@ -3,6 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { strokeLayoutChildren } from '#core/canvas/overlays/layout-outlines'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import {
@@ -118,8 +119,7 @@ function drawValuePill(
   const font = r.valueFont ?? r.labelFont
   if (!font) return
   const glyphs = font.getGlyphIDs(text)
-  let advance = 0
-  for (const glyphWidth of font.getGlyphWidths(glyphs)) advance += glyphWidth
+  const advance = cachedGlyphWidth(r, font, text)
   // The ink's top and bottom, so the digits sit in the middle whatever the font's metrics.
   const bounds = font.getGlyphBounds(glyphs)
   let top = 0
@@ -137,7 +137,7 @@ function drawValuePill(
   )
   r.auxFill.setColor(canvasColor(r, color))
   canvas.drawRRect(rect, r.auxFill)
-  r.auxFill.setColor(r.ck.Color4f(1, 1, 1, 1))
+  r.auxFill.setColorComponents(1, 1, 1, 1)
   canvas.drawText(text, x - advance / 2, y - (top + bottom) / 2, r.auxFill, font)
 }
 

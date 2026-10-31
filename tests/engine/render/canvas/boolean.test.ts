@@ -4,6 +4,7 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { initCanvasKit } from '#cli/headless'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
+import { NodePathCaches } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeNodeShapePath, makePolygonPath, makeRRect } from '#core/canvas/shapes'
 import { BLACK } from '#core/constants'
@@ -16,6 +17,7 @@ async function createRenderer(): Promise<SkiaRenderer> {
   const ck = await initCanvasKit()
   const renderer = {
     ck,
+    nodePaths: new NodePathCaches(),
     makeNodeShapePath(node) {
       return makeNodeShapePath(asRenderer(this), node)
     },
@@ -212,5 +214,33 @@ describe('boolean operation paths', () => {
 
     expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 175, 100]))
     path?.delete()
+  })
+})
+
+describe('boolean operation path cache', () => {
+  test('keeps the result until the operation is invalidated', async () => {
+    const renderer = await createRenderer()
+    const api = createAPI()
+    const first = api.createRectangle()
+    first.resize(100, 100)
+    const second = api.createRectangle()
+    second.x = 50
+    second.resize(100, 100)
+    const boolean = api.union([first, second], asPageNode(api.currentPage))
+    const node = api.graph.getNode(boolean.id)
+    if (!node) throw new Error('Missing boolean')
+
+    const path = makeBooleanOperationPath(renderer, node, api.graph)
+    expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 150, 100]))
+    expect(renderer.nodePaths.boolean.has(node.id)).toBe(true)
+    // A second draw copies the cached result rather than running the path ops again.
+    const again = makeBooleanOperationPath(renderer, node, api.graph)
+    expect(again?.getBounds()).toEqual(path?.getBounds())
+    expect(again).not.toBe(path)
+    path?.delete()
+    again?.delete()
+
+    renderer.nodePaths.invalidate(node.id)
+    expect(renderer.nodePaths.boolean.has(node.id)).toBe(false)
   })
 })

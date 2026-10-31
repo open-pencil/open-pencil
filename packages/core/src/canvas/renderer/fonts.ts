@@ -147,7 +147,6 @@ export async function loadFonts(
       r.componentLabelFont = new r.ck.Font(typeface, COMPONENT_LABEL_FONT_SIZE)
       r.profiler.setTypeface(typeface)
     }
-    r.fontMgr = r.ck.FontMgr.FromData(fontData) ?? null
   }
 
   r.fontsLoaded = true

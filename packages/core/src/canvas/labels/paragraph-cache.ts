@@ -12,6 +12,7 @@ import type { Size } from '@open-pencil/scene-graph/primitives'
 import { detectTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { ResourceCache } from '#core/cache/resource'
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
 import { DEFAULT_FONT_FAMILY, SECTION_TITLE_FONT_FAMILY } from '#core/constants'
 import { textHasFallbackScript } from '#core/text/coverage'
@@ -52,6 +53,31 @@ const HARD_BREAK = /[\r\n\f\v\u0085\u2028\u2029]/u
 export function measureGlyphWidth(font: Font, text: string): number {
   let width = 0
   for (const advance of font.getGlyphWidths(font.getGlyphIDs(text))) width += advance
+  return width
+}
+
+const MAX_CACHED_WIDTHS_PER_FONT = 4096
+
+/**
+ * `text`'s advance in `font`, kept with the renderer: chrome measures the same few labels on
+ * every frame, and each measurement is two native calls. A font reloaded is a new object, so
+ * its widths start over.
+ */
+export function cachedGlyphWidth(
+  r: Pick<SkiaRenderer, 'glyphWidths'>,
+  font: Font,
+  text: string
+): number {
+  let widths = r.glyphWidths.get(font)
+  if (!widths) {
+    widths = new Map()
+    r.glyphWidths.set(font, widths)
+  }
+  const cached = widths.get(text)
+  if (cached !== undefined) return cached
+  if (widths.size >= MAX_CACHED_WIDTHS_PER_FONT) widths.clear()
+  const width = measureGlyphWidth(font, text)
+  widths.set(text, width)
   return width
 }
 

@@ -4,9 +4,28 @@ import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { ResourceCache } from '#core/cache/resource'
 import { BLACK } from '#core/constants'
 
 import type { SkiaRenderer } from './renderer'
+
+/**
+ * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across
+ * every node and frame that shares them. Bounded, so a slider dragged through hundreds of values
+ * frees the ones it passed rather than keeping them for the session.
+ */
+const MAX_CACHED_FILTERS = 256
+
+export type ImageFilterCache = ResourceCache<string, ImageFilter>
+export type MaskFilterCache = ResourceCache<number, MaskFilter>
+
+export function createImageFilterCache(): ImageFilterCache {
+  return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
+}
+
+export function createMaskFilterCache(): MaskFilterCache {
+  return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
+}
 
 /**
  * The Gaussian sigma that draws a Figma blur radius as Figma does. Measured on Figma 126 exports,
@@ -23,42 +42,44 @@ export function getCachedDropShadow(
   dy: number,
   sigma: number,
   color: Float32Array
-): ImageFilter {
+): ImageFilter | null {
   const key = `ds:${dx},${dy},${sigma},${color[0]},${color[1]},${color[2]},${color[3]}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeDropShadowOnly(dx, dy, sigma, sigma, color, null)
-    r.imageFilterCache.set(key, filter)
-  }
+  return cachedImageFilter(r, key, () =>
+    r.ck.ImageFilter.MakeDropShadowOnly(dx, dy, sigma, sigma, color, null)
+  )
+}
+
+export function getCachedBlur(r: SkiaRenderer, sigma: number): ImageFilter | null {
+  return cachedImageFilter(r, `blur:${sigma}`, () =>
+    r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
+  )
+}
+
+export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter | null {
+  return cachedImageFilter(r, `dblur:${sigma}`, () =>
+    r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Decal, null)
+  )
+}
+
+/** CanvasKit makes no filter for a blur too small to draw; a paint takes null as none. */
+export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter | null {
+  const cached = r.maskFilterCache.get(sigma)
+  if (cached) return cached
+  // Typed as always made; at runtime a sigma too small to blur makes none.
+  const filter = r.ck.MaskFilter.MakeBlur(r.ck.BlurStyle.Normal, sigma, true) as MaskFilter | null
+  if (filter) r.maskFilterCache.set(sigma, filter)
   return filter
 }
 
-export function getCachedBlur(r: SkiaRenderer, sigma: number): ImageFilter {
-  const key = `blur:${sigma}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
-    r.imageFilterCache.set(key, filter)
-  }
-  return filter
-}
-
-export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter {
-  const key = `dblur:${sigma}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Decal, null)
-    r.imageFilterCache.set(key, filter)
-  }
-  return filter
-}
-
-export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter {
-  let filter = r.maskFilterCache.get(sigma)
-  if (!filter) {
-    filter = r.ck.MaskFilter.MakeBlur(r.ck.BlurStyle.Normal, sigma, true)
-    r.maskFilterCache.set(sigma, filter)
-  }
+function cachedImageFilter(
+  r: SkiaRenderer,
+  key: string,
+  make: () => ImageFilter | null
+): ImageFilter | null {
+  const cached = r.imageFilterCache.get(key)
+  if (cached) return cached
+  const filter = make()
+  if (filter) r.imageFilterCache.set(key, filter)
   return filter
 }
 
@@ -145,7 +166,7 @@ function renderNoiseEffect(
         const value = seededNoise((x + 1) * 73856093 + (y + 1) * 19349663)
         if (value > density) continue
         const alpha = Math.max(0, Math.min(1, opacity * (0.35 + value * 0.65)))
-        paint.setColor(r.ck.Color4f(color.r, color.g, color.b, alpha))
+        paint.setColorComponents(color.r, color.g, color.b, alpha)
         canvas.drawRect(
           r.ck.LTRBRect(x, y, Math.min(node.width, x + 1), Math.min(node.height, y + 1)),
           paint

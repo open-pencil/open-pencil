@@ -20,6 +20,7 @@ import {
   RULER_MAJOR_TOLERANCE
 } from '#core/constants'
 
+import { cachedGlyphWidth } from './labels/paragraph-cache'
 import type { SkiaRenderer } from './renderer'
 
 interface SelectionScreenBounds {
@@ -61,12 +62,14 @@ function drawHorizontalRulerTicks(
   const worldRight = (vw - r.panX) / r.zoom
   const startX = Math.floor(worldLeft / step) * step
 
+  // Every tick is one line segment in a single draw; only the labels are drawn one by one.
+  const ticks: number[] = []
   for (let wx = startX; wx <= worldRight; wx += minorStep) {
     const sx = wx * r.zoom + r.panX
     if (sx < R) continue
     const isMajor = Math.abs(wx % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
-    canvas.drawLine(sx, R - tickLen, sx, R, r.rulerTickPaint)
+    ticks.push(sx, R - tickLen, sx, R)
 
     if (isMajor) {
       const skipForBadge =
@@ -77,6 +80,7 @@ function drawHorizontalRulerTicks(
       }
     }
   }
+  canvas.drawPoints(r.ck.PointMode.Lines, ticks, r.rulerTickPaint)
   canvas.restore()
 }
 
@@ -98,12 +102,13 @@ function drawVerticalRulerTicks(
   const worldBottom = (vh - r.panY) / r.zoom
   const startY = Math.floor(worldTop / step) * step
 
+  const ticks: number[] = []
   for (let wy = startY; wy <= worldBottom; wy += minorStep) {
     const sy = wy * r.zoom + r.panY
     if (sy < R) continue
     const isMajor = Math.abs(wy % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
-    canvas.drawLine(R - tickLen, sy, R, sy, r.rulerTickPaint)
+    ticks.push(R - tickLen, sy, R, sy)
 
     if (isMajor) {
       const skipForBadge =
@@ -118,6 +123,7 @@ function drawVerticalRulerTicks(
       }
     }
   }
+  canvas.drawPoints(r.ck.PointMode.Lines, ticks, r.rulerTickPaint)
   canvas.restore()
 }
 
@@ -132,13 +138,6 @@ export function drawRulers(
   const vw = r.viewportWidth
   const vh = r.viewportHeight
   if (vw === 0 || vh === 0) return
-
-  if (r.rulerTheme) {
-    const { background, tick, text } = r.rulerTheme
-    r.rulerBgPaint.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
-    r.rulerTickPaint.setColor(r.ck.Color4f(tick.r, tick.g, tick.b, tick.a))
-    r.rulerTextPaint.setColor(r.ck.Color4f(text.r, text.g, text.b, text.a))
-  }
 
   canvas.drawRect(r.ck.LTRBRect(0, 0, vw, R), r.rulerBgPaint)
   canvas.drawRect(r.ck.LTRBRect(0, R, R, vh), r.rulerBgPaint)
@@ -225,10 +224,9 @@ function drawGuideRulerLabel(
   screenPosition: number
 ): void {
   const label = String(Math.round(position * 100) / 100)
-  r.auxFill.setColor(r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1))
+  r.auxFill.setColorComponents(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1)
   if (axis === 'x') {
-    const widths = font.getGlyphWidths(font.getGlyphIDs(label))
-    const textWidth = widths.reduce((sum, width) => sum + width, 0)
+    const textWidth = cachedGlyphWidth(r, font, label)
     canvas.drawText(
       label,
       screenPosition - textWidth / 2,
@@ -305,9 +303,7 @@ export function drawRulerBadge(
   axis: 'horizontal' | 'vertical'
 ): void {
   const R = RULER_SIZE
-  const glyphIds = font.getGlyphIDs(label)
-  const widths = font.getGlyphWidths(glyphIds)
-  const textW = widths.reduce((s, w) => s + w, 0)
+  const textW = cachedGlyphWidth(r, font, label)
   const pad = RULER_BADGE_PADDING
   const h = RULER_BADGE_HEIGHT
 

@@ -38,31 +38,88 @@ function faceKey(family: string, style: string): string {
 
 /** The text nodes under each root, and each root that is itself text. */
 function rootTextNodes(graph: SceneGraph, rootIds: readonly string[]): SceneNode[] {
-  return rootIds.flatMap((rootId) => {
-    const root = graph.getNode(rootId)
-    if (!root) return []
-    const nodes = [root, ...graph.flattenTree(rootId).map(({ node }) => node)]
-    return nodes.filter((node) => node.type === 'TEXT')
-  })
+  const texts: SceneNode[] = []
+  const stack = [...rootIds]
+  while (stack.length > 0) {
+    const node = graph.getNode(stack.pop() ?? '')
+    if (!node) continue
+    if (node.type === 'TEXT') texts.push(node)
+    for (const childId of node.childIds) stack.push(childId)
+  }
+  return texts
 }
 
-function collectFaceUses(graph: SceneGraph, rootIds: readonly string[]): MutableFontFaceUse[] {
-  const uses = new Map<string, MutableFontFaceUse>()
-  for (const node of rootTextNodes(graph, rootIds)) {
-    for (const { family, style } of collectNodeFontFaces(node)) {
-      const key = faceKey(family, style)
-      const use = uses.get(key) ?? {
-        family,
-        style,
-        nodeIds: new Set<string>(),
-        nodeNames: new Set<string>()
-      }
-      use.nodeIds.add(node.id)
-      use.nodeNames.add(node.name)
-      uses.set(key, use)
-    }
+type TextFontFaces = { name: string; faces: Array<{ family: string; style: string }> }
+
+/**
+ * The faces each text under the roots uses, kept by layer: a status is read from the layers
+ * as they are, and an edit updates the one layer it touched, so a page of tens of thousands of
+ * layers is walked once rather than at every keystroke.
+ */
+export class DocumentFontUses {
+  private readonly byNode = new Map<string, TextFontFaces>()
+  private readonly roots: readonly string[]
+
+  constructor(
+    private readonly graph: SceneGraph,
+    rootIds: string | readonly string[]
+  ) {
+    this.roots = typeof rootIds === 'string' ? [rootIds] : rootIds
+    for (const node of rootTextNodes(graph, this.roots)) this.remember(node)
   }
-  return [...uses.values()]
+
+  /** `nodeId` changed, arrived, or moved: its faces are read again, if it is text under a root. */
+  update(nodeId: string): void {
+    const node = this.graph.getNode(nodeId)
+    if (node?.type !== 'TEXT' || !this.underRoots(nodeId)) {
+      this.byNode.delete(nodeId)
+      return
+    }
+    this.remember(node)
+  }
+
+  /** `nodeId` left the document, with whatever was under it. */
+  remove(nodeId: string): void {
+    this.byNode.delete(nodeId)
+  }
+
+  status(manager: FontManager = fontManager): DocumentFontStatus {
+    const uses = new Map<string, MutableFontFaceUse>()
+    for (const [nodeId, { name, faces }] of this.byNode) {
+      // A layer deleted under a deleted ancestor reported nothing itself; it is skipped here.
+      if (!this.graph.getNode(nodeId)) continue
+      for (const { family, style } of faces) {
+        const key = faceKey(family, style)
+        const use = uses.get(key) ?? {
+          family,
+          style,
+          nodeIds: new Set<string>(),
+          nodeNames: new Set<string>()
+        }
+        use.nodeIds.add(nodeId)
+        use.nodeNames.add(name)
+        uses.set(key, use)
+      }
+    }
+    const faces = [...uses.values()]
+      .map((use) => faceStatus(use, manager))
+      .sort((a, b) => a.family.localeCompare(b.family) || a.style.localeCompare(b.style))
+    const issues = faces.filter((face) => face.status !== 'available')
+    return { faithful: issues.length === 0, faces, issues }
+  }
+
+  private remember(node: SceneNode): void {
+    this.byNode.set(node.id, { name: node.name, faces: collectNodeFontFaces(node) })
+  }
+
+  private underRoots(nodeId: string): boolean {
+    let current: string | null = nodeId
+    while (current) {
+      if (this.roots.includes(current)) return true
+      current = this.graph.getNode(current)?.parentId ?? null
+    }
+    return false
+  }
 }
 
 function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFontFaceStatus {
@@ -111,10 +168,5 @@ export function documentFontStatus(
   rootIds: string | readonly string[],
   manager: FontManager = fontManager
 ): DocumentFontStatus {
-  const roots = typeof rootIds === 'string' ? [rootIds] : rootIds
-  const faces = collectFaceUses(graph, roots)
-    .map((use) => faceStatus(use, manager))
-    .sort((a, b) => a.family.localeCompare(b.family) || a.style.localeCompare(b.style))
-  const issues = faces.filter((face) => face.status !== 'available')
-  return { faithful: issues.length === 0, faces, issues }
+  return new DocumentFontUses(graph, rootIds).status(manager)
 }
