@@ -540,12 +540,26 @@ describe('a stroke over fills SVG cannot all draw', () => {
       graph.createNode('RECTANGLE', pageId, {
         width: 10,
         height: 10,
-        fills: [solid(1, 0, 0, 1, 1), noise],
+        fills: [solid(1, 0, 0, 1, 1), solid(0, 0, 1, 1, 1), noise],
+        strokes: [stroke]
+      }).id
+    ])
+    expect(rects(svg)).toHaveLength(2)
+    expect(rects(svg)[0]).not.toContain('stroke=')
+    expect(rects(svg)[1]).toContain('fill="#0000FF"')
+    expect(rects(svg)[1]).toContain('stroke="#000000"')
+  })
+
+  test('draws alone on a shape with no fill SVG draws', () => {
+    const svg = svgOf((graph, pageId) => [
+      graph.createNode('RECTANGLE', pageId, {
+        width: 10,
+        height: 10,
+        fills: [noise, noise],
         strokes: [stroke]
       }).id
     ])
     expect(rects(svg)).toHaveLength(1)
-    expect(rects(svg)[0]).toContain('fill="#FF0000"')
     expect(rects(svg)[0]).toContain('stroke="#000000"')
   })
 

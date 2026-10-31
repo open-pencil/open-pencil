@@ -31,12 +31,16 @@ describe("an instance's own name", () => {
     const graph = new SceneGraph()
     const pageId = graph.getPages()[0].id
     const component = graph.createNode('COMPONENT', pageId, { name: 'Component' })
+    // The component's record GUID, which is the instance's own path.
+    component.source.id = '7:7'
     const plain = graph.createInstance(component.id, pageId)
     const renamed = graph.createInstance(component.id, pageId, { name: 'Lazy instance' })
     if (!plain || !renamed) throw new Error('Missing instances')
 
     expect(ownOverrides(graph, plain)).toEqual([])
-    expect(ownOverrides(graph, renamed).map((override) => override.name)).toEqual(['Lazy instance'])
+    expect(ownOverrides(graph, renamed)).toEqual([
+      { guidPath: { guids: [{ sessionID: 7, localID: 7 }] }, name: 'Lazy instance' }
+    ])
   })
 
   // Without a name of its own, Figma names a variant's instance after the variant set.
