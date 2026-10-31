@@ -19,7 +19,7 @@ import {
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
 
-import { diffFields, type FieldChanges } from './diff'
+import { diffFields, fieldsDiffer, type FieldChanges } from './diff'
 
 type Side = 'before' | 'after'
 
@@ -372,6 +372,21 @@ export function documentChangeFromCheckpoint(
   }
   const ids = [...checkpoint.nodes.keys(), ...created]
   return buildDocumentChange(graph, pageId, ids, previous, created, records)
+}
+
+/**
+ * How many layers `checkpoint` saw reported whose own fields now differ, children, parent, and
+ * source metadata aside: the layers whose content an undo step would hold. A write of the value a
+ * layer already had is not counted.
+ */
+export function countChangedLayers(graph: SceneGraph, checkpoint: TouchedCheckpoint): number {
+  let count = 0
+  for (const id of checkpoint.reported) {
+    const previous = checkpoint.nodes.get(id)
+    const current = graph.getNode(id)
+    if (!previous || !current || fieldsDiffer(previous, current, NESTED_FIELDS)) count++
+  }
+  return count
 }
 
 export function isEmptyDocumentChange(change: DocumentChange): boolean {

@@ -424,6 +424,22 @@ describe('atomic agent tools', () => {
     expect(undo.canUndo).toBe(false)
   })
 
+  test('writing the values layers already have does not count toward the limit', () => {
+    const { graph, figma, editor, undo, tool } = setup()
+    const ids = Array.from(
+      { length: 10_001 },
+      () => graph.createNode('RECTANGLE', figma.currentPage.id).id
+    )
+    const def: ToolDef = {
+      ...tool('set_opacity'),
+      execute: () => {
+        for (const id of ids) graph.updateNode(id, { opacity: 1 })
+      }
+    }
+    expect(() => executeAtomicTool(editor, figma, def, {})).not.toThrow()
+    expect(undo.canUndo).toBe(false)
+  })
+
   test('binding a paint colour on a layer bound to the whole list keeps that binding on undo and rollback', () => {
     const { graph, figma, editor, undo, rectangle, tool } = setup()
     const collection = graph.createCollection('Colors')

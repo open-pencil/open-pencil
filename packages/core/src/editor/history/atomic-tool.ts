@@ -9,13 +9,17 @@ import { isAtomicTool, type ToolDef } from '#core/tools/schema'
 
 import {
   applyDocumentChange,
+  countChangedLayers,
   documentChangeFromCheckpoint,
   emptyDocumentChange,
   recordChanges,
   type DocumentChange
 } from './document-change'
 
-/** The most layers one atomic edit may change; layout that follows it is not counted. */
+/**
+ * The most layers one atomic edit may change. Layout that follows it is not counted, and neither
+ * is a write of the value a layer already had.
+ */
 const MAX_ATOMIC_CHANGED_LAYERS = 10_000
 
 type MutationEditor = Pick<
@@ -83,7 +87,7 @@ export function executeAtomicTool(
       throw new Error(String(result.error))
     }
     checkpoint.assertPropertiesOnly()
-    const changed = checkpoint.reported.size
+    const changed = countChangedLayers(graph, checkpoint)
     if (changed > MAX_ATOMIC_CHANGED_LAYERS) {
       throw new Error(
         `This edit changes ${changed} layers; one atomic agent edit may change at most ${MAX_ATOMIC_CHANGED_LAYERS}. Change fewer layers per call.`

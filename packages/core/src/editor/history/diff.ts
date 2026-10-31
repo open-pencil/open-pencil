@@ -9,6 +9,21 @@ export interface FieldChanges<T> {
   absent: Record<'before' | 'after', (keyof T)[]>
 }
 
+/** Whether two states of one record differ in any field outside `skip`, without copying values. */
+export function fieldsDiffer<T extends object>(
+  previous: T,
+  current: T,
+  skip: ReadonlySet<keyof T> = new Set()
+): boolean {
+  const keys = new Set([...Object.keys(previous), ...Object.keys(current)] as (keyof T)[])
+  for (const key of keys) {
+    if (skip.has(key)) continue
+    if (Object.hasOwn(previous, key) !== Object.hasOwn(current, key)) return true
+    if (!isEqual(previous[key], current[key])) return true
+  }
+  return false
+}
+
 /** Compares two states of one record field by field; `null` when nothing differs. */
 export function diffFields<T extends object>(
   id: string,

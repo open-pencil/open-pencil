@@ -242,7 +242,7 @@ describe('document changes', () => {
   })
 
   test('a layer deleted and created again with its id is undone as updated', () => {
-    const { editor, pageId, badge } = setup()
+    const { editor, pageId, card, title, badge } = setup()
     const finish = captureDocumentChange(editor.graph, pageId)
     editor.graph.deleteNode(badge.id)
     editor.graph.createNodeWithId(badge.id, 'RECTANGLE', pageId, { opacity: 0.5 })
@@ -251,6 +251,8 @@ describe('document changes', () => {
     expect(change.updated.map((update) => update.id)).toContain(badge.id)
     editor.restoreDocumentChange(change, 'before')
     expect(editor.graph.getNode(badge.id)?.opacity).toBe(1)
+    expect(editor.graph.getNode(badge.id)?.parentId).toBe(card.id)
+    expect(editor.graph.getNode(card.id)?.childIds).toEqual([title.id, badge.id])
   })
 
   test('comments are never part of a change, and undo leaves them as they are', () => {
