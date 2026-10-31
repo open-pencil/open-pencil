@@ -167,3 +167,54 @@ html[data-theme='light'] {
   --v-charts-tooltip-foreground: var(--color-surface);
   --v-charts-label-foreground: var(--color-surface);
 }
+
+/* Explicit chrome islands keep interface sizing separate from artwork.
+ * Inline theme values resolve in the consuming element, including body portals. */
+@theme inline {
+  --spacing: calc(0.25rem * var(--interface-scale, 1));
+  --text-base: calc(1rem * var(--interface-scale, 1));
+  --text-xs: calc(0.75rem * var(--interface-scale, 1));
+  --text-sm: calc(0.875rem * var(--interface-scale, 1));
+  --text-interface-xs: calc(11px * var(--interface-scale, 1));
+}
+
+html[data-interface-scale='100'] {
+  --interface-preference-scale: 1;
+}
+html[data-interface-scale='110'] {
+  --interface-preference-scale: 1.1;
+}
+html[data-interface-scale='125'] {
+  --interface-preference-scale: 1.25;
+}
+html[data-interface-scale='150'] {
+  --interface-preference-scale: 1.5;
+}
+
+@utility interface-chrome {
+  --interface-scale: var(--interface-preference-scale, 1);
+  font-size: calc(13px * var(--interface-scale));
+}
+
+/* Existing compact pixel-size labels on chrome roots and descendants follow the spacing scale.
+ * Authored content outside chrome keeps its own typography. */
+.interface-chrome:where(.text-\[8px\]),
+.interface-chrome :where(.text-\[8px\]) {
+  font-size: calc(8px * var(--interface-scale, 1));
+}
+.interface-chrome:where(.text-\[9px\]),
+.interface-chrome :where(.text-\[9px\]) {
+  font-size: calc(9px * var(--interface-scale, 1));
+}
+.interface-chrome:where(.text-\[10px\]),
+.interface-chrome :where(.text-\[10px\]) {
+  font-size: calc(10px * var(--interface-scale, 1));
+}
+.interface-chrome:where(.text-\[11px\]),
+.interface-chrome :where(.text-\[11px\]) {
+  font-size: calc(11px * var(--interface-scale, 1));
+}
+.interface-chrome:where(.text-\[13px\]),
+.interface-chrome :where(.text-\[13px\]) {
+  font-size: calc(13px * var(--interface-scale, 1));
+}

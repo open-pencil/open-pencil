@@ -48,11 +48,11 @@ defineSlots<{
 <template>
   <div
     data-canvas-obstacle
-    class="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center"
+    class="interface-chrome absolute bottom-4 left-1/2 z-10 flex max-w-full -translate-x-1/2 items-center"
   >
     <ToolbarRoot
       data-test-id="toolbar"
-      class="flex gap-0.5 rounded-xl bg-panel p-1 shadow-[0_8px_30px_rgb(0_0_0/0.4)]"
+      class="flex gap-0.5 overflow-x-auto rounded-xl bg-panel p-1 shadow-[0_8px_30px_rgb(0_0_0/0.4)] [&>*]:shrink-0"
     >
       <template v-for="item in items" :key="item.kind === 'tool' ? item.tool.key : item.action">
         <slot v-if="item.kind === 'action'" name="action" :action="item.action" />
