@@ -1,8 +1,8 @@
+import { createNodeEditPaints } from '#core/canvas/node-edit-overlay'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   DEFAULT_FONT_SIZE,
   PARENT_OUTLINE_ALPHA,
-  PARENT_OUTLINE_DASH,
   PEN_PATH_STROKE_WIDTH,
   RULER_BG_COLOR,
   RULER_TEXT_COLOR,
@@ -26,18 +26,10 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.selectionPaint.setStrokeWidth(1)
   r.selectionPaint.setAntiAlias(true)
 
-  r.parentOutlinePaint = new ck.Paint()
-  r.parentOutlinePaint.setStyle(ck.PaintStyle.Stroke)
-  r.parentOutlinePaint.setStrokeWidth(1)
-  r.parentOutlinePaint.setAntiAlias(true)
-  r.parentOutlinePaint.setPathEffect(
-    ck.PathEffect.MakeDash([PARENT_OUTLINE_DASH, PARENT_OUTLINE_DASH], 0)
-  )
-
   r.snapPaint = new ck.Paint()
   r.snapPaint.setStyle(ck.PaintStyle.Stroke)
   r.snapPaint.setStrokeWidth(1)
-  r.snapPaint.setColor(ck.Color4f(SNAP_COLOR.r, SNAP_COLOR.g, SNAP_COLOR.b, 1))
+  r.snapPaint.setColorComponents(SNAP_COLOR.r, SNAP_COLOR.g, SNAP_COLOR.b, 1)
   r.snapPaint.setAntiAlias(true)
 
   r.auxFill = new ck.Paint()
@@ -54,7 +46,7 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
 
   const bg = RULER_BG_COLOR
   r.rulerBgPaint = new ck.Paint()
-  r.rulerBgPaint.setColor(ck.Color4f(bg.r, bg.g, bg.b, 1))
+  r.rulerBgPaint.setColorComponents(bg.r, bg.g, bg.b, 1)
 
   r.rulerTickPaint = new ck.Paint()
   r.rulerTickPaint.setColor(
@@ -65,7 +57,7 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
 
   const tc = RULER_TEXT_COLOR
   r.rulerTextPaint = new ck.Paint()
-  r.rulerTextPaint.setColor(ck.Color4f(tc.r, tc.g, tc.b, 1))
+  r.rulerTextPaint.setColorComponents(tc.r, tc.g, tc.b, 1)
   r.rulerTextPaint.setAntiAlias(true)
 
   r.rulerHlPaint = new ck.Paint()
@@ -75,19 +67,19 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.rulerBadgePaint.setAntiAlias(true)
 
   r.rulerLabelPaint = new ck.Paint()
-  r.rulerLabelPaint.setColor(ck.Color4f(1, 1, 1, 1))
+  r.rulerLabelPaint.setColorComponents(1, 1, 1, 1)
   r.rulerLabelPaint.setAntiAlias(true)
 
   r.penPathPaint = new ck.Paint()
   r.penPathPaint.setStyle(ck.PaintStyle.Stroke)
   r.penPathPaint.setStrokeWidth(1)
-  r.penPathPaint.setColor(ck.Color4f(0.698, 0.698, 0.698, 1))
+  r.penPathPaint.setColorComponents(0.698, 0.698, 0.698, 1)
   r.penPathPaint.setAntiAlias(true)
 
   r.penLiveStrokePaint = new ck.Paint()
   r.penLiveStrokePaint.setStyle(ck.PaintStyle.Stroke)
   r.penLiveStrokePaint.setStrokeWidth(PEN_PATH_STROKE_WIDTH)
-  r.penLiveStrokePaint.setColor(ck.Color4f(0, 0, 0, 1))
+  r.penLiveStrokePaint.setColorComponents(0, 0, 0, 1)
   r.penLiveStrokePaint.setAntiAlias(true)
 
   r.pencilStrokePaint = new ck.Paint()
@@ -111,13 +103,25 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.penVertexStroke.setStrokeWidth(1)
   r.penVertexStroke.setAntiAlias(true)
 
+  r.nodeEditPaints = createNodeEditPaints(ck)
+
   initializeSelectionPaintColors(r)
 }
 
 /** Colors the long-lived paints drawn in the selection color; rerun when that color changes. */
 export function initializeSelectionPaintColors(r: SkiaRenderer): void {
   r.selectionPaint.setColor(r.selColor())
-  r.parentOutlinePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
   r.penHandlePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
   r.penVertexStroke.setColor(r.selColor())
+}
+
+/** Colours the ruler paints from the ruler theme, or the defaults without one. */
+export function initializeRulerPaintColors(r: SkiaRenderer): void {
+  const theme = r.rulerTheme
+  const background = theme?.background ?? { ...RULER_BG_COLOR, a: 1 }
+  const tick = theme?.tick ?? { ...RULER_TICK_COLOR, a: 1 }
+  const text = theme?.text ?? { ...RULER_TEXT_COLOR, a: 1 }
+  r.rulerBgPaint.setColorComponents(background.r, background.g, background.b, background.a)
+  r.rulerTickPaint.setColorComponents(tick.r, tick.g, tick.b, tick.a)
+  r.rulerTextPaint.setColorComponents(text.r, text.g, text.b, text.a)
 }

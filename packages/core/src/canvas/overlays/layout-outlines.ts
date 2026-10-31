@@ -4,7 +4,9 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { LAYOUT_OUTLINE_DASH, LAYOUT_OUTLINE_GAP } from '#core/constants'
-import { createSceneGeometry, type RotationPreview } from '#core/geometry'
+import { type RotationPreview } from '#core/geometry'
+
+import { dashEffect } from './outline'
 
 function isFlowLayout(node: SceneNode | undefined): node is SceneNode {
   return node?.layoutMode === 'HORIZONTAL' || node?.layoutMode === 'VERTICAL'
@@ -26,12 +28,8 @@ export function strokeLayoutOutlines(
   preview?: RotationPreview | null
 ): void {
   if (nodes.length === 0) return
-  const geometry = createSceneGeometry(graph, preview)
-  // MakeDash allocates a WASM PathEffect the JS GC won't reclaim; free it after drawing.
-  const dash = r.ck.PathEffect.MakeDash(
-    [LAYOUT_OUTLINE_DASH / r.zoom, LAYOUT_OUTLINE_GAP / r.zoom],
-    0
-  )
+  const geometry = r.sceneGeometry(graph, preview)
+  const dash = dashEffect(r, LAYOUT_OUTLINE_DASH / r.zoom, LAYOUT_OUTLINE_GAP / r.zoom)
   r.auxStroke.setStrokeWidth(1 / r.zoom)
   r.auxStroke.setColor(r.outlineColor(container, graph))
   r.auxStroke.setPathEffect(dash)
@@ -44,7 +42,6 @@ export function strokeLayoutOutlines(
     }
   } finally {
     r.auxStroke.setPathEffect(null)
-    dash.delete()
   }
 }
 

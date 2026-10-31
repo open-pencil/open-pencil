@@ -41,7 +41,6 @@ test('long-lived selection paints and text follow a new selection theme', () => 
     const expected = rgb(ck.Color4f(r, g, b, 1))
     for (const paint of [
       renderer.selectionPaint,
-      renderer.parentOutlinePaint,
       renderer.penHandlePaint,
       renderer.penVertexStroke
     ]) {
@@ -58,5 +57,18 @@ test('an unset theme returns to the default', () => {
     renderer.setSelectionTheme(undefined)
     expect(renderer.selectionTheme).toEqual(DEFAULT_SELECTION_THEME)
     expect(rgb(renderer.selectionPaint.getColor())).toEqual(rgb(renderer.selColor()))
+  })
+})
+
+test('chrome colours are allocated once per theme and again after it changes', () => {
+  withRenderer((renderer) => {
+    const blue = renderer.selColor()
+    expect(renderer.selColor()).toBe(blue)
+    expect(renderer.selColor(0.5)).not.toBe(blue)
+    expect(renderer.selColor(0.5)).toBe(renderer.selColor(0.5))
+    renderer.setSelectionTheme(GREEN_THEME)
+    const green = renderer.selColor()
+    expect(green).not.toBe(blue)
+    expect(rgb(green)).toEqual(rgb(ck.Color4f(0.08, 0.5, 0.24, 1)))
   })
 })

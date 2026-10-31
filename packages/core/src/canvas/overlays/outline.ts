@@ -1,9 +1,29 @@
-import type { Canvas, Color, Paint } from 'canvaskit-wasm'
+import type { Canvas, Color, Paint, PathEffect } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { createSceneGeometry, type RotationPreview } from '#core/geometry'
+import type { RotationPreview, SceneGeometry } from '#core/geometry'
+
+/** Dashes drawn each frame, by their on and off lengths at the zoom they were made for. */
+const MAX_CACHED_DASHES = 32
+
+export type DashEffectCache = ResourceCache<string, PathEffect>
+
+export function createDashEffectCache(): DashEffectCache {
+  return new ResourceCache({ maxEntries: MAX_CACHED_DASHES, dispose: (effect) => effect.delete() })
+}
+
+/** A dash of `on` and `off` lengths, kept between frames; the paint it goes on borrows it. */
+export function dashEffect(r: SkiaRenderer, on: number, off: number, phase = 0): PathEffect {
+  const key = `${on},${off},${phase}`
+  const cached = r.dashEffects.get(key)
+  if (cached) return cached
+  const effect = r.ck.PathEffect.MakeDash([on, off], phase)
+  r.dashEffects.set(key, effect)
+  return effect
+}
 
 /** An outline sized in screen pixels, so it looks the same at every zoom. */
 export interface ScreenStroke {
@@ -17,25 +37,22 @@ export interface ScreenStroke {
 /**
  * Draw with the shared stroke paint set to `stroke` at the live zoom. Editor chrome draws this
  * way, every frame, in the overlay pass: the scene is cached and scaled while navigating, so
- * anything sized by the zoom must not be drawn there. The paint is reset and the dash freed
- * afterwards, since the paint is shared and a dash is native memory.
+ * anything sized by the zoom must not be drawn there. The paint is reset afterwards, since it is
+ * shared; the dash comes from the renderer's cache, so a frame makes none.
  */
 export function withScreenStroke(
   r: SkiaRenderer,
   stroke: ScreenStroke,
   draw: (paint: Paint) => void
 ): void {
-  const dash = stroke.dash
-    ? r.ck.PathEffect.MakeDash([stroke.dash[0] / r.zoom, stroke.dash[1] / r.zoom], 0)
-    : null
+  const dash = stroke.dash ? dashEffect(r, stroke.dash[0] / r.zoom, stroke.dash[1] / r.zoom) : null
   r.auxStroke.setStrokeWidth((stroke.width ?? 1) / r.zoom)
   r.auxStroke.setColor(stroke.color)
-  r.auxStroke.setPathEffect(dash)
+  if (dash) r.auxStroke.setPathEffect(dash)
   try {
     draw(r.auxStroke)
   } finally {
-    r.auxStroke.setPathEffect(null)
-    dash?.delete()
+    if (dash) r.auxStroke.setPathEffect(null)
   }
 }
 
@@ -43,7 +60,7 @@ export function withScreenStroke(
 export function inNodeSpace(
   r: SkiaRenderer,
   canvas: Canvas,
-  geometry: ReturnType<typeof createSceneGeometry>,
+  geometry: SceneGeometry,
   node: SceneNode,
   draw: () => void
 ): void {
@@ -67,9 +84,9 @@ export function outlineNode(
 ): void {
   const node = nodeId ? graph.getNode(nodeId) : undefined
   if (!node) return
-  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () =>
+  inNodeSpace(r, canvas, r.sceneGeometry(graph, preview), node, () =>
     withScreenStroke(r, stroke, (paint) =>
-      canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
+      canvas.drawRect(r.ltrb(0, 0, node.width, node.height), paint)
     )
   )
 }

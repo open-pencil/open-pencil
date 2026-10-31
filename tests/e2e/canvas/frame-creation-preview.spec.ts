@@ -45,6 +45,8 @@ async function probeCreation(page: Page) {
     if (!store || !element) throw new Error('Editor unavailable')
     const renderer = store.canvasRenderers.find((r) => r.tracksSceneSettlement)
     if (!renderer) throw new Error('Scene renderer unavailable')
+    // The retained renderer keeps its backing through the gesture; tiles keep their coverage.
+    const tiled = renderer.tiledSceneEnabled
     const backing = renderer.sceneBacking
     let committed = 0
     let pointerId: number | undefined
@@ -65,8 +67,8 @@ async function probeCreation(page: Page) {
           version: store.state.sceneVersion,
           committed,
           interactive: store.isInteractiveEditing(),
-          hasBacking: backing !== null,
-          sameBacking: renderer.sceneBacking === backing,
+          hasBacking: tiled ? renderer.tiledSceneCovered : backing !== null,
+          sameBacking: tiled ? renderer.tiledSceneCovered : renderer.sceneBacking === backing,
           batching: store.undo.isBatching
         }
       },

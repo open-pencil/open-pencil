@@ -1,7 +1,8 @@
 import type { ImageFilter, MaskFilter, Canvas, Paint, Path } from 'canvaskit-wasm'
 
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import * as Effects from '#core/canvas/effects'
@@ -9,7 +10,6 @@ import * as Fills from '#core/canvas/fills'
 import * as Labels from '#core/canvas/labels/draw'
 import * as NodeEditOverlay from '#core/canvas/node-edit-overlay'
 import * as Overlays from '#core/canvas/overlays'
-import * as AIOverlays from '#core/canvas/overlays/ai'
 import * as PenOverlay from '#core/canvas/pen-overlay'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
@@ -105,10 +105,6 @@ const rendererMethods = {
     Overlays.drawGroupBounds(this, canvas, nodes, graph, preview)
   },
 
-  getRotatedCorners(n: SceneNode, abs: Vector): Vector[] {
-    return Overlays.getRotatedCorners(this, n, abs)
-  },
-
   drawHandle(canvas: Canvas, x: number, y: number): void {
     Overlays.drawHandle(this, canvas, x, y)
   },
@@ -127,7 +123,6 @@ const rendererMethods = {
 
   drawFlashes(canvas: Canvas, graph: SceneGraph): void {
     Overlays.drawFlashes(this, canvas, graph)
-    AIOverlays.drawAIOverlays(this, canvas, graph)
   },
 
   drawLayoutInsertIndicator(
@@ -211,18 +206,9 @@ const rendererMethods = {
     overlays: RenderOverlays,
     parentAbsX?: number,
     parentAbsY?: number,
-    hasTransformedAncestor?: boolean
+    frame?: Mat3 | null
   ): void {
-    SceneRender.renderNode(
-      this,
-      canvas,
-      graph,
-      nodeId,
-      overlays,
-      parentAbsX,
-      parentAbsY,
-      hasTransformedAncestor
-    )
+    SceneRender.renderNode(this, canvas, graph, nodeId, overlays, parentAbsX, parentAbsY, frame)
   },
 
   renderSection(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
@@ -330,19 +316,24 @@ const rendererMethods = {
     return Shapes.getStrokeGeometry(this, node)
   },
 
-  getCachedDropShadow(dx: number, dy: number, sigma: number, color: Float32Array): ImageFilter {
+  getCachedDropShadow(
+    dx: number,
+    dy: number,
+    sigma: number,
+    color: Float32Array
+  ): ImageFilter | null {
     return Effects.getCachedDropShadow(this, dx, dy, sigma, color)
   },
 
-  getCachedBlur(sigma: number): ImageFilter {
+  getCachedBlur(sigma: number): ImageFilter | null {
     return Effects.getCachedBlur(this, sigma)
   },
 
-  getCachedDecalBlur(sigma: number): ImageFilter {
+  getCachedDecalBlur(sigma: number): ImageFilter | null {
     return Effects.getCachedDecalBlur(this, sigma)
   },
 
-  getCachedMaskBlur(sigma: number): MaskFilter {
+  getCachedMaskBlur(sigma: number): MaskFilter | null {
     return Effects.getCachedMaskBlur(this, sigma)
   },
 

@@ -179,7 +179,7 @@ export function drawPencilOverlay(
   for (const point of rest) path.lineTo(point.x * r.zoom + r.panX, point.y * r.zoom + r.panY)
   const { color, weight } = pencilState.preview
   const paint = r.pencilStrokePaint
-  paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  paint.setColorComponents(color.r, color.g, color.b, color.a)
   paint.setStrokeWidth(weight * r.zoom)
   const stroke = path.detachAndDelete()
   canvas.drawPath(stroke, paint)

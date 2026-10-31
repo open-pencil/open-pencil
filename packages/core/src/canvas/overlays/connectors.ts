@@ -12,7 +12,6 @@ import {
   CONNECTOR_SEGMENT_HANDLE,
   connectorRouteHandles,
   connectorScreenEnds,
-  createSceneGeometry,
   viewportMatrix,
   type RotationPreview
 } from '#core/geometry'
@@ -36,7 +35,7 @@ function strokeConnectorLine(
   // Traced as drawn, its elbows rounded.
   const paths = vectorNetworkToPath(r.ck, line.vectorNetwork, line.cornerRadius)
   canvas.save()
-  canvas.concat(createSceneGeometry(graph, preview).screenMatrix(line, r))
+  canvas.concat(r.sceneGeometry(graph, preview).screenMatrix(line, r))
   for (const path of paths) {
     canvas.drawPath(path, paint)
     path.delete()

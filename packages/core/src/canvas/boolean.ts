@@ -9,8 +9,15 @@ import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
+import { clearFillShader } from './fills'
 import { sharedPath } from './paths/shared'
 import type { SkiaRenderer } from './renderer'
+import {
+  configureStrokePaint,
+  forVisibleStrokes,
+  normalizeDashPattern,
+  withStrokeDash
+} from './strokes'
 import { makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines'
 
@@ -498,18 +505,18 @@ export function paintBooleanOperation(
       try {
         canvas.drawPath(path, r.fillPaint)
       } finally {
-        r.fillPaint.setShader(null)
+        clearFillShader(r)
       }
     }
     between?.()
 
-    for (const stroke of node.strokes) {
-      if (!stroke.visible) continue
-      const color = r.resolveStrokeColor(stroke, 0, node, graph)
-      r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-      r.strokePaint.setAlphaf(stroke.opacity)
-      drawAlignedStroke(r, canvas, path, stroke)
-    }
+    // Each stroke resolves its own binding and shader, with its cap, join, and dash, as a shape's.
+    forVisibleStrokes(r, node, graph, (stroke, color) => {
+      configureStrokePaint(r, node, stroke, color)
+      withStrokeDash(r, normalizeDashPattern(stroke.dashPattern), 0, () =>
+        drawAlignedStroke(r, canvas, path, stroke)
+      )
+    })
   } finally {
     path.delete()
   }

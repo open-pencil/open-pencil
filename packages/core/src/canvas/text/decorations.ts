@@ -304,7 +304,7 @@ export function drawTextDecorations(
       if (fill?.type === 'SOLID') {
         const { r: red, g, b, a } = resolveRGBAForPreview(fill.color).color
         paint.setShader(null)
-        paint.setColor(ck.Color4f(red, g, b, a * fill.opacity))
+        paint.setColorComponents(red, g, b, a * fill.opacity)
       }
       if (rect.style === 'DOTTED') drawDots(canvas, rect, paint)
       else if (rect.style === 'WAVY') drawWave(ck, canvas, rect, paint)
