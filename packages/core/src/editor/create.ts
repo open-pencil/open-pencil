@@ -73,6 +73,7 @@ import type {
   EditorState
 } from './types'
 import { createUndoActions } from './undo'
+import { createLibraryCollectionActions } from './variable-libraries'
 import { createVariableActions } from './variables'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
@@ -505,6 +506,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Variables
     ...variables,
+    ...createLibraryCollectionActions(ctx),
     ...designTokens,
 
     // Text editing

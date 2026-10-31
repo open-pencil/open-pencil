@@ -107,6 +107,7 @@
   "importDesignTokens": "导入设计令牌",
   "libraryCollection": "库",
   "libraryCollectionHint": "从库中复制。编辑会保存在此文件中，并显示在 Figma 里。",
+  "makeCollectionLocal": "设为本地",
   "addedToLibraryCollection": "在这里添加。Figma 不会显示添加到库集合中的变量。",
   "importTokensDescription": "选择每个集合和模式导入到哪里。同名变量会被更新，不会删除任何内容。",
   "importNewCollection": "新集合",
