@@ -114,7 +114,19 @@ describe('vector edit graph ownership', () => {
     const editor = createEditor()
     const page = expectDefined(editor.graph.getPages()[0])
     const fillGeometry = regenerateFillGeometry(NETWORK, [
-      { windingRule: 'NONZERO', commandsBlob: new Uint8Array() }
+      {
+        windingRule: 'NONZERO',
+        commandsBlob: new Uint8Array(),
+        fills: [
+          {
+            type: 'SOLID',
+            color: { r: 1, g: 0.4, b: 0, a: 1 },
+            visible: true,
+            opacity: 1,
+            blendMode: 'NORMAL'
+          }
+        ]
+      }
     ])
     const vector = editor.graph.createNode('VECTOR', page.id, {
       width: 100,

@@ -1,7 +1,6 @@
 import type { Editor } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
-import { vectorNetworksEqual } from '@open-pencil/scene-graph/vector-network'
+import { cloneVectorNetwork, vectorNetworksEqual } from '@open-pencil/scene-graph/vector-network'
 
 import type { NodeEditState, VectorEditState } from './types'
 

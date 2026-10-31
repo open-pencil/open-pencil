@@ -23,10 +23,9 @@ import type {
   LayoutGrid,
   SceneNode,
   Stroke,
-  StyleRun,
-  VectorNetwork,
-  VectorRegion
+  StyleRun
 } from './types'
+import { cloneVectorNetwork } from './vector-network'
 
 // --- Individual copy functions ---
 
@@ -115,32 +114,17 @@ export function copyStyleRuns(runs: StyleRun[]): StyleRun[] {
   return runs.map(copyStyleRun)
 }
 
-/** A region, with new loops when given, keeping its own paints and fill style. */
-export function copyVectorRegion(
-  region: VectorRegion,
-  loops = region.loops.map((loop) => [...loop])
-): VectorRegion {
-  const copy: VectorRegion = { windingRule: region.windingRule, loops }
-  if (region.fills) copy.fills = copyFills(region.fills)
-  if (region.fillStyleId) copy.fillStyleId = region.fillStyleId
-  return copy
-}
-
-/** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */
-export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
+/** Keep path-level fills across copy/scale/transform (resize snapshots). */
+function withPathPaintMeta(path: GeometryPath, commandsBlob: Uint8Array): GeometryPath {
   return {
-    vertices: vn.vertices.map((v) => ({ ...v })),
-    segments: vn.segments.map((s) => ({
-      ...s,
-      tangentStart: { ...s.tangentStart },
-      tangentEnd: { ...s.tangentEnd }
-    })),
-    regions: vn.regions.map((r) => copyVectorRegion(r))
+    windingRule: path.windingRule,
+    commandsBlob,
+    ...(path.fills ? { fills: copyFills(path.fills) } : {})
   }
 }
 
 export function copyGeometryPaths(paths: GeometryPath[]): GeometryPath[] {
-  return paths.map((p) => ({ windingRule: p.windingRule, commandsBlob: p.commandsBlob.slice() }))
+  return paths.map((p) => withPathPaintMeta(p, p.commandsBlob.slice()))
 }
 
 /**
@@ -186,10 +170,9 @@ export function transformGeometryPaths(
   tx = 0,
   ty = 0
 ): GeometryPath[] {
-  return paths.map((g) => ({
-    windingRule: g.windingRule,
-    commandsBlob: transformGeometryBlob(g.commandsBlob, m00, m01, m10, m11, tx, ty)
-  }))
+  return paths.map((g) =>
+    withPathPaintMeta(g, transformGeometryBlob(g.commandsBlob, m00, m01, m10, m11, tx, ty))
+  )
 }
 
 /**

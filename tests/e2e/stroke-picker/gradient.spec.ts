@@ -15,7 +15,7 @@ async function selectedStroke(page: Page) {
 /** Until the stroke panel opened the fill picker, a stroke could only ever be one flat color. */
 test('a stroke can be made a gradient and taken back to solid', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/')
+  await page.goto('/?test')
   await canvas.waitForInit()
 
   await canvas.drawRect(120, 120, 180, 120)

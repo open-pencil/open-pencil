@@ -1,0 +1,5 @@
+- Large pages record faster: a layer costs fewer renderer calls, a chunk clips to its frames with one call, and a boolean operation keeps its result between draws.
+- Adding, removing, or moving a layer on a large page no longer re-renders the whole page: only the tiles it touched render again.
+- Selection chrome, rulers, labels, and issue markers draw with fewer calls per frame: outlines, dashes, colours, and label widths are kept between frames and the rulers' ticks draw as one batch.
+- Pages with thousands of text layers draw and record faster: shaped text stays prepared across frames, a text's fonts are checked once per frame, and emoji share the text's paragraph.
+- Typing into a page of tens of thousands of layers no longer stalls at every keystroke: the font status follows the edited layer instead of walking the page, and the page's coarse copies rebuild once the edit pauses.

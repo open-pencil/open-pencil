@@ -48,11 +48,13 @@ function createHarness() {
     },
     fillPaint: {
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setShader: mock(() => undefined)
     },
     strokePaint: {
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setStrokeWidth: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setStrokeCap: mock(() => undefined),
@@ -105,7 +107,7 @@ describe('drawArrowHeads', () => {
     expect(corners[0][1]).toBeCloseTo(5 - 10 / SQRT3, 5)
     expect(corners[1][0]).toBeCloseTo(0, 5)
     expect(corners[1][1]).toBeCloseTo(5 + 10 / SQRT3, 5)
-    expect(harness.renderer.fillPaint.setColor).toHaveBeenCalledWith(['color', 0.1, 0.2, 0.3, 1])
+    expect(harness.renderer.fillPaint.setColorComponents).toHaveBeenCalledWith(0.1, 0.2, 0.3, 1)
     expect(harness.renderer.fillPaint.setAlphaf).toHaveBeenCalledWith(0.8)
     expect(harness.drawPath).toHaveBeenCalledWith(harness.detached, harness.renderer.fillPaint)
     expect(harness.detached.delete).toHaveBeenCalled()

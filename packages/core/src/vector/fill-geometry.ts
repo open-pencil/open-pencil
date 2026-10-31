@@ -42,8 +42,11 @@ class GeometryBlobBuilder implements PathSink {
 }
 
 /**
- * Rebuild fillGeometry from a (possibly edited) VectorNetwork: one outline per region, in region
- * order, or one for the open chain of a network without regions. Paints stay on the regions.
+ * Rebuild fillGeometry command blobs from a (possibly edited) VectorNetwork so
+ * fills follow network edits. Imported .fig vectors pair fillGeometry entries
+ * with network regions positionally (fillGeometry[i] ↔ regions[i]); per-path
+ * fills are preserved. Networks without regions (open chains) map to a
+ * single fillGeometry entry.
  */
 export function regenerateFillGeometry(
   network: VectorNetwork,
@@ -51,6 +54,26 @@ export function regenerateFillGeometry(
 ): GeometryPath[] {
   if (existing.length === 0) return existing
   const { vertices, segments, regions } = network
+
+  if (regions.length === existing.length) {
+    return existing.map((g, i) => {
+      const region = regions[i]
+      const builder = new GeometryBlobBuilder()
+      for (const loop of region.loops) addLoopToPath(builder, loop, segments, vertices)
+      return { ...g, windingRule: region.windingRule, commandsBlob: builder.toBlob() }
+    })
+  }
+
+  if (regions.length === 0 && existing.length === 1) {
+    const builder = new GeometryBlobBuilder()
+    addOpenSegmentsToPath(builder, segments, vertices)
+    return [{ ...existing[0], commandsBlob: builder.toBlob() }]
+  }
+
+  // Region count no longer matches the imported fillGeometry (e.g. a region was
+  // deleted mid-edit) — the style mapping is unknown. Rebuild from the live
+  // network so committed fillGeometry stays coherent with vectorNetwork; styles
+  // fall back to node-level fills.
   if (regions.length > 0) {
     return regions.map((region) => {
       const builder = new GeometryBlobBuilder()
@@ -61,8 +84,7 @@ export function regenerateFillGeometry(
   if (segments.length > 0) {
     const builder = new GeometryBlobBuilder()
     addOpenSegmentsToPath(builder, segments, vertices)
-    const windingRule = existing.length === 1 ? existing[0].windingRule : 'NONZERO'
-    return [{ windingRule, commandsBlob: builder.toBlob() }]
+    return [{ windingRule: 'NONZERO' as const, commandsBlob: builder.toBlob() }]
   }
   return []
 }

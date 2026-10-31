@@ -7,6 +7,8 @@ import { copyPendingText } from '@/app/editor/clipboard/text'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
+import { variablesStylesheet } from './stylesheet'
+
 const FORMAT_LABELS: Record<TokenStylesheetFormat, string> = {
   css: 'CSS',
   tailwind: 'Tailwind CSS'
@@ -33,11 +35,9 @@ class NothingToCopyError extends Error {
 /** Copy the document's variables as a stylesheet, and name what had to be left out. */
 export function createTokenCopy(store: EditorStore) {
   return async function copyTokens(format: TokenStylesheetFormat): Promise<void> {
-    // The stylesheet generator and its CSS parser load only when someone copies tokens. The
-    // clipboard write starts before either is ready, while the click still allows it.
-    const stylesheet = import('@open-pencil/dom-css/export').then(({ tokenStylesheet }) =>
-      tokenStylesheet(store.graph, { format })
-    )
+    // The clipboard write starts before the stylesheet generator has loaded, while the click
+    // still allows it.
+    const stylesheet = variablesStylesheet(store.graph, { format })
     const css = stylesheet.then((result) => {
       if (!result.css) throw new NothingToCopyError()
       return result.css

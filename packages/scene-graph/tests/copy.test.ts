@@ -1,20 +1,12 @@
 import { describe, test, expect } from 'bun:test'
 
-import type {
-  Fill,
-  Stroke,
-  Effect,
-  StyleRun,
-  GeometryPath,
-  VectorNetwork
-} from '@open-pencil/scene-graph'
+import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@open-pencil/scene-graph'
 import {
   copyFill,
   copyFills,
   copyStroke,
   copyEffect,
   copyStyleRun,
-  cloneVectorNetwork,
   copyGeometryPaths,
   scaleGeometryPaths
 } from '@open-pencil/scene-graph/copy'
@@ -107,39 +99,48 @@ describe('copy helpers — mutation isolation', () => {
     expect(original.style.fontWeight).toBe(700)
   })
 
-  test('copyGeometryPaths: blobs are independent', () => {
+  test('copyGeometryPaths: blobs and path fills are independent', () => {
     const original: GeometryPath[] = [
-      { windingRule: 'NONZERO', commandsBlob: new Uint8Array([1, 2, 3]) }
+      {
+        windingRule: 'NONZERO',
+        commandsBlob: new Uint8Array([1, 2, 3]),
+        fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      }
     ]
     const copy = copyGeometryPaths(original)
     copy[0].commandsBlob[0] = 99
+    if (copy[0].fills?.[0]) copy[0].fills[0].color.r = 0
     expect(original[0].commandsBlob[0]).toBe(1)
-    expect(scaleGeometryPaths(original, 0.5, 0.5)[0]?.commandsBlob).not.toBe(
-      original[0]?.commandsBlob
-    )
+    expect(original[0].fills?.[0]?.color.r).toBe(1)
   })
 
-  test("cloneVectorNetwork keeps each region's own paints, independent of the source", () => {
+  test('copyGeometryPaths and scaleGeometryPaths keep path-level fills', () => {
+    // Resize snapshots use these helpers; dropping fills collapses multi-color
+    // vectors to a single node fill (gray blob).
     const orange: Fill = {
       type: 'SOLID',
       color: { r: 1, g: 0.32, b: 0, a: 1 },
       opacity: 1,
       visible: true
     }
-    const original: VectorNetwork = {
-      vertices: [],
-      segments: [],
-      regions: [
-        { windingRule: 'NONZERO', loops: [[0, 1, 2]], fills: [orange], fillStyleId: 'style:1' },
-        { windingRule: 'EVENODD', loops: [[3, 4, 5]] },
-        { windingRule: 'NONZERO', loops: [[6, 7, 8]], fills: [] }
-      ]
-    }
+    const original: GeometryPath[] = [
+      {
+        windingRule: 'NONZERO',
+        commandsBlob: new Uint8Array([1, 0, 0, 0, 0, 0, 0, 0, 0]),
+        fills: [orange]
+      },
+      { windingRule: 'EVENODD', commandsBlob: new Uint8Array([2, 3, 4]) }
+    ]
 
-    const copied = cloneVectorNetwork(original)
-    expect(copied.regions).toEqual(original.regions)
-    expectDefined(copied.regions[0]?.fills?.[0], 'copied region fill').color.r = 0
-    expect(orange.color.r).toBe(1)
+    const copied = copyGeometryPaths(original)
+    expect(copied[0]?.fills?.[0]?.color.r).toBeCloseTo(1, 2)
+    expect(copied[1]?.fills).toBeUndefined()
+    expectDefined(copied[0]?.fills?.[0], 'copied path fill').color.r = 0
+    expect(original[0]?.fills?.[0]?.color.r).toBe(1)
+
+    const scaled = scaleGeometryPaths(original, 0.5, 0.5)
+    expect(scaled[0]?.fills?.[0]?.color.g).toBeCloseTo(0.32, 2)
+    expect(scaled[0]?.commandsBlob).not.toBe(original[0]?.commandsBlob)
   })
 
   test('copyFills: array independence', () => {

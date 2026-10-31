@@ -71,7 +71,7 @@ Before a PR run `bun run check`, `bun run format`, `bun run test:unit`, and `bun
 - Window API augmentations belong to the owning compilation boundary: `src/global.d.ts` for the app, the package's `global.d.ts` for package DOM gaps, `tests/helpers/tauri/native-global.d.ts` for native tests. Never put `declare global` in specs or implementation modules; include canonical declarations through tsconfig. Keep app API contracts named and owned by their implementation domain; derive vendor API types from top-level type imports. Optional runtime globals stay optional and need a runtime guard.
 - Use `structuredClone` or typed copy helpers for nested mutable data. Self-review for duplication, named shared types, precise unions, and files approaching ~600 lines.
 - Detect desktop with `IS_TAURI`, never ad-hoc `__TAURI_INTERNALS__` checks.
-- Import modules statically. Inline `import()` is for code split on purpose: routes and async components, a heavy dependency only some sessions need, and the `src/main.ts` support gate. Tauri modules are always static, since they reach the native side only when called (`open-pencil/no-inline-tauri-imports`).
+- Import modules statically; an inline `import()` is for code split on purpose: routes and async components, the `src/main.ts` support gate, and a heavy dependency only some sessions need. That dependency loads through one named function in its owning module, which callers import statically (`src/app/editor/tokens/stylesheet.ts`). Tauri modules are always static, since they reach the native side only when called (`open-pencil/no-inline-tauri-imports`).
 
 ### Dependency documentation
 

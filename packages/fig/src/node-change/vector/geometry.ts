@@ -1,7 +1,9 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { GeometryPath, VectorNetwork } from '@open-pencil/scene-graph'
+import type { Fill, GeometryPath, VectorNetwork } from '@open-pencil/scene-graph'
+import { copyFills } from '@open-pencil/scene-graph/copy'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { convertFills } from '../paint'
 import { decodeVectorNetworkBlob, type StyleOverride } from './network'
 
 /** Scene winding rules name the even-odd case EVENODD; the archive names it ODD. */
@@ -77,12 +79,32 @@ export function resolveVectorNetwork(nc: NodeChange, blobs: Uint8Array[]): Vecto
 interface KiwiPath {
   windingRule?: string
   commandsBlob?: number
+  styleID?: number
 }
 
-/** Geometry outlines; a vector's per-region paints are on its network's regions. */
+export function resolveStyleOverrideFills(
+  styleOverrideTable: StyleOverride[] | undefined
+): ReadonlyMap<number, Fill[]> {
+  const fillsByStyleId = new Map<number, Fill[]>()
+  for (const override of styleOverrideTable ?? []) {
+    if (override.fillPaints && override.fillPaints.length > 0) {
+      fillsByStyleId.set(override.styleID, convertFills(override.fillPaints))
+    }
+  }
+  return fillsByStyleId
+}
+
+export function resolveVectorStyleOverrideFills(
+  source: Pick<NodeChange, 'vectorData'>
+): ReadonlyMap<number, Fill[]> {
+  const vectorData = source.vectorData as { styleOverrideTable?: StyleOverride[] } | undefined
+  return resolveStyleOverrideFills(vectorData?.styleOverrideTable)
+}
+
 export function resolveGeometryPaths(
   paths: KiwiPath[] | undefined,
-  blobs: Uint8Array[]
+  blobs: Uint8Array[],
+  fillsByStyleId?: ReadonlyMap<number, Fill[]>
 ): GeometryPath[] {
   if (!paths || paths.length === 0) return []
   const result: GeometryPath[] = []
@@ -91,7 +113,12 @@ export function resolveGeometryPaths(
       continue
     const blob = blobs[p.commandsBlob]
     if (blob.length === 0) continue
-    result.push({ windingRule: fromKiwiWindingRule(p.windingRule), commandsBlob: blob })
+    const fills = p.styleID ? fillsByStyleId?.get(p.styleID) : undefined
+    result.push({
+      windingRule: fromKiwiWindingRule(p.windingRule),
+      commandsBlob: blob,
+      fills: fills && fills.length > 0 ? copyFills(fills) : undefined
+    })
   }
   return result
 }

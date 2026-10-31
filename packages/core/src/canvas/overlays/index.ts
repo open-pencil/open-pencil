@@ -6,8 +6,7 @@ export {
   drawNodeOutline,
   drawNodeSelection,
   drawParentFrameOutlines,
-  drawSelection,
-  getRotatedCorners
+  drawSelection
 } from './selection'
 export { drawAutoLayoutHover } from './auto-layout-hover'
 export {

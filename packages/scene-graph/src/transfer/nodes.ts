@@ -19,9 +19,8 @@ export function semanticTransferReferences(node: SceneNode): string[] {
       node.effectStyleId,
       node.gridStyleId
     ].filter((id): id is string => !!id),
-    ...(node.vectorNetwork?.regions ?? []).flatMap((region) =>
-      region.fillStyleId ? [region.fillStyleId] : []
-    ),
+    ...node.fillGeometry.flatMap((path) => (path.fillStyleId ? [path.fillStyleId] : [])),
+    ...node.strokeGeometry.flatMap((path) => (path.fillStyleId ? [path.fillStyleId] : [])),
     ...Object.entries(node.componentPropertyAssignments).flatMap(([id, value]) => [id, value]),
     ...node.componentPropertyReferences.map((reference) => reference.propertyId),
     ...node.componentPropertyDefinitions.flatMap((definition) => [
@@ -108,8 +107,9 @@ export function prepareNodeTransfer(
     const endpoint = result[field]
     if (endpoint?.nodeId) endpoint.nodeId = refs.nodes.get(endpoint.nodeId) ?? endpoint.nodeId
   }
-  for (const region of result.vectorNetwork?.regions ?? [])
-    if (region.fillStyleId) region.fillStyleId = style(region.fillStyleId)
+  for (const paths of [result.fillGeometry, result.strokeGeometry]) {
+    for (const path of paths ?? []) if (path.fillStyleId) path.fillStyleId = style(path.fillStyleId)
+  }
   result.componentPropertyDefinitions = source.componentPropertyDefinitions.map((definition) => ({
     ...structuredClone(definition),
     id: property(definition.id),

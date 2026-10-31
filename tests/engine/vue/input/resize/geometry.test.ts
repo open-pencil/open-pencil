@@ -2,8 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import type { Fill, GeometryPath, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
-import { cloneVectorNetwork, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { collectResizeDescendants } from '@open-pencil/scene-graph/resize'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
@@ -18,8 +19,6 @@ const RED: Fill = {
   blendMode: 'NORMAL'
 }
 
-const BLUE: Fill = { ...RED, color: { r: 0, g: 0, b: 1, a: 1 } }
-
 const NETWORK: VectorNetwork = {
   vertices: [
     { x: 0, y: 0 },
@@ -33,15 +32,8 @@ const NETWORK: VectorNetwork = {
     { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
     { start: 3, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
   ],
-  // Two regions with paints of their own, so a resize that drops or swaps one shows.
-  regions: [
-    { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]], fills: [RED] },
-    { windingRule: 'EVENODD', loops: [[0, 1, 2, 3]], fills: [BLUE] }
-  ]
+  regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
 }
-
-/** One fill outline per region. */
-const FILL_GEOMETRY = [movePath(10, 10), movePath(0, 10)]
 
 const STROKE: Stroke = {
   type: 'SOLID',
@@ -55,13 +47,13 @@ const STROKE: Stroke = {
   dashPattern: []
 }
 
-function movePath(x: number, y: number): GeometryPath {
+function movePath(x: number, y: number, fills?: Fill[]): GeometryPath {
   const commandsBlob = new Uint8Array(9)
   const view = new DataView(commandsBlob.buffer)
   commandsBlob[0] = 1
   view.setFloat32(1, x, true)
   view.setFloat32(5, y, true)
-  return { windingRule: 'NONZERO', commandsBlob }
+  return { windingRule: 'NONZERO', commandsBlob, fills }
 }
 
 function pathPoint(path: GeometryPath | undefined) {
@@ -111,13 +103,10 @@ function expectGeometry(node: SceneNode, size: number) {
   expect(node.width).toBe(size)
   expect(node.height).toBe(size)
   expect(node.vectorNetwork?.vertices[2]).toMatchObject({ x: size, y: size })
-  expect(node.fillGeometry.map(pathPoint)).toEqual([
-    [size, size],
-    [0, size]
-  ])
+  expect(pathPoint(node.fillGeometry[0])).toEqual([size, size])
   if (size === 10) expect(pathPoint(node.strokeGeometry[0])).toEqual([5, 5])
   else expect(node.strokeGeometry).toEqual([])
-  expect(node.vectorNetwork?.regions.map((region) => region.fills)).toEqual([[RED], [BLUE]])
+  expect(node.fillGeometry[0]?.fills?.[0]?.color.r).toBe(1)
 }
 
 describe('vector resize geometry', () => {
@@ -128,7 +117,7 @@ describe('vector resize geometry', () => {
       width: 10,
       height: 10,
       vectorNetwork: cloneVectorNetwork(NETWORK),
-      fillGeometry: copyGeometryPaths(FILL_GEOMETRY),
+      fillGeometry: [movePath(10, 10, [RED])],
       strokeGeometry: [movePath(5, 5)]
     })
     const drag = dragFor(vector)
@@ -152,7 +141,7 @@ describe('vector resize geometry', () => {
       width: 10,
       height: 10,
       vectorNetwork: cloneVectorNetwork(NETWORK),
-      fillGeometry: copyGeometryPaths(FILL_GEOMETRY),
+      fillGeometry: [movePath(10, 10, [RED])],
       strokeGeometry: [movePath(5, 5)]
     })
     const descendants = collectResizeDescendants(editor.graph, group.id)

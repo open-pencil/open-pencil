@@ -101,11 +101,11 @@ test('a finished reply notifies only when turned on and away, and its click show
     .toBe('2')
 
   // Another document and the Design tab are in view when the notification is clicked.
-  // The tab bar starts with Home; the chat's document is the tab after it.
   const tabs = page.getByTestId('tabbar-tab')
-  const chatDocument = tabs.nth(1)
+  const chatDocument = tabs.first()
   await expect(chatDocument).toHaveAttribute('aria-selected', 'true')
   await page.getByTestId('tabbar-new').click()
+  await page.getByTestId('home-new-design').click()
   await expect(tabs.last()).toHaveAttribute('aria-selected', 'true')
   await chat.designTab.click()
   await page.evaluate(() => document.dispatchEvent(new Event('notification-click')))
