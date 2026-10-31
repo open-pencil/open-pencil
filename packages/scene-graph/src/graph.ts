@@ -623,7 +623,13 @@ export class SceneGraph {
     node.parentId = newParentId
     newParent.childIds.push(nodeId)
 
-    if (isTranslationOnly(oldParentWorld) && isTranslationOnly(newParentWorld)) {
+    const translationOnly =
+      isTranslationOnly(oldParentWorld) && isTranslationOnly(newParentWorld)
+    const editedTransformFields = translationOnly
+      ? ['x', 'y']
+      : ['x', 'y', 'rotation', 'flipX', 'flipY']
+
+    if (translationOnly) {
       node.x += oldParentWorld[2] - newParentWorld[2]
       node.y += oldParentWorld[5] - newParentWorld[5]
     } else {
@@ -632,6 +638,9 @@ export class SceneGraph {
       if (local) Object.assign(node, local)
     }
 
+    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
+      markSourceFieldsEdited(node, editedTransformFields)
+    }
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
   }
 

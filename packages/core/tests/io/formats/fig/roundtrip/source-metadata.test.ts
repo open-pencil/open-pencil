@@ -177,6 +177,50 @@ describe('fig roundtrip source metadata', () => {
     }
   })
 
+  test('exports current child coordinates after reparenting imported nodes', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const child = graph.createNode('RECTANGLE', page.id, {
+      name: 'Reparented imported rect',
+      x: 31,
+      y: 282,
+      width: 40,
+      height: 40
+    })
+    child.source.format = 'fig'
+    child.source.id = '4:508'
+    child.source.fig.rawTransform = {
+      m00: 1,
+      m01: 0,
+      m02: 31,
+      m10: 0,
+      m11: 1,
+      m12: 282
+    }
+
+    const group = graph.createNode('GROUP', page.id, {
+      name: 'New group',
+      x: 20,
+      y: 200,
+      width: 100,
+      height: 100
+    })
+    graph.reparentNode(child.id, group.id)
+
+    expect(child.x).toBe(11)
+    expect(child.y).toBe(82)
+    expect(child.source.editedFields).toEqual(['x', 'y'])
+
+    const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer)
+    const exportedChild = [...reopened.getAllNodes()].find((node) => node.name === child.name)
+
+    expect(exportedChild?.parentId).toBe(
+      [...reopened.getAllNodes()].find((node) => node.name === group.name)?.id
+    )
+    expect(exportedChild?.x).toBe(11)
+    expect(exportedChild?.y).toBe(82)
+  })
+
   test('does not restore cleared imported size constraints from raw metadata', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
