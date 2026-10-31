@@ -1,0 +1,1 @@
+- The retained canvas renderer, the Rendering settings section with its progressive rendering switch, and the `renderer` URL parameter are removed; progressive rendering is the only canvas renderer, and a stored rendering preference is ignored.
