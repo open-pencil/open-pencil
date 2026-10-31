@@ -101,13 +101,16 @@ describe('SVG XML parsing', () => {
 
 const straight = { x: 0, y: 0 }
 
-/** Half of a 24-unit icon: 11.99 scales to 5.995 and rounding lands it on the start, 6. */
-function scaledNetwork(d: string): VectorNetwork {
+/**
+ * Scale a 24-unit path the way inline SVG does. The default, half size, is the clock from #1577:
+ * 11.99 becomes 5.995 and rounding lands it on the start, 6. Pass 1 for an icon drawn at its view box.
+ */
+function scaledNetwork(d: string, scaleX = 12 / 24, scaleY = scaleX): VectorNetwork {
   const path = expectDefined(
     scalePathInfos(
       extractPaths(`<path d="${d}" fill="none" stroke="#000" stroke-width="2.5"/>`),
-      12 / 24,
-      12 / 24
+      scaleX,
+      scaleY
     )[0],
     'scaled path'
   )
@@ -184,6 +187,29 @@ describe('scalePathInfos', () => {
     expect(roundedHandle(network, curve, 'start')).toEqual({ x: 6, y: 1.5 })
     expect(roundedHandle(network, curve, 'end')).toEqual({ x: 10, y: 0 })
     expect(network.vertices[curve.end]).toEqual({ x: 12, y: 1.5 })
+  })
+
+  test('keeps a nearly closed arc when identity scaling rounds its end onto its start', () => {
+    // 11.996 rounds to 12, the point the arc starts at. Drawn at the view box, the scale is 1.
+    const network = scaledNetwork('M12 3A9 9 0 1 1 11.996 3Z', 1)
+
+    expect(network.vertices).toEqual([
+      { x: 12, y: 3 },
+      { x: 21, y: 12 },
+      { x: 12, y: 21 },
+      { x: 3, y: 12 }
+    ])
+    expect(network.segments).toHaveLength(4)
+    expect(span(network.vertices.map((vertex) => vertex.x))).toBe(18)
+    expect(span(network.vertices.map((vertex) => vertex.y))).toBe(18)
+    for (const segment of network.segments) {
+      const curved =
+        segment.tangentStart.x !== 0 ||
+        segment.tangentStart.y !== 0 ||
+        segment.tangentEnd.x !== 0 ||
+        segment.tangentEnd.y !== 0
+      expect(curved).toBe(true)
+    }
   })
 
   test('keeps a nearly closed relative arc when scaling rounds its end onto its start', () => {
