@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
 
@@ -173,7 +174,6 @@ export const toast = {
 export async function openExternalLink(url: string) {
   if (isTauri()) {
     // An app command, so native tests can read the address instead of opening a browser.
-    const { invoke } = await import('@tauri-apps/api/core')
     await invoke('open_external_url', { url })
   } else {
     window.open(url, '_blank')

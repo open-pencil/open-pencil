@@ -5,6 +5,23 @@ import { i18n } from '#vue/i18n/create'
 export const aiMessageDefaults = {
   jumpToLatest: 'Jump to latest',
   chatSettings: 'Chat',
+  notificationsHint: 'Sent only while OpenPencil is in the background or shows another document.',
+  notifyNeedsInput: 'An agent needs you',
+  notifyNeedsInputHint: 'A permission request has waited a few seconds without an answer.',
+  notifyFinished: 'A reply finished',
+  notifyFailed: 'A reply failed',
+  notificationsAllow: 'Allow notifications',
+  notificationsAllowHint: 'Your browser asks once whether OpenPencil may show notifications.',
+  notificationsBlocked:
+    'Notifications are blocked for this site. Allow them in the browser’s site settings.',
+  notificationsUnsupported: 'This browser cannot show notifications.',
+  notificationsSystemHint:
+    'If none appear, allow OpenPencil in your system’s notification settings.',
+  notifyTitle: params('{agent} · {document}'),
+  notifyPermission: 'Asks for permission.',
+  notifyPermissionAction: params('Asks for permission: {action}'),
+  notifyReplyFinished: 'The AI reply finished.',
+  notifyReplyFailed: 'The AI reply stopped with an error.',
   maxAgentSteps: 'Maximum steps per message',
   maxAgentStepsCustom: 'Custom…',
   maxAgentStepsHint:

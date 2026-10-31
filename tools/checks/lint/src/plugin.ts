@@ -393,7 +393,8 @@ import {
   noCoreSelfPackageImports,
   noInlinePromptConstants,
   noAppImportsInPackages,
-  noCoreFrameworkImports
+  noCoreFrameworkImports,
+  noInlineTauriImports
 } from '#lint/rules/imports.ts'
 import {
   noDirectStorageAccess,
@@ -473,6 +474,7 @@ const plugin = {
     'no-inline-prompt-constants': noInlinePromptConstants,
     'no-app-imports-in-packages': noAppImportsInPackages,
     'no-core-framework-imports': noCoreFrameworkImports,
+    'no-inline-tauri-imports': noInlineTauriImports,
     'no-direct-storage-access': noDirectStorageAccess,
     'no-broad-double-cast': noBroadDoubleCast,
     'no-unknown-record-double-cast': noUnknownRecordDoubleCast,

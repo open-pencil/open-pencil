@@ -1,0 +1,1 @@
+- Plus darker and plus lighter blend modes for layers, fills, strokes and effects: drawn on the canvas, kept through `.fig` import and export, exported to SVG, and available in the blend mode menu, the plugin API and design JSX.

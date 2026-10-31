@@ -1,4 +1,4 @@
-import { importSource, normalizedFilename } from '#lint/support/context.ts'
+import { importSource, inlineImportSource, normalizedFilename } from '#lint/support/context.ts'
 import type { RuleDefinition, RuleListener } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
 
@@ -50,7 +50,16 @@ export function createImportSourceRule({
         const message = check(source, file)
         if (message) context.report({ node, message })
       }
-      const visitors: RuleListener = { ImportDeclaration: inspect }
+      const visitors: RuleListener = {
+        ImportDeclaration: inspect,
+        // An inline import crosses the same boundary as a static one.
+        ImportExpression(node) {
+          const source = inlineImportSource(node)
+          if (!source) return
+          const message = check(source, file)
+          if (message) context.report({ node, message })
+        }
+      }
       if (includeExports) {
         visitors.ExportNamedDeclaration = inspect
         visitors.ExportAllDeclaration = inspect

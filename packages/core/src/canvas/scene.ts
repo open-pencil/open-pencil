@@ -24,7 +24,7 @@ import {
 } from '#core/vector'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
-import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
+import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { renderBooleanOperation } from './boolean'
 import { blurSigma } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
@@ -47,7 +47,8 @@ import {
   drawStyledRRectStroke,
   getStrokeCapEntity,
   getStrokeJoinEntity,
-  normalizeDashPattern
+  normalizeDashPattern,
+  setStrokeBlendMode
 } from './strokes'
 import { drawLineStroke } from './strokes/line'
 import { drawOutlinedDashes } from './strokes/outlined-dashes'
@@ -357,7 +358,7 @@ export function renderNode(
   if (needsNodeLayer) {
     const layerBounds = nodeIsolationLayerBounds(r, graph, node, overlays.rotationPreview)
     r.opacityPaint.setAlphaf(node.opacity)
-    r.opacityPaint.setBlendMode(figmaBlendModeToSkia(r.ck, node.blendMode))
+    setPaintBlendMode(r, r.opacityPaint, node.blendMode)
     canvas.saveLayer(r.opacityPaint, layerBounds)
   }
 
@@ -434,11 +435,13 @@ function forVisibleStrokes(
     const stroke = node.strokes[index]
     if (!stroke.visible) continue
     const draws = applyStrokeShader(r, stroke, index, node, graph)
+    setStrokeBlendMode(r, stroke.blendMode)
     try {
       if (draws) draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
     } finally {
       r.strokePaint.setShader(null)
       r.fillPaint.setShader(null)
+      setStrokeBlendMode(r, 'NORMAL')
     }
   }
 }

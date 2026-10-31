@@ -8,12 +8,12 @@ import {
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { loadFigDataCompressor, type FigFileKind } from '@open-pencil/kiwi/fig/container'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import { withFigExportRuntime } from '#core/canvas/text/shape'
-import { IS_BROWSER, IS_TAURI } from '#core/constants'
+import { IS_BROWSER } from '#core/constants'
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import {
@@ -37,6 +37,32 @@ import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids 
 import type { CompressResult } from './worker'
 
 type InternalResourceContext = FigExportSetup & { nodeChanges: KiwiNodeChange[] }
+
+/** A `.fig` archive's parts before they are compressed and packed. */
+export interface FigArchiveParts {
+  schemaDeflated: Uint8Array
+  kiwiData: Uint8Array
+  thumbnailPNG: Uint8Array
+  metaJSON: string
+  images: Array<{ name: string; data: Uint8Array }>
+  figKiwiVersion?: number
+  compressionLevel?: number
+  documentKind: DocumentKind
+}
+
+/** Packs a `.fig` archive from its parts, as a host can do natively off the main thread. */
+export type FigArchiveAssembler = (parts: FigArchiveParts) => Promise<Uint8Array>
+
+let hostAssembler: FigArchiveAssembler | null = null
+
+/**
+ * Lets the host pack every `.fig` written from now on, as the desktop app does in Rust, since
+ * high compression levels take seconds. Without one, a worker packs them, or the main thread
+ * where workers are unavailable.
+ */
+export function setFigArchiveAssembler(assembler: FigArchiveAssembler | null): void {
+  hostAssembler = assembler
+}
 
 /**
  * Children already written under a canvas. Shared styles, variables and the canvas's own
@@ -196,22 +222,17 @@ async function writeFigFile(
   const version = graph.figKiwiVersion ?? undefined
   const compressionLevel = figCompressionLevel(sourceGraph)
 
-  if (IS_TAURI) {
-    const { invoke } = await import('@tauri-apps/api/core')
-    return new Uint8Array(
-      await invoke<ArrayBuffer>('build_fig_file', {
-        file: {
-          schemaDeflated: Array.from(schemaDeflated),
-          kiwiData: Array.from(kiwiData),
-          thumbnailPng: Array.from(extras.thumbnailPNG),
-          metaJson: extras.metaJSON,
-          images: extras.images.map((e) => ({ name: e.name, data: Array.from(e.data) })),
-          figKiwiVersion: version,
-          compressionLevel,
-          board: graph.documentKind === 'board'
-        }
-      })
-    )
+  if (hostAssembler) {
+    return hostAssembler({
+      schemaDeflated,
+      kiwiData,
+      thumbnailPNG: extras.thumbnailPNG,
+      metaJSON: extras.metaJSON,
+      images: extras.images,
+      figKiwiVersion: version,
+      compressionLevel,
+      documentKind: graph.documentKind
+    })
   }
 
   return compressFigData(

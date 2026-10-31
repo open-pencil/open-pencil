@@ -488,6 +488,30 @@ describe('renderNodesToSVG()', () => {
     expect(result).toContain('mix-blend-mode: multiply')
   })
 
+  test('plus lighter blend mode', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      width: 100,
+      height: 100,
+      blendMode: 'LINEAR_DODGE',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const result = exportSVGOrThrow(graph, [node.id])
+    expect(result).toContain('mix-blend-mode: plus-lighter')
+  })
+
+  test('plus darker blend mode', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      width: 100,
+      height: 100,
+      blendMode: 'LINEAR_BURN',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const result = exportSVGOrThrow(graph, [node.id])
+    expect(result).toContain('mix-blend-mode: plus-darker')
+  })
+
   test('fill with opacity < 1', () => {
     const graph = makeGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), {
