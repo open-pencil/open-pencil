@@ -12,20 +12,26 @@ export type WrapContainerType =
   | 'COMPONENT'
   | 'COMPONENT_SET'
   | 'BOOLEAN_OPERATION'
+  | 'SECTION'
 
 const CONTAINER_NAMES: Record<WrapContainerType, string> = {
   BOOLEAN_OPERATION: 'Boolean',
   COMPONENT_SET: 'Component Set',
   COMPONENT: 'Component',
   GROUP: 'Group',
-  FRAME: 'Frame'
+  FRAME: 'Frame',
+  SECTION: 'Section'
 }
 
 const NUMBERED_WHEN_WRAPPED: ReadonlySet<WrapContainerType> = new Set([
   'GROUP',
   'FRAME',
-  'COMPONENT'
+  'COMPONENT',
+  'SECTION'
 ])
+
+/** The room FigJam leaves around layers it wraps in a new section, in canvas units. */
+const SECTION_WRAP_PADDING = 48
 
 /**
  * The parent these layers share when a new container may go there, or null when they are not
@@ -53,11 +59,19 @@ export function wrapNodes(
   index: number | undefined,
   props: Partial<SceneNode> = {}
 ): SceneNode {
-  // A group spans only the layers it shows, as Figma's does; other containers span them all.
-  const bounds =
+  // A group spans only the layers it shows, as Figma's does; other containers span them all, and
+  // a section leaves FigJam's room around them.
+  const spanned =
     type === 'GROUP'
       ? groupBounds(graph, inStackOrder(graph, nodes, parentId), parentId, { x: 0, y: 0 })
       : getAxisAlignedBoundsInParent(nodes, parentId, graph)
+  const pad = type === 'SECTION' ? SECTION_WRAP_PADDING : 0
+  const bounds = {
+    x: spanned.x - pad,
+    y: spanned.y - pad,
+    width: spanned.width + pad * 2,
+    height: spanned.height + pad * 2
+  }
   const container = graph.createNode(type, parentId, {
     name: CONTAINER_NAMES[type],
     ...bounds,

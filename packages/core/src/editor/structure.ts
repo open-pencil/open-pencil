@@ -8,6 +8,7 @@ import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
 
+import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import {
   booleanOperationSelected as booleanOperationSelectedImpl,
@@ -81,6 +82,19 @@ export function createStructureActions(ctx: EditorContext) {
   /** Figma frames a selection without a fill or clipping, unlike a drawn frame. */
   function frameSelection(selectedNodes: SceneNode[]) {
     return wrapSelectionInContainer('FRAME', selectedNodes)
+  }
+
+  /**
+   * Wraps layers in a new section with room around them, as FigJam's selection toolbar does,
+   * painted as a drawn section is.
+   */
+  function wrapInSection(selectedNodes: SceneNode[]) {
+    return wrapSelectionInContainerImpl(
+      ctx,
+      'SECTION',
+      selectedNodes,
+      newLayerDefaults('SECTION', layerTheme(ctx.state))
+    )
   }
 
   function booleanOperationSelected(selectedNodes: SceneNode[], operation: BooleanOperation) {
@@ -196,6 +210,7 @@ export function createStructureActions(ctx: EditorContext) {
     wrapInAutoLayout,
     groupSelected,
     frameSelection,
+    wrapInSection,
     ...layerTypeActions,
     booleanOperationSelected,
     ungroupSelected,

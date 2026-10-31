@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import { figJamColor, figJamColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamShapePaint } from '@open-pencil/scene-graph/figjam'
+import { figJamColor, figJamColorName, figJamLayerColorFields, figJamLayerColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamSectionColorFields, figJamSectionColorName, figJamShapePaint } from '@open-pencil/scene-graph/figjam'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
@@ -79,5 +79,29 @@ describe("FigJam's shape colours", () => {
     // Colouring a hidden outline shows it again.
     const shown = figJamLineColorFields({ ...shape, ...hidden }, 'red')
     expect(shown.strokes?.[0]?.opacity).toBe(1)
+  })
+
+  // Measured in FigJam: a section takes a pale tint outlined in the colour itself, 2 px.
+  test('the colour menu tints a section and outlines it in the colour', () => {
+    const red = figJamSectionColorFields({ strokes: [] }, 'red')
+    expect(hexes(red.fills)).toEqual(['#ffe2e0'])
+    expect(hexes(red.strokes)).toEqual(['#f24822'])
+    expect(red.strokeWeight).toBe(2)
+    expect(hexes(figJamSectionColorFields({ strokes: [] }, 'black').strokes)).toEqual(['#2c2c2c'])
+    expect(hexes(figJamSectionColorFields({ strokes: [] }, 'lightBlue').fills)).toEqual(['#f5fbff'])
+    expect(figJamSectionColorName({ fills: red.fills ?? [] })).toBe('red')
+  })
+
+  test('the colour menu paints text, a line, and other layers as FigJam does', () => {
+    const text = figJamLayerColorFields({ type: 'TEXT', strokes: [] }, 'red')
+    expect(hexes(text.fills)).toEqual(['#f24822'])
+    expect(text.strokes).toBeUndefined()
+    const line = figJamLayerColorFields({ type: 'LINE', strokes: [] }, 'blue')
+    expect(line.fills).toBeUndefined()
+    expect(hexes(line.strokes)).toEqual(['#3dadff'])
+    const rect = figJamLayerColorFields({ type: 'RECTANGLE', strokes: [] }, 'red')
+    expect(hexes(rect.fills)).toEqual(['#f24822'])
+    expect(rect.strokes?.[0]).toMatchObject({ weight: 1 })
+    expect(figJamLayerColorName({ type: 'RECTANGLE', fills: rect.fills ?? [], strokes: [] })).toBe('red')
   })
 })
