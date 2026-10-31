@@ -194,6 +194,7 @@ export function useCanvasInput(
 
   function onDblClick(e: MouseEvent) {
     if (editor.state.play) return
+    if (editor.state.activeTool === 'COMMENT') return
     const { cx, cy } = getCoords(e)
     if (!editor.state.readOnly && valueEdit.start(cx, cy)) {
       e.preventDefault()
@@ -230,7 +231,9 @@ export function useCanvasInput(
       e.preventDefault()
       return
     }
-    editor.setSelectedGuide(null)
+    if (e.button === 0 || editor.state.activeTool !== 'COMMENT') {
+      editor.setSelectedGuide(null)
+    }
 
     const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
     const clickCount = recordClick(sx, sy)
