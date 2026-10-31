@@ -1,0 +1,1 @@
+- Boards draw FigJam's dot grid under their layers and show no pixel grid; a click inside a frame selects the frame, Shift+arrow moves to the next 16-unit grid line, R arms a square shape, and a collaboration room shares that a document is a board.
