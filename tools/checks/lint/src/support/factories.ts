@@ -50,7 +50,15 @@ export function createImportSourceRule({
         const message = check(source, file)
         if (message) context.report({ node, message })
       }
-      const visitors: RuleListener = { ImportDeclaration: inspect }
+      const visitors: RuleListener = {
+        ImportDeclaration: inspect,
+        // An inline import crosses the same boundary as a static one.
+        ImportExpression(node) {
+          if (node.source.type !== 'Literal' || typeof node.source.value !== 'string') return
+          const message = check(node.source.value, file)
+          if (message) context.report({ node, message })
+        }
+      }
       if (includeExports) {
         visitors.ExportNamedDeclaration = inspect
         visitors.ExportAllDeclaration = inspect
