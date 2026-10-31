@@ -5,7 +5,7 @@ import {
   regionSVGPaths
 } from '@open-pencil/scene-graph/vector-network'
 
-import { resolveFill, solidFillOpacity, type SVGExportContext } from './defs'
+import { drawnFills, solidFillOpacity, type SVGExportContext } from './defs'
 import { svg, type SVGNode } from './node'
 import { geometryBlobToSVGPath } from './paths'
 
@@ -57,18 +57,18 @@ export function paintedOutline(
   pathFills: Fill[] | undefined
 ): SVGNode[] {
   if (!pathFills) return [svg('path', attrs)]
-  const visibleFills = pathFills.filter((fill) => fill.visible)
-  if (visibleFills.length === 0) return [svg('path', { ...attrs, fill: 'none' })]
-  return visibleFills.flatMap((fill, index) => {
-    const fillAttr = resolveFill(fill, node, ctx)
-    if (!fillAttr) return []
-    return [
-      svg('path', {
-        ...attrs,
-        fill: fillAttr,
-        'fill-opacity': solidFillOpacity(fill, ctx.colorSpace),
-        stroke: index === visibleFills.length - 1 ? attrs.stroke : 'none'
-      })
-    ]
-  })
+  const drawn = drawnFills(
+    pathFills.filter((fill) => fill.visible),
+    node,
+    ctx
+  )
+  if (drawn.length === 0) return [svg('path', { ...attrs, fill: 'none' })]
+  return drawn.map(({ fill, paint }, index) =>
+    svg('path', {
+      ...attrs,
+      fill: paint,
+      'fill-opacity': solidFillOpacity(fill, ctx.colorSpace),
+      stroke: index === drawn.length - 1 ? attrs.stroke : 'none'
+    })
+  )
 }

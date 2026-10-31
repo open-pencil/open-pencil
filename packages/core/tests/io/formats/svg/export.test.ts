@@ -522,3 +522,47 @@ describe('FigJam shapes exported to SVG', () => {
     expect(exportedShape('DIAMOND').svg).not.toContain('clip-path')
   })
 })
+
+describe('a stroke over fills SVG cannot all draw', () => {
+  const stroke: Stroke = {
+    type: 'SOLID',
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    weight: 2,
+    opacity: 1,
+    visible: true,
+    align: 'CENTER'
+  }
+  // Noise has no SVG paint, so it is left out; the stroke goes on the fill drawn last.
+  const noise: Fill = { type: 'NOISE', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }
+
+  test('goes on the last fill a shape draws', () => {
+    const svg = svgOf((graph, pageId) => [
+      graph.createNode('RECTANGLE', pageId, {
+        width: 10,
+        height: 10,
+        fills: [solid(1, 0, 0, 1, 1), noise],
+        strokes: [stroke]
+      }).id
+    ])
+    expect(rects(svg)).toHaveLength(1)
+    expect(rects(svg)[0]).toContain('fill="#FF0000"')
+    expect(rects(svg)[0]).toContain('stroke="#000000"')
+  })
+
+  test('goes on the last paint a vector region draws', () => {
+    const svg = svgOf((graph, pageId) => [
+      graph.createNode('VECTOR', pageId, {
+        width: 10,
+        height: 10,
+        strokes: [stroke],
+        vectorNetwork: {
+          vertices: [],
+          segments: [],
+          regions: [{ windingRule: 'NONZERO', loops: [], fills: [solid(0, 0, 1, 1, 1), noise] }]
+        },
+        fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: moveTo(0, 0) }]
+      }).id
+    ])
+    expect(paths(svg)).toEqual(['<path d="M0 0" fill="#0000FF" stroke="#000000" stroke-width="2"/>'])
+  })
+})

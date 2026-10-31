@@ -9,6 +9,7 @@ import {
   nextDefId,
   formatSolidColor,
   createFilterDef,
+  drawnFills,
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
@@ -348,23 +349,18 @@ function fillAndStrokeElements(
     )
   }
 
-  if (visibleFills.length > 1) {
-    const elements: SVGNode[] = []
-    for (const fill of visibleFills) {
-      const ref = resolveFill(fill, node, ctx)
-      if (ref) {
-        elements.push(
-          ...nodeShapeElements(
-            node,
-            ref,
-            solidFillOpacity(fill, ctx.colorSpace),
-            fill === visibleFills[visibleFills.length - 1] ? strokeAttrs : {},
-            ctx
-          )
-        )
-      }
-    }
-    return elements
+  // A shape painted once per fill SVG can draw; with none, it draws below as one without fills.
+  const drawn = visibleFills.length > 1 ? drawnFills(visibleFills, node, ctx) : []
+  if (drawn.length > 0) {
+    return drawn.flatMap(({ fill, paint }, index) =>
+      nodeShapeElements(
+        node,
+        paint,
+        solidFillOpacity(fill, ctx.colorSpace),
+        index === drawn.length - 1 ? strokeAttrs : {},
+        ctx
+      )
+    )
   }
 
   const hasFillOrStroke = fillAttr || visibleStrokeCount > 0
