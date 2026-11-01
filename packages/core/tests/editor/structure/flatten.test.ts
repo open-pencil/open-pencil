@@ -465,6 +465,38 @@ describe('flattenSelected', () => {
       expect(regionColors(vector)).toEqual([[RED.color], [BLUE.color]])
     })
 
+    // Figma: a 40 px line at (50, 20) with an 8 px stroke flattens to the segment its stroke is
+    // drawn along, half a weight up, and inside a round cap: (54, 16), 32 long.
+    test.each([
+      ['NONE', 50, 40],
+      ['ROUND', 54, 32]
+    ] as const)('keeps a line where its %s-capped stroke lay', async (cap, x, width) => {
+      const vector = await flattened((graph, pageId) => [
+        graph.createNode('LINE', pageId, {
+          x: 50,
+          y: 20,
+          width: 40,
+          height: 0,
+          strokes: [{ ...RED, weight: 8, align: 'CENTER', cap }],
+          strokeWeight: 8,
+          strokeCap: cap
+        })
+      ])
+      expect([vector?.x, vector?.y, vector?.width, vector?.height]).toEqual([x, 16, width, 0])
+    })
+
+    test('keeps a line that runs down its height', async () => {
+      const vector = await flattened((graph, pageId) => [
+        graph.createNode('LINE', pageId, {
+          width: 0,
+          height: 40,
+          strokes: [{ ...RED, weight: 2, align: 'CENTER' }]
+        })
+      ])
+      expect(vector?.type).toBe('VECTOR')
+      expect([vector?.width, vector?.height]).toEqual([0, 40])
+    })
+
     test("keeps a line as an open segment, under the top shape's stroke", async () => {
       const vector = await flattened((graph, pageId) => [
         graph.createNode('LINE', pageId, {

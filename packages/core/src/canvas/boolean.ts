@@ -18,7 +18,7 @@ import {
   normalizeDashPattern,
   withStrokeDash
 } from './strokes'
-import { makeLineStrokeOutline } from './strokes/line'
+import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines'
 
 const BOOLEAN_PATH_OP: Record<
@@ -376,12 +376,7 @@ export function flattenSourcePath(
 ): Path | null {
   if (node.type === 'BOOLEAN_OPERATION') return makeBooleanOperationPath(r, node, graph)
   if (!canMakeBooleanSourcePath(node)) return null
-  if (node.type === 'LINE') {
-    const segment = new r.ck.PathBuilder()
-    segment.moveTo(0, 0)
-    segment.lineTo(node.width, 0)
-    return segment.detachAndDelete()
-  }
+  if (node.type === 'LINE') return makeLineSegmentPath(r, node)
   return strokeSourcePath(r, node)
 }
 

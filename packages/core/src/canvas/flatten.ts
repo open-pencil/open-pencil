@@ -59,11 +59,14 @@ function flattenLeaves(graph: SceneGraph, nodes: SceneNode[]): FlattenLeaf[] {
   return leaves
 }
 
-/** Layers in the order they are drawn: Flatten stacks their regions so, whatever the selection's. */
+/**
+ * Layers in one parent in the order they are drawn: Flatten stacks their regions so, whatever the
+ * selection's. Layers from several parents, which the Plugin API allows, keep the caller's order.
+ */
 function inDrawOrder(graph: SceneGraph, nodes: SceneNode[]): SceneNode[] {
   const parentId = nodes[0]?.parentId
   const parent = parentId ? graph.getNode(parentId) : undefined
-  if (!parent) return nodes
+  if (!parent || nodes.some((node) => node.parentId !== parentId)) return nodes
   return nodes.toSorted((a, b) => parent.childIds.indexOf(a.id) - parent.childIds.indexOf(b.id))
 }
 
