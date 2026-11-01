@@ -80,10 +80,10 @@ function navigationClass(disabled: boolean) {
   <div
     data-test-id="mobile-toolbar"
     data-canvas-obstacle
-    class="fixed left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5"
+    class="interface-chrome fixed left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5"
     :style="{
       maxWidth: 'calc(100vw - 2rem)',
-      bottom: `calc(56px + env(safe-area-inset-bottom) + 0.75rem)`
+      bottom: `calc(56px * var(--interface-scale, 1) + env(safe-area-inset-bottom) + 0.75rem)`
     }"
   >
     <motion.button
@@ -102,7 +102,7 @@ function navigationClass(disabled: boolean) {
       <motion.div
         :layout="animationsEnabled"
         data-test-id="mobile-toolbar-container"
-        class="relative flex h-11 items-center overflow-hidden rounded-[8px] border border-border bg-panel px-2 shadow-lg"
+        class="scrollbar-none relative flex h-11 min-w-0 items-center overflow-x-auto rounded-[8px] border border-border bg-panel px-2 shadow-lg [&>*]:shrink-0"
         :transition="layoutTransition"
       >
         <AnimatePresence mode="popLayout" :custom="slideDirection">

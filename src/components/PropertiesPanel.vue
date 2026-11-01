@@ -52,7 +52,7 @@ const problemCount = computed(() => {
 <template>
   <aside
     data-test-id="properties-panel"
-    class="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-border bg-panel"
+    class="interface-chrome flex min-w-0 flex-1 flex-col overflow-hidden border-l border-border bg-panel"
     style="contain: paint layout style"
   >
     <CloudVersionHistory v-if="history" />

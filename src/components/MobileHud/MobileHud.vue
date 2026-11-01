@@ -12,7 +12,7 @@ provideMobileHud()
 
 <template>
   <div
-    class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start px-3 pt-3"
+    class="interface-chrome pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start px-3 pt-3"
     @touchstart.stop
   >
     <div class="pointer-events-auto flex flex-col items-start gap-1.5">

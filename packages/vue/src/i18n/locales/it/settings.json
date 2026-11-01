@@ -1,4 +1,7 @@
 {
+  "interfaceScale": "Dimensione dell’interfaccia",
+  "interfaceScaleDescription": "Ridimensiona pannelli, testo e controlli senza modificare lo zoom della tela.",
+  "interfaceScaleDefault": "{scale} (predefinito)",
   "recentFiles": "File recenti",
   "recentFilesDescription": "Scegli quanti file conservare nell’elenco e nel menu dei file recenti.",
   "recentFilesLimit": "Numero di file recenti",

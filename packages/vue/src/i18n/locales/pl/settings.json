@@ -1,4 +1,7 @@
 {
+  "interfaceScale": "Rozmiar interfejsu",
+  "interfaceScaleDescription": "Skaluj panele, tekst i elementy sterujące bez zmiany powiększenia płótna.",
+  "interfaceScaleDefault": "{scale} (domyślnie)",
   "recentFiles": "Ostatnie pliki",
   "recentFilesDescription": "Wybierz, ile plików zachować na liście ostatnich plików i w menu ich otwierania.",
   "recentFilesLimit": "Liczba ostatnich plików",
