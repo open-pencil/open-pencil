@@ -4,7 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
-import { layoutIssueMarkers } from '#core/canvas/issues/layout'
+import { placeIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentLabels, drawFrameTitles, drawSectionTitles } from '#core/canvas/labels/draw'
 import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { drawNodeEditOverlay } from '#core/canvas/node-edit-overlay'
@@ -77,18 +77,34 @@ function suppressedIssueIds(overlays: RenderOverlays): Set<string> {
 /**
  * Lays out markers for this frame and keeps them for hit testing, so the pointer always targets
  * what is drawn. Markers stay attached to their layers through edits and hide while drawing a path.
+ * The layers are staged in world space once per change; a frame places the stage in its viewport.
  */
-function updateIssueMarkers(r: SkiaRenderer, graph: SceneGraph, overlays: RenderOverlays): void {
+function updateIssueMarkers(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  overlays: RenderOverlays,
+  sceneVersion: number
+): void {
   const markers = overlays.designIssues?.markers
   if (!markers || markers.length === 0 || overlays.penState) {
     r.issueMarkers = []
     return
   }
+  const staged = r.issueMarkerStage.update(
+    graph,
+    markers,
+    {
+      pageId: r.pageId ?? '',
+      suppressedIds: suppressedIssueIds(overlays),
+      preview: overlays.rotationPreview
+    },
+    sceneVersion,
+    graph.positionPreviewVersion
+  )
   const measureText = (text: string) =>
     r.chromeFonts.size ? cachedGlyphWidth(r, r.chromeFonts.size, text) : 0
   const inset = r.showRulers ? RULER_SIZE : 0
-  r.issueMarkers = layoutIssueMarkers(graph, markers, {
-    pageId: r.pageId ?? '',
+  r.issueMarkers = placeIssueMarkers(staged, {
     view: {
       panX: r.panX,
       panY: r.panY,
@@ -98,8 +114,6 @@ function updateIssueMarkers(r: SkiaRenderer, graph: SceneGraph, overlays: Render
       insetTop: inset,
       insetLeft: inset
     },
-    suppressedIds: suppressedIssueIds(overlays),
-    preview: overlays.rotationPreview,
     measureText,
     obstacles: r.overlayObstacles
   })
@@ -110,7 +124,8 @@ export function drawOverlayPass(
   canvas: Canvas,
   graph: SceneGraph,
   selectedIds: Set<string>,
-  overlays: RenderOverlays
+  overlays: RenderOverlays,
+  sceneVersion: number
 ): void {
   const measuring = measurementVisible(overlays)
   const hoveredNodeId =
@@ -164,7 +179,7 @@ export function drawOverlayPass(
   drawPenOverlay(r, canvas, overlays.penState)
   drawPencilOverlay(r, canvas, overlays.pencilState)
   drawSnapMarks(r, canvas, overlays.snapGuides)
-  updateIssueMarkers(r, graph, overlays)
+  updateIssueMarkers(r, graph, overlays, sceneVersion)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)
   drawPresenceCursors(r, canvas, graph, overlays.presenceCursors)
 }

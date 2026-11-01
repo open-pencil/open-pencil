@@ -223,7 +223,7 @@ function drawAboveScene(
 
   canvas.save()
   canvas.scale(r.dpr, r.dpr)
-  if (!overlays.playing) drawOverlayPass(r, canvas, graph, selectedIds, overlays)
+  if (!overlays.playing) drawOverlayPass(r, canvas, graph, selectedIds, overlays, sceneVersion)
   drawChromePass(r, canvas, graph, selectedIds, overlays)
   canvas.restore()
 }

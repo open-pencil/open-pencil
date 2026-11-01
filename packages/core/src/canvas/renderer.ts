@@ -71,6 +71,7 @@ import { createSceneGeometry, type RotationPreview, type SceneGeometry } from '#
 
 import * as Effects from './effects'
 import * as Fills from './fills'
+import { IssueMarkerStage } from './issues/stage'
 import type { PlacedIssueMarker } from './issues/types'
 import type { PlacedStatusLabel } from './labels/status'
 import type { NodeEditPaints } from './node-edit-overlay'
@@ -207,6 +208,8 @@ export class SkiaRenderer {
   stickyPlaceholder: string | null = null
   /** What an empty connector label shows while it is typed into; null draws nothing. */
   connectorLabelPlaceholder: string | null = null
+  /** The marked layers staged in world space, placed anew each frame. */
+  readonly issueMarkerStage = new IssueMarkerStage()
   /** Issue markers placed in the last overlay pass; hit testing reads the same layout. */
   issueMarkers: PlacedIssueMarker[] = []
   /** Status labels drawn in the last label pass; clicks on them open the status menu. */
