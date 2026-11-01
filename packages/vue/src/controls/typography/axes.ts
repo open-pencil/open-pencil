@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit/object'
 import { computed, type ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
@@ -80,9 +81,10 @@ export function createTypographyAxes(editor: Editor, nodes: ComputedRef<SceneNod
   // A drag or a typed value is previewed, then committed as one undo step from the values it
   // started at, as the other typography fields are. While text is edited, the editor applies
   // both to the selected characters, and records the step with what was typed.
-  type AxisValues = Pick<SceneNode, 'fontVariations' | 'opticalSizeFromFontSize'> &
-    Partial<Pick<SceneNode, 'styleRuns'>>
-  const beforePreview = new Map<string, AxisValues>()
+  type AxisValues = Pick<SceneNode, 'fontVariations' | 'opticalSizeFromFontSize' | 'styleRuns'>
+  /** A layer's values before a preview, and whether it previewed on selected characters. */
+  type AxisPreview = { values: AxisValues; edited: boolean }
+  const beforePreview = new Map<string, AxisPreview>()
   // The previews belong to the step the commit records, so undoing it leaves nothing unsaved.
   const batch = useUndoBatch(editor.undo, () => editor.beginInteractiveEdit())
 
@@ -90,12 +92,13 @@ export function createTypographyAxes(editor: Editor, nodes: ComputedRef<SceneNod
     batch.ensure('typography:axes', 'Change font axes')
     for (const target of nodes.value) {
       if (!beforePreview.has(target.id)) {
-        // The panel shows a text's characters' style, so what it replaces is read from the layer;
-        // while text is edited, the editor keeps the selected characters' ranges itself.
+        // The panel shows a text's characters' style, so what it replaces is read from the layer.
         const own = editor.graph.getNode(target.id) ?? target
         const { fontVariations, opticalSizeFromFontSize, styleRuns } = own
-        const ranges = editor.state.editingTextId === target.id ? {} : { styleRuns }
-        beforePreview.set(target.id, { fontVariations, opticalSizeFromFontSize, ...ranges })
+        beforePreview.set(target.id, {
+          values: { fontVariations, opticalSizeFromFontSize, styleRuns },
+          edited: editor.state.editingTextId === target.id
+        })
       }
       editor.updateNode(target.id, editor.layerChanges(target.id, changes(target)))
     }
@@ -104,7 +107,9 @@ export function createTypographyAxes(editor: Editor, nodes: ComputedRef<SceneNod
 
   function commitPreview(label: string) {
     editor.undo.runBatch(label, () => {
-      for (const [id, before] of beforePreview) editor.commitNodeUpdate(id, before, label)
+      // While text is edited, the editor records the selected characters' ranges itself.
+      for (const [id, { values, edited }] of beforePreview)
+        editor.commitNodeUpdate(id, edited ? omit(values, ['styleRuns']) : values, label)
     })
     beforePreview.clear()
     batch.flush()
@@ -115,9 +120,13 @@ export function createTypographyAxes(editor: Editor, nodes: ComputedRef<SceneNod
     previewEach((node) => axisChanges(node, axis, value))
   }
 
-  /** Puts back the axes a cancelled edit previewed. */
+  /**
+   * Puts back the axes a cancelled edit previewed. A preview on selected characters changed only
+   * their ranges, which go back as they were rather than taking the layer's axes.
+   */
   function cancelAxis() {
-    for (const [id, before] of beforePreview) editor.updateNode(id, before)
+    for (const [id, { values, edited }] of beforePreview)
+      editor.updateNode(id, edited ? { styleRuns: values.styleRuns } : values)
     beforePreview.clear()
     batch.flush()
     editor.requestRender()
