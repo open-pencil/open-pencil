@@ -65,8 +65,8 @@ async function probeCreation(page: Page) {
           version: store.state.sceneVersion,
           committed,
           interactive: store.isInteractiveEditing(),
-          hasBacking: renderer.tiledSceneCovered,
-          sameBacking: renderer.tiledSceneCovered,
+          covered: renderer.tiledSceneCovered,
+          renderedTiles: renderer.tiledScene.renderedTiles,
           batching: store.undo.isBatching
         }
       },
@@ -96,14 +96,15 @@ test('Frame-tool creation previews without rebuilding the tiles', async ({ page 
     await page.mouse.down()
     const started = await probe.evaluate((p) => p.sample())
     expect(started.interactive).toBe(true)
-    expect(started.hasBacking).toBe(true)
+    expect(started.covered).toBe(true)
     for (const delta of [60, 100, 140, 180, 220]) {
       await page.mouse.move(x + delta, y + 140)
       await canvas.waitForRender()
       const held = await probe.evaluate((p) => p.sample())
       expect(held.version).toBe(started.version)
       expect(held.committed).toBe(started.committed)
-      expect(held.sameBacking).toBe(true)
+      expect(held.covered).toBe(true)
+      expect(held.renderedTiles).toBe(started.renderedTiles)
     }
     expect((await page.screenshot({ clip })).equals(before)).toBe(false)
     await page.mouse.up()

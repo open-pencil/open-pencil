@@ -1,7 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { arrowCapOverflow } from '@open-pencil/scene-graph/arrow-caps'
+import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
@@ -24,9 +24,10 @@ export function drawShapeThroughNodePicture(
   cached?.picture.delete()
   r.nodePictures.delete(node.id)
 
-  // An arrow head reaches past the shape, and its shadow reaches past the head: both margins.
+  // An outside stroke or an arrow head reaches past the shape, and its shadow reaches past that:
+  // both margins, so no part of the drawing lies outside the picture's bounds.
   const margin =
-    r.effectOverflow(node) + arrowCapOverflow(node.strokes, node.strokeCap, node.vectorNetwork)
+    r.effectOverflow(node) + strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
   const bounds = r.ck.LTRBRect(-margin, -margin, node.width + margin, node.height + margin)
   const recorder = new r.ck.PictureRecorder()
   try {
