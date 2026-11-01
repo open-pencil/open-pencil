@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { isAttachableImageFile, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { useChatContext } from '@/app/ai/chat/compaction/limits'
+import { compactionOf } from '@/app/ai/chat/compaction/marker'
 import { useChatCompaction } from '@/app/ai/chat/compaction/use'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
 import {
@@ -71,7 +72,7 @@ const submission = useChatSubmission({
   reportError: toast.error,
   openModelSettings: () => openSettingsDialog('ai'),
   openSetup: () => openAISetup(),
-  prepare: (current) => compaction.compactIfFull(current)
+  prepare: (current, text) => compaction.compactIfFull(current, text)
 })
 
 const chatInput = useTemplateRef<{
@@ -87,9 +88,20 @@ const { dragging: draggingImages } = useImageDrop(panel, {
 })
 let viewGeneration = 0
 
-/** Puts an unsent message back only in the conversation it was written in. */
+/**
+ * Puts an unsent message back only in the conversation it was written in. `/compact` compacts
+ * instead of sending, whether typed now or waiting in the queue, and what waits behind it goes
+ * next.
+ */
 async function submitMessage(message: ChatSubmission) {
   const generation = viewGeneration
+  const command = compactCommand(message)
+  if (command) {
+    const compacted = await compaction.compact({ trigger: 'manual', instructions: command[1] })
+    if (!compacted && generation === viewGeneration) chatInput.value?.restoreDraft(message)
+    if (compacted && status.value === 'ready') sendNextQueued()
+    return
+  }
   if (await submission.submit(message)) return
   if (generation === viewGeneration) chatInput.value?.restoreDraft(message)
   else for (const image of message.images) revokeImagePreviewURL(image.previewURL)
@@ -110,8 +122,20 @@ const contextPercent = computed(() =>
 /** `/compact`, with what to keep after it, compacts the conversation instead of sending it. */
 const COMPACT_COMMAND = /^\/compact(?:\s+([\s\S]*))?$/
 
-function compactConversation(instructions?: string): void {
-  void compaction.compact('manual', instructions)
+/**
+ * The command when `message` is `/compact` for a model the chat calls itself; an agent compacts
+ * its own context, and its own `/compact` goes to it as written.
+ */
+function compactCommand(message: ChatSubmission): RegExpExecArray | null {
+  const own = !providerID.value.startsWith('acp:') && providerID.value !== 'harness:pi'
+  if (!own || message.images.length > 0) return null
+  return COMPACT_COMMAND.exec(message.displayText.trim())
+}
+
+/** Compacts now, from the bar near the limit; a reply in progress finishes first. */
+function compactConversation(): void {
+  if (status.value === 'streaming' || status.value === 'submitted') return
+  void compaction.compact({ trigger: 'manual' })
 }
 
 watch(
@@ -236,13 +260,6 @@ const status = computed(() => chat.value?.status ?? 'ready')
  * takes in once the current tool calls finish, and Alt+Enter waits until all work is done.
  */
 function sendOrQueue(message: ChatSubmission, afterWork: boolean) {
-  // An agent compacts its own context, and its own `/compact` goes to it as written.
-  const ownCompaction = !providerID.value.startsWith('acp:') && providerID.value !== 'harness:pi'
-  const command = ownCompaction ? COMPACT_COMMAND.exec(message.displayText.trim()) : null
-  if (command && message.images.length === 0 && status.value === 'ready') {
-    compactConversation(command[1])
-    return
-  }
   if (status.value === 'streaming' || status.value === 'submitted') {
     enqueueMessage(message, afterWork ? 'follow-up' : 'steer')
     return
@@ -285,8 +302,16 @@ watch(
     )
   }
 )
+/**
+ * Compacts what came before the failed request, which stays after the summary, and asks again;
+ * the request itself is what the model is to answer.
+ */
 async function compactAndRetry(failedId: string | undefined): Promise<void> {
-  if (await compaction.compact('manual')) retryFailed(failedId)
+  const request = messages.value.findLast(
+    (message) => message.role === 'user' && compactionOf(message) === null
+  )
+  if (!request) return
+  if (await compaction.compact({ trigger: 'manual', before: request.id })) retryFailed(failedId)
 }
 function failureAction(failedId: string | undefined): { label: string; run: () => void } {
   const billingURL = cloudBillingURL.value

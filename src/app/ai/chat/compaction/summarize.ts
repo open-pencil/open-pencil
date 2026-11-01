@@ -3,30 +3,39 @@ import { convertToModelMessages, generateText, type LanguageModel, type UIMessag
 import { messagesSinceCompaction } from './marker'
 import prompt from './prompt.md?raw'
 
-/** How much of one tool result the summary request keeps; the rest is what the design shows. */
-const TOOL_OUTPUT_LIMIT = 4000
+/** How much of one tool's input or result the summary request keeps. */
+const TOOL_LIMIT = 4000
+/** How much of one message's text it keeps: a prompt pasted whole still leaves room. */
+const TEXT_LIMIT = 16000
 
-/** A tool result's text, cut to its start when it is long. */
-function shortened(output: unknown): string {
-  const text = typeof output === 'string' ? output : JSON.stringify(output)
-  if (text.length <= TOOL_OUTPUT_LIMIT) return text
-  return `${text.slice(0, TOOL_OUTPUT_LIMIT)}… (${text.length - TOOL_OUTPUT_LIMIT} more characters left out)`
+/** `value` as text, cut to its start when it is longer than `limit`. */
+function shortened(value: unknown, limit: number): string {
+  const text = typeof value === 'string' ? value : JSON.stringify(value)
+  if (text.length <= limit) return text
+  return `${text.slice(0, limit)}… (${text.length - limit} more characters left out)`
+}
+
+type Part = UIMessage['parts'][number]
+
+function boundedPart(part: Part): Part[] {
+  if (part.type === 'file') return []
+  if (part.type === 'text') return [{ ...part, text: shortened(part.text, TEXT_LIMIT) }]
+  if (!part.type.startsWith('tool-') || !('state' in part)) return [part]
+  const input = 'input' in part ? { input: shortened(part.input, TOOL_LIMIT) } : {}
+  const output =
+    part.state === 'output-available' ? { output: shortened(part.output, TOOL_LIMIT) } : {}
+  return [{ ...part, ...input, ...output } as Part]
 }
 
 /**
- * The conversation as the summary request reads it: no images or files, and long tool results
- * cut short, so a conversation too long for its model can still be summarized by it.
+ * The conversation as the summary request reads it: no images or files, and long text, tool
+ * inputs, and tool results cut short, so a conversation too long for its model, even one whose
+ * last prompt alone was, can still be summarized by it.
  */
 export function summarySource(messages: readonly UIMessage[]): UIMessage[] {
   return messagesSinceCompaction(messages).map((message) => ({
     ...message,
-    parts: message.parts.flatMap((part) => {
-      if (part.type === 'file') return []
-      if (part.type.startsWith('tool-') && 'state' in part && part.state === 'output-available') {
-        return [{ ...part, output: shortened(part.output) }]
-      }
-      return [part]
-    })
+    parts: message.parts.flatMap(boundedPart)
   }))
 }
 

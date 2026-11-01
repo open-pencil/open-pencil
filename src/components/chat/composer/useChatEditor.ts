@@ -3,6 +3,7 @@ import {
   autocompletion,
   completionKeymap,
   completionStatus,
+  startCompletion,
   type Completion,
   type CompletionSource
 } from '@codemirror/autocomplete'
@@ -159,6 +160,17 @@ export function useChatEditor(
     editor.focus()
   }
 
+  /** Starts a command: `/` at the start of the message, which opens the commands it offers. */
+  function startCommand() {
+    const editor = view.value
+    if (!editor) return
+    if (!editor.state.doc.toString().startsWith('/'))
+      editor.dispatch({ changes: { from: 0, insert: '/' } })
+    editor.dispatch({ selection: EditorSelection.cursor(1) })
+    editor.focus()
+    startCompletion(editor)
+  }
+
   /** Focuses the field with the caret at the end of the message. */
   function focusEnd() {
     const editor = view.value
@@ -167,5 +179,5 @@ export function useChatEditor(
     editor.focus()
   }
 
-  return { text, setText, insert, focus: () => view.value?.focus(), focusEnd }
+  return { text, setText, insert, startCommand, focus: () => view.value?.focus(), focusEnd }
 }

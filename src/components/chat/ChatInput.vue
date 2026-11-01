@@ -64,6 +64,7 @@ const {
 const composer = useTemplateRef<{
   restoreDraft: (text: string) => boolean
   insert: (text: string) => void
+  startCommand: () => void
 }>('composer')
 
 const completions = useComposerCompletions()
@@ -185,7 +186,7 @@ const selectedProfileName = computed(
         :can-mention="canMentionSelection"
         @attach="openImageDialog()"
         @mention="composer?.insert(selectionMentions())"
-        @command="composer?.insert('/')"
+        @command="composer?.startCommand()"
       />
     </template>
     <template #model>

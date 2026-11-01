@@ -2,7 +2,6 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import type { UIMessage } from 'ai'
 import type { Ref } from 'vue'
 
-import { messagesSinceCompaction } from '@/app/ai/chat/compaction/marker'
 import { appendUndoneCallsContext } from '@/app/ai/chat/context'
 import { undoOf, updateMessage, withUndo, type ReplyUndo } from '@/app/ai/chat/metadata'
 import type { ChatInstance } from '@/app/ai/chat/submission/types'
@@ -61,11 +60,11 @@ export function useUndoRecords(options: UndoRecordOptions) {
   }
 
   /**
-   * `text` with a note about the undone edits `history` has not reported, and those reports.
-   * Edits before a compaction are its summary's to describe, so only later replies count.
+   * `text` with a note about the undone edits `history` has not reported, and those reports. An
+   * edit undone after a compaction is noted too, since the summary still describes it as made.
    */
   function note(text: string, history: readonly UIMessage[]) {
-    const reports = undoToReport(messagesSinceCompaction(history))
+    const reports = undoToReport(history)
     const calls = {
       undone: reports.flatMap((report) => report.calls.undone),
       redone: reports.flatMap((report) => report.calls.redone)

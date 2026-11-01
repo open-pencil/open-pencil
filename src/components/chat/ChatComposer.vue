@@ -75,7 +75,12 @@ function restoreDraft(draft: string): boolean {
   editor.setText(draft)
   return true
 }
-defineExpose({ restoreDraft, insert: editor.insert, focus: editor.focus })
+defineExpose({
+  restoreDraft,
+  insert: editor.insert,
+  startCommand: editor.startCommand,
+  focus: editor.focus
+})
 </script>
 <template>
   <TooltipProvider>

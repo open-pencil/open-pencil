@@ -16,7 +16,7 @@ import { chatContextTheme } from '../ui'
  */
 const { compaction, tokensAfter = null } = defineProps<{
   compaction: Compaction
-  /** What the first request after the compaction held, once one has been made. */
+  /** What the first reply after the compaction reported its request held, once there is one. */
   tokensAfter?: number | null
 }>()
 const { ai } = useI18n()

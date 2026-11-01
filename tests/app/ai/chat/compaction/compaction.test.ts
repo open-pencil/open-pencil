@@ -67,10 +67,12 @@ describe('compaction', () => {
     expect(contextTokensSinceCompaction([text('a', 'user', 'Hi')])).toBeNull()
   })
 
-  test('compacts automatically before the window, leaving room for the reply and the next message', () => {
+  test('compacts automatically before the window, keeping the whole reply allowance and some room', () => {
     expect(autoCompactAt({ contextWindow: 200_000, maxOutputTokens: 16_000 })).toBe(165_600)
-    // A reply allowance past a quarter of the window counts as a quarter.
-    expect(autoCompactAt({ contextWindow: 32_000, maxOutputTokens: 16_000 })).toBe(21_600)
+    // Providers reserve the reply allowance, so a prompt at the threshold still fits with it.
+    expect(autoCompactAt({ contextWindow: 32_000, maxOutputTokens: 16_000 })).toBe(14_400)
+    // An allowance past half the window counts as half, so some conversation still fits.
+    expect(autoCompactAt({ contextWindow: 32_000, maxOutputTokens: 30_000 })).toBe(14_400)
   })
 
   test('the summary request leaves out images and cuts long tool results', () => {
@@ -100,6 +102,27 @@ describe('compaction', () => {
     ]
     const [request, answer] = summarySource(messages)
     expect(request?.parts).toEqual([{ type: 'text', text: 'Match this' }])
+    const [pasted] = summarySource([text('p', 'user', 'z'.repeat(20_000))])
+    expect(pasted?.parts[0]).toEqual({
+      type: 'text',
+      text: `${'z'.repeat(16_000)}… (4000 more characters left out)`
+    })
+    const [call] = summarySource([
+      {
+        id: 'c',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-render',
+            toolCallId: 'call-2',
+            state: 'input-available',
+            input: { jsx: 'x'.repeat(5000) }
+          }
+        ]
+      }
+    ])
+    const input = call?.parts[0] && 'input' in call.parts[0] ? call.parts[0].input : null
+    expect(typeof input === 'string' && input.endsWith('more characters left out)')).toBe(true)
     const output = answer?.parts[0] && 'output' in answer.parts[0] ? answer.parts[0].output : null
     expect(output).toBe(`${'y'.repeat(4000)}… (1000 more characters left out)`)
   })

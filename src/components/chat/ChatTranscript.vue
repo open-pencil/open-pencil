@@ -7,8 +7,8 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
-import { contextTokensSinceCompaction } from '@/app/ai/chat/compaction/limits'
 import { compactionOf } from '@/app/ai/chat/compaction/marker'
+import { contextTokensOf } from '@/app/ai/chat/metadata'
 import type { QueuedMessage } from '@/app/ai/chat/queue'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
@@ -74,14 +74,25 @@ const isThinking = computed(() => {
 const idle = computed(() => interactive && (status === 'ready' || status === 'error'))
 // A request that failed before any reply is the last message; it is retried, not an older reply.
 const lastMessage = computed(() => messages.at(-1))
-/** Each message with the compaction it marks, which the transcript draws as a divider. */
+/**
+ * Each message with the compaction it marks, which the transcript draws as a divider, and what
+ * the first reply after that compaction reported its request held.
+ */
 const entries = computed(() =>
-  messages.map((message) => ({ message, compaction: compactionOf(message) }))
+  messages.map((message, index) => {
+    const compaction = compactionOf(message)
+    const after = compaction ? contextTokensOf(messages.slice(index + 1, index + 3)) : null
+    return { message, compaction, tokensAfter: after }
+  })
 )
-// A compaction's summary is a message the person never wrote, so it is neither edited nor retried.
-const lastRequest = computed(() =>
-  messages.findLast((m) => m.role === 'user' && compactionOf(m) === null)
-)
+/**
+ * The newest message the person wrote. A compaction's summary is not one, and a request before
+ * it is no longer the model's to answer, so neither is edited or retried.
+ */
+const lastRequest = computed(() => {
+  const last = messages.findLast((m) => m.role === 'user')
+  return last && compactionOf(last) === null ? last : undefined
+})
 /** Messages with attachments carry context a plain text edit would drop. */
 const editableRequestId = computed(() => {
   const request = lastRequest.value
@@ -119,11 +130,14 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
       <!-- Messages -->
       <div v-else ref="transcriptContent" data-test-id="chat-messages" class="flex flex-col gap-3">
-        <template v-for="({ message: msg, compaction }, index) in entries" :key="msg.id">
+        <template
+          v-for="({ message: msg, compaction, tokensAfter }, index) in entries"
+          :key="msg.id"
+        >
           <ChatCompactionDivider
             v-if="compaction"
             :compaction="compaction"
-            :tokens-after="contextTokensSinceCompaction([msg])"
+            :tokens-after="tokensAfter"
           />
           <ChatMessage
             v-else

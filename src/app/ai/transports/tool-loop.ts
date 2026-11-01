@@ -152,7 +152,9 @@ export function createToolLoopTransport({
     },
     onStepFinish: (step) => {
       const { usage } = step
-      lastStep = { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 }
+      // A step without a count says nothing of what the request held, so the last counted stands.
+      if (usage.inputTokens !== undefined)
+        lastStep = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens ?? 0 }
       preview.clear()
       recordStep(store)
       recording?.step(step)

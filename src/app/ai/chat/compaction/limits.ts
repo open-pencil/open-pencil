@@ -37,16 +37,22 @@ export async function designContextLimits(): Promise<ContextLimits | null> {
 }
 
 /**
- * Where automatic compaction starts: the window less room for the reply, of which a tenth is
- * left for the next message, so the request that would overflow is never sent.
+ * Where automatic compaction starts: the window less the whole reply allowance, which providers
+ * reserve from the window, and a tenth of the rest for the next message. A reply allowance past
+ * half the window counts as half, so some conversation still fits.
  */
 export function autoCompactAt({ contextWindow, maxOutputTokens }: ContextLimits): number {
-  const reply = Math.min(maxOutputTokens, contextWindow / 4)
+  const reply = Math.min(maxOutputTokens, contextWindow / 2)
   return Math.floor((contextWindow - reply) * 0.9)
 }
 
-/** About four characters to a token, for a summary no request has counted yet. */
+/** About four characters to a token, for text no request has counted yet. */
 const CHARACTERS_PER_TOKEN = 4
+
+/** An estimate of the tokens `text` takes, before a request has counted it. */
+export function estimatedTokens(text: string): number {
+  return Math.ceil(text.length / CHARACTERS_PER_TOKEN)
+}
 
 /**
  * The tokens the next request starts from: what the last reply since the latest compaction
@@ -57,7 +63,7 @@ export function contextTokensSinceCompaction(messages: readonly UIMessage[]): nu
   const reported = contextTokensOf(since)
   if (reported !== null) return reported
   const compaction = since.at(0) ? compactionOf(since[0]) : null
-  return compaction ? Math.ceil(compaction.summary.length / CHARACTERS_PER_TOKEN) : null
+  return compaction ? estimatedTokens(compaction.summary) : null
 }
 
 /** How full the Design model's context is for `messages`, for the chat's context meter. */
