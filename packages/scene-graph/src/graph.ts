@@ -720,8 +720,8 @@ export class SceneGraph {
     return HitTest.hitTestOpenContainer(this, px, py, scopeId)
   }
 
-  isOpenContainer(nodeId: string): boolean {
-    return HitTest.isOpenContainer(this, nodeId)
+  isOpenContainer(nodeId: string, framesOpen = true): boolean {
+    return HitTest.isOpenContainer(this, nodeId, framesOpen)
   }
 
   isPointInNode(nodeId: string, px: number, py: number): boolean {

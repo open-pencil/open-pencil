@@ -1,4 +1,5 @@
 import type { EditorContext } from '#core/editor/types'
+import { resolveEditorProfile } from '#core/editor/views'
 
 export function createSelectionContainerActions(ctx: EditorContext) {
   function validateEnteredContainer() {
@@ -14,12 +15,15 @@ export function createSelectionContainerActions(ctx: EditorContext) {
   /**
    * Enters the container a click reached the layer through, as a double-click would have: its
    * parent, unless that is the page or a container a click looks into by itself (a top-level
-   * frame, a section, a component set), which is never entered.
+   * frame in a design, a section, a component set), which is never entered.
    */
   function enterContainerOf(nodeId: string) {
     const parentId = ctx.graph.getNode(nodeId)?.parentId ?? null
+    const { framesOpen } = resolveEditorProfile(ctx.state)
     const entered =
-      parentId && parentId !== ctx.state.currentPageId && !ctx.graph.isOpenContainer(parentId)
+      parentId &&
+      parentId !== ctx.state.currentPageId &&
+      !ctx.graph.isOpenContainer(parentId, framesOpen)
     ctx.state.enteredContainerId = entered ? parentId : null
   }
 

@@ -65,9 +65,8 @@ function updateHoveredNode(
   >,
   deep: boolean
 ) {
-  const hit = deep
-    ? fns.hitTestLayer(cx, cy, true)
-    : (hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, false))
+  // A label takes the hover before the layers under it, with or without ⌘, as it takes a press.
+  const hit = hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, deep)
   const editNodeId = getNodeEditState(editor)?.nodeId
   // No outline on a layer a press would not select.
   const hovered =

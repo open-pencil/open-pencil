@@ -54,6 +54,13 @@ describe('enterContainerOf', () => {
     expect(editor.state.enteredContainerId).toBeNull()
   })
 
+  test('enters a top-level frame on a board, where frames stay closed', () => {
+    const { rows, row } = swatchRows()
+    editor.setDocumentKind('board')
+    editor.enterContainerOf(row.id)
+    expect(editor.state.enteredContainerId).toBe(rows.id)
+  })
+
   test('exitContainers leaves every entered container', () => {
     const { swatch } = swatchRows()
     editor.enterContainerOf(swatch.id)

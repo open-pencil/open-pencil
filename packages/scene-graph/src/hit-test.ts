@@ -336,9 +336,9 @@ export function hitTestSelectable(
 }
 
 /** Whether a click looks into this container rather than selecting it; see `hitTestSelectable`. */
-export function isOpenContainer(graph: SceneGraph, nodeId: string): boolean {
+export function isOpenContainer(graph: SceneGraph, nodeId: string, framesOpen = true): boolean {
   const node = graph.nodes.get(nodeId)
-  return node !== undefined && opensByItself(graph, node)
+  return node !== undefined && opensByItself(graph, node, framesOpen)
 }
 
 /**

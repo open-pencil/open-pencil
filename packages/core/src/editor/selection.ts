@@ -68,7 +68,12 @@ export function createSelectionActions(ctx: EditorContext) {
   }
 
   const containerActions = createSelectionContainerActions(ctx)
-  const hitTestActions = createSelectionHitTestActions(ctx, select, clearSelection)
+  const hitTestActions = createSelectionHitTestActions(
+    ctx,
+    select,
+    clearSelection,
+    containerActions.enterContainerOf
+  )
   const navigationActions = createSelectionNavigationActions(ctx, select)
   const overlayActions = createSelectionOverlayActions(ctx)
   const readActions = createSelectionReadActions(ctx)

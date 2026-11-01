@@ -7,7 +7,8 @@ import { resolveEditorProfile } from '#core/editor/views'
 export function createSelectionHitTestActions(
   ctx: EditorContext,
   select: (ids: string[], additive?: boolean) => void,
-  clearSelection: () => void
+  clearSelection: () => void,
+  enterContainerOf: (nodeId: string) => void
 ) {
   /**
    * The layer a click selects, found from the page: the selection and the entered container open
@@ -32,13 +33,17 @@ export function createSelectionHitTestActions(
 
   /**
    * Selects what a right-click is over, as Figma does: the layer a click would select, or else the
-   * frame or section whose empty area is under the point, which a click leaves for a marquee.
+   * frame or section whose empty area is under the point, which a click leaves for a marquee. The
+   * entered container follows the selection, as it does after a press.
    */
   function selectAtPoint(cx: number, cy: number) {
     const hit =
       hitTestAtPoint(cx, cy) ?? ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
     if (hit) {
-      if (!ctx.state.selectedIds.has(hit.id)) select([hit.id])
+      if (!ctx.state.selectedIds.has(hit.id)) {
+        select([hit.id])
+        enterContainerOf(hit.id)
+      }
     } else {
       clearSelection()
     }

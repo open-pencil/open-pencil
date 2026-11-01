@@ -68,8 +68,8 @@ test('a swatch reached by double-clicks, then clicks on other rows and sections,
   await canvas.dblclick(dark.x, dark.y)
   await expect.poll(() => scene.selection()).toEqual(['Dark Row 2 Card 1'])
 
-  // The page deselects and leaves every entered container.
-  await canvas.click(swatch.x, 290)
+  // The page between the sections deselects and leaves every entered container.
+  await canvas.click(swatch.x, 330)
   await expect.poll(() => scene.selection()).toEqual([])
   expect(await scene.entered()).toBeNull()
   canvas.assertNoErrors()
