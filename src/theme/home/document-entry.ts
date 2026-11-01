@@ -7,7 +7,7 @@ export default {
       'min-w-0 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50',
     preview:
       'flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-border bg-panel-field transition-colors group-hover:border-panel-focus',
-    image: 'size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]',
+    image: 'size-full object-contain transition-transform duration-200 group-hover:scale-[1.015]',
     fallback: 'size-8 text-muted/40',
     icon: 'size-4 shrink-0 text-primary',
     body: 'min-w-0 flex-1',

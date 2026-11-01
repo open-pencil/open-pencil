@@ -299,11 +299,11 @@ export interface ThumbnailFrame {
 }
 
 /**
- * How a thumbnail frames its page: `contain` shows all the content at the size it fits in,
- * `cover` fills `width` by `height` from the content's top left corner and crops the rest, so a
- * tall kit shows its top and a row of screens its first ones, where the content starts.
+ * How a thumbnail frames its page's content, always whole: `contain` is as large as the content
+ * fits in `width` by `height`, and `letterbox` is exactly that size with the content centred on
+ * the page colour, as Figma's file browser shows a file in its card.
  */
-export type ThumbnailFit = 'contain' | 'cover'
+export type ThumbnailFit = 'contain' | 'letterbox'
 
 /** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
 export function thumbnailFrame(
@@ -323,14 +323,18 @@ export function thumbnailFrame(
   const contentH = bounds.maxY - bounds.minY
   if (contentW <= 0 || contentH <= 0) return null
 
-  if (fit === 'cover') {
-    const scale = Math.max(width / contentW, height / contentH)
+  const scale = Math.min(width / contentW, height / contentH)
+  if (fit === 'letterbox') {
+    const centerX = (bounds.minX + bounds.maxX) / 2
+    const centerY = (bounds.minY + bounds.maxY) / 2
+    const halfW = width / scale / 2
+    const halfH = height / scale / 2
     return {
       bounds: {
-        minX: bounds.minX,
-        minY: bounds.minY,
-        maxX: bounds.minX + width / scale,
-        maxY: bounds.minY + height / scale
+        minX: centerX - halfW,
+        minY: centerY - halfH,
+        maxX: centerX + halfW,
+        maxY: centerY + halfH
       },
       scale,
       width,
@@ -338,7 +342,6 @@ export function thumbnailFrame(
     }
   }
 
-  const scale = Math.min(width / contentW, height / contentH)
   return {
     bounds,
     scale,

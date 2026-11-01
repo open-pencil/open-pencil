@@ -10,7 +10,7 @@ import { readCacheBytes, removeCachePrefix, writeCacheBytes } from '@/app/cache'
 import { isFigArchiveName } from '@/app/document/io/names'
 import { isTauri } from '@/app/tauri/env'
 
-// v3 holds 1280×720 covers; the 512 px ones of v2 are drawn again when a file next opens.
+// v3 holds 800×450 covers; the 512 px ones of v2 are drawn again when a file next opens.
 const RECENT_FILE_THUMBNAIL_CACHE_DIR = 'recent-file-thumbnails/v3'
 
 async function recentFileThumbnailCacheKey(path: string): Promise<string> {
@@ -41,10 +41,10 @@ export async function cacheRecentFileThumbnail(path: string, bytes: Uint8Array):
 }
 
 /**
- * A Home card's preview, framed as the card shows it (16:9 from the content's top left) and sharp
- * at twice the widest card, unlike the 512 px cover a `.fig` carries, which fits its whole page.
+ * A Home card's preview: the whole cover page centred on its colour in the card's 16:9, as Figma's
+ * file browser shows it, 800 px wide like Figma's previews so a card stays sharp at 2×.
  */
-const RECENT_FILE_COVER = { width: 1280, height: 720 }
+const RECENT_FILE_COVER = { width: 800, height: 450 }
 
 /** Cover writes still running, by file, so each file's covers are cached in the order drawn. */
 const coverWrites = new Map<string, Promise<void>>()
@@ -63,7 +63,7 @@ export async function cacheRecentFileCover(
   const pageId = figThumbnailPageId(graph.getPages())
   if (!pageId) return false
   const { width, height } = RECENT_FILE_COVER
-  const bytes = renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'cover')
+  const bytes = renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'letterbox')
   if (!bytes) return false
   const previous = coverWrites.get(path) ?? Promise.resolve()
   const write = previous.catch(() => undefined).then(() => cacheRecentFileThumbnail(path, bytes))

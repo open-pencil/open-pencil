@@ -1,1 +1,1 @@
-- Recent files on Home show sharp previews framed from the top of the cover page, and keep them after the file is saved.
+- Recent files on Home show sharp previews of their whole cover page, centred on the page colour as in Figma's file browser, and keep them after the file is saved.
