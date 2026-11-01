@@ -508,6 +508,7 @@ export class SkiaRenderer {
   forgetNode(nodeId: string): void {
     this.textFonts.pending.delete(nodeId)
     this.textFonts.pictureGenerations.delete(nodeId)
+    this.nodePaths.invalidate(nodeId)
     this.invalidateNodePicture(nodeId)
   }
 
