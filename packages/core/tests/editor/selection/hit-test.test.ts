@@ -29,7 +29,7 @@ describe('editor scoped hit testing', () => {
     expect(editor.hitTestAtPoint(130, 130)?.id).toBe(child.id)
   })
 
-  test("a right-click on a board selects the frame, as a click does", () => {
+  test("selectAtPoint on a board selects the frame over its child", () => {
     const editor = createEditor()
     editor.setDocumentKind('board')
     const pageId = editor.state.currentPageId
