@@ -262,7 +262,15 @@ function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterab
  * values differ from their bindings elsewhere in the document are left as saved.
  */
 export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
-  const changed: string[] = []
+  return [...reconcileVariableBindingUpdates(graph, scope).keys()]
+}
+
+/** As `reconcileVariableBindings`, with the fields each changed layer received. */
+export function reconcileVariableBindingUpdates(
+  graph: SceneGraph,
+  scope?: BindingScope
+): Map<string, Partial<SceneNode>> {
+  const changed = new Map<string, Partial<SceneNode>>()
   for (const node of scopedNodes(graph, scope)) {
     const updates = {
       ...resolvedNumericBindings(graph, node),
@@ -271,7 +279,7 @@ export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScop
     }
     if (Object.keys(updates).length === 0) continue
     graph.updateNode(node.id, updates)
-    changed.push(node.id)
+    changed.set(node.id, updates)
   }
   return changed
 }
