@@ -40,11 +40,19 @@ describe('Markdown as text, styled as FigJam styles typed Markdown', () => {
     ])
   })
 
-  test('a reference link takes its definition’s URL, and inline HTML tags leave their words', () => {
-    expect(styled('See the [guide][Manual] and <b>this</b>.\n\n[manual]: https://x.dev/guide')).toEqual([
+  test('a reference link takes its definition’s URL', () => {
+    const source = 'See the [guide][Manual].\n\n[manual]: https://x.dev/guide'
+    expect(markdownText(source, BASE).text).toBe('See the guide.')
+    expect(styled(source)).toEqual([
       ['guide', { hyperlink: { type: 'URL', value: 'https://x.dev/guide' } }]
     ])
+  })
+
+  test('HTML keeps its words, inline or as a block, and a comment leaves nothing', () => {
     expect(markdownText('See <b>this</b>.', BASE).text).toBe('See this.')
+    expect(markdownText('<div>\nOne<br>two\n</div>\n\n<!-- note -->\n\nend', BASE).text).toBe(
+      'One\ntwo\nend'
+    )
   })
 
   test('code is Roboto Mono, Medium below SemiBold and Bold from it', () => {
@@ -72,6 +80,15 @@ describe('Markdown as text, styled as FigJam styles typed Markdown', () => {
       { listType: 'ORDERED', indentation: 1 }
     ])
     expect(styleRuns).toEqual([{ start: 16, length: 4, style: { italic: true } }])
+  })
+
+  test('an empty list item is a bullet of its own', () => {
+    const { text, textParagraphs } = markdownText('- \n- next', BASE)
+    expect(text).toBe('\nnext')
+    expect(textParagraphs).toEqual([
+      { listType: 'UNORDERED', indentation: 1 },
+      { listType: 'UNORDERED', indentation: 1 }
+    ])
   })
 
   test('a hard break starts a paragraph, a table row reads as its cells, a rule is left out', () => {

@@ -4,6 +4,7 @@ import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
 import { toString } from 'mdast-util-to-string'
 import { gfm } from 'micromark-extension-gfm'
+import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
 
 import type {
   CharacterStyleOverride,
@@ -99,6 +100,17 @@ function phrasing(nodes: readonly PhrasingContent[], style: Style, reading: Read
   })
 }
 
+/** The words HTML shows, a `<br>` breaking the line; its tags only mark them up. */
+function htmlWords(nodes: DefaultTreeAdapterTypes.ChildNode[]): string {
+  return nodes
+    .map((node) => {
+      if (node.nodeName === '#text' && 'value' in node) return node.value
+      if (node.nodeName === 'br') return '\n'
+      return 'childNodes' in node ? htmlWords(node.childNodes) : ''
+    })
+    .join('')
+}
+
 function linked(style: Style, url: string): Style {
   return { ...style, hyperlink: { type: 'URL', value: url } }
 }
@@ -147,14 +159,16 @@ function blocks(
       case 'blockquote':
         return blocks(node.children, { ...style, italic: true }, paragraph, reading, depth)
       case 'list':
-        return node.children.flatMap((item) =>
-          item.children.flatMap((child, index) => {
+        return node.children.flatMap((item) => {
+          const bullet = listStyle(node.ordered === true, depth + 1)
+          // An empty item is still a bullet of its own.
+          if (item.children.length === 0) return [{ segments: [], style: bullet }]
+          return item.children.flatMap((child, index) => {
             // An item's first block is its bullet; a nested list goes a level deeper.
             if (child.type === 'list') return blocks([child], style, paragraph, reading, depth + 1)
-            const itemStyle = index === 0 ? listStyle(node.ordered === true, depth + 1) : paragraph
-            return blocks([child], style, itemStyle, reading, depth)
+            return blocks([child], style, index === 0 ? bullet : paragraph, reading, depth)
           })
-        )
+        })
       case 'code':
         return node.value.split('\n').map((line) => ({
           segments: line ? [{ text: line, style: codeStyle(style, reading) }] : [],
@@ -169,8 +183,10 @@ function blocks(
           ]),
           style: paragraph
         }))
-      case 'html':
-        return splitBreaks([{ text: node.value, style }], paragraph)
+      case 'html': {
+        const words = htmlWords(parseFragment(node.value).childNodes).trim()
+        return words ? splitBreaks([{ text: words, style }], paragraph) : []
+      }
       case 'thematicBreak':
       case 'definition':
       case 'footnoteDefinition':
