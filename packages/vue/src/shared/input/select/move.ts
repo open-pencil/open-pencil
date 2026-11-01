@@ -1,4 +1,4 @@
-import type { Editor, MovePlace } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor, type MovePlace } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
@@ -28,7 +28,7 @@ export function selectionIsLocked(editor: Editor) {
  * selected by the press as they are when it is not selected.
  */
 /** Whether a selected frame, not a group or boolean, holds `hit`; a read-only press selects it then. */
-export function insideSelectedFrame(hit: SceneNode, editor: Editor) {
+function insideSelectedFrame(hit: SceneNode, editor: Editor) {
   for (let node = editor.graph.getNode(hit.parentId ?? ''); node;) {
     if (editor.state.selectedIds.has(node.id)) {
       return node.type !== 'GROUP' && node.type !== 'BOOLEAN_OPERATION'
@@ -38,7 +38,7 @@ export function insideSelectedFrame(hit: SceneNode, editor: Editor) {
   return false
 }
 
-export function pressesSelection(hit: SceneNode, cx: number, cy: number, editor: Editor) {
+function pressesSelection(hit: SceneNode, cx: number, cy: number, editor: Editor) {
   return [...editor.state.selectedIds].some((id) => {
     if (id === hit.id) return false
     if (editor.graph.isDescendant(hit.id, id)) return !editor.graph.isOpenContainer(id)
@@ -136,4 +136,20 @@ export function createSelectionMoveDrag(
     autoLayoutParentId: detectDragAutoLayoutParent(originals, editor),
     flows: collectFlowDrags(originals, editor)
   }
+}
+
+/**
+ * Whether a press on `hit` selects it rather than acting on the selection it lies in, as in
+ * Figma: a press inside a selected frame drags the frame, a deep (⌘) press selects what it hit,
+ * and a read-only document, where nothing drags, selects the layer inside a selected frame.
+ */
+export function pressSelects(
+  hit: SceneNode,
+  cx: number,
+  cy: number,
+  editor: Editor,
+  deep = false
+): boolean {
+  if (deep || !pressesSelection(hit, cx, cy, editor)) return true
+  return !resolveEditorProfile(editor.state).edits && insideSelectedFrame(hit, editor)
 }

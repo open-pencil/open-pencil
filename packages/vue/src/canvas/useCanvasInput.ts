@@ -22,7 +22,7 @@ import {
   updateNodeEditHover
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
-import { createClickCounter, MULTI_CLICK_DELAY } from '#vue/shared/input/click-count'
+import { createClickCounter } from '#vue/shared/input/click-count'
 import {
   attachModifiers,
   handleConnectorDrawMove,
@@ -81,7 +81,6 @@ export function useCanvasInput(
   const cursorOverride = ref<string | null>(null)
   /** Whether the primary button is held on a preview control, such as a slider thumb. */
   const valueEdit = createAutoLayoutValueEdit(editor)
-  const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
   const lastPointer = ref<{ cx: number; cy: number; sx: number; sy: number } | null>(null)
   const pointerInside = ref(false)
   let altHeld = false
@@ -173,7 +172,7 @@ export function useCanvasInput(
     }
   })
 
-  const { handleTextEditClick, onDblClick: onTextDblClick } = createTextEditInput({
+  const { handleTextEditClick, pressDeeper } = createTextEditInput({
     editor,
     getCoords,
     hitTestInScope,
@@ -181,7 +180,6 @@ export function useCanvasInput(
     hitTestComponentLabel,
     hitTestFrameTitle,
     getClickCount,
-    wasSelectedBeforeClickSequence: (id) => selectedIdsBeforeClickSequence.value.has(id),
     onEditCanvasLabel: canvasLabelEdit.start,
     setDrag
   })
@@ -194,13 +192,6 @@ export function useCanvasInput(
     handleMarqueeMove
   } = createCanvasTransformInput(editor, setDrag)
 
-  /**
-   * The second click of a run and every one after it, on its press: one level deeper, or a value
-   * field, as in Figma. The press decides so that every click of a quick run counts; the browser
-   * fires its double-click event by its own count, which a click shortly before the run shifts.
-   */
-  let multiClickPressAt = 0
-
   /** Only the select tool takes a double-click on its press; a drawing tool keeps its press. */
   function takesMultiClick(e: MouseEvent): boolean {
     return (
@@ -211,23 +202,24 @@ export function useCanvasInput(
     )
   }
 
+  /**
+   * The second click of a run and every one after it, on its press: one level deeper, or a value
+   * field, as in Figma. The press decides so that every click of a quick run counts; the browser
+   * fires its double-click event by its own count, which a click shortly before the run shifts.
+   */
   function onMultiClickDown(e: MouseEvent, clickCount: number) {
-    multiClickPressAt = performance.now()
     const { cx, cy } = getCoords(e)
     if (clickCount === 2 && profile().edits && valueEdit.start(cx, cy)) {
       e.preventDefault()
       e.stopPropagation()
       return
     }
-    onTextDblClick(e, clickCount > 2)
+    pressDeeper(e, clickCount > 2)
   }
 
   function onDblClick(e: MouseEvent) {
-    // Handled on the press, which the event only must not follow with a browser text selection;
-    // a double-click dispatched without presses, as tests do, is handled here instead.
+    // Handled on the press; the event only must not start a browser text selection.
     e.preventDefault()
-    if (performance.now() - multiClickPressAt < MULTI_CLICK_DELAY) return
-    if (takesMultiClick(e)) onMultiClickDown(e, 2)
   }
 
   function hoverLayers({ event, cx, cy, sx, sy }: CanvasToolPointer) {
@@ -284,9 +276,7 @@ export function useCanvasInput(
     }
     editor.setSelectedGuide(null)
 
-    const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
     const clickCount = recordClick(sx, sy, e.detail)
-    if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
     if (clickCount >= 2 && takesMultiClick(e)) {
       onMultiClickDown(e, clickCount)
       return

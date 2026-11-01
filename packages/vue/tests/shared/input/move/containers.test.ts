@@ -2,10 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { autoLayoutInsertIndex } from '#vue/shared/input/auto-layout'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
-import {
-  createSelectionMoveDrag,
-  pressesSelection
-} from '#vue/shared/input/select/move'
+import { createSelectionMoveDrag, pressSelects } from '#vue/shared/input/select/move'
 
 import { createMoveHarness, type MoveHarness } from './harness'
 
@@ -159,16 +156,18 @@ describe('auto layout', () => {
 })
 
 describe('pressing inside the selection', () => {
-  test('drags a selected container rather than the child under the cursor', () => {
+  test('drags a selected container rather than selecting the child under the cursor', () => {
     const { node, page, editor } = setup()
     const outer = node('FRAME', page, { width: 500, height: 500 })
     const nested = node('FRAME', outer.id, { x: 50, y: 50, width: 300, height: 300 })
     const child = node('RECTANGLE', nested.id, { x: 50, y: 50, width: 60, height: 60 })
     editor.select([nested.id])
-    expect(pressesSelection(child, 130, 130, editor)).toBe(true)
+    expect(pressSelects(child, 130, 130, editor)).toBe(false)
+    // A deep press selects what it hit, as a ⌘-click does.
+    expect(pressSelects(child, 130, 130, editor, true)).toBe(true)
     // A top-level frame stays open while selected, so a press reaches its layers.
     editor.select([outer.id])
-    expect(pressesSelection(nested, 130, 130, editor)).toBe(false)
+    expect(pressSelects(nested, 130, 130, editor)).toBe(true)
   })
 
   test('keeps a selected group child when the group is hit', () => {
@@ -176,7 +175,7 @@ describe('pressing inside the selection', () => {
     const group = node('GROUP', page, { width: 160, height: 160 })
     const a = node('RECTANGLE', group.id, { width: 60, height: 60 })
     editor.select([a.id])
-    expect(pressesSelection(group, 20, 20, editor)).toBe(true)
-    expect(pressesSelection(group, 120, 120, editor)).toBe(false)
+    expect(pressSelects(group, 20, 20, editor)).toBe(false)
+    expect(pressSelects(group, 120, 120, editor)).toBe(true)
   })
 })

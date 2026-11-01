@@ -1,4 +1,4 @@
-export const MULTI_CLICK_DELAY = 500
+const MULTI_CLICK_DELAY = 500
 const MULTI_CLICK_RADIUS = 5
 
 export function createClickCounter() {

@@ -130,12 +130,9 @@ export function createTextActions(ctx: EditorContext) {
     if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
   }
 
-  /** A text draws from its live layout while edited, so its picture and tiles follow the edit. */
+  /** A text draws from its live layout while edited, so it is drawn afresh as the edit starts and ends. */
   function redrawText(nodeId: string) {
-    for (const renderer of ctx.getRenderers()) {
-      renderer.invalidateNodePicture(nodeId)
-      renderer.tiledScene.invalidateNode(nodeId, ctx.graph)
-    }
+    for (const renderer of ctx.getRenderers()) renderer.redrawNode(nodeId, ctx.graph)
   }
 
   function startTextEditing(nodeId: string) {

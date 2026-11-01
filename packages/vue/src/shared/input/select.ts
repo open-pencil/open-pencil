@@ -12,8 +12,7 @@ import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
 import {
   createSelectionMoveDrag,
-  insideSelectedFrame,
-  pressesSelection,
+  pressSelects,
   selectionIsLocked
 } from '#vue/shared/input/select/move'
 import { tryStartShapeHandleDrag } from '#vue/shared/input/shape-handles'
@@ -72,16 +71,10 @@ function tryStartHandleDrag(
   return !hitTestLabel(cx, cy, fns) && tryStartRotation(cx, cy)
 }
 
-/** Shift adds to the selection; a plain press selects the layer unless it keeps the selection. */
-function selectOnPress(hit: SceneNode, shiftKey: boolean, keepsSelection: boolean, editor: Editor) {
+/** Shift adds to the selection; a plain press selects the layer when the press selects it. */
+function selectOnPress(hit: SceneNode, shiftKey: boolean, selects: boolean, editor: Editor) {
   if (shiftKey) editor.select([hit.id], true)
-  else if (!editor.state.selectedIds.has(hit.id) && !keepsSelection) editor.select([hit.id])
-}
-
-/** A read-only document moves nothing, so a press selects a layer inside a selected frame at once. */
-function selectInsideOnPress(hit: SceneNode, keepsSelection: boolean, editor: Editor) {
-  if (keepsSelection && !editor.state.selectedIds.has(hit.id) && insideSelectedFrame(hit, editor))
-    editor.select([hit.id])
+  else if (selects && !editor.state.selectedIds.has(hit.id)) editor.select([hit.id])
 }
 
 export function handleSelectDown(
@@ -115,14 +108,10 @@ export function handleSelectDown(
     return
   }
 
-  // A deep press selects the deepest layer, as a ⌘-click does in Figma, wherever the selection is.
-  const keepsSelection = !e.shiftKey && !deep && pressesSelection(hit, cx, cy, editor)
-  selectOnPress(hit, e.shiftKey, keepsSelection, editor)
+  selectOnPress(hit, e.shiftKey, pressSelects(hit, cx, cy, editor, deep), editor)
 
-  if (!resolveEditorProfile(editor.state).edits) {
-    selectInsideOnPress(hit, keepsSelection, editor)
-    return
-  }
+  // A read-only document moves nothing.
+  if (!resolveEditorProfile(editor.state).edits) return
   if (selectionIsLocked(editor)) return
 
   // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.

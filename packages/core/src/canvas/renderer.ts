@@ -416,10 +416,7 @@ export class SkiaRenderer {
   flushDecodedPreviews(graph: SceneGraph): void {
     if (this.images.decodedPreviewHashes.size === 0) return
     for (const hash of this.images.decodedPreviewHashes) {
-      for (const nodeId of this.images.fillUsers.get(hash) ?? []) {
-        this.invalidateNodePicture(nodeId)
-        this.tiledScene.invalidateNode(nodeId, graph)
-      }
+      for (const nodeId of this.images.fillUsers.get(hash) ?? []) this.redrawNode(nodeId, graph)
     }
     this.images.decodedPreviewHashes.clear()
   }
@@ -435,8 +432,7 @@ export class SkiaRenderer {
       const node = graph.getNode(id)
       if (!node) continue
       if (node.type === 'TEXT') {
-        this.invalidateNodePicture(id)
-        this.tiledScene.invalidateNode(id, graph)
+        this.redrawNode(id, graph)
         this.invalidateBooleanAncestors(graph, node)
       }
       pending.push(...node.childIds)
@@ -454,8 +450,7 @@ export class SkiaRenderer {
       seen.add(parent.id)
       if (parent.type === 'BOOLEAN_OPERATION') {
         this.invalidateVectorPath(parent.id)
-        this.invalidateNodePicture(parent.id)
-        this.tiledScene.invalidateNode(parent.id, graph)
+        this.redrawNode(parent.id, graph)
       }
       parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
     }
@@ -491,10 +486,7 @@ export class SkiaRenderer {
       const image = source && this.surface.makeImageFromTextureSource(textureSource(source))
       if (image) this.images.live.set(hash, { image, surface: this.surface })
     }
-    for (const id of nodeIds) {
-      this.invalidateNodePicture(id)
-      this.tiledScene.invalidateNode(id)
-    }
+    for (const id of nodeIds) this.redrawNode(id)
     return this.images.live.has(hash)
   }
 
@@ -520,6 +512,12 @@ export class SkiaRenderer {
   /** Drops `nodeId`'s cached drawing; `changedKeys`, when known, lets text keep its glyph coverage. */
   invalidateNodePicture(nodeId: string, changedKeys?: readonly (keyof SceneNode)[]): void {
     RendererState.invalidateNodePicture(this, nodeId, changedKeys)
+  }
+
+  /** Draws `nodeId` afresh next frame: its picture and the tiles that hold it are dropped. */
+  redrawNode(nodeId: string, graph?: SceneGraph): void {
+    this.invalidateNodePicture(nodeId)
+    this.tiledScene.invalidateNode(nodeId, graph)
   }
 
   flashNode(nodeId: string): void {
