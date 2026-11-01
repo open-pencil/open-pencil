@@ -1,7 +1,9 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
 
-import { measureTextForLayout } from './text-measurement'
+import { autoWidthWrapWidth, measureTextForLayout } from './text-measurement'
+
+const WRAP_WIDTH_KEYS = ['minWidth', 'maxWidth'] as const satisfies readonly (keyof SceneNode)[]
 
 /** Case and direction change what the lines hold, so how wide they are and where they break. */
 const TEXT_CONTENT_FIELDS = ['textCase', 'textDirection'] as const
@@ -9,8 +11,10 @@ const TEXT_CONTENT_FIELDS = ['textCase', 'textDirection'] as const
 export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
   ...TEXT_METRIC_FIELDS,
   ...TEXT_CONTENT_FIELDS,
+  ...WRAP_WIDTH_KEYS,
   'lineHeight',
   'textAutoResize',
+  'textTruncation',
   'width',
   'maxLines'
 ])
@@ -18,7 +22,10 @@ export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
 const TEXT_AUTO_WIDTH_KEYS = new Set<keyof SceneNode>([
   ...TEXT_METRIC_FIELDS,
   ...TEXT_CONTENT_FIELDS,
-  'textAutoResize'
+  ...WRAP_WIDTH_KEYS,
+  'textAutoResize',
+  'textTruncation',
+  'maxLines'
 ])
 
 export function hasTextAutoResizeChange(changes: Partial<SceneNode>): boolean {
@@ -52,7 +59,7 @@ export function textAutoResizeChanges(
   if (mode !== 'HEIGHT' && mode !== 'WIDTH_AND_HEIGHT')
     return { derivedTextHeight: measureTextForLayout(next, next.width).height || null }
 
-  const maxWidth = mode === 'HEIGHT' ? next.width : undefined
+  const maxWidth = mode === 'HEIGHT' ? next.width : autoWidthWrapWidth(next)
   const measured = measureTextForLayout(next, maxWidth)
   const resized: TextSizeChanges = {
     derivedLayout: null,

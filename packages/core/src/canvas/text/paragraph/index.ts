@@ -23,6 +23,7 @@ import {
 } from '#core/canvas/text/paint'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
+import { autoWidthWrapWidth } from '#core/layout/text-measurement'
 import { shownTextSlice } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import {
@@ -37,7 +38,9 @@ import type { ParagraphNode } from './inputs'
 
 export function resolveParagraphLayoutWidth(node: ParagraphNode, maxWidth?: number): number {
   if (maxWidth !== undefined) return maxWidth
-  if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return 1e6
+  if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
+    return autoWidthWrapWidth(node) ?? 1e6
+  }
   return node.width || 1e6
 }
 

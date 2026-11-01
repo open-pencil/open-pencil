@@ -1,0 +1,1 @@
+- Text that sizes its own width wraps and truncates at its max width, as in Figma, also after it is edited or laid out again.
