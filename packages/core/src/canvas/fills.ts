@@ -4,6 +4,7 @@ import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
@@ -48,23 +49,23 @@ export function drawVectorMultiStyleFills(
   graph: SceneGraph,
   patternStack?: Set<string>
 ): boolean {
-  if (node.type !== 'VECTOR' || !node.fillGeometry.some((geometry) => geometry.fills?.length)) {
-    return false
-  }
-  const paths = r.getFillGeometry(node)
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!network || !hasRegionFills(network)) return false
+  const { regions } = network
+  const paths =
+    (fillGeometryMatchesRegions(node.fillGeometry, network) ? r.getFillGeometry(node) : null) ??
+    r.getVectorPaths(node)
   if (!paths) return false
 
-  for (let index = 0; index < node.fillGeometry.length; index++) {
-    const geometry = node.fillGeometry[index]
+  for (const [index, region] of regions.entries()) {
     const path = paths[index]
-    const usesPathFills = Boolean(geometry.fills?.length)
     paintFills(
       r,
-      usesPathFills ? (geometry.fills ?? []) : node.fills,
+      region.fills ?? node.fills,
       node,
       graph,
       () => canvas.drawPath(path, r.fillPaint),
-      { bindToNodeFills: !usesPathFills, patternStack }
+      { bindToNodeFills: !region.fills, patternStack }
     )
   }
   return true

@@ -1,9 +1,10 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import { copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
 import type { VectorPathWindingRule } from './parse-path'
 import type { Vector } from './primitives'
-import type { VectorNetwork, VectorSegment, VectorVertex } from './types'
+import type { Fill, GeometryPath, VectorNetwork, VectorSegment, VectorVertex } from './types'
 
 /** Concatenate vector networks while preserving independent geometry. */
 export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorNetwork {
@@ -31,7 +32,7 @@ export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorN
         for (const segmentIndex of loop) shifted.push(segmentIndex + segmentOffset)
         loops.push(shifted)
       }
-      regions.push({ windingRule: region.windingRule, loops })
+      regions.push(copyVectorRegion(region, loops))
     }
     vertexOffset += network.vertices.length
     segmentOffset += network.segments.length
@@ -61,11 +62,29 @@ export function transformVectorNetwork(m: Mat3, vn: VectorNetwork): VectorNetwor
       tangentStart: mapVector(s.tangentStart),
       tangentEnd: mapVector(s.tangentEnd)
     })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
+    regions: vn.regions.map((r) => copyVectorRegion(r))
   }
+}
+
+/** Whether any region has paints of its own, which it draws instead of the layer's fills. */
+export function hasRegionFills(network: VectorNetwork | null): boolean {
+  return network?.regions.some((region) => region.fills !== undefined) ?? false
+}
+
+/**
+ * Whether fill geometry is the regions' outlines, one each, as a file or an edit writes it. A
+ * pasted vector has none, and an import skips empty outlines; their regions draw traced.
+ */
+export function fillGeometryMatchesRegions(
+  fillGeometry: readonly GeometryPath[],
+  network: VectorNetwork
+): boolean {
+  return fillGeometry.length === network.regions.length
+}
+
+/** The paints regions carry of their own. */
+export function regionFills(network: VectorNetwork | null): Fill[] {
+  return network?.regions.flatMap((region) => region.fills ?? []) ?? []
 }
 
 /** Structural equality of two VectorNetworks (order-sensitive, exact values). */
@@ -75,22 +94,6 @@ export function vectorNetworksEqual(a: VectorNetwork, b: VectorNetwork): boolean
     isEqual(a.segments, b.segments) &&
     isEqual(a.regions, b.regions)
   )
-}
-
-/** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */
-export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
-  return {
-    vertices: vn.vertices.map((v) => ({ ...v })),
-    segments: vn.segments.map((s) => ({
-      ...s,
-      tangentStart: { ...s.tangentStart },
-      tangentEnd: { ...s.tangentEnd }
-    })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
-  }
 }
 
 /**

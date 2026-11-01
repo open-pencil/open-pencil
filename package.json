@@ -132,7 +132,6 @@
     "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",
     "@aws-sdk/client-s3": "^3.1149.0",
-    "@chenglou/pretext": "^0.0.7",
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-css": "^6.3.1",
