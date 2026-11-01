@@ -3,3 +3,4 @@
 - A group's empty area no longer takes clicks: a layer under a group, such as a chart line beneath its grouped dots, is selected through the gaps between the group's layers, as in Figma (#1664).
 - A quick run of clicks goes one level deeper on each click after the first, as in Figma, so a nested chart title is reached by clicking it a few times; a run that lands on a text selects it, and a double-click then edits it (#1664).
 - Entering an edit by double-click selects all of the text, and clicking another text while editing puts the caret where you clicked, as in Figma (#1664).
+- After reaching a nested layer by double-clicks, a click on a layer elsewhere selects what a click from nothing would, such as another row of swatches in the shadcn kit, instead of climbing out one container per click; a click on the page or a section's empty area with a selection deselects, as in Figma (#1664).

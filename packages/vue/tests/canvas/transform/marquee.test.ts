@@ -12,7 +12,7 @@ function marquee(from: [number, number], to: [number, number], containerId?: str
   editor.clearSelection()
   handleMarqueeMove(
     editor,
-    { type: 'marquee', startX: from[0], startY: from[1], containerId },
+    { type: 'marquee', startX: from[0], startY: from[1], containerId, selectsSection: true },
     ...to
   )
   return [...editor.state.selectedIds]

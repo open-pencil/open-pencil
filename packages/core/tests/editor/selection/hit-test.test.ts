@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 
-describe('editor scoped hit testing', () => {
-  test('uses world coordinates inside entered containers', () => {
+describe('editor hit testing', () => {
+  test('finds layers from the page whatever container is entered', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const frame = editor.graph.createNode('FRAME', pageId, {

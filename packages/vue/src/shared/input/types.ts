@@ -174,6 +174,8 @@ export interface DragMarquee {
   startY: number
   /** The open frame or section the marquee started in, whose layers it selects. */
   containerId?: string
+  /** Whether a press without a drag selects the section it started in: only from no selection. */
+  selectsSection: boolean
 }
 
 export interface DragRotate {

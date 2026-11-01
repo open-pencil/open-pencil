@@ -13,7 +13,7 @@ type SetDrag = (drag: DragState) => void
 type TextEditInputOptions = {
   editor: Editor
   getCoords: GetCoords
-  hitTestInScope: HitTest
+  hitTestLayer: HitTest
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
@@ -26,7 +26,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
   const {
     editor,
     getCoords,
-    hitTestInScope,
+    hitTestLayer,
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,
@@ -49,7 +49,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     const localY = cy - abs.y
     if (localX < 0 || localY < 0 || localX > editNode.width || localY > editNode.height) {
       editor.commitTextEdit()
-      const hit = hitTestInScope(cx, cy, true)
+      const hit = hitTestLayer(cx, cy, true)
       if (hit?.type === 'TEXT' && hit.id !== editNode.id) {
         startTextEditingAt(hit, cx, cy, 'caret')
         return true
@@ -174,7 +174,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
       editor.state.selectedIds.size === 1 ? [...editor.state.selectedIds][0] : undefined
     if (handleContainerDoubleClick(selectedId, cx, cy)) return
 
-    const found = hitTestInScope(cx, cy, true)
+    const found = hitTestLayer(cx, cy, true)
     if (!found) return
     // A generated frame's sublayers are edited through the frame.
     const hit = generatedFrameOwner(editor.graph, found) ?? found

@@ -61,13 +61,13 @@ function updateHoveredNode(
   editor: Editor,
   fns: Pick<
     HitTestFns,
-    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+    'hitTestLayer' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
   >,
   deep: boolean
 ) {
   const hit = deep
-    ? fns.hitTestInScope(cx, cy, true)
-    : (hitTestLabel(cx, cy, fns) ?? fns.hitTestInScope(cx, cy, false))
+    ? fns.hitTestLayer(cx, cy, true)
+    : (hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, false))
   const editNodeId = getNodeEditState(editor)?.nodeId
   // No outline on a layer a press would not select.
   const hovered =
@@ -84,7 +84,7 @@ export function updateHoverCursor(
   editor: Editor,
   fns: Pick<
     HitTestFns,
-    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+    'hitTestLayer' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
   >,
   deep = false
 ): string | null {

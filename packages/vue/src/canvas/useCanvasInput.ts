@@ -89,7 +89,7 @@ export function useCanvasInput(
   const spaceHeld = useSpaceHeld()
   const { recordClick, getClickCount } = createClickCounter()
 
-  const { getCoords, canvasToLocal, hitTestInScope, hitFns } = createCanvasPointer(
+  const { getCoords, canvasToLocal, hitTestLayer, hitFns } = createCanvasPointer(
     canvasRef,
     editor,
     hitTestSectionTitle,
@@ -175,7 +175,7 @@ export function useCanvasInput(
   const { handleTextEditClick, pressDeeper } = createTextEditInput({
     editor,
     getCoords,
-    hitTestInScope,
+    hitTestLayer,
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,
