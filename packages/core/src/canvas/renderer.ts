@@ -146,6 +146,8 @@ export class SkiaRenderer {
   pageColor = CANVAS_BG_COLOR
   /** The board grid the page's dots follow, in canvas units, or null for a page without dots. */
   pageDotGrid: number | null = null
+  /** What section titles are coloured from, as the document's profile says. */
+  sectionTitles: 'fill' | 'outline' = 'fill'
   showRulers = true
   rulerTheme: RulerTheme | null = null
   /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */

@@ -244,6 +244,20 @@ export function figJamOutlineColorName(color: Color | undefined): FigJamColorNam
   )
 }
 
+/**
+ * How FigJam draws a section's title on a board, measured in FigJam: a pill in the section's
+ * outline colour, with white text on the palette's darkest colours and black on the rest; null
+ * for a section without an outline from the palette.
+ */
+export function figJamSectionTitleColors(
+  section: Pick<SceneNode, 'strokes'>
+): { background: Color; lightText: boolean } | null {
+  const outline = drawnPaint(section.strokes)
+  const name = figJamOutlineColorName(outline?.color)
+  if (!outline || !name) return null
+  return { background: { ...outline.color, a: 1 }, lightText: PALETTE[name].lightLabel }
+}
+
 /** The fill mode a shape's first fill shows. */
 export function figJamFillMode(fill: Fill | undefined): FigJamFillMode {
   if (!fill || !fill.visible || fill.opacity === 0) return 'none'
@@ -380,9 +394,16 @@ export function figJamSectionColorFields(
   name: FigJamColorName
 ): Partial<SceneNode> {
   const { sectionFill, sectionStroke } = PALETTE[name]
+  // The outline shows in full at FigJam's 2, as its menu draws it, unless the line menu hid it.
+  const strokes = strokesIn(section.strokes, parseColor(sectionStroke), SECTION_STROKE_WEIGHT).map(
+    (stroke): Stroke =>
+      stroke.opacity === 0
+        ? stroke
+        : { ...stroke, opacity: 1, visible: true, weight: SECTION_STROKE_WEIGHT }
+  )
   return {
     fills: [{ type: 'SOLID', color: parseColor(sectionFill), opacity: 1, visible: true }],
-    strokes: strokesIn(section.strokes, parseColor(sectionStroke), SECTION_STROKE_WEIGHT),
+    strokes,
     strokeWeight: SECTION_STROKE_WEIGHT
   }
 }
