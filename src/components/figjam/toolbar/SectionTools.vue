@@ -29,6 +29,16 @@ const figjam = useFigJamMessages()
 const { menu } = useI18n()
 const styles = tv(theme)()
 
+/** Locks or unlocks every selected section alike, a mixed selection included. */
+function setLocked(value: boolean) {
+  const changing = [...store.state.selectedIds].filter(
+    (id) => store.graph.getNode(id)?.locked !== value
+  )
+  store.undo.runBatch(value ? 'Lock' : 'Unlock', () =>
+    changing.forEach((id) => store.toggleNodeLock(id))
+  )
+}
+
 const hex = computed(() =>
   toolbar.color.value ? colorToHex(figJamColor(toolbar.color.value)) : undefined
 )
@@ -67,7 +77,7 @@ const hex = computed(() =>
     :label="locked ? menu.unlock : menu.lock"
     :active="locked"
     data-property="toolbar-lock"
-    @click="store.toggleLock()"
+    @click="setLocked(!locked)"
   >
     <icon-lucide-lock v-if="locked" class="size-4" />
     <icon-lucide-lock-open v-else class="size-4" />

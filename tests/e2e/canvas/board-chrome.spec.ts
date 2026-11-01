@@ -39,7 +39,7 @@ test('a board opens on the canvas and its tools, with the panels one click away'
 // Live-checked in FigJam: its toolbar has no context menu, and a board's tools are fixed.
 test("a board's toolbar offers no customizing", async () => {
   await editor.page.getByTestId('toolbar').click({ button: 'right' })
-  await expect(editor.page.getByRole('menuitem', { name: 'Customize toolbar…' })).toHaveCount(0)
+  await expect(editor.page.getByRole('menu')).toHaveCount(0)
 })
 
 test("a selected note offers FigJam's choices over the canvas", async () => {

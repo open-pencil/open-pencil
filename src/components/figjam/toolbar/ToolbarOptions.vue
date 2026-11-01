@@ -19,10 +19,22 @@ const { label, options, selected } = defineProps<{
 }>()
 const emit = defineEmits<{ select: [value: T] }>()
 const styles = tv(theme)()
+
+const ARROW_STEPS: Readonly<Record<string, number>> = { ArrowDown: 1, ArrowUp: -1 }
+
+/** Up and Down move between the choices, wrapping around, as a menu's arrow keys do. */
+function moveFocus(event: KeyboardEvent) {
+  const step = ARROW_STEPS[event.key]
+  if (!step || !(event.currentTarget instanceof HTMLElement)) return
+  event.preventDefault()
+  const items = [...event.currentTarget.querySelectorAll<HTMLElement>('[role=menuitemradio]')]
+  const current = items.indexOf(document.activeElement as HTMLElement)
+  items.at((current + step) % items.length)?.focus()
+}
 </script>
 
 <template>
-  <div role="menu" :aria-label="label" :class="styles.options()">
+  <div role="menu" :aria-label="label" :class="styles.options()" @keydown="moveFocus">
     <button
       v-for="option in options"
       :key="option.value"

@@ -39,7 +39,6 @@ const MENU_GAP = 8
         :collision-padding="8"
         :class="[styles.popover(), floatingSurface, motionStyles.floating]"
         :data-menu="property"
-        @open-auto-focus.prevent
       >
         <slot />
       </PopoverContent>

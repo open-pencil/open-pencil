@@ -1,3 +1,4 @@
+import { uniq } from 'es-toolkit'
 import { computed } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -38,12 +39,25 @@ export function useFigJamStyle() {
   )
   const ids = computed(() => layers.value.map((layer) => layer.id))
 
+  /** The layers a group's colour is read from: its contents, as its colour paints them. */
+  function painted(layer: SceneNode): SceneNode[] {
+    if (layer.type !== 'GROUP') return [layer]
+    return editor.graph.getChildren(layer.id).flatMap(painted)
+  }
+
+  /** The palette colour a layer shows, a group's when its contents share one. */
+  function layerColor(layer: SceneNode): FigJamColorName | null {
+    if (layer.type === 'SECTION') return figJamSectionColorName(layer)
+    const names = uniq(painted(layer).map(figJamLayerColorName))
+    return names.length === 1 ? (names[0] ?? null) : null
+  }
+
   const style = useSceneComputed(() => {
     const first: SceneNode | undefined = layers.value.at(0)
     if (!first) return null
     const text = first.type === 'TEXT' ? first : generatedFrameText(editor.graph, first)
     return {
-      color: first.type === 'SECTION' ? figJamSectionColorName(first) : figJamLayerColorName(first),
+      color: layerColor(first),
       lineStyle: figJamLineStyle(first),
       lineColor: figJamColorName(first.strokes.at(0)?.color),
       textSize: text ? figJamTextSize(text) : null,

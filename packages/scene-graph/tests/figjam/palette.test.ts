@@ -93,15 +93,24 @@ describe("FigJam's shape colours", () => {
   })
 
   test('the colour menu paints text, a line, and other layers as FigJam does', () => {
-    const text = figJamLayerColorFields({ type: 'TEXT', strokes: [] }, 'red')
+    const text = figJamLayerColorFields({ type: 'TEXT', strokes: [], styleRuns: [] }, 'red')
     expect(hexes(text.fills)).toEqual(['#f24822'])
     expect(text.strokes).toBeUndefined()
-    const line = figJamLayerColorFields({ type: 'LINE', strokes: [] }, 'blue')
+    const line = figJamLayerColorFields({ type: 'LINE', strokes: [], styleRuns: [] }, 'blue')
     expect(line.fills).toBeUndefined()
     expect(hexes(line.strokes)).toEqual(['#3dadff'])
-    const rect = figJamLayerColorFields({ type: 'RECTANGLE', strokes: [] }, 'red')
+    const rect = figJamLayerColorFields({ type: 'RECTANGLE', strokes: [], styleRuns: [] }, 'red')
     expect(hexes(rect.fills)).toEqual(['#f24822'])
     expect(rect.strokes?.[0]).toMatchObject({ weight: 1 })
     expect(figJamLayerColorName({ type: 'RECTANGLE', fills: rect.fills ?? [], strokes: [] })).toBe('red')
+  })
+
+  test('the colour reaches gradient strokes and ranges of text coloured on their own', () => {
+    const gradient = { type: 'GRADIENT_LINEAR' as const, color: figJamColor('black'), opacity: 1, visible: true, weight: 2, align: 'INSIDE' as const }
+    const rect = figJamLayerColorFields({ type: 'RECTANGLE', strokes: [gradient], styleRuns: [] }, 'red')
+    expect(rect.strokes?.[0]?.type).toBe('SOLID')
+    const run = { start: 0, length: 2, style: { fills: [{ type: 'SOLID' as const, color: figJamColor('blue'), opacity: 1, visible: true }], fontSize: 30 } }
+    const text = figJamLayerColorFields({ type: 'TEXT', strokes: [], styleRuns: [run] }, 'red')
+    expect(text.styleRuns?.[0]?.style).toEqual({ fontSize: 30 })
   })
 })

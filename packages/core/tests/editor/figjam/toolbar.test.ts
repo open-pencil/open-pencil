@@ -20,6 +20,7 @@ describe("FigJam's selection toolbars", () => {
     expect(figJamToolbarKind([layer('SECTION')])).toBe('section')
     expect(figJamToolbarKind([layer('RECTANGLE'), layer('FRAME'), layer('LINE')])).toBe('layer')
     expect(figJamToolbarKind([layer('RECTANGLE', [image])])).toBe('image')
+    expect(figJamToolbarKind([layer('RECTANGLE', [{ ...image, visible: false }])])).toBe('layer')
     expect(figJamToolbarKind([])).toBeNull()
   })
 

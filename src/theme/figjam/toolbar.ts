@@ -1,6 +1,6 @@
 const figJamToolbarTheme = {
   slots: {
-    bar: 'flex h-10 items-center gap-0.5 px-1',
+    bar: 'flex h-10 max-w-[calc(100vw-16px)] items-center gap-0.5 overflow-x-auto px-1',
     divider: 'mx-1 h-6 w-px shrink-0 bg-border',
     trigger:
       'flex h-8 shrink-0 cursor-pointer items-center gap-0.5 rounded-md px-1.5 text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 data-[state=open]:bg-hover data-[state=open]:text-surface',

@@ -1,3 +1,5 @@
+import { omit } from 'es-toolkit'
+
 import { parseColor } from '../color'
 import { BLACK, WHITE } from '../constants'
 import type { Color } from '../primitives'
@@ -356,7 +358,7 @@ const LAYER_STROKE_WEIGHT = 1
 
 /** `strokes` recoloured, or a new stroke of `weight` when there are none. */
 function strokesIn(strokes: Stroke[], color: Color, weight: number): Stroke[] {
-  if (strokes.length > 0) return strokes.map((stroke) => ({ ...stroke, color }))
+  if (strokes.length > 0) return strokes.map((stroke) => ({ ...stroke, type: 'SOLID', color }))
   return [{ type: 'SOLID', color, opacity: 1, visible: true, weight, align: 'INSIDE' }]
 }
 
@@ -393,12 +395,19 @@ function colorsStroke(node: Pick<SceneNode, 'type'>): boolean {
  * colour.
  */
 export function figJamLayerColorFields(
-  node: Pick<SceneNode, 'type' | 'strokes'>,
+  node: Pick<SceneNode, 'type' | 'strokes' | 'styleRuns'>,
   name: FigJamColorName
 ): Partial<SceneNode> {
   const color = figJamColor(name)
   const fills: Fill[] = [{ type: 'SOLID', color, opacity: 1, visible: true }]
-  if (node.type === 'TEXT') return { fills }
+  if (node.type === 'TEXT') {
+    // The whole text takes the colour, ranges coloured on their own included.
+    const styleRuns = node.styleRuns.map((run) => ({
+      ...run,
+      style: omit(run.style, ['fills', 'fillStyleId'])
+    }))
+    return { fills, styleRuns }
+  }
   const strokes = strokesIn(node.strokes, color, LAYER_STROKE_WEIGHT)
   return colorsStroke(node) ? { strokes } : { fills, strokes }
 }

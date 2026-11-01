@@ -125,7 +125,7 @@ export function createSelectionCommands({
       get label() {
         return t.value.wrapInSection
       },
-      enabled: capabilities.canFrameSelection,
+      enabled: capabilities.canWrapInSection,
       run: () => editor.wrapSelectionInSection()
     },
     'selection.ungroup': {

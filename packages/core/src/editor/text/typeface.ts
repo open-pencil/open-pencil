@@ -59,7 +59,10 @@ export function createFigJamTextActions(
    */
   async function setFigJamTypeface(ids: Iterable<string>, typeface: FigJamTypeface) {
     const { fontFamily, fontWeight } = FIGJAM_TYPEFACES[typeface]
+    const graph = ctx.graph
     await ctx.loadFont(fontFamily, faceLoadKey(fontWeight, false))
+    // Another document opened while the face loaded: these ids are not its layers.
+    if (ctx.graph !== graph) return
     edit('Change typeface', textsAmong(ids), (text) =>
       nodes.updateNode(text.id, figJamTypefaceFields(typeface, text))
     )

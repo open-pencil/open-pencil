@@ -73,6 +73,7 @@ function align(value: Alignment) {
     <ToolbarOptions :label="panels.alignment" :options="options" :selected="null" @select="align" />
   </ToolbarMenu>
   <IconButton
+    v-if="getCommand('selection.wrapInSection').enabled"
     size="md"
     :label="getCommand('selection.wrapInSection').label"
     data-property="toolbar-wrap-section"

@@ -12,7 +12,8 @@ function scaleNote(
   handle: HandlePosition,
   dx: number,
   dy: number,
-  obstacle?: Rect
+  obstacle?: Rect,
+  disableSnapping = false
 ) {
   const editor = createEditor()
   editor.setDocumentKind('board')
@@ -28,7 +29,7 @@ function scaleNote(
   const startY = at.y + (handle.includes('s') ? 240 : 0)
   const drag = tryStartStickyScale(startX, startY, editor)
   if (!drag) throw new Error(`No ${handle} handle`)
-  applyStickyScale(drag, startX + dx, startY + dy, editor)
+  applyStickyScale(drag, startX + dx, startY + dy, editor, disableSnapping)
   drag.commit()
   const scaled = editor.graph.getNode(note.id)
   return { x: scaled?.x, y: scaled?.y, width: scaled?.width, height: scaled?.height }
@@ -55,5 +56,9 @@ describe('scaling a sticky note by a corner on a board', () => {
   test("takes another layer's edge before the grid", () => {
     const edge = { x: 1523, y: 400, width: 20, height: 280 }
     expect(scaleNote({ x: 1264, y: 400 }, 'se', 21, 21, edge)).toMatchObject({ width: 259 })
+  })
+
+  test('Control scales it freely, off the grid', () => {
+    expect(scaleNote({ x: 1264, y: 400 }, 'se', 37, 37, undefined, true)).toMatchObject({ width: 277 })
   })
 })

@@ -36,4 +36,14 @@ describe('wrapping layers in a new section', () => {
     expect(id ? editor.graph.getNode(id)?.fills : null).toEqual(expected)
     expect(editor.graph.getNode(drawn)?.fills).toEqual(expected)
   })
+
+  test('layers inside a frame are not wrapped, as sections live only on pages and in sections', () => {
+    const editor = createEditor()
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, { width: 400, height: 400 })
+    const a = editor.createShape('RECTANGLE', 10, 10, 50, 50, frame.id)
+    editor.select([a])
+    expect(editor.canWrapSelectionInSection()).toBe(false)
+    expect(editor.wrapSelectionInSection()).toBeNull()
+    expect(editor.graph.getNode(a)?.parentId).toBe(frame.id)
+  })
 })

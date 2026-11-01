@@ -14,7 +14,10 @@ import {
   booleanOperationSelected as booleanOperationSelectedImpl,
   type BooleanOperation
 } from './structure/boolean'
-import { wrapSelectionInContainer as wrapSelectionInContainerImpl } from './structure/container-wrap'
+import {
+  wrapParentId,
+  wrapSelectionInContainer as wrapSelectionInContainerImpl
+} from './structure/container-wrap'
 import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
 import { ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
@@ -84,11 +87,19 @@ export function createStructureActions(ctx: EditorContext) {
     return wrapSelectionInContainer('FRAME', selectedNodes)
   }
 
+  /** Whether layers can go in a new section: siblings on a page or in a section, where sections live. */
+  function canWrapInSection(selectedNodes: SceneNode[]) {
+    const parentId = wrapParentId(ctx, selectedNodes)
+    const parent = parentId ? ctx.graph.getNode(parentId) : undefined
+    return parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+  }
+
   /**
    * Wraps layers in a new section with room around them, as FigJam's selection toolbar does,
    * painted as a drawn section is.
    */
   function wrapInSection(selectedNodes: SceneNode[]) {
+    if (!canWrapInSection(selectedNodes)) return null
     return wrapSelectionInContainerImpl(
       ctx,
       'SECTION',
@@ -210,6 +221,7 @@ export function createStructureActions(ctx: EditorContext) {
     wrapInAutoLayout,
     groupSelected,
     frameSelection,
+    canWrapInSection,
     wrapInSection,
     ...layerTypeActions,
     booleanOperationSelected,

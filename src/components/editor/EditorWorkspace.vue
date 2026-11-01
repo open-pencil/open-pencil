@@ -69,8 +69,12 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 const canvasAlone = computed(
   () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
 )
-// A board keeps its tools when its panels are away, as FigJam always shows them.
-const toolsStay = computed(() => !resolveEditorProfile(store.state).panelsOpen)
+// A board keeps its tools when its panels are away, as FigJam always shows them, while they
+// draw: a pan-only preview has none. A phone keeps its drawer, which holds the panels and chat.
+const toolsStay = computed(() => {
+  const profile = resolveEditorProfile(store.state)
+  return !profile.panelsOpen && profile.pointer === 'tools'
+})
 const { editor } = useI18n()
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
@@ -142,7 +146,7 @@ const { pending: roomPending } = useRoomActions()
   </SplitterGroup>
 
   <div
-    v-else-if="isMobile && showChrome && store.state.showUI"
+    v-else-if="isMobile && showChrome"
     :key="'mobile-' + tab.id"
     class="flex flex-1 overflow-hidden"
   >

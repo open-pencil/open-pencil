@@ -16,7 +16,7 @@ const { editor, panels } = useI18n()
   <section
     data-test-id="floating-chat"
     :aria-label="panels.ai"
-    class="absolute top-7 right-7 bottom-20 z-10 flex w-[min(360px,calc(100%-3.5rem))] flex-col overflow-hidden rounded-lg border border-border bg-panel shadow-lg"
+    class="absolute top-7 right-7 bottom-20 z-10 flex min-h-64 w-[min(360px,calc(100%-3.5rem))] flex-col overflow-hidden rounded-lg border border-border bg-panel shadow-lg"
   >
     <header class="flex h-9 shrink-0 items-center justify-between border-b border-border px-2">
       <span class="flex items-center gap-1.5 text-xs font-medium text-surface">

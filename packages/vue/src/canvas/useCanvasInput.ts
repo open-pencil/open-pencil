@@ -386,7 +386,7 @@ export function useCanvasInput(
     }
 
     if (d.type === 'sticky-scale') {
-      applyStickyScale(d, cx, cy, editor)
+      applyStickyScale(d, cx, cy, editor, e.ctrlKey)
       return
     }
 

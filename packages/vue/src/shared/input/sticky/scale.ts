@@ -11,6 +11,7 @@ import {
 import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
+import { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 import { proportionalResizeRect } from '#vue/shared/input/resize/snap'
 import type { DragStickyScale } from '#vue/shared/input/types'
 
@@ -93,8 +94,17 @@ function applyStickyWide(d: DragStickyScale, cx: number, editor: Editor) {
   editor.requestRepaint()
 }
 
-/** Shows the note as the handle has changed it; only the commit records it. */
-export function applyStickyScale(drag: DragStickyScale, cx: number, cy: number, editor: Editor) {
+/**
+ * Shows the note as the handle has changed it; only the commit records it. Control turns snapping
+ * off, as it does for a resize.
+ */
+export function applyStickyScale(
+  drag: DragStickyScale,
+  cx: number,
+  cy: number,
+  editor: Editor,
+  disableSnapping = false
+) {
   const d = toRaw(drag)
   if (d.mode === 'wide') {
     applyStickyWide(d, cx, editor)
@@ -102,17 +112,30 @@ export function applyStickyScale(drag: DragStickyScale, cx: number, cy: number, 
   }
   const { origRect } = d
   // The note keeps its proportions, anchored and snapped as a Shift-resize from the same handle.
+  const aspect = origRect.width / origRect.height
   const rect = proportionalResizeRect(
     d,
     origRect,
     cx - d.startX,
     cy - d.startY,
-    origRect.width / origRect.height,
+    aspect,
     editor,
-    false
+    disableSnapping
   )
   d.scale = Math.max(MIN_STICKY_SCALE, rect.width / origRect.width)
-  d.position = { x: rect.x, y: rect.y }
+  // A note scaled down to its smallest stays anchored as the handle anchors it.
+  const placed =
+    d.scale === rect.width / origRect.width
+      ? rect
+      : constrainToAspectRatio(
+          d.handle,
+          origRect,
+          origRect.width * d.scale,
+          origRect.height * d.scale,
+          aspect,
+          'width'
+        )
+  d.position = { x: placed.x, y: placed.y }
   for (const [id, original] of d.originals) {
     const changes = scaleNodeChanges(original, d.scale, id !== d.nodeId)
     if (id === d.nodeId) Object.assign(changes, d.position)
@@ -132,6 +155,7 @@ function restoreStickyScale(d: DragStickyScale, editor: Editor) {
 function commitStickyScale(drag: DragStickyScale, editor: Editor) {
   const d = toRaw(drag)
   restoreStickyScale(d, editor)
+  editor.setSnapGuides([])
   if (d.mode === 'wide') editor.setStickyWide(d.nodeId, d.wide, d.handle === 'w' ? 'right' : 'left')
   else if (d.scale !== 1) editor.scaleStickyNote(d.nodeId, d.scale, d.position)
   editor.requestRender()

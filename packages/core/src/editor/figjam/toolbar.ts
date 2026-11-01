@@ -38,7 +38,7 @@ const KIND_BY_TYPE: Partial<Record<NodeType, FigJamToolbarKind>> = {
 }
 
 function layerKind(node: Pick<SceneNode, 'type' | 'fills'>): FigJamToolbarKind {
-  if (node.fills.some((fill) => fill.type === 'IMAGE')) return 'image'
+  if (node.fills.some((fill) => fill.type === 'IMAGE' && fill.visible)) return 'image'
   if (PLAIN_LAYERS.has(node.type)) return 'layer'
   return KIND_BY_TYPE[node.type] ?? 'mixed'
 }
