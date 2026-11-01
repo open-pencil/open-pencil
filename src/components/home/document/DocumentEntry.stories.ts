@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import type { Directive } from 'vue'
 
 import DocumentEntry from './DocumentEntry.vue'
 
@@ -31,3 +32,20 @@ export const Disabled: Story = { args: { disabled: true } }
 const menu = { actions: 'Actions for Design system', delete: 'Delete' }
 export const WithMenu: Story = { args: { menu } }
 export const ListWithMenu: Story = { args: { view: 'list', menu } }
+
+/** A parent's directive reaches the entry's element, as Home's preview directives must. */
+const markLoaded: Directive<HTMLElement> = {
+  mounted(element) {
+    element.dataset.previewRequested = 'true'
+  }
+}
+export const WithMenuAndDirective: Story = {
+  args: { menu },
+  render: (args) => ({
+    components: { DocumentEntry },
+    directives: { markLoaded },
+    setup: () => ({ args }),
+    template:
+      '<div class="max-w-sm bg-panel p-4 text-surface"><DocumentEntry v-mark-loaded v-bind="args" /></div>'
+  })
+}
