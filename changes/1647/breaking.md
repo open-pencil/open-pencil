@@ -1,0 +1,3 @@
+- The retained canvas renderer, the Rendering settings section with its progressive rendering switch, and the `renderer` URL parameter are removed; progressive rendering is the only canvas renderer, and a stored rendering preference is ignored.
+- `@open-pencil/core/canvas` no longer exports `withFigExportRuntime` or `drawnFontAxes`; `drawnFontAxes` and its types are exported from `@open-pencil/core/text`.
+- `@open-pencil/vue/i18n` no longer exports `useRenderingMessages`; the only remaining rendering string, the wide-gamut notice, is in the `editor` messages.

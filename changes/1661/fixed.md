@@ -1,0 +1,1 @@
+- On Linux, the desktop app caches recent file previews and downloaded fonts again, so they no longer load anew each time.

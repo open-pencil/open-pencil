@@ -12,7 +12,6 @@ import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
-import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { IS_BROWSER } from '#core/constants'
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
@@ -24,6 +23,7 @@ import {
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
 import { archiveImagesNamedForFigma, writePatchedFigFile } from './patch'
+import { withFigExportRuntime } from './runtime'
 import {
   exportSchema,
   figExportRecordOptions,

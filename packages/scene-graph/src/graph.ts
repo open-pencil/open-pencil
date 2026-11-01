@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- SceneGraph is the facade over the domain modules */
-import { omitBy } from 'es-toolkit/object'
+import { omitBy, pick } from 'es-toolkit/object'
 import { isUndefined } from 'es-toolkit/predicate'
 
 import { removeStaleBindings } from './bindings'
@@ -13,6 +13,7 @@ import {
 } from './coordinate'
 import { cloneNodeProps, type NodeCloneMode } from './copy'
 import { bindNodeEvents } from './events'
+import { TRANSFORM_FIELDS } from './fields/geometry'
 import { LAYOUT_AFFECTING_KEYS } from './fields/layout'
 import { withGeneratedFrameSize } from './generated'
 import * as HitTest from './hit-test'
@@ -575,9 +576,7 @@ export class SceneGraph {
       if (node.componentId) this.unindexInstance(node.componentId, id)
       if (changes.componentId) this.indexInstance(changes.componentId, id)
     }
-    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
-      markSourceFieldsEdited(node, Object.keys(changes))
-    }
+    this.markEdited(node, Object.keys(changes))
     // Cache resets that change the node travel with the change, under the caller's own values,
     // so a layout put-back cannot drop their event.
     if (node.type === 'TEXT') {
@@ -599,6 +598,13 @@ export class SceneGraph {
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
     for (const key of absent) Reflect.deleteProperty(node, key)
     this.publishNodeUpdate(id, changes)
+  }
+
+  /** Marks fields an edit changed, unless metadata is being restored or layout is writing them. */
+  private markEdited(node: SceneNode, keys: string[]): void {
+    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
+      markSourceFieldsEdited(node, keys)
+    }
   }
 
   /** Publishes an update now, or leaves it to the running layout, which publishes once it ends. */
@@ -632,6 +638,7 @@ export class SceneGraph {
     node.parentId = newParentId
     newParent.childIds.push(nodeId)
 
+    const before = pick(node, TRANSFORM_FIELDS)
     if (isTranslationOnly(oldParentWorld) && isTranslationOnly(newParentWorld)) {
       node.x += oldParentWorld[2] - newParentWorld[2]
       node.y += oldParentWorld[5] - newParentWorld[5]
@@ -640,6 +647,11 @@ export class SceneGraph {
       const local = localTransformFromWorld(node, world, newParentWorld)
       if (local) Object.assign(node, local)
     }
+    // The node keeps its place on the canvas by new coordinates, which a save must write.
+    this.markEdited(
+      node,
+      TRANSFORM_FIELDS.filter((key) => node[key] !== before[key])
+    )
 
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
   }
@@ -706,9 +718,10 @@ export class SceneGraph {
     py: number,
     scopeId: string,
     selectedIds: ReadonlySet<string>,
-    pad = 0
+    pad = 0,
+    framesOpen = true
   ): SceneNode | null {
-    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, pad)
+    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, pad, framesOpen)
   }
 
   hitTestOpenContainer(px: number, py: number, scopeId: string): SceneNode | null {

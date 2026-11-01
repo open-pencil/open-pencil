@@ -143,7 +143,7 @@ export function drawRulers(
   canvas.drawRect(r.ck.LTRBRect(0, R, R, vh), r.rulerBgPaint)
   canvas.drawRect(r.ck.LTRBRect(0, 0, R, R), r.rulerBgPaint)
 
-  const font = r.sizeFont ?? r.textFont
+  const font = r.chromeFonts.size ?? r.chromeFonts.text
   if (!font) return
 
   const step = rulerStep(r)

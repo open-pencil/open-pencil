@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { computeGuideRedline, hitTestGuides } from '@open-pencil/core/canvas'
 import { RULER_SIZE } from '@open-pencil/core/constants'
 
@@ -63,7 +63,17 @@ export function createGuideInput({
     return axis === 'x' ? 'ew-resize' : 'ns-resize'
   }
 
+  /** Whether rulers are drawn, so their strip takes new guides and drops dragged ones. */
+  function rulersShown(): boolean {
+    return (
+      'showRulers' in editor.state &&
+      editor.state.showRulers === true &&
+      resolveEditorProfile(editor.state).rulers
+    )
+  }
+
   function rulerAxis(sx: number, sy: number): DragGuide['axis'] | null {
+    if (!rulersShown()) return null
     if (sx < RULER_SIZE && sy < RULER_SIZE) return null
     if (sy < RULER_SIZE) return 'y'
     if (sx < RULER_SIZE) return 'x'
@@ -107,7 +117,6 @@ export function createGuideInput({
   }
 
   function tryStartFromRuler(sx: number, sy: number, cx: number, cy: number): boolean {
-    if (!('showRulers' in editor.state) || editor.state.showRulers !== true) return false
     const axis = rulerAxis(sx, sy)
     if (!axis) return false
     const ownerId = ownerAt(cx, cy)
@@ -169,7 +178,7 @@ export function createGuideInput({
 
   function finish(drag: DragGuide): void {
     if (drag.dragStarted) {
-      if (drag.currentScreenX < RULER_SIZE || drag.currentScreenY < RULER_SIZE) {
+      if (rulersShown() && (drag.currentScreenX < RULER_SIZE || drag.currentScreenY < RULER_SIZE)) {
         if (!drag.duplicate && drag.guideId && drag.originalOwnerId) {
           editor.removeGuide(drag.originalOwnerId, drag.guideId)
           editor.setSelectedGuide(null)

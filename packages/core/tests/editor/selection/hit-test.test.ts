@@ -28,4 +28,25 @@ describe('editor scoped hit testing', () => {
 
     expect(editor.hitTestAtPoint(130, 130)?.id).toBe(child.id)
   })
+
+  test("selectAtPoint on a board selects the frame over its child", () => {
+    const editor = createEditor()
+    editor.setDocumentKind('board')
+    const pageId = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', pageId, { x: 100, y: 100, width: 200, height: 200 })
+    editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    editor.setCanvasKit(
+      {} as Parameters<typeof editor.setCanvasKit>[0],
+      {} as Parameters<typeof editor.setCanvasKit>[1]
+    )
+
+    editor.selectAtPoint(130, 130)
+    expect([...editor.state.selectedIds]).toEqual([frame.id])
+  })
 })

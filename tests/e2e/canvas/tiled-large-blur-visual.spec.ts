@@ -6,7 +6,7 @@ import type { RecordedWheelSample } from '@open-pencil/core/profiler'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
-const editor = useEditorSetup('/?test&no-chrome&no-rulers&renderer=tiled&navigation-benchmark')
+const editor = useEditorSetup('/?test&no-chrome&no-rulers&navigation-benchmark')
 const wheelSampleSchema: v.GenericSchema<unknown, RecordedWheelSample> = v.object({
   timeMs: v.number(),
   deltaX: v.number(),

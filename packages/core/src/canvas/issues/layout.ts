@@ -14,7 +14,12 @@ import {
   ISSUE_MARKER_RING_WIDTH,
   ISSUE_MARKER_VIEWPORT_INSET
 } from '#core/constants'
-import { createSceneGeometry, type RotationPreview, type ViewportTransform } from '#core/geometry'
+import {
+  createSceneGeometry,
+  type RotationPreview,
+  type SceneGeometry,
+  type ViewportTransform
+} from '#core/geometry'
 
 import type { DesignIssueMarker, DesignIssueSeverity, PlacedIssueMarker } from './types'
 
@@ -26,15 +31,32 @@ export interface IssueMarkerView extends ViewportTransform {
   insetLeft: number
 }
 
-export interface IssueMarkerLayoutOptions {
+/** What places markers in the document, which pan and zoom leave alone. */
+export interface IssueMarkerStageOptions {
   pageId: string
-  view: IssueMarkerView
   /** Layers whose markers would cover an active edit, such as the text being typed. */
   suppressedIds?: ReadonlySet<string>
   preview?: RotationPreview | null
+}
+
+/** What places staged markers on the screen. */
+export interface IssueMarkerPlacementOptions {
+  view: IssueMarkerView
   measureText: (text: string) => number
   /** Screen rectangles of UI floating over the canvas, such as a toolbar, to keep pins clear of. */
   obstacles?: readonly Rect[]
+}
+
+export type IssueMarkerLayoutOptions = IssueMarkerStageOptions & IssueMarkerPlacementOptions
+
+/** A marked layer as staged in world space, from which each frame places its marker. */
+export interface StagedIssueMarker {
+  marker: DesignIssueMarker
+  /**
+   * The world boxes a marker may attach to: the layer's, then each ancestor's up to the one under
+   * the page, each clipped by the clipping layers above it and left out where clipped away.
+   */
+  targets: readonly Rect[]
 }
 
 const SEVERITY_RANK: Record<DesignIssueSeverity, number> = { error: 3, warning: 2, info: 1 }
@@ -71,12 +93,9 @@ function overlaps(a: Rect, b: Rect, gap: number): boolean {
   )
 }
 
-function screenBounds(
-  node: SceneNode,
-  geometry: ReturnType<typeof createSceneGeometry>,
-  view: ViewportTransform
-): Rect {
-  const points = Matrix.mapPoints(geometry.screenMatrix(node, view), [
+/** The axis-aligned world box of a layer's rotated rectangle. */
+function worldBounds(node: SceneNode, geometry: SceneGeometry): Rect {
+  const points = Matrix.mapPoints(geometry.worldMatrix(node), [
     0,
     0,
     node.width,
@@ -99,21 +118,29 @@ function screenBounds(
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
+/** A world box on the screen; the viewport pans and scales, so boxes stay axis-aligned. */
+function toScreen(rect: Rect, view: ViewportTransform): Rect {
+  return {
+    x: rect.x * view.zoom + view.panX,
+    y: rect.y * view.zoom + view.panY,
+    width: rect.width * view.zoom,
+    height: rect.height * view.zoom
+  }
+}
+
 /**
- * The screen rectangle a layer's marker attaches to, or null when the layer should not be marked.
+ * The world boxes a layer's marker may attach to, or null when the layer should not be marked.
  *
  * Hidden and clipped-out layers stay listed in the panel but get no marker, so a marker never
- * points at empty canvas. A layer too small to point at on screen hands its marker to the nearest
- * ancestor that is large enough, so zoomed-out designs gather markers at frame corners instead of
- * scattering them over detail that cannot be seen.
+ * points at empty canvas. Clipping is by axis-aligned boxes, which the viewport keeps, so what
+ * shows is settled here once and projected per frame.
  */
-function markerTarget(
+function stageTargets(
   graph: SceneGraph,
   node: SceneNode,
   pageId: string,
-  geometry: ReturnType<typeof createSceneGeometry>,
-  view: ViewportTransform
-): Rect | null {
+  geometry: SceneGeometry
+): Rect[] | null {
   const chain: SceneNode[] = []
   let current: SceneNode | undefined = node
   while (current) {
@@ -130,22 +157,52 @@ function markerTarget(
   let clip: Rect | null = null
   for (let index = chain.length - 1; index >= 0; index--) {
     const layer = chain[index]
-    const bounds = screenBounds(layer, geometry, view)
+    const bounds = worldBounds(layer, geometry)
     const clipped: Rect | null = clip ? intersect(bounds, clip) : bounds
     visible[index] = clipped
     if (!layer.clipsContent) continue
     if (!clipped) return null
     clip = clipped
   }
-
   if (!visible[0]) return null
-  for (let index = 0; index < chain.length; index++) {
-    const bounds = visible[index]
-    if (!bounds) continue
-    const last = index === chain.length - 1
-    if (last || Math.max(bounds.width, bounds.height) >= ISSUE_MARKER_MIN_TARGET) return bounds
+  return visible.filter((bounds): bounds is Rect => bounds !== null)
+}
+
+/**
+ * Stages the markers' layers in world space: what each marker may attach to, with hidden,
+ * clipped-away, and suppressed layers left out. Pan and zoom change none of it, so a canvas keeps
+ * the stage until the document or the markers change.
+ */
+export function stageIssueMarkers(
+  graph: SceneGraph,
+  markers: readonly DesignIssueMarker[],
+  options: IssueMarkerStageOptions
+): StagedIssueMarker[] {
+  const { pageId, suppressedIds } = options
+  const geometry = createSceneGeometry(graph, options.preview)
+  const staged: StagedIssueMarker[] = []
+  for (const marker of markers) {
+    if (marker.count <= 0 || suppressedIds?.has(marker.nodeId)) continue
+    const node = graph.getNode(marker.nodeId)
+    if (!node) continue
+    const targets = stageTargets(graph, node, pageId, geometry)
+    if (targets) staged.push({ marker, targets })
   }
-  return visible[0]
+  return staged
+}
+
+/**
+ * The screen rectangle a staged marker attaches to. A layer too small to point at on screen
+ * hands its marker to the nearest ancestor that is large enough, so zoomed-out designs gather
+ * markers at frame corners instead of scattering them over detail that cannot be seen.
+ */
+function markerTarget(targets: readonly Rect[], view: ViewportTransform): Rect {
+  const last = targets[targets.length - 1]
+  for (const bounds of targets) {
+    if (Math.max(bounds.width, bounds.height) * view.zoom >= ISSUE_MARKER_MIN_TARGET)
+      return toScreen(bounds, view)
+  }
+  return toScreen(last, view)
 }
 
 interface Candidate {
@@ -273,17 +330,15 @@ function layoutEdgePins(
 }
 
 /**
- * Places one marker at the outer top-right corner of each marked layer, then merges markers that
+ * Places one marker at the outer top-right corner of each staged layer, then merges markers that
  * would overlap. Merging keeps the position of the most severe marker, so the canvas never shows
  * a warning on top of an error it hides.
  */
-export function layoutIssueMarkers(
-  graph: SceneGraph,
-  markers: readonly DesignIssueMarker[],
-  options: IssueMarkerLayoutOptions
+export function placeIssueMarkers(
+  staged: readonly StagedIssueMarker[],
+  options: IssueMarkerPlacementOptions
 ): PlacedIssueMarker[] {
-  const { view, pageId, suppressedIds, measureText } = options
-  const geometry = createSceneGeometry(graph, options.preview)
+  const { view, measureText } = options
   const viewport: Rect = {
     x: view.insetLeft,
     y: view.insetTop,
@@ -301,12 +356,8 @@ export function layoutIssueMarkers(
     width: Math.max(0, viewport.width - edgeInset * 2),
     height: Math.max(0, viewport.height - edgeInset * 2)
   }
-  for (const marker of markers) {
-    if (marker.count <= 0 || suppressedIds?.has(marker.nodeId)) continue
-    const node = graph.getNode(marker.nodeId)
-    if (!node) continue
-    const bounds = markerTarget(graph, node, pageId, geometry, view)
-    if (!bounds) continue
+  for (const { marker, targets } of staged) {
+    const bounds = markerTarget(targets, view)
     if (intersect(bounds, viewport)) {
       candidates.push({ marker, anchor: { x: bounds.x + bounds.width, y: bounds.y } })
       continue
@@ -358,6 +409,15 @@ export function layoutIssueMarkers(
   }
   const edgePins = layoutEdgePins(edgeCandidates, edgeArea, options.obstacles ?? [], measureText)
   return [...placed, ...edgePins]
+}
+
+/** Stages and places markers in one go, for a layout that is not kept between frames. */
+export function layoutIssueMarkers(
+  graph: SceneGraph,
+  markers: readonly DesignIssueMarker[],
+  options: IssueMarkerLayoutOptions
+): PlacedIssueMarker[] {
+  return placeIssueMarkers(stageIssueMarkers(graph, markers, options), options)
 }
 
 /** Topmost marker under a screen point; markers placed first are drawn on top. */

@@ -4,7 +4,12 @@ import { toolModelMessageSchema } from 'ai'
 import * as v from 'valibot'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { defineTool, toolsToAI, type ToolLogEntry } from '@open-pencil/core/tools'
+import {
+  defineTool,
+  toolsToAI,
+  type AIAdapterOptions,
+  type ToolLogEntry
+} from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 type ToolFactory = Parameters<typeof toolsToAI>[2]['tool']
@@ -13,10 +18,13 @@ type ToolFactory = Parameters<typeof toolsToAI>[2]['tool']
 const tool = ((definition: unknown) => definition) as ToolFactory
 
 type ModelOutputTool = {
-  toModelOutput(options: { output: unknown }): unknown
+  toModelOutput(options: { toolCallId: string; output: unknown }): Promise<unknown>
 }
 
-function adapt(output: unknown): ModelOutputTool {
+function adapt(
+  output: unknown,
+  encodeModelImage?: AIAdapterOptions['encodeModelImage']
+): ModelOutputTool {
   const def = defineTool({
     name: 'image_tool',
     description: 'Returns a fixed result',
@@ -25,7 +33,7 @@ function adapt(output: unknown): ModelOutputTool {
     execute: () => output
   })
   const figma = new FigmaAPI(new SceneGraph())
-  const tools = toolsToAI([def], { getFigma: () => figma }, { tool })
+  const tools = toolsToAI([def], { getFigma: () => figma, encodeModelImage }, { tool })
   const adapted: unknown = tools.image_tool
   if (!hasModelOutput(adapted)) throw new Error('image_tool has no toModelOutput')
   return adapted
@@ -41,9 +49,9 @@ function hasModelOutput(value: unknown): value is ModelOutputTool {
 }
 
 describe('AI adapter model output', () => {
-  test('sends any image result as a file with its metadata as text', () => {
+  test('sends any image result as a file with its metadata as text', async () => {
     const output = { mimeType: 'image/png', base64: 'AAAA', changedPixels: 12 }
-    expect(adapt(output).toModelOutput({ output })).toEqual({
+    expect(await adapt(output).toModelOutput({ toolCallId: 'call', output })).toEqual({
       type: 'content',
       value: [
         { type: 'text', text: '{"changedPixels":12}' },
@@ -56,7 +64,7 @@ describe('AI adapter model output', () => {
     { mimeType: 'image/png', base64: 'AAAA', changedPixels: 12 },
     { mimeType: 'image/png', base64: 'AAAA' },
     { mimeType: 'application/pdf', base64: 'AAAA' }
-  ])('produces a tool message the AI SDK accepts in the next prompt (%p)', (output) => {
+  ])('produces a tool message the AI SDK accepts in the next prompt (%p)', async (output) => {
     const message = {
       role: 'tool',
       content: [
@@ -64,16 +72,50 @@ describe('AI adapter model output', () => {
           type: 'tool-result',
           toolCallId: 'call',
           toolName: 'image_tool',
-          output: adapt(output).toModelOutput({ output })
+          output: await adapt(output).toModelOutput({ toolCallId: 'call', output })
         }
       ]
     }
     expect(toolModelMessageSchema.safeParse(message).success).toBe(true)
   })
 
-  test('keeps non-image results as JSON', () => {
+  test('keeps non-image results as JSON', async () => {
     const output = { mimeType: 'application/pdf', base64: 'AAAA' }
-    expect(adapt(output).toModelOutput({ output })).toEqual({ type: 'json', value: output })
+    expect(await adapt(output).toModelOutput({ toolCallId: 'call', output })).toEqual({
+      type: 'json',
+      value: output
+    })
+  })
+
+  test('sends the image the connection encodes, once per tool call', async () => {
+    const output = { mimeType: 'image/png', base64: 'AAAA' }
+    const encoded: string[] = []
+    const adapted = adapt(output, async (image) => {
+      encoded.push(image.data)
+      return { data: 'BBBB', mediaType: 'image/webp' }
+    })
+    const file = {
+      type: 'file',
+      mediaType: 'image/webp',
+      data: { type: 'data', data: 'BBBB' }
+    }
+    expect(await adapted.toModelOutput({ toolCallId: 'call', output })).toEqual({
+      type: 'content',
+      value: [file]
+    })
+    // Every request sends the conversation again; its images are not encoded again.
+    await adapted.toModelOutput({ toolCallId: 'call', output })
+    await adapted.toModelOutput({ toolCallId: 'other', output })
+    expect(encoded).toEqual(['AAAA', 'AAAA'])
+  })
+
+  test('sends the tool image when encoding it fails', async () => {
+    const output = { mimeType: 'image/png', base64: 'AAAA' }
+    const adapted = adapt(output, () => Promise.reject(new Error('no encoder')))
+    expect(await adapted.toModelOutput({ toolCallId: 'call', output })).toEqual({
+      type: 'content',
+      value: [{ type: 'file', mediaType: 'image/png', data: { type: 'data', data: 'AAAA' } }]
+    })
   })
 })
 

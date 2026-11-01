@@ -320,4 +320,17 @@ describe('a click just outside a shape', () => {
     graph.createNode('FRAME', page, { name: 'Empty', width: 100, height: 100, fills: FILL })
     expect(graph.hitTestSelectable(102, 50, page, new Set(), 3.5)).toBeNull()
   })
+
+  // FigJam board, Figma desktop: a click on a layer inside a frame selects the frame.
+  test('selects a top-level frame whole when frames stay closed, as on a board', () => {
+    const { graph, page } = scene()
+    const click = (framesOpen: boolean) =>
+      graph.hitTestSelectable(170, 170, page, new Set(), 0, framesOpen)?.name ?? null
+    // In a design the click looks into the top-level frame and takes the frame inside it.
+    expect([click(true), click(false)]).toEqual(['Nested', 'Top'])
+    // Selected, it stays closed: another click inside keeps the frame.
+    const top = [...graph.nodes.values()].find((node) => node.name === 'Top')
+    if (!top) throw new Error('Missing Top')
+    expect(graph.hitTestSelectable(170, 170, page, new Set([top.id]), 0, false)?.name).toBe('Top')
+  })
 })

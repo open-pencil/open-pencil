@@ -18,7 +18,7 @@ import {
   normalizeDashPattern,
   withStrokeDash
 } from './strokes'
-import { makeLineStrokeOutline } from './strokes/line'
+import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines'
 
 const BOOLEAN_PATH_OP: Record<
@@ -67,9 +67,6 @@ function unitedPath(r: SkiaRenderer, regions: Path[]): Path | null {
 }
 
 function fillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | null {
-  if (typeof r.getFillGeometry !== 'function') {
-    return null
-  }
   const regions = r.getFillGeometry(node)
   if (!regions || regions.length === 0) {
     return null
@@ -362,6 +359,22 @@ export function makeBooleanSourcePath(
   savedFill?.delete()
   outline.delete()
   return operandPath(r, node, pieces)
+}
+
+/**
+ * A layer's own geometry as Flatten keeps it, its stroke left a stroke (live-verified): a shape's
+ * outline, a vector's paths open ones included, a line's segment, text's glyphs, or a boolean
+ * operation's result.
+ */
+export function flattenSourcePath(
+  r: SkiaRenderer,
+  node: SceneNode,
+  graph: SceneGraph
+): Path | null {
+  if (node.type === 'BOOLEAN_OPERATION') return makeBooleanOperationPath(r, node, graph)
+  if (!canMakeBooleanSourcePath(node)) return null
+  if (node.type === 'LINE') return makeLineSegmentPath(r, node)
+  return strokeSourcePath(r, node)
 }
 
 function transformedShapePath(r: SkiaRenderer, child: SceneNode, graph: SceneGraph): Path | null {

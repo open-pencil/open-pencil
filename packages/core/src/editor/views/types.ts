@@ -50,6 +50,24 @@ export interface EditorProfile {
    * units: whole pixels in a design, FigJam's 16 on a board.
    */
   snapGrid: number
+  /** The grid of dots drawn under the page's layers, in canvas units, as a FigJam board's; null for none. */
+  dotGrid: number | null
+  /** Whether Figma's pixel grid shows when zoomed in far enough; a FigJam board has none. */
+  pixelGrid: boolean
+  /**
+   * Whether a click looks into a top-level frame by itself, as in Figma Design; on a FigJam
+   * board it selects the frame, and double-click or Enter goes inside.
+   */
+  framesOpen: boolean
+  /** Whether design lint checks the document; a FigJam board has none. */
+  lint: boolean
+  /** Whether the canvas shows rulers, from which guides are dragged; a FigJam board has none. */
+  rulers: boolean
+  /**
+   * Whether the side panels start open: a design's do, while a board starts on the canvas alone,
+   * as FigJam shows it, with the panels a click away.
+   */
+  panelsOpen: boolean
 }
 
 /** The state a profile resolves from: the document's kind, the pane's view, and the host's limits. */

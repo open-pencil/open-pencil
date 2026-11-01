@@ -18,6 +18,7 @@ import {
   normalizeDashPattern,
   withStrokeDash
 } from '#core/canvas/strokes'
+import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import {
   addStrokeRunToPath,
   strokeRuns,
@@ -149,7 +150,7 @@ function drawRegularStroke(
   configureStrokePaint(r, node, stroke, sc)
   withStrokeDash(r, normalizeDashPattern(stroke.dashPattern), 0, () => {
     if (node.independentStrokeWeights && r.isRectangularType(node.type)) {
-      r.drawIndividualSideStrokes(canvas, node, stroke)
+      drawIndividualSideStrokes(r, canvas, node, stroke)
     } else if (!r.isRectangularType(node.type) || !drawFigmaDashes(r, canvas, node, stroke)) {
       r.drawStrokeWithAlign(canvas, node, stroke.align)
     }

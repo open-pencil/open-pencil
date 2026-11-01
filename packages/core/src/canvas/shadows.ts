@@ -2,6 +2,7 @@ import type { Canvas, ImageFilter } from 'canvaskit-wasm'
 
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
@@ -24,7 +25,6 @@ import {
 import {
   drawSilhouette,
   fillsCastShadow,
-  isLayerContainer,
   paintsCastShadow,
   paintsOverKnockout,
   shadowIncludesChildren,

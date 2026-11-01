@@ -132,8 +132,9 @@ async function renderInto<Artwork>(
       undefined,
       context
     )
-    if (options.x !== undefined) graph.updateNode(node.id, { x: options.x })
-    if (options.y !== undefined) graph.updateNode(node.id, { y: options.y })
+    const { x, y } = options.positions?.[index] ?? options
+    if (x !== undefined) graph.updateNode(node.id, { x })
+    if (y !== undefined) graph.updateNode(node.id, { y })
     nodes[index] = node
   }
 

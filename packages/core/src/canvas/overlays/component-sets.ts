@@ -4,7 +4,12 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { labelViewport } from '#core/canvas/labels/layout'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { COMPONENT_SET_OUTLINE_RADIUS } from '#core/constants'
+import {
+  COMPONENT_SET_BORDER_WIDTH,
+  COMPONENT_SET_DASH,
+  COMPONENT_SET_DASH_GAP,
+  COMPONENT_SET_OUTLINE_RADIUS
+} from '#core/constants'
 import { type RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, withScreenStroke } from './outline'
@@ -29,8 +34,8 @@ export function drawComponentSetBorders(
   const geometry = r.sceneGeometry(graph, preview)
   const stroke = {
     color: r.compColor(),
-    width: r.COMPONENT_SET_BORDER_WIDTH,
-    dash: [r.COMPONENT_SET_DASH, r.COMPONENT_SET_DASH_GAP] as const
+    width: COMPONENT_SET_BORDER_WIDTH,
+    dash: [COMPONENT_SET_DASH, COMPONENT_SET_DASH_GAP] as const
   }
   withScreenStroke(r, stroke, (paint) => {
     for (const { node } of sets) {
