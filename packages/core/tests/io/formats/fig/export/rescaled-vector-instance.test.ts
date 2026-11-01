@@ -14,6 +14,27 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
+const SQUARE = [
+  [0, 0],
+  [20, 0],
+  [20, 20],
+  [0, 20]
+] as const
+const DIAMOND = [
+  [10, 0],
+  [20, 10],
+  [10, 20],
+  [0, 10]
+] as const
+
+/** A closed outline through `points`; the encoder flips y, as glyph outlines are y-up. */
+function outlineBlob(points: readonly (readonly [number, number])[]): Uint8Array {
+  return encodePathCommandsBlob([
+    ...points.map(([x, y], index) => ({ type: index === 0 ? ('M' as const) : ('L' as const), x, y: -y })),
+    { type: 'Z' as const }
+  ])
+}
+
 interface Variant {
   regionFills: boolean
   painted: boolean
@@ -52,27 +73,18 @@ async function rescaledInstance({
       { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]], ...(regionFills ? { fills: [] } : {}) }
     ]
   } as never)
-  if (painted) vector.fills = [{ type: 'SOLID', color: RED, opacity: 1, visible: true }]
+  // The fill outline a file saves with the component, at its size. Set on the layer itself: the
+  // Plugin API's fills setter would also clear the regions' own paints.
+  graph.updateNode(vector.id, {
+    fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: outlineBlob(SQUARE) }],
+    ...(painted ? { fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: true }] } : {})
+  })
   // A vector the file saved as outlines only has no path of its own to redraw from.
   if (geometryOnly) graph.updateNode(vector.id, { vectorNetwork: null })
   if (strokeOutline) {
     // Outlines of a stroke the file saved, drawn at the component's size. They are a diamond, not
     // the fill's square, so the stroke has coordinates of its own to check.
-    const outline = api.createVector()
-    await outline.setVectorNetworkAsync({
-      vertices: [
-        { x: 10, y: 0 },
-        { x: 20, y: 10 },
-        { x: 10, y: 20 },
-        { x: 0, y: 10 }
-      ],
-      segments: [0, 1, 2, 3].map((i) => ({ start: i, end: (i + 1) % 4 })),
-      regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]], fills: [] }]
-    } as never)
-    const strokeGeometry = expectDefined(graph.getNode(outline.id)).fillGeometry.map((path) => ({
-      ...path
-    }))
-    outline.remove()
+    const strokeGeometry = [{ windingRule: 'NONZERO' as const, commandsBlob: outlineBlob(DIAMOND) }]
     graph.updateNode(vector.id, {
       strokes: [
         {
