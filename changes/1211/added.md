@@ -1,0 +1,1 @@
+- A self-hosted build can preset the cloud storage endpoint and bucket with `VITE_STORAGE_PRESET_ENDPOINT` and `VITE_STORAGE_PRESET_BUCKET`, so people only enter their access keys; values they save still win.
