@@ -6,6 +6,7 @@
   "sectionTitle": "Travail non enregistré",
   "sectionDescription": "Copies de documents fermés sans enregistrer. Ouvrez-en une pour continuer à travailler.",
   "restoreFailed": "Impossible de restaurer ce document.",
+  "discardFailed": "Impossible de supprimer cette copie.",
   "settingsTitle": "Récupération",
   "settingsDescription": "Gérez les copies locales de récupération des documents non enregistrés.",
   "restore": "Restaurer",

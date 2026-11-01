@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useWindowFocus, watchImmediate } from '@vueuse/core'
-import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -11,7 +10,6 @@ import { formatStorageBytes } from '@/app/storage/format-bytes'
 import { allTabs } from '@/app/tabs'
 import {
   discardRecoverable,
-  recoverable,
   refreshRecoverableSnapshots,
   restoreRecoverable,
   type RecoverableSnapshot
@@ -19,17 +17,15 @@ import {
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 
 /** Recovery copies of documents closed without saving, until each is restored or discarded. */
-const { view, query } = defineProps<{ view: 'grid' | 'list'; query: string }>()
-const { recovery, files, locale } = useI18n()
+const { view, snapshots } = defineProps<{
+  view: 'grid' | 'list'
+  /** The copies to list, filtered by Home's search. */
+  snapshots: readonly RecoverableSnapshot[]
+}>()
+const { recovery, files } = useI18n()
 const notifications = useNotificationMessages()
 const dates = useDateFormat()
 const focused = useWindowFocus()
-
-const snapshots = computed(() =>
-  recoverable.value.filter((snapshot) =>
-    snapshot.documentName.toLocaleLowerCase(locale.value).includes(query)
-  )
-)
 
 // A closed tab or another window that went away can leave a copy behind.
 watchImmediate([() => allTabs.value.length, focused], () => {
@@ -61,10 +57,16 @@ async function restore(snapshot: RecoverableSnapshot): Promise<void> {
   }
 }
 
-function discard(snapshot: RecoverableSnapshot): void {
-  void discardRecoverable(snapshot.id).catch((error: unknown) => {
-    console.warn('[Recovery] Failed to discard a snapshot:', error)
-  })
+async function discard(snapshot: RecoverableSnapshot): Promise<void> {
+  try {
+    await discardRecoverable(snapshot.id)
+  } catch (error) {
+    toast.error(
+      notifications.value.operationFailed({
+        error: error instanceof Error ? error.message : recovery.value.discardFailed
+      })
+    )
+  }
 }
 </script>
 

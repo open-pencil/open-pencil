@@ -28,6 +28,7 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { createStoredDocument } from '@/app/storage/workspace/create'
 import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
+import { recoverable } from '@/app/tabs/recovery'
 import { CloudSharedSection, CloudWorkspaceSection } from '@/components/cloud/integration'
 import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
@@ -155,9 +156,15 @@ const filteredStorageDocuments = computed(() => {
     document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
   )
 })
+const filteredRecoverable = computed(() =>
+  recoverable.value.filter((snapshot) =>
+    snapshot.documentName.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
+  )
+)
 const noSearchMatches = computed(
   () =>
     Boolean(normalizedQuery.value) &&
+    filteredRecoverable.value.length === 0 &&
     filteredRecentFiles.value.length === 0 &&
     filteredStorageDocuments.value.length === 0
 )
@@ -227,7 +234,7 @@ function formattedDate(updatedAt: string): string {
 
     <p v-if="openError" class="mb-4 text-xs text-error" role="alert">{{ openError }}</p>
     <!-- Unsaved work is this device's, so it shows in every place. -->
-    <RecoverySection :view="view" :query="normalizedQuery" />
+    <RecoverySection :view="view" :snapshots="filteredRecoverable" />
     <!-- Nothing until Cloud says which workspace Home opens on. -->
     <template v-if="places.settling.value" />
     <CloudWorkspaceSection

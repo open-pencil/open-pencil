@@ -6,6 +6,7 @@ export const recoveryMessageDefaults = {
   sectionTitle: 'Unsaved work',
   sectionDescription: 'Copies of documents closed without saving. Open one to keep working on it.',
   restoreFailed: 'Could not restore this document.',
+  discardFailed: 'Could not discard this copy.',
   settingsTitle: 'Recovery',
   settingsDescription: 'Control local crash-recovery copies for unsaved documents.',
   preserveUnsavedWork: 'Automatically preserve unsaved work',

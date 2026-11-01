@@ -6,6 +6,7 @@
   "sectionTitle": "Lavoro non salvato",
   "sectionDescription": "Copie di documenti chiusi senza salvare. Aprine una per continuare a lavorare.",
   "restoreFailed": "Impossibile ripristinare questo documento.",
+  "discardFailed": "Impossibile eliminare questa copia.",
   "settingsTitle": "Ripristino",
   "settingsDescription": "Gestisci le copie locali di ripristino dei documenti non salvati.",
   "restore": "Ripristina",

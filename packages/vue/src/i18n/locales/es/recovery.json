@@ -6,6 +6,7 @@
   "sectionTitle": "Trabajo sin guardar",
   "sectionDescription": "Copias de documentos cerrados sin guardar. Abre una para seguir trabajando.",
   "restoreFailed": "No se pudo restaurar este documento.",
+  "discardFailed": "No se pudo descartar esta copia.",
   "settingsTitle": "Recuperación",
   "settingsDescription": "Controla las copias locales de recuperación de documentos no guardados.",
   "restore": "Restaurar",

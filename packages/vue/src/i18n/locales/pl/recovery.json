@@ -6,6 +6,7 @@
   "sectionTitle": "Niezapisana praca",
   "sectionDescription": "Kopie dokumentów zamkniętych bez zapisywania. Otwórz jedną, aby kontynuować pracę.",
   "restoreFailed": "Nie udało się przywrócić tego dokumentu.",
+  "discardFailed": "Nie udało się odrzucić tej kopii.",
   "settingsTitle": "Odzyskiwanie",
   "settingsDescription": "Zarządzaj lokalnymi kopiami odzyskiwania niezapisanych dokumentów.",
   "restore": "Przywróć",

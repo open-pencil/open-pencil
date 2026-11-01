@@ -34,6 +34,8 @@ export function recoverableSnapshots(
 }
 
 const listed = shallowRef<readonly RecoverableSnapshot[]>([])
+/** Bumped by each refresh and each restore or discard, so an older refresh never lands last. */
+let listGeneration = 0
 
 /** The copies Home lists, as of the last `refreshRecoverableSnapshots`. */
 export const recoverable = shallowReadonly(listed)
@@ -45,6 +47,7 @@ export const recoverable = shallowReadonly(listed)
 export async function refreshRecoverableSnapshots({
   reportCrash = false
 }: { reportCrash?: boolean } = {}): Promise<readonly RecoverableSnapshot[]> {
+  const generation = ++listGeneration
   if (!recoveryEnabled.value) {
     listed.value = []
     return listed.value
@@ -55,11 +58,12 @@ export async function refreshRecoverableSnapshots({
   ])
   const found = recoverableSnapshots(snapshots, sessions, openRecoveryIds())
   if (reportCrash) forgetCrashedSessions(sessions.crashed)
-  listed.value = found
+  if (generation === listGeneration) listed.value = found
   return found
 }
 
 function drop(id: string): void {
+  listGeneration++
   listed.value = listed.value.filter((snapshot) => snapshot.id !== id)
 }
 

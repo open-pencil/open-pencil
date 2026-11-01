@@ -6,6 +6,7 @@
   "sectionTitle": "未保存的工作",
   "sectionDescription": "未保存就关闭的文档副本。打开一个即可继续工作。",
   "restoreFailed": "无法恢复此文档。",
+  "discardFailed": "无法丢弃此副本。",
   "settingsTitle": "恢复",
   "settingsDescription": "管理未保存文档的本地恢复副本。",
   "restore": "恢复",

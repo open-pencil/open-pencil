@@ -6,6 +6,7 @@
   "sectionTitle": "Ungespeicherte Arbeit",
   "sectionDescription": "Kopien von Dokumenten, die ohne Speichern geschlossen wurden. Öffne eine, um weiterzuarbeiten.",
   "restoreFailed": "Dieses Dokument konnte nicht wiederhergestellt werden.",
+  "discardFailed": "Diese Kopie konnte nicht verworfen werden.",
   "settingsTitle": "Wiederherstellung",
   "settingsDescription": "Lokale Wiederherstellungskopien für ungespeicherte Dokumente verwalten.",
   "restore": "Wiederherstellen",
