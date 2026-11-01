@@ -23,9 +23,6 @@ const renderer = createDesignJSXRenderer<never>({
   },
   vectorBounds: () => {
     throw new Error('No vectors in these tests')
-  },
-  markdown: () => {
-    throw new Error('No Markdown in these tests')
   }
 })
 

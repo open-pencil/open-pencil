@@ -40,6 +40,13 @@ describe('Markdown as text, styled as FigJam styles typed Markdown', () => {
     ])
   })
 
+  test('a reference link takes its definition’s URL, and inline HTML tags leave their words', () => {
+    expect(styled('See the [guide][Manual] and <b>this</b>.\n\n[manual]: https://x.dev/guide')).toEqual([
+      ['guide', { hyperlink: { type: 'URL', value: 'https://x.dev/guide' } }]
+    ])
+    expect(markdownText('See <b>this</b>.', BASE).text).toBe('See this.')
+  })
+
   test('code is Roboto Mono, Medium below SemiBold and Bold from it', () => {
     expect(styled('a `b`', { fontSize: 24, fontWeight: 400 })).toEqual([
       ['b', { fontFamily: 'Roboto Mono', fontWeight: 500 }]

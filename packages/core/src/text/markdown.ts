@@ -1,5 +1,5 @@
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
-import type { PhrasingContent, RootContent } from 'mdast'
+import type { Nodes, PhrasingContent, RootContent } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
 import { toString } from 'mdast-util-to-string'
@@ -47,40 +47,60 @@ interface Paragraph {
   style: TextParagraphStyle
 }
 
-function codeStyle(style: Style, base: MarkdownBase): Style {
+/** What reading one Markdown source shares: the text's style, and its link definitions by label. */
+interface Reading {
+  base: MarkdownBase
+  definitions: ReadonlyMap<string, string>
+}
+
+/** The URL each `[label]: url` definition gives, wherever it sits, by its normalized label. */
+function linkDefinitions(node: Nodes, found = new Map<string, string>()): Map<string, string> {
+  if (node.type === 'definition' && !found.has(node.identifier))
+    found.set(node.identifier, node.url)
+  if ('children' in node) for (const child of node.children) linkDefinitions(child, found)
+  return found
+}
+
+function codeStyle(style: Style, { base }: Reading): Style {
   const weight = style.fontWeight ?? base.fontWeight
   return { ...style, fontFamily: CODE_FAMILY, fontWeight: weight >= CODE_BOLD_FROM ? BOLD : 500 }
 }
 
-function phrasing(nodes: readonly PhrasingContent[], style: Style, base: MarkdownBase): Segment[] {
+function phrasing(nodes: readonly PhrasingContent[], style: Style, reading: Reading): Segment[] {
   return nodes.flatMap((node): Segment[] => {
     switch (node.type) {
       case 'text':
         return [{ text: node.value, style }]
       case 'strong':
-        return phrasing(node.children, { ...style, fontWeight: BOLD }, base)
+        return phrasing(node.children, { ...style, fontWeight: BOLD }, reading)
       case 'emphasis':
-        return phrasing(node.children, { ...style, italic: true }, base)
+        return phrasing(node.children, { ...style, italic: true }, reading)
       case 'delete':
-        return phrasing(node.children, { ...style, textDecoration: 'STRIKETHROUGH' }, base)
+        return phrasing(node.children, { ...style, textDecoration: 'STRIKETHROUGH' }, reading)
       case 'inlineCode':
-        return [{ text: node.value, style: codeStyle(style, base) }]
+        return [{ text: node.value, style: codeStyle(style, reading) }]
       case 'link':
-        return phrasing(
-          node.children,
-          { ...style, hyperlink: { type: 'URL', value: node.url } },
-          base
-        )
+        return phrasing(node.children, linked(style, node.url), reading)
+      case 'linkReference': {
+        // `[text][label]` links to the URL its definition gives, wherever that is written.
+        const url = reading.definitions.get(node.identifier)
+        return phrasing(node.children, url ? linked(style, url) : style, reading)
+      }
       case 'break':
         return [{ text: '\n', style }]
       case 'image':
         return node.alt ? [{ text: node.alt, style }] : []
       case 'html':
-        return [{ text: node.value, style }]
+        // An inline tag only marks up the text around it, which keeps its words.
+        return []
       default:
         return [{ text: toString(node), style }]
     }
   })
+}
+
+function linked(style: Style, url: string): Style {
+  return { ...style, hyperlink: { type: 'URL', value: url } }
 }
 
 /** Paragraphs of segments, a hard break inside one starting another of the same style. */
@@ -107,37 +127,37 @@ function blocks(
   nodes: readonly RootContent[],
   style: Style,
   paragraph: TextParagraphStyle,
-  base: MarkdownBase,
+  reading: Reading,
   depth: number
 ): Paragraph[] {
   return nodes.flatMap((node): Paragraph[] => {
     switch (node.type) {
       case 'paragraph':
-        return splitBreaks(phrasing(node.children, style, base), paragraph)
+        return splitBreaks(phrasing(node.children, style, reading), paragraph)
       case 'heading': {
         const scale = HEADING_SCALE[node.depth]
         const heading: Style = {
           ...style,
           fontWeight: BOLD,
           lineHeight: HEADING_LINE_HEIGHT,
-          ...(scale ? { fontSize: base.fontSize * scale } : {})
+          ...(scale ? { fontSize: reading.base.fontSize * scale } : {})
         }
-        return splitBreaks(phrasing(node.children, heading, base), paragraph)
+        return splitBreaks(phrasing(node.children, heading, reading), paragraph)
       }
       case 'blockquote':
-        return blocks(node.children, { ...style, italic: true }, paragraph, base, depth)
+        return blocks(node.children, { ...style, italic: true }, paragraph, reading, depth)
       case 'list':
         return node.children.flatMap((item) =>
           item.children.flatMap((child, index) => {
             // An item's first block is its bullet; a nested list goes a level deeper.
-            if (child.type === 'list') return blocks([child], style, paragraph, base, depth + 1)
+            if (child.type === 'list') return blocks([child], style, paragraph, reading, depth + 1)
             const itemStyle = index === 0 ? listStyle(node.ordered === true, depth + 1) : paragraph
-            return blocks([child], style, itemStyle, base, depth)
+            return blocks([child], style, itemStyle, reading, depth)
           })
         )
       case 'code':
         return node.value.split('\n').map((line) => ({
-          segments: line ? [{ text: line, style: codeStyle(style, base) }] : [],
+          segments: line ? [{ text: line, style: codeStyle(style, reading) }] : [],
           style: paragraph
         }))
       case 'table':
@@ -145,7 +165,7 @@ function blocks(
         return node.children.map((row) => ({
           segments: row.children.flatMap((cell, index) => [
             ...(index > 0 ? [{ text: '\t', style }] : []),
-            ...phrasing(cell.children, style, base)
+            ...phrasing(cell.children, style, reading)
           ]),
           style: paragraph
         }))
@@ -179,7 +199,8 @@ function ownStyle(style: Style, base: MarkdownBase): Style {
  */
 export function markdownText(markdown: string, base: MarkdownBase): MarkdownText {
   const root = fromMarkdown(markdown, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] })
-  const paragraphs = blocks(root.children, {}, PLAIN_PARAGRAPH, base, 0)
+  const reading = { base, definitions: linkDefinitions(root) }
+  const paragraphs = blocks(root.children, {}, PLAIN_PARAGRAPH, reading, 0)
   if (paragraphs.length === 0) return { text: '', styleRuns: [], textParagraphs: [] }
 
   const runs: StyleRun[] = []
