@@ -8,6 +8,7 @@ import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-grap
 import { SkiaRenderer } from '#core/canvas'
 import { createPathCache, NodePathCaches } from '#core/canvas/paths/cache'
 import { render, renderSceneToCanvas } from '#core/canvas/renderer/pipeline'
+import { createGraphEventSubscription } from '#core/editor/graph-events'
 import { createDefaultEditorState } from '#core/editor/state'
 import { initCanvasKit } from '#core/io/formats/raster/headless'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
@@ -64,8 +65,7 @@ function triangles(count: number, strokes: Stroke[] = []) {
   return { graph, pageId: page.id, ids }
 }
 
-function replacementGraph(side: 'upper-right' | 'lower-left') {
-  const graph = new SceneGraph()
+function replacementGraph(side: 'upper-right' | 'lower-left', graph = new SceneGraph()) {
   const page = expectDefined(graph.getPages()[0], 'default page')
   const vertices =
     side === 'upper-right'
@@ -255,6 +255,32 @@ describe('renderer path caches', () => {
 
       expect(pixelAt(pixels, 45, 15)).toEqual([255, 0, 0, 255])
       expect(pixelAt(pixels, 15, 45)).toEqual([255, 255, 255, 255])
+    })
+  })
+
+  test('draw a layer created with a deleted layer id from its own geometry', () => {
+    const { graph, pageId } = replacementGraph('upper-right')
+    withRenderer(pageId, (renderer) => {
+      const graphEvents = createGraphEventSubscription({
+        getGraph: () => graph,
+        getRenderers: () => [renderer],
+        scheduleComponentSync: () => undefined,
+        requestRender: () => undefined,
+        emitEditorEvent: () => undefined
+      })
+      graphEvents.subscribeToGraph()
+      const state = createDefaultEditorState(pageId)
+      state.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+      renderer.renderFromEditorState(state, graph, null, 256, 256, false, 'scene')
+
+      graph.deleteNode('reused-vector')
+      replacementGraph('lower-left', graph)
+      renderer.renderFromEditorState(state, graph, null, 256, 256, false, 'scene')
+      const pixels = surfacePixels(renderer)
+
+      expect(pixelAt(pixels, 45, 15)).toEqual([255, 255, 255, 255])
+      expect(pixelAt(pixels, 15, 45)).toEqual([255, 0, 0, 255])
+      graphEvents.unsubscribeFromGraph()
     })
   })
 
