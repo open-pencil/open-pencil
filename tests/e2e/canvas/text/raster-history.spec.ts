@@ -10,7 +10,7 @@ async function captureText(
   browser: Browser,
   baseURL: string | undefined,
   gamut: 'srgb' | 'p3',
-  backing: boolean
+  tiled: boolean
 ) {
   const context = await browser.newContext({
     baseURL,
@@ -27,11 +27,12 @@ async function captureText(
     const canvas = new CanvasHelper(page)
     await canvas.waitForInit()
     await canvas.clearCanvas()
-    const lease = await page.evaluateHandle(async (backing) => {
+    const lease = await page.evaluateHandle(async (tiled) => {
       const store = window.openPencil?.getStore?.()
       const renderer = store?.canvasRenderers.find((candidate) => candidate.tracksSceneSettlement)
       if (!store || !renderer) throw new Error('Scene renderer unavailable')
-      const release = backing ? undefined : store.beginInteractiveEdit()
+      // An edit in progress draws the scene directly; otherwise the text lands in tiles first.
+      const release = tiled ? undefined : store.beginInteractiveEdit()
       const parent = store.state.currentPageId
       store.graph.createNode('FRAME', parent, {
         x: 64,
@@ -86,7 +87,7 @@ async function captureText(
       await store.loadFontsForNodes(store.graph.getPages().flatMap((page) => page.childIds))
       store.requestRender()
       return release
-    }, backing)
+    }, tiled)
     try {
       await canvas.waitForRender()
       await canvas.waitForRender()
@@ -131,7 +132,7 @@ async function captureText(
         } finally {
           paragraph.delete()
         }
-        const hadBacking = renderer.sceneBacking?.sceneVersion === store.state.sceneVersion
+        const hadTiles = !store.isInteractiveEditing() && renderer.tiledSceneCovered
         const copy = document.createElement('canvas')
         copy.width = source.width
         copy.height = source.height
@@ -148,15 +149,15 @@ async function captureText(
         const data = context.getImageData(192, 176, 1120, 192).data
         let ink = 0
         for (let i = 0; i < data.length; i += 4) if (data[i] < 40 && data[i + 3] === 255) ink++
-        return { png: copy.toDataURL(), glyphs, ink, hadBacking }
+        return { png: copy.toDataURL(), glyphs, ink, hadTiles, pixels: Array.from(data) }
       })
       canvas.assertNoErrors()
       expect(result.glyphs).toHaveLength(4)
       expect(result.glyphs.every((glyph) => glyph > 0)).toBe(true)
       expect(result.ink).toBeGreaterThan(100)
-      expect(result.hadBacking).toBe(backing)
+      expect(result.hadTiles).toBe(tiled)
       await cdp.detach()
-      return Buffer.from(toUint8Array(result.png.split(',')[1]))
+      return { png: Buffer.from(toUint8Array(result.png.split(',')[1])), pixels: result.pixels }
     } finally {
       await lease.evaluate((release) => release?.())
       await lease.dispose()
@@ -167,19 +168,22 @@ async function captureText(
 }
 
 for (const gamut of ['srgb', 'p3'] as const) {
-  test(`solid text is independent of backing history in emulated ${gamut}`, async ({
+  test(`solid text is independent of tile history in emulated ${gamut}`, async ({
     browser,
     baseURL,
     browserName
   }, testInfo) => {
     test.skip(browserName !== 'chromium', 'Color-gamut emulation requires Chromium CDP')
     const direct = await captureText(browser, baseURL, gamut, false)
-    const retained = await captureText(browser, baseURL, gamut, true)
-    const matches = retained.equals(direct)
-    if (!matches) {
-      await writeFile(testInfo.outputPath('direct-first.png'), direct)
-      await writeFile(testInfo.outputPath('backing-first.png'), retained)
+    const tiled = await captureText(browser, baseURL, gamut, true)
+    // A tile is drawn as an image, which rounds a channel by one against a direct draw.
+    const differing = direct.pixels.filter(
+      (value, index) => Math.abs(value - (tiled.pixels[index] ?? 0)) > 1
+    ).length
+    if (differing > 0) {
+      await writeFile(testInfo.outputPath('direct-first.png'), direct.png)
+      await writeFile(testInfo.outputPath('tiles-first.png'), tiled.png)
     }
-    expect(matches).toBe(true)
+    expect(differing).toBe(0)
   })
 }

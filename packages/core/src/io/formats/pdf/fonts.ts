@@ -2,8 +2,8 @@ import { fromUint8Array } from 'js-base64'
 
 import type { FontVariation } from '@open-pencil/scene-graph'
 
-import { drawnFontVariations } from '#core/canvas/text/font-families'
 import type { SVGFontAlias, SVGFontRequest } from '#core/io/formats/svg'
+import { drawnFontVariations } from '#core/text/font/families'
 import { fontInstanceVariations, staticFontInstance } from '#core/text/font/instance'
 import { hasTrueTypeOutlines, isVariableFont } from '#core/text/font/variation'
 

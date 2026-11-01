@@ -1,0 +1,1 @@
+- Hosts that serve CanvasKit's WASM themselves must serve `canvaskit-wasm/bin/full/canvaskit.wasm`: `getCanvasKit` from `@open-pencil/core/canvaskit` loads CanvasKit's full build, which encodes WebP and JPEG.

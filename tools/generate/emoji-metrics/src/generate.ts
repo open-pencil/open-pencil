@@ -38,7 +38,7 @@ const output = writeFontTables(emojiMetricsFont(readFontTables(emoji), EMOJI_COP
 await Bun.write(join(assets, EMOJI_METRICS_ASSET), output)
 await Bun.write(join(assets, 'OpenPencilEmojiMetrics-OFL.txt'), emojiLicence)
 await Bun.write(join(assets, 'NotoSansSymbols-OFL.txt'), symbolsLicence)
-const keycap = join(root, 'packages/core/src/text/keycap.ts')
+const keycap = join(root, 'packages/core/src/text/font/keycap.ts')
 await Bun.write(keycap, keycapModule(keycapOutline(symbols), SYMBOLS_COPYRIGHT))
 // The module is source, so it takes the repository's formatting.
 const formatted = Bun.spawnSync([join(root, 'node_modules/.bin/oxfmt'), '--write', keycap], {

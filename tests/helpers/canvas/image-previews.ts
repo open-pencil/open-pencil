@@ -61,9 +61,9 @@ export async function imagePreviewState(page: Page) {
     if (!renderer || !store) throw new Error('Scene renderer unavailable')
     return {
       enabled: renderer.viewportImageRendering,
-      idle: renderer.imagePreviews.idle,
-      keys: [...renderer.imageCache.entries()].map(([key]) => key),
-      weight: renderer.imageCache.weight,
+      idle: renderer.images.previews.idle,
+      keys: [...renderer.images.cache.entries()].map(([key]) => key),
+      weight: renderer.images.cache.weight,
       originals: store.graph.images.size
     }
   })

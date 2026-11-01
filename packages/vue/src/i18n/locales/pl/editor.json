@@ -1,4 +1,5 @@
 {
+  "wideGamutUnavailable": "Ten ekran lub przeglądarka nie obsługuje kolorów Display-P3, więc kanwa wyświetla je w sRGB. Dokument zachowuje swoją przestrzeń kolorów.",
   "toolOptions": "Opcje narzędzia {tool}",
   "removeGradientStop": "Usuń punkt gradientu",
   "cornerRadius": "Promień",

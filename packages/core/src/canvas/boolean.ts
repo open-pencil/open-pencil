@@ -67,9 +67,6 @@ function unitedPath(r: SkiaRenderer, regions: Path[]): Path | null {
 }
 
 function fillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | null {
-  if (typeof r.getFillGeometry !== 'function') {
-    return null
-  }
   const regions = r.getFillGeometry(node)
   if (!regions || regions.length === 0) {
     return null

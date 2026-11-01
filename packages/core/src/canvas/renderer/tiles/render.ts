@@ -58,8 +58,8 @@ export function renderTile(
   if (!surface) return null
   const allocationMs = rendererNow() - allocationStartedAt
   const canvas = surface.getCanvas()
-  const previousDetail = renderer.imageDetailScale
-  renderer.imageDetailScale = key.level
+  const previousDetail = renderer.images.detailScale
+  renderer.images.detailScale = key.level
   canvas.save()
   try {
     canvas.clear(
@@ -115,7 +115,7 @@ export function renderTile(
     }
   } finally {
     canvas.restore()
-    renderer.imageDetailScale = previousDetail
+    renderer.images.detailScale = previousDetail
     surfacePool.release(surface)
   }
 }
@@ -281,8 +281,8 @@ export function recordTilePictures(
   const deadline = budget.now() + budget.remainingMs
   let recorded = 0
   // Pictures record at the tile's detail, so their image previews suit its level.
-  const previousDetail = renderer.imageDetailScale
-  renderer.imageDetailScale = key.level
+  const previousDetail = renderer.images.detailScale
+  renderer.images.detailScale = key.level
   try {
     for (const chunk of tileChunks(index, key)) {
       if (chunk.kind === 'subtree' && !chunk.interruptible) continue
@@ -292,7 +292,7 @@ export function recordTilePictures(
       recorded++
     }
   } finally {
-    renderer.imageDetailScale = previousDetail
+    renderer.images.detailScale = previousDetail
   }
   return true
 }

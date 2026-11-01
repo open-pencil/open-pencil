@@ -160,6 +160,7 @@ ja:diagnostics.sharingDisabledByEnvironment
 ja:diagnostics.sharingQuestionTitle
 ja:diagnostics.sharingQuestionDescription
 ja:editor.showUI
+ja:editor.wideGamutUnavailable
 ja:files.browserFileAPINotSupported
 ja:files.clipboardImageFetchFailed
 ja:files.clipboardImagesFetchFailed
@@ -203,10 +204,6 @@ ja:panels.shaderPreset
 ja:panels.invalidShaderPreset
 ja:panels.shaderNeedsWebGPU
 ja:recovery.dialogDescription
-ja:rendering.reloadRequired
-ja:rendering.settingsDescription
-ja:rendering.urlOverride
-ja:rendering.wideGamutUnavailable
 ja:settings.baseURLHint
 ja:settings.invalidURL
 ja:settings.modelIDHint
@@ -383,6 +380,7 @@ zh-cn:diagnostics.sharingUnofficialBuild
 zh-cn:diagnostics.sharingDisabledByEnvironment
 zh-cn:diagnostics.sharingQuestionTitle
 zh-cn:diagnostics.sharingQuestionDescription
+zh-cn:editor.wideGamutUnavailable
 zh-cn:files.browserFileAPINotSupported
 zh-cn:files.clipboardImageFetchFailed
 zh-cn:files.clipboardImagesFetchFailed
@@ -422,10 +420,6 @@ zh-cn:panels.sizingFixedPx
 zh-cn:panels.xAxis
 zh-cn:panels.yAxis
 zh-cn:recovery.dialogDescription
-zh-cn:rendering.reloadRequired
-zh-cn:rendering.settingsDescription
-zh-cn:rendering.urlOverride
-zh-cn:rendering.wideGamutUnavailable
 zh-cn:settings.baseURLHint
 zh-cn:settings.invalidURL
 zh-cn:settings.temporaryDisableSnappingHint

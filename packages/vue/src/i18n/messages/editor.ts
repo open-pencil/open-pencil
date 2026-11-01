@@ -3,6 +3,8 @@ import { params } from '@nanostores/i18n'
 import { i18n } from '#vue/i18n/create'
 
 export const editorMessageDefaults = {
+  wideGamutUnavailable:
+    'This display or browser cannot show Display-P3 colors, so the canvas previews them in sRGB. The document keeps its color space.',
   toolOptions: params('{tool} options'),
   removeGradientStop: 'Remove gradient stop',
   /** The word before a corner's radius in the label beside a dragged radius handle. */

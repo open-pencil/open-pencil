@@ -1,4 +1,5 @@
 {
+  "wideGamutUnavailable": "Cet écran ou ce navigateur ne peut pas afficher les couleurs Display-P3 ; le canevas les prévisualise donc en sRGB. Le document conserve son espace colorimétrique.",
   "toolOptions": "Options de {tool}",
   "removeGradientStop": "Supprimer le point de dégradé",
   "cornerRadius": "Rayon",

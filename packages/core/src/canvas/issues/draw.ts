@@ -6,6 +6,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { inNodeSpace, withScreenStroke } from '#core/canvas/overlays/outline'
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { strokeNodeShape } from '#core/canvas/strokes'
 import {
   ISSUE_EDGE_ARROW,
   ISSUE_ERROR_COLOR,
@@ -61,7 +62,7 @@ export function drawIssueHighlight(
     r.auxFill.setColor(color4f(r, color, ISSUE_HIGHLIGHT_FILL_ALPHA))
     canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxFill)
     const stroke = { color: color4f(r, color), width: ISSUE_HIGHLIGHT_STROKE_WIDTH }
-    withScreenStroke(r, stroke, (paint) => r.strokeNodeShape(canvas, node, paint))
+    withScreenStroke(r, stroke, (paint) => strokeNodeShape(r, canvas, node, paint))
 
     const minSize = highlight.minSize
     if (minSize && (node.width < minSize.width || node.height < minSize.height)) {
@@ -193,7 +194,7 @@ function drawMarker(
     r.auxFill
   )
 
-  const font = r.sizeFont
+  const font = r.chromeFonts.size
   if (!font) return
   const label = issueMarkerLabel(marker.count)
   const textWidth = cachedGlyphWidth(r, font, label)
@@ -215,13 +216,13 @@ export function drawIssueMarkers(
   hoveredKey: string | null | undefined
 ): void {
   // Every label is bold: the font is set once around the loop, not twice per marker.
-  r.sizeFont?.setEmbolden(true)
+  r.chromeFonts.size?.setEmbolden(true)
   try {
     for (let index = placed.length - 1; index >= 0; index--) {
       const marker = placed[index]
       drawMarker(r, canvas, marker, marker.key === hoveredKey)
     }
   } finally {
-    r.sizeFont?.setEmbolden(false)
+    r.chromeFonts.size?.setEmbolden(false)
   }
 }

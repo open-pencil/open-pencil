@@ -8,7 +8,7 @@ import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 
 import { normalizeComponentPropertyRecords } from '../property-records'
 import { createResourceResolver } from '../resource-reference'
-import { STYLE_REFERENCE_FIELDS } from '../style-dependencies'
+import { STYLE_REFERENCE_FIELDS, vectorStyleTable } from '../style-dependencies'
 
 export interface BindingReferenceDiagnostic {
   sourceId: string
@@ -72,8 +72,10 @@ function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolve
       for (const field of STYLE_REFERENCE_FIELDS) {
         normalize(node[field], field, path)
       }
-      // A text's ranges bind variables and use styles in their own style overrides.
+      // A text's ranges and a vector's regions bind variables and use styles in their own style
+      // overrides.
       for (const override of node.textData?.styleOverrideTable ?? []) visit(override, path)
+      for (const override of vectorStyleTable(node)) visit(override, path)
       visitChildren(node, path, visit)
     }
     visit(record, [])

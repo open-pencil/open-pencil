@@ -1,8 +1,10 @@
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
+import { wrapLanguageModel } from 'ai'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 
+import { toolImagesInUserMessage } from '@/app/ai/providers/tool-images'
 import type { ModelConfig, ModelProviderAdapter } from '@/app/ai/providers/types'
 
 // Anthropic omits CORS headers unless the caller opts in, so browser requests fail with an
@@ -14,10 +16,12 @@ export type CompatibleEndpoint = string | ((config: ModelConfig) => string)
 type OpenAICompatibleOptions = {
   baseURL?: CompatibleEndpoint
   mode?: 'default' | 'chat' | 'configurable'
+  webpImages?: boolean
 }
 
 type AnthropicCompatibleOptions = {
   baseURL?: CompatibleEndpoint
+  webpImages?: boolean
 }
 
 function resolveEndpoint(endpoint: CompatibleEndpoint | undefined, config: ModelConfig) {
@@ -35,14 +39,15 @@ export function createOpenAICompatibleAdapter(
         fetch: runtime.fetch
       })
       const modelID = config.customModelID.trim() || config.modelID
-      if (options.mode === 'chat') return provider.chat(modelID)
+      const chat = () =>
+        wrapLanguageModel({ model: provider.chat(modelID), middleware: toolImagesInUserMessage })
+      if (options.mode === 'chat') return chat()
       if (options.mode === 'configurable') {
-        return config.customAPIType === 'responses'
-          ? provider.responses(modelID)
-          : provider.chat(modelID)
+        return config.customAPIType === 'responses' ? provider.responses(modelID) : chat()
       }
       return provider(modelID)
-    }
+    },
+    webpImages: options.webpImages
   }
 }
 
@@ -58,6 +63,7 @@ export function createAnthropicCompatibleAdapter(
         headers: IS_TAURI ? undefined : BROWSER_ACCESS_HEADERS
       })
       return provider(config.customModelID.trim() || config.modelID)
-    }
+    },
+    webpImages: options.webpImages
   }
 }

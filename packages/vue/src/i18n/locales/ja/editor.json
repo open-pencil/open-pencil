@@ -1,4 +1,5 @@
 {
+  "wideGamutUnavailable": "このディスプレイまたはブラウザーは Display-P3 の色を表示できないため、キャンバスでは sRGB でプレビューします。ドキュメントのカラースペースは保持されます。",
   "toolOptions": "{tool}のオプション",
   "removeGradientStop": "グラデーション停止点を削除",
   "cornerRadius": "角丸",

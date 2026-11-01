@@ -9,6 +9,7 @@ import {
   nextDefId,
   formatSolidColor,
   createFilterDef,
+  drawnFills,
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
@@ -39,7 +40,7 @@ import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
-import { fillOutlines, paintedOutline } from './regions'
+import { fillOutlines, outlineElements } from './regions'
 import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
@@ -71,14 +72,7 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  for (const outline of filled?.outlines ?? []) {
-    const attrs = {
-      d: outline.d,
-      'fill-rule': outline.windingRule === 'EVENODD' ? 'evenodd' : undefined,
-      ...common
-    }
-    elements.push(...paintedOutline(node, attrs, ctx, outline.fills ?? fallbackFills))
-  }
+  elements.push(...outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
   const network = node.vectorNetwork
   if (network && !filled) elements.push(...networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
@@ -348,23 +342,18 @@ function fillAndStrokeElements(
     )
   }
 
-  if (visibleFills.length > 1) {
-    const elements: SVGNode[] = []
-    for (const fill of visibleFills) {
-      const ref = resolveFill(fill, node, ctx)
-      if (ref) {
-        elements.push(
-          ...nodeShapeElements(
-            node,
-            ref,
-            solidFillOpacity(fill, ctx.colorSpace),
-            fill === visibleFills[visibleFills.length - 1] ? strokeAttrs : {},
-            ctx
-          )
-        )
-      }
-    }
-    return elements
+  // A shape painted once per fill SVG can draw; with none, it draws below as one without fills.
+  const drawn = visibleFills.length > 1 ? drawnFills(visibleFills, node, ctx) : []
+  if (drawn.length > 0) {
+    return drawn.flatMap(({ fill, paint }, index) =>
+      nodeShapeElements(
+        node,
+        paint,
+        solidFillOpacity(fill, ctx.colorSpace),
+        index === drawn.length - 1 ? strokeAttrs : {},
+        ctx
+      )
+    )
   }
 
   const hasFillOrStroke = fillAttr || visibleStrokeCount > 0

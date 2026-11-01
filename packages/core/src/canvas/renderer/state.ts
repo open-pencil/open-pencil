@@ -1,38 +1,69 @@
+import type { SkPicture } from 'canvaskit-wasm'
+
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { changesShaping } from '#core/canvas/text/paragraph/inputs'
 
-export function invalidateScenePicture(r: SkiaRenderer): void {
-  r.scenePicture?.delete()
-  r.scenePicture = null
-  r.scenePictureVersion = -1
-  r.scenePictureFontGeneration = -1
-  r.sceneBacking?.image.delete()
-  r.sceneBacking = null
-  r.sceneBackingBuild?.surface.delete()
-  r.sceneBackingBuild = null
+export interface NodeFlash {
+  nodeId: string
+  startTime: number
 }
 
-export function clearSubtreePictureCache(r: SkiaRenderer): void {
-  for (const entry of r.subtreePictureCache.values()) entry.picture.delete()
-  r.subtreePictureCache.clear()
-  r.subtreePictureCachePageId = null
-  r.subtreePictureCacheSceneVersion = -1
-  r.subtreePictureCachePositionPreviewVersion = -1
-  r.subtreePictureCacheFontGeneration = -1
+/** Layers flashing for attention, and those the AI is working on or has just finished. */
+export interface FeedbackMarks {
+  readonly flashes: NodeFlash[]
+  readonly aiActive: Set<string>
+  readonly aiDone: NodeFlash[]
+}
+
+export function createFeedbackMarks(): FeedbackMarks {
+  return { flashes: [], aiActive: new Set(), aiDone: [] }
+}
+
+/** A node's picture of itself with its effects, good while the font generation holds. */
+export interface NodePictureEntry {
+  picture: SkPicture
+  fontGeneration: number
+}
+
+/** The whole page in one picture, with what it was recorded for; stale when any of those moved. */
+export interface WholeScenePicture {
+  picture: SkPicture | null
+  version: number
+  fontGeneration: number
+  positionPreviewVersion: number
+  pageId: string | null
+}
+
+export function createWholeScenePicture(): WholeScenePicture {
+  return {
+    picture: null,
+    version: -1,
+    fontGeneration: -1,
+    positionPreviewVersion: -1,
+    pageId: null
+  }
+}
+
+export function invalidateScenePicture(r: SkiaRenderer): void {
+  r.wholeScene.picture?.delete()
+  r.wholeScene.picture = null
+  r.wholeScene.version = -1
+  r.wholeScene.fontGeneration = -1
+}
+
+export function clearNodePictures(r: Pick<SkiaRenderer, 'nodePictures'>): void {
+  for (const { picture } of r.nodePictures.values()) picture.delete()
+  r.nodePictures.clear()
 }
 
 export function invalidateAllPictures(r: SkiaRenderer): void {
   r.textPreparationCache.clear()
-  r.textReadiness.clear()
+  r.textFonts.readiness.clear()
   invalidateScenePicture(r)
   r.tiledScene.invalidateStructure()
-  for (const pic of r.nodePictureCache.values()) pic?.delete()
-  r.nodePictureCache.clear()
-  r.nodePictureCacheGenerations.clear()
-  r.effectRasterCache.clear()
-  clearSubtreePictureCache(r)
+  clearNodePictures(r)
 }
 
 export function invalidateNodePicture(
@@ -43,34 +74,27 @@ export function invalidateNodePicture(
   r.textPreparationCache.deleteNode(nodeId, {
     keepShaping: changedKeys !== undefined && !changesShaping(changedKeys)
   })
-  r.textReadiness.delete(nodeId)
-  r.effectRasterCache.delete(nodeId)
-  const pic = r.nodePictureCache.get(nodeId)
-  if (pic) {
-    pic.delete()
-    r.nodePictureCache.delete(nodeId)
-    r.nodePictureCacheGenerations.delete(nodeId)
-  }
-  const subtree = r.subtreePictureCache.get(nodeId)
-  if (subtree) {
-    subtree.picture.delete()
-    r.subtreePictureCache.delete(nodeId)
+  r.textFonts.readiness.delete(nodeId)
+  const cached = r.nodePictures.get(nodeId)
+  if (cached) {
+    cached.picture.delete()
+    r.nodePictures.delete(nodeId)
   }
 }
 
 export function flashNode(r: SkiaRenderer, nodeId: string): void {
-  r._flashes.push({ nodeId, startTime: performance.now() })
+  r.feedback.flashes.push({ nodeId, startTime: performance.now() })
 }
 
 export function aiMarkActive(r: SkiaRenderer, nodeIds: string[]): void {
-  for (const id of nodeIds) r._aiActiveNodes.add(id)
+  for (const id of nodeIds) r.feedback.aiActive.add(id)
 }
 
 export function aiMarkDone(r: SkiaRenderer, nodeIds: string[]): void {
   const now = performance.now()
   for (const id of nodeIds) {
-    if (r._aiActiveNodes.delete(id)) {
-      r._aiDoneFlashes.push({ nodeId: id, startTime: now })
+    if (r.feedback.aiActive.delete(id)) {
+      r.feedback.aiDone.push({ nodeId: id, startTime: now })
     }
   }
 }
@@ -78,19 +102,21 @@ export function aiMarkDone(r: SkiaRenderer, nodeIds: string[]): void {
 export function aiFlashDone(r: SkiaRenderer, nodeIds: string[]): void {
   const now = performance.now()
   for (const id of nodeIds) {
-    r._aiDoneFlashes.push({ nodeId: id, startTime: now })
+    r.feedback.aiDone.push({ nodeId: id, startTime: now })
   }
 }
 
 export function aiClearActive(r: SkiaRenderer): void {
-  r._aiActiveNodes.clear()
+  r.feedback.aiActive.clear()
 }
 
 export function aiClearAll(r: SkiaRenderer): void {
-  r._aiActiveNodes.clear()
-  r._aiDoneFlashes = []
+  r.feedback.aiActive.clear()
+  r.feedback.aiDone.length = 0
 }
 
 export function hasActiveFlashes(r: SkiaRenderer): boolean {
-  return r._flashes.length > 0 || r._aiActiveNodes.size > 0 || r._aiDoneFlashes.length > 0
+  return (
+    r.feedback.flashes.length > 0 || r.feedback.aiActive.size > 0 || r.feedback.aiDone.length > 0
+  )
 }

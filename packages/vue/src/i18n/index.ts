@@ -19,7 +19,6 @@ export {
   usePageMessages,
   usePanelMessages,
   useRecoveryMessages,
-  useRenderingMessages,
   useRenameMessages,
   useSettingsMessages,
   useStatusMessages,

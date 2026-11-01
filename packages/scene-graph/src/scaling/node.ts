@@ -104,6 +104,10 @@ function scaledVectorNetwork(node: SceneNode, scale: number): SceneNode['vectorN
     segment.tangentEnd.x *= scale
     segment.tangentEnd.y *= scale
   }
+  // A region's own paints scale as the layer's do.
+  for (const region of network.regions) {
+    if (region.fills) region.fills = scaledFills(region.fills, scale)
+  }
   return network
 }
 

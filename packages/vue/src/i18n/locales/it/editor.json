@@ -1,4 +1,5 @@
 {
+  "wideGamutUnavailable": "Questo schermo o browser non può mostrare i colori Display-P3, quindi la tela li visualizza in sRGB. Il documento mantiene il suo spazio colore.",
   "toolOptions": "Opzioni di {tool}",
   "removeGradientStop": "Rimuovi punto sfumatura",
   "cornerRadius": "Raggio",

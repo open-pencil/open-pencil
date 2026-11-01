@@ -64,8 +64,8 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
   return asDouble<SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }>({
     fontsLoaded: true,
     fontProvider: {},
-    textFont: {},
-    derivedGlyphPathCache: createDerivedGlyphPathCache(),
+    chromeFonts: { text: {} },
+    textCaches: { derivedGlyphPaths: createDerivedGlyphPathCache() },
     fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
     effectLayerPaint: {
       setBlendMode: mock(() => undefined),

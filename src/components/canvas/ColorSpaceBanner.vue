@@ -10,7 +10,7 @@ import AppBanner from '@/components/ui/feedback/AppBanner.vue'
 /** Neutral capability reference: the floating-point drawing buffer support table. */
 const supportURL = 'https://caniuse.com/mdn-api_webglrenderingcontext_drawingbufferstorage'
 
-const { rendering, common } = useI18n()
+const { editor, common } = useI18n()
 
 // The surface reports what it actually presents, so this notice appears only when a
 // Display-P3 document really is being shown in sRGB.
@@ -22,7 +22,7 @@ const show = computed(() => {
   return presentation === 'srgb' && documentColorSpace === 'display-p3'
 })
 
-const message = computed(() => rendering.value.wideGamutUnavailable)
+const message = computed(() => editor.value.wideGamutUnavailable)
 </script>
 
 <template>
