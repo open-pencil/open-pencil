@@ -37,11 +37,11 @@ test('tooltips stay hoverable and clickable in WebKit', async () => {
   await editor.page.getByTestId('api-key-save').click()
   await expect(editor.page.getByTestId('chat-input')).toBeVisible()
 
-  const settings = editor.page.getByTestId('provider-settings-trigger')
-  await settings.hover()
+  const add = editor.page.getByTestId('chat-add-menu')
+  await add.hover()
   await expect(
-    editor.page.locator('[role=tooltip]').filter({ hasText: 'Provider settings' })
+    editor.page.locator('[role=tooltip]').filter({ hasText: 'Add images, layers, or a command' })
   ).toBeVisible()
-  await settings.click()
-  await expect(editor.page.getByTestId('provider-settings-provider')).toBeVisible()
+  await add.click()
+  await expect(editor.page.getByRole('menuitem', { name: 'Attach images' })).toBeVisible()
 })

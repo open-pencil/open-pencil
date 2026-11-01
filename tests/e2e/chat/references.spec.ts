@@ -49,7 +49,7 @@ test('@ inserts a layer as a chip that the reply shows and that selects the laye
 
 test('/ starts a message with a skill', async ({ configuredChat: chat }) => {
   const { page } = chat
-  await page.getByTestId('provider-settings-trigger').click()
+  await chat.openModelSettings()
   await page.getByRole('tab', { name: 'Skills', exact: true }).click()
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Upload skill' }).click()

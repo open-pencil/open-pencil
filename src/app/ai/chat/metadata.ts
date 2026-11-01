@@ -59,3 +59,30 @@ export function undoOf(message: UIMessage): ReplyUndo | null {
 export function withUndo(message: UIMessage, undo: ReplyUndo): UIMessage {
   return withMetadata(message, { undo })
 }
+
+/**
+ * The tokens a reply used: what its requests read and wrote in all, and what its last request
+ * held, prompt and answer, which the next request starts from.
+ */
+const replyUsageSchema = v.object({
+  contextTokens: v.number(),
+  inputTokens: v.number(),
+  outputTokens: v.number(),
+  cacheReadTokens: v.nullable(v.number())
+})
+
+export type ReplyUsage = v.InferOutput<typeof replyUsageSchema>
+
+export function usageOf(message: UIMessage): ReplyUsage | null {
+  const parsed = v.safeParse(replyUsageSchema, messageMetadata(message).usage)
+  return parsed.success ? parsed.output : null
+}
+
+/** What the conversation's last request held, from the latest reply that reported its usage. */
+export function contextTokensOf(messages: readonly UIMessage[]): number | null {
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const usage = usageOf(messages[index])
+    if (usage) return usage.contextTokens
+  }
+  return null
+}

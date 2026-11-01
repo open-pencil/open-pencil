@@ -9,7 +9,7 @@ test('a conversation with an image keeps saving in a private WebKit context', as
 }) => {
   await chat.input.fill('Use this image for the hero')
   const chooser = chat.page.waitForEvent('filechooser')
-  await chat.page.getByRole('button', { name: 'Attach images' }).click()
+  await chat.attachImages()
   await (await chooser).setFiles([IMAGE])
   await chat.sendButton.click()
   await expect(

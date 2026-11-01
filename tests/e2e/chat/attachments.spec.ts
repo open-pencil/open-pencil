@@ -35,7 +35,7 @@ test('the selection button mentions the selected layers, which history shows', a
 
 test('image drafts can be attached and removed', async ({ configuredChat: chat }) => {
   const chooser = chat.page.waitForEvent('filechooser')
-  await chat.page.getByRole('button', { name: 'Attach images' }).click()
+  await chat.attachImages()
   await (await chooser).setFiles([PILOT, PYTHON])
 
   await expect(chat.page.getByText('pilot_avatar.png', { exact: true })).toBeVisible()
@@ -48,7 +48,7 @@ test('image drafts can be attached and removed', async ({ configuredChat: chat }
 test('sent images and text appear immediately in history', async ({ configuredChat: chat }) => {
   await chat.input.fill('Use these images for the new layout')
   const chooser = chat.page.waitForEvent('filechooser')
-  await chat.page.getByRole('button', { name: 'Attach images' }).click()
+  await chat.attachImages()
   await (await chooser).setFiles([PILOT, PYTHON])
   await chat.sendButton.click()
 
@@ -71,7 +71,7 @@ test('a mentioned layer sends with an image', async ({ configuredChat: chat }) =
   await chat.input.fill('Use this reference ')
   await chat.page.getByRole('button', { name: 'Mention the selected layers' }).click()
   const chooser = chat.page.waitForEvent('filechooser')
-  await chat.page.getByRole('button', { name: 'Attach images' }).click()
+  await chat.attachImages()
   await (await chooser).setFiles(PILOT)
   await chat.sendButton.click()
 
@@ -180,7 +180,7 @@ test('a drag that ends without leaving the chat hides the overlay at the next po
 
 test('a full message shows why more images cannot be dropped', async ({ configuredChat: chat }) => {
   const chooser = chat.page.waitForEvent('filechooser')
-  await chat.page.getByRole('button', { name: 'Attach images' }).click()
+  await chat.attachImages()
   await (await chooser).setFiles([PILOT, PYTHON, PILOT, PYTHON])
   await expect(chat.page.getByRole('button', { name: /Remove image/ })).toHaveCount(4)
 

@@ -34,9 +34,15 @@ export function useComposerCompletions() {
   return [
     commandCompletion(() => {
       const agentId = acpAgentId()
+      // Pi compacts its own context; the built-in chat compacts on `/compact`.
+      const own =
+        providerID.value === 'harness:pi'
+          ? []
+          : [{ name: 'compact', description: ai.value.compactCommand, hint: null }]
       return commandCandidates(
         agentId ? (agentCommands.value[agentId] ?? []) : null,
-        enabledSkills.value
+        enabledSkills.value,
+        own
       )
     }, sections),
     referenceCompletion((query) => {
