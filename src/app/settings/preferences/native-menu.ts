@@ -55,9 +55,11 @@ interface CanvasViewSource {
 
 /**
  * Keeps View → Rulers and View → Pixel Grid checked as the active document shows them, whatever
- * toggled them and when another document becomes active.
+ * toggled them and when another document becomes active. Each sync waits for the one before it,
+ * so the menu ends on the latest state however its calls are answered.
  */
 export function followNativeCanvasViewMenu(store: Ref<CanvasViewSource | undefined>): () => void {
+  let pending: Promise<void> = Promise.resolve()
   return watch(
     () => {
       const state = store.value?.state
@@ -65,9 +67,11 @@ export function followNativeCanvasViewMenu(store: Ref<CanvasViewSource | undefin
     },
     (view) => {
       if (!view) return
-      void syncNativeCanvasViewMenu(view).catch((error: unknown) => {
-        console.error('[Menu] Failed to synchronize the native rulers and pixel grid:', error)
-      })
+      pending = pending
+        .then(() => syncNativeCanvasViewMenu(view))
+        .catch((error: unknown) => {
+          console.error('[Menu] Failed to synchronize the native rulers and pixel grid:', error)
+        })
     },
     { immediate: true, deep: true }
   )
