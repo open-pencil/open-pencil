@@ -50,8 +50,8 @@ export function canvasToLocalPoint(
 
 /**
  * The layer a press selects, or with `deep` (⌘ or Ctrl held) the deepest layer under the point.
- * Always found from the page: the selection opens its own ancestors, so an entered container
- * never limits where a click lands, as in Figma.
+ * Always found from the page: the selection and the entered container open their ancestors, so
+ * an entered container never limits where a click lands, as in Figma.
  */
 export function hitTestLayerAt(
   cx: number,
@@ -63,16 +63,16 @@ export function hitTestLayerAt(
   if (!renderer) return null
   const pad = LAYER_HIT_PAD / renderer.zoom
   const scope = editor.state.currentPageId
+  if (editor.state.enteredContainerId && !editor.graph.getNode(editor.state.enteredContainerId)) {
+    editor.state.enteredContainerId = null
+  }
   return deep
     ? editor.graph.hitTestDeep(cx, cy, scope, pad)
-    : editor.graph.hitTestSelectable(
-        cx,
-        cy,
-        scope,
-        editor.state.selectedIds,
+    : editor.graph.hitTestSelectable(cx, cy, scope, editor.state.selectedIds, {
         pad,
-        resolveEditorProfile(editor.state).framesOpen
-      )
+        framesOpen: resolveEditorProfile(editor.state).framesOpen,
+        enteredId: editor.state.enteredContainerId
+      })
 }
 
 export function getScreenRect(

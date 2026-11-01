@@ -10,24 +10,24 @@ export function createSelectionHitTestActions(
   clearSelection: () => void
 ) {
   /**
-   * The layer a click selects, found from the page: the selection opens its own ancestors, so an
-   * entered container never limits where a click lands, as in Figma.
+   * The layer a click selects, found from the page: the selection and the entered container open
+   * their ancestors, so an entered container never limits where a click lands, as in Figma.
    */
   function hitTestAtPoint(cx: number, cy: number, deep = false): SceneNode | null {
     const renderer = ctx.getRenderer()
     if (!renderer) return null
     const pad = LAYER_HIT_PAD / ctx.state.zoom
     const scope = ctx.state.currentPageId
+    if (ctx.state.enteredContainerId && !ctx.graph.getNode(ctx.state.enteredContainerId)) {
+      ctx.state.enteredContainerId = null
+    }
     return deep
       ? ctx.graph.hitTestDeep(cx, cy, scope, pad)
-      : ctx.graph.hitTestSelectable(
-          cx,
-          cy,
-          scope,
-          ctx.state.selectedIds,
+      : ctx.graph.hitTestSelectable(cx, cy, scope, ctx.state.selectedIds, {
           pad,
-          resolveEditorProfile(ctx.state).framesOpen
-        )
+          framesOpen: resolveEditorProfile(ctx.state).framesOpen,
+          enteredId: ctx.state.enteredContainerId
+        })
   }
 
   /**

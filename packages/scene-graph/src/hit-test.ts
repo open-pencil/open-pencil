@@ -252,9 +252,16 @@ function openedBySelection(
   graph: SceneGraph,
   selectedIds: ReadonlySet<string>,
   scopeId: string,
-  framesOpen = true
+  framesOpen: boolean,
+  enteredId: string | null
 ): Set<string> {
   const ancestors = new Set<string>()
+  // An entered container is open whatever its kind, so a double-click into a board's frame
+  // reaches its layers; its ancestors open with it.
+  for (let id = enteredId; id && id !== scopeId && !ancestors.has(id);) {
+    ancestors.add(id)
+    id = graph.nodes.get(id)?.parentId ?? null
+  }
   for (const id of selectedIds) {
     const node = graph.nodes.get(id)
     if (
@@ -283,15 +290,24 @@ function openedBySelection(
  * by the selection is selected, so is a top-level frame with auto layout, and a plain top-level
  * frame or a section is not.
  */
+export interface SelectableHitOptions {
+  /** Canvas units a leaf layer's box grows by, as Figma takes a click a few pixels outside. */
+  pad?: number
+  /** Whether top-level frames are looked into (a design) or selected whole (a board). */
+  framesOpen?: boolean
+  /** The container a double-click entered, open along with its ancestors. */
+  enteredId?: string | null
+}
+
 export function hitTestSelectable(
   graph: SceneGraph,
   px: number,
   py: number,
   scopeId: string,
   selectedIds: ReadonlySet<string>,
-  pad = 0,
-  framesOpen = true
+  options: SelectableHitOptions = {}
 ): SceneNode | null {
+  const { pad = 0, framesOpen = true, enteredId = null } = options
   const deepest = hitTestChildren(graph, px, py, scopeId, true, new Map(), pad)
   if (!deepest) {
     const scope = graph.nodes.get(scopeId)
@@ -304,7 +320,7 @@ export function hitTestSelectable(
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
 
-  const opened = openedBySelection(graph, selectedIds, scopeId, framesOpen)
+  const opened = openedBySelection(graph, selectedIds, scopeId, framesOpen, enteredId)
 
   for (const node of chain) {
     // A locked layer stands in for everything inside it.
