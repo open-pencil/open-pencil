@@ -164,12 +164,15 @@ const filteredStorageDocuments = computed(() =>
       document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
   )
 )
-// Recent files counts matches before its kind filter, so its kind control stays to switch kinds.
+// Recent files counts matches before its kind filter, so its kind control stays to switch kinds;
+// storage has none to count while its first listing loads.
 const noSearchMatches = computed(() => {
   if (!normalizedQuery.value) return false
-  return places.location.value.kind === 'storage'
-    ? filteredStorageDocuments.value.length === 0
-    : searchedRecentFiles.value.length === 0
+  if (places.location.value.kind !== 'storage') return searchedRecentFiles.value.length === 0
+  return (
+    filteredStorageDocuments.value.length === 0 &&
+    !(storageLoading.value && storageDocuments.value.length === 0)
+  )
 })
 
 async function openRecent(document: RecentDocument): Promise<void> {

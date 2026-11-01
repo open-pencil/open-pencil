@@ -117,5 +117,13 @@ function formattedDate(updatedAt: string): string {
       <p class="text-xs font-medium">{{ files.noRecentFiles }}</p>
       <p class="mt-1 text-xs text-muted">{{ files.noRecentFilesDescription }}</p>
     </div>
+
+    <!-- The search matches files of another kind only. -->
+    <p
+      v-else
+      class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"
+    >
+      {{ files.noMatchingFiles({ query }) }}
+    </p>
   </section>
 </template>
