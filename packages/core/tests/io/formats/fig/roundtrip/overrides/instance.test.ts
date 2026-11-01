@@ -101,3 +101,25 @@ test('an instance that clears its component’s fill style keeps it cleared afte
     expect.objectContaining({ color: expect.objectContaining({ r: 1 }) })
   ])
 })
+
+test('a copy of an instance keeps its overrides after saving and reopening', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const button = graph.createNode('COMPONENT', page, { name: 'Button', width: 120, height: 40 })
+  graph.createNode('TEXT', button.id, { name: 'Label', text: 'Button', fontSize: 14 })
+  const instance = expectDefined(graph.createInstance(button.id, page, { name: 'Original' }))
+  const label = expectDefined(graph.getChildren(instance.id)[0])
+  graph.updateNode(label.id, { text: 'Continuar' })
+  recordInstanceOverride(graph, label.id, ['text'])
+  const copy = expectDefined(graph.cloneTree(instance.id, page))
+  graph.updateNode(copy.id, { name: 'Copy', y: 100 })
+
+  const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer)
+  const reopenedCopy = expectDefined(
+    [...reopened.getAllNodes()].find((node) => node.name === 'Copy'),
+    'reopened copy'
+  )
+  const [reopenedLabel] = reopened.getChildren(reopenedCopy.id)
+  expect(reopenedLabel?.text).toBe('Continuar')
+  expect(hasInstanceOverride(reopened, reopenedLabel?.id ?? '', 'text')).toBe(true)
+})
