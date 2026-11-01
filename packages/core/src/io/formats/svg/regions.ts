@@ -50,7 +50,7 @@ export function fillOutlines(node: SceneNode): FillOutlines | null {
 }
 
 /** An outline painted once per visible paint, the last one carrying the stroke. */
-export function paintedOutline(
+function paintedOutline(
   node: SceneNode,
   attrs: Record<string, string | number | undefined>,
   ctx: SVGExportContext,
@@ -71,4 +71,32 @@ export function paintedOutline(
       stroke: index === drawn.length - 1 ? attrs.stroke : 'none'
     })
   )
+}
+
+/**
+ * Filled outlines, each painted with its own paints or `fallbackFills`. A later outline's fill
+ * would cover an earlier one's stroke, so with several the strokes go after every fill, as the
+ * canvas draws them.
+ */
+export function outlineElements(
+  node: SceneNode,
+  outlines: readonly FillOutline[],
+  common: Record<string, string | number | undefined>,
+  ctx: SVGExportContext,
+  fallbackFills: Fill[] | undefined
+): SVGNode[] {
+  const shape = (outline: FillOutline) => ({
+    d: outline.d,
+    'fill-rule': outline.windingRule === 'EVENODD' ? 'evenodd' : undefined
+  })
+  const strokesLater = outlines.length > 1 && !!common.stroke && common.stroke !== 'none'
+  const fillCommon = strokesLater ? { ...common, stroke: 'none' } : common
+  const fills = outlines.flatMap((outline) =>
+    paintedOutline(node, { ...shape(outline), ...fillCommon }, ctx, outline.fills ?? fallbackFills)
+  )
+  if (!strokesLater) return fills
+  const strokes = outlines.map((outline) =>
+    svg('path', { ...shape(outline), ...common, fill: 'none', 'fill-opacity': undefined })
+  )
+  return [...fills, ...strokes]
 }
