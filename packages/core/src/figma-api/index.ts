@@ -10,7 +10,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
 import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
 import { invalidateBooleanAncestors } from '#core/editor/graph-events'
-import { newLayerDefaults } from '#core/editor/shapes/defaults'
+import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group/ungroup'
@@ -233,7 +233,9 @@ export class FigmaAPI implements NodeProxyHost {
 
   /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */
   private _createNode(type: NodeType): FigmaNodeProxy {
-    const defaults = newLayerDefaults(type, this.theme)
+    // A board's new sections are light under any interface theme, as the editor makes them.
+    const theme = layerTheme({ documentKind: this.graph.documentKind, theme: this.theme })
+    const defaults = newLayerDefaults(type, theme)
     // Figma's plugin API makes a line with no height, a 496 px section, and a hugging frame.
     if (type === 'LINE') defaults.height = 0
     if (type === 'SECTION') Object.assign(defaults, { width: 496, height: 496 })

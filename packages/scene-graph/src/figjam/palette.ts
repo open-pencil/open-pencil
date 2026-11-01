@@ -384,9 +384,13 @@ export function figJamSectionColorName(section: Pick<SceneNode, 'fills'>): FigJa
   )
 }
 
-/** Whether a layer takes a palette colour as its stroke alone: a line or a pen stroke. */
-function colorsStroke(node: Pick<SceneNode, 'type'>): boolean {
-  return node.type === 'LINE' || node.type === 'VECTOR'
+/**
+ * Whether a layer takes a palette colour as its stroke alone: a line, or a pen stroke, which is a
+ * vector with nothing filled. A filled vector takes it as any other layer does.
+ */
+function colorsStroke(node: Pick<SceneNode, 'type' | 'fills'>): boolean {
+  if (node.type === 'LINE') return true
+  return node.type === 'VECTOR' && !node.fills.some((fill) => fill.visible)
 }
 
 /**
@@ -395,7 +399,7 @@ function colorsStroke(node: Pick<SceneNode, 'type'>): boolean {
  * colour.
  */
 export function figJamLayerColorFields(
-  node: Pick<SceneNode, 'type' | 'strokes' | 'styleRuns'>,
+  node: Pick<SceneNode, 'type' | 'fills' | 'strokes' | 'styleRuns'>,
   name: FigJamColorName
 ): Partial<SceneNode> {
   const color = figJamColor(name)
@@ -416,5 +420,7 @@ export function figJamLayerColorFields(
 export function figJamLayerColorName(
   node: Pick<SceneNode, 'type' | 'fills' | 'strokes'>
 ): FigJamColorName | null {
-  return figJamColorName((colorsStroke(node) ? node.strokes : node.fills).at(0)?.color)
+  // The first paint the canvas draws: a hidden one shows no colour.
+  const paints: Fill[] = colorsStroke(node) ? node.strokes : node.fills
+  return figJamColorName(paints.find((paint) => paint.visible)?.color)
 }

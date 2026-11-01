@@ -79,6 +79,9 @@ describe('new layer defaults', () => {
     // Figma fills a section #444444 in its dark theme.
     figma.theme = 'dark'
     expect(solid(expectFills(figma.createSection().fills))).toEqual([[0.27, 0.27, 0.27]])
+    // A board is light under either theme.
+    figma.graph.documentKind = 'board'
+    expect(solid(expectFills(figma.createSection().fills))).toEqual([WHITE])
   })
 
   test('each layer gets its own copy of the default paints', () => {

@@ -2,8 +2,9 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   FIGJAM_TYPEFACES,
   figJamTextSizeFields,
+  figJamTextSize,
   figJamTypeface,
-  figJamTypefaceFields,
+  figJamTypefaceFaceFields,
   type FigJamTextSize,
   type FigJamTypeface
 } from '@open-pencil/scene-graph/figjam'
@@ -13,6 +14,7 @@ import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
+import { textStyleChanges } from '#core/text/character-style'
 
 /** How sticky notes and shapes take a FigJam size: each fits itself to its text as it does. */
 interface GeneratedTextSizes {
@@ -63,8 +65,12 @@ export function createFigJamTextActions(
     await ctx.loadFont(fontFamily, faceLoadKey(fontWeight, false))
     // Another document opened while the face loaded: these ids are not its layers.
     if (ctx.graph !== graph) return
+    // The face replaces any a range keeps; ranges keep their own sizes, as the size menu sets those.
     edit('Change typeface', textsAmong(ids), (text) =>
-      nodes.updateNode(text.id, figJamTypefaceFields(typeface, text))
+      nodes.updateNode(text.id, {
+        ...textStyleChanges(text, figJamTypefaceFaceFields(typeface)),
+        ...figJamTextSizeFields(figJamTextSize(text), typeface)
+      })
     )
   }
 
@@ -81,7 +87,10 @@ export function createFigJamTextActions(
         'Change text size',
         targets.filter(({ layer }) => layer.type === 'TEXT'),
         (text) =>
-          nodes.updateNode(text.id, figJamTextSizeFields(size, figJamTypeface(text) ?? 'simple'))
+          nodes.updateNode(
+            text.id,
+            textStyleChanges(text, figJamTextSizeFields(size, figJamTypeface(text) ?? 'simple'))
+          )
       )
       generated.setStickyTextSize(idsOf('STICKY'), size)
       generated.setShapesWithTextTextSize(idsOf('SHAPE_WITH_TEXT'), size)

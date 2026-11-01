@@ -41,6 +41,54 @@ export function boardDriver(page: () => Page) {
         },
         { x, y, width, height }
       )
+    },
+
+    /** Adds a text layer or a section at canvas `x`,`y` and selects it. */
+    async addSelected(
+      type: 'TEXT' | 'SECTION',
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ) {
+      await page().evaluate(
+        ({ type, x, y, width, height }) => {
+          const store = window.openPencil?.getStore?.()
+          if (!store) throw new Error('OpenPencil store not initialized')
+          const id = store.createShape(type, x, y, width, height)
+          if (type === 'TEXT') store.graph.updateNode(id, { text: 'Board text' })
+          store.select([id])
+          store.requestRender()
+        },
+        { type, x, y, width, height }
+      )
+    },
+
+    /** Selects every layer on the board's page. */
+    async selectAll() {
+      await page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        store.select(store.graph.getChildren(store.state.currentPageId).map((node) => node.id))
+      })
+    },
+
+    /** The first fill of the selected layer as 0–255 RGB, or null when it has none. */
+    async selectedFill() {
+      return page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        const id = store ? [...store.state.selectedIds][0] : undefined
+        const color = id ? store?.graph.getNode(id)?.fills[0]?.color : undefined
+        return color ? [color.r, color.g, color.b].map((c) => Math.round(c * 255)) : null
+      })
+    },
+
+    /** The types of the layers directly on the board's page, in order. */
+    async layerTypes() {
+      return page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        return store?.graph.getChildren(store.state.currentPageId).map((node) => node.type)
+      })
     }
   }
 }

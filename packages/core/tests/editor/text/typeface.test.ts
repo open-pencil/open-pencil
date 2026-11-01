@@ -42,6 +42,22 @@ describe('FigJam typefaces and sizes', () => {
     expect(editor.graph.getNode(id)).toMatchObject({ fontFamily: 'Merriweather', fontSize: 40 })
   })
 
+  test('a typeface sets every character, and a FigJam size sets every character too', async () => {
+    const { editor, pageId } = setup()
+    const id = editor.createShape('TEXT', 0, 0, 100, 20, pageId)
+    editor.graph.updateNode(id, {
+      text: 'Hello',
+      styleRuns: [{ start: 0, length: 2, style: { fontFamily: 'Roboto', fontSize: 30 } }]
+    })
+    await editor.setFigJamTypeface([id], 'bookish')
+    // The face reaches the range; its own size stays until a size is chosen.
+    expect(editor.graph.getNode(id)?.styleRuns).toEqual([
+      { start: 0, length: 2, style: { fontSize: 30 } }
+    ])
+    editor.setFigJamTextSize([id], 'large')
+    expect(editor.graph.getNode(id)?.styleRuns).toEqual([])
+  })
+
   test('a FigJam size sets text and sticky notes together, in one undo step', () => {
     const { editor, pageId } = setup()
     const text = editor.createShape('TEXT', 0, 0, 100, 20, pageId)

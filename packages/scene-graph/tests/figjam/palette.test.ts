@@ -93,24 +93,39 @@ describe("FigJam's shape colours", () => {
   })
 
   test('the colour menu paints text, a line, and other layers as FigJam does', () => {
-    const text = figJamLayerColorFields({ type: 'TEXT', strokes: [], styleRuns: [] }, 'red')
+    const text = figJamLayerColorFields({ type: 'TEXT', fills: [], strokes: [], styleRuns: [] }, 'red')
     expect(hexes(text.fills)).toEqual(['#f24822'])
     expect(text.strokes).toBeUndefined()
-    const line = figJamLayerColorFields({ type: 'LINE', strokes: [], styleRuns: [] }, 'blue')
+    const line = figJamLayerColorFields({ type: 'LINE', fills: [], strokes: [], styleRuns: [] }, 'blue')
     expect(line.fills).toBeUndefined()
     expect(hexes(line.strokes)).toEqual(['#3dadff'])
-    const rect = figJamLayerColorFields({ type: 'RECTANGLE', strokes: [], styleRuns: [] }, 'red')
+    const rect = figJamLayerColorFields({ type: 'RECTANGLE', fills: [], strokes: [], styleRuns: [] }, 'red')
     expect(hexes(rect.fills)).toEqual(['#f24822'])
     expect(rect.strokes?.[0]).toMatchObject({ weight: 1 })
     expect(figJamLayerColorName({ type: 'RECTANGLE', fills: rect.fills ?? [], strokes: [] })).toBe('red')
   })
 
+  test('a pen stroke takes the colour as its stroke, a filled vector as its fill and stroke', () => {
+    const pen = figJamLayerColorFields({ type: 'VECTOR', fills: [], strokes: [], styleRuns: [] }, 'blue')
+    expect(pen.fills).toBeUndefined()
+    const filled = { type: 'SOLID' as const, color: figJamColor('black'), opacity: 1, visible: true }
+    const shape = figJamLayerColorFields({ type: 'VECTOR', fills: [filled], strokes: [], styleRuns: [] }, 'blue')
+    expect(hexes(shape.fills)).toEqual(['#3dadff'])
+    expect(hexes(shape.strokes)).toEqual(['#3dadff'])
+  })
+
+  test('a layer shows the colour of its first visible paint', () => {
+    const paint = (name: 'red' | 'blue', visible: boolean) => ({ type: 'SOLID' as const, color: figJamColor(name), opacity: 1, visible })
+    const fills = [paint('red', false), paint('blue', true)]
+    expect(figJamLayerColorName({ type: 'RECTANGLE', fills, strokes: [] })).toBe('blue')
+  })
+
   test('the colour reaches gradient strokes and ranges of text coloured on their own', () => {
     const gradient = { type: 'GRADIENT_LINEAR' as const, color: figJamColor('black'), opacity: 1, visible: true, weight: 2, align: 'INSIDE' as const }
-    const rect = figJamLayerColorFields({ type: 'RECTANGLE', strokes: [gradient], styleRuns: [] }, 'red')
+    const rect = figJamLayerColorFields({ type: 'RECTANGLE', fills: [], strokes: [gradient], styleRuns: [] }, 'red')
     expect(rect.strokes?.[0]?.type).toBe('SOLID')
     const run = { start: 0, length: 2, style: { fills: [{ type: 'SOLID' as const, color: figJamColor('blue'), opacity: 1, visible: true }], fontSize: 30 } }
-    const text = figJamLayerColorFields({ type: 'TEXT', strokes: [], styleRuns: [run] }, 'red')
+    const text = figJamLayerColorFields({ type: 'TEXT', fills: [], strokes: [], styleRuns: [run] }, 'red')
     expect(text.styleRuns?.[0]?.style).toEqual({ fontSize: 30 })
   })
 })

@@ -123,18 +123,20 @@ export function applyStickyScale(
     disableSnapping
   )
   d.scale = Math.max(MIN_STICKY_SCALE, rect.width / origRect.width)
+  const clamped = d.scale !== rect.width / origRect.width
+  // At its smallest the note no longer meets the edge it snapped to, so no guide shows one.
+  if (clamped) editor.setSnapGuides([])
   // A note scaled down to its smallest stays anchored as the handle anchors it.
-  const placed =
-    d.scale === rect.width / origRect.width
-      ? rect
-      : constrainToAspectRatio(
-          d.handle,
-          origRect,
-          origRect.width * d.scale,
-          origRect.height * d.scale,
-          aspect,
-          'width'
-        )
+  const placed = !clamped
+    ? rect
+    : constrainToAspectRatio(
+        d.handle,
+        origRect,
+        origRect.width * d.scale,
+        origRect.height * d.scale,
+        aspect,
+        'width'
+      )
   d.position = { x: placed.x, y: placed.y }
   for (const [id, original] of d.originals) {
     const changes = scaleNodeChanges(original, d.scale, id !== d.nodeId)
