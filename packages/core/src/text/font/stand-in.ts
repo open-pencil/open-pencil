@@ -48,7 +48,8 @@ export function standInFont(font: ArrayBuffer, standIn: FontStandIn): ArrayBuffe
   const data = font.slice(0)
   const head = fontTableView(data, 'head')
   const hhea = fontTableView(data, 'hhea')
-  if (!head || !hhea) return null
+  // The fields read and written: the em in `head`, the line metrics in `hhea`.
+  if (!head || !hhea || head.byteLength < 20 || hhea.byteLength < 10) return null
   const unitsPerEm = Math.round(head.getUint16(18) / standIn.scale)
   const ascent = Math.round(standIn.ascent * unitsPerEm)
   const descent = Math.round(standIn.descent * unitsPerEm)

@@ -61,4 +61,25 @@ describe('stand-in fonts', () => {
   test('other missing families have no stand-in', async () => {
     expect(await offlineManager().loadFont('No Such Family', 'Regular')).toBeNull()
   })
+
+  test('a font whose head table is cut short is not taken for one', async () => {
+    const caveat = await bundledCaveat()
+    const view = new DataView(caveat)
+    // Shorten the head table's directory record to 4 bytes, too short for the em it holds.
+    for (let i = 0; i < view.getUint16(4); i++) {
+      const record = 12 + i * 16
+      const tag = String.fromCharCode(...new Uint8Array(caveat, record, 4))
+      if (tag === 'head') view.setUint32(record + 12, 4)
+    }
+    expect(standInFont(caveat, FIGMA_HAND)).toBeNull()
+  })
+
+  test('an installed Figma Hand replaces the stand-in once it can be read', async () => {
+    const manager = offlineManager()
+    await manager.loadFont('Figma Hand', 'Regular')
+    const installed = await bundledCaveat()
+    manager.setHostFontLoader((family) => Promise.resolve(family === 'Figma Hand' ? installed : null))
+    await manager.loadFont('Figma Hand', 'Regular')
+    expect(manager.loadedFontSource('Figma Hand', 'Regular')).toBe('local')
+  })
 })

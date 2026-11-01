@@ -383,6 +383,13 @@ export class FontManager {
   ): Promise<ArrayBuffer | null> {
     signal?.throwIfAborted()
     const loaded = this.loadedData(family, style)
+    // A stand-in gives way to the family's own face once it is installed or local access is granted.
+    if (loaded && this.loadedFontSource(family, style) === 'stand-in') {
+      const installed = await this.loadInstalledFont(family, style)
+      if (installed) return installed
+      this.registerFontInCanvasKit(family, loaded)
+      return loaded
+    }
     if (loaded) {
       this.registerFontInCanvasKit(family, loaded)
       return this.withRemoteCoverage(family, style, loaded, characters, signal)
@@ -409,10 +416,15 @@ export class FontManager {
   private async loadStandIn(family: string, style: string): Promise<ArrayBuffer | null> {
     const standIn = fontStandIn(family)
     if (!standIn) return null
-    const file = await this.fetchBundledFont(standIn.file)
-    if (!file) return null
-    const font = standInFont(await sfntFont(file), standIn)
-    return font ? this.registerAndCache(family, style, font, 'stand-in') : null
+    try {
+      const file = await this.fetchBundledFont(standIn.file)
+      if (!file) return null
+      const font = standInFont(await sfntFont(file), standIn)
+      return font ? this.registerAndCache(family, style, font, 'stand-in') : null
+    } catch (e) {
+      console.warn(`Stand-in font load failed for "${family}" ${style}:`, e)
+      return null
+    }
   }
 
   /**

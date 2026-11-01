@@ -151,7 +151,7 @@ function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFont
       status: 'substituted',
       source: exactSource,
       substituteFamily: standIn.family,
-      reason: null,
+      reason: manager.unavailableReason(use.family, use.style),
       nodeIds: [...use.nodeIds],
       nodeNames: [...use.nodeNames]
     }
