@@ -1,0 +1,1 @@
+- The AI chat compacts long conversations: the model summarizes what came before, automatically before the context window fills up, from the new context meter in the chat header, or with `/compact`, and a request that is already too long offers Compact and retry. Replies show the tokens they used on hover.
