@@ -8,6 +8,7 @@ test('a document entry with a menu takes its parent directives, shows its previe
   await expect(entry).toHaveAttribute('data-preview-requested', 'true')
 
   const preview = entry.locator('[data-slot="preview"] img')
+  await expect(preview).toBeVisible()
   await expect(preview).toHaveJSProperty('naturalWidth', 16)
 
   await entry.locator('[data-slot="trigger"]').click({ button: 'right' })
