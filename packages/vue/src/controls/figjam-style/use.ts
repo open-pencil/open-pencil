@@ -1,10 +1,11 @@
 import { uniq } from 'es-toolkit'
 import { computed } from 'vue'
 
+import { figJamColoredLayers } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
-  figJamColorName,
   figJamLayerColorName,
+  figJamOutlineColorName,
   figJamLineStyle,
   figJamSectionColorName,
   figJamTextSize,
@@ -39,16 +40,10 @@ export function useFigJamStyle() {
   )
   const ids = computed(() => layers.value.map((layer) => layer.id))
 
-  /** The layers a group's colour is read from: its contents, as its colour paints them. */
-  function painted(layer: SceneNode): SceneNode[] {
-    if (layer.type !== 'GROUP') return [layer]
-    return editor.graph.getChildren(layer.id).flatMap(painted)
-  }
-
-  /** The palette colour a layer shows, a group's when its contents share one. */
+  /** The palette colour a layer shows, a group's when the layers its colour paints share one. */
   function layerColor(layer: SceneNode): FigJamColorName | null {
     if (layer.type === 'SECTION') return figJamSectionColorName(layer)
-    const names = uniq(painted(layer).map(figJamLayerColorName))
+    const names = uniq(figJamColoredLayers(editor.graph, layer).map(figJamLayerColorName))
     return names.length === 1 ? (names[0] ?? null) : null
   }
 
@@ -59,7 +54,7 @@ export function useFigJamStyle() {
     return {
       color: layerColor(first),
       lineStyle: figJamLineStyle(first),
-      lineColor: figJamColorName(first.strokes.at(0)?.color),
+      lineColor: figJamOutlineColorName(first.strokes.at(0)?.color),
       textSize: text ? figJamTextSize(text) : null,
       typeface: text ? figJamTypeface(text) : null,
       font: text?.fontFamily ?? null

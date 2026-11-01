@@ -120,7 +120,8 @@ export function applyResizeSnap(
   const dx = horizontal ? localCorrection.x : 0
   const dy = vertical ? localCorrection.y : 0
 
-  state.snapGuides = snap.guides
+  // Only the axes the handle moves snap, so only their guides show.
+  state.snapGuides = snap.guides.filter((guide) => (guide.axis === 'x' ? horizontal : vertical))
   return applyEdgeDelta(drag.handle, rect, dx, dy)
 }
 

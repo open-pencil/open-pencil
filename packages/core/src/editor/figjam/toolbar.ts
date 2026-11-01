@@ -1,4 +1,5 @@
-import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 
 /**
  * Which of FigJam's selection toolbars a selection gets: one per kind of layer, a text toolbar for
@@ -39,7 +40,19 @@ const KIND_BY_TYPE: Partial<Record<NodeType, FigJamToolbarKind>> = {
 
 /** Whether a layer shows an image, which FigJam's colour menu leaves alone. */
 export function showsImage(node: Pick<SceneNode, 'fills'>): boolean {
-  return node.fills.some((fill) => fill.type === 'IMAGE' && fill.visible)
+  return node.fills.some((fill) => fill.type === 'IMAGE' && fill.visible && fill.opacity > 0)
+}
+
+/**
+ * The layers FigJam's colour menu paints for `layer`: a group's contents at any depth, leaving
+ * out images and generated frames, which keep colours of their own. Reading a colour back takes
+ * the same layers.
+ */
+export function figJamColoredLayers(graph: SceneGraph, layer: SceneNode): SceneNode[] {
+  if (layer.type === 'GROUP') {
+    return graph.getChildren(layer.id).flatMap((child) => figJamColoredLayers(graph, child))
+  }
+  return isGeneratedFrame(layer) || showsImage(layer) ? [] : [layer]
 }
 
 function layerKind(node: Pick<SceneNode, 'type' | 'fills'>): FigJamToolbarKind {
