@@ -1,0 +1,2 @@
+- Editing text that keeps Figma's saved glyphs draws it from the live layout while it is edited, so the caret and selection land where you click even when the loaded font is a different build than the file's; the saved glyphs return when the edit ends (#1664).
+- A single click inside a selected frame or group keeps it selected, each double-click goes one level down through frames and groups, and a nested text is selected first and edited by the next double-click, as in Figma; a top-level frame or section stays open while selected (#1664).
