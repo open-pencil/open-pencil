@@ -4,7 +4,7 @@
   "dialogTitle": "Recupera il lavoro non salvato",
   "dialogDescription": "OpenPencil si è chiuso in modo imprevisto. Questi documenti avevano modifiche non salvate.",
   "sectionTitle": "Lavoro non salvato",
-  "sectionDescription": "Copie di documenti chiusi senza salvare. Aprine una per continuare a lavorare.",
+  "sectionDescription": "Modifiche non salvate di documenti chiusi senza salvare o aperti alla chiusura di OpenPencil. Aprine uno per continuare a lavorare.",
   "restoreFailed": "Impossibile ripristinare questo documento.",
   "discardFailed": "Impossibile eliminare questa copia.",
   "settingsTitle": "Ripristino",

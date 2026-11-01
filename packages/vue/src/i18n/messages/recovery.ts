@@ -4,7 +4,8 @@ export const recoveryMessageDefaults = {
   dialogTitle: 'Recover unsaved work',
   dialogDescription: 'OpenPencil quit unexpectedly. These documents had unsaved changes.',
   sectionTitle: 'Unsaved work',
-  sectionDescription: 'Copies of documents closed without saving. Open one to keep working on it.',
+  sectionDescription:
+    'Unsaved changes kept from documents closed without saving or open when OpenPencil quit. Open one to keep working on it.',
   restoreFailed: 'Could not restore this document.',
   discardFailed: 'Could not discard this copy.',
   settingsTitle: 'Recovery',

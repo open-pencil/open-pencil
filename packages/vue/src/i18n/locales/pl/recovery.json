@@ -4,7 +4,7 @@
   "dialogTitle": "Odzyskaj niezapisaną pracę",
   "dialogDescription": "OpenPencil został nieoczekiwanie zamknięty. Te dokumenty miały niezapisane zmiany.",
   "sectionTitle": "Niezapisana praca",
-  "sectionDescription": "Kopie dokumentów zamkniętych bez zapisywania. Otwórz jedną, aby kontynuować pracę.",
+  "sectionDescription": "Niezapisane zmiany z dokumentów zamkniętych bez zapisywania lub otwartych w chwili zamknięcia OpenPencil. Otwórz jeden, aby kontynuować pracę.",
   "restoreFailed": "Nie udało się przywrócić tego dokumentu.",
   "discardFailed": "Nie udało się odrzucić tej kopii.",
   "settingsTitle": "Odzyskiwanie",

@@ -4,7 +4,7 @@
   "dialogTitle": "Nicht gespeicherte Arbeit wiederherstellen",
   "dialogDescription": "OpenPencil wurde unerwartet beendet. Diese Dokumente hatten ungespeicherte Änderungen.",
   "sectionTitle": "Ungespeicherte Arbeit",
-  "sectionDescription": "Kopien von Dokumenten, die ohne Speichern geschlossen wurden. Öffne eine, um weiterzuarbeiten.",
+  "sectionDescription": "Ungespeicherte Änderungen aus Dokumenten, die ohne Speichern geschlossen wurden oder beim Beenden von OpenPencil geöffnet waren. Öffne eines, um weiterzuarbeiten.",
   "restoreFailed": "Dieses Dokument konnte nicht wiederhergestellt werden.",
   "discardFailed": "Diese Kopie konnte nicht verworfen werden.",
   "settingsTitle": "Wiederherstellung",

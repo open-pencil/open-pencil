@@ -24,5 +24,7 @@ export interface RecoveryStore {
   read(id: string): Promise<RecoverySnapshot | null>
   write(input: RecoverySnapshotInput): Promise<RecoverySnapshotMeta>
   remove(id: string): Promise<void>
+  /** Hands a stored copy to `sessionId` without touching its bytes; nothing when it is gone. */
+  claim(id: string, sessionId: string): Promise<void>
   clear(): Promise<void>
 }

@@ -4,7 +4,7 @@
   "dialogTitle": "未保存の作業を復元",
   "dialogDescription": "OpenPencil が予期せず終了しました。これらのドキュメントには未保存の変更がありました。",
   "sectionTitle": "未保存の作業",
-  "sectionDescription": "保存せずに閉じたドキュメントのコピーです。開くと作業を続けられます。",
+  "sectionDescription": "保存せずに閉じたドキュメントや、OpenPencil の終了時に開いていたドキュメントの未保存の変更です。開くと作業を続けられます。",
   "restoreFailed": "このドキュメントを復元できませんでした。",
   "discardFailed": "このコピーを破棄できませんでした。",
   "settingsTitle": "復元",

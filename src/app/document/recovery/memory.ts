@@ -36,6 +36,10 @@ export function createMemoryRecoveryStore(): RecoveryStore {
     async remove(id: string) {
       snapshots.delete(id)
     },
+    async claim(id: string, sessionId: string) {
+      const snapshot = snapshots.get(id)
+      if (snapshot) snapshots.set(id, { ...snapshot, sessionId })
+    },
     async clear() {
       snapshots.clear()
     }

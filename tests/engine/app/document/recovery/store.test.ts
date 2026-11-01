@@ -73,4 +73,19 @@ describe('document recovery store', () => {
     if (first) first.figBytes[0] = 88
     expect((await store.read('one'))?.figBytes[0]).toBe(1)
   })
+
+  test.each([
+    ['IndexedDB', createIdbRecoveryStore],
+    ['memory', createMemoryRecoveryStore]
+  ])('a %s store hands a copy to another session and keeps its bytes', async (_, create) => {
+    const store = create()
+    await store.write({ id: 'one', sessionId: 'crashed', documentName: 'Draft', figBytes: bytes })
+    await store.claim('one', 'restoring')
+    await store.claim('gone', 'restoring')
+
+    expect((await store.list()).map(({ id, sessionId }) => [id, sessionId])).toEqual([
+      ['one', 'restoring']
+    ])
+    expect((await store.read('one'))?.figBytes).toEqual(bytes)
+  })
 })

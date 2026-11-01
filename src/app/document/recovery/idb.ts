@@ -89,6 +89,14 @@ export function createIdbRecoveryStore(): RecoveryStore {
       ])
     },
 
+    async claim(id: string, sessionId: string) {
+      const db = await database.open()
+      const transaction = db.transaction('meta', 'readwrite')
+      const metadata = await transaction.store.get(id)
+      if (metadata) await transaction.store.put({ ...metadata, sessionId })
+      await transaction.done
+    },
+
     async clear() {
       const db = await database.open()
       const transaction = db.transaction(['meta', 'fig'], 'readwrite')

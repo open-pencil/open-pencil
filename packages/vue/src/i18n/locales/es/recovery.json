@@ -4,7 +4,7 @@
   "dialogTitle": "Recuperar trabajo no guardado",
   "dialogDescription": "OpenPencil se cerró de forma inesperada. Estos documentos tenían cambios sin guardar.",
   "sectionTitle": "Trabajo sin guardar",
-  "sectionDescription": "Copias de documentos cerrados sin guardar. Abre una para seguir trabajando.",
+  "sectionDescription": "Cambios sin guardar de documentos cerrados sin guardar o abiertos cuando OpenPencil se cerró. Abre uno para seguir trabajando.",
   "restoreFailed": "No se pudo restaurar este documento.",
   "discardFailed": "No se pudo descartar esta copia.",
   "settingsTitle": "Recuperación",

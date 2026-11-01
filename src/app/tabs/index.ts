@@ -690,12 +690,7 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
         store.state.documentName = snapshot.documentName
         await store.adoptRecoverySnapshot(id)
         // The copy is this window's now, so no other window lists it while it is open here.
-        await getRecoveryStore().write({
-          id,
-          sessionId: recoverySessionId,
-          documentName: snapshot.documentName,
-          figBytes: snapshot.figBytes
-        })
+        await getRecoveryStore().claim(id, recoverySessionId)
       },
       load
     )
