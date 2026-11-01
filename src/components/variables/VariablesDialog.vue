@@ -11,7 +11,7 @@ import { createTokenCopy } from '@/app/editor/tokens/copy'
 import {
   DESIGN_TOKEN_FILE_ACCEPT,
   exportDesignTokenArchive,
-  readDesignTokenFiles
+  readDesignTokenImport
 } from '@/app/editor/tokens/design-tokens'
 import { pendingTokenImport } from '@/app/editor/tokens/dialog'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -58,10 +58,9 @@ let importRequest = 0
 function importFiles(files: readonly File[]) {
   const request = ++importRequest
   void (async () => {
-    const sources = await readDesignTokenFiles(files)
-    const { readDesignTokens } = await import('@open-pencil/core/io/formats/design-tokens')
+    const bundle = await readDesignTokenImport(files)
     if (request !== importRequest) return
-    importBundle.value = readDesignTokens(sources)
+    importBundle.value = bundle
     importOpen.value = true
   })().catch((error: unknown) => {
     if (request === importRequest) reportFailure(error)

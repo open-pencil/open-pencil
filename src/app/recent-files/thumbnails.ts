@@ -1,6 +1,9 @@
+import { stat, open, SeekMode } from '@tauri-apps/plugin-fs'
+
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 
 import { readCacheBytes, removeCachePrefix, writeCacheBytes } from '@/app/cache'
+import { isFigArchiveName } from '@/app/document/io/names'
 import { isTauri } from '@/app/tauri/env'
 
 const RECENT_FILE_THUMBNAIL_CACHE_DIR = 'recent-file-thumbnails/v2'
@@ -8,7 +11,6 @@ const RECENT_FILE_THUMBNAIL_CACHE_DIR = 'recent-file-thumbnails/v2'
 async function recentFileThumbnailCacheKey(path: string): Promise<string> {
   let fingerprint = path
   try {
-    const { stat } = await import('@tauri-apps/plugin-fs')
     const info = await stat(path)
     fingerprint = `${path}\0${info.size}\0${info.mtime?.getTime() ?? 0}`
   } catch (error) {
@@ -38,10 +40,9 @@ export function clearRecentFileThumbnails(): Promise<void> {
 }
 
 export async function loadRecentFileThumbnail(path: string): Promise<Uint8Array | null> {
-  if (!isTauri() || !path.toLowerCase().endsWith('.fig')) return null
+  if (!isTauri() || !isFigArchiveName(path)) return null
   const cached = await loadCachedRecentFileThumbnail(path)
   if (cached) return cached
-  const { open, SeekMode } = await import('@tauri-apps/plugin-fs')
   const file = await open(path, { read: true })
   try {
     const info = await file.stat()

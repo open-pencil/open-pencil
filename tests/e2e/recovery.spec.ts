@@ -7,7 +7,7 @@ test('keeps recovery independent from cancelling an unsaved-document close', asy
 }) => {
   const context = await browser.newContext({ baseURL })
   const page = await context.newPage()
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 

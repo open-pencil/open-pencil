@@ -1,9 +1,12 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { solidFill } from '#core-tests/helpers/figma-api'
+import { registerTestFont, solidFill } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+// Text edits need the text's font loaded, as in Figma; this file must not rely on another's.
+beforeAll(() => registerTestFont())
 
 describe('absoluteRenderBounds', () => {
   test('absoluteRenderBounds includes strokes and effects and returns null for invisible pixels', () => {
@@ -36,6 +39,31 @@ describe('absoluteRenderBounds', () => {
 
     const emptyVector = api.createVector()
     expect(emptyVector.absoluteRenderBounds).toBeNull()
+  })
+
+  // Figma 126 draws a fixed-size text's lines past its box, and their shadow with them.
+  test('absoluteRenderBounds reaches text lines past a fixed-size box and their shadow', () => {
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const text = api.createText()
+    text.characters = 'Lines'
+    text.fills = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+    text.textAutoResize = 'NONE'
+    text.resize(110, 40)
+    graph.updateNode(text.id, { derivedTextHeight: 150 })
+    text.effects = [
+      {
+        type: 'DROP_SHADOW',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        offset: { x: 0, y: 10 },
+        radius: 0,
+        spread: 0,
+        visible: true,
+        blendMode: 'NORMAL'
+      }
+    ]
+
+    expect(text.absoluteRenderBounds).toEqual({ x: 0, y: 0, width: 110, height: 160 })
   })
 
   test('absoluteRenderBounds is clipped by ancestor frames', () => {

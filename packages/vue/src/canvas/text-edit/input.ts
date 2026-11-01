@@ -1,4 +1,4 @@
-import { getNodeEditCapability, type Editor } from '@open-pencil/core'
+import { getNodeEditCapability, resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { generatedFrameOwner, generatedFrameText } from '@open-pencil/scene-graph/generated'
 
@@ -143,7 +143,8 @@ export function createTextEditInput(options: TextEditInputOptions) {
     }
     const hit = getContainerDescendantHit(selectedId, cx, cy)
     editor.enterContainer(selectedId)
-    if (hit?.type === 'TEXT' && !editor.state.readOnly) startTextEditingAt(hit, cx, cy)
+    if (hit?.type === 'TEXT' && resolveEditorProfile(editor.state).edits)
+      startTextEditingAt(hit, cx, cy)
     else if (hit) editor.select([hit.id])
     else editor.clearSelection()
     return true
@@ -154,7 +155,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     if (editor.state.editingTextId) return
 
     const { cx, cy } = getCoords(e)
-    const { readOnly } = editor.state
+    const readOnly = !resolveEditorProfile(editor.state).edits
     if (!readOnly && startLabelRename(cx, cy)) return
 
     const selectedId =

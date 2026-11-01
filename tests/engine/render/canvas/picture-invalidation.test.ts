@@ -19,6 +19,7 @@ test('full picture invalidation resets tiled font-dependent resources', () => {
   textPreparationCache.clear = mock()
   const renderer = asRenderer({
     textPreparationCache,
+    textReadiness: new Map(),
     scenePicture,
     scenePictureVersion: 1,
     scenePictureFontGeneration: 1,
@@ -52,6 +53,7 @@ test('node picture invalidation removes the changed node picture and keeps its p
   textPreparationCache.deleteNode = mock()
   const renderer = asRenderer({
     textPreparationCache,
+    textReadiness: new Map(),
     nodePictureCache: new Map([
       ['parent', parentPicture],
       ['child', childPicture]

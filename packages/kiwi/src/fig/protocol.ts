@@ -182,7 +182,7 @@ export function isKiwiMessage(data: Uint8Array): boolean {
  */
 export function getKiwiMessageType(data: Uint8Array): number | null {
   if (!isKiwiMessage(data)) return null
-  return data[1] ?? null
+  return data.at(1) ?? null
 }
 
 /**

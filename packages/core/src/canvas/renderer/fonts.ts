@@ -14,7 +14,7 @@ import {
 } from '#core/constants'
 import { withTextMeasurer } from '#core/layout/text-measurement'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { prepareGraphFonts } from '#core/text/prepare'
 import {
   fontCoverageDemand,
@@ -147,7 +147,6 @@ export async function loadFonts(
       r.componentLabelFont = new r.ck.Font(typeface, COMPONENT_LABEL_FONT_SIZE)
       r.profiler.setTypeface(typeface)
     }
-    r.fontMgr = r.ck.FontMgr.FromData(fontData) ?? null
   }
 
   r.fontsLoaded = true

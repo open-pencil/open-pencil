@@ -5,11 +5,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import type { RenderChunk } from '#core/canvas/renderer/chunks'
-import {
-  deleteRecordedRenderChunks,
-  recordRenderChunk,
-  RenderChunkIndex
-} from '#core/canvas/renderer/chunks'
+import { recordRenderChunk, RenderChunkIndex } from '#core/canvas/renderer/chunks'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -32,7 +28,7 @@ function renderPixels(renderer: SkiaRenderer, graph: SceneGraph, pageId: string,
       const picture = recorded.find((entry) => entry.chunk.id === chunk.id)?.picture
       if (picture) canvas.drawPicture(picture)
     }
-    deleteRecordedRenderChunks(recorded)
+    for (const entry of recorded) entry.picture.delete()
     index.dispose()
   } else {
     renderer.renderSceneToCanvas(canvas, graph, pageId)
@@ -103,9 +99,15 @@ describe('recorded render chunks', () => {
       id: `${node.id}:subtree`,
       nodeId: node.id,
       kind: 'subtree',
-      context: { parentTransform: [1, 0, 0, 0, 1, 0, 0, 0, 1], ancestorClipIds: [] },
+      context: {
+        parentTransform: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        clipRect: null,
+        ancestorClipIds: []
+      },
       interruptible: true,
       painterOrder: 0,
+      topId: node.id,
+      localOrder: 0,
       minX: 0,
       minY: 0,
       maxX: 10,

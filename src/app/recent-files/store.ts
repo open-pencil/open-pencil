@@ -102,6 +102,10 @@ export function forgetRecentFile(path: string): void {
   forgetRecentDocument(localDocumentId(path))
 }
 
+export function forgetRecentStorageDocument(binding: StorageDocumentBinding): void {
+  forgetRecentDocument(storageDocumentId(binding))
+}
+
 export async function clearRecentFiles(): Promise<void> {
   recentDocuments.value = []
   await clearRecentFileThumbnails()

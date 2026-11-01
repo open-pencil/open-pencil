@@ -8,7 +8,7 @@ import type {
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 
 import { outlineInk, savedGlyphInk, type InkSpan } from '#core/canvas/text/ink'
 import { COMBINING_KEYCAP, drawKeycapFrame } from '#core/canvas/text/keycap'
@@ -166,8 +166,7 @@ function decorationRects(
   lines: LineSpan[]
 ): TextDecorationRect[] {
   const metrics =
-    fontDecorationMetricsSync(style.fontFamily, weightToStyle(style.fontWeight, style.italic)) ??
-    UNLOADED_FONT_METRICS
+    fontDecorationMetricsSync(style.fontFamily, faceStyleKey(style)) ?? UNLOADED_FONT_METRICS
   const size = style.fontSize
   const underline = style.textDecoration === 'UNDERLINE'
   // Figma measures from the baseline rounded to a whole pixel. An underline's offset and
@@ -305,7 +304,7 @@ export function drawTextDecorations(
       if (fill?.type === 'SOLID') {
         const { r: red, g, b, a } = resolveRGBAForPreview(fill.color).color
         paint.setShader(null)
-        paint.setColor(ck.Color4f(red, g, b, a * fill.opacity))
+        paint.setColorComponents(red, g, b, a * fill.opacity)
       }
       if (rect.style === 'DOTTED') drawDots(canvas, rect, paint)
       else if (rect.style === 'WAVY') drawWave(ck, canvas, rect, paint)

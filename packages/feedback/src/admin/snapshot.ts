@@ -108,6 +108,36 @@ async function pings(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: st
   }
 }
 
+async function networks(db: Kysely<FeedbackDatabase>, range: MetricsQuery) {
+  const rows = await db
+    .selectFrom('pingNetworks')
+    .select(['asn', 'app', 'name', (eb) => eb.fn.sum<number>('count').as('pings')])
+    .where('day', '>=', range.start)
+    .where('day', '<=', range.end)
+    .groupBy(['asn', 'app', 'name'])
+    .execute()
+  const ranked = Object.values(groupBy(rows, (row) => String(row.asn)))
+    .map((network) => ({
+      asn: network[0]?.asn ?? 0,
+      // Cloudflare words an operator's name differently between requests, and sometimes leaves it
+      // out; the commonest reported one names it.
+      name:
+        maxBy(
+          Object.values(
+            groupBy(
+              network.filter((row) => row.name !== ''),
+              (row) => row.name
+            )
+          ),
+          (wording) => sumBy(wording, (row) => Number(row.pings))
+        )?.[0]?.name ?? '',
+      desktop: sumBy(network, (row) => (row.app === 'desktop' ? Number(row.pings) : 0)),
+      web: sumBy(network, (row) => (row.app === 'web' ? Number(row.pings) : 0))
+    }))
+    .toSorted((a, b) => b.desktop + b.web - (a.desktop + a.web))
+  return { total: sumBy(rows, (row) => Number(row.pings)), top: ranked.slice(0, TOP) }
+}
+
 async function site(
   db: Kysely<FeedbackDatabase>,
   env: FeedbackBindings,
@@ -390,9 +420,10 @@ export async function buildSnapshot(
   // Visits and the issue mirror are recorded once a day has ended, so today never has any.
   const finished = days.filter((day) => parseDate(day).compare(today) < 0)
   const db = createFeedbackDatabase(env.DB)
-  const [earliest, pinged, visited, repository, signups, usage] = await Promise.all([
+  const [earliest, pinged, byNetwork, visited, repository, signups, usage] = await Promise.all([
     firstDay(db),
     pings(db, range, days),
+    networks(db, range),
     site(db, env, range, finished),
     github(db, range, days, finished),
     waitlist(db, range),
@@ -407,6 +438,7 @@ export async function buildSnapshot(
     earliest,
     ...range,
     ...pinged,
+    networks: byNetwork,
     ...visited,
     github: repository,
     waitlist: signups,

@@ -20,7 +20,7 @@ const { workspace, documents, query } = defineProps<{
 const emit = defineEmits<{ open: [document: RecentDocument] }>()
 const view = defineModel<'grid' | 'list'>('view', { required: true })
 const { panels, files, common } = useI18n()
-const { isMobile } = useViewportKind()
+const { isTouch } = useViewportKind()
 const dates = useDateFormat()
 const previewURL = workspace.previewURL
 const vWorkspacePreview = workspace.previewDirective
@@ -53,7 +53,7 @@ function formattedDate(updatedAt: string): string {
           v-model="view"
           required
           :label="files.recentFiles"
-          :size="isMobile ? 'touch' : 'md'"
+          :size="isTouch ? 'touch' : 'md'"
           :options="[
             { value: 'grid', label: panels.gridView },
             { value: 'list', label: panels.listView }

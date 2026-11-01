@@ -66,6 +66,27 @@ function* pairSourceChildren(
 }
 
 /**
+ * A built definition's layers under the occurrences of an enclosing tree, which may have read the
+ * definition separately on another page. Layers deleted since a resumed checkpoint are left out,
+ * as the checkpoint leaves them out.
+ */
+export function mapMaterializedComponentNodes(
+  target: InstanceOccurrence,
+  component: MaterializedComponentOccurrence
+): ReadonlyMap<InstanceOccurrence, SceneNode> {
+  const nodes = new Map<InstanceOccurrence, SceneNode>()
+  const visit = (current: InstanceOccurrence, source: InstanceOccurrence): void => {
+    const node = component.materialized.nodes.get(source)
+    if (!node) return
+    nodes.set(current, node)
+    for (const [child, counterpart] of pairSourceChildren(current, source))
+      visit(child, counterpart)
+  }
+  visit(target, component.occurrence)
+  return nodes
+}
+
+/**
  * Each instance owner addresses descendants in its own component expansion. A nested
  * instance therefore has both its own correspondence and the outer owner's; a swap ends
  * the outer owner's descendant scope.

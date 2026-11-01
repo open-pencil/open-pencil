@@ -1,8 +1,8 @@
-import type { BlendMode, Canvas, Path } from 'canvaskit-wasm'
+import type { Canvas, Path } from 'canvaskit-wasm'
 
-import type { Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
 
-import { figmaBlendModeToSkia } from '#core/canvas/blend'
+import { setPaintBlendMode } from '#core/canvas/blend'
 import { blurSigma } from '#core/canvas/effects'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { drawOutline, makeNodeShapePath, nodeHasRadius, withNodeOutline } from '#core/canvas/shapes'
@@ -125,13 +125,13 @@ function drawMaskShadow(
   r: SkiaRenderer,
   canvas: Canvas,
   effect: Effect,
-  blendMode: BlendMode,
+  blendMode: BlendMode | undefined,
   draw: () => void
 ): void {
   r.auxFill.setColor(r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
   r.auxFill.setMaskFilter(r.getCachedMaskBlur(blurSigma(effect.radius)))
   r.auxFill.setImageFilter(null)
-  r.auxFill.setBlendMode(blendMode)
+  setPaintBlendMode(r, r.auxFill, blendMode)
   canvas.save()
   try {
     canvas.translate(effect.offset.x, effect.offset.y)
@@ -150,7 +150,7 @@ export function drawShapeDropShadow(
   node: SceneNode,
   effect: Effect,
   spread: number,
-  blendMode: BlendMode
+  blendMode: BlendMode | undefined
 ): void {
   drawMaskShadow(r, canvas, effect, blendMode, () =>
     withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.auxFill), spread)
@@ -170,7 +170,7 @@ export function drawOutlineDropShadow(
   effect: Effect,
   outline: StrokeOutline,
   spread: number,
-  blendMode: BlendMode
+  blendMode: BlendMode | undefined
 ): void {
   drawMaskShadow(r, canvas, effect, blendMode, () => {
     if (outline.even) {
@@ -188,7 +188,7 @@ export function drawRingDropShadow(
   effect: Effect,
   outline: StrokeOutline,
   spread: number,
-  blendMode: BlendMode
+  blendMode: BlendMode | undefined
 ): void {
   const builder = new r.ck.PathBuilder()
   if (outline.even) {
@@ -241,7 +241,7 @@ export function drawShapeInnerShadow(
   isolated = false
 ): void {
   const sp = spread
-  r.auxFill.setColor(r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
+  r.auxFill.setColorComponents(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
   r.auxFill.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
 
   canvas.save()
@@ -275,7 +275,7 @@ export function drawShapeInnerShadow(
       canvas.drawPath(shadowPath, r.auxFill)
       r.auxFill.setBlendMode(r.ck.BlendMode.Plus)
     } else {
-      r.auxFill.setBlendMode(figmaBlendModeToSkia(r.ck, effect.blendMode))
+      setPaintBlendMode(r, r.auxFill, effect.blendMode)
     }
     r.clipNodeShape(canvas, node)
     canvas.drawPath(shadowPath, r.auxFill)

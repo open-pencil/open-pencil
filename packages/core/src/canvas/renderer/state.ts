@@ -25,6 +25,7 @@ export function clearSubtreePictureCache(r: SkiaRenderer): void {
 
 export function invalidateAllPictures(r: SkiaRenderer): void {
   r.textPreparationCache.clear()
+  r.textReadiness.clear()
   invalidateScenePicture(r)
   r.tiledScene.invalidateStructure()
   for (const pic of r.nodePictureCache.values()) pic?.delete()
@@ -42,6 +43,7 @@ export function invalidateNodePicture(
   r.textPreparationCache.deleteNode(nodeId, {
     keepShaping: changedKeys !== undefined && !changesShaping(changedKeys)
   })
+  r.textReadiness.delete(nodeId)
   r.effectRasterCache.delete(nodeId)
   const pic = r.nodePictureCache.get(nodeId)
   if (pic) {

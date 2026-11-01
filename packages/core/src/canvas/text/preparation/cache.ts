@@ -6,10 +6,11 @@ import type { Size } from '@open-pencil/scene-graph/primitives'
 import { ResourceCache } from '#core/cache/resource'
 import type { missingGlyphOccurrences } from '#core/text/resolver'
 
-// Bound both the number of native paragraphs and the text retained by them.
-// Source UTF-16 units are a workload bound, not an estimate of native bytes.
-const MAX_PREPARED_PARAGRAPHS = 1024
-const MAX_PREPARED_TEXT_UNITS = 262_144
+// Bound both the number of native paragraphs and the text retained by them. Source UTF-16 units
+// are a workload bound, not an estimate of native bytes. A page of a few thousand texts must fit,
+// or every record shapes them all again: the Preline CMS page holds 2,448.
+const MAX_PREPARED_PARAGRAPHS = 8192
+const MAX_PREPARED_TEXT_UNITS = 1_048_576
 // Layout measures a text at a few widths; more than this means the widths are not repeating.
 const MAX_MEASURED_WIDTHS = 16
 // Bound the shapings layers share by their key length, which holds the text.

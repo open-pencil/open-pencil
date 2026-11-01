@@ -22,6 +22,7 @@ import { pendingSyncCount, syncUIState, uploadProgressByCanvas } from '@/app/sto
 import { createStoredDocument } from '@/app/storage/workspace/create'
 import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
+import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 
 import CloudWorkspaceView from './CloudWorkspaceView.vue'
 import type { CloudDocumentRow } from './types'
@@ -139,6 +140,11 @@ function reviewConflicts() {
   if (conflicted) open(conflicted)
 }
 
+const deleting = shallowRef<StorageDocument | null>(null)
+function requestDelete(row: CloudDocumentRow) {
+  deleting.value = listed.value.find((candidate) => candidate.id === row.id) ?? null
+}
+
 function open(row: CloudDocumentRow) {
   const document = listed.value.find((candidate) => candidate.id === row.id)
   if (!document) return
@@ -156,10 +162,13 @@ function open(row: CloudDocumentRow) {
     :state="state"
     :usage="usage"
     :can-create="workspace.role !== 'viewer'"
+    :can-delete="workspace.role !== 'viewer'"
     @open="open"
+    @delete="requestDelete"
     @members="openWorkspaceMembers(serverId, workspace.id)"
     @refresh="files.refresh"
     @new-design="createStoredDocument(location)"
     @review-conflicts="reviewConflicts"
   />
+  <DocumentDeleteDialog v-model:document="deleting" :location="location" />
 </template>

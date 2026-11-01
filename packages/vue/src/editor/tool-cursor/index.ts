@@ -42,5 +42,5 @@ const TOOL_CURSORS: Record<Tool, string> = {
 
 export function toolCursor(tool: Tool, override?: string | null): string {
   if (override) return override
-  return TOOL_CURSORS[tool] ?? 'default'
+  return TOOL_CURSORS[tool]
 }

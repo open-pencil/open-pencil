@@ -1,0 +1,1 @@
+- An instance that clears a fill, stroke, effect, layout grid, or text style an intermediate component applied shows the values of the component it comes from again, instead of the intermediate component's.

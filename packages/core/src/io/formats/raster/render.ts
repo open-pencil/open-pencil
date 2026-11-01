@@ -25,16 +25,6 @@ function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: s
   return nodeIds.every((nodeId) => findPageId(graph, nodeId) === pageId)
 }
 
-function nodeNeedsSceneBackdrop(graph: SceneGraph, nodeId: string): boolean {
-  const node = graph.getNode(nodeId)
-  if (!node) return false
-  if (node.blendMode !== 'NORMAL' && node.blendMode !== 'PASS_THROUGH') return true
-  if (node.effects.some((effect) => effect.visible && effect.type === 'BACKGROUND_BLUR')) {
-    return true
-  }
-  return node.childIds.some((childId) => nodeNeedsSceneBackdrop(graph, childId))
-}
-
 export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
   return computeDescendantVisualBounds(
     nodeIds,
@@ -112,7 +102,7 @@ function renderToSurface(
   quality: number,
   setup: (canvas: Canvas) => void,
   trimTransparent = false
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   const renderScale = 2
   const renderWidth = width * renderScale
   const renderHeight = height * renderScale
@@ -187,7 +177,7 @@ function renderToSurface(
         ])
       : downsampleSurface.makeImageSnapshot()
     const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
-    let resultBytes: Uint8Array | null = encoded ? new Uint8Array(encoded) : null
+    let resultBytes: Uint8Array<ArrayBuffer> | null = encoded ? new Uint8Array(encoded) : null
 
     // CanvasKit's `encodeToBytes` returns null for JPEG/WEBP in this build, so
     // fall back to encoding the raw pixels through the browser canvas.
@@ -226,6 +216,24 @@ function renderToSurface(
   }
 }
 
+/**
+ * `nodeIds` in the order the source page paints them, bottom to top, whatever order they came in,
+ * without those a selected ancestor already paints.
+ */
+function inPaintOrder(source: SceneGraph, pageId: string, nodeIds: readonly string[]): string[] {
+  const selected = new Set(nodeIds)
+  const ordered: string[] = []
+  const visit = (id: string): void => {
+    if (selected.has(id)) {
+      ordered.push(id)
+      return
+    }
+    for (const childId of source.getNode(id)?.childIds ?? []) visit(childId)
+  }
+  visit(pageId)
+  return ordered
+}
+
 export function prepareSelectionRenderGraph(
   source: SceneGraph,
   renderGraph: SceneGraph,
@@ -235,7 +243,9 @@ export function prepareSelectionRenderGraph(
   const page = renderGraph.getNode(pageId)
   if (!page) return
 
-  page.childIds = nodeIds.filter((nodeId) => renderGraph.getNode(nodeId) !== undefined)
+  page.childIds = inPaintOrder(source, pageId, nodeIds).filter(
+    (nodeId) => renderGraph.getNode(nodeId) !== undefined
+  )
   for (const nodeId of page.childIds) {
     const node = renderGraph.getNode(nodeId)
     const sourceNode = source.getNode(nodeId)
@@ -275,7 +285,7 @@ export function renderNodesToImage(
   pageId: string,
   nodeIds: string[],
   options: RenderOptions
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
     throw new Error('Raster export selection must stay on a single page')
   }
@@ -291,23 +301,17 @@ export function renderNodesToImage(
   const pixelH = Math.ceil(contentH * options.scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
+  // Figma exports a layer by itself, without the page behind it, even when it blends.
   const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
   if (!extracted.pageId) return null
-
-  const renderGraph = nodeIds.some((nodeId) => nodeNeedsSceneBackdrop(graph, nodeId))
-    ? graph
-    : extracted.graph
-  const renderPageId = renderGraph === graph ? pageId : extracted.pageId
-  if (renderGraph !== graph) {
-    prepareSelectionRenderGraph(graph, renderGraph, renderPageId, nodeIds)
-  }
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
   return renderToSurface(
     ck,
     renderer,
-    renderGraph,
-    renderPageId,
+    extracted.graph,
+    extracted.pageId,
     pixelW,
     pixelH,
     options.format,
@@ -363,7 +367,7 @@ export function renderThumbnail(
   pageId: string,
   width: number,
   height: number
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   const frame = thumbnailFrame(graph, pageId, width, height)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
@@ -385,7 +389,7 @@ export function drawRegionToImage(
   pageId: string,
   bounds: VisualBounds,
   scale: number
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   const pixelW = Math.max(1, Math.round((bounds.maxX - bounds.minX) * scale))
   const pixelH = Math.max(1, Math.round((bounds.maxY - bounds.minY) * scale))
   if (!graph.getNode(pageId) || !Number.isFinite(pixelW * pixelH)) return null

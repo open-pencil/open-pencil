@@ -1,0 +1,1 @@
+- `@open-pencil/core` replaces `state.readOnly` with `state.hostRestrictions` (`EditorRestrictions`, `{ readOnly }`, still set with `setReadOnly`) and no longer exports `READ_ONLY_TOOLS`; read whether the editor offers edits and which tools from `resolveEditorProfile(state)`'s `edits` and `tools`.

@@ -67,7 +67,7 @@ export function useCollab() {
     /** Puts the active tab's document into a room and returns the room ID. */
     shareCurrentDoc: (roomId?: string): string | null => {
       const store = activeTab.value?.store
-      if (!store || activeTab.value?.kind === 'home') return null
+      if (!store || activeTab.value?.kind !== 'document') return null
       return shareDocument(store, roomId).roomId
     },
     disconnect: () => {

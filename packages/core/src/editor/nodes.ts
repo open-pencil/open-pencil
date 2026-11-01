@@ -12,7 +12,7 @@ import { applyBoundVisibilityEdit, bindsVisibility } from './components/authorin
 import { createLayoutModeActions } from './layout-mode'
 import { createNodePreviewActions } from './node-preview'
 import { createNudgeActions } from './nudge'
-import { refitGroupsAroundLayers } from './structure/group/bounds'
+import { refitContainers, refitGroupsAroundLayers } from './structure/group/bounds'
 import { pathTextEditChanges } from './text/path-edit'
 import type { EditorContext } from './types'
 import { createVariableBindingActions } from './variable-bindings'
@@ -37,6 +37,7 @@ export function createNodeActions(ctx: EditorContext) {
     // A layer's modes reach the layers inside it.
     if (changes.variableModes) reconcileVariableLayouts(ctx.graph, { subtrees: [id] })
     if (changes.visible !== undefined) refitGroupsAroundLayers(ctx, [id])
+    if (changes.booleanOperation !== undefined) refitContainers(ctx, [id])
     ctx.runLayoutForNode(id)
   }
 
@@ -138,3 +139,6 @@ export function createNodeActions(ctx: EditorContext) {
     ...nudgeActions
   }
 }
+
+/** The editor's node writes; an edit made through them leaves the shared styles it changes. */
+export type NodeActions = ReturnType<typeof createNodeActions>

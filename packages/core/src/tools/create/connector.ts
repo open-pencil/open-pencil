@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { toolNumber, defineTool, nodeSummary } from '#core/tools/schema'
 
@@ -55,7 +55,7 @@ export const createConnectorTool = defineTool({
       ? [
           {
             family: CONNECTOR_LABEL_FONT.family,
-            style: weightToStyle(CONNECTOR_LABEL_FONT.weight)
+            style: faceLoadKey(CONNECTOR_LABEL_FONT.weight)
           }
         ]
       : [],

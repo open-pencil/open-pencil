@@ -328,6 +328,37 @@ describe('TextEditor', () => {
     expect(ranges).toEqual([[1, 3]])
   })
 
+  // Skia lays out an empty line below a closing line break; typing starts there, so does the caret.
+  test('places the caret after a closing line break at the start of the empty line below', () => {
+    const lines = (closing: boolean) => [
+      asDouble<LineMetrics>({
+        baseline: 13,
+        ascent: 13,
+        height: 17,
+        left: 0,
+        isHardBreak: true,
+        endIncludingNewline: 4
+      }),
+      asDouble<LineMetrics>({
+        baseline: 30,
+        ascent: 13,
+        height: 17,
+        left: 0,
+        isHardBreak: true,
+        endIndex: closing ? 4 : 7
+      })
+    ]
+    const native = (closing: boolean) => ({
+      getHeight: () => 34,
+      getGlyphInfoAt: () => null,
+      getLineMetrics: () => lines(closing),
+      getRectsForRange: () => [asDouble<RectWithDirection>({ rect: [24, 17, 30, 34] })]
+    })
+    expect(layoutOf(native(true), 4).getCaretRect(4, false)).toEqual({ x: 0, top: 17, bottom: 34 })
+    // After text on the last line, the caret follows that text.
+    expect(layoutOf(native(false), 7).getCaretRect(7, false)?.x).toBe(30)
+  })
+
   test('moveRight at end stays', () => {
     const { editor } = createEditor()
     editor.moveRight()

@@ -71,6 +71,16 @@ export interface SharingPreferences {
 export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
 
+/** Which events send a system notification while OpenPencil is out of view. */
+export interface NotificationPreferences {
+  /** An agent waits on a permission request. */
+  agentNeedsInput: boolean
+  /** An AI reply finished. */
+  agentFinished: boolean
+  /** An AI reply ended with an error. */
+  agentFailed: boolean
+}
+
 export interface AppPreferences {
   appearance: { animations: AnimationPreference; accent: AccentPreference }
   chat: {
@@ -101,6 +111,7 @@ export interface AppPreferences {
     aiSetup: AISetupState
   }
   sharing: SharingPreferences
+  notifications: NotificationPreferences
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
@@ -118,7 +129,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   navigation: { zoomSpeed: 1 },
-  rendering: { canvasMode: 'retained' },
+  rendering: { canvasMode: 'tiled' },
   designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
   comments: {
     showOnCanvas: true,
@@ -129,7 +140,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   },
   toolbar: structuredClone(DEFAULT_TOOLBAR_LAYOUT),
   onboarding: { aiSetup: 'pending' },
-  sharing: { dailyPing: true, usageStats: 'unset' }
+  sharing: { dailyPing: true, usageStats: 'unset' },
+  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -215,6 +227,11 @@ const appPreferencesSchema = section({
   sharing: section({
     dailyPing: v.fallback(v.boolean(), defaults.sharing.dailyPing),
     usageStats: v.fallback(v.picklist(USAGE_STATS_CONSENTS), defaults.sharing.usageStats)
+  }),
+  notifications: section({
+    agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
+    agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
+    agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed)
   })
 })
 
@@ -257,6 +274,13 @@ export function updateSharingPreferences(changes: Partial<SharingPreferences>): 
   appPreferences.value = {
     ...appPreferences.value,
     sharing: { ...appPreferences.value.sharing, ...changes }
+  }
+}
+
+export function updateNotificationPreferences(changes: Partial<NotificationPreferences>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    notifications: { ...appPreferences.value.notifications, ...changes }
   }
 }
 

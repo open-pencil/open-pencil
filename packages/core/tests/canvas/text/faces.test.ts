@@ -11,8 +11,8 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { buildParagraph } from '#core/canvas/text'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
-import { FontManager, fontManager } from '#core/text/fonts'
-import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-fonts'
+import { FontManager, fontManager } from '#core/text/font/manager'
+import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-font/resolver'
 import { glyphOutlineSourceSync } from '#core/text/font/glyphs'
 
 /** A family only these tests load, so faces other tests load cannot answer for it. */
@@ -117,6 +117,25 @@ describe('text faces', () => {
     await fontManager.markLoaded(FAMILY, 'Bold', await bundled('/InterVariable.ttf'))
     const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
     expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).not.toEqual(regular)
+  })
+
+  test('draws a face named apart from its weight as the named instance of that name', async () => {
+    const ck = await getCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    // Inter with an extra instance, "Display Heavy" at wght 850, as Roboto has "Condensed Bold".
+    const fontFamily = 'Faces Test Named'
+    await fontManager.markLoaded(fontFamily, 'Regular', await fixtureFont('InterVariable-Named.ttf'))
+    expect(await fontManager.loadFont(fontFamily, 'Display Heavy')).not.toBeNull()
+    // A name the font has no instance of is not drawn by some other instance.
+    expect(await fontManager.loadFont(fontFamily, 'Condensed Bold')).toBeNull()
+    const face = (fields: Partial<SceneNode>) =>
+      drawn(ck, fontProvider, { fontFamily, fontWeight: 400, italic: false, ...fields })
+    const named = face({ fontWeight: 850, fontStyle: 'Display Heavy' })
+    expect(named).toEqual(face({ fontVariations: [{ axis: 'wght', value: 850 }] }))
+    expect(named).not.toEqual(face({}))
+    // Its weight alone picks the instance its weight is nearest, Black at 900, not this face.
+    expect(named).not.toEqual(face({ fontWeight: 850 }))
   })
 
   test('draws optical size at the font size unless the text detaches it, as Figma does', async () => {

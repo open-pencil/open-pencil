@@ -109,8 +109,18 @@ export async function createTestService() {
   }
   const app = createFeedbackApp(services)
 
-  const request = (path: string, init?: RequestInit) =>
-    app.request(`https://feedback.openpencil.dev${path}`, init, env)
+  /**
+   * Sends a request into the app, carrying `cf` as Cloudflare attaches it when given. A text body
+   * gets its Content-Length, as browsers send it; without one, the body limit rebuilds the request.
+   */
+  const request = (path: string, init?: RequestInit, cf?: Record<string, unknown>) => {
+    const headers = new Headers(init?.headers)
+    if (typeof init?.body === 'string')
+      headers.set('Content-Length', String(new TextEncoder().encode(init.body).length))
+    const sent = new Request(`https://feedback.openpencil.dev${path}`, { ...init, headers })
+    if (cf) Object.defineProperty(sent, 'cf', { value: cf })
+    return app.request(sent, undefined, env)
+  }
 
   return {
     /** A client typed by the service's routes, as the app's is, sending into the app under test. */
@@ -135,12 +145,21 @@ export async function createTestService() {
     },
     request,
     /** Posts any body, including ones the typed client would not let through. */
-    postJSON(path: string, body: unknown, headers: Record<string, string> = {}) {
-      return request(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify(body)
-      })
+    postJSON(
+      path: string,
+      body: unknown,
+      headers: Record<string, string> = {},
+      cf?: Record<string, unknown>
+    ) {
+      return request(
+        path,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(body)
+        },
+        cf
+      )
     },
     dispose: () => proxy.dispose()
   }

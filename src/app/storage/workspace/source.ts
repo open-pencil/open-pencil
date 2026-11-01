@@ -6,13 +6,33 @@ import {
   sameStorageLocation,
   storageLocationOf
 } from '@/app/integrations/storage'
-import { getLocalCanvasStore } from '@/app/storage/local-store'
+import {
+  getLocalCanvasStore,
+  type LocalCanvasMeta,
+  type LocalCanvasStore
+} from '@/app/storage/local-store'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 export type StorageWorkspaceSnapshot = {
   documents: StorageDocument[]
   configured: boolean
+}
+
+/**
+ * Removes this device's copies that reconciliation found deleted, each only if it is as it was when
+ * read: listing the provider takes a while, and an edit saved meanwhile makes it unsent work again.
+ */
+export async function purgeUnchangedCopies(
+  store: LocalCanvasStore,
+  read: LocalCanvasMeta[],
+  ids: string[]
+): Promise<void> {
+  const before = new Map(read.map((metadata) => [metadata.id, metadata]))
+  for (const id of ids) {
+    const unchangedFrom = before.get(id)
+    if (unchangedFrom) await store.remove(id, { unchangedFrom })
+  }
 }
 
 /** The configured storage bucket, the location home lists when no other is chosen. */
@@ -70,7 +90,7 @@ export function createStorageWorkspaceSource(
         throw error
       }
       const reconciliation = reconcileStorageDocuments(local, remote)
-      for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
+      await purgeUnchangedCopies(localStore, local, reconciliation.localIdsToPurge)
       for (const document of reconciliation.remoteDocumentsToSeed) {
         await localStore.upsertIndexMeta({
           id: document.id,

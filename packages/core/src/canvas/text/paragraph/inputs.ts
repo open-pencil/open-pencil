@@ -10,6 +10,7 @@ export const PARAGRAPH_INPUT_KEYS = [
   'fontSize',
   'fontWeight',
   'italic',
+  'fontStyle',
   'styleRuns',
   'fontVariations',
   'opticalSizeFromFontSize',

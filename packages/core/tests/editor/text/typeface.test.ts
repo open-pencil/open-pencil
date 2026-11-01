@@ -3,7 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { createEditor } from '@open-pencil/core'
-import { createSticky, shapeWithTextLabel, stickySublayers } from '@open-pencil/scene-graph/generated'
+import {
+  createSticky,
+  shapeWithTextLabel,
+  stickySublayers
+} from '@open-pencil/scene-graph/generated'
 
 function setup() {
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })
@@ -19,5 +23,14 @@ describe('typefaces of generated text', () => {
     const shape = expectDefined(editor.graph.getNode(id))
     expect(shapeWithTextLabel(editor.graph, shape)?.fontFamily).toBe('Roboto Mono')
     expect(stickySublayers(editor.graph, sticky)?.body.fontFamily).toBe('Roboto Mono')
+  })
+
+  test('a typeface leaves the text style it replaces', async () => {
+    const { editor, pageId } = setup()
+    const sticky = createSticky(editor.graph, pageId, {})
+    const body = expectDefined(stickySublayers(editor.graph, sticky)).body
+    editor.graph.updateNode(body.id, { textStyleId: 'text-style' })
+    await editor.setGeneratedTextTypeface([sticky.id], 'technical')
+    expect(editor.graph.getNode(body.id)?.textStyleId).toBeNull()
   })
 })

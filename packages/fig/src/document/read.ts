@@ -53,6 +53,7 @@ export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: Readon
   return {
     figKiwiVersion: parsed.figKiwiVersion,
     figSchemaDeflated: parsed.figSchemaDeflated,
+    kind: parsed.kind,
     reader: createScopedReader(archiveRecords(parsed.nodeChanges), pageIds),
     blobs: parsed.blobs,
     images: parsed.images,
@@ -109,7 +110,7 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const assets = assetIds(records)
   const resolveStyles = (node: NodeChange): void => {
     applyStyleRefsToFields(index.sources, node, assets)
-    for (const override of symbolOverridesOf(node)) resolveStyles(override as NodeChange)
+    for (const override of symbolOverridesOf(node)) resolveStyles(override)
   }
   for (const node of records) resolveStyles(node)
   const same: WholeRecord = (record) => record
@@ -173,7 +174,7 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
       inheritFromAncestors(record, ancestors)
       const resolveStyles = (node: NodeChange): void => {
         applyStyleRefsToFields(styles, node, assets)
-        for (const override of symbolOverridesOf(node)) resolveStyles(override as NodeChange)
+        for (const override of symbolOverridesOf(node)) resolveStyles(override)
       }
       resolveStyles(record)
       return record
@@ -323,7 +324,8 @@ function createScopedReader(
         roots,
         (id) => sourceInterpreter.component(id, options),
         index.sources,
-        isBuilt
+        isBuilt,
+        (id) => closure.contentIds.has(id)
       )
     },
     readComponent: sourceInterpreter.component

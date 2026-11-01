@@ -1,15 +1,16 @@
-import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
-
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import type { CharacterStyleOverride, FontVariation, SceneNode } from '@open-pencil/scene-graph'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
+import { drawnFontVariations } from '#core/canvas/text/font-families'
 import {
   fontHasGlyphSync,
   getGlyphOutlineMetricsSync,
+  shapedAdvancesSync,
   type OutlineCommand
 } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 export type TextOutlineUnsupportedReason =
   | 'not-text'
@@ -39,49 +40,77 @@ const COMPLEX_SCRIPT_PATTERN = /[\u0590-\u08ff\u0900-\u0dff\ufb1d-\ufdff\ufe70-\
 type TextStyle = Required<
   Pick<
     CharacterStyleOverride,
-    'fontFamily' | 'fontSize' | 'fontWeight' | 'italic' | 'letterSpacing'
+    'fontFamily' | 'fontSize' | 'fontWeight' | 'italic' | 'fontStyle' | 'letterSpacing'
   >
->
+> & {
+  /** The axes a variable font draws the text at; a script fallback draws at the text font's. */
+  variations: FontVariation[]
+}
 
-function baseTextStyle(node: SceneNode): TextStyle {
+function withVariations(
+  style: Omit<TextStyle, 'variations'>,
+  variations: FontVariation[],
+  opticalSizeFromFontSize: boolean
+): TextStyle {
   return {
-    fontFamily: node.fontFamily,
-    fontSize: node.fontSize,
-    fontWeight: node.fontWeight,
-    italic: node.italic,
-    letterSpacing: node.letterSpacing
+    ...style,
+    variations: drawnFontVariations({
+      family: style.fontFamily,
+      weight: style.fontWeight,
+      italic: style.italic,
+      style: faceStyleKey(style),
+      fontSize: style.fontSize,
+      variations,
+      opticalSizeFromFontSize
+    })
   }
 }
 
-function styleName(style: Pick<TextStyle, 'fontWeight' | 'italic'>): string {
-  return weightToStyle(style.fontWeight, style.italic)
+function baseTextStyle(node: SceneNode): TextStyle {
+  return withVariations(
+    {
+      fontFamily: node.fontFamily,
+      fontSize: node.fontSize,
+      fontWeight: node.fontWeight,
+      italic: node.italic,
+      fontStyle: node.fontStyle,
+      letterSpacing: node.letterSpacing
+    },
+    node.fontVariations,
+    node.opticalSizeFromFontSize
+  )
 }
 
 function styleKey(style: TextStyle): string {
   const spacing = textLengthPixels(style.letterSpacing, style.fontSize)
-  return `${style.fontFamily}|${styleName(style)}|${style.fontSize}|${spacing}`
+  const axes = style.variations.map(({ axis, value }) => `${axis}=${value}`).join(',')
+  return `${style.fontFamily}|${faceStyleKey(style)}|${style.fontSize}|${spacing}|${axes}`
 }
 
 function textStyleAt(node: SceneNode, index: number): TextStyle {
-  const base = baseTextStyle(node)
   const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-  if (!run) return base
-  return {
-    fontFamily: run.style.fontFamily ?? base.fontFamily,
-    fontSize: run.style.fontSize ?? base.fontSize,
-    fontWeight: run.style.fontWeight ?? base.fontWeight,
-    italic: run.style.italic ?? base.italic,
-    letterSpacing: run.style.letterSpacing ?? base.letterSpacing
-  }
+  if (!run) return baseTextStyle(node)
+  return withVariations(
+    {
+      fontFamily: run.style.fontFamily ?? node.fontFamily,
+      fontSize: run.style.fontSize ?? node.fontSize,
+      fontWeight: run.style.fontWeight ?? node.fontWeight,
+      italic: run.style.italic ?? node.italic,
+      fontStyle: rangeFontStyle(node, run.style),
+      letterSpacing: run.style.letterSpacing ?? node.letterSpacing
+    },
+    run.style.fontVariations ?? node.fontVariations,
+    run.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
+  )
 }
 
 function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
-  if (fontHasGlyphSync(style.fontFamily, styleName(style), char)) return style
+  if (fontHasGlyphSync(style.fontFamily, faceStyleKey(style), char)) return style
   const family = fallbackFamilies().find((candidate) => {
     const next = fallbackStyle(style, candidate)
     return (
-      fontManager.loadedData(next.fontFamily, styleName(next)) &&
-      fontHasGlyphSync(next.fontFamily, styleName(next), char)
+      fontManager.loadedData(next.fontFamily, faceStyleKey(next)) &&
+      fontHasGlyphSync(next.fontFamily, faceStyleKey(next), char)
     )
   })
   return family ? fallbackStyle(style, family) : null
@@ -91,8 +120,9 @@ function fallbackFamilies(): string[] {
   return [...fontManager.getCJKFallbackFamilies(), ...fontManager.getArabicFallbackFamilies()]
 }
 
+/** `style` in a script fallback family, which has none of the text family's named faces. */
 function fallbackStyle(style: TextStyle, family: string): TextStyle {
-  return { ...style, fontFamily: family }
+  return { ...style, fontFamily: family, fontStyle: null }
 }
 
 function textStyles(node: SceneNode): TextStyle[] {
@@ -110,7 +140,7 @@ export function getTextOutlineSupport(node: SceneNode): TextOutlineSupport {
   if (!node.text) return { supported: false, reason: 'empty-text' }
   if (COMPLEX_SCRIPT_PATTERN.test(node.text)) return { supported: false, reason: 'complex-script' }
   for (const style of textStyles(node)) {
-    if (!fontManager.loadedData(style.fontFamily, styleName(style))) {
+    if (!fontManager.loadedData(style.fontFamily, faceStyleKey(style))) {
       return { supported: false, reason: 'missing-font' }
     }
   }
@@ -142,31 +172,59 @@ function hardTextLines(text: string): TextLine[] {
   return lines
 }
 
-function glyphAdvance(node: SceneNode, absoluteIndex: number): number | null {
-  const char = node.text[absoluteIndex]
-  const style = resolvedGlyphStyle(textStyleAt(node, absoluteIndex), char)
-  if (!style) return null
-  const metrics = getGlyphOutlineMetricsSync(
-    style.fontFamily,
-    styleName(style),
-    char,
-    style.fontSize
-  )
-  const glyph = metrics?.[0]
-  return glyph ? glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize) : null
+interface StyleSegment {
+  start: number
+  end: number
+  style: TextStyle
 }
 
-function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
+/** `line` split where the style its characters are drawn in changes, or `null` when one has none. */
+function styleSegments(node: SceneNode, line: TextLine): StyleSegment[] | null {
+  const segments: StyleSegment[] = []
+  for (let index = 0; index < line.text.length; index++) {
+    const style = resolvedGlyphStyle(textStyleAt(node, line.start + index), line.text[index])
+    if (!style) return null
+    const last = segments.at(-1)
+    if (last && styleKey(last.style) === styleKey(style)) last.end = index + 1
+    else segments.push({ start: index, end: index + 1, style })
+  }
+  return segments
+}
+
+/**
+ * The width each character of `line` adds as its segments are shaped and drawn, kerning and
+ * ligatures included: a glyph's advance and spacing go to the character it starts at.
+ */
+function characterAdvances(node: SceneNode, line: TextLine): number[] | null {
+  const segments = styleSegments(node, line)
+  if (!segments) return null
+  const advances = Array.from<number>({ length: line.text.length }).fill(0)
+  for (const { start, end, style } of segments) {
+    const glyphs = shapedAdvancesSync(
+      style.fontFamily,
+      faceStyleKey(style),
+      line.text.slice(start, end),
+      style.fontSize,
+      style.variations
+    )
+    if (!glyphs) return null
+    const spacing = textLengthPixels(style.letterSpacing, style.fontSize)
+    for (const glyph of glyphs) advances[start + glyph.cluster] += glyph.advance + spacing
+  }
+  return advances
+}
+
+function wrapLine(node: SceneNode, line: TextLine): TextLine[] {
   if (!line.text || node.width <= 0) return [line]
+  const advances = characterAdvances(node, line)
+  if (!advances) return [line]
   const result: TextLine[] = []
   let lineStart = 0
   let cursor = 0
   let lastBreak = -1
 
   for (let index = 0; index < line.text.length; index++) {
-    const advance = glyphAdvance(node, line.start + index)
-    if (advance == null) return [line]
-    cursor += advance
+    cursor += advances[index]
     if (/\s/.test(line.text[index])) {
       lastBreak = index + 1
     }
@@ -187,27 +245,7 @@ function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
 function textLines(node: SceneNode): TextLine[] {
   const hardLines = hardTextLines(node.text)
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return hardLines
-  if (node.styleRuns.length > 0) return hardLines.flatMap((line) => wrapStyledLine(node, line))
-
-  const result: TextLine[] = []
-  for (const hardLine of hardLines) {
-    if (!hardLine.text) {
-      result.push(hardLine)
-      continue
-    }
-    try {
-      const prepared = prepareWithSegments(hardLine.text, `${node.fontSize}px ${node.fontFamily}`)
-      const layout = layoutWithLines(prepared, node.width, lineHeight(node))
-      let start = hardLine.start
-      for (const line of layout.lines) {
-        result.push({ text: line.text, start })
-        start += line.text.length
-      }
-    } catch {
-      result.push(hardLine)
-    }
-  }
-  return result
+  return hardLines.flatMap((line) => wrapLine(node, line))
 }
 
 function lineOffsetX(node: SceneNode, width: number): number {
@@ -238,28 +276,18 @@ function lineGlyphs(
   baseline: number,
   xOffset: number
 ): { glyphs: TextOutlineGlyph[]; width: number } | null {
+  const segments = styleSegments(node, line)
+  if (!segments) return null
   const glyphs: TextOutlineGlyph[] = []
   let cursorX = xOffset
-  let index = 0
 
-  while (index < line.text.length) {
-    const absoluteIndex = line.start + index
-    const style = resolvedGlyphStyle(textStyleAt(node, absoluteIndex), line.text[index])
-    if (!style) return null
-    const key = styleKey(style)
-    let end = index + 1
-    while (end < line.text.length) {
-      const nextStyle = resolvedGlyphStyle(textStyleAt(node, line.start + end), line.text[end])
-      if (!nextStyle || styleKey(nextStyle) !== key) break
-      end++
-    }
-
-    const segment = line.text.slice(index, end)
+  for (const { start, end, style } of segments) {
     const metrics = getGlyphOutlineMetricsSync(
       style.fontFamily,
-      styleName(style),
-      segment,
-      style.fontSize
+      faceStyleKey(style),
+      line.text.slice(start, end),
+      style.fontSize,
+      style.variations
     )
     if (!metrics) return null
 
@@ -267,7 +295,6 @@ function lineGlyphs(
       glyphs.push({ commands: glyph.commands, x: cursorX, y: baseline })
       cursorX += glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
     }
-    index = end
   }
 
   return { glyphs, width: cursorX - xOffset }

@@ -124,10 +124,10 @@ function picked<T>(value: MixedValue<T>): T | '' {
         <PanelFieldGroup :label="panels.fontWeight">
           <AppSelect
             :label="panels.fontWeight"
-            :model-value="picked(ctx.merged('fontWeight'))"
-            :options="ctx.weights.value"
+            :model-value="picked(ctx.faceName.value)"
+            :options="ctx.faces.value"
             :placeholder="panels.mixed"
-            @update:model-value="ctx.actions.setWeight(+$event)"
+            @update:model-value="ctx.actions.setFace(String($event))"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.fontSize">
@@ -169,6 +169,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
             :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('lineHeight', $event)"
             @commit="(v, p) => ctx.actions.commitProp('lineHeight', v, p)"
+            @cancel="ctx.actions.cancelProp('lineHeight')"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.letterSpacing">
@@ -176,6 +177,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
             :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('letterSpacing', $event)"
             @commit="(v, p) => ctx.actions.commitProp('letterSpacing', v, p)"
+            @cancel="ctx.actions.cancelProp('letterSpacing')"
           />
         </PanelFieldGroup>
       </PanelGrid>

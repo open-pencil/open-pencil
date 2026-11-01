@@ -9,7 +9,7 @@ import {
 } from '@open-pencil/scene-graph/figjam'
 import { useFigJamMessages } from '@open-pencil/vue/i18n'
 
-import Swatches from './Swatches.vue'
+import FigJamSwatches from './FigJamSwatches.vue'
 
 /**
  * FigJam's board palette in its menus' order, closed, when `noneLabel` is given, by a swatch for
@@ -66,7 +66,7 @@ const swatches = computed(() =>
 </script>
 
 <template>
-  <Swatches
+  <FigJamSwatches
     :label="label"
     :swatches="swatches"
     :selected="selected"

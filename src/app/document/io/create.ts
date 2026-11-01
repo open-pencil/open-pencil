@@ -69,6 +69,8 @@ export function createDocumentIOActions(
   })
 
   return {
+    renameDocument: sourceActions.renameDocument,
+    onDocumentRenamed: sourceActions.onDocumentRenamed,
     downloadBlob,
     setViewportSize,
     getViewportSize,

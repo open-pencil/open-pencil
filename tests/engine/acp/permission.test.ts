@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from 'bun:test'
+import { describe, expect, test, beforeEach, jest } from 'bun:test'
 
 import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
 
@@ -9,6 +9,7 @@ import {
   respondToPermission,
   rejectCurrentPermission
 } from '@/app/ai/agents/acp/permission'
+import { AGENT_INPUT_NOTIFY_DELAY_MS } from '@/constants'
 
 function makeRequest(
   options: { optionId: string; kind: string; name: string }[] = [
@@ -145,5 +146,25 @@ describe('acp-permission', () => {
     const result = await promise
     expect(selectedOptionId(result)).toBe('reject')
     expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('a request left unanswered calls onUnanswered once, and an answered one never', () => {
+    jest.useFakeTimers()
+    try {
+      let unanswered = 0
+      void requestPermissionFromUser(makeRequest(), () => unanswered++)
+      jest.advanceTimersByTime(AGENT_INPUT_NOTIFY_DELAY_MS - 1)
+      expect(unanswered).toBe(0)
+      jest.advanceTimersByTime(1)
+      expect(unanswered).toBe(1)
+      respondToPermission('allow')
+
+      void requestPermissionFromUser(makeRequest(), () => unanswered++)
+      respondToPermission('allow')
+      jest.advanceTimersByTime(AGENT_INPUT_NOTIFY_DELAY_MS)
+      expect(unanswered).toBe(1)
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })

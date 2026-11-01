@@ -1,6 +1,6 @@
 import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { BlendMode, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
 import {
   arrowLinesSegments,
@@ -11,9 +11,11 @@ import {
 } from '@open-pencil/scene-graph/arrow-caps'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { applyGradientFill, applyImageFill } from './fills'
+import { setPaintBlendMode } from './blend'
+import { applyGradientFill, applyImageFill, clearFillShader, clearStrokeShader } from './fills'
 import type { SkiaRenderer } from './renderer'
 import {
+  clipNodeShape,
   drawOutline,
   makeShapeWithTextDetailsPath,
   nodeHasSmoothCorners,
@@ -72,7 +74,7 @@ export function drawDashedRRectWithSolidCorners(
   const bottom = node.height - inset
   const radius = Math.max(0, cornerRadius - inset)
 
-  r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.strokePaint.setColorComponents(color.r, color.g, color.b, color.a)
   r.strokePaint.setStrokeWidth(stroke.weight)
   r.strokePaint.setAlphaf(stroke.opacity)
   r.strokePaint.setStrokeCap(r.ck.StrokeCap.Butt)
@@ -109,12 +111,12 @@ export function drawDashedRRectWithSolidCorners(
     r.strokePaint
   )
 
-  r.strokePaint.setPathEffect(dash.length > 0 ? r.ck.PathEffect.MakeDash(dash, dashPhase) : null)
-  canvas.drawLine(left + radius, top, right - radius, top, r.strokePaint)
-  canvas.drawLine(right, top + radius, right, bottom - radius, r.strokePaint)
-  canvas.drawLine(right - radius, bottom, left + radius, bottom, r.strokePaint)
-  canvas.drawLine(left, bottom - radius, left, top + radius, r.strokePaint)
-  r.strokePaint.setPathEffect(null)
+  withStrokeDash(r, dash, dashPhase, () => {
+    canvas.drawLine(left + radius, top, right - radius, top, r.strokePaint)
+    canvas.drawLine(right, top + radius, right, bottom - radius, r.strokePaint)
+    canvas.drawLine(right - radius, bottom, left + radius, bottom, r.strokePaint)
+    canvas.drawLine(left, bottom - radius, left, top + radius, r.strokePaint)
+  })
 }
 
 /** The outline a polygonal head fills: a triangle, an equilateral arrow, or a diamond. */
@@ -183,7 +185,7 @@ export function drawArrowHeads(
     const { x, y, angle } = endpoint
     switch (endpoint.cap) {
       case 'ARROW_LINES':
-        r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+        r.strokePaint.setColorComponents(color.r, color.g, color.b, color.a)
         r.strokePaint.setAlphaf(opacity)
         r.strokePaint.setStrokeWidth(weight)
         // One path, so the wings meet in a round join rather than overlapping at the tip.
@@ -220,7 +222,7 @@ function strokeWings(r: SkiaRenderer, canvas: Canvas, [first, second]: [ArrowWin
 }
 
 function setHeadPaint(r: SkiaRenderer, color: Color, opacity: number) {
-  r.fillPaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.fillPaint.setColorComponents(color.r, color.g, color.b, color.a)
   r.fillPaint.setAlphaf(opacity)
 }
 
@@ -253,8 +255,8 @@ export function applyStrokeShader(
   node: SceneNode,
   graph: SceneGraph
 ): boolean {
-  r.strokePaint.setShader(null)
-  r.fillPaint.setShader(null)
+  clearStrokeShader(r)
+  clearFillShader(r)
   if (stroke.type.startsWith('GRADIENT') && stroke.gradientStops && stroke.gradientTransform) {
     let built = true
     for (const paint of [r.strokePaint, r.fillPaint]) {
@@ -287,6 +289,64 @@ export function applyStrokeShader(
   return true
 }
 
+export function setStrokeBlendMode(r: SkiaRenderer, mode: BlendMode | undefined): void {
+  setPaintBlendMode(r, r.strokePaint, mode)
+  setPaintBlendMode(r, r.fillPaint, mode)
+}
+
+/**
+ * Every stroke a node draws passes through here, so a gradient or image stroke gets its shader
+ * here rather than in each draw helper, with its blend mode, and the shader, blend mode, and any
+ * dash are cleared before the next stroke: the paints are shared, and a node must not inherit
+ * what the previous one set.
+ */
+export function forVisibleStrokes(
+  r: SkiaRenderer,
+  node: SceneNode,
+  graph: SceneGraph,
+  draw: (stroke: Stroke, color: Color) => void
+): void {
+  for (let index = 0; index < node.strokes.length; index++) {
+    const stroke = node.strokes[index]
+    if (!stroke.visible) continue
+    const draws = applyStrokeShader(r, stroke, index, node, graph)
+    setStrokeBlendMode(r, stroke.blendMode)
+    try {
+      if (draws) draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
+    } finally {
+      clearStrokeShader(r)
+      clearFillShader(r)
+      r.strokePaint.setPathEffect(null)
+      setStrokeBlendMode(r, 'NORMAL')
+    }
+  }
+}
+
+/**
+ * Draws with `dash` set on the stroke paint, then clears it and frees the effect: the paint keeps
+ * its own reference, and the handle is native memory the garbage collector never reclaims.
+ */
+export function withStrokeDash(
+  r: SkiaRenderer,
+  dash: readonly number[],
+  phase: number,
+  draw: () => void
+): void {
+  if (dash.length === 0) {
+    r.strokePaint.setPathEffect(null)
+    draw()
+    return
+  }
+  const effect = r.ck.PathEffect.MakeDash([...dash], phase)
+  r.strokePaint.setPathEffect(effect)
+  try {
+    draw()
+  } finally {
+    r.strokePaint.setPathEffect(null)
+    effect.delete()
+  }
+}
+
 /** Leaves any shader in place: a shaded stroke's color is unused, but its alpha still applies. */
 export function configureStrokePaint(
   r: SkiaRenderer,
@@ -294,7 +354,7 @@ export function configureStrokePaint(
   stroke: Stroke,
   color: Color
 ): void {
-  r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.strokePaint.setColorComponents(color.r, color.g, color.b, color.a)
   r.strokePaint.setStrokeWidth(stroke.weight)
   r.strokePaint.setAlphaf(stroke.opacity)
   r.strokePaint.setStrokeCap(getStrokeCapEntity(r, stroke.cap ?? node.strokeCap))
@@ -313,9 +373,7 @@ export function drawStyledRRectStroke(
 ): void {
   const dash = normalizeDashPattern(stroke.dashPattern)
   configureStrokePaint(r, node, stroke, color)
-  r.strokePaint.setPathEffect(dash.length > 0 ? r.ck.PathEffect.MakeDash(dash, dashPhase) : null)
-  r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
-  r.strokePaint.setPathEffect(null)
+  withStrokeDash(r, dash, dashPhase, () => r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke))
 }
 
 /** Strokes a layer's outline, or a vector's own paths, open ones included. */
@@ -339,20 +397,8 @@ export function drawStrokeWithAlign(
     canvas.restore()
   } else if (align === 'OUTSIDE') {
     canvas.save()
-    const bigRect = r.ck.LTRBRect(-node.width, -node.height, node.width * 2, node.height * 2)
-    const outerPath = new r.ck.PathBuilder()
-    outerPath.addRect(bigRect)
-    const innerPath = r.makeNodeShapePath(node)
-    const immutableOuterPath = outerPath.detachAndDelete()
-    const clipPath = r.ck.Path.MakeFromOp(immutableOuterPath, innerPath, r.ck.PathOp.Difference)
-    immutableOuterPath.delete()
-    innerPath.delete()
-    if (!clipPath) {
-      canvas.restore()
-      return
-    }
-    canvas.clipPath(clipPath, r.ck.ClipOp.Intersect, true)
-    clipPath.delete()
+    // Everything but the shape: the stroke at double weight then shows only its outer half.
+    clipNodeShape(r, canvas, node, r.ck.ClipOp.Difference)
     const origWidth = r.strokePaint.getStrokeWidth()
     r.strokePaint.setStrokeWidth(origWidth * 2)
     r.drawNodeStroke(canvas, node)
@@ -394,25 +440,7 @@ export function drawRRectStrokeWithAlign(
     canvas.restore()
   } else if (stroke.align === 'OUTSIDE') {
     canvas.save()
-    const outerPath = new r.ck.PathBuilder()
-    outerPath.addRect(r.ck.LTRBRect(-node.width, -node.height, node.width * 2, node.height * 2))
-    const innerPath = new r.ck.PathBuilder()
-    innerPath.addRRect(rrect)
-    const immutableOuterPath = outerPath.detachAndDelete()
-    const immutableInnerPath = innerPath.detachAndDelete()
-    const clipPath = r.ck.Path.MakeFromOp(
-      immutableOuterPath,
-      immutableInnerPath,
-      r.ck.PathOp.Difference
-    )
-    immutableOuterPath.delete()
-    immutableInnerPath.delete()
-    if (!clipPath) {
-      canvas.restore()
-      return
-    }
-    canvas.clipPath(clipPath, r.ck.ClipOp.Intersect, true)
-    clipPath.delete()
+    canvas.clipRRect(rrect, r.ck.ClipOp.Difference, true)
     r.strokePaint.setStrokeWidth(stroke.weight * 2)
     canvas.drawRRect(rrect, r.strokePaint)
     r.strokePaint.setStrokeWidth(stroke.weight)

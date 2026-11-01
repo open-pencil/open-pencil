@@ -1,15 +1,26 @@
 <script setup lang="ts">
 import { Primitive } from 'reka-ui'
 
+import SettingsResetButton from './SettingsResetButton.vue'
+
 /**
  * One line of a `SettingsGroup`: a label, an optional description, and its control on the right.
- * As a `label`, clicking the text works the control, as a switch row does.
+ * As a `label`, clicking the text works the control, as a switch row does. A `modified` row offers
+ * Reset to default before its control, emitting `reset`.
  */
 const {
   label,
   description,
-  as = 'div'
-} = defineProps<{ label?: string; description?: string; as?: 'div' | 'label' }>()
+  as = 'div',
+  modified = false
+} = defineProps<{
+  label?: string
+  description?: string
+  as?: 'div' | 'label'
+  /** The setting differs from its default. */
+  modified?: boolean
+}>()
+const emit = defineEmits<{ reset: [] }>()
 </script>
 
 <template>
@@ -27,6 +38,9 @@ const {
       }}</span>
       <slot name="description" />
     </span>
-    <span class="shrink-0"><slot /></span>
+    <span class="flex shrink-0 items-center gap-1">
+      <SettingsResetButton v-if="modified" @reset="emit('reset')" />
+      <slot />
+    </span>
   </Primitive>
 </template>

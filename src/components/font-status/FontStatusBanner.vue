@@ -59,12 +59,12 @@ const issues = computed(() => status.value.issues)
     <div v-if="expanded" class="grid gap-1 border-t border-warning-border px-3 py-2">
       <div
         v-for="issue in issues"
-        :key="`${issue.family}:${issue.style}`"
+        :key="`${issue.family}:${issue.name}`"
         data-test-id="font-status-issue"
         class="flex min-w-0 items-center gap-2"
       >
         <span class="min-w-0 flex-1 truncate">
-          <strong>{{ issue.family }} {{ issue.style }}</strong>
+          <strong>{{ issue.family }} {{ issue.name }}</strong>
           <template v-if="issue.substituteFamily"> → {{ issue.substituteFamily }} </template>
           <template v-else>— {{ fonts.noSubstitute }}</template>
           <Tip v-if="issue.reason === 'unsupported-format'" :label="fonts.unsupportedFormat">

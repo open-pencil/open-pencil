@@ -10,7 +10,7 @@ import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useFollowView } from '@/app/presence/follow-view'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
-import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 
 /**

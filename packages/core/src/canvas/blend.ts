@@ -1,8 +1,31 @@
-import type { BlendMode as SkBlendMode, CanvasKit } from 'canvaskit-wasm'
+import type { Blender, BlendMode as SkBlendMode, CanvasKit, Paint } from 'canvaskit-wasm'
 
 import type { BlendMode } from '@open-pencil/scene-graph'
 
-export function figmaBlendModeToSkia(ck: CanvasKit, mode?: BlendMode): SkBlendMode {
+import type { SkiaRenderer } from './renderer'
+
+type LinearBlendMode = 'LINEAR_BURN' | 'LINEAR_DODGE'
+
+/**
+ * Figma's plus darker and plus lighter, in premultiplied sRGB with source-over coverage: the sum
+ * less the overlap clamped at zero, and the sum clamped at the coverage (live-measured).
+ */
+const LINEAR_BLEND_COLORS: Record<LinearBlendMode, string> = {
+  LINEAR_BURN: 'max(src.rgb + dst.rgb - src.a * dst.a, half3(0))',
+  LINEAR_DODGE: 'min(src.rgb + dst.rgb, half3(alpha))'
+}
+
+function linearBlendSource(mode: LinearBlendMode): string {
+  return `half4 main(half4 src, half4 dst) {
+  half alpha = src.a + dst.a * (1 - src.a);
+  return half4(${LINEAR_BLEND_COLORS[mode]}, alpha);
+}`
+}
+
+export function figmaBlendModeToSkia(
+  ck: CanvasKit,
+  mode?: Exclude<BlendMode, LinearBlendMode>
+): SkBlendMode {
   switch (mode) {
     case 'DARKEN':
       return ck.BlendMode.Darken
@@ -37,6 +60,31 @@ export function figmaBlendModeToSkia(ck: CanvasKit, mode?: BlendMode): SkBlendMo
     default:
       return ck.BlendMode.SrcOver
   }
+}
+
+export function setPaintBlendMode(r: SkiaRenderer, paint: Paint, mode?: BlendMode): void {
+  if (mode === 'LINEAR_BURN' || mode === 'LINEAR_DODGE') {
+    paint.setBlender(linearBlender(r, mode))
+    return
+  }
+  paint.setBlendMode(figmaBlendModeToSkia(r.ck, mode))
+}
+
+/** Skia has no blend mode for either: they are runtime blenders, compiled once per renderer. */
+function linearBlender(r: SkiaRenderer, mode: LinearBlendMode): Blender {
+  if (mode === 'LINEAR_BURN') return (r.linearBurnBlender ??= compileLinearBlender(r.ck, mode))
+  return (r.linearDodgeBlender ??= compileLinearBlender(r.ck, mode))
+}
+
+function compileLinearBlender(ck: CanvasKit, mode: LinearBlendMode): Blender {
+  let error = ''
+  const effect = ck.RuntimeEffect.MakeForBlender(linearBlendSource(mode), (message) => {
+    error = message
+  })
+  if (!effect) throw new Error(`Cannot compile ${mode} blender: ${error}`)
+  const blender = effect.makeBlender([])
+  effect.delete()
+  return blender
 }
 
 export function needsIsolatedBlendLayer(mode?: BlendMode): boolean {

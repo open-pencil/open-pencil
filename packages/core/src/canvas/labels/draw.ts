@@ -38,6 +38,7 @@ export function drawSectionTitles(
   if (sections.length === 0) return
 
   for (const { node, nested } of sections) {
+    if (node.id === overlays?.renamingLabelId) continue
     drawSectionTitle(r, canvas, provider, node, graph, nested, overlays)
   }
 }
@@ -72,7 +73,7 @@ function drawSectionTitle(
       try {
         const matrix = labelScreenMatrix(labelTransform(node, graph, overlays?.rotationPreview), r)
         canvas.concat(matrix)
-        r.auxFill.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
+        r.auxFill.setColorComponents(background.r, background.g, background.b, background.a)
         const { x, y, width, height } = layout.bounds
         const bounds = r.ck.RRectXY(
           r.ck.LTRBRect(x, y, x + width, y + height),
@@ -194,20 +195,23 @@ export function drawComponentLabels(
       immutablePath.delete()
     }
 
-    const textWidth = r.labelParagraphCache.draw(
-      r.ck,
-      canvas,
-      provider,
-      node.name,
-      layout.fontSize,
-      layout.maxTextWidth,
-      compColor,
-      r.fontGeneration,
-      layout.text.x,
-      layout.text.y,
-      layout.fontWeight
-    )
-    drawTitleStatus(r, canvas, graph, node, layout, textWidth, node.width * r.zoom, matrix)
+    // The field renaming a component starts after its icon and stands in for its name.
+    if (node.id !== overlays?.renamingLabelId) {
+      const textWidth = r.labelParagraphCache.draw(
+        r.ck,
+        canvas,
+        provider,
+        node.name,
+        layout.fontSize,
+        layout.maxTextWidth,
+        compColor,
+        r.fontGeneration,
+        layout.text.x,
+        layout.text.y,
+        layout.fontWeight
+      )
+      drawTitleStatus(r, canvas, graph, node, layout, textWidth, node.width * r.zoom, matrix)
+    }
     canvas.restore()
   }
 }
@@ -233,6 +237,7 @@ export function drawFrameTitles(
     overlays?.rotationPreview
   )
   for (const { node } of frames) {
+    if (node.id === overlays?.renamingLabelId) continue
     const transform = frameLabelPlacement(node, graph, overlays?.rotationPreview)
     const room = shownStatusState(graph, node) ? TITLE_STATUS_ROOM : 0
     const layout = labelLayout('frame', transform.width * r.zoom - room)

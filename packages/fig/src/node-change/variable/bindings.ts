@@ -10,7 +10,7 @@ import type {
   TextBindableField,
   TextBoundVariables
 } from '@open-pencil/scene-graph'
-import { isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
+import { boundNumberValue, isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
 
 import { cloneRecord } from '../clone'
 import { linearVariableExpression } from './expression'
@@ -346,5 +346,7 @@ export function resolvedNumericBindingUpdate(
 ): Partial<SceneNode> | undefined {
   if (field === 'opacity')
     return { opacity: Math.max(0, Math.min(1, value * OPACITY_UNIT_PER_PERCENT)) }
-  return isNumericVariableBindingField(field) ? { [field]: value } : undefined
+  return isNumericVariableBindingField(field)
+    ? { [field]: boundNumberValue(field, value) }
+    : undefined
 }

@@ -53,12 +53,18 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - Browser and native menus share `src/app/shell/menu/schema.ts`; handle IDs in `use.ts` or editor commands, and regenerate `desktop/generated/menu.json` with `bun run generate:tauri-menu`.
 - Motion policy lives in `src/app/shell/motion/`: resolve the persisted System/Off preference and OS reduction once. The root `data-motion` attribute and the Tailwind `motion-safe`/`motion-reduce` variants represent the effective policy, including portalled content. Use the policy-aware Motion adapters rather than repeating preference conditionals in components.
 - Canvas shortcuts stop while a dialog, menu, or listbox is open. A dialog that edits the document listens for undo and redo on its own content with `useDocumentShortcuts`, so keys in menus it portals never reach it; there is one history, the editor's (`src/app/shell/keyboard/document.ts`, `src/components/variables/VariablesDialog.vue`).
+- System notifications go through `notify` in `src/app/shell/notifications/`: each event has a preference under `notifications`, nothing is sent while the person is looking at the tab it concerns, and the click shows that tab. Features describe the event and what to open; they never call the Notification API or the Tauri plugin themselves (`tests/e2e/chat/notifications.spec.ts`).
 - Code that can only run inline, such as the code panel's opaque-origin sandbox frame and the `blob:` worker it starts, is an ordinary module imported as `?script`, which bundles it into a string (`vite/inline-script.ts`); never write it as a source string or serialize functions (`src/app/code/sandbox/frame.ts`).
 - Keep the app manifest in `vite/pwa.ts`; use `BrandMark` for in-app branding; never symlink web assets to desktop icons (`tools/AGENTS.md`, Brand assets).
 
 ## UI
 
-`src/components/ui/**` is generic, store-free design-system code grouped by family: `{binding,button,collapsible,date,dialog,feedback,input,list,menu,overlay,paint,panel,select,table,tabs,toggle}/`. Do not create a folder named after a single component. Feature controls stay in their domain. Theme families mirror these under `src/theme/`; feature themes stay separate. Use explicit imports without old-path forwarding shims.
+`src/components/ui/**` is generic, store-free design-system code grouped by family: `{binding,button,collapsible,date,dialog,drop,feedback,input,list,menu,overlay,paint,panel,select,table,tabs,toggle}/`. Do not create a folder named after a single component. Feature controls stay in their domain. Theme families mirror these under `src/theme/`; feature themes stay separate. Use explicit imports without old-path forwarding shims.
+
+### Naming
+
+- Name a component from the most general word to the most specific, starting with its feature: `ChatMessageQueued`, `ChatToolCallCard`, not `QueuedMessage` or `ToolCallCard` (`src/components/chat/`).
+- A component used only inside one parent starts with that parent's name; existing domains migrate when touched (`src/components/chat/turn/ChatMessageEditor.vue`).
 
 ### Building blocks
 
@@ -88,7 +94,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - `SettingsSaveFeedback` maps domain outcomes (`saved`, `failed`, `partial`) to `AppAlert`. `SettingsLink` owns external-link styling, the icon, and native opening for provider key pages and setup guides; keep arrow glyphs out of translated labels.
 - A section's header-level action (Add, Reset, Restart) goes in its `actions` slot; a link to another settings tab is a `SettingsRow` with an outline `xs` button; status, warning, and error `AppAlert`s come last inside the section they describe, offering only the fix (`src/components/settings/mcp/MCPSettingsPanel.vue`).
 - An integration section links its guide once, as `common.learnMore` at the end of its description; alerts link only to the fix (Node.js, the desktop app), never to docs. Guide URLs live in `src/constants.ts`, except the unsupported-browser guidance, which stays self-contained (`src/app/shell/support/guidance.ts`).
-- Empty lists use `AppPlaceholder`: `size="compact" :fill="false"` for no results or nothing added yet, an icon, description, and action for a feature that still needs setting up (`src/components/assets-panel/AssetsPanel.vue`, `src/components/chat/ProviderSetup.vue`).
+- Empty lists use `AppPlaceholder`: `size="compact" :fill="false"` for no results or nothing added yet, an icon, description, and action for a feature that still needs setting up (`src/components/assets-panel/AssetsPanel.vue`, `src/components/chat/ChatProviderSetup.vue`).
 
 ### Feedback and forms
 

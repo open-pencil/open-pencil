@@ -120,6 +120,20 @@ describe('update_node', () => {
 
     expect(expectDefined(figma.getNodeById(rect.id), 'rectangle node').cornerRadius).toBe(12)
   })
+
+  test("a font size edit leaves the text's text style and keeps its fill style", () => {
+    const { figma } = setupToolTest()
+    const text = figma.createText()
+    figma.graph.updateNode(text.id, { textStyleId: 'style:text', fillStyleId: 'style:fill' })
+
+    getTool('update_node').execute(figma, { id: text.id, font_size: 20 })
+
+    expect(getNodeOrThrow(figma.graph, text.id)).toMatchObject({
+      fontSize: 20,
+      textStyleId: null,
+      fillStyleId: 'style:fill'
+    })
+  })
 })
 
 describe('set_layout', () => {

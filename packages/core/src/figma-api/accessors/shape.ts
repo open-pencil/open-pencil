@@ -6,21 +6,12 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
+import { invalid, numberProblem, received } from '#core/figma-api/accessors/text/messages'
 
 /** Figma caps a polygon or star at this many points, past which it keeps the cap. */
 const MAX_POINT_COUNT = 60
 
 const ARC_FIELDS = ['startingAngle', 'endingAngle', 'innerRadius'] as const
-
-/** Figma's complaint about `value` as a number at `at`, or null when it is one. */
-function numberProblem(value: unknown, at = ''): string | null {
-  if (typeof value === 'number' && !Number.isNaN(value)) return null
-  if (value === undefined) return `Required value missing${at}`
-  // These setters spell it as JavaScript does, unlike the text ones `received` follows.
-  const kind = Number.isNaN(value) ? 'NaN' : received(value)
-  return `Expected number, received ${kind}${at}`
-}
 
 /** Figma's complaint about a ratio outside 0 to 1, or null. */
 function ratioProblem(value: number, at = ''): string | null {
