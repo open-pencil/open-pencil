@@ -1,0 +1,1 @@
+- Saving from MCP or the CLI refuses a path that is not a `.fig` file, or a `.jam` file for a board, instead of writing a Figma archive that cannot be opened again.

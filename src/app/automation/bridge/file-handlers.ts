@@ -2,7 +2,9 @@ import { dirname } from '@tauri-apps/api/path'
 import { mkdir } from '@tauri-apps/plugin-fs'
 import * as v from 'valibot'
 
+import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
 import { parseToolArgs } from '@open-pencil/core/tools'
+import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import {
   resolveAutomationTarget,
@@ -22,6 +24,19 @@ export interface AutomationFiles {
 }
 
 const saveArgsSchema = v.object({ path: v.optional(v.string()) })
+
+/**
+ * Automation always writes a Figma archive. `open_file` reads `.fig` and `.jam` as that archive
+ * and any other extension, such as `.pen`, as another format, so a mismatched path is refused
+ * before a byte is written.
+ */
+function assertAutomationSaveExtension(path: string, kind: DocumentKind): void {
+  const extension = DOCUMENT_EXTENSIONS[kind]
+  if (path.toLowerCase().endsWith(`.${extension}`)) return
+  throw new Error(
+    `save_file writes .${extension} documents; "${path}" does not end in .${extension}`
+  )
+}
 
 const closeArgsSchema = v.object({
   path: v.optional(v.string()),
@@ -60,6 +75,7 @@ export function createFileHandlers(files?: AutomationFiles) {
   // Automation never opens the Save dialog: nobody may be there to answer it.
   async function saveWithoutPrompt(store: AutomationTarget['store'], path?: string): Promise<void> {
     const name = store.state.documentName
+    if (path) assertAutomationSaveExtension(path, store.state.documentKind)
     if (!path && !store.hasWritableSource()) {
       throw new Error(`"${name}" has not been saved to a file yet; pass a path to save it`)
     }
