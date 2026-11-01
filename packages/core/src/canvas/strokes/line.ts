@@ -71,10 +71,6 @@ export function drawLineStroke(
   drawArrowHeads(r, canvas, heads, stroke.weight, color, stroke.opacity)
 }
 
-/**
- * The outline of a LINE's first visible stroke, as booleans and flattening take it: its shaft, its
- * caps, and its heads, without dashes.
- */
 /** The weight and cap a LINE is stroked with: its first visible stroke's. */
 function lineStroke(node: SceneNode): { weight: number; cap: StrokeCap } {
   const stroke = node.strokes.find((item) => item.visible)
@@ -95,6 +91,10 @@ export function makeLineSegmentPath(r: SkiaRenderer, node: SceneNode): Path {
   return segment.detachAndDelete()
 }
 
+/**
+ * The outline of a LINE's first visible stroke, as booleans take it: its shaft, its caps, and
+ * its heads, without dashes.
+ */
 export function makeLineStrokeOutline(r: SkiaRenderer, node: SceneNode): Path | null {
   const { weight, cap } = lineStroke(node)
   const { network, from, to } = lineStrokePath(node, weight, cap)
