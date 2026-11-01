@@ -160,6 +160,7 @@ ja:diagnostics.sharingDisabledByEnvironment
 ja:diagnostics.sharingQuestionTitle
 ja:diagnostics.sharingQuestionDescription
 ja:editor.showUI
+ja:editor.wideGamutUnavailable
 ja:files.browserFileAPINotSupported
 ja:files.clipboardImageFetchFailed
 ja:files.clipboardImagesFetchFailed
