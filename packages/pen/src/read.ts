@@ -5,6 +5,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { pathNetwork } from './geometry'
 import { removeUnusedIconComponents } from './icons'
 import { createImageStore } from './images'
+import { withImports, type PenImports } from './imports'
 import { inAncestorThemes, populateInstances } from './instances'
 import { spreadAround } from './layout'
 import { createSceneNode, redrawIconAtLaidOutSize, type Build, type PenIconSource } from './nodes'
@@ -23,6 +24,12 @@ export interface PenReadOptions {
   images?: ReadonlyMap<string, Uint8Array>
   /** Where icon glyphs come from; icons are empty frames without it. */
   icons?: PenIconSource
+  /**
+   * The documents the document imports, by alias, as `importedDocument` gives them. Their
+   * components and variables are the document's under `<alias>:`, and their layers go on a page
+   * of their own for each alias.
+   */
+  imports?: PenImports
 }
 
 function collectComponents(nodes: PenNode[], components: Map<string, PenNode>): void {
@@ -84,9 +91,10 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
     graph.deleteNode(page.id)
   }
 
+  const imports = options.imports ?? new Map<string, PenDocument>()
   const build: Build = {
     graph,
-    ctx: buildVarContext(graph, doc),
+    ctx: buildVarContext(graph, withImports(doc, imports)),
     images: createImageStore(graph, options.images),
     icons: options.icons,
     components: new Map(),
@@ -100,9 +108,14 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
     replaced: new Set()
   }
   collectComponents(doc.children, build.components)
+  for (const imported of imports.values()) collectComponents(imported.children, build.components)
 
   const page = graph.addPage(doc.children[0]?.name ?? 'Page 1')
   for (const child of doc.children) createSceneNode(child, page.id, build)
+  for (const [alias, imported] of imports) {
+    const importPage = graph.addPage(alias)
+    for (const child of imported.children) createSceneNode(child, importPage.id, build)
+  }
   populateInstances(build)
 
   options.layout?.(graph)

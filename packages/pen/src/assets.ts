@@ -79,6 +79,41 @@ function paintImages(paints: PenPaints | undefined, images: Set<string>) {
   }
 }
 
+/** Paints with each image file they name renamed by `rebase`; data URLs and others as they are. */
+function rebasePaints<T extends PenPaints>(paints: T, rebase: (url: string) => string): T {
+  const one = (paint: PenPaint): PenPaint =>
+    typeof paint === 'object' &&
+    paint.type === 'image' &&
+    typeof paint.url === 'string' &&
+    isDocumentAssetPath(paint.url)
+      ? { ...paint, url: rebase(paint.url) }
+      : paint
+  return (Array.isArray(paints) ? paints.map(one) : one(paints)) as T
+}
+
+function rebaseNode<T extends PenOverride>(node: T, rebase: (url: string) => string): T {
+  const rebased: T = { ...node }
+  if (node.fill !== undefined) rebased.fill = rebasePaints(node.fill, rebase)
+  if (node.stroke !== undefined && !(typeof node.stroke === 'object' && 'thickness' in node.stroke)) {
+    rebased.stroke = rebasePaints(node.stroke, rebase)
+  }
+  if (node.children) rebased.children = node.children.map((child) => rebaseNode(child, rebase))
+  if (node.descendants) {
+    rebased.descendants = Object.fromEntries(
+      Object.entries(node.descendants).map(([path, override]) => [path, rebaseNode(override, rebase)])
+    )
+  }
+  return rebased
+}
+
+/**
+ * A document with each image file its layers name renamed by `rebase`, such as to the path from
+ * another document that imports it, since a file is named relative to the document naming it.
+ */
+export function rebaseImages(doc: PenDocument, rebase: (url: string) => string): PenDocument {
+  return { ...doc, children: doc.children.map((node) => rebaseNode(node, rebase)) }
+}
+
 interface Found {
   doc: PenDocument
   /** Requests by their name and options, so each is listed once. */

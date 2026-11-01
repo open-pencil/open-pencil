@@ -32,9 +32,29 @@ const io = new IORegistry(CLI_IO_FORMATS)
 function documentAssetReader(filePath: string) {
   return async (path: string): Promise<Uint8Array | null> => {
     const folder = await realpath(dirname(filePath))
-    const target = await realpath(resolve(folder, path)).catch(() => null)
-    if (!target?.startsWith(folder + sep)) return null
-    return new Uint8Array(await readFile(target))
+    return readWithin(folder, resolve(folder, path))
+  }
+}
+
+/** The file at `path`, when it really lies inside `root`; null otherwise. */
+async function readWithin(root: string, path: string): Promise<Uint8Array | null> {
+  const target = await realpath(path).catch(() => null)
+  if (!target?.startsWith(root + sep)) return null
+  return new Uint8Array(await readFile(target))
+}
+
+/**
+ * Reads a document a document imports, such as a `.pen` library in a sibling folder, and the
+ * files it names. Imports may leave the document's folder, but not the working directory, which a
+ * repository's tooling runs from; a document outside the working directory imports only from its
+ * own folder.
+ */
+function documentImportReader(filePath: string) {
+  return async (path: string): Promise<Uint8Array | null> => {
+    const folder = await realpath(dirname(filePath))
+    const cwd = await realpath(process.cwd())
+    const root = folder === cwd || folder.startsWith(cwd + sep) ? cwd : folder
+    return readWithin(root, resolve(folder, path))
   }
 }
 
@@ -46,7 +66,8 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const { graph } = await io.readDocument({
     name: filePath,
     data: bytes,
-    readAsset: documentAssetReader(filePath)
+    readAsset: documentAssetReader(filePath),
+    readImport: documentImportReader(filePath)
   })
   graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return graph
