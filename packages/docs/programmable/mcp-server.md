@@ -329,6 +329,8 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `set_variable` | Set a variable value in a mode |
 | `delete_variable` | Delete a variable |
 | `bind_variable` | Bind a variable to a node property |
+| `set_variable_mode` | Show layers in a collection's mode, such as a frame in Dark; children inherit it |
+| `get_variable_modes` | Get the mode a layer shows for each collection, its own or inherited |
 | `get_collection` | Get a variable collection by ID or name |
 | `create_collection` | Create a new variable collection |
 | `delete_collection` | Delete a variable collection |

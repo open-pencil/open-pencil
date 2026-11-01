@@ -86,6 +86,8 @@ export function nodeProxyToJSON(
   // Include variable bindings with resolved values
   const bindings = resolveBindings(graph, n)
   if (bindings) obj.boundVariables = bindings
+  // The modes the layer sets itself, by collection ID, as Figma names them; children inherit them.
+  if (Object.keys(n.variableModes).length > 0) obj.explicitVariableModes = { ...n.variableModes }
   const children = pluginChildren(graph, nodeId)
   if (children.length > 0) {
     if (maxDepth !== undefined && currentDepth >= maxDepth) {

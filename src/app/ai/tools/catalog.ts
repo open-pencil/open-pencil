@@ -19,6 +19,9 @@ const defaultNames = new Set([
   'create_variable',
   'set_variable',
   'bind_variable',
+  // Switches a layer that already exists to a theme; design JSX sets one only on new layers.
+  'set_variable_mode',
+  'get_variable_modes',
   'lint',
   'lint_fix',
   // Lets the model look at what it built.
