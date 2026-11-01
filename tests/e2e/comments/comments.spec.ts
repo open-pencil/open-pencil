@@ -1,5 +1,6 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
+import { CanvasGuideDriver } from '#tests/helpers/canvas/guides'
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetup()
@@ -9,6 +10,20 @@ const moveTool = () => editor.page.getByTestId(toolbarToolTestId('SELECT'))
 const list = () => editor.page.locator('[data-slot="comments-panel"]')
 const items = () => list().locator('[data-slot="comment-list-item"]')
 const pins = () => editor.page.locator('[data-slot="comment-pin"]:not([data-draft])')
+async function selectedIds() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return [...store.state.selectedIds]
+  })
+}
+async function selectedGuide() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.guides.selected
+  })
+}
 const thread = () => editor.page.locator('[data-slot="comment-thread"]')
 
 async function placeComment(x: number, y: number, text: string) {
@@ -117,4 +132,113 @@ test('right-clicking a pin opens comment actions, not the layer menu', async () 
   await editor.page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
   await expect(pins()).toHaveCount(0)
   await expect(items()).toHaveCount(0)
+})
+
+test('middle mouse pans the canvas while the Comment tool is selected', async () => {
+  await commentTool().click()
+  await placeComment(200, 180, 'pan anchor')
+  await editor.page.keyboard.press('Escape')
+
+  const before = expectDefined(await pins().first().boundingBox(), 'pin bounds')
+  const canvas = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
+  const x = canvas.x + canvas.width * 0.75
+  const y = canvas.y + canvas.height * 0.75
+  await editor.page.mouse.move(x, y)
+  await editor.page.mouse.down({ button: 'middle' })
+  await editor.page.mouse.move(x + 60, y + 45, { steps: 4 })
+  await editor.page.mouse.up({ button: 'middle' })
+
+  await expect
+    .poll(async () => {
+      const after = await pins().first().boundingBox()
+      return after ? Math.hypot(after.x - before.x, after.y - before.y) : 0
+    })
+    .toBeGreaterThan(20)
+  await expect(editor.page.getByRole('textbox', { name: 'Add a comment' })).toHaveCount(0)
+})
+
+test('right-clicking a guide in the Comment tool preserves selection and leaves the guide unselected', async () => {
+  await editor.canvas.drawRect(100, 100, 120, 80)
+  await commentTool().click()
+  const selection = await selectedIds()
+  expect(selection).toHaveLength(1)
+  expect(await selectedGuide()).toBeNull()
+
+  const guides = new CanvasGuideDriver(editor.page)
+  const guidePoint = await guides.addFromRuler('x', 400, 300)
+  await expect.poll(() => selectedGuide()).not.toBeNull()
+
+  await moveTool().click()
+  await editor.canvas.click(150, 140)
+  expect(await selectedIds()).toEqual(selection)
+  expect(await selectedGuide()).toBeNull()
+  await commentTool().click()
+
+  const contextMenuEvent = editor.page.waitForEvent('console', {
+    predicate: (message) => message.text().startsWith('contextmenu-default-prevented:')
+  })
+  const canvasElement = editor.page.getByTestId('canvas-element')
+  await canvasElement.evaluate((canvas) => {
+    canvas.addEventListener(
+      'contextmenu',
+      (event) => console.debug(`contextmenu-default-prevented:${event.defaultPrevented}`),
+      { once: true }
+    )
+  })
+
+  await editor.page.mouse.click(guidePoint.x, guidePoint.y, { button: 'right' })
+  await expect(editor.page.getByRole('menu')).toHaveCount(0)
+  expect((await contextMenuEvent).text()).toBe('contextmenu-default-prevented:true')
+  expect(await selectedIds()).toEqual(selection)
+  expect(await selectedGuide()).toBeNull()
+})
+
+test('right and middle clicks preserve a selected guide in the Comment tool', async () => {
+  const guides = new CanvasGuideDriver(editor.page)
+  const guidePoint = await guides.addFromRuler('x', 400, 300)
+  const guideSelection = await selectedGuide()
+  expect(guideSelection).not.toBeNull()
+
+  await commentTool().click()
+  await editor.page.mouse.click(guidePoint.x, guidePoint.y, { button: 'right' })
+  expect(await selectedGuide()).toEqual(guideSelection)
+
+  await editor.page.mouse.click(guidePoint.x, guidePoint.y, { button: 'middle' })
+  expect(await selectedGuide()).toEqual(guideSelection)
+})
+
+test('double-clicking text does not start editing in the Comment tool', async () => {
+  const textPosition = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const node = store.graph.createNode('TEXT', store.state.currentPageId, {
+      x: 100,
+      y: 100,
+      width: 180,
+      height: 40,
+      text: 'Comment mode text'
+    })
+    store.requestRender()
+    return {
+      x: node.x,
+      y: node.y,
+      panX: store.state.panX,
+      panY: store.state.panY,
+      zoom: store.state.zoom
+    }
+  })
+  await editor.canvas.waitForRender()
+  await commentTool().click()
+  const canvas = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
+  await editor.page.mouse.dblclick(
+    canvas.x + textPosition.panX + (textPosition.x + 10) * textPosition.zoom,
+    canvas.y + textPosition.panY + (textPosition.y + 10) * textPosition.zoom
+  )
+
+  const editingTextId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.editingTextId
+  })
+  expect(editingTextId).toBeNull()
 })
