@@ -1,0 +1,1 @@
+- Home lists unsaved work kept from documents closed without saving, and the recovery prompt at start appears only after a crash.
