@@ -19,9 +19,6 @@ export default {
     bar: 'h-1.5 overflow-hidden rounded-full bg-border',
     barValue: 'h-full rounded-full bg-accent data-[full=true]:bg-warning',
     note: 'leading-snug text-muted',
-    actions: 'flex gap-1.5',
-    toggle: 'flex cursor-pointer items-center gap-2',
-    separator: 'h-px bg-border',
     credits: 'flex items-center justify-between gap-2 text-muted',
     warning:
       'mx-2.5 mb-1 flex items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-2.5 py-1.5 text-[11px] text-warning',

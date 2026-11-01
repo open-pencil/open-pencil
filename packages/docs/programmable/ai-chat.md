@@ -104,9 +104,9 @@ The assistant can verify its work visually. With `export_image`, on by default, 
 
 ## Context and compaction
 
-A model reads a limited amount of conversation at once, its context window. With a model the chat calls itself, the header shows how full the window is; click it for the token count, the Cloud credits left, and the compaction controls. When the window is nearly full, a bar over the message field offers to compact.
+A model reads a limited amount of conversation at once, its context window. With a model the chat calls itself, the header shows how full the window is; click it for the token count, when the conversation compacts, and the Cloud credits left. When the window is nearly full, a bar over the message field offers to compact.
 
-Compacting asks the conversation's model for a summary, which then stands for everything before it: later requests send the summary and what followed, while the transcript keeps every message, with a divider where the summary opens. **Compact automatically**, on by default in the context popover and in **Settings → Chat**, compacts before a message would leave too little room for the reply. **Compact now** compacts at once, and `/compact` followed by instructions, or **With instructions…**, says what the summary should keep. A compaction that fails changes nothing and offers Retry; a request that is already too long for the model offers **Compact and retry**. ACP agents and Pi keep and compact their own context, and an ACP agent's own `/compact` reaches it as written.
+Compacting asks the conversation's model for a summary, which then stands for everything before it: later requests send the summary and what followed, while the transcript keeps every message, with a divider where the summary opens. **Compact automatically** in **Settings → Chat**, on by default, compacts before a message would leave too little room for the reply. `/compact` compacts at once, and instructions after it say what the summary should keep. A compaction that fails changes nothing and offers Retry; a request that is already too long for the model offers **Compact and retry**. ACP agents and Pi keep and compact their own context, and an ACP agent's own `/compact` reaches it as written.
 
 Hover a reply to see the tokens it used; **Settings → Chat → Token usage** shows them always or never.
 

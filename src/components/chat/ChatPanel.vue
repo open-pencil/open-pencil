@@ -77,7 +77,6 @@ const submission = useChatSubmission({
 const chatInput = useTemplateRef<{
   restoreDraft: (submission: ChatSubmission) => void
   dropFiles: (files: File[]) => void
-  insert: (text: string) => void
 }>('chatInput')
 const panel = useTemplateRef<HTMLElement>('panel')
 // Images dropped anywhere on the chat go to the composer, when there is one to take them.
@@ -360,10 +359,7 @@ function handleStop() {
           :used="context.used.value"
           :context-window="context.limits.value.contextWindow"
           :compacts-at="context.compactsAt.value"
-          :compacting="compaction.compacting.value"
           :replying="status === 'streaming' || status === 'submitted'"
-          @compact="compactConversation()"
-          @compact-with-instructions="chatInput?.insert('/compact ')"
         />
         <!-- Without a known window there is no meter, and Cloud credits show on their own. -->
         <ChatCreditBalance v-else :replying="status === 'streaming' || status === 'submitted'" />

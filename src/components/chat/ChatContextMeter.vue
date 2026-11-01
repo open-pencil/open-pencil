@@ -7,33 +7,26 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { compactAutomatically } from '@/app/ai/chat/preferences'
 import { formatCompactNumber } from '@/app/i18n/number'
 import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
-import AppButton from '@/components/ui/button/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 import { chatContextTheme } from './ui'
 
 /**
- * How full the conversation's context is, as a ring in the chat's header. Its popover tells the
- * tokens, compacts now or with instructions, turns automatic compaction on or off, and shows
- * what Cloud credits are left.
+ * How full the conversation's context is, as a meter in the chat's header. Its popover tells the
+ * tokens, when the conversation compacts, and what Cloud credits are left; compaction itself is
+ * a setting and `/compact`.
  */
 const {
   used,
   contextWindow,
   compactsAt,
-  canCompact = true,
-  compacting = false,
   replying = false
 } = defineProps<{
   used: number
   contextWindow: number
   compactsAt: number
-  canCompact?: boolean
-  compacting?: boolean
   replying?: boolean
 }>()
-const emit = defineEmits<{ compact: []; compactWithInstructions: [] }>()
 const { ai } = useI18n()
 const ui = chatContextTheme()
 const popover = usePopoverUI({ content: ui.popover() })
@@ -88,32 +81,6 @@ const full = computed(() => ratio.value >= FULL)
               : ai.contextCompactsOff
           }}
         </p>
-        <div v-if="canCompact" :class="ui.actions()">
-          <AppButton
-            size="xs"
-            color="primary"
-            variant="solid"
-            class="flex-1"
-            :disabled="compacting || replying"
-            data-test-id="chat-compact-now"
-            @click="emit('compact')"
-          >
-            {{ compacting ? ai.compacting : ai.compactNow }}
-          </AppButton>
-          <AppButton
-            size="xs"
-            variant="outline"
-            class="flex-1"
-            :disabled="compacting || replying"
-            @click="emit('compactWithInstructions')"
-          >
-            {{ ai.compactWithInstructions }}
-          </AppButton>
-        </div>
-        <div :class="ui.toggle()">
-          <AppCheckbox v-model="compactAutomatically" :ariaLabel="ai.compactAutomatically" />
-          <span aria-hidden="true">{{ ai.compactAutomatically }}</span>
-        </div>
         <div :class="ui.credits()">
           <ChatCreditBalance :replying="replying" />
         </div>

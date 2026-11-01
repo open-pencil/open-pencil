@@ -101,12 +101,7 @@ function dropFiles(files: File[]): void {
   void addFiles(files)
 }
 
-/** Puts `text` in the field at the caret, as a command offered elsewhere starts one. */
-function insert(text: string): void {
-  composer.value?.insert(text)
-}
-
-defineExpose({ restoreDraft, dropFiles, insert })
+defineExpose({ restoreDraft, dropFiles })
 
 const isAgentProvider = computed(
   () => providerID.value.startsWith('acp:') || providerID.value === 'harness:pi'
