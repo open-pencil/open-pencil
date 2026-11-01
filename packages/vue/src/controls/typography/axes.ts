@@ -80,7 +80,8 @@ export function createTypographyAxes(editor: Editor, nodes: ComputedRef<SceneNod
   // A drag or a typed value is previewed, then committed as one undo step from the values it
   // started at, as the other typography fields are. While text is edited, the editor applies
   // both to the selected characters, and records the step with what was typed.
-  type AxisValues = Pick<SceneNode, 'fontVariations' | 'opticalSizeFromFontSize'>
+  type AxisValues = Pick<SceneNode, 'fontVariations' | 'opticalSizeFromFontSize'> &
+    Partial<Pick<SceneNode, 'styleRuns'>>
   const beforePreview = new Map<string, AxisValues>()
   // The previews belong to the step the commit records, so undoing it leaves nothing unsaved.
   const batch = useUndoBatch(editor.undo, () => editor.beginInteractiveEdit())
@@ -89,10 +90,14 @@ export function createTypographyAxes(editor: Editor, nodes: ComputedRef<SceneNod
     batch.ensure('typography:axes', 'Change font axes')
     for (const target of nodes.value) {
       if (!beforePreview.has(target.id)) {
-        const { fontVariations, opticalSizeFromFontSize } = target
-        beforePreview.set(target.id, { fontVariations, opticalSizeFromFontSize })
+        // The panel shows a text's characters' style, so what it replaces is read from the layer;
+        // while text is edited, the editor keeps the selected characters' ranges itself.
+        const own = editor.graph.getNode(target.id) ?? target
+        const { fontVariations, opticalSizeFromFontSize, styleRuns } = own
+        const ranges = editor.state.editingTextId === target.id ? {} : { styleRuns }
+        beforePreview.set(target.id, { fontVariations, opticalSizeFromFontSize, ...ranges })
       }
-      editor.updateNode(target.id, changes(target))
+      editor.updateNode(target.id, editor.layerChanges(target.id, changes(target)))
     }
     editor.requestRender()
   }

@@ -409,3 +409,42 @@ test('an axis set while text is edited styles the selected characters, and undoe
     renderer.destroy()
   }
 })
+
+/** "Hello" drawn at 40 by a range over all of it, over the layer's own 14, and its actions. */
+function rangeSized() {
+  const editor = createEditor()
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello',
+    fontSize: 14,
+    styleRuns: [{ start: 0, length: 5, style: { fontSize: 40 } }]
+  })
+  const actions = createTypographyActions({
+    editor,
+    nodes: computed(() => [text]),
+    activeFormatting: computed(() => []),
+    supports: () => true,
+    options: {}
+  })
+  const node = () => editor.graph.getNode(text.id)
+  return { editor, actions, node }
+}
+
+test('a size set on a layer a range sized draws every character at it, and undoes', () => {
+  const { editor, actions, node } = rangeSized()
+  actions.updateProp('fontSize', 30)
+  actions.commitProp('fontSize', 30, 40)
+  expect(node()?.fontSize).toBe(30)
+  expect(node()?.styleRuns).toEqual([])
+  editor.undoAction()
+  expect(node()?.fontSize).toBe(14)
+  expect(node()?.styleRuns).toEqual([{ start: 0, length: 5, style: { fontSize: 40 } }])
+})
+
+test('a cancelled size on a layer a range sized puts the range back', () => {
+  const { actions, node } = rangeSized()
+  actions.updateProp('fontSize', 30)
+  expect(node()?.styleRuns).toEqual([])
+  actions.cancelProp('fontSize')
+  expect(node()?.fontSize).toBe(14)
+  expect(node()?.styleRuns).toEqual([{ start: 0, length: 5, style: { fontSize: 40 } }])
+})

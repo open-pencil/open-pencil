@@ -69,8 +69,9 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
     return own.length === 0 && !isMixed.value ? items.value : own
   }
 
+  /** A text's fills colour every character, as a layer's own fills do in Figma. */
   function updateArray(node: SceneNode, value: PropertyListItemFor<K>[], label: string) {
-    editor.updateNodeWithUndo(node.id, { [propKey]: value }, label)
+    editor.updateNodeWithUndo(node.id, editor.layerChanges(node.id, { [propKey]: value }), label)
   }
 
   function add(item: PropertyListItemFor<K>) {

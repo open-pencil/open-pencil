@@ -109,3 +109,63 @@ describe('text case while text is edited', () => {
     expect(Object.keys(style)).not.toContain('hyperlink')
   })
 })
+
+describe('panel edits to a text layer whose characters a range styled', () => {
+  const BLUE: Fill = { ...RED, color: { r: 0, g: 0, b: 1, a: 1 } }
+
+  /** "Hello" drawn at 40 and red by a range over all of it, over the layer's own 14. */
+  function rangeStyled() {
+    const editor = createEditor()
+    cleanups.push(() => editor.dispose())
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'Hello',
+      fontSize: 14,
+      styleRuns: [{ start: 0, length: 5, style: { fontSize: 40, fills: [RED] } }]
+    })
+    const node = () => expectDefined(editor.graph.getNode(text.id), 'text')
+    return { editor, id: text.id, node }
+  }
+
+  test('show the style its characters are drawn in', () => {
+    const { editor, node } = rangeStyled()
+    expect(editor.getTextSelectionStyle(node())).toMatchObject({ fontSize: 40, fills: [RED] })
+  })
+
+  test('style every character, as Figma does, and undo to the range', () => {
+    const { editor, id, node } = rangeStyled()
+    const runs = node().styleRuns
+
+    editor.updateNodeWithUndo(id, editor.layerChanges(id, { fontSize: 24 }), 'Change fontSize')
+    expect(node().fontSize).toBe(24)
+    expect(node().styleRuns).toEqual([{ start: 0, length: 5, style: { fills: [RED] } }])
+
+    editor.updateNodeWithUndo(id, editor.layerChanges(id, { fills: [BLUE] }), 'Change fills')
+    expect(node().fills).toEqual([BLUE])
+    expect(node().styleRuns).toEqual([])
+
+    editor.undoAction()
+    editor.undoAction()
+    expect(node().fontSize).toBe(14)
+    expect(node().styleRuns).toEqual(runs)
+  })
+
+  test('leave no empty range on a copy once every character takes the style', () => {
+    const { editor, id } = rangeStyled()
+    editor.select([id])
+    editor.duplicateSelected()
+    const [copy] = editor.state.selectedIds
+    editor.updateNodeWithUndo(
+      copy,
+      editor.layerChanges(copy, { fontSize: 24, fills: [BLUE] }),
+      'Change style'
+    )
+    expect(editor.graph.getNode(copy)?.styleRuns).toEqual([])
+  })
+
+  test('leave a change that styles nothing as it is', () => {
+    const { editor, id } = rangeStyled()
+    expect(editor.layerChanges(id, { textAlignHorizontal: 'CENTER' })).toEqual({
+      textAlignHorizontal: 'CENTER'
+    })
+  })
+})
