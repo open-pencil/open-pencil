@@ -1,4 +1,4 @@
-import { isEqual, isPlainObject, omit, sortBy } from 'es-toolkit'
+import { isEqual, isPlainObject } from 'es-toolkit'
 
 import type {
   SceneGraph,
@@ -71,66 +71,20 @@ function variableNamed(
   return undefined
 }
 
-/** Whether a layer binds the variable. */
-function isBound(graph: SceneGraph, variableId: string): boolean {
-  for (const node of graph.nodes.values()) {
-    if (Object.values(node.boundVariables).includes(variableId)) return true
-  }
-  return false
-}
-
-/** Steps that put back what applying definitions changed, run last to first. */
-type Undo = Array<() => void>
-
-/** A new collection for the definition, its first mode named as the definition's. */
-function createCollection(
-  graph: SceneGraph,
-  definition: CollectionDefinition,
-  undo: Undo
-): VariableCollection {
-  const collection = graph.createCollection(definition.name)
-  graph.renameMode(collection.id, collection.defaultModeId, definition.modes[0].name)
-  // Undone after its variables, so one added since keeps it.
-  undo.push(() => {
-    if (collection.variableIds.length === 0) graph.removeCollection(collection.id)
-  })
-  return collection
-}
-
 /** The collection, with its modes in place, by the definition's names. */
-function ensureCollection(
-  graph: SceneGraph,
-  definition: CollectionDefinition,
-  undo: Undo
-): VariableCollection {
-  const collection =
-    collectionNamed(graph, definition.name) ?? createCollection(graph, definition, undo)
-  const { id } = collection
+function ensureCollection(graph: SceneGraph, definition: CollectionDefinition): VariableCollection {
+  let collection = collectionNamed(graph, definition.name)
+  if (!collection) {
+    collection = graph.createCollection(definition.name)
+    graph.renameMode(collection.id, collection.defaultModeId, definition.modes[0].name)
+  }
   for (const mode of definition.modes) {
-    if (collection.modes.some((existing) => existing.name === mode.name)) continue
-    const modeId = graph.createMode(id, mode.name)
-    if (!modeId) continue
-    // A mode chosen or made the default since is kept.
-    undo.push(() => {
-      if (graph.activeMode.get(id) !== modeId && collection.defaultModeId !== modeId)
-        graph.removeMode(id, modeId)
-    })
+    if (!collection.modes.some((existing) => existing.name === mode.name))
+      graph.createMode(collection.id, mode.name)
   }
   const first = collection.modes.find((mode) => mode.name === definition.modes[0].name)
-  if (first && collection.defaultModeId !== first.modeId) {
-    const previous = collection.defaultModeId
-    const order = collection.modes.map((mode) => mode.modeId)
-    const chosen = first.modeId
-    graph.setDefaultMode(id, chosen)
-    // A default chosen since is kept; modes added since stay after the ones it knew.
-    undo.push(() => {
-      if (collection.defaultModeId !== chosen) return
-      collection.defaultModeId = previous
-      collection.modes = sortBy(collection.modes, [
-        (mode) => (order.includes(mode.modeId) ? order.indexOf(mode.modeId) : order.length)
-      ])
-    })
-  }
+  if (first && collection.defaultModeId !== first.modeId)
+    graph.setDefaultMode(collection.id, first.modeId)
   return collection
 }
 
@@ -176,29 +130,13 @@ function storedValue(
 
 /**
  * Create or update the collections a tree defines, by name: their modes, their variables, and
- * each variable's value in each mode, a mode's missing values taken from the first mode. Returns
- * what puts back only those changes, so edits made since are kept; a failure puts them back
- * itself.
+ * each variable's value in each mode, a mode's missing values taken from the first mode.
  */
-export function applyVariableDefinitions(graph: SceneGraph, tree: TreeNode): () => void {
-  const undo: Undo = []
-  const revert = () => {
-    for (const step of undo.toReversed()) step()
-  }
-  try {
-    applyDefinitions(graph, tree, undo)
-  } catch (error) {
-    revert()
-    throw error
-  }
-  return revert
-}
-
-function applyDefinitions(graph: SceneGraph, tree: TreeNode, undo: Undo): void {
+export function applyVariableDefinitions(graph: SceneGraph, tree: TreeNode): void {
   const found = new Map<string, CollectionDefinition>()
   collectDefinitions(tree, found)
   const definitions = [...found.values()]
-  const collections = definitions.map((definition) => ensureCollection(graph, definition, undo))
+  const collections = definitions.map((definition) => ensureCollection(graph, definition))
 
   const variables = definitions.map((definition, index) => {
     const collection = collections[index]
@@ -207,13 +145,7 @@ function applyDefinitions(graph: SceneGraph, tree: TreeNode, undo: Undo): void {
       const existing = variableNamed(graph, collection, name)
       if (existing && existing.type !== type)
         throw new Error(`Variable ${name} in ${definition.name} is ${existing.type}, not ${type}`)
-      if (existing) return existing
-      const created = graph.createVariable(name, type, collection.id)
-      // Undone after the render's layers are removed, so a layer bound to it since keeps it.
-      undo.push(() => {
-        if (!isBound(graph, created.id)) graph.removeVariable(created.id)
-      })
-      return created
+      return existing ?? graph.createVariable(name, type, collection.id)
     })
   })
 
@@ -225,17 +157,7 @@ function applyDefinitions(graph: SceneGraph, tree: TreeNode, undo: Undo): void {
         const modeId = collection.modes.find((existing) => existing.name === mode.name)?.modeId
         if (!modeId) continue
         const value = mode.values[variable.name] ?? first.values[variable.name]
-        const stored = storedValue(graph, variable.type, variable.name, value)
-        const previous = Object.hasOwn(variable.valuesByMode, modeId)
-          ? variable.valuesByMode[modeId]
-          : undefined
-        undo.push(() => {
-          // A value written since is kept.
-          if (variable.valuesByMode[modeId] !== stored) return
-          if (previous === undefined) variable.valuesByMode = omit(variable.valuesByMode, [modeId])
-          else variable.valuesByMode[modeId] = previous
-        })
-        variable.valuesByMode[modeId] = stored
+        variable.valuesByMode[modeId] = storedValue(graph, variable.type, variable.name, value)
       }
     }
   })

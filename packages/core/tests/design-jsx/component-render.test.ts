@@ -56,7 +56,7 @@ describe('component rendering', () => {
     expect(graph.getChildren(page.id).map((node) => node.name)).toEqual(['Editor'])
   })
 
-  test('undoes a render whose steps after drawing fail, and the variables it defined', async () => {
+  test('undoes a render whose steps after drawing fail', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     await expect(
@@ -67,16 +67,18 @@ describe('component rendering', () => {
       })
     ).rejects.toThrow('boom')
     expect(graph.getChildren(page.id)).toEqual([])
-    await expect(
-      renderJSX(
-        graph,
-        `const theme = defineVars('Theme', { Accent: '#FF0000' })
-        return <><Frame bg={theme.Accent} /><Instance of="Missing" /></>`
-      )
-    ).rejects.toThrow('component not found')
-    expect(graph.variableCollections.size).toBe(0)
-    expect(graph.variables.size).toBe(0)
-    expect(graph.activeMode.size).toBe(0)
+  })
+
+  test('keeps the variables a failed render defined, which rendering again reuses', async () => {
+    const graph = new SceneGraph()
+    const jsx = (end: string) => `const theme = defineVars('Theme', { Accent: '#FF0000' })
+      return <><Frame bg={theme.Accent} />${end}</>`
+    await expect(renderJSX(graph, jsx('<Instance of="Missing" />'))).rejects.toThrow(
+      'component not found'
+    )
+    await renderJSX(graph, jsx(''))
+    expect([...graph.variableCollections.values()].map((item) => item.name)).toEqual(['Theme'])
+    expect([...graph.variables.values()].map((item) => item.name)).toEqual(['Accent'])
   })
 
   test('removes an instance a Reka root draws when a later root fails', async () => {
@@ -92,103 +94,6 @@ describe('component rendering', () => {
       renderJSX(graph, '<><Switch.Root of="Toggle" /><Instance of="Missing" /></>')
     ).rejects.toThrow('component not found')
     expect(graph.getChildren(page.id).map((node) => node.name)).toEqual(['Toggle'])
-  })
-
-  test('keeps variables and modes another hand changes while a failed render runs', async () => {
-    const graph = new SceneGraph()
-    const theme = graph.createCollection('Theme')
-    const dark = graph.createMode(theme.id, 'Dark') ?? ''
-    const accent = graph.createVariable('Accent', 'FLOAT', theme.id)
-    accent.valuesByMode = { [theme.defaultModeId]: 1, [dark]: 2 }
-    graph.setActiveMode(theme.id, dark)
-    let editor = ''
-    const unsubscribe = graph.onNodeEvents({
-      created: () => {
-        if (!editor) editor = graph.createCollection('Editor').id
-      }
-    })
-    await expect(
-      renderJSX(
-        graph,
-        `const theme = defineVars('Theme', { Accent: 5, Size: 8 }, { mode: 'Light' })
-        const dim = defineMode(theme, 'Dim', { Accent: 6 })
-        return <><Frame mode={dim} w={theme.Size} /><Instance of="Missing" /></>`
-      )
-    ).rejects.toThrow('component not found')
-    unsubscribe()
-    expect([...graph.variableCollections.values()].map((item) => item.name)).toEqual([
-      'Theme',
-      'Editor'
-    ])
-    expect(theme.modes.map((mode) => mode.name)).toEqual(['Mode 1', 'Dark'])
-    expect(theme.defaultModeId).toBe(theme.modes[0]?.modeId)
-    expect(graph.activeMode.get(theme.id)).toBe(dark)
-    expect([...graph.variables.values()].map((item) => item.name)).toEqual(['Accent'])
-    expect(accent.valuesByMode).toEqual({ [theme.defaultModeId]: 1, [dark]: 2 })
-  })
-
-  test('keeps the values, default, and modes another hand sets while a failed render runs', async () => {
-    const graph = new SceneGraph()
-    const theme = graph.createCollection('Theme')
-    const first = theme.defaultModeId
-    const dark = graph.createMode(theme.id, 'Dark') ?? ''
-    const extra = graph.createMode(theme.id, 'Extra') ?? ''
-    graph.setDefaultMode(theme.id, dark)
-    const accent = graph.createVariable('Accent', 'FLOAT', theme.id)
-    accent.valuesByMode = { [first]: 1, [dark]: 2, [extra]: 3 }
-    let dim = ''
-    const unsubscribe = graph.onNodeEvents({
-      created: () => {
-        if (dim) return
-        dim = theme.modes.find((mode) => mode.name === 'Dim')?.modeId ?? ''
-        graph.setActiveMode(theme.id, dim)
-        graph.setDefaultMode(theme.id, extra)
-        accent.valuesByMode[first] = 9
-      }
-    })
-    await expect(
-      renderJSX(
-        graph,
-        `const theme = defineVars('Theme', { Accent: 5 })
-        const dim = defineMode(theme, 'Dim', { Accent: 6 })
-        return <><Frame mode={dim} w={theme.Accent} /><Instance of="Missing" /></>`
-      )
-    ).rejects.toThrow('component not found')
-    unsubscribe()
-    expect(theme.modes.map((mode) => mode.name)).toEqual(['Extra', 'Mode 1', 'Dark', 'Dim'])
-    expect(theme.defaultModeId).toBe(extra)
-    expect(graph.activeMode.get(theme.id)).toBe(dim)
-    expect(accent.valuesByMode[first]).toBe(9)
-  })
-
-  test('keeps a mode and a variable a failed render created that another hand used meanwhile', async () => {
-    const graph = new SceneGraph()
-    const theme = graph.createCollection('Theme')
-    const editor = graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Editor' })
-    let dim = ''
-    const unsubscribe = graph.onNodeEvents({
-      created: () => {
-        if (dim) return
-        dim = theme.modes.find((mode) => mode.name === 'Dim')?.modeId ?? ''
-        graph.setDefaultMode(theme.id, dim)
-        const size = [...graph.variables.values()].find((item) => item.name === 'Size')
-        graph.bindVariable(editor.id, 'opacity', size?.id ?? '')
-      }
-    })
-    await expect(
-      renderJSX(
-        graph,
-        `const theme = defineVars('Theme', { Size: 1 })
-        const dim = defineMode(theme, 'Dim', { Size: 0.5 })
-        return <><Frame mode={dim} opacity={theme.Size} /><Instance of="Missing" /></>`
-      )
-    ).rejects.toThrow('component not found')
-    unsubscribe()
-    expect(theme.defaultModeId).toBe(dim)
-    expect(theme.modes.map((mode) => mode.name)).toEqual(['Dim', 'Mode 1'])
-    const [size] = [...graph.variables.values()]
-    expect(size?.name).toBe('Size')
-    expect(getNodeOrThrow(graph, editor.id).boundVariables.opacity).toBe(size?.id)
   })
 
   test('unbinds the layers another hand binds to a property a failed render added', async () => {

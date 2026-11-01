@@ -87,14 +87,14 @@ async function renderRootsNow<Artwork>(
     created: [],
     properties: []
   }
+  // Variables apply by name, so a failed render's stay and the next render reuses them.
+  applyVariableDefinitions(graph, tree)
   const undo = undoRender(graph, parentId, context)
-  const undoVariables = applyVariableDefinitions(graph, tree)
   try {
     return await renderInto(services, graph, roots, parentId, options, context)
   } catch (error) {
-    // A failed render leaves nothing behind, roots rendered before the failing one included.
+    // A failed render leaves no layers behind, roots rendered before the failing one included.
     undo()
-    undoVariables()
     throw error
   }
 }
