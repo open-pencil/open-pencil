@@ -46,10 +46,14 @@ export async function cacheRecentFileThumbnail(path: string, bytes: Uint8Array):
  */
 const RECENT_FILE_COVER = { width: 1280, height: 720 }
 
+/** Cover writes still running, by file, so each file's covers are cached in the order drawn. */
+const coverWrites = new Map<string, Promise<void>>()
+
 /**
  * Draws the cover page of the document at `path` for its Home card and caches it under the
- * file's current size and time, so call it once the file is written. False when there is no page
- * to draw.
+ * file's current size and time, so call it once the file is written. The drawing happens at
+ * once; caching waits for the file's earlier covers, so a cover never lands under the key of a
+ * later write. False when there is no page to draw.
  */
 export async function cacheRecentFileCover(
   path: string,
@@ -61,7 +65,14 @@ export async function cacheRecentFileCover(
   const { width, height } = RECENT_FILE_COVER
   const bytes = renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'cover')
   if (!bytes) return false
-  await cacheRecentFileThumbnail(path, bytes)
+  const previous = coverWrites.get(path) ?? Promise.resolve()
+  const write = previous.catch(() => undefined).then(() => cacheRecentFileThumbnail(path, bytes))
+  coverWrites.set(path, write)
+  try {
+    await write
+  } finally {
+    if (coverWrites.get(path) === write) coverWrites.delete(path)
+  }
   return true
 }
 

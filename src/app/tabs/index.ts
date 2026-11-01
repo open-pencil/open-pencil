@@ -357,6 +357,8 @@ async function showImportedGraph(
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
+  // A document without a page has no cover, so it never waits for a renderer.
+  if (!figThumbnailPageId(store.graph.getPages())) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }

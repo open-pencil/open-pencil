@@ -80,12 +80,14 @@ export function createDocumentSourceActions({
 
   /**
    * A write changes the file's time, which keys its Home preview, so the sharp cover is drawn
-   * again for it; without it Home falls back to the small cover inside the file.
+   * again for it; without it Home falls back to the small cover inside the file. An edit made
+   * while `version` was being written is not in the file, so the cover is left to the next save.
    */
-  function recacheRecentCover() {
+  function recacheRecentCover(version: number) {
     const path = getFilePath()
     const renderer = getRenderer()
     if (!path || !renderer || !isFigArchiveName(path)) return
+    if (changes.capture() !== version) return
     void cacheRecentFileCover(path, editor.graph, renderer).catch((error: unknown) => {
       console.warn('[Recent files] Could not cache the preview after saving', error)
     })
@@ -126,7 +128,7 @@ export function createDocumentSourceActions({
       void startWatchingFile()
     },
     onWriteSuccess: (version) => {
-      recacheRecentCover()
+      recacheRecentCover(version)
       return recovery.markProtectedVersion(version)
     },
     onDownloadSuccess: (version) => recovery.markProtectedVersion(version)
