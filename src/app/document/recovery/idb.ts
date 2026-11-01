@@ -65,6 +65,7 @@ export function createIdbRecoveryStore(): RecoveryStore {
       const transaction = db.transaction(['meta', 'fig'], 'readwrite')
       const metadata: RecoverySnapshotMeta = {
         id: input.id,
+        sessionId: input.sessionId,
         documentName: input.documentName || 'Untitled',
         updatedAt: new Date().toISOString(),
         byteLength: input.figBytes.byteLength,
@@ -86,6 +87,14 @@ export function createIdbRecoveryStore(): RecoveryStore {
         transaction.objectStore('fig').delete(id),
         transaction.done
       ])
+    },
+
+    async claim(id: string, sessionId: string) {
+      const db = await database.open()
+      const transaction = db.transaction('meta', 'readwrite')
+      const metadata = await transaction.store.get(id)
+      if (metadata) await transaction.store.put({ ...metadata, sessionId })
+      await transaction.done
     },
 
     async clear() {

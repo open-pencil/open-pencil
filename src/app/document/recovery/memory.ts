@@ -21,6 +21,7 @@ export function createMemoryRecoveryStore(): RecoveryStore {
     async write(input: RecoverySnapshotInput) {
       const metadata: RecoverySnapshotMeta = {
         id: input.id,
+        sessionId: input.sessionId,
         documentName: input.documentName || 'Untitled',
         updatedAt: new Date().toISOString(),
         byteLength: input.figBytes.byteLength,
@@ -34,6 +35,10 @@ export function createMemoryRecoveryStore(): RecoveryStore {
     },
     async remove(id: string) {
       snapshots.delete(id)
+    },
+    async claim(id: string, sessionId: string) {
+      const snapshot = snapshots.get(id)
+      if (snapshot) snapshots.set(id, { ...snapshot, sessionId })
     },
     async clear() {
       snapshots.clear()

@@ -2,8 +2,12 @@ import { i18n } from '#vue/i18n/create'
 
 export const recoveryMessageDefaults = {
   dialogTitle: 'Recover unsaved work',
-  dialogDescription: 'OpenPencil found documents from a previous session.',
+  dialogDescription: 'OpenPencil quit unexpectedly. These documents had unsaved changes.',
+  sectionTitle: 'Unsaved work',
+  sectionDescription:
+    'Unsaved changes kept from documents closed without saving or open when OpenPencil quit. Open one to keep working on it.',
   restoreFailed: 'Could not restore this document.',
+  discardFailed: 'Could not discard this copy.',
   settingsTitle: 'Recovery',
   settingsDescription: 'Control local crash-recovery copies for unsaved documents.',
   preserveUnsavedWork: 'Automatically preserve unsaved work',

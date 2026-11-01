@@ -28,12 +28,14 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { createStoredDocument } from '@/app/storage/workspace/create'
 import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
+import { recoverable } from '@/app/tabs/recovery'
 import { CloudSharedSection, CloudWorkspaceSection } from '@/components/cloud/integration'
 import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import { ofKind, type DocumentKindFilter } from '@/components/home/document/filter'
 import HomeLayout from '@/components/home/HomeLayout.vue'
 import RecentFilesSection from '@/components/home/recent/RecentFilesSection.vue'
+import RecoverySection from '@/components/home/recovery/RecoverySection.vue'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
 import HomeLocationMenu from '@/components/home/sidebar/HomeLocationMenu.vue'
 import HomeSidebar from '@/components/home/sidebar/HomeSidebar.vue'
@@ -164,10 +166,15 @@ const filteredStorageDocuments = computed(() =>
       document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
   )
 )
+const filteredRecoverable = computed(() =>
+  recoverable.value.filter((snapshot) =>
+    snapshot.documentName.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
+  )
+)
 // Recent files counts matches before its kind filter, so its kind control stays to switch kinds;
-// storage has none to count while its first listing loads.
+// storage has none to count while its first listing loads. Unsaved work shows in every place.
 const noSearchMatches = computed(() => {
-  if (!normalizedQuery.value) return false
+  if (!normalizedQuery.value || filteredRecoverable.value.length > 0) return false
   if (places.location.value.kind !== 'storage') return searchedRecentFiles.value.length === 0
   return (
     filteredStorageDocuments.value.length === 0 &&
@@ -239,6 +246,8 @@ function formattedDate(updatedAt: string): string {
     />
 
     <p v-if="openError" class="mb-4 text-xs text-error" role="alert">{{ openError }}</p>
+    <!-- Unsaved work is this device's, so it shows in every place. -->
+    <RecoverySection :view="view" :snapshots="filteredRecoverable" />
     <!-- Nothing until Cloud says which workspace Home opens on. -->
     <template v-if="places.settling.value" />
     <CloudWorkspaceSection

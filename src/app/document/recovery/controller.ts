@@ -1,6 +1,7 @@
 import { watchDebounced } from '@vueuse/core'
 import { watch, type WatchHandle } from 'vue'
 
+import { recoverySessionId } from '@/app/document/recovery/session'
 import { getRecoveryStore } from '@/app/document/recovery/store'
 import type { RecoveryStore } from '@/app/document/recovery/types'
 import { createCanvasId } from '@/app/storage/id'
@@ -51,6 +52,7 @@ export function createDocumentRecovery({
     if (generation !== lifecycleGeneration || hasWritableSource() || !isEnabled()) return
     await store.write({
       id,
+      sessionId: recoverySessionId,
       documentName: state.documentName,
       figBytes: bytes
     })

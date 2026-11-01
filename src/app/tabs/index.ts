@@ -20,6 +20,7 @@ import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { isFigArchiveName } from '@/app/document/io/names'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
+import { recoverySessionId } from '@/app/document/recovery/session'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
@@ -639,6 +640,13 @@ export async function listRecoverySnapshots(): Promise<RecoverySnapshotMeta[]> {
   return getRecoveryStore().list()
 }
 
+/** The recovery copies of the documents open in tabs, which belong to those tabs while open. */
+export function openRecoveryIds(): Set<string> {
+  return new Set(
+    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store.getRecoveryId())
+  )
+}
+
 export async function discardRecoverySnapshot(id: string): Promise<void> {
   await getRecoveryStore().remove(id)
 }
@@ -669,6 +677,8 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
       async () => {
         store.state.documentName = snapshot.documentName
         await store.adoptRecoverySnapshot(id)
+        // The copy is this window's now, so no other window lists it while it is open here.
+        await getRecoveryStore().claim(id, recoverySessionId)
       },
       load
     )

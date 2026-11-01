@@ -28,12 +28,14 @@ describe('document recovery store', () => {
     const store = createIdbRecoveryStore()
     const metadata = await store.write({
       id: 'recovery-1',
+      sessionId: 'session-1',
       documentName: 'Agent draft',
       figBytes: bytes
     })
 
     expect(metadata).toMatchObject({
       id: 'recovery-1',
+      sessionId: 'session-1',
       documentName: 'Agent draft',
       byteLength: 4,
       formatVersion: 1
@@ -51,6 +53,7 @@ describe('document recovery store', () => {
     const buffer = new Uint8Array([9, 9, 1, 2, 3, 9])
     await store.write({
       id: 'recovery-1',
+      sessionId: 'session-1',
       documentName: 'Agent draft',
       figBytes: buffer.subarray(2, 5)
     })
@@ -62,12 +65,27 @@ describe('document recovery store', () => {
   test('memory store owns input and output bytes', async () => {
     const store = createMemoryRecoveryStore()
     const input = new Uint8Array(bytes)
-    await store.write({ id: 'one', documentName: 'Draft', figBytes: input })
+    await store.write({ id: 'one', sessionId: 'session-1', documentName: 'Draft', figBytes: input })
     input[0] = 99
 
     const first = await store.read('one')
     expect(first?.figBytes[0]).toBe(1)
     if (first) first.figBytes[0] = 88
     expect((await store.read('one'))?.figBytes[0]).toBe(1)
+  })
+
+  test.each([
+    ['IndexedDB', createIdbRecoveryStore],
+    ['memory', createMemoryRecoveryStore]
+  ])('a %s store hands a copy to another session and keeps its bytes', async (_, create) => {
+    const store = create()
+    await store.write({ id: 'one', sessionId: 'crashed', documentName: 'Draft', figBytes: bytes })
+    await store.claim('one', 'restoring')
+    await store.claim('gone', 'restoring')
+
+    expect((await store.list()).map(({ id, sessionId }) => [id, sessionId])).toEqual([
+      ['one', 'restoring']
+    ])
+    expect((await store.read('one'))?.figBytes).toEqual(bytes)
   })
 })

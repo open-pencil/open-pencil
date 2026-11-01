@@ -5,37 +5,39 @@ import { useRoute } from 'vue-router'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import type { RecoverySnapshotMeta } from '@/app/document/recovery'
-import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { useDateFormat } from '@/app/i18n/date'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { formatStorageBytes } from '@/app/storage/format-bytes'
-import { discardRecoverySnapshot, listRecoverySnapshots, restoreRecoverySnapshot } from '@/app/tabs'
+import {
+  discardRecoverable,
+  refreshRecoverableSnapshots,
+  restoreRecoverable,
+  type RecoverableSnapshot
+} from '@/app/tabs/recovery'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 const { recovery, common } = useI18n()
 const notifications = useNotificationMessages()
 const route = useRoute()
-const snapshots = ref<RecoverySnapshotMeta[]>([])
+const snapshots = ref<RecoverableSnapshot[]>([])
 const busyId = ref<string | null>(null)
 const open = ref(false)
 
 const dates = useDateFormat()
-const updatedLabel = (snapshot: RecoverySnapshotMeta) =>
-  dates.format(snapshot.updatedAt, 'dateTime')
+const updatedLabel = (snapshot: RecoverableSnapshot) => dates.format(snapshot.updatedAt, 'dateTime')
 
 /** Drops a handled snapshot; the last one stays listed while the dialog animates closed. */
-function settle(snapshot: RecoverySnapshotMeta): void {
+function settle(snapshot: RecoverableSnapshot): void {
   const remaining = snapshots.value.filter((candidate) => candidate.id !== snapshot.id)
   if (remaining.length === 0) open.value = false
   else snapshots.value = remaining
 }
 
-async function restore(snapshot: RecoverySnapshotMeta): Promise<void> {
+async function restore(snapshot: RecoverableSnapshot): Promise<void> {
   busyId.value = snapshot.id
   try {
-    await restoreRecoverySnapshot(snapshot.id)
+    await restoreRecoverable(snapshot.id)
     settle(snapshot)
   } catch (error) {
     toast.error(
@@ -48,20 +50,22 @@ async function restore(snapshot: RecoverySnapshotMeta): Promise<void> {
   }
 }
 
-async function discard(snapshot: RecoverySnapshotMeta): Promise<void> {
+async function discard(snapshot: RecoverableSnapshot): Promise<void> {
   busyId.value = snapshot.id
   try {
-    await discardRecoverySnapshot(snapshot.id)
+    await discardRecoverable(snapshot.id)
     settle(snapshot)
   } finally {
     busyId.value = null
   }
 }
 
+// Only a crash asks at start; copies kept on purpose wait on Home.
 onMounted(async () => {
-  if (route.path !== '/' || !recoveryEnabled.value) return
+  if (route.path !== '/') return
   try {
-    snapshots.value = await listRecoverySnapshots()
+    const recoverable = await refreshRecoverableSnapshots({ reportCrash: true })
+    snapshots.value = recoverable.filter((snapshot) => snapshot.crashed)
     open.value = snapshots.value.length > 0
   } catch (error) {
     console.warn('[Recovery] Failed to list snapshots:', error)

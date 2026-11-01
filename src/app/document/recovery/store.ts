@@ -77,6 +77,7 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
     write: (input: RecoverySnapshotInput): Promise<RecoverySnapshotMeta> =>
       run((store) => store.write(input)),
     remove: removeFromAll,
+    claim: (id: string, sessionId: string) => run((store) => store.claim(id, sessionId)),
     clear: clearAll
   }
 }
