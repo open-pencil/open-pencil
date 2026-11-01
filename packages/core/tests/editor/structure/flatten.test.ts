@@ -495,6 +495,25 @@ describe('flattenSelected', () => {
       ])
       expect(vector?.type).toBe('VECTOR')
       expect([vector?.width, vector?.height]).toEqual([0, 40])
+      expect(vector?.vectorNetwork?.segments).toHaveLength(1)
+    })
+
+    // Its caps meet at the middle and draw a dot, which the kept round-capped stroke still does.
+    test('keeps a round-capped line no longer than its weight', async () => {
+      const vector = await flattened((graph, pageId) => [
+        graph.createNode('LINE', pageId, {
+          x: 50,
+          y: 20,
+          width: 6,
+          height: 0,
+          strokes: [{ ...RED, weight: 8, align: 'CENTER', cap: 'ROUND' }],
+          strokeWeight: 8,
+          strokeCap: 'ROUND'
+        })
+      ])
+      expect(vector?.type).toBe('VECTOR')
+      expect([vector?.x, vector?.y, vector?.width, vector?.height]).toEqual([53, 16, 0, 0])
+      expect(vector?.strokeCap).toBe('ROUND')
     })
 
     test("keeps a line as an open segment, under the top shape's stroke", async () => {

@@ -133,7 +133,10 @@ function topStroke(node: SceneNode): Pick<SceneNode, StrokeFields> {
   }
 }
 
-/** The box around `paths`; a straight line keeps a zero side. */
+/**
+ * The box around `paths`; a straight line keeps a zero side, and a round-capped line no longer
+ * than its weight, which its caps draw as a dot, a zero box.
+ */
 function boundsOf(paths: Path[]): Rect | null {
   if (paths.length === 0) return null
   const all = paths.map((path) => path.getBounds())
@@ -141,7 +144,6 @@ function boundsOf(paths: Path[]): Rect | null {
   const top = Math.min(...all.map((bounds) => bounds[1]))
   const right = Math.max(...all.map((bounds) => bounds[2]))
   const bottom = Math.max(...all.map((bounds) => bounds[3]))
-  if (right <= left && bottom <= top) return null
   return { x: left, y: top, width: right - left, height: bottom - top }
 }
 
