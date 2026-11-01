@@ -108,14 +108,15 @@ export function handleSelectDown(
 
   if (tryStartHandleDrag(cx, cy, sx, sy, e.altKey, editor, fns, tryStartRotation, setDrag)) return
 
-  const hit =
-    tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, editor, fns, e.metaKey || e.ctrlKey)
+  const deep = e.metaKey || e.ctrlKey
+  const hit = tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, editor, fns, deep)
   if (!hit) {
     if (!editor.state.enteredContainerId) startMarquee(cx, cy, editor, setDrag)
     return
   }
 
-  const keepsSelection = !e.shiftKey && pressesSelection(hit, cx, cy, editor)
+  // A deep press selects the deepest layer, as a ⌘-click does in Figma, wherever the selection is.
+  const keepsSelection = !e.shiftKey && !deep && pressesSelection(hit, cx, cy, editor)
   selectOnPress(hit, e.shiftKey, keepsSelection, editor)
 
   if (!resolveEditorProfile(editor.state).edits) {
