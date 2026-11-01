@@ -84,4 +84,21 @@ describe('variable mode tools', () => {
     expect(result).toHaveProperty('error')
     expect(JSON.stringify(result)).toContain(other.id)
   })
+
+  test('modes that share a name are told apart by ID', async () => {
+    const { graph, figma, frame, theme } = themed()
+    const second = graph.createMode(theme.id, 'Dark')
+    if (!second) throw new Error('Expected a second Dark mode')
+    const byName = await setVariableMode.execute(figma, {
+      ids: [frame.id],
+      collection: 'Theme',
+      mode: 'Dark'
+    })
+    expect(byName).toHaveProperty('error')
+    expect(JSON.stringify(byName)).toContain(second)
+    expect(graph.getNode(frame.id)?.variableModes).toEqual({})
+
+    await setVariableMode.execute(figma, { ids: [frame.id], collection: 'Theme', mode: second })
+    expect(graph.getNode(frame.id)?.variableModes).toEqual({ [theme.id]: second })
+  })
 })
