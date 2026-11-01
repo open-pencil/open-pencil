@@ -131,20 +131,20 @@ test('previews several roots in one render, each where its layer was', async () 
     await expect
       .poll(async () => (await getCodePreviewLinks(editor.page, ['Start'])).layers.Start?.width)
       .toBe(width)
-    return getCodePreviewLinks(editor.page, ['Start', 'Done'])
+    return getCodePreviewLinks(editor.page, ['Start', 'Done', 'Card', 'Card copy'])
   }
 
   const first = await preview(200)
   expect(first.layers.Start).toMatchObject({ x: 100, y: 80 })
   expect(first.layers.Done).toMatchObject({ x: 400, y: 80 })
   expect(first.connectorEnds).toEqual([[first.layers.Start.id, first.layers.Done.id]])
-  expect(first.instancesLinked).toBe(true)
+  expect(first.layers['Card copy'].componentId).toBe(first.layers.Card.id)
 
   // The second edit updates those layers in place, so links must follow them.
   const second = await preview(240)
   expect(second.layers.Start.id).toBe(first.layers.Start.id)
   expect(second.connectorEnds).toEqual([[first.layers.Start.id, first.layers.Done.id]])
-  expect(second.instancesLinked).toBe(true)
+  expect(second.layers['Card copy'].componentId).toBe(second.layers.Card.id)
 })
 
 test('Ctrl+Z edits the CodeMirror draft before touching the canvas transaction', async () => {

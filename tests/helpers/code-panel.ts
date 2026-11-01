@@ -61,14 +61,15 @@ export function getCodeNodeSummaries(page: Page): Promise<CodeNodeSummary[]> {
 }
 
 export type CodePreviewLinks = {
-  layers: Record<string, { id: string; x: number; y: number; width: number }>
+  layers: Record<
+    string,
+    { id: string; x: number; y: number; width: number; componentId: string | null }
+  >
   /** The layer ids each connector's ends follow. */
   connectorEnds: Array<[string | null, string | null]>
-  /** Whether every instance's main component is on the canvas. */
-  instancesLinked: boolean
 }
 
-/** The named layers' places, and what connectors and instances point at. */
+/** The named layers' places and main components, and the layers connectors join. */
 export function getCodePreviewLinks(page: Page, names: string[]): Promise<CodePreviewLinks> {
   return page.evaluate((layerNames) => {
     const store = window.openPencil?.getStore?.()
@@ -77,7 +78,9 @@ export function getCodePreviewLinks(page: Page, names: string[]): Promise<CodePr
     const layers: CodePreviewLinks['layers'] = {}
     for (const name of layerNames) {
       const node = nodes.find((candidate) => candidate.name === name)
-      if (node) layers[name] = { id: node.id, x: node.x, y: node.y, width: node.width }
+      if (!node) continue
+      const { id, x, y, width, componentId } = node
+      layers[name] = { id, x, y, width, componentId }
     }
     return {
       layers,
@@ -86,10 +89,7 @@ export function getCodePreviewLinks(page: Page, names: string[]): Promise<CodePr
         .map((node): [string | null, string | null] => [
           node.connectorStart?.nodeId ?? null,
           node.connectorEnd?.nodeId ?? null
-        ]),
-      instancesLinked: nodes
-        .filter((node) => node.type === 'INSTANCE')
-        .every((node) => !!node.componentId && store.graph.getNode(node.componentId) !== undefined)
+        ])
     }
   }, names)
 }

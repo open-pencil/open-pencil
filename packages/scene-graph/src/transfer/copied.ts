@@ -1,4 +1,4 @@
-import { mapValues } from 'es-toolkit'
+import { isEqual, mapValues } from 'es-toolkit'
 
 import type { SceneGraph } from '../graph'
 import { remapInstanceOverrideState } from '../instances/overrides'
@@ -12,26 +12,24 @@ function remappedReferences(
   const changes: Partial<SceneNode> = {}
   if (node.componentId && mapped(node.componentId) !== node.componentId)
     changes.componentId = mapped(node.componentId)
-  const overrides = node.instanceOverrides
-  if (overrides.self.size > 0 || overrides.descendants.size > 0) {
-    changes.instanceOverrides = remapInstanceOverrideState(overrides, {
-      node: mapped,
-      variable: (id) => id
-    })
-  }
-  if (node.componentPropertyDefinitions.some((definition) => definition.type === 'INSTANCE_SWAP')) {
-    changes.componentPropertyDefinitions = node.componentPropertyDefinitions.map((definition) =>
-      definition.type === 'INSTANCE_SWAP' && definition.defaultValue
-        ? { ...definition, defaultValue: mapped(definition.defaultValue) }
-        : definition
-    )
-  }
-  if (Object.keys(node.componentPropertyAssignments).some((id) => swapProperties.has(id))) {
-    changes.componentPropertyAssignments = mapValues(
-      node.componentPropertyAssignments,
-      (value, id) => (swapProperties.has(id) ? mapped(value) : value)
-    )
-  }
+  // Only what a mapping changes: every write is an update collaboration sends.
+  const overrides = remapInstanceOverrideState(node.instanceOverrides, {
+    node: mapped,
+    variable: (id) => id
+  })
+  if (!isEqual(overrides, node.instanceOverrides)) changes.instanceOverrides = overrides
+  const definitions = node.componentPropertyDefinitions.map((definition) =>
+    definition.type === 'INSTANCE_SWAP' && definition.defaultValue
+      ? { ...definition, defaultValue: mapped(definition.defaultValue) }
+      : definition
+  )
+  if (!isEqual(definitions, node.componentPropertyDefinitions))
+    changes.componentPropertyDefinitions = definitions
+  const assignments = mapValues(node.componentPropertyAssignments, (value, id) =>
+    swapProperties.has(id) ? mapped(value) : value
+  )
+  if (!isEqual(assignments, node.componentPropertyAssignments))
+    changes.componentPropertyAssignments = assignments
   for (const field of ['connectorStart', 'connectorEnd'] as const) {
     const endpoint = node[field]
     if (endpoint?.nodeId && mapped(endpoint.nodeId) !== endpoint.nodeId)
