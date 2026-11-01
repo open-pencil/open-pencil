@@ -7,6 +7,7 @@ import {
   type VariableCollection,
   type VariableCollectionMode
 } from '@open-pencil/scene-graph'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { collectionsBoundIn } from '@open-pencil/scene-graph/variables'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
@@ -38,14 +39,15 @@ function shared<T>(values: readonly T[]): MixedValue<T> {
 }
 
 /**
- * The collections a mode can be set for on `targets`, as Figma offers them: those with more than
- * one mode whose variables the targets' layers use, or every such collection for a page.
+ * The collections a mode can be set for on `targets`: every collection with more than one mode for
+ * pages and layers that hold others, such as a frame's theme for what goes in it before anything
+ * binds its variables, and for other layers only those whose variables they use, as Figma does.
  */
 export function variableModeChoices(editor: Editor, targets: SceneNode[]): VariableModeChoice[] {
   if (targets.length === 0) return []
   const { graph } = editor
-  const page = targets.every((target) => target.type === 'CANVAS')
-  const used = page
+  const holders = targets.every((target) => target.type === 'CANVAS' || isLayerContainer(target))
+  const used = holders
     ? null
     : collectionsBoundIn(
         graph,

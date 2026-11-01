@@ -639,10 +639,7 @@
   "behaviourStateField": "Stan {state}",
   "searchComponentProperties": "Szukaj właściwości",
   "noComponentProperties": "Nie znaleziono właściwości",
-  "applyVariableMode": "Zastosuj tryb zmiennych",
   "removeVariableMode": "Usuń tryb kolekcji {collection}",
-  "variableModesInFile": "Utworzone w tym pliku",
-  "variableModesFromLibraries": "Z bibliotek",
   "variableModeAuto": "Automatycznie ({mode})",
   "variableModeAutoMixed": "Automatycznie",
   "variableModeHeading": "Tryb"

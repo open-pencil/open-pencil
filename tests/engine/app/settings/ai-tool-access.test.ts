@@ -38,6 +38,8 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
     'create_variable',
     'set_variable',
     'bind_variable',
+    'set_variable_mode',
+    'get_variable_modes',
     'lint',
     'lint_fix',
     'export_image',

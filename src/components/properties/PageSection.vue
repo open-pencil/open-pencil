@@ -13,7 +13,6 @@ import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
-import VariableModeMenu from './variable-modes/VariableModeMenu.vue'
 import VariableModeRows from './variable-modes/VariableModeRows.vue'
 
 const editor = useEditorStore()
@@ -38,9 +37,6 @@ function updatePageColor(color: Color) {
 
 <template>
   <PanelSection :label="panels.page">
-    <template #actions>
-      <VariableModeMenu :choices="variableModes.choices.value" @set="variableModes.setMode" />
-    </template>
     <PaintField
       :opacity="pageColor.a"
       :opacity-label="panels.opacity"
@@ -63,6 +59,6 @@ function updatePageColor(color: Color) {
         <PaintValue :color="pageColor" :label="panels.pageBackground" @update="updatePageColor" />
       </template>
     </PaintField>
-    <VariableModeRows :choices="variableModes.applied.value" @set="variableModes.setMode" />
+    <VariableModeRows :choices="variableModes.choices.value" @set="variableModes.setMode" />
   </PanelSection>
 </template>

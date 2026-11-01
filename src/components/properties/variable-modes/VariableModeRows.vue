@@ -9,7 +9,10 @@ import type { AppSelectGroup } from '@/components/ui/select/select'
 
 import { AUTO_MODE, autoModeLabel } from './labels'
 
-/** A row for each collection a mode is set for: its name, Auto or a mode, and a remove button. */
+/**
+ * A row for each collection the layers can show a mode of, such as a frame's theme: its name, Auto
+ * (the inherited mode) or a mode, and a button that removes a mode the layers set themselves.
+ */
 const { choices } = defineProps<{ choices: VariableModeChoice[] }>()
 const emit = defineEmits<{ set: [collectionId: string, modeId: string | null] }>()
 
@@ -57,6 +60,8 @@ function select(choice: VariableModeChoice, value: string) {
     />
     <IconButton
       :label="panels.removeVariableMode({ collection: choice.name })"
+      :class="{ invisible: choice.value === null }"
+      :disabled="choice.value === null"
       @click="emit('set', choice.collectionId, null)"
     >
       <icon-lucide-minus class="size-3.5" />

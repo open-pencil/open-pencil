@@ -1,0 +1,2 @@
+- Frames and pages show a row in Appearance for each variable collection with more than one mode, such as Theme, so their theme can be chosen before anything inside binds a variable; what is inside inherits it.
+- The `set_variable_mode` and `get_variable_modes` tools switch layers that already exist to a mode, such as a frame to its Dark theme, and tell which mode a layer shows, over MCP, WebMCP, and the AI chat.

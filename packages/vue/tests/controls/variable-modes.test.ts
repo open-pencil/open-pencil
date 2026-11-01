@@ -37,12 +37,27 @@ function setup() {
 }
 
 describe('variable mode choices', () => {
-  test('offer the collections with more than one mode that the layers use', () => {
+  test('offer a frame every collection with more than one mode, before anything in it binds one', () => {
     const { editor, theme, outer, plain, node } = setup()
     expect(variableModeChoices(editor, [node(outer.id)]).map((c) => c.collectionId)).toEqual([
       theme.id
     ])
-    expect(variableModeChoices(editor, [node(plain.id)])).toEqual([])
+    expect(variableModeChoices(editor, [node(plain.id)]).map((c) => c.collectionId)).toEqual([
+      theme.id
+    ])
+  })
+
+  test('offer a layer that holds no others only the collections it uses', () => {
+    const { editor, graph, theme, page, node } = setup()
+    const surface = theme.variableIds[0] ?? ''
+    const bound = graph.createNode('RECTANGLE', page, {
+      boundVariables: { 'fills/0/color': surface }
+    })
+    const unbound = graph.createNode('RECTANGLE', page)
+    expect(variableModeChoices(editor, [node(bound.id)]).map((c) => c.collectionId)).toEqual([
+      theme.id
+    ])
+    expect(variableModeChoices(editor, [node(unbound.id)])).toEqual([])
   })
 
   test('offer every collection with more than one mode for a page', () => {
