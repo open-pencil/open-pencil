@@ -85,21 +85,24 @@ function localDocumentKind(path: string): DocumentKind {
   return path.toLowerCase().endsWith(`.${DOCUMENT_EXTENSIONS.board}`) ? 'board' : 'design'
 }
 
-/** A recent file's kind: as recorded, or for a file on this device recorded before, by its name. */
-export function recentDocumentKind(document: RecentDocument): DocumentKind | undefined {
+/**
+ * A recent file's kind: as recorded, or for one recorded before kinds were, by its name on this
+ * device and as a design elsewhere, as storage lists files whose kind they do not know.
+ */
+export function recentDocumentKind(document: RecentDocument): DocumentKind {
   if (document.documentKind) return document.documentKind
-  return document.kind === 'local' ? localDocumentKind(document.path) : undefined
+  return document.kind === 'local' ? localDocumentKind(document.path) : 'design'
 }
 
-/** Remembers a file opened or saved on this device. */
-export function rememberRecentFile(path: string): void {
+/** Remembers a file opened or saved on this device, as the kind the opened document is. */
+export function rememberRecentFile(path: string, documentKind: DocumentKind): void {
   remember({
     id: localDocumentId(path),
     kind: 'local',
     path,
     name: fileName(path),
     updatedAt: new Date().toISOString(),
-    documentKind: localDocumentKind(path)
+    documentKind
   })
 }
 

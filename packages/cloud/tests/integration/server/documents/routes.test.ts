@@ -344,6 +344,7 @@ describe('documents shared with a person', () => {
       v.object({
         id: v.string(),
         name: v.string(),
+        kind: v.string(),
         workspaceName: v.string(),
         permission: v.string(),
         sharedBy: v.nullable(v.object({ name: v.string() }))
@@ -351,7 +352,7 @@ describe('documents shared with a person', () => {
     )
   })
 
-  test('lists direct grants outside the person’s workspaces until they are revoked', async () => {
+  test('lists direct grants outside the person’s workspaces, with their kind, until they are revoked', async () => {
     const aliceAccount = crypto.randomUUID()
     const context = await testApp({ ...actor, userId: aliceAccount })
     try {
@@ -372,7 +373,7 @@ describe('documents shared with a person', () => {
       const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Brief' })
+        body: JSON.stringify({ name: 'Brief', kind: 'board' })
       })
       const created = await responseJSON(
         create,
@@ -395,6 +396,7 @@ describe('documents shared with a person', () => {
         {
           id: documentId,
           name: 'Brief',
+          kind: 'board',
           workspaceName: 'Documents',
           permission: 'view',
           sharedBy: { name: 'Alice' }

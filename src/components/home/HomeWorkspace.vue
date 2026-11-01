@@ -153,20 +153,20 @@ const filteredRecentFiles = computed(() =>
     ofKind(recentDocumentKind(document), kindFilter.value)
   )
 )
+// Only Recent files offers the kind filter, so storage lists every kind.
 const filteredStorageDocuments = computed(() =>
   storageDocuments.value.filter(
     (document) =>
-      ofKind(document.kind, kindFilter.value) &&
-      (!normalizedQuery.value ||
-        document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value))
+      !normalizedQuery.value ||
+      document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
   )
 )
-const noSearchMatches = computed(
-  () =>
-    Boolean(normalizedQuery.value) &&
-    filteredRecentFiles.value.length === 0 &&
-    filteredStorageDocuments.value.length === 0
-)
+const noSearchMatches = computed(() => {
+  if (!normalizedQuery.value) return false
+  return places.location.value.kind === 'storage'
+    ? filteredStorageDocuments.value.length === 0
+    : filteredRecentFiles.value.length === 0
+})
 
 async function openRecent(document: RecentDocument): Promise<void> {
   openError.value = null
