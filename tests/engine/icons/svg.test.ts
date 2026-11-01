@@ -202,13 +202,20 @@ describe('scalePathInfos', () => {
     expect(network.segments).toHaveLength(4)
     expect(span(network.vertices.map((vertex) => vertex.x))).toBe(18)
     expect(span(network.vertices.map((vertex) => vertex.y))).toBe(18)
+    // A quarter circle's cubic handles are (4/3) * tan(pi/8) times its radius, about 4.97,
+    // and perpendicular to the radius from the center.
+    const center = { x: 12, y: 12 }
     for (const segment of network.segments) {
-      const curved =
-        segment.tangentStart.x !== 0 ||
-        segment.tangentStart.y !== 0 ||
-        segment.tangentEnd.x !== 0 ||
-        segment.tangentEnd.y !== 0
-      expect(curved).toBe(true)
+      const handles = [
+        { vertex: network.vertices[segment.start], handle: segment.tangentStart },
+        { vertex: network.vertices[segment.end], handle: segment.tangentEnd }
+      ]
+      for (const { vertex, handle } of handles) {
+        const point = expectDefined(vertex, 'vertex')
+        const alongRadius = handle.x * (point.x - center.x) + handle.y * (point.y - center.y)
+        expect(Math.hypot(handle.x, handle.y)).toBeCloseTo(4.97, 1)
+        expect(alongRadius).toBeCloseTo(0, 1)
+      }
     }
   })
 
