@@ -37,10 +37,17 @@ const KIND_BY_TYPE: Partial<Record<NodeType, FigJamToolbarKind>> = {
   GROUP: 'group'
 }
 
+/** Whether a layer shows an image, which FigJam's colour menu leaves alone. */
+export function showsImage(node: Pick<SceneNode, 'fills'>): boolean {
+  return node.fills.some((fill) => fill.type === 'IMAGE' && fill.visible)
+}
+
 function layerKind(node: Pick<SceneNode, 'type' | 'fills'>): FigJamToolbarKind {
-  if (node.fills.some((fill) => fill.type === 'IMAGE' && fill.visible)) return 'image'
-  if (PLAIN_LAYERS.has(node.type)) return 'layer'
-  return KIND_BY_TYPE[node.type] ?? 'mixed'
+  // A section or text keeps its own menus whatever it is filled with.
+  const kind = KIND_BY_TYPE[node.type]
+  if (kind) return kind
+  if (showsImage(node)) return 'image'
+  return PLAIN_LAYERS.has(node.type) ? 'layer' : 'mixed'
 }
 
 /** The toolbar FigJam gives a selection, measured in FigJam; `null` for none selected. */

@@ -90,6 +90,8 @@ describe("FigJam's shape colours", () => {
     expect(hexes(figJamSectionColorFields({ strokes: [] }, 'black').strokes)).toEqual(['#2c2c2c'])
     expect(hexes(figJamSectionColorFields({ strokes: [] }, 'lightBlue').fills)).toEqual(['#f5fbff'])
     expect(figJamSectionColorName({ fills: red.fills ?? [] })).toBe('red')
+    const hidden = { type: 'SOLID' as const, color: figJamColor('blue'), opacity: 1, visible: false }
+    expect(figJamSectionColorName({ fills: [hidden, ...(red.fills ?? [])] })).toBe('red')
   })
 
   test('the colour menu paints text, a line, and other layers as FigJam does', () => {
@@ -112,6 +114,8 @@ describe("FigJam's shape colours", () => {
     const shape = figJamLayerColorFields({ type: 'VECTOR', fills: [filled], strokes: [], styleRuns: [] }, 'blue')
     expect(hexes(shape.fills)).toEqual(['#3dadff'])
     expect(hexes(shape.strokes)).toEqual(['#3dadff'])
+    const clear = figJamLayerColorFields({ type: 'VECTOR', fills: [{ ...filled, opacity: 0 }], strokes: [], styleRuns: [] }, 'blue')
+    expect(clear.fills).toBeUndefined()
   })
 
   test('a layer shows the colour of its first paint the canvas draws', () => {

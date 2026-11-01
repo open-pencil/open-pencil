@@ -15,7 +15,7 @@ import {
   type BooleanOperation
 } from './structure/boolean'
 import {
-  wrapParentId,
+  sharedParentId,
   wrapSelectionInContainer as wrapSelectionInContainerImpl
 } from './structure/container-wrap'
 import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
@@ -87,9 +87,12 @@ export function createStructureActions(ctx: EditorContext) {
     return wrapSelectionInContainer('FRAME', selectedNodes)
   }
 
-  /** Whether layers can go in a new section: siblings on a page or in a section, where sections live. */
+  /**
+   * Whether layers can go in a new section: siblings on a page or in a section, where sections
+   * live. Toolbars ask while they draw, so it reads the parent without claiming anything.
+   */
   function canWrapInSection(selectedNodes: SceneNode[]) {
-    const parentId = wrapParentId(ctx, selectedNodes)
+    const parentId = sharedParentId(ctx, selectedNodes)
     const parent = parentId ? ctx.graph.getNode(parentId) : undefined
     return parent?.type === 'CANVAS' || parent?.type === 'SECTION'
   }

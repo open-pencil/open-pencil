@@ -31,16 +31,27 @@ describe("FigJam's colour menu", () => {
     expect(hex(get(text).fills[0])).not.toBe('#f24822')
   })
 
-  test("colours a group's layers and leaves sticky notes to their own palette", () => {
+  test("colours a group's layers and leaves sticky notes and images to their own", () => {
     const { editor, pageId } = setup()
     const a = editor.createShape('RECTANGLE', 0, 0, 100, 100, pageId)
     const b = editor.createShape('ELLIPSE', 200, 0, 100, 100, pageId)
-    editor.select([a, b])
+    const photo = editor.createShape('RECTANGLE', 400, 0, 100, 100, pageId)
+    const image = {
+      type: 'IMAGE' as const,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      imageHash: 'hash',
+      imageScaleMode: 'FILL' as const,
+      opacity: 1,
+      visible: true
+    }
+    editor.graph.updateNode(photo, { fills: [image] })
+    editor.select([a, b, photo])
     const group = expectDefined(editor.groupSelected())
     const sticky = createSticky(editor.graph, pageId, {})
     const before = hex(sticky.fills[0])
     editor.setFigJamColor([group, sticky.id], 'blue')
     expect(hex(editor.graph.getNode(b)?.fills[0])).toBe('#3dadff')
+    expect(editor.graph.getNode(photo)?.fills).toEqual([image])
     expect(hex(editor.graph.getNode(sticky.id)?.fills[0])).toBe(before)
   })
 

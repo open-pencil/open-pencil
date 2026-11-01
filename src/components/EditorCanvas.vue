@@ -226,7 +226,8 @@ const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
   const origin = store.graph.getAbsolutePosition(node.id)
-  const { zoom, panX, panY } = store.state
+  // The view the reference projects through, so screen-sized offsets match the drawn frame.
+  const { zoom, panX, panY } = overlayView.value
   const kind = canvasLabelEdit.value?.kind
   // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
   const abs = {

@@ -175,7 +175,7 @@ export function proportionalResizeRect(
   )
   const roundsToPixels =
     state.snappingPreferences.pixelGrid && resolveEditorProfile(state).pixelGrid
-  return constrainToAspectRatio(
+  const fitted = constrainToAspectRatio(
     handle,
     origRect,
     snapped.width,
@@ -184,4 +184,7 @@ export function proportionalResizeRect(
     driver,
     roundsToPixels ? (size) => Math.max(1, Math.round(size)) : undefined
   )
+  // The smallest box the ratio allows moved the snapped side off its guide.
+  if (fitted[driver] !== snapped[driver]) state.snapGuides = []
+  return fitted
 }

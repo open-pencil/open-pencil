@@ -11,6 +11,7 @@ import {
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
+import { showsImage } from '#core/editor/figjam/toolbar'
 import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
 
@@ -54,8 +55,9 @@ export function createFigJamColorActions(ctx: EditorContext, nodes: NodeActions)
         nodes.updateNode(layer.id, figJamSectionColorFields(layer, name))
         return
       }
+      // An image in a group keeps its picture, as a lone image has no colour menu.
       for (const target of painted(layer)) {
-        if (!isGeneratedFrame(target))
+        if (!isGeneratedFrame(target) && !showsImage(target))
           nodes.updateNode(target.id, figJamLayerColorFields(target, name))
       }
     })

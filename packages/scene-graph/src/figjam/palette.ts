@@ -375,9 +375,14 @@ export function figJamSectionColorFields(
   }
 }
 
+/** The first of `paints` the canvas draws: a hidden or fully transparent one shows nothing. */
+function drawnPaint<P extends Fill>(paints: readonly P[]): P | undefined {
+  return paints.find((paint) => paint.visible && paint.opacity > 0)
+}
+
 /** The palette colour a section is painted, by its tint. */
 export function figJamSectionColorName(section: Pick<SceneNode, 'fills'>): FigJamColorName | null {
-  const fill = section.fills.at(0)?.color
+  const fill = drawnPaint(section.fills)?.color
   return (
     FIGJAM_COLOR_NAMES.find((name) => sameColor(fill, parseColor(PALETTE[name].sectionFill))) ??
     null
@@ -390,7 +395,7 @@ export function figJamSectionColorName(section: Pick<SceneNode, 'fills'>): FigJa
  */
 function colorsStroke(node: Pick<SceneNode, 'type' | 'fills'>): boolean {
   if (node.type === 'LINE') return true
-  return node.type === 'VECTOR' && !node.fills.some((fill) => fill.visible)
+  return node.type === 'VECTOR' && !drawnPaint(node.fills)
 }
 
 /**
@@ -420,7 +425,6 @@ export function figJamLayerColorFields(
 export function figJamLayerColorName(
   node: Pick<SceneNode, 'type' | 'fills' | 'strokes'>
 ): FigJamColorName | null {
-  // The first paint the canvas draws: a hidden or fully transparent one shows no colour.
   const paints: Fill[] = colorsStroke(node) ? node.strokes : node.fills
-  return figJamColorName(paints.find((paint) => paint.visible && paint.opacity > 0)?.color)
+  return figJamColorName(drawnPaint(paints)?.color)
 }

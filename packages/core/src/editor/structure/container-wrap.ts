@@ -33,16 +33,23 @@ const NUMBERED_WHEN_WRAPPED: ReadonlySet<WrapContainerType> = new Set([
 /** The room FigJam leaves around layers it wraps in a new section, in canvas units. */
 const SECTION_WRAP_PADDING = 48
 
-/**
- * The parent these layers share when a new container may go there, or null when they are not
- * siblings or sit in the locked part of an instance.
- */
-export function wrapParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
+/** The parent these layers share, or null when they are not siblings; it changes nothing. */
+export function sharedParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
   const first = nodes.at(0)
   if (!first) return null
   const parentId = first.parentId ?? ctx.state.currentPageId
-  if (nodes.some((node) => (node.parentId ?? ctx.state.currentPageId) !== parentId)) return null
-  return prepareSlotEdits(ctx, [parentId]) ? parentId : null
+  return nodes.every((node) => (node.parentId ?? ctx.state.currentPageId) === parentId)
+    ? parentId
+    : null
+}
+
+/**
+ * The parent these layers share when a new container may go there, or null when they are not
+ * siblings or sit in the locked part of an instance; an instance slot there is claimed for edits.
+ */
+export function wrapParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
+  const parentId = sharedParentId(ctx, nodes)
+  return parentId && prepareSlotEdits(ctx, [parentId]) ? parentId : null
 }
 
 /**
