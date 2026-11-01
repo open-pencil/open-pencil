@@ -163,6 +163,8 @@ export class SkiaRenderer {
   readonly liveImages = new Map<string, { image: Image; surface: Surface }>()
   viewportImageRendering = false
   imageMemoryGraph: SceneGraph | null = null
+  /** The graph whose layers the paths and pictures cached by layer id were drawn from. */
+  layerCacheGraph: SceneGraph | null = null
   imageMemoryPage: string | null = null
   onImagePreviewReady: ((hash: string) => void) | null = null
   readonly imagePreviews = new ImagePreviewCache((hash) => {
@@ -591,6 +593,11 @@ export class SkiaRenderer {
     RendererState.invalidateAllPictures(this)
   }
 
+  /** Keeps what is cached by layer id only while `graph`'s layers are drawn; see `bindLayerCaches`. */
+  bindLayerCaches(graph: SceneGraph): void {
+    RendererState.bindLayerCaches(this, graph)
+  }
+
   /**
    * Draws `source` wherever the image `hash` is painted, until it is set to null, and redraws
    * `nodeIds`, the layers that paint it. Frames of the same size reuse one texture. Returns
@@ -640,6 +647,7 @@ export class SkiaRenderer {
   forgetNode(nodeId: string): void {
     this.pendingFontNodes.delete(nodeId)
     this.textPictureGenerations.delete(nodeId)
+    this.nodePaths.invalidate(nodeId)
     this.invalidateNodePicture(nodeId)
   }
 

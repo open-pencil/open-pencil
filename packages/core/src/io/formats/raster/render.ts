@@ -307,6 +307,8 @@ export function renderNodesToImage(
   prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
+  // The copy shares its layers' geometry with `graph`, so it draws with what `graph` cached.
+  renderer.bindLayerCaches(graph)
   return renderToSurface(
     ck,
     renderer,
@@ -374,6 +376,7 @@ export function renderThumbnail(
   // The page's own background, which the editor's page colour matches only while it is open.
   const background = getPageColor(graph.getNode(pageId))
 
+  renderer.bindLayerCaches(graph)
   return renderToSurface(ck, renderer, graph, pageId, pixelW, pixelH, 'PNG', 100, (canvas) => {
     canvas.clear(ck.Color4f(background.r, background.g, background.b, 1))
     canvas.translate(-bounds.minX * scale, -bounds.minY * scale)
@@ -393,6 +396,7 @@ export function drawRegionToImage(
   const pixelW = Math.max(1, Math.round((bounds.maxX - bounds.minX) * scale))
   const pixelH = Math.max(1, Math.round((bounds.maxY - bounds.minY) * scale))
   if (!graph.getNode(pageId) || !Number.isFinite(pixelW * pixelH)) return null
+  renderer.bindLayerCaches(graph)
   return renderToSurface(ck, renderer, graph, pageId, pixelW, pixelH, 'PNG', 100, (canvas) => {
     canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
     canvas.scale(scale, scale)

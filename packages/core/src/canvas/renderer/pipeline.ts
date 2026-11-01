@@ -245,6 +245,7 @@ export function render(
     panY: r.panY,
     zoom: r.zoom
   })
+  r.bindLayerCaches(graph)
   r.syncFontGeneration()
   r.flushDecodedPreviews(graph)
   r.nodePaths.releaseUncached()

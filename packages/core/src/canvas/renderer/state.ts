@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { changesShaping } from '#core/canvas/text/paragraph/inputs'
@@ -33,6 +33,18 @@ export function invalidateAllPictures(r: SkiaRenderer): void {
   r.nodePictureCacheGenerations.clear()
   r.effectRasterCache.clear()
   clearSubtreePictureCache(r)
+}
+
+/**
+ * Ties the renderer's caches keyed by layer id to `graph`. Another graph can give the same ids to
+ * other layers, as a reopened or replaced document and a library's copy of a component do, so
+ * drawing a different graph drops every path and picture the last one left.
+ */
+export function bindLayerCaches(r: SkiaRenderer, graph: SceneGraph): void {
+  if (r.layerCacheGraph === graph) return
+  r.layerCacheGraph = graph
+  r.nodePaths.clear()
+  invalidateAllPictures(r)
 }
 
 export function invalidateNodePicture(
