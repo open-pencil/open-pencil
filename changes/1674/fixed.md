@@ -1,1 +1,0 @@
-- Text that design JSX sets in a font that is still loading is laid out in that font once it loads, instead of keeping the fallback's width while it draws wider.

@@ -1,36 +1,7 @@
-import { uniqBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
-
 import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
-import type { FigmaAPI } from '#core/figma-api'
-import { layoutAuthoredNodes } from '#core/layout'
-import { collectNodeFontFaces } from '#core/text/requirements/collect'
 import { toolNumber, defineTool } from '#core/tools/schema'
-
-/** The fonts the text in a layer and its descendants uses. */
-function subtreeFonts(graph: SceneGraph, id: string): Array<{ family: string; style: string }> {
-  const node = graph.getNode(id)
-  if (!node) return []
-  const own = node.type === 'TEXT' ? collectNodeFontFaces(node) : []
-  return [...own, ...node.childIds.flatMap((child) => subtreeFonts(graph, child))]
-}
-
-/**
- * Lays rendered layers out again in the fonts their text names. JSX names its fonts only as it
- * renders, so text was first measured in whatever face was loaded; a font that cannot load keeps
- * that face, as a file's missing font does.
- */
-async function layoutInTheirFonts(figma: FigmaAPI, rootIds: string[]) {
-  const fonts = uniqBy(
-    rootIds.flatMap((id) => subtreeFonts(figma.graph, id)),
-    (font) => `${font.family}\u0000${font.style}`
-  )
-  if (fonts.length === 0) return
-  await Promise.all(fonts.map((font) => figma.loadFontAsync(font).catch(() => undefined)))
-  layoutAuthoredNodes(figma.graph, rootIds)
-}
 
 export const render = defineTool({
   name: 'render',
@@ -66,10 +37,6 @@ export const render = defineTool({
 
     const placement = resolveRenderPlacement(figma.graph, args, figma.currentPageId)
     const results = await renderJSX(figma.graph, args.jsx, placement)
-    await layoutInTheirFonts(
-      figma,
-      results.map((node) => node.id)
-    )
     finishRenderPlacement(figma.graph, results, placement)
     const result = results[0]
 
