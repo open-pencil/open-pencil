@@ -6,7 +6,7 @@ Confronto tra le funzioni di Figma Design e lo stato attuale di OpenPencil.
 ✅ Supportato · 🟡 Parziale · 🔲 Non implementato
 :::
 
-**Copertura:** 128 funzioni su 156 considerate — 111 complete, 17 parziali e 28 in attesa. Aggiornato: 2026-10-27.
+**Copertura:** 128 funzioni su 156 considerate — 112 complete, 16 parziali e 28 in attesa. Aggiornato: 2026-10-27.
 
 ## Interfaccia e navigazione
 
@@ -22,7 +22,7 @@ Reti vettoriali, Penna, Matita, operazioni booleane, appiattimento e conversione
 
 ## Testo e tipografia
 
-Modifica diretta, rendering CanvasKit Paragraph, font di sistema, famiglia, dimensione, interlinea, allineamento orizzontale e verticale, modalità di ridimensionamento, elenchi, emoji, CJK, RTL e font di icone funzionano. Il testo su tracciato è parziale, perché per modificarne i caratteri servono i contorni del font in locale. Lo sono anche stili di testo, link, funzioni OpenType e font variabili, a cui mancano soprattutto i controlli nel pannello.
+Modifica diretta, rendering CanvasKit Paragraph, font di sistema, famiglia, dimensione, interlinea, allineamento orizzontale e verticale, modalità di ridimensionamento, elenchi, emoji, CJK, RTL e font di icone funzionano. Funzionano anche i font variabili, con gli assi regolabili nel pannello. Il testo su tracciato è parziale, perché per modificarne i caratteri servono i contorni del font in locale. Lo sono anche stili di testo, link e funzioni OpenType, a cui mancano soprattutto i controlli nel pannello.
 
 ## Colori, sfumature e immagini
 

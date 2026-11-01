@@ -19,7 +19,7 @@ export function createPenDrag(startX: number, startY: number): DragState {
     spaceStartY: 0,
     knotStartX: startX,
     knotStartY: startY
-  } as DragState
+  }
 }
 
 function getPenAnchor(penState: PenState): Vector {

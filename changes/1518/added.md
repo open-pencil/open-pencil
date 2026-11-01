@@ -1,0 +1,3 @@
+- Design JSX defines variables: `defineVars` adds a collection to the file's variables table, `defineMode` adds a mode to it, and a variable used as a value makes an alias. Running the same JSX again updates them instead of adding copies, and `designVar(collection, name)` names a variable that several collections share.
+- Design JSX pins a layer's variable modes with `mode`, as the Appearance panel does, and exports them; `<Icon color>` takes a variable.
+- Design JSX exposes a nested instance's properties with `exposed`, and an outer instance sets that instance's variant and properties by its layer name, as in `Action={{ Label: 'Save' }}`.

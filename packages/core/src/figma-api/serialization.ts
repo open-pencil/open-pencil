@@ -35,6 +35,19 @@ function appendTextProps(obj: Record<string, unknown>, n: SceneNode): void {
   if (n.maxLines != null) obj.maxLines = n.maxLines
 }
 
+function appendComponentProperties(obj: Record<string, unknown>, n: SceneNode): void {
+  if (
+    (n.type === 'COMPONENT' || n.type === 'COMPONENT_SET') &&
+    n.componentPropertyDefinitions.length > 0
+  ) {
+    obj.componentPropertyDefinitions = n.componentPropertyDefinitions
+  }
+  if (n.componentPropertyReferences.length > 0)
+    obj.componentPropertyReferences = n.componentPropertyReferences
+  if (n.type === 'INSTANCE' && Object.keys(n.componentPropertyAssignments).length > 0)
+    obj.componentPropertyAssignments = n.componentPropertyAssignments
+}
+
 export function nodeProxyToJSON(
   graph: SceneGraph,
   api: NodeProxyHost,
@@ -61,6 +74,7 @@ export function nodeProxyToJSON(
   if (n.cornerRadius > 0) obj.cornerRadius = n.cornerRadius
   if (!n.visible) obj.visible = false
   if (n.text) obj.characters = n.text
+  appendComponentProperties(obj, n)
   if (n.type === 'TEXT') {
     appendTextProps(obj, n)
   }

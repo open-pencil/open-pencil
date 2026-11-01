@@ -52,16 +52,16 @@ function lineColor(page: Color): Color {
 /** Figma's pixel grid: a line at every document pixel once zoomed in far enough to tell them apart. */
 export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
   if (!pixelGridVisible(r.zoom, r.dpr)) return
-  if (!r.pixelGridEffect) {
+  if (!r.shaders.pixelGridEffect) {
     let error = ''
-    r.pixelGridEffect = r.ck.RuntimeEffect.Make(PIXEL_GRID_SHADER, (message) => {
+    r.shaders.pixelGridEffect = r.ck.RuntimeEffect.Make(PIXEL_GRID_SHADER, (message) => {
       error = message
     })
-    if (!r.pixelGridEffect) throw new Error(`Cannot compile the pixel grid: ${error}`)
+    if (!r.shaders.pixelGridEffect) throw new Error(`Cannot compile the pixel grid: ${error}`)
   }
   const color = lineColor(r.pageColor)
   const step = r.zoom * r.dpr
-  const shader = r.pixelGridEffect.makeShader([
+  const uniforms = [
     r.panX * r.dpr,
     r.panY * r.dpr,
     step,
@@ -71,11 +71,16 @@ export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
     color.b,
     color.a,
     r.dpr
-  ])
+  ]
+  // The shader holds only these uniforms, so a hover repaint at the same view reuses it.
+  const key = uniforms.join(',')
+  if (r.shaders.pixelGrid?.key !== key) {
+    r.shaders.pixelGrid?.shader.delete()
+    r.shaders.pixelGrid = { key, shader: r.shaders.pixelGridEffect.makeShader(uniforms) }
+  }
   // Skia scales a shader by the paint's alpha, which earlier overlays may have left translucent.
   r.auxFill.setAlphaf(1)
-  r.auxFill.setShader(shader)
+  r.auxFill.setShader(r.shaders.pixelGrid.shader)
   canvas.drawRect(r.ck.LTRBRect(0, 0, r.viewportWidth, r.viewportHeight), r.auxFill)
   r.auxFill.setShader(null)
-  shader.delete()
 }

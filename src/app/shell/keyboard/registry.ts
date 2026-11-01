@@ -1,7 +1,10 @@
 import { useEventListener } from '@vueuse/core'
+import { uniq } from 'es-toolkit'
 import { createKeybindingsHandler } from 'tinykeys'
 import type { KeyBindingMap } from 'tinykeys'
 
+import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile } from '@open-pencil/core'
+import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
 import { editorCommandMetadata, type EditorCommandId } from '@open-pencil/vue/editor/commands'
 
 import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
@@ -22,6 +25,7 @@ import type {
   KeyboardShortcutRunOptions
 } from '@/app/shell/keyboard/types'
 import { appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'
+import { showsDocument } from '@/app/tabs'
 
 type ShortcutAction = (options: KeyboardShortcutRunOptions) => void
 
@@ -31,8 +35,8 @@ type ShortcutDefinition = {
   run: ShortcutAction
   shouldPreventDefault?: (event: KeyboardEvent) => boolean
   global?: boolean
-  /** Whether the shortcut also works while a canvas previews. */
-  preview?: boolean
+  /** Whether the shortcut switches or leaves the canvas's view, so it runs in every view. */
+  view?: boolean
 }
 
 function commandShortcut(
@@ -114,6 +118,16 @@ function hasOpenDismissableLayer(allowPickers = false) {
 }
 
 /**
+ * While text is edited its input handles the keys, undo and redo among them. Focus can leave it
+ * for a panel field while the edit stays open, as after a typed font size; undo and redo then
+ * run on the editor's history, which records the text edit's steps, rather than go nowhere.
+ */
+function editingTextHandles(options: KeyboardShortcutOptions, history: boolean) {
+  if (!options.store.state.editingTextId) return false
+  return !history || isCanvasTextInput(document.activeElement)
+}
+
+/**
  * Other shortcuts wait for open popovers to close, but undo and redo work while a fill, stroke,
  * or colour picker is open, as in Figma; a text field in it keeps its own undo.
  */
@@ -128,7 +142,7 @@ function shouldIgnoreShortcut(
     originatedInOverlay(event, history) ||
     isEditing(event) ||
     options.inputFocused.value ||
-    !!options.store.state.editingTextId ||
+    editingTextHandles(options, history) ||
     !!options.store.state.numberFieldFocused
   )
 }
@@ -141,10 +155,16 @@ function bindShortcut(
   for (const key of Array.isArray(keys) ? keys : [keys]) bindings[key] = run
 }
 
+/**
+ * Binds every key a design or a board picks a tool with; which tool a key picks, if any, comes
+ * from the editor profile's key map when it is pressed.
+ */
 function bindToolShortcuts(bindings: KeyBindingMap, options: KeyboardShortcutRunOptions) {
-  for (const [code, tool] of Object.entries(TOOL_SHORTCUTS)) {
-    if (!tool) continue
+  const codes = uniq([...Object.keys(TOOL_SHORTCUTS), ...Object.keys(BOARD_TOOL_SHORTCUTS)])
+  for (const code of codes) {
     bindings[code] = (event: KeyboardEvent) => {
+      const tool = resolveEditorProfile(options.store.state).toolKeys[code]
+      if (!tool) return
       event.preventDefault()
       options.spaceTool.resetToolBeforeSpace()
       options.store.setTool(tool)
@@ -169,7 +189,10 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       'selection.toggleVisibility',
       'selection.toggleLock',
       'selection.flipHorizontal',
-      'selection.flipVertical'
+      'selection.flipVertical',
+      'selection.tidyUp',
+      'selection.distributeHorizontal',
+      'selection.distributeVertical'
     ),
     {
       id: 'copy-properties',
@@ -189,7 +212,9 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     {
       id: 'save-as',
       keys: appMenuTinykeysShortcut('save-as') ?? '$mod+Shift+KeyS',
-      run: ({ store }) => void store.saveFigFileAs()
+      run: ({ store }) => {
+        if (showsDocument()) void store.saveFigFileAs()
+      }
     },
     {
       id: 'save-version',
@@ -203,7 +228,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       id: 'toggle-preview',
       keys: appMenuTinykeysShortcut('toggle-preview') ?? '$mod+Alt+Enter',
       run: ({ actions }) => actions.togglePlay(),
-      preview: true
+      view: true
     },
     {
       id: 'toggle-rulers',
@@ -285,7 +310,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('new') ?? '$mod+KeyN',
       run: ({ createTab }) => createTab()
     },
-    { id: 'show-home', keys: '$mod+KeyT', run: ({ showHome }) => showHome() },
+    {
+      id: 'new-tab',
+      keys: appMenuTinykeysShortcut('new-tab') ?? '$mod+KeyT',
+      run: ({ openNewFileTab }) => openNewFileTab()
+    },
     {
       id: 'next-tab',
       keys: 'Control+Tab',
@@ -320,7 +349,9 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     {
       id: 'save',
       keys: appMenuTinykeysShortcut('save') ?? '$mod+KeyS',
-      run: ({ store }) => void store.saveFigFile()
+      run: ({ store }) => {
+        if (showsDocument()) void store.saveFigFile()
+      }
     },
     {
       id: 'open-file',
@@ -347,7 +378,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       id: 'escape',
       keys: 'Escape',
       run: ({ actions }) => actions.escapeOrDeselect(),
-      preview: true
+      view: true
     },
     siblingShortcut('selection.selectNextSibling'),
     siblingShortcut('selection.selectPreviousSibling'),
@@ -356,9 +387,9 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
 
   const bindings: KeyBindingMap = {}
   const globalBindings: KeyBindingMap = {}
-  /** Keys that keep working while a canvas previews; everything else would edit the design. */
-  const previewKeys = new Set(
-    shortcuts.filter((shortcut) => shortcut.preview).flatMap((shortcut) => [shortcut.keys].flat())
+  /** Keys that switch or leave the canvas's view, which every view keeps. */
+  const viewKeys = new Set(
+    shortcuts.filter((shortcut) => shortcut.view).flatMap((shortcut) => [shortcut.keys].flat())
   )
   const historyKeys = new Set(
     shortcuts
@@ -380,7 +411,8 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
         keys,
         (event: KeyboardEvent) => {
           if (shouldIgnoreShortcut(event, options, historyKeys.has(keys))) return
-          if (options.store.state.play && !previewKeys.has(keys)) return
+          const { shortcuts: allowed } = resolveEditorProfile(options.store.state)
+          if (allowed === 'view' && !viewKeys.has(keys)) return
           handler(event)
         }
       ])

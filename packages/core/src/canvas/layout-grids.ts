@@ -107,11 +107,15 @@ function drawSquareGrid(
   }
 }
 
+const GRID_CONTAINER_TYPES = new Set(['FRAME', 'COMPONENT', 'INSTANCE', 'COMPONENT_SET', 'SECTION'])
+
 export function drawLayoutGrids(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
+  // Only containers carry grids; every other layer skips the raw field read.
+  if (!GRID_CONTAINER_TYPES.has(node.type)) return
   for (const rawGrid of rawLayoutGrids(node)) {
     const grid = gridGeometry(rawGrid)
     if (!grid) continue
-    r.auxFill.setColor(r.ck.Color4f(grid.color.r, grid.color.g, grid.color.b, grid.color.a))
+    r.auxFill.setColorComponents(grid.color.r, grid.color.g, grid.color.b, grid.color.a)
     if (grid.pattern === 'GRID') drawSquareGrid(r, canvas, node, grid)
     else if (grid.pattern === 'ROWS') drawRowGrid(r, canvas, node, grid)
     else drawColumnGrid(r, canvas, node, grid)

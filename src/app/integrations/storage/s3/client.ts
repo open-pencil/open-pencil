@@ -1,5 +1,10 @@
 import type { S3Client } from '@aws-sdk/client-s3'
 
+import {
+  CloudCORSError,
+  formatBrowserCORSHelpMessage,
+  isLikelyCORSOrNetworkError
+} from '@/app/integrations/storage/s3/cors'
 import { asFetch, storageFetch } from '@/app/integrations/storage/s3/fetch'
 import type * as S3SDK from '@/app/integrations/storage/s3/sdk'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
@@ -81,8 +86,6 @@ async function send<Output>(
       )
     }
     // Re-export as a typed error so UI can detect CORS/network blocks.
-    const { CloudCORSError, isLikelyCORSOrNetworkError, formatBrowserCORSHelpMessage } =
-      await import('@/app/integrations/storage/s3/cors')
     if (isLikelyCORSOrNetworkError(error)) {
       throw new CloudCORSError(formatBrowserCORSHelpMessage())
     }

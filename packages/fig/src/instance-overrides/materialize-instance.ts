@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
+import type { Paint } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 import {
@@ -16,6 +16,7 @@ import {
   occurrenceAssignmentScales,
   occurrenceScale
 } from './bindings/variables'
+import { isClearedStyle } from './cleared-style'
 import { OVERRIDE_FIELDS, type OverrideField, type RawOverrideField } from './fields'
 import { resolveOccurrencePath } from './interpret'
 import type { InstanceOccurrence } from './occurrence/types'
@@ -254,7 +255,9 @@ export function materializeInstance(
 function claimApplies(field: OverrideField, value: unknown, target: SceneNode): boolean {
   if (field.kind === 'text')
     return typeof value === 'object' && value !== null && 'characters' in value
-  if (field.kind === 'text-style') return Boolean(target.textStyleId)
+  // A text style claim names the style the layer took, or clears the component's; one that
+  // resolved to neither, such as a library style missing here, is not claimed.
+  if (field.kind === 'text-style') return Boolean(target.textStyleId) || isClearedStyle(value)
   return true
 }
 
@@ -310,7 +313,7 @@ function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>)
         if (field.kind === 'paint')
           recordPaintBindingClaims(owner, target, field.scene[0], claim.properties[raw])
       }
-      recordVariableBindingClaims(owner, target, claim.properties as NodeChange)
+      recordVariableBindingClaims(owner, target, claim.properties)
     }
   }
 }

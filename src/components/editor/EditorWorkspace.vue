@@ -3,6 +3,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -23,7 +24,7 @@ import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import StatusesDialog from '@/components/statuses/StatusesDialog.vue'
-import Toolbar from '@/components/toolbar/Toolbar.vue'
+import EditorToolbar from '@/components/toolbar/EditorToolbar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import VariablesDialog from '@/components/variables/VariablesDialog.vue'
 import splitterTheme from '@/theme/splitter'
@@ -40,10 +41,31 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
-const initialEditorLayout = loadEditorLayout()
+/**
+ * The layout the panels have. The splitter opens with it, also when showing the panels again
+ * remounts it, so its opening report matches and only a resize differs.
+ */
+let editorLayout = loadEditorLayout()
+/** How far apart two sizes, in percent, still count as one; the splitter rounds sizes finer. */
+const LAYOUT_TOLERANCE = 1e-6
+/**
+ * Saves a layout the panels were resized to. The splitter also reports the layout it opens with,
+ * which must not be saved: the right panel's default is a fixed width, and saved as a share of
+ * this window it would open wider on a wider one.
+ */
+function saveResizedLayout(layout: number[]) {
+  if (layout.every((size, index) => Math.abs(size - editorLayout[index]) < LAYOUT_TOLERANCE)) return
+  editorLayout = layout
+  saveEditorLayout(layout)
+}
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
-/** One canvas previewing takes the whole window, in the canvas-only layout; split view keeps panels. */
-const playingAlone = computed(() => store.state.play !== null && store.visiblePaneCount.value <= 1)
+/**
+ * A canvas whose view hides the panels takes the whole window when it is the only one shown, in the
+ * canvas-only layout; split view keeps the panels for the other panes.
+ */
+const canvasAlone = computed(
+  () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
+)
 const { editor } = useI18n()
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
@@ -55,15 +77,15 @@ const { pending: roomPending } = useRoomActions()
   </div>
 
   <SplitterGroup
-    v-else-if="!isMobile && showChrome && store.state.showUI && !playingAlone"
+    v-else-if="!isMobile && showChrome && store.state.showUI && !canvasAlone"
     :key="tab.id"
     direction="horizontal"
     class="flex-1 overflow-hidden"
-    @layout="saveEditorLayout"
+    @layout="saveResizedLayout"
   >
     <SplitterPanel
       id="layers"
-      :default-size="initialEditorLayout[0]"
+      :default-size="editorLayout[0]"
       :min-size="10"
       :max-size="30"
       class="flex"
@@ -76,19 +98,22 @@ const { pending: roomPending } = useRoomActions()
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
-    <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
+    <SplitterPanel id="canvas" :default-size="editorLayout[1]" :min-size="30" class="flex">
       <div class="relative flex min-w-0 flex-1">
         <CanvasSplitRoot />
         <ActiveRoomOverlay />
-        <Toolbar />
+        <EditorToolbar />
       </div>
     </SplitterPanel>
-    <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
+    <SplitterResizeHandle
+      data-test-id="right-splitter-handle"
+      :class="horizontalSplitterStyles.handle()"
+    >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
     <SplitterPanel
       id="properties"
-      :default-size="initialEditorLayout[2]"
+      :default-size="editorLayout[2]"
       :min-size="10"
       :max-size="30"
       class="flex flex-col"
@@ -120,7 +145,7 @@ const { pending: roomPending } = useRoomActions()
       <EditorCanvas />
       <ActiveRoomOverlay />
       <MobileHud />
-      <Toolbar />
+      <EditorToolbar />
     </div>
     <MobileDrawer />
   </div>
@@ -130,7 +155,7 @@ const { pending: roomPending } = useRoomActions()
       <EditorCanvas />
       <ActiveRoomOverlay />
       <WorkspacePill
-        v-if="!isMobile && playingAlone"
+        v-if="!isMobile && canvasAlone"
         mode="preview"
         :document-name="store.state.documentName"
         :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"

@@ -7,15 +7,7 @@ import { parsePhotoRequests } from './stock-photo/requests'
 
 export { applyPhoto, type PhotoRequest, type PhotoResult } from './stock-photo/apply'
 export { parsePhotoRequests } from './stock-photo/requests'
-export {
-  getStockPhotoProviders,
-  registerStockPhotoProvider,
-  setActiveStockPhotoProvider,
-  setPexelsAPIKey,
-  setUnsplashAccessKey,
-  type StockPhotoProvider,
-  type StockPhotoResult
-} from './stock-photo/providers'
+export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo/providers'
 
 export const stockPhoto = defineTool({
   name: 'stock_photo',
@@ -38,7 +30,7 @@ export const stockPhoto = defineTool({
     const provider = getActiveProvider()
     if (!provider) {
       return {
-        error: `No stock photo provider configured. Ask the user to add an API key in AI chat settings. Available providers: Pexels, Unsplash.`
+        error: `No stock photo service has a key. Ask the user to add a Pexels or Unsplash key: Insert photo in the toolbar asks for one.`
       }
     }
 

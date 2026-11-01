@@ -6,7 +6,7 @@ Porównanie funkcji Figma Design z obecnymi możliwościami OpenPencil.
 ✅ Obsługiwane — działa w pełnym zakresie · 🟡 Częściowo — podstawowe działanie istnieje, ale brakuje części funkcji · 🔲 Brak
 :::
 
-**Pokrycie:** uwzględniono 128 ze 156 funkcji Figmy — 111 ✅ obsługiwanych, 17 🟡 częściowych i 28 🔲 niezaimplementowanych. Aktualizacja: 2026-10-27.
+**Pokrycie:** uwzględniono 128 ze 156 funkcji Figmy — 112 ✅ obsługiwanych, 16 🟡 częściowych i 28 🔲 niezaimplementowanych. Aktualizacja: 2026-10-27.
 
 ## Interfejs i nawigacja
 
@@ -91,7 +91,7 @@ Porównanie funkcji Figma Design z obecnymi możliwościami OpenPencil.
 | Łącza | 🟡 | Łącza na zakresach znaków zachowują się w `.fig`, schowku, HTML i API wtyczek; panel nie pozwala ich dodawać |
 | Emoji i symbole | ✅ | Kolorowe emoji rysowane systemową czcionką emoji, edytowane jako jeden znak i zachowywane w `.fig` i schowku |
 | OpenType | 🟡 | Każda funkcja ustawiona w pliku jest renderowana i zachowywana; panel przełącza tylko ligatury, warianty kontekstowe i kerning |
-| Czcionki zmienne | 🟡 | Style nazwane są rysowane w swoich wartościach osi, a rozmiar optyczny podąża za rozmiarem czcionki, jak w Figmie; API wtyczek ustawia dowolną oś, ale panel nie ma jeszcze kontrolek osi |
+| Czcionki zmienne | ✅ | Style nazwane są rysowane w swoich wartościach osi, a rozmiar optyczny podąża za rozmiarem czcionki, jak w Figmie; sekcja Typografia i API wtyczek ustawiają dowolną oś, a rozmiar optyczny można ustawić ręcznie |
 | CJK | ✅ | Czcionki zastępcze CJK dobierane według języka i wczytywane przed pierwszym renderowaniem, także dla chińskiego tradycyjnego i dzielonych czcionek webowych |
 | RTL | ✅ | Kierunek tekstu Auto, LTR lub RTL z kształtowaniem pisma arabskiego; automatyczny układ biegnie od prawej do lewej |
 | Czcionki ikon | ✅ | Material Symbols ze zmiennych czcionek Google w dowolnej grubości, wypełnieniu i gradacji; wybór ikon dodaje zestawy Iconify i SF Symbols (macOS 14+) |

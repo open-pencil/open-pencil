@@ -4,6 +4,7 @@ import { defaultIcons, placeIcon, type IconProvider } from '#core/icons'
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
 import { layoutAuthoredNodes } from '#core/layout'
+import { computeAccurateBounds } from '#core/vector/curve-math'
 
 function parseViewBox(viewBox: string | undefined): { w: number; h: number } {
   if (!viewBox) return { w: 0, h: 0 }
@@ -52,7 +53,8 @@ function createRenderer(icons: IconProvider) {
         // Inline SVG is artwork, not an icon from a set.
         identity: icon.prefix !== INLINE_SVG
       }),
-    layout: layoutAuthoredNodes
+    layout: layoutAuthoredNodes,
+    vectorBounds: computeAccurateBounds
   })
 }
 
@@ -72,4 +74,4 @@ export function designJSXRenderer(icons: IconProvider = defaultIcons) {
 }
 
 /** Design JSX rendering with Iconify's icons. */
-export const { renderJSX, renderTree } = designJSXRenderer()
+export const { renderJSX, renderTree, renderRoots } = designJSXRenderer()

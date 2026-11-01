@@ -128,11 +128,11 @@ describe('derived text rendering', () => {
     const second = new ck.Path()
     let disposedByRenderer = false
     try {
-      renderer.glyphSilhouetteCache.set('first', first)
-      expect(renderer.glyphSilhouetteCache.peek('first')).toBe(first)
-      renderer.glyphSilhouetteCache.clear()
+      renderer.textCaches.glyphSilhouettes.set('first', first)
+      expect(renderer.textCaches.glyphSilhouettes.peek('first')).toBe(first)
+      renderer.textCaches.glyphSilhouettes.clear()
       expect(first.isDeleted()).toBe(true)
-      renderer.glyphSilhouetteCache.set('second', second)
+      renderer.textCaches.glyphSilhouettes.set('second', second)
     } finally {
       try {
         renderer.destroy()

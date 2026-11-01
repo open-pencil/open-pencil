@@ -10,7 +10,7 @@ import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { reasoningCallSettings } from '@/app/ai/models/reasoning/settings'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createAnthropicCompatibleAdapter } from '@/app/ai/providers/compatible'
-import { modelProviderAdapter } from '@/app/ai/providers/registry'
+import { modelProviderAdapter, providerTakesWebPImages } from '@/app/ai/providers/registry'
 import type { ModelConfig } from '@/app/ai/providers/types'
 import type { FetchFunction } from '@/app/http/types'
 
@@ -155,6 +155,91 @@ describe('model provider registry', () => {
     expect(() => modelProviderAdapter('acp:claude-code')).toThrow(
       'ACP providers and Harness agents do not use direct API models'
     )
+  })
+
+  test('sends a tool image to a Chat Completions endpoint in a user message after the tool result', async () => {
+    let requestBody = ''
+    const fetchSpy: FetchFunction = async (_input, init) => {
+      requestBody = String(init?.body)
+      throw new Error('stop')
+    }
+    const model = languageModelInstance(
+      modelProviderAdapter('minimax').create(
+        {
+          providerID: 'minimax',
+          apiKey: 'test-key',
+          modelID: 'MiniMax-M3',
+          customModelID: '',
+          customBaseURL: '',
+          customAPIType: 'completions'
+        },
+        { fetch: fetchSpy }
+      )
+    )
+    if (model.specificationVersion !== 'v4') throw new Error('Expected a v4 model')
+    await Promise.resolve(
+      model.doGenerate({
+        prompt: [
+          { role: 'user', content: [{ type: 'text', text: 'Check the frame' }] },
+          {
+            role: 'assistant',
+            content: [
+              { type: 'tool-call', toolCallId: 'call-1', toolName: 'export_image', input: {} }
+            ]
+          },
+          {
+            role: 'tool',
+            content: [
+              {
+                type: 'tool-result',
+                toolCallId: 'call-1',
+                toolName: 'export_image',
+                output: {
+                  type: 'content',
+                  value: [
+                    { type: 'text', text: '{"width":2}' },
+                    {
+                      type: 'file',
+                      mediaType: 'image/png',
+                      data: { type: 'data', data: 'iVBORw0KGgo=' }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      })
+    ).catch(() => undefined)
+
+    const body: unknown = JSON.parse(requestBody)
+    expect(body).toMatchObject({
+      messages: [
+        { role: 'user' },
+        { role: 'assistant' },
+        {
+          role: 'tool',
+          tool_call_id: 'call-1',
+          content: '{"width":2}\nThe images follow in the next user message.'
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Images from the export_image call call-1:' },
+            { type: 'image_url', image_url: { url: 'data:image/png;base64,iVBORw0KGgo=' } }
+          ]
+        }
+      ]
+    })
+  })
+
+  test('sends WebP tool images only where the provider itself documents WebP input', () => {
+    // An endpoint behind a compatible API, a router, or Cloud may not decode WebP.
+    const documented = new Set<AIProviderID>(['anthropic', 'openai', 'google', 'deepseek'])
+    for (const { id } of AI_PROVIDERS) {
+      expect({ id, webp: providerTakesWebPImages(id) }).toEqual({ id, webp: documented.has(id) })
+    }
+    expect(providerTakesWebPImages('acp:claude-code')).toBe(false)
   })
 })
 

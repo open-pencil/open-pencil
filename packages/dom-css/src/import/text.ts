@@ -10,6 +10,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import {
   parseCSSColor,
+  parseCSSFontFamily,
   parseCSSLetterSpacing,
   parseCSSLineHeight,
   parseCSSNumber
@@ -110,7 +111,7 @@ export function characterStyleFromCSS(
   base: CSSCharacterStyle
 ): CSSCharacterStyle {
   const fills = colorToFillFromCSS(pickStyle(style, 'color'))
-  const family = pickStyle(style, 'font-family')?.split(',')[0]?.replaceAll('"', '').trim()
+  const family = parseCSSFontFamily(pickStyle(style, 'font-family'))
   const decorationColor = pickStyle(style, 'text-decoration-color')
   const decorationFills = parseCSSColor(decorationColor) ? colorToFillFromCSS(decorationColor) : []
   const line = pickStyle(style, 'text-decoration-line')

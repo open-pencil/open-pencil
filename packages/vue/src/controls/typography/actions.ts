@@ -2,15 +2,14 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
+import { faceForStyle, fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
-  TextDecoration,
   TextLength,
   TextListType,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
-import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey, faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
 import {
@@ -20,8 +19,10 @@ import {
   paragraphSpacingOf
 } from '#vue/canvas/text-edit/paragraphs'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
+import { styleFontVariations } from '#vue/controls/typography/axes'
 import { useFamilyFaces } from '#vue/controls/typography/faces'
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
+import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { selectedNodesAsShown } from '#vue/editor/selection-state/nodes'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { useNodeFontStatus } from '#vue/shared/font-status/use'
@@ -70,11 +71,11 @@ export function createTypographyState(editor: Editor) {
   const fontFamily = computed(() => node.value?.fontFamily ?? '')
   const fontWeight = computed(() => node.value?.fontWeight ?? 400)
   const fontSize = computed(() => node.value?.fontSize ?? 16)
-  const currentWeightLabel = computed(
-    () => FONT_WEIGHT_NAMES[node.value?.fontWeight ?? 400] ?? 'Regular'
-  )
+  const { faces, supports, styleName } = useFamilyFaces(nodes)
+  const currentWeightLabel = computed(() => (node.value ? styleName(node.value) : 'Regular'))
+  /** The face every selected text layer is set in, by its name, or MIXED when they differ. */
+  const faceName = computed(() => sharedValue(nodes.value.map((text) => styleName(text))))
   const activeFormatting = computed(() => sharedFormatting(nodes.value))
-  const { weights, supports } = useFamilyFaces(nodes)
   /**
    * The list style every selected text shares, or that of the paragraphs being edited; `null`
    * when they differ.
@@ -115,9 +116,10 @@ export function createTypographyState(editor: Editor) {
     fontWeight,
     fontSize,
     currentWeightLabel,
+    faceName,
     activeFormatting,
     listType,
-    weights,
+    faces,
     supports,
     missingFonts,
     hasMissingFonts
@@ -141,6 +143,9 @@ export function createTypographyActions({
   options
 }: TypographyActionOptions) {
   const lists = createTextListActions(editor)
+  // A dragged field's previews belong to the step its commit records, so they are not edits of
+  // their own that keep the document unsaved after that step is undone.
+  const batch = useUndoBatch(editor.undo, () => editor.beginInteractiveEdit())
   type Preview = { value: SceneNode[keyof SceneNode]; textStyleId: string | null }
   let previewKey: keyof SceneNode | undefined
   const beforePreview = new Map<string, Preview>()
@@ -203,12 +208,19 @@ export function createTypographyActions({
       'Change font',
       ['fontFamily', 'fontWeight', 'italic'],
       async (target) => {
-        const known = await faces
+        await faces
+        // Asked again, so faces forgotten while loading (a catalog arriving) are read anew.
+        const known = await fontManager.familyFaces(family)
         const face = known ? nearestFamilyFace(known, target.fontWeight, target.italic) : null
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic
-        await options.fontLoader?.load(family, weightToStyle(fontWeight, italic))
-        return { fontFamily: family, fontWeight, italic }
+        await options.fontLoader?.load(family, faceLoadKey(fontWeight, italic))
+        return {
+          fontFamily: family,
+          fontWeight,
+          italic,
+          fontVariations: styleFontVariations(target)
+        }
       }
     )
   }
@@ -219,8 +231,27 @@ export function createTypographyActions({
       'Change font weight',
       ['fontWeight'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(weight, target.italic))
-        return { fontWeight: weight }
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(weight, target.italic))
+        return { fontWeight: weight, fontVariations: styleFontVariations(target) }
+      },
+      targets
+    )
+  }
+
+  /**
+   * Sets the face `style` names in each layer's family, as the style menu sets one: its weight,
+   * slant, and name, loaded first so the text is laid out once with it.
+   */
+  async function setFace(style: string, targets = nodes.value) {
+    await updateAfterLoading(
+      'Change font style',
+      ['fontWeight', 'italic', 'fontStyle'],
+      async (target) => {
+        // The menu lists the faces of the layer's slant, so a name in both slants is that one.
+        const face = faceForStyle(target.fontFamily, style, target.italic)
+        const fields = { fontWeight: face.weight, italic: face.italic, fontStyle: face.style }
+        await options.fontLoader?.load(target.fontFamily, faceStyleKey(fields))
+        return { ...fields, fontVariations: styleFontVariations(target) }
       },
       targets
     )
@@ -339,8 +370,8 @@ export function createTypographyActions({
       'Toggle italic',
       ['italic'],
       async (target) => {
-        await options.fontLoader?.load(target.fontFamily, weightToStyle(target.fontWeight, italic))
-        return { italic }
+        await options.fontLoader?.load(target.fontFamily, faceLoadKey(target.fontWeight, italic))
+        return { italic, fontVariations: styleFontVariations(target) }
       },
       nodes.value.filter((target) => supports(target, target.fontWeight, italic))
     )
@@ -349,7 +380,7 @@ export function createTypographyActions({
   function toggleDecoration(deco: 'UNDERLINE' | 'STRIKETHROUGH') {
     const on = activeFormatting.value.includes(deco.toLowerCase())
     update(`Toggle ${deco.toLowerCase()}`, {
-      textDecoration: (on ? 'NONE' : deco) as TextDecoration
+      textDecoration: on ? 'NONE' : deco
     })
   }
 
@@ -366,6 +397,7 @@ export function createTypographyActions({
   }
 
   function updateProp(key: keyof SceneNode, value: PropValue) {
+    batch.ensure(`typography:${String(key)}`, `Change ${String(key)}`)
     if (previewKey !== key) {
       previewKey = key
       beforePreview.clear()
@@ -373,7 +405,7 @@ export function createTypographyActions({
     for (const target of nodes.value) {
       if (!beforePreview.has(target.id))
         beforePreview.set(target.id, { value: target[key], textStyleId: target.textStyleId })
-      editor.updateNode(target.id, { [key]: value } as Partial<SceneNode>)
+      editor.updateNode(target.id, { [key]: value })
     }
   }
 
@@ -389,18 +421,32 @@ export function createTypographyActions({
           {
             [key]: snapshot ? snapshot.value : previous,
             ...(snapshot ? { textStyleId: snapshot.textStyleId } : {})
-          } as Partial<SceneNode>,
+          },
           `Change ${String(key)}`
         )
       }
     })
     previewKey = undefined
     beforePreview.clear()
+    batch.flush()
+  }
+
+  /** Puts back what a cancelled field previewed, as `cancelAxis` does for a font axis. */
+  function cancelProp(key: keyof SceneNode) {
+    if (previewKey === key) {
+      for (const [id, before] of beforePreview)
+        editor.updateNode(id, { [key]: before.value, textStyleId: before.textStyleId })
+    }
+    previewKey = undefined
+    beforePreview.clear()
+    batch.flush()
+    editor.requestRender()
   }
 
   return {
     setFamily,
     setWeight,
+    setFace,
     setAlign,
     setDirection,
     setVerticalAlign,
@@ -416,6 +462,7 @@ export function createTypographyActions({
     toggleDecoration,
     onFormattingChange,
     updateProp,
-    commitProp
+    commitProp,
+    cancelProp
   }
 }

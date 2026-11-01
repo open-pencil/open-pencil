@@ -141,6 +141,16 @@
     ],
     "vue/require-default-export": "error",
     "vue/require-typed-ref": "error",
+    "vue/no-side-effects-in-computed-properties": "error",
+    "vue/no-async-in-computed-properties": "error",
+    "vue/no-watch-after-await": "error",
+    "vue/no-expose-after-await": "error",
+    "vue/no-dupe-keys": "error",
+    "vue/no-reserved-props": "error",
+    "vue/no-reserved-component-names": "error",
+    "vue/prop-name-casing": "error",
+    "vue/valid-define-options": "error",
+    "vue/valid-next-tick": "error",
     "open-pencil/no-import-type-annotations": "error",
     "open-pencil/no-inline-named-types": [
       "error",
@@ -180,6 +190,7 @@
     "open-pencil/no-cross-package-source-imports": "error",
     "open-pencil/no-app-imports-in-packages": "error",
     "open-pencil/no-core-framework-imports": "error",
+    "open-pencil/no-inline-tauri-imports": "error",
     "open-pencil/no-direct-storage-access": "error",
     "open-pencil/no-deep-parent-relative-imports": "error",
     "open-pencil/no-deep-parent-relative-paths": "error",
@@ -202,6 +213,7 @@
       }
     ],
     "open-pencil/no-core-parent-relative-imports": "error",
+    "open-pencil/no-document-change-capture": "error",
     "open-pencil/no-mcp-parent-relative-imports": "error",
     "open-pencil/no-vue-parent-relative-imports": "error",
     "open-pencil/no-cli-parent-relative-imports": "error",
@@ -220,6 +232,7 @@
     "open-pencil/no-flat-kiwi-modules": "error",
     "open-pencil/no-bun-globals-in-cli": "error",
     "open-pencil/no-top-level-prefixed-test-files": "error",
+    "open-pencil/no-editor-profile-inputs": "error",
     "open-pencil/no-conditional-object-spreads": "error",
     "open-pencil/no-sibling-domain-prefixed-files": "error",
     "array-callback-return": "error",
@@ -427,6 +440,12 @@
   },
   "overrides": [
     {
+      "files": ["packages/cloud/src/server/db/migrations/*.ts"],
+      "rules": {
+        "typescript/no-unnecessary-type-assertion": "off"
+      }
+    },
+    {
       "files": ["packages/docs/.vitepress/theme/landing/**/*.{ts,vue}"],
       "rules": {
         "open-pencil/no-app-imports-in-packages": "off"
@@ -619,10 +638,21 @@
       "files": [
         "packages/core/src/io/formats/fig/export/index.ts",
         "packages/core/src/io/formats/fig/export/worker.ts",
-        "packages/core/src/kiwi/fig/parse/worker.ts"
+        "packages/core/src/kiwi/fig/parse/worker.ts",
+        "src/app/code/sandbox/frame.ts",
+        "src/app/code/sandbox/worker/index.ts"
       ],
       "rules": {
         "unicorn/require-post-message-target-origin": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/code/sandbox/evaluate.ts",
+        "src/app/code/sandbox/frame.ts"
+      ],
+      "rules": {
+        "import/default": "off"
       }
     }
   ],

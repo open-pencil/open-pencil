@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride,
@@ -36,7 +36,7 @@ import { createVariableBindingActions } from './variable-bindings'
  */
 function isPathTextEditable(node: SceneNode): boolean {
   if (!node.textPathData) return true
-  return hasGlyphOutlines(node.fontFamily, weightToStyle(node.fontWeight, node.italic))
+  return hasGlyphOutlines(node.fontFamily, faceStyleKey(node))
 }
 
 type PathTextEditSnapshot = Pick<
@@ -255,7 +255,16 @@ export function createTextActions(ctx: EditorContext) {
     recordTextEdit(textState)
     change()
     const node = ctx.graph.getNode(textState.nodeId)
-    if (!node) return
+    if (!node) {
+      // The change took the text away, such as an undo past the step that made it: the edit
+      // ends with it, recording nothing of a node that is gone.
+      te.stop()
+      ctx.state.editingTextId = null
+      activeSession = null
+      restoreEmptyLabel = null
+      ctx.requestRender()
+      return
+    }
     activeSession = createTextEditSession(node)
     te.syncToNode(node)
     ctx.requestRender()

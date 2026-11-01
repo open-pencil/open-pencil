@@ -270,15 +270,48 @@ export function glyphCommands(
 
 let shapingBuffer: HarfBuzzModule.Buffer | null = null
 
-/** The glyphs HarfBuzz shapes `text` into with the font's default instance, and their positions. */
+/** An OpenType feature set on or off for shaping, by its lowercase tag ("liga", "tnum"). */
+export interface ShapingFeature {
+  tag: string
+  value: number
+  /** The code units of the text it applies to, from `start` up to `end`; all when left out. */
+  start?: number
+  end?: number
+}
+
+/**
+ * How text is shaped: at a variable font's instance, with features over the defaults, and in a
+ * direction and language, which HarfBuzz guesses from the text when they are left out.
+ */
+export interface ShapingOptions {
+  instance?: HarfBuzzInstance
+  features?: readonly ShapingFeature[]
+  rtl?: boolean
+  language?: string
+}
+
+/**
+ * The glyphs HarfBuzz shapes `text` into, and their positions: at the font's default instance
+ * and HarfBuzz's default features unless `options` sets others, as CanvasKit shapes a run.
+ */
 export function shapeText(
   parsed: HarfBuzzFont,
-  text: string
+  text: string,
+  options: ShapingOptions = {}
 ): ReturnType<HarfBuzzModule.Buffer['getGlyphInfosAndPositions']> {
   shapingBuffer ??= new parsed.hb.Buffer()
   shapingBuffer.reset()
   shapingBuffer.addText(text)
+  const { Direction, Feature } = parsed.hb
+  if (options.rtl !== undefined) {
+    shapingBuffer.setDirection(options.rtl ? Direction.RTL : Direction.LTR)
+  }
+  if (options.language) shapingBuffer.setLanguage(options.language)
   shapingBuffer.guessSegmentProperties()
-  parsed.hb.shape(parsed.font, shapingBuffer)
+  const features = options.features?.map(
+    ({ tag, value, start, end }) =>
+      new Feature(tag, value, start ?? Feature.GLOBAL_START, end ?? Feature.GLOBAL_END)
+  )
+  parsed.hb.shape(options.instance?.font ?? parsed.font, shapingBuffer, features)
   return shapingBuffer.getGlyphInfosAndPositions()
 }

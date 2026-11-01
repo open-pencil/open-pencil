@@ -1,3 +1,5 @@
+import { isNumber } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   behaviourFromSpec,
@@ -222,11 +224,11 @@ function rootSpec(kind: BehaviourKind, props: Record<string, unknown>): Behaviou
   if (isBinding(main)) values[kind === 'collapsible' ? 'open' : 'value'] = main
   if (isBinding(props.disabled)) values.disabled = props.disabled
   if (isBinding(props.filled)) values.filled = props.filled
-  const range = Object.fromEntries(
-    (['min', 'max', 'step'] as const).flatMap((key) =>
-      typeof props[key] === 'number' ? [[key, props[key]]] : []
-    )
-  )
+  const range: Record<string, number> = {}
+  for (const key of ['min', 'max', 'step'] as const) {
+    const value = props[key]
+    if (isNumber(value)) range[key] = value
+  }
   if (typeof props.defaultValue === 'number') range.default = props.defaultValue
   const spec: BehaviourSpec = { kind }
   if (Object.keys(values).length) spec.values = values

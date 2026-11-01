@@ -6,7 +6,7 @@ Comparación entre las funciones de Figma Design y el estado actual de OpenPenci
 ✅ Compatible — funciona de principio a fin · 🟡 Parcial — existe el comportamiento principal, pero faltan algunas funciones · 🔲 No implementado
 :::
 
-**Cobertura:** 128 de 156 funciones consideradas — 111 ✅ completas, 17 🟡 parciales y 28 🔲 pendientes. Actualizado: 2026-10-27.
+**Cobertura:** 128 de 156 funciones consideradas — 112 ✅ completas, 16 🟡 parciales y 28 🔲 pendientes. Actualizado: 2026-10-27.
 
 ## Interfaz y navegación
 
@@ -91,7 +91,7 @@ Comparación entre las funciones de Figma Design y el estado actual de OpenPenci
 | Enlaces | 🟡 | Los enlaces en intervalos de caracteres se conservan en `.fig`, el portapapeles, HTML y la API de plugins; el panel no permite añadirlos |
 | Emoji y símbolos | ✅ | Los emoji en color se dibujan con la fuente de emoji del sistema, se editan como un solo carácter y se conservan en `.fig` y el portapapeles |
 | OpenType | 🟡 | Todas las funciones que define un archivo se renderizan y se conservan; el panel solo activa ligaduras, alternativas contextuales y kerning |
-| Fuentes variables | 🟡 | Los estilos con nombre usan sus valores de eje y el tamaño óptico sigue al tamaño de fuente, como en Figma; la API de plugins ajusta cualquier eje, pero el panel aún no tiene controles de ejes |
+| Fuentes variables | ✅ | Los estilos con nombre usan sus valores de eje y el tamaño óptico sigue al tamaño de fuente, como en Figma; la sección Tipografía y la API de plugins ajustan cualquier eje, y el tamaño óptico puede fijarse a mano |
 | CJK | ✅ | Fuentes alternativas CJK según el idioma, cargadas antes del primer dibujado, incluido el chino tradicional y las fuentes web divididas |
 | RTL | ✅ | Dirección de texto Auto, LTR o RTL con composición del árabe; la disposición automática fluye de derecha a izquierda |
 | Fuentes de iconos | ✅ | Material Symbols se dibuja con las fuentes variables de Google con cualquier grosor, relleno y grado; el selector de iconos añade colecciones de Iconify y SF Symbols (macOS 14+) |

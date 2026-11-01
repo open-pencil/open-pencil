@@ -6,7 +6,7 @@ Comparaison entre les fonctions de Figma Design et l’état actuel d’OpenPenc
 ✅ Pris en charge — fonctionne de bout en bout · 🟡 Partiel — le comportement principal existe, mais certaines fonctions manquent · 🔲 Non implémenté
 :::
 
-**Couverture :** 128 fonctions sur 156 examinées — 111 ✅ complètes, 17 🟡 partielles et 28 🔲 en attente. Mise à jour : 2026-10-27.
+**Couverture :** 128 fonctions sur 156 examinées — 112 ✅ complètes, 16 🟡 partielles et 28 🔲 en attente. Mise à jour : 2026-10-27.
 
 ## Interface et navigation
 
@@ -40,7 +40,7 @@ Réseaux vectoriels, outils Plume et Crayon, opérations booléennes, aplatissem
 
 ## Texte et typographie
 
-Édition directe, rendu CanvasKit Paragraph, polices système, choix de famille, taille, interligne, alignement horizontal et vertical, modes de redimensionnement, listes, emoji, CJK, RTL et polices d’icônes fonctionnent. Le texte sur un tracé reste partiel, car modifier ses caractères demande les contours de sa police en local. Styles de texte, liens, fonctions OpenType et polices variables le sont aussi : il leur manque surtout des réglages dans le panneau.
+Édition directe, rendu CanvasKit Paragraph, polices système, choix de famille, taille, interligne, alignement horizontal et vertical, modes de redimensionnement, listes, emoji, CJK, RTL et polices d’icônes fonctionnent. Les polices variables fonctionnent aussi, avec leurs axes réglables dans le panneau. Le texte sur un tracé reste partiel, car modifier ses caractères demande les contours de sa police en local. Styles de texte, liens et fonctions OpenType le sont aussi : il leur manque surtout des réglages dans le panneau.
 
 ## Couleurs, dégradés et images
 

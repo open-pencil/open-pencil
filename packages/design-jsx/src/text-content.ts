@@ -44,6 +44,9 @@ export const SPAN_STYLE_FIELDS = [
   'textDecorationThickness',
   'textUnderlineOffset',
   'textDecorationSkipInk',
+  'fontFeatures',
+  'fontVariations',
+  'textLanguage',
   'textCase'
 ] as const satisfies readonly (keyof CharacterStyleOverride & keyof SceneNode)[]
 

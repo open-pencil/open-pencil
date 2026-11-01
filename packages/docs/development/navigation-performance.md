@@ -4,18 +4,18 @@ The navigation benchmark measures the complete wheel/trackpad-to-render pipeline
 
 ## Renderer lifecycle and ownership
 
-The benchmark validates the retained and tiled renderer contracts documented in [Renderer lifecycle and ownership](./renderer-lifecycle.md). Structural renderer changes must preserve those generation, settlement, and CanvasKit ownership rules.
+The benchmark validates the tiled renderer contracts documented in [Renderer lifecycle and ownership](./renderer-lifecycle.md). Structural renderer changes must preserve those generation, settlement, and CanvasKit ownership rules.
 
 ## What it captures
 
 Every run writes `recording.json`, `metrics.json`, and `environment.json`. When tracing is enabled, it also writes `trace.json.gz`:
 
 - `trace.json.gz` (when tracing is enabled): Chromium tracing data for Perfetto or Chrome tracing tools.
-- `recording.json`: wheel samples plus OpenPencil input, viewport, render, and retained-backing events.
+- `recording.json`: wheel samples plus OpenPencil input, viewport, render, and tile coverage events.
 - `metrics.json`: frame pacing, input latency, zoom-anchor drift, viewport jumps, exact active-renderer settlement, and tiled scheduler throughput/cancellation when enabled.
 - `environment.json`: browser, runtime, replay mode, and source gesture information.
 
-OpenPencil emits User Timing marks under `openpencil:*`, including wheel receipt/flush, viewport mutation, render start/end, backing preview/build, crisp-backing completion, and exact tiled coverage. The recording also runs a continuous `requestAnimationFrame` heartbeat and observes browser Long Tasks, so display stalls remain visible even when OpenPencil does not render.
+OpenPencil emits User Timing marks under `openpencil:*`, including wheel receipt/flush, viewport mutation, render start/end, and exact tiled coverage. The recording also runs a continuous `requestAnimationFrame` heartbeat and observes browser Long Tasks, so display stalls remain visible even when OpenPencil does not render.
 
 ## Record a physical macOS trackpad gesture
 
@@ -114,7 +114,7 @@ The report includes:
 - Wheel-to-viewport and wheel-to-render-end latency.
 - Maximum zoom focal-point drift in screen pixels.
 - Maximum presented viewport displacement between rendered frames.
-- Final input to exact active-renderer settlement: crisp retained backing for the existing renderer or exact visible tile coverage for tiled mode.
+- Final input to exact visible tile coverage, the renderer's settlement.
 - Tiled scheduler frame count, maximum jobs per frame, maximum measured job submission, over-budget jobs, deadline overrun, and cancelled obsolete jobs.
 
 The runner contains no warmup or settlement sleeps. `waitForSettlement()` requires an idle navigation lifecycle and renderer-owned exact coverage; its timeout rejects the benchmark and reports renderer state.
@@ -125,7 +125,7 @@ Use the exact imported node ID plus a deterministic property mutation to measure
 
 ```sh
 bun run benchmark:navigation \
-  --url 'http://localhost:1420/?renderer=tiled' \
+  --url 'http://localhost:1420/' \
   --gesture tests/fixtures/navigation/gestures/synthetic-repeated-pinch-reversal.json \
   --mode dom \
   --scenario current-document \
@@ -149,7 +149,7 @@ Permanent benchmark scenarios should cover:
 - **Light:** isolates input and scheduling overhead.
 - **Large flat:** stresses culling and traversal.
 - **Realistic:** nested frames, text, images, gradients, effects, masks, and instances.
-- **Raster stress:** expensive retained-backing creation and coverage changes.
+- **Raster stress:** expensive tile rendering and coverage changes.
 - **Imported `.fig`:** exercises imported-document rendering paths.
 
 Keep large or binary `.fig` fixtures in Git LFS. Synthetic fixture generation must be deterministic.

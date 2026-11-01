@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -16,6 +16,7 @@ import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProfileCapabilities from '@/components/settings/models/ProfileCapabilities.vue'
+import ProviderChooser from '@/components/settings/models/ProviderChooser.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
 import ChatGPTSignInField from '@/components/settings/provider/ChatGPTSignInField.vue'
 import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
@@ -31,7 +32,14 @@ const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials, settings } = useI18n()
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
 const nameInput = useTemplateRef('nameInput')
-defineExpose({ focus: () => nameInput.value?.focus({ preventScroll: true }) })
+/** A new model starts by choosing what it runs on; the form follows for that choice. */
+const choosing = ref(!profileId)
+defineExpose({
+  focus: () => {
+    if (!choosing.value) return nameInput.value?.focus({ preventScroll: true })
+    formElement.value?.querySelector<HTMLElement>('[data-provider]')?.focus({ preventScroll: true })
+  }
+})
 const keyInput = ref('')
 const deleteOpen = ref(false)
 const profile = useModelProfileEditor({ profileId, keyInput, labels: ai })
@@ -99,6 +107,13 @@ function updateProvider(id: AIProviderID) {
   profile.updateProvider(id)
 }
 
+async function choose(id: AIProviderID) {
+  updateProvider(id)
+  choosing.value = false
+  await nextTick()
+  nameInput.value?.focus({ preventScroll: true })
+}
+
 async function save() {
   if (busy.value) return
   if (!(await feedback.validate('save'))) {
@@ -132,7 +147,8 @@ async function remove() {
     @submit.prevent="save"
   >
     <SettingsPage data-test-id="settings-model-editor">
-      <fieldset :disabled="busy" class="flex min-w-0 flex-col gap-6">
+      <ProviderChooser v-if="choosing" @choose="choose" />
+      <fieldset v-else :disabled="busy" class="flex min-w-0 flex-col gap-6">
         <ProviderSettingsField
           v-slot="{ control }"
           :label="ai.modelName"
@@ -355,7 +371,7 @@ async function remove() {
         <AppButton class="ml-auto" :disabled="busy" @click="emit('done')">
           {{ common.cancel }}
         </AppButton>
-        <AppButton type="submit" color="primary" variant="solid" :loading="busy">
+        <AppButton v-if="!choosing" type="submit" color="primary" variant="solid" :loading="busy">
           {{ ai.saveModel }}
         </AppButton>
       </template>

@@ -1,9 +1,22 @@
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
+import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())
+}
+
+/**
+ * Registers the app's bundled variable Inter as `family`, upright and italic, as a host's own
+ * fonts are, so `loadFontAsync` loads any weight of it. Plugin text edits refuse fonts that are
+ * not loaded, as in Figma, so tests that edit text load their fonts first, as scripts do.
+ */
+export async function registerTestFont(family = 'Inter'): Promise<void> {
+  const data = await fontManager.fetchBundledFont('/InterVariable.ttf')
+  if (!data) throw new Error('The bundled Inter font is missing')
+  await fontManager.markLoaded(family, 'Regular', data)
+  await fontManager.markLoaded(family, 'Regular Italic', data)
 }
 
 /** Reads a proxy through Figma's `TextNode` surface, which `wrapNode()` cannot name. */

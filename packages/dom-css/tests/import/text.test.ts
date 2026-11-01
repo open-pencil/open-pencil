@@ -182,6 +182,14 @@ describe('rich text import', () => {
     expect(text?.styleRuns).toEqual([{ start: 5, length: 5, style: { textCase: 'ORIGINAL' } }])
   })
 
+  test('reads the first font family without its single or double quotes', async () => {
+    const [single, double] = await texts(
+      `<div style="display: flex"><span style="font-family: 'Noto Sans KR', sans-serif">a</span><span style='font-family: "Fira Code", monospace'>b</span></div>`
+    )
+    expect(single?.fontFamily).toBe('Noto Sans KR')
+    expect(double?.fontFamily).toBe('Fira Code')
+  })
+
   test('reads back the links and cases it writes', async () => {
     const styleRuns = [
       {

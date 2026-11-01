@@ -26,9 +26,6 @@ export const CHANGE_PREVIEW_SIZES = ['off', 'small', 'medium', 'large'] as const
 /** How large the before/after images kept for each AI edit are; `off` keeps only the JSX diff. */
 export type ChangePreviewSize = (typeof CHANGE_PREVIEW_SIZES)[number]
 
-export const CANVAS_RENDERING_MODES = ['retained', 'tiled'] as const
-export type CanvasRenderingMode = (typeof CANVAS_RENDERING_MODES)[number]
-
 /** Multipliers for how far each wheel or pinch event zooms the canvas; 1 is Figma's rate. */
 export const ZOOM_SPEEDS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2] as const
 export type ZoomSpeed = (typeof ZOOM_SPEEDS)[number]
@@ -71,6 +68,16 @@ export interface SharingPreferences {
 export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
 
+/** Which events send a system notification while OpenPencil is out of view. */
+export interface NotificationPreferences {
+  /** An agent waits on a permission request. */
+  agentNeedsInput: boolean
+  /** An AI reply finished. */
+  agentFinished: boolean
+  /** An AI reply ended with an error. */
+  agentFailed: boolean
+}
+
 export interface AppPreferences {
   appearance: { animations: AnimationPreference; accent: AccentPreference }
   chat: {
@@ -91,9 +98,6 @@ export interface AppPreferences {
   navigation: {
     zoomSpeed: ZoomSpeed
   }
-  rendering: {
-    canvasMode: CanvasRenderingMode
-  }
   designCheck: DesignCheckPreferences
   comments: CommentPreferences
   toolbar: ToolbarLayout
@@ -101,6 +105,7 @@ export interface AppPreferences {
     aiSetup: AISetupState
   }
   sharing: SharingPreferences
+  notifications: NotificationPreferences
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
@@ -118,7 +123,6 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   navigation: { zoomSpeed: 1 },
-  rendering: { canvasMode: 'retained' },
   designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
   comments: {
     showOnCanvas: true,
@@ -129,7 +133,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   },
   toolbar: structuredClone(DEFAULT_TOOLBAR_LAYOUT),
   onboarding: { aiSetup: 'pending' },
-  sharing: { dailyPing: true, usageStats: 'unset' }
+  sharing: { dailyPing: true, usageStats: 'unset' },
+  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -176,9 +181,6 @@ const appPreferencesSchema = section({
   navigation: section({
     zoomSpeed: v.fallback(v.picklist(ZOOM_SPEEDS), defaults.navigation.zoomSpeed)
   }),
-  rendering: section({
-    canvasMode: v.fallback(v.picklist(CANVAS_RENDERING_MODES), defaults.rendering.canvasMode)
-  }),
   designCheck: section({
     showOnCanvas: v.fallback(v.boolean(), defaults.designCheck.showOnCanvas),
     preset: v.fallback(v.picklist(DESIGN_CHECK_PRESETS), defaults.designCheck.preset),
@@ -215,6 +217,11 @@ const appPreferencesSchema = section({
   sharing: section({
     dailyPing: v.fallback(v.boolean(), defaults.sharing.dailyPing),
     usageStats: v.fallback(v.picklist(USAGE_STATS_CONSENTS), defaults.sharing.usageStats)
+  }),
+  notifications: section({
+    agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
+    agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
+    agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed)
   })
 })
 
@@ -260,10 +267,10 @@ export function updateSharingPreferences(changes: Partial<SharingPreferences>): 
   }
 }
 
-export function updateCanvasRenderingMode(canvasMode: CanvasRenderingMode): void {
+export function updateNotificationPreferences(changes: Partial<NotificationPreferences>): void {
   appPreferences.value = {
     ...appPreferences.value,
-    rendering: { canvasMode }
+    notifications: { ...appPreferences.value.notifications, ...changes }
   }
 }
 

@@ -12,7 +12,8 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import type { FigmaFontNameInput } from '#core/figma-api/fonts'
+import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
+import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
 import {
   getParagraphSpacing,
   letterSpacingValue,
@@ -43,6 +44,7 @@ function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField,
       if (invalid) {
         throw new Error(`in set_${name}: Property "${name}" failed validation: ${invalid}`)
       }
+      assertTextFontsLoaded(`set_${name}`, raw(this, internals))
       updateNode(this, internals, { [name]: value })
     }
   }
@@ -50,13 +52,15 @@ function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField,
 
 /**
  * Getter/setter pair for a style characters can override: it reads `mixed` while they differ,
- * and setting it gives every character the value, as Figma's node setters do.
+ * and setting it gives every character the value, as Figma's node setters do. Setting one that
+ * lays the text out again needs the text's fonts loaded, as in Figma.
  */
 function characterStyle<T>(
   internals: NodeProxyInternals,
   field: TextSegmentField,
   mixed: symbol,
-  changes: (node: SceneNode, value: T) => Partial<SceneNode>
+  changes: (node: SceneNode, value: T) => Partial<SceneNode>,
+  needsFonts = true
 ) {
   return {
     get(this: ProxyThis): unknown {
@@ -64,19 +68,29 @@ function characterStyle<T>(
     },
     set(this: ProxyThis, value: T) {
       const node = raw(this, internals)
-      updateNode(this, internals, textStyleChanges(node, changes(node, value)))
+      const patch = changes(node, value)
+      if (needsFonts) assertTextFontsLoaded(`set_${field}`, node)
+      updateNode(this, internals, textStyleChanges(node, patch))
     }
   }
 }
 
-/** Getter/setter pair for a text property stored verbatim on the node. */
-function field<Field extends keyof SceneNode>(internals: NodeProxyInternals, name: Field) {
+/**
+ * Getter/setter pair for a text property stored verbatim on the node; one that lays the text out
+ * again needs its fonts loaded, as in Figma.
+ */
+function field<Field extends keyof SceneNode>(
+  internals: NodeProxyInternals,
+  name: Field,
+  needsFonts = true
+) {
   return {
     get(this: ProxyThis): SceneNode[Field] {
       return raw(this, internals)[name]
     },
     set(this: ProxyThis, value: SceneNode[Field]) {
-      updateNode(this, internals, { [name]: value } as Partial<SceneNode>)
+      if (needsFonts) assertTextFontsLoaded(`set_${name}`, raw(this, internals))
+      updateNode(this, internals, { [name]: value })
     }
   }
 }
@@ -92,23 +106,40 @@ export function installTextNodeProxyAccessors(
         return raw(this, internals).text
       },
       set(this: ProxyThis, value: string) {
+        assertTextFontsLoaded('set_characters', raw(this, internals))
         const textParagraphs = paragraphStylesForCharacters(raw(this, internals), value)
         const styleRuns = styleRunsForCharacters(raw(this, internals), value)
         updateNode(this, internals, { text: value, textParagraphs, styleRuns })
       }
     },
-    fontName: characterStyle<FigmaFontNameInput>(internals, 'fontName', mixed, (node, value) =>
-      fontNameStyle('set_fontName', node, 0, value)
+    // The new font replaces every character's, so only it has to be loaded, as in Figma.
+    fontName: characterStyle<FigmaFontNameInput>(
+      internals,
+      'fontName',
+      mixed,
+      (node, value) => {
+        const style = fontNameStyle('set_fontName', node, 0, value)
+        assertFontLoaded('set_fontName', node, style)
+        return style
+      },
+      false
     ),
     fontSize: characterStyle<number>(internals, 'fontSize', mixed, (_node, fontSize) => ({
       fontSize
     })),
-    textStyleId: characterStyle<string>(internals, 'textStyleId', mixed, (_node, value) => ({
-      textStyleId: value || null
-    })),
-    fontWeight: characterStyle<number>(internals, 'fontWeight', mixed, (_node, fontWeight) => ({
-      fontWeight
-    })),
+    textStyleId: characterStyle<string>(
+      internals,
+      'textStyleId',
+      mixed,
+      (_node, value) => ({ textStyleId: value || null }),
+      false
+    ),
+    // A weight is a face of its own, which has to be loaded as a new font does.
+    fontWeight: characterStyle<number>(internals, 'fontWeight', mixed, (node, fontWeight) => {
+      const style = { fontWeight, fontStyle: null }
+      assertFontLoaded('set_fontWeight', node, style)
+      return style
+    }),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),
     textAutoResize: field(internals, 'textAutoResize'),
@@ -152,6 +183,6 @@ export function installTextNodeProxyAccessors(
     paragraphIndent: spacing(internals, 'paragraphIndent', mixed),
     hangingList: field(internals, 'hangingList'),
     textTruncation: field(internals, 'textTruncation'),
-    autoRename: field(internals, 'autoRename')
+    autoRename: field(internals, 'autoRename', false)
   })
 }

@@ -21,3 +21,9 @@ declare module '*.vue' {
   const component: DefineComponent<object, object, unknown>
   export default component
 }
+
+/** A module bundled with its imports into one classic script, as a string (`vite/inline-script.ts`). */
+declare module '*?script' {
+  const source: string
+  export default source
+}

@@ -19,7 +19,7 @@ import {
 } from '#core/canvas/text'
 import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
 import { transformTextCase } from '#core/text/case'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -64,8 +64,8 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
   return asDouble<SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }>({
     fontsLoaded: true,
     fontProvider: {},
-    textFont: {},
-    derivedGlyphPathCache: createDerivedGlyphPathCache(),
+    chromeFonts: { text: {} },
+    textCaches: { derivedGlyphPaths: createDerivedGlyphPathCache() },
     fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
     effectLayerPaint: {
       setBlendMode: mock(() => undefined),

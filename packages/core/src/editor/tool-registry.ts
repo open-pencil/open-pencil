@@ -42,3 +42,30 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyH: 'HAND',
   KeyC: 'COMMENT'
 }
+
+/**
+ * The tools a board offers, as FigJam's toolbar does: moving and panning, sticky notes, shapes,
+ * connectors, sections, text, and comments, without Figma Design's drawing tools.
+ */
+export const BOARD_TOOLS: ReadonlySet<Tool> = new Set<Tool>([
+  'SELECT',
+  'HAND',
+  'STICKY',
+  'SHAPE_WITH_TEXT',
+  'CONNECTOR',
+  'SECTION',
+  'TEXT',
+  'COMMENT'
+])
+
+/** A board's tool keys, as in FigJam: S places a sticky note, R a shape, and X a connector. */
+export const BOARD_TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
+  KeyV: 'SELECT',
+  KeyH: 'HAND',
+  KeyS: 'STICKY',
+  'Shift+KeyS': 'SECTION',
+  KeyR: 'SHAPE_WITH_TEXT',
+  KeyX: 'CONNECTOR',
+  KeyT: 'TEXT',
+  KeyC: 'COMMENT'
+}

@@ -22,15 +22,17 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import {
   fontNameInputStyle,
-  readVariationSettings,
-  weightToStyleName,
   type CurrentFont,
   type FigmaFontName,
-  type FigmaFontNameInput,
+  type FigmaFontNameInput
+} from '#core/figma-api/fonts/names'
+import {
+  readVariationSettings,
   type FigmaVariationSettings
-} from '#core/figma-api/fonts'
+} from '#core/figma-api/fonts/variations'
 import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
 import {
   getRangeIndentation,
@@ -58,6 +60,7 @@ import {
   styleRunsWithPatch,
   type TextStylePatch
 } from '#core/text/character-style'
+import { textStyleName } from '#core/text/font/names'
 
 import { hyperlinkTarget } from './hyperlink'
 import { invalid, received } from './messages'
@@ -152,7 +155,7 @@ function stringProblem(value: unknown, at: string): string | null {
 function currentFont(node: SceneNode, index: number): CurrentFont {
   const at = Math.min(index, node.text.length - 1)
   const [style] = at < 0 ? [nodeStyle(node)] : characterStyles(node, at, at + 1)
-  const name = weightToStyleName(style.fontWeight, style.italic)
+  const name = textStyleName(style)
   return {
     style: name,
     fontVariations: style.fontVariations,
@@ -160,7 +163,7 @@ function currentFont(node: SceneNode, index: number): CurrentFont {
       style.fontFamily,
       name,
       style.fontVariations,
-      node.opticalSizeFromFontSize
+      style.opticalSizeFromFontSize
     )
   }
 }
@@ -345,7 +348,11 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     if ((value as number) < 1) throw invalid(method, 'Number must be greater than or equal to 1')
     return { fontSize: value as number }
   },
-  setRangeFontName: (method, node, start, _end, value) => fontNameStyle(method, node, start, value),
+  setRangeFontName: (method, node, start, _end, value) => {
+    const style = fontNameStyle(method, node, start, value)
+    assertFontLoaded(method, node, style)
+    return style
+  },
   setRangeFills: (method, _node, _start, _end, value) => ({
     fills: fillsFromPaints(method, value)
   }),
@@ -394,6 +401,13 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     hyperlink: hyperlinkTarget(method, value, graph)
   })
 }
+
+/** Range setters Figma takes with the text's fonts unloaded: paints and links, measured live. */
+const RANGE_SETTERS_WITHOUT_FONTS = new Set([
+  'setRangeFills',
+  'setRangeHyperlink',
+  'setRangeTextDecorationColor'
+])
 
 /** Range getters by method and the segment field each reads. */
 const RANGE_GETTERS: Record<string, TextSegmentField> = {
@@ -510,6 +524,7 @@ export function installTextRangeMethods(
         const node = raw(this, internals)
         assertTextRange(method, node, start, end)
         const patch = setter(method, node, start, end, value, graph(this, internals))
+        if (!RANGE_SETTERS_WITHOUT_FONTS.has(method)) assertTextFontsLoaded(method, node)
         updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
       }
     }

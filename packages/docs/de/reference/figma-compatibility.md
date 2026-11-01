@@ -6,7 +6,7 @@ Vergleich der Funktionen von Figma Design mit dem aktuellen Stand von OpenPencil
 ✅ Unterstützt — funktioniert vollständig · 🟡 Teilweise — Grundfunktion vorhanden, einzelne Teile fehlen · 🔲 Nicht umgesetzt
 :::
 
-**Abdeckung:** 128 von 156 Funktionen berücksichtigt — 111 ✅ vollständig, 17 🟡 teilweise und 28 🔲 nicht umgesetzt. Stand: 2026-10-27.
+**Abdeckung:** 128 von 156 Funktionen berücksichtigt — 112 ✅ vollständig, 16 🟡 teilweise und 28 🔲 nicht umgesetzt. Stand: 2026-10-27.
 
 ## Oberfläche und Navigation
 
@@ -64,7 +64,7 @@ Vektornetze, Zeichenstift, Bleistift, boolesche Operationen (bleiben als boolesc
 
 ## Text und Typografie
 
-Direkte Textbearbeitung, CanvasKit Paragraph, Systemschriften, Schriftwahl, Größe, Zeilenhöhe, horizontale und vertikale Ausrichtung, automatische Textgrößen (Auto width, Auto height, Fixed size), verschachtelte Aufzählungen und nummerierte Listen, Emojis, CJK mit sprachabhängigen Ersatzschriften, RTL mit arabischer Formung und Symbolschriften (Material Symbols, Iconify, SF Symbols ab macOS 14) werden unterstützt. Teilweise umgesetzt sind Text auf Pfaden, Textstile (benannte Stile lassen sich anwenden, aber nicht erstellen oder bearbeiten), Links (bleiben erhalten, lassen sich im Panel aber nicht hinzufügen), OpenType-Funktionen (alle werden dargestellt, das Panel schaltet nur Ligaturen, kontextuelle Alternativen und Unterschneidung) und variable Schriften (Achsen nur über die Plugin API, noch nicht im Panel).
+Direkte Textbearbeitung, CanvasKit Paragraph, Systemschriften, Schriftwahl, Größe, Zeilenhöhe, horizontale und vertikale Ausrichtung, automatische Textgrößen (Auto width, Auto height, Fixed size), verschachtelte Aufzählungen und nummerierte Listen, Emojis, CJK mit sprachabhängigen Ersatzschriften, RTL mit arabischer Formung und Symbolschriften (Material Symbols, Iconify, SF Symbols ab macOS 14) werden unterstützt. Teilweise umgesetzt sind Text auf Pfaden, Textstile (benannte Stile lassen sich anwenden, aber nicht erstellen oder bearbeiten), Links (bleiben erhalten, lassen sich im Panel aber nicht hinzufügen), OpenType-Funktionen (alle werden dargestellt, das Panel schaltet nur Ligaturen, kontextuelle Alternativen und Unterschneidung). Variable Schriften werden unterstützt: Achsen lassen sich im Panel und über die Plugin API setzen.
 
 ## Farben, Verläufe und Bilder
 

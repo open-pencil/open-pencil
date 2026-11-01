@@ -28,13 +28,18 @@ export interface NumberFieldRootProps {
   bound?: boolean
   /** Mutation policy used when the value is bound. */
   editPolicy?: NumberFieldEditPolicy
+  /**
+   * Units a typed value may end with, such as `%` or `px`; the commit reports the one typed. A
+   * unit listed here is read as that unit, not as a percent of `max`.
+   */
+  units?: readonly string[]
 }
 
 export interface NumberFieldRootEmits {
   /** Emitted for live numeric updates and committed expression results. */
-  (event: 'update:modelValue', value: number): void
-  /** Emitted once after a changed interaction is committed. */
-  (event: 'commit', value: number, previous: number): void
+  (event: 'update:modelValue', value: number, unit?: string): void
+  /** Emitted once after a changed interaction is committed, with the unit typed after the value. */
+  (event: 'commit', value: number, previous: number, unit?: string): void
   /** Emitted after restoring a cancelled or invalid interaction. */
   (event: 'cancel'): void
   /** Emitted when the inline editing state changes. */

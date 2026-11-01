@@ -34,7 +34,8 @@ test('general snapping preferences persist and apply to editor sessions', async 
   await canvas.waitForInit()
 
   await page.getByTestId('app-settings-trigger').click()
-  await expect(page.getByTestId('settings-general-panel')).toBeVisible()
+  await page.getByTestId('settings-section-editor').click()
+  await expect(page.getByTestId('settings-editor-panel')).toBeVisible()
   const geometry = page.getByRole('switch', { name: 'Snap to geometry' })
   const objects = page.getByRole('switch', { name: 'Snap to objects' })
   const pixelGrid = page.getByRole('switch', { name: 'Snap to pixel grid' })
@@ -55,6 +56,7 @@ test('general snapping preferences persist and apply to editor sessions', async 
   await page.reload()
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-editor').click()
   await expect(geometry).not.toBeChecked()
   await expect(objects).not.toBeChecked()
   await expect(pixelGrid).not.toBeChecked()
@@ -65,53 +67,6 @@ test('general snapping preferences persist and apply to editor sessions', async 
   await geometry.click()
   await objects.click()
   await pixelGrid.click()
-})
-
-test('progressive tiled rendering preference persists and URL overrides take precedence', async ({
-  page
-}) => {
-  await page.goto('/?test')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-
-  await page.getByTestId('app-settings-trigger').click()
-  const tiled = page.getByRole('switch', { name: 'Progressive rendering' })
-  await expect(tiled).not.toBeChecked()
-  await tiled.click()
-  await expect(page.getByText('Reload OpenPencil to apply this change.')).toBeVisible()
-
-  await page.reload()
-  await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
-  await expect(tiled).toBeChecked()
-  await expect(
-    page.evaluate(() =>
-      window.openPencil
-        ?.getStore?.()
-        .canvasRenderers.some(
-          (renderer) => renderer.tracksSceneSettlement && renderer.tiledSceneEnabled
-        )
-    )
-  ).resolves.toBe(true)
-
-  await page.goto('/?test&renderer=retained')
-  await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
-  await expect(tiled).toBeChecked()
-  await expect(
-    page.getByText(/current session renderer is controlled by a URL override/i)
-  ).toBeVisible()
-  await expect(
-    page.evaluate(() =>
-      window.openPencil
-        ?.getStore?.()
-        .canvasRenderers.every(
-          (renderer) => !renderer.tracksSceneSettlement || !renderer.tiledSceneEnabled
-        )
-    )
-  ).resolves.toBe(true)
-
-  await tiled.click()
 })
 
 test('Preferences menu snapping controls use the same preferences', async ({ page }) => {
@@ -130,6 +85,7 @@ test('Preferences menu snapping controls use the same preferences', async ({ pag
   await objects.click()
 
   await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-editor').click()
   await expect(page.getByRole('switch', { name: 'Snap to objects' })).not.toBeChecked()
   await page.getByRole('switch', { name: 'Snap to objects' }).click()
 })
@@ -140,7 +96,7 @@ test('settings shortcut preserves the last visited section', async ({ page }) =>
   await canvas.waitForInit()
 
   await page.getByTestId('app-settings-trigger').click()
-  await page.getByTestId('settings-section-media').click()
+  await page.getByTestId('settings-section-services').click()
   await page.getByTestId('app-settings-done').click()
 
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')

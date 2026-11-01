@@ -1,0 +1,1 @@
+- Undoing every edit an AI agent or MCP client made returns the document to saved instead of leaving it marked as edited.

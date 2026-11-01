@@ -13,11 +13,16 @@ import * as v from 'valibot'
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
+import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
+import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import { linkOwnTools } from '@/app/ai/agents/acp/tools'
+import { agentAccounts } from '@/app/ai/agents/setup/accounts'
+import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
+import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -293,13 +298,18 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     let onUpdate: ACPSession['onUpdate'] = null
     // Set once the session exists; the client reads it to record the model the agent names.
     let sessionRef: ACPSession | null = null
+    const agentId = this.agentDef.id
+    const { agentDef, store } = this
 
     const clientImpl: Client = {
       async requestPermission(
         params: RequestPermissionRequest
       ): Promise<RequestPermissionResponse> {
-        const { requestPermissionFromUser } = await import('@/app/ai/agents/acp/permission')
-        return requestPermissionFromUser(params)
+        const title = params.toolCall.title ?? ''
+        return requestPermissionFromUser(
+          params,
+          store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
+        )
       },
 
       async sessionUpdate(params: SessionNotification): Promise<void> {
@@ -309,13 +319,15 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
         }
+        if (update.sessionUpdate === 'available_commands_update') {
+          setAgentCommands(agentId, update.availableCommands)
+        }
         onUpdate?.(params)
       },
 
       extNotification: async (method, params) => {
         const status = parseAuthStatusUpdate(method, params)
         if (!status) return
-        const { agentAccounts } = await import('@/app/ai/agents/setup/accounts')
         agentAccounts.report(this.agentDef.id, status)
       }
     }
@@ -328,7 +340,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     })
     stopped.catch(() => undefined)
     const untilStopped = <T>(request: Promise<T>): Promise<T> => Promise.race([request, stopped])
-    const { getAutomationAuthToken } = await import('@/app/automation/mcp/spawn')
     let automationAuthToken: string | null
     try {
       automationAuthToken = await getAutomationAuthToken()

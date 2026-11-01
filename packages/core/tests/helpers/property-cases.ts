@@ -273,6 +273,19 @@ export const PROPERTY_CASES: RoundTripCase[] = [
     textUnderlineOffset: 3,
     textDecorationSkipInk: false
   }),
+  leafCase('text font settings', 'TEXT', {
+    text: 'Numbers 0123',
+    fontFeatures: [
+      { tag: 'TNUM', enabled: true },
+      { tag: 'LIGA', enabled: false }
+    ],
+    fontVariations: [
+      { axis: 'wght', value: 650 },
+      { axis: 'opsz', value: 14 }
+    ],
+    opticalSizeFromFontSize: false,
+    textLanguage: 'de'
+  }),
   leafCase('text paragraph spacing', 'TEXT', {
     text: 'One\nTwo',
     paragraphSpacing: 8,

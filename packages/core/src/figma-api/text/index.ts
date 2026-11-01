@@ -26,6 +26,7 @@ import {
 } from '@open-pencil/scene-graph/text'
 
 import { invalid, received } from '#core/figma-api/accessors/text/messages'
+import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text/style-runs'
 
 import { assertTextRange } from './style'
@@ -134,6 +135,7 @@ export function insertCharacters(
     )
   }
   assertEditPosition('insertCharacters', node, 'start', start)
+  assertTextFontsLoaded('insertCharacters', node)
   const text = node.text.slice(0, start) + characters + node.text.slice(start)
   const textParagraphs = paragraphStylesAfterEdit(
     node.textParagraphs,
@@ -183,6 +185,7 @@ export function deleteCharacters(
   if (end < start) {
     throw new Error('in deleteCharacters: deleteCharacters must have (start <= end)')
   }
+  assertTextFontsLoaded('deleteCharacters', node)
   const text = node.text.slice(0, start) + node.text.slice(end)
   const textParagraphs = paragraphStylesAfterEdit(node.textParagraphs, node.text, start, end, '')
   const styleRuns = adjustRunsForDelete(node.styleRuns, start, end - start)
@@ -240,6 +243,7 @@ export function setRangeListOptions(
     )
   }
   assertTextRange('setRangeListOptions', node, start, end)
+  assertTextFontsLoaded('setRangeListOptions', node)
   updateParagraphs(graph, node, start, end, (style) => withListType(style, options.type))
 }
 
@@ -276,6 +280,7 @@ export function setRangeIndentation(
     throw new Error(`in setRangeIndentation: Property "indentation" failed validation: ${invalid}`)
   }
   assertTextRange('setRangeIndentation', node, start, end)
+  assertTextFontsLoaded('setRangeIndentation', node)
   updateParagraphs(graph, node, start, end, (style) => withIndentation(style, level))
 }
 
@@ -315,6 +320,7 @@ export function setRangeParagraphSpacing(
   const invalid = spacingProblem(value)
   if (invalid) throw new Error(`in ${method}: Property "value" failed validation: ${invalid}`)
   assertTextRange(method, node, start, end)
+  assertTextFontsLoaded(method, node)
   // Ranges change the paragraphs of their characters; one more reaches the end position's.
   updateParagraphs(graph, node, start, end + 1, (style) =>
     withParagraphSpacing(style, field, value)

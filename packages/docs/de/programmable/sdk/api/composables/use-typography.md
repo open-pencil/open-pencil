@@ -54,6 +54,15 @@ typography.toggleItalic()
 typography.toggleDecoration('UNDERLINE')
 ```
 
+### Achsen variabler Schriften setzen
+
+`axes` listet die Achsen der variablen Schrift des ausgewählten Texts mit `tag`, `name`, Bereich und dem `value`, in dem sie gezeichnet wird (`MIXED`, wenn die Ebenen abweichen); bei statischen Schriften oder verschiedenen Familien ist die Liste leer. `previewAxis` zeigt einen Wert beim Ziehen, `setAxis` setzt ihn in einem Undo-Schritt, und `setOpticalSizeAuto` lässt die optische Größe der Schriftgröße folgen oder hält sie fest. Eine neue Stärke, Neigung oder Familie setzt die Achsen auf die des Schnitts zurück.
+
+```ts
+typography.setAxis('wght', 560)
+typography.setOpticalSizeAuto(false)
+```
+
 ## Siehe auch
 
 - [useTextEdit](./use-text-edit)

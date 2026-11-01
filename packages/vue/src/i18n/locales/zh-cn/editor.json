@@ -1,4 +1,5 @@
 {
+  "wideGamutUnavailable": "此显示器或浏览器无法显示 Display-P3 颜色，因此画布以 sRGB 预览。文档的色彩空间保持不变。",
   "toolOptions": "{tool}选项",
   "removeGradientStop": "删除渐变色标",
   "cornerRadius": "圆角",

@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { styleRunReferences } from '@open-pencil/scene-graph/text'
+import { referencedStyleIds } from '@open-pencil/scene-graph/shared-styles'
 
 import { clipboardPlacement, type ClipboardPlacement } from './placement'
 import { captureClipboardVariables, type ClipboardVariables } from './variables'
@@ -17,23 +17,6 @@ export interface ClipboardSnapshot {
   images: Map<string, Uint8Array>
   /** Written by Copy properties: Paste skips it and Paste properties reads it, as in Figma. */
   properties?: boolean
-}
-
-function referencedStyleIds(nodes: SceneNode[]): Set<string> {
-  const ids = new Set<string>()
-  for (const node of nodes) {
-    for (const id of [
-      node.fillStyleId,
-      node.strokeStyleId,
-      node.textStyleId,
-      node.effectStyleId,
-      node.gridStyleId,
-      ...styleRunReferences(node.styleRuns).styles
-    ]) {
-      if (id) ids.add(id)
-    }
-  }
-  return ids
 }
 
 export function captureClipboardSnapshot(
@@ -68,7 +51,7 @@ export function captureClipboardSnapshot(
     for (const child of node.children ?? []) visitReferences(child)
   }
   for (const node of nodes) visitReferences(node)
-  const styleIds = referencedStyleIds(capturedNodes)
+  const styleIds = new Set(capturedNodes.flatMap(referencedStyleIds))
   const styleDefinitions: SceneNode[] = []
   for (const node of graph.getAllNodes()) {
     if (node.source.id && styleIds.has(node.source.id)) styleDefinitions.push(structuredClone(node))

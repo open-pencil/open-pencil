@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 
@@ -6,6 +6,10 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, diffDocuments } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 type DiffResult = { diff?: string | null; message?: string; error?: string }
 type ApplyResult = {

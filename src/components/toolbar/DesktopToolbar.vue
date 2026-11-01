@@ -40,6 +40,8 @@ function selectedTool(tool: EditorToolDef) {
 defineSlots<{
   /** A button that runs a command, such as placing an icon, rather than picking a tool. */
   action(props: { action: ToolbarAction }): unknown
+  /** Pickers whose buttons are hidden, anchored to the toolbar's top edge. */
+  hidden(): unknown
 }>()
 </script>
 
@@ -89,5 +91,6 @@ defineSlots<{
         </ToolbarItem>
       </template>
     </ToolbarRoot>
+    <slot name="hidden" />
   </div>
 </template>

@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
@@ -8,9 +10,9 @@ import {
   savedEmojiCharacters
 } from '#core/text/emoji'
 import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
-import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/requirements'
-import { missingGraphFontScripts } from '#core/text/resolved-requirements'
+import { fontManager } from '#core/text/font/manager'
+import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/requirements/collect'
+import { missingGraphFontScripts } from '#core/text/requirements/resolved'
 
 import { documentFontStatus, type DocumentFontStatus } from './font/status'
 
@@ -41,9 +43,17 @@ function laidOutEmojiCharacters(node: SceneNode): string {
 
 export async function prepareGraphFonts(
   graph: SceneGraph,
-  nodeIds: readonly string[]
+  nodeIds: readonly string[],
+  /** Characters a writer draws besides the text's own, which the fonts must map too. */
+  extraCharacters = ''
 ): Promise<DocumentFontStatus> {
-  const requirements = collectGraphFontRequirements(graph, nodeIds)
+  const collected = collectGraphFontRequirements(graph, nodeIds)
+  const requirements = extraCharacters
+    ? {
+        ...collected,
+        characters: uniq(Array.from(collected.characters + extraCharacters)).join('')
+      }
+    : collected
   const faces = requirements.nodes.flatMap(collectNodeFontFaces)
   await Promise.all(
     faces.map(({ family, style }) => fontManager.loadFont(family, style, requirements.characters))

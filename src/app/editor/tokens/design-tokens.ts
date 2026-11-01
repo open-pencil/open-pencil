@@ -2,6 +2,7 @@ import { uniq } from 'es-toolkit/array'
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 
 import type {
+  DesignTokenBundle,
   DesignTokenIssue,
   DesignTokenSourceFile
 } from '@open-pencil/core/io/formats/design-tokens'
@@ -31,12 +32,15 @@ function issueName(issue: DesignTokenIssue): string {
   return issue.kind === 'unsupported-effect' ? issue.style : issue.token
 }
 
+/** The W3C token reader and writer load with the first import or export. */
+const loadDesignTokens = () => import('@open-pencil/core/io/formats/design-tokens')
+
 /**
  * Saves the document's variables and styles as W3C design tokens: a zip of one file per
  * collection mode, the styles, and the resolver that combines them.
  */
 export async function exportDesignTokenArchive(store: EditorStore): Promise<void> {
-  const { exportDesignTokens } = await import('@open-pencil/core/io/formats/design-tokens')
+  const { exportDesignTokens } = await loadDesignTokens()
   const { files, issues } = exportDesignTokens(store.graph)
   const entries: Zippable = {}
   for (const file of files)
@@ -58,9 +62,7 @@ export async function exportDesignTokenArchive(store: EditorStore): Promise<void
  * Picked files as token sources: JSON as it is, archives unpacked. A folder's files keep their
  * paths inside it, which is how a resolver's `$ref`s and per-folder collections find them.
  */
-export async function readDesignTokenFiles(
-  files: readonly File[]
-): Promise<DesignTokenSourceFile[]> {
+async function readDesignTokenFiles(files: readonly File[]): Promise<DesignTokenSourceFile[]> {
   const sources: DesignTokenSourceFile[] = []
   for (const file of files) {
     const path = file.webkitRelativePath || file.name
@@ -75,4 +77,12 @@ export async function readDesignTokenFiles(
     }
   }
   return sources
+}
+
+/** What picked token files, folders, or archives of them would define in the document. */
+export async function readDesignTokenImport(files: readonly File[]): Promise<DesignTokenBundle> {
+  // Files that cannot be read leave the reader unloaded.
+  const sources = await readDesignTokenFiles(files)
+  const { readDesignTokens } = await loadDesignTokens()
+  return readDesignTokens(sources)
 }

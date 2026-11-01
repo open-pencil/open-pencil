@@ -1,0 +1,1 @@
+- **Vectorize** can use QuiverAI's Arrow 2 model, beside Recraft and fal.ai, with your own QuiverAI API key.

@@ -80,11 +80,17 @@ export const APP_MENU_SCHEMA = [
     label: 'File',
     paletteIcon: 'file',
     items: [
-      { id: 'new', label: 'New', shortcut: 'MOD+N' },
+      { id: 'new', label: 'New Design', shortcut: 'MOD+N' },
+      { id: 'new-tab', label: 'New Tab', shortcut: 'MOD+T' },
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
       { id: 'open-recent', label: 'Open Recent', target: 'native' },
-      { id: 'browse-files', label: 'Browse Files…', handler: 'shell' },
       { id: 'open-tour', label: 'Open the Tour', handler: 'shell' },
+      {
+        id: 'diagnostics',
+        label: 'Diagnostics…',
+        handler: 'shell',
+        palette: { keywords: ['log', 'report', 'bug', 'problem', 'troubleshoot'] }
+      },
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
@@ -477,6 +483,62 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.distributeVertical',
         label: 'Distribute Vertical Spacing',
         command: 'selection.distributeVertical'
+      },
+      { type: 'separator' },
+      { id: 'selection.tidyUp', label: 'Tidy Up', command: 'selection.tidyUp' },
+      {
+        id: 'selection.packHorizontal',
+        label: 'Pack Horizontal',
+        command: 'selection.packHorizontal'
+      },
+      { id: 'selection.packVertical', label: 'Pack Vertical', command: 'selection.packVertical' },
+      {
+        id: 'arrange-layout',
+        label: 'Auto Arrange',
+        sub: [
+          {
+            id: 'selection.arrangeSpread',
+            label: 'Spread Apart',
+            command: 'selection.arrangeSpread'
+          },
+          {
+            id: 'selection.arrangeCompact',
+            label: 'Spread and Compact',
+            command: 'selection.arrangeCompact'
+          },
+          {
+            id: 'selection.arrangePack',
+            label: 'Pack into Rows',
+            command: 'selection.arrangePack'
+          },
+          { type: 'separator' },
+          {
+            id: 'selection.arrangeFlowDown',
+            label: 'Flow, Top to Bottom',
+            command: 'selection.arrangeFlowDown'
+          },
+          {
+            id: 'selection.arrangeFlowRight',
+            label: 'Flow, Left to Right',
+            command: 'selection.arrangeFlowRight'
+          },
+          {
+            id: 'selection.arrangeTreeDown',
+            label: 'Tree, Top to Bottom',
+            command: 'selection.arrangeTreeDown'
+          },
+          {
+            id: 'selection.arrangeTreeRight',
+            label: 'Tree, Left to Right',
+            command: 'selection.arrangeTreeRight'
+          },
+          {
+            id: 'selection.arrangeRadial',
+            label: 'Radial Map',
+            command: 'selection.arrangeRadial'
+          },
+          { id: 'selection.arrangeNetwork', label: 'Network', command: 'selection.arrangeNetwork' }
+        ]
       }
     ]
   }

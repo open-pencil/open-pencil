@@ -57,3 +57,25 @@ test('a call cancelled while it waits for its turn edits nothing', async () => {
   expect(store.graph.getChildren(pageId)).toEqual([])
   expect(store.undo.peekUndo()).toBeUndefined()
 })
+
+test('undoing an asynchronous tool call returns the document to saved', async () => {
+  const tool = (name: string) =>
+    expectDefined(
+      ALL_TOOLS.find((candidate) => candidate.name === name),
+      name
+    )
+  const pageId = store.state.currentPageId
+  const figma = makeFigmaFromStore(store, pageId)
+  const ids = [0, 20, 40].map(
+    (x) => store.graph.createNode('RECTANGLE', pageId, { x, y: x / 2, width: 100, height: 70 }).id
+  )
+  store.markDocumentSaved()
+
+  await runEditorTool({ store, figma, def: tool('arrange'), args: { ids }, source: 'MCP' })
+  await Promise.resolve()
+  expect(store.hasUnsavedChanges()).toBe(true)
+
+  store.undo.undo()
+  await Promise.resolve()
+  expect(store.hasUnsavedChanges()).toBe(false)
+})

@@ -1,11 +1,17 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
+import { registerTestFont } from '#core-tests/helpers/figma-api'
 import { pick } from 'es-toolkit'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
+
+beforeAll(async () => {
+  await registerTestFont()
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Medium' })
+})
 
 function setup() {
   const graph = new SceneGraph()

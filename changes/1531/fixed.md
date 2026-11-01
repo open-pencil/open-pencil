@@ -1,0 +1,1 @@
+- Home in a narrow desktop window keeps mouse-sized controls and focuses its search; only touch screens get the larger touch controls.

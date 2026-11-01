@@ -1,4 +1,4 @@
-import { mapValues } from 'es-toolkit/object'
+import { mapValues } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { tryParseColor } from '@open-pencil/scene-graph/color'
@@ -19,7 +19,7 @@ import {
 import { isColor, isFillValue } from './overrides/fills'
 import { isStrokeValue } from './overrides/strokes'
 import { isLayerRef, type LayerRef } from './refs'
-import { isVariable } from './vars'
+import { isVariable } from './variables'
 
 /**
  * Parse a value a design JSX script passed, or throw `heading` followed by every problem and

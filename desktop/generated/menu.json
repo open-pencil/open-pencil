@@ -4,8 +4,13 @@
     "items": [
       {
         "id": "new",
-        "label": "New",
+        "label": "New Design",
         "accelerator": "CmdOrCtrl+N"
+      },
+      {
+        "id": "new-tab",
+        "label": "New Tab",
+        "accelerator": "CmdOrCtrl+T"
       },
       {
         "id": "open",
@@ -17,12 +22,12 @@
         "label": "Open Recent"
       },
       {
-        "id": "browse-files",
-        "label": "Browse Files…"
-      },
-      {
         "id": "open-tour",
         "label": "Open the Tour"
+      },
+      {
+        "id": "diagnostics",
+        "label": "Diagnostics…"
       },
       {
         "type": "separator"
@@ -575,11 +580,74 @@
       },
       {
         "id": "selection.distributeHorizontal",
-        "label": "Distribute Horizontal Spacing"
+        "label": "Distribute Horizontal Spacing",
+        "accelerator": "Ctrl+Alt+H"
       },
       {
         "id": "selection.distributeVertical",
-        "label": "Distribute Vertical Spacing"
+        "label": "Distribute Vertical Spacing",
+        "accelerator": "Ctrl+Alt+V"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.tidyUp",
+        "label": "Tidy Up",
+        "accelerator": "Ctrl+Alt+T"
+      },
+      {
+        "id": "selection.packHorizontal",
+        "label": "Pack Horizontal"
+      },
+      {
+        "id": "selection.packVertical",
+        "label": "Pack Vertical"
+      },
+      {
+        "id": "arrange-layout",
+        "label": "Auto Arrange",
+        "sub": [
+          {
+            "id": "selection.arrangeSpread",
+            "label": "Spread Apart"
+          },
+          {
+            "id": "selection.arrangeCompact",
+            "label": "Spread and Compact"
+          },
+          {
+            "id": "selection.arrangePack",
+            "label": "Pack into Rows"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "id": "selection.arrangeFlowDown",
+            "label": "Flow, Top to Bottom"
+          },
+          {
+            "id": "selection.arrangeFlowRight",
+            "label": "Flow, Left to Right"
+          },
+          {
+            "id": "selection.arrangeTreeDown",
+            "label": "Tree, Top to Bottom"
+          },
+          {
+            "id": "selection.arrangeTreeRight",
+            "label": "Tree, Left to Right"
+          },
+          {
+            "id": "selection.arrangeRadial",
+            "label": "Radial Map"
+          },
+          {
+            "id": "selection.arrangeNetwork",
+            "label": "Network"
+          }
+        ]
       }
     ]
   }

@@ -7,7 +7,7 @@ import type {
   StyleRun
 } from '@open-pencil/scene-graph'
 import { localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
@@ -143,7 +143,7 @@ export function svgImportFonts(data: Pick<SVGVectorizeResult, 'texts'>): Array<{
   const fonts = new Map<string, { family: string; style: string; characters: string }>()
   for (const run of data.texts.flatMap((text) => text.pieces.flatMap((piece) => piece.runs))) {
     const family = run.fontFamily ?? 'Inter'
-    const style = weightToStyle(run.fontWeight, run.italic)
+    const style = faceLoadKey(run.fontWeight, run.italic)
     const key = `${family}\u0000${style}`
     const font = fonts.get(key) ?? { family, style, characters: '' }
     fonts.set(key, { ...font, characters: font.characters + run.text })

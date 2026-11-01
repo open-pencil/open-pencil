@@ -3,11 +3,6 @@ import { params } from '@nanostores/i18n'
 import { i18n } from '#vue/i18n/create'
 
 export const automationMessageDefaults = {
-  toolAccessDescription:
-    'Configure design tools independently for built-in AI and the local MCP server.',
-  toolAccessTarget: 'Configure tool access for',
-  builtInAI: 'Built-in AI',
-  localMCP: 'Local MCP',
   restoreToolDefaults: 'Restore defaults',
   aiToolAccessDescription:
     'Choose tools for direct AI model connections. ACP and Pi agents use MCP access instead.',

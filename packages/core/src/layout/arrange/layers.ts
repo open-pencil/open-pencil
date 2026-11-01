@@ -178,11 +178,7 @@ function readFrom(
  * layers are joined anew, routed when they flow, and any other connector on what moved follows.
  * Throws, moving nothing, when the layers change while the layout runs.
  */
-export async function arrangeLayers(
-  graph: SceneGraph,
-  ids: string[],
-  options: ArrangeLayersOptions
-): Promise<LayerArrangement> {
+function chosenLayers(graph: SceneGraph, ids: string[]) {
   const given = uniq(ids)
     .map((id) => graph.getNode(id))
     .filter(
@@ -192,6 +188,47 @@ export async function arrangeLayers(
   const groups = groupsAmong(graph, new Set(given.map((node) => node.id)))
   // A layer inside another chosen layer that is not laid out around it moves with that layer.
   const nodes = given.filter((node) => !movesWithAncestor(graph, node, given, groups))
+  const inGroup = (node: SceneNode) => node.parentId !== null && groups.has(node.parentId)
+  return { nodes, groups, inGroup, top: nodes.filter((node) => !inGroup(node)) }
+}
+
+function isLine(layout: LayerLayout) {
+  return layout === 'grid' || layout === 'row' || layout === 'column'
+}
+
+/** Why `arrangeLayers` would refuse these layers with `layout`, or null when it takes them. */
+export function arrangeProblem(
+  graph: SceneGraph,
+  ids: string[],
+  layout: LayerLayout
+): string | null {
+  const { nodes, top } = chosenLayers(graph, ids)
+  // Grid, row, and column place layers in their parents' axes, so the layers must share one.
+  if (isLine(layout)) {
+    return new Set(nodes.map((node) => node.parentId)).size > 1
+      ? 'Layers to place in a grid, row, or column must share a parent'
+      : null
+  }
+  return new Set(top.map((node) => node.parentId)).size > 1
+    ? 'Layers to arrange must share a parent, apart from those in chosen sections'
+    : null
+}
+
+/**
+ * Runs the synchronous step that moves layers; an editor wraps it to record one undo step for
+ * the moves alone, after the asynchronous layout has finished.
+ */
+export type ArrangeCommit = (apply: () => void) => void
+
+export async function arrangeLayers(
+  graph: SceneGraph,
+  ids: string[],
+  options: ArrangeLayersOptions,
+  commit: ArrangeCommit = (apply) => apply()
+): Promise<LayerArrangement> {
+  const problem = arrangeProblem(graph, ids, options.layout)
+  if (problem) throw new Error(problem)
+  const { nodes, groups, inGroup, top } = chosenLayers(graph, ids)
   const chosen = new Set(nodes.map((node) => node.id))
   const relayout = () => {
     const moved = connectorsAffectedBy(graph, chosen)
@@ -201,20 +238,15 @@ export async function arrangeLayers(
     }
     return moved.length
   }
-  if (options.layout === 'grid' || options.layout === 'row' || options.layout === 'column') {
-    // These place layers in their parents' axes, so the layers must share one.
-    if (new Set(nodes.map((node) => node.parentId)).size > 1) {
-      throw new Error('Layers to place in a grid, row, or column must share a parent')
-    }
-    line(nodes, graph, options)
-    return { layers: nodes.length, groups: 0, connectors: relayout() }
+  if (isLine(options.layout)) {
+    let connectors = 0
+    commit(() => {
+      line(nodes, graph, options)
+      connectors = relayout()
+    })
+    return { layers: nodes.length, groups: 0, connectors }
   }
 
-  const inGroup = (node: SceneNode) => node.parentId !== null && groups.has(node.parentId)
-  const top = nodes.filter((node) => !inGroup(node))
-  if (new Set(top.map((node) => node.parentId)).size > 1) {
-    throw new Error('Layers to arrange must share a parent, apart from those in chosen sections')
-  }
   const pageId = top[0] ? graph.pageOf(top[0].id) : null
   if (!pageId) return { layers: 0, groups: 0, connectors: 0 }
 
@@ -254,13 +286,15 @@ export async function arrangeLayers(
   if (readFrom(graph, pageId, nodes, groups) !== before) {
     throw new Error('The layers changed while they were being arranged; nothing was moved')
   }
-  applyArrangement(
-    graph,
-    input,
-    arrangement,
-    { boxes: new Map(nodes.map((node) => [node.id, node.id])), connectors: joined },
-    { topLeft }
-  )
-  relayout()
+  commit(() => {
+    applyArrangement(
+      graph,
+      input,
+      arrangement,
+      { boxes: new Map(nodes.map((node) => [node.id, node.id])), connectors: joined },
+      { topLeft }
+    )
+    relayout()
+  })
   return { layers: input.boxes.length, groups: input.groups.length, connectors: joined.size }
 }

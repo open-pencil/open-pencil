@@ -6,7 +6,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
 :::
 
-**Coverage:** 128 of 156 Figma feature items addressed — 111 ✅ fully supported, 17 🟡 partial, 28 🔲 not yet. Last updated: 2026-10-27.
+**Coverage:** 128 of 156 Figma feature items addressed — 112 ✅ fully supported, 16 🟡 partial, 28 🔲 not yet. Last updated: 2026-10-27.
 
 ## Interface & Navigation
 
@@ -92,7 +92,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Links in text | 🟡 | Links on character ranges round-trip through `.fig`, the clipboard, HTML, and the plugin API; no panel control to add one |
 | Emojis & smart symbols | ✅ | Color emoji draw with the system emoji font, edit as one character, and survive `.fig` and the clipboard |
 | OpenType features | 🟡 | Every feature a file sets renders and round-trips; the panel toggles only ligatures, contextual alternates, and kerning |
-| Variable fonts | 🟡 | Named styles draw at their axis values and optical size follows the font size, as in Figma; the plugin API sets any axis, but the panel has no axis controls yet |
+| Variable fonts | ✅ | Named styles draw at their axis values and optical size follows the font size, as in Figma; the Typography section and the plugin API set any axis, and optical size can be set by hand |
 | CJK text support | ✅ | Language-aware CJK fallback fonts load before first paint, including Traditional Chinese and split web fonts |
 | RTL text support | ✅ | Text direction Auto, LTR, or RTL with Arabic shaping; auto layout flows right to left |
 | Icon fonts | ✅ | Material Symbols draw from Google's variable fonts at any weight, fill, and grade; the icon picker adds Iconify sets and SF Symbols (macOS 14+) |

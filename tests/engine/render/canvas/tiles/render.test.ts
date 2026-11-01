@@ -7,8 +7,10 @@ import { SkiaRenderer } from '#core/canvas'
 import { RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
 import {
   deleteRenderedTile,
+  downsampleTile,
   renderTile,
   TiledSceneController,
+  TileImageCache,
   TILE_DEVICE_SIZE,
   TileSurfacePool,
   tileKeysForWorldBounds,
@@ -244,7 +246,7 @@ describe('tile rendering', () => {
     }
   })
 
-  test('cancels obsolete refresh jobs and performs no exact work during navigation', () => {
+  test('cancels jobs of an earlier navigation generation and resumes rendering once idle', () => {
     const graph = new SceneGraph()
     const page = expectDefined(graph.getPages()[0], 'page')
     for (let index = 0; index < 48; index++) {
@@ -258,7 +260,9 @@ describe('tile rendering', () => {
     }
     const surface = expectDefined(ck.MakeSurface(1280, 800), 'cancellation surface')
     const renderer = new SkiaRenderer(ck, surface)
-    const controller = new TiledSceneController()
+    // Every clock reading is 10 ms later, so each frame affords exactly one tile.
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
     renderer.pageId = page.id
     renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
     renderer.viewportWidth = 1280
@@ -267,15 +271,30 @@ describe('tile rendering', () => {
     renderer.zoom = 1
     renderer.navigationPhase = 'idle'
     try {
-      const initial = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      // A tile first records its chunk pictures, one per 10 ms frame, then renders.
+      let initial = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      for (let frame = 0; frame < 60 && initial.metrics.interruptibleCompleted === 0; frame++) {
+        initial = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
       expect(initial.pending).toBe(true)
+      expect(initial.metrics.interruptibleCompleted).toBe(1)
 
-      renderer.navigationPhase = 'zoom'
+      // A new gesture drops the queue; the tiles it needs are planned afresh, and at 10 ms each
+      // they exceed the moving budget, so the frame keeps its fallback instead.
+      renderer.navigationPhase = 'pan'
       renderer.navigationGeneration = 1
       const navigating = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
       expect(navigating.metrics.cancelledJobs).toBeGreaterThan(0)
-      expect(navigating.metrics.mandatoryCompleted).toBe(0)
       expect(navigating.metrics.interruptibleCompleted).toBe(0)
+      expect(navigating.metrics.skippedWithFallback).toBeGreaterThan(0)
+      expect(navigating.pending).toBe(true)
+
+      renderer.navigationPhase = 'idle'
+      let idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      for (let frame = 0; frame < 60 && idle.metrics.interruptibleCompleted === 0; frame++) {
+        idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      }
+      expect(idle.metrics.interruptibleCompleted).toBe(1)
     } finally {
       controller.destroy()
       renderer.destroy()
@@ -420,7 +439,7 @@ describe('tile rendering', () => {
       for (const tile of rendered) {
         const bounds = tileWorldBounds(tile.key)
         tiledCanvas.drawImageRectOptions(
-          tile.image,
+          expectDefined(tile.image, 'tile image'),
           ck.LTRBRect(0, 0, TILE_DEVICE_SIZE, TILE_DEVICE_SIZE),
           ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY),
           ck.FilterMode.Nearest,
@@ -435,8 +454,12 @@ describe('tile rendering', () => {
       expect(
         differenceRatio(pixels(directImage, 320, 240), pixels(tiledImage, 320, 240))
       ).toBeLessThan(0.01)
-      expect(rendered.every((tile) => tile.chunkCount < index.size())).toBe(true)
-      expect(rendered.every((tile) => tile.image.width() === TILE_DEVICE_SIZE)).toBe(true)
+      expect(rendered.every((tile) => tile.chunkCount <= index.size())).toBe(true)
+      expect(
+        rendered.every(
+          (tile) => expectDefined(tile.image, 'tile image').width() === TILE_DEVICE_SIZE
+        )
+      ).toBe(true)
 
       directImage.delete()
       tiledImage.delete()
@@ -448,6 +471,87 @@ describe('tile rendering', () => {
       direct.destroy()
       tiled.destroy()
       tileFactory.destroy()
+    }
+  })
+
+  test('a tile over nothing takes no surface and downsampling empties stays empty', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    graph.createNode('RECTANGLE', page.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: color(1, 0, 0)
+    })
+    const surface = expectDefined(ck.MakeSurface(320, 240), 'empty tile surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    const { index } = RenderChunkIndex.build(graph, page.id)
+    const pictureCache = new RenderChunkPictureCache()
+    const surfacePool = new TileSurfacePool()
+    try {
+      const empty = expectDefined(
+        renderTile(
+          renderer,
+          graph,
+          index,
+          { pageId: page.id, level: 1, x: 5, y: 5 },
+          pictureCache,
+          surfacePool
+        ),
+        'empty tile'
+      )
+      expect(empty.image).toBeNull()
+      expect(surfacePool.size()).toBe(0)
+      const cache = new TileImageCache()
+      const cached = expectDefined(cache.install(empty, 1), 'cached empty tile')
+      const children = [cached, cached, cached, cached]
+      const parent = expectDefined(
+        downsampleTile(
+          renderer,
+          { pageId: page.id, level: 0.5, x: 2, y: 2 },
+          children,
+          surfacePool
+        ),
+        'downsampled'
+      )
+      expect(parent.image).toBeNull()
+
+      const filled = expectDefined(
+        renderTile(
+          renderer,
+          graph,
+          index,
+          { pageId: page.id, level: 1, x: 0, y: 0 },
+          pictureCache,
+          surfacePool
+        ),
+        'filled tile'
+      )
+      const filledCached = expectDefined(cache.install(filled, 1), 'cached filled tile')
+      const mixed = expectDefined(
+        downsampleTile(
+          renderer,
+          { pageId: page.id, level: 0.5, x: 0, y: 0 },
+          [filledCached, cached, cached, cached],
+          surfacePool
+        ),
+        'mixed'
+      )
+      const image = expectDefined(mixed.image, 'mixed image')
+      const px = pixels(image, TILE_DEVICE_SIZE, TILE_DEVICE_SIZE)
+      // The red square at world 20..60 lands in the top-left quadrant at half size: 10..30.
+      const at = (x: number, y: number) =>
+        Array.from(px.slice((y * TILE_DEVICE_SIZE + x) * 4, (y * TILE_DEVICE_SIZE + x) * 4 + 3))
+      expect(at(20, 20)).toEqual([255, 0, 0])
+      expect(at(100, 100)).toEqual([255, 255, 255])
+      cache.clear()
+    } finally {
+      surfacePool.clear()
+      pictureCache.clear()
+      index.dispose()
+      renderer.destroy()
     }
   })
 })

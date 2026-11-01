@@ -28,9 +28,10 @@ export interface AppPickerProps {
   density?: 'compact' | 'comfortable'
   /**
    * `grid` shows each item's thumbnail alone, eight to a row, with the highlighted item's label
-   * passed to the footer; for browsing many items by sight, such as icons.
+   * passed to the footer; for browsing many items by sight, such as icons. `gallery` does the
+   * same with larger thumbnails three to a row, for pictures such as photos.
    */
-  layout?: 'list' | 'grid'
+  layout?: 'list' | 'grid' | 'gallery'
   /** More items follow the shown ones; scrolling near the end emits `loadMore`. */
   hasMore?: boolean
   /** The items are on their way: placeholders stand in for them, and `emptyLabel` is announced. */
@@ -55,9 +56,19 @@ export interface AppPickerSlots {
   anchor?(): VNode[]
   /** Thumbnail or icon before an item's label. */
   leading?(props: { item: AppPickerItem }): VNode[]
+  /**
+   * Controls in the header before the close button, for a choice the whole picker follows, such
+   * as the service it searches; it stays put while the `setup` view replaces the list.
+   */
+  actions?(): VNode[]
   /** A control at the end of the search field that narrows the list, such as a category. */
   'search-trailing'?(): VNode[]
   trailing?(props: { item: AppPickerItem }): VNode[]
+  /**
+   * Shown instead of the search and list while the picker needs something before it can list
+   * anything, such as a service's key.
+   */
+  setup?(): VNode[]
   /** Actions or details below the list; `highlighted` is the item under the pointer or keys. */
   footer?(props: { close: () => void; highlighted: AppPickerItem | null }): VNode[]
 }
@@ -88,7 +99,7 @@ import { fuzzySearch } from '@open-pencil/vue/shared/search'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import theme, { APP_PICKER_GRID_COLUMNS } from '@/theme/select/picker'
+import theme, { APP_PICKER_COLUMNS } from '@/theme/select/picker'
 
 const {
   heading,
@@ -145,8 +156,12 @@ function highlight(payload: { value: AcceptableValue } | undefined) {
   highlighted.value = matches.value.find((item) => item.value === payload?.value) ?? null
 }
 
-/** Placeholders shown while loading: the grid's visible rows, or a few list rows. */
-const LOADING_PLACEHOLDERS = computed(() => (layout === 'grid' ? APP_PICKER_GRID_COLUMNS * 7 : 3))
+/** Thumbnails a row in the grid and gallery layouts; null for a list. */
+const columns = computed(() => (layout === 'list' ? null : APP_PICKER_COLUMNS[layout]))
+/** Placeholders shown while loading: the visible rows of thumbnails, or a few list rows. */
+const LOADING_PLACEHOLDERS = computed(
+  () => ({ list: 3, grid: APP_PICKER_COLUMNS.grid * 7, gallery: 12 })[layout]
+)
 
 const ROW_KEYS = new Map([
   ['ArrowDown', 1],
@@ -154,16 +169,17 @@ const ROW_KEYS = new Map([
 ])
 // ListboxRoot is generic, so its instance type is spelled as the part used here.
 const listbox = useTemplateRef<{ highlightItem: (value: AcceptableValue) => void }>('listboxRoot')
-// Reka moves through a listbox one item at a time. The grid lays it out horizontally, so
+// Reka moves through a listbox one item at a time. A grid lays it out horizontally, so
 // left and right move an item, and up and down move a row here; with nothing highlighted, they
 // start at the first item.
 function moveRow(event: KeyboardEvent) {
   const rows = ROW_KEYS.get(event.key)
-  if (layout !== 'grid' || !rows) return
+  const perRow = columns.value
+  if (!perRow || !rows) return
   event.preventDefault()
   const current = highlighted.value?.value
   const index = matches.value.findIndex((item) => item.value === current)
-  const target = index === -1 ? 0 : index + rows * APP_PICKER_GRID_COLUMNS
+  const target = index === -1 ? 0 : index + rows * perRow
   const next = matches.value[clamp(target, 0, matches.value.length - 1)]
   if (next) listbox.value?.highlightItem(next.value)
 }
@@ -212,17 +228,22 @@ function select(value: AcceptableValue) {
       >
         <div :class="styles.header({ class: ui?.header })">
           <h3 :class="styles.title({ class: ui?.title })">{{ heading }}</h3>
+          <slot name="actions" />
           <PopoverClose as-child>
             <IconButton :label="closeLabel">
               <icon-lucide-x class="size-3.5" />
             </IconButton>
           </PopoverClose>
         </div>
+        <div v-if="slots.setup" :class="styles.setup({ class: ui?.setup })">
+          <slot name="setup" />
+        </div>
         <ListboxRoot
+          v-else
           ref="listboxRoot"
           class="flex min-h-0 flex-1 flex-col"
           highlight-on-hover
-          :orientation="layout === 'grid' ? 'horizontal' : 'vertical'"
+          :orientation="columns ? 'horizontal' : 'vertical'"
           @update:model-value="select"
           @highlight="highlight"
           @keydown="moveRow"
@@ -270,7 +291,7 @@ function select(value: AcceptableValue) {
                 :value="item.value"
                 :disabled="item.disabled"
                 :aria-disabled="item.disabled || undefined"
-                :aria-label="layout === 'grid' ? item.label : undefined"
+                :aria-label="columns ? item.label : undefined"
                 :data-selected="item.value === selected || undefined"
                 :class="styles.item({ class: ui?.item })"
               >

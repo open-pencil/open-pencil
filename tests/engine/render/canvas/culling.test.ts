@@ -31,8 +31,7 @@ function createCanvas() {
 function createRenderer() {
   const rendered: string[] = []
   const renderer = {
-    _nodeCount: 0,
-    _culledCount: 0,
+    drawCounts: { nodes: 0, culled: 0 },
     worldViewport: { x: 900, y: 900, w: 300, h: 300 },
     opacityPaint: { setAlphaf: mock(() => undefined) },
     effectLayerPaint: {
@@ -89,7 +88,7 @@ describe('canvas culling', () => {
 
     expect(rendered).toContain(frame.id)
     expect(rendered).toContain(text.id)
-    expect(renderer._culledCount).toBe(0)
+    expect(renderer.drawCounts.culled).toBe(0)
   })
 
   test('uses world bounds for children of transformed instances', () => {
@@ -113,7 +112,7 @@ describe('canvas culling', () => {
     renderNode(renderer, asCanvas(createCanvas()), graph, instance.id, {})
 
     expect(rendered).toContain(connector.id)
-    expect(renderer._culledCount).toBe(0)
+    expect(renderer.drawCounts.culled).toBe(0)
   })
 
   test('culling follows an ancestor rotation preview before the graph commits', () => {

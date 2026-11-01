@@ -1,31 +1,55 @@
-import type { ShapedTextGlyph } from '@open-pencil/fig/node-change'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { uniq } from 'es-toolkit'
 
-import { withTextShaper } from '#core/canvas/text/shape'
+import type { ShapedTextGlyph } from '@open-pencil/fig/node-change'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
 import { getCanvasKit } from '#core/canvaskit'
 import { populateFigPage } from '#core/io/formats/fig'
-import type { SVGCharacterEdges, SVGTextLayout } from '#core/io/formats/svg'
+import type { SVGCharacterEdges, SVGFallbackFace, SVGTextLayout } from '#core/io/formats/svg'
+import { withTextShaper } from '#core/io/shaping'
 import { computeAllLayouts } from '#core/layout'
 import { shownText } from '#core/text/case'
+import { characterFace } from '#core/text/character-face'
+import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
+import { ARABIC_CHARACTER } from '#core/text/fallbacks'
+import { fontManager } from '#core/text/font/manager'
 import type { DocumentFontStatus } from '#core/text/font/status'
-import { fontManager } from '#core/text/fonts'
 import { prepareGraphFonts } from '#core/text/prepare'
+import { collectGraphFontRequirements } from '#core/text/requirements/collect'
 
 import type { PDFFontFace } from './fonts'
 import type { PDFPageSpec } from './plan'
 
 /**
  * Loads every font the text of these pages draws with, as the canvas does: the faces, the
- * characters remote fonts must cover, and the script and emoji fallbacks.
+ * characters remote fonts must cover, and the script and emoji fallbacks. Fonts loaded for some
+ * characters only cover the ones jsPDF writes too.
  */
-export function preparePDFFonts(
+export async function preparePDFFonts(
   graph: SceneGraph,
   specs: readonly PDFPageSpec[]
 ): Promise<DocumentFontStatus> {
-  return prepareGraphFonts(
-    graph,
-    specs.flatMap((spec) => spec.nodeIds)
-  )
+  const nodeIds = specs.flatMap((spec) => spec.nodeIds)
+  return prepareGraphFonts(graph, nodeIds, await pdfWrittenCharacters(graph, nodeIds))
+}
+
+/**
+ * Characters jsPDF writes for the text besides its own: it writes Arabic letters as their
+ * presentation forms, picked by the letters around them, so the embedded fonts must map those.
+ */
+async function pdfWrittenCharacters(
+  graph: SceneGraph,
+  nodeIds: readonly string[]
+): Promise<string> {
+  const texts = collectGraphFontRequirements(graph, nodeIds)
+    .nodes.filter((node) => node.type === 'TEXT')
+    .map(shownText)
+    .filter((text) => ARABIC_CHARACTER.test(text))
+  if (texts.length === 0) return ''
+  const { jsPDF } = await import('jspdf')
+  // jsPDF adds its Arabic parser to each document it makes, as the one it writes the text with.
+  const writer = new jsPDF()
+  return uniq(texts.flatMap((text) => Array.from(writer.processArabic(text)))).join('')
 }
 
 /**
@@ -84,16 +108,38 @@ export async function withPDFTextLayout<T>(
       const shaped = shape(node)
       if (!shaped?.baselines.length) return null
       const characters = characterEdges(shaped.glyphs)
+      const fallbacks = fallbackFaces(node, characters)
       return shaped.baselines.map((line) => ({
         start: line.firstCharacter,
         end: line.endCharacter,
         x: line.position.x,
         y: line.position.y,
         width: line.width,
-        characters
+        characters,
+        fallbacks
       }))
     })
   )
+}
+
+/**
+ * The face of each drawn character the canvas draws from another file than its text's own: a
+ * fallback font, such as for Chinese in Inter, or a shard of a font split by unicode-range. Emoji
+ * keep their own family: the face the canvas lays them out with has no glyphs to embed.
+ */
+function fallbackFaces(
+  node: SceneNode,
+  characters: ReadonlyMap<number, SVGCharacterEdges>
+): Map<number, SVGFallbackFace> {
+  const text = shownText(node)
+  const fallbacks = new Map<number, SVGFallbackFace>()
+  for (const index of characters.keys()) {
+    const face = characterFace(node, text, index)
+    if (!face || (!face.fallback && face.file === 0) || face.family === EMOJI_METRICS_FAMILY)
+      continue
+    fallbacks.set(index, { family: face.family, style: face.style, file: face.file })
+  }
+  return fallbacks
 }
 
 /** The left and right edges of the glyphs each character is drawn with. */

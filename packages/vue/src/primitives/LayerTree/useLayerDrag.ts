@@ -11,7 +11,7 @@ import {
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { onScopeDispose, ref, watchEffect, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 
 import type { LayerDragInstruction } from '#vue/primitives/LayerTree/context'
 import { dropIndex, listsChildrenInFlow } from '#vue/primitives/LayerTree/model'
@@ -57,7 +57,7 @@ export function useLayerDrag(
         draggable({
           element,
           // A read-only document's layers keep their order.
-          canDrag: () => acceptsSiblings && !editor.state.readOnly,
+          canDrag: () => acceptsSiblings && resolveEditorProfile(editor.state).edits,
           getInitialData: () => ({ id: data.id }),
           onDragStart: () => {
             draggingId.value = data.id
