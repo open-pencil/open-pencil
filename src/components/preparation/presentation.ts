@@ -2,7 +2,7 @@ import type { EditorPreparation, EditorPreparationProgress } from '@/app/editor/
 
 export const preparationPhaseLabels = {
   reading: 'Reading document',
-  decoding: 'Decoding Figma document',
+  decoding: 'Decoding document',
   materializing: 'Preparing layers',
   'populating-page': 'Preparing page',
   'resolving-fonts': 'Resolving fonts',
