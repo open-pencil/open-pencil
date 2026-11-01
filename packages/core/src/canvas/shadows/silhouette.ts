@@ -1,8 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { Fill, NodeType, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
@@ -29,15 +30,6 @@ const SILHOUETTE_PAINT: Fill = {
   visible: true
 }
 
-const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
-  'FRAME',
-  'GROUP',
-  'SECTION',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE'
-])
-
 /**
  * Figma casts a full-strength shadow from any paint above 0% opacity and none from a paint at
  * 0% or a gradient whose stops are all transparent, so such a paint counts as no paint at all.
@@ -48,10 +40,6 @@ export function paintCastsShadow(paint: Fill): boolean {
 }
 
 /** Frames, groups, and the like, whose shadows Figma casts from their children as well. */
-export function isLayerContainer(node: SceneNode): boolean {
-  return LAYER_CONTAINER_TYPES.has(node.type)
-}
-
 export function fillsCastShadow(node: SceneNode): boolean {
   return node.fills.some(paintCastsShadow) || regionFills(node.vectorNetwork).some(paintCastsShadow)
 }

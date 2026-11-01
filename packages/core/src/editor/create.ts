@@ -42,6 +42,7 @@ import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
 import { createDocumentSettingsActions } from './document-settings'
 import { createFigCompressionActions } from './fig-compression'
+import { createFigJamColorActions } from './figjam/colors'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
@@ -63,7 +64,7 @@ import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import { createPendingTextLayout } from './text/pending-layout'
 import { createTextSelectionStyle } from './text/selection-style'
-import { createGeneratedTextActions } from './text/typeface'
+import { createFigJamTextActions } from './text/typeface'
 import type {
   EditorContext,
   EditorEventName,
@@ -310,7 +311,8 @@ export function createEditor(options?: EditorOptions) {
   const icons = createIconActions(ctx)
   const stickies = createStickyActions(ctx, nodes)
   const shapesWithText = createShapeWithTextActions(ctx, nodes)
-  const generatedText = createGeneratedTextActions(ctx, nodes)
+  const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
+  const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
@@ -484,6 +486,7 @@ export function createEditor(options?: EditorOptions) {
         nodes.updateNodeWithUndo(target, next, label)
       ),
     getTextSelectionStyle: textSelectionStyle.selectionStyle,
+    layerChanges: textSelectionStyle.layerChanges,
 
     // Alignment (align, flip, rotate)
     ...alignment,
@@ -496,7 +499,8 @@ export function createEditor(options?: EditorOptions) {
     ...icons,
     ...stickies,
     ...shapesWithText,
-    ...generatedText,
+    ...figJamText,
+    ...figJamColors,
     statusWorkflow: statuses.statusWorkflow,
     getShownStatus: statuses.getShownStatus,
     setStatus: statuses.setStatus,

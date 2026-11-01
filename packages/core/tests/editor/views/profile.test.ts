@@ -23,7 +23,13 @@ describe('canvas view profiles', () => {
       edits: true,
       tools: null,
       toolKeys: TOOL_SHORTCUTS,
-      snapGrid: 1
+      snapGrid: 1,
+      dotGrid: null,
+      pixelGrid: true,
+      framesOpen: true,
+      lint: true,
+      rulers: true,
+      panelsOpen: true
     })
   })
 
@@ -40,7 +46,13 @@ describe('canvas view profiles', () => {
       edits: true,
       tools: null,
       toolKeys: TOOL_SHORTCUTS,
-      snapGrid: 1
+      snapGrid: 1,
+      dotGrid: null,
+      pixelGrid: true,
+      framesOpen: true,
+      lint: true,
+      rulers: true,
+      panelsOpen: true
     })
   })
 
@@ -106,7 +118,7 @@ describe('host restrictions', () => {
 })
 
 describe('document kinds', () => {
-  test('a board offers FigJam\'s tools and keys and snaps to its 16-unit grid', () => {
+  test("a board offers FigJam's tools and keys and snaps to its 16-unit grid", () => {
     const editor = createEditor()
     editor.setDocumentKind('board')
     const profile = resolveEditorProfile(editor.state)
@@ -121,6 +133,16 @@ describe('document kinds', () => {
       'COMMENT'
     ])
     expect([profile.toolKeys, profile.snapGrid]).toEqual([BOARD_TOOL_SHORTCUTS, 16])
+    // FigJam draws its dots every 16 units and has no pixel grid.
+    const { dotGrid, pixelGrid, framesOpen, lint, rulers, panelsOpen } = profile
+    expect([dotGrid, pixelGrid, framesOpen, lint, rulers, panelsOpen]).toEqual([
+      16,
+      false,
+      false,
+      false,
+      false,
+      false
+    ])
   })
 
   test('becoming a board drops a design tool, and refuses picking one', () => {

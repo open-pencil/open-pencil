@@ -1,0 +1,1 @@
+- Scaled SVG artwork preserves nearly closed arcs when coordinate rounding makes their endpoints coincide.

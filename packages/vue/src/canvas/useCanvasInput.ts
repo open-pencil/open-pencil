@@ -386,7 +386,7 @@ export function useCanvasInput(
     }
 
     if (d.type === 'sticky-scale') {
-      applyStickyScale(d, cx, cy, editor)
+      applyStickyScale(d, cx, cy, editor, e.ctrlKey)
       return
     }
 
@@ -596,6 +596,7 @@ export function useCanvasInput(
     drag,
     cursorOverride,
     canvasLabelEdit: canvasLabelEdit.edit,
+    startCanvasLabelEdit: canvasLabelEdit.start,
     updateCanvasLabelEdit: canvasLabelEdit.update,
     commitCanvasLabelEdit: canvasLabelEdit.commit,
     cancelCanvasLabelEdit: canvasLabelEdit.cancel,

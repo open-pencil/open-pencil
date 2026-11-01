@@ -15,6 +15,7 @@ import type { EditorPreparationController } from '@/app/editor/preparation/contr
 type DocumentIOState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  showUI: boolean
 }
 
 export function createDocumentIOActions(

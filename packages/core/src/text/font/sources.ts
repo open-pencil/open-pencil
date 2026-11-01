@@ -9,7 +9,8 @@ export interface FontInfo {
 
 export type LocalFontAccessState = 'unsupported' | 'prompt' | 'granted' | 'denied'
 export type FontFamilySource = 'local' | 'bundled' | 'fallback' | WebFontProviderId
-export type FontLoadedSource = FontFamilySource | 'cache' | 'registered'
+/** Where a loaded face came from; `stand-in` is an open font drawn in a missing family's place. */
+export type FontLoadedSource = FontFamilySource | 'cache' | 'registered' | 'stand-in'
 
 export interface FontFamilyOption {
   family: string

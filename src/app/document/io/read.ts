@@ -1,6 +1,6 @@
 import { filename } from 'pathe/utils'
 
-import type { Editor, EditorState } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
@@ -15,6 +15,8 @@ import { toast } from '@/app/shell/ui'
 
 type OpenDocumentState = EditorState & {
   documentName: string
+  /** Whether the side panels show, which a document opens with as its kind starts it. */
+  showUI: boolean
 }
 
 type ReloadDocumentState = EditorState & { documentName: string }
@@ -59,6 +61,8 @@ export function createOpenActions({
       await yieldToUI()
       load.update({ phase: 'materializing', detail: file.name })
       await applyImportedDocument(editor, imported, load)
+      // Into a reused tab too, the document opens with the panels its kind starts with.
+      state.showUI = resolveEditorProfile(editor.state).panelsOpen
       state.documentName = filename(file.name) ?? file.name
       setDocumentSource(file.name, 'fig', handle, path)
       await fitCurrentPageToViewport()

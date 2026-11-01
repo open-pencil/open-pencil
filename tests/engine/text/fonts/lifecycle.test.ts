@@ -86,7 +86,9 @@ describe('font lifecycle', () => {
     })
     const renderer = {
       fontGeneration: 1,
-      textPictureGenerations: new Map<string, { data: Uint8Array; generation: number }>()
+      textFonts: {
+        pictureGenerations: new Map<string, { data: Uint8Array; generation: number }>()
+      }
     }
 
     expect(isTextPictureCurrent(renderer, node)).toBe(true)

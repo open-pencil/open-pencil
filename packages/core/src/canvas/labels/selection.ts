@@ -38,7 +38,7 @@ function accumulateSelectionBounds(
 function drawSizePill(
   r: SkiaRenderer,
   canvas: Canvas,
-  sizeFont: NonNullable<SkiaRenderer['sizeFont']>,
+  sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>,
   text: string,
   x: number,
   y: number,
@@ -72,7 +72,7 @@ export function drawSingleSelectionSize(
   graph: SceneGraph,
   node: SceneNode,
   overlays: RenderOverlays,
-  sizeFont: NonNullable<SkiaRenderer['sizeFont']>
+  sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>
 ): void {
   const sizeText = `${Math.round(node.width)} × ${Math.round(node.height)}`
   const pillColor = r.outlineColor(node, graph)
@@ -98,7 +98,7 @@ function drawMultiSelectionSize(
   minY: number,
   maxX: number,
   maxY: number,
-  sizeFont: NonNullable<SkiaRenderer['sizeFont']>
+  sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>
 ): void {
   const sizeText = `${Math.round(maxX - minX)} × ${Math.round(maxY - minY)}`
   const sx1 = minX * r.zoom + r.panX
@@ -119,8 +119,8 @@ export function drawSelectionLabels(
   selectedIds: Set<string>,
   overlays?: RenderOverlays
 ): void {
-  const labelFont = r.labelFont
-  const sizeFont = r.sizeFont
+  const labelFont = r.chromeFonts.label
+  const sizeFont = r.chromeFonts.size
   if (!labelFont || !sizeFont) return
   const activeOverlays = overlays ?? {}
   const { nodes, minX, minY, maxX, maxY } = accumulateSelectionBounds(

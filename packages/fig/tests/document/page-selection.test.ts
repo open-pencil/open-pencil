@@ -11,7 +11,11 @@ test('selected-page assembly excludes unrelated content but keeps cross-page com
   const changes: NodeChange[] = [
     { guid: guid(1), type: 'CANVAS', name: 'Design' },
     { guid: guid(2), type: 'CANVAS', name: 'Library' },
-    { guid: guid(3), type: 'SYMBOL', parentIndex: { guid: guid(2), position: '!' } },
+    {
+      guid: guid(3),
+      type: 'SYMBOL',
+      parentIndex: { guid: guid(2), position: '!' }
+    },
     {
       guid: guid(4),
       type: 'TEXT',
@@ -31,7 +35,9 @@ test('selected-page assembly excludes unrelated content but keeps cross-page com
       textData: { characters: 'Unrelated' }
     }
   ]
-  const selected = materializeDocument(changes, [], { pageIds: new Set(['1:1']) })
+  const selected = materializeDocument(changes, [], {
+    pageIds: new Set(['1:1'])
+  })
   const full = materializeDocument(changes)
   expect(selected.graph.getPages()).toHaveLength(2)
   expect(selected.sources.has('1:6')).toBe(false)
@@ -54,16 +60,34 @@ async function enclosedComponentArchive(
 ): Promise<ArrayBuffer> {
   const records: NodeChange[] = [
     { guid: guid(1), type: 'DOCUMENT' },
-    { guid: guid(2), type: 'CANVAS', parentIndex: { guid: guid(1), position: '!' } },
+    {
+      guid: guid(2),
+      type: 'CANVAS',
+      parentIndex: { guid: guid(1), position: '!' }
+    },
     {
       guid: guid(10),
       type: 'INSTANCE',
       parentIndex: { guid: guid(2), position: '!' },
       symbolData: { symbolID: guid(5) }
     },
-    { guid: guid(3), type: 'CANVAS', parentIndex: { guid: guid(1), position: '"' } },
-    { guid: guid(4), type: 'SYMBOL', name: 'Outer', parentIndex: { guid: guid(3), position: '!' } },
-    { guid: guid(5), type: 'SYMBOL', name: 'Inner', parentIndex: { guid: guid(4), position: '!' } },
+    {
+      guid: guid(3),
+      type: 'CANVAS',
+      parentIndex: { guid: guid(1), position: '"' }
+    },
+    {
+      guid: guid(4),
+      type: 'SYMBOL',
+      name: 'Outer',
+      parentIndex: { guid: guid(3), position: '!' }
+    },
+    {
+      guid: guid(5),
+      type: 'SYMBOL',
+      name: 'Inner',
+      parentIndex: { guid: guid(4), position: '!' }
+    },
     {
       guid: guid(6),
       type: 'TEXT',
@@ -154,10 +178,9 @@ test.each([false, true])(
       session = createFigDocumentSession(bytes, {}, { graph, checkpoint: session.checkpoint() })
     }
     session.loadPage('1:3')
-    // Checkpointing after a resumed deletion is #1425; read the layers from the graph instead.
-    const outer = [...graph.getAllNodes()].find((node) => node.name === 'Outer')
+    const outer = new Map(session.checkpoint().componentIds).get('1:4')
     if (!outer) throw new Error('Missing outer component')
-    expect(layers(graph, outer.id)).toEqual([
+    expect(layers(graph, outer)).toEqual([
       'COMPONENT',
       '',
       [
@@ -166,7 +189,96 @@ test.each([false, true])(
         ['INSTANCE', '', [['TEXT', 'Label', []]]]
       ]
     ])
-    if (!resumed) expect(session.checkpoint().components.map(([id]) => id)).toContain('1:4')
+    expect(session.checkpoint().components.map(([id]) => id)).toContain('1:4')
+  }
+)
+
+test('checkpoints a resumed session after a component layer is deleted', async () => {
+  const bytes = await enclosedComponentArchive(false)
+  const initial = createFigDocumentSession(bytes)
+  initial.loadPage('1:2')
+  const { graph } = initial
+  const resumed = createFigDocumentSession(bytes, {}, { graph, checkpoint: initial.checkpoint() })
+  const inner = new Map(resumed.checkpoint().componentIds).get('1:5')
+  if (!inner) throw new Error('Missing inner component')
+  const deleted = graph.getChildren(inner)[0].id
+  graph.deleteNode(deleted)
+  const again = createFigDocumentSession(bytes, {}, { graph, checkpoint: resumed.checkpoint() })
+  const component = new Map(again.checkpoint().components).get('1:5')
+  expect(component?.nodes.map(({ nodeId }) => nodeId)).toEqual([inner])
+})
+
+test.each([false, true])(
+  'loads a page whose instance encloses a layer deleted inside a frame of its component (resumed: %p)',
+  async (resumed) => {
+    const bytes = await figArchiveOf([
+      { guid: guid(1), type: 'DOCUMENT' },
+      {
+        guid: guid(2),
+        type: 'CANVAS',
+        parentIndex: { guid: guid(1), position: '!' }
+      },
+      {
+        guid: guid(3),
+        type: 'CANVAS',
+        parentIndex: { guid: guid(1), position: '"' }
+      },
+      {
+        guid: guid(4),
+        type: 'SYMBOL',
+        name: 'Icon',
+        parentIndex: { guid: guid(3), position: '!' }
+      },
+      {
+        guid: guid(5),
+        type: 'TEXT',
+        parentIndex: { guid: guid(4), position: '!' },
+        textData: { characters: 'Icon' }
+      },
+      {
+        guid: guid(6),
+        type: 'SYMBOL',
+        name: 'Header',
+        parentIndex: { guid: guid(3), position: '"' }
+      },
+      {
+        guid: guid(7),
+        type: 'FRAME',
+        parentIndex: { guid: guid(6), position: '!' }
+      },
+      {
+        guid: guid(8),
+        type: 'INSTANCE',
+        parentIndex: { guid: guid(7), position: '!' },
+        symbolData: { symbolID: guid(4) }
+      },
+      {
+        guid: guid(9),
+        type: 'TEXT',
+        parentIndex: { guid: guid(7), position: '"' },
+        textData: { characters: 'Label' }
+      },
+      {
+        guid: guid(10),
+        type: 'INSTANCE',
+        parentIndex: { guid: guid(2), position: '!' },
+        symbolData: { symbolID: guid(6) }
+      }
+    ])
+    let session = createFigDocumentSession(bytes)
+    session.loadPage('1:3')
+    const { graph } = session
+    const header = new Map(session.checkpoint().componentIds).get('1:6')
+    if (!header) throw new Error('Missing header component')
+    const [frame] = graph.getChildren(header)
+    graph.deleteNode(graph.getChildren(frame.id)[0].id)
+    if (resumed) {
+      session = createFigDocumentSession(bytes, {}, { graph, checkpoint: session.checkpoint() })
+    }
+    session.loadPage('1:2')
+    const copy = new Map(session.checkpoint().sources).get('1:10')
+    if (!copy) throw new Error('Missing header instance')
+    expect(layers(graph, copy)).toEqual(['INSTANCE', '', [['FRAME', '', [['TEXT', 'Label', []]]]]])
   }
 )
 

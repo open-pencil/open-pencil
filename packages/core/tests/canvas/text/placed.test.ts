@@ -165,6 +165,40 @@ describe('the font saved glyphs are outlined from', () => {
     ])
   })
 
+  test('spaces a reshaped ligature once, as the paragraph draws it', () => {
+    const text = 'a->b'
+    const spacing = 10
+    // The width the paragraph draws the arrow ligature at, with `letterSpacing`.
+    const drawnArrow = (letterSpacing: number) => {
+      const textStyle = { fontFamilies: [FAMILY], fontSize: FONT_SIZE, letterSpacing }
+      const builder = ck.ParagraphBuilder.MakeFromFontProvider(
+        new ck.ParagraphStyle({ textStyle }),
+        variableProvider
+      )
+      builder.addText(text)
+      const paragraph = builder.build()
+      builder.delete()
+      try {
+        paragraph.layout(1000)
+        const [run] = paragraph.getShapedLines()[0].runs
+        expect(Array.from(run.offsets)).toEqual([0, 1, 3, 4])
+        return run.positions[4] - run.positions[2]
+      } finally {
+        paragraph.delete()
+      }
+    }
+    // The static file draws the arrow's characters apart, so the run is shaped again.
+    const reshapedArrow = (letterSpacing: number) =>
+      placed(text, staticProvider, [{ name: 'calt', value: 0 }], {
+        letterSpacing: pixelLength(letterSpacing)
+      })[1]
+
+    expect(reshapedArrow(spacing).firstCharacter).toBe(1)
+    expect(reshapedArrow(spacing).id).toBe(variableSource().shape(text, {})[1].id)
+    expect(drawnArrow(spacing) - drawnArrow(0)).toBeCloseTo(spacing, 3)
+    expect(reshapedArrow(spacing).advance - reshapedArrow(0).advance).toBeCloseTo(spacing, 3)
+  })
+
   test('shapes the run itself with the features the text sets', () => {
     const source = variableSource()
     // With contextual alternates off in the text too, the arrow stays its three characters.

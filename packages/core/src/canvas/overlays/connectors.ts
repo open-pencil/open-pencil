@@ -17,6 +17,8 @@ import {
 } from '#core/geometry'
 import { vectorNetworkToPath } from '#core/vector'
 
+import { outlineHoveredNode } from './outline'
+
 /** Radius of a connector's end handles and of a layer's magnet dots, in screen pixels. */
 export const CONNECTOR_HANDLE_RADIUS = 5
 const MAGNET_DOT_RADIUS = 4
@@ -125,7 +127,7 @@ export function drawConnectorTarget(
 ) {
   const node = target ? graph.getNode(target.nodeId) : undefined
   if (!target || !node) return
-  r.drawHoverHighlight(canvas, graph, node.id, preview)
+  outlineHoveredNode(r, canvas, graph, node, preview)
   const page = graph.pageOf(node.id)
   if (!page) return
   const box = getAxisAlignedBoundsInParent([node], page, graph)

@@ -2,6 +2,7 @@ import type { Image as CKImage } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { paintPageBackground } from '#core/canvas/page/background'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   type RenderChunk,
@@ -58,18 +59,12 @@ export function renderTile(
   if (!surface) return null
   const allocationMs = rendererNow() - allocationStartedAt
   const canvas = surface.getCanvas()
-  const previousDetail = renderer.imageDetailScale
-  renderer.imageDetailScale = key.level
+  const previousDetail = renderer.images.detailScale
+  renderer.images.detailScale = key.level
   canvas.save()
   try {
-    canvas.clear(
-      renderer.ck.Color4f(
-        renderer.pageColor.r,
-        renderer.pageColor.g,
-        renderer.pageColor.b,
-        renderer.pageColor.a
-      )
-    )
+    const origin = { x: -bounds.minX * key.level, y: -bounds.minY * key.level }
+    paintPageBackground(renderer, canvas, origin, key.level)
     canvas.scale(key.level, key.level)
     canvas.translate(-bounds.minX, -bounds.minY)
     canvas.clipRect(
@@ -115,7 +110,7 @@ export function renderTile(
     }
   } finally {
     canvas.restore()
-    renderer.imageDetailScale = previousDetail
+    renderer.images.detailScale = previousDetail
     surfacePool.release(surface)
   }
 }
@@ -281,8 +276,8 @@ export function recordTilePictures(
   const deadline = budget.now() + budget.remainingMs
   let recorded = 0
   // Pictures record at the tile's detail, so their image previews suit its level.
-  const previousDetail = renderer.imageDetailScale
-  renderer.imageDetailScale = key.level
+  const previousDetail = renderer.images.detailScale
+  renderer.images.detailScale = key.level
   try {
     for (const chunk of tileChunks(index, key)) {
       if (chunk.kind === 'subtree' && !chunk.interruptible) continue
@@ -292,7 +287,7 @@ export function recordTilePictures(
       recorded++
     }
   } finally {
-    renderer.imageDetailScale = previousDetail
+    renderer.images.detailScale = previousDetail
   }
   return true
 }

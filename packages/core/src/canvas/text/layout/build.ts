@@ -27,11 +27,11 @@ import {
 } from '#core/canvas/text/paragraph'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
-import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
+import { utf8Length } from '#core/text/utf8'
 
 /** A list item's indent per level, in ems of the list's first character. */
 const LIST_INDENT_EMS = 1.5

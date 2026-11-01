@@ -1,0 +1,1 @@
+- Text in FigJam's Cute typeface, Figma Hand, which is licensed for Figma only, draws in the open Caveat font sized to Figma Hand's widths and line height instead of falling back to Inter; files keep Figma Hand, and the font notice names the substitution.

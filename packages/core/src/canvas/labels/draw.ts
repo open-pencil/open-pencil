@@ -28,7 +28,7 @@ export function drawSectionTitles(
   overlays?: RenderOverlays
 ): void {
   const provider = r.fontProvider
-  if (!r.sectionTitleFont || !provider) return
+  if (!r.chromeFonts.sectionTitle || !provider) return
 
   const sections = r.labelCache.getSections(
     graph,
@@ -131,7 +131,7 @@ export function drawComponentLabels(
   graph: SceneGraph,
   overlays?: RenderOverlays
 ): void {
-  if (!r.componentLabelFont || !r.fontProvider) return
+  if (!r.chromeFonts.componentLabel || !r.fontProvider) return
 
   const components = r.labelCache.getComponents(
     graph,
@@ -229,7 +229,7 @@ export function drawFrameTitles(
   overlays?: RenderOverlays
 ): void {
   const provider = r.fontProvider
-  if (!r.labelFont || !provider) return
+  if (!r.chromeFonts.label || !provider) return
 
   const frames = r.labelCache.getFrames(
     graph,
