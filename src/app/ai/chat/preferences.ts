@@ -4,7 +4,8 @@ import { resolveAgentStepLimit } from '@/app/ai/reply/step-limit'
 import {
   appPreferences,
   type ChangePreviewSize,
-  type ReasoningDisplay
+  type ReasoningDisplay,
+  type TokenUsageDisplay
 } from '@/app/settings/preferences/store'
 
 export const maxAgentSteps = computed({
@@ -33,6 +34,26 @@ export const changePreviewSize = computed({
     appPreferences.value = {
       ...appPreferences.value,
       chat: { ...appPreferences.value.chat, changePreviewSize }
+    }
+  }
+})
+
+export const compactAutomatically = computed({
+  get: () => appPreferences.value.chat.compactAutomatically,
+  set: (compactAutomatically: boolean) => {
+    appPreferences.value = {
+      ...appPreferences.value,
+      chat: { ...appPreferences.value.chat, compactAutomatically }
+    }
+  }
+})
+
+export const tokenUsageDisplay = computed({
+  get: () => appPreferences.value.chat.tokenUsage,
+  set: (tokenUsage: TokenUsageDisplay) => {
+    appPreferences.value = {
+      ...appPreferences.value,
+      chat: { ...appPreferences.value.chat, tokenUsage }
     }
   }
 })

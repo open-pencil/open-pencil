@@ -5,7 +5,7 @@ test('expand while thinking auto-collapses but preserves manual opening', async 
   configuredChat: chat,
   page
 }) => {
-  await page.getByTestId('provider-settings-trigger').click()
+  await chat.openModelSettings()
   await page.getByRole('combobox', { name: 'Reasoning display' }).click()
   await page.getByRole('option', { name: 'Expand while thinking', exact: true }).click()
   await page.getByTestId('app-settings-done').click()
@@ -67,7 +67,7 @@ test('reasoning preferences use AI settings and persist across reload', async ({
   configuredChat: chat,
   page
 }) => {
-  await page.getByTestId('provider-settings-trigger').click()
+  await chat.openModelSettings()
   const display = page.getByRole('combobox', { name: 'Reasoning display' })
   await expect(display).toContainText('Collapsed by default')
   await display.click()
@@ -88,6 +88,6 @@ test('reasoning preferences use AI settings and persist across reload', async ({
   await expect(page.locator('[data-slot="chat-reasoning-content"]')).toBeHidden()
   await page.reload()
   await chat.chatTab.click()
-  await page.getByTestId('provider-settings-trigger').click()
+  await chat.openModelSettings()
   await expect(display).toContainText('Expanded by default')
 })

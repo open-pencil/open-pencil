@@ -11,8 +11,7 @@ import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
-import { openSettingsDialog } from '@/app/settings/dialog'
-import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
+import ChatAddMenu from '@/components/chat/ChatAddMenu.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
@@ -65,6 +64,7 @@ const {
 const composer = useTemplateRef<{
   restoreDraft: (text: string) => boolean
   insert: (text: string) => void
+  startCommand: () => void
 }>('composer')
 
 const completions = useComposerCompletions()
@@ -84,7 +84,6 @@ function restoreDraft(submission: ChatSubmission): void {
 }
 
 /** A reply is on its way, so the credit balance waits to update until it ends. */
-const replying = computed(() => status === 'streaming' || status === 'submitted')
 /** Why images dropped now would not be attached, or null when they would. */
 const dropRefusal = computed(() => {
   if (disabled) return ai.value.dropImagesAfterReply
@@ -144,7 +143,6 @@ const selectedProfileName = computed(
     @stop="emit('stop')"
     @interrupt="emit('interrupt')"
     @paste="handlePaste"
-    @settings="openSettingsDialog('ai')"
   >
     <template v-if="images.length" #attachment>
       <div class="flex flex-wrap gap-1.5">
@@ -182,23 +180,14 @@ const selectedProfileName = computed(
       />
     </template>
     <template #leading>
-      <IconButton
-        :label="ai.mentionSelection"
-        size="sm"
-        :disabled="disabled || !canMentionSelection"
-        data-slot="chat-mention-selection"
-        @click="composer?.insert(selectionMentions())"
-      >
-        <icon-lucide-mouse-pointer-2 class="size-4" />
-      </IconButton>
-      <IconButton
-        :label="ai.attachImages"
-        size="sm"
-        :disabled="disabled || images.length >= MAX_IMAGE_ATTACHMENTS"
-        @click="openImageDialog()"
-      >
-        <icon-lucide-image-plus class="size-4" />
-      </IconButton>
+      <ChatAddMenu
+        :disabled="disabled"
+        :can-attach="images.length < MAX_IMAGE_ATTACHMENTS"
+        :can-mention="canMentionSelection"
+        @attach="openImageDialog()"
+        @mention="composer?.insert(selectionMentions())"
+        @command="composer?.startCommand()"
+      />
     </template>
     <template #model>
       <div class="@container flex min-w-0 items-center">
@@ -215,7 +204,6 @@ const selectedProfileName = computed(
             </template>
           </ChatProfileSelect>
           <ChatThinkingSelect />
-          <ChatCreditBalance :replying="replying" />
         </template>
       </div>
     </template>

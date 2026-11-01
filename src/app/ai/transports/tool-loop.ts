@@ -5,7 +5,9 @@ import { toMerged } from 'es-toolkit'
 
 import type { AIProviderID, ReasoningEffort } from '@open-pencil/core/constants'
 
+import { messagesSinceCompaction } from '@/app/ai/chat/compaction/marker'
 import { resumableTransport } from '@/app/ai/chat/history/continuation'
+import type { ReplyUsage } from '@/app/ai/chat/metadata'
 import { maxAgentSteps } from '@/app/ai/chat/preferences'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import type { RunRecorder, RunRecording } from '@/app/ai/chat/trace/recorder'
@@ -114,6 +116,8 @@ export function createToolLoopTransport({
     preview.finish(toolCallId)
   const cacheProviderOptions = promptCachingOptions(providerID, effectiveModelID)
   let recording: RunRecording | undefined
+  // The last step's tokens: what the reply's final request held, which the next one starts from.
+  let lastStep: { inputTokens: number; outputTokens: number } | null = null
   const agent = new ToolLoopAgent({
     model,
     instructions: SYSTEM_PROMPT,
@@ -148,6 +152,9 @@ export function createToolLoopTransport({
     },
     onStepFinish: (step) => {
       const { usage } = step
+      // A step without a count says nothing of what the request held, so the last counted stands.
+      if (usage.inputTokens !== undefined)
+        lastStep = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens ?? 0 }
       preview.clear()
       recordStep(store)
       recording?.step(step)
@@ -174,14 +181,28 @@ export function createToolLoopTransport({
   }
   const transport = new DirectChatTransport({
     agent,
-    onError: handleError
+    onError: handleError,
+    // The reply keeps its tokens, which the transcript shows and the context meter reads.
+    messageMetadata: ({ part }) => {
+      if (part.type !== 'finish' || !lastStep) return undefined
+      const usage: ReplyUsage = {
+        contextTokens: lastStep.inputTokens + lastStep.outputTokens,
+        inputTokens: part.totalUsage.inputTokens ?? 0,
+        outputTokens: part.totalUsage.outputTokens ?? 0,
+        cacheReadTokens: part.totalUsage.inputTokenDetails.cacheReadTokens ?? null
+      }
+      return { usage }
+    }
   }) as ChatTransport<UIMessage>
   return resumableTransport({
     reconnectToStream: (options) => transport.reconnectToStream(options),
-    async sendMessages(options) {
+    async sendMessages(sent) {
+      // A compacted conversation reaches the model as its summary and what followed it.
+      const options = { ...sent, messages: messagesSinceCompaction(sent.messages) }
       // The run starts as the message is sent, so a Stop before the model is reached ends it.
       const started = startRun(store, maxAgentSteps.value, effectiveModelID)
       run = started
+      lastStep = null
       await skills.refresh()
       offeredSkills = modelSkills()
       const catalog = skillCatalog(offeredSkills)

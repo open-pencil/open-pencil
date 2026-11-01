@@ -80,7 +80,6 @@ const meta = {
               :status="selected?.status ?? 'ready'"
               @submit="submit"
               @stop="stop"
-              @settings="showProfileNotice"
             >
               <template #model>
                 <div class="@container flex min-w-0 items-center">

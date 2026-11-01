@@ -29,7 +29,6 @@ const emit = defineEmits<{
   stop: []
   /** Escape while the agent works: stop it and send what is waiting. */
   interrupt: []
-  settings: []
   paste: [event: ClipboardEvent]
 }>()
 const { ai } = useI18n()
@@ -76,7 +75,12 @@ function restoreDraft(draft: string): boolean {
   editor.setText(draft)
   return true
 }
-defineExpose({ restoreDraft, insert: editor.insert, focus: editor.focus })
+defineExpose({
+  restoreDraft,
+  insert: editor.insert,
+  startCommand: editor.startCommand,
+  focus: editor.focus
+})
 </script>
 <template>
   <TooltipProvider>
@@ -96,14 +100,6 @@ defineExpose({ restoreDraft, insert: editor.insert, focus: editor.focus })
           <template #model><slot name="model" /></template>
 
           <template #actions>
-            <IconButton
-              :label="ai.providerSettings"
-              size="sm"
-              data-test-id="provider-settings-trigger"
-              @click="emit('settings')"
-            >
-              <icon-lucide-settings class="size-3.5" />
-            </IconButton>
             <IconButton
               v-if="showStop"
               :label="ai.stopGenerating"

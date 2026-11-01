@@ -83,6 +83,8 @@ export interface ModelOption {
   tag?: string
   capabilities?: readonly ('tools' | 'vision')[]
   recommendedMaxOutputTokens?: number
+  /** Tokens a request may hold, prompt and reply together, as the provider's catalog gives it. */
+  contextWindow?: number
   releaseDate?: string
   status?: 'active' | 'beta' | 'deprecated'
   /** Lowest reasoning effort the model accepts; lower thinking levels, Off included, use it. */

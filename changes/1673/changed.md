@@ -1,0 +1,1 @@
+- The chat composer groups attaching images, mentioning the selection, and commands under one + button, and model settings open from the model picker.

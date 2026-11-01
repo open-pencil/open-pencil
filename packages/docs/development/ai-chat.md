@@ -91,6 +91,12 @@ Edit → Undo and the chat's **Revert changes** therefore end in the same state:
 
 A reply's metadata (`chat/metadata.ts`) keeps whether you stopped it, and its edits with those undone and what the model was last told. Conversations save messages with `structuredClone`, so metadata is written from the plain message, never from the chat's reactive copy. Reopening a conversation settles any reply saved mid-way. The undo history does not survive closing a document, so a reopened reply keeps its marks but offers no Revert or Restore.
 
+## Compaction
+
+A compaction is a message in the conversation (`chat/compaction/marker.ts`): a user message whose text is the summary and whose metadata marks it, so the transcript draws a divider and any backend that knows nothing of compaction still reads the summary. `messagesSinceCompaction` gives what a model reads, from the latest marker on; the tool loop sends only that. Undo notes still cover edits before it, which the summary describes as made. Saved conversations keep every message, so nothing changes in storage.
+
+`chat/compaction/use.ts` runs it: the Design model summarizes the conversation (`summarize.ts`, with `prompt.md`), from a copy without images and with long tool results cut, so a conversation too long for its model can still be summarized; the marker is added only once the summary arrives, so a failed or cancelled compaction leaves the conversation as it was. One compaction runs at a time, and a message sent meanwhile waits for it. Before a message is sent, `compactIfFull` compacts when the last request since the latest marker, with the outgoing text estimated, passes `autoCompactAt` (`limits.ts`): the context window, from the model catalogs' `contextWindow`, less the whole reply allowance up to half the window, of which a tenth is kept for the next message. Compact and retry compacts only what came before the failed request, which stays after the summary to be asked again. Each reply keeps its token usage in its metadata (`usage`), written by the tool loop's `messageMetadata`, which the context meter and the reply's token line read. A provider error for a prompt past the window classifies as `context-limit`, whose notice offers Compact and retry. ACP agents and Pi compact their own context.
+
 ## Traces
 
 Save trace… in the conversation menu writes a file to reproduce what the agent did (`chat/trace/export.ts`). It holds the conversation's messages, its runs, and its diagnostic events.

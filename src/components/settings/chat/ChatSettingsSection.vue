@@ -3,7 +3,13 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { changePreviewSize, maxAgentSteps, reasoningDisplay } from '@/app/ai/chat/preferences'
+import {
+  changePreviewSize,
+  compactAutomatically,
+  maxAgentSteps,
+  reasoningDisplay,
+  tokenUsageDisplay
+} from '@/app/ai/chat/preferences'
 import { AGENT_STEP_LIMIT_MIN, AGENT_STEP_LIMIT_MAX } from '@/app/ai/reply/schema'
 import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -12,6 +18,7 @@ import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { ai, automation, settings } = useI18n()
 const stepPresets = [25, 50, 100, 200]
@@ -22,6 +29,11 @@ const options = computed(() => [
   { value: 'collapsed' as const, label: ai.value.reasoningCollapsed },
   { value: 'while-thinking' as const, label: ai.value.reasoningWhileThinking },
   { value: 'expanded' as const, label: ai.value.reasoningExpanded }
+])
+const usageOptions = computed(() => [
+  { value: 'hover' as const, label: ai.value.tokenUsageHover },
+  { value: 'always' as const, label: ai.value.tokenUsageAlways },
+  { value: 'hidden' as const, label: ai.value.tokenUsageHidden }
 ])
 const previewOptions = computed(() => [
   { value: 'off' as const, label: ai.value.changePreviewOff },
@@ -52,6 +64,21 @@ const previewOptions = computed(() => [
           v-model="changePreviewSize"
           :label="ai.changePreview"
           :options="previewOptions"
+          :ui="{ trigger: 'w-full sm:w-52' }"
+        />
+      </SettingsRow>
+      <SettingsRow :label="ai.compactAutomatically" :description="ai.compactAutomaticallyHint">
+        <AppSwitch v-model="compactAutomatically" :label="ai.compactAutomatically" />
+      </SettingsRow>
+      <SettingsRow
+        :label="ai.tokenUsage"
+        :description="ai.tokenUsageHint"
+        class="max-sm:flex-col max-sm:items-stretch"
+      >
+        <AppSelect
+          v-model="tokenUsageDisplay"
+          :label="ai.tokenUsage"
+          :options="usageOptions"
           :ui="{ trigger: 'w-full sm:w-52' }"
         />
       </SettingsRow>

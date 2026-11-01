@@ -11,6 +11,7 @@ export const modelOptionsSchema = v.array(
     tag: v.optional(v.string()),
     capabilities: v.optional(v.array(v.picklist(['tools', 'vision']))),
     recommendedMaxOutputTokens: v.optional(v.number()),
+    contextWindow: v.optional(v.pipe(v.number(), v.minValue(1))),
     releaseDate: v.optional(v.string()),
     status: v.optional(v.picklist(['active', 'beta', 'deprecated'])),
     minReasoningEffort: v.optional(v.picklist(REASONING_EFFORTS))

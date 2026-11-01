@@ -27,6 +27,18 @@ export class ChatHarness {
     return this.page.getByTestId('chat-profile-selector')
   }
 
+  /** Model settings open from the model picker's Manage models and roles. */
+  async openModelSettings(): Promise<void> {
+    await this.profileTrigger.click()
+    await this.page.getByRole('button', { name: 'Manage models and roles…' }).click()
+  }
+
+  /** Images are attached from the composer's add menu. */
+  async attachImages(): Promise<void> {
+    await this.page.getByTestId('chat-add-menu').click()
+    await this.page.getByRole('menuitem', { name: 'Attach images' }).click()
+  }
+
   userMessage() {
     return this.page.getByTestId('chat-message-user').last()
   }

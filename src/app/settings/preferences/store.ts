@@ -26,6 +26,10 @@ export const CHANGE_PREVIEW_SIZES = ['off', 'small', 'medium', 'large'] as const
 /** How large the before/after images kept for each AI edit are; `off` keeps only the JSX diff. */
 export type ChangePreviewSize = (typeof CHANGE_PREVIEW_SIZES)[number]
 
+export const TOKEN_USAGE_DISPLAYS = ['hover', 'always', 'hidden'] as const
+/** When a reply shows the tokens it used: while hovered, always, or never. */
+export type TokenUsageDisplay = (typeof TOKEN_USAGE_DISPLAYS)[number]
+
 /** Multipliers for how far each wheel or pinch event zooms the canvas; 1 is Figma's rate. */
 export const ZOOM_SPEEDS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2] as const
 export type ZoomSpeed = (typeof ZOOM_SPEEDS)[number]
@@ -86,6 +90,9 @@ export interface AppPreferences {
     changePreviewSize: ChangePreviewSize
     /** Whether the view follows our AI agents while they work. */
     followAgents: boolean
+    /** Whether a conversation is compacted when its context window fills up. */
+    compactAutomatically: boolean
+    tokenUsage: TokenUsageDisplay
   }
   files: { recentLimit: number }
   version: 1
@@ -114,7 +121,9 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     reasoningDisplay: 'collapsed',
     maxAgentSteps: DEFAULT_AGENT_STEPS,
     changePreviewSize: 'medium',
-    followAgents: true
+    followAgents: true,
+    compactAutomatically: true,
+    tokenUsage: 'hover'
   },
   files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
   version: 1,
@@ -164,7 +173,9 @@ const appPreferencesSchema = section({
       v.picklist(CHANGE_PREVIEW_SIZES),
       defaults.chat.changePreviewSize
     ),
-    followAgents: v.fallback(v.boolean(), defaults.chat.followAgents)
+    followAgents: v.fallback(v.boolean(), defaults.chat.followAgents),
+    compactAutomatically: v.fallback(v.boolean(), defaults.chat.compactAutomatically),
+    tokenUsage: v.fallback(v.picklist(TOKEN_USAGE_DISPLAYS), defaults.chat.tokenUsage)
   }),
   files: section({
     recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)

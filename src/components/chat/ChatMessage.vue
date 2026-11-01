@@ -9,7 +9,7 @@ import { vTestId } from '@open-pencil/vue/testing'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
-import { undoOf, wasStopped } from '@/app/ai/chat/metadata'
+import { undoOf, usageOf, wasStopped } from '@/app/ai/chat/metadata'
 import { reasoningDisplay as preferredReasoningDisplay } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
@@ -89,6 +89,7 @@ async function copyResponse(): Promise<void> {
 // The AI SDK updates parts in place and replaces only the message, so copy each part for
 // the cards' computed state to see the new values.
 const undo = computed(() => undoOf(message))
+const usage = computed(() => usageOf(message))
 const undoneCalls = computed(() => new Set(undo.value?.undone))
 const reverted = computed(
   () =>
@@ -109,6 +110,7 @@ function groupKey(group: MessagePartGroup): string {
 <template>
   <div
     v-test-id="`chat-message-${message.role}`"
+    class="group/reply"
     :class="message.role === 'user' ? 'flex justify-end' : ''"
   >
     <div
@@ -173,6 +175,7 @@ function groupKey(group: MessagePartGroup): string {
           :stopped="stopped"
           :undone="undoneCalls.size"
           :edits="undo?.edits.length ?? 0"
+          :usage="usage"
           @regenerate="emit('regenerate')"
           @revert="emit('revert')"
           @restore="emit('restore')"

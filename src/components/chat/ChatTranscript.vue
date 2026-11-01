@@ -7,6 +7,8 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
+import { compactionOf } from '@/app/ai/chat/compaction/marker'
+import { contextTokensOf } from '@/app/ai/chat/metadata'
 import type { QueuedMessage } from '@/app/ai/chat/queue'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
@@ -16,6 +18,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
 import ChatMessage from './ChatMessage.vue'
 import { useScrollFollowing } from './transcript/useScrollFollowing'
+import ChatCompactionDivider from './turn/ChatCompactionDivider.vue'
 import ChatMessageQueued from './turn/ChatMessageQueued.vue'
 
 const {
@@ -71,7 +74,25 @@ const isThinking = computed(() => {
 const idle = computed(() => interactive && (status === 'ready' || status === 'error'))
 // A request that failed before any reply is the last message; it is retried, not an older reply.
 const lastMessage = computed(() => messages.at(-1))
-const lastRequest = computed(() => messages.findLast((m) => m.role === 'user'))
+/**
+ * Each message with the compaction it marks, which the transcript draws as a divider, and what
+ * the first reply after that compaction reported its request held.
+ */
+const entries = computed(() =>
+  messages.map((message, index) => {
+    const compaction = compactionOf(message)
+    const after = compaction ? contextTokensOf(messages.slice(index + 1, index + 3)) : null
+    return { message, compaction, tokensAfter: after }
+  })
+)
+/**
+ * The newest message the person wrote. A compaction's summary is not one, and a request before
+ * it is no longer the model's to answer, so neither is edited or retried.
+ */
+const lastRequest = computed(() => {
+  const last = messages.findLast((m) => m.role === 'user')
+  return last && compactionOf(last) === null ? last : undefined
+})
 /** Messages with attachments carry context a plain text edit would drop. */
 const editableRequestId = computed(() => {
   const request = lastRequest.value
@@ -109,21 +130,30 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
       <!-- Messages -->
       <div v-else ref="transcriptContent" data-test-id="chat-messages" class="flex flex-col gap-3">
-        <ChatMessage
-          v-for="(msg, index) in messages"
+        <template
+          v-for="({ message: msg, compaction, tokensAfter }, index) in entries"
           :key="msg.id"
-          :message="msg"
-          :presentation="presentations?.[msg.id]"
-          :streaming="running && msg.role === 'assistant' && index === messages.length - 1"
-          :can-regenerate="idle && msg.id === lastMessage?.id && msg.role === 'assistant'"
-          :can-retry="idle && msg.id === lastMessage?.id && msg.role === 'user'"
-          :can-edit="idle && msg.id === editableRequestId"
-          :reasoning-display="reasoningDisplay"
-          @regenerate="emit('regenerate')"
-          @revert="emit('revert', msg.id)"
-          @restore="emit('restore', msg.id)"
-          @edit="(text) => emit('edit', msg.id, text)"
-        />
+        >
+          <ChatCompactionDivider
+            v-if="compaction"
+            :compaction="compaction"
+            :tokens-after="tokensAfter"
+          />
+          <ChatMessage
+            v-else
+            :message="msg"
+            :presentation="presentations?.[msg.id]"
+            :streaming="running && msg.role === 'assistant' && index === messages.length - 1"
+            :can-regenerate="idle && msg.id === lastMessage?.id && msg.role === 'assistant'"
+            :can-retry="idle && msg.id === lastMessage?.id && msg.role === 'user'"
+            :can-edit="idle && msg.id === editableRequestId"
+            :reasoning-display="reasoningDisplay"
+            @regenerate="emit('regenerate')"
+            @revert="emit('revert', msg.id)"
+            @restore="emit('restore', msg.id)"
+            @edit="(text) => emit('edit', msg.id, text)"
+          />
+        </template>
 
         <!-- Thinking indicator: shown when AI is working but no visible activity -->
         <div v-if="isThinking" data-test-id="chat-typing-indicator" class="flex gap-2">

@@ -12,13 +12,13 @@ Press <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) to open the AI
 The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Gemini CLI, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → Models → Run guided setup**. To configure models by hand:
 
 1. Open the AI chat panel (<kbd>⌘</kbd><kbd>J</kbd>)
-2. Click the settings icon
+2. Open the model picker under the message field and choose **Manage models and roles…**
 3. Add a model and configure its provider, model ID, credentials, and capabilities
 4. Save the model and assign it to **Design agent**
 
 You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. Models using the same provider connection reuse its stored credential.
 
-The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, or use the selection button to mention the selected layers, and `/` at the start of a message to run a skill, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
+The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/compact`, or one of an ACP agent's commands. The **+** button beside the field attaches images, mentions the selected layers, and starts a command. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
 
 ## Step limit
 
@@ -101,6 +101,14 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 ## Visual Verification
 
 The assistant can verify its work visually. With `export_image`, on by default, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss. `diff_visual`, enabled by default, compares an edited node with a reference copy and returns the changed pixels and region, so the assistant can confirm an edit stayed within its target.
+
+## Context and compaction
+
+A model reads a limited amount of conversation at once, its context window. With a model the chat calls itself, the header shows how full the window is; click it for the token count, when the conversation compacts, and the Cloud credits left. When the window is nearly full, a bar over the message field offers to compact.
+
+Compacting asks the conversation's model for a summary, which then stands for everything before it: later requests send the summary and what followed, while the transcript keeps every message, with a divider where the summary opens. **Compact automatically** in **Settings → Chat**, on by default, compacts before a message would leave too little room for the reply. `/compact` compacts at once, and instructions after it say what the summary should keep. A compaction that fails changes nothing and offers Retry; a request that is already too long for the model offers **Compact and retry**. ACP agents and Pi keep and compact their own context, and an ACP agent's own `/compact` reaches it as written.
+
+Hover a reply to see the tokens it used; **Settings → Chat → Token usage** shows them always or never.
 
 ## Messages while the assistant works
 
