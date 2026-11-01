@@ -5,6 +5,7 @@ const SUMMARY_COLUMNS = [
   'id',
   'workspaceId',
   'name',
+  'kind',
   'currentRevisionId',
   'version',
   'createdAt',

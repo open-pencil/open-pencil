@@ -3,14 +3,13 @@ import { join } from 'node:path'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
-import type { TypefaceFontProvider } from 'canvaskit-wasm'
 
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
-import { withFigExportRuntime, withTextShaper } from '#core/canvas/text/shape'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { getGlyphOutlineMetricsSync, glyphOutlineSourceSync } from '#core/text/font/glyphs'
@@ -401,42 +400,4 @@ describe('text shaping for saved glyphs', () => {
       Array.from(text, (character) => replacement.outline(replacement.glyphOf(character), 13))
     )
   })
-})
-
-test('overlapping shaping calls share their provider until the last one finishes', async () => {
-  const ck = await getCanvasKit()
-  // Providers other tests left attached are set aside, so the calls make one of their own.
-  const setAside: TypefaceFontProvider[] = []
-  for (
-    let provider = fontManager.providerFor(ck);
-    provider;
-    provider = fontManager.providerFor(ck)
-  ) {
-    setAside.push(provider)
-    fontManager.detachProvider(provider)
-  }
-  try {
-    const graph = new SceneGraph()
-    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
-      text: 'Shaped',
-      fontFamily: 'Inter',
-      fontSize: 13
-    })
-    const firstHeld = Promise.withResolvers<undefined>()
-    const secondHeld = Promise.withResolvers<undefined>()
-
-    const first = withTextShaper(ck, () => firstHeld.promise)
-    const second = withTextShaper(ck, async (shape) => {
-      await secondHeld.promise
-      return shape(node)
-    })
-    firstHeld.resolve(undefined)
-    await first
-    secondHeld.resolve(undefined)
-
-    expect((await second)?.baselines).toHaveLength(1)
-    expect(fontManager.providerFor(ck)).toBeNull()
-  } finally {
-    for (const provider of setAside.toReversed()) fontManager.attachProvider(ck, provider)
-  }
 })

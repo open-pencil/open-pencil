@@ -1,3 +1,4 @@
+import { invert } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type {
@@ -44,16 +45,17 @@ export function jsxEnum<T extends string>(
   spellings: Readonly<Record<T, string>>,
   aliases: Readonly<Record<string, T>> = {}
 ): JSXEnum<T> {
-  const entries = Object.entries(spellings) as [T, string][]
-  const byName = new Map<string, T>(
-    [...entries.map(([value, name]): [string, T] => [name, value]), ...Object.entries(aliases)].map(
-      ([name, value]): [string, T] => [name.toLowerCase(), value]
-    )
+  // Every spelling, the written ones and the aliases, read in any case.
+  const byName = new Map(
+    Object.entries({ ...invert(spellings), ...aliases }).map(([name, value]) => [
+      name.toLowerCase(),
+      value
+    ])
   )
   return {
     parse: (value) => (typeof value === 'string' ? byName.get(value.toLowerCase()) : undefined),
     print: (value) => spellings[value],
-    names: [...entries.map(([, name]) => name), ...Object.keys(aliases)]
+    names: [...Object.values<string>(spellings), ...Object.keys(aliases)]
   }
 }
 

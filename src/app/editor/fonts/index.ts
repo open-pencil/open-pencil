@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import { watch } from 'vue'
 
@@ -73,8 +74,7 @@ let tauriFontsPromise: Promise<HostFontFamily[]> | null = null
 async function getTauriFonts(): Promise<HostFontFamily[]> {
   if (tauriFontsCache) return tauriFontsCache
   if (!tauriFontsPromise) {
-    tauriFontsPromise = import('@tauri-apps/api/core')
-      .then(({ invoke }) => invoke<HostFontFamily[]>('list_system_fonts'))
+    tauriFontsPromise = invoke<HostFontFamily[]>('list_system_fonts')
       .then((fonts) => {
         tauriFontsCache = fonts
         // The weight list and family switches read each family's faces from these.
@@ -153,7 +153,7 @@ export async function listFonts(): Promise<HostFontFamily[]> {
 }
 
 interface FontRenderInvalidator {
-  invalidateAllPictures(): void
+  invalidateNodesForFonts(graph: SceneGraph, nodeIds: readonly string[]): void
 }
 
 export async function ensureGraphFonts(
@@ -182,7 +182,7 @@ export async function ensureGraphFonts(
     return fontManager.generation() !== generationBefore || fallbackScripts.length > 0
   } finally {
     fontManager.unblockNodes(nodeIds)
-    renderer?.invalidateAllPictures()
+    renderer?.invalidateNodesForFonts(graph, nodeIds)
   }
 }
 
@@ -201,7 +201,6 @@ type NativeFontLoadError = { code?: 'not-found' | 'unsupported-format' | 'failed
 async function loadSystemFont(family: string, style = 'Regular'): Promise<ArrayBuffer | null> {
   if (!isTauri()) return null
   try {
-    const { invoke } = await import('@tauri-apps/api/core')
     const data = await invoke<ArrayBuffer>('load_system_font', { family, style })
     if (data.byteLength === 0) return null
     return data

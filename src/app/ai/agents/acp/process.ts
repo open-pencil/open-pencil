@@ -1,3 +1,5 @@
+import { Command } from '@tauri-apps/plugin-shell'
+
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 
@@ -21,7 +23,6 @@ export async function spawnACPProcess({
   destroying,
   onUnexpectedClose
 }: ACPProcessOptions) {
-  const { Command } = await import('@tauri-apps/plugin-shell')
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',

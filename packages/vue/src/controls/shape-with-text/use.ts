@@ -93,7 +93,7 @@ export function useShapeWithText() {
   }
 
   function setTypeface(value: FigJamTypeface) {
-    return editor.setGeneratedTextTypeface(ids.value, value)
+    return editor.setFigJamTypeface(ids.value, value)
   }
 
   /** Picks `value` for the shape tool and arms it, as FigJam's Shapes panel does. */

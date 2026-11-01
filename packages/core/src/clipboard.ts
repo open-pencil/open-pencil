@@ -31,8 +31,8 @@ import {
   assignVariableGuids
 } from '#core/io/formats/fig/export/variables'
 
-import { withFigExportRuntime } from './canvas/text/shape'
 import { prepareClipboardImport } from './clipboard/fig-import'
+import { withFigExportRuntime } from './io/formats/fig/export/runtime'
 import { buildFontDigestMap } from './kiwi/fig/node-change/serialize'
 import { cloneSceneGraphForFigExport } from './kiwi/fig/parse/transfer'
 

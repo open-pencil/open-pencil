@@ -41,6 +41,7 @@ import {
   rememberRecentStorageDocument
 } from '@/app/recent-files'
 import { createDeferred } from '@/app/runtime/deferred'
+import { resolvedAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
@@ -128,7 +129,7 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
  */
 export function createDocumentTab(kind: DocumentKind): Tab {
   const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
-  const tab = createTab(undefined, createDocumentGraph(kind))
+  const tab = createTab(undefined, createDocumentGraph(kind, resolvedAppTheme.value))
   if (picker) {
     const rest = tabsRef.value.filter((entry) => entry !== tab)
     tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))
@@ -494,7 +495,7 @@ export async function openStorageDocumentInNewTab(
   const existing = findStorageTab(binding)
   if (existing) {
     switchTab(existing.id)
-    rememberRecentStorageDocument(binding, document.name)
+    rememberRecentStorageDocument(binding, document.name, existing.store.state.documentKind)
     return existing.store
   }
 
@@ -508,7 +509,7 @@ export async function openStorageDocumentInNewTab(
   let succeeded = false
   try {
     await showStorageDocument(store, binding, document, load)
-    rememberRecentStorageDocument(binding, document.name)
+    rememberRecentStorageDocument(binding, document.name, store.state.documentKind)
     succeeded = true
   } catch (error) {
     if (!load.signal.aborted) {

@@ -1,0 +1,1 @@
+- Vectors whose regions have their own colors keep them, and the paint styles they come from, when pasted from Figma or saved to `.fig`, and through edits that add or remove regions.

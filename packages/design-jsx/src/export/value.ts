@@ -1,3 +1,5 @@
+import { isUndefined, mapValues, omitBy } from 'es-toolkit'
+
 import { es, jsx, type SyntaxNode } from '@open-pencil/emit'
 
 /** A paint, effect, or variable helper call inside a prop value, such as `solid("#FF0000")`. */
@@ -56,11 +58,7 @@ export function plainValue(value: unknown): JSXValue {
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (Array.isArray(value)) return value.map(plainValue)
   if (isRecord(value)) {
-    return Object.fromEntries(
-      Object.entries(value).flatMap(([key, item]) =>
-        item === undefined ? [] : [[key, plainValue(item)]]
-      )
-    )
+    return mapValues(omitBy(value, isUndefined), (item) => plainValue(item))
   }
   throw new TypeError(`Cannot write a ${typeof value} value as JSX`)
 }

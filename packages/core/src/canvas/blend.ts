@@ -72,8 +72,8 @@ export function setPaintBlendMode(r: SkiaRenderer, paint: Paint, mode?: BlendMod
 
 /** Skia has no blend mode for either: they are runtime blenders, compiled once per renderer. */
 function linearBlender(r: SkiaRenderer, mode: LinearBlendMode): Blender {
-  if (mode === 'LINEAR_BURN') return (r.linearBurnBlender ??= compileLinearBlender(r.ck, mode))
-  return (r.linearDodgeBlender ??= compileLinearBlender(r.ck, mode))
+  if (mode === 'LINEAR_BURN') return (r.shaders.linearBurn ??= compileLinearBlender(r.ck, mode))
+  return (r.shaders.linearDodge ??= compileLinearBlender(r.ck, mode))
 }
 
 function compileLinearBlender(ck: CanvasKit, mode: LinearBlendMode): Blender {

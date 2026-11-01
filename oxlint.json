@@ -190,6 +190,7 @@
     "open-pencil/no-cross-package-source-imports": "error",
     "open-pencil/no-app-imports-in-packages": "error",
     "open-pencil/no-core-framework-imports": "error",
+    "open-pencil/no-inline-tauri-imports": "error",
     "open-pencil/no-direct-storage-access": "error",
     "open-pencil/no-deep-parent-relative-imports": "error",
     "open-pencil/no-deep-parent-relative-paths": "error",

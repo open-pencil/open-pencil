@@ -1,4 +1,4 @@
-import { scaleGeometryPaths } from '../copy'
+import { cloneVectorNetwork, scaleGeometryPaths } from '../copy'
 import { scaledTextLength } from '../text/lengths'
 import { TEXT_PARAGRAPH_SPACING_FIELDS } from '../text/paragraphs'
 import {
@@ -11,7 +11,6 @@ import {
   type StyleRun,
   type TextParagraphStyle
 } from '../types'
-import { cloneVectorNetwork } from '../vector-network'
 
 function scaledOptional(value: number | null, scale: number): number | null {
   return value == null ? null : value * scale
@@ -104,6 +103,10 @@ function scaledVectorNetwork(node: SceneNode, scale: number): SceneNode['vectorN
     segment.tangentStart.y *= scale
     segment.tangentEnd.x *= scale
     segment.tangentEnd.y *= scale
+  }
+  // A region's own paints scale as the layer's do.
+  for (const region of network.regions) {
+    if (region.fills) region.fills = scaledFills(region.fills, scale)
   }
   return network
 }

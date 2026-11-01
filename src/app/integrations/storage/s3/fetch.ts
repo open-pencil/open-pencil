@@ -1,4 +1,5 @@
 import { isTauri } from '@/app/tauri/env'
+import { tauriFetch } from '@/app/tauri/http'
 
 /**
  * How long a request waits for its answer, or a download for its next bytes, before it fails, so a
@@ -90,7 +91,6 @@ async function fetchWithTimeout(
   let response: Response
   try {
     if (isTauri()) {
-      const { tauriFetch } = await import('@/app/tauri/http')
       response = await tauriFetch(input, { ...init, signal })
     } else if (input instanceof Request) {
       // Request bodies are owned by the Request; re-wrap so we can attach a timeout signal.

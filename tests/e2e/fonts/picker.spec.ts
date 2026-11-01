@@ -4,7 +4,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 import { mockGoogleFonts } from '#tests/helpers/fonts/google'
 
 async function openTypographyForText(page: Page) {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 

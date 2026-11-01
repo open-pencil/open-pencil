@@ -301,13 +301,10 @@ tests/engine/render/canvas/chunks/context.test.ts
 tests/engine/render/canvas/chunks/gold-preview.test.ts
 tests/engine/render/canvas/chunks/index.test.ts
 tests/engine/render/canvas/chunks/record.test.ts
-tests/engine/render/canvas/component-label-text.test.ts
 tests/engine/render/canvas/corner-smoothing.test.ts
 tests/engine/render/canvas/culling.test.ts
 tests/engine/render/canvas/derived-text.test.ts
 tests/engine/render/canvas/diamond-gradient.test.ts
-tests/engine/render/canvas/effect-raster-cache.test.ts
-tests/engine/render/canvas/effect-raster-integration.test.ts
 tests/engine/render/canvas/effects/edge-cases.test.ts
 tests/engine/render/canvas/effects/inner-shadow.test.ts
 tests/engine/render/canvas/effects/ordering.test.ts
@@ -335,8 +332,6 @@ tests/engine/render/canvas/painted-text.test.ts
 tests/engine/render/canvas/picture-invalidation.test.ts
 tests/engine/render/canvas/raster-export.test.ts
 tests/engine/render/canvas/renderer-lifecycle.test.ts
-tests/engine/render/canvas/retained-backing-pixels.test.ts
-tests/engine/render/canvas/retained-backing.test.ts
 tests/engine/render/canvas/schema-fill-fallback.test.ts
 tests/engine/render/canvas/surface-replacement.test.ts
 tests/engine/render/canvas/text/font-variations.test.ts

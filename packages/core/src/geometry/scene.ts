@@ -6,7 +6,7 @@ import {
   getWorldHandles,
   getWorldMatrix
 } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { RotationPreview, ViewportTransform } from './types'
@@ -36,7 +36,15 @@ export function createSceneGeometry(graph: SceneGraph, preview?: RotationPreview
       return source ? node(source) : undefined
     }
   }
-  const worldMatrix = (source: SceneNode) => getWorldMatrix(node(source), reader)
+  // One view serves one draw or input operation, so a layer's world matrix is walked once.
+  const worldMatrices = new Map<string, Mat3>()
+  const worldMatrix = (source: SceneNode): Mat3 => {
+    const cached = worldMatrices.get(source.id)
+    if (cached) return cached
+    const matrix = getWorldMatrix(node(source), reader)
+    worldMatrices.set(source.id, matrix)
+    return matrix
+  }
   const screenMatrix = (source: SceneNode, viewport: ViewportTransform) =>
     Matrix.multiply(viewportMatrix(viewport), worldMatrix(source))
 
@@ -85,7 +93,7 @@ export function createSceneGeometry(graph: SceneGraph, preview?: RotationPreview
     },
     /** Same world-space rectangle, with reflected axes removed for readable labels. */
     unreflectedWorldMatrix(source: SceneNode) {
-      const world = worldMatrix(source)
+      const world = [...worldMatrix(source)]
       const { x: flipX, y: flipY } = reflections(source)
       const origin = Matrix.mapPoint(world, {
         x: flipX < 0 ? source.width : 0,

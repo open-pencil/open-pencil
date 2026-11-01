@@ -7,6 +7,7 @@ export {
   recentFiles,
   recentLocalFileAt,
   recentLocalFilePaths,
+  recentDocumentKind,
   rememberRecentFile,
   rememberRecentStorageDocument,
   type RecentDocument,

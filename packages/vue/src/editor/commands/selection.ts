@@ -120,6 +120,14 @@ export function createSelectionCommands({
       enabled: capabilities.canFrameSelection,
       run: () => editor.frameSelection()
     },
+    'selection.wrapInSection': {
+      id: 'selection.wrapInSection',
+      get label() {
+        return t.value.wrapInSection
+      },
+      enabled: capabilities.canWrapInSection,
+      run: () => editor.wrapSelectionInSection()
+    },
     'selection.ungroup': {
       id: 'selection.ungroup',
       get label() {

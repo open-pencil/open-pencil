@@ -71,14 +71,32 @@ export function drawLineStroke(
   drawArrowHeads(r, canvas, heads, stroke.weight, color, stroke.opacity)
 }
 
+/** The weight and cap a LINE is stroked with: its first visible stroke's. */
+function lineStroke(node: SceneNode): { weight: number; cap: StrokeCap } {
+  const stroke = node.strokes.find((item) => item.visible)
+  return { weight: stroke?.weight ?? 1, cap: stroke?.cap ?? node.strokeCap }
+}
+
 /**
- * The outline of a LINE's first visible stroke, as booleans and flattening take it: its shaft, its
- * caps, and its heads, without dashes.
+ * A LINE as Flatten keeps it: the segment its stroke is drawn along, to one side and inside its
+ * caps by half a weight each, so the stroke it keeps lies where it did (live-measured). A line
+ * shorter than its weight reverses, as in Figma.
+ */
+export function makeLineSegmentPath(r: SkiaRenderer, node: SceneNode): Path {
+  const { weight, cap } = lineStroke(node)
+  const { start, end } = lineStrokeEnds(node.width, node.height, weight, cap, true)
+  const segment = new r.ck.PathBuilder()
+  segment.moveTo(start.x, start.y)
+  segment.lineTo(end.x, end.y)
+  return segment.detachAndDelete()
+}
+
+/**
+ * The outline of a LINE's first visible stroke, as booleans take it: its shaft, its caps, and
+ * its heads, without dashes.
  */
 export function makeLineStrokeOutline(r: SkiaRenderer, node: SceneNode): Path | null {
-  const stroke = node.strokes.find((item) => item.visible)
-  const weight = stroke?.weight ?? 1
-  const cap = stroke?.cap ?? node.strokeCap
+  const { weight, cap } = lineStroke(node)
   const { network, from, to } = lineStrokePath(node, weight, cap)
   const shaft = new r.ck.PathBuilder()
   shaft.moveTo(from.x, from.y)

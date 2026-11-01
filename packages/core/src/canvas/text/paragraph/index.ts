@@ -17,12 +17,6 @@ import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/tex
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import {
-  drawnFontVariations,
-  loadedFace,
-  resolveParagraphFontFamilies
-} from '#core/canvas/text/font-families'
-import { laidOutText } from '#core/canvas/text/keycap'
-import {
   pushParagraphStyle,
   type ParagraphPaintStyle,
   type ParagraphBuildOptions
@@ -31,7 +25,13 @@ import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownTextSlice } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
+import {
+  drawnFontVariations,
+  loadedFace,
+  resolveParagraphFontFamilies
+} from '#core/text/font/families'
 import { fontManager } from '#core/text/font/manager'
+import { laidOutText } from '#core/text/keycap'
 
 import type { ParagraphNode } from './inputs'
 

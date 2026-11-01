@@ -29,3 +29,13 @@ export function importSource(
 ): string | null {
   return typeof node.source?.value === 'string' ? node.source.value : null
 }
+
+/** The module an inline `import()` names, when it is a string or a template without expressions. */
+export function inlineImportSource(node: TSESTree.ImportExpression): string | null {
+  const { source } = node
+  if (source.type === 'Literal') return typeof source.value === 'string' ? source.value : null
+  if (source.type === 'TemplateLiteral' && source.expressions.length === 0) {
+    return source.quasis[0]?.value.cooked ?? null
+  }
+  return null
+}

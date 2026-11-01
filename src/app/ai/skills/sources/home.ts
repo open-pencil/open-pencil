@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { partition } from 'es-toolkit'
 import * as v from 'valibot'
 
@@ -77,7 +78,6 @@ export async function readHomeSkills(home: string, reader: HomeSkillReader): Pro
 
 /** The desktop's reader, through the shell's skill commands. */
 export async function nativeHomeSkillReader(): Promise<HomeSkillReader> {
-  const { invoke } = await import('@tauri-apps/api/core')
   return {
     folders: (root) => invoke<unknown>('skill_folders', { root }),
     readFile: (dir, path) => invoke<string>('skill_folder_file', { dir, path })

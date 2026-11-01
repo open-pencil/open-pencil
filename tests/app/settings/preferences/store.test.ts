@@ -31,8 +31,7 @@ describe('parseAppPreferences', () => {
     const preferences = parseAppPreferences({
       appearance: { animations: 'off' },
       chat: { reasoningDisplay: 'sometimes', changePreviewSize: 'large', maxAgentSteps: 'many' },
-      editing: { snapping: { geometry: false, objects: 'yes' } },
-      rendering: 'tiled'
+      editing: { snapping: { geometry: false, objects: 'yes' } }
     })
     expect(preferences.appearance.animations).toBe('off')
     expect(preferences.chat).toEqual({
@@ -43,7 +42,6 @@ describe('parseAppPreferences', () => {
       ...DEFAULT_APP_PREFERENCES.editing.snapping,
       geometry: false
     })
-    expect(preferences.rendering).toEqual(DEFAULT_APP_PREFERENCES.rendering)
   })
 
   test('keeps each disabled design check rule once and drops what is not a rule name', () => {

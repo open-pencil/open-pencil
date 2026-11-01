@@ -2,14 +2,17 @@ import { expect, mock, test } from 'bun:test'
 
 import type { Font, Paint, Surface } from 'canvaskit-wasm'
 
-import { createImageCache } from '#core/canvas/images/cache'
-import { ImagePreviewCache } from '#core/canvas/images/previews'
+import { createImageFilterCache, createMaskFilterCache } from '#core/canvas/effects'
+import { createRendererImages } from '#core/canvas/images/state'
+import { IssueMarkerStage } from '#core/canvas/issues/stage'
+import type { NodeEditPaints } from '#core/canvas/node-edit-overlay'
+import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { EffectRasterCache } from '#core/canvas/renderer/effect-raster-cache'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
-import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from '#core/canvas/text/derived'
-import { createEmojiImageCache } from '#core/canvas/text/emoji'
+import { createCompiledShaders } from '#core/canvas/renderer/shaders'
+import { createWholeScenePicture } from '#core/canvas/renderer/state'
+import { createTextCaches } from '#core/canvas/text/caches'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 
 import { asDouble, asRenderer } from './helpers'
@@ -23,29 +26,25 @@ function createRenderer() {
     destroyed: false,
     textPreparationCache: new TextPreparationCache(),
     transientPreviews: new Map(),
-    imageCache: createImageCache(),
-    liveImages: new Map(),
-    imagePreviews: new ImagePreviewCache(() => undefined),
-    onImagePreviewReady: null,
+    images: createRendererImages(),
     nodePaths: new NodePathCaches(),
-    glyphSilhouetteCache: createGlyphSilhouetteCache(),
-    derivedGlyphPathCache: createDerivedGlyphPathCache(),
-    emojiImageCache: createEmojiImageCache(),
+    textCaches: createTextCaches(),
     fillPaint: deletable<Paint>(),
     strokePaint: deletable<Paint>(),
     selectionPaint: deletable<Paint>(),
-    parentOutlinePaint: deletable<Paint>(),
     snapPaint: deletable<Paint>(),
     auxFill: deletable<Paint>(),
     auxStroke: deletable<Paint>(),
     opacityPaint: deletable<Paint>(),
     effectLayerPaint: deletable<Paint>(),
-    textFont: deletable<Font>(),
-    labelFont: deletable<Font>(),
-    sizeFont: deletable<Font>(),
-    sectionTitleFont: deletable<Font>(),
-    componentLabelFont: deletable<Font>(),
-    fontMgr: null,
+    chromeFonts: {
+      text: deletable<Font>(),
+      label: deletable<Font>(),
+      size: deletable<Font>(),
+      value: null,
+      sectionTitle: deletable<Font>(),
+      componentLabel: deletable<Font>()
+    },
     fontProvider: null,
     fontsLoaded: true,
     rulerBgPaint: deletable<Paint>(),
@@ -60,17 +59,18 @@ function createRenderer() {
     penHandlePaint: deletable<Paint>(),
     penVertexFill: deletable<Paint>(),
     penVertexStroke: deletable<Paint>(),
-    imageFilterCache: new Map(),
-    maskFilterCache: new Map(),
-    nodePictureCache: new Map(),
-    effectRasterCache: new EffectRasterCache(),
-    subtreePictureCache: new Map(),
-    scenePicture: null,
-    sceneBacking: null,
-    sceneBackingBuild: null,
+    imageFilterCache: createImageFilterCache(),
+    dashEffects: createDashEffectCache(),
+    shaders: createCompiledShaders(),
+    maskFilterCache: createMaskFilterCache(),
+    nodeEditPaints: {
+      techStrokePaint: deletable<Paint>()
+    } as Partial<NodeEditPaints> as NodeEditPaints,
+    nodePictures: new Map(),
+    issueMarkerStage: new IssueMarkerStage(),
+    wholeScene: createWholeScenePicture(),
     tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
     labelParagraphCache: asDouble<SkiaRenderer['labelParagraphCache']>({ clear: mock() }),
-    _flashPaint: null,
     profiler: { destroy: mock() } as Partial<SkiaRenderer['profiler']> as SkiaRenderer['profiler'],
     surface: deletable<Surface>()
   }
@@ -95,15 +95,12 @@ test('destroyRenderer releases tiled resources before deleting the main surface'
 
 test('destroyRenderer deletes all renderer-owned paints and label fonts', () => {
   const renderer = createRenderer()
-  const parentOutlinePaint = renderer.parentOutlinePaint
-  const sectionTitleFont = renderer.sectionTitleFont
-  const componentLabelFont = renderer.componentLabelFont
+  const { sectionTitle, componentLabel } = renderer.chromeFonts
   const pencilStrokePaint = renderer.pencilStrokePaint
 
   destroyRenderer(renderer)
 
-  expect(parentOutlinePaint.delete).toHaveBeenCalled()
   expect(pencilStrokePaint.delete).toHaveBeenCalled()
-  expect(sectionTitleFont?.delete).toHaveBeenCalled()
-  expect(componentLabelFont?.delete).toHaveBeenCalled()
+  expect(sectionTitle?.delete).toHaveBeenCalled()
+  expect(componentLabel?.delete).toHaveBeenCalled()
 })

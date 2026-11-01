@@ -44,7 +44,7 @@ async function getSelectedStroke(page: Page) {
 
 test('stroke picker updates stroke color on a rectangle', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/')
+  await page.goto('/?test')
   await canvas.waitForInit()
 
   await canvas.drawRect(120, 120, 180, 120)
@@ -66,7 +66,7 @@ test('stroke picker updates stroke color on a rectangle', async ({ page }) => {
 
 test('stroke picker alpha slider updates stroke opacity and alpha', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/')
+  await page.goto('/?test')
   await canvas.waitForInit()
 
   await canvas.drawRect(120, 120, 180, 120)
@@ -144,7 +144,7 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
   page
 }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/')
+  await page.goto('/?test')
   await canvas.waitForInit()
   await canvas.drawRect(120, 120, 180, 120)
   await propertySection(page, 'Stroke').getByRole('button', { name: 'Add stroke' }).click()

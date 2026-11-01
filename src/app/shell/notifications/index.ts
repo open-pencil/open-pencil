@@ -1,3 +1,5 @@
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import { onAction, sendNotification } from '@tauri-apps/plugin-notification'
 import { useDocumentVisibility, useWindowFocus } from '@vueuse/core'
 import { watch } from 'vue'
 
@@ -54,7 +56,6 @@ watch([windowFocused, documentVisibility, () => activeTab.value?.id], () => {
 })
 
 async function focusDesktopWindow(): Promise<void> {
-  const { getCurrentWindow } = await import('@tauri-apps/api/window')
   const window = getCurrentWindow()
   await window.unminimize()
   await window.setFocus()
@@ -66,7 +67,6 @@ async function focusDesktopWindow(): Promise<void> {
  * moved to the Action Center.
  */
 async function addDesktopClickListener(): Promise<void> {
-  const { onAction } = await import('@tauri-apps/plugin-notification')
   await onAction(({ actionId, notification }) => {
     const id = notification?.id
     const open = id === undefined ? undefined : shownOnDesktop.get(id)
@@ -87,7 +87,6 @@ function listenForDesktopClicks(): Promise<void> {
 
 async function showOnDesktop(notification: AppNotification): Promise<void> {
   await listenForDesktopClicks()
-  const { sendNotification } = await import('@tauri-apps/plugin-notification')
   const id = randomInt()
   shownOnDesktop.set(id, notification.open)
   for (const old of shownOnDesktop.keys()) {

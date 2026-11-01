@@ -201,6 +201,7 @@ const metadata = (document: CloudDocumentRow) =>
         :key="document.id"
         :view="view"
         :name="document.name"
+        :kind="document.kind"
         :metadata="metadata(document)"
         :previewURL="document.previewURL"
         :menu="menu(document)"

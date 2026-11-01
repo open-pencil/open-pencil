@@ -82,7 +82,9 @@ test('a swap of a nested instance is addressed by the nested instance record', a
   const { nodeChanges } = parseFigBuffer(bytes.slice().buffer as ArrayBuffer)
   const exported = expectDefined(
     nodeChanges.find(
-      (node) => node.type === 'INSTANCE' && symbolDataOf(node)?.symbolOverrides?.length
+      (node) =>
+        node.type === 'INSTANCE' &&
+        symbolDataOf(node)?.symbolOverrides?.some((override) => override.overriddenSymbolID)
     ),
     'exported instance'
   )
