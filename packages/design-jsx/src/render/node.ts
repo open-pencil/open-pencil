@@ -12,7 +12,7 @@ import { applySizeOverrides, propsToOverrides, shapeOverrides } from '../overrid
 import { placeVectorPaths } from '../overrides/vector'
 import type { LayerRefs } from '../refs'
 import { readElementProps } from '../schema'
-import type { DesignJSXServices } from '../services'
+import type { DesignJSXServices, MarkdownService } from '../services'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from '../text-content'
 import { isTreeNode } from '../tree'
 import type { TreeNode } from '../tree'
@@ -194,7 +194,8 @@ export function elementOverrides(
   nodeType: NodeType,
   tree: TreeNode,
   parentId: string,
-  context?: RenderContext
+  context?: RenderContext,
+  markdown?: MarkdownService
 ): ElementOverrides {
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const isText = nodeType === 'TEXT'
@@ -219,7 +220,7 @@ export function elementOverrides(
     // A span's variables give their values; characters keep no bindings of their own.
     const spanOverrides = (spanProps: Record<string, unknown>) =>
       propsToOverrides(preparePropsForRender(graph, spanProps, true, layer).props, true, 'NONE')
-    Object.assign(overrides, textContentFields(tree, props, overrides, spanOverrides))
+    Object.assign(overrides, textContentFields(tree, props, overrides, spanOverrides, markdown))
   }
   return { overrides, bindings }
 }
@@ -322,7 +323,8 @@ async function renderNodeContent<Artwork>(
         nodeType,
         element,
         elementParentId,
-        context
+        context,
+        services.markdown
       )
       const created = graph.createNode(nodeType, elementParentId, overrides)
       context?.created.push(created.id)
@@ -344,7 +346,14 @@ async function renderNodeContent<Artwork>(
   const nodeType = elementNodeType(tree.type)
   if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
 
-  const { overrides, bindings } = elementOverrides(graph, nodeType, tree, parentId, context)
+  const { overrides, bindings } = elementOverrides(
+    graph,
+    nodeType,
+    tree,
+    parentId,
+    context,
+    services.markdown
+  )
   const node = graph.createNode(nodeType, parentId, overrides)
   context?.created.push(node.id)
   applyBindings(graph, node.id, bindings)

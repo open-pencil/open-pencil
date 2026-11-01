@@ -16,6 +16,7 @@ import {
 } from '@open-pencil/scene-graph/text'
 
 import { parseScriptInput } from './schema'
+import type { MarkdownService } from './services'
 import { isTreeNode, type TreeNode } from './tree'
 
 /** `<Span>`: characters of a text styled apart from the rest of it. */
@@ -193,8 +194,10 @@ export function textContentFields(
   tree: TreeNode,
   props: Record<string, unknown>,
   overrides: Partial<SceneNode>,
-  spanOverrides: SpanOverrides
+  spanOverrides: SpanOverrides,
+  markdown?: MarkdownService
 ): TextContentFields {
+  if (props.markdown === true) return markdownContentFields(tree, props, overrides, markdown)
   if (!tree.children.some(isTextContent)) {
     const childText = tree.children.filter((c): c is string => typeof c === 'string').join('')
     const propText =
@@ -230,4 +233,37 @@ export function textContentFields(
     styleRuns: styleRuns(segments, textStyle),
     textParagraphs: trimParagraphStyles(styles, styles.length)
   }
+}
+
+/**
+ * `source` without the indent all its lines share, as a template literal written inside JSX
+ * indents them; a line indented further, such as a nested list item, keeps the rest.
+ */
+function withoutSharedIndent(source: string): string {
+  const lines = source.split('\n')
+  const indents = lines
+    .filter((line) => line.trim() !== '')
+    .map((line) => line.length - line.trimStart().length)
+  if (indents.length === 0) return ''
+  const shared = Math.min(...indents)
+  return lines.map((line) => line.slice(Math.min(shared, line.length))).join('\n')
+}
+
+/**
+ * `<Text markdown>`: its text, from children or the `text` prop, read as Markdown over the
+ * text's own style. Indentation the source shares, as in a template literal, is left out.
+ */
+function markdownContentFields(
+  tree: TreeNode,
+  props: Record<string, unknown>,
+  overrides: Partial<SceneNode>,
+  markdown: MarkdownService | undefined
+): TextContentFields {
+  if (tree.children.some(isTreeNode))
+    throw new Error('<Text markdown> holds only its Markdown text, not <Span> or <Paragraph>')
+  if (!markdown) throw new Error('<Text markdown> needs the renderer to read Markdown')
+  const childText = tree.children.filter((c): c is string => typeof c === 'string').join('')
+  const source = childText || (typeof props.text === 'string' ? props.text : '')
+  const base = createDefaultNode(() => '', 'TEXT', overrides)
+  return markdown(withoutSharedIndent(source), base)
 }
