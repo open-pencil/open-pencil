@@ -27,6 +27,8 @@ describe("FigJam's colour menu", () => {
     expect(hex(get(text).fills[0])).toBe('#f24822')
     editor.undo.undo()
     expect(hex(get(rect).fills[0])).not.toBe('#f24822')
+    expect(hex(get(section).fills[0])).not.toBe('#ffe2e0')
+    expect(hex(get(text).fills[0])).not.toBe('#f24822')
   })
 
   test("colours a group's layers and leaves sticky notes to their own palette", () => {

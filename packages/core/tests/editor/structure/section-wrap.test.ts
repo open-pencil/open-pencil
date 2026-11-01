@@ -19,6 +19,9 @@ describe('wrapping layers in a new section', () => {
     expect([...editor.state.selectedIds]).toEqual([section.id])
     editor.undo.undo()
     expect(editor.graph.getNode(a)?.parentId).toBe(pageId)
+    expect(editor.graph.getNode(b)?.parentId).toBe(pageId)
+    expect(editor.graph.getNode(section.id)).toBeUndefined()
+    expect(editor.graph.getNode(pageId)?.childIds).toEqual([a, b])
   })
 
   test('a board paints it as a light section, whatever the interface theme', () => {
