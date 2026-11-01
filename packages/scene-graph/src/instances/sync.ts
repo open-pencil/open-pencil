@@ -470,7 +470,11 @@ export function syncChildren(
       factor: componentScale / compChild.componentScale,
       skip: (key) => driven.has(key) || isProtectedSyncField(instChild, key, protectedField)
     })
-    Object.assign(updates, assignedFieldValues(graph, instChild, compChild))
+    const assigned = assignedFieldValues(graph, instChild, compChild)
+    // A direct label override is more specific than the enclosing text property assignment.
+    // Visibility assignments still drive their descendants independently of ancestor visibility.
+    if (isProtectedSyncField(instChild, 'text', protectedField)) delete assigned.text
+    Object.assign(updates, assigned)
     keepOwnContentSize(graph, updates, instChild, source, placement)
     updateSyncedProps(graph, instChild, updates)
 
