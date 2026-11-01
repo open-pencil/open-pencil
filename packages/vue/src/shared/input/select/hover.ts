@@ -12,6 +12,7 @@ import {
 import { lineEndAt } from '#vue/shared/input/line/end'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
+import { pressesSelection } from '#vue/shared/input/select/move'
 import { scalesByHandles } from '#vue/shared/input/sticky/scale'
 import { getNodeEditState } from '#vue/shared/input/vector'
 
@@ -68,9 +69,13 @@ function updateHoveredNode(
     ? fns.hitTestInScope(cx, cy, true)
     : (hitTestLabel(cx, cy, fns) ?? fns.hitTestInScope(cx, cy, false))
   const editNodeId = getNodeEditState(editor)?.nodeId
-  editor.setHoveredNode(
-    hit && !editor.state.selectedIds.has(hit.id) && hit.id !== editNodeId ? hit.id : null
-  )
+  // No outline on a layer a press would not select: one inside a selected frame drags the frame.
+  const hovered =
+    hit &&
+    !editor.state.selectedIds.has(hit.id) &&
+    hit.id !== editNodeId &&
+    (deep || !pressesSelection(hit, cx, cy, editor))
+  editor.setHoveredNode(hovered ? hit.id : null)
 }
 
 export function updateHoverCursor(

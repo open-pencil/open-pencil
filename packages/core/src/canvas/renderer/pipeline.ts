@@ -15,7 +15,10 @@ import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-b
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
-  r: Pick<SkiaRenderer, 'worldViewport' | 'viewportImageRendering' | 'renderNode' | 'nodePaths'>,
+  r: Pick<
+    SkiaRenderer,
+    'worldViewport' | 'viewportImageRendering' | 'renderNode' | 'nodePaths' | 'editingTextId'
+  >,
   canvas: Canvas,
   graph: SceneGraph,
   pageId: string
@@ -23,7 +26,10 @@ export function renderSceneToCanvas(
   r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
+  const editing = r.editingTextId
   r.viewportImageRendering = false
+  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited.
+  r.editingTextId = null
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
     const pageNode = graph.getNode(pageId)
@@ -33,6 +39,7 @@ export function renderSceneToCanvas(
   } finally {
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
+    r.editingTextId = editing
   }
 }
 

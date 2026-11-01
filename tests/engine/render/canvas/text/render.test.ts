@@ -221,6 +221,29 @@ describe('renderText', () => {
     expect(canvas.saveLayer).not.toHaveBeenCalled()
   })
 
+  test('lays text out live when its fonts are loaded, and draws saved glyphs for a substituted face', () => {
+    const node = textNode({
+      derivedTextGlyphs: [
+        { commandsBlob: new Uint8Array(), x: 0, y: 12, fontSize: 12, firstCharacter: 0, advance: 8 }
+      ]
+    })
+    const ready = createMockRenderer()
+    const readyCanvas = createMockCanvas()
+    renderText(ready, readyCanvas as never, node)
+    expect(ready.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(readyCanvas.drawPath).not.toHaveBeenCalled()
+
+    const base = createMockRenderer()
+    const substituted = createMockRenderer({
+      nodeFontReadiness: mock(() => 'substituted'),
+      ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
+    })
+    const substitutedCanvas = createMockCanvas()
+    renderText(substituted, substitutedCanvas as never, node)
+    expect(substituted.buildParagraph).not.toHaveBeenCalled()
+    expect(substitutedCanvas.drawPath).toHaveBeenCalled()
+  })
+
   test('draws the text being edited from its live layout, not its saved glyphs', () => {
     const node = textNode({
       derivedTextGlyphs: [
@@ -236,6 +259,7 @@ describe('renderText', () => {
     const base = createMockRenderer()
     const other = createMockRenderer({
       editingTextId: 'another',
+      nodeFontReadiness: mock(() => 'substituted'),
       ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
     })
     const otherCanvas = createMockCanvas()

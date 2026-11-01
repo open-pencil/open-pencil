@@ -239,7 +239,10 @@ export function createTextActions(ctx: EditorContext) {
       ctx.state.editingTextId = null
       activeSession = null
       restore?.()
-      if (edited) redrawText(edited)
+      if (edited) {
+        redrawText(edited)
+        ctx.requestRender()
+      }
       return
     }
     const textState = te.state

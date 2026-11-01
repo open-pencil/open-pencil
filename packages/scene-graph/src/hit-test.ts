@@ -110,9 +110,10 @@ function hitTestTransparentContainer(
   if (child.type === 'GROUP') {
     // A group fits its layers, so a padded click on one at its edge falls just outside it.
     if (!containsPoint(px, py, child, graph, transformCache, pad)) return null
+    // A group has no area of its own, as in Figma: between its layers the click falls through to
+    // whatever lies under the group.
     const childHit = hitTestChildren(graph, px, py, childId, deep, transformCache, pad)
-    if (childHit) return deep ? childHit : child
-    return containsPoint(px, py, child, graph, transformCache) ? child : null
+    return childHit ? (deep ? childHit : child) : null
   }
 
   const childHit = hitTestChildren(graph, px, py, childId, deep, transformCache, pad)
@@ -239,9 +240,11 @@ function frameChildAt(
 }
 
 /**
- * The containers the selection opens: every ancestor of a selected layer inside the scope, and a
- * selected container itself, so a click inside it selects the layer under the point, as in Figma.
- * A selected group or boolean stays closed: clicking inside it keeps it selected.
+ * The containers the selection opens: every ancestor of a selected layer inside the scope, so a
+ * click reaches the siblings of selected layers, and a selected container itself, so hover and a
+ * read-only click reach the layer under the point. A plain press inside a selected frame still
+ * drags the frame, as in Figma, which `pressesSelection` in the Vue input decides. A selected group
+ * or boolean stays closed: clicking inside it keeps it selected.
  */
 function openedBySelection(
   graph: SceneGraph,

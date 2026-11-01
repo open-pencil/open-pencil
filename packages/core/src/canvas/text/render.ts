@@ -61,7 +61,9 @@ function drawResolvedPathText(
 function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
   if (!r.fontsLoaded || !r.fontProvider || node.textPathData !== null) return false
   const readiness = r.nodeFontReadiness(node)
-  return readiness !== 'pending' && readiness !== 'exhausted' && mayHoldEmoji(shownText(node))
+  // Edited text draws its paragraph even after its fonts gave up, so its emoji draw over it too.
+  const laidOut = readiness !== 'pending' && (readiness !== 'exhausted' || !drawsSaved(r, node))
+  return laidOut && mayHoldEmoji(shownText(node))
 }
 
 /**
@@ -86,11 +88,14 @@ export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode):
 }
 
 /**
- * Whether the text draws from its saved glyphs. Not while it is edited: the caret, selection, and
- * hit testing follow the live layout, and saved glyphs may come from another build of the font.
+ * Whether the text draws from its saved glyphs. Text whose fonts are all loaded lays out live, as
+ * Figma lays text out with its own fonts, so an edit changes nothing but the characters; saved
+ * glyphs stand in for a missing or substituted font and keep path text on its path. Not while the
+ * text is edited either: the caret, selection, and hit testing follow the live layout.
  */
 function drawsSaved(r: SkiaRenderer, node: SceneNode): boolean {
-  return r.editingTextId !== node.id
+  if (r.editingTextId === node.id) return false
+  return node.textPathData !== null || r.nodeFontReadiness(node) !== 'ready'
 }
 
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {

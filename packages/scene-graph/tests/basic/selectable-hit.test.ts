@@ -298,6 +298,26 @@ describe('a click just outside a shape', () => {
     }
   })
 
+  test('a group’s empty area takes no click, so a layer under the group shows through', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const line = graph.createNode('RECTANGLE', page, {
+      name: 'Line',
+      x: 100,
+      y: 100,
+      width: 400,
+      height: 300,
+      fills: FILL
+    })
+    const group = graph.createNode('GROUP', page, { name: 'Dots', x: 150, y: 150, width: 300, height: 200 })
+    graph.createNode('ELLIPSE', group.id, { name: 'Dot', width: 20, height: 20, fills: FILL })
+    expect(graph.hitTestSelectable(160, 160, page, new Set())?.name).toBe('Dots')
+    expect(graph.hitTestSelectable(300, 250, page, new Set())?.id).toBe(line.id)
+    expect(graph.hitTestDeep(300, 250, page)?.id).toBe(line.id)
+    graph.updateNode(line.id, { visible: false })
+    expect(graph.hitTestSelectable(300, 250, page, new Set())).toBeNull()
+  })
+
   test('reaches a shape at its group’s edge, and the group only through its shapes', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
