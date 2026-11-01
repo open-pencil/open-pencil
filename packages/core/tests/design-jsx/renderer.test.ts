@@ -63,6 +63,7 @@ describe('renderRoots positions', () => {
     const tree: TreeNode = { type: '', props: {}, children: [frame('A'), frame('B', 300)] }
 
     const [a, b] = await renderRoots(graph, tree, {
+      x: 500,
       positions: [
         { x: 10, y: 20 },
         { y: 40 }

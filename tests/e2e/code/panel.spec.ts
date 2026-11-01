@@ -1,6 +1,7 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import {
   getCodeNodeSummaries,
+  getCodePreviewLinks,
   getFirstSelectedNodeId,
   getUndoLabel,
   hasNode,
@@ -109,44 +110,41 @@ test('previews several roots in one render, each where its layer was', async () 
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const page = store.state.currentPageId
-    const left = store.graph.createNode('RECTANGLE', page, { x: 100, y: 80, width: 80, height: 40 })
-    const right = store.graph.createNode('RECTANGLE', page, {
-      x: 400,
-      y: 80,
-      width: 80,
-      height: 40
-    })
+    const size = { width: 80, height: 40 }
+    const left = store.graph.createNode('RECTANGLE', page, { x: 100, y: 80, ...size })
+    const right = store.graph.createNode('RECTANGLE', page, { x: 400, y: 80, ...size })
     store.select([left.id, right.id])
   })
   await openCodePanel()
-  await codeEditor().fill(
+  const code = (width: number) =>
     [
       '<>',
-      '  <Frame name="Start" w={200} h={100} />',
-      '  <Frame name="Done" w={200} h={100} />',
+      `  <Frame name="Start" w={${width}} h={100} />`,
+      `  <Frame name="Done" w={${width}} h={100} />`,
       '  <Connector from="Start" to="Done" />',
-      '  <Instance name="Card copy" of="Card" />',
-      '  <Component name="Card" w={100} h={50} />',
+      '  <Instance name="Card copy" of={card} />',
+      '  <Component ref={card} name="Card" w={100} h={50} />',
       '</>'
     ].join('\n')
-  )
-  await waitForNodeNamed(editor.page, 'Card copy')
+  const preview = async (width: number) => {
+    await codeEditor().fill(`const card = ref()\nreturn ${code(width)}`)
+    await expect
+      .poll(async () => (await getCodePreviewLinks(editor.page, ['Start'])).layers.Start?.width)
+      .toBe(width)
+    return getCodePreviewLinks(editor.page, ['Start', 'Done'])
+  }
 
-  const rendered = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const nodes = [...store.graph.getAllNodes()]
-    const named = (name: string) => nodes.find((node) => node.name === name)
-    const connector = nodes.find((node) => node.type === 'CONNECTOR')
-    return {
-      start: named('Start'),
-      done: named('Done'),
-      ends: [connector?.connectorStart?.nodeId, connector?.connectorEnd?.nodeId]
-    }
-  })
-  expect(rendered.start).toMatchObject({ x: 100, y: 80 })
-  expect(rendered.done).toMatchObject({ x: 400, y: 80 })
-  expect(rendered.ends).toEqual([rendered.start?.id, rendered.done?.id])
+  const first = await preview(200)
+  expect(first.layers.Start).toMatchObject({ x: 100, y: 80 })
+  expect(first.layers.Done).toMatchObject({ x: 400, y: 80 })
+  expect(first.connectorEnds).toEqual([[first.layers.Start.id, first.layers.Done.id]])
+  expect(first.instancesLinked).toBe(true)
+
+  // The second edit updates those layers in place, so links must follow them.
+  const second = await preview(240)
+  expect(second.layers.Start.id).toBe(first.layers.Start.id)
+  expect(second.connectorEnds).toEqual([[first.layers.Start.id, first.layers.Done.id]])
+  expect(second.instancesLinked).toBe(true)
 })
 
 test('Ctrl+Z edits the CodeMirror draft before touching the canvas transaction', async () => {

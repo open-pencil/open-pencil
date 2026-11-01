@@ -1,7 +1,8 @@
 import { mapValues } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { remapInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+import type { SceneGraph } from '../graph'
+import { remapInstanceOverrideState } from '../instances/overrides'
+import type { SceneNode } from '../types'
 
 function remappedReferences(
   node: SceneNode,
@@ -31,15 +32,21 @@ function remappedReferences(
       (value, id) => (swapProperties.has(id) ? mapped(value) : value)
     )
   }
+  for (const field of ['connectorStart', 'connectorEnd'] as const) {
+    const endpoint = node[field]
+    if (endpoint?.nodeId && mapped(endpoint.nodeId) !== endpoint.nodeId)
+      changes[field] = { ...endpoint, nodeId: mapped(endpoint.nodeId) }
+  }
   return changes
 }
 
 /**
- * Points the layers a library copy made at one another, as `prepareNodeTransfer` does for a
- * paste: an instance's main component, the layers its overrides change and the components they
- * swap in, and the components an instance-swap property defaults to or is set to. `mappedIds`
- * maps each copied layer to its copy; a reference outside the copy stays as it is, and so do
- * variable IDs, since the copies keep their source's variables.
+ * Points copied layers at one another, as `prepareNodeTransfer` does for a paste: an instance's
+ * main component, the layers its overrides change and the components they swap in, the
+ * components an instance-swap property defaults to or is set to, and the layers a connector's
+ * ends follow. `mappedIds` maps each copied layer to its copy, such as a library copy or a design
+ * JSX render folded into the layers it replaces; a reference outside the copy stays as it is, and
+ * so do variable IDs, since the copies keep their source's variables.
  */
 export function remapCopiedReferences(
   graph: SceneGraph,

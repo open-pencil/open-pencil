@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
 /**
  * Fields a layer keeps when its code is rendered again: its place in the tree and the identity
@@ -111,8 +112,9 @@ class Reconciler {
 /**
  * Folds freshly rendered layers into the layers they replace, so code edits update layers in
  * place: matched layers keep their ids, and only the properties that differ change. Roots pair
- * by position; extra rendered roots stay, extra existing roots are deleted. Returns the id each
- * rendered layer ends up with.
+ * by position; extra rendered roots stay, extra existing roots are deleted. A rendered layer that
+ * pointed at another, such as an instance at its component or a connector at the layers it joins,
+ * points at that layer's kept id. Returns the id each rendered layer ends up with.
  */
 export function reconcileRenderedLayers(
   graph: SceneGraph,
@@ -130,5 +132,6 @@ export function reconcileRenderedLayers(
     return [rendered.id]
   })
   for (const id of existingRootIds.slice(renderedRootIds.length)) graph.deleteNode(id)
+  remapCopiedReferences(graph, reconciler.ids)
   return { rootIds, ids: reconciler.ids }
 }

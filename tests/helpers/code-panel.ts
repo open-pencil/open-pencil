@@ -60,6 +60,40 @@ export function getCodeNodeSummaries(page: Page): Promise<CodeNodeSummary[]> {
   })
 }
 
+export type CodePreviewLinks = {
+  layers: Record<string, { id: string; x: number; y: number; width: number }>
+  /** The layer ids each connector's ends follow. */
+  connectorEnds: Array<[string | null, string | null]>
+  /** Whether every instance's main component is on the canvas. */
+  instancesLinked: boolean
+}
+
+/** The named layers' places, and what connectors and instances point at. */
+export function getCodePreviewLinks(page: Page, names: string[]): Promise<CodePreviewLinks> {
+  return page.evaluate((layerNames) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const nodes = [...store.graph.getAllNodes()]
+    const layers: CodePreviewLinks['layers'] = {}
+    for (const name of layerNames) {
+      const node = nodes.find((candidate) => candidate.name === name)
+      if (node) layers[name] = { id: node.id, x: node.x, y: node.y, width: node.width }
+    }
+    return {
+      layers,
+      connectorEnds: nodes
+        .filter((node) => node.type === 'CONNECTOR')
+        .map((node): [string | null, string | null] => [
+          node.connectorStart?.nodeId ?? null,
+          node.connectorEnd?.nodeId ?? null
+        ]),
+      instancesLinked: nodes
+        .filter((node) => node.type === 'INSTANCE')
+        .every((node) => !!node.componentId && store.graph.getNode(node.componentId) !== undefined)
+    }
+  }, names)
+}
+
 export function getUndoLabel(page: Page): Promise<string | null> {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
