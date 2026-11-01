@@ -4,6 +4,8 @@ import type { Component } from 'vue'
 
 import theme from '@/theme/figjam/toolbar'
 
+import { useCloseToolbarMenu } from './menu'
+
 /** One choice of a toolbar menu: its value, name, and icon. */
 export interface ToolbarOption<T extends string> {
   value: T
@@ -19,6 +21,12 @@ const { label, options, selected } = defineProps<{
 }>()
 const emit = defineEmits<{ select: [value: T] }>()
 const styles = tv(theme)()
+const closeMenu = useCloseToolbarMenu()
+
+function choose(value: T) {
+  emit('select', value)
+  closeMenu()
+}
 
 const ARROW_STEPS: Readonly<Record<string, number>> = { ArrowDown: 1, ArrowUp: -1 }
 
@@ -44,7 +52,7 @@ function moveFocus(event: KeyboardEvent) {
       :data-state="option.value === selected ? 'on' : 'off'"
       :data-option="option.value"
       :class="styles.option()"
-      @click="emit('select', option.value)"
+      @click="choose(option.value)"
     >
       <component :is="option.icon" v-if="option.icon" :class="styles.optionIcon()" />
       {{ option.label }}

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
+import { provide } from 'vue'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/figjam/toolbar'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
+
+import { CLOSE_TOOLBAR_MENU } from './menu'
 
 /**
  * A button of FigJam's selection toolbar that opens a menu above it: its trigger shows the current
@@ -19,6 +22,9 @@ const { label, property } = defineProps<{
 }>()
 const open = defineModel<boolean>('open', { default: false })
 const styles = tv(theme)()
+provide(CLOSE_TOOLBAR_MENU, () => {
+  open.value = false
+})
 
 /** How far a menu opens above its button. */
 const MENU_GAP = 8

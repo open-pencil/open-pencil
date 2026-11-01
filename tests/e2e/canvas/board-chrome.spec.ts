@@ -65,6 +65,20 @@ test('text and sections take their colour from the toolbar', async () => {
   await expect.poll(board.selectedFill).toEqual([255, 226, 224])
 })
 
+// Measured in FigJam: a pick closes its menu, but a line colour leaves the line menu open.
+test('a toolbar menu closes on a pick, and the line menu stays for its colours', async () => {
+  await board.addSelected('SECTION', 300, 200, 400, 300)
+  await toolbar().locator('[data-property=toolbar-color]').click()
+  await openMenu().getByRole('radio', { name: 'Blue', exact: true }).click()
+  await expect(openMenu()).toHaveCount(0)
+
+  await toolbar().locator('[data-property=toolbar-line-style]').click()
+  await openMenu().getByRole('radio', { name: 'Red', exact: true }).click()
+  await expect(openMenu()).toHaveCount(1)
+  await openMenu().getByRole('menuitemradio', { name: 'Dashed' }).click()
+  await expect(openMenu()).toHaveCount(0)
+})
+
 test('several layers wrap into a new section from the toolbar', async () => {
   await sticky.add([
     { x: 300, y: 200, text: 'One', author: 'Ada' },

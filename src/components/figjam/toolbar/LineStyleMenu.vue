@@ -16,7 +16,7 @@ import ToolbarOptions, { type ToolbarOption } from './ToolbarOptions.vue'
 
 /**
  * FigJam's line menu for a shape's or section's outline: solid, dashed, or none, over the palette
- * its colour comes from.
+ * its colour comes from. A style closes it; a colour leaves it open to try another, as in FigJam.
  */
 const { style, color } = defineProps<{
   style: FigJamLineStyle | null
@@ -52,6 +52,7 @@ const options = computed<ToolbarOption<FigJamLineStyle>[]>(() => [
       <FigJamPalette
         :label="shapes.line"
         :selected="style === 'none' ? null : color"
+        keeps-menu-open
         @select="emit('update:color', $event)"
       />
     </div>
