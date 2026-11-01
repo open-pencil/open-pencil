@@ -19,7 +19,7 @@ export function figJamTextFields(
   textSize: FigJamTextSize | undefined,
   typeface: FigJamTypeface | undefined
 ): Partial<SceneNode> {
-  const sized = textSize ? figJamTextSizeFields(textSize, typeface) : {}
+  const sized: Partial<SceneNode> = textSize ? figJamTextSizeFields(textSize, typeface) : {}
   if (!typeface) return sized
   return figJamTypefaceFields(typeface, { fontSize: sized.fontSize ?? text.fontSize })
 }

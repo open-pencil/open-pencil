@@ -39,11 +39,7 @@ export function flattenSelected(
   const vectorProps = vectorPropsFactory(renderer, ctx.graph, topLevel)
   if (!vectorProps) return null
 
-  const vector = ctx.graph.createNode('VECTOR', parentId, {
-    ...vectorProps,
-    name: label,
-    strokes: []
-  })
+  const vector = ctx.graph.createNode('VECTOR', parentId, { ...vectorProps, name: label })
   const vectorSnapshot = structuredClone(vector)
   ctx.graph.insertChildAt(vector.id, parentId, firstIndex)
   for (const id of childIds) ctx.graph.deleteNode(id)

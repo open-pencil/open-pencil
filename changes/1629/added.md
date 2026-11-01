@@ -1,0 +1,1 @@
+- Boards open on the canvas and their tools alone, as FigJam shows them, with no rulers, the panels a click away, and the AI chat floating over the canvas; while the panels are hidden, every selection gets FigJam's selection toolbar, with colour, outline, text, alignment and wrap-in-section menus for sticky notes, shapes, connectors, text, sections and other layers.

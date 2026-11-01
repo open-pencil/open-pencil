@@ -11,6 +11,8 @@
   "stickyPlaceholder": "输入任意内容，@提及任何人",
   "connectorLabelPlaceholder": "添加文本",
   "showUI": "显示界面（{shortcut}）",
+  "openChat": "打开 AI 聊天",
+  "closeChat": "关闭 AI 聊天",
   "previewing": "预览中",
   "resetPreview": "重置",
   "leavePreview": "退出预览 ({shortcut})",

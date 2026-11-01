@@ -11,6 +11,8 @@
   "stickyPlaceholder": "Wpisz cokolwiek, @wspomnij kogoś",
   "connectorLabelPlaceholder": "Dodaj tekst",
   "showUI": "Pokaż interfejs ({shortcut})",
+  "openChat": "Otwórz czat AI",
+  "closeChat": "Zamknij czat AI",
   "previewing": "Podgląd",
   "resetPreview": "Resetuj",
   "leavePreview": "Zakończ podgląd ({shortcut})",

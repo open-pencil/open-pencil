@@ -11,6 +11,8 @@
   "stickyPlaceholder": "Écrivez ce que vous voulez, @mentionnez quelqu’un",
   "connectorLabelPlaceholder": "Ajouter du texte",
   "showUI": "Afficher l’interface ({shortcut})",
+  "openChat": "Ouvrir le chat IA",
+  "closeChat": "Fermer le chat IA",
   "previewing": "Aperçu",
   "resetPreview": "Réinitialiser",
   "leavePreview": "Quitter l’aperçu ({shortcut})",

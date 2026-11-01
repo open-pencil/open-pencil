@@ -17,6 +17,7 @@ import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import type { Tab } from '@/app/tabs'
 import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
+import FloatingChat from '@/components/chat/FloatingChat.vue'
 import CollabPanel from '@/components/collab-panel/CollabPanel.vue'
 import ActiveRoomOverlay from '@/components/collab-room/ActiveRoomOverlay.vue'
 import { useRoomActions } from '@/components/collab-room/useRoomActions'
@@ -44,6 +45,8 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
+/** Whether the AI chat floats over the canvas shown alone; the right panel holds it otherwise. */
+const floatingChat = ref(false)
 const interfaceScale = computed(interfaceScaleFactor)
 const workspace = useTemplateRef('workspace')
 const { width: workspaceWidth } = useElementSize(() => {
@@ -113,6 +116,12 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 const canvasAlone = computed(
   () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
 )
+// A board keeps its tools when its panels are away, as FigJam always shows them, while they
+// draw: a pan-only preview has none. A phone keeps its drawer, which holds the panels and chat.
+const toolsStay = computed(() => {
+  const profile = resolveEditorProfile(store.state)
+  return !profile.panelsOpen && profile.pointer === 'tools'
+})
 const { editor } = useI18n()
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
@@ -193,7 +202,7 @@ const { pending: roomPending } = useRoomActions()
   </SplitterGroup>
 
   <div
-    v-else-if="isMobile && showChrome && store.state.showUI"
+    v-else-if="isMobile && showChrome"
     :key="'mobile-' + tab.id"
     class="flex flex-1 overflow-hidden"
   >
@@ -210,6 +219,7 @@ const { pending: roomPending } = useRoomActions()
     <div class="relative flex min-w-0 flex-1">
       <EditorCanvas />
       <ActiveRoomOverlay />
+      <EditorToolbar v-if="toolsStay && !canvasAlone" />
       <WorkspacePill
         v-if="!isMobile && canvasAlone"
         mode="preview"
@@ -223,7 +233,13 @@ const { pending: roomPending } = useRoomActions()
         mode="collapsed"
         :document-name="store.state.documentName"
         :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
+        :chat-open="floatingChat"
         @show-ui="store.state.showUI = true"
+        @toggle-chat="floatingChat = !floatingChat"
+      />
+      <FloatingChat
+        v-if="!isMobile && !canvasAlone && floatingChat"
+        @close="floatingChat = false"
       />
     </div>
   </div>

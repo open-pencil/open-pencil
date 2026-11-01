@@ -30,5 +30,12 @@
   "colorLightTeal": "ライトティール",
   "colorLightBlue": "ライトブルー",
   "colorLightViolet": "ライトバイオレット",
-  "colorLightPink": "ライトピンク"
+  "colorLightPink": "ライトピンク",
+  "changeColor": "色を変更",
+  "lineStyle": "線のスタイル",
+  "lineShape": "線の形",
+  "solid": "実線",
+  "thin": "細い",
+  "renameSection": "セクション名を変更",
+  "addText": "テキストを追加"
 }

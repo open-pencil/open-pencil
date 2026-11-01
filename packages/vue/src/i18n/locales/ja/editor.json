@@ -11,6 +11,8 @@
   "stickyPlaceholder": "自由に入力、@で誰かをメンション",
   "connectorLabelPlaceholder": "テキストを追加",
   "showUI": "UIを表示 ({shortcut})",
+  "openChat": "AI チャットを開く",
+  "closeChat": "AI チャットを閉じる",
   "previewing": "プレビュー中",
   "resetPreview": "リセット",
   "leavePreview": "プレビューを終了 ({shortcut})",

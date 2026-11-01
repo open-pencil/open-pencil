@@ -36,7 +36,7 @@ export function isFigJamTypeface(value: unknown): value is FigJamTypeface {
 export function figJamTextSizeFields(
   size: FigJamTextSize,
   typeface: FigJamTypeface = 'simple'
-): Partial<SceneNode> {
+): Pick<SceneNode, 'fontSize' | 'lineHeight' | 'letterSpacing'> {
   const { fontSize, tracking } = FIGJAM_TEXT_SIZES[size]
   const tracked = FIGJAM_TYPEFACES[typeface].tracked
   return {
@@ -68,11 +68,16 @@ export function figJamTypefaceFields(
   typeface: FigJamTypeface,
   text: Pick<SceneNode, 'fontSize'>
 ): Partial<SceneNode> {
-  const { fontFamily, fontWeight } = FIGJAM_TYPEFACES[typeface]
   return {
-    fontFamily,
-    fontWeight,
-    italic: false,
+    ...figJamTypefaceFaceFields(typeface),
     ...figJamTextSizeFields(figJamTextSize(text), typeface)
   }
+}
+
+/** The face `typeface` sets, without the size and spacing it sets with it. */
+export function figJamTypefaceFaceFields(
+  typeface: FigJamTypeface
+): Pick<SceneNode, 'fontFamily' | 'fontWeight' | 'italic'> {
+  const { fontFamily, fontWeight } = FIGJAM_TYPEFACES[typeface]
+  return { fontFamily, fontWeight, italic: false }
 }

@@ -159,6 +159,8 @@ ja:diagnostics.sharingUnofficialBuild
 ja:diagnostics.sharingDisabledByEnvironment
 ja:diagnostics.sharingQuestionTitle
 ja:diagnostics.sharingQuestionDescription
+ja:editor.closeChat
+ja:editor.openChat
 ja:editor.showUI
 ja:editor.wideGamutUnavailable
 ja:files.browserFileAPINotSupported
@@ -380,6 +382,8 @@ zh-cn:diagnostics.sharingUnofficialBuild
 zh-cn:diagnostics.sharingDisabledByEnvironment
 zh-cn:diagnostics.sharingQuestionTitle
 zh-cn:diagnostics.sharingQuestionDescription
+zh-cn:editor.closeChat
+zh-cn:editor.openChat
 zh-cn:editor.wideGamutUnavailable
 zh-cn:files.browserFileAPINotSupported
 zh-cn:files.clipboardImageFetchFailed

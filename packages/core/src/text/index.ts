@@ -25,3 +25,4 @@ export {
   type GlyphOutlineProbe,
   type OutlineCommand
 } from './font/glyphs'
+export { layerTextStyleChanges, shownTextStyle } from './character-style'

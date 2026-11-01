@@ -207,13 +207,14 @@ export function hitTestDeep(
 
 /**
  * A container a click looks into by itself, as in Figma: a top-level frame (on the page or in a
- * section) or a section that holds layers, and a component set.
+ * section) or a section that holds layers, and a component set. On a FigJam board frames stay
+ * closed (`framesOpen` false): a click inside one selects the frame.
  */
-function opensByItself(graph: SceneGraph, node: SceneNode): boolean {
+function opensByItself(graph: SceneGraph, node: SceneNode, framesOpen = true): boolean {
   if (node.type === 'COMPONENT_SET') return true
   if (node.childIds.length === 0) return false
   if (node.type === 'SECTION') return true
-  return node.type === 'FRAME' && isTopLevel(graph, node)
+  return framesOpen && node.type === 'FRAME' && isTopLevel(graph, node)
 }
 
 /**
@@ -225,14 +226,15 @@ function frameChildAt(
   graph: SceneGraph,
   container: SceneNode,
   px: number,
-  py: number
+  py: number,
+  framesOpen = true
 ): SceneNode | null {
   const transformCache = new Map<string, boolean>()
   for (let i = container.childIds.length - 1; i >= 0; i--) {
     const child = graph.nodes.get(container.childIds[i])
     if (!child || child.internalOnly || !child.visible || child.type !== 'FRAME') continue
     // A board, such as a top-level frame in a section, keeps its empty area as background.
-    if (opensByItself(graph, child) && !ownsItsEmptyArea(graph, child)) continue
+    if (opensByItself(graph, child, framesOpen) && !ownsItsEmptyArea(graph, child)) continue
     if (containsPoint(px, py, child, graph, transformCache)) return child
   }
   return null
@@ -246,7 +248,8 @@ function frameChildAt(
 function openedBySelection(
   graph: SceneGraph,
   selectedIds: ReadonlySet<string>,
-  scopeId: string
+  scopeId: string,
+  framesOpen = true
 ): Set<string> {
   const ancestors = new Set<string>()
   for (const id of selectedIds) {
@@ -255,7 +258,9 @@ function openedBySelection(
       node &&
       node.childIds.length > 0 &&
       node.type !== 'GROUP' &&
-      node.type !== 'BOOLEAN_OPERATION'
+      node.type !== 'BOOLEAN_OPERATION' &&
+      // A board's frame stays closed when selected: a click inside keeps it selected.
+      (framesOpen || node.type !== 'FRAME' || !isTopLevel(graph, node))
     )
       ancestors.add(id)
     let parentId = node?.parentId
@@ -281,12 +286,13 @@ export function hitTestSelectable(
   py: number,
   scopeId: string,
   selectedIds: ReadonlySet<string>,
-  pad = 0
+  pad = 0,
+  framesOpen = true
 ): SceneNode | null {
   const deepest = hitTestChildren(graph, px, py, scopeId, true, new Map(), pad)
   if (!deepest) {
     const scope = graph.nodes.get(scopeId)
-    return scope ? frameChildAt(graph, scope, px, py) : null
+    return scope ? frameChildAt(graph, scope, px, py, framesOpen) : null
   }
 
   const chain: SceneNode[] = []
@@ -295,19 +301,19 @@ export function hitTestSelectable(
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
 
-  const opened = openedBySelection(graph, selectedIds, scopeId)
+  const opened = openedBySelection(graph, selectedIds, scopeId, framesOpen)
 
   for (const node of chain) {
     // A locked layer stands in for everything inside it.
     if (node.locked) return node
-    if (!opened.has(node.id) && !opensByItself(graph, node)) return node
+    if (!opened.has(node.id) && !opensByItself(graph, node, framesOpen)) return node
   }
   const last = chain.at(-1)
   if (!last) return null
-  const frame = frameChildAt(graph, last, px, py)
+  const frame = frameChildAt(graph, last, px, py, framesOpen)
   if (frame) return frame
   if (ownsItsEmptyArea(graph, last)) return last
-  return opened.has(last.id) && !opensByItself(graph, last) ? last : null
+  return opened.has(last.id) && !opensByItself(graph, last, framesOpen) ? last : null
 }
 
 /** Whether a click looks into this container rather than selecting it; see `hitTestSelectable`. */
