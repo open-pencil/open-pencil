@@ -1,3 +1,4 @@
+import { sortBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
@@ -190,23 +191,12 @@ function modeValues(
 
 type SavedMode = NonNullable<NodeChange['variableSetModes']>[number]
 
-function bySortPosition(a: SavedMode, b: SavedMode): number {
-  const left = a.sortPosition || null
-  const right = b.sortPosition || null
-  if (left === right) {
-    return 0
-  }
-  if (left === null) {
-    return 1
-  }
-  if (right === null) {
-    return -1
-  }
-  return left < right ? -1 : 1
-}
-
+/** Figma lists modes by `sortPosition`; modes without one follow, in saved order. */
 function modesInListedOrder(resource: NodeChange): SavedMode[] {
-  return (resource.variableSetModes ?? []).toSorted(bySortPosition)
+  return sortBy(resource.variableSetModes ?? [], [
+    (mode) => !mode.sortPosition,
+    (mode) => mode.sortPosition ?? ''
+  ])
 }
 
 /** No invented values or fallback collections: unsupported resources remain explicit. */
