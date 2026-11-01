@@ -83,8 +83,8 @@ const coverWrites = new Map<string, Promise<void>>()
 
 /**
  * Draws the cover page of the document at `path` for its Home card and caches it for the file
- * as it is now, so call it once the file is written. The file is read and the cover drawn at
- * once; caching waits for the file's earlier covers, so the last one drawn is the one kept.
+ * as it is now, so call it once the file is written. The file is read and the cover drawn and
+ * queued at once; caching waits for the file's earlier covers, so the last one drawn is kept.
  * False when there is no page to draw.
  */
 export async function cacheRecentFileCover(
@@ -98,10 +98,16 @@ export async function cacheRecentFileCover(
   const { width, height } = RECENT_FILE_COVER
   const bytes = renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'letterbox')
   if (!bytes) return false
-  const fingerprint = await fileFingerprint(path)
-  if (!fingerprint) return false
+  // Read now, for the file this cover was drawn from, but queued at once, so covers keep the
+  // order they were drawn in however their reads finish.
+  const fingerprint = fileFingerprint(path)
   const previous = coverWrites.get(path) ?? Promise.resolve()
-  const write = previous.catch(() => undefined).then(() => writeCover(path, bytes, fingerprint))
+  const write = previous
+    .catch(() => undefined)
+    .then(async () => {
+      const drawnFor = await fingerprint
+      if (drawnFor) await writeCover(path, bytes, drawnFor)
+    })
   coverWrites.set(path, write)
   try {
     await write
