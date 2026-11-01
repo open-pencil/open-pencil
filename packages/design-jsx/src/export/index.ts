@@ -385,11 +385,12 @@ export function selectionToJSXWithLayers(
     const layerIds: Array<string | null> = []
     const reference = componentReferences(graph, refs, onOf)
     const scope = { connectors, refs, variables, reference }
+    // Several roots are children of a fragment, a level in.
+    const depth = nodeIds.length > 1 ? 1 : 0
     const roots = compact(
       nodeIds.map((id) => {
         const node = graph.getNode(id)
-        const syntax = node ? nodeToJSX(node, graph, 0, scope, layerIds).at(0) : undefined
-        return syntax ? jsx.printJSX(syntax) : ''
+        return node ? nodeToJSX(node, graph, depth, scope, layerIds).at(0) : undefined
       })
     )
     return { roots, layerIds, written: new Set(layerIds) }
@@ -408,7 +409,8 @@ export function selectionToJSXWithLayers(
     : connectors.refs
   const { roots, layerIds } = refs.size > connectors.refs.size ? write(refs) : first
   // Several roots are siblings in a fragment, so the code is one JSX expression.
-  const elements = roots.length > 1 ? `<>\n${roots.join('\n\n')}\n</>` : (roots.at(0) ?? '')
+  const root = roots.length > 1 ? jsx.fragment(roots, 0) : roots.at(0)
+  const elements = root ? jsx.printJSX(root) : ''
   // Variables first: a ref names a layer, and nothing in a variable's definition refers to one.
   const declarations = compact([variables.declarations(), refDeclarations(refs)]).join('\n\n')
   if (!declarations || !elements) return { code: elements, layerIds }

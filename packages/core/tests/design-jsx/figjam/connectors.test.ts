@@ -155,7 +155,7 @@ return <>
       graph
     )
     expect(jsx).toStartWith(
-      'const card1 = ref()\nconst card2 = ref()\n\nreturn <>\n<Frame name="Card"'
+      'const card1 = ref()\nconst card2 = ref()\n\nreturn <>\n  <Frame name="Card"'
     )
     expect(jsx).toEndWith('\n</>')
     const again = new SceneGraph()
