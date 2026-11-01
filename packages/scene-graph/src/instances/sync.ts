@@ -243,17 +243,33 @@ function childBindingProtection(
   return (field: string) => protectedField(field) || ownsSelfFillField(child, field)
 }
 
+/**
+ * Links a copy to the component layer it matched. Each node it changes is reported, so undo, the
+ * file as saved and collaboration all see the new link.
+ */
 function linkMatchedChild(
-  overrides: InstanceOverrideState,
+  graph: SceneGraph,
+  context: InstanceSyncContext,
   instParentId: string,
   instChild: SceneNode,
   compChildId: string
 ): void {
-  if (instChild.type === 'INSTANCE') {
+  const { overrides } = context
+  // A recorded link outranks `componentId`, so one a file recorded must follow the match too.
+  const recorded = hasNodeInstanceOverride(
+    overrides,
+    instParentId,
+    instChild.id,
+    'sourceComponentId'
+  )
+  if (instChild.type === 'INSTANCE' || recorded) {
+    // The overrides change in place, so their instance is reported before they do.
+    const owner = graph.nodes.get(context.instanceId)
+    graph.willChangeNode(owner)
     setInstanceOverride(overrides, instParentId, instChild.id, 'sourceComponentId', compChildId)
-  } else {
-    instChild.componentId = compChildId
+    if (owner) graph.updateNode(owner.id, { instanceOverrides: owner.instanceOverrides })
   }
+  if (instChild.type !== 'INSTANCE') graph.updateNode(instChild.id, { componentId: compChildId })
 }
 
 function matchFallbackChildren(
@@ -261,7 +277,7 @@ function matchFallbackChildren(
   compParent: SceneNode,
   instParent: SceneNode,
   instParentId: string,
-  overrides: InstanceOverrideState,
+  context: InstanceSyncContext,
   instChildMap: Map<string, SceneNode>,
   usedInstChildIds: Set<string>
 ): void {
@@ -302,7 +318,7 @@ function matchFallbackChildren(
     remainingCandidateCount.set(compChild.type, candidateCount - 1)
     instChildMap.set(compChildId, match)
     usedInstChildIds.add(match.id)
-    linkMatchedChild(overrides, instParentId, match, compChildId)
+    linkMatchedChild(graph, context, instParentId, match, compChildId)
   }
 }
 
@@ -438,7 +454,7 @@ export function syncChildren(
     compParent,
     instParent,
     instParentId,
-    overrides,
+    context,
     instChildMap,
     usedInstChildIds
   )
