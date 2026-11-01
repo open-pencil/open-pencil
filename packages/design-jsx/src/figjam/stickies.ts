@@ -10,7 +10,8 @@ import {
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { readElementProps, stickyPropsSchema } from '../schema'
-import { plainTextOf, type TreeNode } from '../tree'
+import { textContentText } from '../text-content'
+import type { TreeNode } from '../tree'
 import { figJamTextFields, figJamTextProps } from './text'
 
 /**
@@ -30,7 +31,7 @@ export function renderStickyNode(
   layer: Partial<SceneNode>
 ) {
   const props = readElementProps(stickyPropsSchema, tree.props)
-  const text = plainTextOf(tree)
+  const text = textContentText(tree)
   const author = props.author ?? ''
   const sticky = createSticky(
     graph,
@@ -72,7 +73,7 @@ export function stickyProps(graph: SceneGraph, node: SceneNode): Array<[string, 
   return props
 }
 
-/** The body a note writes as its children. */
-export function stickyBody(graph: SceneGraph, node: SceneNode): string {
-  return stickySublayers(graph, node)?.body.text ?? ''
+/** The text layer of a note's body, which `<Sticky>` writes as its children. */
+export function stickyBodyLayer(graph: SceneGraph, node: SceneNode): SceneNode | null {
+  return stickySublayers(graph, node)?.body ?? null
 }

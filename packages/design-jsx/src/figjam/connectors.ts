@@ -21,7 +21,8 @@ import { CONNECTOR_LINE, CONNECTOR_SIDE, STROKE_CAP } from '../enums'
 import { Reference } from '../export/value'
 import { isLayerRef, refName, type LayerRefs } from '../refs'
 import { connectorPropsSchema, readElementProps } from '../schema'
-import { plainTextOf, type TreeNode } from '../tree'
+import { textContentText } from '../text-content'
+import type { TreeNode } from '../tree'
 
 /**
  * `<Connector from="A" to="B">`: a FigJam connector whose ends name other layers of the same
@@ -53,7 +54,7 @@ export function renderConnectorNode(
       lineType: props.line,
       startCap: props.startCap ?? 'NONE',
       endCap: props.endCap ?? 'ARROW_LINES',
-      text: plainTextOf(tree)
+      text: textContentText(tree)
     },
     {
       ...layer,
@@ -291,7 +292,7 @@ export function connectorProps(
   return props.filter(([, value]) => value !== undefined && value !== null)
 }
 
-/** The label a connector writes as its children. */
-export function connectorLabel(graph: SceneGraph, node: SceneNode): string {
-  return connectorSublayers(graph, node)?.label.text ?? ''
+/** The text layer of a connector's label, which `<Connector>` writes as its children. */
+export function connectorLabelLayer(graph: SceneGraph, node: SceneNode): SceneNode | null {
+  return connectorSublayers(graph, node)?.label ?? null
 }

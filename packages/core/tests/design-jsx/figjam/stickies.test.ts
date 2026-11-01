@@ -50,6 +50,23 @@ describe('sticky notes in design JSX', () => {
     expect(sceneNodeToJSX(reread.id, again)).toBe(jsx)
   })
 
+  test('a body styled in ranges and lists writes back with <Span>s and <Paragraph>s', async () => {
+    const graph = new SceneGraph()
+    const source =
+      '<Sticky color="blue">\n  <Paragraph><Span weight="bold">Todo</Span></Paragraph>\n  <Paragraph list="unordered">Ship</Paragraph>\n</Sticky>'
+    const [rendered] = await renderJSX(graph, source)
+    const sticky = getNodeOrThrow(graph, rendered.id)
+    const body = stickySublayers(graph, sticky)?.body
+    expect(body?.text).toBe('Todo\nShip')
+    // The newline after the bold word takes its style, as in Figma.
+    expect(body?.styleRuns).toEqual([{ start: 0, length: 5, style: { fontWeight: 700 } }])
+    expect(body?.textParagraphs).toEqual([
+      { listType: 'NONE', indentation: 0 },
+      { listType: 'UNORDERED', indentation: 1 }
+    ])
+    expect(sceneNodeToJSX(sticky.id, graph)).toBe(source)
+  })
+
   test('keep a name given in the JSX, even one that matches the body', async () => {
     const graph = new SceneGraph()
     const [result] = await renderJSX(graph, '<Sticky name="Ship it">Ship it</Sticky>')

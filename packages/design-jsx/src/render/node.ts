@@ -54,6 +54,17 @@ function renderOwnLayerElement(
     (value) => value === undefined
   )
   const node = element.render(graph, { ...tree, props }, parentId, layer)
+  // `<Span>` and `<Paragraph>` children style the text layer as they style a `<Text>`.
+  const textLayer = element.textLayer(graph, node)
+  if (textLayer && tree.children.some(isTextContent)) {
+    const spanOverrides = (spanProps: Record<string, unknown>) =>
+      propsToOverrides(
+        preparePropsForRender(graph, spanProps, true, { parentId, modes }).props,
+        true,
+        'NONE'
+      )
+    graph.updateNode(textLayer.id, textContentFields(tree, {}, textLayer, spanOverrides))
+  }
   try {
     for (const [field, variableId] of Object.entries(bindings)) {
       graph.bindVariable(element.bindingTarget?.(graph, node, field) ?? node.id, field, variableId)

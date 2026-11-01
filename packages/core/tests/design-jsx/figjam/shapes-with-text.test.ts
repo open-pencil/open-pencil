@@ -53,6 +53,27 @@ describe('shapes with text in design JSX', () => {
     expect(sceneNodeToJSX(reread.id, again)).toBe(jsx)
   })
 
+  test('a label styled in ranges writes back with <Span>s and reads back the same', async () => {
+    const graph = new SceneGraph()
+    const [rendered] = await renderJSX(
+      graph,
+      '<Shape><Span weight={700}>Idea</Span> and <Span italic>sketch</Span></Shape>'
+    )
+    const shape = getNodeOrThrow(graph, rendered.id)
+    const label = shapeWithTextLabel(graph, shape)
+    expect(label?.text).toBe('Idea and sketch')
+    expect(label?.styleRuns).toEqual([
+      { start: 0, length: 4, style: { fontWeight: 700 } },
+      { start: 9, length: 6, style: { italic: true } }
+    ])
+    expect(shape.name).toBe('Idea and sketch')
+    const jsx = sceneNodeToJSX(shape.id, graph)
+    expect(jsx).toBe('<Shape><Span weight="bold">Idea</Span> and <Span italic>sketch</Span></Shape>')
+    const again = new SceneGraph()
+    const [reread] = await renderJSX(again, jsx)
+    expect(shapeWithTextLabel(again, getNodeOrThrow(again, reread.id))?.styleRuns).toEqual(label?.styleRuns)
+  })
+
   test('write the size they were given, not the size their label grew them to', async () => {
     const graph = new SceneGraph()
     const label = 'A label long enough to need more lines than a small square holds'

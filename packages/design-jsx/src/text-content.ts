@@ -163,6 +163,21 @@ function paragraphElements(tree: TreeNode): TreeNode[] | null {
   return paragraphs
 }
 
+/**
+ * The text an element's children write, `<Span>`s and `<Paragraph>`s included, such as a sticky
+ * note's body or a connector's label; other elements among them are not text and are skipped.
+ */
+export function textContentText(tree: TreeNode): string {
+  const paragraphs = tree.children.filter(
+    (child): child is TreeNode => isTreeNode(child) && child.type === PARAGRAPH
+  )
+  if (paragraphs.length > 0) {
+    return paragraphs.map((paragraph) => textOf(paragraph.children)).join('\n')
+  }
+  const inline = tree.children.filter((child) => typeof child === 'string' || child.type === SPAN)
+  return textOf(inline)
+}
+
 /** Runs for the segments, holding only what differs from the text's own style. */
 function styleRuns(segments: readonly Segment[], textStyle: SpanStyle): StyleRun[] {
   const runs: StyleRun[] = []

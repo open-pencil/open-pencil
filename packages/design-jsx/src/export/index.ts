@@ -2,18 +2,22 @@ import { compact } from 'es-toolkit'
 
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { isGeneratedFrame, type GeneratedFrameType } from '@open-pencil/scene-graph/generated'
+import {
+  isGeneratedFrame,
+  shapeWithTextLabel,
+  type GeneratedFrameType
+} from '@open-pencil/scene-graph/generated'
 
 import { rekaExport, type RekaExport } from '../behaviours/export'
 import { elementTag } from '../elements'
 import {
   connectorExportScope,
-  connectorLabel,
+  connectorLabelLayer,
   connectorProps,
   type ConnectorExportScope
 } from '../figjam/connectors'
-import { shapeWithTextLabelText, shapeWithTextProps } from '../figjam/shapes-with-text'
-import { stickyBody, stickyProps } from '../figjam/stickies'
+import { shapeWithTextProps } from '../figjam/shapes-with-text'
+import { stickyBodyLayer, stickyProps } from '../figjam/stickies'
 import { refDeclarations } from '../refs'
 import { instanceProps } from './components/instances'
 import { propertyBindingProps, withPropertyBindings } from './components/properties'
@@ -64,10 +68,16 @@ function elementCount(nodes: readonly SyntaxNode[]): number {
  * A layer and the layers below it as JSX elements. A component with a behaviour is written as
  * Reka UI elements; a container JSX leaves implicit is written as its children alone.
  */
-/** What an element written its own way holds: its props, and the text it writes as children. */
+/** What an element written its own way holds: its props, and the text layer it writes as children. */
 interface OwnElement {
   props: JSXProp[]
-  text: string
+  textLayer: SceneNode | null
+}
+
+/** An own element's text as children: plain, or with the `<Span>`s and `<Paragraph>`s `<Text>` writes. */
+function ownChildren(own: OwnElement, depth: number): { children: SyntaxNode[]; inline: boolean } {
+  if (!own.textLayer?.text) return { children: [], inline: true }
+  return textChildren(own.textLayer, depth)
 }
 
 /**
@@ -93,7 +103,7 @@ const OWN_ELEMENTS: Record<
       ...stickyProps(graph, node).map(([key, value]): JSXProp => [key, plainValue(value)]),
       ...presenceProps(node)
     ],
-    text: stickyBody(graph, node)
+    textLayer: stickyBodyLayer(graph, node)
   }),
   SHAPE_WITH_TEXT: (graph, node) => ({
     props: [
@@ -102,14 +112,14 @@ const OWN_ELEMENTS: Record<
       ...shapeWithTextProps(graph, node),
       ...presenceProps(node)
     ],
-    text: shapeWithTextLabelText(graph, node)
+    textLayer: shapeWithTextLabel(graph, node)
   }),
   CONNECTOR: (graph, node, scope) => ({
     props: connectorProps(graph, node, scope).map(([key, value]): JSXProp => [
       key,
       plainValue(value)
     ]),
-    text: connectorLabel(graph, node)
+    textLayer: connectorLabelLayer(graph, node)
   })
 }
 
@@ -199,8 +209,8 @@ function nodeToJSX(
   layerIds?.push(node.id)
   const own = ownElement(graph, node, scope.connectors)
   if (own) {
-    const children = own.text ? [jsx.text(own.text)] : []
-    return [jsx.element(tag, own.props.map(propAttribute), children, depth, true)]
+    const { children, inline } = ownChildren(own, depth)
+    return [jsx.element(tag, own.props.map(propAttribute), children, depth, inline)]
   }
   const ownProps = reka.props.get(node.id)
   // An item names its component; the instance's own layers are the component's to write.
@@ -264,7 +274,7 @@ export function sceneNodeAttributes(
   const own = ownElement(graph, node)
   const props = instance ?? (own ? own.props : frameProps(node, graph, variables, reference))
   if (node.type === 'TEXT' && !hasTextProp(props)) props.push(['text', node.text])
-  if (own?.text) props.push(['text', own.text])
+  if (own?.textLayer?.text) props.push(['text', own.textLayer.text])
   return props.map((prop) => ({
     name: prop[0],
     source: oneLine(jsx.printJSX(propAttribute(prop)))
@@ -329,8 +339,8 @@ export function designJSXElement(nodeId: string, graph: SceneGraph): DesignJSXEl
   }
   if (node.type === 'TEXT' || isInstance) return { tag, attributes, text: null, childIds: [] }
   if (own) {
-    const children = own.text ? [jsx.text(own.text)] : []
-    return { tag, attributes, text: contentBetween(tag, children, true), childIds: [] }
+    const { children, inline } = ownChildren(own, 0)
+    return { tag, attributes, text: contentBetween(tag, children, inline), childIds: [] }
   }
   const childIds = graph
     .getChildren(node.id)
@@ -397,11 +407,11 @@ export function selectionToJSXWithLayers(
       )
     : connectors.refs
   const { roots, layerIds } = refs.size > connectors.refs.size ? write(refs) : first
-  const elements = roots.join('\n\n')
+  // Several roots are siblings in a fragment, so the code is one JSX expression.
+  const elements = roots.length > 1 ? `<>\n${roots.join('\n\n')}\n</>` : (roots.at(0) ?? '')
   // Variables first: a ref names a layer, and nothing in a variable's definition refers to one.
   const declarations = compact([variables.declarations(), refDeclarations(refs)]).join('\n\n')
   if (!declarations || !elements) return { code: elements, layerIds }
-  // Statements end with `return` and the JSX; several roots return as siblings in a fragment.
-  const returned = roots.length > 1 ? `<>\n${elements}\n</>` : elements
-  return { code: `${declarations}\n\nreturn ${returned}`, layerIds }
+  // Statements end with `return` and the JSX.
+  return { code: `${declarations}\n\nreturn ${elements}`, layerIds }
 }
