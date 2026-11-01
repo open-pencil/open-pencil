@@ -82,6 +82,25 @@ describe('scaling a sticky note by a corner on a board', () => {
     expect(editor.graph.getNode(note.id)?.width).toBe(24)
   })
 
+  // A wide note in a design file keeps its ratio with the following side rounded to pixels.
+  test('keeps a snapped bottom edge on its guide when the width is rounded', () => {
+    const editor = createEditor()
+    editor.state.snappingPreferences = { geometry: true, objects: true, pixelGrid: true }
+    const pageId = editor.state.currentPageId
+    const note = editor.createStickyNote(pageId, { x: 0, y: 0 })
+    editor.graph.updateNode(note.id, { x: 0, y: 0, width: 480, height: 240 })
+    editor.graph.createNode('RECTANGLE', pageId, { x: 700, y: 301.3, width: 20, height: 50 })
+    editor.select([note.id])
+    const drag = tryStartStickyScale(240, 240, editor)
+    if (!drag) throw new Error('No s handle')
+    applyStickyScale(drag, 240, 300, editor)
+    const guide = editor.state.snapGuides.find((line) => line.axis === 'y')
+    drag.commit()
+    const scaled = editor.graph.getNode(note.id)
+    expect(guide?.position).toBeCloseTo(301.3)
+    expect((scaled?.y ?? 0) + (scaled?.height ?? 0)).toBeCloseTo(301.3)
+  })
+
   test('Control scales it freely, off the grid', () => {
     expect(scaleNote({ x: 1264, y: 400 }, 'se', 37, 37, undefined, true)).toMatchObject({ width: 277 })
   })
