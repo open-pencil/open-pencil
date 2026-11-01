@@ -1,0 +1,1 @@
+- Arrow keys no longer also nudge the selected layer while a list, menu, or dialog is open.
