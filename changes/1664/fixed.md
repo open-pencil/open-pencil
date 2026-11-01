@@ -2,3 +2,4 @@
 - A single click inside a selected frame or group keeps it selected, each double-click goes one level down through frames and groups, and a nested text is selected first and edited by the next double-click, as in Figma; a top-level frame or section stays open while selected (#1664).
 - A group's empty area no longer takes clicks: a layer under a group, such as a chart line beneath its grouped dots, is selected through the gaps between the group's layers, as in Figma (#1664).
 - A quick run of clicks goes one level deeper on each click after the first, as in Figma, so a nested chart title is reached by clicking it a few times; a run that lands on a text selects it, and a double-click then edits it (#1664).
+- Entering an edit by double-click selects all of the text, and clicking another text while editing puts the caret where you clicked, as in Figma (#1664).

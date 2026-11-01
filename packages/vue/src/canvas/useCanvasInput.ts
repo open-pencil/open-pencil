@@ -22,7 +22,7 @@ import {
   updateNodeEditHover
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
-import { createClickCounter } from '#vue/shared/input/click-count'
+import { createClickCounter, MULTI_CLICK_DELAY } from '#vue/shared/input/click-count'
 import {
   attachModifiers,
   handleConnectorDrawMove,
@@ -194,18 +194,31 @@ export function useCanvasInput(
     handleMarqueeMove
   } = createCanvasTransformInput(editor, setDrag)
 
-  function onDblClick(e: MouseEvent) {
-    if (profile().pointer === 'pan') return
-    // The third click on of a run went a level deeper on its press; the browser's double-click
-    // event for an even click of that run must not go another.
-    if (getClickCount() > 2) return
+  /**
+   * The second click of a run and every one after it, on its press: one level deeper, or a value
+   * field, as in Figma. The press decides so that every click of a quick run counts; the browser
+   * fires its double-click event by its own count, which a click shortly before the run shifts.
+   */
+  let multiClickPressAt = 0
+
+  function onMultiClickDown(e: MouseEvent, clickCount: number) {
+    multiClickPressAt = performance.now()
     const { cx, cy } = getCoords(e)
-    if (profile().edits && valueEdit.start(cx, cy)) {
+    if (clickCount === 2 && profile().edits && valueEdit.start(cx, cy)) {
       e.preventDefault()
       e.stopPropagation()
       return
     }
-    onTextDblClick(e)
+    onTextDblClick(e, clickCount > 2)
+  }
+
+  function onDblClick(e: MouseEvent) {
+    // Handled on the press, which the event only must not follow with a browser text selection;
+    // a double-click dispatched without presses, as tests do, is handled here instead.
+    e.preventDefault()
+    if (performance.now() - multiClickPressAt < MULTI_CLICK_DELAY) return
+    if (profile().pointer === 'pan' || editor.state.editingTextId) return
+    onMultiClickDown(e, 2)
   }
 
   function hoverLayers({ event, cx, cy, sx, sy }: CanvasToolPointer) {
@@ -265,15 +278,13 @@ export function useCanvasInput(
     const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
     const clickCount = recordClick(sx, sy, e.detail)
     if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
-    // A run of clicks goes one level deeper on each click after the first, as in Figma: the
-    // second through the double-click event, the rest here.
     if (
-      clickCount > 2 &&
+      clickCount >= 2 &&
       e.button === 0 &&
       !editor.state.editingTextId &&
       profile().pointer !== 'pan'
     ) {
-      onTextDblClick(e, true)
+      onMultiClickDown(e, clickCount)
       return
     }
     pressCanvasTool({ event: e, cx, cy, sx, sy }, toolContext)

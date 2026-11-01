@@ -1,4 +1,4 @@
-const MULTI_CLICK_DELAY = 500
+export const MULTI_CLICK_DELAY = 500
 const MULTI_CLICK_RADIUS = 5
 
 export function createClickCounter() {
@@ -8,13 +8,15 @@ export function createClickCounter() {
   let clickCount = 0
 
   /**
-   * Counts a press in a run of clicks. `detail`, the browser's own count for the press, stands
-   * when it is higher: the browser times the run from the input itself, while a frame that took
-   * longer than the window between two presses would restart the count here.
+   * Counts a press in a run of clicks. `detail`, the browser's own count for the press, is the
+   * count when the event carries one: the system times the run by its own double-click speed. A
+   * press without one, such as a dispatched event, is counted here by time and distance.
    */
   function recordClick(sx: number, sy: number, detail = 0) {
     const now = performance.now()
-    if (
+    if (detail > 0) {
+      clickCount = detail
+    } else if (
       now - lastClickTime < MULTI_CLICK_DELAY &&
       Math.abs(sx - lastClickX) < MULTI_CLICK_RADIUS &&
       Math.abs(sy - lastClickY) < MULTI_CLICK_RADIUS
@@ -23,7 +25,6 @@ export function createClickCounter() {
     } else {
       clickCount = 1
     }
-    clickCount = Math.max(clickCount, detail)
     lastClickTime = now
     lastClickX = sx
     lastClickY = sy
