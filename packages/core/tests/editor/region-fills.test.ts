@@ -37,9 +37,25 @@ describe("setting a vector's fills", () => {
     const regions = () => getNodeOrThrow(editor.graph, vector.id).vectorNetwork?.regions
 
     editor.updateNodeWithUndo(vector.id, { fills: [solid(0, 1, 0)] })
+    expect(getNodeOrThrow(editor.graph, vector.id).fills).toEqual([solid(0, 1, 0)])
     expect(regions()).toEqual([{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }])
 
     editor.undo.undo()
     expect(regions()?.[0]).toMatchObject({ fills: [solid(1, 0, 0)], fillStyleId: 'style:red' })
+  })
+
+  test('drops the style of a region linked to one without its paints', () => {
+    const editor = createEditor()
+    const vector = editor.graph.createNode('VECTOR', editor.graph.getPages()[0].id, {
+      vectorNetwork: {
+        vertices: [],
+        segments: [],
+        regions: [{ windingRule: 'NONZERO', loops: [], fillStyleId: 'style:red' }]
+      }
+    })
+    editor.updateNodeWithUndo(vector.id, { fills: [solid(0, 1, 0)] })
+    expect(getNodeOrThrow(editor.graph, vector.id).vectorNetwork?.regions).toEqual([
+      { windingRule: 'NONZERO', loops: [] }
+    ])
   })
 })

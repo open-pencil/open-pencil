@@ -126,6 +126,13 @@ describe('a drop shadow of a vector with region fills', () => {
     expect(renderRow(ck, renderer, squares([]), 165, 150, 170)).toEqual(Array.from({ length: 11 }, () => 255))
   })
 
+  test('casts none from a region whose only paint is hidden', () => {
+    const hidden = [{ ...RED, opacity: 1, visible: false }]
+    expect(renderRow(ck, renderer, squares(hidden), 165, 110, 130)).toEqual(
+      Array.from({ length: 11 }, () => 0)
+    )
+  })
+
   test("casts from a region that takes the layer's fill", () => {
     expect(renderRow(ck, renderer, squares(undefined), 165, 110, 130)).toEqual(Array.from({ length: 11 }, () => 255))
   })

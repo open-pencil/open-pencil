@@ -249,10 +249,14 @@ describe('fills of a vector with region fills', () => {
   const GREY = solidFill({ r: 0.5, g: 0.5, b: 0.5, a: 1 })
   const GREEN = solidFill({ r: 0, g: 1, b: 0, a: 1 })
 
-  function squares(left: (typeof RED)[] | undefined, right: (typeof RED)[] | undefined) {
-    const api = createAPI()
+  function squares(
+    left: (typeof RED)[] | undefined,
+    right: (typeof RED)[] | undefined,
+    layer: readonly (typeof RED)[] = [GREY],
+    api = createAPI()
+  ) {
     const vector = api.createVector()
-    vector.fills = [GREY]
+    vector.fills = layer
     vector.vectorNetwork = {
       vertices: [
         { x: 0, y: 0 },
@@ -287,6 +291,16 @@ describe('fills of a vector with region fills', () => {
     expect<unknown>(differ.vector.fills).toBe(differ.api.mixed)
     expect(colors(squares([RED], [RED]).vector.fills)).toEqual([{ r: 0.5, g: 0.5, b: 0.5 }])
     expect(colors(squares(undefined, undefined).vector.fills)).toEqual([{ r: 0.5, g: 0.5, b: 0.5 }])
+  })
+
+  test("compares a region that takes the layer's fill by its bound color", () => {
+    const api = createAPI()
+    const collection = api.variables.createVariableCollection('Colors')
+    const red = api.variables.createVariable('Red', collection, 'COLOR')
+    red.setValueForMode(collection.modes[0].modeId, { r: 1, g: 0, b: 0, a: 1 })
+    const blue = solidFill({ r: 0, g: 0, b: 1, a: 1 })
+    const { vector } = squares([RED], undefined, [api.variables.setBoundVariableForPaint(blue, 'color', red)], api)
+    expect(colors(vector.fills)).toEqual([{ r: 1, g: 0, b: 0 }])
   })
 
   test('setting them makes every region draw them', () => {

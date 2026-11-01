@@ -119,8 +119,9 @@ export function regionFillChanges(
   changes: Partial<SceneNode>
 ): Pick<Partial<SceneNode>, 'vectorNetwork'> {
   const network = node.type === 'VECTOR' ? node.vectorNetwork : null
-  if (!('fills' in changes) || 'vectorNetwork' in changes || !hasRegionFills(network)) return {}
-  return network ? { vectorNetwork: withoutRegionFills(network) } : {}
+  if (!('fills' in changes) || 'vectorNetwork' in changes || !network) return {}
+  const ownFills = network.regions.some((region) => region.fills || region.fillStyleId)
+  return ownFills ? { vectorNetwork: withoutRegionFills(network) } : {}
 }
 
 /** The paints regions carry of their own. */

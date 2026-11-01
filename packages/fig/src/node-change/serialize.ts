@@ -360,7 +360,7 @@ function serializeGeometry(
   node: SceneNode,
   nc: KiwiNodeChange,
   blobs: Uint8Array[],
-  styleReference?: (id: string) => StyleReference
+  styleReference: (id: string) => StyleReference
 ): void {
   if (node.isMask) {
     nc.mask = true

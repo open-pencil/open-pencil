@@ -132,7 +132,7 @@ export interface SceneNodeToKiwiContext {
     node: SceneNode,
     nc: KiwiNodeChange,
     blobs: Uint8Array[],
-    styleReference?: (id: string) => StyleReference
+    styleReference: (id: string) => StyleReference
   ) => void
   serializeVariableBindings: (
     node: SceneNode,
