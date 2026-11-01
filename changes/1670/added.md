@@ -1,0 +1,1 @@
+- Text can be written in Markdown: `set_text` with `markdown: true`, `openpencil.setTextMarkdown()` in scripts, and `<Text markdown>` in design JSX turn headings, bold, italic, strikethrough, code, links, lists, and quotes into styled text, sized and set as FigJam styles typed Markdown; Mermaid labels written in Markdown keep their bold and italic.
