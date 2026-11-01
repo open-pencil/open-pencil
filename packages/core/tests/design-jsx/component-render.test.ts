@@ -161,6 +161,36 @@ describe('component rendering', () => {
     expect(accent.valuesByMode[first]).toBe(9)
   })
 
+  test('keeps a mode and a variable a failed render created that another hand used meanwhile', async () => {
+    const graph = new SceneGraph()
+    const theme = graph.createCollection('Theme')
+    const editor = graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Editor' })
+    let dim = ''
+    const unsubscribe = graph.onNodeEvents({
+      created: () => {
+        if (dim) return
+        dim = theme.modes.find((mode) => mode.name === 'Dim')?.modeId ?? ''
+        graph.setDefaultMode(theme.id, dim)
+        const size = [...graph.variables.values()].find((item) => item.name === 'Size')
+        graph.bindVariable(editor.id, 'opacity', size?.id ?? '')
+      }
+    })
+    await expect(
+      renderJSX(
+        graph,
+        `const theme = defineVars('Theme', { Size: 1 })
+        const dim = defineMode(theme, 'Dim', { Size: 0.5 })
+        return <><Frame mode={dim} opacity={theme.Size} /><Instance of="Missing" /></>`
+      )
+    ).rejects.toThrow('component not found')
+    unsubscribe()
+    expect(theme.defaultModeId).toBe(dim)
+    expect(theme.modes.map((mode) => mode.name)).toEqual(['Dim', 'Mode 1'])
+    const [size] = [...graph.variables.values()]
+    expect(size?.name).toBe('Size')
+    expect(getNodeOrThrow(graph, editor.id).boundVariables.opacity).toBe(size?.id)
+  })
+
   test('unbinds the layers another hand binds to a property a failed render added', async () => {
     const graph = new SceneGraph()
     const [card] = await renderJSX(

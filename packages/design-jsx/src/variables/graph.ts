@@ -71,6 +71,14 @@ function variableNamed(
   return undefined
 }
 
+/** Whether a layer binds the variable. */
+function isBound(graph: SceneGraph, variableId: string): boolean {
+  for (const node of graph.nodes.values()) {
+    if (Object.values(node.boundVariables).includes(variableId)) return true
+  }
+  return false
+}
+
 /** Steps that put back what applying definitions changed, run last to first. */
 type Undo = Array<() => void>
 
@@ -102,9 +110,10 @@ function ensureCollection(
     if (collection.modes.some((existing) => existing.name === mode.name)) continue
     const modeId = graph.createMode(id, mode.name)
     if (!modeId) continue
-    // A mode chosen since is kept.
+    // A mode chosen or made the default since is kept.
     undo.push(() => {
-      if (graph.activeMode.get(id) !== modeId) graph.removeMode(id, modeId)
+      if (graph.activeMode.get(id) !== modeId && collection.defaultModeId !== modeId)
+        graph.removeMode(id, modeId)
     })
   }
   const first = collection.modes.find((mode) => mode.name === definition.modes[0].name)
@@ -200,7 +209,10 @@ function applyDefinitions(graph: SceneGraph, tree: TreeNode, undo: Undo): void {
         throw new Error(`Variable ${name} in ${definition.name} is ${existing.type}, not ${type}`)
       if (existing) return existing
       const created = graph.createVariable(name, type, collection.id)
-      undo.push(() => graph.removeVariable(created.id))
+      // Undone after the render's layers are removed, so a layer bound to it since keeps it.
+      undo.push(() => {
+        if (!isBound(graph, created.id)) graph.removeVariable(created.id)
+      })
       return created
     })
   })
