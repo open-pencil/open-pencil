@@ -22,6 +22,8 @@
   "recentFilesDescription": "Continúa trabajando en un diseño o crea uno nuevo.",
   "noRecentFiles": "Aún no hay archivos recientes",
   "noRecentFilesDescription": "Los archivos que abras en la aplicación de escritorio aparecerán aquí.",
+  "noRecentDesigns": "No hay diseños recientes",
+  "noRecentBoards": "No hay tableros recientes",
   "searchFiles": "Buscar archivos…",
   "searchRecentAndStorageFiles": "Buscar en archivos recientes y almacenados…",
   "newDesign": "Nuevo diseño",

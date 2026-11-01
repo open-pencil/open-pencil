@@ -111,12 +111,20 @@ function formattedDate(updatedAt: string): string {
     </div>
 
     <div
-      v-else-if="!query"
+      v-else-if="!query && !hasRecentFiles"
       class="rounded-lg border border-dashed border-border px-4 py-4 text-center sm:py-6"
     >
       <p class="text-xs font-medium">{{ files.noRecentFiles }}</p>
       <p class="mt-1 text-xs text-muted">{{ files.noRecentFilesDescription }}</p>
     </div>
+
+    <!-- Recent files are all of another kind than the filter shows. -->
+    <p
+      v-else-if="!query"
+      class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"
+    >
+      {{ kind === 'board' ? files.noRecentBoards : files.noRecentDesigns }}
+    </p>
 
     <!-- The search matches files of another kind only. -->
     <p

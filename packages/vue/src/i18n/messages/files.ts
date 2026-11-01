@@ -32,6 +32,8 @@ export const filesMessageDefaults = {
   recentFilesDescription: 'Continue working on a design or start a new one.',
   noRecentFiles: 'No recent files yet',
   noRecentFilesDescription: 'Files you open in the desktop app will appear here.',
+  noRecentDesigns: 'No recent designs',
+  noRecentBoards: 'No recent boards',
   searchFiles: 'Search files…',
   searchRecentAndStorageFiles: 'Search recent and storage files…',
   newDesign: 'New design',

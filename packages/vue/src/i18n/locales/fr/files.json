@@ -22,6 +22,8 @@
   "recentFilesDescription": "Continuez un design ou commencez-en un nouveau.",
   "noRecentFiles": "Aucun fichier récent",
   "noRecentFilesDescription": "Les fichiers ouverts dans l’application de bureau apparaîtront ici.",
+  "noRecentDesigns": "Aucun design récent",
+  "noRecentBoards": "Aucun tableau blanc récent",
   "searchFiles": "Rechercher des fichiers…",
   "searchRecentAndStorageFiles": "Rechercher dans les fichiers récents et stockés…",
   "newDesign": "Nouveau design",
