@@ -4,7 +4,14 @@ import { cloneVectorNetwork, copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
 import type { VectorPathWindingRule } from './parse-path'
 import type { Vector } from './primitives'
-import type { Fill, GeometryPath, VectorNetwork, VectorSegment, VectorVertex } from './types'
+import type {
+  Fill,
+  GeometryPath,
+  SceneNode,
+  VectorNetwork,
+  VectorSegment,
+  VectorVertex
+} from './types'
 
 /** Concatenate vector networks while preserving independent geometry. */
 export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorNetwork {
@@ -94,13 +101,26 @@ export function regionFillsDiffer(
   return rest.some((fills) => !isEqual(fills, first))
 }
 
-/** The network with every region drawing the layer's fills, as setting a vector's fills makes it in Figma. */
-export function withoutRegionFills(network: VectorNetwork): VectorNetwork {
+/** The network with every region drawing the layer's fills. */
+function withoutRegionFills(network: VectorNetwork): VectorNetwork {
   const copy = cloneVectorNetwork(network)
   return {
     ...copy,
     regions: copy.regions.map(({ windingRule, loops }) => ({ windingRule, loops }))
   }
+}
+
+/**
+ * What else an edit that sets a vector's fills changes: every region draws them, its own paints
+ * and style dropped, as setting fills does in Figma (live-verified). Edit entry points apply it.
+ */
+export function regionFillChanges(
+  node: SceneNode,
+  changes: Partial<SceneNode>
+): Pick<Partial<SceneNode>, 'vectorNetwork'> {
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!('fills' in changes) || 'vectorNetwork' in changes || !hasRegionFills(network)) return {}
+  return network ? { vectorNetwork: withoutRegionFills(network) } : {}
 }
 
 /** The paints regions carry of their own. */

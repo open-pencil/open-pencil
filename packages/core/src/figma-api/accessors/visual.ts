@@ -1,11 +1,7 @@
-import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
-import {
-  hasRegionFills,
-  regionFillsDiffer,
-  withoutRegionFills
-} from '@open-pencil/scene-graph/vector-network'
+import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
   graph,
@@ -68,15 +64,6 @@ export function figmaStrokes(sceneGraph: SceneGraph, node: SceneNode): FigmaPain
   return strokes.map((stroke, index) => toFigmaPaint(stroke, bound.get(index)))
 }
 
-/** What setting fills changes: a text's characters, or every region of a vector, take them all. */
-function fillChanges(node: SceneNode, fills: Fill[]): Partial<SceneNode> {
-  if (node.type === 'TEXT') return textStyleChanges(node, { fills })
-  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
-  if (network && hasRegionFills(network))
-    return { fills, vectorNetwork: withoutRegionFills(network) }
-  return { fills }
-}
-
 export function installVisualNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals,
@@ -97,7 +84,12 @@ export function installVisualNodeProxyAccessors(
       },
       set(this: ProxyThis, value: readonly FigmaPaint[]) {
         const node = raw(this, internals)
-        updateNode(this, internals, fillChanges(node, parseFigmaPaints(value)))
+        const fills = parseFigmaPaints(value)
+        updateNode(
+          this,
+          internals,
+          node.type === 'TEXT' ? textStyleChanges(node, { fills }) : { fills }
+        )
         setPaintBindings(graph(this, internals), raw(this, internals), 'fills', value)
       }
     },
