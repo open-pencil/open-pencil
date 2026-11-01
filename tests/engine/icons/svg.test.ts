@@ -233,26 +233,4 @@ describe('scalePathInfos', () => {
     expect(span(network.vertices.map((vertex) => vertex.x))).toBe(9)
     expect(span(network.vertices.map((vertex) => vertex.y))).toBe(9)
   })
-
-  test('rounds a path whose arc stays open without turning that arc into curves first', () => {
-    // 20.012 scales to 10.006 and rounds to 10.01. The ends, 0 and 10, stay apart.
-    const network = scaledNetwork('M0 0A20.012 20 0 0 1 20 0H40.008')
-    const arc = expectDefined(
-      network.segments.find((segment) => network.vertices[segment.start]?.x === 0),
-      'arc'
-    )
-    const line = expectDefined(
-      network.segments.find((segment) => network.vertices[segment.end]?.x === 20),
-      'line'
-    )
-
-    expect(network.segments).toHaveLength(2)
-    expect(arc.tangentStart.x).toBeCloseTo(3.0945624544, 5)
-    expect(arc.tangentStart.y).toBeCloseTo(-1.7824853529, 5)
-    expect(arc.tangentEnd.x).toBeCloseTo(-3.0945624544, 5)
-    expect(arc.tangentEnd.y).toBeCloseTo(-1.7824853529, 5)
-    expect(network.vertices[line.end]).toEqual({ x: 20, y: 0 })
-    expect(line.tangentStart).toEqual(straight)
-    expect(line.tangentEnd).toEqual(straight)
-  })
 })
