@@ -192,12 +192,17 @@ export function useCanvasInput(
     handleMarqueeMove
   } = createCanvasTransformInput(editor, setDrag)
 
-  /** Only the select tool takes a double-click on its press; a drawing tool keeps its press. */
+  /**
+   * Only a plain press of the select tool takes a double-click on its press: a drawing tool, a
+   * vector being edited, and a Shift-press that adds to the selection keep their own press.
+   */
   function takesMultiClick(e: MouseEvent): boolean {
     return (
       e.button === 0 &&
+      !e.shiftKey &&
       editor.state.activeTool === 'SELECT' &&
       !editor.state.editingTextId &&
+      !editor.state.nodeEditState &&
       profile().pointer !== 'pan'
     )
   }
