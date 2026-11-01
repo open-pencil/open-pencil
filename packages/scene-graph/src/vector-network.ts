@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import { copyVectorRegion } from './copy'
+import { cloneVectorNetwork, copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
 import type { VectorPathWindingRule } from './parse-path'
 import type { Vector } from './primitives'
@@ -80,6 +80,27 @@ export function fillGeometryMatchesRegions(
   network: VectorNetwork
 ): boolean {
   return fillGeometry.length === network.regions.length
+}
+
+/**
+ * Whether a vector's regions draw different fills, each its own or else the layer's, which Figma
+ * reads as mixed (live-verified: regions with equal fills of their own read the layer's).
+ */
+export function regionFillsDiffer(
+  network: VectorNetwork | null,
+  layerFills: readonly Fill[]
+): boolean {
+  const [first, ...rest] = (network?.regions ?? []).map((region) => region.fills ?? layerFills)
+  return rest.some((fills) => !isEqual(fills, first))
+}
+
+/** The network with every region drawing the layer's fills, as setting a vector's fills makes it in Figma. */
+export function withoutRegionFills(network: VectorNetwork): VectorNetwork {
+  const copy = cloneVectorNetwork(network)
+  return {
+    ...copy,
+    regions: copy.regions.map(({ windingRule, loops }) => ({ windingRule, loops }))
+  }
 }
 
 /** The paints regions carry of their own. */

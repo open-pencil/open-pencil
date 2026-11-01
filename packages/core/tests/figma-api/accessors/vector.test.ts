@@ -241,3 +241,61 @@ describe('vector paths', () => {
     ])
   })
 })
+
+// Live-verified in Figma: a vector reads mixed while its regions draw different fills, and
+// setting its fills makes every region draw them.
+describe('fills of a vector with region fills', () => {
+  const RED = solidFill({ r: 1, g: 0, b: 0, a: 1 })
+  const GREY = solidFill({ r: 0.5, g: 0.5, b: 0.5, a: 1 })
+  const GREEN = solidFill({ r: 0, g: 1, b: 0, a: 1 })
+
+  function squares(left: (typeof RED)[] | undefined, right: (typeof RED)[] | undefined) {
+    const api = createAPI()
+    const vector = api.createVector()
+    vector.fills = [GREY]
+    vector.vectorNetwork = {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 40, y: 0 },
+        { x: 40, y: 40 },
+        { x: 0, y: 40 },
+        { x: 80, y: 0 },
+        { x: 80, y: 40 }
+      ],
+      segments: [
+        { start: 0, end: 1 },
+        { start: 1, end: 2 },
+        { start: 2, end: 3 },
+        { start: 3, end: 0 },
+        { start: 1, end: 4 },
+        { start: 4, end: 5 },
+        { start: 5, end: 2 }
+      ],
+      regions: [
+        { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]], ...(left ? { fills: left } : {}) },
+        { windingRule: 'NONZERO', loops: [[4, 5, 6, 1]], ...(right ? { fills: right } : {}) }
+      ]
+    }
+    return { api, vector }
+  }
+
+  const colors = (fills: unknown) =>
+    Array.isArray(fills) ? fills.map((fill: { color: unknown }) => fill.color) : fills
+
+  test('reads mixed while the regions differ, and the layer fills otherwise', () => {
+    const differ = squares([RED], undefined)
+    expect<unknown>(differ.vector.fills).toBe(differ.api.mixed)
+    expect(colors(squares([RED], [RED]).vector.fills)).toEqual([{ r: 0.5, g: 0.5, b: 0.5 }])
+    expect(colors(squares(undefined, undefined).vector.fills)).toEqual([{ r: 0.5, g: 0.5, b: 0.5 }])
+  })
+
+  test('setting them makes every region draw them', () => {
+    const { vector } = squares([RED], undefined)
+    vector.fills = [GREEN]
+    expect(vector.vectorNetwork.regions?.map((region) => colors(region.fills))).toEqual([
+      [{ r: 0, g: 1, b: 0 }],
+      [{ r: 0, g: 1, b: 0 }]
+    ])
+    expect(colors(vector.fills)).toEqual([{ r: 0, g: 1, b: 0 }])
+  })
+})
