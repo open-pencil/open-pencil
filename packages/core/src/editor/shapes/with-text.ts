@@ -12,7 +12,7 @@ import {
   type FigJamLineStyle,
   type FigJamTextSize
 } from '@open-pencil/scene-graph/figjam'
-import { shapeWithTextFrameFields, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { shapeWithTextKindFields, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
@@ -61,10 +61,7 @@ export function createShapeWithTextActions(ctx: EditorContext, nodes: NodeAction
       'Change shape',
       changing.map((shape) => shape.id),
       (shape) => {
-        nodes.updateNode(shape.id, {
-          shapeWithTextType: kind,
-          ...shapeWithTextFrameFields(kind, shape.width, shape.height)
-        })
+        nodes.updateNode(shape.id, shapeWithTextKindFields(shape, kind))
       }
     )
   }
