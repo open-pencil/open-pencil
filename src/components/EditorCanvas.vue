@@ -46,6 +46,7 @@ import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
+import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
 import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
@@ -96,6 +97,8 @@ const shouldSuspendRender = () =>
 
 /** The pan and zoom of the scene's last drawn frame, which preview islands follow. */
 const drawnView = shallowRef<ViewportTransform | null>(null)
+/** Where popovers on the canvas are placed: the drawn frame, or the live view before one is drawn. */
+const overlayView = computed(() => drawnView.value ?? paneView.value)
 
 // The tab's scene is presented only here once the canvas can draw, so waiting for it times out
 // only while it is shown and drawing, not while the renderer and its fonts download.
@@ -111,7 +114,6 @@ useCanvas(sceneCanvasRef, store, {
   onFrame: (view) => {
     drawnView.value = view
   },
-  sceneRenderer: appRuntimeConfig.sceneRenderer,
   onReady: canvasReady,
   onFailed: (error) =>
     store.preparationController.failCanvas(
@@ -138,7 +140,12 @@ const {
   // The scene canvas reports a canvas that cannot start.
   onFailed: () => undefined,
   get showRulers() {
-    return appRuntimeConfig.showRulers && store.state.showRulers && paneProfile.value.editChrome
+    return (
+      appRuntimeConfig.showRulers &&
+      store.state.showRulers &&
+      paneProfile.value.editChrome &&
+      paneProfile.value.rulers
+    )
   },
   getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
   shouldSuspendRender,
@@ -146,8 +153,10 @@ const {
   onViewportResize
 })
 const {
+  drag,
   cursorOverride,
   canvasLabelEdit,
+  startCanvasLabelEdit,
   updateCanvasLabelEdit,
   commitCanvasLabelEdit,
   cancelCanvasLabelEdit,
@@ -217,7 +226,8 @@ const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
   const origin = store.graph.getAbsolutePosition(node.id)
-  const { zoom, panX, panY } = store.state
+  // The view the reference projects through, so screen-sized offsets match the drawn frame.
+  const { zoom, panX, panY } = overlayView.value
   const kind = canvasLabelEdit.value?.kind
   // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
   const abs = {
@@ -238,16 +248,37 @@ const canvasLabelEditAnchor = computed(() => {
   }
   return { x: abs.x, y: abs.y }
 })
-const canvasLabelEditReference = useCanvasVirtualReference(canvasRef, store, canvasLabelEditAnchor)
+const canvasLabelEditReference = useCanvasVirtualReference(
+  canvasRef,
+  overlayView,
+  canvasLabelEditAnchor
+)
 const canvasLabelEditPresentation = computed(() =>
   canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
+)
+
+/** Names the selected section on the canvas, as its title does on a double-click. */
+function renameSelectedSection() {
+  const [id] = store.state.selectedIds
+  const section = id ? store.graph.getNode(id) : undefined
+  if (section?.type === 'SECTION') startCanvasLabelEdit('section-title', section)
+}
+
+// With the side panels away, a sticky, shape, or connector shows its controls over the canvas,
+// as FigJam does.
+const selectionToolbar = computed(
+  () =>
+    isActivePane.value &&
+    !store.state.showUI &&
+    paneProfile.value.edits &&
+    paneProfile.value.editChrome
 )
 
 const valueEditorAnchor = computed(() => {
   const edit = autoLayoutValueEdit.value
   return edit ? autoLayoutValueAnchor(store, edit.nodeId, edit.field, edit.gap) : null
 })
-const valueEditorReference = useCanvasVirtualReference(canvasRef, store, valueEditorAnchor)
+const valueEditorReference = useCanvasVirtualReference(canvasRef, overlayView, valueEditorAnchor)
 const valueEditorIcon = computed(() => {
   const edit = autoLayoutValueEdit.value
   if (!edit) return IconLucidePanelTop
@@ -309,6 +340,13 @@ const cursor = computed(() =>
           @update="updateCanvasLabelEdit"
           @commit="commitCanvasLabelEdit"
           @cancel="cancelCanvasLabelEdit"
+        />
+        <SelectionToolbar
+          v-if="selectionToolbar"
+          :canvas="canvasRef"
+          :view="overlayView"
+          :hidden="!!drag || !!canvasLabelEdit"
+          @rename-section="renameSelectedSection"
         />
         <PopoverRoot :open="!!autoLayoutValueEdit">
           <PopoverPortal>

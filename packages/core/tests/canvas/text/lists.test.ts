@@ -6,7 +6,7 @@ import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
 
 import { buildParagraph } from '#core/canvas/text/layout/build'
-import { withFigExportRuntime } from '#core/canvas/text/shape'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/font/manager'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'

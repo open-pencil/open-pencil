@@ -15,8 +15,8 @@ interface CachedChunkPicture {
 }
 
 /** Read after recording, through a call, so the flag reset before it is not taken as final. */
-function drewPreviews(renderer: Pick<SkiaRenderer, 'previewsDrawn'>): boolean {
-  return renderer.previewsDrawn
+function drewPreviews(renderer: Pick<SkiaRenderer, 'images'>): boolean {
+  return renderer.images.previewsDrawn
 }
 
 export class RenderChunkPictureCache {
@@ -31,7 +31,7 @@ export class RenderChunkPictureCache {
     return (
       cached !== undefined &&
       cached.fontGeneration === renderer.fontGeneration &&
-      (cached.previewDetail === null || cached.previewDetail >= renderer.imageDetailScale)
+      (cached.previewDetail === null || cached.previewDetail >= renderer.images.detailScale)
     )
   }
 
@@ -40,12 +40,12 @@ export class RenderChunkPictureCache {
     if (cached && this.current(renderer, cached)) return cached.picture
     cached?.picture.delete()
     this.entries.delete(chunk.id)
-    renderer.previewsDrawn = false
+    renderer.images.previewsDrawn = false
     const recorded = recordRenderChunk(renderer, graph, chunk)
     this.entries.set(chunk.id, {
       picture: recorded.picture,
       fontGeneration: renderer.fontGeneration,
-      previewDetail: drewPreviews(renderer) ? renderer.imageDetailScale : null
+      previewDetail: drewPreviews(renderer) ? renderer.images.detailScale : null
     })
     return recorded.picture
   }

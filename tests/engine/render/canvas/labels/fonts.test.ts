@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { initCanvasKit } from '#cli/headless'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
 import { resolveLabelFontCoverage } from '#core/canvas/renderer/fonts'
-import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import { resolveParagraphFontFamilies } from '#core/text/font/families'
 import { fontManager } from '#core/text/font/manager'
 import { FontResolver, missingGlyphOccurrences } from '#core/text/resolver'
 

@@ -46,9 +46,13 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
 </script>
 
 <template>
-  <ContextMenuRoot :disabled="!menu">
-    <ContextMenuTrigger as-child>
-      <div data-slot="document-entry" :class="styles.root({ class: normalizeClass(className) })">
+  <!--
+    The entry's own element is its root, so a parent's directives and attributes reach it, as the
+    preview directives of Home do; under the context menu they would land on a fragment.
+  -->
+  <div data-slot="document-entry" :class="styles.root({ class: normalizeClass(className) })">
+    <ContextMenuRoot :disabled="!menu">
+      <ContextMenuTrigger as="div" data-slot="surface" :class="styles.surface()">
         <button
           type="button"
           :disabled="disabled"
@@ -98,17 +102,17 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
             </DropdownMenuContent>
           </DropdownMenuPortal>
         </DropdownMenuRoot>
-      </div>
-    </ContextMenuTrigger>
-    <ContextMenuPortal v-if="menu">
-      <ContextMenuContent :class="menuUI.content">
-        <MenuScrollArea>
-          <ContextMenuItem :class="menuUI.item" @select="emit('delete')">
-            <icon-lucide-trash-2 :class="menuUI.icon" />
-            {{ menu.delete }}
-          </ContextMenuItem>
-        </MenuScrollArea>
-      </ContextMenuContent>
-    </ContextMenuPortal>
-  </ContextMenuRoot>
+      </ContextMenuTrigger>
+      <ContextMenuPortal v-if="menu">
+        <ContextMenuContent :class="menuUI.content">
+          <MenuScrollArea>
+            <ContextMenuItem :class="menuUI.item" @select="emit('delete')">
+              <icon-lucide-trash-2 :class="menuUI.icon" />
+              {{ menu.delete }}
+            </ContextMenuItem>
+          </MenuScrollArea>
+        </ContextMenuContent>
+      </ContextMenuPortal>
+    </ContextMenuRoot>
+  </div>
 </template>

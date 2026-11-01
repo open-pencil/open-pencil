@@ -109,7 +109,6 @@ es:panels.textCaseOriginal
 es:panels.variables
 es:panels.slots
 es:panels.shader
-es:rendering.experimental
 es:settings.general
 es:settings.mcp
 es:storage.bucket
@@ -242,7 +241,6 @@ it:panels.behaviourStateFocus
 it:panels.shader
 it:panels.variableModeAuto
 it:panels.variableModeAutoMixed
-it:rendering.settingsTitle
 it:settings.mcp
 it:settings.media
 it:settings.privacy

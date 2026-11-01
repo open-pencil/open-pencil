@@ -29,6 +29,7 @@ import {
   type HostFontLoader,
   type LocalFontAccessState
 } from '#core/text/font/sources'
+import { fontStandIn, standInFont } from '#core/text/font/stand-in'
 import {
   fontAxes,
   hasNamedInstance,
@@ -37,6 +38,7 @@ import {
   type FontAxis,
   type NamedInstance
 } from '#core/text/font/variation'
+import { sfntFont } from '#core/text/font/woff2'
 import { collectGraphFontKeys } from '#core/text/requirements/collect'
 import { normalizedCoverageText, WebFontResolver } from '#core/text/web-font/resolver'
 import type { WebFontFetch, WebFontProviderId } from '#core/text/web-font/resolver'
@@ -381,6 +383,13 @@ export class FontManager {
   ): Promise<ArrayBuffer | null> {
     signal?.throwIfAborted()
     const loaded = this.loadedData(family, style)
+    // A stand-in gives way to the family's own face once it is installed or local access is granted.
+    if (loaded && this.loadedFontSource(family, style) === 'stand-in') {
+      const installed = await this.loadInstalledFont(family, style)
+      if (installed) return installed
+      this.registerFontInCanvasKit(family, loaded)
+      return loaded
+    }
     if (loaded) {
       this.registerFontInCanvasKit(family, loaded)
       return this.withRemoteCoverage(family, style, loaded, characters, signal)
@@ -395,8 +404,27 @@ export class FontManager {
     return (
       (await this.loadBundledFont(family, style)) ??
       (await this.loadCachedFont(family, style, characters)) ??
-      (await this.loadRemoteFont(family, style, characters, signal))
+      (await this.loadRemoteFont(family, style, characters, signal)) ??
+      (await this.loadStandIn(family, style))
     )
+  }
+
+  /**
+   * The open font that draws a family nobody may ship, made to the family's widths and line box,
+   * under the family's own name, so text is laid out and drawn alike wherever it is read from.
+   */
+  private async loadStandIn(family: string, style: string): Promise<ArrayBuffer | null> {
+    const standIn = fontStandIn(family)
+    if (!standIn) return null
+    try {
+      const file = await this.fetchBundledFont(standIn.file)
+      if (!file) return null
+      const font = standInFont(await sfntFont(file), standIn)
+      return font ? this.registerAndCache(family, style, font, 'stand-in') : null
+    } catch (e) {
+      console.warn(`Stand-in font load failed for "${family}" ${style}:`, e)
+      return null
+    }
   }
 
   /**

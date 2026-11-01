@@ -19,6 +19,7 @@ export * from './prepare'
 export * from './font/faces'
 export type { HostFontFamily } from './font/catalog'
 export * from './font/names'
+export { drawnFontAxes, type DrawnFontAxes, type DrawnFontAxis } from './font/families'
 export {
   probeGlyphOutlineCommands,
   type GlyphOutlineProbe,

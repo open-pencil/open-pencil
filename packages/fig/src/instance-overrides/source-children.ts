@@ -15,33 +15,37 @@ export function reconcileOccurrenceStructure(
   graph: SceneGraph,
   components: ReadonlyMap<string, MaterializedComponentOccurrence>
 ): void {
-  if (target.mainComponentId !== null) {
-    const component = components.get(target.mainComponentId)
-    if (!component) throw new Error(`Missing component occurrence ${target.mainComponentId}`)
-    const liveOrder = new Map(
-      graph.getChildren(component.materialized.root.id).map((node, index) => [node.id, index])
-    )
-    const sourceChildren = new Map(
-      component.occurrence.children.map((child) => [child.sourceId, child])
-    )
-    target.children = target.children
-      .filter((child) => {
-        const source = sourceChildren.get(child.sourceId)
-        const node = source && component.materialized.nodes.get(source)
-        return !!node && liveOrder.has(node.id)
-      })
-      .toSorted((a, b) => {
-        const sourceA = sourceChildren.get(a.sourceId)
-        const sourceB = sourceChildren.get(b.sourceId)
-        const nodeA = sourceA && component.materialized.nodes.get(sourceA)
-        const nodeB = sourceB && component.materialized.nodes.get(sourceB)
-        return (
-          (nodeA ? (liveOrder.get(nodeA.id) ?? 0) : 0) -
-          (nodeB ? (liveOrder.get(nodeB.id) ?? 0) : 0)
-        )
-      })
+  if (target.mainComponentId === null) {
+    for (const child of target.children) reconcileOccurrenceStructure(child, graph, components)
+    return
   }
-  for (const child of target.children) reconcileOccurrenceStructure(child, graph, components)
+  const component = components.get(target.mainComponentId)
+  if (!component) throw new Error(`Missing component occurrence ${target.mainComponentId}`)
+  const nodes = component.materialized.nodes
+  // Walk the component's own layers, frames inside it included, beside the instance's.
+  const reconcileLayers = (current: InstanceOccurrence, source: InstanceOccurrence): void => {
+    const layer = nodes.get(source)
+    const liveOrder = new Map(
+      (layer ? graph.getChildren(layer.id) : []).map((node, index) => [node.id, index])
+    )
+    const sourceChildren = new Map(source.children.map((child) => [child.sourceId, child]))
+    const liveIndex = (child: InstanceOccurrence): number | undefined => {
+      const counterpart = sourceChildren.get(child.sourceId)
+      const node = counterpart && nodes.get(counterpart)
+      return node && liveOrder.get(node.id)
+    }
+    current.children = current.children
+      .filter((child) => liveIndex(child) !== undefined)
+      .toSorted((a, b) => (liveIndex(a) ?? 0) - (liveIndex(b) ?? 0))
+    for (const child of current.children) {
+      const counterpart = sourceChildren.get(child.sourceId)
+      // Nested instances answer to their own components; slot content is the instance's own.
+      if (child.mainComponentId !== null || child.slotContentId || !counterpart) {
+        reconcileOccurrenceStructure(child, graph, components)
+      } else reconcileLayers(child, counterpart)
+    }
+  }
+  reconcileLayers(target, component.occurrence)
 }
 
 /**

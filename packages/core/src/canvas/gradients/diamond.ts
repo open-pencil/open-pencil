@@ -17,13 +17,13 @@ export function makeDiamondGradient(
   positions: number[],
   localMatrix: InputMatrix
 ): Shader {
-  if (!r.diamondGradientEffect) {
+  if (!r.shaders.diamondGradient) {
     let error = ''
     const effect = r.ck.RuntimeEffect.Make(DIAMOND_GRADIENT, (message) => {
       error = message
     })
     if (!effect) throw new Error(`Cannot compile diamond gradient: ${error}`)
-    r.diamondGradientEffect = effect
+    r.shaders.diamondGradient = effect
   }
   const ramp = r.ck.Shader.MakeLinearGradient(
     [0, 0],
@@ -33,7 +33,7 @@ export function makeDiamondGradient(
     r.ck.TileMode.Clamp
   )
   try {
-    return r.diamondGradientEffect.makeShaderWithChildren([], [ramp], localMatrix)
+    return r.shaders.diamondGradient.makeShaderWithChildren([], [ramp], localMatrix)
   } finally {
     ramp.delete()
   }

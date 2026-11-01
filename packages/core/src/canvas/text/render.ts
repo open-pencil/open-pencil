@@ -4,6 +4,7 @@ import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { textVerticalOffset, withTextParagraph } from '#core/canvas/text'
+import { DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { mayHoldEmoji } from '#core/text/emoji'
 
@@ -140,10 +141,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
         drawTextLayout(r.ck, canvas, node, prepared, paragraphY, r.fillPaint)
       }
     )
-  } else if (r.textFont) {
-    const fontSize = node.fontSize || r.DEFAULT_FONT_SIZE
+  } else if (r.chromeFonts.text) {
+    const fontSize = node.fontSize || DEFAULT_FONT_SIZE
     const paragraphY = textVerticalOffset(node, fontSize)
-    canvas.drawText(shownText(node), 0, paragraphY + fontSize, r.fillPaint, r.textFont)
+    canvas.drawText(shownText(node), 0, paragraphY + fontSize, r.fillPaint, r.chromeFonts.text)
   }
 
   canvas.restore()

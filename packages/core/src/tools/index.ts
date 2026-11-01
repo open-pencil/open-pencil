@@ -27,7 +27,13 @@ export {
 } from './schema'
 export { toolNumber } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
-export type { ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './ai-adapter'
+export type {
+  ToolLogEntry,
+  ToolDebugLog,
+  AIAdapterOptions,
+  ModelImage,
+  StepBudget
+} from './ai-adapter'
 export {
   calcClusterConfidence,
   compileScript,

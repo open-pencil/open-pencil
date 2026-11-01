@@ -74,4 +74,4 @@ export function designJSXRenderer(icons: IconProvider = defaultIcons) {
 }
 
 /** Design JSX rendering with Iconify's icons. */
-export const { renderJSX, renderTree } = designJSXRenderer()
+export const { renderJSX, renderTree, renderRoots } = designJSXRenderer()

@@ -4,6 +4,7 @@ import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
@@ -48,23 +49,23 @@ export function drawVectorMultiStyleFills(
   graph: SceneGraph,
   patternStack?: Set<string>
 ): boolean {
-  if (node.type !== 'VECTOR' || !node.fillGeometry.some((geometry) => geometry.fills?.length)) {
-    return false
-  }
-  const paths = r.getFillGeometry(node)
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!network || !hasRegionFills(network)) return false
+  const { regions } = network
+  const paths =
+    (fillGeometryMatchesRegions(node.fillGeometry, network) ? r.getFillGeometry(node) : null) ??
+    r.getVectorPaths(node)
   if (!paths) return false
 
-  for (let index = 0; index < node.fillGeometry.length; index++) {
-    const geometry = node.fillGeometry[index]
+  for (const [index, region] of regions.entries()) {
     const path = paths[index]
-    const usesPathFills = Boolean(geometry.fills?.length)
     paintFills(
       r,
-      usesPathFills ? (geometry.fills ?? []) : node.fills,
+      region.fills ?? node.fills,
       node,
       graph,
       () => canvas.drawPath(path, r.fillPaint),
-      { bindToNodeFills: !usesPathFills, patternStack }
+      { bindToNodeFills: !region.fills, patternStack }
     )
   }
   return true
@@ -113,11 +114,11 @@ export function applyFill(
   }
 
   if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
-    return r.applyGradientFill(fill, node, graph)
+    return applyGradientFill(r, fill, node, graph)
   }
 
   if (fill.type === 'IMAGE' && fill.imageHash) {
-    return r.applyImageFill(fill, node, graph)
+    return applyImageFill(r, fill, node, graph)
   }
 
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
@@ -460,20 +461,20 @@ export function applyImageFill(
 ): boolean {
   const hash = fill.imageHash
   if (!hash) return false
-  const live = r.liveImages.get(hash)
+  const live = r.images.live.get(hash)
   if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
   if (r.viewportImageRendering) {
     r.noteImageFillUser(hash, node.id)
-    r.previewsDrawn = true
+    r.images.previewsDrawn = true
   }
   // The preview's resolution follows the detail the drawing is for: the viewport's scale, or a
   // tile's level, whose chunk pictures record again when a finer tile needs more.
   const preview = r.viewportImageRendering
-    ? r.imagePreviews.get(graph, hash, previewEdge(node, r.imageDetailScale))
+    ? r.images.previews.get(graph, hash, previewEdge(node, r.images.detailScale))
     : undefined
   if (r.viewportImageRendering && !preview) return false
   const key = preview?.key ?? hash
-  let img = r.imageCache.get(key)
+  let img = r.images.cache.get(key)
   let temporary = false
   if (!img) {
     const data = preview?.preview.bytes ?? graph.images.get(hash)
@@ -485,7 +486,7 @@ export function applyImageFill(
     } finally {
       decoded.delete()
     }
-    temporary = !r.imageCache.set(key, img)
+    temporary = !r.images.cache.set(key, img)
   }
 
   try {

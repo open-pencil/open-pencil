@@ -1,0 +1,1 @@
+- A Shift or ratio-locked resize and scaling a sticky note now snap the dragged edge to other layers and to the pixel grid, or a board's 16-unit grid, as Figma does.

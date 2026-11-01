@@ -1,7 +1,7 @@
 import { computed, type ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { drawnFontAxes, type DrawnFontAxis } from '@open-pencil/core/canvas'
+import { drawnFontAxes, type DrawnFontAxis } from '@open-pencil/core/text'
 import type { FontVariation, SceneNode } from '@open-pencil/scene-graph'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'

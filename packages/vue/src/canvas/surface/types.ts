@@ -17,10 +17,6 @@ export interface UseCanvasOptions {
    */
   layer?: CanvasRenderLayer
   /**
-   * Enables the experimental tiled scene renderer for this surface.
-   */
-  sceneRenderer?: 'retained' | 'tiled'
-  /**
    * Forces ruler visibility on or off for this canvas.
    *
    * When omitted, the composable falls back to viewport and URL-param logic.

@@ -355,7 +355,6 @@ describe('tiles with image previews', () => {
     const surface = expectDefined(ck.MakeSurface(320, 240), 'preview surface')
     const renderer = new SkiaRenderer(ck, surface)
     const controller = renderer.tiledScene
-    renderer.tiledSceneEnabled = true
     renderer.pageId = page.id
     renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
     renderer.viewportWidth = 320
@@ -364,7 +363,7 @@ describe('tiles with image previews', () => {
     renderer.zoom = 1
     renderer.navigationPhase = 'idle'
     renderer.viewportImageRendering = true
-    renderer.imageMemoryGraph = graph
+    renderer.images.memoryGraph = graph
     let release: (() => void) | undefined
     const decoded = new Promise<void>((resolve) => {
       release = resolve
@@ -378,9 +377,9 @@ describe('tiles with image previews', () => {
       },
       destroy: mock()
     }
-    renderer.imagePreviews.setDecoder(decoder)
+    renderer.images.previews.setDecoder(decoder)
     const ready: string[] = []
-    renderer.onImagePreviewReady = (readyHash) => ready.push(readyHash)
+    renderer.images.onPreviewReady = (readyHash) => ready.push(readyHash)
     try {
       const canvas = surface.getCanvas()
       canvas.clear(ck.WHITE)
@@ -391,7 +390,7 @@ describe('tiles with image previews', () => {
       expect(result.covered).toBe(true)
       // The preview is still decoding, so the image draws nothing yet.
       expect(centerPixel(renderer)).toEqual([255, 255, 255, 255])
-      expect(renderer.imageFillUsers.get(hash)).toEqual(new Set([node.id]))
+      expect(renderer.images.fillUsers.get(hash)).toEqual(new Set([node.id]))
 
       expectDefined(release, 'release')()
       await decoded
@@ -413,7 +412,7 @@ describe('tiles with image previews', () => {
 
       // Four times closer, the tiles record the chunk again with a preview for their level.
       renderer.zoom = 4
-      renderer.imageDetailScale = 4
+      renderer.images.detailScale = 4
       result = controller.renderFrame(renderer, canvas, graph, 1, 1)
       for (let frame = 0; frame < 10 && result.pending; frame++) {
         result = controller.renderFrame(renderer, canvas, graph, 1, 1)
@@ -646,7 +645,6 @@ describe('tiles with image previews', () => {
     const { graph, surface, renderer, pageId } = createGridScene()
     const text = graph.createNode('TEXT', pageId, { x: 20, y: 20, width: 100, height: 30 })
     const controller = renderer.tiledScene
-    renderer.tiledSceneEnabled = true
     try {
       let result = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
       for (let frame = 0; frame < 30 && (result.pending || result.backgroundPending); frame++) {

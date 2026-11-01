@@ -48,6 +48,17 @@ Every call of an OpenPencil tool, from the chat, a coding agent through MCP, or 
 - A call's result reaches the model as JSON. `eval` converts what a script returns, as MCP and the CLI print it.
 - If you undid or redid the run's own edits since the model last heard, the result carries an `undoNote` saying so.
 
+## Images a tool returns
+
+An image a call returns, such as `export_image`'s, reaches the model as a file, and every request sends the whole conversation again. On a connection whose provider documents WebP input itself (Anthropic, OpenAI, Google Gemini, and DeepSeek: `webpImages` in `providers/registry.ts`, each beside its documentation link), a PNG goes as WebP at quality 90 (`tools/model-image.ts`), unless the WebP comes out larger, as it can for flat renders.
+
+- Measured at the 1280 px default edge on design renders: flat UI is 14–20 KB as PNG and barely smaller as WebP; renders with imagery are 197–289 KB as PNG and 61–86 KB as WebP, at SSIM 0.984–0.995 against the PNG, with small text as legible.
+- Only a provider's own documentation counts. An Anthropic- or OpenAI-compatible endpoint, OpenRouter, Z.ai, MiniMax, ChatGPT sign-in, and Cloud may forward to a model server that cannot decode WebP (llama.cpp's server reads images with stb_image, which has none), so they get PNG.
+- JPEG is never chosen for the model: our export paints transparent pixels black.
+- Core's adapter encodes the image as each request is built (`encodeModelImage` in `tools/ai-adapter.ts`), once per tool call, and the result keeps the tool's PNG, so a conversation continued on a PNG-only connection still sends PNG.
+- The app loads CanvasKit's full build, which encodes WebP and JPEG, because a WebView cannot be relied on: WKWebView answers a canvas asked for WebP with PNG.
+- Chat Completions takes only text in a tool message, and the AI SDK sends a tool's image there as its Base64 text. On the connections that use it (MiniMax, Cloud, and an OpenAI-compatible endpoint set to Chat Completions), `providers/tool-images.ts` moves each image into a user message after the step's tool results, as opencode does. The same history always gives the same messages, so cached prefixes still match.
+
 ## A reply ends
 
 A run ends once, in one of three ways: finished (`onFinish`), failed (`handleError`), or stopped (the request's abort signal). The agent goes idle and its cursor leaves the canvas. A tool already running keeps going: its edit lands in its run, but cannot move the agent again.
