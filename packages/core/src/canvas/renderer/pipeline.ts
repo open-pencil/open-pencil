@@ -238,6 +238,7 @@ export function render(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
+  r.editingTextId = overlays.editingTextId ?? null
   emitNavigationTrace('render:start', {
     layer,
     sceneVersion,

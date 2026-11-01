@@ -221,6 +221,29 @@ describe('renderText', () => {
     expect(canvas.saveLayer).not.toHaveBeenCalled()
   })
 
+  test('draws the text being edited from its live layout, not its saved glyphs', () => {
+    const node = textNode({
+      derivedTextGlyphs: [
+        { commandsBlob: new Uint8Array(), x: 0, y: 12, fontSize: 12, firstCharacter: 0, advance: 8 }
+      ]
+    })
+    const edited = createMockRenderer({ editingTextId: node.id })
+    const editedCanvas = createMockCanvas()
+    renderText(edited, editedCanvas as never, node)
+    expect(edited.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(editedCanvas.drawPath).not.toHaveBeenCalled()
+
+    const base = createMockRenderer()
+    const other = createMockRenderer({
+      editingTextId: 'another',
+      ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
+    })
+    const otherCanvas = createMockCanvas()
+    renderText(other, otherCanvas as never, node)
+    expect(other.buildParagraph).not.toHaveBeenCalled()
+    expect(otherCanvas.drawPath).toHaveBeenCalled()
+  })
+
   test('prefers resolved fonts over baked text pictures', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()

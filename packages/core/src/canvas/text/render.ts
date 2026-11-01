@@ -69,7 +69,7 @@ function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
  * over the blank squares the editor's layout gives them.
  */
 export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
-  const saved = drawsSavedText(node)
+  const saved = drawsSaved(r, node) && drawsSavedText(node)
   if (!saved && !drawsLaidOutText(r, node)) return
   canvas.save()
   if (saved) drawSavedEmoji(r, canvas, node)
@@ -85,8 +85,18 @@ export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode):
   canvas.restore()
 }
 
+/**
+ * Whether the text draws from its saved glyphs. Not while it is edited: the caret, selection, and
+ * hit testing follow the live layout, and saved glyphs may come from another build of the font.
+ */
+function drawsSaved(r: SkiaRenderer, node: SceneNode): boolean {
+  return r.editingTextId !== node.id
+}
+
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
-  return canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node, fill)
+  return (
+    drawsSaved(r, node) && canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node, fill)
+  )
 }
 
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
@@ -108,7 +118,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.restore()
     return
   }
-  if (fontReadiness === 'exhausted') {
+  if (fontReadiness === 'exhausted' && drawsSaved(r, node)) {
     if (node.textPicture && r.isTextPictureCurrent(node)) {
       const pic = r.ck.MakePicture(node.textPicture)
       if (pic) {
