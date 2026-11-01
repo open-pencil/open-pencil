@@ -149,7 +149,11 @@ export function createTextEditInput(options: TextEditInputOptions) {
     return true
   }
 
-  function onDblClick(e: MouseEvent) {
+  /**
+   * One level deeper, as a double-click goes in Figma. A `rapid` click, the third or later of a
+   * run, goes a level deeper too but stops at a text: editing it takes a double-click.
+   */
+  function onDblClick(e: MouseEvent, rapid = false) {
     const nodeEditEditor = editor as Editor & NodeEditMethods
     if (editor.state.editingTextId) return
 
@@ -173,7 +177,10 @@ export function createTextEditInput(options: TextEditInputOptions) {
 
     if (hit.type === 'TEXT') {
       const isTopLevelText = hit.parentId === editor.state.currentPageId
-      if (!isTopLevelText && selectedId !== hit.id && !wasSelectedBeforeClickSequence(hit.id)) {
+      if (
+        rapid ||
+        (!isTopLevelText && selectedId !== hit.id && !wasSelectedBeforeClickSequence(hit.id))
+      ) {
         editor.select([hit.id])
         return
       }

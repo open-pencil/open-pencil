@@ -50,6 +50,7 @@ describe('raster export', () => {
     graph.createNode('RECTANGLE', page.id)
     const viewport = { x: 1, y: 2, w: 3, h: 4 }
     const renderer = {
+      editingTextId: null,
       viewportImageRendering: true,
       worldViewport: viewport,
       nodePaths: new NodePathCaches(),

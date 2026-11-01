@@ -196,6 +196,9 @@ export function useCanvasInput(
 
   function onDblClick(e: MouseEvent) {
     if (profile().pointer === 'pan') return
+    // The third click on of a run went a level deeper on its press; the browser's double-click
+    // event for an even click of that run must not go another.
+    if (getClickCount() > 2) return
     const { cx, cy } = getCoords(e)
     if (profile().edits && valueEdit.start(cx, cy)) {
       e.preventDefault()
@@ -260,8 +263,19 @@ export function useCanvasInput(
     editor.setSelectedGuide(null)
 
     const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
-    const clickCount = recordClick(sx, sy)
+    const clickCount = recordClick(sx, sy, e.detail)
     if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
+    // A run of clicks goes one level deeper on each click after the first, as in Figma: the
+    // second through the double-click event, the rest here.
+    if (
+      clickCount > 2 &&
+      e.button === 0 &&
+      !editor.state.editingTextId &&
+      profile().pointer !== 'pan'
+    ) {
+      onTextDblClick(e, true)
+      return
+    }
     pressCanvasTool({ event: e, cx, cy, sx, sy }, toolContext)
   }
 

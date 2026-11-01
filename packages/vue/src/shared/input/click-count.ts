@@ -7,7 +7,12 @@ export function createClickCounter() {
   let lastClickY = 0
   let clickCount = 0
 
-  function recordClick(sx: number, sy: number) {
+  /**
+   * Counts a press in a run of clicks. `detail`, the browser's own count for the press, stands
+   * when it is higher: the browser times the run from the input itself, while a frame that took
+   * longer than the window between two presses would restart the count here.
+   */
+  function recordClick(sx: number, sy: number, detail = 0) {
     const now = performance.now()
     if (
       now - lastClickTime < MULTI_CLICK_DELAY &&
@@ -18,6 +23,7 @@ export function createClickCounter() {
     } else {
       clickCount = 1
     }
+    clickCount = Math.max(clickCount, detail)
     lastClickTime = now
     lastClickX = sx
     lastClickY = sy

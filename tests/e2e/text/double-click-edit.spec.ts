@@ -116,6 +116,35 @@ test('double-clicks reach nested text one level at a time and edit it last', asy
   await expect.poll(() => getEditingTextId(page), { timeout: 3000 }).toBe(ids.textId)
 })
 
+test('quick clicks reach nested text and select it; a double-click then edits', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  canvas.errors.length = 0
+  await canvas.clearCanvas()
+
+  const ids = await addFrameWithNestedText(page, true)
+  await canvas.waitForRender()
+  await page.evaluate(() => window.openPencil?.getStore?.().clearSelection())
+
+  // Card is top-level: click one reaches Inner, click two the text, click three keeps it.
+  const box = await page.getByTestId('canvas-element').boundingBox()
+  if (!box) throw new Error('canvas bounds')
+  await page.mouse.move(box.x + 145, box.y + 145)
+  for (const [count, expected] of [ids.innerId, ids.textId, ids.textId].entries()) {
+    await page.mouse.down({ clickCount: count + 1 })
+    await page.mouse.up({ clickCount: count + 1 })
+    await expect.poll(() => selectedIds(page)).toEqual([expected])
+    await page.waitForTimeout(80)
+  }
+  expect(await getEditingTextId(page)).toBeNull()
+  await page.waitForTimeout(600)
+  await canvas.dblclick(145, 145)
+  await expect.poll(() => getEditingTextId(page), { timeout: 3000 }).toBe(ids.textId)
+})
+
 test('double-clicking top-level text enters text edit mode', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)

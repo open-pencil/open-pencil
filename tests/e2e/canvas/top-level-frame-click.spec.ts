@@ -79,6 +79,24 @@ test('clicks keep the selected layer and double-clicks go one level deeper each'
   editor.canvas.assertNoErrors()
 })
 
+test('a run of quick clicks goes one level deeper on each click after the first', async () => {
+  const ids = await scene.nestedBoard()
+  await editor.canvas.waitForRender()
+  const point = await scene.at(ids.label, 20, 20)
+  // Click, double-click, and a third click of the same run, each within the multi-click window.
+  const box = await editor.page.getByTestId('canvas-element').boundingBox()
+  if (!box) throw new Error('canvas bounds')
+  await editor.page.mouse.move(box.x + point.x, box.y + point.y)
+  await editor.page.mouse.down({ clickCount: 1 })
+  await editor.page.mouse.up({ clickCount: 1 })
+  await editor.page.mouse.down({ clickCount: 2 })
+  await editor.page.mouse.up({ clickCount: 2 })
+  await editor.page.mouse.down({ clickCount: 3 })
+  await editor.page.mouse.up({ clickCount: 3 })
+  await expect.poll(async () => (await scene.state()).selected).toEqual([ids.label])
+  editor.canvas.assertNoErrors()
+})
+
 test('holding Cmd hovers the deepest layer, the one a Cmd-click selects', async () => {
   const ids = await scene.nestedBoard()
   await editor.canvas.waitForRender()
