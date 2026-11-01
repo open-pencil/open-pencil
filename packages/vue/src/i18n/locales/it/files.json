@@ -28,6 +28,8 @@
   "newFile": "Nuovo file",
   "createDesign": "Design",
   "createBoard": "Lavagna",
+  "allFiles": "Tutti i file",
+  "fileKind": "Tipo di file",
   "createIn": "Viene creato in {place}",
   "noMatchingFiles": "Nessun file corrisponde a «{query}».",
   "documentActions": "Azioni per {name}",

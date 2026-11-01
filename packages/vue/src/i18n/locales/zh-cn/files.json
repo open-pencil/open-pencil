@@ -28,6 +28,8 @@
   "newFile": "新建文件",
   "createDesign": "设计",
   "createBoard": "白板",
+  "allFiles": "所有文件",
+  "fileKind": "文件类型",
   "createIn": "在 {place} 中创建",
   "noMatchingFiles": "没有与“{query}”匹配的文件。",
   "documentActions": "{name} 的操作",

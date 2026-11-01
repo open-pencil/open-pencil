@@ -28,6 +28,8 @@
   "newFile": "Archivo nuevo",
   "createDesign": "Diseño",
   "createBoard": "Tablero",
+  "allFiles": "Todos los archivos",
+  "fileKind": "Tipo de archivo",
   "createIn": "Se crea en {place}",
   "noMatchingFiles": "Ningún archivo coincide con «{query}».",
   "documentActions": "Acciones de {name}",

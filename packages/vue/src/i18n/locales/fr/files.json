@@ -28,6 +28,8 @@
   "newFile": "Nouveau fichier",
   "createDesign": "Design",
   "createBoard": "Tableau blanc",
+  "allFiles": "Tous les fichiers",
+  "fileKind": "Type de fichier",
   "createIn": "Créé dans {place}",
   "noMatchingFiles": "Aucun fichier ne correspond à « {query} ».",
   "documentActions": "Actions pour {name}",

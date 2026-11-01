@@ -44,8 +44,8 @@ describe('deleting a stored document', () => {
       figBytes: new Uint8Array([1]),
       syncStatus: 'synced'
     })
-    rememberRecentStorageDocument({ ...BUCKET, documentId: POSTER.id }, POSTER.name)
-    rememberRecentStorageDocument({ ...BUCKET, documentId: 'flyer' }, 'Flyer')
+    rememberRecentStorageDocument({ ...BUCKET, documentId: POSTER.id }, POSTER.name, 'design')
+    rememberRecentStorageDocument({ ...BUCKET, documentId: 'flyer' }, 'Flyer', 'design')
     expect(recentPoster()).toBe(true)
     const events: string[] = []
     const stop = onStorageWorkspaceEvent((event) =>

@@ -38,6 +38,8 @@ export const filesMessageDefaults = {
   newFile: 'New file',
   createDesign: 'Design',
   createBoard: 'Board',
+  allFiles: 'All files',
+  fileKind: 'File type',
   createIn: params('Creates it in {place}'),
   noMatchingFiles: params('No files match “{query}”.'),
   documentActions: params('Actions for {name}'),

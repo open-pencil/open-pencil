@@ -8,6 +8,7 @@ export default {
     image: 'size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]',
     fallback: 'size-8 text-muted/40',
     icon: 'size-4 shrink-0 text-primary',
+    kind: 'size-3.5 shrink-0',
     body: 'min-w-0 flex-1',
     title: 'flex min-w-0 items-center gap-1.5',
     name: 'block min-w-0 truncate text-xs font-medium',
@@ -20,6 +21,10 @@ export default {
       'shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100'
   },
   variants: {
+    kind: {
+      design: { kind: 'text-primary' },
+      board: { kind: 'text-board', icon: 'text-board' }
+    },
     view: {
       grid: {
         body: 'mt-2 block',

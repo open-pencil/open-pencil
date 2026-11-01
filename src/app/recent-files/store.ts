@@ -2,6 +2,9 @@ import { useLocalStorage } from '@vueuse/core'
 import { basename } from 'pathe'
 import { computed } from 'vue'
 
+import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
+import type { DocumentKind } from '@open-pencil/scene-graph'
+
 import {
   DEFAULT_STORAGE_PROFILE,
   storageLocationOf,
@@ -21,6 +24,8 @@ export interface RecentLocalDocument {
   path: string
   name: string
   updatedAt: string
+  /** A design or a board; entries recorded before this was kept have none. */
+  documentKind?: DocumentKind
 }
 
 export interface RecentStorageDocument {
@@ -32,6 +37,8 @@ export interface RecentStorageDocument {
   documentId: string
   name: string
   updatedAt: string
+  /** A design or a board; entries recorded before this was kept have none. */
+  documentKind?: DocumentKind
 }
 
 export type RecentDocument = RecentLocalDocument | RecentStorageDocument
@@ -73,24 +80,42 @@ function remember(document: RecentDocument): void {
   ].slice(0, recentFilesLimit.value)
 }
 
+/** What a file on this device is by its name: a FigJam `.jam` is a board, anything else a design. */
+function localDocumentKind(path: string): DocumentKind {
+  return path.toLowerCase().endsWith(`.${DOCUMENT_EXTENSIONS.board}`) ? 'board' : 'design'
+}
+
+/** A recent file's kind: as recorded, or for a file on this device recorded before, by its name. */
+export function recentDocumentKind(document: RecentDocument): DocumentKind | undefined {
+  if (document.documentKind) return document.documentKind
+  return document.kind === 'local' ? localDocumentKind(document.path) : undefined
+}
+
+/** Remembers a file opened or saved on this device. */
 export function rememberRecentFile(path: string): void {
   remember({
     id: localDocumentId(path),
     kind: 'local',
     path,
     name: fileName(path),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    documentKind: localDocumentKind(path)
   })
 }
 
-export function rememberRecentStorageDocument(binding: StorageDocumentBinding, name: string): void {
+export function rememberRecentStorageDocument(
+  binding: StorageDocumentBinding,
+  name: string,
+  documentKind: DocumentKind
+): void {
   remember({
     id: storageDocumentId(binding),
     kind: 'storage',
     ...storageLocationOf(binding),
     documentId: binding.documentId,
     name,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    documentKind
   })
 }
 

@@ -28,6 +28,8 @@
   "newFile": "Nowy plik",
   "createDesign": "Projekt",
   "createBoard": "Tablica",
+  "allFiles": "Wszystkie pliki",
+  "fileKind": "Typ pliku",
   "createIn": "Tworzy w: {place}",
   "noMatchingFiles": "Brak plików pasujących do „{query}”.",
   "documentActions": "Działania dla {name}",

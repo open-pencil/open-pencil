@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'bun:test'
 import { expectDefined } from '#fig-tests/helpers/assert'
 import {
   FIG_PACKAGE_STATUS,
+  figArchiveKind,
   figArchiveMetaJSON,
   parseFigBuffer,
   readFigArchiveMeta,
@@ -131,6 +132,22 @@ describe('@open-pencil/fig package API', () => {
     expect(renamed.images).toEqual([['hash', new Uint8Array([9, 8, 7])]])
     expect(renameFigArchive(bytes, 'Old')).toBe(bytes)
     expect(renameFigArchive(archive('{"version":1,"app":"OpenPencil"}'), 'New')).toBeNull()
+  })
+
+  it('tells a board archive from a design one by its canvas header', () => {
+    const archive = (kind?: 'design' | 'board') =>
+      writeFigArchive({
+        schemaDeflated: deflateSync(getSchemaBytes()),
+        kiwiData: encodeMessage(createNodeChangesMessage(0, 0, [])),
+        thumbnailPNG: PNG_SIGNATURE,
+        metaJSON: '{}',
+        kind
+      })
+
+    expect(figArchiveKind(archive())).toBe('design')
+    expect(figArchiveKind(archive('board'))).toBe('board')
+    expect(figArchiveKind(new TextEncoder().encode('fig-jam.'))).toBe('board')
+    expect(figArchiveKind(new Uint8Array([1, 2, 3]))).toBeNull()
   })
 
   it('parses legacy raw fig-kiwi files and preserves their thumbnail chunk', () => {

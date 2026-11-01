@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { CloudAPIError, createCloudAPIClient } from '#cloud/client'
+import { omit } from 'es-toolkit'
 
 const workspaceId = '11111111-1111-4111-8111-111111111111'
 const documentId = '22222222-2222-4222-8222-222222222222'
@@ -21,6 +22,7 @@ const document = {
   id: documentId,
   workspaceId,
   name: 'Homepage',
+  kind: 'board' as const,
   currentRevisionId: revisionId,
   version: 1,
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -28,6 +30,14 @@ const document = {
 }
 
 describe('createCloudAPIClient', () => {
+  test('reads a document an older server lists without a kind as a design', async () => {
+    const older = omit(document, ['kind'])
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
+      fetch: async () => Response.json({ documents: [older] })
+    })
+    expect((await client.listDocuments(workspaceId))[0]?.kind).toBe('design')
+  })
+
   test('validates document metadata and sends authenticated requests', async () => {
     const requests: Request[] = []
     const client = createCloudAPIClient('https://cloud.example.com/api', {

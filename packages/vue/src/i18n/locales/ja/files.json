@@ -28,6 +28,8 @@
   "newFile": "新規ファイル",
   "createDesign": "デザイン",
   "createBoard": "ボード",
+  "allFiles": "すべてのファイル",
+  "fileKind": "ファイルの種類",
   "createIn": "{place} に作成します",
   "noMatchingFiles": "「{query}」に一致するファイルはありません。",
   "documentActions": "{name} の操作",

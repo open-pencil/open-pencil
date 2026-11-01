@@ -81,8 +81,17 @@ describe('Cloud document routes', () => {
       const list = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`)
       expect(list.status).toBe(200)
       expect(await list.json()).toMatchObject({
-        documents: [{ id: created.document.id, name: 'Homepage', currentRevisionId: null }]
+        documents: [
+          { id: created.document.id, name: 'Homepage', kind: 'design', currentRevisionId: null }
+        ]
       })
+
+      const board = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Retro', kind: 'board' })
+      })
+      expect(await board.json()).toMatchObject({ document: { name: 'Retro', kind: 'board' } })
     } finally {
       await context.runtime.close()
     }
@@ -162,7 +171,7 @@ describe('Cloud document routes', () => {
         const commit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksum, name: 'Updated homepage' })
+          body: JSON.stringify({ checksum, name: 'Updated homepage', kind: 'board' })
         })
         expect(commit.status).toBe(200)
         const committed = await responseJSON(
@@ -171,13 +180,15 @@ describe('Cloud document routes', () => {
             document: v.object({
               currentRevisionId: v.string(),
               version: v.number(),
-              name: v.string()
+              name: v.string(),
+              kind: v.string()
             })
           })
         )
         expect(committed.document.currentRevisionId).toBeString()
         expect(committed.document.version).toBe(1)
         expect(committed.document.name).toBe('Updated homepage')
+        expect(committed.document.kind).toBe('board')
 
         const repeatedCommit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
           method: 'POST',
