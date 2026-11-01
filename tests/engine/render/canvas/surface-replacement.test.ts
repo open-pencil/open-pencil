@@ -16,10 +16,10 @@ describe('renderer surface replacement', () => {
     const next = surface()
     const renderer: Pick<
       SkiaRenderer,
-      'surface' | 'liveImages' | 'tiledScene' | 'invalidateScenePicture' | 'replaceSurface'
+      'surface' | 'images' | 'tiledScene' | 'invalidateScenePicture' | 'replaceSurface'
     > = {
       surface: previous,
-      liveImages: new Map(),
+      images: asDouble<SkiaRenderer['images']>({ live: new Map() }),
       tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
       invalidateScenePicture: mock(),
       replaceSurface: SkiaRenderer.prototype.replaceSurface

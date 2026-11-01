@@ -16,15 +16,13 @@ export function renderShapeThroughEffectCaches(
   node: SceneNode,
   draw: (target: Canvas) => void
 ): void {
-  const cached = r.nodePictureCache.get(node.id)
-  const cachedGeneration = r.nodePictureCacheGenerations.get(node.id)
-  if (cached && cachedGeneration === r.fontGeneration) {
-    canvas.drawPicture(cached)
+  const cached = r.nodePictures.get(node.id)
+  if (cached?.picture && cached.fontGeneration === r.fontGeneration) {
+    canvas.drawPicture(cached.picture)
     return
   }
-  if (cached) cached.delete()
-  r.nodePictureCache.delete(node.id)
-  r.nodePictureCacheGenerations.delete(node.id)
+  cached?.picture?.delete()
+  r.nodePictures.delete(node.id)
 
   // An arrow head reaches past the shape, and its shadow reaches past the head: both margins.
   const margin =
@@ -35,8 +33,7 @@ export function renderShapeThroughEffectCaches(
     const recCanvas = recorder.beginRecording(bounds)
     draw(recCanvas)
     const picture = recorder.finishRecordingAsPicture()
-    r.nodePictureCache.set(node.id, picture)
-    r.nodePictureCacheGenerations.set(node.id, r.fontGeneration)
+    r.nodePictures.set(node.id, { picture, fontGeneration: r.fontGeneration })
     canvas.drawPicture(picture)
   } finally {
     recorder.delete()

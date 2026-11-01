@@ -42,10 +42,10 @@ function emojiImage(r: SkiaRenderer, text: string): Image | null {
   const platform = canDrawPlatformEmoji()
   // Noto draws only once its font is loaded, so a later font generation tries again.
   const key = platform ? `platform:${text}` : `noto:${r.fontGeneration}:${text}`
-  const cached = r.emojiImageCache.get(key)
+  const cached = r.textCaches.emojiImages.get(key)
   if (cached !== undefined) return cached
   const image = rasterizeEmoji(r, platform, text)
-  r.emojiImageCache.set(key, image)
+  r.textCaches.emojiImages.set(key, image)
   return image
 }
 

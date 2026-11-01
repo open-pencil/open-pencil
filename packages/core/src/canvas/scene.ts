@@ -342,13 +342,13 @@ export function renderNode(
   if (!found || !drawsNode(found, overlays)) return
   const node = stickyPlaceholderNode(graph, found, r.stickyPlaceholder) ?? found
 
-  r._nodeCount++
+  r.drawCounts.nodes++
 
   const absX = parentAbsX + node.x
   const absY = parentAbsY + node.y
 
   if (isCulled(r, node, absX, absY, frame, overlays.rotationPreview)) {
-    r._culledCount++
+    r.drawCounts.culled++
     return
   }
 

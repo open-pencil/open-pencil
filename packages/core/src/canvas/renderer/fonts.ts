@@ -1,6 +1,9 @@
+import type { Font } from 'canvaskit-wasm'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { NodeFontReadiness } from '#core/canvas/text'
 import {
   COMPONENT_LABEL_FONT_SIZE,
   DEFAULT_FONT_FAMILY,
@@ -24,6 +27,48 @@ import {
   type FontResolutionSnapshot
 } from '#core/text/resolver'
 
+/** The faces the canvas chrome draws with, and the plain face text falls back to. */
+export interface ChromeFonts {
+  text: Font | null
+  label: Font | null
+  size: Font | null
+  /** Inter SemiBold at 11 px, which Figma sets the padding and gap values on the canvas in. */
+  value: Font | null
+  sectionTitle: Font | null
+  componentLabel: Font | null
+}
+
+export function createChromeFonts(): ChromeFonts {
+  return {
+    text: null,
+    label: null,
+    size: null,
+    value: null,
+    sectionTitle: null,
+    componentLabel: null
+  }
+}
+
+export interface PendingFontNode {
+  node: SceneNode
+  keys: Set<string>
+}
+
+/** Font bookkeeping per text layer: demands in flight, saved pictures' generations, and readiness. */
+export interface TextFontState {
+  readonly pending: Map<string, PendingFontNode>
+  readonly pictureGenerations: Map<string, { data: Uint8Array; generation: number }>
+  /** Readiness of a text's fonts, found once per layer per font generation; a change to the layer drops it. */
+  readonly readiness: Map<
+    string,
+    { node: SceneNode; generation: number; readiness: NodeFontReadiness }
+  >
+}
+
+export function createTextFontState(): TextFontState {
+  return { pending: new Map(), pictureGenerations: new Map(), readiness: new Map() }
+}
+
 export function resolveLabelFontCoverage(
   r: Pick<SkiaRenderer, 'isDestroyed' | 'onFontResolutionSettled'>,
   missing: readonly MissingGlyphOccurrence[],
@@ -46,26 +91,26 @@ export function syncFontGeneration(r: SkiaRenderer): void {
 }
 
 export function trackFontDemand(r: SkiaRenderer, node: SceneNode, key: string): void {
-  const pending = r.pendingFontNodes.get(node.id) ?? { node, keys: new Set<string>() }
+  const pending = r.textFonts.pending.get(node.id) ?? { node, keys: new Set<string>() }
   pending.node = node
   pending.keys.add(key)
-  r.pendingFontNodes.set(node.id, pending)
+  r.textFonts.pending.set(node.id, pending)
 }
 
-interface TextPictureGenerationState {
-  fontGeneration: number
-  textPictureGenerations: Map<string, { data: Uint8Array; generation: number }>
-}
-
-export function isTextPictureCurrent(r: TextPictureGenerationState, node: SceneNode): boolean {
+export function isTextPictureCurrent(
+  r: Pick<SkiaRenderer, 'fontGeneration'> & {
+    textFonts: Pick<TextFontState, 'pictureGenerations'>
+  },
+  node: SceneNode
+): boolean {
   const data = node.textPicture
   if (!data) {
-    r.textPictureGenerations.delete(node.id)
+    r.textFonts.pictureGenerations.delete(node.id)
     return false
   }
-  const cached = r.textPictureGenerations.get(node.id)
+  const cached = r.textFonts.pictureGenerations.get(node.id)
   if (!cached || cached.data !== data) {
-    r.textPictureGenerations.set(node.id, { data, generation: r.fontGeneration })
+    r.textFonts.pictureGenerations.set(node.id, { data, generation: r.fontGeneration })
     return true
   }
   return cached.generation === r.fontGeneration
@@ -78,13 +123,13 @@ function settleFontDemand(
 ): void {
   syncFontGeneration(r)
   for (const nodeId of nodeIds) {
-    const pending = r.pendingFontNodes.get(nodeId)
+    const pending = r.textFonts.pending.get(nodeId)
     if (pending) {
       pending.node.textPicture = null
       pending.keys.delete(snapshot.key)
-      if (pending.keys.size === 0) r.pendingFontNodes.delete(nodeId)
+      if (pending.keys.size === 0) r.textFonts.pending.delete(nodeId)
     }
-    r.textPictureGenerations.delete(nodeId)
+    r.textFonts.pictureGenerations.delete(nodeId)
     r.invalidateNodePicture(nodeId)
   }
 }
@@ -100,8 +145,8 @@ function registerSectionTitleFont(r: SkiaRenderer, data: ArrayBuffer) {
   const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(data)
   if (!typeface) return
   try {
-    r.valueFont?.delete()
-    r.valueFont = new r.ck.Font(typeface, VALUE_FONT_SIZE)
+    r.chromeFonts.value?.delete()
+    r.chromeFonts.value = new r.ck.Font(typeface, VALUE_FONT_SIZE)
   } finally {
     // The font holds its own reference to the face.
     typeface.delete()
@@ -135,16 +180,16 @@ export async function loadFonts(
   if (fontData) {
     const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(fontData)
     if (typeface) {
-      r.textFont?.delete()
-      r.labelFont?.delete()
-      r.sizeFont?.delete()
-      r.sectionTitleFont?.delete()
-      r.componentLabelFont?.delete()
-      r.textFont = new r.ck.Font(typeface, DEFAULT_FONT_SIZE)
-      r.labelFont = new r.ck.Font(typeface, LABEL_FONT_SIZE)
-      r.sizeFont = new r.ck.Font(typeface, SIZE_FONT_SIZE)
-      r.sectionTitleFont = new r.ck.Font(typeface, SECTION_TITLE_FONT_SIZE)
-      r.componentLabelFont = new r.ck.Font(typeface, COMPONENT_LABEL_FONT_SIZE)
+      r.chromeFonts.text?.delete()
+      r.chromeFonts.label?.delete()
+      r.chromeFonts.size?.delete()
+      r.chromeFonts.sectionTitle?.delete()
+      r.chromeFonts.componentLabel?.delete()
+      r.chromeFonts.text = new r.ck.Font(typeface, DEFAULT_FONT_SIZE)
+      r.chromeFonts.label = new r.ck.Font(typeface, LABEL_FONT_SIZE)
+      r.chromeFonts.size = new r.ck.Font(typeface, SIZE_FONT_SIZE)
+      r.chromeFonts.sectionTitle = new r.ck.Font(typeface, SECTION_TITLE_FONT_SIZE)
+      r.chromeFonts.componentLabel = new r.ck.Font(typeface, COMPONENT_LABEL_FONT_SIZE)
       r.profiler.setTypeface(typeface)
     }
   }

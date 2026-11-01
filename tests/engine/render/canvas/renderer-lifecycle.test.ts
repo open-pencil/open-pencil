@@ -3,15 +3,15 @@ import { expect, mock, test } from 'bun:test'
 import type { Font, Paint, Surface } from 'canvaskit-wasm'
 
 import { createImageFilterCache, createMaskFilterCache } from '#core/canvas/effects'
-import { createImageCache } from '#core/canvas/images/cache'
-import { ImagePreviewCache } from '#core/canvas/images/previews'
+import { createRendererImages } from '#core/canvas/images/state'
 import type { NodeEditPaints } from '#core/canvas/node-edit-overlay'
 import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
-import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from '#core/canvas/text/derived'
-import { createEmojiImageCache } from '#core/canvas/text/emoji'
+import { createCompiledShaders } from '#core/canvas/renderer/shaders'
+import { createWholeScenePicture } from '#core/canvas/renderer/state'
+import { createTextCaches } from '#core/canvas/text/caches'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 
 import { asDouble, asRenderer } from './helpers'
@@ -25,14 +25,9 @@ function createRenderer() {
     destroyed: false,
     textPreparationCache: new TextPreparationCache(),
     transientPreviews: new Map(),
-    imageCache: createImageCache(),
-    liveImages: new Map(),
-    imagePreviews: new ImagePreviewCache(() => undefined),
-    onImagePreviewReady: null,
+    images: createRendererImages(),
     nodePaths: new NodePathCaches(),
-    glyphSilhouetteCache: createGlyphSilhouetteCache(),
-    derivedGlyphPathCache: createDerivedGlyphPathCache(),
-    emojiImageCache: createEmojiImageCache(),
+    textCaches: createTextCaches(),
     fillPaint: deletable<Paint>(),
     strokePaint: deletable<Paint>(),
     selectionPaint: deletable<Paint>(),
@@ -41,11 +36,14 @@ function createRenderer() {
     auxStroke: deletable<Paint>(),
     opacityPaint: deletable<Paint>(),
     effectLayerPaint: deletable<Paint>(),
-    textFont: deletable<Font>(),
-    labelFont: deletable<Font>(),
-    sizeFont: deletable<Font>(),
-    sectionTitleFont: deletable<Font>(),
-    componentLabelFont: deletable<Font>(),
+    chromeFonts: {
+      text: deletable<Font>(),
+      label: deletable<Font>(),
+      size: deletable<Font>(),
+      value: null,
+      sectionTitle: deletable<Font>(),
+      componentLabel: deletable<Font>()
+    },
     fontProvider: null,
     fontsLoaded: true,
     rulerBgPaint: deletable<Paint>(),
@@ -62,13 +60,13 @@ function createRenderer() {
     penVertexStroke: deletable<Paint>(),
     imageFilterCache: createImageFilterCache(),
     dashEffects: createDashEffectCache(),
-    pixelGridShader: null,
+    shaders: createCompiledShaders(),
     maskFilterCache: createMaskFilterCache(),
     nodeEditPaints: {
       techStrokePaint: deletable<Paint>()
     } as Partial<NodeEditPaints> as NodeEditPaints,
-    nodePictureCache: new Map(),
-    scenePicture: null,
+    nodePictures: new Map(),
+    wholeScene: createWholeScenePicture(),
     tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
     labelParagraphCache: asDouble<SkiaRenderer['labelParagraphCache']>({ clear: mock() }),
     profiler: { destroy: mock() } as Partial<SkiaRenderer['profiler']> as SkiaRenderer['profiler'],
@@ -95,13 +93,12 @@ test('destroyRenderer releases tiled resources before deleting the main surface'
 
 test('destroyRenderer deletes all renderer-owned paints and label fonts', () => {
   const renderer = createRenderer()
-  const sectionTitleFont = renderer.sectionTitleFont
-  const componentLabelFont = renderer.componentLabelFont
+  const { sectionTitle, componentLabel } = renderer.chromeFonts
   const pencilStrokePaint = renderer.pencilStrokePaint
 
   destroyRenderer(renderer)
 
   expect(pencilStrokePaint.delete).toHaveBeenCalled()
-  expect(sectionTitleFont?.delete).toHaveBeenCalled()
-  expect(componentLabelFont?.delete).toHaveBeenCalled()
+  expect(sectionTitle?.delete).toHaveBeenCalled()
+  expect(componentLabel?.delete).toHaveBeenCalled()
 })

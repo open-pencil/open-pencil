@@ -84,7 +84,8 @@ function updateIssueMarkers(r: SkiaRenderer, graph: SceneGraph, overlays: Render
     r.issueMarkers = []
     return
   }
-  const measureText = (text: string) => (r.sizeFont ? cachedGlyphWidth(r, r.sizeFont, text) : 0)
+  const measureText = (text: string) =>
+    r.chromeFonts.size ? cachedGlyphWidth(r, r.chromeFonts.size, text) : 0
   const inset = r.showRulers ? RULER_SIZE : 0
   r.issueMarkers = layoutIssueMarkers(graph, markers, {
     pageId: r.pageId ?? '',

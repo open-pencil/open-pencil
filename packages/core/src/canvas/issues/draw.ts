@@ -194,7 +194,7 @@ function drawMarker(
     r.auxFill
   )
 
-  const font = r.sizeFont
+  const font = r.chromeFonts.size
   if (!font) return
   const label = issueMarkerLabel(marker.count)
   const textWidth = cachedGlyphWidth(r, font, label)
@@ -216,13 +216,13 @@ export function drawIssueMarkers(
   hoveredKey: string | null | undefined
 ): void {
   // Every label is bold: the font is set once around the loop, not twice per marker.
-  r.sizeFont?.setEmbolden(true)
+  r.chromeFonts.size?.setEmbolden(true)
   try {
     for (let index = placed.length - 1; index >= 0; index--) {
       const marker = placed[index]
       drawMarker(r, canvas, marker, marker.key === hoveredKey)
     }
   } finally {
-    r.sizeFont?.setEmbolden(false)
+    r.chromeFonts.size?.setEmbolden(false)
   }
 }

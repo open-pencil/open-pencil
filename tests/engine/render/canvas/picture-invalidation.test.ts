@@ -16,12 +16,9 @@ test('full picture invalidation resets tiled font-dependent resources', () => {
   textPreparationCache.clear = mock()
   const renderer = asRenderer({
     textPreparationCache,
-    textReadiness: new Map(),
-    scenePicture,
-    scenePictureVersion: 1,
-    scenePictureFontGeneration: 1,
-    nodePictureCache: new Map([['node', nodePicture]]),
-    nodePictureCacheGenerations: new Map([['node', 1]]),
+    textFonts: { readiness: new Map() },
+    wholeScene: { picture: scenePicture, version: 1, fontGeneration: 1 },
+    nodePictures: new Map([['node', { picture: nodePicture, fontGeneration: 1 }]]),
     tiledScene: { invalidateStructure: mock() }
   })
 
@@ -40,14 +37,10 @@ test('node picture invalidation removes the changed node picture and keeps its p
   textPreparationCache.deleteNode = mock()
   const renderer = asRenderer({
     textPreparationCache,
-    textReadiness: new Map(),
-    nodePictureCache: new Map([
-      ['parent', parentPicture],
-      ['child', childPicture]
-    ]),
-    nodePictureCacheGenerations: new Map([
-      ['parent', 1],
-      ['child', 1]
+    textFonts: { readiness: new Map() },
+    nodePictures: new Map([
+      ['parent', { picture: parentPicture, fontGeneration: 1 }],
+      ['child', { picture: childPicture, fontGeneration: 1 }]
     ])
   })
 
@@ -58,7 +51,7 @@ test('node picture invalidation removes the changed node picture and keeps its p
   })
   expect(parentPicture.delete).not.toHaveBeenCalled()
   expect(childPicture.delete).toHaveBeenCalledTimes(1)
-  expect([...renderer.nodePictureCache.keys()]).toEqual(['parent'])
+  expect([...renderer.nodePictures.keys()]).toEqual(['parent'])
 
   invalidateNodePicture(renderer, 'child', ['width', 'height', 'x'])
   expect(textPreparationCache.deleteNode).toHaveBeenLastCalledWith('child', {

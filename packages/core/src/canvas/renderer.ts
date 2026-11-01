@@ -13,10 +13,6 @@ import {
   COMPONENT_COLOR,
   SLOT_COLOR,
   CANVAS_BG_COLOR,
-  DEFAULT_FONT_SIZE,
-  COMPONENT_SET_DASH,
-  COMPONENT_SET_DASH_GAP,
-  COMPONENT_SET_BORDER_WIDTH,
   IS_BROWSER
 } from '#core/constants'
 import type { EditorState } from '#core/editor/types'
@@ -24,8 +20,7 @@ import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
 import { createImageFilterCache, createMaskFilterCache } from './effects'
-import { createImageCache } from './images/cache'
-import { ImagePreviewCache } from './images/previews'
+import { createRendererImages } from './images/state'
 import { LabelCache } from './labels/cache'
 import * as LabelHitTest from './labels/hit-test'
 import { LabelParagraphCache } from './labels/paragraph-cache'
@@ -33,6 +28,7 @@ import { labelHitOptions } from './labels/style'
 import { createDashEffectCache } from './overlays/outline'
 import { NodePathCaches } from './paths/cache'
 import * as RenderColors from './renderer/colors'
+import { createChromeFonts, createTextFontState } from './renderer/fonts'
 import * as RendererFonts from './renderer/fonts'
 import { destroyRenderer, releaseLiveImages } from './renderer/lifecycle'
 import {
@@ -41,11 +37,15 @@ import {
   initializeSelectionPaintColors
 } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
+import { createCompiledShaders } from './renderer/shaders'
+import {
+  createFeedbackMarks,
+  createWholeScenePicture,
+  type NodePictureEntry
+} from './renderer/state'
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
-import type { SavedDecorationCache } from './text/decorations'
-import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from './text/derived'
-import { createEmojiImageCache } from './text/emoji'
+import { createTextCaches } from './text/caches'
 import { TextPreparationCache } from './text/preparation/cache'
 export type {
   MeasurementMode,
@@ -55,29 +55,19 @@ export type {
   SelectionTheme
 } from './renderer/types'
 import type {
-  Blender,
   Canvas,
   CanvasKit,
   Font,
-  Image,
   ImageFilter,
   MaskFilter,
   Paint,
   Path,
-  RuntimeEffect,
-  Shader,
-  SkPicture,
   Surface,
   TextureSource,
   TypefaceFontProvider
 } from 'canvaskit-wasm'
 
 import { createSceneGeometry, type RotationPreview, type SceneGeometry } from '#core/geometry'
-
-export interface PendingFontNode {
-  node: SceneNode
-  keys: Set<string>
-}
 
 import * as Effects from './effects'
 import * as Fills from './fills'
@@ -105,13 +95,12 @@ export type LiveImageSource =
 const textureSource = (source: LiveImageSource) => source as TextureSource
 
 export class SkiaRenderer {
+  // CanvasKit, its surface, and the paints every draw shares.
   ck: CanvasKit
   surface: Surface
+  destroyed = false
+  readonly profiler: RenderProfiler
   declare fillPaint: Paint
-  diamondGradientEffect: RuntimeEffect | null = null
-  pixelGridEffect: RuntimeEffect | null = null
-  linearBurnBlender: Blender | null = null
-  linearDodgeBlender: Blender | null = null
   declare strokePaint: Paint
   declare selectionPaint: Paint
   declare snapPaint: Paint
@@ -122,106 +111,6 @@ export class SkiaRenderer {
   /** Whether the shared fill and stroke paints carry a shader, so clearing one is a call only when needed. */
   fillPaintShaded = false
   strokePaintShaded = false
-  /** Dashes the overlay pass draws with, kept between frames. */
-  readonly dashEffects = createDashEffectCache()
-  /** Label widths by font and text, so chrome measures a label once. */
-  readonly glyphWidths = new WeakMap<Font, Map<string, number>>()
-  /** The pixel grid's shader, kept while its uniforms hold. */
-  pixelGridShader: { key: string; shader: Shader } | null = null
-  /** Scene geometry shared by everything drawn in one frame; `pipeline` starts each frame afresh. */
-  frameGeometry: {
-    graph: SceneGraph
-    preview: RotationPreview | null
-    geometry: SceneGeometry
-  } | null = null
-  private readonly colors = new Map<string, Float32Array>()
-  imageFilterCache = createImageFilterCache()
-  maskFilterCache = createMaskFilterCache()
-  _tmpColor = new Float32Array(4)
-  _tmpRect = new Float32Array(4)
-  textFont: Font | null = null
-  labelFont: Font | null = null
-  sizeFont: Font | null = null
-  /** Inter SemiBold at 11 px, which Figma sets the padding and gap values on the canvas in. */
-  valueFont: Font | null = null
-  sectionTitleFont: Font | null = null
-  componentLabelFont: Font | null = null
-  fontProvider: TypefaceFontProvider | null = null
-  fontsLoaded = false
-  fontGeneration = 0
-  onFontResolutionSettled:
-    | ((snapshot: FontResolutionSnapshot, nodeIds: readonly string[]) => void)
-    | undefined
-  pendingFontNodes = new Map<string, PendingFontNode>()
-  textPictureGenerations = new Map<string, { data: Uint8Array; generation: number }>()
-  readonly transientPreviews = new Map<string, TransientCanvasPreview>()
-  imageCache = createImageCache()
-  /**
-   * Images drawn in place of stored ones while they play, such as a shader's live frames, each
-   * with the surface whose GL context holds its texture.
-   */
-  readonly liveImages = new Map<string, { image: Image; surface: Surface }>()
-  viewportImageRendering = false
-  imageMemoryGraph: SceneGraph | null = null
-  imageMemoryPage: string | null = null
-  onImagePreviewReady: ((hash: string) => void) | null = null
-  readonly imagePreviews = new ImagePreviewCache((hash) => {
-    this.decodedPreviewHashes.add(hash)
-    this.onImagePreviewReady?.(hash)
-  })
-  /**
-   * Device pixels per world unit the drawing in progress is for: the viewport's scale in a frame,
-   * a tile's level while it records. Image previews are chosen at this detail, so a picture that
-   * drew them is recorded again when a finer tile asks for more.
-   */
-  imageDetailScale = 1
-  /** Whether the drawing in progress drew an image preview; chunk pictures note it to re-record. */
-  previewsDrawn = false
-  /** Nodes whose image fills drew each image while previews were on, for redrawing them sharper. */
-  readonly imageFillUsers = new Map<string, Set<string>>()
-  /** Images whose sharper preview has decoded since the last frame. */
-  private readonly decodedPreviewHashes = new Set<string>()
-  nodePaths = new NodePathCaches()
-  /** Path-text glyph silhouettes (stroke-and-union, font units) keyed by blob hash + relative weight. */
-  glyphSilhouetteCache = createGlyphSilhouetteCache()
-  derivedGlyphPathCache = createDerivedGlyphPathCache()
-  derivedDecorationCache: SavedDecorationCache = new WeakMap()
-  /** Images of the emoji saved text draws, by what drew them and the emoji. */
-  emojiImageCache = createEmojiImageCache()
-  scenePicture: SkPicture | null = null
-  scenePictureVersion = -1
-  scenePictureFontGeneration = -1
-  scenePicturePositionPreviewVersion = -1
-  scenePicturePageId: string | null = null
-  navigationPhase: EditorState['navigation']['phase'] = 'idle'
-  navigationGeneration = 0
-  /** Selections draw handles to drag; off while the canvas offers no edits. */
-  editHandles = true
-  /**
-   * What an empty sticky note shows while it is edited on this canvas, in the interface language;
-   * null for a canvas that draws only the document, such as an export.
-   */
-  stickyPlaceholder: string | null = null
-  /** What an empty connector label shows while it is typed into; null draws nothing. */
-  connectorLabelPlaceholder: string | null = null
-  tracksSceneSettlement = true
-  /** Colour space this renderer's surface presents; colours convert into it when painting. */
-  presentationColorSpace: RenderColorSpace = 'srgb'
-  tiledScenePending = false
-  /** Tile work beyond the visible tiles remains; the frame loop keeps idle frames coming. */
-  tiledSceneBackgroundPending = false
-  tiledSceneCovered = false
-  lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
-  nodePictureCache = new Map<string, SkPicture | null>()
-  nodePictureCacheGenerations = new Map<string, number>()
-  readonly labelCache = new LabelCache()
-  readonly labelParagraphCache = new LabelParagraphCache(undefined, undefined, {
-    onMissingGlyphs: (missing) => RendererFonts.resolveLabelFontCoverage(this, missing)
-  })
-  readonly textPreparationCache = new TextPreparationCache()
-  readonly tiledScene = new TiledSceneController()
-  readonly profiler: RenderProfiler
-
   declare rulerBgPaint: Paint
   declare rulerTickPaint: Paint
   declare rulerTextPaint: Paint
@@ -236,41 +125,99 @@ export class SkiaRenderer {
   declare penVertexFill: Paint
   declare penVertexStroke: Paint
   declare nodeEditPaints: NodeEditPaints
+  readonly shaders = createCompiledShaders()
+  imageFilterCache = createImageFilterCache()
+  maskFilterCache = createMaskFilterCache()
+  /** Dashes the overlay pass draws with, kept between frames. */
+  readonly dashEffects = createDashEffectCache()
+  private readonly colors = new Map<string, Float32Array>()
+  private readonly tmpColor = new Float32Array(4)
+  private readonly tmpRect = new Float32Array(4)
 
+  // The viewport and page being drawn.
   panX = 0
   panY = 0
   zoom = 1
   dpr = 1
   viewportWidth = 0
   viewportHeight = 0
-  showRulers = true
+  worldViewport = { x: 0, y: 0, w: 0, h: 0 }
+  pageId: string | null = null
   pageColor = CANVAS_BG_COLOR
+  showRulers = true
   rulerTheme: RulerTheme | null = null
   /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */
   selectionTheme: SelectionTheme = DEFAULT_SELECTION_THEME
-  pageId: string | null = null
+  /** Colour space this renderer's surface presents; colours convert into it when painting. */
+  presentationColorSpace: RenderColorSpace = 'srgb'
+  navigationPhase: EditorState['navigation']['phase'] = 'idle'
+  navigationGeneration = 0
+  tracksSceneSettlement = true
+  /** Scene geometry shared by everything drawn in one frame; `pipeline` starts each frame afresh. */
+  frameGeometry: {
+    graph: SceneGraph
+    preview: RotationPreview | null
+    geometry: SceneGeometry
+  } | null = null
+  /** Layers drawn and skipped in the frame or recording in progress. */
+  readonly drawCounts = { nodes: 0, culled: 0 }
+  boundEffectLayersToViewport = false
+
+  // Fonts: the document's provider and the faces the chrome draws with.
+  fontProvider: TypefaceFontProvider | null = null
+  fontsLoaded = false
+  fontGeneration = 0
+  onFontResolutionSettled:
+    | ((snapshot: FontResolutionSnapshot, nodeIds: readonly string[]) => void)
+    | undefined
+  readonly chromeFonts = createChromeFonts()
+  /** Which text waits for fonts, and what each layer's fonts answered for this generation. */
+  readonly textFonts = createTextFontState()
+  readonly textPreparationCache = new TextPreparationCache()
+  readonly textCaches = createTextCaches()
+  /** Label widths by font and text, so chrome measures a label once. */
+  readonly glyphWidths = new WeakMap<Font, Map<string, number>>()
+  readonly labelCache = new LabelCache()
+  readonly labelParagraphCache = new LabelParagraphCache(undefined, undefined, {
+    onMissingGlyphs: (missing) => RendererFonts.resolveLabelFontCoverage(this, missing)
+  })
+
+  // Images and the geometry, pictures, and tiles that hold the drawn scene.
+  readonly images = createRendererImages()
+  viewportImageRendering = false
+  nodePaths = new NodePathCaches()
+  /** Each node's picture of itself with its effects, good for the font generation it was recorded at. */
+  readonly nodePictures = new Map<string, NodePictureEntry>()
+  /** The one picture of the whole page a single-canvas consumer draws from. */
+  readonly wholeScene = createWholeScenePicture()
+  readonly tiledScene = new TiledSceneController()
+  tiledScenePending = false
+  /** Tile work beyond the visible tiles remains; the frame loop keeps idle frames coming. */
+  tiledSceneBackgroundPending = false
+  tiledSceneCovered = false
+  readonly transientPreviews = new Map<string, TransientCanvasPreview>()
+
+  // What the overlays show and leave behind for hit testing.
+  /** Selections draw handles to drag; off while the canvas offers no edits. */
+  editHandles = true
+  /**
+   * What an empty sticky note shows while it is edited on this canvas, in the interface language;
+   * null for a canvas that draws only the document, such as an export.
+   */
+  stickyPlaceholder: string | null = null
+  /** What an empty connector label shows while it is typed into; null draws nothing. */
+  connectorLabelPlaceholder: string | null = null
   /** Issue markers placed in the last overlay pass; hit testing reads the same layout. */
   issueMarkers: PlacedIssueMarker[] = []
   /** Status labels drawn in the last label pass; clicks on them open the status menu. */
   statusLabels: PlacedStatusLabel[] = []
   /** Screen rectangles of UI floating over this canvas, which overlays such as edge pins avoid. */
   overlayObstacles: readonly Rect[] = []
-
-  boundEffectLayersToViewport = false
-  worldViewport = { x: 0, y: 0, w: 0, h: 0 }
-  _nodeCount = 0
-  _culledCount = 0
-  _flashes: Array<{ nodeId: string; startTime: number }> = []
-  _aiActiveNodes: Set<string> = new Set()
-  _aiDoneFlashes: Array<{ nodeId: string; startTime: number }> = []
-
-  readonly DEFAULT_FONT_SIZE = DEFAULT_FONT_SIZE
-  readonly COMPONENT_SET_BORDER_WIDTH = COMPONENT_SET_BORDER_WIDTH
-  readonly COMPONENT_SET_DASH = COMPONENT_SET_DASH
-  readonly COMPONENT_SET_DASH_GAP = COMPONENT_SET_DASH_GAP
+  /** Layers flashing for attention and those the AI is working on or just finished. */
+  readonly feedback = createFeedbackMarks()
 
   color4f(r: number, g: number, b: number, a: number): Float32Array {
-    const c = this._tmpColor
+    const c = this.tmpColor
     c[0] = r
     c[1] = g
     c[2] = b
@@ -279,7 +226,7 @@ export class SkiaRenderer {
   }
 
   ltrb(l: number, t: number, r: number, b: number): Float32Array {
-    const rc = this._tmpRect
+    const rc = this.tmpRect
     rc[0] = l
     rc[1] = t
     rc[2] = r
@@ -450,9 +397,9 @@ export class SkiaRenderer {
   }
 
   noteImageFillUser(hash: string, nodeId: string): void {
-    const users = this.imageFillUsers.get(hash)
+    const users = this.images.fillUsers.get(hash)
     if (users) users.add(nodeId)
-    else this.imageFillUsers.set(hash, new Set([nodeId]))
+    else this.images.fillUsers.set(hash, new Set([nodeId]))
   }
 
   /**
@@ -460,14 +407,14 @@ export class SkiaRenderer {
    * and tiles are invalidated together, so one frame picks up every preview decoded in between.
    */
   flushDecodedPreviews(graph: SceneGraph): void {
-    if (this.decodedPreviewHashes.size === 0) return
-    for (const hash of this.decodedPreviewHashes) {
-      for (const nodeId of this.imageFillUsers.get(hash) ?? []) {
+    if (this.images.decodedPreviewHashes.size === 0) return
+    for (const hash of this.images.decodedPreviewHashes) {
+      for (const nodeId of this.images.fillUsers.get(hash) ?? []) {
         this.invalidateNodePicture(nodeId)
         this.tiledScene.invalidateNode(nodeId, graph)
       }
     }
-    this.decodedPreviewHashes.clear()
+    this.images.decodedPreviewHashes.clear()
   }
 
   /**
@@ -524,7 +471,7 @@ export class SkiaRenderer {
     source: LiveImageSource | null,
     nodeIds: Iterable<string> = []
   ): boolean {
-    const live = this.liveImages.get(hash)
+    const live = this.images.live.get(hash)
     // A texture made on a surface since replaced has no context left to update or free it in.
     const current = live?.surface === this.surface ? live.image : null
     if (
@@ -536,15 +483,15 @@ export class SkiaRenderer {
       this.surface.updateTextureFromSource(current, textureSource(source))
     } else {
       current?.delete()
-      this.liveImages.delete(hash)
+      this.images.live.delete(hash)
       const image = source && this.surface.makeImageFromTextureSource(textureSource(source))
-      if (image) this.liveImages.set(hash, { image, surface: this.surface })
+      if (image) this.images.live.set(hash, { image, surface: this.surface })
     }
     for (const id of nodeIds) {
       this.invalidateNodePicture(id)
       this.tiledScene.invalidateNode(id)
     }
-    return this.liveImages.has(hash)
+    return this.images.live.has(hash)
   }
 
   /**
@@ -552,17 +499,17 @@ export class SkiaRenderer {
    * rendered again, and redraws whatever showed it. Previews notice new bytes themselves.
    */
   forgetImage(hash: string): void {
-    const keys = Array.from(this.imageCache.entries(), ([key]) => key)
+    const keys = Array.from(this.images.cache.entries(), ([key]) => key)
     for (const key of keys) {
-      if (key === hash || key.startsWith(`${hash}:`)) this.imageCache.delete(key)
+      if (key === hash || key.startsWith(`${hash}:`)) this.images.cache.delete(key)
     }
     this.invalidateAllPictures()
   }
 
   /** Forgets a layer that left the document: its drawing and the fonts it was waiting for. */
   forgetNode(nodeId: string): void {
-    this.pendingFontNodes.delete(nodeId)
-    this.textPictureGenerations.delete(nodeId)
+    this.textFonts.pending.delete(nodeId)
+    this.textFonts.pictureGenerations.delete(nodeId)
     this.invalidateNodePicture(nodeId)
   }
 
@@ -611,7 +558,7 @@ export class SkiaRenderer {
       canvasY,
       this.zoom,
       this.pageId ?? graph.rootId,
-      this.sectionTitleFont,
+      this.chromeFonts.sectionTitle,
       this.labelCache,
       labelHitOptions(this, graph, preview)
     )
@@ -629,7 +576,7 @@ export class SkiaRenderer {
       canvasY,
       this.zoom,
       this.pageId ?? graph.rootId,
-      this.componentLabelFont,
+      this.chromeFonts.componentLabel,
       this.labelCache,
       labelHitOptions(this, graph, preview)
     )
@@ -647,7 +594,7 @@ export class SkiaRenderer {
       canvasY,
       this.zoom,
       this.pageId ?? graph.rootId,
-      this.labelFont,
+      this.chromeFonts.label,
       this.labelCache,
       labelHitOptions(this, graph, preview)
     )
@@ -700,15 +647,9 @@ export class SkiaRenderer {
     return RenderText.measureTextNode(this, node, maxWidth)
   }
 
-  /** Readiness of a text's fonts, found once per layer per font generation; a change to the layer drops it. */
-  readonly textReadiness = new Map<
-    string,
-    { node: SceneNode; generation: number; readiness: RenderText.NodeFontReadiness }
-  >()
-
   nodeFontReadiness(node: SceneNode): RenderText.NodeFontReadiness {
     if (node.type !== 'TEXT') return 'ready'
-    const cached = this.textReadiness.get(node.id)
+    const cached = this.textFonts.readiness.get(node.id)
     if (cached?.node === node && cached.generation === this.fontGeneration) {
       return cached.readiness
     }
@@ -716,7 +657,7 @@ export class SkiaRenderer {
     // A text waiting on a demand another text raised is told nothing when that demand settles,
     // so a pending reading is asked again each frame until the fonts arrive or give up.
     if (readiness !== 'pending') {
-      this.textReadiness.set(node.id, { node, generation: this.fontGeneration, readiness })
+      this.textFonts.readiness.set(node.id, { node, generation: this.fontGeneration, readiness })
     }
     return readiness
   }
@@ -830,8 +771,6 @@ export class SkiaRenderer {
       return null
     }
   }
-
-  destroyed: boolean = false
 
   /**
    * The scene walk's recursion and the geometry and effect caches, reached through the renderer:

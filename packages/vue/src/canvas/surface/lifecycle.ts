@@ -124,8 +124,8 @@ export function createCanvasSurfaceManager({
 
     const glCtx = canvas.getContext('webgl2') ?? null
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
-    state.renderer.onImagePreviewReady = () => renderLoop.markDirty()
-    state.renderer.imagePreviews.setDecoder(createImagePreviewDecoder())
+    state.renderer.images.onPreviewReady = () => renderLoop.markDirty()
+    state.renderer.images.previews.setDecoder(createImagePreviewDecoder())
     state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
     state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
     showPlaceholders(state.renderer)

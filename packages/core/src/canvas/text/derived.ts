@@ -32,10 +32,10 @@ export function createDerivedGlyphPathCache(): ResourceCache<Uint8Array, Path> {
 
 /** A saved glyph's outline, decoded once and borrowed from the renderer's cache. */
 function derivedGlyphPath(r: SkiaRenderer, blob: Uint8Array): Path {
-  const cached = r.derivedGlyphPathCache.get(blob)
+  const cached = r.textCaches.derivedGlyphPaths.get(blob)
   if (cached) return cached
   const path = geometryBlobToPath(r.ck, blob, 'NONZERO')
-  r.derivedGlyphPathCache.set(blob, path)
+  r.textCaches.derivedGlyphPaths.set(blob, path)
   return path
 }
 
@@ -102,7 +102,7 @@ function getGlyphSilhouette(
   const blob = glyph.commandsBlob
   const relativeWeight = stroke.weight / glyph.fontSize
   const key = `${fromUint8Array(blob)}:${relativeWeight.toFixed(5)}`
-  const cached = r.glyphSilhouetteCache.peek(key)
+  const cached = r.textCaches.glyphSilhouettes.peek(key)
   if (cached) return { path: cached, cached: true }
 
   const base = geometryBlobToPath(r.ck, blob, 'NONZERO')
@@ -126,8 +126,9 @@ function getGlyphSilhouette(
   stroked?.delete()
   outline.delete()
   // Preserve reset-at-capacity for stroke-weight sweeps; the cache owns path disposal.
-  if (r.glyphSilhouetteCache.size >= MAX_GLYPH_SILHOUETTES) r.glyphSilhouetteCache.clear()
-  r.glyphSilhouetteCache.set(key, merged)
+  if (r.textCaches.glyphSilhouettes.size >= MAX_GLYPH_SILHOUETTES)
+    r.textCaches.glyphSilhouettes.clear()
+  r.textCaches.glyphSilhouettes.set(key, merged)
   return { path: merged, cached: true }
 }
 
@@ -365,7 +366,12 @@ export function drawDerivedText(
   // Decorations follow horizontal lines; path text has none.
   if (snapBaselines && hasDecoration(node)) {
     const glyphs = node.derivedTextGlyphs
-    const rects = savedTextDecorationRects(r.derivedDecorationCache, node, glyphs, r.fontGeneration)
+    const rects = savedTextDecorationRects(
+      r.textCaches.derivedDecorations,
+      node,
+      glyphs,
+      r.fontGeneration
+    )
     drawTextDecorations(r.ck, canvas, rects, r.fillPaint)
   }
   return true

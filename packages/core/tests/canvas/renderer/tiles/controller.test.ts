@@ -363,7 +363,7 @@ describe('tiles with image previews', () => {
     renderer.zoom = 1
     renderer.navigationPhase = 'idle'
     renderer.viewportImageRendering = true
-    renderer.imageMemoryGraph = graph
+    renderer.images.memoryGraph = graph
     let release: (() => void) | undefined
     const decoded = new Promise<void>((resolve) => {
       release = resolve
@@ -377,9 +377,9 @@ describe('tiles with image previews', () => {
       },
       destroy: mock()
     }
-    renderer.imagePreviews.setDecoder(decoder)
+    renderer.images.previews.setDecoder(decoder)
     const ready: string[] = []
-    renderer.onImagePreviewReady = (readyHash) => ready.push(readyHash)
+    renderer.images.onPreviewReady = (readyHash) => ready.push(readyHash)
     try {
       const canvas = surface.getCanvas()
       canvas.clear(ck.WHITE)
@@ -390,7 +390,7 @@ describe('tiles with image previews', () => {
       expect(result.covered).toBe(true)
       // The preview is still decoding, so the image draws nothing yet.
       expect(centerPixel(renderer)).toEqual([255, 255, 255, 255])
-      expect(renderer.imageFillUsers.get(hash)).toEqual(new Set([node.id]))
+      expect(renderer.images.fillUsers.get(hash)).toEqual(new Set([node.id]))
 
       expectDefined(release, 'release')()
       await decoded
@@ -412,7 +412,7 @@ describe('tiles with image previews', () => {
 
       // Four times closer, the tiles record the chunk again with a preview for their level.
       renderer.zoom = 4
-      renderer.imageDetailScale = 4
+      renderer.images.detailScale = 4
       result = controller.renderFrame(renderer, canvas, graph, 1, 1)
       for (let frame = 0; frame < 10 && result.pending; frame++) {
         result = controller.renderFrame(renderer, canvas, graph, 1, 1)
