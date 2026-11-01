@@ -234,18 +234,12 @@ describe('model provider registry', () => {
   })
 
   test('sends WebP tool images only where the provider itself documents WebP input', () => {
-    expect(providerTakesWebPImages('anthropic')).toBe(true)
     // An endpoint behind a compatible API, a router, or Cloud may not decode WebP.
-    for (const providerID of [
-      'anthropic-compatible',
-      'openai-compatible',
-      'openrouter',
-      'openpencil',
-      'acp:claude-code',
-      'harness:pi'
-    ] as const) {
-      expect(providerTakesWebPImages(providerID)).toBe(false)
+    const documented = new Set<AIProviderID>(['anthropic', 'openai', 'google', 'deepseek'])
+    for (const { id } of AI_PROVIDERS) {
+      expect({ id, webp: providerTakesWebPImages(id) }).toEqual({ id, webp: documented.has(id) })
     }
+    expect(providerTakesWebPImages('acp:claude-code')).toBe(false)
   })
 })
 
