@@ -486,6 +486,7 @@ export function createEditor(options?: EditorOptions) {
         nodes.updateNodeWithUndo(target, next, label)
       ),
     getTextSelectionStyle: textSelectionStyle.selectionStyle,
+    layerChanges: textSelectionStyle.layerChanges,
 
     // Alignment (align, flip, rotate)
     ...alignment,
