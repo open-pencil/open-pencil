@@ -420,7 +420,7 @@ export function figJamLayerColorFields(
 export function figJamLayerColorName(
   node: Pick<SceneNode, 'type' | 'fills' | 'strokes'>
 ): FigJamColorName | null {
-  // The first paint the canvas draws: a hidden one shows no colour.
+  // The first paint the canvas draws: a hidden or fully transparent one shows no colour.
   const paints: Fill[] = colorsStroke(node) ? node.strokes : node.fills
-  return figJamColorName(paints.find((paint) => paint.visible)?.color)
+  return figJamColorName(paints.find((paint) => paint.visible && paint.opacity > 0)?.color)
 }

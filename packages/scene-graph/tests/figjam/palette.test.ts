@@ -114,9 +114,9 @@ describe("FigJam's shape colours", () => {
     expect(hexes(shape.strokes)).toEqual(['#3dadff'])
   })
 
-  test('a layer shows the colour of its first visible paint', () => {
-    const paint = (name: 'red' | 'blue', visible: boolean) => ({ type: 'SOLID' as const, color: figJamColor(name), opacity: 1, visible })
-    const fills = [paint('red', false), paint('blue', true)]
+  test('a layer shows the colour of its first paint the canvas draws', () => {
+    const paint = (name: 'red' | 'green' | 'blue', visible: boolean, opacity = 1) => ({ type: 'SOLID' as const, color: figJamColor(name), opacity, visible })
+    const fills = [paint('red', false), paint('green', true, 0), paint('blue', true)]
     expect(figJamLayerColorName({ type: 'RECTANGLE', fills, strokes: [] })).toBe('blue')
   })
 
