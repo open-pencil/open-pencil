@@ -148,8 +148,11 @@ const newDesignTarget = computed<{ location: StorageLocation; label: string } | 
 const storagePreviewURL = storageWorkspace.previewURL
 const vStoragePreview = storageWorkspace.previewDirective
 const normalizedQuery = computed(() => query.value.trim().toLocaleLowerCase(locale.value))
+const searchedRecentFiles = computed(() =>
+  matchingRecentFiles(documents.value, normalizedQuery.value, locale.value)
+)
 const filteredRecentFiles = computed(() =>
-  matchingRecentFiles(documents.value, normalizedQuery.value, locale.value).filter((document) =>
+  searchedRecentFiles.value.filter((document) =>
     ofKind(recentDocumentKind(document), kindFilter.value)
   )
 )
@@ -161,11 +164,12 @@ const filteredStorageDocuments = computed(() =>
       document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
   )
 )
+// Recent files counts matches before its kind filter, so its kind control stays to switch kinds.
 const noSearchMatches = computed(() => {
   if (!normalizedQuery.value) return false
   return places.location.value.kind === 'storage'
     ? filteredStorageDocuments.value.length === 0
-    : filteredRecentFiles.value.length === 0
+    : searchedRecentFiles.value.length === 0
 })
 
 async function openRecent(document: RecentDocument): Promise<void> {

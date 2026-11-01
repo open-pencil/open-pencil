@@ -92,6 +92,7 @@ describe('recent documents', () => {
       ['screens.fig', 'design'],
       ['plan.fig', 'board']
     ])
+    expect(recentFiles.value.map(recentDocumentKind)).toEqual(['board', 'design', 'board'])
   })
 
   test('reads the kind of files recorded before kinds were', () => {
