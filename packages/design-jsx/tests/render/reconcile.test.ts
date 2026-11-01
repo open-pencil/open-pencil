@@ -114,4 +114,33 @@ describe('reconcileRenderedLayers', () => {
     expect(graph.getNode(one)?.name).toBe('One again')
     expect(graph.getNode(two)).toBeUndefined()
   })
+
+  test('points rendered instances and connectors at the layers kept in place', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const render = () => {
+      const card = graph.createNode('COMPONENT', page, { name: 'Card' })
+      const copy = graph.createNode('INSTANCE', page, { name: 'Card copy', componentId: card.id })
+      const end = (nodeId: string) => ({
+        nodeId,
+        magnet: 'AUTO' as const,
+        position: { x: 0, y: 0 }
+      })
+      const link = graph.createNode('CONNECTOR', page, {
+        name: 'Link',
+        connectorStart: end(card.id),
+        connectorEnd: end(copy.id)
+      })
+      return [card.id, copy.id, link.id]
+    }
+    const before = render()
+    const after = render()
+
+    const { rootIds } = reconcileRenderedLayers(graph, before, after)
+
+    const [card, copy, link] = rootIds.map((id) => graph.getNode(id))
+    expect(card?.id).toBe(before[0])
+    expect(copy?.componentId).toBe(card?.id)
+    expect([link?.connectorStart?.nodeId, link?.connectorEnd?.nodeId]).toEqual([card?.id, copy?.id])
+  })
 })

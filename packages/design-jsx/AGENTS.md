@@ -4,7 +4,7 @@ OpenPencil's design JSX: the elements (`Frame`, `Text`, …) and the trees they 
 
 Rules:
 
-- Depend only on `@open-pencil/scene-graph` and `@open-pencil/emit`. Engine work the renderer needs — icon lookup, SVG path conversion, vector node creation, and layout — comes in through `DesignJSXServices` (`src/services.ts`). Core binds them in `packages/core/src/design-jsx/renderer.ts` and exports the bound `renderJSX` and `renderTree` from `@open-pencil/core/design-jsx`.
+- Depend only on `@open-pencil/scene-graph` and `@open-pencil/emit`. Engine work the renderer needs — icon lookup, SVG path conversion, vector node creation, and layout — comes in through `DesignJSXServices` (`src/services.ts`). Core binds them in `packages/core/src/design-jsx/renderer.ts` and exports the bound `renderJSX`, `renderTree`, and `renderRoots` from `@open-pencil/core/design-jsx`.
 - The `layout` service receives the rendered roots. A caller that moves them into place afterwards passes `deferLayout` and lays them out once (`packages/core/src/design-jsx/placement.ts`).
 - `src/streaming/` parses JSX as it streams in and projects the static subset into trees without evaluating expressions; Core's `packages/core/src/design-jsx/preview/` stages and records those trees on the canvas.
 - Each element is one entry in `DESIGN_JSX_ELEMENTS` (`src/elements/index.ts`): its name, the layer type it builds and the types it writes, and its props. The runtime bindings, renderer, export tag, unsupported-prop warnings, schema, and reference read it; do not add a parallel tag or type map (`tests/elements/index.test.ts`).

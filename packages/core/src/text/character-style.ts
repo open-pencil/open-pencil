@@ -1,5 +1,5 @@
-import { omit, pick } from 'es-toolkit/object'
-import { isEqual } from 'es-toolkit/predicate'
+import { omit, omitBy, pick } from 'es-toolkit/object'
+import { isEmptyObject, isEqual, isUndefined } from 'es-toolkit/predicate'
 
 import {
   TEXT_BINDABLE_FIELDS,
@@ -140,12 +140,11 @@ function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[
   const base = nodeStyle(node)
   const result: StyleRun[] = []
   for (const run of runs) {
-    const style = omit(
-      run.style,
-      CHARACTER_STYLE_KEYS.filter(
-        (key) => run.style[key] !== undefined && isEqual(run.style[key], base[key])
-      )
+    const repeated = CHARACTER_STYLE_KEYS.filter(
+      (key) => run.style[key] !== undefined && isEqual(run.style[key], base[key])
     )
+    // A key a copy left undefined overrides nothing either.
+    const style = omitBy(omit(run.style, repeated), isUndefined)
     if (Object.keys(style).length === 0) continue
     const previous = result.at(-1)
     if (
@@ -261,4 +260,27 @@ export function textStyleChanges(
     ...changes,
     styleRuns: styleRunsWithPatch({ ...updated, styleRuns }, 0, node.text.length, sized)
   }
+}
+
+/**
+ * A change to a text layer as a whole, such as from the design panel: a style it sets applies to
+ * every character, as Figma's node setters do, so no range keeps its own value of it.
+ */
+export function layerTextStyleChanges(
+  node: SceneNode,
+  changes: Partial<SceneNode>
+): Partial<SceneNode> {
+  const style = pick(changes, TEXT_STYLE_KEYS)
+  if (node.type !== 'TEXT' || node.styleRuns.length === 0 || isEmptyObject(style)) return changes
+  return { ...changes, ...textStyleChanges(node, style) }
+}
+
+/**
+ * The style a text layer shows as its own: its first character's, which a range may set; the
+ * panel shows it, as it shows the first selected character's while text is edited.
+ */
+export function shownTextStyle(node: SceneNode): Partial<SceneNode> | null {
+  if (node.type !== 'TEXT' || node.styleRuns.length === 0 || node.text.length === 0) return null
+  const [style] = characterStyles(node, 0, 1)
+  return pick(style, TEXT_STYLE_KEYS)
 }

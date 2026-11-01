@@ -13,14 +13,18 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
-/** Right-clicking the toolbar offers its Settings page. */
+/**
+ * Right-clicking the toolbar offers its Settings page, unless the toolbar is `disabled` for
+ * customizing, as a board's fixed one is.
+ */
+const { disabled = false } = defineProps<{ disabled?: boolean }>()
 const { settings } = useI18n()
 const menu = useMenuUI({ content: 'w-48', item: 'justify-start gap-2' })
 </script>
 
 <template>
   <ContextMenuRoot>
-    <ContextMenuTrigger as-child>
+    <ContextMenuTrigger as-child :disabled="disabled">
       <slot />
     </ContextMenuTrigger>
     <ContextMenuPortal>

@@ -13,6 +13,7 @@ export type EditorCommandId =
   | 'selection.delete'
   | 'selection.group'
   | 'selection.frameSelection'
+  | 'selection.wrapInSection'
   | 'selection.ungroup'
   | 'selection.createComponent'
   | 'selection.createComponentSet'

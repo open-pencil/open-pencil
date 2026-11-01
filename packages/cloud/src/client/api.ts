@@ -29,7 +29,7 @@ import {
   type CreateInvitationContinuationInput,
   type InvitationContinuation,
   type CommitUploadRequest,
-  type CreateDocumentInput,
+  type CreateDocumentRequest,
   type CreateDocumentInvitationInput,
   type CreateDocumentShareInput,
   type CreateUploadInput,
@@ -192,12 +192,12 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     },
     async createDocument(
       workspaceId: string,
-      input: CreateDocumentInput
+      input: CreateDocumentRequest
     ): Promise<DocumentSummary> {
       const response = await parseResponse(
         client.workspaces[':workspaceId'].documents.$post({
           param: { workspaceId },
-          json: input
+          json: { ...input, kind: input.kind ?? 'design' }
         }),
         documentResponseSchema,
         options.onDiagnostic

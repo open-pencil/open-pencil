@@ -9,6 +9,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'acceptingParent',
   'acceptsChildren',
   'canDistributeNodes',
+  'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
   'getChildren',

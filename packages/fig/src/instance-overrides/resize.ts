@@ -2,6 +2,7 @@ import type { Vector } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import type { InstanceOccurrence } from './occurrence/types'
+import { growInheritedOutlineScale } from './scale/outline'
 import { uniformScaleOf } from './types'
 
 export function applyPlacedConstraints(
@@ -65,6 +66,8 @@ export function resizeFreeformOccurrence(
     )
     const size = { x: x.size, y: y.size }
     resizeFreeformOccurrence(child, props.size, size)
+    if (props.type === 'VECTOR' && props.size.x > 0 && props.size.y > 0)
+      growInheritedOutlineScale(child, size.x / props.size.x, size.y / props.size.y)
     props.size = size
     props.transform = { ...transform, m02: x.position, m12: y.position }
   }
