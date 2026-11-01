@@ -484,3 +484,79 @@ test('a cancelled axis edit on selected characters puts back their own axes', as
     renderer.destroy()
   }
 })
+
+test('an axis set on a whole text keeps the other axes a range sets', () => {
+  const editor = createEditor()
+  const width = { start: 0, length: 5, style: { fontVariations: [{ axis: 'wdth', value: 80 }] } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello',
+    styleRuns: [width]
+  })
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  const node = () => editor.graph.getNode(text.id)
+  try {
+    axes.setAxis('wght', 600)
+    expect(node()?.fontVariations).toEqual([{ axis: 'wght', value: 600 }])
+    expect(node()?.styleRuns).toEqual([
+      {
+        start: 0,
+        length: 5,
+        style: {
+          fontVariations: [
+            { axis: 'wdth', value: 80 },
+            { axis: 'wght', value: 600 }
+          ]
+        }
+      }
+    ])
+    editor.undoAction()
+    expect(node()?.fontVariations).toEqual([])
+    expect(node()?.styleRuns).toEqual([width])
+  } finally {
+    scope.stop()
+    editor.dispose()
+  }
+})
+
+test('a cancelled axis preview that outlived text editing puts back the layer and its ranges', async () => {
+  await fontManager.loadFont('Inter', 'Regular')
+  const ck = await initCanvasKit()
+  const surface = ck.MakeSurface(200, 200)
+  if (!surface) throw new Error('Expected a surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  const editor = createEditor()
+  editor.setCanvasKit(ck, renderer)
+  await renderer.loadFonts()
+  const range = { start: 6, length: 5, style: { fontSize: 30 } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello world',
+    fontFamily: 'Inter',
+    width: 200,
+    height: 20,
+    styleRuns: [range]
+  })
+  editor.startTextEditing(text.id)
+  const state = editor.textEditor?.state
+  if (!state) throw new Error('Expected a text editor')
+  state.selectionAnchor = 6
+  state.cursor = 11
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  const node = () => editor.graph.getNode(text.id)
+  try {
+    axes.previewAxis('wght', 500)
+    editor.commitTextEdit()
+    axes.previewAxis('wght', 600)
+    expect(node()?.fontVariations).toEqual([{ axis: 'wght', value: 600 }])
+    axes.cancelAxis()
+    expect(node()?.fontVariations).toEqual([])
+    expect(node()?.styleRuns).toEqual([range])
+  } finally {
+    scope.stop()
+    editor.dispose()
+    renderer.destroy()
+  }
+})
