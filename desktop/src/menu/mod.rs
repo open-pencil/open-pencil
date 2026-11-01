@@ -73,6 +73,33 @@ fn app_menu_file() -> tauri::Result<AppMenuFile> {
     ))?)
 }
 
+/// Whether `accelerator` holds a modifier other than Shift: Ctrl, Alt, Super, or Cmd.
+fn has_command_modifier(accelerator: &str) -> bool {
+    let parts: Vec<&str> = accelerator.split('+').collect();
+    // The last part is the key itself, which may be `+` as in `CmdOrCtrl++`.
+    parts[..parts.len().saturating_sub(1)]
+        .iter()
+        .any(|part| !part.trim().is_empty() && !part.trim().eq_ignore_ascii_case("shift"))
+}
+
+/// The accelerator an item registers natively, if any.
+///
+/// GTK activates a window's accelerators before the focused widget sees the key, so on Linux a
+/// menu accelerator without Ctrl, Alt, or Super takes typed characters, Backspace, and paging
+/// keys away from text fields in the WebView. Those, and copy, cut, and paste, whose native
+/// commands need X11 automation that Wayland lacks, are left to the frontend's shortcuts, which
+/// skip text fields (`src/app/shell/keyboard/registry.ts`).
+fn native_accelerator(entry: &MenuEntry) -> Option<&str> {
+    let accelerator = entry.accelerator.as_deref()?;
+    if cfg!(target_os = "linux") {
+        let clipboard = matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
+        if clipboard || !has_command_modifier(accelerator) {
+            return None;
+        }
+    }
+    Some(accelerator)
+}
+
 /// The macOS application menu holds Settings…, so the schema's copy is left out there, along
 /// with a separator it would leave at the end of its menu.
 fn platform_entries<'a>(items: &'a [MenuEntry], features: &[String]) -> Vec<&'a MenuEntry> {
@@ -151,7 +178,7 @@ fn build_submenu<R: tauri::Runtime>(
             if let Some(id) = &entry.id {
                 item = item.id(id);
             }
-            if let Some(accelerator) = &entry.accelerator {
+            if let Some(accelerator) = native_accelerator(entry) {
                 item = item.accelerator(accelerator);
             }
             builder = builder.item(&item.build(app)?);
@@ -162,15 +189,8 @@ fn build_submenu<R: tauri::Runtime>(
         if let Some(id) = &entry.id {
             item = item.id(id);
         }
-        // On Linux, muda's predefined edit commands depend on optional X11
-        // automation and do not work on Wayland. Leave these accelerators to the
-        // WebView instead, which preserves native input and canvas paste events.
-        let webview_handles_accelerator = cfg!(target_os = "linux")
-            && matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
-        if !webview_handles_accelerator {
-            if let Some(accelerator) = &entry.accelerator {
-                item = item.accelerator(accelerator);
-            }
+        if let Some(accelerator) = native_accelerator(entry) {
+            item = item.accelerator(accelerator);
         }
         builder = builder.item(&item.build(app)?);
     }
@@ -387,4 +407,58 @@ pub fn set_native_menu_features<R: tauri::Runtime>(
     features: Vec<String>,
 ) -> Result<(), String> {
     update_app_menu(&app, |inputs| inputs.features = features)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(id: &str, accelerator: &str) -> MenuEntry {
+        MenuEntry {
+            r#type: None,
+            id: Some(id.to_owned()),
+            label: Some(id.to_owned()),
+            accelerator: Some(accelerator.to_owned()),
+            checkbox: false,
+            feature: None,
+            sub: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn counts_every_modifier_but_shift_as_a_command_modifier() {
+        for accelerator in ["CmdOrCtrl+Z", "Ctrl+Tab", "Alt+W", "Super+K", "CmdOrCtrl++"] {
+            assert!(has_command_modifier(accelerator), "{accelerator}");
+        }
+        for accelerator in ["N", "[", "Backspace", "PageUp", "Shift+1", "Shift+'", "+"] {
+            assert!(!has_command_modifier(accelerator), "{accelerator}");
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn leaves_keys_that_text_fields_type_to_the_frontend_on_linux() {
+        for (id, accelerator) in [
+            ("selection.delete", "Backspace"),
+            ("selection.sendToBack", "["),
+            ("view.zoomNextFrame", "N"),
+            ("view.zoomFit", "Shift+1"),
+            ("copy", "CmdOrCtrl+C"),
+        ] {
+            assert_eq!(native_accelerator(&entry(id, accelerator)), None, "{id}");
+        }
+        assert_eq!(
+            native_accelerator(&entry("edit.undo", "CmdOrCtrl+Z")),
+            Some("CmdOrCtrl+Z")
+        );
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    #[test]
+    fn registers_every_accelerator_off_linux() {
+        assert_eq!(
+            native_accelerator(&entry("view.zoomNextFrame", "N")),
+            Some("N")
+        );
+    }
 }
