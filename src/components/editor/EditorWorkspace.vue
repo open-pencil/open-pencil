@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
+import { clamp } from 'es-toolkit'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
@@ -61,22 +62,48 @@ const sidebarMinimum = computed(() =>
     : 10
 )
 const sidebarMaximum = computed(() => (interfaceScale.value > 1 ? MAX_SCALED_SIDEBAR_PERCENT : 30))
-/**
- * The layout the panels have. The splitter opens with it, also when showing the panels again
- * remounts it, so its opening report matches and only a resize differs.
- */
-let editorLayout = loadEditorLayout()
+// Constraints may temporarily widen either sidebar without changing the user's preference.
+const preferredLayout = ref(loadEditorLayout())
+const leftSize = computed(() =>
+  clamp(preferredLayout.value[0], sidebarMinimum.value, sidebarMaximum.value)
+)
+const rightSize = computed(() =>
+  clamp(preferredLayout.value[2], sidebarMinimum.value, sidebarMaximum.value)
+)
+let displayedLayout: number[] = []
+let resizing: { sidebar: 0 | 2; startSize: number } | undefined
 /** How far apart two sizes, in percent, still count as one; the splitter rounds sizes finer. */
 const LAYOUT_TOLERANCE = 1e-6
-/**
- * Saves a layout the panels were resized to. The splitter also reports the layout it opens with,
- * which must not be saved: the right panel's default is a fixed width, and saved as a share of
- * this window it would open wider on a wider one.
- */
-function saveResizedLayout(layout: number[]) {
-  if (layout.every((size, index) => Math.abs(size - editorLayout[index]) < LAYOUT_TOLERANCE)) return
-  editorLayout = layout
+function beginResize(sidebar: 0 | 2) {
+  const startSize = displayedLayout[sidebar]
+  if (startSize !== undefined) resizing = { sidebar, startSize }
+}
+function finishResize() {
+  const interaction = resizing
+  resizing = undefined
+  if (!interaction) return
+  const size = displayedLayout[interaction.sidebar]
+  if (size === undefined || Math.abs(size - interaction.startSize) < LAYOUT_TOLERANCE) return
+  // The opposite sidebar may be constrained; do not save its temporary width too.
+  const layout: [number, number, number] = [preferredLayout.value[0], 0, preferredLayout.value[2]]
+  layout[interaction.sidebar] = size
+  layout[1] = 100 - layout[0] - layout[2]
+  preferredLayout.value = layout
   saveEditorLayout(layout)
+}
+function onDragging(sidebar: 0 | 2, dragging: boolean) {
+  if (dragging) beginResize(sidebar)
+  else finishResize()
+}
+function isResizeKey(event: KeyboardEvent) {
+  return ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)
+}
+function onResizeKeyDown(sidebar: 0 | 2, event: KeyboardEvent) {
+  if (isResizeKey(event)) beginResize(sidebar)
+}
+function onResizeKeyHandled(event: KeyboardEvent) {
+  // Reka emits layout synchronously at the handle, between capture and group bubbling.
+  if (isResizeKey(event)) finishResize()
 }
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 /**
@@ -102,11 +129,12 @@ const { pending: roomPending } = useRoomActions()
     ref="workspace"
     direction="horizontal"
     class="flex-1 overflow-hidden"
-    @layout="saveResizedLayout"
+    @layout="displayedLayout = $event"
+    @keydown="onResizeKeyHandled"
   >
     <SplitterPanel
       id="layers"
-      :default-size="editorLayout[0]"
+      :default-size="leftSize"
       :min-size="sidebarMinimum"
       :max-size="sidebarMaximum"
       class="flex"
@@ -116,10 +144,13 @@ const { pending: roomPending } = useRoomActions()
     <SplitterResizeHandle
       data-test-id="left-splitter-handle"
       :class="horizontalSplitterStyles.handle()"
+      @dragging="onDragging(0, $event)"
+      @keydown.capture="onResizeKeyDown(0, $event)"
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
-    <SplitterPanel id="canvas" :default-size="editorLayout[1]" :min-size="30" class="flex">
+    <!-- Let the canvas take the remainder; its cached default must not outlive sidebar changes. -->
+    <SplitterPanel id="canvas" :min-size="30" class="flex">
       <div class="relative flex min-w-0 flex-1">
         <CanvasSplitRoot />
         <ActiveRoomOverlay />
@@ -129,12 +160,14 @@ const { pending: roomPending } = useRoomActions()
     <SplitterResizeHandle
       data-test-id="right-splitter-handle"
       :class="horizontalSplitterStyles.handle()"
+      @dragging="onDragging(2, $event)"
+      @keydown.capture="onResizeKeyDown(2, $event)"
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
     <SplitterPanel
       id="properties"
-      :default-size="editorLayout[2]"
+      :default-size="rightSize"
       :min-size="sidebarMinimum"
       :max-size="sidebarMaximum"
       class="flex flex-col"
