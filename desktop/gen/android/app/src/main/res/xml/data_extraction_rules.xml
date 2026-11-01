@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- dataExtractionRules: cloud backup + device-to-device transfer (API 31+).
+     Credentials stored by the app's file backend under files/credentials/ must
+     never be included in backups or transfers. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="credentials" />
+        <exclude domain="file" path="credentials.json.tmp" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="credentials" />
+        <exclude domain="file" path="credentials.json.tmp" />
+    </device-transfer>
+</data-extraction-rules>

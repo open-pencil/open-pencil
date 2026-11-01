@@ -1,0 +1,5 @@
+{
+  "build": {
+    "beforeBuildCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run build"
+  }
+}

@@ -11,6 +11,7 @@
   "openTour": "ツアーを開く",
   "diagnostics": "診断…",
   "save": "保存",
+  "saveFailedHeading": "ドキュメントを保存できませんでした",
   "saveAs": "名前を付けて保存…",
   "exportSelection": "選択範囲をエクスポート…",
   "autosave": "ファイルに自動保存",

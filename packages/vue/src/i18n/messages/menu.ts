@@ -14,6 +14,7 @@ export const menuMessageDefaults = {
   openTour: 'Open the Tour',
   diagnostics: 'Diagnostics…',
   save: 'Save',
+  saveFailedHeading: 'Couldn’t save the document',
   saveAs: 'Save as…',
   saveTo: 'Save to…',
   showVersionHistory: 'Show version history',

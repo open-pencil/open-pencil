@@ -1,0 +1,9 @@
+/src/main/**/generated
+/src/main/jniLibs/**/*.so
+/tauri.build.gradle.kts
+/proguard-tauri.pro
+/tauri.properties
+
+# Bundled web assets and the copied Tauri config are produced on every build. The
+# Android project itself is tracked so hand-written Kotlin and resources survive.
+/src/main/assets/

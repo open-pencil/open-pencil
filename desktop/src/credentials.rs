@@ -132,6 +132,149 @@ fn map_keyring_error(error: KeyringError) -> BackendError {
     }
 }
 
+// On Android there is no system keyring backend; persist credentials in the
+// app-private files directory instead (only the app uid can read it).
+#[cfg(target_os = "android")]
+struct AndroidFileBackend;
+
+#[cfg(target_os = "android")]
+impl AndroidFileBackend {
+    fn store_path(account: &str) -> Result<std::path::PathBuf, BackendError> {
+        // Keep `.` distinct and map the `:` reference separator to `+`: two different
+        // valid references ("a.b", "a_b" / "a:b", "a+b") must not collapse onto the
+        // same filename, or a write/remove for one would hit the other's secret.
+        // Validated segments are ASCII [a-z0-9._-] plus the `:` separator, so the
+        // mapping stays one-to-one.
+        let safe: String = account
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                    c
+                } else if c == ':' {
+                    '+'
+                } else {
+                    '_'
+                }
+            })
+            .collect();
+        // Derive the app-private dir from the running process instead of hardcoding
+        // /data/data/<pkg>: the path differs on multi-user / work profiles
+        // (/data/user/0/..., /data/user_de/0/...), and hardcoding silently writes to a
+        // location the app may not own.
+        let mut dir = Self::data_dir()?;
+        dir.push("credentials");
+        std::fs::create_dir_all(&dir).map_err(|error| {
+            eprintln!("[credentials] create_dir_all({}) failed: {error}", dir.display());
+            BackendError::Failed
+        })?;
+        Ok(dir.join(format!("{}.json", safe)))
+    }
+
+    /// App-private files dir. Prefers `/proc/self/cmdline` (the package name) so the
+    /// directory follows the actual installed package, and resolves the current
+    /// Android user from the process uid — on secondary or work profiles (uid >=
+    /// 100000) the package data is mounted at `/data/user/N/<pkg>`, not
+    /// `/data/data/<pkg>`, so a fixed user-0 path silently misses.
+    #[cfg(target_os = "android")]
+    fn data_dir() -> Result<std::path::PathBuf, BackendError> {
+        if let Ok(cmdline) = std::fs::read("/proc/self/cmdline") {
+            let package = String::from_utf8_lossy(&cmdline)
+                .split('\0')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !package.is_empty() && package.contains('.') {
+                // uid = user_id * 100000 + app_id; /data/user/N is keyed by user_id.
+                let uid = Self::current_uid();
+                for base in [
+                    format!("/data/user/{uid}"),
+                    "/data/user/0".to_string(),
+                    "/data/data".to_string(),
+                ] {
+                    let candidate = std::path::Path::new(&base).join(&package).join("files");
+                    if candidate.is_dir() {
+                        return Ok(candidate);
+                    }
+                }
+            }
+        }
+        // Fallback: the historical hardcoded location.
+        Ok(std::path::Path::new("/data/data/net.dannote.open_pencil/files").to_path_buf())
+    }
+
+    /// Real uid from /proc/self/status; 0 (user 0) when unreadable.
+    #[cfg(target_os = "android")]
+    fn current_uid() -> u32 {
+        if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+            for line in status.lines() {
+                if let Some(rest) = line.strip_prefix("Uid:") {
+                    if let Some(field) = rest.split_whitespace().next() {
+                        if let Ok(uid) = field.parse::<u32>() {
+                            return uid;
+                        }
+                    }
+                }
+            }
+        }
+        0
+    }
+}
+
+#[cfg(target_os = "android")]
+impl CredentialBackend for AndroidFileBackend {
+    fn read(&self, account: &str) -> Result<Option<String>, BackendError> {
+        let path = Self::store_path(account)?;
+        match std::fs::read_to_string(path) {
+            Ok(json) => serde_json::from_str::<String>(&json)
+                .map(Some)
+                .map_err(|_| BackendError::Failed),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(_) => Err(BackendError::Failed),
+        }
+    }
+
+    fn write(&self, account: &str, value: &str) -> Result<(), BackendError> {
+        let path = Self::store_path(account)?;
+        let json = serde_json::to_string(value).map_err(|_| BackendError::Failed)?;
+        // Write to a temp file then rename, so a kill mid-write cannot leave a
+        // truncated file that later reads as invalid JSON.
+        let tmp = path.with_extension("json.tmp");
+        std::fs::write(&tmp, json.as_bytes()).map_err(|error| {
+            eprintln!("[credentials] write({}) failed: {error}", tmp.display());
+            BackendError::Failed
+        })?;
+        std::fs::rename(&tmp, &path).map_err(|error| {
+            eprintln!("[credentials] rename -> {} failed: {error}", path.display());
+            let _ = std::fs::remove_file(&tmp);
+            BackendError::Failed
+        })?;
+        Ok(())
+    }
+
+    fn remove(&self, account: &str) -> Result<(), BackendError> {
+        let path = Self::store_path(account)?;
+        match std::fs::remove_file(path) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(_) => Err(BackendError::Failed),
+        }
+    }
+
+    fn exists(&self, account: &str) -> Result<bool, BackendError> {
+        // Decode like `read` does: a nonempty but damaged file must not report
+        // Configured while every read of it fails.
+        let path = Self::store_path(account)?;
+        match std::fs::read_to_string(path) {
+            Ok(json) => serde_json::from_str::<String>(&json)
+                .map(|_| true)
+                .map_err(|_| BackendError::Failed),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(_) => Err(BackendError::Failed),
+        }
+    }
+}
+
 #[cfg(feature = "native-test")]
 static TEST_CREDENTIALS: std::sync::LazyLock<Mutex<std::collections::HashMap<String, String>>> =
     std::sync::LazyLock::new(|| Mutex::new(std::collections::HashMap::new()));
@@ -260,7 +403,7 @@ fn public_error(error: BackendError) -> CredentialError {
 }
 
 fn read_with(
-    backend: &impl CredentialBackend,
+    backend: &dyn CredentialBackend,
     reference: &CredentialRef,
 ) -> Result<Option<String>, CredentialError> {
     let account = account_for(reference)?;
@@ -268,7 +411,7 @@ fn read_with(
 }
 
 fn write_with(
-    backend: &impl CredentialBackend,
+    backend: &dyn CredentialBackend,
     reference: &CredentialRef,
     value: &str,
 ) -> Result<(), CredentialError> {
@@ -283,7 +426,7 @@ fn write_with(
 }
 
 fn remove_with(
-    backend: &impl CredentialBackend,
+    backend: &dyn CredentialBackend,
     reference: &CredentialRef,
 ) -> Result<(), CredentialError> {
     let account = account_for(reference)?;
@@ -312,6 +455,12 @@ pub async fn credential_store_availability() -> Result<CredentialStoreAvailabili
 {
     tauri::async_runtime::spawn_blocking(|| {
         credential_operation(false, || {
+            #[cfg(target_os = "android")]
+            {
+                let _ = AndroidFileBackend.exists(AVAILABILITY_ACCOUNT);
+                return Ok(CredentialStoreAvailability::Available);
+            }
+            #[cfg(not(target_os = "android"))]
             match NativeCredentialBackend.exists(AVAILABILITY_ACCOUNT) {
                 Ok(_) => Ok(CredentialStoreAvailability::Available),
                 Err(BackendError::Locked) => Ok(CredentialStoreAvailability::Locked),
@@ -331,6 +480,11 @@ pub async fn credential_status(
     tauri::async_runtime::spawn_blocking(move || {
         match credential_operation(false, || {
             let account = account_for(&reference)?;
+            #[cfg(target_os = "android")]
+            {
+                return AndroidFileBackend.exists(&account).map_err(public_error);
+            }
+            #[cfg(not(target_os = "android"))]
             NativeCredentialBackend
                 .exists(&account)
                 .map_err(public_error)
@@ -371,7 +525,14 @@ pub async fn credential_read(
     app: tauri::AppHandle,
     reference: CredentialRef,
 ) -> Result<Option<String>, CredentialError> {
-    interactive_operation(app, move || read_with(&NativeCredentialBackend, &reference)).await
+    interactive_operation(app, move || {
+        #[cfg(target_os = "android")]
+        let backend: &dyn CredentialBackend = &AndroidFileBackend;
+        #[cfg(not(target_os = "android"))]
+        let backend: &dyn CredentialBackend = &NativeCredentialBackend;
+        read_with(backend, &reference)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -381,7 +542,16 @@ pub async fn credential_write(
     value: String,
 ) -> Result<(), CredentialError> {
     interactive_operation(app, move || {
-        write_with(&NativeCredentialBackend, &reference, &value)
+        #[cfg(target_os = "android")]
+        {
+            let backend: &dyn CredentialBackend = &AndroidFileBackend;
+            write_with(backend, &reference, &value)
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            let backend: &dyn CredentialBackend = &NativeCredentialBackend;
+            write_with(backend, &reference, &value)
+        }
     })
     .await
 }
@@ -392,7 +562,16 @@ pub async fn credential_remove(
     reference: CredentialRef,
 ) -> Result<(), CredentialError> {
     interactive_operation(app, move || {
-        remove_with(&NativeCredentialBackend, &reference)
+        #[cfg(target_os = "android")]
+        {
+            let backend: &dyn CredentialBackend = &AndroidFileBackend;
+            remove_with(backend, &reference)
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            let backend: &dyn CredentialBackend = &NativeCredentialBackend;
+            remove_with(backend, &reference)
+        }
     })
     .await
 }

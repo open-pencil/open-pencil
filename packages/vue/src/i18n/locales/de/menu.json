@@ -11,6 +11,7 @@
   "openTour": "Rundgang öffnen",
   "diagnostics": "Diagnose…",
   "save": "Speichern",
+  "saveFailedHeading": "Dokument konnte nicht gespeichert werden",
   "saveAs": "Speichern unter…",
   "exportSelection": "Auswahl exportieren…",
   "autosave": "Automatisch in Datei speichern",

@@ -1,9 +1,11 @@
 mod agents;
+mod android_save;
 mod credentials;
 mod files;
 mod fonts;
 mod icons;
 mod launch;
+#[cfg(desktop)]
 mod menu;
 mod network;
 mod system;
@@ -14,12 +16,15 @@ use credentials::{
 };
 use fonts::{list_system_fonts, load_system_font};
 use launch::args;
+#[cfg(desktop)]
 use menu::events::handle_menu_event;
+#[cfg(desktop)]
 use menu::{
     install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_features,
     NativeMenuInputs, NativeMenuState,
 };
 use network::http::{cancel_http_request, proxy_http_request, ProxyHttpRequests};
+#[cfg(desktop)]
 use std::sync::Mutex;
 #[cfg(target_os = "macos")]
 use system::window::show_main_window;
@@ -27,7 +32,11 @@ use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // `fix-path-env` forks a login shell to rebuild $PATH — there is no /bin/sh on
+    // Android, so it must never run there.
+    #[cfg(desktop)]
     let _ = fix_path_env::fix();
+    #[cfg(desktop)]
     agents::path::augment_process_path();
 
     let mut builder = tauri::Builder::default();
@@ -53,18 +62,58 @@ pub fn run() {
         }));
     }
 
-    builder = builder.plugin(tauri_plugin_deep_link::init());
+    // Deep links are a desktop feature for now. On Android the plugin also installs
+    // intent handlers that only make sense with platform-specific config.
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_deep_link::init());
+    }
+
+    // Self-update only exists on desktop; the frontend calls the updater plugin
+    // unconditionally, so the Rust side must be there to answer.
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    // The native-menu commands read this state; without it they error on desktop.
+    #[cfg(desktop)]
+    let builder = builder.manage(NativeMenuState(Mutex::new(NativeMenuInputs::default())));
+
+    // Route native menu selections to the frontend. Without this, Settings / Quit /
+    // Check for Updates clicks do nothing on desktop.
+    #[cfg(desktop)]
+    let builder = builder.on_menu_event(|app, event| {
+        handle_menu_event(app, event.id().0.as_str());
+    });
+
+    // Saving goes through the platform's document picker, which hands back a `content://`
+    // URI that `std::fs` cannot open. The Kotlin side owns that write.
+    #[cfg(target_os = "android")]
+    {
+        builder = builder.plugin(
+            tauri::plugin::Builder::<_, ()>::new("android-save")
+                .setup(|app, api| {
+                    let bridge = android_save::init(&api)
+                        .map_err(|error| std::io::Error::other(error))?;
+                    app.manage(bridge);
+                    Ok(())
+                })
+                .build(),
+        );
+    }
 
     builder
         .manage(launch::PendingOpen::default())
         .manage(ProxyHttpRequests::default())
         .manage(network::oauth::ChatGPTOAuthLoopback::default())
         .manage(launch::PendingRooms::default())
-        .manage(NativeMenuState(Mutex::new(NativeMenuInputs::default())))
         .manage(launch::PendingCloudLinks::default())
         .invoke_handler(tauri::generate_handler![
             agents::lookup::agent_lookup,
             agents::lookup::agent_workspace,
+            android_save::write_content_uri,
+            android_save::content_uri_display_name,
             files::fig::build_fig_file,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,
@@ -93,8 +142,11 @@ pub fn run() {
             proxy_http_request,
             cancel_http_request,
             files::recent::set_recent_files,
+            #[cfg(desktop)]
             set_native_menu_features,
+            #[cfg(desktop)]
             native_menu_checked,
+            #[cfg(desktop)]
             set_native_menu_checked,
             launch::take_pending_open,
             launch::take_pending_rooms,
@@ -108,12 +160,8 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
-        .on_menu_event(|app, event| {
-            handle_menu_event(app, event.id().0.as_str());
-        })
         .setup(|app| {
             // The main window is built here rather than from the config alone, so that pages it
             // opens with `window.open` reach the system browser.
@@ -132,48 +180,62 @@ pub fn run() {
 
             launch::queue_open_paths(app.handle(), args::startup_open_paths());
 
-            use tauri_plugin_deep_link::DeepLinkExt;
-            // On macOS the plugin turns `RunEvent::Opened` into this callback, so every
-            // link that arrives while the app runs is handled here; the cold-start link
-            // arrives before this closure and is drained from `current` below. The
-            // `Opened` arm further down keeps handling file URLs.
-            let handle = app.handle().clone();
-            app.deep_link().on_open_url(move |event| {
-                launch::queue_deep_links(&handle, event.urls());
-            });
-            #[cfg(any(windows, target_os = "linux"))]
+            #[cfg(desktop)]
             {
-                if let Err(error) = app.deep_link().register_all() {
-                    eprintln!("[deep-link] register_all failed: {error}");
+                use tauri_plugin_deep_link::DeepLinkExt;
+                // On macOS the plugin turns `RunEvent::Opened` into this callback, so every
+                // link that arrives while the app runs is handled here; the cold-start link
+                // arrives before this closure and is drained from `current` below. The
+                // `Opened` arm further down keeps handling file URLs.
+                let handle = app.handle().clone();
+                app.deep_link().on_open_url(move |event| {
+                    launch::queue_deep_links(&handle, event.urls());
+                });
+                #[cfg(any(windows, target_os = "linux"))]
+                {
+                    if let Err(error) = app.deep_link().register_all() {
+                        eprintln!("[deep-link] register_all failed: {error}");
+                    }
+                }
+                // Every desktop platform can deliver the launch link before this closure
+                // runs, which means before the listener above exists, and the plugin's
+                // `deep-link://new-url` emit then reaches nobody:
+                //
+                // - Windows / Linux: the link is argv, and the plugin parses it in its own
+                //   setup (`handle_cli_arguments`).
+                // - macOS: AppKit delivers the GetURL event *before* the app's setup. Traced
+                //   on a cold `open openpencil://…`: `RunEvent::Opened` at T+0.085 s, this
+                //   closure at T+0.342 s, and `on_open_url` never fired.
+                //
+                // In all three cases the URL survives only in the plugin's `current`, so it
+                // is read here. No link can be queued twice: `RunEvent::Opened` is dispatched
+                // on the main thread, the same thread this closure runs on, so a link cannot
+                // arrive between the registration above and this read — anything later goes
+                // to `on_open_url` and is no longer in `current` by the time it is read.
+                if let Ok(Some(urls)) = app.deep_link().get_current() {
+                    launch::queue_deep_links(app.handle(), urls);
                 }
             }
-            // Every desktop platform can deliver the launch link before this closure
-            // runs, which means before the listener above exists, and the plugin's
-            // `deep-link://new-url` emit then reaches nobody:
-            //
-            // - Windows / Linux: the link is argv, and the plugin parses it in its own
-            //   setup (`handle_cli_arguments`).
-            // - macOS: AppKit delivers the GetURL event *before* the app's setup. Traced
-            //   on a cold `open openpencil://…`: `RunEvent::Opened` at T+0.085 s, this
-            //   closure at T+0.342 s, and `on_open_url` never fired.
-            //
-            // In all three cases the URL survives only in the plugin's `current`, so it
-            // is read here. No link can be queued twice: `RunEvent::Opened` is dispatched
-            // on the main thread, the same thread this closure runs on, so a link cannot
-            // arrive between the registration above and this read — anything later goes
-            // to `on_open_url` and is no longer in `current` by the time it is read.
-            if let Ok(Some(urls)) = app.deep_link().get_current() {
-                launch::queue_deep_links(app.handle(), urls);
-            }
 
-            Ok(install_app_menu(
-                app.handle(),
-                &NativeMenuInputs::default(),
-            )?)
+            #[cfg(desktop)]
+            {
+                Ok(install_app_menu(
+                    app.handle(),
+                    &NativeMenuInputs::default(),
+                )?)
+            }
+            #[cfg(not(desktop))]
+            {
+                Ok(())
+            }
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app, event| match event {
+            // Desktop-only: the window-close-to-quit handshake exists so the frontend can
+            // ask about unsaved documents. Android has no window and no quit button; the
+            // back gesture must not be swallowed into a modal that can never resolve.
+            #[cfg(desktop)]
             tauri::RunEvent::ExitRequested {
                 api, code: None, ..
             } if !_app.webview_windows().is_empty() => {

@@ -21,6 +21,7 @@ import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED } from '@/app/cloud/integration'
+import { MCP_SETTINGS_ENABLED } from '@/app/settings/mcp/feature'
 import {
   settingsDialogOpen,
   registerSettingsNavigation,
@@ -94,7 +95,9 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'tools', label: settings.value.toolAccess, icon: IconSlidersHorizontal },
       { value: 'skills', label: settings.value.skills, icon: IconBookOpen },
       { value: 'services', label: settings.value.imageServices, icon: IconImage },
-      { value: 'mcp', label: settings.value.mcp, icon: IconPlug },
+      ...(MCP_SETTINGS_ENABLED
+        ? [{ value: 'mcp' as const, label: settings.value.mcp, icon: IconPlug }]
+        : []),
       { value: 'usage', label: settings.value.usage, icon: IconChartNoAxesCombined }
     ]
   },
@@ -226,7 +229,7 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="services" as-child>
         <MediaSettingsPanel />
       </AppTabsContent>
-      <AppTabsContent value="mcp" as-child>
+      <AppTabsContent v-if="MCP_SETTINGS_ENABLED" value="mcp" as-child>
         <MCPWorkspacePanel />
       </AppTabsContent>
       <AppTabsContent value="usage" as-child>

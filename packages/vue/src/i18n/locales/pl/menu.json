@@ -11,6 +11,7 @@
   "openTour": "Otwórz przewodnik",
   "diagnostics": "Diagnostyka…",
   "save": "Zapisz",
+  "saveFailedHeading": "Nie udało się zapisać dokumentu",
   "saveAs": "Zapisz jako…",
   "exportSelection": "Eksportuj zaznaczenie…",
   "autosave": "Automatyczny zapis do pliku",

@@ -1,0 +1,1 @@
+- The editor runs on Android: the desktop shell skips the POSIX-only startup steps, settings are stored in the app's private files, and **Save** is reachable without a keyboard — a button in the menu on wide layouts, the file menu on phones.
