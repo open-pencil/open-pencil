@@ -9,7 +9,7 @@ import * as v from 'valibot'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { savedDecoratedGlyphs, textDecorationRects } from '#core/canvas/text/decorations'
+import { savedDecoratedGlyphs, textDecorationRects } from '#core/text/decorations'
 
 const rectSchema = v.object({ x: v.number(), y: v.number(), w: v.number(), h: v.number() })
 const oracleSchema = v.object({

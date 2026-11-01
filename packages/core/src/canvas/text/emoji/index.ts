@@ -10,8 +10,9 @@ import {
   snapDerivedGlyphBaseline
 } from '#core/canvas/text/derived'
 import type { TextLayout } from '#core/canvas/text/layout'
-import { characterFamily, laidOutGlyphs } from '#core/canvas/text/placed'
+import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
+import { characterFamily } from '#core/text/character-face'
 import {
   canDrawPlatformEmoji,
   EMOJI_METRICS_FAMILY,

@@ -1,8 +1,8 @@
 import type { Image, Path } from 'canvaskit-wasm'
 
 import type { ResourceCache } from '#core/cache/resource'
+import type { SavedDecorationCache } from '#core/text/decorations'
 
-import type { SavedDecorationCache } from './decorations'
 import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from './derived'
 import { createEmojiImageCache } from './emoji'
 

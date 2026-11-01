@@ -14,11 +14,8 @@ import {
 import type { ResourceCache } from '#core/cache/resource'
 import { createPathCache } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import {
-  drawTextDecorations,
-  hasDecoration,
-  savedTextDecorationRects
-} from '#core/canvas/text/decorations'
+import { drawTextDecorations } from '#core/canvas/text/decorations'
+import { hasDecoration, savedTextDecorationRects } from '#core/text/decorations'
 import { geometryBlobToPath } from '#core/vector'
 
 const MAX_GLYPH_SILHOUETTES = 512

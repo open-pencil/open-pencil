@@ -1,27 +1,16 @@
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import {
-  EMPTY_EXPORT_RUNTIME,
-  type FigNodeChangeExportRuntime,
-  type PlacedTextGlyph,
-  type ShapedText,
-  type ShapedTextGlyph,
-  type TextDecorationRecord
-} from '@open-pencil/fig/node-change'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
-import { textDecorationRects, type DecoratedGlyph } from '#core/canvas/text/decorations'
-import { outlineInk, savedGlyphInk } from '#core/canvas/text/ink'
-import { COMBINING_KEYCAP, keycapFrame } from '#core/canvas/text/keycap'
-import { characterFamily, laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
-import { getCanvasKit } from '#core/canvaskit'
+import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
+import { characterFamily } from '#core/text/character-face'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { OutlineCommand } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/font/manager'
-import { faceStyleName } from '#core/text/font/names'
 import { nextGraphemeBoundary } from '#core/text/graphemes'
+import { COMBINING_KEYCAP, keycapFrame } from '#core/text/keycap'
 
 /**
  * Whether saved glyphs could stand for this text: case changes that alter its length move
@@ -161,76 +150,4 @@ export function shapeText(
   } finally {
     paragraph.delete()
   }
-}
-
-function decoratedGlyph(glyph: PlacedTextGlyph): DecoratedGlyph {
-  const { commandsBlob, commands } = glyph
-  return {
-    ...glyph,
-    ink: (top, bottom) => {
-      if (commandsBlob) return savedGlyphInk(commandsBlob, glyph, top, bottom)
-      return commands ? outlineInk(commands, glyph.x, glyph.y, top, bottom) : null
-    }
-  }
-}
-
-/** Decorations as Figma saves them, over glyphs saved or just shaped. */
-function textDecorations(
-  node: SceneNode,
-  glyphs: readonly PlacedTextGlyph[]
-): TextDecorationRecord[] {
-  return textDecorationRects(node, glyphs.map(decoratedGlyph)).map(
-    ({ firstCharacter, x, y, width, height }) => ({ firstCharacter, x, y, width, height })
-  )
-}
-
-function needsShaping(graph: SceneGraph): boolean {
-  for (const node of graph.nodes.values()) {
-    if (node.type === 'TEXT' && node.text && !node.derivedTextGlyphs?.length) return true
-  }
-  return false
-}
-
-/** How many shaping calls share each provider made for them; the last one to finish deletes it. */
-const shaperProviderUsers = new Map<TypefaceFontProvider, number>()
-
-/**
- * Run `use` with text shaped as the canvas lays it out. Unless the attached font provider belongs
- * to this CanvasKit, the loaded fonts are registered in one made for shaping, which calls that
- * overlap share and the last of them deletes.
- */
-export async function withTextShaper<T>(
-  canvasKit: CanvasKit,
-  use: (shape: (node: SceneNode) => ShapedText | null) => Promise<T>
-): Promise<T> {
-  const attached = fontManager.providerFor(canvasKit)
-  const provider = attached ?? canvasKit.TypefaceFontProvider.Make()
-  if (!attached) fontManager.attachProvider(canvasKit, provider)
-  const shared = !attached || shaperProviderUsers.has(provider)
-  if (shared) shaperProviderUsers.set(provider, (shaperProviderUsers.get(provider) ?? 0) + 1)
-  try {
-    return await use((node) => shapeText(canvasKit, provider, node))
-  } finally {
-    if (shared) {
-      const users = (shaperProviderUsers.get(provider) ?? 1) - 1
-      if (users > 0) {
-        shaperProviderUsers.set(provider, users)
-      } else {
-        shaperProviderUsers.delete(provider)
-        fontManager.detachProvider(provider)
-        provider.delete()
-      }
-    }
-  }
-}
-
-/** Run a `.fig` or Figma clipboard write with text shaping. */
-export async function withFigExportRuntime<T>(
-  graph: SceneGraph,
-  ck: CanvasKit | undefined,
-  write: (runtime: FigNodeChangeExportRuntime) => Promise<T>
-): Promise<T> {
-  const named = { textDecorations, fontStyleName: faceStyleName }
-  if (!needsShaping(graph)) return write({ ...EMPTY_EXPORT_RUNTIME, ...named })
-  return withTextShaper(ck ?? (await getCanvasKit()), (shapeText) => write({ shapeText, ...named }))
 }
