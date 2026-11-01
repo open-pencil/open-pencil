@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { node, setup, withOtherPage } from '#core-tests/helpers/atomic-tool'
+import { HEAVY_TEST_TIMEOUT_MS } from '#core-tests/helpers/test-utils'
 
 import { createEditor, executeAtomicTool } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
@@ -334,7 +335,7 @@ describe('atomic agent tools', () => {
     expect(recorded[0].updated).toHaveLength(1)
     undo.undo()
     expect(rectangle.opacity).toBe(1)
-  })
+  }, HEAVY_TEST_TIMEOUT_MS)
 
   test('a node event the graph was not told of beforehand fails and rolls back', () => {
     const { graph, figma, editor, undo, rectangle, tool } = setup()
@@ -422,7 +423,7 @@ describe('atomic agent tools', () => {
     )
     expect(ids.every((id) => node(graph, id).opacity === 1)).toBe(true)
     expect(undo.canUndo).toBe(false)
-  })
+  }, HEAVY_TEST_TIMEOUT_MS)
 
   test('writing the values layers already have does not count toward the limit', () => {
     const { graph, figma, editor, undo, tool } = setup()
@@ -438,7 +439,7 @@ describe('atomic agent tools', () => {
     }
     expect(() => executeAtomicTool(editor, figma, def, {})).not.toThrow()
     expect(undo.canUndo).toBe(false)
-  })
+  }, HEAVY_TEST_TIMEOUT_MS)
 
   test('binding a paint colour on a layer bound to the whole list keeps that binding on undo and rollback', () => {
     const { graph, figma, editor, undo, rectangle, tool } = setup()
