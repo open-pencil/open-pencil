@@ -104,10 +104,8 @@ export async function cacheRecentFileCover(
   const previous = coverWrites.get(path) ?? Promise.resolve()
   const write = previous
     .catch(() => undefined)
-    .then(async () => {
-      const drawnFor = await fingerprint
-      if (drawnFor) await writeCover(path, bytes, drawnFor)
-    })
+    .then(() => fingerprint)
+    .then((drawnFor) => (drawnFor ? writeCover(path, bytes, drawnFor) : undefined))
   coverWrites.set(path, write)
   try {
     await write
