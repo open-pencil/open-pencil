@@ -68,6 +68,7 @@ export function claimSlotContent(
 ): void {
   const { frame, instance, propertyId } = scope
   if (ownsSlotContent(graph, frame, propertyId)) return
+  graph.willChangeNode(instance)
   const overrides = instance.instanceOverrides
   for (const node of descendants(graph, frame, false)) {
     overrides.descendants.delete(node.id)
@@ -76,6 +77,7 @@ export function claimSlotContent(
       continue
     }
     // A nested instance keeps the overrides its former owner applied inside it.
+    graph.willChangeNode(node)
     for (const inner of descendants(graph, node, true)) {
       const fields = overrides.descendants.get(inner.id)
       if (!fields) continue

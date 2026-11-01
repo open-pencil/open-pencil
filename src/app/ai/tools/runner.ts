@@ -132,14 +132,14 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
   }
   try {
     if (isAtomicTool(def)) {
-      // An atomic tool commits its own step at once; loading its fonts after is not part of it.
-      const result = store.recordEdit({ ...options, push: false }, () =>
-        executeAtomicTool(store, figma, def, args, {
-          label: prefix,
-          signal: call.signal,
-          isLive: call.isLive
-        })
-      )
+      // An atomic tool records and commits its own step at once, from the layers it touched;
+      // loading its fonts after is not part of it.
+      const result = executeAtomicTool(store, figma, def, args, {
+        label: prefix,
+        signal: call.signal,
+        isLive: call.isLive,
+        onRecorded: options.onRecorded
+      })
       await loadAtomicToolFonts(store, figma, args, { isLive: call.isLive })
       return result
     }
