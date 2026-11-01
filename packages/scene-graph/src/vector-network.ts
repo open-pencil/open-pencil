@@ -1,10 +1,17 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import { copyVectorRegion } from './copy'
+import { cloneVectorNetwork, copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
 import type { VectorPathWindingRule } from './parse-path'
 import type { Vector } from './primitives'
-import type { Fill, GeometryPath, VectorNetwork, VectorSegment, VectorVertex } from './types'
+import type {
+  Fill,
+  GeometryPath,
+  SceneNode,
+  VectorNetwork,
+  VectorSegment,
+  VectorVertex
+} from './types'
 
 /** Concatenate vector networks while preserving independent geometry. */
 export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorNetwork {
@@ -80,6 +87,41 @@ export function fillGeometryMatchesRegions(
   network: VectorNetwork
 ): boolean {
   return fillGeometry.length === network.regions.length
+}
+
+/**
+ * Whether a vector's regions draw different fills, each its own or else the layer's, which Figma
+ * reads as mixed (live-verified: regions with equal fills of their own read the layer's).
+ */
+export function regionFillsDiffer(
+  network: VectorNetwork | null,
+  layerFills: readonly Fill[]
+): boolean {
+  const [first, ...rest] = (network?.regions ?? []).map((region) => region.fills ?? layerFills)
+  return rest.some((fills) => !isEqual(fills, first))
+}
+
+/** The network with every region drawing the layer's fills. */
+function withoutRegionFills(network: VectorNetwork): VectorNetwork {
+  const copy = cloneVectorNetwork(network)
+  return {
+    ...copy,
+    regions: copy.regions.map(({ windingRule, loops }) => ({ windingRule, loops }))
+  }
+}
+
+/**
+ * What else an edit that sets a vector's fills changes: every region draws them, its own paints
+ * and style dropped, as setting fills does in Figma (live-verified). Edit entry points apply it.
+ */
+export function regionFillChanges(
+  node: SceneNode,
+  changes: Partial<SceneNode>
+): Pick<Partial<SceneNode>, 'vectorNetwork'> {
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!('fills' in changes) || 'vectorNetwork' in changes || !network) return {}
+  const ownFills = network.regions.some((region) => region.fills || region.fillStyleId)
+  return ownFills ? { vectorNetwork: withoutRegionFills(network) } : {}
 }
 
 /** The paints regions carry of their own. */

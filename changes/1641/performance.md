@@ -1,0 +1,1 @@
+- Images from tools such as `export_image` go to Anthropic, OpenAI, Google Gemini, and DeepSeek models as WebP, about a third the size of PNG for renders with imagery; other connections still get PNG.

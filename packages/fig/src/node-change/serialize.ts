@@ -1,4 +1,4 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
@@ -356,7 +356,12 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
   fixFilledOwnSizing(node, nc, graph)
 }
 
-function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
+function serializeGeometry(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  blobs: Uint8Array[],
+  styleReference: (id: string) => StyleReference
+): void {
   if (node.isMask) {
     nc.mask = true
     // Figma's MaskType names a vector mask OUTLINE. ALPHA and LUMINANCE already match.
@@ -370,7 +375,7 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
     styleToId,
     regionStyleIds
   } = network
-    ? buildStyleOverrideTable(network)
+    ? buildStyleOverrideTable(network, styleReference)
     : { table: [] as StyleOverride[], styleToId: undefined, regionStyleIds: [] }
 
   const vectorData: Record<string, unknown> = {}

@@ -1,0 +1,3 @@
+- WEBP and JPEG export work on macOS desktop and in Safari.
+- Images from tools reach MiniMax, OpenPencil Cloud, and OpenAI-compatible Chat Completions models as images instead of Base64 text.
+- A resized WebP image attached in the chat on macOS desktop or in Safari is sent with its actual PNG type.

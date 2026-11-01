@@ -12,6 +12,9 @@ beforeAll(async () => {
   const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular', data)
   await fontManager.markLoaded('Inter', 'Bold', data)
+  const italic = await Bun.file('packages/core/assets/InterVariable-Italic.ttf').arrayBuffer()
+  await fontManager.markLoaded('Inter', 'Regular Italic', italic)
+  await fontManager.markLoaded('Inter', 'Bold Italic', italic)
 })
 
 function text(props: Partial<SceneNode>): SceneNode {
@@ -73,5 +76,34 @@ describe('textNodeToOutlineLayout', () => {
 
     expect(lineCount(text({ width, textAutoResize: 'HEIGHT' }))).toBe(1)
     expect(lineCount(text({ width, letterSpacing, textAutoResize: 'HEIGHT' }))).toBe(2)
+  })
+
+  test('outlines italic text from the italic file', () => {
+    const outline = (italic: boolean) =>
+      textNodeToOutlineLayout(text({ text: 'l', italic, fontStyle: italic ? 'Italic' : 'Regular' }))
+        ?.glyphs[0]?.commands
+    const upright = outline(false)
+    const slanted = outline(true)
+
+    expect(upright).toBeDefined()
+    expect(slanted).toBeDefined()
+    expect(slanted).not.toEqual(upright)
+  })
+
+  test('wraps italic text by the advances of its weight', () => {
+    const italic = { italic: true }
+    const regular = oneLineWidth({ ...italic, fontWeight: 400, fontStyle: 'Italic' })
+    const bold = oneLineWidth({ ...italic, fontWeight: 700, fontStyle: 'Bold Italic' })
+    expect(bold).toBeGreaterThan(regular)
+    const width = (regular + bold) / 2
+
+    expect(
+      lineCount(text({ ...italic, fontWeight: 400, fontStyle: 'Italic', width, textAutoResize: 'HEIGHT' }))
+    ).toBe(1)
+    expect(
+      lineCount(
+        text({ ...italic, fontWeight: 700, fontStyle: 'Bold Italic', width, textAutoResize: 'HEIGHT' })
+      )
+    ).toBe(2)
   })
 })

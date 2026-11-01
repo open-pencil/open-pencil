@@ -7,6 +7,7 @@ import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
 import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 import { claimSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
+import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
@@ -127,8 +128,10 @@ export function updateNode(
   ) as Partial<SceneNode>
   if (Object.keys(applied).length === 0) return
   const before = g.getNode(id)
-  // Auto-sizing text measures its new content, as the editor's updates do.
+  // Auto-sizing text measures its new content, and a vector's regions take its new fills, as the
+  // editor's updates do.
   Object.assign(applied, textAutoResizeChanges(before, applied))
+  if (before) Object.assign(applied, regionFillChanges(before, applied))
   // An edit to a style's fields leaves that style, as the editor's updates do.
   const edit = before ? styleDetachmentChanges(before, applied) : applied
   // Figma overrides only what an edit changes, so setting a layer's own value claims nothing.

@@ -7,7 +7,7 @@ export default defineConfig({
     'jsx-runtime': './src/jsx-runtime.ts',
     'jsx-dev-runtime': './src/jsx-dev-runtime.ts'
   },
-  // `reference.ts` imports the authoring guide as text.
+  // `reference/index.ts` imports the authoring guide as text.
   plugins: [raw()],
   platform: 'neutral',
   format: ['esm'],

@@ -13,6 +13,7 @@ import { promptCachingOptions } from '@/app/ai/models/caching'
 import { reasoningCallSettings, type AIProviderOptions } from '@/app/ai/models/reasoning/settings'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createRunPreview } from '@/app/ai/preview/run'
+import { providerTakesWebPImages } from '@/app/ai/providers/registry'
 import { skillCatalog } from '@/app/ai/skills/catalog'
 import { appSkillLibrary, type SkillLibrary } from '@/app/ai/skills/library'
 import { createSkillTools, SKILL_TOOL_NAMES } from '@/app/ai/skills/tools'
@@ -25,6 +26,7 @@ import {
   type AITools
 } from '@/app/ai/tools'
 import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
+import { encodeWebPModelImage } from '@/app/ai/tools/model-image'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { recordModelStepCompleted } from '@/app/diagnostics/events'
 import type { AIDiagnosticContext } from '@/app/diagnostics/events/ai'
@@ -87,7 +89,11 @@ export function createToolLoopTransport({
   yieldWhen = () => false
 }: ToolLoopTransportOptions) {
   const tools: AITools = {
-    ...createAITools(store, diagnosticContext),
+    ...createAITools(
+      store,
+      diagnosticContext,
+      providerTakesWebPImages(providerID) ? encodeWebPModelImage : undefined
+    ),
     ...createSkillTools(() => offeredSkills)
   }
   // Read again for each message, so skills installed or switched off since apply to the next one.
