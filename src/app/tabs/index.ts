@@ -61,7 +61,11 @@ export interface Tab {
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const fileOpenCoordinator = createFileOpenCoordinator()
-const RECENT_FILE_THUMBNAIL_SIZE = 512
+/**
+ * A Home card's preview, framed as the card shows it (16:9, cropped around the content's centre)
+ * and sharp at twice the widest card, unlike the 512 px cover a `.fig` carries.
+ */
+const RECENT_FILE_THUMBNAIL = { width: 1280, height: 720 }
 const coverThumbnailListeners = new WeakMap<EditorStore, () => void>()
 
 let nextTabId = 1
@@ -374,8 +378,9 @@ async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<vo
     renderer,
     store.graph,
     thumbnailPageId,
-    RECENT_FILE_THUMBNAIL_SIZE,
-    RECENT_FILE_THUMBNAIL_SIZE
+    RECENT_FILE_THUMBNAIL.width,
+    RECENT_FILE_THUMBNAIL.height,
+    'cover'
   )
   if (!bytes) {
     console.warn('[Recent files] Thumbnail skipped because its page was empty')

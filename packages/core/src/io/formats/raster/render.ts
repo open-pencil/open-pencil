@@ -334,12 +334,19 @@ export interface ThumbnailFrame {
   height: number
 }
 
-/** The page region a thumbnail fitted into `width` by `height` pixels shows, and its size. */
+/**
+ * How a thumbnail frames its page: `contain` shows all the content at the size it fits in,
+ * `cover` fills `width` by `height` and crops the content around its centre, as a card shows it.
+ */
+export type ThumbnailFit = 'contain' | 'cover'
+
+/** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
 export function thumbnailFrame(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  fit: ThumbnailFit = 'contain'
 ): ThumbnailFrame | null {
   const page = graph.getNode(pageId)
   if (!page || page.childIds.length === 0) return null
@@ -350,6 +357,25 @@ export function thumbnailFrame(
   const contentW = bounds.maxX - bounds.minX
   const contentH = bounds.maxY - bounds.minY
   if (contentW <= 0 || contentH <= 0) return null
+
+  if (fit === 'cover') {
+    const scale = Math.max(width / contentW, height / contentH)
+    const centerX = (bounds.minX + bounds.maxX) / 2
+    const centerY = (bounds.minY + bounds.maxY) / 2
+    const halfW = width / scale / 2
+    const halfH = height / scale / 2
+    return {
+      bounds: {
+        minX: centerX - halfW,
+        minY: centerY - halfH,
+        maxX: centerX + halfW,
+        maxY: centerY + halfH
+      },
+      scale,
+      width,
+      height
+    }
+  }
 
   const scale = Math.min(width / contentW, height / contentH)
   return {
@@ -366,9 +392,10 @@ export function renderThumbnail(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  fit: ThumbnailFit = 'contain'
 ): Uint8Array<ArrayBuffer> | null {
-  const frame = thumbnailFrame(graph, pageId, width, height)
+  const frame = thumbnailFrame(graph, pageId, width, height, fit)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.

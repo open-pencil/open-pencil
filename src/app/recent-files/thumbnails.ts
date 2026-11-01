@@ -6,7 +6,8 @@ import { readCacheBytes, removeCachePrefix, writeCacheBytes } from '@/app/cache'
 import { isFigArchiveName } from '@/app/document/io/names'
 import { isTauri } from '@/app/tauri/env'
 
-const RECENT_FILE_THUMBNAIL_CACHE_DIR = 'recent-file-thumbnails/v2'
+// v3 holds 1280×720 covers; the 512 px ones of v2 are drawn again when a file next opens.
+const RECENT_FILE_THUMBNAIL_CACHE_DIR = 'recent-file-thumbnails/v3'
 
 async function recentFileThumbnailCacheKey(path: string): Promise<string> {
   let fingerprint = path

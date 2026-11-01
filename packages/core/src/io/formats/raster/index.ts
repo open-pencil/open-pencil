@@ -4,6 +4,7 @@ export {
   renderThumbnail,
   thumbnailFrame,
   type RasterExportFormat,
+  type ThumbnailFit,
   type ThumbnailFrame,
   type ExportFormat
 } from './render'

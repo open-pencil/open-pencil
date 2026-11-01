@@ -6,7 +6,8 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   createCanvasKitRasterCodec,
   headlessRenderThumbnail,
-  initCanvasKit
+  initCanvasKit,
+  thumbnailFrame
 } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -47,4 +48,17 @@ test('a thumbnail loads the faces its text is set in before drawing it', async (
   const inked = image.data.filter((red, index) => index % 4 === 0 && red < 128).length
 
   expect(inked).toBeGreaterThan(0)
+})
+
+test('a cover thumbnail fills its size and crops the content around its centre', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  graph.createNode('RECTANGLE', page.id, { x: 0, y: 0, width: 1000, height: 1000 })
+
+  const contained = expectDefined(thumbnailFrame(graph, page.id, 160, 90), 'contained frame')
+  expect([contained.width, contained.height]).toEqual([90, 90])
+
+  const covered = expectDefined(thumbnailFrame(graph, page.id, 160, 90, 'cover'), 'covered frame')
+  expect([covered.width, covered.height, covered.scale]).toEqual([160, 90, 0.16])
+  expect(covered.bounds).toEqual({ minX: 0, minY: 218.75, maxX: 1000, maxY: 781.25 })
 })
