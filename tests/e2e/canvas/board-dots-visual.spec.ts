@@ -4,6 +4,8 @@ import { boardDriver } from '#tests/helpers/canvas/board-driver'
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 const board = boardDriver(() => editor.page)
 
+test.afterEach(() => board.close())
+
 // Figma desktop, FigJam board: #C4C4C4 dots, 2 units across, every 16 units from 50% and
 // every 32 at 25%, under the layers.
 for (const zoom of [1, 0.25]) {
