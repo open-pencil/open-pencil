@@ -104,6 +104,51 @@ test('live previews Design JSX and keeps one undo transaction', async () => {
   expect(await hasNodeNamed(editor.page, 'Live JSX final')).toBe(false)
 })
 
+test('previews several roots in one render, each where its layer was', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const page = store.state.currentPageId
+    const left = store.graph.createNode('RECTANGLE', page, { x: 100, y: 80, width: 80, height: 40 })
+    const right = store.graph.createNode('RECTANGLE', page, {
+      x: 400,
+      y: 80,
+      width: 80,
+      height: 40
+    })
+    store.select([left.id, right.id])
+  })
+  await openCodePanel()
+  await codeEditor().fill(
+    [
+      '<>',
+      '  <Frame name="Start" w={200} h={100} />',
+      '  <Frame name="Done" w={200} h={100} />',
+      '  <Connector from="Start" to="Done" />',
+      '  <Instance name="Card copy" of="Card" />',
+      '  <Component name="Card" w={100} h={50} />',
+      '</>'
+    ].join('\n')
+  )
+  await waitForNodeNamed(editor.page, 'Card copy')
+
+  const rendered = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const nodes = [...store.graph.getAllNodes()]
+    const named = (name: string) => nodes.find((node) => node.name === name)
+    const connector = nodes.find((node) => node.type === 'CONNECTOR')
+    return {
+      start: named('Start'),
+      done: named('Done'),
+      ends: [connector?.connectorStart?.nodeId, connector?.connectorEnd?.nodeId]
+    }
+  })
+  expect(rendered.start).toMatchObject({ x: 100, y: 80 })
+  expect(rendered.done).toMatchObject({ x: 400, y: 80 })
+  expect(rendered.ends).toEqual([rendered.start?.id, rendered.done?.id])
+})
+
 test('Ctrl+Z edits the CodeMirror draft before touching the canvas transaction', async () => {
   await openCodePanel()
   const initial = await codeEditor().textContent()
