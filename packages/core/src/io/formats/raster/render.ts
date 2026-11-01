@@ -336,7 +336,8 @@ export interface ThumbnailFrame {
 
 /**
  * How a thumbnail frames its page: `contain` shows all the content at the size it fits in,
- * `cover` fills `width` by `height` and crops the content around its centre, as a card shows it.
+ * `cover` fills `width` by `height` from the content's top left corner and crops the rest, so a
+ * tall kit shows its top and a row of screens its first ones, where the content starts.
  */
 export type ThumbnailFit = 'contain' | 'cover'
 
@@ -360,16 +361,12 @@ export function thumbnailFrame(
 
   if (fit === 'cover') {
     const scale = Math.max(width / contentW, height / contentH)
-    const centerX = (bounds.minX + bounds.maxX) / 2
-    const centerY = (bounds.minY + bounds.maxY) / 2
-    const halfW = width / scale / 2
-    const halfH = height / scale / 2
     return {
       bounds: {
-        minX: centerX - halfW,
-        minY: centerY - halfH,
-        maxX: centerX + halfW,
-        maxY: centerY + halfH
+        minX: bounds.minX,
+        minY: bounds.minY,
+        maxX: bounds.minX + width / scale,
+        maxY: bounds.minY + height / scale
       },
       scale,
       width,

@@ -1,6 +1,10 @@
 import { stat, open, SeekMode } from '@tauri-apps/plugin-fs'
 
+import type { Editor } from '@open-pencil/core'
+import { figThumbnailPageId } from '@open-pencil/core/io/formats/fig'
+import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { readCacheBytes, removeCachePrefix, writeCacheBytes } from '@/app/cache'
 import { isFigArchiveName } from '@/app/document/io/names'
@@ -34,6 +38,31 @@ export async function loadCachedRecentFileThumbnail(path: string): Promise<Uint8
 export async function cacheRecentFileThumbnail(path: string, bytes: Uint8Array): Promise<void> {
   if (!isTauri()) return
   await writeCacheBytes(await recentFileThumbnailCacheKey(path), Uint8Array.from(bytes).buffer)
+}
+
+/**
+ * A Home card's preview, framed as the card shows it (16:9 from the content's top left) and sharp
+ * at twice the widest card, unlike the 512 px cover a `.fig` carries, which fits its whole page.
+ */
+const RECENT_FILE_COVER = { width: 1280, height: 720 }
+
+/**
+ * Draws the cover page of the document at `path` for its Home card and caches it under the
+ * file's current size and time, so call it once the file is written. False when there is no page
+ * to draw.
+ */
+export async function cacheRecentFileCover(
+  path: string,
+  graph: SceneGraph,
+  renderer: NonNullable<Editor['renderer']>
+): Promise<boolean> {
+  const pageId = figThumbnailPageId(graph.getPages())
+  if (!pageId) return false
+  const { width, height } = RECENT_FILE_COVER
+  const bytes = renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'cover')
+  if (!bytes) return false
+  await cacheRecentFileThumbnail(path, bytes)
+  return true
 }
 
 export function clearRecentFileThumbnails(): Promise<void> {

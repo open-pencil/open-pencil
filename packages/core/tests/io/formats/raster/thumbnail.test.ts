@@ -50,7 +50,7 @@ test('a thumbnail loads the faces its text is set in before drawing it', async (
   expect(inked).toBeGreaterThan(0)
 })
 
-test('a cover thumbnail fills its size and crops the content around its centre', () => {
+test('a cover thumbnail fills its size from the top left of the content', () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   graph.createNode('RECTANGLE', page.id, { x: 0, y: 0, width: 1000, height: 1000 })
@@ -60,5 +60,5 @@ test('a cover thumbnail fills its size and crops the content around its centre',
 
   const covered = expectDefined(thumbnailFrame(graph, page.id, 160, 90, 'cover'), 'covered frame')
   expect([covered.width, covered.height, covered.scale]).toEqual([160, 90, 0.16])
-  expect(covered.bounds).toEqual({ minX: 0, minY: 218.75, maxX: 1000, maxY: 781.25 })
+  expect(covered.bounds).toEqual({ minX: 0, minY: 0, maxX: 1000, maxY: 562.5 })
 })

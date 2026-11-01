@@ -5,7 +5,6 @@ import { shallowRef, computed, triggerRef } from 'vue'
 import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
-import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
@@ -36,7 +35,7 @@ import {
   type StorageLocation
 } from '@/app/integrations/storage'
 import {
-  cacheRecentFileThumbnail,
+  cacheRecentFileCover,
   loadCachedRecentFileThumbnail,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
@@ -61,11 +60,6 @@ export interface Tab {
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const fileOpenCoordinator = createFileOpenCoordinator()
-/**
- * A Home card's preview, framed as the card shows it (16:9, cropped around the content's centre)
- * and sharp at twice the widest card, unlike the 512 px cover a `.fig` carries.
- */
-const RECENT_FILE_THUMBNAIL = { width: 1280, height: 720 }
 const coverThumbnailListeners = new WeakMap<EditorStore, () => void>()
 
 let nextTabId = 1
@@ -363,8 +357,6 @@ async function showImportedGraph(
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
-  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
-  if (!thumbnailPageId) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }
@@ -373,20 +365,9 @@ async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<vo
     console.warn('[Recent files] Thumbnail skipped because the renderer was unavailable')
     return
   }
-  const bytes = renderThumbnail(
-    renderer.ck,
-    renderer,
-    store.graph,
-    thumbnailPageId,
-    RECENT_FILE_THUMBNAIL.width,
-    RECENT_FILE_THUMBNAIL.height,
-    'cover'
-  )
-  if (!bytes) {
+  if (!(await cacheRecentFileCover(path, store.graph, renderer))) {
     console.warn('[Recent files] Thumbnail skipped because its page was empty')
-    return
   }
-  await cacheRecentFileThumbnail(path, bytes)
 }
 
 function watchOpenedFigCover(path: string, store: EditorStore): void {
