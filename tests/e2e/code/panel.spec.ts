@@ -142,7 +142,8 @@ test('previews several roots in one render, each where its layer was', async () 
 
   // The second edit updates those layers in place, so links must follow them.
   const second = await preview(240)
-  expect(second.layers.Start.id).toBe(first.layers.Start.id)
+  expect(second.layers.Start).toMatchObject({ id: first.layers.Start.id, x: 100, y: 80 })
+  expect(second.layers.Done).toMatchObject({ id: first.layers.Done.id, x: 400, y: 80 })
   expect(second.connectorEnds).toEqual([[first.layers.Start.id, first.layers.Done.id]])
   expect(second.layers['Card copy'].componentId).toBe(second.layers.Card.id)
 })

@@ -46,4 +46,59 @@ describe('remapCopiedReferences', () => {
 
     expect(updated).toEqual([])
   })
+
+  test('writes to distinct copies and leaves their sources as they were', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const card = graph.createNode('COMPONENT', page, { name: 'Card' })
+    const cardCopy = graph.createNode('COMPONENT', page, { name: 'Card' })
+    const instance = graph.createNode('INSTANCE', page, { componentId: card.id })
+    const instanceCopy = graph.createNode('INSTANCE', page, { componentId: card.id })
+    const ends = { connectorStart: end(card.id), connectorEnd: end(instance.id) }
+    const link = graph.createNode('CONNECTOR', page, ends)
+    const linkCopy = graph.createNode('CONNECTOR', page, structuredClone(ends))
+
+    remapCopiedReferences(
+      graph,
+      new Map([
+        [card.id, cardCopy.id],
+        [instance.id, instanceCopy.id],
+        [link.id, linkCopy.id]
+      ])
+    )
+
+    expect(graph.getNode(instanceCopy.id)?.componentId).toBe(cardCopy.id)
+    expect(graph.getNode(linkCopy.id)?.connectorStart?.nodeId).toBe(cardCopy.id)
+    expect(graph.getNode(linkCopy.id)?.connectorEnd?.nodeId).toBe(instanceCopy.id)
+    expect(graph.getNode(instance.id)?.componentId).toBe(card.id)
+    expect(graph.getNode(link.id)?.connectorStart?.nodeId).toBe(card.id)
+    expect(graph.getNode(link.id)?.connectorEnd?.nodeId).toBe(instance.id)
+  })
+
+  test('remaps a swap set on an instance of a component left behind', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const button = graph.createNode('COMPONENT', page, {
+      name: 'Button',
+      componentPropertyDefinitions: [
+        { id: 'icon', name: 'Icon', type: 'INSTANCE_SWAP', defaultValue: '' }
+      ]
+    })
+    const star = graph.createNode('COMPONENT', page, { name: 'Star' })
+    const starCopy = graph.createNode('COMPONENT', page, { name: 'Star' })
+    const instance = graph.createNode('INSTANCE', page, {
+      componentId: button.id,
+      componentPropertyAssignments: { icon: star.id }
+    })
+
+    remapCopiedReferences(
+      graph,
+      new Map([
+        [star.id, starCopy.id],
+        [instance.id, instance.id]
+      ])
+    )
+
+    expect(graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({ icon: starCopy.id })
+  })
 })

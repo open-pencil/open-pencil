@@ -1,8 +1,15 @@
 import { isEqual, mapValues } from 'es-toolkit'
 
+import { componentPropertyDefinitions } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import { remapInstanceOverrideState } from '../instances/overrides'
-import type { SceneNode } from '../types'
+import type { ComponentPropertyDefinition, SceneNode } from '../types'
+
+function swapPropertyIds(definitions: readonly ComponentPropertyDefinition[]): string[] {
+  return definitions
+    .filter((definition) => definition.type === 'INSTANCE_SWAP')
+    .map((definition) => definition.id)
+}
 
 function remappedReferences(
   node: SceneNode,
@@ -52,14 +59,13 @@ export function remapCopiedReferences(
 ): void {
   const mapped = (id: string) => mappedIds.get(id) ?? id
   const copies = [...mappedIds.values()].flatMap((id) => graph.getNode(id) ?? [])
-  const swapProperties = new Set(
-    copies.flatMap((node) =>
-      node.componentPropertyDefinitions
-        .filter((definition) => definition.type === 'INSTANCE_SWAP')
-        .map((definition) => definition.id)
-    )
-  )
+  const copiedSwaps = copies.flatMap((node) => swapPropertyIds(node.componentPropertyDefinitions))
   for (const node of copies) {
+    // An instance's swap property may be defined on a component the copy leaves behind.
+    const swapProperties = new Set([
+      ...copiedSwaps,
+      ...swapPropertyIds(componentPropertyDefinitions(graph, node))
+    ])
     const changes = remappedReferences(node, mapped, swapProperties)
     if (Object.keys(changes).length > 0) graph.updateNode(node.id, changes)
   }
