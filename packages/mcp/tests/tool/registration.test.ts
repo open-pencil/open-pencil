@@ -33,6 +33,7 @@ interface ToolResult {
 /** An MCP server over a fresh root whose app answers each tool with `results[name]`. */
 async function server(results: Record<string, unknown>) {
   const root = await mkdtemp(join(tmpdir(), 'op-mcp-root-'))
+  const rpcCalls: unknown[] = []
   const manager = createMCPSessionManager({
     serverVersion: '0.0.0',
     registerTools: (mcpServer, agentSession, onToolSettled) =>
@@ -42,6 +43,7 @@ async function server(results: Record<string, unknown>) {
         onToolSettled,
         mcpRoot: root,
         sendRPC: async (body) => {
+          rpcCalls.push(body)
           const { args } = body as { args: { name: string } }
           return { ok: true, result: results[args.name] }
         }
@@ -79,7 +81,7 @@ async function server(results: Record<string, unknown>) {
     const message: unknown = JSON.parse(json)
     return (message as { result: ToolResult }).result
   }
-  return { root, call }
+  return { root, call, rpcCalls }
 }
 
 const zigzag = `M0 0${Array.from({ length: 64 }, (_, i) => ` L${(i + 1) * 3} ${(i % 2) * 20}`).join('')}`
@@ -111,5 +113,41 @@ describe('MCP tool file output', () => {
     const inline = await call('export_pdf', {})
     expect(inline.content[0].type).toBe('text')
     expect(inline.content[0].text).toContain(result.base64)
+  })
+})
+
+describe('MCP page tools', () => {
+  test('move_page keeps its target page ID separate from the active page routing field', async () => {
+    const { call, rpcCalls } = await server({
+      move_page: { id: 'page-to-move', name: 'Moved', index: 1 }
+    })
+
+    const result = await call('move_page', {
+      document_id: 'document-target',
+      page_id: 'active-page',
+      target_page_id: 'page-to-move',
+      index: 1
+    })
+
+    expect(result.isError).toBeFalsy()
+    const rpc = rpcCalls[0] as {
+      command: string
+      args: {
+        document_id: string
+        page_id: string
+        name: string
+        args: Record<string, unknown>
+      }
+    }
+    expect(rpc).toMatchObject({
+      command: 'tool',
+      args: {
+        document_id: 'document-target',
+        page_id: 'active-page',
+        name: 'move_page',
+        args: { target_page_id: 'page-to-move', index: 1 }
+      }
+    })
+    expect(rpc.args.args.page_id).toBeUndefined()
   })
 })

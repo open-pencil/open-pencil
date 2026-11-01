@@ -76,7 +76,8 @@ import {
   nodeToComponent,
   nodeTree,
   renameNode,
-  ungroupNode
+  ungroupNode,
+  movePage
 } from '#core/tools/structure'
 import {
   bindVariable,
@@ -181,6 +182,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   nodeBindings,
   nodeReplaceWith,
   arrangeNodes,
+  movePage,
   // Variables
   listVariables,
   listCollections,

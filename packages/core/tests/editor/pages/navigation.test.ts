@@ -24,3 +24,27 @@ describe('page navigation', () => {
     expect(editor.state.currentPageId).toBe(first)
   })
 })
+
+test('moving the last visible page places it before a trailing internal canvas', () => {
+  const editor = createEditor({ getViewportSize: () => VIEWPORT })
+  const [first] = editor.graph.getPages()
+  if (!first) throw new Error('Expected a default page')
+
+  const popover = editor.graph.addPage('Popover')
+  const internal = editor.graph.addPage('Internal Only Canvas')
+  editor.graph.updateNode(internal.id, { internalOnly: true })
+  const empty = editor.graph.addPage('Empty')
+
+  editor.movePage(empty.id, 2)
+
+  expect(editor.graph.getPages().map((page) => page.id)).toEqual([first.id, popover.id, empty.id])
+  expect(editor.graph.getPages(true).map((page) => page.id)).toEqual([
+    first.id,
+    popover.id,
+    empty.id,
+    internal.id
+  ])
+  const orderKeys = editor.graph.getPages(true).map((page) => page.source.orderKey)
+  expect(orderKeys.every((key) => typeof key === 'string')).toBe(true)
+  expect([...orderKeys].sort()).toEqual(orderKeys)
+})
