@@ -18,6 +18,7 @@ const meta = {
   metadata: string
   view: 'grid' | 'list'
   disabled?: boolean
+  previewURL?: string
   menu?: { actions: string; delete: string }
 }>
 
