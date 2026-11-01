@@ -1,0 +1,1 @@
+- Recent files on Home show sharp previews framed from the top of the cover page, and keep them after the file is saved.
