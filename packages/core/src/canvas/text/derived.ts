@@ -1,4 +1,4 @@
-import type { Canvas, Path } from 'canvaskit-wasm'
+import type { Canvas, Paint, Path } from 'canvaskit-wasm'
 import { fromUint8Array } from 'js-base64'
 
 import type { Fill, DerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
@@ -15,6 +15,7 @@ import type { ResourceCache } from '#core/cache/resource'
 import { createPathCache } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { drawTextDecorations } from '#core/canvas/text/decorations'
+import { styleRunAt, type StyleRun } from '#core/text/character-face'
 import { hasDecoration, savedTextDecorationRects } from '#core/text/decorations'
 import { geometryBlobToPath } from '#core/vector'
 
@@ -304,23 +305,50 @@ export function drawsSavedText(node: SceneNode): boolean {
   )
 }
 
+/**
+ * The paints of each style run's solid fills, copied from the layer's fill paint once per run
+ * and shared by the run's glyphs; a text of many runs still makes one paint per fill.
+ */
+class StyleRunPaints {
+  private readonly byRun = new Map<StyleRun, Paint[]>()
+
+  constructor(private readonly base: Paint) {}
+
+  for(run: StyleRun, fills: readonly Fill[]): Paint[] {
+    let paints = this.byRun.get(run)
+    if (paints) return paints
+    paints = []
+    for (const fill of fills) {
+      if (!fill.visible || fill.type !== 'SOLID') continue
+      const paint = this.base.copy()
+      const color = fill.color
+      paint.setColorComponents(color.r, color.g, color.b, color.a * fill.opacity)
+      paints.push(paint)
+    }
+    this.byRun.set(run, paints)
+    return paints
+  }
+
+  delete(): void {
+    for (const paints of this.byRun.values()) for (const paint of paints) paint.delete()
+    this.byRun.clear()
+  }
+}
+
 /** One glyph's outline in its style run's solid fills, or in the layer's fill paint. */
-function drawGlyphOutline(r: SkiaRenderer, canvas: Canvas, path: Path, runFills?: Fill[]): void {
-  if (!runFills) {
+function drawGlyphOutline(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  path: Path,
+  runPaints: StyleRunPaints,
+  run: StyleRun | undefined
+): void {
+  const fills = run?.style.fills
+  if (!run || !fills) {
     canvas.drawPath(path, r.fillPaint)
     return
   }
-  const paint = r.fillPaint.copy()
-  try {
-    for (const fill of runFills) {
-      if (!fill.visible || fill.type !== 'SOLID') continue
-      const color = fill.color
-      paint.setColorComponents(color.r, color.g, color.b, color.a * fill.opacity)
-      canvas.drawPath(path, paint)
-    }
-  } finally {
-    paint.delete()
-  }
+  for (const paint of runPaints.for(run, fills)) canvas.drawPath(path, paint)
 }
 
 export function drawDerivedText(
@@ -339,25 +367,28 @@ export function drawDerivedText(
   // A gradient spans the layer, so its glyphs are moved into layer space rather than drawn
   // under an em-scaled canvas that would stretch the gradient by the font size.
   const paintsLayerSpace = fill !== undefined && fill.type !== 'SOLID'
-  for (const [index, glyph] of node.derivedTextGlyphs.entries()) {
-    // An emoji's outline is a placeholder square; its image is drawn apart from the fills.
-    if (glyph.emojiCodePoints) continue
-    const glyphY = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
-    const emPath = derivedGlyphPath(r, glyph.commandsBlob)
-    const path = paintsLayerSpace ? layerSpaceGlyphPath(r, emPath, glyph, glyphY) : emPath
-    canvas.save()
-    if (!paintsLayerSpace) applyGlyphEmTransform(canvas, glyph, glyphY)
-    const shouldUseHardCoverage = shouldUseHardDerivedGlyphCoverage(node)
-    if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(false)
-    const character = glyph.firstCharacter ?? markerCharacters.get(index)
-    const run =
-      character === undefined
-        ? undefined
-        : node.styleRuns.find((run) => character >= run.start && character < run.start + run.length)
-    drawGlyphOutline(r, canvas, path, savedTextEligible ? run?.style.fills : undefined)
-    if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(true)
-    if (path !== emPath) path.delete()
-    canvas.restore()
+  const hardCoverage = shouldUseHardDerivedGlyphCoverage(node)
+  if (hardCoverage) r.fillPaint.setAntiAlias(false)
+  const runPaints = new StyleRunPaints(r.fillPaint)
+  try {
+    for (const [index, glyph] of node.derivedTextGlyphs.entries()) {
+      // An emoji's outline is a placeholder square; its image is drawn apart from the fills.
+      if (glyph.emojiCodePoints) continue
+      const glyphY = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
+      const emPath = derivedGlyphPath(r, glyph.commandsBlob)
+      const path = paintsLayerSpace ? layerSpaceGlyphPath(r, emPath, glyph, glyphY) : emPath
+      canvas.save()
+      if (!paintsLayerSpace) applyGlyphEmTransform(canvas, glyph, glyphY)
+      const character = glyph.firstCharacter ?? markerCharacters.get(index)
+      const run =
+        savedTextEligible && character !== undefined ? styleRunAt(node, character) : undefined
+      drawGlyphOutline(r, canvas, path, runPaints, run)
+      if (path !== emPath) path.delete()
+      canvas.restore()
+    }
+  } finally {
+    runPaints.delete()
+    if (hardCoverage) r.fillPaint.setAntiAlias(true)
   }
 
   // Decorations follow horizontal lines; path text has none.

@@ -37,12 +37,19 @@ function solidColor(fills: Fill[]): Fill | undefined {
   return fills.find((fill) => fill.visible && fill.type === 'SOLID')
 }
 
-function drawDots(canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
+/** Dots one diameter apart, drawn as one run of round points so a line is one call. */
+function drawDots(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
   const radius = rect.height / 2
   const y = rect.y + radius
+  const points: number[] = []
   for (let x = rect.x + radius; x <= rect.x + rect.width - radius; x += rect.height * 2) {
-    canvas.drawCircle(x, y, radius, paint)
+    points.push(x, y)
   }
+  if (points.length === 0) return
+  paint.setStyle(ck.PaintStyle.Stroke)
+  paint.setStrokeCap(ck.StrokeCap.Round)
+  paint.setStrokeWidth(rect.height)
+  canvas.drawPoints(ck.PointMode.Points, points, paint)
 }
 
 function drawWave(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
@@ -83,7 +90,7 @@ export function drawTextDecorations(
         paint.setShader(null)
         paint.setColorComponents(red, g, b, a * fill.opacity)
       }
-      if (rect.style === 'DOTTED') drawDots(canvas, rect, paint)
+      if (rect.style === 'DOTTED') drawDots(ck, canvas, rect, paint)
       else if (rect.style === 'WAVY') drawWave(ck, canvas, rect, paint)
       else canvas.drawRect(ck.XYWHRect(rect.x, rect.y, rect.width, rect.height), paint)
     } finally {
