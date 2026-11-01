@@ -1,6 +1,8 @@
 export default {
   slots: {
     root: 'group relative min-w-0',
+    // The context menu's trigger: it fills the root, so a right-click anywhere on the entry opens it.
+    surface: '',
     trigger:
       'min-w-0 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50',
     preview:
@@ -27,7 +29,7 @@ export default {
         menuTrigger: 'absolute top-2 right-2 bg-panel/90 shadow-sm'
       },
       list: {
-        root: 'flex items-center border-b border-border last:border-b-0 hover:bg-hover',
+        surface: 'flex items-center border-b border-border group-last:border-b-0 hover:bg-hover',
         trigger: 'flex min-h-14 items-center gap-3 px-3 py-2 sm:min-h-0 sm:px-4 sm:py-3',
         metadata: 'sm:hidden',
         menuTrigger: 'mr-2 sm:mr-3'

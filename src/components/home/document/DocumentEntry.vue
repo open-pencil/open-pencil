@@ -53,7 +53,7 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
   <div data-slot="document-entry" :class="styles.root({ class: normalizeClass(className) })">
     <ContextMenuRoot :disabled="!menu">
       <ContextMenuTrigger as-child>
-        <div class="contents">
+        <div data-slot="surface" :class="styles.surface()">
           <button
             type="button"
             :disabled="disabled"
