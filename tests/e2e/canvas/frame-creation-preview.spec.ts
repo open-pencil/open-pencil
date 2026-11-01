@@ -66,7 +66,7 @@ async function probeCreation(page: Page) {
           committed,
           interactive: store.isInteractiveEditing(),
           covered: renderer.tiledSceneCovered,
-          renderedTiles: renderer.tiledScene.renderedTiles,
+          visibleTiles: renderer.tiledScene.visibleTilesRendered,
           batching: store.undo.isBatching
         }
       },
@@ -104,7 +104,7 @@ test('Frame-tool creation previews without rebuilding the tiles', async ({ page 
       expect(held.version).toBe(started.version)
       expect(held.committed).toBe(started.committed)
       expect(held.covered).toBe(true)
-      expect(held.renderedTiles).toBe(started.renderedTiles)
+      expect(held.visibleTiles).toBe(started.visibleTiles)
     }
     expect((await page.screenshot({ clip })).equals(before)).toBe(false)
     await page.mouse.up()

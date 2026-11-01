@@ -91,8 +91,11 @@ export interface TiledSceneControllerOptions {
 }
 
 export class TiledSceneController {
-  /** Tiles rendered and kept since the controller was made; a test reads it to prove a gesture rebuilt none. */
-  renderedTiles = 0
+  /**
+   * Visible-level tiles rendered and kept since the controller was made, background stages left
+   * out; a test reads it to prove a gesture rebuilt none.
+   */
+  visibleTilesRendered = 0
   private readonly now: () => number
   private index: RenderChunkIndex | null = null
   private pageId: string | null = null
@@ -561,7 +564,7 @@ export class TiledSceneController {
     }
     this.tileCache.takeWatchedEvictions()
     this.tileCache.install(tile, job.contentGeneration)
-    this.renderedTiles++
+    if (job.priority !== 'overscan') this.visibleTilesRendered++
     if (job.priority === 'overscan' && this.tileCache.takeWatchedEvictions() > 0) {
       this.backgroundSaturated = true
     }
