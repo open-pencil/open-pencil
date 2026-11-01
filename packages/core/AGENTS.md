@@ -75,12 +75,12 @@ Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
 - `renderNow()` is only for surface recreation and font loading, where an immediate draw is required.
 - The resize observer uses a rAF throttle, not a debounce; debounce causes canvas skew.
 - Viewport culling skips off-screen nodes; unclipped parents are not culled because children may extend beyond bounds.
-- Overscan images accelerate navigation; settled scenes rasterize existing retained pictures at the live viewport size and origin. Pixel-grid alignment alone does not guarantee Skia anti-aliasing parity. Keep settlement pending until the viewport pass completes; do not add a second viewport image cache.
+- Overscan images accelerate navigation; a settled scene is the exact visible tiles at the live viewport's device scale. Pixel-grid alignment alone does not guarantee Skia anti-aliasing parity. Keep settlement pending until the viewport pass completes; do not add a second viewport image cache.
 
 ### Paints
 
 - A gradient or image paint builds a Skia shader through `applyGradientFill` and `applyImageFill` (`packages/core/src/canvas/fills.ts`), which take the target `Paint`, so a stroke reuses them instead of a second shader path. Both say whether they set one; a caller skips the paint when they did not, since CanvasKit builds no gradient from a transform it cannot invert and an image may not be decoded yet (`packages/core/tests/canvas/paints.test.ts`).
-- `packages/core/src/canvas/scene.ts` walks the tree and dispatches: text draws in `canvas/text/render.ts`, a layer's strokes in `canvas/strokes/dispatch.ts`, and a shape with effects through its raster or picture cache in `canvas/renderer/effect-raster-cache.ts`; keep `scene.ts` to traversal and move a new drawing domain beside those.
+- `packages/core/src/canvas/scene.ts` walks the tree and dispatches: text draws in `canvas/text/render.ts`, a layer's strokes in `canvas/strokes/dispatch.ts`, and a shape with effects through its node picture in `canvas/renderer/node-pictures.ts`; keep `scene.ts` to traversal and move a new drawing domain beside those.
 - `forVisibleStrokes` (`packages/core/src/canvas/strokes.ts`) is where a stroke's shader and dash are set and cleared, for shapes and booleans alike; stroke draw helpers take an already-configured `strokePaint` and must not reset its shader, and a dash goes on through `withStrokeDash`, which frees the effect (`packages/core/tests/canvas/strokes.test.ts`).
 - Shadows are cast from what a layer draws, children included, through `drawSilhouette` (`packages/core/src/canvas/shadows/silhouette.ts`); a container's shadows are drawn by `renderLayerShadows` around its children, not by `renderShape`. A faster path for a shape must give the same pixels as its silhouette (`packages/core/tests/canvas/shadows.test.ts`).
 
@@ -97,7 +97,7 @@ Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
 
 ### Text decorations
 
-- Underlines and strikethroughs come from `textDecorationRects` (`packages/core/src/text/decorations.ts`), Figma's geometry over laid-out or saved glyphs, both for drawing and for the rects `.fig` files save, which Figma draws decorations from; Skia's paragraph decorations stay off. Drawn decorations are kept with the prepared text, whose paragraph inputs cover them, or by saved glyphs in the renderer's `derivedDecorationCache` (`packages/core/tests/text/decorations.test.ts`).
+- Underlines and strikethroughs come from `textDecorationRects` (`packages/core/src/text/decorations.ts`), Figma's geometry over laid-out or saved glyphs, both for drawing and for the rects `.fig` files save, which Figma draws decorations from; Skia's paragraph decorations stay off. Drawn decorations are kept with the prepared text, whose paragraph inputs cover them, or by saved glyphs in the renderer's `textCaches.derivedDecorations` (`packages/core/tests/text/decorations.test.ts`).
 
 ### Geometry and overlays
 

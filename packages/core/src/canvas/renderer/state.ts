@@ -23,7 +23,7 @@ export function createFeedbackMarks(): FeedbackMarks {
 
 /** A node's picture of itself with its effects, good while the font generation holds. */
 export interface NodePictureEntry {
-  picture: SkPicture | null
+  picture: SkPicture
   fontGeneration: number
 }
 
@@ -54,7 +54,7 @@ export function invalidateScenePicture(r: SkiaRenderer): void {
 }
 
 export function clearNodePictures(r: Pick<SkiaRenderer, 'nodePictures'>): void {
-  for (const { picture } of r.nodePictures.values()) picture?.delete()
+  for (const { picture } of r.nodePictures.values()) picture.delete()
   r.nodePictures.clear()
 }
 
@@ -77,7 +77,7 @@ export function invalidateNodePicture(
   r.textFonts.readiness.delete(nodeId)
   const cached = r.nodePictures.get(nodeId)
   if (cached) {
-    cached.picture?.delete()
+    cached.picture.delete()
     r.nodePictures.delete(nodeId)
   }
 }

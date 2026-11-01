@@ -17,7 +17,7 @@ import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
-import { renderShapeThroughEffectCaches } from './renderer/effect-raster-cache'
+import { drawShapeThroughNodePicture } from './renderer/node-pictures'
 import { mapVisualBounds, subtreeVisualBounds } from './renderer/visual-bounds'
 import { isolatesInnerShadows, renderLayerShadows } from './shadows'
 import {
@@ -503,7 +503,7 @@ export function renderShape(
     return
   }
 
-  renderShapeThroughEffectCaches(r, canvas, node, (target) =>
+  drawShapeThroughNodePicture(r, canvas, node, (target) =>
     r.renderShapeUncached(target, node, graph)
   )
 }

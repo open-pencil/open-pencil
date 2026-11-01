@@ -88,6 +88,7 @@ function updateIssueMarkers(
   const markers = overlays.designIssues?.markers
   if (!markers || markers.length === 0 || overlays.penState) {
     r.issueMarkers = []
+    r.issueMarkerStage.clear()
     return
   }
   const staged = r.issueMarkerStage.update(

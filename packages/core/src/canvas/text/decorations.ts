@@ -39,6 +39,8 @@ function solidColor(fills: Fill[]): Fill | undefined {
 
 /** Dots one diameter apart, drawn as one run of round points so a line is one call. */
 function drawDots(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
+  // A line of no thickness has no dots; stepping by it would never end.
+  if (rect.height <= 0) return
   const radius = rect.height / 2
   const y = rect.y + radius
   const points: number[] = []

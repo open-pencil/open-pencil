@@ -1,6 +1,6 @@
 # Renderer lifecycle and ownership
 
-The CanvasKit renderer keeps hot drawing loops direct, but its retained and tiled paths follow explicit lifecycle contracts. Preserve these contracts when changing renderer structure or cache policy.
+The CanvasKit renderer keeps hot drawing loops direct, but its tiled path follows explicit lifecycle contracts. Preserve these contracts when changing renderer structure or cache policy.
 
 ## Navigation and settlement
 
@@ -10,7 +10,7 @@ Generation rules:
 
 - Navigation generations cancel obsolete queued tile work.
 - Content generations invalidate affected pictures and tiles.
-- Page, scene, position-preview, and font versions all participate in retained-cache validity.
+- Page, scene, position-preview, and font versions all participate in picture and tile validity.
 - A stale build or raster result must be deleted rather than installed.
 
 ## CanvasKit ownership
@@ -19,14 +19,11 @@ CanvasKit objects are native/WASM resources and are not reclaimed reliably by Ja
 
 | Resource | Created by | Owner after success | Released by |
 | --- | --- | --- | --- |
-| Scene picture | Scene recorder | Renderer scene-picture state | Replacement, invalidation, renderer destruction |
-| Retained backing image | Completed backing build | Retained backing state | Replacement, invalidation, renderer destruction |
-| Retained build surface | Backing builder | Retained build state | Commit, cancellation, invalidation, renderer destruction |
-| Subtree picture | Subtree recorder | Subtree picture cache | Scope change, node invalidation, renderer destruction |
+| Whole-scene picture | Scene recorder | `wholeScene` | Replacement, invalidation, renderer destruction |
+| Node picture | Node picture recorder | `nodePictures` | Node invalidation, font generation change, renderer destruction |
 | Chunk picture | Chunk recorder | `RenderChunkPictureCache` | Chunk invalidation or cache clear |
 | Tile image | `renderTile()` | Caller until installation, then `TileImageCache` | Stale-result discard, replacement, eviction, cache clear |
 | Tile surface | `TileSurfacePool` | Surface pool | Pool clear |
-| Effect raster image | Effect rasterizer | Effect raster cache | Node invalidation, eviction, cache clear |
 | CanvasKit path arrays | Geometry builder | Owning geometry cache | Node invalidation or renderer destruction |
 
 Do not introduce generic disposal wrappers into per-node or per-tile hot loops. Prefer narrow domain operations with obvious transfer points, and use `try/finally` around recorder, surface, paint-effect, and transform lifetimes.

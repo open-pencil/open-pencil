@@ -4,6 +4,7 @@ import type { Font, Paint, Surface } from 'canvaskit-wasm'
 
 import { createImageFilterCache, createMaskFilterCache } from '#core/canvas/effects'
 import { createRendererImages } from '#core/canvas/images/state'
+import { IssueMarkerStage } from '#core/canvas/issues/stage'
 import type { NodeEditPaints } from '#core/canvas/node-edit-overlay'
 import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
@@ -66,6 +67,7 @@ function createRenderer() {
       techStrokePaint: deletable<Paint>()
     } as Partial<NodeEditPaints> as NodeEditPaints,
     nodePictures: new Map(),
+    issueMarkerStage: new IssueMarkerStage(),
     wholeScene: createWholeScenePicture(),
     tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
     labelParagraphCache: asDouble<SkiaRenderer['labelParagraphCache']>({ clear: mock() }),

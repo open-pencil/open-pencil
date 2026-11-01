@@ -6,22 +6,22 @@ import { arrowCapOverflow } from '@open-pencil/scene-graph/arrow-caps'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
 /**
- * Draws a shape with effects from its cached picture, recording one when there is none: the
+ * Draws a shape with effects from its node picture, recording one when there is none: the
  * picture holds the shape with its shadows and blurs, so a tile that holds it again replays it
  * rather than building the effects again.
  */
-export function renderShapeThroughEffectCaches(
+export function drawShapeThroughNodePicture(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   draw: (target: Canvas) => void
 ): void {
   const cached = r.nodePictures.get(node.id)
-  if (cached?.picture && cached.fontGeneration === r.fontGeneration) {
+  if (cached && cached.fontGeneration === r.fontGeneration) {
     canvas.drawPicture(cached.picture)
     return
   }
-  cached?.picture?.delete()
+  cached?.picture.delete()
   r.nodePictures.delete(node.id)
 
   // An arrow head reaches past the shape, and its shadow reaches past the head: both margins.

@@ -69,6 +69,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.dashEffects.clear()
   disposeNodeEditPaints(r.nodeEditPaints)
   clearNodePictures(r)
+  r.issueMarkerStage.clear()
   r.labelParagraphCache.clear()
   r.textPreparationCache.clear()
   r.tiledScene.destroy()
