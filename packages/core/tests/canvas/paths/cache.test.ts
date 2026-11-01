@@ -228,6 +228,36 @@ describe('renderer path caches', () => {
     })
   })
 
+  test('keep the paths of the drawn graph while it is exported', () => {
+    const { graph, pageId } = replacementGraph('upper-right')
+    withRenderer(pageId, (renderer) => {
+      renderer.renderFromEditorState(createDefaultEditorState(pageId), graph, null, 256, 256, false)
+      const cached = renderer.nodePaths.vector.get('reused-vector')
+      expect(cached).toBeDefined()
+
+      exportPixels(renderer, graph, pageId)
+
+      expect(renderer.nodePaths.vector.get('reused-vector')).toBe(cached)
+    })
+  })
+
+  test('redraw the drawn graph after another graph reusing its ids is exported', () => {
+    const document = replacementGraph('upper-right')
+    const library = replacementGraph('lower-left')
+    withRenderer(document.pageId, (renderer) => {
+      const state = createDefaultEditorState(document.pageId)
+      state.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+      renderer.renderFromEditorState(state, document.graph, null, 256, 256, false, 'scene')
+
+      exportPixels(renderer, library.graph, library.pageId)
+      renderer.renderFromEditorState(state, document.graph, null, 256, 256, false, 'scene')
+      const pixels = surfacePixels(renderer)
+
+      expect(pixelAt(pixels, 45, 15)).toEqual([255, 0, 0, 255])
+      expect(pixelAt(pixels, 15, 45)).toEqual([255, 255, 255, 255])
+    })
+  })
+
   test('stay within their point budget however many vectors are drawn', () => {
     const { graph, pageId } = triangles(200)
     withRenderer(pageId, (renderer) => {

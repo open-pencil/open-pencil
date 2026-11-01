@@ -29,7 +29,6 @@ export function renderSceneToCanvas(
   graph: SceneGraph,
   pageId: string
 ): void {
-  r.nodePaths.useGraph(graph)
   r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
