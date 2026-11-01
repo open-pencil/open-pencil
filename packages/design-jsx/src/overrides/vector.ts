@@ -8,8 +8,8 @@ import {
   transformVectorNetwork
 } from '@open-pencil/scene-graph/vector-network'
 
+import { normalizeStyleProps } from '.'
 import { designJSXProp } from '../definitions'
-import { normalizeStyleProps } from '../props-overrides'
 import { parseScriptInput } from '../schema'
 
 const FILL_RULES = { nonzero: 'NONZERO', evenodd: 'EVENODD' } as const

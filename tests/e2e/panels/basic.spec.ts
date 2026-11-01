@@ -1,7 +1,7 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 
-const editor = useEditorSetup()
+const editor = useEditorSetup('/?test')
 
 test('layers panel resize increases width', async () => {
   const panel = editor.page.getByTestId('layers-panel')

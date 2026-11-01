@@ -18,7 +18,7 @@ export interface AppRuntimeConfig {
 
 export function parseAppRuntimeConfig(
   search: string,
-  preferredRenderer: SceneRendererMode = 'retained'
+  preferredRenderer: SceneRendererMode = 'tiled'
 ): AppRuntimeConfig {
   const params = new URLSearchParams(search)
   const renderer = params.get('renderer')

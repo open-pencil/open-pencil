@@ -1,0 +1,5 @@
+- Instances renamed in OpenPencil keep their names when the file is opened in Figma, instead of showing their component's name.
+- Vectors saved to `.fig` give every point a stroke join, so Figma can edit their points from plugins.
+- A text style an instance clears stays cleared after the file is saved and opened again.
+- Removing a point where three or more segments meet no longer leaves the shape filled as an open path.
+- SVG export keeps a layer's stroke when its topmost fill, such as noise, has no SVG paint.

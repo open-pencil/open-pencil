@@ -49,7 +49,7 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
+import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -177,12 +177,8 @@ export function useAppMenu() {
   }
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => {
-      void import('@/app/tabs').then((m) => m.createTab())
-    },
-    'new-tab': () => {
-      void import('@/app/tabs').then((m) => m.openNewFileTab())
-    },
+    new: () => createTab(),
+    'new-tab': () => openNewFileTab(),
     open: () => void openFileDialog(),
     'open-tour': () => {
       openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))

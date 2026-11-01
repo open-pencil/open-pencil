@@ -1,4 +1,4 @@
-import type { Paint } from '@open-pencil/kiwi/fig/codec'
+import type { Paint, StyleReference } from '@open-pencil/kiwi/fig/codec'
 import type {
   HandleMirroring,
   VectorNetwork,
@@ -8,6 +8,9 @@ import type {
   WindingRule
 } from '@open-pencil/scene-graph'
 
+import { convertFills, fillToKiwiPaint } from '../paint'
+import { styleRefId } from '../style/refs'
+
 export interface StyleOverride {
   styleID: number
   handleMirroring?: string
@@ -15,6 +18,8 @@ export interface StyleOverride {
   strokeJoin?: string
   cornerRadius?: number
   fillPaints?: Paint[]
+  /** The shared fill style a region's paints come from. */
+  styleIdForFill?: StyleReference
 }
 
 export function decodeVectorNetworkBlob(
@@ -22,6 +27,17 @@ export function decodeVectorNetworkBlob(
   styleOverrideTable?: StyleOverride[]
 ): VectorNetwork {
   return readVectorNetworkBlob(data, styleOverrideTable).network
+}
+
+/**
+ * A region's own paints, and the shared style they come from, from its style table entry. An
+ * entry with an empty list is a region filled with nothing, not one that takes the layer's.
+ */
+function regionFill(style: StyleOverride | undefined): Pick<VectorRegion, 'fills' | 'fillStyleId'> {
+  if (!style?.fillPaints) return {}
+  const fills = convertFills(style.fillPaints)
+  const fillStyleId = styleRefId(style.styleIdForFill)
+  return fillStyleId ? { fills, fillStyleId } : { fills }
 }
 
 /** The network a blob holds, with each segment's style word, which the network itself drops. */
@@ -90,8 +106,9 @@ function readVectorNetworkBlob(
   const regions: VectorRegion[] = []
   for (let index = 0; index < regionCount; index++) {
     // The low bit is the winding rule; the rest is the region's style ID, which names its fill.
-    const windingRule: WindingRule =
-      (view.getUint32(offset, true) & 1) === 1 ? 'NONZERO' : 'EVENODD'
+    const word = view.getUint32(offset, true)
+    const windingRule: WindingRule = (word & 1) === 1 ? 'NONZERO' : 'EVENODD'
+    const style = styles.get(word >>> 1)
     offset += 4
     const loopCount = view.getUint32(offset, true)
     offset += 4
@@ -106,7 +123,7 @@ function readVectorNetworkBlob(
       }
       loops.push(loop)
     }
-    regions.push({ windingRule, loops })
+    regions.push({ windingRule, loops, ...regionFill(style) })
   }
 
   return { network: { vertices, segments, regions }, segmentStyles }
@@ -121,9 +138,18 @@ function vertexStyleKey(vertex: VectorVertex): string {
   ].join('|')
 }
 
-export function buildStyleOverrideTable(network: VectorNetwork): {
+/**
+ * The style overrides a network's vertices and regions name: vertex entries are shared by equal
+ * styles, and each region with paints of its own gets an entry, as Figma writes them, naming the
+ * shared style they come from through `styleReference`.
+ */
+export function buildStyleOverrideTable(
+  network: VectorNetwork,
+  styleReference?: (id: string) => StyleReference
+): {
   table: StyleOverride[]
   styleToId: Map<string, number>
+  regionStyleIds: number[]
 } {
   const styleToId = new Map<string, number>()
   const table: StyleOverride[] = []
@@ -148,7 +174,15 @@ export function buildStyleOverrideTable(network: VectorNetwork): {
     table.push(entry)
     nextId++
   }
-  return { table, styleToId }
+  const regionStyleIds = network.regions.map((region) => {
+    if (!region.fills) return 0
+    const entry: StyleOverride = { styleID: nextId, fillPaints: region.fills.map(fillToKiwiPaint) }
+    if (region.fillStyleId && styleReference)
+      entry.styleIdForFill = styleReference(region.fillStyleId)
+    table.push(entry)
+    return nextId++
+  })
+  return { table, styleToId, regionStyleIds }
 }
 
 /**

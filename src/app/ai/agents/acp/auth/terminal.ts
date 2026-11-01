@@ -1,3 +1,5 @@
+import { Command } from '@tauri-apps/plugin-shell'
+
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { createDeferred } from '@/app/runtime/deferred'
@@ -45,7 +47,6 @@ export async function startTerminalSignIn(
   args: string[],
   onURL: (url: string) => void
 ): Promise<TerminalSignIn> {
-  const { Command } = await import('@tauri-apps/plugin-shell')
   const resolved = resolveScopedCommand(signInScope(agent), agent.command, args)
   const command = Command.create(resolved.command, resolved.args)
   const finished = createDeferred<undefined>()

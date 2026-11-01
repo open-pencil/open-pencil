@@ -149,13 +149,13 @@ export function drawSectionStatus(
       SECTION_TITLE_RADIUS
     )
     const { background } = colors
-    r.auxFill.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
+    r.auxFill.setColorComponents(background.r, background.g, background.b, background.a)
     canvas.drawRRect(bounds, r.auxFill)
     r.auxStroke.setColor(colors.border)
     r.auxStroke.setStrokeWidth(1)
     r.auxStroke.setPathEffect(null)
     canvas.drawRRect(bounds, r.auxStroke)
-    r.auxFill.setColor(r.ck.Color4f(label.color.r, label.color.g, label.color.b, 1))
+    r.auxFill.setColorComponents(label.color.r, label.color.g, label.color.b, 1)
     canvas.drawCircle(
       x + SECTION_TITLE_PADDING_X + DOT_RADIUS,
       y + height / 2,
@@ -191,6 +191,6 @@ export function drawStatusDot(
   label: StatusState,
   center: Vector
 ): void {
-  r.auxFill.setColor(r.ck.Color4f(label.color.r, label.color.g, label.color.b, 1))
+  r.auxFill.setColorComponents(label.color.r, label.color.g, label.color.b, 1)
   canvas.drawCircle(center.x, center.y, DOT_RADIUS, r.auxFill)
 }

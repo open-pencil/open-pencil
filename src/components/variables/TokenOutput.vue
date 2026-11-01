@@ -16,6 +16,7 @@ import { useEditor } from '@open-pencil/vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
+import { variablesStylesheet } from '@/app/editor/tokens/stylesheet'
 import CodeViewer from '@/components/code-editor/CodeViewer.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -45,8 +46,7 @@ const collectionVariables = useSceneComputed(() => [
  */
 const stylesheet = computedAsync(async () => {
   const ids = new Set(collectionVariables.value.map((variable) => variable.id))
-  const { tokenStylesheet } = await import('@open-pencil/dom-css/export')
-  const { css } = await tokenStylesheet(editor.graph, {
+  const { css } = await variablesStylesheet(editor.graph, {
     format: 'css',
     include: (variable) => ids.has(variable.id)
   })

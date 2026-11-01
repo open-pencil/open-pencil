@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
 
-import { deleteVectorParts } from '#core/vector/bezier'
+import { deleteVectorParts, removeVertex } from '#core/vector/bezier'
 
 const zero = { x: 0, y: 0 }
 
@@ -87,5 +87,42 @@ describe('deleting segments and points', () => {
     const result = deleteVectorParts(network, [0], [])
     expect(result.vertices).toEqual(SQUARE.vertices)
     expect(result.regions).toEqual(SQUARE.regions)
+  })
+})
+
+describe('removing a point', () => {
+  test('a point between two segments merges them and keeps its fill region', () => {
+    const result = removeVertex(SQUARE, 1)
+    expect(ends(result ?? OPEN)).toEqual([
+      [0, 1],
+      [1, 2],
+      [2, 0]
+    ])
+    expect(result?.regions).toEqual([{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }])
+  })
+
+  test('a point with three segments opens the loops through it and drops their regions', () => {
+    // A filled square with a spur from its corner 0, beside a filled triangle away from it.
+    const network: VectorNetwork = {
+      vertices: [
+        ...SQUARE.vertices,
+        { x: -100, y: 0 },
+        { x: 200, y: 0 },
+        { x: 300, y: 0 },
+        { x: 200, y: 100 }
+      ],
+      segments: [...SQUARE.segments, line(0, 4), line(5, 6), line(6, 7), line(7, 5)],
+      regions: [...SQUARE.regions, { windingRule: 'EVENODD', loops: [[5, 6, 7]] }]
+    }
+    const result = removeVertex(network, 0)
+    expect(ends(result ?? OPEN)).toEqual([
+      [0, 1],
+      [1, 2],
+      [4, 5],
+      [5, 6],
+      [6, 4]
+    ])
+    // The square's loop lost two sides; the triangle's keeps its segments, renumbered.
+    expect(result?.regions).toEqual([{ windingRule: 'EVENODD', loops: [[2, 3, 4]] }])
   })
 })

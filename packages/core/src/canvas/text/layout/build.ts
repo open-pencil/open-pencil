@@ -304,7 +304,8 @@ function buildBlocks(
       lines: paragraphLines(r, blockNode, color, options, firstLineIndent),
       x: 0,
       y: 0,
-      visible: true
+      visible: true,
+      metrics: []
     }
   }
 }

@@ -5,7 +5,7 @@ import { instanceSlotFrames, slotPropertyId } from '@open-pencil/scene-graph/slo
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { SLOT_EMPTY_FILL_ALPHA } from '#core/constants'
-import { createSceneGeometry, type RotationPreview } from '#core/geometry'
+import { type RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, withScreenStroke } from './outline'
 
@@ -50,7 +50,7 @@ export function drawSlotOutlines(
   if (hoveredNodeId) slots.delete(hoveredNodeId)
   if (slots.size === 0) return
 
-  const geometry = createSceneGeometry(graph, preview)
+  const geometry = r.sceneGeometry(graph, preview)
   r.auxFill.setColor(r.slotColor(SLOT_EMPTY_FILL_ALPHA))
   withScreenStroke(r, { color: r.slotColor(), dash: [SLOT_DASH, SLOT_DASH] }, (paint) => {
     for (const frame of slots.values()) {

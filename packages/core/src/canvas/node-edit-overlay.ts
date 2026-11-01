@@ -1,4 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
+import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
 
 import type {
   VectorVertex,
@@ -82,8 +82,6 @@ export function drawNodeEditOverlay(
   const regions = editState.regions
 
   if (vertices.length === 0) return
-
-  ensureNodeEditPaints(r)
 
   const toScreen: ToScreenFn = (x, y) => ({
     x: x * r.zoom + r.panX,
@@ -188,125 +186,64 @@ function drawLiveShape(
 }
 
 // ---------------------------------------------------------------------------
-// Lazy paint cache
+// Paints
 // ---------------------------------------------------------------------------
 
-const paintCache = new WeakMap<
-  SkiaRenderer,
-  {
-    handleLinePaint: Paint
-    handleLineSelectedPaint: Paint
-    handleLineHoverPaint: Paint
-    vertexStroke1px: Paint
-    vertexSelectedFill: Paint
-    handleSelectedFill: Paint
-    handleSelectedStroke: Paint
-    handleHoverFill: Paint
-    handleHoverStroke: Paint
-    techStrokePaint: Paint
-    segmentSelectedPaint: Paint
-  }
->()
-
-function ensureNodeEditPaints(r: SkiaRenderer) {
-  if (paintCache.has(r)) return
-  const ck = r.ck
-
-  // Default handle line — gray
-  const handleLinePaint = new ck.Paint()
-  handleLinePaint.setStyle(ck.PaintStyle.Stroke)
-  handleLinePaint.setStrokeWidth(1)
-  handleLinePaint.setColor(ck.Color4f(0.6, 0.6, 0.6, 1))
-  handleLinePaint.setAntiAlias(true)
-
-  // Selected handle line — blue
-  const handleLineSelectedPaint = new ck.Paint()
-  handleLineSelectedPaint.setStyle(ck.PaintStyle.Stroke)
-  handleLineSelectedPaint.setStrokeWidth(1)
-  handleLineSelectedPaint.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  handleLineSelectedPaint.setAntiAlias(true)
-
-  // Hover handle line — light blue
-  const handleLineHoverPaint = new ck.Paint()
-  handleLineHoverPaint.setStyle(ck.PaintStyle.Stroke)
-  handleLineHoverPaint.setStrokeWidth(1)
-  handleLineHoverPaint.setColor(ck.Color4f(LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 1))
-  handleLineHoverPaint.setAntiAlias(true)
-
-  // Vertex stroke — blue 1px
-  const vertexStroke1px = new ck.Paint()
-  vertexStroke1px.setStyle(ck.PaintStyle.Stroke)
-  vertexStroke1px.setStrokeWidth(1)
-  vertexStroke1px.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  vertexStroke1px.setAntiAlias(true)
-
-  // Vertex selected fill — blue
-  const vertexSelectedFill = new ck.Paint()
-  vertexSelectedFill.setStyle(ck.PaintStyle.Fill)
-  vertexSelectedFill.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  vertexSelectedFill.setAntiAlias(true)
-
-  // Selected handle diamond — blue fill
-  const handleSelectedFill = new ck.Paint()
-  handleSelectedFill.setStyle(ck.PaintStyle.Fill)
-  handleSelectedFill.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  handleSelectedFill.setAntiAlias(true)
-
-  // Selected handle diamond — white outset stroke 3px
-  const handleSelectedStroke = new ck.Paint()
-  handleSelectedStroke.setStyle(ck.PaintStyle.Stroke)
-  handleSelectedStroke.setStrokeWidth(3)
-  handleSelectedStroke.setColor(ck.Color4f(1, 1, 1, 1))
-  handleSelectedStroke.setAntiAlias(true)
-
-  // Hover handle diamond — light blue fill
-  const handleHoverFill = new ck.Paint()
-  handleHoverFill.setStyle(ck.PaintStyle.Fill)
-  handleHoverFill.setColor(ck.Color4f(LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 1))
-  handleHoverFill.setAntiAlias(true)
-
-  // Hover handle diamond — white outset stroke 3px
-  const handleHoverStroke = new ck.Paint()
-  handleHoverStroke.setStyle(ck.PaintStyle.Stroke)
-  handleHoverStroke.setStrokeWidth(3)
-  handleHoverStroke.setColor(ck.Color4f(1, 1, 1, 1))
-  handleHoverStroke.setAntiAlias(true)
-
-  // Technical stroke: rgb(178,178,178) = 0.698
-  const techStrokePaint = new ck.Paint()
-  techStrokePaint.setStyle(ck.PaintStyle.Stroke)
-  techStrokePaint.setStrokeWidth(1)
-  techStrokePaint.setColor(ck.Color4f(0.698, 0.698, 0.698, 1))
-  techStrokePaint.setAntiAlias(true)
-
-  // Selected segment — blue 2px
-  const segmentSelectedPaint = new ck.Paint()
-  segmentSelectedPaint.setStyle(ck.PaintStyle.Stroke)
-  segmentSelectedPaint.setStrokeWidth(2)
-  segmentSelectedPaint.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  segmentSelectedPaint.setAntiAlias(true)
-
-  paintCache.set(r, {
-    handleLinePaint,
-    handleLineSelectedPaint,
-    handleLineHoverPaint,
-    vertexStroke1px,
-    vertexSelectedFill,
-    handleSelectedFill,
-    handleSelectedStroke,
-    handleHoverFill,
-    handleHoverStroke,
-    techStrokePaint,
-    segmentSelectedPaint
-  })
+export interface NodeEditPaints {
+  handleLinePaint: Paint
+  handleLineSelectedPaint: Paint
+  handleLineHoverPaint: Paint
+  vertexStroke1px: Paint
+  vertexSelectedFill: Paint
+  handleSelectedFill: Paint
+  handleSelectedStroke: Paint
+  handleHoverFill: Paint
+  handleHoverStroke: Paint
+  techStrokePaint: Paint
+  segmentSelectedPaint: Paint
 }
 
-function getNodeEditPaints(r: SkiaRenderer) {
-  const paints = paintCache.get(r)
-  if (!paints) {
-    throw new Error('Node edit paints are not initialized')
+function strokePaint(ck: CanvasKit, width: number, color: Float32Array): Paint {
+  const paint = new ck.Paint()
+  paint.setStyle(ck.PaintStyle.Stroke)
+  paint.setStrokeWidth(width)
+  paint.setColor(color)
+  paint.setAntiAlias(true)
+  return paint
+}
+
+function fillPaint(ck: CanvasKit, color: Float32Array): Paint {
+  const paint = new ck.Paint()
+  paint.setStyle(ck.PaintStyle.Fill)
+  paint.setColor(color)
+  paint.setAntiAlias(true)
+  return paint
+}
+
+/** The renderer owns these: it creates them with its other paints and frees them when destroyed. */
+export function createNodeEditPaints(ck: CanvasKit): NodeEditPaints {
+  const blue = ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1)
+  const lightBlue = ck.Color4f(LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 1)
+  const white = ck.Color4f(1, 1, 1, 1)
+  return {
+    handleLinePaint: strokePaint(ck, 1, ck.Color4f(0.6, 0.6, 0.6, 1)),
+    handleLineSelectedPaint: strokePaint(ck, 1, blue),
+    handleLineHoverPaint: strokePaint(ck, 1, lightBlue),
+    vertexStroke1px: strokePaint(ck, 1, blue),
+    vertexSelectedFill: fillPaint(ck, blue),
+    handleSelectedFill: fillPaint(ck, blue),
+    // White outset strokes around the selected and hovered handle diamonds.
+    handleSelectedStroke: strokePaint(ck, 3, white),
+    handleHoverFill: fillPaint(ck, lightBlue),
+    handleHoverStroke: strokePaint(ck, 3, white),
+    // Technical stroke: rgb(178, 178, 178).
+    techStrokePaint: strokePaint(ck, 1, ck.Color4f(0.698, 0.698, 0.698, 1)),
+    segmentSelectedPaint: strokePaint(ck, 2, blue)
   }
-  return paints
+}
+
+export function disposeNodeEditPaints(paints: NodeEditPaints): void {
+  for (const paint of Object.values(paints)) paint.delete()
 }
 
 // ---------------------------------------------------------------------------
@@ -322,7 +259,7 @@ function drawTechStroke(
   segments: VectorSegment[],
   regions: VectorRegion[]
 ): void {
-  const { techStrokePaint } = getNodeEditPaints(r)
+  const { techStrokePaint } = r.nodeEditPaints
   const node = graph.getNode(nodeId)
   if (!node) return
   const world = getWorldMatrix(node, graph)
@@ -358,7 +295,7 @@ function drawSelectedSegments(
   selectedSegmentIndices: Set<number>,
   toScreen: ToScreenFn
 ): void {
-  const { segmentSelectedPaint, vertexStroke1px } = getNodeEditPaints(r)
+  const { segmentSelectedPaint, vertexStroke1px } = r.nodeEditPaints
   const network = { vertices, segments, regions: [] }
   for (const index of selectedSegmentIndices) {
     if (index >= segments.length) continue
@@ -395,7 +332,7 @@ function drawEditHandles(
   selectedHandles: Set<number>,
   hovered: HandleInfo
 ): void {
-  const paints = getNodeEditPaints(r)
+  const paints = r.nodeEditPaints
   for (let si = 0; si < segments.length; si++) {
     const seg = segments[si]
     drawSegmentHandle(
@@ -438,7 +375,7 @@ function drawSegmentHandle(
   toScreen: ToScreenFn,
   selectedHandles: Set<number>,
   hovered: HandleInfo,
-  paints: ReturnType<typeof getNodeEditPaints>
+  paints: NodeEditPaints
 ): void {
   const vertexIndex = tangentField === 'tangentStart' ? seg.start : seg.end
   if (!handleVisibleVertices.has(vertexIndex)) return
@@ -508,7 +445,7 @@ function drawEditVertices(
   toScreen: ToScreenFn
 ): void {
   const vertexFill = r.penVertexFill
-  const { vertexStroke1px, vertexSelectedFill } = getNodeEditPaints(r)
+  const { vertexStroke1px, vertexSelectedFill } = r.nodeEditPaints
 
   for (let i = 0; i < vertices.length; i++) {
     const v = toScreen(vertices[i].x, vertices[i].y)

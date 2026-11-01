@@ -28,6 +28,14 @@ export function fitEnclosingGroupsWithUndo(ctx: EditorContext, parentIds: Iterab
 }
 
 /**
+ * Refits these containers themselves and the groups around them: a boolean operation whose
+ * operation changed takes the box of its new result, as it does when an operand moves.
+ */
+export function refitContainers(ctx: EditorContext, ids: Iterable<string>) {
+  fitEnclosingGroups(ctx.graph, ids, groupFitOptions(ctx.getRenderer(), ctx.graph))
+}
+
+/**
  * Refits the groups around layers that were shown or hidden, since a group spans only the layers
  * it shows. The fit follows from what the layers show, so an edit that replays on undo and redo
  * refits again and needs no undo step of its own.

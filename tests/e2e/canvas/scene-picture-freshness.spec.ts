@@ -82,11 +82,17 @@ for (const renderer of ['retained', 'tiled'] as const) {
       await page.keyboard.up('Control')
     }
     await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+    // The retained renderer zooms over a whole-scene picture; the tiled one over its tiles.
     expect(
-      await page.evaluate(() =>
-        window.openPencil
-          ?.getStore?.()
-          .canvasRenderers.some((r) => r.tracksSceneSettlement && r.scenePicture !== null)
+      await page.evaluate(
+        (tiled) =>
+          window.openPencil
+            ?.getStore?.()
+            .canvasRenderers.some(
+              (r) =>
+                r.tracksSceneSettlement && (tiled ? r.tiledSceneCovered : r.scenePicture !== null)
+            ),
+        renderer === 'tiled'
       )
     ).toBe(true)
     await page.keyboard.press('Backspace')

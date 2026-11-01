@@ -1,0 +1,1 @@
+- Progressive rendering settles a changed canvas in tens of milliseconds instead of over a second, keeps exact tiles on screen while panning, scales downsampled copies of what was rendered into place while zooming out and keeps the page covered at any window size, stays on for documents that draw image previews, and redraws only the text a newly loaded font affects.

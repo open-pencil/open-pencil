@@ -1,3 +1,4 @@
+import { check } from '@tauri-apps/plugin-updater'
 import { promiseTimeout } from '@vueuse/core'
 import type { Ref } from 'vue'
 
@@ -40,7 +41,6 @@ export function scheduleStartupUpdateCheck(messages: Ref<UpdaterMessages>) {
 // window checks again for its own handle, then shows the notes and installs.
 async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
   try {
-    const { check } = await import('@tauri-apps/plugin-updater')
     const update = await check()
     if (!update) {
       if (!silent) toast.info(messages.value.upToDate)
