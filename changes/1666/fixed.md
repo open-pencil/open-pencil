@@ -1,0 +1,1 @@
+- Vector artwork no longer draws another layer's shape after a document is replaced or reopened, or after another document is previewed (#1637).
