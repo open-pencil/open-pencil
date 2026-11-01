@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodeToJSX } from '@open-pencil/design-jsx'
+import { sceneNodeToJSX, selectionToJSXWithLayers } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
@@ -72,6 +72,24 @@ describe('shapes with text in design JSX', () => {
     const again = new SceneGraph()
     const [reread] = await renderJSX(again, jsx)
     expect(shapeWithTextLabel(again, getNodeOrThrow(again, reread.id))?.styleRuns).toEqual(label?.styleRuns)
+  })
+
+  test('a styled label’s elements belong to no layer, so later elements map to theirs', async () => {
+    const graph = new SceneGraph()
+    const [shape, frame] = await renderJSX(
+      graph,
+      '<><Shape><Span weight={700}>Go</Span> now</Shape><Frame name="After" w={10} h={10} /></>'
+    )
+    const { layerIds } = selectionToJSXWithLayers([shape.id, frame.id], graph)
+    expect(layerIds).toEqual([shape.id, null, frame.id])
+  })
+
+  test('a label mixing <Paragraph> with other text fails before the shape is made', async () => {
+    const graph = new SceneGraph()
+    await expect(
+      renderJSX(graph, '<Shape><Paragraph>a</Paragraph>b</Shape>')
+    ).rejects.toThrow('mixes <Paragraph> with other content')
+    expect([...graph.getAllNodes()].some((node) => node.type === 'SHAPE_WITH_TEXT')).toBe(false)
   })
 
   test('write the size they were given, not the size their label grew them to', async () => {

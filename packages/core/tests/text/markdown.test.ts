@@ -82,6 +82,20 @@ describe('Markdown as text, styled as FigJam styles typed Markdown', () => {
     expect(styleRuns).toEqual([{ start: 16, length: 4, style: { italic: true } }])
   })
 
+  test('HTML shows what a browser shows: blocks on lines of their own, no script, a pre’s spaces', () => {
+    expect(markdownText('first<br>second', BASE).text).toBe('first\nsecond')
+    expect(markdownText('<div>one</div><div>two</div>', BASE).text).toBe('one\ntwo')
+    expect(markdownText('<div>a<script>secret()</script><style>p{}</style></div>', BASE).text).toBe('a')
+    expect(markdownText('<pre>  indented</pre>', BASE).text).toBe('  indented')
+  })
+
+  test('an item holding only a nested list keeps a bullet of its own', () => {
+    expect(markdownText('-\n  - child', BASE).textParagraphs).toEqual([
+      { listType: 'UNORDERED', indentation: 1 },
+      { listType: 'UNORDERED', indentation: 2 }
+    ])
+  })
+
   test('an empty list item is a bullet of its own', () => {
     const { text, textParagraphs } = markdownText('- \n- next', BASE)
     expect(text).toBe('\nnext')

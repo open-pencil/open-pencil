@@ -168,9 +168,8 @@ function paragraphElements(tree: TreeNode): TreeNode[] | null {
  * note's body or a connector's label; other elements among them are not text and are skipped.
  */
 export function textContentText(tree: TreeNode): string {
-  const paragraphs = tree.children.filter(
-    (child): child is TreeNode => isTreeNode(child) && child.type === PARAGRAPH
-  )
+  // Mixed content fails here, before the element makes its layer.
+  const paragraphs = paragraphElements(tree) ?? []
   if (paragraphs.length > 0) {
     return paragraphs.map((paragraph) => textOf(paragraph.children)).join('\n')
   }

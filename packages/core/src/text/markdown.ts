@@ -91,24 +91,81 @@ function phrasing(nodes: readonly PhrasingContent[], style: Style, reading: Read
         return [{ text: '\n', style }]
       case 'image':
         return node.alt ? [{ text: node.alt, style }] : []
-      case 'html':
-        // An inline tag only marks up the text around it, which keeps its words.
-        return []
+      case 'html': {
+        // An inline tag only marks up the words around it; a `<br>` still breaks the line.
+        const words = htmlWords(node.value)
+        return words ? [{ text: words, style }] : []
+      }
       default:
         return [{ text: toString(node), style }]
     }
   })
 }
 
-/** The words HTML shows, a `<br>` breaking the line; its tags only mark them up. */
-function htmlWords(nodes: DefaultTreeAdapterTypes.ChildNode[]): string {
+/** Elements whose content HTML never shows. */
+const HIDDEN_ELEMENTS = new Set(['script', 'style', 'template', 'head', 'title'])
+
+/** Elements HTML lays out as blocks of their own, which start a line. */
+const BLOCK_ELEMENTS = new Set([
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'dd',
+  'details',
+  'div',
+  'dl',
+  'dt',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'hr',
+  'li',
+  'main',
+  'nav',
+  'ol',
+  'p',
+  'pre',
+  'section',
+  'summary',
+  'table',
+  'tr',
+  'ul'
+])
+
+/** Where a block element starts or ends, which several in a row make one line break. */
+const BLOCK_EDGE = '\u0000'
+
+function htmlContent(nodes: DefaultTreeAdapterTypes.ChildNode[]): string {
   return nodes
     .map((node) => {
       if (node.nodeName === '#text' && 'value' in node) return node.value
       if (node.nodeName === 'br') return '\n'
-      return 'childNodes' in node ? htmlWords(node.childNodes) : ''
+      if (HIDDEN_ELEMENTS.has(node.nodeName) || !('childNodes' in node)) return ''
+      const words = htmlContent(node.childNodes)
+      return BLOCK_ELEMENTS.has(node.nodeName) ? `${BLOCK_EDGE}${words}${BLOCK_EDGE}` : words
     })
     .join('')
+}
+
+/**
+ * The words HTML shows: a `<br>` breaks the line and a block element sits on lines of its own,
+ * while inline tags only mark up their words and hidden content shows nothing.
+ */
+function htmlWords(html: string): string {
+  const content = htmlContent(parseFragment(html).childNodes)
+  const edges = new RegExp(`${BLOCK_EDGE}+`, 'g')
+  return content.replace(edges, (edge, at: number) =>
+    at === 0 || at + edge.length === content.length ? '' : '\n'
+  )
 }
 
 function linked(style: Style, url: string): Style {
@@ -164,8 +221,12 @@ function blocks(
           // An empty item is still a bullet of its own.
           if (item.children.length === 0) return [{ segments: [], style: bullet }]
           return item.children.flatMap((child, index) => {
-            // An item's first block is its bullet; a nested list goes a level deeper.
-            if (child.type === 'list') return blocks([child], style, paragraph, reading, depth + 1)
+            // An item's first block is its bullet; a nested list goes a level deeper, under a
+            // bullet of the item's own when the item holds nothing before it.
+            if (child.type === 'list') {
+              const own = index === 0 ? [{ segments: [], style: bullet }] : []
+              return [...own, ...blocks([child], style, paragraph, reading, depth + 1)]
+            }
             return blocks([child], style, index === 0 ? bullet : paragraph, reading, depth)
           })
         })
@@ -184,7 +245,8 @@ function blocks(
           style: paragraph
         }))
       case 'html': {
-        const words = htmlWords(parseFragment(node.value).childNodes).trim()
+        // Only the blank lines around the block go; a `<pre>` keeps the spaces it shows.
+        const words = htmlWords(node.value).replace(/^\n+|\n+$/g, '')
         return words ? splitBreaks([{ text: words, style }], paragraph) : []
       }
       case 'thematicBreak':

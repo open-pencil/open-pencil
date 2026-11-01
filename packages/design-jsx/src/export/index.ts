@@ -210,6 +210,8 @@ function nodeToJSX(
   const own = ownElement(graph, node, scope.connectors)
   if (own) {
     const { children, inline } = ownChildren(own, depth)
+    // Its label's `<Span>`s and `<Paragraph>`s are elements of no layer, as a text's are.
+    for (let index = 0; index < elementCount(children); index++) layerIds?.push(null)
     return [jsx.element(tag, own.props.map(propAttribute), children, depth, inline)]
   }
   const ownProps = reka.props.get(node.id)
