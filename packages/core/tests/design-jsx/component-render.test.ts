@@ -76,9 +76,11 @@ describe('component rendering', () => {
     await expect(renderJSX(graph, jsx('<Instance of="Missing" />'))).rejects.toThrow(
       'component not found'
     )
+    const kept = [...graph.variables.keys()]
     await renderJSX(graph, jsx(''))
     expect([...graph.variableCollections.values()].map((item) => item.name)).toEqual(['Theme'])
     expect([...graph.variables.values()].map((item) => item.name)).toEqual(['Accent'])
+    expect([...graph.variables.keys()]).toEqual(kept)
   })
 
   test('removes an instance a Reka root draws when a later root fails', async () => {
