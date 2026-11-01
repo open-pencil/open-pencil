@@ -65,6 +65,7 @@ export function createIdbRecoveryStore(): RecoveryStore {
       const transaction = db.transaction(['meta', 'fig'], 'readwrite')
       const metadata: RecoverySnapshotMeta = {
         id: input.id,
+        sessionId: input.sessionId,
         documentName: input.documentName || 'Untitled',
         updatedAt: new Date().toISOString(),
         byteLength: input.figBytes.byteLength,

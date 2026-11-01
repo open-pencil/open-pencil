@@ -21,6 +21,7 @@ export function createMemoryRecoveryStore(): RecoveryStore {
     async write(input: RecoverySnapshotInput) {
       const metadata: RecoverySnapshotMeta = {
         id: input.id,
+        sessionId: input.sessionId,
         documentName: input.documentName || 'Untitled',
         updatedAt: new Date().toISOString(),
         byteLength: input.figBytes.byteLength,

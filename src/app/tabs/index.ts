@@ -651,6 +651,13 @@ export async function listRecoverySnapshots(): Promise<RecoverySnapshotMeta[]> {
   return getRecoveryStore().list()
 }
 
+/** The recovery copies of the documents open in tabs, which belong to those tabs while open. */
+export function openRecoveryIds(): Set<string> {
+  return new Set(
+    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store.getRecoveryId())
+  )
+}
+
 export async function discardRecoverySnapshot(id: string): Promise<void> {
   await getRecoveryStore().remove(id)
 }

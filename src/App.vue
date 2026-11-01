@@ -11,6 +11,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
+import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
@@ -47,8 +48,14 @@ provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
 useRestartApprovals()
+startRecoverySession()
 useEventListener(window, 'pagehide', () => {
   void prepareForReload()
+  endRecoverySession()
+})
+// A page restored from the back/forward cache runs on in the session it had.
+useEventListener(window, 'pageshow', (event) => {
+  if (event.persisted) startRecoverySession()
 })
 
 onMounted(() => {
