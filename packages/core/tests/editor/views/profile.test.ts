@@ -145,12 +145,12 @@ describe('document kinds', () => {
   test('a board opened or swapped in with a design tool active gives way to Move', () => {
     const state = createDefaultEditorState(new SceneGraph().getPages()[0].id)
     state.activeTool = 'RECTANGLE'
-    const opened = createEditor({ graph: createDocumentGraph('board'), state })
+    const opened = createEditor({ graph: createDocumentGraph('board', 'light'), state })
     expect(opened.state.activeTool).toBe('SELECT')
 
     const editor = createEditor()
     editor.setTool('PEN')
-    editor.replaceGraph(createDocumentGraph('board'))
+    editor.replaceGraph(createDocumentGraph('board', 'light'))
     expect(editor.state.activeTool).toBe('SELECT')
   })
 

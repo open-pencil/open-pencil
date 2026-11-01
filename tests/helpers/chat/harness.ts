@@ -36,7 +36,7 @@ export class ChatHarness {
   }
 
   async open(): Promise<void> {
-    await this.page.goto('/')
+    await this.page.goto('/?test')
     await this.page.evaluate(async () => {
       const themeModulePath = '/src/app/shell/theme.ts'
       const themeModule = await import(themeModulePath)
