@@ -1,0 +1,1 @@
+- Documents opened from `.fig` files save and load pages again after a layer of a component is deleted, including when an instance nested in a component frame is replaced (#1425, #1427).
