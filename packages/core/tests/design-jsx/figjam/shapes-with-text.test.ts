@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodeToJSX } from '@open-pencil/design-jsx'
+import { sceneNodeToJSX, selectionToJSXWithLayers } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
@@ -51,6 +51,45 @@ describe('shapes with text in design JSX', () => {
     const again = new SceneGraph()
     const [reread] = await renderJSX(again, jsx)
     expect(sceneNodeToJSX(reread.id, again)).toBe(jsx)
+  })
+
+  test('a label styled in ranges writes back with <Span>s and reads back the same', async () => {
+    const graph = new SceneGraph()
+    const [rendered] = await renderJSX(
+      graph,
+      '<Shape><Span weight={700}>Idea</Span> and <Span italic>sketch</Span></Shape>'
+    )
+    const shape = getNodeOrThrow(graph, rendered.id)
+    const label = shapeWithTextLabel(graph, shape)
+    expect(label?.text).toBe('Idea and sketch')
+    expect(label?.styleRuns).toEqual([
+      { start: 0, length: 4, style: { fontWeight: 700 } },
+      { start: 9, length: 6, style: { italic: true } }
+    ])
+    expect(shape.name).toBe('Idea and sketch')
+    const jsx = sceneNodeToJSX(shape.id, graph)
+    expect(jsx).toBe('<Shape><Span weight="bold">Idea</Span> and <Span italic>sketch</Span></Shape>')
+    const again = new SceneGraph()
+    const [reread] = await renderJSX(again, jsx)
+    expect(shapeWithTextLabel(again, getNodeOrThrow(again, reread.id))?.styleRuns).toEqual(label?.styleRuns)
+  })
+
+  test('a styled label’s elements belong to no layer, so later elements map to theirs', async () => {
+    const graph = new SceneGraph()
+    const [shape, frame] = await renderJSX(
+      graph,
+      '<><Shape><Span weight={700}>Go</Span> now</Shape><Frame name="After" w={10} h={10} /></>'
+    )
+    const { layerIds } = selectionToJSXWithLayers([shape.id, frame.id], graph)
+    expect(layerIds).toEqual([shape.id, null, frame.id])
+  })
+
+  test('a label mixing <Paragraph> with other text fails before the shape is made', async () => {
+    const graph = new SceneGraph()
+    await expect(
+      renderJSX(graph, '<Shape><Paragraph>a</Paragraph>b</Shape>')
+    ).rejects.toThrow('mixes <Paragraph> with other content')
+    expect([...graph.getAllNodes()].some((node) => node.type === 'SHAPE_WITH_TEXT')).toBe(false)
   })
 
   test('write the size they were given, not the size their label grew them to', async () => {

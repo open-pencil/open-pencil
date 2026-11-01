@@ -83,9 +83,8 @@ describe('derived text rendering', () => {
     })
     const surface = expectDefined(ck.MakeSurface(1, 1), 'surface')
     const renderer = new SkiaRenderer(ck, surface)
-    renderer.nodeFontReadiness = () => {
-      throw new Error('Saved text must not depend on font readiness')
-    }
+    // Saved glyphs draw while the face is not the text's own; a loaded face lays the text out live.
+    renderer.nodeFontReadiness = () => 'substituted'
     try {
       const png = expectDefined(
         renderNodesToImage(ck, renderer, graph, page.id, [text.id], {

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { templateRef } from '@vueuse/core'
 import { nextTick, watch } from 'vue'
-import IconLucidePenTool from '~icons/lucide/pen-tool'
-import IconLucideStickyNote from '~icons/lucide/sticky-note'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
@@ -10,6 +8,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'
+import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -22,8 +21,8 @@ const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 
 /** What Home offers to create, side by side, as Figma's Home and New file tab offer theirs. */
 const CREATE_CHOICES = [
-  { kind: 'design', label: 'createDesign', icon: IconLucidePenTool },
-  { kind: 'board', label: 'createBoard', icon: IconLucideStickyNote }
+  { kind: 'design', label: 'createDesign', icon: DOCUMENT_KIND_ICONS.design },
+  { kind: 'board', label: 'createBoard', icon: DOCUMENT_KIND_ICONS.board }
 ] as const satisfies ReadonlyArray<{ kind: DocumentKind; label: string; icon: unknown }>
 const query = defineModel<string>({ required: true })
 const { menu, files } = useI18n()

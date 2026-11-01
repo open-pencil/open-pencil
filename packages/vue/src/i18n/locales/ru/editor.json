@@ -11,6 +11,8 @@
   "stickyPlaceholder": "Пишите что угодно, @упоминайте кого угодно",
   "connectorLabelPlaceholder": "Добавить текст",
   "showUI": "Показать интерфейс ({shortcut})",
+  "openChat": "Открыть чат с ИИ",
+  "closeChat": "Закрыть чат с ИИ",
   "previewing": "Просмотр",
   "resetPreview": "Сбросить",
   "leavePreview": "Выйти из просмотра ({shortcut})",

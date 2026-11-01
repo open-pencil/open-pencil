@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { ref, type Directive } from 'vue'
 
 import DocumentEntry from './DocumentEntry.vue'
 
@@ -17,6 +18,7 @@ const meta = {
   metadata: string
   view: 'grid' | 'list'
   disabled?: boolean
+  previewURL?: string
   menu?: { actions: string; delete: string }
 }>
 
@@ -31,3 +33,24 @@ export const Disabled: Story = { args: { disabled: true } }
 const menu = { actions: 'Actions for Design system', delete: 'Delete' }
 export const WithMenu: Story = { args: { menu } }
 export const ListWithMenu: Story = { args: { view: 'list', menu } }
+
+/** A 16×9 indigo PNG, so a story shows a preview without a server. */
+const PREVIEW_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJCAIAAAC0SDtlAAAAFElEQVR4nGNITvtIEmIY1TAoNAAA5CT4oTrOkfMAAAAASUVORK5CYII='
+
+/** A parent's directive reaches the entry's element, as Home's preview directives must. */
+const markLoaded: Directive<HTMLElement> = {
+  mounted(element) {
+    element.dataset.previewRequested = 'true'
+  }
+}
+export const WithMenuAndDirective: Story = {
+  args: { menu, previewURL: PREVIEW_URL },
+  render: (args) => ({
+    components: { DocumentEntry },
+    directives: { markLoaded },
+    setup: () => ({ args, deleted: ref(false) }),
+    template:
+      '<div class="max-w-sm bg-panel p-4 text-surface" :data-deleted="deleted"><DocumentEntry v-mark-loaded v-bind="args" @delete="deleted = true" /></div>'
+  })
+}

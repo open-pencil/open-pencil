@@ -33,4 +33,15 @@ export interface DesignJSXServices<Artwork> {
   layout(graph: SceneGraph, rootIds: readonly string[]): void
   /** The tight bounds of a vector network, its curves included, which size a `<Vector>`. */
   vectorBounds(network: VectorNetwork): Rect
+  /**
+   * `<Text markdown>`: Markdown as a text's characters, ranges, and paragraphs over `base`. An
+   * engine without it renders everything else and refuses only `<Text markdown>`.
+   */
+  markdown?: MarkdownService
 }
+
+/** Markdown as a text's characters, ranges, and paragraphs, relative to its own style. */
+export type MarkdownService = (
+  source: string,
+  base: Pick<SceneNode, 'fontSize' | 'fontWeight'>
+) => Pick<SceneNode, 'text' | 'styleRuns' | 'textParagraphs'>

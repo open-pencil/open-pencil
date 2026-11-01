@@ -7,6 +7,7 @@ export {
   recentFiles,
   recentLocalFileAt,
   recentLocalFilePaths,
+  recentDocumentKind,
   rememberRecentFile,
   rememberRecentStorageDocument,
   type RecentDocument,
@@ -14,6 +15,7 @@ export {
   type RecentStorageDocument
 } from './store'
 export {
+  cacheRecentFileCover,
   cacheRecentFileThumbnail,
   loadCachedRecentFileThumbnail,
   loadRecentFileThumbnail

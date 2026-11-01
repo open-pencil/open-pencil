@@ -59,7 +59,7 @@ export function useStickyNote() {
   }
 
   function setTypeface(value: FigJamTypeface) {
-    return editor.setGeneratedTextTypeface(ids.value, value)
+    return editor.setFigJamTypeface(ids.value, value)
   }
 
   return {

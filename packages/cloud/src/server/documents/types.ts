@@ -4,6 +4,7 @@ export type CreateDocumentRecord = {
   id: string
   workspaceId: string
   name: string
+  kind: 'design' | 'board'
   createdBy: string
 }
 

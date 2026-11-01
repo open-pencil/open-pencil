@@ -1,8 +1,8 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
-import { remapCopiedReferences } from './copied-references'
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'

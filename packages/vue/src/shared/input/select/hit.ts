@@ -33,34 +33,16 @@ export function tinySelectionAt(cx: number, cy: number, editor: Editor): SceneNo
   return null
 }
 
-/** The layer a press selects; `deep` (Cmd or Ctrl held) reaches the deepest layer, as in Figma. */
+/**
+ * The layer a press selects: a label under the point, or else the layer a click reaches from the
+ * page; `deep` (⌘ or Ctrl held) reaches the deepest layer, as in Figma. Null where nothing is
+ * under the point, however deep the selection was.
+ */
 export function resolveHit(
   cx: number,
   cy: number,
-  editor: Editor,
   fns: HitTestFns,
   deep = false
 ): SceneNode | null {
-  const titleHit = hitTestLabel(cx, cy, fns)
-  if (titleHit) return titleHit
-
-  const hit = fns.hitTestInScope(cx, cy, deep)
-  if (hit) return hit
-
-  const scopeId = editor.state.enteredContainerId
-  if (!scopeId) return null
-
-  if (fns.isInsideContainerBounds(cx, cy, scopeId)) {
-    editor.clearSelection()
-    return null
-  }
-
-  editor.exitContainer()
-  const afterExit = fns.hitTestInScope(cx, cy, deep)
-  if (afterExit) return afterExit
-
-  if (editor.state.enteredContainerId) {
-    editor.exitContainer()
-  }
-  return null
+  return hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, deep)
 }

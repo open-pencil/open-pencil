@@ -155,7 +155,7 @@ return <>
       graph
     )
     expect(jsx).toStartWith(
-      'const card1 = ref()\nconst card2 = ref()\n\nreturn <>\n<Frame name="Card"'
+      'const card1 = ref()\nconst card2 = ref()\n\nreturn <>\n  <Frame name="Card"'
     )
     expect(jsx).toEndWith('\n</>')
     const again = new SceneGraph()
@@ -309,4 +309,22 @@ return <Frame name="Flow" w={800} h={400}>
     expect(line?.strokes[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
     expect(line?.boundVariables['strokes/0/color']).toBe('var-line')
   })
+})
+
+test('a connector label styled in ranges writes back with <Span>s', async () => {
+  const graph = new SceneGraph()
+  const [flow] = await renderJSX(
+    graph,
+    `<Frame name="Flow" w={400} h={200}>
+      <Frame name="A" w={50} h={50} />
+      <Frame name="B" x={300} w={50} h={50} />
+      <Connector from="A" to="B"><Span italic>maybe</Span> later</Connector>
+    </Frame>`
+  )
+  const connector = graph.getChildren(flow.id).find((node) => node.type === 'CONNECTOR')
+  if (!connector) throw new Error('Expected the connector')
+  expect(connectorSublayers(graph, connector)?.label.styleRuns).toEqual([
+    { start: 0, length: 5, style: { italic: true } }
+  ])
+  expect(sceneNodeToJSX(flow.id, graph)).toContain('><Span italic>maybe</Span> later</Connector>')
 })

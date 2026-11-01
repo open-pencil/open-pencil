@@ -6,6 +6,8 @@ import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/s
 import type { EditorContext } from '#core/editor/types'
 import {
   characterStyles,
+  layerTextStyleChanges,
+  shownTextStyle,
   styleRunsWithPatch,
   TEXT_STYLE_KEYS,
   type TextStyleKey
@@ -109,15 +111,27 @@ export function createTextSelectionStyle(
 
   /**
    * The style of the selected characters as the layer's own properties, for the panel to show;
-   * characters styled differently show the first one's.
+   * characters styled differently show the first one's. A text not being edited shows its first
+   * character's, so a style its ranges set shows instead of one they hide.
    */
   function selectionStyle(node: SceneNode): Partial<SceneNode> | null {
     const range = selectedRange(node.id)
-    if (!range) return null
+    if (!range) return shownTextStyle(node)
     const [style] = characterStyles(node, range[0], range[0] + 1)
     // Links, styles, and bindings of characters are not the layer's own properties.
     return pick(style, TEXT_STYLE_KEYS)
   }
 
-  return { updateNode, updateNodeWithUndo, commitNodeUpdate, selectionStyle }
+  /**
+   * A change the panel makes to a layer: on a text not being edited, a style it sets applies to
+   * every character, so a range styled on its own no longer hides it. While text is edited the
+   * change goes to the selected characters, as `updateNode` sends it.
+   */
+  function layerChanges(id: string, changes: Partial<SceneNode>): Partial<SceneNode> {
+    const node = ctx.graph.getNode(id)
+    if (!node || ctx.state.editingTextId === id) return changes
+    return layerTextStyleChanges(node, changes)
+  }
+
+  return { updateNode, updateNodeWithUndo, commitNodeUpdate, selectionStyle, layerChanges }
 }

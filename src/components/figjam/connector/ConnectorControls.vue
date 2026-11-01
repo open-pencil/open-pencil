@@ -6,6 +6,7 @@ import type { ConnectorLineType, StrokeCap } from '@open-pencil/scene-graph'
 import type { FigJamColorName } from '@open-pencil/scene-graph/figjam'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { useConnectorOptions } from '@/components/figjam/connector/options'
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { CONNECTOR_LINE_TYPE_ICONS, connectorCapIcon } from '@/components/icons/connectors'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -45,21 +46,7 @@ const emit = defineEmits<{
 const { panels } = useI18n()
 const styles = tv(theme)()
 
-const lineOptions = computed<Array<{ value: ConnectorLineType; label: string }>>(() => [
-  { value: 'ELBOWED', label: panels.value.connectorElbowed },
-  { value: 'STRAIGHT', label: panels.value.connectorStraight },
-  { value: 'CURVED', label: panels.value.connectorCurved }
-])
-
-/** The caps FigJam offers at a connector's ends. */
-const capOptions = computed<Array<{ value: StrokeCap; label: string }>>(() => [
-  { value: 'NONE', label: panels.value.strokeCapNone },
-  { value: 'ARROW_LINES', label: panels.value.strokeCapArrowLines },
-  { value: 'ARROW_EQUILATERAL', label: panels.value.strokeCapArrowEquilateral },
-  { value: 'TRIANGLE_FILLED', label: panels.value.strokeCapTriangleFilled },
-  { value: 'DIAMOND_FILLED', label: panels.value.strokeCapDiamondFilled },
-  { value: 'CIRCLE_FILLED', label: panels.value.strokeCapCircleFilled }
-])
+const { lineOptions, capOptions } = useConnectorOptions()
 
 const selectedLine = computed<ConnectorLineType>({
   get: () => lineType ?? 'ELBOWED',

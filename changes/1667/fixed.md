@@ -1,0 +1,1 @@
+- Font size, weight, colour and other text styles set from the design panel apply to every character of a text whose characters were styled in ranges, and the panel shows the style the text is drawn in.

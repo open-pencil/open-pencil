@@ -4,17 +4,27 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
+import { paintPageBackground } from '#core/canvas/page/background'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views/profile'
+import type { EditorProfile } from '#core/editor/views/types'
 import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
-  r: Pick<SkiaRenderer, 'worldViewport' | 'viewportImageRendering' | 'renderNode' | 'nodePaths'>,
+  r: Pick<
+    SkiaRenderer,
+    | 'worldViewport'
+    | 'viewportImageRendering'
+    | 'renderNode'
+    | 'nodePaths'
+    | 'editingTextId'
+    | 'invalidateNodePicture'
+  >,
   canvas: Canvas,
   graph: SceneGraph,
   pageId: string
@@ -22,7 +32,12 @@ export function renderSceneToCanvas(
   r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
+  const editing = r.editingTextId
   r.viewportImageRendering = false
+  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited;
+  // the edited text's picture is of its live layout, so it is dropped on the way in and out.
+  r.editingTextId = null
+  if (editing) r.invalidateNodePicture(editing)
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
     const pageNode = graph.getNode(pageId)
@@ -32,10 +47,17 @@ export function renderSceneToCanvas(
   } finally {
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
+    r.editingTextId = editing
+    if (editing) r.invalidateNodePicture(editing)
   }
 }
 
 export type RenderLayer = 'full' | 'scene' | 'overlays'
+
+/** Whether the pixel grid shows: on an edited canvas whose profile has one, unless turned off. */
+function showsPixelGrid(profile: EditorProfile, state: EditorState): boolean {
+  return profile.editChrome && profile.pixelGrid && state.showPixelGrid !== false
+}
 
 export function renderFromEditorState(
   r: SkiaRenderer,
@@ -80,7 +102,9 @@ export function renderFromEditorState(
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
-  const { editChrome, live, edits } = resolveEditorProfile(state)
+  const profile = resolveEditorProfile(state)
+  const { editChrome, live, edits } = profile
+  r.pageDotGrid = profile.dotGrid
   r.editHandles = edits
   render(
     r,
@@ -90,7 +114,7 @@ export function renderFromEditorState(
       playing: !editChrome,
       playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
       hoveredNodeId: editChrome ? state.hoveredNodeId : null,
-      showPixelGrid: editChrome && state.showPixelGrid !== false,
+      showPixelGrid: showsPixelGrid(profile, state),
       gradientEdit: state.gradientEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
@@ -237,6 +261,7 @@ export function render(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
+  r.editingTextId = overlays.editingTextId ?? null
   emitNavigationTrace('render:start', {
     layer,
     sceneVersion,
@@ -260,7 +285,7 @@ export function render(
   if (layer === 'overlays') {
     canvas.clear(r.ck.Color4f(0, 0, 0, 0))
   } else {
-    canvas.clear(r.ck.Color4f(r.pageColor.r, r.pageColor.g, r.pageColor.b, 1))
+    paintPageBackground(r, canvas, { x: r.panX * r.dpr, y: r.panY * r.dpr }, r.zoom * r.dpr)
   }
 
   r.worldViewport = {

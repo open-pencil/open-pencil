@@ -23,6 +23,46 @@ export function sectionClicksDriver(page: () => Page) {
       }, PAN)
     },
 
+    /** Builds the swatch rows and returns their ids. */
+    buildSwatchRows() {
+      return page().evaluate(async (pan) => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const fixtureURL = '/tests/helpers/canvas/section-clicks/scene.ts'
+        const scene: typeof SectionScene = await import(fixtureURL)
+        const ids = scene.createSwatchRows(store.graph, store.state.currentPageId)
+        store.state.zoom = 1
+        store.state.panX = pan
+        store.state.panY = pan
+        store.clearSelection()
+        store.requestRender()
+        return ids
+      }, PAN)
+    },
+
+    /** The canvas point over a node's centre, for the canvas helper's clicks. */
+    center(id: string) {
+      return page().evaluate(
+        ({ id, pan }) => {
+          const store = window.openPencil?.getStore?.()
+          const node = store?.graph.getNode(id)
+          if (!store || !node) throw new Error('node not found')
+          const abs = store.graph.getAbsolutePosition(id)
+          return { x: pan + abs.x + node.width / 2, y: pan + abs.y + node.height / 2 }
+        },
+        { id, pan: PAN }
+      )
+    },
+
+    /** The entered container's name, or null on the page. */
+    entered() {
+      return page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        const id = store?.state.enteredContainerId
+        return id ? (store?.graph.getNode(id)?.name ?? null) : null
+      })
+    },
+
     clearSelection() {
       return page().evaluate(() => window.openPencil?.getStore?.().clearSelection())
     },

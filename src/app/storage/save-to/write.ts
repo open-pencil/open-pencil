@@ -21,6 +21,6 @@ export async function writeDocumentTo(
     store.state.documentName = previousName
     return null
   }
-  rememberRecentStorageDocument(binding, name)
+  rememberRecentStorageDocument(binding, name, store.state.documentKind)
   return binding
 }

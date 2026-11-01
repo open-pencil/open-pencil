@@ -62,7 +62,9 @@ function drawResolvedPathText(
 function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
   if (!r.fontsLoaded || !r.fontProvider || node.textPathData !== null) return false
   const readiness = r.nodeFontReadiness(node)
-  return readiness !== 'pending' && readiness !== 'exhausted' && mayHoldEmoji(shownText(node))
+  // Edited text draws its paragraph even after its fonts gave up, so its emoji draw over it too.
+  const laidOut = readiness !== 'pending' && (readiness !== 'exhausted' || !drawsSaved(r, node))
+  return laidOut && mayHoldEmoji(shownText(node))
 }
 
 /**
@@ -70,7 +72,7 @@ function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
  * over the blank squares the editor's layout gives them.
  */
 export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
-  const saved = drawsSavedText(node)
+  const saved = drawsSaved(r, node) && drawsSavedText(node)
   if (!saved && !drawsLaidOutText(r, node)) return
   canvas.save()
   if (saved) drawSavedEmoji(r, canvas, node)
@@ -86,8 +88,24 @@ export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode):
   canvas.restore()
 }
 
+/**
+ * Whether the text draws from its saved glyphs. Text whose fonts are all loaded lays out live, as
+ * Figma lays text out with its own fonts, so an edit changes nothing but the characters; saved
+ * glyphs stand in for a missing or substituted font and keep path text on its path. Not while the
+ * text is edited either: the caret, selection, and hit testing follow the live layout.
+ */
+function drawsSaved(r: SkiaRenderer, node: SceneNode): boolean {
+  const readiness = r.nodeFontReadiness(node)
+  // Fonts still loading leave nothing else to draw, edited or not.
+  if (readiness === 'pending') return true
+  if (r.editingTextId === node.id) return false
+  return node.textPathData !== null || readiness !== 'ready'
+}
+
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
-  return canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node, fill)
+  return (
+    drawsSaved(r, node) && canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node, fill)
+  )
 }
 
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
@@ -109,7 +127,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.restore()
     return
   }
-  if (fontReadiness === 'exhausted') {
+  if (fontReadiness === 'exhausted' && drawsSaved(r, node)) {
     if (node.textPicture && r.isTextPictureCurrent(node)) {
       const pic = r.ck.MakePicture(node.textPicture)
       if (pic) {

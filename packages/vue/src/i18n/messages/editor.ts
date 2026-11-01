@@ -24,6 +24,8 @@ export const editorMessageDefaults = {
   /** What an empty connector label shows on the canvas while it is typed into. */
   connectorLabelPlaceholder: 'Add text',
   showUI: params('Show UI ({shortcut})'),
+  openChat: 'Open AI chat',
+  closeChat: 'Close AI chat',
   previewing: 'Previewing',
   startPreview: params('Preview ({shortcut})'),
   resetPreview: 'Reset',

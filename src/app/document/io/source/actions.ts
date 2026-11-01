@@ -9,7 +9,8 @@ import {
   documentFileName,
   documentNameFromFigPath,
   downloadNameFromPath,
-  figDownloadName
+  figDownloadName,
+  isFigArchiveName
 } from '@/app/document/io/names'
 import { createSaveActions } from '@/app/document/io/save/actions'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
@@ -18,6 +19,7 @@ import { createDocumentRecovery } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
+import { cacheRecentFileCover } from '@/app/recent-files'
 import { createCanvasId } from '@/app/storage/id'
 import { isTauri } from '@/app/tauri/env'
 import { trackDocumentFormat } from '@/app/telemetry'
@@ -76,6 +78,21 @@ export function createDocumentSourceActions({
     })
   }
 
+  /**
+   * A write changes the file's time, which keys its Home preview, so the sharp cover is drawn
+   * again for it; without it Home falls back to the small cover inside the file. An edit made
+   * while `version` was being written is not in the file, so the cover is left to the next save.
+   */
+  function recacheRecentCover(version: number) {
+    const path = getFilePath()
+    const renderer = getRenderer()
+    if (!path || !renderer || !isFigArchiveName(path)) return
+    if (changes.capture() !== version) return
+    void cacheRecentFileCover(path, editor.graph, renderer).catch((error: unknown) => {
+      console.warn('[Recent files] Could not cache the preview after saving', error)
+    })
+  }
+
   function buildRecoveryFigFile() {
     return exportFigFile(editor.graph, {
       pageId: state.currentPageId,
@@ -110,7 +127,10 @@ export function createDocumentSourceActions({
     startWatchingFile: () => {
       void startWatchingFile()
     },
-    onWriteSuccess: (version) => recovery.markProtectedVersion(version),
+    onWriteSuccess: (version) => {
+      recacheRecentCover(version)
+      return recovery.markProtectedVersion(version)
+    },
     onDownloadSuccess: (version) => recovery.markProtectedVersion(version)
   })
 

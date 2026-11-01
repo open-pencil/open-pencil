@@ -132,6 +132,16 @@ openpencil eval design.fig -w -c '
 
 Names the component does not have fail with an error that lists the ones it has.
 
+`openpencil.setTextMarkdown(text, markdown)` sets a text layer's text from Markdown, styled over the layer's own style as FigJam styles Markdown typed into a text: `#` and `##` headings bold at 2.5× and 1.5× its size, deeper ones bold at its size, `**bold**`, `*italic*`, `~~strike~~`, `` `code` `` in Roboto Mono, links, lists, and quotes. Load the fonts it uses first, as for `characters`; an unloaded one fails with the font to load. Over MCP, `set_text` takes `markdown: true` for the same.
+
+```sh
+openpencil eval design.fig -w -c '
+  const text = figma.currentPage.findOne((n) => n.type === "TEXT" && n.name === "Notes")
+  await figma.loadFontAsync({ family: "Inter", style: "Bold" })
+  openpencil.setTextMarkdown(text, "## Next\n- **Ship** the beta\n- Write the post")
+'
+```
+
 Comments people leave with the Comment tool are part of the document, so scripts and agents can read the feedback on a file, act on it, and answer:
 
 ```sh

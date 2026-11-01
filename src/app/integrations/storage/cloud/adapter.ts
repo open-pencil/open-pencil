@@ -1,6 +1,6 @@
 import { CloudAPIError, type CloudAPIClient } from '@open-pencil/cloud/client'
 import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@open-pencil/cloud/contract'
-import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { extractFigThumbnailFromReader, figArchiveKind } from '@open-pencil/fig'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
@@ -101,6 +101,7 @@ export function createCloudStorageAdapter(
       return documents.map((document) => ({
         id: document.id,
         name: document.name,
+        kind: document.kind,
         updatedAt: document.updatedAt,
         metadataAuthoritative: true,
         revision: document.currentRevisionId
@@ -121,9 +122,11 @@ export function createCloudStorageAdapter(
       const cloud = await client()
       const baseRevision = options?.baseRevision ?? null
       const name = cloudDocumentName(metadata.name)
+      // The file says whether it is a board, as its header does for Figma.
+      const kind = figArchiveKind(bytes) ?? 'design'
       // Without a revision this is the first save; the document may not exist on the server yet.
       if (!baseRevision && !(await listed(id))) {
-        await cloud.createDocument(workspaceId(), { id, name })
+        await cloud.createDocument(workspaceId(), { id, name, kind })
       }
       // The workspace keeps images once; the stored file names them and uploads only those it lacks.
       const { lean, images } = splitCloudDocument(bytes)
@@ -147,6 +150,7 @@ export function createCloudStorageAdapter(
         const committed = await cloud.commitUpload(upload.uploadId, {
           checksum,
           name,
+          kind,
           multipart: upload.multipart,
           images: named.map((image) => ({ name: image.name, checksum: image.checksum }))
         })

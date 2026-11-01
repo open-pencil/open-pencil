@@ -141,6 +141,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'content',
   'value',
   'title',
+  'markdown',
   'textAlign',
   'textAlignHorizontal',
   'textHorizontalAlignment',

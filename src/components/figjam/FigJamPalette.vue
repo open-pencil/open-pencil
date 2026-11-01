@@ -19,13 +19,16 @@ const {
   label,
   selected,
   noneLabel,
-  none = false
+  none = false,
+  keepsMenuOpen = false
 } = defineProps<{
   label: string
   selected: FigJamColorName | null
   noneLabel?: string
   /** Whether no colour is shown, which the none swatch marks. */
   none?: boolean
+  /** Whether a pick leaves the toolbar menu open, as a line menu's palette does in FigJam. */
+  keepsMenuOpen?: boolean
 }>()
 const emit = defineEmits<{ select: [name: FigJamColorName]; none: [] }>()
 const figjam = useFigJamMessages()
@@ -71,6 +74,7 @@ const swatches = computed(() =>
     :swatches="swatches"
     :selected="selected"
     :none="noneLabel ? { label: noneLabel, active: none } : undefined"
+    :keeps-menu-open="keepsMenuOpen"
     @select="emit('select', $event)"
     @none="emit('none')"
   />

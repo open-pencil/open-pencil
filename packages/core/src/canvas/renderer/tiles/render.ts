@@ -2,6 +2,7 @@ import type { Image as CKImage } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { paintPageBackground } from '#core/canvas/page/background'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   type RenderChunk,
@@ -62,14 +63,8 @@ export function renderTile(
   renderer.images.detailScale = key.level
   canvas.save()
   try {
-    canvas.clear(
-      renderer.ck.Color4f(
-        renderer.pageColor.r,
-        renderer.pageColor.g,
-        renderer.pageColor.b,
-        renderer.pageColor.a
-      )
-    )
+    const origin = { x: -bounds.minX * key.level, y: -bounds.minY * key.level }
+    paintPageBackground(renderer, canvas, origin, key.level)
     canvas.scale(key.level, key.level)
     canvas.translate(-bounds.minX, -bounds.minY)
     canvas.clipRect(

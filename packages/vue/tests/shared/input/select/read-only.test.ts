@@ -28,8 +28,7 @@ function setup() {
   })
   let under: SceneNode | null = rect
   const fns: HitTestFns = {
-    hitTestInScope: () => under,
-    isInsideContainerBounds: () => false,
+    hitTestLayer: () => under,
     hitTestFrameTitle: () => null,
     hitTestSectionTitle: () => null,
     hitTestComponentLabel: () => null
