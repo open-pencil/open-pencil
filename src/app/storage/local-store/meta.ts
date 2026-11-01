@@ -1,6 +1,7 @@
 import type {
   LocalCanvasIndexInput,
   LocalCanvasMeta,
+  LocalCanvasState,
   LocalCanvasWriteInput
 } from '@/app/storage/local-store/types'
 
@@ -87,4 +88,13 @@ export function buildIndexMeta(
     remoteRevision: input.remoteRevision ?? existing?.remoteRevision ?? null,
     conflictRevision: existing?.conflictRevision ?? null
   }
+}
+
+/** Whether a row is still in the state a caller read it in. */
+export function sameLocalCanvasState(row: LocalCanvasMeta, state: LocalCanvasState): boolean {
+  return (
+    row.revision === state.revision &&
+    row.syncStatus === state.syncStatus &&
+    row.tombstoned === state.tombstoned
+  )
 }

@@ -6,7 +6,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 const SENTENCE = 'A sentence long enough that it has to wrap onto a second line.'
 

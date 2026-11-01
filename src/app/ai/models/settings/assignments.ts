@@ -5,8 +5,7 @@ import {
   isAgentModelProfile,
   modelProfile,
   setModelRoleAssignment,
-  type AIModelRole,
-  type OptionalAIModelRole
+  type AIModelRole
 } from '@/app/ai/models'
 
 export function useModelRoleAssignments(
@@ -49,15 +48,15 @@ export function useModelRoleAssignments(
       return
     }
     if (value === NO_MODEL) {
-      setModelRoleAssignment(role as OptionalAIModelRole, null)
+      setModelRoleAssignment(role, null)
       return
     }
     if (value === SAME_AS_DESIGN) {
-      setModelRoleAssignment(role as OptionalAIModelRole, 'design')
+      setModelRoleAssignment(role, 'design')
       return
     }
     const profile = modelProfile(value)
-    if (profile) setModelRoleAssignment(role as OptionalAIModelRole, profile.id)
+    if (profile) setModelRoleAssignment(role, profile.id)
   }
 
   return { assignmentValue, optionsForRole, updateAssignment }

@@ -4,8 +4,9 @@ import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
-import { figmaBlendModeToSkia } from './blend'
+import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
 import type { SkiaRenderer } from './renderer'
@@ -33,10 +34,11 @@ export function paintFills(
       : r.applyFill(fill, node, graph, fillIndex)
     if (!applied) continue
     r.fillPaint.setAlphaf(fill.opacity)
-    r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
+    const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
+    if (blends) setPaintBlendMode(r, r.fillPaint, fill.blendMode)
     draw(fill)
-    r.fillPaint.setShader(null)
-    r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    clearFillShader(r)
+    if (blends) setPaintBlendMode(r, r.fillPaint, 'NORMAL')
   }
 }
 
@@ -47,26 +49,45 @@ export function drawVectorMultiStyleFills(
   graph: SceneGraph,
   patternStack?: Set<string>
 ): boolean {
-  if (node.type !== 'VECTOR' || !node.fillGeometry.some((geometry) => geometry.fills?.length)) {
-    return false
-  }
-  const paths = r.getFillGeometry(node)
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!network || !hasRegionFills(network)) return false
+  const { regions } = network
+  const paths =
+    (fillGeometryMatchesRegions(node.fillGeometry, network) ? r.getFillGeometry(node) : null) ??
+    r.getVectorPaths(node)
   if (!paths) return false
 
-  for (let index = 0; index < node.fillGeometry.length; index++) {
-    const geometry = node.fillGeometry[index]
+  for (const [index, region] of regions.entries()) {
     const path = paths[index]
-    const usesPathFills = Boolean(geometry.fills?.length)
     paintFills(
       r,
-      usesPathFills ? (geometry.fills ?? []) : node.fills,
+      region.fills ?? node.fills,
       node,
       graph,
       () => canvas.drawPath(path, r.fillPaint),
-      { bindToNodeFills: !usesPathFills, patternStack }
+      { bindToNodeFills: !region.fills, patternStack }
     )
   }
   return true
+}
+
+/** Clears the fill paint's shader, when it has one; a layer with plain fills makes no call. */
+export function clearFillShader(r: SkiaRenderer): void {
+  if (!r.fillPaintShaded) return
+  r.fillPaint.setShader(null)
+  r.fillPaintShaded = false
+}
+
+export function clearStrokeShader(r: SkiaRenderer): void {
+  if (!r.strokePaintShaded) return
+  r.strokePaint.setShader(null)
+  r.strokePaintShaded = false
+}
+
+/** Records that `paint`, when it is a shared one, now carries a shader. */
+function markShaded(r: SkiaRenderer, paint: Paint): void {
+  if (paint === r.fillPaint) r.fillPaintShaded = true
+  else if (paint === r.strokePaint) r.strokePaintShaded = true
 }
 
 export function drawNodeFill(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
@@ -84,11 +105,11 @@ export function applyFill(
   fillIndex = 0,
   patternStack = new Set<string>()
 ): boolean {
-  r.fillPaint.setShader(null)
+  clearFillShader(r)
 
   if (fill.type === 'SOLID') {
     const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColor(r.ck.Color4f(c.r, c.g, c.b, c.a))
+    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
 
@@ -104,7 +125,7 @@ export function applyFill(
 
   if (fill.type === 'PATTERN' || fill.type === 'NOISE' || fill.type === 'CUSTOM') {
     const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColor(r.ck.Color4f(c.r, c.g, c.b, c.a))
+    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
 
@@ -223,6 +244,7 @@ function applyPatternFill(
     tileRect
   )
   r.fillPaint.setShader(shader)
+  r.fillPaintShaded = true
   shader.delete()
   picture.delete()
   return true
@@ -291,6 +313,7 @@ export function applyGradientFill(
     if (!shader) return false
     try {
       paint.setShader(shader)
+      markShaded(r, paint)
     } finally {
       shader.delete()
     }
@@ -422,6 +445,7 @@ function setImageShader(
         )
   try {
     paint.setShader(shader)
+    markShaded(r, paint)
   } finally {
     shader.delete()
   }
@@ -439,9 +463,14 @@ export function applyImageFill(
   if (!hash) return false
   const live = r.liveImages.get(hash)
   if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
+  if (r.viewportImageRendering) {
+    r.noteImageFillUser(hash, node.id)
+    r.previewsDrawn = true
+  }
+  // The preview's resolution follows the detail the drawing is for: the viewport's scale, or a
+  // tile's level, whose chunk pictures record again when a finer tile needs more.
   const preview = r.viewportImageRendering
-    ? // eslint-disable-next-line open-pencil/no-zoom-in-scene-drawing -- picks the preview resolution, not a size; preview mode draws the scene uncached on every frame.
-      r.imagePreviews.get(graph, hash, previewEdge(node, r.zoom, r.dpr))
+    ? r.imagePreviews.get(graph, hash, previewEdge(node, r.imageDetailScale))
     : undefined
   if (r.viewportImageRendering && !preview) return false
   const key = preview?.key ?? hash

@@ -126,8 +126,8 @@ export function createNodePropArrayActions({
   ) {
     for (const n of targetNodes()) {
       const arr = [...n[key]]
-      arr[index] = { ...arr[index], ...patch } as (typeof arr)[number]
-      store.updateNodeWithUndo(n.id, { [key]: arr } as Partial<SceneNode>, label)
+      arr[index] = { ...arr[index], ...patch }
+      store.updateNodeWithUndo(n.id, { [key]: arr }, label)
     }
   }
 
@@ -135,7 +135,7 @@ export function createNodePropArrayActions({
     for (const n of targetNodes()) {
       store.updateNodeWithUndo(
         n.id,
-        { [key]: (n[key] as unknown[]).filter((_, i) => i !== index) } as Partial<SceneNode>,
+        { [key]: (n[key] as unknown[]).filter((_, i) => i !== index) },
         label
       )
     }
@@ -147,11 +147,7 @@ export function createNodePropArrayActions({
       if (!items[index]) continue
       const arr = [...n[key]]
       arr[index] = { ...arr[index], visible: !items[index].visible }
-      store.updateNodeWithUndo(
-        n.id,
-        { [key]: arr } as Partial<SceneNode>,
-        `Toggle ${key} visibility`
-      )
+      store.updateNodeWithUndo(n.id, { [key]: arr }, `Toggle ${key} visibility`)
     }
   }
 
@@ -190,13 +186,13 @@ export function createNodePropScrubActions(store: Editor) {
     if (store.getSelectedNodes().length > 1) {
       for (const n of store.getSelectedNodes()) {
         const prev = previousValues.get(n.id)?.[key] ?? previous
-        store.commitNodeUpdate(n.id, { [key]: prev } as Partial<SceneNode>, `Change ${key}`)
+        store.commitNodeUpdate(n.id, { [key]: prev }, `Change ${key}`)
       }
       previousValues.clear()
     } else {
       const node = store.getSelectedNode()
       if (node) {
-        store.commitNodeUpdate(node.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
+        store.commitNodeUpdate(node.id, { [key]: previous }, `Change ${key}`)
       }
     }
   }

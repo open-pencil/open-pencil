@@ -174,8 +174,11 @@ function pick(name: string) {
     @select="pick"
     @load-more="loadMore"
   >
-    <template #trigger>
+    <template v-if="$slots.trigger" #trigger>
       <slot name="trigger" />
+    </template>
+    <template v-else #anchor>
+      <slot name="anchor" />
     </template>
     <template #search-trailing>
       <AppCombobox

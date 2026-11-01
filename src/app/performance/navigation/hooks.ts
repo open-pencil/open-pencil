@@ -71,7 +71,9 @@ export function createNavigationBenchmarkHooks(store: EditorStore): NavigationBe
             renderers.length > 0 &&
             renderers.every((renderer) =>
               renderer.tiledSceneEnabled
-                ? renderer.tiledSceneCovered && !renderer.tiledScenePending
+                ? renderer.tiledSceneCovered &&
+                  !renderer.tiledScenePending &&
+                  !renderer.tiledScene.hasPendingWork()
                 : !renderer.sceneBackingNeedsCrispRender
             )
           if (settled) {

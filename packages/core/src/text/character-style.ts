@@ -11,6 +11,8 @@ import {
   type TextLength
 } from '@open-pencil/scene-graph'
 import {
+  FACE_KEYS,
+  rangeFontStyle,
   SHARED_TEXT_STYLE_FIELDS,
   styleDetachmentChanges
 } from '@open-pencil/scene-graph/shared-styles'
@@ -35,6 +37,7 @@ export type CharacterStyle = Required<
     | 'textCase'
   >
 > & {
+  fontStyle: string | null
   lineHeight: TextLength | null
   textDecorationThickness: number | null
   textUnderlineOffset: number | null
@@ -50,6 +53,7 @@ export const TEXT_STYLE_KEYS = [
   'fontFamily',
   'fontWeight',
   'italic',
+  'fontStyle',
   'fontSize',
   'letterSpacing',
   'lineHeight',
@@ -83,6 +87,7 @@ export function nodeStyle(node: SceneNode): CharacterStyle {
     fontFamily: node.fontFamily,
     fontWeight: node.fontWeight,
     italic: node.italic,
+    fontStyle: node.fontStyle,
     fontSize: node.fontSize,
     letterSpacing: node.letterSpacing,
     lineHeight: node.lineHeight,
@@ -112,7 +117,11 @@ export function characterStyles(node: SceneNode, start: number, end: number): Ch
     const from = Math.max(start, run.start)
     const to = Math.min(end, run.start + run.length)
     for (let index = from; index < to; index++) {
-      styles[index - start] = { ...styles[index - start], ...definedOverrides(run.style) }
+      styles[index - start] = {
+        ...styles[index - start],
+        ...definedOverrides(run.style),
+        fontStyle: rangeFontStyle(node, run.style)
+      }
     }
   }
   return styles
@@ -168,16 +177,12 @@ function detachedStyles(
   style: CharacterStyleOverride | undefined
 ): CharacterStyleOverride {
   if (!style) return {}
-  const styled = {
-    ...node,
-    textStyleId: current.textStyleId !== undefined ? current.textStyleId : node.textStyleId,
-    fillStyleId: current.fillStyleId !== undefined ? current.fillStyleId : node.fillStyleId
-  }
+  const styled = { ...node, ...current }
   const changes = pick(style, [...TEXT_STYLE_KEYS, 'fills', 'textStyleId', 'fillStyleId'])
   const detached = styleDetachmentChanges(styled, changes)
   return pick(
     detached,
-    (['textStyleId', 'fillStyleId'] as const).filter(
+    (['textStyleId', 'fillStyleId', 'fontStyle'] as const).filter(
       (key) => !Object.hasOwn(changes, key) && Object.hasOwn(detached, key)
     )
   )
@@ -241,7 +246,11 @@ export function textStyleChanges(
     ...(changed.some((key) => (SHARED_TEXT_STYLE_FIELDS as readonly string[]).includes(key))
       ? (['textStyleId'] as const)
       : []),
-    ...(changed.includes('fills') ? (['fillStyleId'] as const) : [])
+    ...(changed.includes('fills') ? (['fillStyleId'] as const) : []),
+    // A range's face name names none once the text's face changes under it.
+    ...(changed.some((key) => (FACE_KEYS as readonly string[]).includes(key))
+      ? (['fontStyle'] as const)
+      : [])
   ]
   const runs = node.styleRuns.map((run) => ({ ...run, style: omit(run.style, keys) }))
   const updated = { ...node, ...changes }

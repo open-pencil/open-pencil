@@ -191,7 +191,7 @@ export function drawReflowedPathTextSilhouettes(
   const paint = new r.ck.Paint()
   paint.setAntiAlias(true)
   paint.setStyle(r.ck.PaintStyle.Fill)
-  paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  paint.setColorComponents(color.r, color.g, color.b, color.a)
   paint.setAlphaf(stroke.opacity)
   try {
     for (const glyph of glyphs) {
@@ -317,7 +317,7 @@ function drawGlyphOutline(r: SkiaRenderer, canvas: Canvas, path: Path, runFills?
     for (const fill of runFills) {
       if (!fill.visible || fill.type !== 'SOLID') continue
       const color = fill.color
-      paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a * fill.opacity))
+      paint.setColorComponents(color.r, color.g, color.b, color.a * fill.opacity)
       canvas.drawPath(path, paint)
     }
   } finally {

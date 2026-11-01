@@ -1,0 +1,1 @@
+- Saving a `.fig` after moving a component that has an instance in slot content no longer writes the component twice, so the file opens again.

@@ -1,0 +1,2 @@
+- An image fill's **Stock photo** searches Unsplash or Pexels and fills the layer with the photo picked, crediting its photographer and showing the service's own picks before a search; a service without a key leads to its free key in Settings, where **Test connection** checks it.
+- A PNG, JPEG, or WebP file dropped on an image fill fills the layer with it.

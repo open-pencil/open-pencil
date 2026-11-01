@@ -3,6 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { inNodeSpace, withScreenStroke } from '#core/canvas/overlays/outline'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
@@ -14,7 +15,7 @@ import {
   ISSUE_MARKER_RING_WIDTH,
   ISSUE_WARNING_COLOR
 } from '#core/constants'
-import { createSceneGeometry, type RotationPreview } from '#core/geometry'
+import { type RotationPreview } from '#core/geometry'
 
 import { issueMarkerLabel } from './layout'
 import type { DesignIssueHighlight, DesignIssueSeverity, PlacedIssueMarker } from './types'
@@ -56,7 +57,7 @@ export function drawIssueHighlight(
   if (!highlight || !node) return
   const color = issueSeverityColor(highlight.severity)
 
-  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () => {
+  inNodeSpace(r, canvas, r.sceneGeometry(graph, preview), node, () => {
     r.auxFill.setColor(color4f(r, color, ISSUE_HIGHLIGHT_FILL_ALPHA))
     canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxFill)
     const stroke = { color: color4f(r, color), width: ISSUE_HIGHLIGHT_STROKE_WIDTH }
@@ -143,7 +144,7 @@ function drawMarker(
     radius + ring,
     radius + ring
   )
-  r.auxFill.setColor(r.ck.Color4f(0, 0, 0, MARKER_SHADOW_ALPHA))
+  r.auxFill.setColorComponents(0, 0, 0, MARKER_SHADOW_ALPHA)
   r.auxFill.setMaskFilter(r.getCachedMaskBlur(MARKER_SHADOW_SIGMA))
   canvas.drawRRect(shadow, r.auxFill)
   r.auxFill.setMaskFilter(null)
@@ -195,9 +196,7 @@ function drawMarker(
   const font = r.sizeFont
   if (!font) return
   const label = issueMarkerLabel(marker.count)
-  let textWidth = 0
-  for (const width of font.getGlyphWidths(font.getGlyphIDs(label))) textWidth += width
-  font.setEmbolden(true)
+  const textWidth = cachedGlyphWidth(r, font, label)
   r.auxFill.setColor(color4f(r, issueSeverityForeground(marker.severity)))
   canvas.drawText(
     label,
@@ -206,7 +205,6 @@ function drawMarker(
     r.auxFill,
     font
   )
-  font.setEmbolden(false)
 }
 
 /** Draws placed markers so the first placed, most severe marker ends up on top. */
@@ -216,8 +214,14 @@ export function drawIssueMarkers(
   placed: readonly PlacedIssueMarker[],
   hoveredKey: string | null | undefined
 ): void {
-  for (let index = placed.length - 1; index >= 0; index--) {
-    const marker = placed[index]
-    drawMarker(r, canvas, marker, marker.key === hoveredKey)
+  // Every label is bold: the font is set once around the loop, not twice per marker.
+  r.sizeFont?.setEmbolden(true)
+  try {
+    for (let index = placed.length - 1; index >= 0; index--) {
+      const marker = placed[index]
+      drawMarker(r, canvas, marker, marker.key === hoveredKey)
+    }
+  } finally {
+    r.sizeFont?.setEmbolden(false)
   }
 }

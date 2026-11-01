@@ -19,7 +19,7 @@ import {
 } from '#core/canvas/text'
 import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
 import { transformTextCase } from '#core/text/case'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
 
 import { expectDefined } from '#tests/helpers/assert'

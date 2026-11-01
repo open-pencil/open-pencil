@@ -68,7 +68,7 @@ export function drawSnapMarks(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuid
 function vertexSnapPaint(r: SkiaRenderer, alpha: number) {
   const { r: red, g, b } = VERTEX_SNAP_COLOR
   r.auxStroke.setStrokeWidth(1)
-  r.auxStroke.setColor(r.ck.Color4f(red, g, b, alpha))
+  r.auxStroke.setColorComponents(red, g, b, alpha)
   return r.auxStroke
 }
 

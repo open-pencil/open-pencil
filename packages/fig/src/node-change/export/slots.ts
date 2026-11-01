@@ -88,9 +88,7 @@ export function slotContentAssignment(
 function markSlotContent(record: KiwiNodeChange): void {
   record.isSlotContent = true
   Reflect.deleteProperty(record, 'componentPropRefs')
-  const parameters = record.parameterConsumptionMap as
-    | { entries?: Array<{ variableField?: string }> }
-    | undefined
+  const parameters = record.parameterConsumptionMap
   const entries = parameters?.entries?.filter((entry) => entry.variableField !== 'SLOT_CONTENT_ID')
   if (entries?.length) record.parameterConsumptionMap = { entries }
   else Reflect.deleteProperty(record, 'parameterConsumptionMap')

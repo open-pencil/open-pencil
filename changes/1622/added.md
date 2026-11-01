@@ -1,0 +1,1 @@
+- Boards: Home and the New file tab (⌘T or + in the tab bar, as in Figma) offer Design and Board side by side; a board has FigJam's tools (sticky note, shape, connector, section, text), its keys (S, R, X), and a 16-unit snap grid, and saves and opens as a FigJam `.jam` file, which the desktop app also opens from Finder.

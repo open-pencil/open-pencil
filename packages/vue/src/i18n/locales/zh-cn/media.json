@@ -1,11 +1,17 @@
 {
   "vectorization": "图像矢量化",
-  "vectorizationDescription": "将图像图层发送到 Recraft 或 fal.ai，并返回可编辑的矢量。服务商可能收费。",
+  "vectorizationDescription": "将图像图层发送到 Recraft、fal.ai 或 QuiverAI，并返回可编辑的矢量。服务商可能收费。",
   "vectorizeProvider": "矢量化服务",
   "pexelsAPIKey": "Pexels API 密钥（图库照片）",
   "unsplashAccessKey": "Unsplash 访问密钥",
   "stockPhotoToolOptional": "可选，用于 stock_photo 工具",
   "pexelsAlternativeOptional": "可选，作为 Pexels 的替代",
   "getPexelsAPIKey": "获取免费 Pexels API 密钥 →",
-  "getUnsplashAccessKey": "获取免费的 Unsplash 访问密钥 →"
+  "getUnsplashAccessKey": "获取免费的 Unsplash 访问密钥 →",
+  "photoKeyWorks": "{service} 接受了此密钥。",
+  "photoKeyRejected": "{service} 拒绝了此密钥。请检查是否完整复制。",
+  "unsplashKeyRejected": "Unsplash 拒绝了此密钥。请粘贴应用的 Access Key，而不是 Secret key。",
+  "photoKeyRateLimited": "此密钥本小时的 {service} 请求已用完。请稍后再试。",
+  "photoKeyUnreachable": "无法连接 {service}。请检查网络连接。",
+  "photoKeyCheckFailed": "{service} 没有响应测试。请稍后再试。"
 }

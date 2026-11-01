@@ -118,7 +118,7 @@ function resolveSimpleCalc(value: string): string {
 
   const base = Number.parseFloat(calc[1])
   const multiplier = Number.parseFloat(calc[3])
-  const unit = calc[2] ?? 'px'
+  const unit = calc.at(2) ?? 'px'
   if (!Number.isFinite(base) || !Number.isFinite(multiplier)) return value
   return `${unit === 'rem' ? base * multiplier * 16 : base * multiplier}px`
 }

@@ -28,9 +28,9 @@ const emit = defineEmits<{ back: []; closed: []; openAutoFocus: [event: Event] }
 
 const styles = tv(drillInTheme)()
 /**
- * The list shows under the detail while it slides, then hides once covered. It is inert from the
- * moment the detail opens, and a closing detail is inert while it slides away, so the two never
- * share the tab order.
+ * The list stays under the detail's background while its content slides in, then hides. It is
+ * inert from the moment the detail opens, and a closing detail is inert while it slides away, so
+ * the two never share the tab order.
  */
 const covered = ref(false)
 

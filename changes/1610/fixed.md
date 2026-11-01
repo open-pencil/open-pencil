@@ -1,0 +1,2 @@
+- Boolean operations draw as in Figma: operands with a hidden fill add only their strokes, strokes keep their alignment, reflected operands keep their orientation, vector operands take their saved fill shape, and the operation's corner radius rounds its outline.
+- A vector's saved outside stroke no longer covers its fill.

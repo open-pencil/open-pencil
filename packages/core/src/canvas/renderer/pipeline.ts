@@ -7,6 +7,7 @@ import { needsImagePreviews } from '#core/canvas/images/previews'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
+import { resolveEditorProfile } from '#core/editor/views/profile'
 import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
@@ -59,7 +60,10 @@ export function renderFromEditorState(
     r.imageCache.clear()
     // Previews of another document hold its encoded images, which a document without
     // previews would otherwise keep alive.
-    if (r.imageMemoryGraph !== graph) r.imagePreviews.release()
+    if (r.imageMemoryGraph !== graph) {
+      r.imagePreviews.release()
+      r.imageFillUsers.clear()
+    }
     r.imageMemoryGraph = graph
     r.imageMemoryPage = state.currentPageId
   }
@@ -72,28 +76,28 @@ export function renderFromEditorState(
   r.viewportHeight = viewportHeight
   r.showRulers = showRulers
   r.pageColor = state.pageColor
-  r.rulerTheme = state.rulerTheme ?? null
+  r.setRulerTheme(state.rulerTheme ?? null)
   r.setSelectionTheme(state.selectionTheme)
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
-  r.readOnly = state.readOnly
-  // A previewing canvas shows the design as it runs: no selection, hover, or edit chrome.
-  const previewing = state.play !== null
+  const { editChrome, live, edits } = resolveEditorProfile(state)
+  r.editHandles = edits
   render(
     r,
     graph,
-    previewing ? new Set<string>() : state.selectedIds,
+    editChrome ? state.selectedIds : new Set<string>(),
     {
-      playing: previewing,
-      playIslands: previewing ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
-      hoveredNodeId: previewing ? null : state.hoveredNodeId,
-      showPixelGrid: !previewing && state.showPixelGrid !== false,
+      playing: !editChrome,
+      playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
+      hoveredNodeId: editChrome ? state.hoveredNodeId : null,
+      showPixelGrid: editChrome && state.showPixelGrid !== false,
       gradientEdit: state.gradientEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
+      renamingLabelId: state.renamingLabelId,
       textEditor: textEditor as RenderOverlays['textEditor'],
       marquee: state.marquee,
       snapGuides: state.snapGuides,
@@ -102,11 +106,11 @@ export function renderFromEditorState(
       dropTargetId: state.dropTargetId,
       layoutInsertIndicator: state.layoutInsertIndicator,
       penState: state.penState
-        ? ({
+        ? {
             ...state.penState,
             cursorX: state.penCursorX ?? undefined,
             cursorY: state.penCursorY ?? undefined
-          } as RenderOverlays['penState'])
+          }
         : null,
       pencilState: state.pencilState,
       nodeEditState: state.nodeEditState ?? null,
@@ -170,13 +174,17 @@ function getSceneRenderPolicy(
   graph: SceneGraph,
   overlays: RenderOverlays,
   sceneVersion: number,
+  layer: RenderLayer,
   interactive: boolean
 ) {
   const hasPositionPreview =
     graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion &&
     sceneVersion === r.scenePictureVersion
+  // Image previews arrive over time; the uncached path redraws everything to show each one, the
+  // tiled path redraws only the nodes that drew the image (flushDecodedPreviews).
+  const tilesHoldPreviews = r.tiledSceneEnabled && layer === 'scene'
   const requiresUncachedSceneRender =
-    r.viewportImageRendering ||
+    (r.viewportImageRendering && !tilesHoldPreviews) ||
     interactive ||
     hasPositionPreview ||
     sceneContentDependsOnOverlay(overlays) ||
@@ -238,7 +246,9 @@ export function render(
     zoom: r.zoom
   })
   r.syncFontGeneration()
+  r.flushDecodedPreviews(graph)
   r.nodePaths.releaseUncached()
+  r.frameGeometry = null
   const p = r.profiler
   p.beginFrame()
   p.setScenePictureDrawTime(0)
@@ -260,6 +270,7 @@ export function render(
     w: r.viewportWidth / r.zoom,
     h: r.viewportHeight / r.zoom
   }
+  r.imageDetailScale = r.zoom * r.dpr
   updateSceneBackingPreviewState(r, layer)
 
   const { requiresUncachedSceneRender, canUsePicture, cacheMissReason } = getSceneRenderPolicy(
@@ -267,6 +278,7 @@ export function render(
     graph,
     overlays,
     sceneVersion,
+    layer,
     interactive
   )
 
@@ -281,26 +293,12 @@ export function render(
     p.beginPhase('render:scene')
     let renderedScene = false
     if (layer === 'scene' && !requiresUncachedSceneRender && r.tiledSceneEnabled) {
-      const backingPresented = renderSceneBacking(r, canvas, graph, sceneVersion)
-      if (!backingPresented) {
-        canvas.save()
-        canvas.translate(r.panX, r.panY)
-        canvas.scale(r.zoom, r.zoom)
-        renderSceneContent(
-          r,
-          canvas,
-          graph,
-          overlays,
-          sceneVersion,
-          canUsePicture,
-          cacheMissReason,
-          requiresUncachedSceneRender
-        )
-        canvas.restore()
-      }
+      // Tiles stand in for the retained backing, idle or moving.
       const tiled = r.tiledScene.renderFrame(r, canvas, graph, sceneVersion, r.navigationGeneration)
       r.tiledScenePending = tiled.pending
+      r.tiledSceneBackgroundPending = tiled.backgroundPending
       r.tiledSceneCovered = tiled.covered
+      r.sceneBackingNeedsCrispRender = false
       renderedScene = true
       p.setScenePictureMode('hit', tiled.covered ? 'tiled' : 'tiled-fallback')
     }

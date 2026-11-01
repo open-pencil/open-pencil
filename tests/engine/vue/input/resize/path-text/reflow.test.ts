@@ -149,6 +149,7 @@ describe('group resize reflows path text instead of squashing it', () => {
     } as Editor
 
     const origChild: ResizeSnapshot = {
+      type: 'TEXT',
       x: 0,
       y: 0,
       width: 256,

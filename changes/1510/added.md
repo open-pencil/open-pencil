@@ -1,0 +1,2 @@
+- The AI chat supports Agent Skills: SKILL.md folders it lists by name and description and loads when a request matches. **Settings › Skills** takes uploads as a ZIP or a SKILL.md, and in the desktop app also reads the skills folders next to the open document once you trust them, and the skills you pick from `~/.agents/skills` and `~/.claude/skills`, which AI setup offers one by one since most are coding workflows; each folder and skill can be switched on or off.
+- Start a message with `/skill:name` to run a skill; Pi gets the enabled skills too.

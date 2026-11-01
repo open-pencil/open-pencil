@@ -2,6 +2,7 @@ export {
   clearRecentFiles,
   forgetRecentDocument,
   forgetRecentFile,
+  forgetRecentStorageDocument,
   recentDocuments,
   recentFiles,
   recentLocalFileAt,

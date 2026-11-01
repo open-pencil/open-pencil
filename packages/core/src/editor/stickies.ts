@@ -19,11 +19,13 @@ import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
 
+import type { NodeActions } from './nodes'
+
 /**
  * Sticky note commands. A note's colour sits on the note and its text on its sublayers, so each
  * change records the notes' whole subtrees as one step.
  */
-export function createStickyActions(ctx: EditorContext) {
+export function createStickyActions(ctx: EditorContext, nodes: NodeActions) {
   /** The colour the sticky tool places notes in: the one picked last, as in FigJam. */
   let stickyColor: Color = DEFAULT_STICKY_COLOR
 
@@ -75,7 +77,7 @@ export function createStickyActions(ctx: EditorContext) {
       const fills = fill
         ? [{ ...fill, type: 'SOLID' as const, color: { ...color } }, ...sticky.fills.slice(1)]
         : [{ type: 'SOLID' as const, color: { ...color }, opacity: 1, visible: true }]
-      ctx.graph.updateNode(sticky.id, { fills })
+      nodes.updateNode(sticky.id, { fills })
     })
   }
 
@@ -84,7 +86,7 @@ export function createStickyActions(ctx: EditorContext) {
     editStickies('Change sticky text size', ids, (sticky) => {
       const body = stickySublayers(ctx.graph, sticky)?.body
       if (body) {
-        ctx.graph.updateNode(body.id, figJamTextSizeFields(size, figJamTypeface(body) ?? 'simple'))
+        nodes.updateNode(body.id, figJamTextSizeFields(size, figJamTypeface(body) ?? 'simple'))
       }
     })
   }
@@ -93,7 +95,7 @@ export function createStickyActions(ctx: EditorContext) {
   function setStickyAuthorVisible(ids: Iterable<string>, visible: boolean) {
     editStickies(visible ? 'Show sticky author' : 'Hide sticky author', ids, (sticky) => {
       const author = stickySublayers(ctx.graph, sticky)?.author
-      if (author) ctx.graph.updateNode(author.id, { visible })
+      if (author) nodes.updateNode(author.id, { visible })
     })
   }
 

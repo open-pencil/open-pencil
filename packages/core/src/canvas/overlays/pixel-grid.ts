@@ -61,7 +61,7 @@ export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
   }
   const color = lineColor(r.pageColor)
   const step = r.zoom * r.dpr
-  const shader = r.pixelGridEffect.makeShader([
+  const uniforms = [
     r.panX * r.dpr,
     r.panY * r.dpr,
     step,
@@ -71,11 +71,16 @@ export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
     color.b,
     color.a,
     r.dpr
-  ])
+  ]
+  // The shader holds only these uniforms, so a hover repaint at the same view reuses it.
+  const key = uniforms.join(',')
+  if (r.pixelGridShader?.key !== key) {
+    r.pixelGridShader?.shader.delete()
+    r.pixelGridShader = { key, shader: r.pixelGridEffect.makeShader(uniforms) }
+  }
   // Skia scales a shader by the paint's alpha, which earlier overlays may have left translucent.
   r.auxFill.setAlphaf(1)
-  r.auxFill.setShader(shader)
+  r.auxFill.setShader(r.pixelGridShader.shader)
   canvas.drawRect(r.ck.LTRBRect(0, 0, r.viewportWidth, r.viewportHeight), r.auxFill)
   r.auxFill.setShader(null)
-  shader.delete()
 }

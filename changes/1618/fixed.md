@@ -1,0 +1,1 @@
+- Text in a font whose file was replaced, such as a web font fetched again for more characters, saves to `.fig` files with its own letters and weight instead of reopening with other letters.

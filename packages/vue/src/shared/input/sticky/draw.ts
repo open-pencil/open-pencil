@@ -8,6 +8,7 @@ import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
 
 import { parentSpace } from '#vue/shared/input/draw'
 import { findDrawParent } from '#vue/shared/input/drop-target'
+import { gridRounding } from '#vue/shared/input/snap'
 import { subtree } from '#vue/shared/input/sticky/scale'
 import type { DragState, DragStickyDraw } from '#vue/shared/input/types'
 
@@ -28,7 +29,7 @@ export function startStickyDraw(
   editor.undo.beginBatch('Create sticky')
   const parentId = findDrawParent(cx, cy, 'STICKY', editor)
   const toLocal = parentSpace(editor, parentId)
-  const snap = editor.state.snappingPreferences.pixelGrid ? Math.round : (value: number) => value
+  const snap = gridRounding(editor)
   const local = toLocal(cx, cy)
   const start = { x: snap(local.x), y: snap(local.y) }
   const sticky = editor.createStickyNote(parentId, {

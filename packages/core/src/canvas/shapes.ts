@@ -1,4 +1,4 @@
-import type { Canvas, Paint, Path } from 'canvaskit-wasm'
+import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
@@ -101,7 +101,8 @@ function pathsOutline(
  */
 function nodeOutline(r: SkiaRenderer, node: SceneNode, spread: number): NodeOutline {
   // `0 - spread` rather than `-spread`: a spread of 0 must not put -0 into flattened geometry.
-  const rect = r.ck.LTRBRect(0 - spread, 0 - spread, node.width + spread, node.height + spread)
+  const rect = () =>
+    r.ck.LTRBRect(0 - spread, 0 - spread, node.width + spread, node.height + spread)
   switch (node.type) {
     case 'VECTOR': {
       const paths = r.getFillGeometry(node) ?? r.getVectorPaths(node) ?? []
@@ -111,7 +112,7 @@ function nodeOutline(r: SkiaRenderer, node: SceneNode, spread: number): NodeOutl
       const geometry = r.getFillGeometry(node)
       if (geometry) return pathsOutline(r, geometry, spread, false)
       if (node.arcData) return pathsOutline(r, [makeArcPath(r, node)], spread, true)
-      return { kind: 'oval', rect }
+      return { kind: 'oval', rect: rect() }
     }
     case 'POLYGON':
     case 'STAR':
@@ -122,7 +123,7 @@ function nodeOutline(r: SkiaRenderer, node: SceneNode, spread: number): NodeOutl
         return { kind: 'paths', paths: [makeSmoothRRectPath(r, node, spread)], owned: true }
       }
       if (nodeHasRadius(node)) return { kind: 'rrect', rrect: makeRRectWithSpread(r, node, spread) }
-      return { kind: 'rect', rect }
+      return { kind: 'rect', rect: rect() }
   }
 }
 
@@ -259,9 +260,14 @@ export function makeRRectWithSpread(
   )
 }
 
-export function clipNodeShape(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
+/** Clips to the layer's outline, or with `op` to everything but it. */
+export function clipNodeShape(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  op: EmbindEnumEntity = r.ck.ClipOp.Intersect
+): void {
   withNodeOutline(r, node, (outline) => {
-    const op = r.ck.ClipOp.Intersect
     if (outline.kind === 'rect') canvas.clipRect(outline.rect, op, true)
     else if (outline.kind === 'rrect') canvas.clipRRect(outline.rrect, op, true)
     else if (outline.kind === 'paths' && outline.paths.length === 1) {

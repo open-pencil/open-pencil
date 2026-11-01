@@ -23,6 +23,8 @@ de:diagnostics.categoryMCP
 de:diagnostics.categoryRenderer
 de:diagnostics.durationMs
 de:editor.cornerRadius
+de:files.createBoard
+de:files.createDesign
 de:menu.text
 de:panels.alpha
 de:panels.blendModeNormal
@@ -78,6 +80,7 @@ es:ai.chatSettings
 es:ai.completions
 es:ai.responses
 es:ai.toolError
+es:ai.notifyTitle
 es:automation.statusError
 es:code.editorDesignLabel
 es:code.sourceDesignJSX
@@ -138,6 +141,7 @@ fr:designCheck.scopeDocument
 fr:designCheck.scopePage
 fr:designCheck.suggestions
 fr:diagnostics.title
+fr:files.createDesign
 fr:pages.pageName
 fr:pages.pages
 fr:panels.alpha
@@ -204,6 +208,7 @@ it:ai.aiSetupAgentAccount
 it:ai.chatSettings
 it:ai.completions
 it:ai.responses
+it:ai.notifyTitle
 it:code.editorDesignLabel
 it:code.sourceDesignJSX
 it:code.sourceHTML
@@ -216,6 +221,7 @@ it:diagnostics.categoryMCP
 it:diagnostics.categoryRenderer
 it:diagnostics.categoryRuntime
 it:diagnostics.durationMs
+it:files.createDesign
 it:menu.file
 it:panels.ai
 it:panels.auto
@@ -271,6 +277,7 @@ pl:ai.completions
 pl:ai.modelAgentConnection
 pl:ai.modelConfiguration
 pl:ai.responses
+pl:ai.notifyTitle
 pl:automation.port
 pl:code.editorDesignLabel
 pl:code.sourceDesignJSX
@@ -305,6 +312,7 @@ pl:storage.providerR2
 pl:storage.region
 ru:ai.completions
 ru:ai.responses
+ru:ai.notifyTitle
 ru:code.editorDesignLabel
 ru:code.sourceDesignJSX
 ru:code.sourceHTML
@@ -327,6 +335,7 @@ ru:storage.cloudTitle
 ru:storage.waitlistPlaceholder
 zh-cn:ai.completions
 zh-cn:ai.responses
+zh-cn:ai.notifyTitle
 zh-cn:code.editorDesignLabel
 zh-cn:code.sourceDesignJSX
 zh-cn:code.sourceHTML
@@ -361,6 +370,7 @@ it:variables.formula
 it:variables.unitAuto
 pl:variables.unitAuto
 es:menu.variables
+fr:menu.diagnostics
 fr:menu.variables
 fr:variables.collections
 de:panels.gridAuto
@@ -477,9 +487,6 @@ ru:cloudPortal.methodApple
 ru:cloudPortal.deploymentOfficial
 ru:cloudPortal.emailTransportSMTP
 ru:cloudPortal.emailTransportCloudflare
-de:settings.cloud
-fr:settings.cloud
-it:settings.cloud
 es:cloud.productName
 es:cloud.roleEditor
 es:cloud.homeCloudOnHost
@@ -527,3 +534,20 @@ pl:shapes.engFolder
 ru:cloud.productName
 ru:cloud.homeCloudOnHost
 ru:cloud.inviteEmailPlaceholder
+de:settings.skills
+de:ai.chatReferenceSkills
+de:ai.notifyTitle
+fr:ai.chatReferencePages
+fr:ai.notifyTitle
+de:settings.groupApp
+de:settings.editor
+es:settings.editor
+it:settings.groupApp
+it:settings.editor
+ja:settings.groupAI
+ja:ai.notifyTitle
+pl:settings.groupAI
+zh-cn:settings.groupAI
+de:settings.cloud
+fr:settings.cloud
+it:settings.cloud

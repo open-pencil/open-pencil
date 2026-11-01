@@ -4,7 +4,7 @@ The Cloudflare Worker behind `feedback.openpencil.dev`. It is operated by the Op
 
 | Route | What it does | What it keeps |
 | --- | --- | --- |
-| `POST /ping` | The daily anonymous ping. | One counter per day and build (version, OS, architecture, desktop or web, browser family). Nothing per install, no addresses. |
+| `POST /ping` | The daily anonymous ping. | One counter per day and build (version, OS, architecture, desktop or web, browser family), and one per day, app, platform, and network (Cloudflare's AS number and operator name). Nothing per install, no addresses. |
 | `POST /ingest` | Opt-in usage stats, forwarded to PostHog EU. Refuses any event or property not in `src/contract`. | Nothing. PostHog gets no client address, person profile, or GeoIP. |
 | `GET /admin/` | The team's metrics dashboard, built from the app's `metrics.html` (`bun run build:metrics` writes `dist-metrics/`, which Wrangler uploads as the Worker's assets), behind Cloudflare Access. | Nothing. |
 | `GET /admin/api/snapshot?start&end` | The metrics dashboard's data for a range of UTC days, behind Cloudflare Access. | Nothing; it reads pings, snapshots, and the waitlist from D1 (email domains only) and asks PostHog for usage. |

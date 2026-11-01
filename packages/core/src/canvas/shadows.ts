@@ -1,11 +1,12 @@
-import type { BlendMode, Canvas, ImageFilter } from 'canvaskit-wasm'
+import type { Canvas, ImageFilter } from 'canvaskit-wasm'
 
-import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
 
-import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
+import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
 import { blurSigma, renderNoiseEffects } from './effects'
 import type { SkiaRenderer } from './renderer'
@@ -101,7 +102,7 @@ function drawSilhouetteDropShadow(
   effect: Effect,
   spread: number,
   bounds: Float32Array,
-  blendMode: BlendMode,
+  blendMode: BlendMode | undefined,
   draw: () => void
 ): void {
   const ck = r.ck
@@ -118,31 +119,33 @@ function drawSilhouetteDropShadow(
         morphology
       )
     : r.getCachedDropShadow(effect.offset.x, effect.offset.y, sigma, color)
-  const paint = new ck.Paint()
+  // The layer copies the paint, so the shared one is reset at once for whatever draws inside.
+  const paint = r.effectLayerPaint
   paint.setImageFilter(filter)
-  paint.setBlendMode(blendMode)
+  setPaintBlendMode(r, paint, blendMode)
   canvas.saveLayer(paint, bounds)
+  paint.setImageFilter(null)
+  paint.setBlendMode(ck.BlendMode.SrcOver)
   try {
     draw()
   } finally {
     canvas.restore()
-    paint.delete()
     if (morphology) {
-      filter.delete()
+      filter?.delete()
       morphology.delete()
     }
   }
 }
 
 function drawKnockout(r: SkiaRenderer, canvas: Canvas, bounds: Float32Array, draw: () => void) {
-  const paint = new r.ck.Paint()
+  const paint = r.effectLayerPaint
   paint.setBlendMode(r.ck.BlendMode.DstOut)
   canvas.saveLayer(paint, bounds)
+  paint.setBlendMode(r.ck.BlendMode.SrcOver)
   try {
     draw()
   } finally {
     canvas.restore()
-    paint.delete()
   }
 }
 
@@ -156,7 +159,7 @@ function drawOwnShapeDropShadow(
   node: SceneNode,
   effect: Effect,
   spread: number,
-  blendMode: BlendMode,
+  blendMode: BlendMode | undefined,
   knockout: boolean
 ): boolean {
   const outline = regularStrokeOutline(node, spread)
@@ -222,7 +225,7 @@ function renderDropShadow(
 ): void {
   if (!includeChildren && !paintsCastShadow(node)) return
   const spread = shadowSpread(node, effect)
-  const blendMode = figmaBlendModeToSkia(r.ck, effect.blendMode)
+  const blendMode = effect.blendMode
   const knockout =
     effect.showShadowBehindNode === false && !paintsOverKnockout(graph, node, includeChildren)
   const children = includeChildren
@@ -244,10 +247,10 @@ function renderDropShadow(
   }
 
   const bounds = shadowLayerBounds(r, graph, node, effect, spread, includeChildren)
-  const isolation = knockout ? new r.ck.Paint() : null
-  if (isolation) {
-    isolation.setBlendMode(blendMode)
-    canvas.saveLayer(isolation, bounds)
+  if (knockout) {
+    setPaintBlendMode(r, r.effectLayerPaint, blendMode)
+    canvas.saveLayer(r.effectLayerPaint, bounds)
+    setPaintBlendMode(r, r.effectLayerPaint, 'NORMAL')
   }
   try {
     drawSilhouetteDropShadow(
@@ -256,7 +259,7 @@ function renderDropShadow(
       effect,
       spread,
       bounds,
-      isolation ? r.ck.BlendMode.SrcOver : blendMode,
+      knockout ? 'NORMAL' : blendMode,
       () => drawSilhouette(r, canvas, graph, node, 'cast', includeChildren)
     )
     if (knockout) {
@@ -265,10 +268,7 @@ function renderDropShadow(
       )
     }
   } finally {
-    if (isolation) {
-      canvas.restore()
-      isolation.delete()
-    }
+    if (knockout) canvas.restore()
     resetEffectLayerPaint(r)
   }
 }
@@ -289,7 +289,7 @@ function drawSilhouetteInnerShadow(
   let solidBlackFilter: ReturnType<typeof ck.ColorFilter.MakeBlend> | null = null
 
   try {
-    r.effectLayerPaint.setBlendMode(figmaBlendModeToSkia(ck, effect.blendMode))
+    setPaintBlendMode(r, r.effectLayerPaint, effect.blendMode)
     canvas.saveLayer(r.effectLayerPaint, bounds)
     restoreCount++
     r.effectLayerPaint.setBlendMode(ck.BlendMode.SrcOver)
@@ -317,7 +317,7 @@ function drawSilhouetteInnerShadow(
     canvas.saveLayer(r.effectLayerPaint, inverse)
     restoreCount++
 
-    r.auxFill.setColor(ck.Color4f(0, 0, 0, 1))
+    r.auxFill.setColorComponents(0, 0, 0, 1)
     canvas.drawRect(inverse, r.auxFill)
 
     r.effectLayerPaint.setImageFilter(null)
@@ -382,7 +382,7 @@ export function isolatesInnerShadows(node: SceneNode): boolean {
   return (
     shadows.length > 0 &&
     shadows.every((effect) => !needsIsolatedBlendLayer(effect.blendMode)) &&
-    [...node.fills, ...node.fillGeometry.flatMap((geometry) => geometry.fills ?? [])].every(
+    [...node.fills, ...regionFills(node.vectorNetwork)].every(
       (fill) => !fill.visible || !needsIsolatedBlendLayer(fill.blendMode)
     )
   )

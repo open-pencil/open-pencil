@@ -9,7 +9,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { emptyBehaviour, readBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/font/digests'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 // A save reads the document after its last wait, so the font digests it waits for must cover
 // a font an edit brought in while they loaded.

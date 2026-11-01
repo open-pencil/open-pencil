@@ -3,12 +3,18 @@ import { createMemoryLocalCanvasStore } from '@/app/storage/local-store/memory'
 import type {
   LocalCanvasIndexInput,
   LocalCanvasMeta,
+  LocalCanvasState,
   LocalCanvasWriteInput
 } from '@/app/storage/local-store/types'
 
 export type UpdateLocalCanvasMetaOptions = {
   /** Apply only if the row still has this revision. */
   expectedRevision?: number
+}
+
+export type RemoveLocalCanvasOptions = {
+  /** Remove only if the row is still in this state, checked in the same transaction. */
+  unchangedFrom?: LocalCanvasState
 }
 
 export type LocalCanvasStore = {
@@ -28,7 +34,8 @@ export type LocalCanvasStore = {
   tombstone(id: string): Promise<LocalCanvasMeta | null>
   /** Drop only the cached fig blob (eviction) — meta and thumb stay. */
   clearFig(id: string): Promise<LocalCanvasMeta | null>
-  remove(id: string): Promise<void>
+  /** Removes the copy, and says whether it did; a changed row stays under `unchangedFrom`. */
+  remove(id: string, options?: RemoveLocalCanvasOptions): Promise<boolean>
   clearAll(): Promise<void>
 }
 

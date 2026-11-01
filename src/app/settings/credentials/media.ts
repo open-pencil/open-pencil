@@ -1,6 +1,11 @@
 import { ref } from 'vue'
 
-import { setPexelsAPIKey, setUnsplashAccessKey } from '@open-pencil/core/tools'
+import {
+  checkStockPhotoKey,
+  setPexelsAPIKey,
+  setUnsplashAccessKey,
+  type StockPhotoKeyCheck
+} from '@open-pencil/core/tools'
 
 import { appCredentialServices } from './app'
 import {
@@ -57,6 +62,19 @@ export async function setUnsplashKey(key: string): Promise<void> {
       ? () => resolveMediaCredential(UNSPLASH_CREDENTIAL)
       : null
   )
+}
+/**
+ * Checks the key typed in Settings, or the saved one when nothing is typed, with one request to
+ * the service; `missing` when there is neither.
+ */
+export async function checkMediaKey(
+  service: 'pexels' | 'unsplash',
+  typed: string,
+  useSaved: boolean
+): Promise<StockPhotoKeyCheck | 'missing'> {
+  const reference = service === 'pexels' ? PEXELS_CREDENTIAL : UNSPLASH_CREDENTIAL
+  const key = typed.trim() || (useSaved ? await resolveMediaCredential(reference) : null)
+  return key ? checkStockPhotoKey(service, key) : 'missing'
 }
 export async function setRememberCredentials(remembered: boolean): Promise<void> {
   await initializeCredentialMigration()

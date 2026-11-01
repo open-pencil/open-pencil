@@ -3,13 +3,10 @@ import * as v from 'valibot'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
-import type {
-  FigmaFontName,
-  FigmaFontNameInput,
-  FigmaVariationSettings
-} from '#core/figma-api/fonts'
+import type { FigmaFontName, FigmaFontNameInput } from '#core/figma-api/fonts/names'
+import type { FigmaVariationSettings } from '#core/figma-api/fonts/variations'
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { collectNodeFontFaces } from '#core/text/requirements'
+import { collectNodeFontFaces } from '#core/text/requirements/collect'
 import {
   toolNumber,
   nodeIdInputSchema,

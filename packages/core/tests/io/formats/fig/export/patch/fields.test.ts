@@ -52,8 +52,9 @@ test('an edit rewrites only the fields it changed, keeping those OpenPencil does
   graph.updateNode(instance.id, { name: 'Lists renamed' })
 
   const changed = changes(recordsOf(bytes), recordsOf(await exportFigFile(graph)))
-  // Figma's own fields, its library links, and the overrides it saved all stay.
-  expect([...changed.values()]).toEqual([['name']])
+  // Figma's own fields, its library links, and the overrides it saved all stay; the overrides
+  // only gain the name, which Figma shows from the one at the instance's own path.
+  expect([...changed.values()]).toEqual([['name', 'symbolData']])
 })
 
 test('renaming an instance adds its name to the overrides Figma saved, and changes no other', async () => {

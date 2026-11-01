@@ -29,7 +29,8 @@ const blendModes = {
   Hue: 'Hue',
   Saturation: 'Saturation',
   Color: 'Color',
-  Luminosity: 'Luminosity'
+  Luminosity: 'Luminosity',
+  Plus: 'Plus'
 }
 
 function createCanvas() {
@@ -87,7 +88,8 @@ function calls(fn: ReturnType<typeof mock>): unknown[][] {
 describe('canvas blend modes', () => {
   test('maps Figma blend modes to CanvasKit blend modes', () => {
     const ck = asCanvasKit({ BlendMode: blendModes })
-    const cases: Array<[BlendMode, string]> = [
+    // Plus darker and plus lighter have no CanvasKit mode; they draw through runtime blenders.
+    const cases: Array<[Exclude<BlendMode, 'LINEAR_BURN' | 'LINEAR_DODGE'>, string]> = [
       ['NORMAL', 'SrcOver'],
       ['PASS_THROUGH', 'SrcOver'],
       ['DARKEN', 'Darken'],

@@ -77,6 +77,9 @@ pub fn run() {
             credential_store_availability,
             credential_write,
             agents::mcp::mcp_lookup,
+            agents::skills::skill_folders,
+            agents::skills::project_skill_folders,
+            agents::skills::skill_folder_file,
             #[cfg(feature = "native-test")]
             launch::native_test_open_deep_link,
             system::opener::open_external_url,
@@ -104,6 +107,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
@@ -111,6 +115,21 @@ pub fn run() {
             handle_menu_event(app, event.id().0.as_str());
         })
         .setup(|app| {
+            // The main window is built here rather than from the config alone, so that pages it
+            // opens with `window.open` reach the system browser.
+            let main = app
+                .config()
+                .app
+                .windows
+                .first()
+                .cloned()
+                .ok_or("the main window is not configured")?;
+            tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+                .on_new_window(system::opener::open_new_window_externally(
+                    app.handle().clone(),
+                ))
+                .build()?;
+
             launch::queue_open_paths(app.handle(), args::startup_open_paths());
 
             use tauri_plugin_deep_link::DeepLinkExt;

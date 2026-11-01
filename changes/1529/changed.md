@@ -1,0 +1,1 @@
+- The right panel opens wider by default, giving the AI chat more room; a width you set yourself is kept.

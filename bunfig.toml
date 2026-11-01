@@ -2,6 +2,7 @@
 # Preload discovery-file isolation for every `bun test` run so engine tests
 # never clobber the real ~/Library/Application Support/OpenPencil/mcp.json
 # (which would break a running OpenPencil desktop app). See
-# tests/helpers/mcp/discovery-isolation.ts for the rationale.
+# tests/helpers/mcp/discovery-isolation.ts for the rationale. Web font
+# providers start off, so no test reaches the network (tests/helpers/fonts/offline.ts).
 [test]
-preload = ["./tests/helpers/mcp/discovery-isolation.ts"]
+preload = ["./tests/helpers/mcp/discovery-isolation.ts", "./tests/helpers/fonts/offline.ts"]

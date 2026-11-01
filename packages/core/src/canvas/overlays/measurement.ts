@@ -1,11 +1,11 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   MEASUREMENT_COLOR,
@@ -14,6 +14,8 @@ import {
   MEASUREMENT_PILL_RADIUS,
   MEASUREMENT_TEXT_BASELINE
 } from '#core/constants'
+
+import { outlineNode } from './outline'
 
 export interface MeasurementSegment {
   axis: 'x' | 'y'
@@ -147,12 +149,7 @@ function selectedBounds(graph: SceneGraph, selectedIds: Set<string>): Rect | nul
 }
 
 function textWidth(r: SkiaRenderer, text: string): number {
-  const font = r.sizeFont
-  if (!font) return 0
-  const widths = font.getGlyphWidths(font.getGlyphIDs(text))
-  let width = 0
-  for (const glyphWidth of widths) width += glyphWidth
-  return width
+  return r.sizeFont ? cachedGlyphWidth(r, r.sizeFont, text) : 0
 }
 
 function drawPill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: number) {
@@ -169,7 +166,7 @@ function drawPill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: n
     MEASUREMENT_PILL_RADIUS,
     MEASUREMENT_PILL_RADIUS
   )
-  r.auxFill.setColor(r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1))
+  r.auxFill.setColorComponents(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1)
   canvas.drawRRect(rect, r.auxFill)
   r.auxFill.setColor(r.ck.WHITE)
   canvas.drawText(
@@ -182,27 +179,9 @@ function drawPill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: n
 }
 
 function drawTargetOutline(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, target: SceneNode) {
-  const world = getWorldMatrix(target, graph)
-  const view = Matrix.multiply(Matrix.translated(r.panX, r.panY), Matrix.scaled(r.zoom, r.zoom))
-  const points = Matrix.mapPoints(Matrix.multiply(view, world), [
-    0,
-    0,
-    target.width,
-    0,
-    target.width,
-    target.height,
-    0,
-    target.height
-  ])
-  const path = new r.ck.PathBuilder()
-  path.moveTo(points[0], points[1])
-  path.lineTo(points[2], points[3])
-  path.lineTo(points[4], points[5])
-  path.lineTo(points[6], points[7])
-  path.close()
-  const immutablePath = path.detachAndDelete()
-  canvas.drawPath(immutablePath, r.auxStroke)
-  immutablePath.delete()
+  outlineNode(r, canvas, graph, target.id, {
+    color: r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1)
+  })
 }
 
 export function drawMeasurementSegment(

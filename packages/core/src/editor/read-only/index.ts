@@ -1,6 +1,7 @@
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import type { EditorContext, Tool } from '#core/editor/types'
+import type { EditorContext } from '#core/editor/types'
+import { offeredTool } from '#core/editor/views'
 
 import { READ_ONLY_ACTIONS } from './actions'
 
@@ -12,12 +13,9 @@ export class ReadOnlyDocumentError extends Error {
   }
 }
 
-/** The tools a read-only document keeps, as Figma's toolbar shows while a version is viewed. */
-export const READ_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['SELECT', 'HAND'])
-
 /**
  * Returns the editor with every action that changes the document refused while `isReadOnly`
- * holds; the actions in `READ_ONLY_ACTIONS` and the editor's getters pass through.
+ * holds, as it does while the editor's profile offers no edits; the actions in `READ_ONLY_ACTIONS` and the editor's getters pass through.
  */
 export function guardReadOnly<T extends object>(editor: T, isReadOnly: () => boolean): T {
   const descriptors = Object.getOwnPropertyDescriptors(editor)
@@ -56,12 +54,10 @@ export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) 
    * drops a tool that would edit, as Figma does on opening version history.
    */
   function setReadOnly(readOnly: boolean): void {
-    if (ctx.state.readOnly === readOnly) return
-    if (readOnly) {
-      endEdits()
-      if (!READ_ONLY_TOOLS.has(ctx.state.activeTool)) ctx.setActiveTool('SELECT')
-    }
-    ctx.state.readOnly = readOnly
+    if (ctx.state.hostRestrictions.readOnly === readOnly) return
+    if (readOnly) endEdits()
+    ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, readOnly }
+    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
     ctx.emitEditorEvent('document:read-only-changed', readOnly)
     ctx.requestRepaint()
   }

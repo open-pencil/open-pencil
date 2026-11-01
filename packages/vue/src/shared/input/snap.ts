@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { SNAP_THRESHOLD_SCREEN_PX } from '@open-pencil/core/constants'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
@@ -13,16 +13,29 @@ export interface PixelSnapResult {
   guides: SnapGuide[]
 }
 
+/** Rounds to a multiple of `step`. */
+function roundTo(value: number, step: number): number {
+  return Math.round(value / step) * step
+}
+
 /**
- * Lands the bounds on whole pixels, as Figma's Snap to pixel grid does at any zoom: a move ends on
- * a whole position and a resized edge on a whole size, even from a fractional start.
+ * Lands the bounds on the snap grid, as Figma's Snap to pixel grid does at any zoom: a move ends on
+ * a whole position and a resized edge on a whole size, even from a fractional start. The grid is
+ * the editor profile's: whole pixels in a design, FigJam's 16 units on a board.
  */
-export function computePixelGridSnap(bounds: Rect): PixelSnapResult {
+export function computePixelGridSnap(bounds: Rect, step = 1): PixelSnapResult {
   return {
-    delta: { x: Math.round(bounds.x) - bounds.x, y: Math.round(bounds.y) - bounds.y },
+    delta: { x: roundTo(bounds.x, step) - bounds.x, y: roundTo(bounds.y, step) - bounds.y },
     // Pixel rounding is not alignment with another object or an explicit guide.
     guides: []
   }
+}
+
+/** How a drawn layer's corners land while Snap to pixel grid is on, on the profile's grid. */
+export function gridRounding(editor: Editor): (value: number) => number {
+  if (!editor.state.snappingPreferences.pixelGrid) return (value) => value
+  const step = resolveEditorProfile(editor.state).snapGrid
+  return (value) => roundTo(value, step)
 }
 
 export interface ExplicitSnapTarget extends SnapGuide {
@@ -131,7 +144,7 @@ export function resolveObjectPixelSnap(
     ? computeSnap(movingIds, movingBounds, targets, threshold)
     : { dx: 0, dy: 0, guides: [] }
   const pixelSnap = editor.state.snappingPreferences.pixelGrid
-    ? computePixelGridSnap(movingBounds)
+    ? computePixelGridSnap(movingBounds, resolveEditorProfile(editor.state).snapGrid)
     : { delta: { x: 0, y: 0 }, guides: [] }
   const objectX = objectSnap.guides.some((guide) => guide.axis === 'x')
   const objectY = objectSnap.guides.some((guide) => guide.axis === 'y')

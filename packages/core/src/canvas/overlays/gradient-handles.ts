@@ -50,10 +50,10 @@ function strokeWithShadow(r: SkiaRenderer, canvas: Canvas, path: Path) {
   paint.setPathEffect(null)
   paint.setStrokeWidth(1)
   paint.setMaskFilter(getCachedMaskBlur(r, SHADOW_BLUR))
-  paint.setColor(r.ck.Color4f(0, 0, 0, SHADOW_ALPHA))
+  paint.setColorComponents(0, 0, 0, SHADOW_ALPHA)
   canvas.drawPath(path, paint)
   paint.setMaskFilter(null)
-  paint.setColor(r.ck.Color4f(1, 1, 1, 1))
+  paint.setColorComponents(1, 1, 1, 1)
   canvas.drawPath(path, paint)
   path.delete()
 }
@@ -61,10 +61,10 @@ function strokeWithShadow(r: SkiaRenderer, canvas: Canvas, path: Path) {
 function drawDot(r: SkiaRenderer, canvas: Canvas, point: Vector) {
   const paint = r.auxFill
   paint.setMaskFilter(getCachedMaskBlur(r, SHADOW_BLUR))
-  paint.setColor(r.ck.Color4f(0, 0, 0, SHADOW_ALPHA))
+  paint.setColorComponents(0, 0, 0, SHADOW_ALPHA)
   canvas.drawCircle(point.x, point.y + 0.5, GRADIENT_HANDLE.dotRadius, paint)
   paint.setMaskFilter(null)
-  paint.setColor(r.ck.Color4f(1, 1, 1, 1))
+  paint.setColorComponents(1, 1, 1, 1)
   canvas.drawCircle(point.x, point.y, GRADIENT_HANDLE.dotRadius, paint)
 }
 
@@ -80,7 +80,7 @@ function drawStop(
   const border = selected ? SELECTED_BORDER : STOP_BORDER
   const paint = r.auxFill
   paint.setMaskFilter(null)
-  paint.setColor(r.ck.Color4f(border.r, border.g, border.b, 1))
+  paint.setColorComponents(border.r, border.g, border.b, 1)
   // The pointer leaves the square's edge facing the spot it marks.
   const { center, pointing } = stop
   const edge = {
@@ -111,9 +111,9 @@ function drawStop(
       center.y + half - inset
     )
   canvas.drawRect(rect(0), paint)
-  paint.setColor(r.ck.Color4f(1, 1, 1, 1))
+  paint.setColorComponents(1, 1, 1, 1)
   canvas.drawRect(rect(2), paint)
-  paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  paint.setColorComponents(color.r, color.g, color.b, color.a)
   canvas.drawRect(rect(3), paint)
 }
 

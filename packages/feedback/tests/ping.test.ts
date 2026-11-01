@@ -72,6 +72,52 @@ describe('ping', () => {
     ])
   })
 
+  test('counts pings per day by the network and wording Cloudflare reports, never the address', async () => {
+    const huawei = { asn: 136907, asOrganization: 'Huawei Cloud Singapore Region' }
+    await service.postJSON('/ping', BUILD, { 'CF-Connecting-IP': '203.0.113.7' }, huawei)
+    await service.postJSON('/ping', BUILD, {}, huawei)
+    await service.postJSON('/ping', BUILD, {}, { ...huawei, asOrganization: 'Huawei-Cloud-SG' })
+    await service.postJSON('/ping', { ...BUILD, app: 'web' }, {}, { asn: 9299 })
+
+    const networks = await createFeedbackDatabase(service.db)
+      .selectFrom('pingNetworks')
+      .selectAll()
+      .where('asn', '!=', 0)
+      .orderBy(['asn', 'app', 'name'])
+      .execute()
+    expect(networks).toEqual([
+      { day: '2026-10-12', asn: 9299, app: 'web', platform: 'macos', name: '', count: 1 },
+      {
+        day: '2026-10-12',
+        asn: 136907,
+        app: 'desktop',
+        platform: 'macos',
+        name: 'Huawei Cloud Singapore Region',
+        count: 2
+      },
+      {
+        day: '2026-10-12',
+        asn: 136907,
+        app: 'desktop',
+        platform: 'macos',
+        name: 'Huawei-Cloud-SG',
+        count: 1
+      }
+    ])
+    expect(JSON.stringify(networks)).not.toContain('203.0.113.7')
+  })
+
+  test('counts a ping without network details under AS 0', async () => {
+    await service.postJSON('/ping', { ...BUILD, platform: 'linux' })
+
+    const unknown = await createFeedbackDatabase(service.db)
+      .selectFrom('pingNetworks')
+      .select(['asn', 'name', 'count'])
+      .where('platform', '=', 'linux')
+      .execute()
+    expect(unknown).toEqual([{ asn: 0, name: '', count: 1 }])
+  })
+
   test('refuses a ping without the usage stats answer', async () => {
     expect((await service.postJSON('/ping', omit(BUILD, ['usageStats']))).status).toBe(400)
   })

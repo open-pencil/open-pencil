@@ -8,9 +8,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["node", "vite/client", "@wdio/globals/types", "@wdio/mocha-framework"],
-    "baseUrl": "../../..",
     "paths": {
-      "#tests/*": ["tests/*"]
+      "#tests/*": ["../../*"]
     }
   },
   "include": [

@@ -38,7 +38,7 @@ describe('app runtime configuration', () => {
       recentFiles: false,
       showChrome: true,
       showRulers: true,
-      sceneRenderer: 'retained',
+      sceneRenderer: 'tiled',
       sceneRendererOverride: false,
       collaborationTransport: 'default',
       collaborationRelayURL: null

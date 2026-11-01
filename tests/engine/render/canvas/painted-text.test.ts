@@ -6,7 +6,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { withTextParagraph, type TextLayout } from '#core/canvas/text'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'

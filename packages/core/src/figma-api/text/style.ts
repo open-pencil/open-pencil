@@ -8,10 +8,11 @@ import {
   paragraphStyleAt
 } from '@open-pencil/scene-graph/text'
 
-import { readVariationSettings, weightToStyleName } from '#core/figma-api/fonts'
+import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
+import { textStyleName } from '#core/text/font/names'
 
 /** The fields `getStyledTextSegments` takes, in the order Figma lists them. */
 export const TEXT_SEGMENT_FIELDS = [
@@ -100,7 +101,7 @@ function spacing(field: 'paragraphSpacing' | 'listSpacing' | 'paragraphIndent') 
 const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown> = {
   fontSize: ({ style }) => style.fontSize,
   fontName: ({ style }) => {
-    const name = weightToStyleName(style.fontWeight, style.italic)
+    const name = textStyleName(style)
     const variationSettings = readVariationSettings(
       style.fontFamily,
       name,

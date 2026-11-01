@@ -9,6 +9,7 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
 import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
+import { invalidateBooleanAncestors } from '#core/editor/graph-events'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
@@ -18,11 +19,13 @@ import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { createSVGNodes } from '#core/io/formats/svg'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import { componentFromNode } from './components'
 import { flattenSceneNodes } from './flatten'
-import { loadFigmaFont, variationAxisTags, type FigmaFontNameInput } from './fonts'
+import { loadFigmaFont } from './fonts/load'
+import type { FigmaFontNameInput } from './fonts/names'
+import { variationAxisTags } from './fonts/variations'
 import * as images from './images'
 import type {
   FigmaBooleanOperationNode,
@@ -91,7 +94,8 @@ export type {
   FigmaVectorNode
 } from './node-types'
 export type { FigmaFont, FigmaFontName } from './proxy'
-export type { FigmaFontNameInput, FigmaVariationSettings } from './fonts'
+export type { FigmaFontNameInput } from './fonts/names'
+export type { FigmaVariationSettings } from './fonts/variations'
 
 // TODO(figma-api): Implement the full official PluginAPI interface once our compatibility
 // layer covers all required node-specific return types and unsupported APIs are modeled explicitly.
@@ -102,6 +106,7 @@ export class FigmaAPI implements NodeProxyHost {
   private _nodeCache = new Map<string, FigmaNodeProxy>()
   private _pageProxies = new WeakSet<FigmaNodeProxy>()
   private _renderer: SkiaRenderer | null = null
+  private _unbindRendererEvents: (() => void) | null = null
   /** The interface theme new sections take their fill from, as in Figma. */
   theme: InterfaceTheme = 'light'
 
@@ -123,8 +128,33 @@ export class FigmaAPI implements NodeProxyHost {
     this._currentPageId = pages[0]?.id ?? graph.rootId
   }
 
+  /**
+   * The renderer that measures for the API: boolean results and flattened vectors. It keeps
+   * each boolean operation's result between readings, so the API tells it when a change lands
+   * inside one, as the editor does for its renderers.
+   */
   setRenderer(renderer: SkiaRenderer | null): void {
+    this._unbindRendererEvents?.()
+    this._unbindRendererEvents = null
     this._renderer = renderer
+    if (!renderer) return
+    const graph = this.graph
+    const invalidate = (id: string | null | undefined) =>
+      invalidateBooleanAncestors(graph, [renderer], id)
+    this._unbindRendererEvents = graph.onNodeEvents({
+      created: (node) => invalidate(node.parentId),
+      updated: (id) => invalidate(id),
+      previewUpdated: (id) => invalidate(id),
+      deleted: (_id, parentId) => invalidate(parentId),
+      reparented: (id, oldParentId) => {
+        invalidate(oldParentId)
+        invalidate(graph.getNode(id)?.parentId)
+      },
+      reordered: (_id, parentId, _index, previousParentId) => {
+        invalidate(parentId)
+        invalidate(previousParentId)
+      }
+    })
   }
 
   get groupFitOptions(): GroupFitOptions {

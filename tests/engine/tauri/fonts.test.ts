@@ -9,20 +9,24 @@ afterEach(async () => {
   vi.restoreAllMocks()
 })
 
+/** As the desktop catalog lists a family: each face by its font's name, weight, and slant. */
+const SYSTEM_UI_FACES = [
+  { style: 'Regular', weight: 400, italic: false },
+  { style: 'Bold', weight: 700, italic: false }
+]
+
 describe('Tauri font helpers', () => {
   test('lists system font families through mocked Tauri IPC', async () => {
     await mockTauriIPC((cmd) => {
       expect(cmd).toBe('list_system_fonts')
-      return [{ family: 'System UI', styles: ['Regular', 'Bold'] }]
+      return [{ family: 'System UI', faces: SYSTEM_UI_FACES }]
     })
 
     vi.spyOn(fontManager, 'listFamilyOptions').mockResolvedValue([])
     const { listFamilies, listFonts } = await import('@/app/editor/fonts')
 
     await expect(listFamilies()).resolves.toEqual([{ family: 'System UI', source: 'local' }])
-    await expect(listFonts()).resolves.toEqual([
-      { family: 'System UI', styles: ['Regular', 'Bold'] }
-    ])
+    await expect(listFonts()).resolves.toEqual([{ family: 'System UI', faces: SYSTEM_UI_FACES }])
   })
 
   test('loads system font bytes and registers the face', async () => {

@@ -8,7 +8,11 @@ pub fn file_association_path(path: PathBuf) -> Option<PathBuf> {
         return None;
     }
     let ext = path.extension()?.to_string_lossy().to_lowercase();
-    matches!(ext.as_str(), "fig" | "pen" | "drawio" | "dio" | "mmd" | "mermaid").then_some(path)
+    matches!(
+        ext.as_str(),
+        "fig" | "jam" | "pen" | "drawio" | "dio" | "mmd" | "mermaid"
+    )
+    .then_some(path)
 }
 
 fn path_from_arg(arg: String, cwd: &Path) -> Option<PathBuf> {

@@ -5,6 +5,8 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
+import { drawAIOverlays } from '#core/canvas/overlays/ai'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
@@ -65,13 +67,7 @@ function updateIssueMarkers(r: SkiaRenderer, graph: SceneGraph, overlays: Render
     r.issueMarkers = []
     return
   }
-  const measureText = (text: string) => {
-    const font = r.sizeFont
-    if (!font) return 0
-    let width = 0
-    for (const glyph of font.getGlyphWidths(font.getGlyphIDs(text))) width += glyph
-    return width
-  }
+  const measureText = (text: string) => (r.sizeFont ? cachedGlyphWidth(r, r.sizeFont, text) : 0)
   const inset = r.showRulers ? RULER_SIZE : 0
   r.issueMarkers = layoutIssueMarkers(graph, markers, {
     pageId: r.pageId ?? '',
@@ -123,7 +119,7 @@ export function drawOverlayPass(
     drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
   else {
     r.drawSelection(canvas, graph, selectedIds, overlays)
-    if (!overlays.transforming && !r.readOnly)
+    if (!overlays.transforming && r.editHandles)
       drawShapeHandles(
         r,
         canvas,
@@ -137,12 +133,13 @@ export function drawOverlayPass(
   r.profiler.endPhase('render:selection')
 
   r.drawFlashes(canvas, graph)
+  drawAIOverlays(r, canvas, graph)
   if (overlays.guides?.redline) drawMeasurementSegment(r, canvas, overlays.guides.redline.segment)
   drawGuides(r, canvas, graph, overlays.guides)
   r.drawSnapGuides(canvas, overlays.snapGuides)
   r.drawMarquee(canvas, overlays.marquee)
   r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
-  if (!measuring && !overlays.transforming && !r.readOnly) {
+  if (!measuring && !overlays.transforming && r.editHandles) {
     r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
   }
   r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)

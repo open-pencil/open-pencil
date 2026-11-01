@@ -59,6 +59,8 @@ export interface TextLayoutBlock {
   y: number
   /** Whether the block is shown, as truncation hides blocks past its last line. */
   visible: boolean
+  /** The paragraph's line metrics, read once when the block is laid out. */
+  metrics: LineMetrics[]
 }
 
 export interface TextCaretBox {
@@ -105,7 +107,8 @@ export class TextLayout {
         lines,
         x: 0,
         y: 0,
-        visible: true
+        visible: true,
+        metrics: []
       }
     ])
   }
@@ -137,26 +140,38 @@ export class TextLayout {
         continue
       }
       block.paragraph.layout(Math.max(1, width - block.inset))
+      block.metrics = block.paragraph.getLineMetrics()
       // A block capped for a narrower layout gets its lines back when there is room for them.
       const cap = this.caps.get(block) ?? this.maxLines ?? Infinity
-      const overflows = block.paragraph.getLineMetrics().length > remaining
+      const overflows = block.metrics.length > remaining
       const clipped = cap < remaining && block.paragraph.didExceedMaxLines()
       if ((overflows || clipped) && block.rebuild) {
         block.paragraph.delete()
         block.paragraph = block.rebuild(remaining)
         this.caps.set(block, remaining)
         block.paragraph.layout(Math.max(1, width - block.inset))
+        block.metrics = block.paragraph.getLineMetrics()
       }
       if (block.paragraph.didExceedMaxLines()) this.truncated = true
       if (index > 0) y += block.spaceBefore
       block.x = block.rtl ? 0 : block.inset
       block.y = y
       y += block.paragraph.getHeight()
-      lines += block.paragraph.getLineMetrics().length
+      lines += block.metrics.length
     }
     this.placeLines(width)
     for (const block of this.visibleBlocks()) this.placeMarker(block)
     this.collectLines()
+    this.height = this.measureHeight()
+  }
+
+  /** The laid-out height, kept from the layout so a draw asks the paragraphs nothing. */
+  private height: number | null = null
+
+  private measureHeight(): number {
+    const last = this.visibleBlocks().at(-1)
+    if (this.placedHeight !== null) return this.placedHeight
+    return last ? last.y + last.paragraph.getHeight() : 0
   }
 
   private clearPlacements(): void {
@@ -165,6 +180,7 @@ export class TextLayout {
     }
     this.placements.clear()
     this.placedHeight = null
+    this.height = null
   }
 
   /**
@@ -190,7 +206,7 @@ export class TextLayout {
   private offsetAt(block: TextLayoutBlock, y: number): number {
     const placement = this.placements.get(block)
     if (!placement) return 0
-    const lines = block.paragraph.getLineMetrics()
+    const lines = block.metrics
     const index = lines.findIndex((line) => y < line.baseline + line.descent)
     return placement.offsets[index === -1 ? lines.length - 1 : index] ?? 0
   }
@@ -201,7 +217,7 @@ export class TextLayout {
 
   private placeMarker(block: TextLayoutBlock): void {
     const marker = block.marker
-    const first = block.paragraph.getLineMetrics().at(0)
+    const first = block.metrics.at(0)
     if (!marker || !first) return
     const markerLine = marker.paragraph.getLineMetrics().at(0)
     const width = marker.paragraph.getLongestLine()
@@ -232,7 +248,7 @@ export class TextLayout {
     for (const [blockIndex, block] of visible.entries()) {
       this.lineOffsets.push(this.lines.length)
       if (block.marker) block.marker.lineNumber = this.lines.length
-      const metrics = block.paragraph.getLineMetrics()
+      const metrics = block.metrics
       const boxes = this.placements.get(block)?.boxes
       const blockEnd = block.start + block.length
       for (const [lineIndex, line] of metrics.entries()) {
@@ -265,9 +281,7 @@ export class TextLayout {
   }
 
   getHeight(): number {
-    const last = this.visibleBlocks().at(-1)
-    if (this.placedHeight !== null) return this.placedHeight
-    return last ? last.y + last.paragraph.getHeight() : 0
+    return this.height ?? this.measureHeight()
   }
 
   getLongestLine(): number {
@@ -387,6 +401,8 @@ export class TextLayout {
         bottom: top + first.height
       }
     }
+    const after = this.caretAfterLineBreak(block, local)
+    if (after) return after
     let lo = local
     let hi = local + 1
     let useRight = false
@@ -415,6 +431,21 @@ export class TextLayout {
       top: y + rect[1],
       bottom: y + rect[3]
     }
+  }
+
+  /**
+   * The caret after a line break that ends the paragraph: at the start of the empty line Skia
+   * lays out below it, where typing goes, not after the break on the line above.
+   */
+  private caretAfterLineBreak(block: TextLayoutBlock, local: number): TextCaretBox | null {
+    if (local < block.length) return null
+    const lines = block.paragraph.getLineMetrics()
+    const last = lines.at(-1)
+    const previous = lines.at(-2)
+    if (!last || !previous?.isHardBreak || last.endIndex > previous.endIncludingNewline) return null
+    const lineTop = last.baseline - last.ascent
+    const y = block.y + this.offsetAt(block, lineTop + last.height / 2)
+    return { x: block.x + last.left, top: y + lineTop, bottom: y + lineTop + last.height }
   }
 
   /**
