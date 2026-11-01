@@ -1,7 +1,12 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { computeContentBounds } from '#core/io/formats/raster'
-import { renderNodesToSVG, type SVGExportOptions, type SVGTextLayout } from '#core/io/formats/svg'
+import {
+  renderNodesToSVG,
+  type SVGExportOptions,
+  type SVGExportWarning,
+  type SVGTextLayout
+} from '#core/io/formats/svg'
 
 import { withPDFDOM, type SVGPageParser } from './dom'
 import {
@@ -17,6 +22,8 @@ import type { PDFPageSpec } from './plan'
 
 export interface PDFExportOptions {
   title?: string
+  /** Receives explanations when the PDF export omits an unsupported effect. */
+  onWarning?: (warning: SVGExportWarning) => void
   /** The faces the text uses, to embed their files; without them text uses standard PDF fonts. */
   fonts?: readonly PDFFontFace[]
   /** Line breaks of text nodes as the editor laid them out, so paragraphs stay wrapped. */
@@ -29,6 +36,8 @@ export interface PDFExportResult {
   data: Uint8Array
   /** The pages written, in order. Pages with nothing visible are skipped. */
   pages: Array<{ label?: string; width: number; height: number }>
+  /** Effects the PDF export could not represent and omitted. */
+  warnings?: SVGExportWarning[]
   /** Embedded and fallback faces, when `fonts` was given. */
   fonts?: PDFFontReport
 }
@@ -40,7 +49,10 @@ interface PreparedPage {
   height: number
 }
 
-type PageSVGOptions = Pick<SVGExportOptions, 'textLayout' | 'fontAlias'>
+type PageSVGOptions = Pick<
+  SVGExportOptions,
+  'textLayout' | 'fontAlias' | 'skipUnsupportedEffects' | 'onWarning'
+>
 
 function preparePage(
   graph: SceneGraph,
@@ -85,9 +97,18 @@ async function renderPages(
   parse: SVGPageParser
 ): Promise<PDFExportResult | null> {
   const embedding = options.fonts ? planFontEmbedding(options.fonts, options.fallbackFile) : null
+  const warnings = new Map<string, SVGExportWarning>()
+  const onWarning = (warning: SVGExportWarning) => {
+    const key = `${warning.effect}:${warning.nodeId}`
+    if (warnings.has(key)) return
+    warnings.set(key, warning)
+    options.onWarning?.(warning)
+  }
   const svgOptions: PageSVGOptions = {
     textLayout: options.textLayout,
-    fontAlias: embedding ? embeddedFontAlias(embedding) : undefined
+    fontAlias: embedding ? embeddedFontAlias(embedding) : undefined,
+    skipUnsupportedEffects: true,
+    onWarning
   }
   const preparePages = () =>
     specs
@@ -123,13 +144,15 @@ async function renderPages(
     await svg2pdf(page.svgElement, doc, { x: 0, y: 0, width: page.width, height: page.height })
   }
 
-  return {
+  const result: PDFExportResult = {
     data: new Uint8Array(doc.output('arraybuffer')),
     pages: prepared.map((page) => ({
       label: page.spec.label,
       width: page.width,
       height: page.height
-    })),
-    ...(embedding ? { fonts: embedding.report } : {})
+    }))
   }
+  if (warnings.size > 0) result.warnings = [...warnings.values()]
+  if (embedding) result.fonts = embedding.report
+  return result
 }
