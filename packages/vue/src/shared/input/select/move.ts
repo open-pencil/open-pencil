@@ -23,25 +23,16 @@ export function selectionIsLocked(editor: Editor) {
 
 /**
  * Whether pressing `hit` should drag the current selection, as in Figma: the hit lies inside a
- * selected layer, or a selected layer under the point lies inside the hit group or boolean.
+ * selected layer that a click does not look into, or a selected layer under the point lies inside
+ * the hit group or boolean. A selected top-level frame or section stays open, so its layers are
+ * selected by the press as they are when it is not selected.
  */
 export function pressesSelection(hit: SceneNode, cx: number, cy: number, editor: Editor) {
   return [...editor.state.selectedIds].some((id) => {
     if (id === hit.id) return false
-    if (editor.graph.isDescendant(hit.id, id)) return true
+    if (editor.graph.isDescendant(hit.id, id)) return !editor.graph.isOpenContainer(id)
     return editor.graph.isDescendant(id, hit.id) && editor.graph.isPointInNode(id, cx, cy)
   })
-}
-
-/** Whether clicking `hit` inside the selection selects it: not when a selected group holds it. */
-export function clickSelectsInside(hit: SceneNode, editor: Editor) {
-  for (let node = editor.graph.getNode(hit.parentId ?? ''); node;) {
-    if (editor.state.selectedIds.has(node.id)) {
-      return node.type !== 'GROUP' && node.type !== 'BOOLEAN_OPERATION'
-    }
-    node = editor.graph.getNode(node.parentId ?? '')
-  }
-  return false
 }
 
 function autoLayoutMoveTarget(id: string, editor: Editor): string {

@@ -342,7 +342,6 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     editor.setLayoutInsertIndicator(null)
     editor.setSnapGuides([])
     editor.setDropTarget(null)
-    if (d.selectOnClick) editor.select([d.selectOnClick])
     return
   }
 

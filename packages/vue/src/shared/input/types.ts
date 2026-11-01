@@ -127,8 +127,6 @@ export interface DragMove {
   keepParents?: boolean
   /** Control is held: auto layout frames take the layers as absolute-positioned children. */
   ignoreAutoLayout?: boolean
-  /** Selected instead if the press ends as a click without dragging. */
-  selectOnClick?: string
   /** Where Control drops layers among an auto layout frame's children. */
   absoluteInsertIndex?: number
 }

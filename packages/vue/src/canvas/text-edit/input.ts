@@ -143,9 +143,8 @@ export function createTextEditInput(options: TextEditInputOptions) {
     }
     const hit = getContainerDescendantHit(selectedId, cx, cy)
     editor.enterContainer(selectedId)
-    if (hit?.type === 'TEXT' && resolveEditorProfile(editor.state).edits)
-      startTextEditingAt(hit, cx, cy)
-    else if (hit) editor.select([hit.id])
+    // A text one level down is selected first; the next double-click edits it, as in Figma.
+    if (hit) editor.select([hit.id])
     else editor.clearSelection()
     return true
   }

@@ -3,7 +3,6 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { autoLayoutInsertIndex } from '#vue/shared/input/auto-layout'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
 import {
-  clickSelectsInside,
   createSelectionMoveDrag,
   pressesSelection
 } from '#vue/shared/input/select/move'
@@ -167,18 +166,17 @@ describe('pressing inside the selection', () => {
     const child = node('RECTANGLE', nested.id, { x: 50, y: 50, width: 60, height: 60 })
     editor.select([nested.id])
     expect(pressesSelection(child, 130, 130, editor)).toBe(true)
-    // A click without dragging still selects the child of a frame.
-    expect(clickSelectsInside(child, editor)).toBe(true)
+    // A top-level frame stays open while selected, so a press reaches its layers.
+    editor.select([outer.id])
+    expect(pressesSelection(nested, 130, 130, editor)).toBe(false)
   })
 
-  test('keeps a selected group child when the group is hit, and a selected group on click', () => {
+  test('keeps a selected group child when the group is hit', () => {
     const { node, page, editor } = setup()
     const group = node('GROUP', page, { width: 160, height: 160 })
     const a = node('RECTANGLE', group.id, { width: 60, height: 60 })
     editor.select([a.id])
     expect(pressesSelection(group, 20, 20, editor)).toBe(true)
     expect(pressesSelection(group, 120, 120, editor)).toBe(false)
-    editor.select([group.id])
-    expect(clickSelectsInside(a, editor)).toBe(false)
   })
 })

@@ -67,6 +67,85 @@ async function addFrameWithNestedText(page: Page) {
   })
 }
 
+async function addFrameWithInnerText(page: Page) {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.zoom = 1
+    store.state.panX = 0
+    store.state.panY = 0
+    const pageId = store.state.currentPageId
+    const white = [
+      { type: 'SOLID' as const, color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }
+    ]
+    const card = store.graph.createNode('FRAME', pageId, {
+      name: 'Card',
+      x: 100,
+      y: 100,
+      width: 240,
+      height: 140,
+      fills: white
+    })
+    const inner = store.graph.createNode('FRAME', card.id, {
+      name: 'Inner',
+      x: 10,
+      y: 10,
+      width: 220,
+      height: 120,
+      fills: [
+        {
+          type: 'SOLID' as const,
+          color: { r: 0.9, g: 0.9, b: 0.9, a: 1 },
+          opacity: 1,
+          visible: true
+        }
+      ]
+    })
+    const text = store.graph.createNode('TEXT', inner.id, {
+      name: 'Inner label',
+      text: 'Inner label',
+      x: 10,
+      y: 10,
+      width: 140,
+      height: 30,
+      fontSize: 18
+    })
+    store.select([card.id])
+    store.requestRender()
+    return { cardId: card.id, innerId: inner.id, textId: text.id }
+  })
+}
+
+const selectedIds = (page: Page) =>
+  page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return [...store.state.selectedIds]
+  })
+
+test('double-clicks reach nested text one level at a time and edit it last', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  canvas.errors.length = 0
+  await canvas.clearCanvas()
+
+  const ids = await addFrameWithInnerText(page)
+  await canvas.waitForRender()
+
+  // Card is top-level, so a click reaches Inner; Inner's text takes a double-click to select and
+  // another to edit, as in Figma.
+  await canvas.click(135, 135)
+  await expect.poll(() => selectedIds(page)).toEqual([ids.innerId])
+  await page.waitForTimeout(600)
+  await canvas.dblclick(135, 135)
+  await expect.poll(() => selectedIds(page)).toEqual([ids.textId])
+  expect(await getEditingTextId(page)).toBeNull()
+  await page.waitForTimeout(600)
+  await canvas.dblclick(135, 135)
+  await expect.poll(() => getEditingTextId(page), { timeout: 3000 }).toBe(ids.textId)
+})
+
 test('double-clicking top-level text enters text edit mode', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
