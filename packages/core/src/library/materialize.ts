@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { LibraryAssetSource, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
@@ -6,6 +6,7 @@ import { remapCopiedReferences } from './copied-references'
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
+import { assetComponent } from './variants'
 
 const INTERNAL_LIBRARY_PAGE_NAME = 'OpenPencil library definitions'
 
@@ -16,7 +17,7 @@ export interface MaterializedLibraryAsset {
   created: boolean
 }
 
-function getInternalLibraryPage(graph: SceneGraph): SceneNode {
+export function getInternalLibraryPage(graph: SceneGraph): SceneNode {
   const existing = graph
     .getPages(true)
     .find((page) => page.internalOnly && page.name === INTERNAL_LIBRARY_PAGE_NAME)
@@ -70,43 +71,54 @@ export function copyLibraryTree(
     copyLibraryTree(source, target, childId, created.id, mappedIds)
 }
 
+/**
+ * The library identity a copy of the revision layer `sourceId` carries as a definition: its
+ * asset's, or, for a component other assets use, the component's own key.
+ */
+export function libraryDefinitionSource(
+  revision: ComponentLibraryRevision,
+  sourceId: string
+): LibraryAssetSource | null {
+  const descriptor = revision.manifest.assets.find((asset) => asset.sourceNodeId === sourceId)
+  const source = revision.graph.getNode(sourceId)
+  const assetKey =
+    descriptor?.key ??
+    (source?.type === 'COMPONENT' || source?.type === 'COMPONENT_SET'
+      ? (source.componentKey ?? source.sourceLibraryKey ?? source.publishId)
+      : null)
+  if (!assetKey) return null
+  return {
+    identity: {
+      libraryId: revision.manifest.libraryId,
+      assetKey,
+      revisionId: revision.manifest.revisionId
+    },
+    sourceNodeId: sourceId,
+    readOnly: true
+  }
+}
+
 function markDefinitions(
   graph: SceneGraph,
   revision: ComponentLibraryRevision,
   mappedIds: Map<string, string>
 ): void {
-  const descriptorsBySourceId = new Map(
-    revision.manifest.assets.map((asset) => [asset.sourceNodeId, asset])
-  )
   remapCopiedReferences(graph, mappedIds)
   for (const [sourceId, targetId] of mappedIds) {
     const target = graph.getNode(targetId)
     if (!target) continue
-    const descriptor = descriptorsBySourceId.get(sourceId)
-    const source = revision.graph.getNode(sourceId)
-    const sourceAssetKey =
-      descriptor?.key ??
-      (source?.type === 'COMPONENT' || source?.type === 'COMPONENT_SET'
-        ? (source.componentKey ?? source.sourceLibraryKey ?? source.publishId)
-        : null)
     graph.updateNode(targetId, {
       locked: true,
-      librarySource: sourceAssetKey
-        ? {
-            identity: {
-              libraryId: revision.manifest.libraryId,
-              assetKey: sourceAssetKey,
-              revisionId: revision.manifest.revisionId
-            },
-            sourceNodeId: sourceId,
-            readOnly: true
-          }
-        : target.librarySource
+      librarySource: libraryDefinitionSource(revision, sourceId) ?? target.librarySource
     })
   }
 }
 
-function copyImages(source: SceneGraph, target: SceneGraph, mappedIds: Map<string, string>): void {
+export function copyImages(
+  source: SceneGraph,
+  target: SceneGraph,
+  mappedIds: Map<string, string>
+): void {
   const hashes = new Set<string>()
   for (const sourceId of mappedIds.keys()) {
     const node = source.getNode(sourceId)
@@ -121,16 +133,6 @@ function copyImages(source: SceneGraph, target: SceneGraph, mappedIds: Map<strin
   }
 }
 
-function defaultComponent(graph: SceneGraph, root: SceneNode): SceneNode | undefined {
-  if (root.type === 'COMPONENT') return root
-  return root.childIds
-    .flatMap((id) => {
-      const child = graph.getNode(id)
-      return child?.type === 'COMPONENT' ? [child] : []
-    })
-    .sort((left, right) => left.y - right.y || left.x - right.x)[0]
-}
-
 export function materializeLibraryAsset(
   consumer: SceneGraph,
   revision: ComponentLibraryRevision,
@@ -142,7 +144,7 @@ export function materializeLibraryAsset(
   consumer.enabledLibraries.set(libraryId, { libraryId, revisionId, enabled: true })
   const existing = findLibraryDefinition(consumer, libraryId, assetKey, revisionId)
   if (existing) {
-    const component = defaultComponent(consumer, existing)
+    const component = assetComponent(consumer, existing)?.component
     if (!component) throw new Error(`Materialized asset has no component: ${assetKey}`)
     return {
       componentId: component.id,
@@ -166,7 +168,7 @@ export function materializeLibraryAsset(
   const rootId = mappedIds.get(descriptor.sourceNodeId)
   const root = rootId ? consumer.getNode(rootId) : undefined
   if (!root) throw new Error(`Failed to materialize library asset: ${assetKey}`)
-  const component = defaultComponent(consumer, root)
+  const component = assetComponent(consumer, root)?.component
   if (!component) throw new Error(`Library asset has no component: ${assetKey}`)
   return {
     componentId: component.id,

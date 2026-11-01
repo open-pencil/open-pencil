@@ -24,6 +24,7 @@ import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractLibraryLayerId,
   extractLibrarySource,
   extractTextPathBox,
   extractPluginData,
@@ -794,6 +795,7 @@ export function nodeChangeToProps(
     status: extractNodeStatus(nc),
     pluginData: extractPluginData(nc),
     librarySource: extractLibrarySource(nc),
+    libraryLayerId: extractLibraryLayerId(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
