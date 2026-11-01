@@ -364,6 +364,27 @@ export function makeBooleanSourcePath(
   return operandPath(r, node, pieces)
 }
 
+/**
+ * A layer's own geometry as Flatten keeps it, its stroke left a stroke (live-verified): a shape's
+ * outline, a vector's paths open ones included, a line's segment, text's glyphs, or a boolean
+ * operation's result.
+ */
+export function flattenSourcePath(
+  r: SkiaRenderer,
+  node: SceneNode,
+  graph: SceneGraph
+): Path | null {
+  if (node.type === 'BOOLEAN_OPERATION') return makeBooleanOperationPath(r, node, graph)
+  if (!canMakeBooleanSourcePath(node)) return null
+  if (node.type === 'LINE') {
+    const segment = new r.ck.PathBuilder()
+    segment.moveTo(0, 0)
+    segment.lineTo(node.width, 0)
+    return segment.detachAndDelete()
+  }
+  return strokeSourcePath(r, node)
+}
+
 function transformedShapePath(r: SkiaRenderer, child: SceneNode, graph: SceneGraph): Path | null {
   const path = makeBooleanSourcePath(r, child, graph)
   if (!path) return null
