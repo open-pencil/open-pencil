@@ -83,11 +83,12 @@ function lineStroke(node: SceneNode): { weight: number; cap: StrokeCap } {
 
 /**
  * A LINE as Flatten keeps it: the segment its stroke is drawn along, to one side and inside its
- * caps, so the stroke it keeps lies where it did (live-verified).
+ * caps by half a weight each, so the stroke it keeps lies where it did (live-measured). A line
+ * shorter than its weight reverses, as in Figma.
  */
 export function makeLineSegmentPath(r: SkiaRenderer, node: SceneNode): Path {
   const { weight, cap } = lineStroke(node)
-  const [start, end] = lineStrokePath(node, weight, cap).network.vertices
+  const { start, end } = lineStrokeEnds(node.width, node.height, weight, cap, true)
   const segment = new r.ck.PathBuilder()
   segment.moveTo(start.x, start.y)
   segment.lineTo(end.x, end.y)
