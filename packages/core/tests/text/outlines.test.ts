@@ -85,6 +85,7 @@ describe('textNodeToOutlineLayout', () => {
     const upright = outline(false)
     const slanted = outline(true)
 
+    expect(upright).toBeDefined()
     expect(slanted).toBeDefined()
     expect(slanted).not.toEqual(upright)
   })

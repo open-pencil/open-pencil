@@ -194,6 +194,7 @@ describe('the font saved glyphs are outlined from', () => {
       })[1]
 
     expect(reshapedArrow(spacing).firstCharacter).toBe(1)
+    expect(reshapedArrow(spacing).id).toBe(variableSource().shape(text, {})[1].id)
     expect(drawnArrow(spacing) - drawnArrow(0)).toBeCloseTo(spacing, 3)
     expect(reshapedArrow(spacing).advance - reshapedArrow(0).advance).toBeCloseTo(spacing, 3)
   })
