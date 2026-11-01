@@ -62,6 +62,28 @@ const store = useEditorStore()
 const viewport = useTemplateRef<HTMLElement>('viewport')
 /** How far the rows are scrolled, for the pinned top-level row. */
 const { y: scrollTop } = useScroll(viewport)
+let pendingScrollPosition: number | undefined
+watch(
+  [rowHeight, () => store.state.currentPageId],
+  async ([height, pageId], [previousHeight, previousPageId], onCleanup) => {
+    const el = viewport.value
+    if (!el || pageId !== previousPageId) {
+      pendingScrollPosition = undefined
+      return
+    }
+    // Capture before the keyed virtualizer remount resets the viewport to zero.
+    pendingScrollPosition ??= el.scrollTop / previousHeight
+    const position = pendingScrollPosition
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    await nextTick()
+    if (cancelled || viewport.value !== el) return
+    el.scrollTop = Math.min(position * height, Math.max(0, el.scrollHeight - el.clientHeight))
+    pendingScrollPosition = undefined
+  }
+)
 const rename = useInlineRename((id, name) => store.renameNode(id, name))
 
 /** Issue marks follow the canvas markers' View → Design issues toggle. */

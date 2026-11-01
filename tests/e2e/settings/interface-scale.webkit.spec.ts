@@ -155,6 +155,61 @@ for (const scale of ['110%', '125%', '150%']) {
   })
 }
 
+test('interface scaling preserves the scrolled layer and partial row offset', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const layers = layerDriver(() => page)
+  const ids = await layers.frameWithChildren('Pinned frame', 80)
+  await layers.select([ids.children[40]])
+  const scroller = page.getByTestId('layers-scroll')
+  await scroller.evaluate((el) => {
+    el.scrollTop = 728
+  })
+  const anchor = async () =>
+    scroller.evaluate((el) => {
+      const top = el.getBoundingClientRect().top
+      const row = [...el.querySelectorAll('[role="treeitem"]')].find((item) => {
+        const box = item.getBoundingClientRect()
+        return box.top <= top && box.bottom > top
+      })
+      if (!row) throw new Error('No layer at the scroll anchor')
+      const box = row.getBoundingClientRect()
+      return { id: row.getAttribute('data-node-id'), fraction: (top - box.top) / box.height }
+    })
+  await expect.poll(async () => (await anchor()).id).not.toBeNull()
+  const before = await anchor()
+  for (const scale of ['150%', '125%', '100% (default)']) {
+    await chooseScale(page, scale)
+    await expect.poll(async () => (await anchor()).id).toBe(before.id)
+    await expect.poll(async () => (await anchor()).fraction).toBeCloseTo(before.fraction, 1)
+    await expect(page.getByTestId('layers-sticky-row')).toBeVisible()
+    expect((await getSelectedNode(page))?.id).toBe(ids.children[40])
+  }
+  canvas.assertNoErrors()
+})
+
+test('scaling down clamps the layer scroll position at the end of the list', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const layers = layerDriver(() => page)
+  const ids = await layers.frameWithChildren('Pinned frame', 80)
+  await layers.select([ids.children[0]])
+  await chooseScale(page, '150%')
+  const scroller = page.getByTestId('layers-scroll')
+  await scroller.evaluate((el) => {
+    el.scrollTop = el.scrollHeight
+  })
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(1000)
+  await chooseScale(page, '100% (default)')
+  await expect
+    .poll(() => scroller.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop))
+    .toBeLessThan(1)
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(1000)
+  canvas.assertNoErrors()
+})
+
 test('resizing the interface keeps virtualized selection, pinned rows and rename usable', async ({
   page
 }) => {
