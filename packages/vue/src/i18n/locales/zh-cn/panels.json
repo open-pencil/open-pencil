@@ -625,10 +625,7 @@
   "behaviourStateField": "{state}状态",
   "searchComponentProperties": "搜索属性",
   "noComponentProperties": "未找到属性",
-  "applyVariableMode": "应用变量模式",
   "removeVariableMode": "移除 {collection} 的模式",
-  "variableModesInFile": "在此文件中创建",
-  "variableModesFromLibraries": "来自库",
   "variableModeAuto": "自动（{mode}）",
   "variableModeAutoMixed": "自动",
   "variableModeHeading": "模式"

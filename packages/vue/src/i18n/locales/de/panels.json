@@ -632,10 +632,7 @@
   "behaviourStateField": "Zustand {state}",
   "searchComponentProperties": "Eigenschaften suchen",
   "noComponentProperties": "Keine Eigenschaften gefunden",
-  "applyVariableMode": "Variablenmodus anwenden",
   "removeVariableMode": "Modus von {collection} entfernen",
-  "variableModesInFile": "In dieser Datei erstellt",
-  "variableModesFromLibraries": "Aus Bibliotheken",
   "variableModeAuto": "Automatisch ({mode})",
   "variableModeAutoMixed": "Automatisch",
   "variableModeHeading": "Modus"

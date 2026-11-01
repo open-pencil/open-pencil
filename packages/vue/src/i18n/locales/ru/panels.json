@@ -639,10 +639,7 @@
   "behaviourStateField": "Состояние «{state}»",
   "searchComponentProperties": "Поиск свойств",
   "noComponentProperties": "Свойства не найдены",
-  "applyVariableMode": "Применить режим переменных",
   "removeVariableMode": "Убрать режим коллекции «{collection}»",
-  "variableModesInFile": "Созданы в этом файле",
-  "variableModesFromLibraries": "Из библиотек",
   "variableModeAuto": "Авто ({mode})",
   "variableModeAutoMixed": "Авто",
   "variableModeHeading": "Режим"

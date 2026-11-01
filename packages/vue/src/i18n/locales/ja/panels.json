@@ -625,10 +625,7 @@
   "behaviourStateField": "{state} 状態",
   "searchComponentProperties": "プロパティを検索",
   "noComponentProperties": "プロパティが見つかりません",
-  "applyVariableMode": "変数モードを適用",
   "removeVariableMode": "{collection} のモードを解除",
-  "variableModesInFile": "このファイルで作成",
-  "variableModesFromLibraries": "ライブラリから",
   "variableModeAuto": "自動（{mode}）",
   "variableModeAutoMixed": "自動",
   "variableModeHeading": "モード"
