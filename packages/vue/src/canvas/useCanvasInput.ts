@@ -201,6 +201,16 @@ export function useCanvasInput(
    */
   let multiClickPressAt = 0
 
+  /** Only the select tool takes a double-click on its press; a drawing tool keeps its press. */
+  function takesMultiClick(e: MouseEvent): boolean {
+    return (
+      e.button === 0 &&
+      editor.state.activeTool === 'SELECT' &&
+      !editor.state.editingTextId &&
+      profile().pointer !== 'pan'
+    )
+  }
+
   function onMultiClickDown(e: MouseEvent, clickCount: number) {
     multiClickPressAt = performance.now()
     const { cx, cy } = getCoords(e)
@@ -217,8 +227,7 @@ export function useCanvasInput(
     // a double-click dispatched without presses, as tests do, is handled here instead.
     e.preventDefault()
     if (performance.now() - multiClickPressAt < MULTI_CLICK_DELAY) return
-    if (profile().pointer === 'pan' || editor.state.editingTextId) return
-    onMultiClickDown(e, 2)
+    if (takesMultiClick(e)) onMultiClickDown(e, 2)
   }
 
   function hoverLayers({ event, cx, cy, sx, sy }: CanvasToolPointer) {
@@ -278,12 +287,7 @@ export function useCanvasInput(
     const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
     const clickCount = recordClick(sx, sy, e.detail)
     if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
-    if (
-      clickCount >= 2 &&
-      e.button === 0 &&
-      !editor.state.editingTextId &&
-      profile().pointer !== 'pan'
-    ) {
+    if (clickCount >= 2 && takesMultiClick(e)) {
       onMultiClickDown(e, clickCount)
       return
     }

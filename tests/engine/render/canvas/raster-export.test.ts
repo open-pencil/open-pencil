@@ -51,6 +51,7 @@ describe('raster export', () => {
     const viewport = { x: 1, y: 2, w: 3, h: 4 }
     const renderer = {
       editingTextId: null,
+      invalidateNodePicture() {},
       viewportImageRendering: true,
       worldViewport: viewport,
       nodePaths: new NodePathCaches(),

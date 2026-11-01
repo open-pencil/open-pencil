@@ -12,6 +12,7 @@ import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
 import {
   createSelectionMoveDrag,
+  insideSelectedFrame,
   pressesSelection,
   selectionIsLocked
 } from '#vue/shared/input/select/move'
@@ -75,17 +76,6 @@ function tryStartHandleDrag(
 function selectOnPress(hit: SceneNode, shiftKey: boolean, keepsSelection: boolean, editor: Editor) {
   if (shiftKey) editor.select([hit.id], true)
   else if (!editor.state.selectedIds.has(hit.id) && !keepsSelection) editor.select([hit.id])
-}
-
-/** Whether a selected frame, not a group or boolean, holds `hit`. */
-function insideSelectedFrame(hit: SceneNode, editor: Editor) {
-  for (let node = editor.graph.getNode(hit.parentId ?? ''); node;) {
-    if (editor.state.selectedIds.has(node.id)) {
-      return node.type !== 'GROUP' && node.type !== 'BOOLEAN_OPERATION'
-    }
-    node = editor.graph.getNode(node.parentId ?? '')
-  }
-  return false
 }
 
 /** A read-only document moves nothing, so a press selects a layer inside a selected frame at once. */

@@ -16,7 +16,12 @@ import { hasTransientPreviews, renderPageWithPreviews } from './transient-previe
 export function renderSceneToCanvas(
   r: Pick<
     SkiaRenderer,
-    'worldViewport' | 'viewportImageRendering' | 'renderNode' | 'nodePaths' | 'editingTextId'
+    | 'worldViewport'
+    | 'viewportImageRendering'
+    | 'renderNode'
+    | 'nodePaths'
+    | 'editingTextId'
+    | 'invalidateNodePicture'
   >,
   canvas: Canvas,
   graph: SceneGraph,
@@ -27,8 +32,10 @@ export function renderSceneToCanvas(
   const previewMode = r.viewportImageRendering
   const editing = r.editingTextId
   r.viewportImageRendering = false
-  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited.
+  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited;
+  // the edited text's picture is of its live layout, so it is dropped on the way in and out.
   r.editingTextId = null
+  if (editing) r.invalidateNodePicture(editing)
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
     const pageNode = graph.getNode(pageId)
@@ -39,6 +46,7 @@ export function renderSceneToCanvas(
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
     r.editingTextId = editing
+    if (editing) r.invalidateNodePicture(editing)
   }
 }
 

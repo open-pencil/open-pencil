@@ -95,8 +95,11 @@ export function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode):
  * text is edited either: the caret, selection, and hit testing follow the live layout.
  */
 function drawsSaved(r: SkiaRenderer, node: SceneNode): boolean {
+  const readiness = r.nodeFontReadiness(node)
+  // Fonts still loading leave nothing else to draw, edited or not.
+  if (readiness === 'pending') return true
   if (r.editingTextId === node.id) return false
-  return node.textPathData !== null || r.nodeFontReadiness(node) !== 'ready'
+  return node.textPathData !== null || readiness !== 'ready'
 }
 
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
