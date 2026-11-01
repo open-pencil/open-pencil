@@ -2,7 +2,7 @@ import { uniq } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
-import { GENERATED_FRAME_TYPES } from '@open-pencil/scene-graph/generated'
+import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 
 import { presets } from './presets'
 import { allRules } from './rules'
@@ -76,7 +76,12 @@ export class Linter {
     this.variables = describeVariables(graph)
     this.checks = this.ruleChecks()
     const roots = rootIds && rootIds.length > 0 ? rootIds : graph.getPages().map((p) => p.id)
-    for (const id of outermostRoots(graph, roots)) this.lintNode(id, undefined)
+    for (const id of outermostRoots(graph, roots)) {
+      // A sublayer of a sticky note, shape, or connector is skipped as a root, as in a page's walk.
+      const node = graph.getNode(id)
+      if (node && generatedFrameOwner(graph, node)) continue
+      this.lintNode(id, undefined)
+    }
     this.graph = null
     this.checks = []
     return {

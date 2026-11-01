@@ -39,4 +39,11 @@ describe('FigJam layers', () => {
     expect(linted.filter(({ nodeId }) => insideSticky.has(nodeId))).toEqual([])
     expect(linted.some(({ nodeId }) => nodeId === frame.id)).toBe(true)
   })
+
+  test("a sticky note's sublayer is left out when it is a root, as in the page's walk", () => {
+    const editor = createEditor()
+    const sticky = editor.createStickyNote(editor.state.currentPageId, { x: 200, y: 200 })
+    const linted = createLinter({ preset: 'strict' }).lintGraph(editor.graph, [...sticky.childIds])
+    expect(linted.messages).toEqual([])
+  })
 })
