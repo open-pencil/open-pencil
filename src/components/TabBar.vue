@@ -72,7 +72,7 @@ function onClose(e: MouseEvent, tabId: string) {
     v-model="modelValue"
     data-slot="tab-bar"
     activation-mode="automatic"
-    :class="baseStyles.root()"
+    :class="baseStyles.root({ class: 'interface-chrome' })"
   >
     <div
       ref="scroller"
