@@ -1,0 +1,1 @@
+- A file from this device or from storage reopens on the page and at the view it was left at, as in Figma (#1675).
