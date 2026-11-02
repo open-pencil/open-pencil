@@ -2,11 +2,7 @@ import type { Ref } from 'vue'
 
 import type { Editor, Tool } from '@open-pencil/core'
 
-import {
-  clearEyedropperPreview,
-  handleEyedropperDown,
-  previewEyedropper
-} from '#vue/canvas/eyedropper'
+import { handleEyedropperDown } from '#vue/canvas/eyedropper'
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
@@ -39,14 +35,10 @@ export interface CanvasToolContext {
   hoverLayers: (pointer: CanvasToolPointer) => void
 }
 
-/**
- * What a tool does on the canvas: on a press, while the pointer moves with no drag, and when the
- * pointer leaves the canvas.
- */
+/** What a tool does on the canvas: on a press, and while the pointer moves with no drag. */
 export interface CanvasTool {
   press: (pointer: CanvasToolPointer, context: CanvasToolContext) => void
   hover?: (pointer: CanvasToolPointer, context: CanvasToolContext) => void
-  leave?: (context: CanvasToolContext) => void
 }
 
 const pan: CanvasTool = {
@@ -88,9 +80,7 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
   EYEDROPPER: {
     press: ({ event, cx, cy }, { editor }) => {
       if (event.button === 0) handleEyedropperDown(editor, cx, cy, event.altKey)
-    },
-    hover: ({ sx, sy }, { editor }) => previewEyedropper(editor, sx, sy),
-    leave: ({ editor }) => clearEyedropperPreview(editor)
+    }
   },
   PEN: {
     press: ({ event, cx, cy }, { editor, setDrag, cursorOverride }) =>

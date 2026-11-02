@@ -6,7 +6,7 @@
 export default {
   slots: {
     content:
-      'pointer-events-none z-50 flex flex-col gap-1.5 rounded-lg bg-panel p-1.5 text-surface shadow-[0_0_0_1px_var(--color-border),0_8px_30px_rgb(0_0_0/0.4)]',
+      'pointer-events-none absolute top-0 left-0 z-10 flex flex-col gap-1.5 rounded-lg bg-panel p-1.5 text-surface shadow-[0_0_0_1px_var(--color-border),0_8px_30px_rgb(0_0_0/0.4)]',
     loupe: 'relative size-[72px] overflow-hidden rounded-md',
     pixels: 'block size-full [image-rendering:pixelated]',
     grid: 'absolute inset-0 bg-[image:linear-gradient(to_right,rgb(0_0_0/0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgb(0_0_0/0.12)_1px,transparent_1px)] bg-[size:8px_8px]',
