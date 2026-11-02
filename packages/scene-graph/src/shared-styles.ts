@@ -1,6 +1,9 @@
-import { compact, isEqual, omit } from 'es-toolkit'
+import { compact, isEqual, omit, pick } from 'es-toolkit'
 
+import { BLACK } from './constants'
+import { copyEffects, copyFills, copyLayoutGrids } from './copy'
 import type { SceneGraph } from './graph'
+import { randomHex } from './random'
 import { styleRunReferences } from './text/references'
 import type {
   CharacterStyleOverride,
@@ -144,4 +147,81 @@ export function styleDetachmentChanges(
     next.fontStyle = null
   }
   return next
+}
+
+/** The node of the shared style with `id`, when the document holds one of `type`. */
+export function findSharedStyle(
+  graph: SceneGraph,
+  id: string,
+  type: SharedStyleType
+): SceneNode | undefined {
+  if (!id) return undefined
+  for (const node of graph.getAllNodes()) {
+    if (node.sharedStyleType === type && node.source.id === id) return node
+  }
+  return undefined
+}
+
+/** A new local style's ID, in the shape Figma gives one: `S:` and a 40-digit hex key. */
+export function newSharedStyleId(): string {
+  return `S:${randomHex(20)},`
+}
+
+const INTERNAL_CANVAS_NAME = 'Internal Only Canvas'
+
+/** The page that holds the document's styles out of view, as a `.fig` file keeps them; made once. */
+export function internalCanvas(graph: SceneGraph): SceneNode {
+  const existing = graph.getPages(true).find((page) => page.internalOnly)
+  if (existing) return existing
+  return graph.createNode('CANVAS', graph.rootId, {
+    name: INTERNAL_CANVAS_NAME,
+    width: 0,
+    height: 0,
+    internalOnly: true
+  })
+}
+
+/** A stroke style's paints over a layer's strokes, which keep their weight and alignment. */
+function strokesFromStyle(target: SceneNode, style: SceneNode): SceneNode['strokes'] {
+  const fills = style.fills.filter((fill) => fill.type === 'SOLID')
+  if (fills.length === 0) return target.strokes
+  const fallback = target.strokes[0] ?? {
+    type: 'SOLID' as const,
+    color: BLACK,
+    weight: 1,
+    opacity: 1,
+    visible: true,
+    align: 'CENTER' as const
+  }
+  return fills.map((fill, index) => ({
+    ...(target.strokes[index] ?? fallback),
+    color: { ...fill.color },
+    opacity: fill.opacity,
+    visible: fill.visible
+  }))
+}
+
+/**
+ * What a layer takes from a shared style it starts using: the style's fields and the reference
+ * that keeps it attached. Without the style's node, the reference alone.
+ */
+export function sharedStylePatch(
+  kind: SharedStyleKind,
+  target: SceneNode,
+  styleId: string,
+  style: SceneNode | null
+): Partial<SceneNode> {
+  const patch: Partial<SceneNode> = { [STYLE_REF_KEYS[kind]]: styleId }
+  if (!style) return patch
+  if (kind === 'fill') patch.fills = copyFills(style.fills)
+  else if (kind === 'stroke') patch.strokes = strokesFromStyle(target, style)
+  else if (kind === 'effect') patch.effects = copyEffects(style.effects)
+  else if (kind === 'grid') patch.layoutGrids = copyLayoutGrids(style.layoutGrids)
+  else Object.assign(patch, structuredClone(pick(style, SHARED_STYLE_FIELDS.text)))
+  return patch
+}
+
+/** A layer leaving a shared style: it keeps the style's values, without the reference. */
+export function sharedStyleDetachPatch(kind: SharedStyleKind): Partial<SceneNode> {
+  return { [STYLE_REF_KEYS[kind]]: null }
 }

@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { registerTestFont } from '#core-tests/helpers/figma-api'
 
 beforeAll(() => registerTestFont())
 
@@ -148,6 +148,23 @@ describe('instance.resetOverrides', () => {
 
   test('is an instance’s alone', () => {
     const { card } = setup()
-    expect(() => card.resetOverrides()).toThrow('resetOverrides() can only be called on instances')
+    expect('resetOverrides' in card).toBe(false)
+  })
+})
+
+describe('instance.removeOverrides', () => {
+  test('does what resetOverrides does, under the name Figma gives it now', () => {
+    const { card, instance, find, overrides, show } = setup()
+    instance.setProperties({ [show]: false })
+    find('Label').fontSize = 30
+    find('Nested').opacity = 0.5
+    instance.removeOverrides()
+    expect([find('Box').visible, find('Label').fontSize, find('Nested').opacity]).toEqual([
+      false,
+      12,
+      1
+    ])
+    expect(overrides()).toEqual(['SELF: height,width'])
+    expect('removeOverrides' in card).toBe(false)
   })
 })

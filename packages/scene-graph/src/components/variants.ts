@@ -7,14 +7,25 @@ export function compareCanvasPosition(a: SceneNode, b: SceneNode): number {
 }
 
 /**
- * A component set's default variant, the one an instance starts as: the variant in its
- * top-left corner, as Figma defines it.
+ * Whether `a` comes before `b` reading the set as Figma does: variants whose rows overlap, edges
+ * touching included, read left to right, and others top to bottom.
+ */
+function readsBefore(a: SceneNode, b: SceneNode): boolean {
+  const sameRow = a.y <= b.y + b.height && b.y <= a.y + a.height
+  return sameRow ? a.x < b.x || (a.x === b.x && a.y < b.y) : a.y < b.y
+}
+
+/**
+ * A component set's default variant, the one an instance starts as: the first in reading order,
+ * and the first in layer order of those at the same place (measured in Figma desktop 126).
  */
 export function defaultVariant(graph: SceneGraph, set: SceneNode): SceneNode | undefined {
-  return graph
-    .getChildren(set.id)
-    .filter((child) => child.type === 'COMPONENT')
-    .sort(compareCanvasPosition)[0]
+  let first: SceneNode | undefined
+  for (const child of graph.getChildren(set.id)) {
+    if (child.type !== 'COMPONENT') continue
+    if (!first || readsBefore(child, first)) first = child
+  }
+  return first
 }
 
 /**

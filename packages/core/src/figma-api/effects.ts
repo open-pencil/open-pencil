@@ -3,8 +3,11 @@ import * as v from 'valibot'
 import type { BlendMode, Effect } from '@open-pencil/scene-graph'
 
 import { TRANSPARENT } from '#core/constants'
+import { invalid, received } from '#core/figma-api/accessors/text/messages'
 
+/** Blend modes in the order Figma lists them in its messages. */
 const BLEND_MODE_KEYS = {
+  PASS_THROUGH: true,
   NORMAL: true,
   DARKEN: true,
   MULTIPLY: true,
@@ -22,8 +25,7 @@ const BLEND_MODE_KEYS = {
   HUE: true,
   SATURATION: true,
   COLOR: true,
-  LUMINOSITY: true,
-  PASS_THROUGH: true
+  LUMINOSITY: true
 } satisfies Record<BlendMode, true>
 
 export const BLEND_MODES = Object.keys(BLEND_MODE_KEYS) as BlendMode[]
@@ -98,14 +100,17 @@ function unsupportedEffect(value: unknown): string | null {
  * Throws with the first problem, as Figma's `effects` setter does.
  */
 export function parseFigmaEffects(value: unknown): Effect[] {
+  const method = 'set_effects'
+  if (!Array.isArray(value)) {
+    throw invalid(method, `Expected array, received ${received(value)}`, 'effects')
+  }
   const unsupported = unsupportedEffect(value)
-  if (unsupported) throw new Error(`Property "effects" failed validation: ${unsupported}`)
+  if (unsupported) throw invalid(method, unsupported, 'effects')
   const result = v.safeParse(effectsSchema, value)
   if (!result.success) {
     const [issue] = result.issues
-    throw new Error(
-      `Property "effects" failed validation: ${issue.message} at ${issuePath(issue.path) || 'effects'}`
-    )
+    const at = issuePath(issue.path) || 'effects'
+    throw invalid(method, `${issue.message} at ${at}`, 'effects')
   }
   return result.output.map(toSceneEffect)
 }

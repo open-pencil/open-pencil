@@ -1,0 +1,87 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { defaultVariant } from '@open-pencil/scene-graph/components'
+
+import {
+  graph,
+  raw,
+  updateNode,
+  type NodeProxyInternals,
+  type ProxyThis
+} from '#core/figma-api/accessor-utils'
+import { invalid, received } from '#core/figma-api/accessors/text/messages'
+import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
+
+function wrap(target: ProxyThis, internals: NodeProxyInternals, id: string): FigmaNodeProxy {
+  return (target[internals.api] as NodeProxyHost).wrapNode(id)
+}
+
+function instancesOf(target: ProxyThis, internals: NodeProxyInternals): FigmaNodeProxy[] {
+  const id = raw(target, internals).id
+  return graph(target, internals)
+    .getInstances(id)
+    .map((instance) => wrap(target, internals, instance.id))
+}
+
+/**
+ * The members Figma's `ComponentNode` and `ComponentSetNode` add: a description, a component's
+ * instances, and a set's default variant and variant values. Installed on the proxies of those
+ * nodes alone, as Figma has them on no other node.
+ */
+export function installComponentNodeAccessors(
+  target: object,
+  internals: NodeProxyInternals,
+  type: SceneNode['type']
+): void {
+  if (type !== 'COMPONENT' && type !== 'COMPONENT_SET') return
+  Object.defineProperty(target, 'description', {
+    get(this: ProxyThis): string {
+      return raw(this, internals).symbolDescription
+    },
+    set(this: ProxyThis, value: unknown) {
+      if (typeof value !== 'string') {
+        throw invalid(
+          'set_description',
+          `Expected string, received ${received(value)}`,
+          'description'
+        )
+      }
+      updateNode(this, internals, { symbolDescription: value })
+    }
+  })
+  if (type === 'COMPONENT') {
+    Object.defineProperties(target, {
+      instances: {
+        get(this: ProxyThis): FigmaNodeProxy[] {
+          return instancesOf(this, internals)
+        }
+      },
+      getInstancesAsync: {
+        value(this: ProxyThis): Promise<FigmaNodeProxy[]> {
+          return Promise.resolve(instancesOf(this, internals))
+        }
+      }
+    })
+    return
+  }
+  Object.defineProperties(target, {
+    defaultVariant: {
+      get(this: ProxyThis): FigmaNodeProxy | null {
+        const variant = defaultVariant(graph(this, internals), raw(this, internals))
+        return variant ? wrap(this, internals, variant.id) : null
+      }
+    },
+    // Figma's deprecated reading of the variant properties: each one's values, in order.
+    variantGroupProperties: {
+      get(this: ProxyThis): Record<string, { values: string[] }> {
+        return Object.fromEntries(
+          raw(this, internals)
+            .componentPropertyDefinitions.filter((definition) => definition.type === 'VARIANT')
+            .map((definition) => [
+              definition.name,
+              { values: [...(definition.variantOptions ?? [])] }
+            ])
+        )
+      }
+    }
+  })
+}

@@ -5,6 +5,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { STYLE_NOT_FOUND } from '#core/figma-api/styles/apply'
 import { setRangeParagraphSpacing } from '#core/figma-api/text'
 import {
   assertTextBindableField,
@@ -35,19 +36,27 @@ export function installTextReferenceMethods(
   mixed: symbol
 ): void {
   for (const [method, kind] of Object.entries(SHARED_STYLE_SETTERS)) {
-    const set = function (this: ProxyThis, start: number, end: number, styleId: unknown) {
+    // The async methods reject with Figma's message alone, as its own do.
+    const set = function (
+      this: ProxyThis,
+      start: number,
+      end: number,
+      styleId: unknown,
+      async = false
+    ) {
       const node = raw(this, internals)
       if (typeof styleId !== 'string') {
         throw invalid(method, `Expected string, received ${received(styleId)}`, 'styleId')
       }
       assertTextRange(method, node, start, end)
       const patch = rangeSharedStylePatch(graph(this, internals), kind, styleId)
+      if (!patch) throw new Error(async ? STYLE_NOT_FOUND : `in ${method}: ${STYLE_NOT_FOUND}`)
       updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
     }
     methods[method] = {
       value: method.endsWith('Async')
         ? async function (this: ProxyThis, start: number, end: number, styleId: unknown) {
-            set.call(this, start, end, styleId)
+            set.call(this, start, end, styleId, true)
           }
         : set
     }

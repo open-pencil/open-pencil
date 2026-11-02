@@ -25,7 +25,14 @@ import {
   withParagraphSpacing
 } from '@open-pencil/scene-graph/text'
 
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
+import {
+  invalid,
+  invalidOption,
+  numberProblem,
+  received,
+  tooBig,
+  tooSmall
+} from '#core/figma-api/accessors/text/messages'
 import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text/style-runs'
 
@@ -229,22 +236,33 @@ export function getRangeListOptions(
   return types.size === 1 ? { type } : mixed
 }
 
+function isListType(value: unknown): value is TextListOptions['type'] {
+  return (LIST_TYPES as ReadonlySet<unknown>).has(value)
+}
+
 export function setRangeListOptions(
   graph: SceneGraph,
   node: SceneNode,
   start: number,
   end: number,
-  options: TextListOptions
+  value: TextListOptions
 ): void {
-  if (!LIST_TYPES.has(options.type)) {
-    throw new Error(
-      `in setRangeListOptions: Property "options" failed validation: Invalid enum value. ` +
-        `Expected 'NONE' | 'ORDERED' | 'UNORDERED', received '${String(options.type)}' at .type`
+  // Scripts pass anything, whatever the types say.
+  const options: unknown = value
+  if (!options || typeof options !== 'object') {
+    throw invalid(
+      'setRangeListOptions',
+      `Expected object, received ${received(options)}`,
+      'options'
     )
+  }
+  const type: unknown = Reflect.get(options, 'type')
+  if (!isListType(type)) {
+    throw invalid('setRangeListOptions', invalidOption(LIST_TYPES, ' at .type'), 'options')
   }
   assertTextRange('setRangeListOptions', node, start, end)
   assertTextFontsLoaded('setRangeListOptions', node)
-  updateParagraphs(graph, node, start, end, (style) => withListType(style, options.type))
+  updateParagraphs(graph, node, start, end, (style) => withListType(style, type))
 }
 
 export function getRangeIndentation(
@@ -260,11 +278,12 @@ export function getRangeIndentation(
 }
 
 /** What Figma reports about an indentation it rejects, or `null`. */
-function indentationProblem(level: number): string | null {
-  if (!Number.isInteger(level)) return 'Expected integer, received float'
-  if (level < 0) return 'Number must be greater than or equal to 0'
-  if (level > MAX_LIST_INDENTATION)
-    return `Number must be less than or equal to ${MAX_LIST_INDENTATION}`
+function indentationProblem(level: unknown): string | null {
+  const problem = numberProblem(level)
+  if (problem) return problem
+  if (!Number.isInteger(level)) return 'Expected int, received number'
+  if ((level as number) < 0) return tooSmall(0)
+  if ((level as number) > MAX_LIST_INDENTATION) return tooBig(MAX_LIST_INDENTATION)
   return null
 }
 
@@ -275,10 +294,8 @@ export function setRangeIndentation(
   end: number,
   level: number
 ): void {
-  const invalid = indentationProblem(level)
-  if (invalid) {
-    throw new Error(`in setRangeIndentation: Property "indentation" failed validation: ${invalid}`)
-  }
+  const problem = indentationProblem(level)
+  if (problem) throw invalid('setRangeIndentation', problem, 'indentation')
   assertTextRange('setRangeIndentation', node, start, end)
   assertTextFontsLoaded('setRangeIndentation', node)
   updateParagraphs(graph, node, start, end, (style) => withIndentation(style, level))
@@ -294,7 +311,7 @@ function spacingParagraphs(node: SceneNode, start: number, end: number): [number
 
 /** What Figma reports about a spacing it rejects, or `null`. */
 export function spacingProblem(value: number): string | null {
-  return value >= 0 ? null : 'Number must be greater than or equal to 0'
+  return value >= 0 ? null : tooSmall(0)
 }
 
 export function getRangeParagraphSpacing(
