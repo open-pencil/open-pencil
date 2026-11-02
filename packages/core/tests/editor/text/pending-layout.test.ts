@@ -221,7 +221,7 @@ test('a document replaced while its text is prepared keeps its text as it is', a
 })
 
 test('text of the document that replaced another is laid out once its fonts are prepared', async () => {
-  const { replaceDocument, renders } = setup()
+  const { prepared, replaceDocument, renders } = setup()
   const opened = replaceDocument()
   const next = opened.createNode('TEXT', opened.getPages()[0].id, {
     text: 'Weighted label',
@@ -233,6 +233,7 @@ test('text of the document that replaced another is laid out once its fonts are 
   expect(fontManager.isNodeBlocked(opened, next.id)).toBe(true)
 
   await settle()
+  expect(prepared).toEqual([[next.id]])
   expect(fontManager.isNodeBlocked(opened, next.id)).toBe(false)
   expect([next.width, next.height]).toEqual([234, 29])
   expect(renders()).toBe(1)
