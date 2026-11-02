@@ -17,7 +17,7 @@ import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
+import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
