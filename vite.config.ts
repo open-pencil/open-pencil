@@ -91,6 +91,9 @@ export default defineConfig(async ({ command, mode }) => {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
       chunkSizeWarningLimit: 2500,
+      // Official releases upload their maps to PostHog for error reports, then remove them
+      // (`tools/release/release-packages/src/sourcemaps/publish.ts`); no chunk links one.
+      sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
       outDir: metrics ? 'dist-metrics/admin' : cloudSite ? 'dist-cloud' : 'dist',
       rolldownOptions: {
         // The desktop Software Update window is its own page; a Cloud server adds its own
