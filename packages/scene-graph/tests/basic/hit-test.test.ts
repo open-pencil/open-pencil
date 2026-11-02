@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '../helpers/assert'
-import { pageId, rect } from './helpers'
+import { pageId, rect, SOLID_FILL } from './helpers'
 
 describe('hitTest', () => {
   test('hits a rectangle', () => {
@@ -63,6 +63,7 @@ describe('hitTest', () => {
     }).id
     graph.createNode('RECTANGLE', groupId, {
       name: 'Child',
+      fills: [SOLID_FILL],
       x: 10,
       y: 10,
       width: 30,
@@ -87,6 +88,7 @@ describe('hitTest', () => {
     })
     const childId = graph.createNode('RECTANGLE', frame.id, {
       name: 'Overflow Child',
+      fills: [SOLID_FILL],
       x: 50,
       y: 50,
       width: 200,
@@ -110,6 +112,7 @@ describe('hitTest', () => {
     }).id
     graph.createNode('RECTANGLE', compId, {
       name: 'Inner',
+      fills: [SOLID_FILL],
       x: 10,
       y: 10,
       width: 30,
@@ -172,5 +175,28 @@ describe('hitTest', () => {
     // Zero opacity does NOT affect hit testing (opacity is a visual property, not a structural one)
     // The fill is "visible: true" which is what hasVisibleFillOrStroke checks
     expect(graph.hitTest(50, 50, page)?.id).toBe(rectId)
+  })
+})
+
+describe('hitTest on drawn shapes', () => {
+  test('a click inside an unfilled line reaches the layer under it', () => {
+    const graph = new SceneGraph()
+    const below = rect(graph, 'Below', 0, 0, 300, 100)
+    const line = graph.createNode('VECTOR', pageId(graph), {
+      name: 'Line',
+      width: 300,
+      height: 100,
+      strokes: [{ ...SOLID_FILL, weight: 2, align: 'CENTER' }],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 100 },
+          { x: 300, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      }
+    }).id
+    expect(graph.hitTestDeep(150, 50, pageId(graph), 3.5)?.id).toBe(line)
+    expect(graph.hitTestDeep(30, 30, pageId(graph), 3.5)?.id).toBe(below)
   })
 })

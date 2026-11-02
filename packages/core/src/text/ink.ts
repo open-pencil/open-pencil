@@ -1,4 +1,4 @@
-import { geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
+import { cubicPoint, GeometryCommand, readGeometryBlob } from '@open-pencil/scene-graph/geometry'
 
 import type { OutlineCommand } from '#core/text/font/glyphs'
 
@@ -50,15 +50,13 @@ class BandInk {
   }
 
   cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
-    const { x: x0, y: y0 } = this
+    const start = { x: this.x, y: this.y }
+    const c1 = { x: x1, y: y1 }
+    const c2 = { x: x2, y: y2 }
+    const end = { x, y }
     for (let step = 1; step <= CURVE_STEPS; step++) {
-      const t = step / CURVE_STEPS
-      const u = 1 - t
-      const a = u * u * u
-      const b = 3 * u * u * t
-      const c = 3 * u * t * t
-      const d = t * t * t
-      this.lineTo(a * x0 + b * x1 + c * x2 + d * x, a * y0 + b * y1 + c * y2 + d * y)
+      const point = cubicPoint(start, c1, c2, end, step / CURVE_STEPS)
+      this.lineTo(point.x, point.y)
     }
   }
 
@@ -120,31 +118,25 @@ export function savedGlyphInk(
   bottom: number
 ): InkSpan | null {
   const ink = new BandInk(top, bottom)
-  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   const sx = glyph.fontSize * (glyph.scaleX ?? 1)
   const sy = glyph.fontSize * (glyph.scaleY ?? 1)
   const points: number[] = []
   let startX = 0
   let startY = 0
-  let offset = 0
-  while (offset < blob.length) {
-    const command = blob[offset++]
-    const count = geometryCommandCoordCount(command)
-    if (count === null || offset + count * 8 > blob.length) break
+  readGeometryBlob(blob, (command, coords) => {
     points.length = 0
-    for (let index = 0; index < count; index++) {
-      points.push(glyph.x + view.getFloat32(offset, true) * sx)
-      points.push(glyph.y - view.getFloat32(offset + 4, true) * sy)
-      offset += 8
+    for (let index = 0; index < coords.length; index += 2) {
+      points.push(glyph.x + coords[index] * sx, glyph.y - coords[index + 1] * sy)
     }
-    if (command === 0) ink.lineTo(startX, startY)
-    else if (command === 1) {
+    if (command === GeometryCommand.CLOSE) ink.lineTo(startX, startY)
+    else if (command === GeometryCommand.MOVE) {
       ink.moveTo(points[0], points[1])
       startX = points[0]
       startY = points[1]
-    } else if (command === 2) ink.lineTo(points[0], points[1])
-    else if (command === 3) ink.quadTo(points[0], points[1], points[2], points[3])
+    } else if (command === GeometryCommand.LINE) ink.lineTo(points[0], points[1])
+    else if (command === GeometryCommand.QUAD)
+      ink.quadTo(points[0], points[1], points[2], points[3])
     else ink.cubicTo(points[0], points[1], points[2], points[3], points[4], points[5])
-  }
+  })
   return ink.span()
 }

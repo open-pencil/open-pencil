@@ -1,4 +1,5 @@
 import { getNodeEditCapability, resolveEditorProfile, type Editor } from '@open-pencil/core'
+import { LAYER_HIT_PAD } from '@open-pencil/core/constants'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { generatedFrameOwner, generatedFrameText } from '@open-pencil/scene-graph/generated'
 
@@ -107,8 +108,10 @@ export function createTextEditInput(options: TextEditInputOptions) {
     cx: number,
     cy: number
   ): SceneNode | null {
-    // Double-clicking goes one level into the container, as in Figma.
-    const hit = editor.graph.hitTestSelectable(cx, cy, containerId, new Set())
+    // Double-clicking goes one level into the container, as in Figma, taking a click as near a
+    // layer as a press does: thin strokes are hit within the same few screen pixels.
+    const pad = LAYER_HIT_PAD / (editor.renderer?.zoom ?? editor.state.zoom)
+    const hit = editor.graph.hitTestSelectable(cx, cy, containerId, new Set(), { pad })
     if (hit) return hit
     return editor.graph.isPointInNode(containerId, cx, cy)
       ? (editor.graph.getNode(containerId) ?? null)

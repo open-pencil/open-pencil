@@ -2,6 +2,7 @@ import { hitsConnectorLine } from './connectors/hit'
 import { getWorldMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
 import Matrix from './matrix'
+import { hitsShape, strokeReach } from './outline/hit'
 import type { SceneNode, NodeType } from './types'
 
 const CONTAINER_TYPES = new Set<NodeType>([
@@ -179,10 +180,28 @@ function hitTestChildren(
       if (hitsConnectorLine(graph, child, px, py, pad)) return child
       continue
     }
-    if (containsPoint(px, py, child, graph, transformCache, pad)) return child
+    if (hitsLeaf(graph, px, py, child, transformCache, pad)) return child
   }
 
   return null
+}
+
+/**
+ * Whether a click lands on a leaf layer: on what its paints draw, as Figma tests shapes (see
+ * `hitsShape`), or on its box for layers without an outline to test, such as text.
+ */
+function hitsLeaf(
+  graph: SceneGraph,
+  px: number,
+  py: number,
+  node: SceneNode,
+  transformCache: Map<string, boolean>,
+  pad: number
+): boolean {
+  if (!containsPoint(px, py, node, graph, transformCache, pad + strokeReach(node))) return false
+  return (
+    hitsShape(graph, node, px, py, pad) ?? containsPoint(px, py, node, graph, transformCache, pad)
+  )
 }
 
 export function hitTest(

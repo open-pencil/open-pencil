@@ -1,7 +1,11 @@
 import { compact } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { polygonVertices } from '@open-pencil/scene-graph/geometry'
+import {
+  GeometryCommand,
+  polygonVertices,
+  readGeometryBlob
+} from '@open-pencil/scene-graph/geometry'
 import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network'
@@ -9,12 +13,6 @@ import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network
 import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
 import { nodeHasRadius } from '#core/canvas/shapes'
 import type { PathSink } from '#core/vector/path-helpers'
-
-const CMD_CLOSE = 0
-const CMD_MOVE_TO = 1
-const CMD_LINE_TO = 2
-const CMD_QUAD_TO = 3
-const CMD_CUBIC_TO = 4
 
 export function round(n: number, decimals = 2): number {
   const factor = 10 ** decimals
@@ -26,56 +24,18 @@ function coordinate(value: number, decimals: number | null): number {
 }
 
 export function geometryBlobToSVGPath(blob: Uint8Array, decimals: number | null = 2): string {
-  if (blob.length === 0) return ''
-  const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
-  let o = 0
   const parts: string[] = []
-
-  while (o < blob.length) {
-    const cmd = blob[o++]
-    switch (cmd) {
-      case CMD_CLOSE:
-        parts.push('Z')
-        break
-      case CMD_MOVE_TO: {
-        const x = coordinate(dv.getFloat32(o, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 4, true), decimals)
-        o += 8
-        parts.push(`M${x} ${y}`)
-        break
-      }
-      case CMD_LINE_TO: {
-        const x = coordinate(dv.getFloat32(o, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 4, true), decimals)
-        o += 8
-        parts.push(`L${x} ${y}`)
-        break
-      }
-      case CMD_QUAD_TO: {
-        const x1 = coordinate(dv.getFloat32(o, true), decimals)
-        const y1 = coordinate(dv.getFloat32(o + 4, true), decimals)
-        const x = coordinate(dv.getFloat32(o + 8, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 12, true), decimals)
-        o += 16
-        parts.push(`Q${x1} ${y1} ${x} ${y}`)
-        break
-      }
-      case CMD_CUBIC_TO: {
-        const x1 = coordinate(dv.getFloat32(o, true), decimals)
-        const y1 = coordinate(dv.getFloat32(o + 4, true), decimals)
-        const x2 = coordinate(dv.getFloat32(o + 8, true), decimals)
-        const y2 = coordinate(dv.getFloat32(o + 12, true), decimals)
-        const x = coordinate(dv.getFloat32(o + 16, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 20, true), decimals)
-        o += 24
-        parts.push(`C${x1} ${y1} ${x2} ${y2} ${x} ${y}`)
-        break
-      }
-      default:
-        return parts.join('')
-    }
+  const letters: Record<GeometryCommand, string> = {
+    [GeometryCommand.CLOSE]: 'Z',
+    [GeometryCommand.MOVE]: 'M',
+    [GeometryCommand.LINE]: 'L',
+    [GeometryCommand.QUAD]: 'Q',
+    [GeometryCommand.CUBIC]: 'C'
   }
-
+  readGeometryBlob(blob, (command, coords) => {
+    const values = coords.map((value) => coordinate(value, decimals))
+    parts.push(`${letters[command]}${values.join(' ')}`)
+  })
   return parts.join('')
 }
 
