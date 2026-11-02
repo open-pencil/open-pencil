@@ -1,7 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
+import type { Compaction } from '@/app/ai/chat/compaction/marker'
+
 import ChatCompactionDivider from './ChatCompactionDivider.vue'
+
+type DividerStoryArgs = {
+  compaction: Compaction
+  tokensAfter?: number | null
+}
 
 const meta = {
   title: 'App/Chat/Compaction Divider',
@@ -13,10 +20,10 @@ const meta = {
     template:
       '<div class="w-96 rounded-xl bg-panel p-4 text-surface"><ChatCompactionDivider v-bind="args" /></div>'
   })
-} satisfies Meta<typeof ChatCompactionDivider>
+} satisfies Meta<DividerStoryArgs>
 
 export default meta
-type Story = StoryObj<typeof meta>
+type Story = StoryObj<DividerStoryArgs>
 
 export const Summary: Story = {
   args: {
