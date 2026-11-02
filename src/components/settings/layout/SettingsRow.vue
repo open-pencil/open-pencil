@@ -33,7 +33,7 @@ const emit = defineEmits<{ reset: [] }>()
       <span class="block text-xs font-medium text-surface"
         ><slot name="label">{{ label }}</slot></span
       >
-      <span v-if="description" class="mt-1 block text-[11px] leading-relaxed text-muted">{{
+      <span v-if="description" class="mt-1 block text-2xs leading-relaxed text-muted">{{
         description
       }}</span>
       <slot name="description" />

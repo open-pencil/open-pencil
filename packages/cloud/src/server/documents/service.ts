@@ -42,7 +42,7 @@ import { announceVersions, recordCheckpoint } from '#cloud/server/documents/vers
 import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageQuotaService } from '#cloud/server/quota'
-import { limitAsync, uniq, uniqBy } from 'es-toolkit'
+import { isUndefined, limitAsync, omitBy, uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
@@ -93,7 +93,8 @@ export function createDocumentService(
       revisionId,
       storageObjectId,
       images: revisionImages,
-      name
+      name,
+      kind
     }: {
       userId: string
       uploadId: string
@@ -108,6 +109,7 @@ export function createDocumentService(
       storageObjectId: string
       images: CommitUploadInput['images']
       name: CommitUploadInput['name']
+      kind: CommitUploadInput['kind']
     }
   ): Promise<boolean> {
     const lockedUpload = await transaction
@@ -156,7 +158,8 @@ export function createDocumentService(
     await transaction
       .updateTable('document')
       .set({
-        ...(name === undefined ? {} : { name }),
+        // A revision may also retitle its document, or say the file it holds is a board.
+        ...omitBy({ name, kind }, isUndefined),
         currentRevisionId: revisionId,
         version: (expression) => expression('version', '+', 1)
       })
@@ -328,7 +331,8 @@ export function createDocumentService(
                   revisionId: crypto.randomUUID(),
                   storageObjectId: crypto.randomUUID(),
                   images: input.images,
-                  name: input.name
+                  name: input.name,
+                  kind: input.kind
                 })
               )
             )
@@ -438,6 +442,7 @@ export function createDocumentService(
         id: documentId,
         workspaceId,
         name: input.name,
+        kind: input.kind,
         createdBy: userId
       })
       const document = await findDocument(database, userId, documentId)

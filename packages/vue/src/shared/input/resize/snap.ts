@@ -120,7 +120,8 @@ export function applyResizeSnap(
   const dx = horizontal ? localCorrection.x : 0
   const dy = vertical ? localCorrection.y : 0
 
-  state.snapGuides = snap.guides
+  // Only the axes the handle moves snap, so only their guides show.
+  state.snapGuides = snap.guides.filter((guide) => (guide.axis === 'x' ? horizontal : vertical))
   return applyEdgeDelta(drag.handle, rect, dx, dy)
 }
 
@@ -147,6 +148,29 @@ const DRIVING_EDGE: Record<HandlePosition, Record<AspectDriver, HandlePosition>>
  * lands on the grid and on other layers' edges as a free resize's edge would, and the other side
  * follows the ratio, rounded to a whole pixel in a design and left as it falls on a board.
  */
+/** The size a drag gives the box before its ratio is kept. */
+function draggedSize(handle: HandlePosition, origRect: Rect, dx: number, dy: number) {
+  return {
+    width: origRect.width + edgeGrowth(dx, movesRight(handle), movesLeft(handle)),
+    height: origRect.height + edgeGrowth(dy, movesBottom(handle), movesTop(handle))
+  }
+}
+
+/**
+ * The side that drives a ratio-locked resize, which {@link proportionalResizeRect} snaps; the
+ * other follows it and may be rounded.
+ */
+export function proportionalResizeDriver(
+  handle: HandlePosition,
+  origRect: Rect,
+  dx: number,
+  dy: number,
+  aspect: number
+): AspectDriver {
+  const { width, height } = draggedSize(handle, origRect, dx, dy)
+  return aspectDriver(handle, width, height, aspect)
+}
+
 export function proportionalResizeRect(
   drag: ResizeSnapTarget,
   origRect: Rect,
@@ -159,14 +183,13 @@ export function proportionalResizeRect(
   const { handle } = drag
   const constrained = calculateResizeRect(handle, origRect, dx, dy, aspect)
   const state = optionalEditorState(editor)
-  const width = origRect.width + edgeGrowth(dx, movesRight(handle), movesLeft(handle))
-  const height = origRect.height + edgeGrowth(dy, movesBottom(handle), movesTop(handle))
+  const { width, height } = draggedSize(handle, origRect, dx, dy)
   // A handle dragged past the opposite edge flips the box; it lands where the pointer puts it.
   if (disableSnapping || !state || width <= 0 || height <= 0) {
     if (state) state.snapGuides = []
     return constrained
   }
-  const driver = aspectDriver(handle, width, height, aspect)
+  const driver = proportionalResizeDriver(handle, origRect, dx, dy, aspect)
   const snapped = applyResizeSnap(
     { nodeId: drag.nodeId, handle: DRIVING_EDGE[handle][driver] },
     constrained,

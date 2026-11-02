@@ -547,7 +547,7 @@ describe('sceneNodeAttributes', () => {
 })
 
 describe('selectionToJSX', () => {
-  test('multiple nodes separated by blank lines', () => {
+  test('several nodes are siblings in a fragment, so the code is one JSX expression', () => {
     const graph = makeGraph()
     const a = graph.createNode('RECTANGLE', pageId(graph), {
       name: 'A',
@@ -560,8 +560,6 @@ describe('selectionToJSX', () => {
       height: 20
     })
     const jsx = selectionToJSX([a.id, b.id], graph)
-    expect(jsx).toContain('<Rectangle')
-    expect(jsx).toContain('<Ellipse')
-    expect(jsx).toContain('\n\n')
+    expect(jsx).toMatch(/^<>\n  <Rectangle [^\n]*\/>\n  <Ellipse [^\n]*\/>\n<\/>$/)
   })
 })

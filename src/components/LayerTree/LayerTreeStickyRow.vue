@@ -5,7 +5,7 @@ import { stickyTopLevelRow, useLayerTree } from '@open-pencil/vue/primitives/Lay
 
 import type { LayerIssueMark } from '@/app/editor/design-check/layers'
 
-import { layerTreeGeometry } from './geometry'
+import { useLayerTreeGeometry } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import type { LayerTreeChrome, LayerTreeItemActions } from './types'
 
@@ -27,6 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const tree = useLayerTree()
+const { rowHeight } = useLayerTreeGeometry()
 
 const pinned = computed(() => {
   const rows = tree.visibleRows.value
@@ -52,7 +53,6 @@ function select(event: MouseEvent) {
   if (!id) return
   tree.select(id, { additive: event.metaKey || event.ctrlKey, range: event.shiftKey })
 }
-const { rowHeight } = layerTreeGeometry()
 </script>
 
 <template>

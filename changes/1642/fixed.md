@@ -1,1 +1,0 @@
-- Text flattened or used in a boolean operation wraps where it is drawn and keeps its weight in variable fonts, instead of breaking lines by the default face or turning bold text regular.

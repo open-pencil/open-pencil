@@ -1,1 +1,0 @@
-- Property overrides in `.pen` instances, such as a changed label or a hidden layer, survive a sync and saving as `.fig`, instead of falling back to the component's values.

@@ -1,6 +1,7 @@
 import { difference } from 'es-toolkit'
 
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
 import { REKA_ELEMENTS, rekaRole } from '../behaviours'
 import {
@@ -9,9 +10,13 @@ import {
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
   DESIGN_JSX_TEXT_PARAGRAPH_PROPERTY_NAMES
 } from '../definitions'
-import { connectorBindingTarget, renderConnectorNode } from '../figjam/connectors'
+import {
+  connectorBindingTarget,
+  connectorLabelLayer,
+  renderConnectorNode
+} from '../figjam/connectors'
 import { renderShapeNode } from '../figjam/shapes-with-text'
-import { renderStickyNode } from '../figjam/stickies'
+import { renderStickyNode, stickyBodyLayer } from '../figjam/stickies'
 import {
   connectorPropsSchema,
   ownLayerPropsSchema,
@@ -30,6 +35,8 @@ export interface OwnLayerRenderer {
   render(graph: SceneGraph, tree: TreeNode, parentId: string, layer: Partial<SceneNode>): SceneNode
   /** The layer a variable binding of `field` goes on, when not the element's own. */
   bindingTarget?(graph: SceneGraph, node: SceneNode, field: string): string
+  /** The text layer its children write, which `<Span>` and `<Paragraph>` style as in `<Text>`. */
+  textLayer(graph: SceneGraph, node: SceneNode): SceneNode | null
 }
 
 /**
@@ -188,7 +195,11 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     runtimeType: 'sticky',
     description: 'A FigJam sticky note; its text is the body.',
     schema: stickyPropsSchema,
-    ownLayer: { layer: placedOwnLayerPropsSchema, render: renderStickyNode },
+    ownLayer: {
+      layer: placedOwnLayerPropsSchema,
+      render: renderStickyNode,
+      textLayer: stickyBodyLayer
+    },
     writes: ['STICKY']
   },
   {
@@ -196,7 +207,11 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     runtimeType: 'shape',
     description: 'A FigJam shape with text; its text is the label.',
     schema: shapePropsSchema,
-    ownLayer: { layer: shapeLayerPropsSchema, render: renderShapeNode },
+    ownLayer: {
+      layer: shapeLayerPropsSchema,
+      render: renderShapeNode,
+      textLayer: shapeWithTextLabel
+    },
     writes: ['SHAPE_WITH_TEXT']
   },
   {
@@ -208,7 +223,8 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     ownLayer: {
       layer: ownLayerPropsSchema,
       render: renderConnectorNode,
-      bindingTarget: connectorBindingTarget
+      bindingTarget: connectorBindingTarget,
+      textLayer: connectorLabelLayer
     },
     writes: ['CONNECTOR']
   },

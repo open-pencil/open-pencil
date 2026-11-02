@@ -48,42 +48,31 @@ export function canvasToLocalPoint(
   return { lx: point?.x ?? cx, ly: point?.y ?? cy }
 }
 
-export function hitTestInEditorScope(
+/**
+ * The layer a press selects, or with `deep` (⌘ or Ctrl held) the deepest layer under the point.
+ * Always found from the page: the selection and the entered container open their ancestors, so
+ * an entered container never limits where a click lands, as in Figma.
+ */
+export function hitTestLayerAt(
   cx: number,
   cy: number,
   deep: boolean,
   editor: Editor
 ): SceneNode | null {
-  const scopeId = editor.state.enteredContainerId
-
   const renderer = editor.renderer
   if (!renderer) return null
   const pad = LAYER_HIT_PAD / renderer.zoom
-  if (scopeId && !editor.graph.getNode(scopeId)) editor.state.enteredContainerId = null
-  const scope = editor.state.enteredContainerId ?? editor.state.currentPageId
+  const scope = editor.state.currentPageId
+  if (editor.state.enteredContainerId && !editor.graph.getNode(editor.state.enteredContainerId)) {
+    editor.state.enteredContainerId = null
+  }
   return deep
     ? editor.graph.hitTestDeep(cx, cy, scope, pad)
-    : editor.graph.hitTestSelectable(
-        cx,
-        cy,
-        scope,
-        editor.state.selectedIds,
+    : editor.graph.hitTestSelectable(cx, cy, scope, editor.state.selectedIds, {
         pad,
-        resolveEditorProfile(editor.state).framesOpen
-      )
-}
-
-export function isInsideEditorContainerBounds(
-  cx: number,
-  cy: number,
-  containerId: string,
-  editor: Editor,
-  canvasToLocal: (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
-): boolean {
-  const container = editor.graph.getNode(containerId)
-  if (!container) return false
-  const { lx, ly } = canvasToLocal(cx, cy, containerId)
-  return lx >= 0 && lx <= container.width && ly >= 0 && ly <= container.height
+        framesOpen: resolveEditorProfile(editor.state).framesOpen,
+        enteredId: editor.state.enteredContainerId
+      })
 }
 
 export function getScreenRect(

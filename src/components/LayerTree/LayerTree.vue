@@ -28,7 +28,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import CanvasMenu from '../canvas/CanvasMenu.vue'
-import { layerTreeGeometry } from './geometry'
+import { useLayerTreeGeometry } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
@@ -54,7 +54,7 @@ defineOptions({ inheritAttrs: false })
 
 const { ui } = defineProps<{ ui?: LayerTreeUI }>()
 
-const { rowHeight, indent } = layerTreeGeometry()
+const { rowHeight, indent } = useLayerTreeGeometry()
 const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
@@ -62,28 +62,6 @@ const store = useEditorStore()
 const viewport = useTemplateRef<HTMLElement>('viewport')
 /** How far the rows are scrolled, for the pinned top-level row. */
 const { y: scrollTop } = useScroll(viewport)
-let pendingScrollPosition: number | undefined
-watch(
-  [rowHeight, () => store.state.currentPageId],
-  async ([height, pageId], [previousHeight, previousPageId], onCleanup) => {
-    const el = viewport.value
-    if (!el || pageId !== previousPageId) {
-      pendingScrollPosition = undefined
-      return
-    }
-    // Capture before the keyed virtualizer remount resets the viewport to zero.
-    pendingScrollPosition ??= el.scrollTop / previousHeight
-    const position = pendingScrollPosition
-    let cancelled = false
-    onCleanup(() => {
-      cancelled = true
-    })
-    await nextTick()
-    if (cancelled || viewport.value !== el) return
-    el.scrollTop = Math.min(position * height, Math.max(0, el.scrollHeight - el.clientHeight))
-    pendingScrollPosition = undefined
-  }
-)
 const rename = useInlineRename((id, name) => store.renameNode(id, name))
 
 /** Issue marks follow the canvas markers' View → Design issues toggle. */
@@ -242,8 +220,8 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
             :class="styles.viewport({ class: ui?.viewport })"
           >
             <TreeVirtualizer
-              :key="rowHeight"
               v-slot="{ item, virtualizer }"
+              :key="rowHeight"
               :estimate-size="rowHeight"
               :text-content="layerTextContent"
             >

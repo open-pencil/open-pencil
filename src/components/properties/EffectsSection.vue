@@ -77,7 +77,7 @@ function effectPreview(effect: Effect): Fill {
         @update:model-value="updateStyle"
       />
 
-      <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedEffectsHelp }}</p>
+      <p v-if="isMixed" class="text-2xs text-muted">{{ panels.mixedEffectsHelp }}</p>
 
       <div
         v-for="(effect, index) in items"

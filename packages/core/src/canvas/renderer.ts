@@ -146,6 +146,8 @@ export class SkiaRenderer {
   pageColor = CANVAS_BG_COLOR
   /** The board grid the page's dots follow, in canvas units, or null for a page without dots. */
   pageDotGrid: number | null = null
+  /** What section titles are coloured from, as the document's profile says. */
+  sectionTitles: 'fill' | 'outline' = 'fill'
   showRulers = true
   rulerTheme: RulerTheme | null = null
   /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */
@@ -207,6 +209,11 @@ export class SkiaRenderer {
    * null for a canvas that draws only the document, such as an export.
    */
   stickyPlaceholder: string | null = null
+  /**
+   * The text being edited on this canvas, drawn from the live layout its caret and selection
+   * come from rather than from its saved glyphs, which another font build may have shaped.
+   */
+  editingTextId: string | null = null
   /** What an empty connector label shows while it is typed into; null draws nothing. */
   connectorLabelPlaceholder: string | null = null
   /** The marked layers staged in world space, placed anew each frame. */
@@ -413,10 +420,7 @@ export class SkiaRenderer {
   flushDecodedPreviews(graph: SceneGraph): void {
     if (this.images.decodedPreviewHashes.size === 0) return
     for (const hash of this.images.decodedPreviewHashes) {
-      for (const nodeId of this.images.fillUsers.get(hash) ?? []) {
-        this.invalidateNodePicture(nodeId)
-        this.tiledScene.invalidateNode(nodeId, graph)
-      }
+      for (const nodeId of this.images.fillUsers.get(hash) ?? []) this.redrawNode(nodeId, graph)
     }
     this.images.decodedPreviewHashes.clear()
   }
@@ -432,8 +436,7 @@ export class SkiaRenderer {
       const node = graph.getNode(id)
       if (!node) continue
       if (node.type === 'TEXT') {
-        this.invalidateNodePicture(id)
-        this.tiledScene.invalidateNode(id, graph)
+        this.redrawNode(id, graph)
         this.invalidateBooleanAncestors(graph, node)
       }
       pending.push(...node.childIds)
@@ -451,8 +454,7 @@ export class SkiaRenderer {
       seen.add(parent.id)
       if (parent.type === 'BOOLEAN_OPERATION') {
         this.invalidateVectorPath(parent.id)
-        this.invalidateNodePicture(parent.id)
-        this.tiledScene.invalidateNode(parent.id, graph)
+        this.redrawNode(parent.id, graph)
       }
       parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
     }
@@ -488,10 +490,7 @@ export class SkiaRenderer {
       const image = source && this.surface.makeImageFromTextureSource(textureSource(source))
       if (image) this.images.live.set(hash, { image, surface: this.surface })
     }
-    for (const id of nodeIds) {
-      this.invalidateNodePicture(id)
-      this.tiledScene.invalidateNode(id)
-    }
+    for (const id of nodeIds) this.redrawNode(id)
     return this.images.live.has(hash)
   }
 
@@ -517,6 +516,12 @@ export class SkiaRenderer {
   /** Drops `nodeId`'s cached drawing; `changedKeys`, when known, lets text keep its glyph coverage. */
   invalidateNodePicture(nodeId: string, changedKeys?: readonly (keyof SceneNode)[]): void {
     RendererState.invalidateNodePicture(this, nodeId, changedKeys)
+  }
+
+  /** Draws `nodeId` afresh next frame: its picture and the tiles that hold it are dropped. */
+  redrawNode(nodeId: string, graph?: SceneGraph): void {
+    this.invalidateNodePicture(nodeId)
+    this.tiledScene.invalidateNode(nodeId, graph)
   }
 
   flashNode(nodeId: string): void {

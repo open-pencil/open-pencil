@@ -1,13 +1,16 @@
 import { computed } from 'vue'
 
-import { interfaceScaleFactor } from '@/app/shell/interface-scale'
+import { remToPx } from '@/app/shell/root-font-size'
 
-// Virtualized offsets and both display/rename rows must use the same geometry.
-export const LAYER_TREE_ROW_HEIGHT = 24
+// Virtualized offsets, both display/rename rows and the drop indicator must use the same geometry.
+// It is in rem so the rows follow the interface size; scroll math and the virtualizer take pixels.
+const ROW_HEIGHT_REM = 1.5
+const INDENT_REM = 1
 
-export function layerTreeGeometry() {
+/** The layer tree's row height and per-level indent in pixels at the current interface size. */
+export function useLayerTreeGeometry() {
   return {
-    rowHeight: computed(() => LAYER_TREE_ROW_HEIGHT * interfaceScaleFactor()),
-    indent: computed(() => 16 * interfaceScaleFactor())
+    rowHeight: computed(() => remToPx(ROW_HEIGHT_REM)),
+    indent: computed(() => remToPx(INDENT_REM))
   }
 }

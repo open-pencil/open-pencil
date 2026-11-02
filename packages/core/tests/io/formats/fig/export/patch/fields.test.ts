@@ -2,7 +2,7 @@ import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
-import { uniq } from 'es-toolkit/array'
+import { sortBy, uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
 import { createEditor } from '@open-pencil/core'
@@ -103,7 +103,15 @@ test('a mode added to a collection of library aliases keeps the file as Figma sa
   )
   const set = expectDefined(after.get(guidToString(expectDefined(before.get(collection.id)?.guid))))
   const saved = expectDefined(before.get(collection.id)?.variableSetModes)
-  expect(set.variableSetModes?.slice(0, saved.length)).toEqual(saved)
+  const listed = sortBy(saved, [
+    (mode) => mode.sortPosition === undefined,
+    (mode) => mode.sortPosition ?? ''
+  ])
+  const written = expectDefined(set.variableSetModes)
+  expect(written.slice(0, -1)).toEqual(listed)
+  const added = expectDefined(written.at(-1))
+  expect(added.name).toBe('Added')
+  expect(expectDefined(added.sortPosition) > expectDefined(listed.at(-1)?.sortPosition)).toBe(true)
   // Values aliasing library variables still name them by key, as Figma writes them.
   for (const guid of changed.keys()) {
     const entries = after.get(guid)?.variableDataValues?.entries ?? []

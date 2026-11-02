@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { layerTreeGeometry } from './geometry'
+import { useLayerTreeGeometry } from './geometry'
 
 const { padLeft } = defineProps<{ padLeft: string }>()
-const { rowHeight } = layerTreeGeometry()
+const { rowHeight } = useLayerTreeGeometry()
 </script>
 
 <template>

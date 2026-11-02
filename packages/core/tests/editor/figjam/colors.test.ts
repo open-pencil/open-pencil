@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor, figJamColoredLayers } from '@open-pencil/core'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { createSticky } from '@open-pencil/scene-graph/generated'
 
@@ -53,6 +53,32 @@ describe("FigJam's colour menu", () => {
     expect(hex(editor.graph.getNode(b)?.fills[0])).toBe('#3dadff')
     expect(editor.graph.getNode(photo)?.fills).toEqual([image])
     expect(hex(editor.graph.getNode(sticky.id)?.fills[0])).toBe(before)
+    const colored = figJamColoredLayers(editor.graph, expectDefined(editor.graph.getNode(group)))
+    expect(colored.map((layer) => layer.id)).toEqual([a, b])
+  })
+
+  test('a group of images takes no colour and records no undo step', () => {
+    const { editor, pageId } = setup()
+    const photo = editor.createShape('RECTANGLE', 0, 0, 100, 100, pageId)
+    editor.graph.updateNode(photo, {
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          imageHash: 'hash',
+          imageScaleMode: 'FILL',
+          opacity: 1,
+          visible: true
+        }
+      ]
+    })
+    const other = editor.createShape('RECTANGLE', 200, 0, 100, 100, pageId)
+    editor.select([photo, other])
+    const group = expectDefined(editor.groupSelected())
+    editor.graph.deleteNode(other)
+    const label = editor.undo.undoLabel
+    editor.setFigJamColor([group], 'blue')
+    expect(editor.undo.undoLabel).toBe(label)
   })
 
   test("dashes a section's outline, giving it one first if it has none", () => {
