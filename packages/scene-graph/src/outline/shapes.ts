@@ -32,6 +32,8 @@ export interface ShapeOutline {
   strokeCentered?: boolean
   /** For each line, whether its start and its end are open ends, where a stroke's cap is drawn. */
   lineEnds?: Array<[boolean, boolean]>
+  /** The saved outline a stroke fills, for a shape whose stroke has no lines to follow. */
+  strokeAreas?: OutlineArea[]
 }
 
 function closed(contour: Vector[]): Vector[] {
@@ -129,7 +131,12 @@ function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null 
   }))
   if (!network) {
     if (geometry.length === 0) return null
-    return { areas: geometry, lines: geometry.flatMap((area) => area.contours.map(closed)) }
+    // Without a network the renderer fills the saved stroke geometry, or draws no stroke.
+    const strokeAreas = node.strokeGeometry.map((path) => ({
+      windingRule: path.windingRule,
+      contours: path.commandsBlob.length > 0 ? blobContours(path.commandsBlob, tolerance) : []
+    }))
+    return { areas: geometry, lines: [], strokeAreas }
   }
   // A vertex on one segment only is an open end.
   const degree = new Map<number, number>()

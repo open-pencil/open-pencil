@@ -24,6 +24,24 @@ const stroke = (weight: number, align: Stroke['align'] = 'CENTER', overrides: Pa
   ...overrides
 })
 
+/** A Figma geometry blob for straight contours, each closed. */
+function contoursBlob(contours: Array<Array<[number, number]>>): Uint8Array {
+  const size = contours.reduce((sum, contour) => sum + contour.length * 9 + 1, 0)
+  const blob = new Uint8Array(size)
+  const view = new DataView(blob.buffer)
+  let offset = 0
+  for (const contour of contours) {
+    for (const [index, [x, y]] of contour.entries()) {
+      blob[offset++] = index === 0 ? 1 : 2
+      view.setFloat32(offset, x, true)
+      view.setFloat32(offset + 4, y, true)
+      offset += 8
+    }
+    blob[offset++] = 0
+  }
+  return blob
+}
+
 function setup() {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
@@ -443,6 +461,81 @@ describe('outline details', () => {
       vectorNetwork: network
     })
     expect(hits(drawnCentred, 50, -4.5)).toBe(true)
+  })
+
+  test('loops that cancel under even-odd fill take no clicks on their shared edge', () => {
+    const { add, hits } = setup()
+    const square: Array<[number, number]> = [
+      [0, 0],
+      [100, 0],
+      [100, 100],
+      [0, 100]
+    ]
+    const shape = add('VECTOR', {
+      width: 100,
+      height: 100,
+      fills: [fill()],
+      fillGeometry: [{ windingRule: 'EVENODD', commandsBlob: contoursBlob([square, square]) }]
+    })
+    expect(hits(shape, 50, 50)).toBe(false)
+    expect(hits(shape, 50, 1)).toBe(false)
+  })
+
+  test('a side with no border weight takes no clicks', () => {
+    const { add, hits } = setup()
+    const box = add('RECTANGLE', {
+      width: 200,
+      height: 150,
+      strokes: [stroke(1, 'INSIDE')],
+      independentStrokeWeights: true,
+      borderTopWeight: 4,
+      borderRightWeight: 0,
+      borderBottomWeight: 4,
+      borderLeftWeight: 4
+    })
+    expect(hits(box, 199, 75)).toBe(false)
+    expect(hits(box, 1, 75)).toBe(true)
+  })
+
+  test('past a flat end the reach is measured from the painted corner', () => {
+    const { add, hits } = setup()
+    const line = add('LINE', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)] })
+    // 4.24 units from the corner (100, 10): beyond the 3.5 pad.
+    expect(hits(line, 103, 13)).toBe(false)
+    expect(hits(line, 102, 11)).toBe(true)
+  })
+
+  test('without a network a stroke is hit on its saved stroke outline only', () => {
+    const { add, hits } = setup()
+    const triangle: Array<[number, number]> = [
+      [0, 0],
+      [100, 0],
+      [100, 100]
+    ]
+    // The stroke outline: a 4-unit band along the top edge only.
+    const band: Array<[number, number]> = [
+      [0, -2],
+      [100, -2],
+      [100, 2],
+      [0, 2]
+    ]
+    const withOutline = add('VECTOR', {
+      width: 100,
+      height: 100,
+      strokes: [stroke(4)],
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: contoursBlob([triangle]) }],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: contoursBlob([band]) }]
+    })
+    expect(hits(withOutline, 50, 0)).toBe(true)
+    // On the triangle's closing edge, which no stroke draws.
+    expect(hits(withOutline, 50, 50)).toBe(false)
+    const withoutOutline = add('VECTOR', {
+      width: 100,
+      height: 100,
+      strokes: [stroke(4)],
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: contoursBlob([triangle]) }]
+    })
+    expect(hits(withoutOutline, 50, 0)).toBe(false)
   })
 
   test("a huge ellipse's edge stays within the pad at the maximum zoom", () => {

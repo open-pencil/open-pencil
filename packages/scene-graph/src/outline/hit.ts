@@ -8,6 +8,9 @@ import type { Fill, SceneNode, Stroke } from '../types'
 import { containsByWinding, distanceToLines, distanceToSegment } from './point'
 import { shapeOutline, type OutlineArea, type ShapeOutline } from './shapes'
 
+/** Points tested along each edge near the point for whether the filled result changes there. */
+const EDGE_SAMPLES = 8
+
 /** How far a flattened curve may stray from the shape when nothing tighter is asked for. */
 const DEFAULT_TOLERANCE = 0.25
 
@@ -60,8 +63,11 @@ function localPoint(graph: SceneGraph, node: SceneNode, px: number, py: number):
 
 interface Probe {
   inside: boolean
-  /** Distance to the outline of the filled area, in canvas units. */
-  edge: number
+  /**
+   * Whether the outline of the filled area passes within `radius` of the point, counting only
+   * edges where the filled result changes from one side to the other.
+   */
+  edgeWithin: (radius: number) => boolean
   /** Each line a stroke follows, measured from the point in canvas units. */
   lines: LineReach[]
   /** Each line's own stroke weight, where sides differ. */
@@ -70,11 +76,53 @@ interface Probe {
   closed: boolean
   /** Strokes centre on the lines whatever their alignment. */
   centered?: boolean
-  /**
-   * For a shape combined from operands, whether its outline passes within `radius` of the point;
-   * it replaces `edge` and `lines`, which would count operand edges the result does not draw.
-   */
-  boundaryWithin?: (radius: number) => boolean
+  /** Strokes follow the filled area's outline, for a shape combined from operands. */
+  strokeOnEdge?: boolean
+  /** Whether the point lies on or within `radius` of the saved outline a stroke fills. */
+  strokeAreaWithin?: (radius: number) => boolean
+}
+
+/**
+ * Whether an outline made of `edges` passes within `radius` of the point, counting a stretch of
+ * edge only where `insideAt` changes from one side of it to the other: edges that cancel or that
+ * lie hidden inside or outside the result count for nothing.
+ */
+function changingEdgeWithin(
+  edges: Vector[][],
+  insideAt: (x: number, y: number) => boolean | null,
+  point: Vector,
+  radius: number,
+  tolerance: number
+): boolean {
+  const step = Math.max(1e-6, Math.min(tolerance, radius / 4) / 4)
+  for (const edge of edges) {
+    for (let i = 0; i + 1 < edge.length; i++) {
+      const a = edge[i]
+      const b = edge[i + 1]
+      if (a.x === b.x && a.y === b.y) continue
+      if (distanceToSegment(point, a, b) > radius) continue
+      const dx = b.x - a.x
+      const dy = b.y - a.y
+      const length = Math.hypot(dx, dy)
+      const nx = -dy / length
+      const ny = dx / length
+      // The part of the edge inside the circle, sampled evenly.
+      const centre = ((point.x - a.x) * dx + (point.y - a.y) * dy) / (length * length)
+      const offset = Math.abs((point.x - a.x) * nx + (point.y - a.y) * ny)
+      const half = Math.sqrt(Math.max(0, radius * radius - offset * offset)) / length
+      const from = Math.max(0, centre - half)
+      const to = Math.min(1, centre + half)
+      for (let k = 0; k <= EDGE_SAMPLES; k++) {
+        const t = from + ((to - from) * k) / EDGE_SAMPLES
+        const qx = a.x + dx * t
+        const qy = a.y + dy * t
+        const left = insideAt(qx + nx * step, qy + ny * step)
+        const right = insideAt(qx - nx * step, qy - ny * step)
+        if (left !== null && right !== null && left !== right) return true
+      }
+    }
+  }
+  return false
 }
 
 /**
@@ -113,17 +161,29 @@ function measureLine(
   return reach
 }
 
-function probeOutline(outline: ShapeOutline, point: Vector): Probe {
+function probeOutline(outline: ShapeOutline, point: Vector, tolerance: number): Probe {
+  const insideAt = (x: number, y: number) =>
+    outline.areas.some((area) => insideArea(area, { x, y }))
+  const edges = outline.areas.flatMap((area) => area.contours.map(closedLoop))
+  const { strokeAreas } = outline
   return {
-    inside: outline.areas.some((area) => insideArea(area, point)),
-    edge: distanceToLines(
-      outline.areas.flatMap((area) => area.contours.map(closedLoop)),
-      point
-    ),
+    inside: insideAt(point.x, point.y),
+    edgeWithin: (radius) => changingEdgeWithin(edges, insideAt, point, radius, tolerance),
     lines: outline.lines.map((line, index) => measureLine(line, outline.lineEnds?.[index], point)),
     lineWeights: outline.lineWeights,
     closed: outline.areas.some((area) => area.contours.length > 0),
-    centered: outline.strokeCentered
+    centered: outline.strokeCentered,
+    strokeAreaWithin: strokeAreas
+      ? (radius) =>
+          strokeAreas.some((area) => insideArea(area, point)) ||
+          changingEdgeWithin(
+            strokeAreas.flatMap((area) => area.contours.map(closedLoop)),
+            (x, y) => strokeAreas.some((area) => insideArea(area, { x, y })),
+            point,
+            radius,
+            tolerance
+          )
+      : undefined
   }
 }
 
@@ -141,9 +201,6 @@ const BOOLEAN_COMBINE: Record<
   SUBTRACT: ([first = false, ...rest]) => first && !rest.some(Boolean),
   EXCLUDE: (hits) => compact(hits).length % 2 === 1
 }
-
-/** Points tested along each operand edge near the point for whether the result changes there. */
-const EDGE_SAMPLES = 8
 
 /** The lines an operand draws its outline along, in canvas coordinates. */
 function operandEdges(graph: SceneGraph, node: SceneNode, tolerance: number): Vector[][] {
@@ -174,7 +231,9 @@ function operandEdges(graph: SceneGraph, node: SceneNode, tolerance: number): Ve
 /**
  * A boolean operation without saved geometry, combined from its operands as it draws. Its outline
  * runs along the operand edges where the combined result changes from one side to the other, so
- * edges hidden inside or outside the result count for nothing, however thin the result is.
+ * edges hidden inside or outside the result count for nothing. Each side is probed at most a
+ * quarter of a screen pixel out, so a result thinner than that, which draws no visible pixel, is
+ * not seen.
  */
 function probeBoolean(
   graph: SceneGraph,
@@ -199,43 +258,13 @@ function probeBoolean(
   if (inside === null) return null
   const point = { x: px, y: py }
   const edges = operands.flatMap((operand) => operandEdges(graph, operand, tolerance))
-  /** Whether the result changes across the edge from `a` to `b` at the point `q` on it. */
-  const changesAcross = (q: Vector, a: Vector, b: Vector, step: number): boolean => {
-    const length = Math.hypot(b.x - a.x, b.y - a.y)
-    const nx = -(b.y - a.y) / length
-    const ny = (b.x - a.x) / length
-    const left = insideAt(q.x + nx * step, q.y + ny * step)
-    const right = insideAt(q.x - nx * step, q.y - ny * step)
-    return left !== null && right !== null && left !== right
+  return {
+    inside,
+    edgeWithin: (radius) => changingEdgeWithin(edges, insideAt, point, radius, tolerance),
+    lines: [],
+    closed: true,
+    strokeOnEdge: true
   }
-  const boundaryWithin = (radius: number): boolean => {
-    const step = Math.max(1e-6, Math.min(tolerance, radius / 4) / 4)
-    for (const edge of edges) {
-      for (let i = 0; i + 1 < edge.length; i++) {
-        const a = edge[i]
-        const b = edge[i + 1]
-        if (a.x === b.x && a.y === b.y) continue
-        if (distanceToSegment(point, a, b) > radius) continue
-        // The part of the edge inside the circle, sampled evenly.
-        const dx = b.x - a.x
-        const dy = b.y - a.y
-        const lengthSquared = dx * dx + dy * dy
-        const centre = ((px - a.x) * dx + (py - a.y) * dy) / lengthSquared
-        const nearest = { x: a.x + dx * centre, y: a.y + dy * centre }
-        const half = Math.sqrt(
-          Math.max(0, radius * radius - (nearest.x - px) ** 2 - (nearest.y - py) ** 2)
-        )
-        const from = Math.max(0, centre - half / Math.sqrt(lengthSquared))
-        const to = Math.min(1, centre + half / Math.sqrt(lengthSquared))
-        for (let k = 0; k <= EDGE_SAMPLES; k++) {
-          const t = from + ((to - from) * k) / EDGE_SAMPLES
-          if (changesAcross({ x: a.x + dx * t, y: a.y + dy * t }, a, b, step)) return true
-        }
-      }
-    }
-    return false
-  }
-  return { inside, edge: Infinity, lines: [], closed: true, boundaryWithin }
 }
 
 function probeNode(
@@ -254,7 +283,7 @@ function probeNode(
       : shapeOutline(node, tolerance)
   if (!outline) return null
   const point = localPoint(graph, node, px, py)
-  return point ? probeOutline(outline, point) : null
+  return point ? probeOutline(outline, point, tolerance) : null
 }
 
 /** How far from a line a stroke's band reaches toward the point, beyond which it misses. */
@@ -265,19 +294,24 @@ function strokeReachAt(align: Stroke['align'], weight: number, inside: boolean):
 }
 
 function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number): boolean {
+  if (probe.strokeAreaWithin) return probe.strokeAreaWithin(pad)
   const align = probe.closed && !probe.centered ? stroke.align : 'CENTER'
-  if (probe.boundaryWithin) {
+  if (probe.strokeOnEdge) {
     const weight = strokeWeightOf(node, stroke)
-    return probe.boundaryWithin(strokeReachAt(align, weight, probe.inside) + pad)
+    return probe.edgeWithin(strokeReachAt(align, weight, probe.inside) + pad)
   }
   // A flat cap ends the stroke at the line's end; round and square caps paint past it.
-  const cap = stroke.cap ?? node.strokeCap
-  const flatEnds = cap === 'NONE'
+  const flatEnds = (stroke.cap ?? node.strokeCap) === 'NONE'
   return probe.lines.some((line, index) => {
     const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
-    const reach = strokeReachAt(align, weight, probe.inside) + pad
-    if (flatEnds && line.beyond > 0) return line.beyond <= pad && line.across <= reach
-    return line.distance <= reach
+    // A side with no weight paints no border.
+    if (!(weight > 0)) return false
+    const band = strokeReachAt(align, weight, probe.inside)
+    if (flatEnds && line.beyond > 0) {
+      // Past a flat end, the distance to the painted band's square end.
+      return Math.hypot(line.beyond, Math.max(0, line.across - band)) <= pad
+    }
+    return line.distance <= band + pad
   })
 }
 
@@ -298,7 +332,6 @@ export function hitsShape(
   const probe = probeNode(graph, node, px, py, tolerance)
   if (!probe) return null
   const fills = node.fills.filter(isHitPaint)
-  const nearEdge = probe.boundaryWithin ? probe.boundaryWithin(pad) : probe.edge <= pad
-  if (fills.length > 0 && probe.closed && (probe.inside || nearEdge)) return true
+  if (fills.length > 0 && probe.closed && (probe.inside || probe.edgeWithin(pad))) return true
   return node.strokes.some((stroke) => isHitPaint(stroke) && strokeHits(node, stroke, probe, pad))
 }
