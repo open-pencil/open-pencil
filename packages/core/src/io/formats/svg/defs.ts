@@ -48,12 +48,18 @@ export interface SVGExportContext {
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
   fontAlias?: SVGFontAlias
-  /** How many layers have taken each name as their id, when layers are written with ids. */
-  layerIds?: Map<string, number>
+  /**
+   * When layers are written with their names as ids: how many have taken each name, and every id
+   * given out so far, defs included, so no two elements share one.
+   */
+  layerIds?: { names: Map<string, number>; taken: Set<string> }
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
-  return `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  let id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  ctx.layerIds?.taken.add(id)
+  return id
 }
 
 export function formatColor(

@@ -3,7 +3,7 @@ import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { normalizeDashPattern } from '#core/canvas/strokes'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
-import { computeContentBounds } from '#core/io/formats/raster'
+import { exportBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
@@ -392,11 +392,20 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   return { ...drawn, attrs: { id, ...drawn.attrs } }
 }
 
-/** A layer's name as an element id, numbered from `_2` when an earlier layer has it, as Figma does. */
-function layerId(name: string, used: Map<string, number>): string {
-  const count = (used.get(name) ?? 0) + 1
-  used.set(name, count)
-  return count === 1 ? name : `${name}_${count}`
+/**
+ * A layer's name as an element id, numbered from `_2` when an earlier layer has it, as Figma does,
+ * and past any id already given out.
+ */
+function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): string {
+  let count = ids.names.get(name) ?? 0
+  let id: string
+  do {
+    count += 1
+    id = count === 1 ? name : `${name}_${count}`
+  } while (ids.taken.has(id))
+  ids.names.set(name, count)
+  ids.taken.add(id)
+  return id
 }
 
 function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
@@ -486,6 +495,8 @@ export interface SVGExportOptions {
   fontAlias?: SVGFontAlias
   /** Each layer's name as its element's `id`, as Figma's "Include id attribute" writes it. */
   layerIds?: boolean
+  /** Size the drawing to the layers' boxes rather than to everything they draw. */
+  useAbsoluteBounds?: boolean
 }
 
 export function renderNodesToSVG(
@@ -494,7 +505,7 @@ export function renderNodesToSVG(
   nodeIds: string[],
   options: SVGExportOptions = {}
 ): string | null {
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = exportBounds(graph, nodeIds, options.useAbsoluteBounds)
   if (!bounds) return null
 
   const { minX, minY, maxX, maxY } = bounds
@@ -508,7 +519,7 @@ export function renderNodesToSVG(
     colorSpace: options.colorSpace ?? 'srgb',
     textLayout: options.textLayout,
     fontAlias: options.fontAlias,
-    layerIds: options.layerIds ? new Map() : undefined
+    layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
 
   const contentNodes: SVGNode[] = []

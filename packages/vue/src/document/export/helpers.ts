@@ -5,7 +5,11 @@ import type { ComputedRef } from 'vue'
 import type { Editor } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry, type BuiltinIOFormatId } from '@open-pencil/core/io'
 import type { ExportSetting, PluginDataEntry } from '@open-pencil/scene-graph'
-import { EXPORT_FORMAT_IDS, type ExportFormatId } from '@open-pencil/scene-graph/export-format'
+import {
+  compactExportSetting,
+  EXPORT_FORMAT_IDS,
+  type ExportFormatId
+} from '@open-pencil/scene-graph/export-format'
 import {
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
@@ -88,7 +92,7 @@ export function createExportTargetState(editor: Editor, selectedIds: ComputedRef
     const first = editor.graph.getNode(firstId)?.exportSettings ?? []
     return otherIds.some((id) => {
       const settings = editor.graph.getNode(id)?.exportSettings ?? []
-      return !isEqual(first, settings)
+      return !isEqual(first.map(compactExportSetting), settings.map(compactExportSetting))
     })
   })
 

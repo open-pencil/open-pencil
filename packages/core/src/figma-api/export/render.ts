@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { clampExportScale } from '@open-pencil/scene-graph/export-scale'
+import { isValidExportScale, MAX_EXPORT_SCALE } from '@open-pencil/scene-graph/export-scale'
 
+import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { ExportImageOptions } from '#core/figma-api/types'
 import { findPageId } from '#core/io/subgraph'
 
@@ -18,6 +19,8 @@ export async function exportLayer(
   node: SceneNode,
   request: ExportRequest
 ): Promise<Uint8Array | string> {
+  // A script's edits that nothing read yet are laid out first, as Figma lays them out.
+  flushPendingLayout(graph)
   // A page exports what is on it.
   const ids =
     node.type === 'CANVAS' ? graph.getChildren(node.id).map((child) => child.id) : [node.id]
@@ -32,7 +35,8 @@ export async function exportLayer(
       const { renderNodesToLaidOutSVG } = await import('#core/io/formats/svg/text/layout')
       const svg = await renderNodesToLaidOutSVG(graph, pageId, ids, {
         xmlDeclaration: false,
-        layerIds: request.svgIdAttribute
+        layerIds: request.svgIdAttribute,
+        useAbsoluteBounds: request.useAbsoluteBounds
       })
       if (svg === null) throw nothingToExport()
       return request.format === 'SVG' ? new TextEncoder().encode(svg) : svg
@@ -70,9 +74,13 @@ async function exportImage(
   if (constraint?.type === 'SCALE' && constraint.value !== 0) scale = constraint.value
   if (constraint?.type === 'WIDTH') scale = constraint.value / (bounds.maxX - bounds.minX)
   if (constraint?.type === 'HEIGHT') scale = constraint.value / (bounds.maxY - bounds.minY)
-  if (!(scale > 0)) throw new Error('in exportAsync: An export size must be more than 0')
+  if (!isValidExportScale(scale)) {
+    throw new Error(
+      `in exportAsync: An image must be exported at more than 0 and at most ${MAX_EXPORT_SCALE} times the layer's size`
+    )
+  }
   const data = await host.exportImage(ids, {
-    scale: clampExportScale(scale),
+    scale,
     format: request.format,
     pageId,
     useAbsoluteBounds: request.useAbsoluteBounds

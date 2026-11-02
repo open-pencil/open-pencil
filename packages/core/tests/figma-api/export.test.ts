@@ -223,6 +223,66 @@ describe('exportAsync', () => {
     expect([jpg[0], jpg[1]]).toEqual([0xff, 0xd8])
   })
 
+  test('lays out a script’s pending edits before exporting', async () => {
+    const figma = createAPI()
+    const frame = figma.createFrame()
+    frame.layoutMode = 'HORIZONTAL'
+    frame.primaryAxisSizingMode = 'AUTO'
+    frame.counterAxisSizingMode = 'AUTO'
+    for (let index = 0; index < 3; index += 1) {
+      const box = figma.createRectangle()
+      box.resize(10, 10)
+      frame.appendChild(box)
+    }
+    const svg = await frame.exportAsync({ format: 'SVG_STRING' })
+    expect(svg).toContain('width="30"')
+  })
+
+  test('keeps every SVG id unique', async () => {
+    const figma = createAPI()
+    const frame = figma.createFrame()
+    frame.name = 'clip0'
+    frame.resize(60, 40)
+    frame.clipsContent = true
+    for (const name of ['Box', 'Box_2', 'Box']) {
+      const box = figma.createRectangle()
+      box.name = name
+      box.resize(10, 10)
+      frame.appendChild(box)
+    }
+    const svg = await frame.exportAsync({ format: 'SVG_STRING', svgIdAttribute: true })
+    const ids = [...svg.matchAll(/ id="([^"]+)"/g)].map((match) => match[1])
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toEqual(expect.arrayContaining(['clip0', 'Box', 'Box_2', 'Box_3']))
+  })
+
+  test('sizes an SVG to the layer’s box with useAbsoluteBounds', async () => {
+    const figma = createAPI()
+    const rect = figma.createRectangle()
+    rect.resize(20, 10)
+    rect.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }]
+    rect.strokeWeight = 2
+    rect.strokeAlign = 'OUTSIDE'
+    expect(await rect.exportAsync({ format: 'SVG_STRING' })).toContain('width="24"')
+    const boxed = await rect.exportAsync({ format: 'SVG_STRING', useAbsoluteBounds: true })
+    expect(boxed).toContain('width="20"')
+  })
+
+  test('refuses an image size past the export scale limits rather than shrinking it', async () => {
+    const figma = createAPI()
+    figma.exportImage = () => Promise.resolve(new Uint8Array([1]))
+    const rect = figma.createRectangle()
+    rect.resize(1, 1)
+    const limit =
+      "in exportAsync: An image must be exported at more than 0 and at most 1024 times the layer's size"
+    await expect(
+      rect.exportAsync({ format: 'PNG', constraint: { type: 'WIDTH', value: 2000 } })
+    ).rejects.toThrow(limit)
+    await expect(
+      rect.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: -1 } })
+    ).rejects.toThrow(limit)
+  })
+
   test('says so when the host has no renderer for images', async () => {
     const figma = createAPI()
     await expect(figma.createRectangle().exportAsync()).rejects.toThrow(
