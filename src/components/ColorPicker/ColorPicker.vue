@@ -5,15 +5,22 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { OkHCLControls } from '@open-pencil/vue/controls/color-model'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { ColorPickerRoot } from '@open-pencil/vue/primitives/ColorPicker'
-import { holdsPickerOpen } from '@open-pencil/vue/canvas/eyedropper'
-import { useEditor } from '@open-pencil/vue'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
+import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedropper'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 const { panels } = useI18n()
-const editor = useEditor()
-const { color, okhcl = null } = defineProps<{ color: Color; okhcl?: OkHCLControls | null }>()
+const {
+  color,
+  okhcl = null,
+  eyedropper = true
+} = defineProps<{
+  color: Color
+  okhcl?: OkHCLControls | null
+  /** Offers sampling the canvas; off where no document color is edited, as in Settings. */
+  eyedropper?: boolean
+}>()
 defineSlots<{
   trigger?(props: { style: { background: string } }): VNode[]
 }>()
@@ -23,13 +30,15 @@ const emit = defineEmits<{
   cancel: []
 }>()
 const cls = usePopoverUI({ content: 'w-56 p-2' })
+// Settings has no document behind it to sample, nor always an editor to sample with.
+const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
 </script>
 
 <template>
   <ColorPickerRoot
     :color="color"
     :label="panels.editColor"
-    :keep-open="() => holdsPickerOpen(editor)"
+    :keep-open="keepOpen"
     :ui="{
       content: cls.content,
       swatch: 'size-5 shrink-0 cursor-pointer rounded border border-border p-0'
@@ -42,7 +51,12 @@ const cls = usePopoverUI({ content: 'w-56 p-2' })
       <slot name="trigger" v-bind="trigger" />
     </template>
     <template #default="{ color: currentColor }">
-      <ColorPickerPanel :color="currentColor" :okhcl="okhcl" @update="emit('update', $event)" />
+      <ColorPickerPanel
+        :color="currentColor"
+        :okhcl="okhcl"
+        :eyedropper="eyedropper"
+        @update="emit('update', $event)"
+      />
     </template>
   </ColorPickerRoot>
 </template>

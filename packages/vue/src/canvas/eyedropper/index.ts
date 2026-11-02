@@ -1,4 +1,4 @@
-import { applySampledColor, sampleSceneColor } from '@open-pencil/core/editor'
+import { applySampledColor, resolveEditorProfile, sampleSceneColor } from '@open-pencil/core/editor'
 import type { Editor, EyedropperTarget } from '@open-pencil/core/editor'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -7,67 +7,63 @@ interface SampleRequest {
   stop: () => void
 }
 
-interface EyedropperSession {
-  request: SampleRequest | null
-  settledAt: number
-}
-
-/**
- * Reka reports focus moving outside a popover a tick or two late, after the canvas click that
- * answered the request took focus; dismissals within this window still belong to the sample.
- */
-const DISMISS_GRACE_MS = 250
-
-const sessions = new WeakMap<Editor, EyedropperSession>()
-
-function sessionOf(editor: Editor): EyedropperSession {
-  const existing = sessions.get(editor)
-  if (existing) return existing
-  const session: EyedropperSession = { request: null, settledAt: Number.NEGATIVE_INFINITY }
-  sessions.set(editor, session)
-  return session
-}
+/** The request a color picker waits on, per editor; a new request replaces the old one. */
+const requests = new WeakMap<Editor, SampleRequest>()
 
 function settle(editor: Editor, color: Color | null) {
-  const session = sessionOf(editor)
-  const { request } = session
+  const request = requests.get(editor)
   if (!request) return
-  session.request = null
-  session.settledAt = performance.now()
+  requests.delete(editor)
   request.stop()
   request.resolve(color)
 }
 
+/** Whether the editor's profile offers the eyedropper; boards and read-only documents do not. */
+export function offersEyedropper(editor: Editor): boolean {
+  const { tools } = resolveEditorProfile(editor.state)
+  return !tools || tools.has('EYEDROPPER')
+}
+
 /**
  * Switches to the eyedropper and resolves with the next color picked on the canvas instead of
- * applying it to the selection; `null` when the user cancels or picks another tool.
+ * applying it to the selection; `null` when the user leaves the tool or the request is cancelled.
  */
 export function requestEyedropperSample(editor: Editor): Promise<Color | null> {
   settle(editor, null)
+  editor.setTool('EYEDROPPER')
+  if (editor.state.activeTool !== 'EYEDROPPER') return Promise.resolve(null)
   return new Promise((resolve) => {
     // Subscribed after switching, so the switch to the eyedropper itself does not cancel.
-    editor.setTool('EYEDROPPER')
-    const stop = editor.onEditorEvent('tool:changed', () => {
-      if (editor.state.activeTool !== 'EYEDROPPER') settle(editor, null)
-    })
-    sessionOf(editor).request = { resolve, stop }
+    const stop = editor.onEditorEvent('tool:changed', () => settle(editor, null))
+    requests.set(editor, { resolve, stop })
   })
 }
 
-/** The color the document shows at a canvas point, or null without a renderer. */
-function sampleCanvasColor(editor: Editor, cx: number, cy: number): Color | null {
-  const renderer = editor.renderer
-  if (!renderer) return null
-  return sampleSceneColor(renderer.ck, renderer, editor.graph, editor.state.currentPageId, cx, cy)
+/** Gives up a waiting request, as when its picker closes, and leaves the eyedropper. */
+export function cancelEyedropperSample(editor: Editor) {
+  if (!requests.has(editor)) return
+  settle(editor, null)
+  if (editor.state.activeTool === 'EYEDROPPER') editor.setTool('SELECT')
 }
 
 /**
- * A click with the eyedropper: answers a pending picker request, otherwise paints the
- * selection's fill (Alt: stroke) in one undo step. Either way the move tool comes back.
+ * Whether a press answers a picker's request: one on the canvas while a request waits. A picker
+ * passes it as `keepOpen`, so the press that samples does not dismiss it.
+ */
+export function pressAnswersEyedropper(editor: Editor, event: PointerEvent): boolean {
+  return requests.has(editor) && event.target instanceof HTMLCanvasElement
+}
+
+/**
+ * A click with the eyedropper: answers a waiting picker request, otherwise paints the selection's
+ * fill (Alt: stroke) in one undo step. Either way the Move tool comes back.
  */
 export function handleEyedropperDown(editor: Editor, cx: number, cy: number, altKey: boolean) {
-  const color = sampleCanvasColor(editor, cx, cy)
-  if (sessionOf(editor).request) {
+  const renderer = editor.renderer
+  const color = renderer
+    ? sampleSceneColor(renderer.ck, renderer, editor.graph, editor.state.currentPageId, cx, cy)
+    : null
+  if (requests.has(editor)) {
     // Resolve before the tool switch, which would otherwise cancel the request.
     settle(editor, color)
   } else if (color) {
@@ -75,13 +71,4 @@ export function handleEyedropperDown(editor: Editor, cx: number, cy: number, alt
     applySampledColor(editor, color, target)
   }
   editor.setTool('SELECT')
-}
-
-/**
- * Whether a color picker should stay open through a dismissal: while it waits for a canvas
- * sample, and for the moment after one, when the late focus change reaches it.
- */
-export function holdsPickerOpen(editor: Editor): boolean {
-  const { request, settledAt } = sessionOf(editor)
-  return request !== null || performance.now() - settledAt < DISMISS_GRACE_MS
 }
