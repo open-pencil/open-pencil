@@ -1,5 +1,6 @@
 import { compact } from 'es-toolkit'
 
+import { lineStrokeEnds } from '../arrow-caps'
 import { getWorldMatrix } from '../coordinate'
 import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
@@ -49,7 +50,9 @@ export function strokeReach(node: SceneNode): number {
   for (const stroke of node.strokes) {
     if (!isHitPaint(stroke)) continue
     const weight = strokeWeightOf(node, stroke)
-    reach = Math.max(reach, stroke.align === 'OUTSIDE' ? weight : weight / 2)
+    // A line's stroke lies a full weight to one side of it.
+    const side = node.type === 'LINE' || stroke.align === 'OUTSIDE'
+    reach = Math.max(reach, side ? weight : weight / 2)
   }
   return reach
 }
@@ -63,6 +66,8 @@ function localPoint(graph: SceneGraph, node: SceneNode, px: number, py: number):
 
 interface Probe {
   inside: boolean
+  /** The point in the layer's own coordinates, where its outline has one. */
+  local?: Vector
   /**
    * Whether the outline of the filled area passes within `radius` of the point, counting only
    * edges where the filled result changes from one side to the other.
@@ -168,6 +173,7 @@ function probeOutline(outline: ShapeOutline, point: Vector, tolerance: number): 
   const { strokeAreas } = outline
   return {
     inside: insideAt(point.x, point.y),
+    local: point,
     edgeWithin: (radius) => changingEdgeWithin(edges, insideAt, point, radius, tolerance),
     lines: outline.lines.map((line, index) => measureLine(line, outline.lineEnds?.[index], point)),
     lineWeights: outline.lineWeights,
@@ -301,17 +307,27 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
     return probe.edgeWithin(strokeReachAt(align, weight, probe.inside) + pad)
   }
   // A flat cap ends the stroke at the line's end; round and square caps paint past it.
-  const flatEnds = (stroke.cap ?? node.strokeCap) === 'NONE'
-  return probe.lines.some((line, index) => {
-    const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
-    // A side with no weight paints no border.
-    if (!(weight > 0)) return false
-    const band = strokeReachAt(align, weight, probe.inside)
+  const cap = stroke.cap ?? node.strokeCap
+  const flatEnds = cap === 'NONE'
+  const reaches = (line: LineReach, band: number): boolean => {
     if (flatEnds && line.beyond > 0) {
       // Past a flat end, the distance to the painted band's square end.
       return Math.hypot(line.beyond, Math.max(0, line.across - band)) <= pad
     }
     return line.distance <= band + pad
+  }
+  if (node.type === 'LINE' && probe.local) {
+    // Figma strokes a line a full weight to one side, along the path the renderer draws.
+    const weight = strokeWeightOf(node, stroke)
+    if (!(weight > 0)) return false
+    const { start, end } = lineStrokeEnds(node.width, node.height, weight, cap)
+    return reaches(measureLine([start, end], [true, true], probe.local), weight / 2)
+  }
+  return probe.lines.some((line, index) => {
+    const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
+    // A side with no weight paints no border.
+    if (!(weight > 0)) return false
+    return reaches(line, strokeReachAt(align, weight, probe.inside))
   })
 }
 

@@ -130,7 +130,7 @@ function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null 
     contours: path.commandsBlob.length > 0 ? blobContours(path.commandsBlob, tolerance) : []
   }))
   if (!network) {
-    if (geometry.length === 0) return null
+    if (geometry.length === 0 && node.strokeGeometry.length === 0) return null
     // Without a network the renderer fills the saved stroke geometry, or draws no stroke.
     const strokeAreas = node.strokeGeometry.map((path) => ({
       windingRule: path.windingRule,

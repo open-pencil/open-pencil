@@ -42,6 +42,18 @@ function contoursBlob(contours: Array<Array<[number, number]>>): Uint8Array {
   return blob
 }
 
+/** An open path along the x axis from 0 to `length`. */
+function straight(length: number) {
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: length, y: 0 }
+    ],
+    segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+    regions: []
+  }
+}
+
 function setup() {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
@@ -80,19 +92,33 @@ describe('a stroked shape without a fill', () => {
     expect(hits(line, 150, 60)).toBe(false)
   })
 
-  test('reaches 3.5 px past a thick stroke', () => {
+  test('reaches 3.5 px past a thick stroke centred on an open path', () => {
     const { add, hits } = setup()
-    const line = add('LINE', { width: 300, height: 0, strokes: [stroke(10)] })
-    expect(hits(line, 150, 8)).toBe(true)
-    expect(hits(line, 150, 9)).toBe(false)
+    const path = add('VECTOR', { width: 300, height: 0, strokes: [stroke(10)], vectorNetwork: straight(300) })
+    expect(hits(path, 150, 8)).toBe(true)
+    expect(hits(path, 150, 9)).toBe(false)
+  })
+
+  // Measured in Figma 126 on a line layer of weight 10 (scratch/pr-oracle/line-hit.ts): its stroke
+  // runs a full weight to the line's negative y, and clicks hit from 13 px above to 3 px below.
+  test('takes a line layer by the stroke a full weight to one side of it', () => {
+    const { add, hits } = setup()
+    const line = add('LINE', { width: 300, height: 0, strokeCap: 'NONE', strokes: [stroke(10)] })
+    expect(hits(line, 150, -13)).toBe(true)
+    expect(hits(line, 150, -14)).toBe(false)
+    expect(hits(line, 150, 3)).toBe(true)
+    expect(hits(line, 150, 4)).toBe(false)
+    // Past its flat end, within the pad only.
+    expect(hits(line, 303, -5)).toBe(true)
+    expect(hits(line, 304, -5)).toBe(false)
   })
 
   test('scales its reach with the zoom, as the pad is screen pixels', () => {
     const { add, hits } = setup()
-    const line = add('LINE', { width: 300, height: 0, strokes: [stroke(1)] })
+    const path = add('VECTOR', { width: 300, height: 0, strokes: [stroke(1)], vectorNetwork: straight(300) })
     // At 400% the 0.5 unit half stroke is 2 px, so 5 px out hits and 6 px misses.
-    expect(hits(line, 150, 5 / 4, PAD / 4)).toBe(true)
-    expect(hits(line, 150, 6 / 4, PAD / 4)).toBe(false)
+    expect(hits(path, 150, 5 / 4, PAD / 4)).toBe(true)
+    expect(hits(path, 150, 6 / 4, PAD / 4)).toBe(false)
   })
 
   test('is hit on a rectangle by its inside stroke, not in its middle', () => {
@@ -420,14 +446,22 @@ describe('outline details', () => {
     expect(hits(box, 1, 1)).toBe(false)
   })
 
-  test('a flat cap ends the stroke at the line end; a round one paints past it', () => {
+  test('a flat cap ends an open path at its end; a round one paints past it', () => {
     const { add, hits } = setup()
-    const flat = add('LINE', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)] })
-    // 8 units past the end, on the line's axis.
+    const flat = add('VECTOR', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)], vectorNetwork: straight(100) })
+    // 8 units past the end, on the path's axis.
     expect(hits(flat, 108, 0)).toBe(false)
     expect(hits(flat, 103, 0)).toBe(true)
-    const round = add('LINE', { width: 100, height: 0, strokeCap: 'ROUND', strokes: [stroke(20)] })
+    const round = add('VECTOR', { width: 100, height: 0, strokeCap: 'ROUND', strokes: [stroke(20)], vectorNetwork: straight(100) })
     expect(hits(round, 108, 0)).toBe(true)
+  })
+
+  test("a line's caps end where the line does", () => {
+    const { add, hits } = setup()
+    const round = add('LINE', { width: 100, height: 0, strokeCap: 'ROUND', strokes: [stroke(20)] })
+    // The cap is drawn inside the line's length, so 8 past the end is beyond the pad.
+    expect(hits(round, 108, -10)).toBe(false)
+    expect(hits(round, 103, -10)).toBe(true)
   })
 
   test('a closed network without regions keeps its stroke alignment when stroke geometry is saved', () => {
@@ -499,10 +533,29 @@ describe('outline details', () => {
 
   test('past a flat end the reach is measured from the painted corner', () => {
     const { add, hits } = setup()
-    const line = add('LINE', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)] })
+    const path = add('VECTOR', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)], vectorNetwork: straight(100) })
     // 4.24 units from the corner (100, 10): beyond the 3.5 pad.
-    expect(hits(line, 103, 13)).toBe(false)
-    expect(hits(line, 102, 11)).toBe(true)
+    expect(hits(path, 103, 13)).toBe(false)
+    expect(hits(path, 102, 11)).toBe(true)
+  })
+
+  test('without a network or fill geometry a stroke is still hit on its saved outline only', () => {
+    const { add, hits } = setup()
+    const band: Array<[number, number]> = [
+      [0, -2],
+      [100, -2],
+      [100, 2],
+      [0, 2]
+    ]
+    const strokeOnly = add('VECTOR', {
+      width: 100,
+      height: 100,
+      strokes: [stroke(4)],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: contoursBlob([band]) }]
+    })
+    expect(hits(strokeOnly, 50, 0)).toBe(true)
+    // In the layer's empty box, away from the painted stroke.
+    expect(hits(strokeOnly, 50, 60)).toBe(false)
   })
 
   test('without a network a stroke is hit on its saved stroke outline only', () => {
