@@ -8,8 +8,10 @@ import { fillGeometryMatchesRegions, hasRegionFills } from '@lawha/scene-graph/v
 
 import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
+import { adjustedImageShader, hasAdjustments, IMAGE_ADJUST_SKSL } from './image-adjust'
 import { previewEdge } from './images/previews'
 import type { SkiaRenderer } from './renderer'
+import { compiledEffect } from './renderer/shaders'
 import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
@@ -443,10 +445,24 @@ function setImageShader(
           r.ck.MipmapMode.Linear,
           localMatrix
         )
+  const adjusted = hasAdjustments(fill.adjustments)
+    ? adjustedImageShader(
+        compiledEffect(
+          r.ck,
+          r.shaders,
+          'imageAdjustEffect',
+          IMAGE_ADJUST_SKSL,
+          'image adjustments'
+        ),
+        shader,
+        fill.adjustments
+      )
+    : null
   try {
-    paint.setShader(shader)
+    paint.setShader(adjusted ?? shader)
     markShaded(r, paint)
   } finally {
+    adjusted?.delete()
     shader.delete()
   }
   return true

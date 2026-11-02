@@ -139,6 +139,26 @@ const sourceLibraryPublicationSchema: v.GenericSchema<unknown, SourceLibraryPubl
   }
 )
 
+const adjustmentValueSchema = v.optional(v.pipe(v.number(), v.minValue(-1), v.maxValue(1)))
+
+/** Every adjustment of each adjusted fill, by fill index, so a save loses none of them. */
+const imageAdjustmentsSchema = v.record(
+  v.pipe(v.string(), v.regex(/^\d+$/)),
+  v.object({
+    exposure: adjustmentValueSchema,
+    contrast: adjustmentValueSchema,
+    brightness: adjustmentValueSchema,
+    saturation: adjustmentValueSchema,
+    vibrance: adjustmentValueSchema,
+    temperature: adjustmentValueSchema,
+    tint: adjustmentValueSchema,
+    highlights: adjustmentValueSchema,
+    shadows: adjustmentValueSchema,
+    hue: adjustmentValueSchema,
+    invert: v.optional(v.boolean())
+  })
+)
+
 /**
  * Every plugin-data entry Lawha writes under {@link LAWHA_PLUGIN_ID}: state Figma's
  * format has no field for. Add a key here, never as a string elsewhere, so reading and writing
@@ -156,6 +176,11 @@ export const LAWHA_PLUGIN_DATA = {
   exportSettings: jsonPluginDataField('exportSettings', 'format', exportSettingsSchema),
   /** The node-local rect a TEXT_PATH layout maps onto, which Kiwi has no field for. */
   textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBoxSchema),
+  /**
+   * Image fill adjustments by fill index. Figma's paint filter keeps eight of them; hue, invert
+   * and vibrance have no Figma field, so this keeps every one exactly.
+   */
+  imageAdjustments: jsonPluginDataField('imageAdjustments', 'format', imageAdjustmentsSchema),
   /** The library asset a node was inserted from. */
   librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySourceSchema),
   /**
@@ -209,9 +234,7 @@ export const LAWHA_PLUGIN_DATA = {
   shader: jsonPluginDataField('shader', 'content', shaderPaintSchema)
 } satisfies Record<string, PluginDataKey>
 
-const NOT_CONTENT = Object.values(LAWHA_PLUGIN_DATA).filter(
-  (field) => field.role !== 'content'
-)
+const NOT_CONTENT = Object.values(LAWHA_PLUGIN_DATA).filter((field) => field.role !== 'content')
 
 /**
  * A node's plugin data that is part of its content, in a stable order: Lawha's content

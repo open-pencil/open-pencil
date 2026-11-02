@@ -3,9 +3,15 @@ import { uniq } from 'es-toolkit'
 import type { ShapedTextGlyph } from '@lawha/fig/node-change'
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
+import { imageAdjustBaker } from '#core/canvas/image-adjust'
 import { getCanvasKit } from '#core/canvaskit'
 import { populateFigPage } from '#core/io/formats/fig'
-import type { SVGCharacterEdges, SVGFallbackFace, SVGTextLayout } from '#core/io/formats/svg'
+import type {
+  SVGCharacterEdges,
+  SVGFallbackFace,
+  SVGImageAdjust,
+  SVGTextLayout
+} from '#core/io/formats/svg'
 import { withTextShaper } from '#core/io/shaping'
 import { computeAllLayouts } from '#core/layout'
 import { shownText } from '#core/text/case'
@@ -97,29 +103,35 @@ export function pdfFontFaces(status: DocumentFontStatus): PDFFontFace[] {
  * layout and only explicit newlines start a new line.
  */
 export async function withPDFTextLayout<T>(
-  render: (textLayout: SVGTextLayout | undefined) => Promise<T>
+  render: (textLayout: SVGTextLayout | undefined, imageAdjust?: SVGImageAdjust) => Promise<T>
 ): Promise<T> {
   const ck = await getCanvasKit().catch(() => null)
   if (!ck) return render(undefined)
-  return withTextShaper(ck, (shape) =>
-    render((node) => {
-      // Shaped lines are cut by character index, which the text's case must keep.
-      if (shownText(node).length !== node.text.length) return null
-      const shaped = shape(node)
-      if (!shaped?.baselines.length) return null
-      const characters = characterEdges(shaped.glyphs)
-      const fallbacks = fallbackFaces(node, characters)
-      return shaped.baselines.map((line) => ({
-        start: line.firstCharacter,
-        end: line.endCharacter,
-        x: line.position.x,
-        y: line.position.y,
-        width: line.width,
-        characters,
-        fallbacks
-      }))
-    })
-  )
+  // Image adjustments are baked with the canvas's own shader, so embedded images match it.
+  const baker = imageAdjustBaker(ck)
+  try {
+    return await withTextShaper(ck, (shape) =>
+      render((node) => {
+        // Shaped lines are cut by character index, which the text's case must keep.
+        if (shownText(node).length !== node.text.length) return null
+        const shaped = shape(node)
+        if (!shaped?.baselines.length) return null
+        const characters = characterEdges(shaped.glyphs)
+        const fallbacks = fallbackFaces(node, characters)
+        return shaped.baselines.map((line) => ({
+          start: line.firstCharacter,
+          end: line.endCharacter,
+          x: line.position.x,
+          y: line.position.y,
+          width: line.width,
+          characters,
+          fallbacks
+        }))
+      }, baker.bake)
+    )
+  } finally {
+    baker.release()
+  }
 }
 
 /**

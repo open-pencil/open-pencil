@@ -3,7 +3,7 @@ import { useFileDialog } from '@vueuse/core'
 import { computed, useTemplateRef } from 'vue'
 
 import type { StockPhotoResult } from '@lawha/core/tools'
-import type { Fill, ImageScaleMode } from '@lawha/scene-graph'
+import type { Fill, ImageAdjustments, ImageScaleMode } from '@lawha/scene-graph'
 import { coverImageTransform } from '@lawha/scene-graph/images'
 import { useI18n } from '@lawha/vue/i18n'
 
@@ -18,6 +18,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import ImageAdjustmentsPanel from './ImageAdjustmentsPanel.vue'
 import { useImageFill } from './useImageFill'
 
 const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
@@ -113,6 +114,12 @@ function setTileScale(percent: number) {
 function rotate() {
   emit('update', { ...fill, imageRotation: ((fill.imageRotation ?? 0) + 90) % 360 })
 }
+
+/** Adjustments on the fill; none removes the key, so an unadjusted fill stays as it was. */
+function setAdjustments(adjustments: ImageAdjustments | undefined) {
+  const { adjustments: _previous, ...rest } = fill
+  emit('update', adjustments ? { ...rest, adjustments } : rest)
+}
 </script>
 
 <template>
@@ -190,5 +197,10 @@ function rotate() {
         <icon-lucide-rotate-cw class="size-3.5" />
       </IconButton>
     </div>
+    <ImageAdjustmentsPanel
+      v-if="fill.imageHash"
+      :adjustments="fill.adjustments"
+      @update="setAdjustments"
+    />
   </div>
 </template>

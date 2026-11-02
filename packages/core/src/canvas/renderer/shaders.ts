@@ -13,11 +13,12 @@ export interface CompiledShaders {
   pixelGrid: KeptShader | null
   dotGridEffect: RuntimeEffect | null
   dotGrid: KeptShader | null
+  imageAdjustEffect: RuntimeEffect | null
   linearBurn: Blender | null
   linearDodge: Blender | null
 }
 
-type EffectSlot = 'diamondGradient' | 'pixelGridEffect' | 'dotGridEffect'
+type EffectSlot = 'diamondGradient' | 'pixelGridEffect' | 'dotGridEffect' | 'imageAdjustEffect'
 type ShaderSlot = 'pixelGrid' | 'dotGrid'
 
 export function createCompiledShaders(): CompiledShaders {
@@ -27,6 +28,7 @@ export function createCompiledShaders(): CompiledShaders {
     pixelGrid: null,
     dotGridEffect: null,
     dotGrid: null,
+    imageAdjustEffect: null,
     linearBurn: null,
     linearDodge: null
   }
@@ -43,6 +45,8 @@ export function releaseCompiledShaders(shaders: CompiledShaders): void {
   shaders.dotGridEffect = null
   shaders.dotGrid?.shader.delete()
   shaders.dotGrid = null
+  shaders.imageAdjustEffect?.delete()
+  shaders.imageAdjustEffect = null
   shaders.linearBurn?.delete()
   shaders.linearBurn = null
   shaders.linearDodge?.delete()

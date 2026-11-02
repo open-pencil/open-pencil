@@ -16,7 +16,7 @@ export async function renderNodesToLaidOutSVG(
   options: SVGExportOptions = {}
 ): Promise<string | null> {
   await prepareGraphFonts(graph, nodeIds)
-  return withPDFTextLayout(async (textLayout) =>
-    renderNodesToSVG(graph, pageId, nodeIds, { textLayout, ...options })
+  return withPDFTextLayout(async (textLayout, imageAdjust) =>
+    renderNodesToSVG(graph, pageId, nodeIds, { textLayout, imageAdjust, ...options })
   )
 }

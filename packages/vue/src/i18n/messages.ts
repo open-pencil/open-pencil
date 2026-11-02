@@ -22,6 +22,7 @@ import { mediaMessageDefaults, mediaMessages } from '#vue/i18n/messages/media'
 import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
 import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
+import { photoMessageDefaults, photoMessages } from '#vue/i18n/messages/photo'
 import { printMessageDefaults, printMessages } from '#vue/i18n/messages/print'
 import { prototypeMessageDefaults, prototypeMessages } from '#vue/i18n/messages/prototype'
 import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/recovery'
@@ -58,6 +59,7 @@ export {
   menuMessages,
   pageMessages,
   panelMessages,
+  photoMessages,
   printMessages,
   prototypeMessages,
   recoveryMessages,
@@ -94,6 +96,7 @@ export const messageDefaults = {
   menu: menuMessageDefaults,
   pages: pageMessageDefaults,
   panels: panelMessageDefaults,
+  photo: photoMessageDefaults,
   print: printMessageDefaults,
   prototype: prototypeMessageDefaults,
   recovery: recoveryMessageDefaults,

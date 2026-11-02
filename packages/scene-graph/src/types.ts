@@ -170,6 +170,41 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
+/**
+ * Colour adjustments on an image fill, applied when drawn, never baked into the image. Each runs
+ * from -1 to 1 with 0 leaving the image as it is, as Figma's image filters do.
+ */
+export interface ImageAdjustments {
+  exposure?: number
+  contrast?: number
+  brightness?: number
+  saturation?: number
+  vibrance?: number
+  /** Warmer (+) or cooler (-). */
+  temperature?: number
+  /** Magenta (+) or green (-). */
+  tint?: number
+  highlights?: number
+  shadows?: number
+  /** Hue rotation: ±1 is ±180°. */
+  hue?: number
+  /** Invert every channel. */
+  invert?: boolean
+}
+
+export const IMAGE_ADJUSTMENT_KEYS = [
+  'exposure',
+  'contrast',
+  'brightness',
+  'saturation',
+  'vibrance',
+  'temperature',
+  'tint',
+  'highlights',
+  'shadows',
+  'hue'
+] as const satisfies readonly (keyof ImageAdjustments)[]
+
 export interface Fill {
   type: FillType
   color: Color
@@ -180,6 +215,8 @@ export interface Fill {
   gradientTransform?: GradientTransform
   imageHash?: string
   imageScaleMode?: ImageScaleMode
+  /** Colour adjustments for an IMAGE fill. */
+  adjustments?: ImageAdjustments
   /** A crop's image-space window; Fill, Fit and Tile ignore it. */
   imageTransform?: GradientTransform
   /** Clockwise turn of a Fill, Fit or Tile image, in multiples of 90°; a crop holds its own. */

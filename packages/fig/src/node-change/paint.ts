@@ -7,6 +7,7 @@ import type {
   BlendMode,
   ImageScaleMode,
   GradientTransform,
+  ImageAdjustments,
   StrokeCap,
   StrokeJoin
 } from '@lawha/scene-graph'
@@ -34,11 +35,7 @@ export function fillToKiwiPaint(fill: Fill): Paint {
     }))
   }
   if (fill.gradientTransform) paint.transform = fill.gradientTransform
-  if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
-  if (fill.imageScaleMode)
-    paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
-  if (fill.imageTransform) paint.transform = fill.imageTransform
-  if (fill.imageRotation) paint.rotation = fill.imageRotation
+  writeImagePaintFields(fill, paint)
   if (fill.sourceNodeId) paint.sourceNodeId = stringToGuid(fill.sourceNodeId)
   if (fill.scale) paint.scale = fill.scale
   if (fill.spacing) paint.spacing = fill.spacing
@@ -133,6 +130,58 @@ function applyImagePaintFields(fill: Fill, p: Paint): void {
   if (p.transform && fill.imageScaleMode === 'CROP')
     fill.imageTransform = convertGradientTransform(p.transform)
   if (p.rotation) fill.imageRotation = p.rotation
+  const adjustments = fromFigmaPaintFilter(p.paintFilter)
+  if (adjustments) fill.adjustments = adjustments
+}
+
+/** The image's hash, scale mode, crop, turn and adjustments, as Figma's paint keeps them. */
+function writeImagePaintFields(fill: Fill, paint: Paint): void {
+  if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
+  if (fill.imageScaleMode)
+    paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
+  if (fill.imageTransform) paint.transform = fill.imageTransform
+  if (fill.imageRotation) paint.rotation = fill.imageRotation
+  if (fill.type === 'IMAGE' && fill.adjustments) {
+    const filter = toFigmaPaintFilter(fill.adjustments)
+    if (filter) paint.paintFilter = filter
+  }
+}
+
+/**
+ * Figma's paint filter fields and the adjustment each one is. Figma's editor calls its `vibrance`
+ * field Saturation; Lawha's own vibrance, hue and invert have no Figma field.
+ */
+const FIGMA_FILTER_FIELDS = [
+  ['exposure', 'exposure'],
+  ['contrast', 'contrast'],
+  ['brightness', 'brightness'],
+  ['temperature', 'temperature'],
+  ['tint', 'tint'],
+  ['highlights', 'highlights'],
+  ['shadows', 'shadows'],
+  ['vibrance', 'saturation']
+] as const satisfies readonly (readonly [
+  keyof NonNullable<Paint['paintFilter']>,
+  keyof ImageAdjustments
+])[]
+
+export function toFigmaPaintFilter(adjust: ImageAdjustments): Paint['paintFilter'] | undefined {
+  const filter: NonNullable<Paint['paintFilter']> = {}
+  for (const [figma, own] of FIGMA_FILTER_FIELDS) {
+    const value = adjust[own]
+    if (value) filter[figma] = value
+  }
+  return Object.keys(filter).length > 0 ? filter : undefined
+}
+
+export function fromFigmaPaintFilter(filter: Paint['paintFilter']): ImageAdjustments | undefined {
+  if (!filter) return undefined
+  const adjust: ImageAdjustments = {}
+  for (const [figma, own] of FIGMA_FILTER_FIELDS) {
+    const value = filter[figma]
+    if (value) adjust[own] = Math.max(-1, Math.min(1, value))
+  }
+  return Object.keys(adjust).length > 0 ? adjust : undefined
 }
 
 function applySchemaPaintFields(fill: Fill, p: Paint): void {

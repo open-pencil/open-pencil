@@ -1,11 +1,14 @@
 import * as v from 'valibot'
 
-import type { BlendMode, Fill, GradientTransform, ImageScaleMode } from '@lawha/scene-graph'
+import type {
+  BlendMode,
+  Fill,
+  GradientTransform,
+  ImageAdjustments,
+  ImageScaleMode
+} from '@lawha/scene-graph'
 import { BLACK } from '@lawha/scene-graph/constants'
-import {
-  gradientTransformRows,
-  IDENTITY_GRADIENT_TRANSFORM
-} from '@lawha/scene-graph/gradient'
+import { gradientTransformRows, IDENTITY_GRADIENT_TRANSFORM } from '@lawha/scene-graph/gradient'
 import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { invalid, received } from './accessors/text/messages'
@@ -42,7 +45,17 @@ type ImageFilters = Record<
   number
 >
 
-/** Lawha keeps no image filters; Figma reads every slider at 0 until one moves. */
+const FILTER_KEYS = [
+  'exposure',
+  'contrast',
+  'saturation',
+  'temperature',
+  'tint',
+  'highlights',
+  'shadows'
+] as const satisfies readonly (keyof ImageFilters & keyof ImageAdjustments)[]
+
+/** Figma reads every slider at 0 until one moves. */
 const NO_FILTERS: ImageFilters = {
   exposure: 0,
   contrast: 0,
@@ -51,6 +64,31 @@ const NO_FILTERS: ImageFilters = {
   tint: 0,
   highlights: 0,
   shadows: 0
+}
+
+/** A fill's adjustments as Figma's seven image filter sliders. */
+function filtersOf(adjust: ImageAdjustments | undefined): ImageFilters {
+  const filters = { ...NO_FILTERS }
+  for (const key of FILTER_KEYS) filters[key] = adjust?.[key] ?? 0
+  return filters
+}
+
+/** Plugin filters as adjustments; sliders at 0 are left out, and none at all is no adjustment. */
+function adjustmentsOf(filters: Partial<ImageFilters> | undefined): ImageAdjustments | undefined {
+  if (!filters) return undefined
+  const adjust: ImageAdjustments = {}
+  for (const key of FILTER_KEYS) {
+    const value = filters[key]
+    if (value) adjust[key] = value
+  }
+  return Object.keys(adjust).length > 0 ? adjust : undefined
+}
+
+/** `{ adjustments }` when there are some, else nothing, so an unadjusted fill has no key. */
+function withAdjustments(adjustments: ImageAdjustments | undefined): {
+  adjustments?: ImageAdjustments
+} {
+  return adjustments ? { adjustments } : {}
 }
 
 /** Figma's videos are named by the SHA-1 of their bytes. */
@@ -328,7 +366,8 @@ function sceneFill(paint: ParsedPaint, site: PaintSite): Fill {
       ...(hash !== null && { imageHash: hash }),
       ...(imageTransform && { imageTransform }),
       ...(paint.rotation !== undefined && { imageRotation: paint.rotation }),
-      ...(paint.scalingFactor !== undefined && { scale: paint.scalingFactor })
+      ...(paint.scalingFactor !== undefined && { scale: paint.scalingFactor }),
+      ...withAdjustments(paint.type === 'IMAGE' ? adjustmentsOf(paint.filters) : undefined)
     }
   }
   return {
@@ -380,7 +419,7 @@ function figmaMediaPaint(paint: Fill, type: 'IMAGE' | 'VIDEO', base: ReadBase): 
     scaleMode,
     scalingFactor: scaleMode === 'TILE' ? (paint.scale ?? 1) : 1,
     ...(!crop && { rotation: paint.imageRotation ?? 0 }),
-    filters: { ...NO_FILTERS }
+    filters: filtersOf(paint.adjustments)
   }
   const transform = rows(crop ? paint.imageTransform : undefined)
   const hash = paint.imageHash ?? null

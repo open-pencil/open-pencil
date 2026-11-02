@@ -21,6 +21,7 @@ import media from './media.json'
 import menu from './menu.json'
 import pages from './pages.json'
 import panels from './panels.json'
+import photo from './photo.json'
 import print from './print.json'
 import prototype from './prototype.json'
 import recovery from './recovery.json'
@@ -56,6 +57,7 @@ export default {
   menu,
   pages,
   panels,
+  photo,
   print,
   prototype,
   recovery,

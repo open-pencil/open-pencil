@@ -1268,3 +1268,5 @@ zh-cn:designSystem.buildHint
 zh-cn:designSystem.done
 zh-cn:designSystem.duplicates
 zh-cn:designSystem.failed
+fr:photo.saturation
+fr:photo.vibrance

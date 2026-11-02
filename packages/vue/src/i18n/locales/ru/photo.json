@@ -1,0 +1,15 @@
+{
+  "adjustments": "Коррекция",
+  "reset": "Сбросить",
+  "exposure": "Экспозиция",
+  "contrast": "Контраст",
+  "brightness": "Яркость",
+  "saturation": "Насыщенность",
+  "vibrance": "Красочность",
+  "temperature": "Температура",
+  "tint": "Оттенок",
+  "highlights": "Света",
+  "shadows": "Тени",
+  "hue": "Цветовой тон",
+  "invert": "Инверсия"
+}

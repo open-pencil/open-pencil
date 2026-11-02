@@ -1,0 +1,15 @@
+{
+  "adjustments": "Anpassungen",
+  "reset": "Zurücksetzen",
+  "exposure": "Belichtung",
+  "contrast": "Kontrast",
+  "brightness": "Helligkeit",
+  "saturation": "Sättigung",
+  "vibrance": "Dynamik",
+  "temperature": "Temperatur",
+  "tint": "Tönung",
+  "highlights": "Lichter",
+  "shadows": "Tiefen",
+  "hue": "Farbton",
+  "invert": "Umkehren"
+}

@@ -7,14 +7,12 @@ import { stringToGuid } from '@lawha/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
+  ImageAdjustments,
   LayoutGrid,
   SceneGraph,
   SceneNode
 } from '@lawha/scene-graph'
-import {
-  DEFAULT_STROKE_MITER_LIMIT,
-  DEFAULT_STROKE_WEIGHT
-} from '@lawha/scene-graph/constants'
+import { DEFAULT_STROKE_MITER_LIMIT, DEFAULT_STROKE_WEIGHT } from '@lawha/scene-graph/constants'
 import { isGeneratedFrame } from '@lawha/scene-graph/generated'
 import { layoutGridCount } from '@lawha/scene-graph/layout'
 import { siblingOrderKeys } from '@lawha/scene-graph/order-keys'
@@ -1017,6 +1015,7 @@ export function sceneNodeToKiwiWithContext(
   applyLibrarySourcePluginData(node)
   serializeNodeStatus(node, nc)
   applyTextPathBoxPluginData(node, savedInFigmaBox(node))
+  applyImageAdjustmentsPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {
@@ -1029,4 +1028,18 @@ export function sceneNodeToKiwiWithContext(
     result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
   }
   return result
+}
+
+/** Keeps every image adjustment by fill index, for those Figma's paint filter cannot hold. */
+function applyImageAdjustmentsPluginData(node: SceneNode): void {
+  const byIndex: Record<string, ImageAdjustments> = {}
+  node.fills.forEach((fill, index) => {
+    if (fill.type === 'IMAGE' && fill.adjustments && Object.keys(fill.adjustments).length > 0)
+      byIndex[String(index)] = fill.adjustments
+  })
+  node.pluginData = withPluginData(
+    node.pluginData,
+    LAWHA_PLUGIN_DATA.imageAdjustments,
+    Object.keys(byIndex).length > 0 ? byIndex : undefined
+  )
 }

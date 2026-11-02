@@ -1,0 +1,15 @@
+{
+  "adjustments": "调整",
+  "reset": "重置",
+  "exposure": "曝光",
+  "contrast": "对比度",
+  "brightness": "亮度",
+  "saturation": "饱和度",
+  "vibrance": "自然饱和度",
+  "temperature": "色温",
+  "tint": "色调",
+  "highlights": "高光",
+  "shadows": "阴影",
+  "hue": "色相",
+  "invert": "反相"
+}

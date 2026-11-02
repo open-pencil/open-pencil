@@ -30,14 +30,10 @@ import {
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@lawha/scene-graph'
-import {
-  hasRegionFills,
-  looseSegments,
-  regionSVGPaths
-} from '@lawha/scene-graph/vector-network'
+import { hasRegionFills, looseSegments, regionSVGPaths } from '@lawha/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import type { SVGExportContext, SVGFontAlias } from './defs'
+import type { SVGExportContext, SVGFontAlias, SVGImageAdjust } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -467,6 +463,8 @@ export interface SVGExportOptions {
    * file under. Text in an aliased face is written in that family at normal weight and style.
    */
   fontAlias?: SVGFontAlias
+  /** Bakes an image fill's adjustments into its embedded copy; without it they are dropped. */
+  imageAdjust?: SVGImageAdjust
 }
 
 export function renderNodesToSVG(
@@ -488,7 +486,8 @@ export function renderNodesToSVG(
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
     textLayout: options.textLayout,
-    fontAlias: options.fontAlias
+    fontAlias: options.fontAlias,
+    imageAdjust: options.imageAdjust
   }
 
   const contentNodes: SVGNode[] = []

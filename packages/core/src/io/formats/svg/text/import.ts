@@ -1,11 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type {
-  CharacterStyleOverride,
-  SceneGraph,
-  SceneNode,
-  StyleRun
-} from '@lawha/scene-graph'
+import type { CharacterStyleOverride, SceneGraph, SceneNode, StyleRun } from '@lawha/scene-graph'
 import { localTransformFromWorld } from '@lawha/scene-graph/coordinate'
 import { faceLoadKey } from '@lawha/scene-graph/font-style'
 import Matrix from '@lawha/scene-graph/matrix'

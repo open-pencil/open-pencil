@@ -27,10 +27,11 @@ export async function exportPDFDocument(
     ? await preparePagesForPDF(graph, specs)
     : await preparePDFFonts(graph, specs)
   const fonts = options.embedFonts ? pdfFontFaces(status) : undefined
-  return withPDFTextLayout((textLayout) =>
+  return withPDFTextLayout((textLayout, imageAdjust) =>
     renderPagesToPDFDetailed(graph, specs, {
       fonts,
       textLayout,
+      imageAdjust,
       fallbackFile: (family, style, file) =>
         file === 0
           ? fontManager.loadedData(family, style)

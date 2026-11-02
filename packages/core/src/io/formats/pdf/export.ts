@@ -1,7 +1,12 @@
 import type { SceneGraph } from '@lawha/scene-graph'
 
 import { computeContentBounds } from '#core/io/formats/raster'
-import { renderNodesToSVG, type SVGExportOptions, type SVGTextLayout } from '#core/io/formats/svg'
+import {
+  renderNodesToSVG,
+  type SVGExportOptions,
+  type SVGImageAdjust,
+  type SVGTextLayout
+} from '#core/io/formats/svg'
 
 import { withPDFDOM, type SVGPageParser } from './dom'
 import {
@@ -23,6 +28,8 @@ export interface PDFExportOptions {
   textLayout?: SVGTextLayout
   /** The files of fallback faces the text layout draws characters in, to embed them too. */
   fallbackFile?: PDFFallbackFontFile
+  /** Bakes image adjustments into embedded images, so the PDF matches the canvas. */
+  imageAdjust?: SVGImageAdjust
 }
 
 export interface PDFExportResult {
@@ -40,7 +47,7 @@ interface PreparedPage {
   height: number
 }
 
-type PageSVGOptions = Pick<SVGExportOptions, 'textLayout' | 'fontAlias'>
+type PageSVGOptions = Pick<SVGExportOptions, 'textLayout' | 'fontAlias' | 'imageAdjust'>
 
 function preparePage(
   graph: SceneGraph,
@@ -87,7 +94,8 @@ async function renderPages(
   const embedding = options.fonts ? planFontEmbedding(options.fonts, options.fallbackFile) : null
   const svgOptions: PageSVGOptions = {
     textLayout: options.textLayout,
-    fontAlias: embedding ? embeddedFontAlias(embedding) : undefined
+    fontAlias: embedding ? embeddedFontAlias(embedding) : undefined,
+    imageAdjust: options.imageAdjust
   }
   const preparePages = () =>
     specs

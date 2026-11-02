@@ -1,0 +1,15 @@
+{
+  "adjustments": "調整",
+  "reset": "リセット",
+  "exposure": "露出",
+  "contrast": "コントラスト",
+  "brightness": "明るさ",
+  "saturation": "彩度",
+  "vibrance": "自然な彩度",
+  "temperature": "色温度",
+  "tint": "色かぶり補正",
+  "highlights": "ハイライト",
+  "shadows": "シャドウ",
+  "hue": "色相",
+  "invert": "反転"
+}

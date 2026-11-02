@@ -64,6 +64,7 @@ import type {
   TextLength,
   NodeType,
   Fill,
+  ImageAdjustments,
   StrokeCap,
   StrokeJoin,
   LayoutMode,
@@ -613,8 +614,7 @@ function convertLayoutProps(
       (nc.stackCounterAlignContent as string) === 'SPACE_BETWEEN' ? 'SPACE_BETWEEN' : 'AUTO',
     itemReverseZIndex: (nc.stackReverseZIndex ?? false) as boolean,
     strokesIncludedInLayout: (nc.strokesIncludedInLayout ?? false) as boolean,
-    layoutDirection:
-      readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.layoutDirection) ?? 'AUTO',
+    layoutDirection: readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.layoutDirection) ?? 'AUTO',
     ...(derivedLayout ? { derivedLayout } : {})
   }
 }
@@ -744,7 +744,10 @@ export function nodeChangeToProps(
     internalOnly: nc.internalOnly === true || sharedStyleType(nc.styleType) !== null,
     blendMode: (nc.blendMode as Fill['blendMode']) ?? 'PASS_THROUGH',
     booleanOperation: mapBooleanOperation(nc),
-    fills: convertFills(nc.fillPaints),
+    fills: withImageAdjustments(
+      convertFills(nc.fillPaints),
+      readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.imageAdjustments)
+    ),
     strokes: convertStrokes(
       nc.strokePaints,
       nc.strokeWeight,
@@ -1327,4 +1330,20 @@ function extractSymbolId(nc: NodeChange): string {
   const sd = nc.symbolData as { symbolID?: GUID } | undefined
   if (!sd?.symbolID) return ''
   return guidToString(sd.symbolID)
+}
+
+/**
+ * The adjustments Lawha kept for each image fill replace the ones read from Figma's paint
+ * filter, which holds only eight of them; files Figma saved keep the paint filter's.
+ */
+function withImageAdjustments(
+  fills: Fill[],
+  kept: Record<string, ImageAdjustments> | undefined
+): Fill[] {
+  if (!kept) return fills
+  return fills.map((fill, index) => {
+    const key = String(index)
+    if (fill.type !== 'IMAGE' || !Object.hasOwn(kept, key)) return fill
+    return { ...fill, adjustments: { ...kept[key] } }
+  })
 }
