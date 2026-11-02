@@ -328,9 +328,10 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     store.commitTextEdit()
     await store.loadFontsForNodes(nodeIds)
     fontManager.unblockNodes(store.graph, nodeIds)
+    // Both texts are laid out as the editor lays out an edit, measuring them in their fonts.
     for (const id of nodeIds) {
       const node = store.graph.getNode(id)
-      if (node?.type === 'TEXT') store.graph.updateNode(id, { text: node.text })
+      if (node?.type === 'TEXT') store.updateNode(id, { text: node.text })
     }
     store.clearSelection()
     store.renderer.invalidateAllPictures()
@@ -353,6 +354,7 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     return {
       image: Array.from(image),
       textsMatch: tool?.type === 'TEXT' && typed?.type === 'TEXT' && tool.text === typed.text,
+      sameHeights: tool?.derivedTextHeight === typed?.derivedTextHeight,
       toolReady: tool ? store.renderer.isNodeFontLoaded(tool) : false,
       typedReady: typed ? store.renderer.isNodeFontLoaded(typed) : false,
       unblocked: nodeIds.every((id) => !fontManager.isNodeBlocked(store.graph, id))
@@ -360,7 +362,13 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
   }, ids)
 
   const { image, ...state } = resolved
-  expect(state).toEqual({ textsMatch: true, toolReady: true, typedReady: true, unblocked: true })
+  expect(state).toEqual({
+    textsMatch: true,
+    sameHeights: true,
+    toolReady: true,
+    typedReady: true,
+    unblocked: true
+  })
   expect(Buffer.from(image)).toMatchSnapshot('interactive-font-fallback-resolved.png')
 })
 
