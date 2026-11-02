@@ -65,7 +65,8 @@ function setup({
       }),
     syncFontGeneration: noop
   }
-  const { runLayoutForNode } = createLayoutRunner(() => graph)
+  let currentGraph = graph
+  const { runLayoutForNode } = createLayoutRunner(() => currentGraph)
   let renders = 0
   /** The text each preparation was asked for. */
   const prepared: string[][] = []
@@ -77,7 +78,6 @@ function setup({
   let failing = false
   /** Whether each layout the pending text ran was the document's own. */
   const relayouts: boolean[] = []
-  let currentGraph = graph
   const pending = createPendingTextLayout({
     getGraph: () => currentGraph,
     getRenderer: () => renderer,
@@ -91,7 +91,7 @@ function setup({
       if (preparing) loaded = true
     },
     runLayoutForNode: (id) => {
-      relayouts.push(graph.isApplyingDerivedLayout)
+      relayouts.push(currentGraph.isApplyingDerivedLayout)
       runLayoutForNode(id)
     },
     requestRender: () => renders++,
@@ -112,9 +112,11 @@ function setup({
     stopPreparing: () => (preparing = false),
     loadElsewhere: () => (loaded = true),
     failNextPreparation: () => (failing = true),
+    /** Replaces the document, as opening another one does, and returns the new one. */
     replaceDocument: () => {
       pending.clear()
       currentGraph = createEditor().graph
+      return currentGraph
     },
     /** Holds preparations until the returned function lets them finish. */
     holdPreparation: () => {
@@ -216,6 +218,24 @@ test('a document replaced while its text is prepared keeps its text as it is', a
   expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
   expect(text.width).toBe(100)
   expect(renders()).toBe(0)
+})
+
+test('text of the document that replaced another is laid out once its fonts are prepared', async () => {
+  const { replaceDocument, renders } = setup()
+  const opened = replaceDocument()
+  const next = opened.createNode('TEXT', opened.getPages()[0].id, {
+    text: 'Weighted label',
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    width: 100,
+    height: 20
+  })
+  sizeAutoResizingText(opened, next.id)
+  expect(fontManager.isNodeBlocked(opened, next.id)).toBe(true)
+
+  await settle()
+  expect(fontManager.isNodeBlocked(opened, next.id)).toBe(false)
+  expect([next.width, next.height]).toEqual([234, 29])
+  expect(renders()).toBe(1)
 })
 
 test('text an edit queues again while it is prepared stays hidden until it is prepared again', async () => {
