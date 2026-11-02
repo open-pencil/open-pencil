@@ -16,6 +16,16 @@ function warnMemoryFallback(error?: unknown): void {
   memoryFallback = true
 }
 
+/** A cover is only a preview: one that cannot be read is left out, and the copy still counts. */
+async function readCoverOrNone(store: RecoveryStore, id: string): Promise<Uint8Array | null> {
+  try {
+    return await store.readCover(id)
+  } catch (error) {
+    console.warn('[Recovery] Could not read the cover:', error)
+    return null
+  }
+}
+
 function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
   let current = primary
   let queue = Promise.resolve()
@@ -38,7 +48,7 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
       for (const metadata of snapshots) {
         const snapshot = await primary.read(metadata.id)
         if (snapshot)
-          await memory.write({ ...snapshot, cover: await primary.readCover(metadata.id) })
+          await memory.write({ ...snapshot, cover: await readCoverOrNone(primary, metadata.id) })
       }
     } catch (migrationError) {
       console.warn('[Recovery] Failed to migrate IndexedDB snapshots to memory:', migrationError)
@@ -89,7 +99,8 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
   return {
     list: () => run((store) => store.list()),
     read: (id: string): Promise<RecoverySnapshot | null> => run((store) => store.read(id)),
-    readCover: (id: string) => run((store) => store.readCover(id)),
+    // A failed preview never moves the copies to memory.
+    readCover: (id: string) => serialized(() => readCoverOrNone(current, id)),
     write: (input: RecoverySnapshotInput): Promise<RecoverySnapshotMeta> =>
       run((store) => store.write(input)),
     remove: removeFromAll,

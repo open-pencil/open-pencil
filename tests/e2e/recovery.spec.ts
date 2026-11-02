@@ -82,8 +82,11 @@ test('lists the unsaved work of a window that crashed on Home', async ({ browser
   const lost = page.getByTestId('home-recovery').locator('[data-slot="document-entry"]')
   await expect(lost).toHaveCount(1)
   await expect(lost).toContainText('Kept after a crash')
-  // The cover drawn with the copy, so the card shows the work rather than a blank.
+  // The cover stored with the copy decodes to an image on the card.
   await expect(lost.locator('img')).toHaveAttribute('src', /^blob:/)
+  await expect
+    .poll(() => lost.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0)
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
   await lost.locator('[data-slot="trigger"]').click()
   await expect(page.getByText('Crashed recovery rectangle')).toBeVisible()

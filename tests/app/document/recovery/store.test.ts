@@ -26,6 +26,13 @@ describe('recovery store fallback', () => {
     globalThis.indexedDB = sharedFactory
   })
 
+  test('a cover that cannot be read leaves the store on IndexedDB', async () => {
+    globalThis.indexedDB = new BrokenFactory()
+    resetRecoveryStoreForTests()
+    expect(await getRecoveryStore().readCover('copy')).toBeNull()
+    expect(isRecoveryStoreMemoryFallback()).toBe(false)
+  })
+
   test('a restored copy is claimed in memory once IndexedDB has failed', async () => {
     globalThis.indexedDB = new BrokenFactory()
     resetRecoveryStoreForTests()
@@ -47,6 +54,7 @@ describe('recovery store fallback', () => {
 describe('recovery covers', () => {
   const sharedFactory = globalThis.indexedDB
   const cover = new Uint8Array([137, 80, 78, 71])
+  const figBytes = new Uint8Array([1, 2, 3])
 
   afterAll(() => {
     globalThis.indexedDB = sharedFactory
@@ -58,7 +66,7 @@ describe('recovery covers', () => {
   ])('a %s store keeps the cover of the last write until the copy goes', async (_, create) => {
     globalThis.indexedDB = new IDBFactory()
     const store = create()
-    const copy = { id: 'copy', sessionId: 'one', documentName: 'Draft', figBytes: cover }
+    const copy = { id: 'copy', sessionId: 'one', documentName: 'Draft', figBytes }
     await store.write({ ...copy, cover })
     expect(await store.readCover('copy')).toEqual(cover)
 
