@@ -147,7 +147,7 @@ function fixture(patches: Patches = {}): NodeChange[] {
   return changes.map((change) => ({ ...change, ...patches[change.guid?.localID ?? 0] }))
 }
 
-function nestedWidth(changes: NodeChange[], outer = OUTER, depth = 1): number {
+function nestedNode(changes: NodeChange[], outer = OUTER, depth = 1) {
   const { graph, sources } = materializeDocument(changes, [], { derivedBounds: true })
   let id = sources.get(`1:${outer}`)
   for (let level = 0; level < depth; level++) {
@@ -157,7 +157,11 @@ function nestedWidth(changes: NodeChange[], outer = OUTER, depth = 1): number {
   if (!nested) {
     throw new Error('Missing nested instance')
   }
-  return nested.width
+  return { graph, nested }
+}
+
+function nestedWidth(changes: NodeChange[], outer = OUTER, depth = 1): number {
+  return nestedNode(changes, outer, depth).nested.width
 }
 
 test('a nested instance takes its bound size from the mode its outer instance sets', () => {
@@ -251,16 +255,6 @@ function modeUnset(collection: number): Partial<NodeChange> {
   return { variableModeBySetMap: { entries: [{ variableSetID: { guid: guid(collection) } }] } }
 }
 
-function nestedNode(changes: NodeChange[]) {
-  const { graph, sources } = materializeDocument(changes, [], { derivedBounds: true })
-  const outer = sources.get(`1:${OUTER}`)
-  const nested = outer ? graph.getChildren(outer)[0] : undefined
-  if (!nested) {
-    throw new Error('Missing nested instance')
-  }
-  return { graph, nested }
-}
-
 test('an override naming a collection without a mode clears the nested component mode', () => {
   const patches = {
     [NESTED]: { ...instanceOf(WIDE_LEAF), size: { x: WIDTH_BY_MODE[WIDE], y: 10 } },
@@ -334,7 +328,9 @@ function twoLevelClaims(outerModes: Partial<NodeChange>, innerModes: Partial<Nod
 
 test('modes two owners set on one nested instance for different collections all apply', () => {
   const patches = twoLevelClaims(modes([THEME, DARK]), modes([SIZES, WIDE]))
-  expect(nestedWidth(fixture(patches), OUTER_PANEL, 2)).toBe(WIDTH_BY_MODE[WIDE])
+  const { graph, nested } = nestedNode(fixture(patches), OUTER_PANEL, 2)
+  expect(nested.width).toBe(WIDTH_BY_MODE[WIDE])
+  expect(graph.getNodeVariableModeId(nested.id, `1:${THEME}`)).toBe(`1:${DARK}`)
 })
 
 test('the outer owner mode wins where two owners set one collection on a nested instance', () => {
@@ -391,4 +387,5 @@ test('a binding to a library variable by asset reference drops the saved size', 
   const nested = [...occurrences(outer)].find(({ sourceId }) => sourceId === `1:${NESTED}`)
 
   expect(nested?.derivedSize).toBeUndefined()
+  expect(nestedWidth(fixture(patches))).toBe(WIDTH_BY_MODE[WIDE])
 })
