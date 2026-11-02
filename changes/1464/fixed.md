@@ -1,1 +1,0 @@
-- `.pen` icons inside components open as instances of icon components on an "Icons" page, so instances that change an icon's glyph, colour, or size save as `.fig`.

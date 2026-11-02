@@ -1,1 +1,0 @@
-- `@open-pencil/core/canvas` replaces `outlineStrokeNodesToVectorProps` and `hasVisibleStrokeSourceNode` with `outlineStrokeLayer` and `layersToOutline`, and the editor's `copySelectionAsSVG` returns a promise.
