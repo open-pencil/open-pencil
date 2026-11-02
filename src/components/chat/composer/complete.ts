@@ -28,10 +28,11 @@ export interface ComposerSections {
 const KIND_ICONS: Record<ChatReferenceKind, Component> = {
   node: IconFile,
   page: IconFile,
-  skill: IconBookOpen
+  skill: IconBookOpen,
+  command: IconSquareSlash
 }
 
-const SECTION_RANK: Record<ChatReferenceKind, number> = { node: 0, page: 1, skill: 2 }
+const SECTION_RANK: Record<ChatReferenceKind, number> = { node: 0, page: 1, skill: 2, command: 3 }
 
 /** What may stand before an `@` that starts a reference: nothing, a space, or an opening bracket. */
 const REFERENCE_START = /^[\s([]?$/

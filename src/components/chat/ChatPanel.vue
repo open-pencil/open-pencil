@@ -17,6 +17,7 @@ import {
   removeQueuedMessage,
   takeNextMessage
 } from '@/app/ai/chat/queue'
+import { leadingCommand, type LeadingCommand } from '@/app/ai/chat/references/command'
 import { useChatRunLocation } from '@/app/ai/chat/run-location'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
@@ -105,7 +106,10 @@ async function submitMessage(message: ChatSubmission) {
   const generation = viewGeneration
   const command = compactCommand(message)
   if (command) {
-    const compacted = await compaction.compact({ trigger: 'manual', instructions: command[1] })
+    const compacted = await compaction.compact({
+      trigger: 'manual',
+      instructions: command.rest || undefined
+    })
     if (!compacted && generation === viewGeneration) chatInput.value?.restoreDraft(message)
     if (compacted && status.value === 'ready') sendNextQueued()
     return
@@ -127,16 +131,15 @@ const contextPercent = computed(() =>
   context.ratio.value === null ? null : Math.round(Math.min(1, context.ratio.value) * 100)
 )
 
-/** `/compact`, with what to keep after it, compacts the conversation instead of sending it. */
-const COMPACT_COMMAND = /^\/compact(?:\s+([\s\S]*))?$/
-
 /**
- * The command when `message` is `/compact`: the chat summarizes a model it calls itself and
- * asks Pi to compact its own context. An ACP agent's own `/compact` goes to it as written.
+ * The command when `message` starts with `/compact`, and what to keep after it: the chat
+ * summarizes a model it calls itself and asks Pi to compact its own context. An ACP agent's
+ * own `/compact` goes to it as written.
  */
-function compactCommand(message: ChatSubmission): RegExpExecArray | null {
+function compactCommand(message: ChatSubmission): LeadingCommand | null {
   if (providerID.value.startsWith('acp:') || message.images.length > 0) return null
-  return COMPACT_COMMAND.exec(message.displayText.trim())
+  const command = leadingCommand(message.displayText)
+  return command?.name === 'compact' ? command : null
 }
 
 /** Compacts now, from the bar near the limit; a reply in progress finishes first. */

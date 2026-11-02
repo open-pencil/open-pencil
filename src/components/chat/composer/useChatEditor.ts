@@ -3,6 +3,7 @@ import {
   autocompletion,
   completionKeymap,
   completionStatus,
+  selectedCompletion,
   type Completion,
   type CompletionSource
 } from '@codemirror/autocomplete'
@@ -97,6 +98,17 @@ export function useChatEditor(
               if (completionStatus(editor.state) === 'active') return acceptCompletion(editor)
               options.onSubmit(false)
               return true
+            }
+          },
+          {
+            // Typing a completion's whole label, such as `/compact`, then a space picks it, so a
+            // command typed in full becomes the same chip as one chosen from the list.
+            key: 'Space',
+            run: (editor) => {
+              const selected = selectedCompletion(editor.state)
+              if (completionStatus(editor.state) !== 'active' || !selected) return false
+              const typed = editor.state.sliceDoc(0, editor.state.selection.main.head)
+              return typed === selected.label && acceptCompletion(editor)
             }
           },
           {

@@ -7,6 +7,7 @@ import {
   chatCommandCandidates,
   referenceCandidates
 } from '@/app/ai/chat/references/candidates'
+import { commandLink } from '@/app/ai/chat/references/command'
 import { resolveReference } from '@/app/ai/chat/references/resolve'
 
 import { skillFixture } from '#tests/helpers/chat/skills'
@@ -53,14 +54,14 @@ describe('reference candidates', () => {
     const skills = [skillFixture(), skillFixture({ name: 'auto', userInvocable: false })]
     const compact = { name: 'compact', description: 'Compact', hint: null }
     expect(chatCommandCandidates([compact], skills).map((command) => command.insert)).toEqual([
-      '/compact ',
-      '/skill:grid '
+      `${commandLink('compact')} `,
+      `${commandLink('skill:grid')} `
     ])
     expect(
       agentCommandCandidates([{ name: 'review', description: 'Review', hint: null }]).map(
         (command) => command.insert
       )
-    ).toEqual(['/review '])
+    ).toEqual([`${commandLink('review')} `])
   })
 })
 

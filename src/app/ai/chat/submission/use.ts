@@ -13,6 +13,7 @@ import {
 } from '@/app/ai/attachment/presentation/store'
 import { appendSkillContext } from '@/app/ai/chat/context'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
+import { commandsAsText } from '@/app/ai/chat/references/command'
 import { mentionedNodes } from '@/app/ai/chat/references/nodes'
 import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
 import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
@@ -212,7 +213,7 @@ export function useChatSubmission(options: SubmissionOptions) {
     options.clearFailure()
     for (const message of later) if (message.role === 'assistant') revertTurn(message.id)
     // Replies after the edited message are replaced; what it reported needs a new report.
-    const note = undone.note(trimmed, currentChat.messages.slice(0, index))
+    const note = undone.note(commandsAsText(trimmed), currentChat.messages.slice(0, index))
     const skill = await invokedSkill(trimmed)
     setVisibleMessageText(messageId, trimmed)
     // The layers the edited text mentions replace the previews the message showed.

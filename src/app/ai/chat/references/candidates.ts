@@ -3,9 +3,10 @@ import { compact } from 'es-toolkit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { AgentCommand } from '@/app/ai/agents/acp/commands'
-import { runnableSkills } from '@/app/ai/skills/invoke'
+import { runnableSkills, skillCommand } from '@/app/ai/skills/invoke'
 import type { Skill } from '@/app/ai/skills/types'
 
+import { commandLink } from './command'
 import type { ChatReference } from './link'
 
 /** Matching layers past this many are left out of `@` completions; typing more narrows them. */
@@ -90,7 +91,7 @@ function commandCandidate(command: AgentCommand): CommandCandidate {
     kind: 'agent',
     label: `/${command.name}`,
     detail: command.description,
-    insert: `/${command.name} `
+    insert: `${commandLink(command.name)} `
   }
 }
 
@@ -108,9 +109,9 @@ export function chatCommandCandidates(
     ...commands.map(commandCandidate),
     ...runnableSkills(skills).map((skill) => ({
       kind: 'skill' as const,
-      label: `/skill:${skill.name}`,
+      label: `/${skillCommand(skill.name)}`,
       detail: skill.description,
-      insert: `/skill:${skill.name} `
+      insert: `${commandLink(skillCommand(skill.name))} `
     }))
   ]
 }
