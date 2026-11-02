@@ -218,3 +218,42 @@ test('a boolean layer takes the union of a variant that sets no operation', () =
   editor.switchInstanceVariant(chip.id, 'Size', 'Large')
   expect(child().booleanOperation).toBe('UNION')
 })
+
+function withNestedDot(
+  edit: (editor: ReturnType<typeof createEditor>, dotId: string, size: string) => void
+) {
+  const editor = createEditor()
+  const { graph } = editor
+  const dot = graph.createNode('COMPONENT', editor.state.currentPageId, {
+    name: 'Dot',
+    width: 4,
+    height: 4
+  })
+  const { chip, child } = variantsOf(editor, (componentId, size) => {
+    const nested = must(graph.createInstance(dot.id, componentId, { name: 'Dot' }))
+    edit(editor, nested.id, size)
+  })
+  return { editor, chip, child }
+}
+
+test('a nested instance follows what the new variant sets on it, past its own binding', () => {
+  const tokens = { small: '', large: '', width: '' }
+  const { editor, chip, child } = withNestedDot((editing, dotId, size) => {
+    const { graph } = editing
+    const collection = graph.createCollection(`Tokens ${size}`)
+    const height = graph.createVariable('Height', 'FLOAT', collection.id, 10).id
+    if (size === 'Small') {
+      tokens.small = height
+      tokens.width = graph.createVariable('Width', 'FLOAT', collection.id, 12).id
+    } else {
+      tokens.large = height
+    }
+    editing.bindVariable(dotId, 'height', height)
+    editing.updateNodeWithUndo(dotId, { visible: size === 'Large' })
+  })
+  editor.bindVariable(child().id, 'width', tokens.width)
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  expect(child().boundVariables.height).toBe(tokens.large)
+  expect(child().boundVariables.width).toBe(tokens.width)
+  expect(child().visible).toBe(true)
+})

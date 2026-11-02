@@ -8,7 +8,7 @@ import type { SceneGraph } from '../graph'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
 import { ownsSelfFillField } from './main-component'
-import { hasInstanceOverride, setInstanceOverride } from './overrides'
+import { hasInstanceOverride, overriddenBindingField, setInstanceOverride } from './overrides'
 import {
   bindingProtection,
   cloneChildInCoordinates,
@@ -182,7 +182,11 @@ function linkCopy(
   return swapped || copy.componentId === layer.id ? undefined : layer.id
 }
 
-function copyProtection(swap: Swap, copy: SceneNode): (field: string) => boolean {
+function copyProtection(
+  swap: Swap,
+  copy: SceneNode,
+  previous: SceneNode | undefined
+): (field: string) => boolean {
   const scopes: ReadonlySet<string>[] = []
   for (const owner of swap.owners) {
     const fields = owner.instanceOverrides.descendants.get(copy.id)
@@ -190,13 +194,30 @@ function copyProtection(swap: Swap, copy: SceneNode): (field: string) => boolean
       scopes.push(new Set(fields.keys()))
     }
   }
-  const own = copy.instanceOverrides.self
-  const ownsField = (field: string) => own.has(field) || ownsSelfFillField(copy, field)
+  const ownsField = (field: string) =>
+    ownsSelfFillField(copy, field) ||
+    (previous !== undefined && divergesFromLayer(copy, previous, field))
   if (scopes.length === 0) {
-    return own.size === 0 ? NOTHING_PROTECTED : ownsField
+    return copy.instanceOverrides.self.size === 0 ? NOTHING_PROTECTED : ownsField
   }
   const protectedField = bindingProtection(scopes)
   return (field) => protectedField(field) || ownsField(field)
+}
+
+function divergesFromLayer(copy: SceneNode, layer: SceneNode, field: string): boolean {
+  const own = copy.instanceOverrides.self
+  const binding = overriddenBindingField(field)
+  if (binding !== null) {
+    return (
+      (own.has(field) || own.has('boundVariables')) &&
+      !isEqual(copy.boundVariables[binding], layer.boundVariables[binding])
+    )
+  }
+  if (field === 'boundVariables' || !own.has(field)) {
+    return false
+  }
+  const key = field as keyof SceneNode
+  return !layer.instanceOverrides.self.has(field) || !isEqual(copy[key], layer[key])
 }
 
 function followReplacedLayerFields(graph: SceneGraph, copy: SceneNode, layer: SceneNode): void {
@@ -354,10 +375,11 @@ function followLayers(swap: Swap, compParent: SceneNode, instParent: SceneNode):
 function followCopy(swap: Swap, match: MatchedCopy): void {
   const { compChild: layer, instChild: copy } = match
   const swapped = isSwappedCopy(swap, copy)
-  const replaced = sourceLayer(swap, copy) !== layer
+  const previous = sourceLayer(swap, copy)
+  const protection = copyProtection(swap, copy, previous)
   const linkedLayerId = linkCopy(swap, copy, layer, swapped)
-  syncCopy(swap.graph, match, copyProtection(swap, copy), linkedLayerId)
-  if (replaced) {
+  syncCopy(swap.graph, match, protection, linkedLayerId)
+  if (previous !== layer) {
     followReplacedLayerFields(swap.graph, copy, layer)
   }
   if (swapped || ownsSlotContent(swap.graph, copy, slotPropertyId(layer))) {
