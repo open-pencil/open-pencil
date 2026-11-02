@@ -311,9 +311,9 @@ function spacingParagraphs(node: SceneNode, start: number, end: number): [number
   return [paragraphIndexAt(node.text, start), paragraphIndexAt(node.text, end)]
 }
 
-/** What Figma reports about a spacing it rejects, or `null`. */
-export function spacingProblem(value: number): string | null {
-  return value >= 0 ? null : tooSmall(0)
+/** What Figma reports about a spacing it rejects, a finite number of 0 or more, or `null`. */
+export function spacingProblem(value: unknown): string | null {
+  return numberProblem(value) ?? ((value as number) >= 0 ? null : tooSmall(0))
 }
 
 export function getRangeParagraphSpacing(

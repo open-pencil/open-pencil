@@ -276,13 +276,11 @@ const TOP_LEVEL_FRAME_TYPES: ReadonlySet<SceneNode['type']> = new Set([
  * section. A shape directly on a page has none (Figma desktop 126).
  */
 function topLevelFrame(scene: SceneGraph, node: SceneNode): SceneNode | undefined {
-  for (let current: SceneNode | undefined = node; current?.parentId;) {
-    const parent = scene.getNode(current.parentId)
+  return scene.closest(node.id, (current) => {
+    const parent = current.parentId ? scene.getNode(current.parentId) : undefined
     const topLevel = parent?.type === 'CANVAS' || parent?.type === 'SECTION'
-    if (topLevel && TOP_LEVEL_FRAME_TYPES.has(current.type)) return current
-    current = parent
-  }
-  return undefined
+    return topLevel && TOP_LEVEL_FRAME_TYPES.has(current.type)
+  })
 }
 
 /** Every layer below a node, which a resize may place by its constraints. */

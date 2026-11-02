@@ -130,6 +130,27 @@ describe('text setters check their values as Figma does', () => {
     expect([text.fontSize, text.textDecoration, text.textCase]).toEqual([12, 'NONE', 'ORIGINAL'])
   })
 
+  test('spacings take finite numbers of 0 or more', async () => {
+    const api = createAPI()
+    await api.loadFontAsync({ family: 'Inter', style: 'Regular' })
+    const text = api.createText()
+    text.characters = 'ab'
+    const message = (property: string, problem: string) =>
+      `in set_${property}: Property "${property}" failed validation: ${problem}`
+    expect(() => (text.paragraphSpacing = 'a' as never)).toThrow(
+      message('paragraphSpacing', 'Expected number, received string')
+    )
+    expect(() => (text.paragraphSpacing = Number.NaN)).toThrow(
+      message('paragraphSpacing', 'Expected number, received NaN')
+    )
+    expect(() => (text.listSpacing = Infinity)).toThrow(
+      message('listSpacing', 'Expected number, received Infinity')
+    )
+    expect(() => text.setRangeParagraphSpacing(0, 1, 'a' as never)).toThrow(
+      'in setRangeParagraphSpacing: Property "value" failed validation: Expected number, received string'
+    )
+  })
+
   test('font names and lengths take no keys Figma does not know', async () => {
     const api = createAPI()
     await api.loadFontAsync({ family: 'Inter', style: 'Regular' })

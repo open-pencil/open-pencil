@@ -172,6 +172,14 @@ describe('using styles', () => {
     ])
     await rectangle.setStrokeStyleIdAsync(figma.createPaintStyle().id)
     expect([rectangle.strokes, rectangle.strokeWeight]).toEqual([[], 3])
+    // Without strokes, the layer's kept weight and alignment go to the new ones.
+    rectangle.strokeAlign = 'OUTSIDE'
+    await rectangle.setStrokeStyleIdAsync(gradient.id)
+    expect([rectangle.strokes.length, rectangle.strokeWeight, rectangle.strokeAlign]).toEqual([
+      1,
+      3,
+      'OUTSIDE'
+    ])
   })
 
   test('a paint bound to a variable keeps it in the style and in the layers that use it', async () => {

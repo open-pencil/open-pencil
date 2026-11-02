@@ -120,12 +120,12 @@ function restyledRuns(
   node: SceneNode,
   field: 'textStyleId' | 'fillStyleId',
   id: string,
-  patch: CharacterStyleOverride
+  patch: () => CharacterStyleOverride
 ): SceneNode['styleRuns'] | null {
   const ranges = node.styleRuns
     .filter((run) => run.style[field] === id)
     .map((run) => [run.start, run.start + run.length] as const)
-  return ranges.length > 0 ? styleRunsWithPatchOver(node, ranges, patch) : null
+  return ranges.length > 0 ? styleRunsWithPatchOver(node, ranges, patch()) : null
 }
 
 /**
@@ -145,6 +145,13 @@ function updateUsers(
   const id = style.source.id
   if (!id || !style.sharedStyleType) return
   const kinds = KINDS_OF_TYPE[style.sharedStyleType]
+  // A style's range patch is the same for every text, so it is built once, when one needs it.
+  const rangePatches = new Map<'text' | 'fill', CharacterStyleOverride>()
+  const lazyRangePatch = (kind: 'text' | 'fill') => () => {
+    const found = rangePatches.get(kind) ?? rangePatch(kind)
+    rangePatches.set(kind, found)
+    return found
+  }
   for (const node of graph.getAllNodes()) {
     if (node.sharedStyleType !== null) continue
     const own = kinds.filter((kind) => node[sharedStyleRefKey(kind)] === id)
@@ -154,7 +161,7 @@ function updateUsers(
       // A text or fill style reaches characters through one kind of run reference.
       const runKind = kinds.find((kind) => kind === 'text' || kind === 'fill')
       const field = runKind === 'text' ? 'textStyleId' : 'fillStyleId'
-      const runs = runKind && restyledRuns(node, field, id, rangePatch(runKind))
+      const runs = runKind && restyledRuns(node, field, id, lazyRangePatch(runKind))
       if (runs) changes.styleRuns = runs
     }
     if (Object.keys(changes).length === 0) continue

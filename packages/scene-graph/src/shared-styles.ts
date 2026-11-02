@@ -3,6 +3,7 @@ import { compact, isEqual, omit, pick } from 'es-toolkit'
 import { BLACK } from './constants'
 import { copyEffects, copyFills, copyLayoutGrids } from './copy'
 import type { SceneGraph } from './graph'
+import { newStrokeGeometry } from './node-defaults'
 import { randomHex } from './random'
 import { styleRunReferences } from './text/references'
 import type {
@@ -187,13 +188,13 @@ export function internalCanvas(graph: SceneGraph): SceneNode {
  * (Figma desktop 126).
  */
 function strokesFromStyle(target: SceneNode, style: SceneNode): SceneNode['strokes'] {
+  // Without strokes, the layer keeps the weight and alignment a new stroke takes.
   const fallback: Stroke = target.strokes[0] ?? {
     type: 'SOLID',
     color: BLACK,
-    weight: 1,
     opacity: 1,
     visible: true,
-    align: 'CENTER'
+    ...newStrokeGeometry(target)
   }
   return copyFills(style.fills).map((paint, index) => ({
     ...paint,

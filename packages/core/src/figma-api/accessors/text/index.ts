@@ -30,7 +30,6 @@ import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style
 
 import { installTextDecorationAccessors } from './decoration'
 import { hyperlinkTarget } from './hyperlink'
-import { invalid } from './messages'
 import { fontNameStyle } from './ranges'
 import { DECORATIONS, enumValue, fontSizeValue, textCaseValue } from './values'
 
@@ -188,15 +187,9 @@ export function installTextNodeProxyAccessors(
         return raw(this, internals).leadingTrim
       },
       set(this: ProxyThis, value: unknown) {
-        if (!LEADING_TRIMS.has(value as LeadingTrim)) {
-          throw invalid(
-            'set_leadingTrim',
-            'Invalid option: expected one of "CAP_HEIGHT"|"NONE"',
-            'leadingTrim'
-          )
-        }
+        const leadingTrim = enumValue('set_leadingTrim', value, LEADING_TRIMS, 'leadingTrim')
         assertTextFontsLoaded('set_leadingTrim', raw(this, internals))
-        updateNode(this, internals, { leadingTrim: value as LeadingTrim })
+        updateNode(this, internals, { leadingTrim })
       }
     },
     // Figma reads the features characters set; assigning to it does nothing, as in Figma.
