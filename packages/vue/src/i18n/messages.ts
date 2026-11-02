@@ -12,6 +12,7 @@ import { commentMessageDefaults, commentMessages } from '#vue/i18n/messages/comm
 import { commonMessageDefaults, commonMessages } from '#vue/i18n/messages/common'
 import { credentialsMessageDefaults, credentialsMessages } from '#vue/i18n/messages/credentials'
 import { designCheckMessageDefaults, designCheckMessages } from '#vue/i18n/messages/design-check'
+import { designSystemMessageDefaults, designSystemMessages } from '#vue/i18n/messages/design-system'
 import { diagnosticsMessageDefaults, diagnosticsMessages } from '#vue/i18n/messages/diagnostics'
 import { editorMessageDefaults, editorMessages } from '#vue/i18n/messages/editor'
 import { figJamMessageDefaults, figJamMessages } from '#vue/i18n/messages/figjam'
@@ -47,6 +48,7 @@ export {
   commonMessages,
   credentialsMessages,
   designCheckMessages,
+  designSystemMessages,
   diagnosticsMessages,
   editorMessages,
   figJamMessages,
@@ -82,6 +84,7 @@ export const messageDefaults = {
   common: commonMessageDefaults,
   credentials: credentialsMessageDefaults,
   designCheck: designCheckMessageDefaults,
+  designSystem: designSystemMessageDefaults,
   diagnostics: diagnosticsMessageDefaults,
   editor: editorMessageDefaults,
   figjam: figJamMessageDefaults,

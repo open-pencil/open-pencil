@@ -115,6 +115,7 @@ import {
   resizeForPlatforms,
   resizeForScreens
 } from '#core/tools/mockup'
+import { buildDesignSystemTool } from '#core/tools/design-system'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 import {
   addInteraction,
@@ -139,6 +140,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   listPrintProducts,
   createPrintTemplate,
   convertToDieline,
+  // Design system
+  buildDesignSystemTool,
   // Prototype
   getPrototype,
   setInteractions,

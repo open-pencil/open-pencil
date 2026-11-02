@@ -24,6 +24,7 @@ const LOCALE_FILE_NAMES: Record<string, string> = {
   cloud: 'cloud/editor',
   cloudPortal: 'cloud/portal',
   designCheck: 'design-check',
+  designSystem: 'design-system',
   variables: 'variables/panel',
   variableTypes: 'variables/types'
 }

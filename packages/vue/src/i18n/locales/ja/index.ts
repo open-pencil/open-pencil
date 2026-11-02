@@ -11,6 +11,7 @@ import comments from './comments.json'
 import common from './common.json'
 import credentials from './credentials.json'
 import designCheck from './design-check.json'
+import designSystem from './design-system.json'
 import diagnostics from './diagnostics.json'
 import editor from './editor.json'
 import figjam from './figjam.json'
@@ -45,6 +46,7 @@ export default {
   common,
   credentials,
   designCheck,
+  designSystem,
   diagnostics,
   editor,
   figjam,

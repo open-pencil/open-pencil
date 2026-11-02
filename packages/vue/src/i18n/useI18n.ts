@@ -14,6 +14,7 @@ import {
   commonMessages,
   credentialsMessages,
   designCheckMessages,
+  designSystemMessages,
   diagnosticsMessages,
   editorMessages,
   figJamMessages,
@@ -62,6 +63,7 @@ export const useMenuMessages = () => useI18nNamespace(menuMessages)
 export const usePageMessages = () => useI18nNamespace(pageMessages)
 export const usePanelMessages = () => useI18nNamespace(panelMessages)
 export const useRecoveryMessages = () => useI18nNamespace(recoveryMessages)
+export const useDesignSystemMessages = () => useI18nNamespace(designSystemMessages)
 export const usePrintMessages = () => useI18nNamespace(printMessages)
 export const usePrototypeMessages = () => useI18nNamespace(prototypeMessages)
 export const useRenameMessages = () => useI18nNamespace(renameMessages)

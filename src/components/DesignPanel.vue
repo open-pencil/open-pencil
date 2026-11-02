@@ -32,6 +32,7 @@ import SlotAuthoringSection from './properties/component-properties/slot/SlotAut
 import { usePropertyBinding } from './properties/component-properties/usePropertyBinding'
 import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
+import DesignSystemSection from './properties/DesignSystemSection.vue'
 import DocumentSection from './properties/DocumentSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
@@ -257,6 +258,7 @@ const { panels } = useI18n()
         :node-id="node.id"
       />
       <PrototypeSection :node-id="node.id" />
+      <DesignSystemSection scope="selection" />
       <ExportSection />
     </div>
   </RetainedPanel>
@@ -271,6 +273,7 @@ const { panels } = useI18n()
     <StatusesSection />
     <DocumentSection />
     <PrototypeSection />
+    <DesignSystemSection scope="page" />
     <ExportSection />
   </div>
 </template>
