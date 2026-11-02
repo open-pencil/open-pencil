@@ -89,7 +89,7 @@
   "externallyManaged": "مُدار خارجيًا",
   "starting": "جارٍ التشغيل…",
   "statusIdle": "غير مهيّأ",
-  "statusStarting": "قيد التشغيل",
+  "statusStarting": "بدء التشغيل",
   "statusRunning": "يعمل",
   "statusStopped": "متوقف",
   "statusError": "خطأ"
