@@ -178,4 +178,26 @@ describe('Figma’s validation messages', () => {
         '  Invalid input: expected "NONE"'
     )
   })
+
+  test('an unknown key inherited by the value is named', () => {
+    const value: object = Object.create({ inherited: 1 })
+    expect(refusal(v.strictObject({}), value)).toBe('Unrecognized key: "inherited"')
+  })
+
+  test('a value that throws on a second read reports what the first read found', () => {
+    const choice = v.union([v.strictObject({ axis: v.picklist(['X', 'Y']) }), v.literal('NONE')])
+    let reads = 0
+    const value = {
+      get axis() {
+        reads += 1
+        if (reads > 1) throw new Error('second read')
+        return 'Z'
+      }
+    }
+    expect(refusal(choice, value)).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Invalid option: expected one of "X"|"Y" at .axis\n' +
+        '  Invalid input: expected "NONE"'
+    )
+  })
 })
