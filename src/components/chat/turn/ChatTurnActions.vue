@@ -44,7 +44,7 @@ const partlyUndone = computed(() => undone > 0 && undone < edits)
   >
     <span
       v-if="stopped"
-      class="inline-flex items-center gap-1 px-2 text-[11px] text-muted"
+      class="inline-flex items-center gap-1 px-2 text-2xs text-muted"
       data-slot="chat-turn-stopped"
     >
       <icon-lucide-circle-stop class="size-3" aria-hidden="true" />
@@ -53,7 +53,7 @@ const partlyUndone = computed(() => undone > 0 && undone < edits)
     <!-- What is undone shows whether or not Redo can still bring it back. -->
     <span
       v-if="partlyUndone"
-      class="inline-flex items-center gap-1 px-2 text-[11px] text-muted"
+      class="inline-flex items-center gap-1 px-2 text-2xs text-muted"
       data-slot="chat-turn-undone"
     >
       <icon-lucide-undo-2 class="size-3" aria-hidden="true" />
@@ -61,7 +61,7 @@ const partlyUndone = computed(() => undone > 0 && undone < edits)
     </span>
     <span
       v-else-if="reverted"
-      class="inline-flex items-center gap-1 px-2 text-[11px] text-muted"
+      class="inline-flex items-center gap-1 px-2 text-2xs text-muted"
       data-slot="chat-turn-reverted"
     >
       <icon-lucide-undo-2 class="size-3" aria-hidden="true" />

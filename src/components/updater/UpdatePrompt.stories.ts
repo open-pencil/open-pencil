@@ -45,7 +45,7 @@ const meta = {
     setup: () => ({ args }),
     // The size the Software Update window opens at.
     template:
-      '<div class="h-[520px] w-[560px] overflow-hidden rounded-lg border border-border"><UpdatePrompt v-bind="args" /></div>'
+      '<div class="h-130 w-140 overflow-hidden rounded-lg border border-border"><UpdatePrompt v-bind="args" /></div>'
   })
 } satisfies Meta<Args>
 

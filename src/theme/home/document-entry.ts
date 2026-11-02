@@ -15,8 +15,8 @@ export default {
     title: 'flex min-w-0 items-center gap-1.5',
     name: 'block min-w-0 truncate text-xs font-medium',
     status: 'flex shrink-0 items-center gap-1 text-muted',
-    metadata: 'mt-0.5 block truncate text-[10px] text-muted',
-    trailingMetadata: 'hidden shrink-0 text-[10px] text-muted sm:inline',
+    metadata: 'mt-0.5 block truncate text-3xs text-muted',
+    trailingMetadata: 'hidden shrink-0 text-3xs text-muted sm:inline',
     actions: 'flex shrink-0 items-center gap-1',
     // Over an icon button: shown on hover, focus, and while open; always on touch screens.
     menuTrigger:

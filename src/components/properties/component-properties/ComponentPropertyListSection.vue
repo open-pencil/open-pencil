@@ -176,7 +176,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
           v-for="conflict in conflicts"
           :key="conflict.label"
           role="alert"
-          class="flex items-start gap-1.5 rounded bg-warning/10 px-2 py-1.5 text-[11px] leading-4 text-warning"
+          class="flex items-start gap-1.5 rounded bg-warning/10 px-2 py-1.5 text-2xs leading-4 text-warning"
         >
           <icon-lucide-triangle-alert class="mt-0.5 size-3 shrink-0" aria-hidden="true" />
           <span class="min-w-0 flex-1">
@@ -262,7 +262,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
         </div>
 
         <div v-if="exposed.length" class="flex flex-col gap-0.5">
-          <span class="text-[11px] text-muted">{{ panels.nestedInstances }}</span>
+          <span class="text-2xs text-muted">{{ panels.nestedInstances }}</span>
           <div class="-mx-1.5 flex flex-col">
             <div
               v-for="node in exposed"

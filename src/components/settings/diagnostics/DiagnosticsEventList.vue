@@ -75,7 +75,7 @@ const categoryOptions = computed(() => [
     <SettingsGroup v-if="visible.length">
       <CollapsibleRoot v-for="event in visible" :key="event.id" data-slot="diagnostics-event">
         <CollapsibleTrigger
-          class="flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-[11px] hover:bg-hover"
+          class="flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-2xs hover:bg-hover"
         >
           <span class="flex min-w-0 items-center gap-2">
             <icon-lucide-circle-alert
@@ -89,7 +89,7 @@ const categoryOptions = computed(() => [
             <icon-lucide-info v-else class="size-3.5 shrink-0 text-muted" />
             <span class="min-w-0">
               <span class="block truncate text-surface">{{ event.label }}</span>
-              <span v-if="event.detail" class="block truncate text-[11px] text-muted">{{
+              <span v-if="event.detail" class="block truncate text-2xs text-muted">{{
                 event.detail
               }}</span>
             </span>
@@ -97,7 +97,7 @@ const categoryOptions = computed(() => [
           <span class="shrink-0 text-muted">{{ dates.format(event.timestamp, 'clock') }}</span>
         </CollapsibleTrigger>
         <CollapsibleContent :class="collapsibleContentMotion">
-          <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-[11px] text-muted">
+          <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-2xs text-muted">
             <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
               <template v-for="[name, value] in event.fields" :key="name">
                 <dt>{{ name }}</dt>
@@ -112,8 +112,8 @@ const categoryOptions = computed(() => [
         </CollapsibleContent>
       </CollapsibleRoot>
     </SettingsGroup>
-    <p v-else class="px-1 text-[11px] text-muted">{{ messages.noMatchingEvents }}</p>
-    <div v-if="hasMore" class="flex items-center justify-between text-[11px] text-muted">
+    <p v-else class="px-1 text-2xs text-muted">{{ messages.noMatchingEvents }}</p>
+    <div v-if="hasMore" class="flex items-center justify-between text-2xs text-muted">
       <span>{{ messages.showingEvents({ shown: visible.length, total }) }}</span>
       <AppButton size="xs" color="neutral" variant="ghost" @click="showMore">{{
         messages.showMore

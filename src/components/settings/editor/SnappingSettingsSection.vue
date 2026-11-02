@@ -76,6 +76,6 @@ const snapToPixelGrid = computed({
       </SettingsRow>
     </SettingsGroup>
 
-    <p class="text-[11px] text-muted">{{ settings.temporaryDisableSnappingHint }}</p>
+    <p class="text-2xs text-muted">{{ settings.temporaryDisableSnappingHint }}</p>
   </SettingsSection>
 </template>

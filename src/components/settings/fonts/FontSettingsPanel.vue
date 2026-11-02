@@ -150,7 +150,7 @@ onMounted(() => {
         </SettingsGroup>
       </SettingsSection>
 
-      <p v-if="status" role="status" class="text-[11px] leading-relaxed text-muted">
+      <p v-if="status" role="status" class="text-2xs leading-relaxed text-muted">
         {{ status }}
       </p>
     </div>

@@ -120,7 +120,7 @@ async function saveDiagnostics() {
     </SettingsGroup>
     <DiagnosticsEventList :refresh-stats="refreshDiagnosticsStats" />
     <!-- On a narrow page the buttons wrap below the count rather than squeezing it. -->
-    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-muted">
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-2xs text-muted">
       <span class="whitespace-nowrap">{{
         diagnosticMessages.eventCount({
           count: diagnosticsCount,

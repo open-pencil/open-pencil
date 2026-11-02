@@ -160,7 +160,7 @@ const selectedProfileName = computed(
             height="40"
             class="size-10 shrink-0 rounded-md border border-border object-cover"
           />
-          <span class="min-w-0 flex-1 truncate text-[10px] text-surface">
+          <span class="min-w-0 flex-1 truncate text-3xs text-surface">
             {{ image.file.name }}
           </span>
           <IconButton
@@ -203,7 +203,7 @@ const selectedProfileName = computed(
     <template #model>
       <div class="@container flex min-w-0 items-center">
         <template v-if="isAgentProvider">
-          <div class="flex min-w-0 items-center gap-1 px-1.5 text-[10px] text-muted">
+          <div class="flex min-w-0 items-center gap-1 px-1.5 text-3xs text-muted">
             <icon-lucide-bot class="size-3 shrink-0" />
             <span class="truncate">{{ agentName }}</span>
           </div>
