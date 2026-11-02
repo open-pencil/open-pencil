@@ -1,11 +1,12 @@
 import { compact } from 'es-toolkit'
 
-import { lineStrokeEnds } from '../arrow-caps'
+import { arrowCapOverflow, isArrowCap, lineStrokeEnds } from '../arrow-caps'
 import { getWorldMatrix } from '../coordinate'
 import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
 import type { Vector } from '../primitives'
 import type { Fill, SceneNode, Stroke } from '../types'
+import { hitsArrowHeads } from './heads'
 import { containsByWinding, distanceToLines, distanceToSegment } from './point'
 import { shapeOutline, type OutlineArea, type ShapeOutline } from './shapes'
 
@@ -54,7 +55,9 @@ export function strokeReach(node: SceneNode): number {
     const side = node.type === 'LINE' || stroke.align === 'OUTSIDE'
     reach = Math.max(reach, side ? weight : weight / 2)
   }
-  return reach
+  // Arrow heads reach past the stroke.
+  const hitStrokes = node.strokes.filter(isHitPaint)
+  return Math.max(reach, arrowCapOverflow(hitStrokes, node.strokeCap, node.vectorNetwork))
 }
 
 function localPoint(graph: SceneGraph, node: SceneNode, px: number, py: number): Vector | null {
@@ -321,7 +324,20 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
     const weight = strokeWeightOf(node, stroke)
     if (!(weight > 0)) return false
     const { start, end } = lineStrokeEnds(node.width, node.height, weight, cap)
-    return reaches(measureLine([start, end], [true, true], probe.local), weight / 2)
+    if (reaches(measureLine([start, end], [true, true], probe.local), weight / 2)) return true
+    if (!isArrowCap(cap)) return false
+    const still = { x: 0, y: 0 }
+    const shaft = {
+      vertices: [start, end],
+      segments: [{ start: 0, end: 1, tangentStart: still, tangentEnd: still }],
+      regions: []
+    }
+    return hitsArrowHeads(shaft, cap, weight, probe.local, pad)
+  }
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (network && probe.local) {
+    const weight = strokeWeightOf(node, stroke)
+    if (weight > 0 && hitsArrowHeads(network, cap, weight, probe.local, pad)) return true
   }
   return probe.lines.some((line, index) => {
     const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
