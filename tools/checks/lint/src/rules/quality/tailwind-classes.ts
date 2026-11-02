@@ -153,71 +153,122 @@ function isClassHelperCall(node: ESTree.CallExpression): boolean {
   return node.callee.type === 'Identifier' && CLASS_HELPERS.has(node.callee.name)
 }
 
+/** Why a class is a problem for a rule, or null; `theme` builds the file's classes. */
+type ClassCheck = (theme: Theme, className: string, file: string) => string | null
+
+/**
+ * A rule over every class Tailwind reads: Vue class attributes and bindings, `tv`, `twMerge` and
+ * `twJoin` calls, and theme modules under `src/theme/`.
+ */
+function defineClassRule(description: string, problemFor: ClassCheck) {
+  return defineRule({
+    meta: { type: 'problem', docs: { description } },
+    create(context) {
+      const file = normalizedFilename(context)
+      const theme = themeFor(file)
+      if (!theme) return {}
+      const themeModule = file.startsWith('src/theme/') || file.includes('/src/theme/')
+
+      const check = (node: ESTree.Node, text: string) => {
+        for (const className of classNames(text)) {
+          const problem = problemFor(theme, className, file)
+          if (problem) context.report({ node, message: `Tailwind class: ${problem}.` })
+        }
+      }
+
+      function checkStrings(node: ESTree.Node) {
+        if (!isClassString(node)) return
+        if (node.type === 'Literal' && typeof node.value === 'string') check(node, node.value)
+        else if (node.type === 'TemplateLiteral')
+          for (const quasi of node.quasis) check(node, quasi.value.cooked ?? quasi.value.raw)
+      }
+
+      let helperDepth = 0
+      return {
+        Program(node) {
+          if (!isVueSourceFile(file)) return
+          const template = vueTemplateAst(context.sourceCode.getText(), file)
+          if (!template) return
+          walkVueTemplateAst(template, (templateNode) => {
+            if (templateNode.type !== VUE_ELEMENT_NODE) return
+            for (const prop of templateNode.props) {
+              if (prop.type !== VUE_DIRECTIVE_NODE) {
+                if (prop.name === 'class' && prop.value) check(node, prop.value.content)
+                continue
+              }
+              const arg = prop.arg?.type === 4 ? prop.arg.content : null
+              const expression = prop.exp?.type === 4 ? prop.exp.content : null
+              if (prop.name === 'bind' && arg === 'class' && expression)
+                for (const text of boundClassStrings(expression)) check(node, text)
+            }
+          })
+        },
+        CallExpression(node) {
+          if (isClassHelperCall(node)) helperDepth++
+        },
+        'CallExpression:exit'(node: ESTree.CallExpression) {
+          if (isClassHelperCall(node)) helperDepth--
+        },
+        Literal(node) {
+          if (themeModule || helperDepth > 0) checkStrings(node)
+        },
+        TemplateLiteral(node) {
+          if (themeModule || helperDepth > 0) checkStrings(node)
+        }
+      }
+    }
+  })
+}
+
 /**
  * Require every class Tailwind reads to be one it can build. It drops a class it does not know
- * without a warning, so a typo or a color with no token leaves the element unstyled. Classes are
- * read from Vue class attributes and bindings, `tv`, `twMerge` and `twJoin` calls, and theme
- * modules under `src/theme/`.
+ * without a warning, so a typo or a color with no token leaves the element unstyled.
  */
-export const noUnknownTailwindClassesRule = defineRule({
-  meta: {
-    type: 'problem',
-    docs: {
-      description: 'Require Tailwind classes to be ones the app theme can build.'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    const theme = themeFor(file)
-    if (!theme) return {}
-    const themeModule = file.startsWith('src/theme/') || file.includes('/src/theme/')
+export const noUnknownTailwindClassesRule = defineClassRule(
+  'Require Tailwind classes to be ones the app theme can build.',
+  (theme, className) => classProblem(theme, className)
+)
 
-    const check = (node: ESTree.Node, text: string) => {
-      for (const className of classNames(text)) {
-        const problem = classProblem(theme, className)
-        if (problem) context.report({ node, message: `Tailwind class: ${problem}.` })
-      }
-    }
+/** Sources sized with the interface: the app and the SDK's primitives. */
+const INTERFACE_SOURCES = ['src/', 'packages/vue/src/']
+const PX_LENGTH = /(?:^|[\s(,])-?(?:\d*\.)?\d+px\b/i
 
-    function checkStrings(node: ESTree.Node) {
-      if (!isClassString(node)) return
-      if (node.type === 'Literal' && typeof node.value === 'string') check(node, node.value)
-      else if (node.type === 'TemplateLiteral')
-        for (const quasi of node.quasis) check(node, quasi.value.cooked ?? quasi.value.raw)
-    }
-
-    let helperDepth = 0
-    return {
-      Program(node) {
-        if (!isVueSourceFile(file)) return
-        const template = vueTemplateAst(context.sourceCode.getText(), file)
-        if (!template) return
-        walkVueTemplateAst(template, (templateNode) => {
-          if (templateNode.type !== VUE_ELEMENT_NODE) return
-          for (const prop of templateNode.props) {
-            if (prop.type !== VUE_DIRECTIVE_NODE) {
-              if (prop.name === 'class' && prop.value) check(node, prop.value.content)
-              continue
-            }
-            const arg = prop.arg?.type === 4 ? prop.arg.content : null
-            const expression = prop.exp?.type === 4 ? prop.exp.content : null
-            if (prop.name === 'bind' && arg === 'class' && expression)
-              for (const text of boundClassStrings(expression)) check(node, text)
-          }
-        })
-      },
-      CallExpression(node) {
-        if (isClassHelperCall(node)) helperDepth++
-      },
-      'CallExpression:exit'(node: ESTree.CallExpression) {
-        if (isClassHelperCall(node)) helperDepth--
-      },
-      Literal(node) {
-        if (themeModule || helperDepth > 0) checkStrings(node)
-      },
-      TemplateLiteral(node) {
-        if (themeModule || helperDepth > 0) checkStrings(node)
-      }
-    }
+/**
+ * The pixel length in a class's arbitrary value, such as `text-[11px]` or `grid-cols-[24px_1fr]`.
+ * Shadows keep pixel offsets: they are decoration, not layout. `content` values are text.
+ */
+function pxValue(theme: Theme, className: string): string | null {
+  for (const candidate of theme.system.parseCandidate(className)) {
+    const value = arbitraryValue(candidate)
+    if (value !== null && PX_LENGTH.test(value)) return value
   }
-})
+  return null
+}
+
+type Candidate = ReturnType<DesignSystem['parseCandidate']>[number]
+
+/** Whether a utility or property takes values that are not sizes: shadows and text content. */
+function exempt(name: string): boolean {
+  return name.endsWith('shadow') || name === 'content'
+}
+
+/** A class's arbitrary size value, `[width:10px]` or `w-[10px]`. */
+function arbitraryValue(candidate: Candidate): string | null {
+  if (candidate.kind === 'arbitrary') return exempt(candidate.property) ? null : candidate.value
+  if (candidate.kind !== 'functional' || candidate.value?.kind !== 'arbitrary') return null
+  return exempt(candidate.root) ? null : candidate.value.value
+}
+
+/**
+ * Require interface sizes in rem, so the interface follows the root font size: Tailwind's scale,
+ * the theme's text sizes, or a rem arbitrary value.
+ */
+export const noPxTailwindValuesRule = defineClassRule(
+  'Require Tailwind sizes in the interface to be in rem.',
+  (theme, className, file) => {
+    if (!INTERFACE_SOURCES.some((root) => file.startsWith(root) || file.includes(`/${root}`)))
+      return null
+    if (pxValue(theme, className) === null) return null
+    return `size \`${className}\` in rem so it follows the root font size: use the spacing scale (\`h-6.5\`), a theme size (\`text-2xs\`, \`rounded-md\`), or a rem value`
+  }
+)

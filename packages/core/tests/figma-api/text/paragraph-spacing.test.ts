@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { registerTestFont } from '#core-tests/helpers/figma-api'
 
 beforeAll(() => registerTestFont())
 
@@ -67,7 +67,7 @@ describe('paragraph spacing ranges', () => {
   test('reject what Figma rejects, with its messages', () => {
     const { text } = spacedText()
     expect(() => text.setRangeParagraphSpacing(0, 1, -3)).toThrow(
-      'in setRangeParagraphSpacing: Property "value" failed validation: Number must be greater than or equal to 0'
+      'in setRangeParagraphSpacing: Property "value" failed validation: Too small: expected number to be >=0'
     )
     expect(() => text.setRangeParagraphIndent(0, 1, -3)).toThrow(
       'in setRangeParagraphIndent: Property "value" failed validation'

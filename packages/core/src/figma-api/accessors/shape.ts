@@ -1,6 +1,10 @@
 import type { ArcData, SceneNode } from '@open-pencil/scene-graph'
+import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
 
 import {
+  graph,
+  hostFitOptions,
+  nodeId,
   raw,
   updateNode,
   type NodeProxyInternals,
@@ -10,6 +14,10 @@ import { invalid, numberProblem, received } from '#core/figma-api/accessors/text
 
 /** Figma caps a polygon or star at this many points, past which it keeps the cap. */
 const MAX_POINT_COUNT = 60
+
+type BooleanOperation = NonNullable<SceneNode['booleanOperation']>
+
+const BOOLEAN_OPERATIONS = new Set<BooleanOperation>(['UNION', 'INTERSECT', 'SUBTRACT', 'EXCLUDE'])
 
 const ARC_FIELDS = ['startingAngle', 'endingAngle', 'innerRadius'] as const
 
@@ -59,9 +67,9 @@ function parseArcData(value: unknown): ArcData {
 const WHOLE_ELLIPSE: ArcData = { startingAngle: 0, endingAngle: 2 * Math.PI, innerRadius: 0 }
 
 /**
- * The members of Figma's `PolygonNode`, `StarNode`, and `EllipseNode` that shape them: a point
- * count, a star's inner radius, and an ellipse's arc. Installed on the proxies of those nodes
- * alone, as Figma has them on no other node.
+ * The members of Figma's `PolygonNode`, `StarNode`, `EllipseNode`, and `BooleanOperationNode`
+ * that shape them: a point count, a star's inner radius, an ellipse's arc, and a boolean's
+ * operation. Installed on the proxies of those nodes alone, as Figma has them on no other node.
  */
 export function installShapeNodeProxyAccessors(
   target: object,
@@ -85,6 +93,29 @@ export function installShapeNodeProxyAccessors(
       },
       set(this: ProxyThis, value: number) {
         updateNode(this, internals, { starInnerRadius: parseInnerRadius(value) })
+      }
+    })
+  }
+  if (type === 'BOOLEAN_OPERATION') {
+    Object.defineProperty(target, 'booleanOperation', {
+      get(this: ProxyThis): BooleanOperation {
+        return raw(this, internals).booleanOperation ?? 'UNION'
+      },
+      set(this: ProxyThis, value: unknown) {
+        if (!BOOLEAN_OPERATIONS.has(value as BooleanOperation)) {
+          throw invalid(
+            'set_booleanOperation',
+            'Invalid option: expected one of "UNION"|"INTERSECT"|"SUBTRACT"|"EXCLUDE"',
+            'booleanOperation'
+          )
+        }
+        updateNode(this, internals, { booleanOperation: value as BooleanOperation })
+        // The result's bounds change with the operation, and the groups around it follow.
+        fitEnclosingGroups(
+          graph(this, internals),
+          [nodeId(this, internals)],
+          hostFitOptions(this, internals)
+        )
       }
     })
   }

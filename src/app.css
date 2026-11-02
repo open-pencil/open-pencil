@@ -15,7 +15,7 @@ body,
 
 body {
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--color-surface);
   background: var(--color-canvas);
   user-select: none;

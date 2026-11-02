@@ -7,7 +7,7 @@ export default {
       'min-w-0 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50',
     preview:
       'flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-border bg-panel-field transition-colors group-hover:border-panel-focus',
-    image: 'size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]',
+    image: 'size-full object-contain transition-transform duration-200 group-hover:scale-[1.015]',
     fallback: 'size-8 text-muted/40',
     icon: 'size-4 shrink-0 text-primary',
     kind: 'size-3.5 shrink-0',
@@ -15,8 +15,8 @@ export default {
     title: 'flex min-w-0 items-center gap-1.5',
     name: 'block min-w-0 truncate text-xs font-medium',
     status: 'flex shrink-0 items-center gap-1 text-muted',
-    metadata: 'mt-0.5 block truncate text-[10px] text-muted',
-    trailingMetadata: 'hidden shrink-0 text-[10px] text-muted sm:inline',
+    metadata: 'mt-0.5 block truncate text-3xs text-muted',
+    trailingMetadata: 'hidden shrink-0 text-3xs text-muted sm:inline',
     actions: 'flex shrink-0 items-center gap-1',
     // Over an icon button: shown on hover, focus, and while open; always on touch screens.
     menuTrigger:

@@ -1,6 +1,6 @@
 import type { HyperlinkTarget, NodeType, SceneGraph } from '@open-pencil/scene-graph'
 
-import { invalid, received } from './messages'
+import { invalid, invalidOption, noneMatched, received } from './messages'
 
 const HYPERLINK_TYPES = new Set(['URL', 'NODE'])
 
@@ -23,26 +23,31 @@ const LINK_TARGETS = new Set<NodeType>([
 
 /**
  * A link Figma takes: a URL it supports or a layer it can show, or `null` to remove one. An
- * empty URL removes the link, as in Figma.
+ * empty URL removes the link, as in Figma. Figma names the value `hyperlink` in the range
+ * method's messages and `value` in the node setter's.
  */
 export function hyperlinkTarget(
   method: string,
   value: unknown,
-  graph: SceneGraph
+  graph: SceneGraph,
+  property: string
 ): HyperlinkTarget | null {
   if (value === null) return null
-  if (typeof value !== 'object' || Array.isArray(value)) {
-    throw invalid(method, `Expected object, received ${received(value)}`)
-  }
-  const target = value as Partial<Record<keyof HyperlinkTarget, unknown>>
-  if (!HYPERLINK_TYPES.has(target.type as string)) {
+  // Figma checks a link against a target and against null, and reports both.
+  const refuse: (problem: string) => never = (problem) => {
     throw invalid(
       method,
-      `Invalid enum value. Expected 'URL' | 'NODE', received '${String(target.type)}' at .type`
+      noneMatched([problem, `Expected null, received ${received(value)}`]),
+      property
     )
   }
+  if (typeof value !== 'object' || Array.isArray(value))
+    refuse(`Expected object, received ${received(value)}`)
+  const target = value as Partial<Record<keyof HyperlinkTarget, unknown>>
+  if (!HYPERLINK_TYPES.has(target.type as string))
+    refuse(invalidOption(HYPERLINK_TYPES, ' at .type'))
   if (typeof target.value !== 'string') {
-    throw invalid(method, `Expected string, received ${received(target.value)} at .value`)
+    refuse(`Expected string, received ${received(target.value)} at .value`)
   }
   if (target.type === 'URL') {
     if (target.value === '') return null

@@ -14,7 +14,10 @@ import { preferEsToolkitRule } from '#lint/rules/quality/es-toolkit.ts'
 import { noUnvalidatedJSONParseRule } from '#lint/rules/quality/json-parse.ts'
 import { noModuleMockingRule } from '#lint/rules/quality/module-mocking.ts'
 import { noReduceAccumulatorCopyRule } from '#lint/rules/quality/reduce-accumulator-copy.ts'
-import { noUnknownTailwindClassesRule } from '#lint/rules/quality/tailwind-classes.ts'
+import {
+  noPxTailwindValuesRule,
+  noUnknownTailwindClassesRule
+} from '#lint/rules/quality/tailwind-classes.ts'
 import { valibotSchemaConventionsRule } from '#lint/rules/quality/valibot-schemas.ts'
 import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
 import { noRawSQLRule } from '#lint/rules/sql.ts'
@@ -457,6 +460,7 @@ const plugin = {
     'no-math-random': noMathRandom,
     'no-hardcoded-color-constants': noHardcodedColorConstants,
     'no-unknown-tailwind-classes': noUnknownTailwindClassesRule,
+    'no-px-tailwind-values': noPxTailwindValuesRule,
     'no-hand-rolled-color': noHandRolledColor,
     'no-raw-console-format': noRawConsoleFormat,
     'no-silent-catch': noSilentCatch,

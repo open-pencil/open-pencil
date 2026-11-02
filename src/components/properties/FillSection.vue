@@ -130,7 +130,7 @@ function updateSolidColor(
         @update:model-value="updateStyle"
       />
 
-      <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedFillsHelp }}</p>
+      <p v-if="isMixed" class="text-2xs text-muted">{{ panels.mixedFillsHelp }}</p>
 
       <div v-for="(fill, index) in items" :key="`${index}:${fill.visible ? 'visible' : 'hidden'}`">
         <PropertyItemRow

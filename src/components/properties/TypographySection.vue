@@ -398,7 +398,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
         <label
           v-for="feature in commonFeatures"
           :key="feature.tag"
-          class="flex items-center justify-between gap-1.5 text-[11px] text-muted"
+          class="flex items-center justify-between gap-1.5 text-2xs text-muted"
         >
           <span>{{ feature.label }}</span>
           <AppSwitch

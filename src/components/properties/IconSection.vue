@@ -57,7 +57,7 @@ function confirmSwap() {
 <template>
   <PanelSection v-if="name" :label="panels.icon">
     <template #actions>
-      <span v-if="modified" class="mr-1 text-[11px] text-muted" data-property="icon-modified">
+      <span v-if="modified" class="mr-1 text-2xs text-muted" data-property="icon-modified">
         {{ panels.iconModified }}
       </span>
       <IconButton v-if="modified" :label="panels.resetIcon" @click="reset">

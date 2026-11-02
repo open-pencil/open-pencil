@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 
-describe('editor scoped hit testing', () => {
-  test('uses world coordinates inside entered containers', () => {
+describe('editor hit testing', () => {
+  test('finds layers from the page whatever container is entered', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const frame = editor.graph.createNode('FRAME', pageId, {
@@ -70,5 +70,9 @@ describe('editor scoped hit testing', () => {
     editor.state.enteredContainerId = frame.id
     editor.selectAtPoint(130, 130)
     expect([...editor.state.selectedIds]).toEqual([child.id])
+    // The entered container follows the selection, as after a press.
+    expect(editor.state.enteredContainerId).toBe(frame.id)
+    editor.selectAtPoint(500, 500)
+    expect([...editor.state.selectedIds]).toEqual([])
   })
 })

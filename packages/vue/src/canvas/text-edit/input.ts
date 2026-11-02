@@ -13,12 +13,11 @@ type SetDrag = (drag: DragState) => void
 type TextEditInputOptions = {
   editor: Editor
   getCoords: GetCoords
-  hitTestInScope: HitTest
+  hitTestLayer: HitTest
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
   getClickCount: () => number
-  wasSelectedBeforeClickSequence: (id: string) => boolean
   onEditCanvasLabel?: (kind: CanvasLabelKind, node: SceneNode) => void
   setDrag: SetDrag
 }
@@ -27,12 +26,11 @@ export function createTextEditInput(options: TextEditInputOptions) {
   const {
     editor,
     getCoords,
-    hitTestInScope,
+    hitTestLayer,
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,
     getClickCount,
-    wasSelectedBeforeClickSequence,
     onEditCanvasLabel,
     setDrag
   } = options
@@ -51,9 +49,9 @@ export function createTextEditInput(options: TextEditInputOptions) {
     const localY = cy - abs.y
     if (localX < 0 || localY < 0 || localX > editNode.width || localY > editNode.height) {
       editor.commitTextEdit()
-      const hit = hitTestInScope(cx, cy, true)
+      const hit = hitTestLayer(cx, cy, true)
       if (hit?.type === 'TEXT' && hit.id !== editNode.id) {
-        startTextEditingAt(hit, cx, cy)
+        startTextEditingAt(hit, cx, cy, 'caret')
         return true
       }
       return false
@@ -70,7 +68,16 @@ export function createTextEditInput(options: TextEditInputOptions) {
     return true
   }
 
-  function startTextEditingAt(hit: SceneNode, cx: number, cy: number) {
+  /**
+   * Starts editing `hit` as Figma does: a double-click selects all of its text, a click on it
+   * while another text is edited puts the caret where the click landed.
+   */
+  function startTextEditingAt(
+    hit: SceneNode,
+    cx: number,
+    cy: number,
+    selection: 'all' | 'caret' = 'all'
+  ) {
     editor.select([hit.id])
     editor.startTextEditing(hit.id)
     // Text the editor refuses, such as path text without its font, stays selected only.
@@ -78,7 +85,8 @@ export function createTextEditInput(options: TextEditInputOptions) {
     const textEd = editor.textEditor
     if (textEd) {
       const abs = editor.graph.getAbsolutePosition(hit.id)
-      textEd.selectWordAt(cx - abs.x, cy - abs.y)
+      if (selection === 'caret') textEd.setCursorAt(cx - abs.x, cy - abs.y, false)
+      else textEd.selectAll()
       editor.textSelectionChanged()
     }
   }
@@ -143,14 +151,18 @@ export function createTextEditInput(options: TextEditInputOptions) {
     }
     const hit = getContainerDescendantHit(selectedId, cx, cy)
     editor.enterContainer(selectedId)
-    if (hit?.type === 'TEXT' && resolveEditorProfile(editor.state).edits)
-      startTextEditingAt(hit, cx, cy)
-    else if (hit) editor.select([hit.id])
+    // A text one level down is selected first; the next double-click edits it, as in Figma.
+    if (hit) editor.select([hit.id])
     else editor.clearSelection()
     return true
   }
 
-  function onDblClick(e: MouseEvent) {
+  /**
+   * The press of a run's second click or later: one level deeper, as a double-click goes in
+   * Figma. The third click on, `rapid`, goes a level deeper too but stops at a text: editing it
+   * takes a double-click.
+   */
+  function pressDeeper(e: MouseEvent, rapid = false) {
     const nodeEditEditor = editor as Editor & NodeEditMethods
     if (editor.state.editingTextId) return
 
@@ -162,7 +174,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
       editor.state.selectedIds.size === 1 ? [...editor.state.selectedIds][0] : undefined
     if (handleContainerDoubleClick(selectedId, cx, cy)) return
 
-    const found = hitTestInScope(cx, cy, true)
+    const found = hitTestLayer(cx, cy, true)
     if (!found) return
     // A generated frame's sublayers are edited through the frame.
     const hit = generatedFrameOwner(editor.graph, found) ?? found
@@ -173,12 +185,9 @@ export function createTextEditInput(options: TextEditInputOptions) {
     }
 
     if (hit.type === 'TEXT') {
-      const isTopLevelText = hit.parentId === editor.state.currentPageId
-      if (!isTopLevelText && selectedId !== hit.id && !wasSelectedBeforeClickSequence(hit.id)) {
-        editor.select([hit.id])
-        return
-      }
-      startTextEditingAt(hit, cx, cy)
+      // The selected text is edited; a text reached by this click is selected first.
+      if (rapid || selectedId !== hit.id) editor.select([hit.id])
+      else startTextEditingAt(hit, cx, cy)
       return
     }
 
@@ -195,5 +204,5 @@ export function createTextEditInput(options: TextEditInputOptions) {
     editor.select([hit.id])
   }
 
-  return { handleTextEditClick, onDblClick }
+  return { handleTextEditClick, pressDeeper }
 }

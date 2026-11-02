@@ -10,15 +10,9 @@ async function clickCanvas(page: Page, x: number, y: number) {
 }
 
 async function dblclickCanvas(page: Page, x: number, y: number) {
-  const canvas = page.getByTestId('canvas-element')
-  const box = await canvas.boundingBox()
+  const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('Canvas has no bounding box')
-  await canvas.dispatchEvent('dblclick', {
-    clientX: box.x + x,
-    clientY: box.y + y,
-    bubbles: true,
-    cancelable: true
-  })
+  await page.mouse.dblclick(box.x + x, box.y + y)
 }
 
 async function setupAutoLayoutFrame(page: Page) {

@@ -19,8 +19,8 @@ import { fontManager } from '#core/text/font/manager'
 import { collectGraphFontRequirements } from '#core/text/requirements/collect'
 import { missingGraphFontScripts } from '#core/text/requirements/resolved'
 
-import { createPageViewportStore } from './page-viewports'
 import { createPageLayouts } from './pages/layouts'
+import { createPageViewportStore } from './pages/viewports'
 import type { EditorContext } from './types'
 
 export interface PageSwitchProgress {

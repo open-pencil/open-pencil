@@ -1,4 +1,4 @@
-/// <reference types="@figma/plugin-typings" />
+import type { Image } from '@figma/plugin-typings/plugin-api-standalone'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import {

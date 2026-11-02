@@ -1,3 +1,5 @@
+import type { PageNode, SolidPaint } from '@figma/plugin-typings/plugin-api-standalone'
+
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'

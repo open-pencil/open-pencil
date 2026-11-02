@@ -47,6 +47,16 @@
 }
 
 @theme {
+  /*
+   * Interface text below Tailwind's text-xs. Sizes are in rem, like Tailwind's own scale, so the
+   * whole interface follows the root font size. T-shirt names keep tailwind-merge reading them as
+   * font sizes rather than colors.
+   */
+  --text-2xs: 0.6875rem;
+  --text-3xs: 0.625rem;
+  --text-4xs: 0.5625rem;
+  --text-5xs: 0.5rem;
+
   /* The theme's colors are its own: Tailwind's default palette is left out. */
   --color-*: initial;
   --color-white: #ffffff;

@@ -1,5 +1,6 @@
+import type { Font, FontName, FontNameInput } from '@figma/plugin-typings/plugin-api-standalone'
+
 import type { FontVariation } from '@open-pencil/scene-graph'
-import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
 import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 
 import {
@@ -10,15 +11,11 @@ import {
 import { faceForStyle } from '#core/text/font/names'
 
 /** A font as Figma reads one; a variable font's also lists every axis it is drawn at. */
-export type FigmaFontName = FontFamilyStyle & { variationSettings?: FigmaVariationSettings }
-export type FigmaFont = { fontName: FigmaFontName }
+export type FigmaFontName = FontName
+export type FigmaFont = Font
 
 /** A font to apply, as Figma takes one: `style` may be left out for the axes to pick it. */
-export interface FigmaFontNameInput {
-  family: string
-  style?: string
-  variationSettings?: FigmaVariationSettings
-}
+export type FigmaFontNameInput = FontNameInput
 
 /** The font a character has before a new one is set over it. */
 export interface CurrentFont {
