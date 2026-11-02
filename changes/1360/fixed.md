@@ -1,1 +1,0 @@
-- Off and Minimal thinking no longer fail on OpenRouter models that always reason: requests use the lowest effort OpenRouter lists for the model.

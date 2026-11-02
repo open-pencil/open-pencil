@@ -1,1 +1,0 @@
-- Settings → General → Navigation → Zoom speed scales how far each mouse wheel step or trackpad pinch zooms the canvas, for mouse wheels that zoom too fast.

@@ -1,1 +1,0 @@
-- Variable modes from a .fig file open in Figma's order with Figma's default mode, and keep that order through export.

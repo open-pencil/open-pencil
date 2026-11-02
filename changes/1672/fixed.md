@@ -1,1 +1,0 @@
-- View → Variables… opens the variables dialog in the desktop app.
