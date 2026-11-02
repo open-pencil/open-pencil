@@ -103,7 +103,7 @@ test('the color picker button samples the canvas and the picker stays open', asy
 
   await expect.poll(() => eyedropper.topPaint(target, 'fills')).toEqual({ color: SOURCE })
   await expect(pick).toBeVisible()
-  await expect(pick).not.toHaveAttribute('aria-pressed')
+  await expect(pick).toHaveAttribute('aria-pressed', 'false')
   expect(await eyedropper.activeTool()).toBe('SELECT')
 })
 
@@ -121,6 +121,24 @@ test('a color sampled into the picker undoes and redoes as one step', async () =
   await page.keyboard.press('ControlOrMeta+Shift+z')
   await expect.poll(() => eyedropper.topPaint(target, 'fills')).toEqual({ color: SOURCE })
   await expect(page.getByTestId('color-eyedropper')).toBeVisible()
+})
+
+test('pressing the picker button again stops sampling', async () => {
+  const { page, canvas } = editor
+  const target = await sourceAndTarget()
+
+  await page.getByTestId('fill-picker-swatch').first().click()
+  const pick = page.getByTestId('color-eyedropper')
+  await pick.click()
+  await expect(pick).toHaveAttribute('aria-pressed', 'true')
+  await pick.click()
+
+  await expect(pick).toHaveAttribute('aria-pressed', 'false')
+  await expect.poll(() => eyedropper.activeTool()).toBe('SELECT')
+  // The picker stays open, and the next canvas click samples nothing.
+  await expect(pick).toBeVisible()
+  await canvas.click(150, 170)
+  expect(await eyedropper.topPaint(target, 'fills')).toEqual({ color: TARGET })
 })
 
 test('closing the picker while it samples leaves the eyedropper', async () => {

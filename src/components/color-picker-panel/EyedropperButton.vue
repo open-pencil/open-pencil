@@ -18,7 +18,12 @@ const { tools } = useI18n()
 const offered = computed(() => offersEyedropper(editor))
 const sampling = ref(false)
 
+/** Starts sampling, or, pressed again while it samples, gives the sample up. */
 async function pick() {
+  if (sampling.value) {
+    cancelEyedropperSample(editor)
+    return
+  }
   sampling.value = true
   try {
     const sampled = await requestEyedropperSample(editor)
@@ -40,6 +45,7 @@ onScopeDispose(() => {
     v-if="offered"
     :label="tools.eyedropperSample"
     :active="sampling"
+    toggle
     data-test-id="color-eyedropper"
     @click="pick"
   >
