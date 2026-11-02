@@ -6,6 +6,7 @@ import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { setTextMeasurer, sizeAutoResizingText } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { expectDefined } from '#core-tests/helpers/assert'
 import {
   createPendingTextLayout,
   type PendingLayoutRenderer
@@ -269,10 +270,13 @@ test('text that keeps the glyphs its file saved keeps the size the file gave it'
   expect([text.width, text.height]).toEqual([120, 20])
 })
 
-test('the editor lays out text its fonts could not measure once font resolution settles', async () => {
-  let loaded = false
+/**
+ * An editor with a renderer whose fonts measure its auto-sizing text only once `measure` is called;
+ * the rest of the renderer stays absent, past what the editor's graph events and text layout reach.
+ */
+function editorSetup() {
+  let measurable = false
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })
-  // Only what the editor's graph events and text layout reach; the rest of the renderer stays absent.
   const tiledScene: Partial<SkiaRenderer['tiledScene']> = {
     invalidateNode: noop,
     invalidateStructure: noop
@@ -282,7 +286,7 @@ test('the editor lays out text its fonts could not measure once font resolution 
     forgetNode: noop,
     invalidateVectorPath: noop,
     fontsLoaded: true,
-    measureTextNode: () => (loaded ? { width: 234, height: 29 } : null),
+    measureTextNode: () => (measurable ? { width: 234, height: 29 } : null),
     whenFontsLoaded: () => Promise.resolve(),
     syncFontGeneration: noop,
     invalidateNodePicture: noop
@@ -302,20 +306,56 @@ test('the editor lays out text its fonts could not measure once font resolution 
         resolve()
       })
     })
+  return {
+    editor,
+    text,
+    measure: () => (measurable = true),
+    laidOut,
+    /** Lays the text out before its fonts measure it, which stalls it. */
+    stall: async () => {
+      const first = laidOut()
+      sizeAutoResizingText(editor.graph, text.id)
+      await first
+    },
+    dispose: () => editor.removeCanvasRenderer(renderer as SkiaRenderer)
+  }
+}
+
+test('the editor lays out text its fonts could not measure once font resolution settles', async () => {
+  const { text, measure, laidOut, stall, dispose } = editorSetup()
   try {
-    const first = laidOut()
-    sizeAutoResizingText(editor.graph, text.id)
-    await first
+    await stall()
     expect(text.width).toBe(100)
 
-    loaded = true
-    const second = laidOut()
+    measure()
+    const relaid = laidOut()
     await fontResolver.demand({ key: 'pending-layout-test', candidates: [] })
-    await second
+    await relaid
     expect([text.width, text.height]).toEqual([234, 29])
   } finally {
     fontResolver.reset('pending-layout-test')
-    editor.removeCanvasRenderer(renderer as SkiaRenderer)
+    dispose()
+  }
+})
+
+test('the editor lays out text its fonts could not measure once a face loads', async () => {
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
+    'bundled Inter font'
+  )
+  const { text, measure, laidOut, stall, dispose } = editorSetup()
+  try {
+    await stall()
+    expect(text.width).toBe(100)
+
+    measure()
+    // The face listener runs inside markLoaded, so the render it leads to is awaited after it.
+    const relaid = laidOut()
+    await fontManager.markLoaded('Pending Layout Test', 'Regular', inter)
+    await relaid
+    expect([text.width, text.height]).toEqual([234, 29])
+  } finally {
+    dispose()
   }
 })
 
