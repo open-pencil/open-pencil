@@ -11,7 +11,7 @@ const collapsibleTheme = {
     header: 'flex items-center gap-3',
     trigger:
       'group flex min-w-0 flex-1 items-center gap-2 text-left text-xs text-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
-    icon: 'size-3.5 shrink-0 transition-transform group-data-[state=open]:rotate-90 motion-reduce:transition-none',
+    icon: 'size-3.5 shrink-0 transition-transform group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180 motion-reduce:transition-none',
     label: 'min-w-0',
     actions: 'shrink-0',
     // Padding and borders belong to the slot inside this wrapper so they cannot

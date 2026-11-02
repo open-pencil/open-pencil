@@ -44,7 +44,7 @@ const layerTreeTheme = {
     },
     expanded: {
       true: { disclosure: 'rotate-90' },
-      false: { disclosure: 'rotate-0' }
+      false: { disclosure: 'rotate-0 rtl:rotate-180' }
     },
     actionsVisible: {
       true: {},

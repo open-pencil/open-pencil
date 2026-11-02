@@ -70,7 +70,7 @@ function isOpen(group: CapabilityGroup) {
             class="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
           >
             <icon-lucide-chevron-right
-              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 motion-reduce:transition-none"
+              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180 motion-reduce:transition-none"
               aria-hidden="true"
             />
             <span class="shrink-0 font-semibold text-surface">{{ group.label }}</span>
@@ -132,7 +132,7 @@ function isOpen(group: CapabilityGroup) {
                 }}</span>
                 <icon-lucide-chevron-right
                   v-if="openLabel"
-                  class="size-3.5 shrink-0 text-muted"
+                  class="size-3.5 shrink-0 text-muted rtl:-scale-x-100"
                   aria-hidden="true"
                 />
               </component>

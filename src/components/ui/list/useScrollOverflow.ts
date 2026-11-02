@@ -49,8 +49,10 @@ export function useScrollOverflow(
   function scrollTowardHidden() {
     const element = scroller.value
     if (!element) return
+    // In a right-to-left row the end lies to the left, where scrollLeft goes negative.
+    const towardEnd = getComputedStyle(element).direction === 'rtl' ? -1 : 1
     element.scrollBy({
-      left: overflowEnd.value ? element.clientWidth : -element.scrollWidth,
+      left: towardEnd * (overflowEnd.value ? element.clientWidth : -element.scrollWidth),
       behavior: smooth() ? 'smooth' : 'auto'
     })
   }

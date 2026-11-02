@@ -31,3 +31,9 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   display: none;
 }
+
+/* Key combinations read left to right in every language, also inside RTL text. */
+kbd {
+  direction: ltr;
+  unicode-bidi: isolate;
+}

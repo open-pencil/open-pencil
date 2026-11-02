@@ -12,5 +12,6 @@ const cls = computed(() => twMerge('text-[11px] text-muted', ui?.base))
 </script>
 
 <template>
-  <span :class="cls"><slot /></span>
+  <!-- Key combinations read left to right in every language (Ctrl+, not ,+Ctrl). -->
+  <span dir="ltr" :class="cls" class="[unicode-bidi:isolate]"><slot /></span>
 </template>

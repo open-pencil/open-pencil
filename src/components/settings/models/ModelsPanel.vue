@@ -162,7 +162,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
                       : ai.modelCapabilityVisionShort
                   }}
                 </span>
-                <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" />
+                <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted rtl:-scale-x-100" />
               </template>
             </AppActionRow>
           </div>

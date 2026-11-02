@@ -185,7 +185,7 @@ watch(previewKey, updatePreview, { flush: 'post' })
         @click="showPreview = !showPreview"
       >
         <icon-lucide-chevron-down v-if="showPreview" class="size-3" />
-        <icon-lucide-chevron-right v-else class="size-3" />
+        <icon-lucide-chevron-right v-else class="size-3 rtl:-scale-x-100" />
         {{ panels.exportPreview }}
       </button>
     </Tip>

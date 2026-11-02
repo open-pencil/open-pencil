@@ -68,7 +68,7 @@ function select(choice: VariableModeChoice, value: string) {
                 :class="[menu.subTrigger, 'justify-between data-[highlighted]:bg-hover']"
               >
                 {{ choice.name }}
-                <icon-lucide-chevron-right :class="menu.icon" />
+                <icon-lucide-chevron-right :class="[menu.icon, 'rtl:-scale-x-100']" />
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent :side-offset="4" :class="menu.content">

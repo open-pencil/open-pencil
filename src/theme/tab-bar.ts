@@ -3,7 +3,7 @@ const tabBarTheme = {
     root: 'flex h-9 shrink-0 items-end border-b border-border bg-canvas',
     // Sized by its tabs until the bar runs out of room; then it scrolls and fades the clipped side.
     scroller:
-      'scrollbar-none h-full min-w-0 scroll-px-8 overflow-x-auto data-overflow-end:mask-r-from-[calc(100%-2rem)] data-overflow-start:mask-l-from-[calc(100%-2rem)]',
+      'scrollbar-none h-full min-w-0 scroll-px-8 overflow-x-auto ltr:data-overflow-end:mask-r-from-[calc(100%-2rem)] ltr:data-overflow-start:mask-l-from-[calc(100%-2rem)] rtl:data-overflow-end:mask-l-from-[calc(100%-2rem)] rtl:data-overflow-start:mask-r-from-[calc(100%-2rem)]',
     list: 'flex h-full items-end',
     item: 'group/tab flex h-full max-w-48 min-w-24 items-center border-r border-border pr-3',
     trigger:
@@ -19,7 +19,7 @@ const tabBarTheme = {
     newIcon: 'size-4',
     scroll:
       'flex size-6 shrink-0 cursor-pointer touch-manipulation items-center justify-center self-center rounded text-muted transition-colors outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus mx-0.5 data-start:order-first',
-    scrollIcon: 'size-3.5'
+    scrollIcon: 'size-3.5 rtl:-scale-x-100'
   },
   variants: {
     // Home is pinned first as an icon, the way Figma's desktop app shows it.

@@ -15,7 +15,8 @@ export const menu = tv({
     item: 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[11px] outline-none select-none data-[disabled]:cursor-default data-[disabled]:text-muted/50 data-[highlighted]:bg-hover',
     separator: 'mx-1 my-1 h-px bg-border',
     label: 'px-2 pt-1.5 pb-1 text-[11px] text-muted select-none',
-    shortcut: 'text-[11px] text-muted',
+    // Key combinations read left to right in every language (Ctrl+, not ,+Ctrl).
+    shortcut: 'text-[11px] text-muted [direction:ltr] [unicode-bidi:isolate]',
     icon: 'size-3 text-muted',
     subTrigger:
       'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[11px] outline-none select-none',

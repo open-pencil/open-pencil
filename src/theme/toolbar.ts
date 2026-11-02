@@ -14,7 +14,7 @@ const toolbarTheme = {
     flyoutItemLabel: 'flex-1',
     navigationAction:
       'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel text-muted shadow-sm outline-none select-none focus-visible:ring-1 focus-visible:ring-panel-focus disabled:pointer-events-none',
-    navigationIcon: 'size-3.5',
+    navigationIcon: 'size-3.5 rtl:-scale-x-100',
     action:
       'flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted transition-colors outline-none select-none active:bg-hover active:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus',
     actionIcon: 'size-4'
