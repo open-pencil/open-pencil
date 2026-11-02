@@ -183,7 +183,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
         <p
           v-if="compacting"
           role="status"
-          class="flex items-center justify-center gap-1.5 py-1 text-[11px] text-muted"
+          class="flex items-center justify-center gap-1.5 py-1 text-2xs text-muted"
           data-test-id="chat-compacting"
         >
           <icon-lucide-loader-circle
