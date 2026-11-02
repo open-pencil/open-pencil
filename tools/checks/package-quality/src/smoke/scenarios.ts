@@ -71,5 +71,9 @@ export const runtimeScenarios: RuntimeScenario[] = [
   {
     name: 'XPath query',
     code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { matchByXPath, queryByXPath } = await import('@open-pencil/core/xpath'); const graph = new SceneGraph(); new FigmaAPI(graph).createRectangle(); const found = await queryByXPath(graph, '//RECTANGLE'); if (found.length !== 1 || !(await matchByXPath(graph, '@width > 0', found[0]))) throw new Error('XPath query smoke failed')"
+  },
+  {
+    name: 'PDF export',
+    code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { BUILTIN_IO_FORMATS, IORegistry } = await import('@open-pencil/core/io'); const graph = new SceneGraph(); const rectangle = new FigmaAPI(graph).createRectangle(); const result = await new IORegistry(BUILTIN_IO_FORMATS).exportContent('pdf', { graph, target: { scope: 'node', nodeId: rectangle.id } }); if (!(result.data instanceof Uint8Array) || new TextDecoder().decode(result.data.subarray(0, 5)) !== '%PDF-') throw new Error('PDF export smoke failed')"
   }
 ]
