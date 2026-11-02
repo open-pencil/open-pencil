@@ -7,10 +7,11 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { EditorContext } from '#core/editor/types'
 import { sizeAutoResizingText } from '#core/layout/text-auto-resize'
 import { fontManager } from '#core/text/font/manager'
+import { collectNodeFontFaces } from '#core/text/requirements/collect'
 
 export type PendingLayoutRenderer = Pick<
   SkiaRenderer,
-  'measureTextNode' | 'fontsLoaded' | 'whenFontsLoaded' | 'syncFontGeneration'
+  'measureTextNode' | 'nodeFontReadiness' | 'fontsLoaded' | 'whenFontsLoaded' | 'syncFontGeneration'
 >
 
 interface PendingTextLayoutContext {
@@ -35,6 +36,8 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   const queued = new Map<string, boolean>()
   /** Text its fonts could not measure, prepared or failed, tried again once fonts settle. */
   const stalled = new Map<string, boolean>()
+  /** Text measured in the substitute for a face found nowhere, laid out again when its family loads. */
+  const substituted = new Map<string, boolean>()
   /** The text being laid out after its fonts were prepared, which measuring does not queue again. */
   let layingOut: ReadonlySet<string> = new Set()
   /** Queued text kept off the canvas, each holding one block its preparation releases. */
@@ -46,6 +49,9 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   function measure(renderer: PendingLayoutRenderer, node: SceneNode, maxWidth?: number) {
     const size = renderer.measureTextNode(node, maxWidth)
     if (!size && node.type === 'TEXT' && node.text) defer(node.id)
+    else if (size && renderer.nodeFontReadiness(node) === 'substituted') {
+      note(substituted, node.id, ctx.getGraph().isApplyingDerivedLayout)
+    } else if (size) substituted.delete(node.id)
     return size
   }
 
@@ -134,20 +140,40 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     schedule()
   }
 
+  /** Lays the text measured in a substitute out again whose runs name `family`, which loaded. */
+  function retrySubstituted(family: string) {
+    const graph = ctx.getGraph()
+    for (const [id, derived] of substituted) {
+      const node = graph.getNode(id)
+      if (!node || !collectNodeFontFaces(node).some((face) => face.family === family)) continue
+      substituted.delete(id)
+      note(queued, id, derived)
+    }
+    if (queued.size > 0) schedule()
+  }
+
   /** Drops the text of the document about to be replaced, before the editor replaces it. */
   function clear() {
     fontManager.unblockNodes(ctx.getGraph(), [...hidden])
     hidden.clear()
     queued.clear()
     stalled.clear()
+    substituted.clear()
     documents++
   }
 
   ctx.onEditorEvent('font:resolution-changed', (event) => {
     if (event === 'settled') retryStalled()
   })
-  // A face loaded outside the resolver can be the one stalled text was missing.
-  ctx.onEditorEvent('font:loaded', retryStalled)
+  ctx.onEditorEvent('font:loaded', (family) => {
+    // A face loaded outside the resolver can be the one stalled text was missing.
+    retryStalled()
+    retrySubstituted(family)
+  })
+  ctx.onEditorEvent('node:deleted', (id) => {
+    stalled.delete(id)
+    substituted.delete(id)
+  })
 
   return { measure, retryStalled, clear }
 }
