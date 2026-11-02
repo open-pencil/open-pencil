@@ -11,7 +11,7 @@ import { colorToCSS, colorToHexRaw } from '@open-pencil/scene-graph/color'
 import type { EyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
 
 import { remToPx } from '@/app/shell/root-font-size'
-import theme from '@/theme/canvas-eyedropper-loupe'
+import theme from '@/theme/canvas/eyedropper-loupe'
 
 const loupeTheme = tv(theme)
 
