@@ -31,15 +31,15 @@ export function defaultVariant(graph: SceneGraph, set: SceneNode): SceneNode | u
 }
 
 /**
- * The value a variant property starts at: its recorded default when that is one of its options,
- * or else the default variant's, since a document may leave the recorded default empty.
+ * The value a variant property starts at: the default variant's, as Figma reads it whatever
+ * default the document records, and follows when another variant moves to the top left. The
+ * recorded default stands only while no variant has the property.
  */
 export function variantDefaultValue(
   graph: SceneGraph,
   set: SceneNode,
-  property: { name: string; defaultValue: string; variantOptions?: string[] }
+  property: { name: string; defaultValue: string }
 ): string {
-  if (property.variantOptions?.includes(property.defaultValue)) return property.defaultValue
   return defaultVariant(graph, set)?.componentPropertyValues[property.name] ?? property.defaultValue
 }
 
@@ -70,26 +70,4 @@ export function resolvedVariantDefinition(
   if (definition.type !== 'VARIANT') return definition
   const options = { ...definition, variantOptions: variantOptions(graph, set, definition) }
   return { ...options, defaultValue: variantDefaultValue(graph, set, options) }
-}
-
-/**
- * The variant with every property at its default value: the recorded defaults when they name a
- * variant, else the default variant, as a document that leaves them out draws it.
- */
-export function restingVariant(graph: SceneGraph, set: SceneNode): SceneNode | undefined {
-  const properties = set.componentPropertyDefinitions.filter(
-    (definition) => definition.type === 'VARIANT'
-  )
-  const values = properties.map(
-    (property) => [property.name, variantDefaultValue(graph, set, property)] as const
-  )
-  return (
-    graph
-      .getChildren(set.id)
-      .find(
-        (child) =>
-          child.type === 'COMPONENT' &&
-          values.every(([name, value]) => child.componentPropertyValues[name] === value)
-      ) ?? defaultVariant(graph, set)
-  )
 }
