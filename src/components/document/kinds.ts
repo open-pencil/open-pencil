@@ -3,7 +3,10 @@ import IconLucideStickyNote from '~icons/lucide/sticky-note'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
-/** The icon each kind of document shows, on Home's create buttons and before its files' names. */
+/**
+ * The icon each kind of document shows: on Home's create buttons, before its files' names, and on
+ * its tab.
+ */
 export const DOCUMENT_KIND_ICONS = {
   design: IconLucidePenTool,
   board: IconLucideStickyNote

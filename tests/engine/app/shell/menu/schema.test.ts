@@ -84,6 +84,46 @@ describe('APP_MENU_SCHEMA', () => {
     )
   })
 
+  // Home and a New file tab hold no document: the menus keep what starts, opens, and switches
+  // documents, and the app's own settings, and leave out what edits or shows one.
+  test('shows only document-free menus and items while no document is in front', () => {
+    const shownIds = (items: readonly AppMenuEntry[]) =>
+      items.flatMap((entry) =>
+        entry.type === 'separator' || entry.feature === 'document' || entry.target === 'browser'
+          ? []
+          : [entry.id]
+      )
+    const shown = APP_MENU_SCHEMA.filter((group) => group.feature !== 'document').map((group) => ({
+      label: group.label,
+      ids: shownIds(group.items)
+    }))
+
+    expect(shown).toEqual([
+      {
+        label: 'File',
+        ids: [
+          'new',
+          'new-tab',
+          'open',
+          'open-recent',
+          'open-tour',
+          'diagnostics',
+          'save-version',
+          'version-history',
+          'autosave',
+          'previous-tab',
+          'next-tab',
+          'settings'
+        ]
+      },
+      { label: 'Edit', ids: ['copy', 'cut', 'paste'] },
+      {
+        label: 'View',
+        ids: ['theme', 'preferences', 'dev-tools']
+      }
+    ])
+  })
+
   test('keeps move-to-page destination selection in the browser menu', () => {
     const objectMenu = APP_MENU_SCHEMA.find((group) => group.label === 'Object')
     const entries = objectMenu ? actionItems(objectMenu.items) : []

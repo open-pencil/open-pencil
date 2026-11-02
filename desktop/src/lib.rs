@@ -16,8 +16,8 @@ use fonts::{list_system_fonts, load_system_font};
 use launch::args;
 use menu::events::handle_menu_event;
 use menu::{
-    install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_features,
-    NativeMenuInputs, NativeMenuState,
+    install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_disabled,
+    set_native_menu_features, NativeMenuInputs, NativeMenuState,
 };
 use network::http::{cancel_http_request, proxy_http_request, ProxyHttpRequests};
 use std::sync::Mutex;
@@ -94,6 +94,7 @@ pub fn run() {
             cancel_http_request,
             files::recent::set_recent_files,
             set_native_menu_features,
+            set_native_menu_disabled,
             native_menu_checked,
             set_native_menu_checked,
             launch::take_pending_open,

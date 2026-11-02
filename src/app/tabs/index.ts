@@ -87,6 +87,8 @@ export const allTabs = computed(() =>
     isHome: t.kind === 'home',
     isNewFile: t.kind === 'new-file',
     isDirty: t.kind === 'document' && t.store.hasUnsavedChanges(),
+    // What kind of file the tab holds, for its icon, as Home marks its files.
+    fileKind: t.kind === 'document' ? t.store.state.documentKind : undefined,
     isPreparing: t.store.state.preparation !== null,
     preparationProgress: t.store.state.preparation?.progress ?? null,
     isActive: t.id === activeTabId.value
