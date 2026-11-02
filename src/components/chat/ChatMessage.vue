@@ -183,9 +183,9 @@ function groupKey(group: MessagePartGroup): string {
               class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
-              <!-- With usage shown on hover, the last text gets a small toolbar on its lower edge
-                   with the usage and the copy button, taking no room at rest; otherwise the
-                   button sits in the bubble's corner. -->
+              <!-- With usage shown on hover, the usage and the copy button appear in the last
+                   text's corner over the bubble's own colour, fading the line's end out under
+                   them, so they take no room at rest; otherwise the button sits there alone. -->
               <div
                 v-if="
                   (usageOnHover && group.index === lastAssistantTextPartIndex) ||
@@ -193,10 +193,10 @@ function groupKey(group: MessagePartGroup): string {
                 "
                 :class="
                   usageOnHover && group.index === lastAssistantTextPartIndex
-                    ? 'absolute right-2 bottom-0 z-10 flex h-6 translate-y-1/2 items-center gap-1 rounded-md border border-border bg-panel px-1 shadow-sm'
+                    ? 'absolute right-1 bottom-1 flex h-6 items-center gap-1 rounded-br-xl bg-[linear-gradient(to_right,transparent,var(--color-hover)_2rem)] pl-8'
                     : 'absolute right-1 bottom-1'
                 "
-                class="text-2xs text-muted opacity-0 group-focus-within/response:opacity-100 group-hover/response:opacity-100"
+                class="translate-x-1 text-2xs text-muted opacity-0 transition-[opacity,translate] duration-150 ease-out group-focus-within/response:translate-x-0 group-focus-within/response:opacity-100 group-hover/response:translate-x-0 group-hover/response:opacity-100 motion-reduce:translate-x-0 motion-reduce:transition-none"
               >
                 <span
                   v-if="usageOnHover && group.index === lastAssistantTextPartIndex"

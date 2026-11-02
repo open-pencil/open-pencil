@@ -131,8 +131,14 @@ export const PartlyUndone: Story = {
 export const WithUsage: Story = {
   args: {
     message: {
-      ...assistantMessage,
       id: 'usage-message',
+      role: 'assistant',
+      parts: [
+        {
+          type: 'text',
+          text: 'I added two more rectangles, green and magenta, each 160×120 with 8px corners. They sit in a second row under the first pair, and I zoomed the view to show all four rectangles.'
+        }
+      ],
       metadata: {
         usage: {
           contextTokens: 29_300,
