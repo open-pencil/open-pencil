@@ -1,5 +1,5 @@
-import { sampleScenePixels } from '@open-pencil/core/editor'
-import type { Editor, ScenePixels } from '@open-pencil/core/editor'
+import { sampleScenePixels } from '@open-pencil/core'
+import type { Editor, ScenePixels } from '@open-pencil/core'
 
 /** The screen pixels around a world point at the view's zoom, the centre one sampled. */
 export function sampleEyedropperPixels(

@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import { computed, effectScope } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
-import { applySampledColor } from '@open-pencil/core/editor'
+import { applySampledColor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager } from '@open-pencil/core/text'

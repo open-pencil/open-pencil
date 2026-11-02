@@ -1,5 +1,5 @@
-import { applySampledColor, resolveEditorProfile, scenePixelColor } from '@open-pencil/core/editor'
-import type { Editor, EyedropperTarget } from '@open-pencil/core/editor'
+import { applySampledColor, resolveEditorProfile, scenePixelColor } from '@open-pencil/core'
+import type { Editor, EyedropperTarget } from '@open-pencil/core'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { sampleEyedropperPixels } from './sample'

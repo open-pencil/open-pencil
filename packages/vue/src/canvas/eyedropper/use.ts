@@ -10,8 +10,8 @@ import {
   type ShallowRef
 } from 'vue'
 
-import { scenePixelColor } from '@open-pencil/core/editor'
-import type { Editor, ScenePixels } from '@open-pencil/core/editor'
+import { scenePixelColor } from '@open-pencil/core'
+import type { Editor, ScenePixels } from '@open-pencil/core'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { sampleEyedropperPixels } from './sample'
