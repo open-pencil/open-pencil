@@ -239,17 +239,19 @@ const PX_LENGTH = /(?:^|[\s(,])-?(?:\d*\.)?\d+px\b/
  */
 function pxValue(theme: Theme, className: string): string | null {
   for (const candidate of theme.system.parseCandidate(className)) {
-    const value =
-      candidate.kind === 'arbitrary'
-        ? candidate.value
-        : candidate.kind === 'functional' &&
-            candidate.value?.kind === 'arbitrary' &&
-            !candidate.root.endsWith('shadow')
-          ? candidate.value.value
-          : null
+    const value = arbitraryValue(candidate)
     if (value !== null && PX_LENGTH.test(value)) return value
   }
   return null
+}
+
+type Candidate = ReturnType<DesignSystem['parseCandidate']>[number]
+
+/** A class's arbitrary value, `[width:10px]` or `w-[10px]`, other than a shadow's. */
+function arbitraryValue(candidate: Candidate): string | null {
+  if (candidate.kind === 'arbitrary') return candidate.value
+  if (candidate.kind !== 'functional' || candidate.value?.kind !== 'arbitrary') return null
+  return candidate.root.endsWith('shadow') ? null : candidate.value.value
 }
 
 /**
