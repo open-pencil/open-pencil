@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { defaultVariant, variantDefaultValue } from '@open-pencil/scene-graph/components'
+import {
+  defaultVariant,
+  variantDefaultValue,
+  variantOptions
+} from '@open-pencil/scene-graph/components'
 
 /** A set of sizes laid out with Large first in its children but Small in the top-left corner. */
 function sizes(defaultValue: string) {
@@ -69,5 +73,20 @@ describe('default variants', () => {
     recorded.graph.updateNode(large.id, { y: 0 })
     recorded.graph.updateNode(small.id, { y: 60 })
     expect(variantDefaultValue(recorded.graph, recorded.set, recorded.definition)).toBe('Large')
+  })
+
+  test('keep the recorded default while the default variant has no value for the property', () => {
+    const { graph, set, definition } = sizes('Large')
+    const small = graph.getChildren(set.id).find((variant) => variant.name === 'Size=Small')
+    graph.updateNode(small?.id ?? '', { componentPropertyValues: { Size: '' } })
+    expect(variantDefaultValue(graph, set, definition)).toBe('Large')
+  })
+})
+
+describe('variant options', () => {
+  test('keep the recorded values first and add those the variants use', () => {
+    const { graph, set } = sizes('')
+    const options = variantOptions(graph, set, { name: 'Size', variantOptions: ['Medium'] })
+    expect(options).toEqual(['Medium', 'Large', 'Small'])
   })
 })

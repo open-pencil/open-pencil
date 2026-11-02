@@ -33,14 +33,15 @@ export function defaultVariant(graph: SceneGraph, set: SceneNode): SceneNode | u
 /**
  * The value a variant property starts at: the default variant's, as Figma reads it whatever
  * default the document records, and follows when another variant moves to the top left. The
- * recorded default stands only while no variant has the property.
+ * recorded default stands only while the default variant has no value for the property.
  */
 export function variantDefaultValue(
   graph: SceneGraph,
   set: SceneNode,
   property: { name: string; defaultValue: string }
 ): string {
-  return defaultVariant(graph, set)?.componentPropertyValues[property.name] ?? property.defaultValue
+  const value = defaultVariant(graph, set)?.componentPropertyValues[property.name]
+  return value || property.defaultValue
 }
 
 /**
