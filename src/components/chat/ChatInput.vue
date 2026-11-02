@@ -181,7 +181,6 @@ const selectedProfileName = computed(
         :label="ai.mentionSelection"
         size="sm"
         :disabled="disabled || !canMentionSelection"
-        data-slot="chat-mention-selection"
         @click="composer?.insert(selectionMentions())"
       >
         <icon-lucide-mouse-pointer-2 class="size-4" />

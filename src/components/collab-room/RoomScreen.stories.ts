@@ -10,10 +10,9 @@ type Args = {
   sender: string | null
   othersWaiting: string[]
   name: string
-  copied: boolean
+  link: string
   desktopLink: string | null
   downloadURL: string | null
-  onCopyLink: () => void
   onLeave: () => void
   onRename: (name: string) => void
 }
@@ -27,10 +26,9 @@ const meta = {
     sender: null,
     othersWaiting: [],
     name: 'Teal Fox',
-    copied: false,
+    link: 'https://app.openpencil.dev/room/abcdefghijklmnopqrstuvwxyz012345',
     desktopLink: null,
     downloadURL: null,
-    onCopyLink: fn(),
     onLeave: fn(),
     onRename: fn()
   },
@@ -73,15 +71,12 @@ export const WaitingInDesktopBrowser: Story = {
   }
 }
 
-export const LinkCopied: Story = {
-  args: { copied: true }
-}
-
 export const Actions: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Copy link' }))
-    await expect(args.onCopyLink).toHaveBeenCalledOnce()
+    // The button says so in place.
+    await expect(await canvas.findByRole('button', { name: 'Copied' })).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Leave' }))
     await expect(args.onLeave).toHaveBeenCalledOnce()
   }
