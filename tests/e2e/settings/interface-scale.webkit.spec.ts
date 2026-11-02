@@ -48,7 +48,7 @@ for (const scale of ['110%', '150%']) {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.reload()
     await canvas.waitForInit()
-    await chooseScale(page, '100% (default)')
+    await chooseScale(page, '100%')
     await expect.poll(() => sidebarWidth(page, 'left')).toBeCloseTo(left, 0)
     await expect.poll(() => sidebarWidth(page, 'right')).toBeCloseTo(right, 0)
     expect(await savedLayout(page)).toBeUndefined()
@@ -94,7 +94,7 @@ for (const side of ['left', 'right'] as const) {
       await canvas.waitForInit()
       await chooseScale(page, '125%')
       await expect.poll(() => sidebarWidth(page, side)).toBeCloseTo(resized, 0)
-      await chooseScale(page, '100% (default)')
+      await chooseScale(page, '100%')
       await expect.poll(() => sidebarWidth(page, opposite)).toBeCloseTo(originalOpposite, 0)
       expect(await savedLayout(page)).toBe(saved)
     })
@@ -129,7 +129,7 @@ test('interface size can return to the default', async ({ page }) => {
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await chooseScale(page, '125%')
-  await chooseScale(page, '100% (default)')
+  await chooseScale(page, '100%')
   await page.reload()
   await canvas.waitForInit()
   await expect(page.locator('html')).toHaveAttribute('data-interface-scale', '100')
@@ -187,7 +187,7 @@ test('interface scaling preserves the scrolled layer and partial row offset', as
     })
   await expect.poll(async () => (await anchor()).id).not.toBeNull()
   const before = await anchor()
-  for (const scale of ['150%', '125%', '100% (default)']) {
+  for (const scale of ['150%', '125%', '100%']) {
     await chooseScale(page, scale)
     await expect.poll(async () => (await anchor()).id).toBe(before.id)
     await expect.poll(async () => (await anchor()).fraction).toBeCloseTo(before.fraction, 1)
@@ -210,7 +210,7 @@ test('scaling down clamps the layer scroll position at the end of the list', asy
     el.scrollTop = el.scrollHeight
   })
   await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(1000)
-  await chooseScale(page, '100% (default)')
+  await chooseScale(page, '100%')
   await expect
     .poll(() => scroller.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop))
     .toBeLessThan(1)

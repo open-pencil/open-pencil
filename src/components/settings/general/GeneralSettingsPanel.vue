@@ -63,13 +63,7 @@ const preserveUnsavedWork = computed({
 const defaultInterfaceScale = DEFAULT_APP_PREFERENCES.appearance.interfaceScale
 const interfaceScaleOptions = computed(() => {
   const format = new Intl.NumberFormat(locale.value, { style: 'percent' })
-  return INTERFACE_SCALES.map((value) => ({
-    value,
-    label:
-      value === defaultInterfaceScale
-        ? settings.value.interfaceScaleDefault({ scale: format.format(value / 100) })
-        : format.format(value / 100)
-  }))
+  return INTERFACE_SCALES.map((value) => ({ value, label: format.format(value / 100) }))
 })
 </script>
 

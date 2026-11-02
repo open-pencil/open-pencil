@@ -6,7 +6,6 @@ export const settingsMessageDefaults = {
   appearance: 'Appearance',
   interfaceScale: 'Interface size',
   interfaceScaleDescription: 'Scale panels, text, and controls without changing canvas zoom.',
-  interfaceScaleDefault: params('{scale} (default)'),
   animations: 'Animations',
   animationsSystem: 'Follow system',
   animationsOff: 'Off',
