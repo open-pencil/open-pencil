@@ -167,6 +167,22 @@ describe('a boolean operation without saved geometry', () => {
     expect(hits(boolean, 0, 100)).toBe(false)
   })
 
+  test('reaches a result thinner than the pad', () => {
+    const { graph, add, hits } = setup()
+    const boolean = add('BOOLEAN_OPERATION', {
+      width: 200,
+      height: 200,
+      booleanOperation: 'SUBTRACT',
+      fills: [fill()]
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 200, height: 200 })
+    graph.createNode('RECTANGLE', boolean.id, { x: -10, width: 112.9, height: 200 })
+    graph.createNode('RECTANGLE', boolean.id, { x: 103.2, width: 96.8, height: 200 })
+    // The result is the strip from x 102.9 to 103.2, 2.9 units from the click.
+    expect(hits(boolean, 100, 100)).toBe(true)
+    expect(hits(boolean, 98, 100)).toBe(false)
+  })
+
   test("reaches the edges its result draws", () => {
     const { graph, add, hits } = setup()
     const boolean = add('BOOLEAN_OPERATION', {
@@ -384,6 +400,49 @@ describe('outline details', () => {
     expect(hits(box, 18.2, 18.2)).toBe(true)
     // The square corner outside the curve is empty.
     expect(hits(box, 1, 1)).toBe(false)
+  })
+
+  test('a flat cap ends the stroke at the line end; a round one paints past it', () => {
+    const { add, hits } = setup()
+    const flat = add('LINE', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)] })
+    // 8 units past the end, on the line's axis.
+    expect(hits(flat, 108, 0)).toBe(false)
+    expect(hits(flat, 103, 0)).toBe(true)
+    const round = add('LINE', { width: 100, height: 0, strokeCap: 'ROUND', strokes: [stroke(20)] })
+    expect(hits(round, 108, 0)).toBe(true)
+  })
+
+  test('a closed network without regions keeps its stroke alignment when stroke geometry is saved', () => {
+    const { add, hits } = setup()
+    const network = {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 2, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+      ],
+      regions: []
+    }
+    const saved = add('VECTOR', {
+      width: 100,
+      height: 100,
+      strokes: [stroke(10, 'INSIDE')],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array([0]) }],
+      vectorNetwork: network
+    })
+    // 4.5 units outside the top edge: an inside stroke draws nothing there.
+    expect(hits(saved, 50, -4.5)).toBe(false)
+    const drawnCentred = add('VECTOR', {
+      width: 100,
+      height: 100,
+      strokes: [stroke(10, 'INSIDE')],
+      vectorNetwork: network
+    })
+    expect(hits(drawnCentred, 50, -4.5)).toBe(true)
   })
 
   test("a huge ellipse's edge stays within the pad at the maximum zoom", () => {

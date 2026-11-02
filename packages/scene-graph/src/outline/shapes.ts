@@ -25,8 +25,13 @@ export interface ShapeOutline {
   lines: Vector[][]
   /** Each line's own stroke weight, where sides differ, as a rectangle's independent borders. */
   lineWeights?: number[]
-  /** Strokes centre on the lines whatever their alignment, as on an open network without regions. */
+  /**
+   * Strokes centre on the lines whatever their alignment, as on a network without regions that is
+   * open or has no saved stroke geometry.
+   */
   strokeCentered?: boolean
+  /** For each line, whether its start and its end are open ends, where a stroke's cap is drawn. */
+  lineEnds?: Array<[boolean, boolean]>
 }
 
 function closed(contour: Vector[]): Vector[] {
@@ -126,13 +131,25 @@ function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null 
     if (geometry.length === 0) return null
     return { areas: geometry, lines: geometry.flatMap((area) => area.contours.map(closed)) }
   }
-  const lines = network.segments.flatMap((_, index) => {
+  // A vertex on one segment only is an open end.
+  const degree = new Map<number, number>()
+  for (const segment of network.segments) {
+    degree.set(segment.start, (degree.get(segment.start) ?? 0) + 1)
+    degree.set(segment.end, (degree.get(segment.end) ?? 0) + 1)
+  }
+  const lines: Vector[][] = []
+  const lineEnds: Array<[boolean, boolean]> = []
+  for (const [index, segment] of network.segments.entries()) {
     const points = segmentPoints(network, index, tolerance)
-    return points ? [points] : []
-  })
-  // An open network without regions draws its stroke centred on each segment.
-  const strokeCentered = network.regions.length === 0
-  if (geometry.length > 0) return { areas: geometry, lines, strokeCentered }
+    if (!points) continue
+    lines.push(points)
+    lineEnds.push([degree.get(segment.start) === 1, degree.get(segment.end) === 1])
+  }
+  // Without regions the stroke draws centred on each segment, unless a closed network carries
+  // saved stroke geometry, which the renderer draws with its alignment.
+  const open = lineEnds.some(([start, end]) => start || end)
+  const strokeCentered = network.regions.length === 0 && (open || node.strokeGeometry.length === 0)
+  if (geometry.length > 0) return { areas: geometry, lines, lineEnds, strokeCentered }
   const areas =
     network.regions.length > 0
       ? network.regions.map((region) => ({
@@ -141,7 +158,7 @@ function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null 
         }))
       : // Without regions a fill closes each run of segments, as a path fill does.
         [{ windingRule: 'NONZERO' as const, contours: segmentRuns(network, tolerance) }]
-  return { areas, lines, strokeCentered }
+  return { areas, lines, lineEnds, strokeCentered }
 }
 
 /**
@@ -172,7 +189,8 @@ export function shapeOutline(node: SceneNode, tolerance: number): ShapeOutline |
             { x: 0, y: 0 },
             { x: node.width, y: node.height }
           ]
-        ]
+        ],
+        lineEnds: [[true, true]]
       }
     case 'VECTOR':
       return vectorOutline(node, tolerance)

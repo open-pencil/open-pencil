@@ -5,7 +5,7 @@ import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
 import type { Vector } from '../primitives'
 import type { Fill, SceneNode, Stroke } from '../types'
-import { containsByWinding, distanceToLines } from './point'
+import { containsByWinding, distanceToLines, distanceToSegment } from './point'
 import { shapeOutline, type OutlineArea, type ShapeOutline } from './shapes'
 
 /** How far a flattened curve may stray from the shape when nothing tighter is asked for. */
@@ -62,8 +62,8 @@ interface Probe {
   inside: boolean
   /** Distance to the outline of the filled area, in canvas units. */
   edge: number
-  /** Distance to each line a stroke follows, in canvas units. */
-  lines: number[]
+  /** Each line a stroke follows, measured from the point in canvas units. */
+  lines: LineReach[]
   /** Each line's own stroke weight, where sides differ. */
   lineWeights?: number[]
   /** Whether the layer has an area of its own; strokes on lines are always centred. */
@@ -77,6 +77,42 @@ interface Probe {
   boundaryWithin?: (radius: number) => boolean
 }
 
+/**
+ * How a point lies from a line: its distance, and past an open end how far beyond the end it is
+ * along the line and how far across it, for a flat cap that paints nothing past the end.
+ */
+interface LineReach {
+  distance: number
+  beyond: number
+  across: number
+}
+
+function measureLine(
+  line: Vector[],
+  ends: [boolean, boolean] | undefined,
+  point: Vector
+): LineReach {
+  const reach: LineReach = { distance: distanceToLines([line], point), beyond: 0, across: 0 }
+  if (!ends || line.length < 2) return reach
+  // Past an open end, the point projects beyond the first or last segment.
+  const tips: Array<[boolean, Vector, Vector]> = [
+    [ends[0], line[0], line[1]],
+    [ends[1], line[line.length - 1], line[line.length - 2]]
+  ]
+  for (const [open, tip, next] of tips) {
+    if (!open) continue
+    const dx = tip.x - next.x
+    const dy = tip.y - next.y
+    const length = Math.hypot(dx, dy)
+    if (length === 0) continue
+    const along = ((point.x - tip.x) * dx + (point.y - tip.y) * dy) / length
+    if (along <= 0 || Math.hypot(point.x - tip.x, point.y - tip.y) > reach.distance + 1e-9) continue
+    reach.beyond = along
+    reach.across = Math.abs((point.x - tip.x) * dy - (point.y - tip.y) * dx) / length
+  }
+  return reach
+}
+
 function probeOutline(outline: ShapeOutline, point: Vector): Probe {
   return {
     inside: outline.areas.some((area) => insideArea(area, point)),
@@ -84,7 +120,7 @@ function probeOutline(outline: ShapeOutline, point: Vector): Probe {
       outline.areas.flatMap((area) => area.contours.map(closedLoop)),
       point
     ),
-    lines: outline.lines.map((line) => distanceToLines([line], point)),
+    lines: outline.lines.map((line, index) => measureLine(line, outline.lineEnds?.[index], point)),
     lineWeights: outline.lineWeights,
     closed: outline.areas.some((area) => area.contours.length > 0),
     centered: outline.strokeCentered
@@ -106,13 +142,39 @@ const BOOLEAN_COMBINE: Record<
   EXCLUDE: (hits) => compact(hits).length % 2 === 1
 }
 
-/** Directions sampled round a point to find a combined shape's outline near it. */
-const BOUNDARY_SAMPLES = 16
+/** Points tested along each operand edge near the point for whether the result changes there. */
+const EDGE_SAMPLES = 8
+
+/** The lines an operand draws its outline along, in canvas coordinates. */
+function operandEdges(graph: SceneGraph, node: SceneNode, tolerance: number): Vector[][] {
+  if (node.type === 'BOOLEAN_OPERATION' && node.fillGeometry.length === 0) {
+    return graph
+      .getChildren(node.id)
+      .filter((child) => child.visible)
+      .flatMap((child) => operandEdges(graph, child, tolerance))
+  }
+  const outline =
+    node.type === 'BOOLEAN_OPERATION'
+      ? shapeOutline({ ...node, type: 'VECTOR', vectorNetwork: null }, tolerance)
+      : shapeOutline(node, tolerance)
+  if (!outline) return []
+  const world = getWorldMatrix(node, graph)
+  const local = [
+    ...outline.lines,
+    ...outline.areas.flatMap((area) => area.contours.map(closedLoop))
+  ]
+  return local.map((line) =>
+    line.map((point) => {
+      const [x, y] = Matrix.mapPoints(world, [point.x, point.y])
+      return { x, y }
+    })
+  )
+}
 
 /**
  * A boolean operation without saved geometry, combined from its operands as it draws. Its outline
- * is found where the combined result changes near the point, sampled on two rings, so operand
- * edges hidden inside or outside the result count for nothing.
+ * runs along the operand edges where the combined result changes from one side to the other, so
+ * edges hidden inside or outside the result count for nothing, however thin the result is.
  */
 function probeBoolean(
   graph: SceneGraph,
@@ -135,12 +197,40 @@ function probeBoolean(
   }
   const inside = insideAt(px, py)
   if (inside === null) return null
+  const point = { x: px, y: py }
+  const edges = operands.flatMap((operand) => operandEdges(graph, operand, tolerance))
+  /** Whether the result changes across the edge from `a` to `b` at the point `q` on it. */
+  const changesAcross = (q: Vector, a: Vector, b: Vector, step: number): boolean => {
+    const length = Math.hypot(b.x - a.x, b.y - a.y)
+    const nx = -(b.y - a.y) / length
+    const ny = (b.x - a.x) / length
+    const left = insideAt(q.x + nx * step, q.y + ny * step)
+    const right = insideAt(q.x - nx * step, q.y - ny * step)
+    return left !== null && right !== null && left !== right
+  }
   const boundaryWithin = (radius: number): boolean => {
-    for (const ring of [radius, radius / 2]) {
-      for (let i = 0; i < BOUNDARY_SAMPLES; i++) {
-        const angle = (2 * Math.PI * i) / BOUNDARY_SAMPLES
-        const sample = insideAt(px + ring * Math.cos(angle), py + ring * Math.sin(angle))
-        if (sample !== null && sample !== inside) return true
+    const step = Math.max(1e-6, Math.min(tolerance, radius / 4) / 4)
+    for (const edge of edges) {
+      for (let i = 0; i + 1 < edge.length; i++) {
+        const a = edge[i]
+        const b = edge[i + 1]
+        if (a.x === b.x && a.y === b.y) continue
+        if (distanceToSegment(point, a, b) > radius) continue
+        // The part of the edge inside the circle, sampled evenly.
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const lengthSquared = dx * dx + dy * dy
+        const centre = ((px - a.x) * dx + (py - a.y) * dy) / lengthSquared
+        const nearest = { x: a.x + dx * centre, y: a.y + dy * centre }
+        const half = Math.sqrt(
+          Math.max(0, radius * radius - (nearest.x - px) ** 2 - (nearest.y - py) ** 2)
+        )
+        const from = Math.max(0, centre - half / Math.sqrt(lengthSquared))
+        const to = Math.min(1, centre + half / Math.sqrt(lengthSquared))
+        for (let k = 0; k <= EDGE_SAMPLES; k++) {
+          const t = from + ((to - from) * k) / EDGE_SAMPLES
+          if (changesAcross({ x: a.x + dx * t, y: a.y + dy * t }, a, b, step)) return true
+        }
       }
     }
     return false
@@ -180,9 +270,14 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
     const weight = strokeWeightOf(node, stroke)
     return probe.boundaryWithin(strokeReachAt(align, weight, probe.inside) + pad)
   }
-  return probe.lines.some((distance, index) => {
+  // A flat cap ends the stroke at the line's end; round and square caps paint past it.
+  const cap = stroke.cap ?? node.strokeCap
+  const flatEnds = cap === 'NONE'
+  return probe.lines.some((line, index) => {
     const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
-    return distance <= strokeReachAt(align, weight, probe.inside) + pad
+    const reach = strokeReachAt(align, weight, probe.inside) + pad
+    if (flatEnds && line.beyond > 0) return line.beyond <= pad && line.across <= reach
+    return line.distance <= reach
   })
 }
 
