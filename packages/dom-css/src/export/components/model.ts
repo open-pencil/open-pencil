@@ -4,7 +4,6 @@ import { allElements } from '#dom-css/behaviours/states/layers'
 import { ownerVariants, restLayerOf, stateStyles } from '#dom-css/behaviours/states/model'
 import { layerClassNames, propAttribute } from '#dom-css/behaviours/states/names'
 import type { StateElement, StateStyles } from '#dom-css/behaviours/states/types'
-import { uniq } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -16,7 +15,6 @@ import {
   textBinding,
   type Behaviour
 } from '@open-pencil/scene-graph/behaviours'
-import { variantDefaultValue } from '@open-pencil/scene-graph/components'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import type { SceneGraphToDesignOptions } from '../projection'
@@ -321,14 +319,8 @@ function variantProps(
     .map((definition) => ({
       name: claimName(camelCase(identifierName(definition.name, 'Prop')), taken),
       property: definition.name,
-      // A document may record no options, which the variants' own values then are.
-      options: uniq([
-        ...(definition.variantOptions ?? []),
-        ...ownerVariants(graph, set).map(
-          (variant) => variant.componentPropertyValues[definition.name] ?? ''
-        )
-      ]).filter((option) => option !== ''),
-      default: variantDefaultValue(graph, set, definition)
+      options: definition.variantOptions ?? [],
+      default: definition.defaultValue
     }))
 }
 

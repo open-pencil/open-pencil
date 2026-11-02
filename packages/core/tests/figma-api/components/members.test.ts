@@ -38,21 +38,29 @@ describe('component and component set members', () => {
     await expect(component.getInstancesAsync()).rejects.toThrow()
   })
 
+  // The shadcn/ui community kit saves its sets' variant properties with neither values nor a
+  // default.
   test('a set read from a file without its option lists gives its variants’ values', () => {
     const figma = createAPI()
     const small = figma.createComponent()
     small.name = 'size=s'
     const large = figma.createComponent()
     large.name = 'size=l'
+    large.y = 200
     const set = figma.combineAsVariants([small, large], figma.currentPage)
+    // Small stays the top-left, default variant while coming second in layer order.
+    set.insertChild(0, large)
     const node = figma.graph.getNode(set.id)
     if (!node) throw new Error('Expected the set')
     figma.graph.updateNode(set.id, {
       componentPropertyDefinitions: node.componentPropertyDefinitions.map(
-        ({ variantOptions: _options, ...definition }) => definition
+        ({ variantOptions: _options, ...definition }) => ({ ...definition, defaultValue: '' })
       )
     })
-    expect(set.variantGroupProperties).toEqual({ size: { values: ['s', 'l'] } })
+    expect(set.variantGroupProperties).toEqual({ size: { values: ['l', 's'] } })
+    expect(set.componentPropertyDefinitions).toEqual({
+      size: { type: 'VARIANT', defaultValue: 's', variantOptions: ['l', 's'] }
+    })
   })
 
   test('a set’s default variant, the first in reading order, and its variant values', () => {

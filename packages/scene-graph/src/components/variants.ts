@@ -1,5 +1,7 @@
+import { compact, uniq } from 'es-toolkit/array'
+
 import type { SceneGraph } from '../graph'
-import type { SceneNode } from '../types'
+import type { ComponentPropertyDefinition, SceneNode } from '../types'
 
 /** Variants in reading order on the canvas: top to bottom, then left to right, then by name. */
 export function compareCanvasPosition(a: SceneNode, b: SceneNode): number {
@@ -39,6 +41,35 @@ export function variantDefaultValue(
 ): string {
   if (property.variantOptions?.includes(property.defaultValue)) return property.defaultValue
   return defaultVariant(graph, set)?.componentPropertyValues[property.name] ?? property.defaultValue
+}
+
+/**
+ * A variant property's values: the ones the document records, then any its variants use that it
+ * does not, since older documents record none and a set's page may have loaded only some
+ * variants.
+ */
+export function variantOptions(
+  graph: SceneGraph,
+  set: SceneNode,
+  property: { name: string; variantOptions?: string[] }
+): string[] {
+  const used = graph
+    .getChildren(set.id)
+    .map((child) =>
+      child.type === 'COMPONENT' ? child.componentPropertyValues[property.name] : ''
+    )
+  return compact(uniq([...(property.variantOptions ?? []), ...used]))
+}
+
+/** A set's definition with a variant property's values and default filled in from its variants. */
+export function resolvedVariantDefinition(
+  graph: SceneGraph,
+  set: SceneNode,
+  definition: ComponentPropertyDefinition
+): ComponentPropertyDefinition {
+  if (definition.type !== 'VARIANT') return definition
+  const options = { ...definition, variantOptions: variantOptions(graph, set, definition) }
+  return { ...options, defaultValue: variantDefaultValue(graph, set, options) }
 }
 
 /**
