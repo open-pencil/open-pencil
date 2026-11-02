@@ -6,7 +6,7 @@ import { parseFigma } from '#core/figma-api/validation'
 
 /** Figma's `HyperlinkTarget`, or null to remove a link; Figma checks a value against both. */
 const hyperlinkSchema = v.union([
-  v.object({ type: v.picklist(['URL', 'NODE']), value: v.string() }),
+  v.strictObject({ type: v.picklist(['URL', 'NODE']), value: v.string() }),
   v.null()
 ])
 

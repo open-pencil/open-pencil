@@ -155,7 +155,7 @@ export function deleteCharacters(
 }
 
 type ListType = TextListOptions['type']
-const listOptionsSchema = v.object({
+const listOptionsSchema = v.strictObject({
   type: v.picklist(['NONE', 'ORDERED', 'UNORDERED'] as const satisfies readonly ListType[])
 })
 
@@ -217,11 +217,10 @@ export function getRangeIndentation(
   return levels.size === 1 ? level : mixed
 }
 
-const indentationSchema = v.pipe(
-  finiteNumberSchema,
-  v.integer(),
-  v.minValue(0),
-  v.maxValue(MAX_LIST_INDENTATION)
+/** A whole level of nesting; Figma stops at a fraction before checking the bounds. */
+const indentationSchema = v.config(
+  v.pipe(finiteNumberSchema, v.integer(), v.minValue(0), v.maxValue(MAX_LIST_INDENTATION)),
+  { abortPipeEarly: true }
 )
 
 export function setRangeIndentation(

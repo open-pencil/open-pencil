@@ -151,6 +151,33 @@ describe('text setters check their values as Figma does', () => {
     )
   })
 
+  test('links and list options take no keys Figma does not know, and a level is whole first', async () => {
+    const api = createAPI()
+    await api.loadFontAsync({ family: 'Inter', style: 'Regular' })
+    const text = api.createText()
+    text.characters = 'Hello'
+    expect(() =>
+      text.setRangeHyperlink(0, 3, { type: 'URL', value: 'https://a.com', foo: 1 } as never)
+    ).toThrow(
+      'in setRangeHyperlink: Property "hyperlink" failed validation: Unrecognized key: "foo"'
+    )
+    expect(() => text.setRangeHyperlink(0, 3, undefined as never)).toThrow(
+      'failed validation: Expected one of the following, but none matched:\n  Required value missing'
+    )
+    expect(() => text.setRangeListOptions(0, 3, { type: 'NONE', foo: 1 } as never)).toThrow(
+      'in setRangeListOptions: Property "options" failed validation: Unrecognized key: "foo"'
+    )
+    let refusal = ''
+    try {
+      text.setRangeIndentation(0, 3, -1.5)
+    } catch (error) {
+      refusal = error instanceof Error ? error.message : ''
+    }
+    expect(refusal).toBe(
+      'in setRangeIndentation: Property "indentation" failed validation: Expected int, received number'
+    )
+  })
+
   test('font names and lengths take no keys Figma does not know', async () => {
     const api = createAPI()
     await api.loadFontAsync({ family: 'Inter', style: 'Regular' })

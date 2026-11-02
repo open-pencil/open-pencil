@@ -27,9 +27,10 @@ const BOOLEAN_OPERATIONS = [
   'EXCLUDE'
 ] as const satisfies readonly BooleanOperation[]
 
-const pointCountSchema = v.pipe(finiteNumberSchema, v.integer(), v.minValue(3))
+/** Figma checks the minimum before whole numbers, and reports both. */
+const pointCountSchema = v.pipe(finiteNumberSchema, v.minValue(3), v.integer())
 /** Figma's `ArcData`; it checks every field and lists each problem on its own line. */
-const arcDataSchema = v.object({
+const arcDataSchema = v.strictObject({
   startingAngle: finiteNumberSchema,
   endingAngle: finiteNumberSchema,
   innerRadius: unitIntervalSchema

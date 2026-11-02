@@ -94,6 +94,10 @@ describe('Figma’s validation messages', () => {
         '    Required value missing at .value.color\n' +
         '  Invalid input: expected "AUTO" at .value'
     )
+    // Shapes that fail alike read once, as every shape fails a missing value.
+    expect(refusal(color, undefined)).toBe(
+      'Expected one of the following, but none matched:\n  Required value missing'
+    )
     expect(parseFigma(color, { value: 'AUTO' }, 'set_example')).toEqual({ value: 'AUTO' })
   })
 })

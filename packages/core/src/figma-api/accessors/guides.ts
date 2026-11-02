@@ -23,7 +23,9 @@ const GUIDE_OWNER_TYPES: ReadonlySet<SceneNode['type']> = new Set([
 ])
 
 /** Figma's `Guide`: an axis and an offset along it. */
-const guidesSchema = v.array(v.object({ axis: v.picklist(['X', 'Y']), offset: finiteNumberSchema }))
+const guidesSchema = v.array(
+  v.strictObject({ axis: v.picklist(['X', 'Y']), offset: finiteNumberSchema })
+)
 
 /**
  * `guides` on pages and frames, as Figma keeps them for each (Figma desktop 126). A guide set at

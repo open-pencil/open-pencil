@@ -1,3 +1,4 @@
+import { uniq } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 // Figma's plugin API validates arguments with Zod 4 and words what it refuses in its own way
@@ -250,12 +251,15 @@ function figmaProblems(schema: Schema, value: unknown, prefix: readonly PathItem
       lines.every((text) => REFINEMENTS.some((refinement) => text.startsWith(refinement)))
     )
     if (settled.length === 1) return settled[0] ?? []
+    // Shapes that fail alike, as every shape fails a missing value, read once.
     return [
       noneMatched(
-        branches.map((lines) =>
-          lines.length === 1
-            ? (lines[0] ?? '')
-            : `Multiple issues${where(prefix)}:\n${lines.map((text) => `    ${text}`).join('\n')}`
+        uniq(
+          branches.map((lines) =>
+            lines.length === 1
+              ? (lines[0] ?? '')
+              : `Multiple issues${where(prefix)}:\n${lines.map((text) => `    ${text}`).join('\n')}`
+          )
         )
       )
     ]

@@ -128,3 +128,18 @@ describe('a boolean operation', () => {
     expect('booleanOperation' in api().figma.createRectangle()).toBe(false)
   })
 })
+
+describe('shape values Figma refuses', () => {
+  test('a point count reports its minimum before whole numbers, and arc data takes no other keys', () => {
+    const { figma } = api()
+    const polygon = figma.createPolygon()
+    expect(() => (polygon.pointCount = 2.5)).toThrow(
+      'in set_pointCount: Property "pointCount" failed validation: Too small: expected number to be >=3\nExpected int, received number'
+    )
+    const ellipse = figma.createEllipse()
+    expect(
+      () =>
+        (ellipse.arcData = { startingAngle: 0, endingAngle: 1, innerRadius: 0, foo: 1 } as never)
+    ).toThrow('in set_arcData: Property "arcData" failed validation: Unrecognized key: "foo"')
+  })
+})
