@@ -5,7 +5,6 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 import {
   createAgentDiscovery,
   detectedAgents,
-  resolveAgentCommand,
   spawnCommandFromLookup
 } from '@/app/ai/agents/setup/discovery'
 import type { AgentLookup } from '@/app/ai/agents/setup/native'
@@ -168,7 +167,7 @@ describe('local agent discovery', () => {
     ])
   })
 
-  test('starts the name lookup found and refuses a lookup that found none', () => {
+  test('refuses an agent the lookup did not find, and tries it when the lookup failed', () => {
     const agents = detectedAgents(lookup())
     const cursor = expectDefined(
       agents.find((agent) => agent.definition.id === 'cursor'),
@@ -181,33 +180,26 @@ describe('local agent discovery', () => {
     expect(spawnCommandFromLookup(cursor.definition, { 'cursor-agent': '/bin/cursor-agent' })).toBe(
       'cursor-agent'
     )
-    expect(
-      spawnCommandFromLookup(cursor.definition, {
-        agent: '/bin/agent',
-        'cursor-agent': '/bin/cursor-agent'
-      })
-    ).toBe('agent')
-    expect(spawnCommandFromLookup(cursor.definition, null)).toBe('agent')
-    expect(() =>
-      spawnCommandFromLookup(cursor.definition, { agent: null, 'cursor-agent': null })
-    ).toThrow(AgentNotInstalledError)
+    expect(spawnCommandFromLookup(cursor.definition, null)).toBe('cursor-agent')
+    expect(() => spawnCommandFromLookup(cursor.definition, { 'cursor-agent': null })).toThrow(
+      AgentNotInstalledError
+    )
     expect(() => spawnCommandFromLookup(gemini.definition, { gemini: null })).toThrow(
       AgentNotInstalledError
     )
   })
 
-  test('starts cursor-agent when agent itself is not installed', () => {
-    const found = lookup('cursor-agent')
-    const cursor = detectedAgents(found).find((agent) => agent.definition.id === 'cursor')
-    expect(cursor?.status).toBe('available')
-    if (!cursor) return
-    expect(resolveAgentCommand(cursor.definition, found.executables)).toBe('cursor-agent')
-    expect(
-      resolveAgentCommand(cursor.definition, {
-        ...found.executables,
-        agent: '/test/bin/agent'
-      })
-    ).toBe('agent')
+  test('does not take another program named agent for Cursor', () => {
+    // Grok Build, among others, installs an `agent` command of its own.
+    const found = lookup('agent')
+    const cursor = expectDefined(
+      detectedAgents(found).find((agent) => agent.definition.id === 'cursor'),
+      'Cursor'
+    )
+    expect(cursor.status).toBe('not-installed')
+    expect(() => spawnCommandFromLookup(cursor.definition, found.executables)).toThrow(
+      AgentNotInstalledError
+    )
   })
 
   test('browser discovery performs no native operations', async () => {

@@ -38,31 +38,17 @@ export type DetectedAgent = {
   status: 'available' | 'needs-adapter' | 'not-installed'
 }
 
-/** `command`, then any alias, so the canonical name wins when both are installed. */
-export function agentCommandNames(agent: ACPAgentDef): string[] {
-  return [agent.command, ...(agent.commandAliases ?? [])]
-}
-
-/** The executable to start: the first listed name that lookup found, or `command` when none did. */
-export function resolveAgentCommand(
-  agent: ACPAgentDef,
-  executables: AgentLookup['executables']
-): string {
-  return agentCommandNames(agent).find((name) => executables[name]) ?? agent.command
-}
-
 /**
  * The executable to spawn from a finished lookup. `null` means the lookup itself failed, so the
- * canonical command is tried. A lookup that found none of the names refuses to start.
+ * command is tried anyway. A lookup that did not find it refuses to start, so a missing agent is
+ * reported as such rather than as a shell that exited.
  */
 export function spawnCommandFromLookup(
   agent: ACPAgentDef,
   executables: AgentLookup['executables'] | null
 ): string {
-  if (!executables) return agent.command
-  const found = agentCommandNames(agent).find((name) => executables[name])
-  if (!found) throw new AgentNotInstalledError(agent)
-  return found
+  if (executables && !executables[agent.command]) throw new AgentNotInstalledError(agent)
+  return agent.command
 }
 
 export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
@@ -76,9 +62,8 @@ export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
 
 export function detectedAgents(lookup: AgentLookup): DetectedAgent[] {
   return ACP_AGENTS.map((definition) => {
-    const command = resolveAgentCommand(definition, lookup.executables)
     const cliPath = lookup.executables[definition.cliCommand ?? definition.command] ?? null
-    const adapterPath = lookup.executables[command] ?? null
+    const adapterPath = lookup.executables[definition.command] ?? null
     // An adapter package carries its agent, so it installs whether or not the CLI is there.
     const unavailableStatus = definition.adapterPackage ? 'needs-adapter' : 'not-installed'
     return {

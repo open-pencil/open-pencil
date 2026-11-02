@@ -18,11 +18,6 @@ export interface ACPAgentDef {
   name: string
   command: string
   args: string[]
-  /**
-   * Other executable names for the same program, used when `command` is not on PATH.
-   * The first name lookup finds is the one that is started.
-   */
-  commandAliases?: string[]
   /** The agent's own CLI, when the ACP program is a separate adapter for it. */
   cliCommand?: string
   /** npm package that provides `command` when it is an adapter. */
@@ -78,9 +73,10 @@ export const ACP_AGENTS: ACPAgentDef[] = [
   {
     id: 'cursor',
     name: 'Cursor',
-    command: 'agent',
+    // Cursor's installer links both `agent` and `cursor-agent`; other CLIs, such as Grok Build,
+    // install an `agent` of their own, so only `cursor-agent` is sure to be Cursor.
+    command: 'cursor-agent',
     args: ['acp'],
-    commandAliases: ['cursor-agent'],
     setupURL: 'https://cursor.com/docs/cli/installation',
     apiKey: {
       integrationId: 'acp-cursor',

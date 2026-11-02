@@ -1,35 +1,20 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
-
-import { agentCommandNames } from '@/app/ai/agents/setup/discovery'
 import { codingAgentSetupPrompt } from '@/app/ai/agents/setup/prompt'
 
-import { expectDefined } from '#tests/helpers/assert'
-
 describe('coding agent setup prompt', () => {
-  test('names every executable an agent can start as', () => {
-    for (const id of ['cursor', 'claude-code'] as const) {
-      const agent = expectDefined(
-        ACP_AGENTS.find((candidate) => candidate.id === id),
-        id
-      )
-      const prompt = codingAgentSetupPrompt(agent.id)
-      for (const name of agentCommandNames(agent)) {
-        expect(prompt).toContain(`\`${name}\``)
-        expect(prompt).toContain(`which ${name}`)
-      }
-    }
+  test('tells Cursor to install from its guide and to start and sign in with cursor-agent', () => {
+    const prompt = codingAgentSetupPrompt('cursor')
+    expect(prompt).toContain(
+      'If `cursor-agent` is not on my PATH, install Cursor from https://cursor.com/docs/cli/installation'
+    )
+    expect(prompt).toContain('which cursor-agent')
+    expect(prompt).toContain('`cursor-agent login`')
   })
 
-  test('tells a Cursor install to sign in with whichever command it has', () => {
-    const agent = expectDefined(
-      ACP_AGENTS.find((candidate) => candidate.id === 'cursor'),
-      'Cursor'
+  test('gives an npm-installed agent its install command', () => {
+    expect(codingAgentSetupPrompt('gemini-cli')).toContain(
+      'install it: `npm i -g @google/gemini-cli`'
     )
-    const prompt = codingAgentSetupPrompt(agent.id)
-    for (const name of agentCommandNames(agent)) {
-      expect(prompt).toContain(`\`${name} login\``)
-    }
   })
 })

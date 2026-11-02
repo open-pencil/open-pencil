@@ -100,7 +100,7 @@ describe('agent process environment', () => {
     await setModelConnectionAPIKey('connection-cursor', 'design-key')
 
     expect(await agentProcessEnv(cursor)).toEqual({ CURSOR_API_KEY: 'design-key' })
-    expect([cursor.command, ...cursor.args]).toEqual(['agent', 'acp'])
+    expect([cursor.command, ...cursor.args]).toEqual(['cursor-agent', 'acp'])
     expect(await agentProcessEnv(claude)).toEqual({})
   })
 
