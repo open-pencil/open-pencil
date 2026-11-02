@@ -1,4 +1,7 @@
 {
+  "interfaceScale": "インターフェースのサイズ",
+  "interfaceScaleDescription": "キャンバスのズームを変更せずに、パネル、テキスト、コントロールのサイズを調整します。",
+  "interfaceScaleDefault": "{scale}（デフォルト）",
   "recentFiles": "最近使ったファイル",
   "recentFilesDescription": "最近使ったファイルの一覧とメニューに保持するファイル数を選択します。",
   "recentFilesLimit": "最近使ったファイルの数",

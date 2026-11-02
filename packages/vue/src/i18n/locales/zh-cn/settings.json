@@ -1,4 +1,7 @@
 {
+  "interfaceScale": "界面大小",
+  "interfaceScaleDescription": "调整面板、文本和控件的大小，不改变画布缩放。",
+  "interfaceScaleDefault": "{scale}（默认）",
   "recentFiles": "最近的文件",
   "recentFilesDescription": "选择在最近文件列表和“打开最近的文件”菜单中保留的文件数量。",
   "recentFilesLimit": "最近文件数量",

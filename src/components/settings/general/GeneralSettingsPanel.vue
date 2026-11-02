@@ -11,10 +11,12 @@ import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-fil
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,
+  INTERFACE_SCALES,
   updateAccentPreference
 } from '@/app/settings/preferences/store'
 import { DEFAULT_THEME } from '@/app/settings/theme'
 import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
+import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
@@ -59,6 +61,17 @@ const preserveUnsavedWork = computed({
   get: () => recoveryEnabled.value,
   set: setRecoveryEnabled
 })
+const defaultInterfaceScale = DEFAULT_APP_PREFERENCES.appearance.interfaceScale
+const interfaceScaleOptions = computed(() => {
+  const format = new Intl.NumberFormat(locale.value, { style: 'percent' })
+  return INTERFACE_SCALES.map((value) => ({
+    value,
+    label:
+      value === defaultInterfaceScale
+        ? settings.value.interfaceScaleDefault({ scale: format.format(value / 100) })
+        : format.format(value / 100)
+  }))
+})
 </script>
 
 <template>
@@ -82,6 +95,21 @@ const preserveUnsavedWork = computed({
     <SettingsSection>
       <template #title>{{ settings.appearance }}</template>
       <SettingsGroup>
+        <SettingsRow
+          :label="settings.interfaceScale"
+          :description="settings.interfaceScaleDescription"
+          :modified="interfaceScalePreference !== defaultInterfaceScale"
+          class="flex-wrap"
+          @reset="interfaceScalePreference = defaultInterfaceScale"
+        >
+          <AppSelect
+            v-model="interfaceScalePreference"
+            :label="settings.interfaceScale"
+            :options="interfaceScaleOptions"
+            :ui="selectUI"
+            data-test-id="settings-interface-scale"
+          />
+        </SettingsRow>
         <SettingsRow
           as="label"
           :label="menu.theme"
