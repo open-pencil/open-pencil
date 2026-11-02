@@ -21,6 +21,7 @@ export {
 export { rememberDocumentView, rememberedDocumentView } from './view'
 export {
   cacheRecentFileCover,
+  drawHomeCardCover,
   cacheRecentFileThumbnail,
   loadCachedRecentFileThumbnail,
   loadRecentFileThumbnail

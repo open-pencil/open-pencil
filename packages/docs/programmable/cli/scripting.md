@@ -216,6 +216,7 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `node.findOne(callback)`
 - `node.findChild(callback)`
 - `node.findChildren(callback?)`
+- `node.getTopLevelFrame()` — the frame, group, section, component, or instance the node sits in directly under its page or section
 - `figma.group(nodes, parent)`
 - `figma.ungroup(node)`
 
@@ -224,8 +225,11 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `figma.createComponentFromNode(node)`
 - `figma.combineAsVariants(components, parent)` — properties come from names such as `State=On, Size=Large`
 - On a component set, `addComponentProperty(name, 'VARIANT', value)` appends the value to every variant's name and `editComponentProperty(name, { name })` renames the property in them, which instances follow; renaming a variant updates the set's values, and `variantProperties` reads a variant's or an instance's values
-- `component.createInstance()`
+- `component.createInstance()`, `component.instances`, and `component.getInstancesAsync()`
+- `description` on components and component sets
+- `set.defaultVariant`, the first variant reading the set across each row and then down, and `set.variantGroupProperties`
 - `instance.mainComponent`
+- `instance.removeOverrides()` (and its deprecated name `resetOverrides()`)
 
 ### Variables
 
@@ -236,17 +240,27 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `collection.addMode(name)`, `renameMode(modeId, name)`, `removeMode(modeId)`, `modes`, `defaultModeId`, `variableIds`, and `remove()`
 - `node.boundVariables`, `node.setBoundVariable(field, variable)`, `node.setExplicitVariableModeForCollection(collection, modeId)`, and `node.clearExplicitVariableModeForCollection(collection)`
 
+### Styles
+
+- `figma.createPaintStyle()`, `createTextStyle()`, `createEffectStyle()`, and `createGridStyle()`, kept on the document's internal page as Figma keeps them
+- `figma.getLocalPaintStyles()`, `getLocalTextStyles()`, `getLocalEffectStyles()`, `getLocalGridStyles()`, their `…Async` forms, and `figma.getStyleById(id)` / `getStyleByIdAsync(id)`
+- `style.name`, `description`, `key`, `paints`, `effects`, `layoutGrids`, a text style's font, size, spacing, case, and decoration, `getStyleConsumersAsync()`, and `remove()`; a change to a style reaches every layer and text range that uses it, and removing it leaves them its values
+- `fillStyleId`, `strokeStyleId`, `effectStyleId`, `gridStyleId`, and `textStyleId` with their `set…StyleIdAsync` setters, on the layers Figma has them on; setting one gives the layer the style's values, an empty ID takes the style off, and a style the document does not hold is refused
+
 ### Properties
 
 Common node properties are readable/writable through the proxy, including:
 
 - Geometry: `x`, `y`, `width`, `height`, `rotation`, `resize(width, height)`
-- Appearance: `fills`, `strokes`, `effects`, `opacity`, `visible`, `locked`, `blendMode`, `clipsContent`. Paints take Figma's shape here, on page `backgrounds`, text ranges, and vector regions: a solid `color` is RGB with its alpha in `opacity`, and an image names `scaleMode`, `rotation`, and `scalingFactor`; a paint Figma refuses throws Figma's message
+- Appearance: `fills`, `strokes` (also set with `setFillsAsync` and `setStrokesAsync`), `effects`, `opacity`, `visible`, `locked`, `blendMode`, `clipsContent`. Paints take Figma's shape here, on page `backgrounds`, text ranges, and vector regions: a solid `color` is RGB with its alpha in `opacity`, and an image names `scaleMode`, `rotation`, and `scalingFactor`; a paint Figma refuses throws Figma's message
 - Radius: `cornerRadius`, `topLeftRadius`, `topRightRadius`, `bottomRightRadius`, `bottomLeftRadius`
-- Text: `characters`, `fontSize`, `fontName` (with `variationSettings`, every axis of a variable font), `fontWeight` (a variable font's `wght`), `fills`, `letterSpacing`, `lineHeight`, and `textDecoration`, which read `figma.mixed` while characters differ and restyle every character when set, and alignment
+- Text: `characters`, `fontSize`, `fontName` (with `variationSettings`, every axis of a variable font), `fontWeight` (a variable font's `wght`), `fills`, `letterSpacing`, `lineHeight`, and `textDecoration` with its `textDecorationStyle`, `textDecorationOffset`, `textDecorationThickness`, `textDecorationColor`, and `textDecorationSkipInk` (null without an underline), which read `figma.mixed` while characters differ and restyle every character when set, `openTypeFeatures`, `leadingTrim`, and alignment
 - Text ranges: `getStyledTextSegments(fields, start?, end?)`, and `getRange…` / `setRange…` for `FontSize`, `FontName`, `Fills`, `LetterSpacing`, `LineHeight`, `TextDecoration` with its `Style`, `Offset`, `Thickness`, `Color`, and `SkipInk`, `TextCase`, `Hyperlink` (a `{ type: 'URL' | 'NODE', value }` link, or `null`), `TextStyleId` and `FillStyleId` (set with `setRangeTextStyleIdAsync` and `setRangeFillStyleIdAsync`, which give the range the style's fields), and `getRangeBoundVariable` / `setRangeBoundVariable` for the text fields Figma binds, plus `getRangeFontWeight`, `getRangeAllFontNames`, and `getRangeOpenTypeFeatures`. Line height and letter spacing keep the unit they are set in, pixels or a percent of the font size that follows the size, as in Figma; other lengths read in pixels, and a percent given to their setters is of the font size
 - Text lists and paragraphs: `getRangeListOptions` / `setRangeListOptions` for bulleted (`UNORDERED`) and numbered (`ORDERED`) items, `getRangeIndentation` / `setRangeIndentation` for nesting (1–5 for list items), `listSpacing`, `paragraphSpacing`, and `paragraphIndent` for the whole text (`figma.mixed` when paragraphs differ) or per paragraph with `getRangeListSpacing` / `setRangeListSpacing`, `getRangeParagraphSpacing` / `setRangeParagraphSpacing`, and `getRangeParagraphIndent` / `setRangeParagraphIndent`, and `hangingList`
-- Auto-layout: `layoutMode`, `primaryAxisAlignItems`, `counterAxisAlignItems`, `itemSpacing`, padding, sizing, and layout positioning fields
+- Auto-layout: `layoutMode`, `primaryAxisAlignItems`, `counterAxisAlignItems`, `itemSpacing`, padding (including Figma's deprecated `horizontalPadding` and `verticalPadding`), sizing, and layout positioning fields
+- Guides: `guides` on pages and frames, as `{ axis: 'X' | 'Y', offset }`
+- Shapes: `pointCount`, a star's `innerRadius`, an ellipse's `arcData`, and a boolean's `booleanOperation`
+- Document: `figma.root.documentColorProfile`
 - Stroke helpers: `strokeWeight`, `strokeAlign`, `dashPattern`
 - Status: `devStatus` on sections, frames, components, component sets, and instances directly on a page or in a section, as `{ type: 'READY_FOR_DEV' | 'COMPLETED' }` or `null` (a description is not kept); it reads `null` while the layer sits where it cannot show one
 
