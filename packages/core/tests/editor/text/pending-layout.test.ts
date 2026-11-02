@@ -52,10 +52,19 @@ function setup({
     ...values
   })
   let loaded = false
+  /** Whether the text's face was found nowhere, so it measures in the substitute it draws in. */
+  let substituted = false
   let canvasLoaded: () => void = noop
   const renderer: PendingLayoutRenderer = {
     fontsLoaded: canvasFontsLoaded,
-    measureTextNode: () => (loaded ? { width: 234, height: 29 } : null),
+    measureTextNode: () => {
+      if (loaded) return { width: 234, height: 29 }
+      return substituted ? { width: 180, height: 24 } : null
+    },
+    nodeFontReadiness: () => {
+      if (loaded) return 'ready'
+      return substituted ? 'substituted' : 'pending'
+    },
     whenFontsLoaded: () =>
       new Promise((resolve) => {
         canvasLoaded = () => {
@@ -111,6 +120,7 @@ function setup({
     canvasLoaded: () => canvasLoaded(),
     stopPreparing: () => (preparing = false),
     loadElsewhere: () => (loaded = true),
+    findNowhere: () => (substituted = true),
     failNextPreparation: () => (failing = true),
     /** Replaces the document, as opening another one does, and returns the new one. */
     replaceDocument: () => {
@@ -276,6 +286,28 @@ test('text its prepared fonts still cannot measure shows, and is laid out once f
   expect(text.width).toBe(234)
 })
 
+test('text measured in a substitute is laid out in its own face once that face loads', async () => {
+  const { graph, text, prepared, pending, runLayoutForNode, renders, findNowhere, loadElsewhere } =
+    setup()
+  findNowhere()
+  runLayoutForNode(text.id)
+  expect([text.width, text.height]).toEqual([180, 24])
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
+  await settle()
+  expect(prepared).toEqual([])
+
+  loadElsewhere()
+  pending.retryStalled()
+  await settle()
+  expect([text.width, text.height]).toEqual([234, 29])
+  expect(renders()).toBe(1)
+
+  // Laid out in its own face, it is not tried again.
+  pending.retryStalled()
+  await settle()
+  expect(prepared).toEqual([[text.id]])
+})
+
 test('text that keeps the glyphs its file saved keeps the size the file gave it', async () => {
   const { graph, text, runLayoutForNode } = setup({
     outside: true,
@@ -309,6 +341,7 @@ function editorSetup() {
     invalidateVectorPath: noop,
     fontsLoaded: true,
     measureTextNode: () => (measurable ? { width: 234, height: 29 } : null),
+    nodeFontReadiness: () => (measurable ? 'ready' : 'pending'),
     whenFontsLoaded: () => Promise.resolve(),
     syncFontGeneration: noop,
     invalidateNodePicture: noop

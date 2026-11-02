@@ -10,7 +10,7 @@ import { fontManager } from '#core/text/font/manager'
 
 export type PendingLayoutRenderer = Pick<
   SkiaRenderer,
-  'measureTextNode' | 'fontsLoaded' | 'whenFontsLoaded' | 'syncFontGeneration'
+  'measureTextNode' | 'nodeFontReadiness' | 'fontsLoaded' | 'whenFontsLoaded' | 'syncFontGeneration'
 >
 
 interface PendingTextLayoutContext {
@@ -33,7 +33,10 @@ interface PendingTextLayoutContext {
 export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   /** Layer id → whether it was measured only while laying out the document's own state. */
   const queued = new Map<string, boolean>()
-  /** Text its fonts could not measure, prepared or failed, tried again once fonts settle. */
+  /**
+   * Text its fonts could not measure, prepared or failed, or measured in a substitute, tried again
+   * once fonts settle.
+   */
   const stalled = new Map<string, boolean>()
   /** The text being laid out after its fonts were prepared, which measuring does not queue again. */
   let layingOut: ReadonlySet<string> = new Set()
@@ -46,6 +49,11 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   function measure(renderer: PendingLayoutRenderer, node: SceneNode, maxWidth?: number) {
     const size = renderer.measureTextNode(node, maxWidth)
     if (!size && node.type === 'TEXT' && node.text) defer(node.id)
+    // Text a face found nowhere is measured in the substitute it draws in, and laid out again
+    // when a face loads, which may be its own.
+    else if (size && renderer.nodeFontReadiness(node) === 'substituted') {
+      note(stalled, node.id, ctx.getGraph().isApplyingDerivedLayout)
+    }
     return size
   }
 
