@@ -53,6 +53,9 @@ describe('Figma’s validation messages', () => {
     expect(refusal(v.array(item), [{ axis: 'X' }, { axis: 'Y', foo: 1 }])).toBe(
       'Unrecognized key: "foo" at index 1'
     )
+    expect(refusal(item, { axis: 'X', toString: 1, constructor: 2 })).toBe(
+      'Unrecognized keys: "toString", "constructor"'
+    )
     expect(refusal(v.array(item), [{ axis: 'Z' }])).toBe(
       'Invalid option: expected one of "X"|"Y" at [0].axis'
     )
@@ -99,5 +102,21 @@ describe('Figma’s validation messages', () => {
       'Expected one of the following, but none matched:\n  Required value missing'
     )
     expect(parseFigma(color, { value: 'AUTO' }, 'set_example')).toEqual({ value: 'AUTO' })
+  })
+
+  test('a value that reads differently the second time reports what the first read found', () => {
+    const choice = v.union([v.strictObject({ size: finiteNumberSchema }), v.literal('AUTO')])
+    let reads = 0
+    const value = {
+      get size() {
+        reads += 1
+        return reads === 1 ? 'big' : 1
+      }
+    }
+    expect(refusal(choice, value)).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Expected number, received string at .size\n' +
+        '  Invalid input: expected "AUTO"'
+    )
   })
 })

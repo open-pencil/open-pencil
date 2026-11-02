@@ -165,7 +165,7 @@ function unrecognized(schema: Schema | undefined, input: unknown, at: string): s
   const object = schema && base(schema).type === 'variant' ? variantOption(schema, input) : schema
   const known = object ? entries(object) : {}
   const keys = Object.keys(input && typeof input === 'object' ? input : {}).filter(
-    (key) => !(key in known)
+    (key) => !Object.hasOwn(known, key)
   )
   const names = keys.map((key) => `"${key}"`).join(', ')
   return `${keys.length === 1 ? 'Unrecognized key' : 'Unrecognized keys'}: ${names}${at}`
@@ -225,8 +225,12 @@ function line(issue: v.BaseIssue<unknown>, root: Schema, prefix: readonly PathIt
     }
     case 'picklist':
       return invalidOption(choices(schemaAt(root, relative)), where(path))
-    case 'literal':
-      return invalidLiteral(String(literalOf(schemaAt(root, relative))), where(path))
+    case 'literal': {
+      const literal = literalOf(schemaAt(root, relative))
+      // Valibot quotes a string literal it expects, as Figma does.
+      if (literal === undefined) return `Invalid input: expected ${issue.expected}${where(path)}`
+      return invalidLiteral(literal, where(path))
+    }
   }
   const refinement = refinementLine(issue, where(path))
   if (refinement) return refinement
@@ -279,6 +283,12 @@ function figmaProblems(schema: Schema, value: unknown, prefix: readonly PathItem
   })
 }
 
+/** A line from an issue alone, a choice listing what each of its shapes found. */
+function fallback(issue: v.BaseIssue<unknown>, root: Schema): string {
+  if (issue.type !== 'union' || !issue.issues) return line(issue, root, [])
+  return noneMatched(uniq(issue.issues.map((nested) => line(nested, root, []))))
+}
+
 /**
  * `value` as `schema` reads it, each field read once, or Figma's refusal of it from `method` for
  * `property`.
@@ -291,5 +301,10 @@ export function parseFigma<const S extends Schema>(
 ): v.InferOutput<S> {
   const result = v.safeParse(schema, value)
   if (result.success) return result.output
-  throw invalid(method, figmaProblems(schema, value).join('\n'), property)
+  // Wording a choice reads the value again; a value that reads differently the second time still
+  // reports what the first read found.
+  const problems = figmaProblems(schema, value)
+  const lines =
+    problems.length > 0 ? problems : result.issues.map((issue) => fallback(issue, schema))
+  throw invalid(method, lines.join('\n'), property)
 }
