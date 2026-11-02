@@ -21,6 +21,7 @@ type DocumentBehaviour = Pick<
   | 'dotGrid'
   | 'pixelGrid'
   | 'framesOpen'
+  | 'sectionTitles'
   | 'lint'
   | 'rulers'
   | 'panelsOpen'
@@ -38,6 +39,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     dotGrid: null,
     pixelGrid: true,
     framesOpen: true,
+    sectionTitles: 'fill',
     lint: true,
     rulers: true,
     panelsOpen: true
@@ -50,6 +52,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     dotGrid: BOARD_GRID,
     pixelGrid: false,
     framesOpen: false,
+    sectionTitles: 'outline',
     lint: false,
     rulers: false,
     panelsOpen: false
