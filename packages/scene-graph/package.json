@@ -224,6 +224,12 @@
       "import": "./dist/order-keys.js",
       "default": "./dist/order-keys.js"
     },
+    "./outline": {
+      "types": "./dist/outline/index.d.ts",
+      "bun": "./src/outline/index.ts",
+      "import": "./dist/outline/index.js",
+      "default": "./dist/outline/index.js"
+    },
     "./paints": {
       "types": "./dist/paints/index.d.ts",
       "bun": "./src/paints/index.ts",
