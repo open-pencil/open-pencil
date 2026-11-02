@@ -6,6 +6,7 @@ import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { prepareGraphFonts } from '@open-pencil/core/text'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
@@ -22,6 +23,7 @@ import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoverySessionId } from '@/app/document/recovery/session'
 import { setActiveEditorStore } from '@/app/editor/active-store'
+import { loadFont } from '@/app/editor/fonts'
 import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
@@ -331,13 +333,16 @@ async function discardFailedRecovery(store: EditorStore): Promise<void> {
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
   const imported = await readFigDocument(file, signal)
   const firstPageId = imported.getPages()[0]?.id
-  const layOut = (pageId: string) =>
+  // Each page is laid out once its text's fonts are prepared, never in a face it would lose.
+  const layOut = async (pageId: string) => {
+    await prepareGraphFonts(imported, [pageId], { loadFont, signal })
     imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
-  if (firstPageId) layOut(firstPageId)
+  }
+  if (firstPageId) await layOut(firstPageId)
   const thumbnailPageId = figThumbnailPageId(imported.getPages())
   if (thumbnailPageId && thumbnailPageId !== firstPageId) {
     populateFigPage(imported, thumbnailPageId)
-    layOut(thumbnailPageId)
+    await layOut(thumbnailPageId)
   }
   return imported
 }
