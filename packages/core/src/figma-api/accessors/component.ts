@@ -1,5 +1,6 @@
 import type { ComponentSetNode } from '@figma/plugin-typings/plugin-api-standalone'
 import { compact, uniq } from 'es-toolkit/array'
+import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { defaultVariant } from '@open-pencil/scene-graph/components'
@@ -11,8 +12,8 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
+import { parseFigma } from '#core/figma-api/validation'
 
 function wrap(target: ProxyThis, internals: NodeProxyInternals, id: string): FigmaNodeProxy {
   return (target[internals.api] as NodeProxyHost).wrapNode(id)
@@ -41,14 +42,8 @@ export function installComponentNodeAccessors(
       return raw(this, internals).symbolDescription
     },
     set(this: ProxyThis, value: unknown) {
-      if (typeof value !== 'string') {
-        throw invalid(
-          'set_description',
-          `Expected string, received ${received(value)}`,
-          'description'
-        )
-      }
-      updateNode(this, internals, { symbolDescription: value })
+      const description = parseFigma(v.string(), value, 'set_description', 'description')
+      updateNode(this, internals, { symbolDescription: description })
     }
   })
   if (type === 'COMPONENT') {

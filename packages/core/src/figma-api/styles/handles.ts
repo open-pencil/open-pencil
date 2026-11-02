@@ -3,13 +3,14 @@ import type {
   StyleType,
   TextStyle
 } from '@figma/plugin-typings/plugin-api-standalone'
+import * as v from 'valibot'
 
 import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
 
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
 import { figmaFills } from '#core/figma-api/accessors/visual'
 import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
+import { parseFigma } from '#core/figma-api/validation'
 import { setPaintBindings } from '#core/figma-api/variables/bindings'
 
 import { releaseUsers, restyleUsers, styleConsumers, type LayerUpdate } from './apply'
@@ -86,10 +87,8 @@ export abstract class FigmaBaseStyle {
 
   set name(value: string) {
     const node = this[NODE]('set_name')
-    if (typeof value !== 'string') {
-      throw invalid('set_name', `Expected string, received ${received(value)}`, 'name')
-    }
-    this[HOST].graph.updateNode(node.id, { name: value })
+    const name = parseFigma(v.string(), value, 'set_name', 'name')
+    this[HOST].graph.updateNode(node.id, { name })
   }
 
   get description(): string {

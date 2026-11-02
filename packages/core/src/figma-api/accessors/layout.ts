@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
@@ -21,7 +23,8 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, numberProblem, received } from '#core/figma-api/accessors/text/messages'
+import { atLeast } from '#core/figma-api/schema'
+import { parseFigma } from '#core/figma-api/validation'
 
 /** A guide in Figma's plugin shape, whether it was set that way or read from a file. */
 function figmaLayoutGrid(grid: LayoutGrid): Readonly<LayoutGrid> {
@@ -75,10 +78,7 @@ export function installLayoutNodeProxyAccessors(
         return Object.freeze(raw(this, internals).layoutGrids.map(figmaLayoutGrid))
       },
       set(this: ProxyThis, value: readonly LayoutGrid[]) {
-        if (!Array.isArray(value)) {
-          const problem = `Expected array, received ${received(value)}`
-          throw invalid('set_layoutGrids', problem, 'layoutGrids')
-        }
+        parseFigma(v.array(v.unknown()), value, 'set_layoutGrids', 'layoutGrids')
         // An Auto count is stored as the archive stores it, so it survives copies and saves.
         const grids = structuredClone([...value]).map((grid) =>
           isAutoGridCount(grid.count) ? { ...grid, count: AUTO_LAYOUT_GRID_COUNT } : grid
@@ -245,11 +245,8 @@ function padding(
       return raw(this, internals)[sides[0]]
     },
     set(this: ProxyThis, value: unknown) {
-      const problem =
-        numberProblem(value) ??
-        ((value as number) < 0 ? 'Too small: expected number to be >=0' : null)
-      if (problem) throw invalid(`set_${property}`, problem, property)
-      updateNode(this, internals, Object.fromEntries(sides.map((side) => [side, value])))
+      const amount = parseFigma(atLeast(0), value, `set_${property}`, property)
+      updateNode(this, internals, Object.fromEntries(sides.map((side) => [side, amount])))
     }
   }
 }

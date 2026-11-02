@@ -56,6 +56,9 @@ describe('guides', () => {
     expect(() => (frame.guides = [{ axis: 'X', offset: Infinity }])).toThrow(
       message('Expected number, received Infinity at [0].offset')
     )
+    expect(() => (frame.guides = [{ axis: 'X', offset: 1, foo: 1 }] as never)).toThrow(
+      message('Unrecognized key: "foo" at index 0')
+    )
     expect(() => (frame.guides = [5] as never)).toThrow(
       message('Expected object, received number at index 0')
     )
