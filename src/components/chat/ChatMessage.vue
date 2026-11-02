@@ -183,8 +183,9 @@ function groupKey(group: MessagePartGroup): string {
               class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
-              <!-- With usage shown on hover, the last text ends in a row for it and the copy
-                   button; otherwise the button sits in the bubble's corner. -->
+              <!-- With usage shown on hover, the last text gets a small toolbar on its lower edge
+                   with the usage and the copy button, taking no room at rest; otherwise the
+                   button sits in the bubble's corner. -->
               <div
                 v-if="
                   (usageOnHover && group.index === lastAssistantTextPartIndex) ||
@@ -192,13 +193,14 @@ function groupKey(group: MessagePartGroup): string {
                 "
                 :class="
                   usageOnHover && group.index === lastAssistantTextPartIndex
-                    ? '-mr-2 -mb-1 flex h-5 items-center justify-end gap-1'
+                    ? 'absolute right-2 bottom-0 z-10 flex h-6 translate-y-1/2 items-center gap-1 rounded-md border border-border bg-panel px-1 shadow-sm'
                     : 'absolute right-1 bottom-1'
                 "
                 class="text-2xs text-muted opacity-0 group-focus-within/response:opacity-100 group-hover/response:opacity-100"
               >
                 <span
                   v-if="usageOnHover && group.index === lastAssistantTextPartIndex"
+                  class="px-1"
                   data-slot="chat-reply-usage"
                 >
                   {{ usageOnHover }}
