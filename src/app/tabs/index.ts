@@ -360,7 +360,7 @@ async function showImportedGraph(
   load?.update({ phase: 'preparing-render', detail: store.state.documentName })
   if (remembered) {
     await yieldToUI()
-    store.centerOn(remembered.x, remembered.y, remembered.zoom)
+    store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
   } else {
     await store.fitCurrentPageToViewport()
   }

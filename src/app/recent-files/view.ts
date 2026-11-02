@@ -25,8 +25,7 @@ export function rememberDocumentView(store: ViewedDocument): void {
   if (width <= 0 || height <= 0 || zoom <= 0) return
   rememberRecentDocumentView(id, {
     pageId: currentPageId,
-    x: (width / 2 - panX) / zoom,
-    y: (height / 2 - panY) / zoom,
+    center: { x: (width / 2 - panX) / zoom, y: (height / 2 - panY) / zoom },
     zoom
   })
 }

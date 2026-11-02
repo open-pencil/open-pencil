@@ -4,6 +4,7 @@ import { computed } from 'vue'
 
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
 import type { DocumentKind } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
   DEFAULT_STORAGE_PROFILE,
@@ -22,8 +23,7 @@ const RECENT_DOCUMENTS_STORAGE_KEY = 'open-pencil:recent-documents'
 export interface RecentDocumentView {
   pageId: string
   /** The world point at the centre of the canvas. */
-  x: number
-  y: number
+  center: Vector
   zoom: number
 }
 

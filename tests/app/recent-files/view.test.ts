@@ -46,7 +46,11 @@ describe("a document's remembered view", () => {
     const again = openedFromPath()
     again.graph.addPage('Second')
     expect(rememberedDocumentView(again)).toBeNull()
-    expect(rememberedDocumentView(store)).toEqual({ pageId: second, x: 300, y: 200, zoom: 2 })
+    expect(rememberedDocumentView(store)).toEqual({
+      pageId: second,
+      center: { x: 300, y: 200 },
+      zoom: 2
+    })
   })
 
   test('is kept when the file is opened again and forgotten with the file', () => {
