@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -21,41 +21,44 @@ const { compaction, tokensAfter = null } = defineProps<{
 }>()
 const { ai } = useI18n()
 const ui = chatContextTheme()
-const open = ref(false)
 </script>
 
 <template>
-  <section
+  <!-- A collapsible with its own header shape, so it drives Reka directly and keeps the shared
+       content motion, as the reasoning row does. -->
+  <CollapsibleRoot
+    as="section"
     :class="ui.divider()"
     data-test-id="chat-compaction"
     :aria-label="ai.conversationCompacted"
   >
     <div :class="ui.dividerRule()">
       <span :class="ui.dividerLine()" aria-hidden="true" />
-      <button type="button" :class="ui.dividerToggle()" :aria-expanded="open" @click="open = !open">
+      <CollapsibleTrigger :class="ui.dividerToggle()">
         <icon-lucide-shrink :class="ui.dividerIcon()" aria-hidden="true" />
         <span :class="ui.dividerTitle()">{{ ai.conversationCompacted }}</span>
-        <icon-lucide-chevron-down
-          :class="ui.dividerChevron()"
-          :data-open="open"
-          aria-hidden="true"
-        />
-      </button>
+        <icon-lucide-chevron-down :class="ui.dividerChevron()" aria-hidden="true" />
+      </CollapsibleTrigger>
       <span :class="ui.dividerLine()" aria-hidden="true" />
     </div>
-    <div v-if="open" :class="ui.summary()">
-      <p :class="ui.dividerNote()">
-        {{ compaction.agent ? ai.agentCompactionKeepsMessages : ai.compactionKeepsMessages }}
-      </p>
-      <p v-if="compaction.tokensBefore !== null && tokensAfter !== null" :class="ui.dividerNote()">
-        {{
-          ai.compactionTokens({
-            before: formatCompactNumber(compaction.tokensBefore),
-            after: formatCompactNumber(tokensAfter)
-          })
-        }}
-      </p>
-      <ChatMarkdown v-if="compaction.summary" :content="compaction.summary" mode="static" />
-    </div>
-  </section>
+    <CollapsibleContent :class="ui.dividerContent()">
+      <div :class="ui.summary()">
+        <p :class="ui.dividerNote()">
+          {{ compaction.agent ? ai.agentCompactionKeepsMessages : ai.compactionKeepsMessages }}
+        </p>
+        <p
+          v-if="compaction.tokensBefore !== null && tokensAfter !== null"
+          :class="ui.dividerNote()"
+        >
+          {{
+            ai.compactionTokens({
+              before: formatCompactNumber(compaction.tokensBefore),
+              after: formatCompactNumber(tokensAfter)
+            })
+          }}
+        </p>
+        <ChatMarkdown v-if="compaction.summary" :content="compaction.summary" mode="static" />
+      </div>
+    </CollapsibleContent>
+  </CollapsibleRoot>
 </template>
