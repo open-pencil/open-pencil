@@ -1,13 +1,59 @@
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
+import type { ViewportTransform } from '#core/geometry/types'
 import { emitNavigationTrace } from '#core/profiler'
 
 import type { EditorContext } from './types'
 
 /** Space kept between revealed layers and the viewport edge. */
 const REVEAL_MARGIN = 48
+
+const ZOOM_MIN = 0.02
+const ZOOM_MAX = 256
+
+/** Screen pixels between the canvas edge and layers fitted into it. */
+export interface ViewportInsets {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+/**
+ * Figma's insets for zoom to fit and the first visit of a page, measured on its canvas: 35 px a
+ * side, plus the 10 px left and top and 50 px at the bottom its floating toolbar and chrome take.
+ */
+export const FIT_INSETS: ViewportInsets = { left: 45, right: 25, top: 45, bottom: 85 }
+
+/** Figma's insets for zoom to selection: 50 px a side plus the same chrome allowance. */
+export const SELECTION_INSETS: ViewportInsets = { left: 60, right: 40, top: 60, bottom: 100 }
+
+function clampZoom(zoom: number): number {
+  return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom))
+}
+
+/**
+ * The viewport that fills the `size` canvas less `insets` with `bounds`, centred there, as Figma
+ * fits layers: zoomed past 100% for small layers, to the maximum zoom for a point.
+ */
+export function fitViewport(
+  bounds: Rect,
+  size: { width: number; height: number },
+  insets: ViewportInsets
+): ViewportTransform {
+  const areaWidth = size.width - insets.left - insets.right
+  const areaHeight = size.height - insets.top - insets.bottom
+  const fit = Math.min(areaWidth / bounds.width, areaHeight / bounds.height)
+  const zoom = clampZoom(Number.isNaN(fit) ? 1 : fit)
+  return {
+    zoom,
+    panX: insets.left + areaWidth / 2 - (bounds.x + bounds.width / 2) * zoom,
+    panY: insets.top + areaHeight / 2 - (bounds.y + bounds.height / 2) * zoom
+  }
+}
 
 export function createViewportActions(ctx: EditorContext) {
   function currentViewport() {
@@ -38,7 +84,7 @@ export function createViewportActions(ctx: EditorContext) {
 
   function setZoomAroundPoint(level: number, centerX: number, centerY: number) {
     const previous = currentViewport()
-    const newZoom = Math.max(0.02, Math.min(256, level))
+    const newZoom = clampZoom(level)
     ctx.state.panX = centerX - (centerX - ctx.state.panX) * (newZoom / ctx.state.zoom)
     ctx.state.panY = centerY - (centerY - ctx.state.panY) * (newZoom / ctx.state.zoom)
     ctx.state.zoom = newZoom
@@ -62,18 +108,20 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
-  function zoomToBounds(minX: number, minY: number, maxX: number, maxY: number) {
+  /** Fills the canvas less `insets` with the world rectangle, centred, zooming in or out as needed. */
+  function zoomToBounds(
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+    insets: ViewportInsets = SELECTION_INSETS
+  ) {
     const previous = currentViewport()
-    const padding = 80
-    const w = maxX - minX + padding * 2
-    const h = maxY - minY + padding * 2
-
-    const { width: viewW, height: viewH } = ctx.getViewportSize()
-    const zoom = Math.min(viewW / w, viewH / h, 1)
-
-    ctx.state.zoom = zoom
-    ctx.state.panX = (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
-    ctx.state.panY = (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
+    const bounds = { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+    const next = fitViewport(bounds, ctx.getViewportSize(), insets)
+    ctx.state.zoom = next.zoom
+    ctx.state.panX = next.panX
+    ctx.state.panY = next.panY
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -82,7 +130,7 @@ export function createViewportActions(ctx: EditorContext) {
   function centerOn(x: number, y: number, zoom = ctx.state.zoom) {
     const previous = currentViewport()
     const { width, height } = ctx.getViewportSize()
-    const nextZoom = Math.max(0.02, Math.min(256, zoom))
+    const nextZoom = clampZoom(zoom)
     const panX = width / 2 - x * nextZoom
     const panY = height / 2 - y * nextZoom
     // Remote cursors are finite but unbounded; a point that overflows leaves the view alone.
@@ -94,12 +142,16 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
+  /** Figma's Shift+1: every layer of the page fitted; an empty page shows its origin at 100%. */
   function zoomToFit() {
     const nodes = ctx.graph.getChildren(ctx.state.currentPageId)
-    if (nodes.length === 0) return
+    if (nodes.length === 0) {
+      centerOn(0, 0, 1)
+      return
+    }
 
     const b = computeBounds(nodes)
-    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height)
+    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height, FIT_INSETS)
   }
 
   function zoomToLevel(level: number) {
@@ -108,7 +160,7 @@ export function createViewportActions(ctx: EditorContext) {
     const centerY = (-ctx.state.panY + viewH / 2) / ctx.state.zoom
 
     const previous = currentViewport()
-    ctx.state.zoom = Math.max(0.02, Math.min(256, level))
+    ctx.state.zoom = clampZoom(level)
     // Keep the world point at the center of the viewport where it was.
     ctx.state.panX = viewW / 2 - centerX * ctx.state.zoom
     ctx.state.panY = viewH / 2 - centerY * ctx.state.zoom

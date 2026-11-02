@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 const VIEWPORT = { width: 800, height: 600 }
 
@@ -38,5 +39,73 @@ describe('centerOn', () => {
     const before = { ...center(editor), zoom: editor.state.zoom }
     editor.centerOn(1e308, 0, 256)
     expect({ ...center(editor), zoom: editor.state.zoom }).toEqual(before)
+  })
+})
+
+/** Where the world point lands on the canvas. */
+function screenOf(editor: ReturnType<typeof createEditor>, x: number, y: number) {
+  const { panX, panY, zoom } = editor.state
+  return { x: x * zoom + panX, y: y * zoom + panY }
+}
+
+function withRect(rect: Rect) {
+  const editor = createEditor({ getViewportSize: () => VIEWPORT })
+  const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, rect)
+  return { editor, node }
+}
+
+// Insets measured in Figma 126: zoom to fit keeps 45/25 px at the sides and 45/85 px above and
+// below the layers, zoom to selection 60/40 and 60/100, both zooming past 100% when the layers
+// are small.
+describe('zoomToFit', () => {
+  test('fills the canvas less the fit insets with every layer, past 100% when they are small', () => {
+    const { editor } = withRect({ x: 100, y: 200, width: 300, height: 180 })
+    editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: 300,
+      y: 250,
+      width: 100,
+      height: 100
+    })
+
+    editor.zoomToFit()
+
+    // The 300 × 180 union fits the 730 × 470 area by its width.
+    expect(editor.state.zoom).toBeCloseTo(730 / 300, 6)
+    expect(screenOf(editor, 250, 290)).toEqual({ x: 45 + 730 / 2, y: 45 + 470 / 2 })
+  })
+
+  test('zooms out for layers larger than the canvas', () => {
+    const { editor } = withRect({ x: -1000, y: 500, width: 4000, height: 1000 })
+    editor.zoomToFit()
+    expect(editor.state.zoom).toBeCloseTo(730 / 4000, 6)
+  })
+
+  test('stops at the maximum zoom for a point-sized layer and still centres it', () => {
+    const { editor } = withRect({ x: 50, y: 50, width: 0, height: 0 })
+    editor.zoomToFit()
+    expect(editor.state.zoom).toBe(256)
+    expect(screenOf(editor, 50, 50)).toEqual({ x: 45 + 730 / 2, y: 45 + 470 / 2 })
+  })
+
+  test('shows the origin at the centre at 100% on an empty page', () => {
+    const editor = createEditor({ getViewportSize: () => VIEWPORT })
+    editor.state.zoom = 3
+    editor.state.panX = 900
+    editor.zoomToFit()
+    expect(editor.state.zoom).toBe(1)
+    expect(center(editor)).toEqual({ x: 0, y: 0 })
+  })
+})
+
+describe('zoomToSelection', () => {
+  test('fills the canvas less the selection insets with the selected layers', () => {
+    const { editor, node } = withRect({ x: 700, y: 500, width: 120, height: 90 })
+    editor.select([node.id])
+
+    editor.zoomToSelection()
+
+    // The 120 × 90 layer fits the 700 × 440 area by its height.
+    expect(editor.state.zoom).toBeCloseTo(440 / 90, 6)
+    expect(screenOf(editor, 760, 545)).toEqual({ x: 60 + 700 / 2, y: 60 + 440 / 2 })
   })
 })
