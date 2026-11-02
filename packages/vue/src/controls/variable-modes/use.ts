@@ -8,9 +8,8 @@ import { useSceneComputed } from '#vue/internal/scene-computed/use'
  * Returns the variable modes the selection can show, or the current page's when nothing is
  * selected, and the action that sets or clears one.
  *
- * Use this composable for Figma's Apply variable mode control: `choices` lists the collections a
- * mode can be set for, and `applied` those a mode is set for on at least one target, which the
- * panel shows as rows.
+ * Use this composable for a variable mode control, such as a frame's theme: `choices` lists the
+ * collections a mode can be set for, and `applied` those a mode is set for on at least one target.
  */
 export function useVariableModes() {
   const editor = useEditor()
