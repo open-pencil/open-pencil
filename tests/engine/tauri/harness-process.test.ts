@@ -52,6 +52,29 @@ describe('Harness sidecar process', () => {
     ).not.toContain('secret')
   })
 
+  test('passes on a compaction the agent reports', async () => {
+    let onEvent: ((event: unknown) => void) | undefined
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'plugin:shell|spawn') {
+        onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent.onmessage
+        return 47
+      }
+      return null
+    })
+    const process = await spawnHarnessProcess({
+      environment: {},
+      onUnexpectedClose: () => undefined
+    })
+    const event = { type: 'compaction', trigger: 'manual', summary: 'Greeted.', tokensBefore: 1200 }
+    const line = `${JSON.stringify({ type: 'turn.event', id: 'turn', event })}\n`
+    onEvent?.({ event: 'Stdout', payload: Array.from(new TextEncoder().encode(line)) })
+    expect((await process.messages.getReader().read()).value).toEqual({
+      type: 'turn.event',
+      id: 'turn',
+      event
+    })
+  })
+
   test('routes the npm launcher through its cmd scope entry on Windows', async () => {
     const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
     try {
