@@ -1,5 +1,5 @@
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import { canvasLabelForeground } from '@open-pencil/core/canvas'
+import { canvasLabelForeground, outlineColorInMode } from '@open-pencil/core/canvas'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -27,10 +27,19 @@ export function canvasLabelPresentation(
   // A board draws the title on the section's outline colour, as FigJam does.
   const figJam =
     node && resolveEditorProfile(editor.state).sectionTitles === 'outline'
-      ? figJamSectionTitleColors(node)
+      ? figJamSectionTitleColors(node, (stroke, index) =>
+          outlineColorInMode(editor.graph, node, stroke, index)
+        )
       : null
-  if (figJam)
-    return { background: figJam.background, foreground: figJam.lightText ? 'light' : 'dark' }
+  if (figJam) {
+    const outline = node?.strokes[figJam.strokeIndex]
+    const background =
+      (node &&
+        outline &&
+        editor.renderer?.resolveStrokeColor(outline, figJam.strokeIndex, node, editor.graph)) ||
+      figJam.background
+    return { background, foreground: figJam.lightText ? 'light' : 'dark' }
+  }
   const fill = node?.fills[0]
   const background =
     node && fill?.visible

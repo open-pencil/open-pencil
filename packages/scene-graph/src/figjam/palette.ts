@@ -245,17 +245,24 @@ export function figJamOutlineColorName(color: Color | undefined): FigJamColorNam
 }
 
 /**
- * How FigJam draws a section's title on a board, measured in FigJam: a pill in the section's
- * outline colour, with white text on the palette's darkest colours and black on the rest; null
- * for a section without an outline from the palette.
+ * How FigJam draws a section's title on a board, measured in FigJam: a pill in the colour of the
+ * outline drawn on top, with white text on the palette's darkest colours and black on the rest;
+ * null for a section without an outline from the palette. `colorOf` reads an outline's colour as
+ * drawn, such as a variable's value in the active mode.
  */
 export function figJamSectionTitleColors(
-  section: Pick<SceneNode, 'strokes'>
-): { background: Color; lightText: boolean } | null {
-  const outline = drawnPaint(section.strokes)
-  const name = figJamOutlineColorName(outline?.color)
-  if (!outline || !name) return null
-  return { background: { ...outline.color, a: 1 }, lightText: PALETTE[name].lightLabel }
+  section: Pick<SceneNode, 'strokes'>,
+  colorOf: (stroke: Stroke, index: number) => Color = (stroke) => stroke.color
+): { strokeIndex: number; background: Color; lightText: boolean } | null {
+  const strokeIndex = section.strokes.findLastIndex(
+    (stroke) => stroke.visible && stroke.opacity > 0
+  )
+  const outline = section.strokes.at(strokeIndex)
+  if (strokeIndex === -1 || !outline) return null
+  const color = colorOf(outline, strokeIndex)
+  const name = figJamOutlineColorName(color)
+  if (!name) return null
+  return { strokeIndex, background: { ...color, a: 1 }, lightText: PALETTE[name].lightLabel }
 }
 
 /** The fill mode a shape's first fill shows. */
