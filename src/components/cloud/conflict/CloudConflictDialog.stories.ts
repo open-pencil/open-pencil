@@ -26,7 +26,7 @@ const meta = {
       cloud: { previewURL: previewDocuments[0]?.previewURL, by: 'Ben', savedAgo: '5 min ago' }
     }),
     template: `
-      <div class="h-[700px]">
+      <div class="h-175">
         <CloudConflictDialog :open="true" v-model:choice="choice" document-name="Pricing page" :mine="mine" :cloud="cloud" @confirm="args.onConfirm" />
       </div>`
   })

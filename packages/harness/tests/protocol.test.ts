@@ -69,6 +69,21 @@ describe('harness sidecar protocol', () => {
     })
   })
 
+  test('parses a compaction request, with or without instructions', () => {
+    const compact = (params: object) =>
+      parseHarnessRequest(JSON.stringify({ id: 'request-1', method: 'session.compact', params }))
+    expect(compact({ sessionId: 'session-1' })).toEqual({
+      id: 'request-1',
+      method: 'session.compact',
+      params: { sessionId: 'session-1' }
+    })
+    expect(compact({ sessionId: 'session-1', instructions: 'keep the colors' }).params).toEqual({
+      sessionId: 'session-1',
+      instructions: 'keep the colors'
+    })
+    expect(() => compact({ sessionId: 'session-1', instructions: 3 })).toThrow('instructions')
+  })
+
   test('rejects unknown methods and oversized prompts', () => {
     expect(() =>
       parseHarnessRequest(JSON.stringify({ id: 'request-1', method: 'unknown' }))

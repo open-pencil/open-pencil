@@ -1,4 +1,6 @@
 {
+  "interfaceScale": "Oberflächengröße",
+  "interfaceScaleDescription": "Skaliert Bedienfelder, Text und Steuerelemente, ohne den Canvas-Zoom zu ändern.",
   "recentFiles": "Zuletzt verwendete Dateien",
   "recentFilesDescription": "Wähle, wie viele Dateien in der Liste und im Menü „Zuletzt verwendet“ gespeichert werden.",
   "recentFilesLimit": "Anzahl zuletzt verwendeter Dateien",
@@ -64,7 +66,6 @@
   "toolbarMoveDown": "Nach unten",
   "toolbarGroupWith": "Mit {tool} gruppieren",
   "toolbarUngroup": "Gruppierung aufheben",
-  "toolbarReset": "Auf Standard zurücksetzen",
   "resetToDefault": "Auf Standard zurücksetzen",
   "customizeToolbar": "Werkzeugleiste anpassen…",
   "discardChanges": "Änderungen verwerfen?",

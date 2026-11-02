@@ -50,7 +50,7 @@ export function keycapModule(commands: OutlineCommand[], copyright: string): str
 // ${copyright}
 // Licensed under the SIL Open Font License, Version 1.1 (packages/core/assets/NotoSansSymbols-OFL.txt).
 
-import type { OutlineCommand } from './font/glyphs'
+import type { OutlineCommand } from './glyphs'
 
 /**
  * The frame Figma draws a keycap with: Noto Sans Symbols' combining enclosing keycap (U+20E3),

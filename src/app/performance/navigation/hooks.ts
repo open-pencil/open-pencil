@@ -16,20 +16,11 @@ export function createNavigationBenchmarkHooks(store: EditorStore): NavigationBe
       if (recorder) throw new Error('A navigation recording is already active')
       const canvas = document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')
       if (!canvas) throw new Error('Canvas element not found')
-      recorder = startNavigationRecorder(
-        canvas,
-        name,
-        {
-          panX: store.state.panX,
-          panY: store.state.panY,
-          zoom: store.state.zoom
-        },
-        store.canvasRenderers.some(
-          (renderer) => renderer.tracksSceneSettlement && renderer.tiledSceneEnabled
-        )
-          ? 'tiled'
-          : 'retained'
-      )
+      recorder = startNavigationRecorder(canvas, name, {
+        panX: store.state.panX,
+        panY: store.state.panY,
+        zoom: store.state.zoom
+      })
     },
     async waitForSettlement(timeoutMs = 30_000) {
       await new Promise<void>((resolve, reject) => {
@@ -47,10 +38,8 @@ export function createNavigationBenchmarkHooks(store: EditorStore): NavigationBe
           const state = store.canvasRenderers
             .filter((renderer) => renderer.tracksSceneSettlement && renderer.pageId !== null)
             .map((renderer) => ({
-              tiled: renderer.tiledSceneEnabled,
               covered: renderer.tiledSceneCovered,
-              pending: renderer.tiledScenePending,
-              backingCrisp: !renderer.sceneBackingNeedsCrispRender
+              pending: renderer.tiledScenePending
             }))
           finish(
             'reject',
@@ -69,12 +58,11 @@ export function createNavigationBenchmarkHooks(store: EditorStore): NavigationBe
           const settled =
             store.state.navigation.phase === 'idle' &&
             renderers.length > 0 &&
-            renderers.every((renderer) =>
-              renderer.tiledSceneEnabled
-                ? renderer.tiledSceneCovered &&
-                  !renderer.tiledScenePending &&
-                  !renderer.tiledScene.hasPendingWork()
-                : !renderer.sceneBackingNeedsCrispRender
+            renderers.every(
+              (renderer) =>
+                renderer.tiledSceneCovered &&
+                !renderer.tiledScenePending &&
+                !renderer.tiledScene.hasPendingWork()
             )
           if (settled) {
             finish('resolve')

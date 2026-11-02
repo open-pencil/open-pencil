@@ -1,0 +1,1 @@
+- In the desktop app and for files in storage, a file reopens on the page and at the view it was left at, as in Figma (#1675).

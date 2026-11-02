@@ -22,7 +22,7 @@ const styles = tv(theme)()
   <section :class="styles.root()" data-test-id="usage-stats-question">
     <h3 :id="headingId" :class="styles.heading()">{{ diagnostics.sharingQuestionTitle }}</h3>
     <p :class="styles.text()">{{ diagnostics.sharingQuestionDescription }}</p>
-    <ExternalLink :href="PRIVACY_URL" :ui="{ base: 'text-[11px]' }">{{
+    <ExternalLink :href="PRIVACY_URL" :ui="{ base: 'text-2xs' }">{{
       diagnostics.sharingDetails
     }}</ExternalLink>
     <p v-if="usageStatsConsent !== 'unset'" :class="styles.answer()" role="status">

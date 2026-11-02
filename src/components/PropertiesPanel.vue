@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { useDesignCheckMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { useAIChat } from '@/app/ai/chat/use'
@@ -31,6 +32,13 @@ const tabStyles = propertiesTabs()
 const commenting = computed(() => store.state.activeTool === 'COMMENT')
 /** Version history takes the sidebar while it is open, for the document and a version alike. */
 const history = computed(() => isVersionHistoryOpen(store))
+
+/** Whether the document has design lint: a board has none, as FigJam has none. */
+const lints = computed(() => resolveEditorProfile(store.state).lint)
+// A board opened on the Lint tab shows Design instead.
+watchEffect(() => {
+  if (!lints.value && activeTab.value === 'lint') activeTab.value = 'design'
+})
 
 /** Errors and warnings on the current page; suggestions do not earn an indicator. */
 const problemCount = computed(() => {
@@ -71,6 +79,7 @@ const problemCount = computed(() => {
           <span :class="tabStyles.label()">{{ panels.ai }}</span>
         </TabsTrigger>
         <TabsTrigger
+          v-if="lints"
           value="lint"
           data-test-id="properties-tab-lint"
           :aria-label="

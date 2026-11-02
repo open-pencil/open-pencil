@@ -22,7 +22,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Canvas guides | ✅ | Drag guides from rulers onto the canvas or frames; select, move, duplicate, delete, and undo; saved in `.fig` |
 | Actions menu / command palette | ✅ | <kbd>⌘</kbd><kbd>K</kbd> opens a searchable palette of editor and app actions |
 | Context menu | ✅ | Right-click with clipboard, z-order, grouping, component, visibility, lock, move-to-page actions |
-| Keyboard shortcuts | 🟡 | Tools, editing, booleans, flatten, masks, components, align, z-order, navigation, text formatting; no Scale (<kbd>K</kbd>), Arrow, Eyedropper (<kbd>I</kbd>), or zoom tool |
+| Keyboard shortcuts | 🟡 | Tools, editing, booleans, flatten, masks, components, align, z-order, navigation, text formatting; no Scale (<kbd>K</kbd>), Arrow, or zoom tool |
 | Find and replace | 🔲 | Text search/replace across document |
 | Layer outlines view | 🔲 | Wireframe view of all layers |
 | Custom file thumbnails | 🔲 | Saved files preview their first page, as Figma's do without a Cover page; no thumbnail picker |
@@ -113,7 +113,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Add images & videos | 🟡 | Drop or paste PNG, JPEG, GIF, WebP, AVIF, and SVG onto the canvas; no video |
 | Image property adjustment | 🔲 | Exposure, contrast, saturation, etc. |
 | Crop an image | 🟡 | The Crop mode in the image fill picker keeps a crop; no on-canvas crop handles |
-| Eyedropper tool | 🔲 | Sample colors from canvas |
+| Eyedropper tool | ✅ | <kbd>I</kbd> or the color picker button; samples the rendered canvas with a loupe of the pixels under the pointer, <kbd>Alt</kbd> targets the stroke |
 | Mixed selection color editing | ✅ | Selection colors changes a color everywhere across a multi-selection |
 | Color models (RGB, HSL, HSB, Hex) | ✅ | Hex, RGB, HSL, HSB, and OkHCL fields with gamut warnings |
 

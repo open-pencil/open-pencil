@@ -63,3 +63,16 @@ export function tileKeysForWorldBounds(
 export function tileKeyString(key: TileKey): string {
   return `${key.pageId}:${key.level}:${key.x}:${key.y}`
 }
+
+/** Exact levels are keyed to this many bits of the scale's logarithm: stable across float noise. */
+const EXACT_LEVEL_BITS = 20
+
+/**
+ * The level a settled view renders at: the device scale itself, so tiles draw on whole device
+ * pixels without resampling, rounded so a gesture that ends a few ulps from where it began
+ * finds its tiles again instead of rendering them anew. Quantized levels serve the backdrop.
+ */
+export function exactTileLevel(scale: number): number {
+  const clamped = Math.min(MAX_TILE_LEVEL, Math.max(MIN_TILE_LEVEL, scale))
+  return 2 ** (Math.round(Math.log2(clamped) * 2 ** EXACT_LEVEL_BITS) / 2 ** EXACT_LEVEL_BITS)
+}

@@ -36,7 +36,7 @@ export function resolveVisible(
       continue
     }
     levels ??= cache.fallbackLevels(pageId, level)
-    const tiles = cache.findFallback(key, levels)
+    const tiles = cache.findFallback(key, levels, content)
     if (tiles) {
       presentation.fallback.push({ key, tiles })
       continue

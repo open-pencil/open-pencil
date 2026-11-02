@@ -255,9 +255,7 @@ function invite() {
                   <template #option="{ option }">
                     <span class="flex flex-col">
                       <span>{{ option.label }}</span>
-                      <span class="text-[11px] text-muted">{{
-                        roleDescriptions[option.value]
-                      }}</span>
+                      <span class="text-2xs text-muted">{{ roleDescriptions[option.value] }}</span>
                     </span>
                   </template>
                 </AppSelect>

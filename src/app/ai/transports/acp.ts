@@ -15,10 +15,14 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
+import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import { linkOwnTools } from '@/app/ai/agents/acp/tools'
+import { agentAccounts } from '@/app/ai/agents/setup/accounts'
+import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
+import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -301,10 +305,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       async requestPermission(
         params: RequestPermissionRequest
       ): Promise<RequestPermissionResponse> {
-        const [{ requestPermissionFromUser }, { notifyPermissionWaiting }] = await Promise.all([
-          import('@/app/ai/agents/acp/permission'),
-          import('@/app/ai/chat/notifications')
-        ])
         const title = params.toolCall.title ?? ''
         return requestPermissionFromUser(
           params,
@@ -328,7 +328,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       extNotification: async (method, params) => {
         const status = parseAuthStatusUpdate(method, params)
         if (!status) return
-        const { agentAccounts } = await import('@/app/ai/agents/setup/accounts')
         agentAccounts.report(this.agentDef.id, status)
       }
     }
@@ -341,7 +340,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     })
     stopped.catch(() => undefined)
     const untilStopped = <T>(request: Promise<T>): Promise<T> => Promise.race([request, stopped])
-    const { getAutomationAuthToken } = await import('@/app/automation/mcp/spawn')
     let automationAuthToken: string | null
     try {
       automationAuthToken = await getAutomationAuthToken()

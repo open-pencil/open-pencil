@@ -1,20 +1,18 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
+import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { FLASH_PADDING, FLASH_STROKE_WIDTH, FLASH_RADIUS } from '#core/constants'
+import { FLASH_PADDING, FLASH_RADIUS, FLASH_STROKE_WIDTH } from '#core/constants'
+import { type RotationPreview } from '#core/geometry'
 
+import { inNodeSpace, withScreenStroke } from './overlays/outline'
 import type { SkiaRenderer } from './renderer'
 
-export function ensureFlashPaint(r: SkiaRenderer): Paint {
-  if (!r._flashPaint) {
-    r._flashPaint = new r.ck.Paint()
-    r._flashPaint.setStyle(r.ck.PaintStyle.Stroke)
-    r._flashPaint.setAntiAlias(true)
-  }
-  return r._flashPaint
-}
-
+/**
+ * Outlines the layer `nodeId` with a rounded stroke sized in screen pixels, placed through its
+ * own and its ancestors' transforms, so a layer inside a rotated or flipped frame is outlined
+ * where it is drawn.
+ */
 export function drawNodeHighlightRect(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -22,30 +20,27 @@ export function drawNodeHighlightRect(
   nodeId: string,
   color: { r: number; g: number; b: number },
   opacity: number,
-  extraPad = 0
+  extraPad = 0,
+  preview?: RotationPreview | null
 ): boolean {
   const node = graph.getNode(nodeId)
   if (!node) return false
-
-  const abs = graph.getAbsolutePosition(nodeId)
-  const cx = (abs.x + node.width / 2) * r.zoom + r.panX
-  const cy = (abs.y + node.height / 2) * r.zoom + r.panY
-  const hw = (node.width / 2) * r.zoom
-  const hh = (node.height / 2) * r.zoom
-  const pad = FLASH_PADDING + extraPad
-
-  const paint = ensureFlashPaint(r)
-  paint.setColor(r.ck.Color4f(color.r, color.g, color.b, opacity))
-  paint.setStrokeWidth(FLASH_STROKE_WIDTH)
-
-  canvas.save()
-  if (node.rotation !== 0) canvas.rotate(node.rotation, cx, cy)
-  const rect = r.ck.RRectXY(
-    r.ck.LTRBRect(cx - hw - pad, cy - hh - pad, cx + hw + pad, cy + hh + pad),
-    FLASH_RADIUS,
-    FLASH_RADIUS
+  const pad = (FLASH_PADDING + extraPad) / r.zoom
+  const radius = FLASH_RADIUS / r.zoom
+  inNodeSpace(r, canvas, r.sceneGeometry(graph, preview), node, () =>
+    withScreenStroke(
+      r,
+      { color: r.ck.Color4f(color.r, color.g, color.b, opacity), width: FLASH_STROKE_WIDTH },
+      (paint) =>
+        canvas.drawRRect(
+          r.ck.RRectXY(
+            r.ck.LTRBRect(-pad, -pad, node.width + pad, node.height + pad),
+            radius,
+            radius
+          ),
+          paint
+        )
+    )
   )
-  canvas.drawRRect(rect, paint)
-  canvas.restore()
   return true
 }

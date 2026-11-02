@@ -12,7 +12,6 @@ import {
   DIAGNOSTICS_RETENTION_MAX,
   DIAGNOSTICS_RETENTION_MIN,
   diagnosticsRetentionPresets,
-  pruneDiagnostics,
   useDiagnosticsSettings
 } from '@/app/diagnostics/settings'
 import { toast } from '@/app/shell/ui'
@@ -29,13 +28,15 @@ const { common, diagnostics: diagnosticMessages } = useI18n()
 const { copy: copyText, copied } = useClipboard({ copiedDuring: 1500 })
 const clearOpen = ref(false)
 
-const {
-  diagnosticsEnabled,
-  diagnosticsCount,
-  diagnosticsSize,
-  diagnosticsRetention,
-  refreshDiagnosticsStats
-} = useDiagnosticsSettings()
+const { diagnosticsEnabled, diagnosticsRetention } = useDiagnosticsSettings()
+const diagnosticsCount = ref(0)
+const diagnosticsSize = ref(0)
+
+async function refreshDiagnosticsStats(): Promise<void> {
+  const events = await diagnostics.list()
+  diagnosticsCount.value = events.length
+  diagnosticsSize.value = JSON.stringify(events).length
+}
 
 const retentionValue = computed({
   get: () => diagnosticsRetention.value,
@@ -46,7 +47,7 @@ const retentionValue = computed({
 
 /** Retention is a stored policy change, so pruning follows the committed value. */
 async function commitRetention(value: number): Promise<void> {
-  await pruneDiagnostics(value)
+  await diagnostics.prune(value)
   await refreshDiagnosticsStats()
 }
 
@@ -119,7 +120,7 @@ async function saveDiagnostics() {
     </SettingsGroup>
     <DiagnosticsEventList :refresh-stats="refreshDiagnosticsStats" />
     <!-- On a narrow page the buttons wrap below the count rather than squeezing it. -->
-    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-muted">
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-2xs text-muted">
       <span class="whitespace-nowrap">{{
         diagnosticMessages.eventCount({
           count: diagnosticsCount,

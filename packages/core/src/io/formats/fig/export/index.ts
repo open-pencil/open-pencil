@@ -12,7 +12,6 @@ import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
-import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { IS_BROWSER } from '#core/constants'
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
@@ -24,6 +23,7 @@ import {
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
 import { archiveImagesNamedForFigma, writePatchedFigFile } from './patch'
+import { withFigExportRuntime } from './runtime'
 import {
   exportSchema,
   figExportRecordOptions,
@@ -253,16 +253,18 @@ function canUseWorker(): boolean {
   return typeof Worker !== 'undefined' && IS_BROWSER
 }
 
-function compressViaWorker(
-  schemaDeflated: Uint8Array,
-  kiwiData: Uint8Array,
-  thumbnailPNG: Uint8Array,
-  metaJSON: string,
-  imageEntries: Array<{ name: string; data: Uint8Array }>,
-  figKiwiVersion?: number,
-  compressionLevel?: number,
-  kind?: FigFileKind
-): Promise<Uint8Array> {
+/** Compresses in a worker; it takes what `compressFigData` takes. */
+function compressViaWorker(...args: Parameters<typeof compressFigData>): Promise<Uint8Array> {
+  const [
+    schemaDeflated,
+    kiwiData,
+    thumbnailPNG,
+    metaJSON,
+    imageEntries,
+    figKiwiVersion,
+    compressionLevel,
+    kind
+  ] = args
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./worker.js', import.meta.url), {
       type: 'module'

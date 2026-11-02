@@ -1,3 +1,16 @@
+import type {
+  BaseNode,
+  BooleanOperationNode,
+  ChildrenMixin,
+  ComponentNode,
+  ComponentSetNode,
+  GroupNode,
+  Image,
+  PageNode,
+  SceneNode,
+  UtilAPI,
+  VectorNode
+} from '@figma/plugin-typings/plugin-api-standalone'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import type { SceneGraph, SceneNode as CoreSceneNode, NodeType } from '@open-pencil/scene-graph'
@@ -9,7 +22,8 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
 import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
-import { newLayerDefaults } from '#core/editor/shapes/defaults'
+import { invalidateBooleanAncestors } from '#core/editor/graph-events'
+import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group/ungroup'
@@ -46,6 +60,7 @@ import type {
 import { startPendingLayout } from './pending-layout'
 import { FigmaNodeProxy, INTERNAL_ID, MIXED, type FigmaFont, type NodeProxyHost } from './proxy'
 import { newShapeWithText } from './shape-with-text'
+import { FigmaStyleMethods } from './styles/api'
 import type { ExportImageOptions } from './types'
 import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
@@ -98,13 +113,15 @@ export type { FigmaVariationSettings } from './fonts/variations'
 
 // TODO(figma-api): Implement the full official PluginAPI interface once our compatibility
 // layer covers all required node-specific return types and unsupported APIs are modeled explicitly.
-export class FigmaAPI implements NodeProxyHost {
+export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   readonly graph: SceneGraph
   private _currentPageId: string
   private _selection: FigmaNodeProxy[] = []
   private _nodeCache = new Map<string, FigmaNodeProxy>()
+  private _nodeTypes = new Map<string, string | undefined>()
   private _pageProxies = new WeakSet<FigmaNodeProxy>()
   private _renderer: SkiaRenderer | null = null
+  private _unbindRendererEvents: (() => void) | null = null
   /** The interface theme new sections take their fill from, as in Figma. */
   theme: InterfaceTheme = 'light'
 
@@ -118,6 +135,7 @@ export class FigmaAPI implements NodeProxyHost {
   readonly #fetch: images.ImageFetch
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
+    super()
     this.graph = graph
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     this.variables = new FigmaVariablesAPI(graph)
@@ -126,8 +144,33 @@ export class FigmaAPI implements NodeProxyHost {
     this._currentPageId = pages[0]?.id ?? graph.rootId
   }
 
+  /**
+   * The renderer that measures for the API: boolean results and flattened vectors. It keeps
+   * each boolean operation's result between readings, so the API tells it when a change lands
+   * inside one, as the editor does for its renderers.
+   */
   setRenderer(renderer: SkiaRenderer | null): void {
+    this._unbindRendererEvents?.()
+    this._unbindRendererEvents = null
     this._renderer = renderer
+    if (!renderer) return
+    const graph = this.graph
+    const invalidate = (id: string | null | undefined) =>
+      invalidateBooleanAncestors(graph, [renderer], id)
+    this._unbindRendererEvents = graph.onNodeEvents({
+      created: (node) => invalidate(node.parentId),
+      updated: (id) => invalidate(id),
+      previewUpdated: (id) => invalidate(id),
+      deleted: (_id, parentId) => invalidate(parentId),
+      reparented: (id, oldParentId) => {
+        invalidate(oldParentId)
+        invalidate(graph.getNode(id)?.parentId)
+      },
+      reordered: (_id, parentId, _index, previousParentId) => {
+        invalidate(parentId)
+        invalidate(previousParentId)
+      }
+    })
   }
 
   get groupFitOptions(): GroupFitOptions {
@@ -139,10 +182,13 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   wrapNode(id: string): FigmaNodeProxy {
+    const type = this.graph.getNode(id)?.type
     let proxy = this._nodeCache.get(id)
-    if (!proxy) {
+    // A node that changed type, such as a detached instance, gets the members of its new type.
+    if (!proxy || this._nodeTypes.get(id) !== type) {
       proxy = new FigmaNodeProxy(id, this.graph, this)
       this._nodeCache.set(id, proxy)
+      this._nodeTypes.set(id, type)
     }
     return proxy
   }
@@ -206,7 +252,9 @@ export class FigmaAPI implements NodeProxyHost {
 
   /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */
   private _createNode(type: NodeType): FigmaNodeProxy {
-    const defaults = newLayerDefaults(type, this.theme)
+    // A board's new sections are light under any interface theme, as the editor makes them.
+    const theme = layerTheme({ documentKind: this.graph.documentKind, theme: this.theme })
+    const defaults = newLayerDefaults(type, theme)
     // Figma's plugin API makes a line with no height, a 496 px section, and a hugging frame.
     if (type === 'LINE') defaults.height = 0
     if (type === 'SECTION') Object.assign(defaults, { width: 496, height: 496 })

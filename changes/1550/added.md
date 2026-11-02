@@ -1,1 +1,0 @@
-- ⌃Tab and ⌃⇧Tab select the next and previous tab, wrapping through Home, as in Figma; File gains Select Next Tab and Select Previous Tab.

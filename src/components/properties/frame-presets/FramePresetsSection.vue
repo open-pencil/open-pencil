@@ -18,7 +18,7 @@ function createFrame(preset: FramePreset) {
 <template>
   <section :aria-label="panels.frame">
     <div class="flex h-10 items-center border-b border-border px-3">
-      <span role="heading" aria-level="2" class="text-[11px] font-semibold text-surface">
+      <span role="heading" aria-level="2" class="text-2xs font-semibold text-surface">
         {{ panels.frame }}
       </span>
     </div>
@@ -31,7 +31,7 @@ function createFrame(preset: FramePreset) {
       class="border-b border-border"
     >
       <CollapsibleTrigger
-        class="flex h-9 w-full items-center gap-1.5 px-3 text-left text-[11px] text-surface hover:bg-hover"
+        class="flex h-9 w-full items-center gap-1.5 px-3 text-left text-2xs text-surface hover:bg-hover"
       >
         <icon-lucide-chevron-right
           class="size-3 shrink-0 transition-transform data-[open]:rotate-90"
@@ -49,7 +49,7 @@ function createFrame(preset: FramePreset) {
             :key="preset.id"
             type="button"
             :data-frame-preset="preset.id"
-            class="flex h-7 w-full items-center gap-2 px-7 text-left text-[11px] text-surface hover:bg-hover"
+            class="flex h-7 w-full items-center gap-2 px-7 text-left text-2xs text-surface hover:bg-hover"
             @click="createFrame(preset)"
           >
             <span class="min-w-0 flex-1 truncate">{{ preset.name }}</span>

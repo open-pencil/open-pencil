@@ -1,9 +1,11 @@
 import type { CachedTile, TileImageCache } from './cache'
 import {
   MIN_TILE_LEVEL,
+  TILE_DEVICE_SIZE,
   type TileKey,
   type TileWorldBounds,
   tileKeysForWorldBounds,
+  tileLevel,
   tileWorldBounds,
   tileKeyString,
   tileWorldSize
@@ -36,6 +38,28 @@ export interface TilePlanOptions {
    * so a zoom out always finds a scaled stand-in for what was rendered.
    */
   pyramid?: { levels: number }
+}
+
+/** The whole page is kept at a level where its longer side spans this many tiles. */
+const PAGE_BACKDROP_TILES = 4
+
+/**
+ * The whole page at a level coarse enough to fit PAGE_BACKDROP_TILES along its longer side, or
+ * undefined when the visible level is already that coarse. The level depends only on the page,
+ * so its tiles stay valid across zooms.
+ */
+export function pageBackdropPlan(
+  bounds: TileWorldBounds | null,
+  level: number
+): { level: number; bounds: TileWorldBounds } | undefined {
+  if (!bounds) return undefined
+  const span = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY, 1)
+  const pageLevel = Math.max(
+    MIN_TILE_LEVEL,
+    tileLevel((PAGE_BACKDROP_TILES * TILE_DEVICE_SIZE) / span)
+  )
+  if (pageLevel >= level) return undefined
+  return { level: pageLevel, bounds }
 }
 
 export interface TilePlan {

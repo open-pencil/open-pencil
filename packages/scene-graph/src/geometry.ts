@@ -3,6 +3,8 @@ import type { Rect, Vector } from './primitives'
 import { textLinesOverflow } from './text/overflow'
 import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
 
+export { cubicPoint } from './cubic'
+
 export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180
 }
@@ -328,38 +330,54 @@ export function intersectVisualBounds(a: VisualBounds, b: VisualBounds): VisualB
   return minX < maxX && minY < maxY ? { minX, minY, maxX, maxY } : null
 }
 
+/** The path commands of a Figma geometry blob, by their byte code. */
+export const GeometryCommand = { CLOSE: 0, MOVE: 1, LINE: 2, QUAD: 3, CUBIC: 4 } as const
+export type GeometryCommand = (typeof GeometryCommand)[keyof typeof GeometryCommand]
+
 /**
- * Coordinate pairs per path blob command: 0=close, 1=move, 2=line,
- * 3=quad (glyph-derived blobs are quad-heavy), 4=cubic. Unknown → null so
- * walkers stop instead of desyncing into coordinate bytes.
+ * Coordinate pairs per command: glyph-derived blobs are quad-heavy, so every code needs its
+ * count. Unknown codes are null, so readers stop instead of desyncing into coordinate bytes.
  */
-export function geometryCommandCoordCount(command: number): number | null {
-  if (command === 0) return 0
-  if (command === 1 || command === 2) return 1
-  if (command === 3) return 2
-  if (command === 4) return 3
+function commandCoordCount(command: number): number | null {
+  if (command === GeometryCommand.CLOSE) return 0
+  if (command === GeometryCommand.MOVE || command === GeometryCommand.LINE) return 1
+  if (command === GeometryCommand.QUAD) return 2
+  if (command === GeometryCommand.CUBIC) return 3
   return null
+}
+
+/**
+ * Walks a Figma geometry blob: `visit` gets each command, its coordinates as x, y pairs in one
+ * array reused between calls, and the byte offset of the first coordinate. It stops at an
+ * unknown command or one cut short.
+ */
+export function readGeometryBlob(
+  blob: Uint8Array,
+  visit: (command: GeometryCommand, coords: readonly number[], offset: number) => void
+): void {
+  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
+  const coords: number[] = []
+  let offset = 0
+  while (offset < blob.length) {
+    const command = blob[offset]
+    const count = commandCoordCount(command)
+    if (count === null || offset + 1 + count * 8 > blob.length) return
+    offset += 1
+    coords.length = 0
+    for (let i = 0; i < count; i++) {
+      coords.push(view.getFloat32(offset + i * 8, true), view.getFloat32(offset + i * 8 + 4, true))
+    }
+    visit(command as GeometryCommand, coords, offset)
+    offset += count * 8
+  }
 }
 
 export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): Rect | null {
   const bounds = createBoundsAccumulator()
-
   for (const path of paths) {
-    const blob = path.commandsBlob
-    const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
-    let offset = 0
-    while (offset < blob.length) {
-      const command = blob[offset++]
-      const coords = geometryCommandCoordCount(command)
-      if (coords == null) break
-      for (let i = 0; i < coords; i++) {
-        if (offset + 8 > blob.length) break
-        const x = dv.getFloat32(offset, true)
-        const y = dv.getFloat32(offset + 4, true)
-        includePoint(bounds, x, y)
-        offset += 8
-      }
-    }
+    readGeometryBlob(path.commandsBlob, (_, coords) => {
+      for (let i = 0; i < coords.length; i += 2) includePoint(bounds, coords[i], coords[i + 1])
+    })
   }
 
   return bounds.minX === Infinity ? null : boundsToRect(bounds)

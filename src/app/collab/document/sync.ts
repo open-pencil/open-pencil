@@ -6,6 +6,7 @@ import type {
   CommentReply,
   CommentThread,
   DocumentColorSpace,
+  DocumentKind,
   EnabledLibraryBinding,
   PluginDataEntry
 } from '@open-pencil/scene-graph'
@@ -24,6 +25,7 @@ import { readRoot, type YMeta } from '../shared-tree/fields'
 
 const { comments } = OPEN_PENCIL_PLUGIN_DATA
 const COLOR_SPACE_KEY = 'colorSpace'
+const KIND_KEY = 'documentKind'
 /** A thread's replies are a map of their own by id, so replies written at once all stay. */
 const BY_REPLY = new Set(['replies'])
 
@@ -42,11 +44,12 @@ const bindingSchema = v.object({
   enabled: v.boolean()
 })
 const colorSpaceSchema = v.picklist(['srgb', 'display-p3'] satisfies DocumentColorSpace[])
+const kindSchema = v.picklist(['design', 'board'] satisfies DocumentKind[])
 
 /**
  * The room's maps for what the document holds outside its layers: the document node's plugin
  * data by plugin and key, its comment threads by id, its libraries by id, and its settings,
- * such as the color space, by name.
+ * such as the color space and whether it is a design or a board, by name.
  */
 export type YDocumentData = {
   entries: YRecords
@@ -67,6 +70,7 @@ export function roomDocumentData(ydoc: Y.Doc): YDocumentData {
 type DocumentData = DocumentNodeData & {
   libraries: Map<string, EnabledLibraryBinding>
   colorSpace: DocumentColorSpace | undefined
+  kind: DocumentKind | undefined
 }
 
 /** The document node's plugin data as the room keeps it: entries by plugin and key, threads by id. */
@@ -114,7 +118,8 @@ function readDocumentData(store: EditorStore): DocumentData {
   return {
     ...documentNodeData(graph.getNode(graph.rootId)?.pluginData ?? []),
     libraries: structuredClone(graph.enabledLibraries),
-    colorSpace: graph.documentColorSpace
+    colorSpace: graph.documentColorSpace,
+    kind: graph.documentKind
   }
 }
 
@@ -192,6 +197,7 @@ export function bindDocumentSync({
       writeChanges(data.threads, next.threads, sent.threads, { nested: BY_REPLY })
       writeChanges(data.libraries, next.libraries, sent.libraries)
       if (next.colorSpace !== sent.colorSpace) data.settings.set(COLOR_SPACE_KEY, next.colorSpace)
+      if (next.kind !== sent.kind) data.settings.set(KIND_KEY, next.kind)
     })
     sent = structuredClone(next)
   }
@@ -221,6 +227,8 @@ export function bindDocumentSync({
     if (!ids || ids.settings) {
       const colorSpace = v.safeParse(colorSpaceSchema, data.settings.get(COLOR_SPACE_KEY))
       if (colorSpace.success) next.colorSpace = colorSpace.output
+      const kind = v.safeParse(kindSchema, data.settings.get(KIND_KEY))
+      if (kind.success) next.kind = kind.output
     }
     sent = structuredClone(next)
     receiving = true
@@ -244,7 +252,9 @@ export function bindDocumentSync({
     if (libraries) graph.enabledLibraries = structuredClone(next.libraries)
     const colorSpace = next.colorSpace !== undefined && next.colorSpace !== graph.documentColorSpace
     if (next.colorSpace !== undefined) graph.documentColorSpace = next.colorSpace
-    if (libraries || colorSpace) store.refreshDocumentSettings()
+    const kind = next.kind !== undefined && next.kind !== graph.documentKind
+    if (next.kind !== undefined) graph.documentKind = next.kind
+    if (libraries || colorSpace || kind) store.refreshDocumentSettings()
   }
 
   /**
@@ -282,7 +292,8 @@ export function bindDocumentSync({
       if (id === store.graph.rootId && 'pluginData' in changes) send()
     }),
     store.onEditorEvent('document:libraries-changed', send),
-    store.onEditorEvent('document:color-space-changed', send)
+    store.onEditorEvent('document:color-space-changed', send),
+    store.onEditorEvent('document:kind-changed', send)
   ]
   data.settings.observe(onSettings)
 
@@ -294,7 +305,13 @@ export function bindDocumentSync({
     share() {
       if (store.state.hostRestrictions.readOnly) return
       followedRoot = store.graph.rootId
-      sent = { entries: new Map(), threads: new Map(), libraries: new Map(), colorSpace: undefined }
+      sent = {
+        entries: new Map(),
+        threads: new Map(),
+        libraries: new Map(),
+        colorSpace: undefined,
+        kind: undefined
+      }
       write()
     },
     follow,

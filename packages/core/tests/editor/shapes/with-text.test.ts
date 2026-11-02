@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { createEditor } from '@open-pencil/core'
-import { setTextMeasurer } from '@open-pencil/core/layout'
+import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import { lineHeightPixels } from '@open-pencil/scene-graph/text'
@@ -48,6 +48,19 @@ describe('shapes with text in the editor', () => {
     })
     editor.undo.undo()
     expect(editor.graph.getNode(id)?.shapeWithTextType).toBe('SQUARE')
+  })
+
+  // Measured in FigJam: 70.4 on a 176 square, 80 at 400×200, and 6 again once it is a square.
+  test('a rounded rectangle keeps its corners at 0.4 of its shorter side, as FigJam does', () => {
+    const { editor, pageId } = setup()
+    const id = editor.createShape('SHAPE_WITH_TEXT', 0, 0, 176, 176, pageId)
+    editor.changeShapesWithTextKind([id], 'ROUNDED_RECTANGLE')
+    expect(editor.graph.getNode(id)?.cornerRadius).toBeCloseTo(70.4)
+    editor.graph.updateNode(id, { width: 400, height: 200, shapeUserHeight: 200 })
+    computeAllLayouts(editor.graph, id)
+    expect(editor.graph.getNode(id)?.cornerRadius).toBeCloseTo(80)
+    editor.changeShapesWithTextKind([id], 'SQUARE')
+    expect(editor.graph.getNode(id)?.cornerRadius).toBe(6)
   })
 
   test("typing in a shape's label renames a shape that was never renamed", () => {

@@ -132,8 +132,8 @@ test('international text is correct on its first visible paint', async ({ page }
       }).id
     })
 
-    fontManager.blockNodesUntilFontsResolve(sampleIds)
-    const blockedBeforeFonts = sampleIds.every((id) => fontManager.isNodeBlocked(id))
+    fontManager.blockNodesUntilFontsResolve(store.graph, sampleIds)
+    const blockedBeforeFonts = sampleIds.every((id) => fontManager.isNodeBlocked(store.graph, id))
     const [cjk, arabic] = await Promise.all([
       fetch('/tests/fixtures/fonts/NotoSansCJK-Test.otf').then((response) =>
         response.arrayBuffer()
@@ -148,7 +148,7 @@ test('international text is correct on its first visible paint', async ({ page }
     fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
 
     await store.loadFontsForNodes(sampleIds)
-    fontManager.unblockNodes(sampleIds)
+    fontManager.unblockNodes(store.graph, sampleIds)
     for (const id of sampleIds) {
       const node = store.graph.getNode(id)
       if (node?.type === 'TEXT') store.graph.updateNode(id, { text: node.text })
@@ -178,7 +178,7 @@ test('international text is correct on its first visible paint', async ({ page }
           state: node ? store.renderer?.nodeFontReadiness(node) : 'missing'
         }
       }),
-      unblockedAfterFonts: sampleIds.every((id) => !fontManager.isNodeBlocked(id))
+      unblockedAfterFonts: sampleIds.every((id) => !fontManager.isNodeBlocked(store.graph, id))
     }
   })
 
@@ -263,7 +263,7 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
-    fontManager.blockNodesUntilFontsResolve(nodeIds)
+    fontManager.blockNodesUntilFontsResolve(store.graph, nodeIds)
     store.select([typed.id])
     store.startTextEditing(typed.id)
     store.requestRender()
@@ -287,6 +287,8 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
   })
   await canvas.waitForRender()
   const pending = await page.evaluate(async (nodeIds) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not found')
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
@@ -295,7 +297,7 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
-    return nodeIds.every((id) => fontManager.isNodeBlocked(id))
+    return nodeIds.every((id) => fontManager.isNodeBlocked(store.graph, id))
   }, ids.nodeIds)
   expect(pending).toBe(true)
   await expectCanvas(canvas, 'interactive-font-fallback-pending')
@@ -325,10 +327,11 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
     store.commitTextEdit()
     await store.loadFontsForNodes(nodeIds)
-    fontManager.unblockNodes(nodeIds)
+    fontManager.unblockNodes(store.graph, nodeIds)
+    // Both texts are laid out as the editor lays out an edit, measuring them in their fonts.
     for (const id of nodeIds) {
       const node = store.graph.getNode(id)
-      if (node?.type === 'TEXT') store.graph.updateNode(id, { text: node.text })
+      if (node?.type === 'TEXT') store.updateNode(id, { text: node.text })
     }
     store.clearSelection()
     store.renderer.invalidateAllPictures()
@@ -351,14 +354,21 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     return {
       image: Array.from(image),
       textsMatch: tool?.type === 'TEXT' && typed?.type === 'TEXT' && tool.text === typed.text,
+      sameHeights: tool?.derivedTextHeight === typed?.derivedTextHeight,
       toolReady: tool ? store.renderer.isNodeFontLoaded(tool) : false,
       typedReady: typed ? store.renderer.isNodeFontLoaded(typed) : false,
-      unblocked: nodeIds.every((id) => !fontManager.isNodeBlocked(id))
+      unblocked: nodeIds.every((id) => !fontManager.isNodeBlocked(store.graph, id))
     }
   }, ids)
 
   const { image, ...state } = resolved
-  expect(state).toEqual({ textsMatch: true, toolReady: true, typedReady: true, unblocked: true })
+  expect(state).toEqual({
+    textsMatch: true,
+    sameHeights: true,
+    toolReady: true,
+    typedReady: true,
+    unblocked: true
+  })
   expect(Buffer.from(image)).toMatchSnapshot('interactive-font-fallback-resolved.png')
 })
 

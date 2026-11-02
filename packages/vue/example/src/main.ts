@@ -1,4 +1,4 @@
-import canvasKitWasm from 'canvaskit-wasm/bin/canvaskit.wasm?url'
+import canvasKitWasm from 'canvaskit-wasm/bin/full/canvaskit.wasm?url'
 import { createApp } from 'vue'
 
 import { setCanvasKitLocator } from '@open-pencil/core/canvaskit'

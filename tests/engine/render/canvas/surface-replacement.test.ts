@@ -16,17 +16,11 @@ describe('renderer surface replacement', () => {
     const next = surface()
     const renderer: Pick<
       SkiaRenderer,
-      | 'surface'
-      | 'liveImages'
-      | 'tiledScene'
-      | 'sceneBackingAllocationFailed'
-      | 'invalidateScenePicture'
-      | 'replaceSurface'
+      'surface' | 'images' | 'tiledScene' | 'invalidateScenePicture' | 'replaceSurface'
     > = {
       surface: previous,
-      liveImages: new Map(),
+      images: asDouble<SkiaRenderer['images']>({ live: new Map() }),
       tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
-      sceneBackingAllocationFailed: true,
       invalidateScenePicture: mock(),
       replaceSurface: SkiaRenderer.prototype.replaceSurface
     }
@@ -36,7 +30,6 @@ describe('renderer surface replacement', () => {
     expect(renderer.tiledScene.destroy).toHaveBeenCalledTimes(1)
     expect(previous.delete).toHaveBeenCalledTimes(1)
     expect(renderer.surface).toBe(next)
-    expect(renderer.sceneBackingAllocationFailed).toBe(false)
     expect(renderer.invalidateScenePicture).toHaveBeenCalledTimes(1)
   })
 })

@@ -1,1 +1,0 @@
-- On the desktop, links in chat replies and collaboration rooms open in the browser, and links such as **Get API key** no longer show a "shell.open not allowed" error.

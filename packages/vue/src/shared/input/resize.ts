@@ -29,7 +29,7 @@ import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
-import { applyResizeSnap } from '#vue/shared/input/resize/snap'
+import { applyResizeSnap, proportionalResizeRect } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
 
@@ -106,15 +106,12 @@ function resizeChanges(
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
-  const calculatedRect = calculateResizeRect(
-    d.handle,
-    origRect,
-    cx - d.startX,
-    cy - d.startY,
-    aspect
-  )
+  const dx = cx - d.startX
+  const dy = cy - d.startY
   const newRect =
-    aspect !== null ? calculatedRect : applyResizeSnap(d, calculatedRect, editor, ctrlKey)
+    aspect !== null
+      ? proportionalResizeRect(d, origRect, dx, dy, aspect, editor, ctrlKey)
+      : applyResizeSnap(d, calculateResizeRect(d.handle, origRect, dx, dy, null), editor, ctrlKey)
 
   const changes: Partial<SceneNode> = {
     ...newRect,

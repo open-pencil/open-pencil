@@ -142,7 +142,7 @@ export async function packReleasePackages(
   return plan
 }
 
-async function artifactsByPackage(directory: string): Promise<Map<string, string>> {
+export async function artifactsByPackage(directory: string): Promise<Map<string, string>> {
   const artifacts = new Map<string, string>()
   for (const filename of (await readdir(directory)).filter((name) => name.endsWith('.tgz'))) {
     const path = join(directory, filename)

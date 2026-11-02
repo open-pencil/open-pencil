@@ -13,6 +13,7 @@ import {
   HARNESS_PACKAGE
 } from '@/app/ai/agents/pi/companion'
 import { MCP_EXECUTABLE, MCP_INSTALL_TARGET, MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
+import { restartMCPRuntime } from '@/app/automation/mcp/runtime'
 import { detectUserAgent } from '@/app/tauri/command'
 
 import {
@@ -285,7 +286,6 @@ export const agentDiscovery = createAgentDiscovery({
   installBridge: installCanvasBridge,
   installHarness: installHarnessCompanion,
   async restartBridge() {
-    const { restartMCPRuntime } = await import('@/app/automation/mcp/runtime')
     const result = await restartMCPRuntime()
     if (!result.ok) throw result.error
   }

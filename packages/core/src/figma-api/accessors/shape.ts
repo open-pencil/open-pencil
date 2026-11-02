@@ -1,67 +1,61 @@
+import * as v from 'valibot'
+
 import type { ArcData, SceneNode } from '@open-pencil/scene-graph'
+import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
 
 import {
+  graph,
+  hostFitOptions,
+  nodeId,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, numberProblem, received } from '#core/figma-api/accessors/text/messages'
+import { finiteNumberSchema, unitIntervalSchema } from '#core/figma-api/schema'
+import { parseFigma } from '#core/figma-api/validation'
 
 /** Figma caps a polygon or star at this many points, past which it keeps the cap. */
 const MAX_POINT_COUNT = 60
 
-const ARC_FIELDS = ['startingAngle', 'endingAngle', 'innerRadius'] as const
+type BooleanOperation = NonNullable<SceneNode['booleanOperation']>
 
-/** Figma's complaint about a ratio outside 0 to 1, or null. */
-function ratioProblem(value: number, at = ''): string | null {
-  if (value < 0) return `Too small: expected number to be >=0${at}`
-  if (value > 1) return `Too big: expected number to be <=1${at}`
-  return null
-}
+const BOOLEAN_OPERATIONS = [
+  'UNION',
+  'INTERSECT',
+  'SUBTRACT',
+  'EXCLUDE'
+] as const satisfies readonly BooleanOperation[]
+
+/** Figma checks the minimum before whole numbers, and reports both. */
+const pointCountSchema = v.pipe(finiteNumberSchema, v.minValue(3), v.integer())
+/** Figma's `ArcData`; it checks every field and lists each problem on its own line. */
+const arcDataSchema = v.strictObject({
+  startingAngle: finiteNumberSchema,
+  endingAngle: finiteNumberSchema,
+  innerRadius: unitIntervalSchema
+})
 
 function parsePointCount(value: unknown): number {
-  const problem =
-    numberProblem(value) ??
-    (Number.isInteger(value) ? null : 'Expected int, received number') ??
-    ((value as number) < 3 ? 'Too small: expected number to be >=3' : null)
-  if (problem) throw invalid('set_pointCount', problem, 'pointCount')
-  return Math.min(value as number, MAX_POINT_COUNT)
+  const count = parseFigma(pointCountSchema, value, 'set_pointCount', 'pointCount')
+  return Math.min(count, MAX_POINT_COUNT)
 }
 
 function parseInnerRadius(value: unknown): number {
-  const problem = numberProblem(value) ?? ratioProblem(value as number)
-  if (problem) throw invalid('set_innerRadius', problem, 'innerRadius')
-  return value as number
+  return parseFigma(unitIntervalSchema, value, 'set_innerRadius', 'innerRadius')
 }
 
-/** Figma checks every field and lists each problem on its own line. */
 function parseArcData(value: unknown): ArcData {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw invalid('set_arcData', `Expected object, received ${received(value)}`, 'arcData')
-  }
-  const fields = value as Partial<Record<(typeof ARC_FIELDS)[number], unknown>>
-  // Each field read once, so a getter cannot pass the checks and then store something else.
-  const values = ARC_FIELDS.map((field) => fields[field])
-  const problems = values.map((value, index) => numberProblem(value, ` at .${ARC_FIELDS[index]}`))
-  const [startingAngle, endingAngle, innerRadius] = values
-  if (!problems[2]) problems[2] = ratioProblem(innerRadius as number, ' at .innerRadius')
-  const listed = problems.filter((problem) => problem !== null)
-  if (listed.length > 0) throw invalid('set_arcData', listed.join('\n'), 'arcData')
-  return {
-    startingAngle: startingAngle as number,
-    endingAngle: endingAngle as number,
-    innerRadius: innerRadius as number
-  }
+  return parseFigma(arcDataSchema, value, 'set_arcData', 'arcData')
 }
 
 /** An ellipse without arc data is a whole one, which Figma reports as a full turn. */
 const WHOLE_ELLIPSE: ArcData = { startingAngle: 0, endingAngle: 2 * Math.PI, innerRadius: 0 }
 
 /**
- * The members of Figma's `PolygonNode`, `StarNode`, and `EllipseNode` that shape them: a point
- * count, a star's inner radius, and an ellipse's arc. Installed on the proxies of those nodes
- * alone, as Figma has them on no other node.
+ * The members of Figma's `PolygonNode`, `StarNode`, `EllipseNode`, and `BooleanOperationNode`
+ * that shape them: a point count, a star's inner radius, an ellipse's arc, and a boolean's
+ * operation. Installed on the proxies of those nodes alone, as Figma has them on no other node.
  */
 export function installShapeNodeProxyAccessors(
   target: object,
@@ -85,6 +79,28 @@ export function installShapeNodeProxyAccessors(
       },
       set(this: ProxyThis, value: number) {
         updateNode(this, internals, { starInnerRadius: parseInnerRadius(value) })
+      }
+    })
+  }
+  if (type === 'BOOLEAN_OPERATION') {
+    Object.defineProperty(target, 'booleanOperation', {
+      get(this: ProxyThis): BooleanOperation {
+        return raw(this, internals).booleanOperation ?? 'UNION'
+      },
+      set(this: ProxyThis, value: unknown) {
+        const booleanOperation = parseFigma(
+          v.picklist(BOOLEAN_OPERATIONS),
+          value,
+          'set_booleanOperation',
+          'booleanOperation'
+        )
+        updateNode(this, internals, { booleanOperation })
+        // The result's bounds change with the operation, and the groups around it follow.
+        fitEnclosingGroups(
+          graph(this, internals),
+          [nodeId(this, internals)],
+          hostFitOptions(this, internals)
+        )
       }
     })
   }

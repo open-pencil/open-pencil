@@ -1,0 +1,1 @@
+- Plugin API effect errors read in Figma's words, and a value with several problems lists each one, as Figma does.

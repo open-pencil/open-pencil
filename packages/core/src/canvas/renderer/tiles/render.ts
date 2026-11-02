@@ -2,6 +2,7 @@ import type { Image as CKImage } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { paintPageBackground } from '#core/canvas/page/background'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   type RenderChunk,
@@ -12,7 +13,9 @@ import {
 import { rendererNow } from '#core/canvas/renderer/clock'
 
 import type { CachedTile } from './cache'
+import type { TileCostModel } from './cost'
 import { TILE_DEVICE_SIZE, type TileKey, tileWorldBounds } from './geometry'
+import type { TileJobResult } from './scheduler'
 import type { TileSurfacePool } from './surface-pool'
 
 export interface RenderedTile {
@@ -56,16 +59,12 @@ export function renderTile(
   if (!surface) return null
   const allocationMs = rendererNow() - allocationStartedAt
   const canvas = surface.getCanvas()
+  const previousDetail = renderer.images.detailScale
+  renderer.images.detailScale = key.level
   canvas.save()
   try {
-    canvas.clear(
-      renderer.ck.Color4f(
-        renderer.pageColor.r,
-        renderer.pageColor.g,
-        renderer.pageColor.b,
-        renderer.pageColor.a
-      )
-    )
+    const origin = { x: -bounds.minX * key.level, y: -bounds.minY * key.level }
+    paintPageBackground(renderer, canvas, origin, key.level)
     canvas.scale(key.level, key.level)
     canvas.translate(-bounds.minX, -bounds.minY)
     canvas.clipRect(
@@ -111,6 +110,7 @@ export function renderTile(
     }
   } finally {
     canvas.restore()
+    renderer.images.detailScale = previousDetail
     surfacePool.release(surface)
   }
 }
@@ -211,10 +211,83 @@ export function downsampleTile(
   }
 }
 
+/** The scheduler's account of a rendered tile: over budget when it alone took longer than one. */
+export function tileJobResult(tile: RenderedTile, budgetMs: number): TileJobResult {
+  return {
+    renderMs: tile.renderMs,
+    overBudget: tile.renderMs > budgetMs,
+    allocationMs: tile.allocationMs,
+    drawMs: tile.drawMs,
+    flushMs: tile.flushMs,
+    snapshotMs: tile.snapshotMs,
+    chunkCount: tile.chunkCount
+  }
+}
+
 export function deleteRenderedTile(tile: RenderedTile): void {
   tile.image?.delete()
 }
 
 export function tileChunks(index: RenderChunkIndex, key: TileKey): RenderChunk[] {
   return index.search(tileWorldBounds(key))
+}
+
+/**
+ * The estimated time to render `key`: a tile over nothing is free; while moving, a tile with a
+ * chunk picture still to record is beyond the frame, since recording cannot be bounded below
+ * one chunk; otherwise the cost model's estimate.
+ */
+export function estimateTileCost(
+  renderer: SkiaRenderer,
+  index: RenderChunkIndex,
+  pictureCache: RenderChunkPictureCache,
+  costs: TileCostModel,
+  key: TileKey,
+  moving: boolean
+): number {
+  const chunks = tileChunks(index, key)
+  if (chunks.length === 0) return 0
+  if (
+    moving &&
+    chunks.some(
+      (chunk) =>
+        (chunk.kind !== 'subtree' || chunk.interruptible) && !pictureCache.has(renderer, chunk)
+    )
+  ) {
+    return Number.POSITIVE_INFINITY
+  }
+  return costs.estimate(key, chunks.length)
+}
+
+/**
+ * Recording a chunk's picture is the dear part of a tile, so a tile whose chunks are not all
+ * recorded yet records them until the frame's budget is spent and defers the rest; the tile
+ * itself renders, from recorded pictures, on the frame that finds them all present. False when
+ * some remain for the next frame.
+ */
+export function recordTilePictures(
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  index: RenderChunkIndex,
+  pictureCache: RenderChunkPictureCache,
+  key: TileKey,
+  budget: { now: () => number; remainingMs: number }
+): boolean {
+  const deadline = budget.now() + budget.remainingMs
+  let recorded = 0
+  // Pictures record at the tile's detail, so their image previews suit its level.
+  const previousDetail = renderer.images.detailScale
+  renderer.images.detailScale = key.level
+  try {
+    for (const chunk of tileChunks(index, key)) {
+      if (chunk.kind === 'subtree' && !chunk.interruptible) continue
+      if (pictureCache.has(renderer, chunk)) continue
+      if (recorded > 0 && budget.now() >= deadline) return false
+      pictureCache.get(renderer, graph, chunk)
+      recorded++
+    }
+  } finally {
+    renderer.images.detailScale = previousDetail
+  }
+  return true
 }

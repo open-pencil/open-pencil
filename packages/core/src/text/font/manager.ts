@@ -7,15 +7,18 @@ import {
   faceLoadKey,
   namesWeight,
   normalizeFontFamily,
-  parseFontStyle,
-  styleToWeight
+  parseFontStyle
 } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { fontFallbackEntry, type FontFallbackScript } from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
 import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
-import { fontFaceRenderFamily, type FamilyFace } from '#core/text/font/faces'
+import {
+  browserFaceDescriptors,
+  fontFaceRenderFamily,
+  type FamilyFace
+} from '#core/text/font/faces'
 import { loadHarfBuzz } from '#core/text/font/harfbuzz'
 import { LocalFonts } from '#core/text/font/local'
 import { sameFontFile, SharedReads, withHarfBuzz } from '#core/text/font/reads'
@@ -29,6 +32,7 @@ import {
   type HostFontLoader,
   type LocalFontAccessState
 } from '#core/text/font/sources'
+import { fontStandIn, standInFont } from '#core/text/font/stand-in'
 import {
   fontAxes,
   hasNamedInstance,
@@ -37,6 +41,7 @@ import {
   type FontAxis,
   type NamedInstance
 } from '#core/text/font/variation'
+import { sfntFont } from '#core/text/font/woff2'
 import { collectGraphFontKeys } from '#core/text/requirements/collect'
 import { normalizedCoverageText, WebFontResolver } from '#core/text/web-font/resolver'
 import type { WebFontFetch, WebFontProviderId } from '#core/text/web-font/resolver'
@@ -47,6 +52,8 @@ export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
+  /** Faces a load looked for everywhere and found nowhere, until one of them loads after all. */
+  private missingFaces = new Set<string>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
   /** The name each file of a family loaded from several files is registered under. */
   private fileFamilies = new Map<ArrayBuffer, string>()
@@ -68,7 +75,8 @@ export class FontManager {
     ArrayBuffer,
     { axes: FontAxis[]; instances: NamedInstance[] } | null
   >()
-  private blockedNodeIds = new Set<string>()
+  /** Layers kept off the canvas while their fonts are prepared, by graph, with how many hold each. */
+  private blockedNodes = new WeakMap<SceneGraph, Map<string, number>>()
   private fontProvider: TypefaceFontProvider | null = null
   private fontProviders = new Set<TypefaceFontProvider>()
   private providerCanvasKits = new WeakMap<TypefaceFontProvider, CanvasKit>()
@@ -133,16 +141,31 @@ export class FontManager {
     return this.registrationGeneration
   }
 
-  blockNodesUntilFontsResolve(nodeIds: readonly string[]): void {
-    for (const nodeId of nodeIds) this.blockedNodeIds.add(nodeId)
+  /**
+   * Keeps `nodeIds` of `graph` off the canvas until each is unblocked as many times as it was
+   * blocked, so one preparation that ends does not show text another still prepares.
+   */
+  blockNodesUntilFontsResolve(graph: SceneGraph, nodeIds: readonly string[]): void {
+    let blocked = this.blockedNodes.get(graph)
+    if (!blocked) {
+      blocked = new Map()
+      this.blockedNodes.set(graph, blocked)
+    }
+    for (const nodeId of nodeIds) blocked.set(nodeId, (blocked.get(nodeId) ?? 0) + 1)
   }
 
-  unblockNodes(nodeIds: readonly string[]): void {
-    for (const nodeId of nodeIds) this.blockedNodeIds.delete(nodeId)
+  unblockNodes(graph: SceneGraph, nodeIds: readonly string[]): void {
+    const blocked = this.blockedNodes.get(graph)
+    if (!blocked) return
+    for (const nodeId of nodeIds) {
+      const holds = blocked.get(nodeId) ?? 0
+      if (holds > 1) blocked.set(nodeId, holds - 1)
+      else blocked.delete(nodeId)
+    }
   }
 
-  isNodeBlocked(nodeId: string): boolean {
-    return this.blockedNodeIds.has(nodeId)
+  isNodeBlocked(graph: SceneGraph, nodeId: string): boolean {
+    return this.blockedNodes.get(graph)?.has(nodeId) ?? false
   }
 
   localAccessState(): LocalFontAccessState {
@@ -381,6 +404,13 @@ export class FontManager {
   ): Promise<ArrayBuffer | null> {
     signal?.throwIfAborted()
     const loaded = this.loadedData(family, style)
+    // A stand-in gives way to the family's own face once it is installed or local access is granted.
+    if (loaded && this.loadedFontSource(family, style) === 'stand-in') {
+      const installed = await this.loadInstalledFont(family, style)
+      if (installed) return installed
+      this.registerFontInCanvasKit(family, loaded)
+      return loaded
+    }
     if (loaded) {
       this.registerFontInCanvasKit(family, loaded)
       return this.withRemoteCoverage(family, style, loaded, characters, signal)
@@ -392,11 +422,39 @@ export class FontManager {
     const shared = this.sharedVariableFace(family, style)
     if (shared) return this.withRemoteCoverage(family, style, shared, characters, signal)
 
-    return (
+    const found =
       (await this.loadBundledFont(family, style)) ??
       (await this.loadCachedFont(family, style, characters)) ??
-      (await this.loadRemoteFont(family, style, characters, signal))
-    )
+      (await this.loadRemoteFont(family, style, characters, signal)) ??
+      (await this.loadStandIn(family, style))
+    if (!found) this.missingFaces.add(`${family}|${style}`)
+    return found
+  }
+
+  /**
+   * Whether a load looked for this face and found it nowhere, so text in it draws in another face,
+   * as Figma draws a missing font, rather than waiting for it.
+   */
+  isFaceMissing(family: string, style: string): boolean {
+    return this.missingFaces.has(`${family}|${style}`)
+  }
+
+  /**
+   * The open font that draws a family nobody may ship, made to the family's widths and line box,
+   * under the family's own name, so text is laid out and drawn alike wherever it is read from.
+   */
+  private async loadStandIn(family: string, style: string): Promise<ArrayBuffer | null> {
+    const standIn = fontStandIn(family)
+    if (!standIn) return null
+    try {
+      const file = await this.fetchBundledFont(standIn.file)
+      if (!file) return null
+      const font = standInFont(await sfntFont(file), standIn)
+      return font ? this.registerAndCache(family, style, font, 'stand-in') : null
+    } catch (e) {
+      console.warn(`Stand-in font load failed for "${family}" ${style}:`, e)
+      return null
+    }
   }
 
   /**
@@ -781,6 +839,7 @@ export class FontManager {
     source?: FontLoadedSource
   ): ArrayBuffer | null {
     const key = `${family}|${style}`
+    this.missingFaces.delete(key)
     const existing = this.loadedFamilies.get(key)
     if (existing && sameFontFile(existing, buffer)) {
       if (source) this.loadedFamilySources.set(key, source)
@@ -843,12 +902,7 @@ export class FontManager {
   /** Makes a face available to the page's own text, such as fields over canvas labels. */
   registerFontInBrowser(family: string, style: string, data: ArrayBuffer) {
     if (!IS_BROWSER) return
-    const weight = styleToWeight(style)
-    const italic = style.toLowerCase().includes('italic') ? 'italic' : 'normal'
-    const face = new FontFace(family, data, {
-      weight: String(weight),
-      style: italic
-    })
+    const face = new FontFace(family, data, browserFaceDescriptors(style, data))
     face
       .load()
       .then(() => document.fonts.add(face))

@@ -103,3 +103,48 @@ test('checks SDK examples and the landing against the docs stylesheet that build
   )
   expect(diagnostics.map((item) => item.filename?.split('/').pop())).toEqual(['Palette.vue'])
 })
+
+describe('no-px-tailwind-values', () => {
+  const pxRule = 'no-px-tailwind-values'
+
+  test('rejects pixel lengths in arbitrary values in the app and the SDK', async () => {
+    const classes = [
+      'text-[11px]',
+      'hover:h-[26px]',
+      '-bottom-[9px]',
+      'grid-cols-[24px_minmax(0,1fr)]',
+      'w-[min(360px,100%)]',
+      '[width:10px]',
+      'w-[10PX]'
+    ]
+    const accepted = [
+      'text-2xs',
+      'h-6.5',
+      'w-[22.5rem]',
+      'rounded-md',
+      'w-px',
+      'shadow-[0_8px_30px_var(--color-border)]',
+      'grid-cols-[repeat(2,1fr)]',
+      '[box-shadow:0_1px_2px_var(--color-border)]',
+      'after:content-["10px_wide"]'
+    ]
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/rejected.ts': `export const theme = '${classes.join(' ')}'\n`,
+          'src/theme/accepted.ts': `export const theme = '${accepted.join(' ')}'\n`,
+          'packages/vue/src/primitives/Demo/examples/Px.vue': `${SCRIPT}<template><p class="text-[11px]" /></template>\n`,
+          'packages/docs/.vitepress/theme/landing/Px.vue': `${SCRIPT}<template><p class="text-[11px]" /></template>\n`
+        },
+        { [`open-pencil/${pxRule}`]: 'error' }
+      ),
+      pxRule
+    )
+    const files = diagnostics.map((item) => item.filename?.split('/').pop())
+    expect(files.filter((name) => name === 'rejected.ts')).toHaveLength(classes.length)
+    expect(files.filter((name) => name !== 'rejected.ts')).toEqual(['Px.vue'])
+    expect(diagnostics.find((item) => item.filename?.endsWith('Px.vue'))?.filename).toContain(
+      'packages/vue/src/'
+    )
+  })
+})

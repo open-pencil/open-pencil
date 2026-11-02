@@ -1,4 +1,5 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { referencedStyleIds } from '@open-pencil/scene-graph/shared-styles'
 import { styleRunReferences } from '@open-pencil/scene-graph/text'
 import { variableValueReferences } from '@open-pencil/scene-graph/variables'
 
@@ -21,23 +22,14 @@ export interface ExtractedGraph {
 }
 
 function includeReferencedStyles(source: SceneGraph, ids: Set<string>): void {
-  const referencedStyleIds = new Set<string>()
+  const styleIds = new Set<string>()
   for (const id of ids) {
     const node = source.getNode(id)
     if (!node) continue
-    for (const styleId of [
-      node.fillStyleId,
-      node.strokeStyleId,
-      node.textStyleId,
-      node.effectStyleId,
-      node.gridStyleId,
-      ...styleRunReferences(node.styleRuns).styles
-    ]) {
-      if (styleId) referencedStyleIds.add(styleId)
-    }
+    for (const styleId of referencedStyleIds(node)) styleIds.add(styleId)
   }
   for (const node of source.getAllNodes()) {
-    if (node.sharedStyleType && node.source.id && referencedStyleIds.has(node.source.id)) {
+    if (node.sharedStyleType && node.source.id && styleIds.has(node.source.id)) {
       ids.add(node.id)
     }
   }

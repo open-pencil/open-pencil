@@ -23,7 +23,9 @@ import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
  */
 export function pluginChildren(sceneGraph: SceneGraph, id: string): SceneNode[] {
   const node = sceneGraph.getNode(id)
-  return node && isGeneratedFrame(node) ? [] : sceneGraph.getChildren(id)
+  if (node && isGeneratedFrame(node)) return []
+  // Pages and layers the document keeps out of view, such as its styles, are no plugin's.
+  return sceneGraph.getChildren(id).filter((child) => !child.internalOnly)
 }
 
 function sublayers(target: ProxyThis, internals: NodeProxyInternals) {

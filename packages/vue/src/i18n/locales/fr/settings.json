@@ -1,4 +1,6 @@
 {
+  "interfaceScale": "Taille de l’interface",
+  "interfaceScaleDescription": "Redimensionne les panneaux, le texte et les commandes sans modifier le zoom du canevas.",
   "recentFiles": "Fichiers récents",
   "recentFilesDescription": "Choisissez combien de fichiers conserver dans la liste et le menu des fichiers récents.",
   "recentFilesLimit": "Nombre de fichiers récents",
@@ -64,7 +66,6 @@
   "toolbarMoveDown": "Descendre",
   "toolbarGroupWith": "Grouper avec {tool}",
   "toolbarUngroup": "Dégrouper",
-  "toolbarReset": "Rétablir les valeurs par défaut",
   "resetToDefault": "Rétablir les valeurs par défaut",
   "customizeToolbar": "Personnaliser la barre d’outils…",
   "discardChanges": "Abandonner les modifications ?",

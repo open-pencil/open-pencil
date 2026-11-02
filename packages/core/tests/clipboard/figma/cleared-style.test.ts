@@ -5,6 +5,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
 
 import { importClipboardNodes } from '@open-pencil/core/clipboard'
+import { exportFigFile, parseFigFile, populateAllFigPages } from '@open-pencil/core/io/formats/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange, type StyleReference } from '@open-pencil/kiwi/fig/codec'
@@ -56,8 +57,20 @@ function isClearedReference(value: unknown): boolean {
   return guid !== undefined && isUnsetGuid(guid)
 }
 
-/** Outer's layer after import; `valuesKept: false` leaves the clearing claim only its reference. */
-async function outerLayer(entry: Case, valuesKept: boolean) {
+/** A document saved as .fig and opened again. */
+async function reopened(graph: SceneGraph): Promise<SceneGraph> {
+  const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer, {
+    populate: 'first-page'
+  })
+  populateAllFigPages(reopened)
+  return reopened
+}
+
+/**
+ * Outer's layer after import, or after a .fig save and reopen too; `valuesKept: false` leaves the
+ * clearing claim only its reference.
+ */
+async function outerLayer(entry: Case, valuesKept: boolean, saved = false) {
   const parsed = expectDefined(
     await parseFigmaClipboard(await Bun.file(join(FIXTURES, entry.fixture)).text())
   )
@@ -68,15 +81,10 @@ async function outerLayer(entry: Case, valuesKept: boolean) {
         for (const field of Object.keys(override))
           if (field !== 'guidPath' && field !== entry.reference)
             Reflect.deleteProperty(override, field)
-  const graph = new SceneGraph()
-  const [outer] = importClipboardNodes(
-    parsed.nodes,
-    graph,
-    graph.getPages()[0].id,
-    0,
-    0,
-    parsed.blobs
-  )
+  const imported = new SceneGraph()
+  importClipboardNodes(parsed.nodes, imported, imported.getPages()[0].id, 0, 0, parsed.blobs)
+  const graph = saved ? await reopened(imported) : imported
+  const outer = expectDefined([...graph.nodes.values()].find((node) => node.name === 'Outer')).id
   const layer = expectDefined(
     [...graph.nodes.values()].find(
       (node) => node.name === entry.layer && graph.isDescendant(node.id, outer)
@@ -95,5 +103,10 @@ describe.each(CASES)('a $reference an outer instance clears', (entry) => {
   // Figma draws such a claim with Inner's values, and with no style (live-verified).
   test("shows the source layer's values, without a style, when it wrote none", async () => {
     expect(await outerLayer(entry, false)).toEqual(entry.source)
+  })
+
+  test('stays cleared through a .fig save and reopen', async () => {
+    expect(await outerLayer(entry, true, true)).toEqual(entry.kept)
+    expect(await outerLayer(entry, false, true)).toEqual(entry.source)
   })
 })

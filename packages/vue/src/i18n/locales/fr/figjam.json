@@ -30,5 +30,12 @@
   "colorLightTeal": "Sarcelle clair",
   "colorLightBlue": "Bleu clair",
   "colorLightViolet": "Violet clair",
-  "colorLightPink": "Rose clair"
+  "colorLightPink": "Rose clair",
+  "changeColor": "Changer la couleur",
+  "lineStyle": "Style de ligne",
+  "lineShape": "Forme de ligne",
+  "solid": "Continue",
+  "thin": "Fine",
+  "renameSection": "Renommer la section",
+  "addText": "Ajouter du texte"
 }

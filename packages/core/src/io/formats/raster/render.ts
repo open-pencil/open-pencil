@@ -10,6 +10,8 @@ import type { SkiaRenderer } from '#core/canvas'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
+import { ckImageFormat } from './pixels'
+
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
 export type ExportFormat = RasterExportFormat | 'SVG'
 
@@ -31,17 +33,6 @@ export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
     (id) => graph.getNode(id),
     (id) => graph.getAbsolutePosition(id)
   )
-}
-
-function ckImageFormat(ck: CanvasKit, format: ExportFormat) {
-  switch (format) {
-    case 'JPG':
-      return ck.ImageFormat.JPEG
-    case 'WEBP':
-      return ck.ImageFormat.WEBP
-    default:
-      return ck.ImageFormat.PNG
-  }
 }
 
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {
@@ -177,34 +168,7 @@ function renderToSurface(
         ])
       : downsampleSurface.makeImageSnapshot()
     const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
-    let resultBytes: Uint8Array<ArrayBuffer> | null = encoded ? new Uint8Array(encoded) : null
-
-    // CanvasKit's `encodeToBytes` returns null for JPEG/WEBP in this build, so
-    // fall back to encoding the raw pixels through the browser canvas.
-    if (!resultBytes && (format === 'JPG' || format === 'WEBP')) {
-      const exportWidth = alphaBounds ? alphaBounds.maxX - alphaBounds.minX : width
-      const exportHeight = alphaBounds ? alphaBounds.maxY - alphaBounds.minY : height
-      const exportMinX = alphaBounds ? alphaBounds.minX : 0
-      const exportMinY = alphaBounds ? alphaBounds.minY : 0
-
-      const rawPixels = downsampleCanvas.readPixels(exportMinX, exportMinY, {
-        alphaType: ck.AlphaType.Unpremul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB,
-        width: exportWidth,
-        height: exportHeight
-      })
-
-      if (rawPixels instanceof Uint8Array) {
-        resultBytes = renderer.encodeRasterFallback(
-          rawPixels,
-          exportWidth,
-          exportHeight,
-          format,
-          quality
-        )
-      }
-    }
+    const resultBytes = encoded ? new Uint8Array(encoded) : null
 
     image.delete()
     downsampleSurface.delete()
@@ -334,12 +298,20 @@ export interface ThumbnailFrame {
   height: number
 }
 
-/** The page region a thumbnail fitted into `width` by `height` pixels shows, and its size. */
+/**
+ * How a thumbnail frames its page's content, always whole: `contain` is as large as the content
+ * fits in `width` by `height`, and `letterbox` is exactly that size with the content centred on
+ * the page colour, as Figma's file browser shows a file in its card.
+ */
+export type ThumbnailFit = 'contain' | 'letterbox'
+
+/** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
 export function thumbnailFrame(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  fit: ThumbnailFit = 'contain'
 ): ThumbnailFrame | null {
   const page = graph.getNode(pageId)
   if (!page || page.childIds.length === 0) return null
@@ -352,6 +324,24 @@ export function thumbnailFrame(
   if (contentW <= 0 || contentH <= 0) return null
 
   const scale = Math.min(width / contentW, height / contentH)
+  if (fit === 'letterbox') {
+    const centerX = (bounds.minX + bounds.maxX) / 2
+    const centerY = (bounds.minY + bounds.maxY) / 2
+    const halfW = width / scale / 2
+    const halfH = height / scale / 2
+    return {
+      bounds: {
+        minX: centerX - halfW,
+        minY: centerY - halfH,
+        maxX: centerX + halfW,
+        maxY: centerY + halfH
+      },
+      scale,
+      width,
+      height
+    }
+  }
+
   return {
     bounds,
     scale,
@@ -366,9 +356,10 @@ export function renderThumbnail(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  fit: ThumbnailFit = 'contain'
 ): Uint8Array<ArrayBuffer> | null {
-  const frame = thumbnailFrame(graph, pageId, width, height)
+  const frame = thumbnailFrame(graph, pageId, width, height, fit)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.

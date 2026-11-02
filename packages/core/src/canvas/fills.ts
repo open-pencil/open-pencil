@@ -34,10 +34,11 @@ export function paintFills(
       : r.applyFill(fill, node, graph, fillIndex)
     if (!applied) continue
     r.fillPaint.setAlphaf(fill.opacity)
-    setPaintBlendMode(r, r.fillPaint, fill.blendMode)
+    const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
+    if (blends) setPaintBlendMode(r, r.fillPaint, fill.blendMode)
     draw(fill)
-    r.fillPaint.setShader(null)
-    r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    clearFillShader(r)
+    if (blends) setPaintBlendMode(r, r.fillPaint, 'NORMAL')
   }
 }
 
@@ -70,6 +71,25 @@ export function drawVectorMultiStyleFills(
   return true
 }
 
+/** Clears the fill paint's shader, when it has one; a layer with plain fills makes no call. */
+export function clearFillShader(r: SkiaRenderer): void {
+  if (!r.fillPaintShaded) return
+  r.fillPaint.setShader(null)
+  r.fillPaintShaded = false
+}
+
+export function clearStrokeShader(r: SkiaRenderer): void {
+  if (!r.strokePaintShaded) return
+  r.strokePaint.setShader(null)
+  r.strokePaintShaded = false
+}
+
+/** Records that `paint`, when it is a shared one, now carries a shader. */
+function markShaded(r: SkiaRenderer, paint: Paint): void {
+  if (paint === r.fillPaint) r.fillPaintShaded = true
+  else if (paint === r.strokePaint) r.strokePaintShaded = true
+}
+
 export function drawNodeFill(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   if (node.type === 'TEXT') r.renderText(canvas, node, fill)
   else if (node.type !== 'LINE') {
@@ -85,27 +105,27 @@ export function applyFill(
   fillIndex = 0,
   patternStack = new Set<string>()
 ): boolean {
-  r.fillPaint.setShader(null)
+  clearFillShader(r)
 
   if (fill.type === 'SOLID') {
     const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColor(r.ck.Color4f(c.r, c.g, c.b, c.a))
+    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
 
   if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
-    return r.applyGradientFill(fill, node, graph)
+    return applyGradientFill(r, fill, node, graph)
   }
 
   if (fill.type === 'IMAGE' && fill.imageHash) {
-    return r.applyImageFill(fill, node, graph)
+    return applyImageFill(r, fill, node, graph)
   }
 
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
 
   if (fill.type === 'PATTERN' || fill.type === 'NOISE' || fill.type === 'CUSTOM') {
     const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColor(r.ck.Color4f(c.r, c.g, c.b, c.a))
+    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
 
@@ -224,6 +244,7 @@ function applyPatternFill(
     tileRect
   )
   r.fillPaint.setShader(shader)
+  r.fillPaintShaded = true
   shader.delete()
   picture.delete()
   return true
@@ -292,6 +313,7 @@ export function applyGradientFill(
     if (!shader) return false
     try {
       paint.setShader(shader)
+      markShaded(r, paint)
     } finally {
       shader.delete()
     }
@@ -423,6 +445,7 @@ function setImageShader(
         )
   try {
     paint.setShader(shader)
+    markShaded(r, paint)
   } finally {
     shader.delete()
   }
@@ -438,16 +461,20 @@ export function applyImageFill(
 ): boolean {
   const hash = fill.imageHash
   if (!hash) return false
-  const live = r.liveImages.get(hash)
+  const live = r.images.live.get(hash)
   if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
-  if (r.viewportImageRendering) r.noteImageFillUser(hash, node.id)
+  if (r.viewportImageRendering) {
+    r.noteImageFillUser(hash, node.id)
+    r.images.previewsDrawn = true
+  }
+  // The preview's resolution follows the detail the drawing is for: the viewport's scale, or a
+  // tile's level, whose chunk pictures record again when a finer tile needs more.
   const preview = r.viewportImageRendering
-    ? // eslint-disable-next-line open-pencil/no-zoom-in-scene-drawing -- picks the preview resolution, not a size; preview mode draws the scene uncached on every frame, and tiles redraw the node when a sharper preview decodes.
-      r.imagePreviews.get(graph, hash, previewEdge(node, r.zoom, r.dpr))
+    ? r.images.previews.get(graph, hash, previewEdge(node, r.images.detailScale))
     : undefined
   if (r.viewportImageRendering && !preview) return false
   const key = preview?.key ?? hash
-  let img = r.imageCache.get(key)
+  let img = r.images.cache.get(key)
   let temporary = false
   if (!img) {
     const data = preview?.preview.bytes ?? graph.images.get(hash)
@@ -459,7 +486,7 @@ export function applyImageFill(
     } finally {
       decoded.delete()
     }
-    temporary = !r.imageCache.set(key, img)
+    temporary = !r.images.cache.set(key, img)
   }
 
   try {

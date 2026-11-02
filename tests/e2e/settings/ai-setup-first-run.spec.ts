@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
 
-import { CanvasHelper } from '#tests/helpers/canvas'
 import { waitForDemo } from '#tests/helpers/demo'
 
 // `?test` suppresses the first-run offer, so these load the app as a person would, with none
@@ -9,15 +8,15 @@ test.use({ storageState: { cookies: [], origins: [] } })
 
 test('a fresh install offers guided AI setup once and remembers skipping it', async ({ page }) => {
   await page.goto('/')
-  // The offer is made while the workspace starts, so it is open once the canvas is ready.
-  await new CanvasHelper(page).waitForInit()
+  // The offer is made while the workspace starts, over Home, where a first run begins.
   const setup = page.getByTestId('ai-setup-dialog')
   await expect(setup.getByRole('heading', { name: 'Welcome to OpenPencil' })).toBeVisible()
+  await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await setup.getByRole('button', { name: 'Start designing' }).click()
   await expect(setup).toHaveCount(0)
 
   await page.reload()
-  await new CanvasHelper(page).waitForInit()
+  await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect(setup).toHaveCount(0)
 })
 
@@ -78,7 +77,7 @@ test.describe('an install with a configured model', () => {
 
   test('never sees the first-run offer', async ({ page }) => {
     await page.goto('/')
-    await new CanvasHelper(page).waitForInit()
+    await expect(page.getByTestId('recent-files-home')).toBeVisible()
     await expect(page.getByTestId('ai-setup-dialog')).toHaveCount(0)
   })
 })

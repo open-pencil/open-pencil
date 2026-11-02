@@ -1,10 +1,10 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
 
 import type { PresenceCursor, SkiaRenderer } from '#core/canvas/renderer'
+
+import { outlineNode } from './outline'
 
 const CURSOR_SIZE = 9
 const LABEL_PADDING_X = 4
@@ -21,7 +21,7 @@ const LABEL_SPARKLE_GAP = 3
 function drawSelection(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, cursor: PresenceCursor) {
   if (!cursor.selection?.length && !cursor.outline?.length) return
   const { r: red, g, b } = cursor.color
-  r.auxStroke.setColor(r.ck.Color4f(red, g, b, 0.6))
+  r.auxStroke.setColorComponents(red, g, b, 0.6)
   r.auxStroke.setStrokeWidth(1.5)
   r.auxStroke.setPathEffect(null)
   // Outlines of what is not a layer yet, such as JSX an agent is still streaming.
@@ -36,31 +36,9 @@ function drawSelection(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, curso
       r.auxStroke
     )
   }
-  for (const nodeId of cursor.selection ?? []) {
-    const node = graph.getNode(nodeId)
-    if (!node) continue
-    // Map the corners through the node's world matrix, as the shape is rendered, so the
-    // box tracks rotation, flips, and parent transforms.
-    const corners = Matrix.mapPoints(getWorldMatrix(node, graph), [
-      0,
-      0,
-      node.width,
-      0,
-      node.width,
-      node.height,
-      0,
-      node.height
-    ])
-    const box = new r.ck.PathBuilder()
-    box.moveTo(corners[0] * r.zoom + r.panX, corners[1] * r.zoom + r.panY)
-    for (let i = 2; i < corners.length; i += 2) {
-      box.lineTo(corners[i] * r.zoom + r.panX, corners[i + 1] * r.zoom + r.panY)
-    }
-    box.close()
-    const path = box.detachAndDelete()
-    canvas.drawPath(path, r.auxStroke)
-    path.delete()
-  }
+  // In the layer's own space, so the box tracks rotation, flips, and parent transforms.
+  const box = { color: r.ck.Color4f(red, g, b, 0.6), width: 1.5 }
+  for (const nodeId of cursor.selection ?? []) outlineNode(r, canvas, graph, nodeId, box)
 }
 
 function arrowPath(r: SkiaRenderer, x: number, y: number) {
@@ -101,7 +79,7 @@ function drawArrow(r: SkiaRenderer, canvas: Canvas, x: number, y: number, cursor
   r.auxStroke.setPathEffect(null)
   canvas.drawPath(path, r.auxStroke)
   const { r: red, g, b } = cursor.color
-  r.auxFill.setColor(r.ck.Color4f(red, g, b, 1))
+  r.auxFill.setColorComponents(red, g, b, 1)
   canvas.drawPath(path, r.auxFill)
   path.delete()
 }

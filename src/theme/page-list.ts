@@ -2,7 +2,7 @@ const pageListTheme = {
   slots: {
     panel: 'flex min-h-0 flex-1 flex-col',
     header: 'flex shrink-0 items-center justify-between px-3 py-1.5',
-    title: 'text-[11px] font-semibold text-surface',
+    title: 'text-2xs font-semibold text-surface',
     add: 'cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
     body: 'min-h-0 flex-1 overflow-hidden',
     viewport: 'scrollbar-thin h-full overflow-x-hidden overflow-y-auto px-1 pb-1',
@@ -11,10 +11,10 @@ const pageListTheme = {
     renameRow: 'flex h-6 w-full items-center gap-1.5 rounded px-2',
     icon: 'size-3 shrink-0 opacity-70',
     renameInput:
-      'min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-[11px] text-surface outline-none',
+      'min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-2xs text-surface outline-none',
     divider: 'my-1 flex cursor-pointer items-center px-2',
     dividerLine: 'h-px flex-1 bg-border',
-    item: 'flex h-6 w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 text-left text-[11px] outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
+    item: 'flex h-6 w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 text-left text-2xs outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
     label: 'min-w-0 flex-1 truncate',
     /** Right-aligned page badges, such as who works on the page. */
     trailing: 'flex shrink-0 items-center gap-1.5'

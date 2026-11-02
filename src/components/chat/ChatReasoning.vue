@@ -84,7 +84,7 @@ function updateOpen(value: boolean): void {
     <CollapsibleTrigger
       data-slot="chat-reasoning-trigger"
       :data-streaming="streaming || undefined"
-      class="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-[11px] text-muted hover:bg-hover hover:text-surface"
+      class="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-2xs text-muted hover:bg-hover hover:text-surface"
     >
       <icon-lucide-brain class="size-3.5 shrink-0 text-primary" aria-hidden="true" />
       <span class="flex-1">{{ streaming ? thinkingLabel : finishedLabel }}</span>
@@ -100,7 +100,7 @@ function updateOpen(value: boolean): void {
       />
     </CollapsibleTrigger>
     <CollapsibleContent data-slot="chat-reasoning-content" :class="collapsibleContentMotion">
-      <div class="border-t border-border px-2 py-1.5 text-[11px] leading-relaxed text-muted">
+      <div class="border-t border-border px-2 py-1.5 text-2xs leading-relaxed text-muted">
         <ChatMarkdown :content="text" :mode="markdownMode" surface="reasoning" />
       </div>
     </CollapsibleContent>

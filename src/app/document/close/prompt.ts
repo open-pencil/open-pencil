@@ -3,6 +3,7 @@ import { shallowRef } from 'vue'
 import { IS_TAURI } from '@/constants'
 
 import { confirmDocumentClose, type ClosableDocument, type CloseChoice } from './controller'
+import { chooseNativeDocumentClose } from './native'
 
 export const closePrompt = shallowRef<{ documentName: string } | null>(null)
 let resolvePrompt: ((choice: CloseChoice) => void) | null = null
@@ -18,10 +19,7 @@ export function answerClosePrompt(choice: CloseChoice): void {
 export function requestDocumentClose(document: ClosableDocument, documentName: string) {
   const result = pending.then(() =>
     confirmDocumentClose(document, async () => {
-      if (IS_TAURI) {
-        const { chooseNativeDocumentClose } = await import('./native')
-        return chooseNativeDocumentClose(documentName)
-      }
+      if (IS_TAURI) return chooseNativeDocumentClose(documentName)
       return new Promise<CloseChoice>((resolve) => {
         resolvePrompt = resolve
         closePrompt.value = { documentName }

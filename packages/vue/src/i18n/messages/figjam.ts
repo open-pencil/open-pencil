@@ -1,6 +1,6 @@
 import { i18n } from '#vue/i18n/create'
 
-/** FigJam's text sizes, typefaces and board palette, shared by sticky notes and shapes. */
+/** FigJam's text sizes, typefaces, board palette and selection toolbar menus. */
 export const figJamMessageDefaults = {
   textSize: 'Text size',
   textSmall: 'Small',
@@ -33,7 +33,14 @@ export const figJamMessageDefaults = {
   colorLightTeal: 'Light teal',
   colorLightBlue: 'Light blue',
   colorLightViolet: 'Light violet',
-  colorLightPink: 'Light pink'
+  colorLightPink: 'Light pink',
+  changeColor: 'Change color',
+  lineStyle: 'Line style',
+  lineShape: 'Line shape',
+  solid: 'Solid',
+  thin: 'Thin',
+  renameSection: 'Rename section',
+  addText: 'Add text'
 } as const
 
 export const figJamMessages = i18n('figjam', figJamMessageDefaults)

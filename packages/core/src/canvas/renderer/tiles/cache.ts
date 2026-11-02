@@ -1,5 +1,7 @@
 import type { Image as CKImage } from 'canvaskit-wasm'
 
+import { intersectVisualBounds } from '@open-pencil/scene-graph/geometry'
+
 import { ResourceCache } from '#core/cache/resource'
 
 import {
@@ -125,6 +127,20 @@ export class TileImageCache {
     if (levels.size === 0) this.entriesByLevel.delete(entry.key.pageId)
   }
 
+  /**
+   * Marks every tile of `level` as used now, so it is evicted after everything else: the page
+   * copy is the stand-in of last resort, and a zoom that renders through the budget must not
+   * lose it to tiles it will discard at the next step.
+   */
+  touchLevel(pageId: string, level: number): void {
+    const tiles = this.entriesByLevel.get(pageId)?.get(level)
+    if (!tiles) return
+    for (const id of tiles.keys()) {
+      const entry = this.entries.get(id)
+      if (entry) entry.lastUsed = ++this.clock
+    }
+  }
+
   /** The cached tiles of one level of a page, in no particular order. */
   tilesAtLevel(pageId: string, level: number): Iterable<CachedTile> {
     return this.entriesByLevel.get(pageId)?.get(level)?.values() ?? []
@@ -142,18 +158,25 @@ export class TileImageCache {
    * Cached tiles of other levels that stand in for `key`'s missing tile, scaled, in drawing
    * order: the nearest level that covers all of the area first, then the nearer partial levels
    * over it, nearest last, so the sharpest content ends on top and the complete level fills
-   * whatever the partial ones miss. The search passes over partial levels beyond the layered
-   * ones until it finds a complete one, so a hole shows the page copy rather than the page
-   * colour. Null when no level has a tile there.
+   * whatever the partial ones miss. The area is the tile's overlap with `content`, the page's
+   * bounds, so the page copy counts as complete under a tile that reaches past the page; a tile
+   * off the page keeps its own area. The search passes over partial levels beyond the layered ones until it finds a complete one, so
+   * a hole shows the page copy rather than the page colour. Null when no level has a tile there.
    */
-  findFallback(key: TileKey, levels: number[]): CachedTile[] | null {
+  findFallback(
+    key: TileKey,
+    levels: number[],
+    content: TileWorldBounds | null = null
+  ): CachedTile[] | null {
     const bounds = tileWorldBounds(key)
+    // A tile off the page keeps its own area.
+    const area = content ? (intersectVisualBounds(bounds, content) ?? bounds) : bounds
     // Shrink by a hair so a boundary shared with the next tile does not ask for that tile too.
     const inset = {
-      minX: bounds.minX + 1e-6,
-      minY: bounds.minY + 1e-6,
-      maxX: bounds.maxX - 1e-6,
-      maxY: bounds.maxY - 1e-6
+      minX: area.minX + 1e-6,
+      minY: area.minY + 1e-6,
+      maxX: area.maxX - 1e-6,
+      maxY: area.maxY - 1e-6
     }
     const partial: CachedTile[][] = []
     let base: CachedTile[] | null = null

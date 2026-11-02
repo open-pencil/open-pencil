@@ -1,1 +1,0 @@
-- Switching pages in a document with many design-check issues no longer builds the hidden Lint panel's rows.

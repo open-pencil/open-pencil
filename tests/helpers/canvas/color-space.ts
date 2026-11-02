@@ -65,8 +65,8 @@ export async function waitForSettledScene(page: Page) {
     return (
       store?.state.navigation.phase === 'idle' &&
       renderer &&
-      !renderer.sceneBackingNeedsCrispRender &&
-      !renderer.sceneBackingBuild
+      renderer.tiledSceneCovered &&
+      !renderer.tiledScenePending
     )
   })
 }
