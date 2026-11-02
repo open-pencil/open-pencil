@@ -6,6 +6,8 @@ import {
   type ParsedFontStyle
 } from '@open-pencil/scene-graph/font-style'
 
+import { fontAxes } from './variation'
+
 /** A weight, upright or italic. */
 export interface FaceWeight {
   weight: number
@@ -87,4 +89,24 @@ export function fontFaceFromFigmaFontName(fontName: {
 
 export function fontFaceRenderFamily(family: string, style: string): string {
   return `__op_font__${family.replace(/[^a-z0-9_-]+/giu, '_')}__${style.replace(/[^a-z0-9_-]+/giu, '_')}`
+}
+
+/** What a font file is registered with in the page's `document.fonts`. */
+export interface BrowserFaceDescriptors {
+  weight: string
+  style: 'normal' | 'italic'
+}
+
+/**
+ * The page face for a font file loaded as `style`. A variable font covers its whole `wght` range,
+ * so text at any weight draws from the font's own instance; registered at the one weight `style`
+ * names, every other weight would fall back to that instance, synthesized bold or not at all.
+ */
+export function browserFaceDescriptors(style: string, data: ArrayBuffer): BrowserFaceDescriptors {
+  const { weight, italic } = parseFontStyle(style)
+  const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+  return {
+    weight: wght ? `${wght.min} ${wght.max}` : String(weight),
+    style: italic ? 'italic' : 'normal'
+  }
 }
