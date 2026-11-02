@@ -1,10 +1,10 @@
 import { useLocalStorage } from '@vueuse/core'
 import { basename } from 'pathe'
+import * as v from 'valibot'
 import { computed } from 'vue'
 
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
 import type { DocumentKind } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
   DEFAULT_STORAGE_PROFILE,
@@ -15,17 +15,12 @@ import {
 } from '@/app/integrations/storage'
 
 import { recentFilesLimit } from './preferences'
+import { recentDocumentViewSchema } from './schema'
 import { clearRecentFileThumbnails } from './thumbnails'
 
 const RECENT_DOCUMENTS_STORAGE_KEY = 'open-pencil:recent-documents'
 
-/** The page and view a document was left at, which it opens on again, as in Figma. */
-export interface RecentDocumentView {
-  pageId: string
-  /** The world point at the centre of the canvas. */
-  center: Vector
-  zoom: number
-}
+export type RecentDocumentView = v.InferOutput<typeof recentDocumentViewSchema>
 
 export interface RecentLocalDocument {
   id: string
@@ -115,9 +110,11 @@ export function rememberRecentDocumentView(id: string, view: RecentDocumentView)
   )
 }
 
-/** The view a listed document was left at, if one was kept. */
+/** The view a listed document was left at, if one was kept and stored intact. */
 export function recentDocumentView(id: string): RecentDocumentView | null {
-  return recentDocuments.value.find((document) => document.id === id)?.view ?? null
+  const view: unknown = recentDocuments.value.find((document) => document.id === id)?.view
+  const parsed = v.safeParse(recentDocumentViewSchema, view)
+  return parsed.success ? parsed.output : null
 }
 
 /** What a file on this device is by its name: a FigJam `.jam` is a board, anything else a design. */

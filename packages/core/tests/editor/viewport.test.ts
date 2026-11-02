@@ -87,6 +87,17 @@ describe('zoomToFit', () => {
     expect(screenOf(editor, 50, 50)).toEqual({ x: 45 + 730 / 2, y: 45 + 470 / 2 })
   })
 
+  test('fits a rotated layer by the box it draws in', () => {
+    const { editor } = withRect({ x: 0, y: 0, width: 400, height: 40 })
+    const node = editor.graph.getChildren(editor.state.currentPageId)[0]
+    editor.graph.updateNode(node.id, { rotation: 90 })
+
+    editor.zoomToFit()
+
+    // Standing upright, the 400 × 40 bar fits the 470 px tall area by its length.
+    expect(editor.state.zoom).toBeCloseTo(470 / 400, 6)
+  })
+
   test('shows the origin at the centre at 100% on an empty page', () => {
     const editor = createEditor({ getViewportSize: () => VIEWPORT })
     editor.state.zoom = 3

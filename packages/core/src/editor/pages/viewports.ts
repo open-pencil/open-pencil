@@ -1,10 +1,7 @@
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-
+import type { EditorContext } from '#core/editor/types'
+import { FIT_INSETS, fitViewport, pageContentBounds } from '#core/editor/viewport'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import type { ViewportTransform } from '#core/geometry/types'
-
-import type { EditorContext } from './types'
-import { FIT_INSETS, fitViewport } from './viewport'
 
 export function createPageViewportStore(ctx: EditorContext) {
   const pageViewports = new Map<string, ViewportTransform>()
@@ -23,11 +20,12 @@ export function createPageViewportStore(ctx: EditorContext) {
    */
   function firstVisitViewport(pageId: string): ViewportTransform {
     const size = ctx.getViewportSize()
-    // A canvas not yet measured fits the page once it is.
+    // Nothing to fit into a canvas not yet measured: the page opens at the origin at 100%, and a
+    // host that reports its size later calls zoomToFit.
     if (size.width <= 0 || size.height <= 0) return { panX: 0, panY: 0, zoom: 1 }
-    const nodes = ctx.graph.getChildren(pageId)
-    if (nodes.length === 0) return { panX: size.width / 2, panY: size.height / 2, zoom: 1 }
-    return fitViewport(computeBounds(nodes), size, FIT_INSETS)
+    const bounds = pageContentBounds(ctx.graph, pageId)
+    if (!bounds) return { panX: size.width / 2, panY: size.height / 2, zoom: 1 }
+    return fitViewport(bounds, size, FIT_INSETS)
   }
 
   function restorePageViewport(pageId: string) {

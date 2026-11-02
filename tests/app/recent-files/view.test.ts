@@ -67,6 +67,27 @@ describe("a document's remembered view", () => {
     expect(rememberedDocumentView(store)).toBeNull()
   })
 
+  test('is ignored when stored malformed, or on a page the document hides', async () => {
+    const store = openedFromPath()
+    rememberRecentFile(PATH, 'design')
+    const first = store.state.currentPageId
+    const hidden = store.graph.addPage('Internal')
+    store.graph.updateNode(hidden.id, { internalOnly: true })
+
+    rememberDocumentView(store)
+    recentDocuments.value = recentDocuments.value.map((document) => ({
+      ...document,
+      view: { pageId: first, zoom: 1 } as never
+    }))
+    expect(rememberedDocumentView(store)).toBeNull()
+
+    store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+    await store.switchPage(hidden.id)
+    rememberDocumentView(store)
+    expect(recentDocuments.value[0]?.view?.pageId).toBe(hidden.id)
+    expect(rememberedDocumentView(store)).toBeNull()
+  })
+
   test('is not kept for a document recent files do not list', () => {
     const store = openedFromPath()
     rememberDocumentView(store)

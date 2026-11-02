@@ -1,8 +1,9 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
+import { ZOOM_DIVISOR, ZOOM_MAX, ZOOM_MIN, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 import type { ViewportTransform } from '#core/geometry/types'
 import { emitNavigationTrace } from '#core/profiler'
 
@@ -10,9 +11,6 @@ import type { EditorContext } from './types'
 
 /** Space kept between revealed layers and the viewport edge. */
 const REVEAL_MARGIN = 48
-
-const ZOOM_MIN = 0.02
-const ZOOM_MAX = 256
 
 /** Screen pixels between the canvas edge and layers fitted into it. */
 export interface ViewportInsets {
@@ -30,6 +28,16 @@ export const FIT_INSETS: ViewportInsets = { left: 45, right: 25, top: 45, bottom
 
 /** Figma's insets for zoom to selection: 50 px a side plus the same chrome allowance. */
 export const SELECTION_INSETS: ViewportInsets = { left: 60, right: 40, top: 60, bottom: 100 }
+
+/** The world box every layer of the page draws in, rotation included; null for an empty page. */
+export function pageContentBounds(
+  graph: Pick<SceneGraph, 'getChildren' | 'getNode'>,
+  pageId: string
+): Rect | null {
+  const nodes = graph.getChildren(pageId)
+  if (nodes.length === 0) return null
+  return computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, graph)))
+}
 
 function clampZoom(zoom: number): number {
   return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom))
@@ -144,13 +152,11 @@ export function createViewportActions(ctx: EditorContext) {
 
   /** Figma's Shift+1: every layer of the page fitted; an empty page shows its origin at 100%. */
   function zoomToFit() {
-    const nodes = ctx.graph.getChildren(ctx.state.currentPageId)
-    if (nodes.length === 0) {
+    const b = pageContentBounds(ctx.graph, ctx.state.currentPageId)
+    if (!b) {
       centerOn(0, 0, 1)
       return
     }
-
-    const b = computeBounds(nodes)
     zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height, FIT_INSETS)
   }
 
