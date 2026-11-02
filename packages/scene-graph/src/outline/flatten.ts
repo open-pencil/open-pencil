@@ -45,8 +45,9 @@ export function segmentPoints(
   index: number,
   tolerance: number
 ): Vector[] | null {
-  // `at` counts a negative index from the end; a loop naming one refers to no segment.
-  if (index < 0) return null
+  // `at` counts a negative index from the end and truncates a fraction; a loop naming either
+  // refers to no segment.
+  if (!Number.isInteger(index) || index < 0) return null
   const segment = network.segments.at(index)
   if (!segment || segment.start < 0 || segment.end < 0) return null
   const p0 = network.vertices.at(segment.start)

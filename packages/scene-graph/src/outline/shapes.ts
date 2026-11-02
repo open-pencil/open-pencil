@@ -25,6 +25,8 @@ export interface ShapeOutline {
   lines: Vector[][]
   /** Each line's own stroke weight, where sides differ, as a rectangle's independent borders. */
   lineWeights?: number[]
+  /** Strokes centre on the lines whatever their alignment, as on an open network without regions. */
+  strokeCentered?: boolean
 }
 
 function closed(contour: Vector[]): Vector[] {
@@ -59,17 +61,27 @@ function rectangleContour(node: SceneNode, tolerance: number): Vector[] {
   ]
 }
 
-/** A rectangle's four sides with the weight each draws its border at: top, right, bottom, left. */
-function rectangleSides(node: SceneNode): Pick<ShapeOutline, 'lines' | 'lineWeights'> {
+/**
+ * A rectangle's four sides with the weight each draws its border at: top, right, bottom, left.
+ * Each side runs from the middle of one rounded corner to the middle of the next, as its border
+ * is drawn round them.
+ */
+function rectangleSides(
+  node: SceneNode,
+  tolerance: number
+): Pick<ShapeOutline, 'lines' | 'lineWeights'> {
   const { width: w, height: h } = node
-  const corners = [
-    { x: 0, y: 0 },
-    { x: w, y: 0 },
-    { x: w, y: h },
-    { x: 0, y: h }
-  ]
+  const [tl, tr, br, bl] = cornerRadii(node)
+  const quarter = Math.PI / 4
+  const arc = (cx: number, cy: number, r: number, from: number): Vector[] =>
+    r > 0 ? arcPoints(cx, cy, r, r, from, from + quarter, tolerance) : [{ x: cx, y: cy }]
   return {
-    lines: corners.map((corner, index) => [corner, corners[(index + 1) % corners.length]]),
+    lines: [
+      [...arc(tl, tl, tl, 5 * quarter), ...arc(w - tr, tr, tr, -2 * quarter)],
+      [...arc(w - tr, tr, tr, -quarter), ...arc(w - br, h - br, br, 0)],
+      [...arc(w - br, h - br, br, quarter), ...arc(bl, h - bl, bl, 2 * quarter)],
+      [...arc(bl, h - bl, bl, 3 * quarter), ...arc(tl, tl, tl, 4 * quarter)]
+    ],
     lineWeights: [
       node.borderTopWeight,
       node.borderRightWeight,
@@ -118,7 +130,9 @@ function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null 
     const points = segmentPoints(network, index, tolerance)
     return points ? [points] : []
   })
-  if (geometry.length > 0) return { areas: geometry, lines }
+  // An open network without regions draws its stroke centred on each segment.
+  const strokeCentered = network.regions.length === 0
+  if (geometry.length > 0) return { areas: geometry, lines, strokeCentered }
   const areas =
     network.regions.length > 0
       ? network.regions.map((region) => ({
@@ -127,7 +141,7 @@ function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null 
         }))
       : // Without regions a fill closes each run of segments, as a path fill does.
         [{ windingRule: 'NONZERO' as const, contours: segmentRuns(network, tolerance) }]
-  return { areas, lines }
+  return { areas, lines, strokeCentered }
 }
 
 /**
@@ -139,7 +153,9 @@ export function shapeOutline(node: SceneNode, tolerance: number): ShapeOutline |
     case 'RECTANGLE':
     case 'ROUNDED_RECTANGLE': {
       const outline = fromContours([rectangleContour(node, tolerance)])
-      return node.independentStrokeWeights ? { ...outline, ...rectangleSides(node) } : outline
+      return node.independentStrokeWeights
+        ? { ...outline, ...rectangleSides(node, tolerance) }
+        : outline
     }
     case 'ELLIPSE': {
       if (node.fillGeometry.length > 0) return vectorOutline(node, tolerance)

@@ -141,6 +141,48 @@ describe('a filled shape', () => {
   })
 })
 
+describe('a boolean operation without saved geometry', () => {
+  function emptySubtraction(paints: Partial<SceneNode>) {
+    const { graph, add, hits } = setup()
+    const boolean = add('BOOLEAN_OPERATION', {
+      width: 200,
+      height: 200,
+      booleanOperation: 'SUBTRACT',
+      ...paints
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 200, height: 200 })
+    graph.createNode('RECTANGLE', boolean.id, { width: 200, height: 200 })
+    return { boolean, hits }
+  }
+
+  test('counts no edge of an operand its result does not draw, for a fill', () => {
+    const { boolean, hits } = emptySubtraction({ fills: [fill()] })
+    expect(hits(boolean, 100, 100)).toBe(false)
+    expect(hits(boolean, 1, 100)).toBe(false)
+    expect(hits(boolean, -2, 100)).toBe(false)
+  })
+
+  test('counts no edge of an operand its result does not draw, for a stroke', () => {
+    const { boolean, hits } = emptySubtraction({ strokes: [stroke(4)] })
+    expect(hits(boolean, 0, 100)).toBe(false)
+  })
+
+  test("reaches the edges its result draws", () => {
+    const { graph, add, hits } = setup()
+    const boolean = add('BOOLEAN_OPERATION', {
+      width: 200,
+      height: 200,
+      booleanOperation: 'SUBTRACT',
+      strokes: [stroke(2)]
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 200, height: 200 })
+    graph.createNode('RECTANGLE', boolean.id, { x: 50, y: 50, width: 100, height: 100 })
+    expect(hits(boolean, 2, 100)).toBe(true)
+    expect(hits(boolean, 52, 100)).toBe(true)
+    expect(hits(boolean, 100, 100)).toBe(false)
+  })
+})
+
 describe('which paints take clicks', () => {
   const cases: Array<[string, Partial<SceneNode>, boolean]> = [
     ['no paints', {}, false],
@@ -262,6 +304,86 @@ describe('outline details', () => {
     // Without the stray index the loop is the triangle (0,0)–(100,0)–(100,100), closed back.
     expect(hits(shape, 80, 20)).toBe(true)
     expect(hits(shape, 20, 80)).toBe(false)
+  })
+
+  test('a loop naming a fractional segment index adds no geometry', () => {
+    const { add, hits } = setup()
+    const shape = add('VECTOR', {
+      width: 100,
+      height: 100,
+      fills: [fill()],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+          { x: 100, y: 100 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: [{ windingRule: 'NONZERO', loops: [[0.5, 1]] }]
+      }
+    })
+    // Read as segment 0, the stray index would close a triangle over (80, 20).
+    expect(hits(shape, 80, 20)).toBe(false)
+  })
+
+  test('an open network centres its stroke even when its fill geometry is saved', () => {
+    const { add, hits } = setup()
+    const blob = new Uint8Array(1 + 8 + 1 + 8 + 1 + 8 + 1)
+    const view = new DataView(blob.buffer)
+    let offset = 0
+    const command = (code: number, ...points: number[]) => {
+      blob[offset++] = code
+      for (const value of points) {
+        view.setFloat32(offset, value, true)
+        offset += 4
+      }
+    }
+    command(1, 0, 0)
+    command(2, 100, 0)
+    command(2, 100, 100)
+    command(0)
+    const shape = add('VECTOR', {
+      width: 100,
+      height: 100,
+      strokes: [stroke(10, 'INSIDE')],
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: blob }],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+          { x: 100, y: 100 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: []
+      }
+    })
+    // 4 units outside the top segment lies on its centred 10-unit band.
+    expect(hits(shape, 50, -4)).toBe(true)
+  })
+
+  test('independent borders follow rounded corners', () => {
+    const { add, hits } = setup()
+    const box = add('RECTANGLE', {
+      width: 100,
+      height: 100,
+      cornerRadius: 50,
+      strokes: [stroke(1, 'INSIDE')],
+      independentStrokeWeights: true,
+      borderTopWeight: 10,
+      borderRightWeight: 1,
+      borderBottomWeight: 1,
+      borderLeftWeight: 1
+    })
+    // 5 units in from the rounded corner lies on the 10-unit top border drawn round it.
+    expect(hits(box, 18.2, 18.2)).toBe(true)
+    // The square corner outside the curve is empty.
+    expect(hits(box, 1, 1)).toBe(false)
   })
 
   test("a huge ellipse's edge stays within the pad at the maximum zoom", () => {

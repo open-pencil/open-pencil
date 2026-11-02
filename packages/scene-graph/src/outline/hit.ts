@@ -68,6 +68,13 @@ interface Probe {
   lineWeights?: number[]
   /** Whether the layer has an area of its own; strokes on lines are always centred. */
   closed: boolean
+  /** Strokes centre on the lines whatever their alignment. */
+  centered?: boolean
+  /**
+   * For a shape combined from operands, whether its outline passes within `radius` of the point;
+   * it replaces `edge` and `lines`, which would count operand edges the result does not draw.
+   */
+  boundaryWithin?: (radius: number) => boolean
 }
 
 function probeOutline(outline: ShapeOutline, point: Vector): Probe {
@@ -79,7 +86,8 @@ function probeOutline(outline: ShapeOutline, point: Vector): Probe {
     ),
     lines: outline.lines.map((line) => distanceToLines([line], point)),
     lineWeights: outline.lineWeights,
-    closed: outline.areas.some((area) => area.contours.length > 0)
+    closed: outline.areas.some((area) => area.contours.length > 0),
+    centered: outline.strokeCentered
   }
 }
 
@@ -98,7 +106,14 @@ const BOOLEAN_COMBINE: Record<
   EXCLUDE: (hits) => compact(hits).length % 2 === 1
 }
 
-/** A boolean operation without saved geometry, combined from its operands as it draws. */
+/** Directions sampled round a point to find a combined shape's outline near it. */
+const BOUNDARY_SAMPLES = 16
+
+/**
+ * A boolean operation without saved geometry, combined from its operands as it draws. Its outline
+ * is found where the combined result changes near the point, sampled on two rings, so operand
+ * edges hidden inside or outside the result count for nothing.
+ */
 function probeBoolean(
   graph: SceneGraph,
   node: SceneNode,
@@ -106,21 +121,31 @@ function probeBoolean(
   py: number,
   tolerance: number
 ): Probe | null {
-  const probes: Probe[] = []
-  for (const child of graph.getChildren(node.id)) {
-    if (!child.visible) continue
-    const probe = probeNode(graph, child, px, py, tolerance)
-    if (!probe) return null
-    probes.push(probe)
-  }
-  if (probes.length === 0) return null
+  const operands = graph.getChildren(node.id).filter((child) => child.visible)
+  if (operands.length === 0) return null
   const combine = BOOLEAN_COMBINE[node.booleanOperation ?? 'UNION']
-  return {
-    inside: combine(probes.map((probe) => probe.inside)),
-    edge: Math.min(...probes.map((probe) => probe.edge)),
-    lines: probes.flatMap((probe) => probe.lines),
-    closed: true
+  const insideAt = (x: number, y: number): boolean | null => {
+    const hits: boolean[] = []
+    for (const operand of operands) {
+      const probe = probeNode(graph, operand, x, y, tolerance)
+      if (!probe) return null
+      hits.push(probe.inside)
+    }
+    return combine(hits)
   }
+  const inside = insideAt(px, py)
+  if (inside === null) return null
+  const boundaryWithin = (radius: number): boolean => {
+    for (const ring of [radius, radius / 2]) {
+      for (let i = 0; i < BOUNDARY_SAMPLES; i++) {
+        const angle = (2 * Math.PI * i) / BOUNDARY_SAMPLES
+        const sample = insideAt(px + ring * Math.cos(angle), py + ring * Math.sin(angle))
+        if (sample !== null && sample !== inside) return true
+      }
+    }
+    return false
+  }
+  return { inside, edge: Infinity, lines: [], closed: true, boundaryWithin }
 }
 
 function probeNode(
@@ -142,13 +167,22 @@ function probeNode(
   return point ? probeOutline(outline, point) : null
 }
 
+/** How far from a line a stroke's band reaches toward the point, beyond which it misses. */
+function strokeReachAt(align: Stroke['align'], weight: number, inside: boolean): number {
+  if (align === 'INSIDE') return inside ? weight : 0
+  if (align === 'OUTSIDE') return inside ? 0 : weight
+  return weight / 2
+}
+
 function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number): boolean {
-  const align = probe.closed ? stroke.align : 'CENTER'
+  const align = probe.closed && !probe.centered ? stroke.align : 'CENTER'
+  if (probe.boundaryWithin) {
+    const weight = strokeWeightOf(node, stroke)
+    return probe.boundaryWithin(strokeReachAt(align, weight, probe.inside) + pad)
+  }
   return probe.lines.some((distance, index) => {
     const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
-    if (align === 'INSIDE') return distance <= (probe.inside ? weight : 0) + pad
-    if (align === 'OUTSIDE') return distance <= (probe.inside ? 0 : weight) + pad
-    return distance <= weight / 2 + pad
+    return distance <= strokeReachAt(align, weight, probe.inside) + pad
   })
 }
 
@@ -169,6 +203,7 @@ export function hitsShape(
   const probe = probeNode(graph, node, px, py, tolerance)
   if (!probe) return null
   const fills = node.fills.filter(isHitPaint)
-  if (fills.length > 0 && probe.closed && (probe.inside || probe.edge <= pad)) return true
+  const nearEdge = probe.boundaryWithin ? probe.boundaryWithin(pad) : probe.edge <= pad
+  if (fills.length > 0 && probe.closed && (probe.inside || nearEdge)) return true
   return node.strokes.some((stroke) => isHitPaint(stroke) && strokeHits(node, stroke, probe, pad))
 }
