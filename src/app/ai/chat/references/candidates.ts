@@ -84,31 +84,28 @@ export function referenceCandidates(
   ]
 }
 
-/**
- * What `/` offers: an ACP agent's own commands, or else the chat's own commands, such as
- * `/compact`, and the skills the user can run.
- */
-export function commandCandidates(
-  agentCommands: readonly AgentCommand[] | null,
-  skills: readonly Skill[],
-  chatCommands: readonly AgentCommand[] = []
-): CommandCandidate[] {
-  if (agentCommands) {
-    return agentCommands.map((command) => ({
-      kind: 'agent' as const,
-      label: `/${command.name}`,
-      detail: command.description,
-      insert: `/${command.name} `
-    }))
-  }
-  const own = chatCommands.map((command) => ({
-    kind: 'agent' as const,
+/** A command as `/` offers it, from an ACP agent or the chat itself. */
+function commandCandidate(command: AgentCommand): CommandCandidate {
+  return {
+    kind: 'agent',
     label: `/${command.name}`,
     detail: command.description,
     insert: `/${command.name} `
-  }))
+  }
+}
+
+/** What `/` offers with an ACP agent: its own commands, which run its own skills too. */
+export function agentCommandCandidates(commands: readonly AgentCommand[]): CommandCandidate[] {
+  return commands.map(commandCandidate)
+}
+
+/** What `/` offers otherwise: the chat's own commands, such as `/compact`, then the user's skills. */
+export function chatCommandCandidates(
+  commands: readonly AgentCommand[],
+  skills: readonly Skill[]
+): CommandCandidate[] {
   return [
-    ...own,
+    ...commands.map(commandCandidate),
     ...runnableSkills(skills).map((skill) => ({
       kind: 'skill' as const,
       label: `/skill:${skill.name}`,
