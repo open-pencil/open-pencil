@@ -286,9 +286,14 @@ test('text its prepared fonts still cannot measure shows, and is laid out once f
   expect(text.width).toBe(234)
 })
 
-test('text measured in a substitute is laid out in its own face once that face loads', async () => {
-  const { graph, text, prepared, pending, runLayoutForNode, renders, findNowhere, loadElsewhere } =
-    setup()
+test('text measured in a substitute is laid out in its own face once its family loads', async () => {
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
+    'bundled Inter font'
+  )
+  const { graph, text, prepared, runLayoutForNode, renders, findNowhere, loadElsewhere } = setup({
+    text: { fontFamily: 'Pending Layout Substitute' }
+  })
   findNowhere()
   runLayoutForNode(text.id)
   expect([text.width, text.height]).toEqual([180, 24])
@@ -297,15 +302,17 @@ test('text measured in a substitute is laid out in its own face once that face l
   expect(prepared).toEqual([])
 
   loadElsewhere()
-  pending.retryStalled()
+  // A face of a family it does not name leaves it as it is.
+  await fontManager.markLoaded('Pending Layout Other', 'Regular', inter)
   await settle()
-  expect([text.width, text.height]).toEqual([234, 29])
-  expect(renders()).toBe(1)
+  expect(prepared).toEqual([])
+  expect(text.width).toBe(180)
 
-  // Laid out in its own face, it is not tried again.
-  pending.retryStalled()
+  await fontManager.markLoaded('Pending Layout Substitute', 'Regular', inter)
   await settle()
   expect(prepared).toEqual([[text.id]])
+  expect([text.width, text.height]).toEqual([234, 29])
+  expect(renders()).toBe(1)
 })
 
 test('text that keeps the glyphs its file saved keeps the size the file gave it', async () => {
