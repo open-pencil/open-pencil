@@ -20,6 +20,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 
+import AdaptSection from './properties/AdaptSection.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
 import BehaviourPanel from './properties/component-properties/behaviour/BehaviourPanel.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
@@ -250,6 +251,10 @@ const { panels } = useI18n()
       </template>
       <LayoutGridSection v-if="supportsLayoutGuides" />
 
+      <AdaptSection
+        v-if="node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'"
+        :node-id="node.id"
+      />
       <ExportSection />
     </div>
   </RetainedPanel>

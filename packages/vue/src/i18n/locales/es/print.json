@@ -1,0 +1,39 @@
+{
+  "section": "Adaptar diseño",
+  "toScreens": "Adaptar a pantallas",
+  "toScreensHint": "Copias para móvil, tableta y escritorio que se reorganizan con el diseño automático",
+  "toSocial": "Tamaños para redes sociales",
+  "toSocialHint": "Copias para Instagram, Story, X, LinkedIn y YouTube",
+  "product": "Producto impreso",
+  "toDieline": "Convertir a troquel",
+  "toDielineHint": "Pliego listo para imprenta con sangrado, zona segura y líneas de corte y plegado",
+  "done": {
+    "input": "Creados: {count}"
+  },
+  "failed": {
+    "input": "No se pudo adaptar el diseño: {error}"
+  },
+  "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
+  "productBusinessCardEu": "Business card 85×55 mm (Europe)",
+  "productBusinessCardUs": "Business card 3.5×2 in (US)",
+  "productBusinessCardRounded": "Business card, rounded corners",
+  "productFlyerA6": "Flyer A6",
+  "productFlyerA5": "Flyer A5",
+  "productFlyerA4": "Flyer A4",
+  "productFlyerDl": "Flyer DL",
+  "productPosterA3": "Poster A3",
+  "productPosterA2": "Poster A2",
+  "productPosterA1": "Poster A1",
+  "productPoster50x70": "Poster 50×70 cm",
+  "productBrochureBifoldA4": "Bi-fold brochure A4",
+  "productBrochureTrifoldA4": "Tri-fold brochure A4",
+  "productGreetingCardA5": "Folded card A5",
+  "productDoorHanger": "Door hanger",
+  "productStickerCircle": "Round sticker",
+  "productStickerRounded": "Rounded sticker / label",
+  "productLetterhead": "Letterhead A4",
+  "productEnvelopeDl": "Envelope DL",
+  "productPresentationFolderA4": "Presentation folder A4",
+  "productTuckBox": "Tuck end box",
+  "productRollup85x200": "Roll-up banner 85×200 cm"
+}

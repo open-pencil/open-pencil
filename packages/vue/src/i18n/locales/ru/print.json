@@ -1,0 +1,39 @@
+{
+  "section": "Адаптация дизайна",
+  "toScreens": "Адаптировать под экраны",
+  "toScreensHint": "Копии для телефона, планшета и компьютера, перестраиваемые автолейаутом",
+  "toSocial": "Размеры для соцсетей",
+  "toSocialHint": "Копии для Instagram, Stories, X, LinkedIn и YouTube",
+  "product": "Печатная продукция",
+  "toDieline": "Преобразовать в вырубку",
+  "toDielineHint": "Готовый к печати лист с вылетами, безопасной зоной, линиями реза и биговки",
+  "done": {
+    "input": "Создано: {count}"
+  },
+  "failed": {
+    "input": "Не удалось адаптировать дизайн: {error}"
+  },
+  "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
+  "productBusinessCardEu": "Business card 85×55 mm (Europe)",
+  "productBusinessCardUs": "Business card 3.5×2 in (US)",
+  "productBusinessCardRounded": "Business card, rounded corners",
+  "productFlyerA6": "Flyer A6",
+  "productFlyerA5": "Flyer A5",
+  "productFlyerA4": "Flyer A4",
+  "productFlyerDl": "Flyer DL",
+  "productPosterA3": "Poster A3",
+  "productPosterA2": "Poster A2",
+  "productPosterA1": "Poster A1",
+  "productPoster50x70": "Poster 50×70 cm",
+  "productBrochureBifoldA4": "Bi-fold brochure A4",
+  "productBrochureTrifoldA4": "Tri-fold brochure A4",
+  "productGreetingCardA5": "Folded card A5",
+  "productDoorHanger": "Door hanger",
+  "productStickerCircle": "Round sticker",
+  "productStickerRounded": "Rounded sticker / label",
+  "productLetterhead": "Letterhead A4",
+  "productEnvelopeDl": "Envelope DL",
+  "productPresentationFolderA4": "Presentation folder A4",
+  "productTuckBox": "Tuck end box",
+  "productRollup85x200": "Roll-up banner 85×200 cm"
+}

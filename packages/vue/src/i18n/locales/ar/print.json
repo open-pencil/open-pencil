@@ -1,0 +1,39 @@
+{
+  "section": "تكييف التصميم",
+  "toScreens": "تكييف للشاشات",
+  "toScreensHint": "نسخ للجوال والتابلت وسطح المكتب تُعاد ترتيبها بالتخطيط التلقائي",
+  "toSocial": "مقاسات السوشيال ميديا",
+  "toSocialHint": "نسخ لإنستقرام والستوري وX ولينكدإن ويوتيوب",
+  "product": "منتج الطباعة",
+  "toDieline": "تحويل إلى داي كت",
+  "toDielineHint": "ملف جاهز للطباعة مع النزيف والمنطقة الآمنة وخطوط القص والطي",
+  "done": {
+    "input": "تم الإنشاء: {count}"
+  },
+  "failed": {
+    "input": "تعذّر تكييف التصميم: {error}"
+  },
+  "productBusinessCardGulf": "كرت شخصي 90×50 مم (الخليج)",
+  "productBusinessCardEu": "كرت شخصي 85×55 مم (أوروبا)",
+  "productBusinessCardUs": "كرت شخصي 3.5×2 إنش (أمريكا)",
+  "productBusinessCardRounded": "كرت شخصي بزوايا دائرية",
+  "productFlyerA6": "فلاير A6",
+  "productFlyerA5": "فلاير A5",
+  "productFlyerA4": "فلاير A4",
+  "productFlyerDl": "فلاير DL",
+  "productPosterA3": "بوستر A3",
+  "productPosterA2": "بوستر A2",
+  "productPosterA1": "بوستر A1",
+  "productPoster50x70": "بوستر 50×70 سم",
+  "productBrochureBifoldA4": "بروشور طيّتين A4",
+  "productBrochureTrifoldA4": "بروشور ثلاث طيّات A4",
+  "productGreetingCardA5": "كرت مطوي A5",
+  "productDoorHanger": "علّاقة باب",
+  "productStickerCircle": "ستيكر دائري",
+  "productStickerRounded": "ستيكر / ملصق بزوايا دائرية",
+  "productLetterhead": "ورق رسمي A4",
+  "productEnvelopeDl": "ظرف DL",
+  "productPresentationFolderA4": "ملف تقديمي A4",
+  "productTuckBox": "علبة بلسان إغلاق",
+  "productRollup85x200": "رول أب 85×200 سم"
+}

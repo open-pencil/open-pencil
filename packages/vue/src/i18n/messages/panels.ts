@@ -157,6 +157,8 @@ export const panelMessageDefaults = {
   framePresetCategoryPresentation: 'Presentation',
   framePresetCategoryWatch: 'Watch',
   framePresetCategoryPaper: 'Paper',
+  framePresetCategoryPrint: 'Print',
+  framePresetCategoryWeb: 'Web',
   framePresetCategorySocialMedia: 'Social media',
   framePresetCategoryFigmaCommunity: 'Figma Community',
   framePresetCategoryArchive: 'Archive',

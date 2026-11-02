@@ -1,0 +1,39 @@
+{
+  "section": "デザインを展開",
+  "toScreens": "画面サイズに展開",
+  "toScreensHint": "オートレイアウトで再配置されるモバイル・タブレット・デスクトップ用のコピー",
+  "toSocial": "SNS サイズ",
+  "toSocialHint": "Instagram、ストーリー、X、LinkedIn、YouTube 用のコピー",
+  "product": "印刷物",
+  "toDieline": "抜き型データに変換",
+  "toDielineHint": "塗り足し、安全領域、カット線と折り線付きの入稿データ",
+  "done": {
+    "input": "{count} 件作成しました"
+  },
+  "failed": {
+    "input": "デザインを展開できませんでした: {error}"
+  },
+  "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
+  "productBusinessCardEu": "Business card 85×55 mm (Europe)",
+  "productBusinessCardUs": "Business card 3.5×2 in (US)",
+  "productBusinessCardRounded": "Business card, rounded corners",
+  "productFlyerA6": "Flyer A6",
+  "productFlyerA5": "Flyer A5",
+  "productFlyerA4": "Flyer A4",
+  "productFlyerDl": "Flyer DL",
+  "productPosterA3": "Poster A3",
+  "productPosterA2": "Poster A2",
+  "productPosterA1": "Poster A1",
+  "productPoster50x70": "Poster 50×70 cm",
+  "productBrochureBifoldA4": "Bi-fold brochure A4",
+  "productBrochureTrifoldA4": "Tri-fold brochure A4",
+  "productGreetingCardA5": "Folded card A5",
+  "productDoorHanger": "Door hanger",
+  "productStickerCircle": "Round sticker",
+  "productStickerRounded": "Rounded sticker / label",
+  "productLetterhead": "Letterhead A4",
+  "productEnvelopeDl": "Envelope DL",
+  "productPresentationFolderA4": "Presentation folder A4",
+  "productTuckBox": "Tuck end box",
+  "productRollup85x200": "Roll-up banner 85×200 cm"
+}

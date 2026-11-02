@@ -605,3 +605,6 @@ zh-cn:ai.notificationsAllowHint
 zh-cn:ai.notificationsSystemHint
 zh-cn:ai.notifyReplyFinished
 zh-cn:ai.notifyReplyFailed
+ja:print.toSocial
+ja:print.toSocialHint
+zh-cn:print.toSocialHint

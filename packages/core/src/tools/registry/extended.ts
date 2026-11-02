@@ -112,8 +112,10 @@ import {
   createDeviceMockup,
   createSocialPost,
   listMockupPresets,
-  resizeForPlatforms
+  resizeForPlatforms,
+  resizeForScreens
 } from '#core/tools/mockup'
+import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 
 /**
  * Extended tools not in CORE_TOOLS — variables, vector ops, analysis,
@@ -125,6 +127,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   createSocialPost,
   resizeForPlatforms,
   createDeviceMockup,
+  resizeForScreens,
+  // Print
+  listPrintProducts,
+  createPrintTemplate,
+  convertToDieline,
   // Read (advanced)
   getPageTree,
   getCurrentPage,
