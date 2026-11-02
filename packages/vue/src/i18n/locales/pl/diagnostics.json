@@ -105,5 +105,7 @@
   "reportSent": "Zgłoszenie wysłane. Dziękujemy!",
   "reportFailed": "Nie udało się wysłać zgłoszenia. Sprawdź połączenie i spróbuj ponownie.",
   "reportFilesFailed": "Zgłoszenie zostało wysłane, ale nie udało się przesłać dokumentu.",
-  "reportUnexpectedError": "W OpenPencil coś poszło nie tak."
+  "reportUnexpectedError": "W OpenPencil coś poszło nie tak.",
+  "reportPanic": "Podczas ostatniego uruchomienia w OpenPencil wystąpił błąd wewnętrzny.",
+  "reportCrashed": "OpenPencil nieoczekiwanie zamknął się po błędzie."
 }

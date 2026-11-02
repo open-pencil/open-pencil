@@ -105,5 +105,7 @@
   "reportSent": "Bericht gesendet. Danke!",
   "reportFailed": "Der Bericht konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es erneut.",
   "reportFilesFailed": "Der Bericht wurde gesendet, aber das Dokument konnte nicht hochgeladen werden.",
-  "reportUnexpectedError": "In OpenPencil ist etwas schiefgelaufen."
+  "reportUnexpectedError": "In OpenPencil ist etwas schiefgelaufen.",
+  "reportPanic": "OpenPencil hatte beim letzten Start einen internen Fehler.",
+  "reportCrashed": "OpenPencil wurde nach einem Fehler unerwartet beendet."
 }

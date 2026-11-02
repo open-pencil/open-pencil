@@ -105,5 +105,7 @@
   "reportSent": "报告已发送。谢谢！",
   "reportFailed": "无法发送报告。请检查网络连接后重试。",
   "reportFilesFailed": "报告已发送，但文档未能上传。",
-  "reportUnexpectedError": "OpenPencil 出现了问题。"
+  "reportUnexpectedError": "OpenPencil 出现了问题。",
+  "reportPanic": "OpenPencil 上次运行时发生了内部错误。",
+  "reportCrashed": "OpenPencil 在出错后意外关闭。"
 }

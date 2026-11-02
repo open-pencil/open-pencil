@@ -105,5 +105,7 @@
   "reportSent": "Отчёт отправлен. Спасибо!",
   "reportFailed": "Не удалось отправить отчёт. Проверьте подключение и попробуйте ещё раз.",
   "reportFilesFailed": "Отчёт отправлен, но документ загрузить не удалось.",
-  "reportUnexpectedError": "В OpenPencil что-то пошло не так."
+  "reportUnexpectedError": "В OpenPencil что-то пошло не так.",
+  "reportPanic": "При прошлом запуске в OpenPencil произошла внутренняя ошибка.",
+  "reportCrashed": "OpenPencil неожиданно закрылся после ошибки."
 }

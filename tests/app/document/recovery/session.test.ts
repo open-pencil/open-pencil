@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import {
+  crashedSessionsOf,
   endRecoverySession,
   recoverySessionId,
   sessionStates,
@@ -61,5 +62,17 @@ describe('recovery sessions', () => {
     expect(startedSessionIds()).toEqual([recoverySessionId])
     endRecoverySession()
     expect(startedSessionIds()).toEqual([])
+  })
+
+  test('sessions started before launch crashed when no window holds them now', async () => {
+    const locks = {
+      query: async () => ({
+        held: [{ name: 'open-pencil:recovery-session:other-window', mode: 'exclusive' as const }],
+        pending: []
+      }),
+      request: (() => Promise.resolve()) as LockManager['request']
+    }
+    const crashed = await crashedSessionsOf(['crashed', 'other-window', recoverySessionId], locks)
+    expect([...crashed]).toEqual(['crashed'])
   })
 })

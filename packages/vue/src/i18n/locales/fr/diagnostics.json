@@ -105,5 +105,7 @@
   "reportSent": "Rapport envoyé. Merci !",
   "reportFailed": "Impossible d’envoyer le rapport. Vérifiez votre connexion et réessayez.",
   "reportFilesFailed": "Le rapport a été envoyé, mais le document n’a pas pu être téléversé.",
-  "reportUnexpectedError": "Une erreur s’est produite dans OpenPencil."
+  "reportUnexpectedError": "Une erreur s’est produite dans OpenPencil.",
+  "reportPanic": "OpenPencil a rencontré une erreur interne lors de sa dernière exécution.",
+  "reportCrashed": "OpenPencil s’est fermé de façon inattendue après une erreur."
 }
