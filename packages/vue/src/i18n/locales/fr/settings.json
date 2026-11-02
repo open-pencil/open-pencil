@@ -1,4 +1,7 @@
 {
+  "interfaceScale": "Taille de l’interface",
+  "interfaceScaleDescription": "Redimensionne les panneaux, le texte et les commandes sans modifier le zoom du canevas.",
+  "interfaceScaleDefault": "{scale} (par défaut)",
   "recentFiles": "Fichiers récents",
   "recentFilesDescription": "Choisissez combien de fichiers conserver dans la liste et le menu des fichiers récents.",
   "recentFilesLimit": "Nombre de fichiers récents",

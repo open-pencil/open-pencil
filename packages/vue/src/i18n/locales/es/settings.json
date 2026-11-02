@@ -1,4 +1,7 @@
 {
+  "interfaceScale": "Tamaño de la interfaz",
+  "interfaceScaleDescription": "Ajusta el tamaño de los paneles, el texto y los controles sin cambiar el zoom del lienzo.",
+  "interfaceScaleDefault": "{scale} (predeterminado)",
   "recentFiles": "Archivos recientes",
   "recentFilesDescription": "Elige cuántos archivos conservar en la lista de recientes y en el menú Abrir recientes.",
   "recentFilesLimit": "Número de archivos recientes",
