@@ -6,6 +6,7 @@ import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 import './app.css'
 import { recordRuntimeError } from '@/app/diagnostics'
+import { installNativeFigArchives } from '@/app/document/io/native-fig'
 import { installCanvasKitBinary, preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
 import { preloadFonts } from '@/app/editor/fonts'
 import { installBundledFonts } from '@/app/editor/fonts/bundled'
@@ -23,6 +24,7 @@ import router from './router'
  */
 export async function boot(): Promise<void> {
   installBundledFonts()
+  if (IS_TAURI) installNativeFigArchives()
   installCanvasKitBinary()
   preloadCanvasKit()
   preloadFonts()

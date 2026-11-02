@@ -80,7 +80,7 @@ function pick(value: string) {
       />
     </template>
     <template #footer="{ highlighted }">
-      <p class="flex h-5 items-center truncate px-1 text-[11px] text-muted">
+      <p class="flex h-5 items-center truncate px-1 text-2xs text-muted">
         <span class="truncate" :class="highlighted && 'text-surface'">
           {{ highlighted?.label ?? label(selected ?? 'SQUARE') }}
         </span>

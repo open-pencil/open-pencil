@@ -6,5 +6,5 @@ export {
   parseCSSJustifyContent
 } from './layout'
 export { parseCSSShadows } from './shadows'
-export { parseCSSLetterSpacing, parseCSSLineHeight } from './text'
+export { parseCSSFontFamily, parseCSSLetterSpacing, parseCSSLineHeight } from './text'
 export { parseCSSColor, parseCSSNumber, splitCSSValue } from './values'

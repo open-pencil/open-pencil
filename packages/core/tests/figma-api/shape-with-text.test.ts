@@ -1,11 +1,18 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { pick } from 'es-toolkit'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { shapeWithTextFrameFields } from '@open-pencil/scene-graph/generated'
 
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
 import { FigmaAPI } from '#core/figma-api'
+
+beforeAll(async () => {
+  await registerTestFont()
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Medium' })
+})
 
 const RED = [
   { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { clipBoundsToPolygon, clipPolygon } from '@open-pencil/scene-graph/geometry'
+import { clipBoundsToPolygon, clipPolygon } from '@open-pencil/scene-graph/clipping'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 describe('clipPolygon', () => {

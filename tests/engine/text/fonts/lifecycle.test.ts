@@ -39,33 +39,45 @@ describe('font lifecycle', () => {
 
   test('draws a style from the cumulative subset that replaced its file', async () => {
     const manager = new FontManager()
-    const registrations: string[] = []
+    const registrations: Array<{ data: ArrayBuffer; family: string }> = []
     const provider = {
-      registerFont(_data: ArrayBuffer, family: string) {
-        registrations.push(family)
+      registerFont(data: ArrayBuffer, family: string) {
+        registrations.push({ data, family })
       }
     } as TypefaceFontProvider
 
     manager.attachProvider({} as CanvasKit, provider)
     await manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(8))
     const firstGeneration = manager.generation()
-    await manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(12))
+    const replacement = new ArrayBuffer(12)
+    await manager.markLoaded('Subset Font', 'Regular', replacement)
 
-    // CanvasKit draws from the first file registered under a name, which is the replaced one.
+    // CanvasKit draws from the first file registered under a name, which is the replaced one,
+    // and picks between files under one name by the weight each declares, so the name the
+    // style draws under holds the replacement alone.
     const drawn = manager.renderFamily('Subset Font', 'Regular')
     expect(drawn).not.toBe('Subset Font')
     expect(manager.generation()).toBeGreaterThan(firstGeneration)
-    expect(registrations).toEqual(['Subset Font', 'Subset Font', drawn, drawn])
+    expect(registrations.filter(({ family }) => family === drawn).map(({ data }) => data)).toEqual([
+      replacement
+    ])
   })
 
   test('tracks nodes gated by pre-render font resolution', () => {
     const manager = new FontManager()
-    manager.blockNodesUntilFontsResolve(['first', 'second'])
-    expect(manager.isNodeBlocked('first')).toBe(true)
-    expect(manager.isNodeBlocked('second')).toBe(true)
-    manager.unblockNodes(['first'])
-    expect(manager.isNodeBlocked('first')).toBe(false)
-    expect(manager.isNodeBlocked('second')).toBe(true)
+    const graph = new SceneGraph()
+    const other = new SceneGraph()
+    manager.blockNodesUntilFontsResolve(graph, ['first', 'second'])
+    manager.blockNodesUntilFontsResolve(graph, ['second'])
+    expect(manager.isNodeBlocked(graph, 'first')).toBe(true)
+    expect(manager.isNodeBlocked(other, 'first')).toBe(false)
+    manager.unblockNodes(other, ['first'])
+    manager.unblockNodes(graph, ['first', 'second'])
+    expect(manager.isNodeBlocked(graph, 'first')).toBe(false)
+    // Another preparation still holds it.
+    expect(manager.isNodeBlocked(graph, 'second')).toBe(true)
+    manager.unblockNodes(graph, ['second'])
+    expect(manager.isNodeBlocked(graph, 'second')).toBe(false)
   })
 
   test('rejects a text picture observed before the font generation changed', () => {
@@ -81,7 +93,9 @@ describe('font lifecycle', () => {
     })
     const renderer = {
       fontGeneration: 1,
-      textPictureGenerations: new Map<string, { data: Uint8Array; generation: number }>()
+      textFonts: {
+        pictureGenerations: new Map<string, { data: Uint8Array; generation: number }>()
+      }
     }
 
     expect(isTextPictureCurrent(renderer, node)).toBe(true)

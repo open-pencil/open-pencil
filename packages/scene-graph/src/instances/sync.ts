@@ -21,7 +21,7 @@ import { INSTANCE_SYNC_FIELD_OWNERS, INSTANCE_SYNC_FIELDS } from './fields'
 import { ownsSelfFillField, sourceWithEffectiveFill } from './main-component'
 import {
   bindingOverrideField,
-  getInstanceOverride,
+  copiedComponentLayerId,
   hasInstanceOverride as hasNodeInstanceOverride,
   overriddenBindingField,
   setInstanceOverride,
@@ -320,10 +320,7 @@ function sortInstanceChildren(
   for (let index = 0; index < instParent.childIds.length; index++) {
     const childId = instParent.childIds[index]
     const node = graph.nodes.get(childId)
-    const source = node
-      ? getInstanceOverride(overrides, instParentId, node.id, 'sourceComponentId')
-      : undefined
-    const mapped = typeof source === 'string' ? source : node?.componentId
+    const mapped = node && copiedComponentLayerId(overrides, instParentId, node)
     const componentIndex = mapped ? orderMap.get(mapped) : undefined
     ranks.set(childId, componentIndex ?? compChildOrder.length + index)
   }
@@ -354,14 +351,7 @@ function matchLinkedChildren(
   for (const childId of instParent.childIds) {
     const child = graph.nodes.get(childId)
     if (!child) continue
-    const sourceComponentId = getInstanceOverride(
-      overrides,
-      instParentId,
-      child.id,
-      'sourceComponentId'
-    )
-    const mappedComponentId =
-      typeof sourceComponentId === 'string' ? sourceComponentId : child.componentId
+    const mappedComponentId = copiedComponentLayerId(overrides, instParentId, child)
     if (mappedComponentId && compChildIdSet.has(mappedComponentId)) {
       instChildMap.set(mappedComponentId, child)
       usedInstChildIds.add(child.id)

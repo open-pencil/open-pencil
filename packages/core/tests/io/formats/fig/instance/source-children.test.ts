@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { beforeAll, expect, test } from 'bun:test'
 
 import { guid } from '#core-tests/helpers/fig/guid'
 
@@ -13,6 +13,10 @@ import {
 } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 test('derives repeated nested child correspondence from materialized component occurrences', async () => {
   const changes: NodeChange[] = [

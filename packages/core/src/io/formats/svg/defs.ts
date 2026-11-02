@@ -15,7 +15,7 @@ import {
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { FontFaceRef } from '#core/text/face'
+import type { FontFaceRef } from '#core/text/font/faces'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
@@ -26,6 +26,8 @@ import type { SVGTextLayout } from './text/lines'
  * `opticalSizeFromFontSize` is off, and the axes the text sets.
  */
 export interface SVGFontRequest extends FontFaceRef {
+  /** Which of the style's files draws the text, 0 for its own then its shards; 0 when left out. */
+  file?: number
   fontSize: number
   variations: readonly FontVariation[]
   opticalSizeFromFontSize: boolean
@@ -296,6 +298,18 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   return null
 }
 
+/** The paints SVG can draw, each with its fill attribute: a stroke goes on the last of them. */
+export function drawnFills(
+  fills: readonly Fill[],
+  node: SceneNode,
+  ctx: SVGExportContext
+): Array<{ fill: Fill; paint: string }> {
+  return fills.flatMap((fill) => {
+    const paint = resolveFill(fill, node, ctx)
+    return paint ? [{ fill, paint }] : []
+  })
+}
+
 export const SVG_STROKE_CAP: Record<string, string> = {
   NONE: 'butt',
   ROUND: 'round',
@@ -314,7 +328,9 @@ export const SVG_BLEND_MODE: Record<string, string> = {
   MULTIPLY: 'multiply',
   COLOR_BURN: 'color-burn',
   LIGHTEN: 'lighten',
+  LINEAR_BURN: 'plus-darker',
   SCREEN: 'screen',
+  LINEAR_DODGE: 'plus-lighter',
   COLOR_DODGE: 'color-dodge',
   OVERLAY: 'overlay',
   SOFT_LIGHT: 'soft-light',

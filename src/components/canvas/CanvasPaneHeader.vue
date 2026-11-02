@@ -16,7 +16,7 @@ import type { SplitDirection } from '@/app/editor/panes/split-tree'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
-import canvasPaneHeaderTheme from '@/theme/canvas-pane-header'
+import canvasPaneHeaderTheme from '@/theme/canvas/pane-header'
 
 const { paneId } = defineProps<{
   paneId: string

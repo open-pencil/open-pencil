@@ -115,7 +115,7 @@ describe('a line stroke', () => {
   })
 })
 
-// Booleans and flattening take a line as its stroke outline: Figma's stroke geometry for a 300 px
+// Booleans take a line as its stroke outline (Flatten keeps its segment): Figma's stroke geometry for a 300 px
 // line with a 6 px stroke and triangle heads spans x 3 to 297 and y -20.32 to 14.32.
 describe('a line taken as a boolean operand', () => {
   test('keeps its heads and the shaft between them', () => {

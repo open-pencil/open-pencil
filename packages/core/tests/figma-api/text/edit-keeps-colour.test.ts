@@ -1,6 +1,9 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { createAPI } from '#core-tests/helpers/figma-api'
+import { createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
+
+
+beforeAll(() => registerTestFont())
 
 const RED = [{ type: 'SOLID' as const, color: { r: 1, g: 0, b: 0 } }]
 

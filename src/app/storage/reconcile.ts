@@ -23,8 +23,12 @@ export function reconcileStorageDocuments(
       .map((document) => [document.id, document])
   )
 
+  // A synced copy the provider no longer lists was deleted there, by another device or person.
+  const deletedRemotely = (metadata: LocalCanvasMeta) =>
+    metadata.syncStatus === 'synced' && !remoteIds.has(metadata.id)
+
   for (const metadata of local) {
-    if (metadata.tombstoned) continue
+    if (metadata.tombstoned || deletedRemotely(metadata)) continue
     if (metadata.syncStatus === 'synced' && merged.has(metadata.id)) continue
     merged.set(metadata.id, {
       id: metadata.id,
@@ -41,7 +45,10 @@ export function reconcileStorageDocuments(
     ),
     remoteDocumentsToSeed: remote.filter((document) => !localById.has(document.id)),
     localIdsToPurge: local
-      .filter((metadata) => metadata.tombstoned && !remoteIds.has(metadata.id))
+      .filter(
+        (metadata) =>
+          (metadata.tombstoned && !remoteIds.has(metadata.id)) || deletedRemotely(metadata)
+      )
       .map((metadata) => metadata.id)
   }
 }

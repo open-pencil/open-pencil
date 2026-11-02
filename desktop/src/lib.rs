@@ -1,5 +1,6 @@
 mod agents;
 mod credentials;
+mod explicit_sync;
 mod files;
 mod fonts;
 mod icons;
@@ -16,8 +17,8 @@ use fonts::{list_system_fonts, load_system_font};
 use launch::args;
 use menu::events::handle_menu_event;
 use menu::{
-    install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_features,
-    NativeMenuInputs, NativeMenuState,
+    install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_disabled,
+    set_native_menu_features, NativeMenuInputs, NativeMenuState,
 };
 use network::http::{cancel_http_request, proxy_http_request, ProxyHttpRequests};
 use std::sync::Mutex;
@@ -27,6 +28,11 @@ use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Before anything starts GTK or EGL, which read the variable once: WebKitGTK before 2.54.2
+    // crashes on Wayland with NVIDIA otherwise (`explicit_sync`).
+    #[cfg(target_os = "linux")]
+    explicit_sync::disable_nvidia_explicit_sync();
+
     let _ = fix_path_env::fix();
     agents::path::augment_process_path();
 
@@ -77,6 +83,9 @@ pub fn run() {
             credential_store_availability,
             credential_write,
             agents::mcp::mcp_lookup,
+            agents::skills::skill_folders,
+            agents::skills::project_skill_folders,
+            agents::skills::skill_folder_file,
             #[cfg(feature = "native-test")]
             launch::native_test_open_deep_link,
             system::opener::open_external_url,
@@ -91,6 +100,7 @@ pub fn run() {
             cancel_http_request,
             files::recent::set_recent_files,
             set_native_menu_features,
+            set_native_menu_disabled,
             native_menu_checked,
             set_native_menu_checked,
             launch::take_pending_open,
@@ -104,6 +114,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
@@ -111,6 +122,21 @@ pub fn run() {
             handle_menu_event(app, event.id().0.as_str());
         })
         .setup(|app| {
+            // The main window is built here rather than from the config alone, so that pages it
+            // opens with `window.open` reach the system browser.
+            let main = app
+                .config()
+                .app
+                .windows
+                .first()
+                .cloned()
+                .ok_or("the main window is not configured")?;
+            tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+                .on_new_window(system::opener::open_new_window_externally(
+                    app.handle().clone(),
+                ))
+                .build()?;
+
             launch::queue_open_paths(app.handle(), args::startup_open_paths());
 
             use tauri_plugin_deep_link::DeepLinkExt;

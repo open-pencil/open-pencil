@@ -275,7 +275,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `node_move` | Move a node to a new position |
 | `node_resize` | Resize a node |
 | `node_replace_with` | Replace a node with another node |
-| `arrange` | Align or distribute selected nodes |
+| `arrange` | Spread overlapping layers apart, pack them, place them in a grid, row, or column, or lay them out along their connectors as a flow, tree, radial map, or network |
 
 ### Structure
 

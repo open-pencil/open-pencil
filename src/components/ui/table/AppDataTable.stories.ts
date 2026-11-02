@@ -4,11 +4,10 @@ import { expect, within } from 'storybook/test'
 
 import AppDataTable from './AppDataTable.vue'
 import AppTablePagination from './AppTablePagination.vue'
-import type { TableColumnMeta } from './columns'
 
 type Layer = { id: string; name: string; kind: string; updated: string }
 
-const features = tableFeatures({ columnMeta: {} as TableColumnMeta })
+const features = tableFeatures({ columnMeta: {} })
 const column = createColumnHelper<typeof features, Layer>()
 const columns = column.columns([
   column.accessor('name', { header: 'Name', meta: { class: 'font-medium' } }),

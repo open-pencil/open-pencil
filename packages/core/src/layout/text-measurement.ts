@@ -1,5 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
 import { measureTextWithFont } from '#core/text/font/glyphs'
@@ -19,7 +19,7 @@ export function estimateTextSize(
 ): { width: number; height: number } {
   const fontSize = node.fontSize || 14
   const family = node.fontFamily || 'Inter'
-  const style = weightToStyle(node.fontWeight || 400, node.italic)
+  const style = faceStyleKey({ ...node, fontWeight: node.fontWeight || 400 })
   const text = node.text || ''
 
   const ownLineH = lineHeightPixels(node.lineHeight, fontSize) ?? 0
@@ -46,12 +46,22 @@ export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
 }
 
-/** The size of `node`'s text: measured when a measurer is installed and can, estimated otherwise. */
+/**
+ * The size of `node`'s text. With a measurer installed, that is its size in its own fonts; text
+ * whose fonts are not prepared keeps the size it has, never one guessed in another face, until
+ * the measurer's host prepares them and lays it out again (the editor's `createPendingTextLayout`).
+ * With none, as in a host without fonts, it is estimated.
+ */
 export function measureTextForLayout(
   node: SceneNode,
   maxWidth?: number
 ): { width: number; height: number } {
-  return globalTextMeasurer?.(node, maxWidth) ?? estimateTextSize(node, maxWidth)
+  if (!globalTextMeasurer) return estimateTextSize(node, maxWidth)
+  const measured = globalTextMeasurer(node, maxWidth)
+  if (measured) return measured
+  // Empty text measures nothing but its line, which needs no fonts beyond the default.
+  if (node.type !== 'TEXT' || !node.text) return estimateTextSize(node, maxWidth)
+  return { width: node.width, height: node.height }
 }
 
 const installedMeasurers: TextMeasurer[] = []

@@ -173,3 +173,52 @@ export function createGradientLinesScene(graph: SceneGraph, pageId: string): voi
     })
   }
 }
+
+/**
+ * Translucent squares drawn from their paths with a centred, an inside, and an outside stroke, as
+ * a vector without a saved stroke outline draws, such as one drawn or resized on the canvas.
+ */
+export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string): void {
+  const side = 80
+  const corner = { x: 0, y: 0 }
+  for (const [column, align] of (['CENTER', 'INSIDE', 'OUTSIDE'] as const).entries()) {
+    graph.createNode('VECTOR', pageId, {
+      name: align,
+      x: 60 + column * 160,
+      y: 60,
+      width: side,
+      height: side,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: side, y: 0 },
+          { x: side, y: side },
+          { x: 0, y: side }
+        ],
+        segments: [0, 1, 2, 3].map((start) => ({
+          start,
+          end: (start + 1) % 4,
+          tangentStart: corner,
+          tangentEnd: corner
+        })),
+        regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
+      },
+      fills: [
+        { type: 'SOLID', color: { r: 0.86, g: 0.91, b: 0.98, a: 1 }, opacity: 1, visible: true }
+      ],
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0.1, g: 0.1, b: 0.2, a: 1 },
+          weight: 12,
+          opacity: 0.6,
+          visible: true,
+          align,
+          cap: 'NONE',
+          join: 'MITER',
+          dashPattern: []
+        }
+      ]
+    })
+  }
+}

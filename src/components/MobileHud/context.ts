@@ -18,6 +18,7 @@ import type { FollowTarget } from '@/app/presence/types'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useSendLink } from '@/app/shell/share/link'
 import { toast } from '@/app/shell/ui'
+import { createTab } from '@/app/tabs'
 import { roomStatusText } from '@/components/collab-room/statusText'
 import { toolIcons } from '@/components/icons'
 import { presenceRows } from '@/components/presence/rows'
@@ -63,7 +64,7 @@ function createMobileHudContext() {
     {
       icon: IconFilePlus,
       label: 'New',
-      action: () => void import('@/app/tabs').then((m) => m.createTab())
+      action: () => createTab()
     },
     { icon: IconFolderOpen, label: 'Open…', action: () => void openFileDialog() },
     { icon: IconSave, label: 'Save', action: () => void store.saveFigFile() },

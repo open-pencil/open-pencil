@@ -5,7 +5,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { NOTO_COLOR_EMOJI_FAMILY } from '#core/text/emoji'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { prepareGraphFonts } from '#core/text/prepare'
 
 function graphWithText(text: string) {

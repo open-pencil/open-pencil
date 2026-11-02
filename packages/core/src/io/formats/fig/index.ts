@@ -1,5 +1,12 @@
 export { readFigFile, parseFigFile, type ParseFigFileOptions } from './read'
-export { exportFigFile, compressFigData, type FigFileExtrasOptions } from './write'
+export {
+  exportFigFile,
+  compressFigData,
+  setFigArchiveAssembler,
+  type FigArchiveAssembler,
+  type FigArchiveParts,
+  type FigFileExtrasOptions
+} from './write'
 export { figThumbnailPageId } from './thumbnail-page'
 export {
   isReaderPagePending as isFigPagePending,

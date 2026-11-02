@@ -26,7 +26,8 @@ const {
   nodeId,
   nodeIds,
   bindingPath,
-  bindingPaths
+  bindingPaths,
+  units
 } = defineProps<{
   modelValue: number | symbol
   min?: number
@@ -42,11 +43,13 @@ const {
   nodeIds?: readonly string[]
   bindingPath: NumberBindingPath
   bindingPaths?: readonly NumberBindingPath[]
+  /** Units a typed value may end with; the commit reports the one typed. */
+  units?: readonly string[]
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number]
-  commit: [value: number, previous: number]
+  'update:modelValue': [value: number, unit?: string]
+  commit: [value: number, previous: number, unit?: string]
   cancel: []
 }>()
 
@@ -90,11 +93,14 @@ defineOptions({ inheritAttrs: false })
       :min="min"
       :max="max"
       :step="step"
+      :units="units"
       :ui="{ root: bindingStyles.root }"
       :data-property="bindingPath"
       :aria-label="accessibleLabel"
-      @update:model-value="emit('update:modelValue', $event)"
-      @commit="(value: number, previous: number) => emit('commit', value, previous)"
+      @update:model-value="(value: number, unit?: string) => emit('update:modelValue', value, unit)"
+      @commit="
+        (value: number, previous: number, unit?: string) => emit('commit', value, previous, unit)
+      "
       @cancel="emit('cancel')"
     >
       <template v-if="$slots.icon" #icon>

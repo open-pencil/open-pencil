@@ -1,4 +1,4 @@
-import { readFile, realpath, writeFile } from 'node:fs/promises'
+import { readFile, realpath } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
@@ -11,6 +11,7 @@ import {
   installTextMeasurer,
   sizeAutoResizingText
 } from '@open-pencil/core/layout'
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 import { prepareGraphFonts, type DocumentFontStatus } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
@@ -96,7 +97,7 @@ export const documentWriteOptions = {
 /** Save a headless document as `.fig`, with the thumbnail `export --format fig` renders. */
 export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
   const result = await io.writeDocument('fig', graph, { renderThumbnail: true })
-  await writeFile(filePath, result.data as Uint8Array)
+  await writeFileAtomic(filePath, result.data, { symlink: 'follow' })
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {

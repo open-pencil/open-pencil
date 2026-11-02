@@ -48,7 +48,7 @@ POST https://feedback.openpencil.dev/ping
 
 <SdkDataTable :columns="columns" :rows="pingRows" />
 
-It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day. The server adds one to a counter for that day and build, and keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
+It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day. The server adds one to a counter for that day and build. It also adds one to a counter for that day, the app and platform, and the network the ping came from: the network's number and operator name as Cloudflare reports them, such as a home internet provider, a university, or a cloud host. That tells real people apart from automated installs running in data centers, without anything that identifies a device. The server keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
 
 The ping is on by default. Turn it off in **Settings → Privacy**.
 
@@ -90,6 +90,6 @@ OpenPencil is local-first, but some features reach the network. The desktop app 
 | Cloud storage           | The storage provider you configure                                                                                                                                                                      |
 | Fonts                   | Google Fonts, which can supply a font a document uses that is not installed                                                                                                                             |
 | Icons                   | The Iconify API, when you search or insert icons                                                                                                                                                        |
-| Stock images            | Unsplash or Pexels, when you search them                                                                                                                                                                |
+| Stock photos            | Unsplash or Pexels, with your own key, when you search them or place one of their photos                                                                                                                |
 
 The app, the feedback service, and this page are open source. The event list lives in [`packages/feedback/src/contract`](https://github.com/open-pencil/open-pencil/tree/master/packages/feedback/src/contract), and the tables above are generated from it.

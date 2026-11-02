@@ -1,5 +1,6 @@
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
+import { compact } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
@@ -23,7 +24,7 @@ import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 /* eslint-disable max-lines */
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
-import { snapshotInstanceGeometry } from '../instance/geometry'
+import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
 import {
   applyExportSettingsPluginData,
   applyLibrarySourcePluginData,
@@ -32,6 +33,11 @@ import {
   serializePluginRelaunchData
 } from '../plugin-data'
 import { serializeNodeStatus } from '../status'
+import {
+  componentPropAssignment,
+  componentPropertyValue,
+  componentPropertyVariableValue
+} from './assignments/values'
 import {
   applyColorVariableBinding,
   createFillPaints,
@@ -47,9 +53,10 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { generatedFrameRecord, writesGeneratedFrame } from './generated'
+import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
-import { slotContentAssignment, slotDefinitionFields } from './slots'
+import { slotDefinitionFields } from './slots'
 import { serializeText } from './text'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
@@ -116,46 +123,6 @@ export function buildAssetRefToVarGuidMap(
 function componentPropertyTypeForKiwi(type: string) {
   if (type === 'BOOLEAN') return 'BOOL'
   return type
-}
-
-function componentPropertyValue(
-  type: string,
-  value: string,
-  context: SceneNodeToKiwiContext,
-  localIdCounter: { value: number }
-) {
-  if (type === 'BOOLEAN') return { boolValue: value === 'true' }
-  if (type === 'INSTANCE_SWAP') {
-    const target = context.graph.getNode(value)
-    const guid = target
-      ? getOrCreateNodeGuid(context, target.id, localIdCounter)
-      : parseGuidOrNull(value)
-    return guid ? { guidValue: guid } : { textValue: { characters: value } }
-  }
-  return { textValue: { characters: value } }
-}
-
-function componentPropertyVariableValue(
-  type: string,
-  value: string,
-  context: SceneNodeToKiwiContext,
-  localIdCounter: { value: number }
-) {
-  const legacy = componentPropertyValue(type, value, context, localIdCounter)
-  if (type === 'BOOLEAN')
-    return {
-      value: { boolValue: value === 'true' },
-      dataType: 'BOOLEAN',
-      resolvedDataType: 'BOOLEAN'
-    }
-  if (type === 'INSTANCE_SWAP' && 'guidValue' in legacy) {
-    return {
-      value: { symbolIdValue: { guid: legacy.guidValue } },
-      dataType: 'SYMBOL_ID',
-      resolvedDataType: 'SYMBOL_ID'
-    }
-  }
-  return { value: { textValue: value }, dataType: 'STRING', resolvedDataType: 'STRING' }
 }
 
 function serializeVariableModes(
@@ -515,6 +482,13 @@ function applyInstancePayload(
         overridableNodeFields(context, target)
       )
     )
+    const ownPath = instanceExportAddress(
+      context.graph,
+      node,
+      node,
+      instanceGuidResolver(context, localIdCounter)
+    )
+    if (ownPath) writeOwnInstanceName(context.graph, node, ownPath, symbolOverrides)
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (!Number.isFinite(node.componentScale) || node.componentScale <= 0)
       throw new Error('Invalid instance uniform scale')
@@ -621,9 +595,7 @@ interface ExportedParameterEntry {
   }
 }
 function mergeParameterBindings(nc: KiwiNodeChange): void {
-  const parameters = nc.parameterConsumptionMap as
-    | { entries?: Array<{ variableField?: string }> }
-    | undefined
+  const parameters = nc.parameterConsumptionMap
   const entries = parameters?.entries ?? []
   const fields = new Set(entries.map((entry) => entry.variableField))
   const variables = nc.variableConsumptionMap?.entries ?? []
@@ -721,25 +693,11 @@ function applyComponentMetadata(
   }
 
   applyParameterReferences(nc, parameterRefs)
-  const componentPropAssignments = Object.entries(node.componentPropertyAssignments)
-    .map(([propertyId, value]) => {
-      const definition = context.componentPropertyDefinitionsById.get(propertyId)
-      if (!definition) return null
-      if (definition.type === 'SLOT')
-        return slotContentAssignment(
-          context,
-          node,
-          propertyId,
-          getOrCreatePropertyGuid(context, propertyId, localIdCounter),
-          localIdCounter
-        )
-      return {
-        defID: getOrCreatePropertyGuid(context, propertyId, localIdCounter),
-        value: componentPropertyValue(definition.type, value, context, localIdCounter),
-        varValue: componentPropertyVariableValue(definition.type, value, context, localIdCounter)
-      }
-    })
-    .filter((assignment): assignment is NonNullable<typeof assignment> => assignment !== null)
+  const componentPropAssignments = compact(
+    Object.entries(node.componentPropertyAssignments).map(([propertyId, value]) =>
+      componentPropAssignment(context, node, propertyId, value, localIdCounter)
+    )
+  )
   if (
     shouldSerializeRawBackedField(
       node,
@@ -899,9 +857,9 @@ function applyNodeVisualProps(
   if (node.verticalConstraint !== 'MIN') nc.verticalConstraint = node.verticalConstraint
   if (node.strokeCap !== 'NONE') nc.strokeCap = node.strokeCap
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
-  if (node.strokeJoin !== 'MITER' || 'strokeJoin' in rawNodeFields) {
-    nc.strokeJoin = node.strokeJoin
-  }
+  // Figma writes the join on every layer, MITER too: a vector's points without a join of their own
+  // take it, and without it they have none, which Figma's own network writes reject.
+  nc.strokeJoin = node.strokeJoin
   if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
@@ -1047,7 +1005,9 @@ export function sceneNodeToKiwiWithContext(
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
-  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs)
+  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs, (id) =>
+    exportedStyleReference(context, id)
+  )
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   mergeParameterBindings(nc)
   applyRawFigmaNodeFields(context, node, nc)

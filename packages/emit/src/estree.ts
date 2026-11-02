@@ -139,6 +139,18 @@ export function object(entries: (readonly [string, SyntaxNode])[]): SyntaxNode {
 
 export const array = (elements: SyntaxNode[]): SyntaxNode => ({ type: 'ArrayExpression', elements })
 
+/** `object.key`, or `object['key']` for a key that is not an identifier. */
+export function member(object: SyntaxNode, key: string): SyntaxNode {
+  const computed = !/^[A-Za-z_$][\w$]*$/.test(key)
+  return {
+    type: 'MemberExpression',
+    object,
+    property: computed ? string(key) : identifier(key),
+    computed,
+    optional: false
+  }
+}
+
 /**
  * A value read from JSON written as source: strings, finite numbers, booleans, null, and lists
  * and objects of them. Anything else, such as a function or an infinite number, is null.

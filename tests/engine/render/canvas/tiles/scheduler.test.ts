@@ -131,3 +131,62 @@ describe('tile scheduler', () => {
     expect(scheduler.pending()).toBe(0)
   })
 })
+
+test('a moving frame skips dear jobs ahead of an affordable one and keeps them queued', () => {
+  const executed: string[] = []
+  let time = 0
+  const scheduler = new TileScheduler({ now: () => time, budgetMs: 2 })
+  const job = (x: number, estimatedCost: number) => ({
+    key: { pageId: 'page', level: 1, x, y: 0 },
+    navigationGeneration: 0,
+    contentGeneration: 0,
+    priority: 'visible' as const,
+    fallbackAvailable: true,
+    estimatedCost
+  })
+  scheduler.enqueue([job(0, 20), job(1, 20), job(2, 3)])
+  const metrics = scheduler.runFrame(
+    (candidate) => {
+      executed.push(`${candidate.key.x}`)
+      time += candidate.estimatedCost
+      return { renderMs: candidate.estimatedCost, overBudget: candidate.estimatedCost > 2 }
+    },
+    2,
+    8
+  )
+  expect(executed).toEqual(['2'])
+  expect(metrics.interruptibleCompleted).toBe(1)
+  expect(metrics.skippedWithFallback).toBe(2)
+  expect(scheduler.pending()).toBe(2)
+})
+
+test('a deferred job stays first and ends the frame', () => {
+  let time = 0
+  const scheduler = new TileScheduler({ now: () => time, budgetMs: 5 })
+  const job = (x: number) => ({
+    key: { pageId: 'page', level: 1, x, y: 0 },
+    navigationGeneration: 0,
+    contentGeneration: 0,
+    priority: 'visible' as const,
+    fallbackAvailable: true,
+    estimatedCost: 1
+  })
+  scheduler.enqueue([job(0), job(1)])
+  let calls = 0
+  const first = scheduler.runFrame((candidate, remainingMs) => {
+    calls++
+    expect(remainingMs).toBeGreaterThan(0)
+    time += 5
+    return { renderMs: 5, overBudget: false, deferred: candidate.key.x === 0 }
+  })
+  expect(calls).toBe(1)
+  expect(first.deferredJobs).toBe(1)
+  expect(first.interruptibleCompleted).toBe(0)
+  expect(scheduler.pending()).toBe(2)
+  time = 0
+  const second = scheduler.runFrame(() => {
+    time += 1
+    return { renderMs: 1, overBudget: false, deferred: false }
+  })
+  expect(second.interruptibleCompleted).toBe(2)
+})

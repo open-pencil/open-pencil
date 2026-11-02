@@ -1,6 +1,9 @@
 import { arrowCapOverflow } from './arrow-caps'
 import type { Rect, Vector } from './primitives'
+import { textLinesOverflow } from './text/overflow'
 import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
+
+export { cubicPoint } from './cubic'
 
 export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180
@@ -155,12 +158,18 @@ export function strokeOverflow(
   shape?: StrokeShape
 ): number {
   const line = shape?.type === 'LINE'
+  // Open segments enclose nothing to take a side of, so their strokes draw centred; a network
+  // with closed regions still strokes those on their side.
+  const enclosed = new Set(network?.regions.flatMap((region) => region.loops.flat()))
+  const open = network?.segments.some((_, index) => !enclosed.has(index)) ?? false
+  const sided = !network || network.regions.length > 0
   let overflow = 0
   for (const stroke of strokes ?? []) {
     if (!stroke.visible) continue
-    let extra = 0
-    if (line || stroke.align === 'OUTSIDE') extra = stroke.weight
-    else if (stroke.align === 'CENTER') extra = stroke.weight / 2
+    const align = sided ? stroke.align : 'CENTER'
+    let extra = open ? stroke.weight / 2 : 0
+    if (line || align === 'OUTSIDE') extra = stroke.weight
+    else if (align === 'CENTER') extra = stroke.weight / 2
     const miter = network
       ? miterRatio(network, stroke.join ?? shape?.strokeJoin, shape?.strokeMiterLimit)
       : 1
@@ -296,6 +305,7 @@ export interface VisualBoundsNode {
   textDecoration?: string
   textUnderlineOffset?: number | null
   textDecorationThickness?: number | null
+  derivedTextHeight?: number | null
 }
 
 export function unionVisualBounds(
@@ -320,38 +330,54 @@ export function intersectVisualBounds(a: VisualBounds, b: VisualBounds): VisualB
   return minX < maxX && minY < maxY ? { minX, minY, maxX, maxY } : null
 }
 
+/** The path commands of a Figma geometry blob, by their byte code. */
+export const GeometryCommand = { CLOSE: 0, MOVE: 1, LINE: 2, QUAD: 3, CUBIC: 4 } as const
+export type GeometryCommand = (typeof GeometryCommand)[keyof typeof GeometryCommand]
+
 /**
- * Coordinate pairs per path blob command: 0=close, 1=move, 2=line,
- * 3=quad (glyph-derived blobs are quad-heavy), 4=cubic. Unknown → null so
- * walkers stop instead of desyncing into coordinate bytes.
+ * Coordinate pairs per command: glyph-derived blobs are quad-heavy, so every code needs its
+ * count. Unknown codes are null, so readers stop instead of desyncing into coordinate bytes.
  */
-export function geometryCommandCoordCount(command: number): number | null {
-  if (command === 0) return 0
-  if (command === 1 || command === 2) return 1
-  if (command === 3) return 2
-  if (command === 4) return 3
+function commandCoordCount(command: number): number | null {
+  if (command === GeometryCommand.CLOSE) return 0
+  if (command === GeometryCommand.MOVE || command === GeometryCommand.LINE) return 1
+  if (command === GeometryCommand.QUAD) return 2
+  if (command === GeometryCommand.CUBIC) return 3
   return null
+}
+
+/**
+ * Walks a Figma geometry blob: `visit` gets each command, its coordinates as x, y pairs in one
+ * array reused between calls, and the byte offset of the first coordinate. It stops at an
+ * unknown command or one cut short.
+ */
+export function readGeometryBlob(
+  blob: Uint8Array,
+  visit: (command: GeometryCommand, coords: readonly number[], offset: number) => void
+): void {
+  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
+  const coords: number[] = []
+  let offset = 0
+  while (offset < blob.length) {
+    const command = blob[offset]
+    const count = commandCoordCount(command)
+    if (count === null || offset + 1 + count * 8 > blob.length) return
+    offset += 1
+    coords.length = 0
+    for (let i = 0; i < count; i++) {
+      coords.push(view.getFloat32(offset + i * 8, true), view.getFloat32(offset + i * 8 + 4, true))
+    }
+    visit(command as GeometryCommand, coords, offset)
+    offset += count * 8
+  }
 }
 
 export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): Rect | null {
   const bounds = createBoundsAccumulator()
-
   for (const path of paths) {
-    const blob = path.commandsBlob
-    const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
-    let offset = 0
-    while (offset < blob.length) {
-      const command = blob[offset++]
-      const coords = geometryCommandCoordCount(command)
-      if (coords == null) break
-      for (let i = 0; i < coords; i++) {
-        if (offset + 8 > blob.length) break
-        const x = dv.getFloat32(offset, true)
-        const y = dv.getFloat32(offset + 4, true)
-        includePoint(bounds, x, y)
-        offset += 8
-      }
-    }
+    readGeometryBlob(path.commandsBlob, (_, coords) => {
+      for (let i = 0; i < coords.length; i += 2) includePoint(bounds, coords[i], coords[i + 1])
+    })
   }
 
   return bounds.minX === Infinity ? null : boundsToRect(bounds)
@@ -407,6 +433,12 @@ export function nodeVisualBounds(
   ])
   if (localGeometry) {
     bounds = unionVisualBounds(bounds, transformedLocalBounds(node, localGeometry, abs)) ?? bounds
+  }
+
+  const linesOverflow = textLinesOverflow(node)
+  if (linesOverflow > 0) {
+    const lines = { x: 0, y: 0, width: node.width, height: node.height + linesOverflow }
+    bounds = unionVisualBounds(bounds, transformedLocalBounds(node, lines, abs)) ?? bounds
   }
 
   bounds.maxY += textDecorationOverflow(node)
@@ -473,119 +505,4 @@ export function computeDescendantVisualBounds(
     )
   }
   return bounds
-}
-
-// ── Rotated-rectangle clipping ──
-
-function crossProduct(a: Vector, b: Vector, p: Vector): number {
-  return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)
-}
-
-function lineSegmentIntersect(p1: Vector, p2: Vector, p3: Vector, p4: Vector): Vector {
-  const dx1 = p2.x - p1.x
-  const dy1 = p2.y - p1.y
-  const dx2 = p4.x - p3.x
-  const dy2 = p4.y - p3.y
-  const denom = dx1 * dy2 - dy1 * dx2
-  if (denom === 0) return p1
-  const t = ((p3.x - p1.x) * dy2 - (p3.y - p1.y) * dx2) / denom
-  return { x: p1.x + t * dx1, y: p1.y + t * dy1 }
-}
-
-function clipHalfPlane(polygon: Vector[], a: Vector, b: Vector, wantPositive: boolean): Vector[] {
-  const output: Vector[] = []
-  const isInside = (p: Vector): boolean => {
-    const cross = crossProduct(a, b, p)
-    return wantPositive ? cross >= 0 : cross <= 0
-  }
-  for (let i = 0; i < polygon.length; i++) {
-    const curr = polygon[i]
-    const prev = polygon[i === 0 ? polygon.length - 1 : i - 1]
-    const currInside = isInside(curr)
-    const prevInside = isInside(prev)
-    if (currInside) {
-      if (!prevInside) output.push(lineSegmentIntersect(prev, curr, a, b))
-      output.push(curr)
-    } else if (prevInside) {
-      output.push(lineSegmentIntersect(prev, curr, a, b))
-    }
-  }
-  return output
-}
-
-/**
- * Clip a subject polygon against a convex polygon (e.g. the 4 canvas-space
- * corners of a rotated clipping ancestor).
- *
- * Uses Sutherland–Hodgman polygon clipping with centroid-based interior
- * detection, making it robust to either winding order of the clip polygon.
- * Returns the clipped polygon, or null if the subject is fully outside the
- * clip polygon. When `clipCorners` has fewer than 3 points the subject is
- * returned unchanged (no clipping).
- *
- * Preserving the polygon (rather than collapsing to an AABB) lets callers
- * chain multiple clips without reintroducing corners removed by an inner clip.
- */
-export function clipPolygon(subject: Vector[], clipCorners: Vector[]): Vector[] | null {
-  if (clipCorners.length < 3) return subject
-
-  let cx = 0
-  let cy = 0
-  for (const c of clipCorners) {
-    cx += c.x
-    cy += c.y
-  }
-  cx /= clipCorners.length
-  cy /= clipCorners.length
-
-  let polygon: Vector[] = subject
-
-  for (let i = 0; i < clipCorners.length; i++) {
-    if (polygon.length === 0) return null
-    const a = clipCorners[i]
-    const b = clipCorners[(i + 1) % clipCorners.length]
-    const centroidCross = crossProduct(a, b, { x: cx, y: cy })
-    polygon = clipHalfPlane(polygon, a, b, centroidCross >= 0)
-  }
-
-  return polygon.length === 0 ? null : polygon
-}
-
-/**
- * Clip an axis-aligned VisualBounds rectangle against a convex polygon
- * (e.g. the 4 canvas-space corners of a rotated clipping ancestor).
- *
- * Returns the AABB of the intersection, or null if the bounds are fully
- * outside the clip polygon. Delegates to {@link clipPolygon}.
- *
- * For a non-rotated clip (axis-aligned corners) the result is identical
- * to `intersectVisualBounds`.
- */
-export function clipBoundsToPolygon(
-  bounds: VisualBounds,
-  clipCorners: Vector[]
-): VisualBounds | null {
-  if (clipCorners.length < 3) return bounds
-
-  const subject: Vector[] = [
-    { x: bounds.minX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.maxY },
-    { x: bounds.minX, y: bounds.maxY }
-  ]
-
-  const polygon = clipPolygon(subject, clipCorners)
-  if (!polygon) return null
-
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  for (const p of polygon) {
-    if (p.x < minX) minX = p.x
-    if (p.y < minY) minY = p.y
-    if (p.x > maxX) maxX = p.x
-    if (p.y > maxY) maxY = p.y
-  }
-  return minX < maxX && minY < maxY ? { minX, minY, maxX, maxY } : null
 }

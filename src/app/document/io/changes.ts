@@ -48,8 +48,8 @@ export function createDocumentChanges(editor: Editor) {
     revision.value++
     contentRevision = revision.value
     const at = contentRevision
-    // Text editing and coalesced edits record their step when they end, not with each change.
-    if (editor.state.editingTextId !== null || editor.undo.isBatching) return
+    // Text editing, coalesced edits, and edits that await record their step when they end.
+    if (editor.state.editingTextId !== null || editor.undo.isRecording) return
     queueMicrotask(() => {
       if (historyRevision < at) outsideRevision = Math.max(outsideRevision, at)
     })

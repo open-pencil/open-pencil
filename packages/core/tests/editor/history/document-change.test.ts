@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { captureDocumentChange } from '#core/editor/history/document-change'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core'
@@ -32,7 +33,7 @@ function documentState(editor: Editor) {
 /** Records an edit, then checks that undo and redo bring back each side exactly. */
 function roundTrip(editor: Editor, edit: () => void) {
   const before = documentState(editor)
-  const finish = editor.captureDocumentChange(editor.state.currentPageId)
+  const finish = captureDocumentChange(editor.graph, editor.state.currentPageId)
   edit()
   const change = finish()
   const after = documentState(editor)
@@ -97,7 +98,7 @@ describe('document changes', () => {
 
   test('keeps copies of only the layers the edit touched', () => {
     const { editor, pageId, card, title, badge, other } = setup()
-    const finish = editor.captureDocumentChange(pageId)
+    const finish = captureDocumentChange(editor.graph, pageId)
     editor.graph.updateNode(title.id, { text: 'Changed' })
     editor.graph.createNode('RECTANGLE', other.id, { name: 'New' })
     const change = finish()
@@ -121,13 +122,13 @@ describe('document changes', () => {
 
   test('an edit that changes nothing is empty', () => {
     const { editor, pageId } = setup()
-    const finish = editor.captureDocumentChange(pageId)
+    const finish = captureDocumentChange(editor.graph, pageId)
     expect(isEmptyDocumentChange(finish())).toBe(true)
   })
 
   test('builds standalone graphs of both sides of an edit', () => {
     const { editor, pageId, title, badge } = setup()
-    const finish = editor.captureDocumentChange(pageId)
+    const finish = captureDocumentChange(editor.graph, pageId)
     editor.graph.updateNode(title.id, { text: 'Changed' })
     editor.graph.deleteNode(badge.id)
     const change = finish()
@@ -146,7 +147,7 @@ describe('document changes', () => {
   test('the past side of a move to another page keeps the layer on its first page', () => {
     const { editor, pageId, card } = setup()
     const second = editor.graph.addPage('Second')
-    const finish = editor.captureDocumentChange(pageId)
+    const finish = captureDocumentChange(editor.graph, pageId)
     editor.graph.reparentNode(card.id, second.id)
     const change = finish()
 
@@ -160,7 +161,7 @@ describe('document changes', () => {
   test('the past side of removing the page the edit ran on brings that page back', () => {
     const { editor, pageId, card } = setup()
     editor.graph.addPage('Second')
-    const finish = editor.captureDocumentChange(pageId)
+    const finish = captureDocumentChange(editor.graph, pageId)
     editor.graph.deleteNode(pageId)
     const change = finish()
 
@@ -174,7 +175,7 @@ describe('document changes', () => {
     const { editor, pageId, card, title } = setup()
     // Nothing in the graph's API makes a cycle; a damaged file can.
     expectDefined(editor.graph.getNode(card.id), 'card').parentId = title.id
-    const finish = editor.captureDocumentChange(pageId)
+    const finish = captureDocumentChange(editor.graph, pageId)
     editor.graph.updateNode(title.id, { text: 'Changed' })
     expect(isEmptyDocumentChange(finish())).toBe(false)
   })
@@ -242,12 +243,12 @@ describe('document changes', () => {
   test('comments are never part of a change, and undo leaves them as they are', () => {
     const { editor, pageId } = setup()
     const { graph } = editor
-    const finishComment = editor.captureDocumentChange(pageId)
+    const finishComment = captureDocumentChange(editor.graph, pageId)
     writeComments(graph, [thread('first', pageId)])
     expect(isEmptyDocumentChange(finishComment())).toBe(true)
 
     // A step that renames the document and comments as it goes.
-    const finish = editor.captureDocumentChange(pageId)
+    const finish = captureDocumentChange(editor.graph, pageId)
     graph.updateNode(graph.rootId, { name: 'Renamed' })
     writeComments(graph, [thread('first', pageId), thread('second', pageId)])
     const change = finish()

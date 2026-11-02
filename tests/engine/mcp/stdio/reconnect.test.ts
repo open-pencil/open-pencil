@@ -252,7 +252,6 @@ describe('stdio-bridge transport reconnection', () => {
         expect(reconnected).toBe(true)
       } finally {
         bridge?.close()
-        bridge = null
         await closeMockServer(server1, SOCKET_PATH)
         await closeMockServer(server2, SOCKET_PATH)
       }
@@ -323,7 +322,6 @@ describe('stdio-bridge transport reconnection', () => {
         expect(reconnected).toBe(true)
       } finally {
         bridge?.close()
-        bridge = null
         await closeMockServer(server1, SOCKET_PATH)
         await closeMockServer(server2, SOCKET_PATH)
       }
@@ -383,7 +381,6 @@ describe('stdio-bridge transport reconnection', () => {
         expect(reconnected).toBe(true)
       } finally {
         bridge?.close()
-        bridge = null
         await closeMockServer(server1, SOCKET_PATH)
         await closeMockServer(server2, SOCKET_PATH)
       }
@@ -456,7 +453,6 @@ describe('stdio-bridge transport reconnection', () => {
         expect(reconnected).toBe(true)
       } finally {
         bridge?.close()
-        bridge = null
         await closeMockServer(server1, SOCKET_PATH)
         await closeMockServer(server2, SOCKET_PATH_2)
       }

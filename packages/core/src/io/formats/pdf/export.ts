@@ -9,6 +9,7 @@ import {
   embeddedFontAlias,
   planFontEmbedding,
   registerEmbeddedFonts,
+  type PDFFallbackFontFile,
   type PDFFontFace,
   type PDFFontReport
 } from './fonts'
@@ -20,6 +21,8 @@ export interface PDFExportOptions {
   fonts?: readonly PDFFontFace[]
   /** Line breaks of text nodes as the editor laid them out, so paragraphs stay wrapped. */
   textLayout?: SVGTextLayout
+  /** The files of fallback faces the text layout draws characters in, to embed them too. */
+  fallbackFile?: PDFFallbackFontFile
 }
 
 export interface PDFExportResult {
@@ -81,7 +84,7 @@ async function renderPages(
   options: PDFExportOptions,
   parse: SVGPageParser
 ): Promise<PDFExportResult | null> {
-  const embedding = options.fonts ? planFontEmbedding(options.fonts) : null
+  const embedding = options.fonts ? planFontEmbedding(options.fonts, options.fallbackFile) : null
   const svgOptions: PageSVGOptions = {
     textLayout: options.textLayout,
     fontAlias: embedding ? embeddedFontAlias(embedding) : undefined

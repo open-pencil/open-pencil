@@ -142,6 +142,19 @@ export function getInstanceOverride(
   return nodeId === instanceId ? state.self.get(field) : state.descendants.get(nodeId)?.get(field)
 }
 
+/**
+ * The component layer a layer of an instance copies: the one its instance recorded for it, as
+ * a swapped nested instance keeps, or else the one it was cloned from.
+ */
+export function copiedComponentLayerId(
+  state: InstanceOverrideState,
+  instanceId: string,
+  node: { id: string; componentId: string | null }
+): string | undefined {
+  const recorded = getInstanceOverride(state, instanceId, node.id, 'sourceComponentId')
+  return typeof recorded === 'string' ? recorded : (node.componentId ?? undefined)
+}
+
 export function hasInstanceOverride(
   state: InstanceOverrideState,
   instanceId: string,

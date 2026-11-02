@@ -12,7 +12,7 @@ of them in one undo step, so a selection of text and other layers edits only the
 It exposes:
 
 - font family
-- font weight, and `weights`: the weights the selected layers' families have, read from installed fonts and web font providers, every weight while a family's faces are unknown
+- font style: `faces`, the faces of the selected layers' family by the names their fonts give them (Avenir's Book and Roman apart), read from installed fonts and web font providers, every standard weight while a family's faces are unknown; `faceName`, the face the layers share or `MIXED`; and `setFace(style)`, which sets a face by its name
 - font size
 - formatting state
 - missing-font status
@@ -20,8 +20,9 @@ It exposes:
 - text case and direction
 - ending truncation and maximum lines
 - OpenType feature toggles
+- variable font axes (`axes`, `opticalSizeAuto`)
 - list style (`listType`, `null` when the paragraphs differ) and hanging lists
-- helpers for changing family, weight, alignment, and decorations
+- helpers for changing family, face, weight, alignment, and decorations
 - `merged(key)` and `fontFeature(tag)`, which return the shared value or `MIXED`
 
 ## Usage
@@ -41,6 +42,7 @@ const {
   fontSize,
   activeFormatting,
   setFamily,
+  setFace,
   setWeight,
   setAlign,
   setVerticalAlign,
@@ -86,6 +88,15 @@ While the text is being edited, `setListType` and `setParagraphSpacing` change t
 typography.setListType('UNORDERED')
 typography.setHangingList(true)
 typography.setParagraphSpacing('listSpacing', 8)
+```
+
+### Set variable font axes
+
+`axes` lists the axes of the selected text's variable font, each with its `tag`, `name`, range, and the `value` it is drawn at (`MIXED` when the layers differ), and is empty for a static font or layers in different families. `previewAxis` shows a value while a field is dragged, `setAxis` sets it in one undo step, and `setOpticalSizeAuto` lets the optical size follow the font size or holds it. Changing weight, slant, or family puts the axes back at the style's own.
+
+```ts
+typography.setAxis('wght', 560)
+typography.setOpticalSizeAuto(false)
 ```
 
 ## Related APIs

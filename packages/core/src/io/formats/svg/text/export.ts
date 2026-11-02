@@ -1,4 +1,5 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -14,10 +15,12 @@ import {
   explicitNewlineLines,
   laidOutTextSpans,
   textStyleSpans,
-  type SpanAttrs
+  type SpanAttrs,
+  type SVGFallbackFace
 } from '#core/io/formats/svg/text/lines'
 import { shownText } from '#core/text/case'
-import { textFontFace } from '#core/text/requirements'
+import { drawnFontVariations } from '#core/text/font/families'
+import { textFontFace } from '#core/text/requirements/collect'
 
 function styleOverrideToTspanAttrs(
   style: CharacterStyleOverride,
@@ -79,13 +82,43 @@ function aliasedFontAttrs(
   }
 }
 
-/** The face a run of `node` is drawn in, with the size and axes its instance follows. */
-function fontRequest(node: SceneNode, style: CharacterStyleOverride = {}): SVGFontRequest {
-  return {
+/**
+ * The font attributes of a span: its face's alias where there is one, otherwise the family of the
+ * fallback face that draws it, if any.
+ */
+function spanFontAttrs(
+  node: SceneNode,
+  style: CharacterStyleOverride,
+  fallback: SVGFallbackFace | undefined,
+  fontAlias: SVGFontAlias | undefined
+): Record<string, string | number> {
+  if (fontAlias) return aliasedFontAttrs(fontRequest(node, style, fallback), fontAlias)
+  return fallback ? { 'font-family': fallback.family } : {}
+}
+
+/**
+ * The face a run of `node` is drawn in, or the fallback face that draws its characters instead,
+ * with the size and axes its instance follows. A fallback is drawn at the axes the run's own font
+ * is drawn at, as the paragraph draws every font it falls back to.
+ */
+function fontRequest(
+  node: SceneNode,
+  style: CharacterStyleOverride = {},
+  fallback?: SVGFallbackFace
+): SVGFontRequest {
+  const own: SVGFontRequest = {
     ...textFontFace(node, style),
     fontSize: style.fontSize ?? node.fontSize,
     variations: style.fontVariations ?? node.fontVariations,
-    opticalSizeFromFontSize: node.opticalSizeFromFontSize
+    opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
+  }
+  if (!fallback) return own
+  return {
+    ...own,
+    ...fallback,
+    ...parseFontStyle(fallback.style),
+    variations: drawnFontVariations(own),
+    opticalSizeFromFontSize: false
   }
 }
 
@@ -171,9 +204,9 @@ export function renderTextNode(
     'letter-spacing': letterSpacing ? round(letterSpacing) : undefined,
     ...(fontAlias ? aliasedFontAttrs(fontRequest(node), fontAlias) : {})
   }
-  const spanAttrs = (style: CharacterStyleOverride) => ({
+  const spanAttrs = (style: CharacterStyleOverride, fallback?: SVGFallbackFace) => ({
     ...styleOverrideToTspanAttrs(style, colorSpace, fillOpacity, node),
-    ...(fontAlias ? aliasedFontAttrs(fontRequest(node, style), fontAlias) : {})
+    ...spanFontAttrs(node, style, fallback, fontAlias)
   })
 
   if (laidOut) {

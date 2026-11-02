@@ -4,6 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { parseFixture } from '#core-tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#core-tests/helpers/test-utils'
 
+import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
@@ -405,6 +406,81 @@ describe('variable roundtrip', () => {
     const defaultMode = imported.modes.find((mode) => mode.modeId === imported.defaultModeId)
     expect(defaultMode?.name).toBe('Dark')
     expect(imported.modes.map((mode) => mode.name)).toEqual(['Dark', 'Mode 1'])
+  })
+
+  function themeWithSavedModes(): SceneGraph {
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'theme',
+      name: 'Theme',
+      modes: [
+        { modeId: 'light', name: 'Light', sortPosition: 'm' },
+        { modeId: 'dark', name: 'Dark', sortPosition: 'q' }
+      ],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    graph.addMode('theme', 'contrast', 'Contrast')
+    graph.createVariable('Gap', 'FLOAT', 'theme', 4)
+    return graph
+  }
+
+  async function reimportedTheme(graph: SceneGraph) {
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const theme = expectDefined(
+      [...reimported.variableCollections.values()].find((c) => c.name === 'Theme'),
+      'theme collection'
+    )
+    const defaultMode = theme.modes.find((mode) => mode.modeId === theme.defaultModeId)
+    return { defaultMode: defaultMode?.name, modes: theme.modes.map((mode) => mode.name) }
+  }
+
+  test('saved mode order and default survive export → re-import', async () => {
+    await initCodec()
+
+    expect(await reimportedTheme(themeWithSavedModes())).toEqual({
+      defaultMode: 'Light',
+      modes: ['Light', 'Dark', 'Contrast']
+    })
+  })
+
+  test('a default chosen among saved modes survives export → re-import', async () => {
+    await initCodec()
+    const graph = themeWithSavedModes()
+
+    graph.setDefaultMode('theme', 'dark')
+
+    expect(await reimportedTheme(graph)).toEqual({
+      defaultMode: 'Dark',
+      modes: ['Dark', 'Light', 'Contrast']
+    })
+  })
+
+  test('a saved mode restored by undo keeps its place after export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'theme',
+      name: 'Theme',
+      modes: [
+        { modeId: 'a', name: 'A', sortPosition: 'a' },
+        { modeId: 'b', name: 'B', sortPosition: 'b' },
+        { modeId: 'c', name: 'C', sortPosition: 'c' }
+      ],
+      defaultModeId: 'a',
+      variableIds: []
+    })
+    graph.createVariable('Gap', 'FLOAT', 'theme', 4)
+    const editor = createEditor({ graph })
+
+    editor.removeMode('theme', 'b')
+    expect(graph.variableCollections.get('theme')?.modes.map((mode) => mode.modeId)).toEqual([
+      'a',
+      'c'
+    ])
+    editor.undo.undo()
+
+    expect(await reimportedTheme(graph)).toEqual({ defaultMode: 'A', modes: ['A', 'B', 'C'] })
   })
 
   test.if(runsHeavyTests)(

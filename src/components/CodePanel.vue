@@ -12,6 +12,7 @@ import {
   watch
 } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { JSX_REFERENCE } from '@open-pencil/design-jsx'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { useEditorEvent } from '@open-pencil/vue/editor/events'
@@ -141,7 +142,7 @@ const stylingOptions = computed(() => [
 /** Components are generated; Design JSX and HTML are edited into layers. */
 const readOnly = computed(() => source.value === 'vue' || source.value === 'react')
 /** A read-only document's code is read, never previewed or applied back. */
-const codeReadOnly = computed(() => readOnly.value || store.state.readOnly)
+const codeReadOnly = computed(() => readOnly.value || !resolveEditorProfile(store.state).edits)
 const editorLabel = computed(() => {
   if (source.value === 'html-css') return code.value.editorHTMLCSSLabel
   if (source.value === 'vue') return code.value.sourceVue
@@ -401,7 +402,7 @@ watch(
         :options="sourceOptions"
         :label="code.source"
         data-test-id="code-panel-source"
-        :ui="{ trigger: 'h-7 min-w-0 flex-1 text-[11px]' }"
+        :ui="{ trigger: 'h-7 min-w-0 flex-1 text-2xs' }"
         @update:model-value="changeSource"
       />
       <SegmentedControl
@@ -468,7 +469,7 @@ watch(
       v-if="error"
       role="alert"
       data-test-id="code-panel-error"
-      class="shrink-0 border-t border-error-border bg-error-bg px-3 py-2 text-[11px] leading-snug text-error"
+      class="shrink-0 border-t border-error-border bg-error-bg px-3 py-2 text-2xs leading-snug text-error"
     >
       {{ error }}
     </div>

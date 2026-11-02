@@ -9,7 +9,6 @@ import { applySnappingPreferences, setDesignIssuesOnCanvas } from '@/app/setting
 import {
   ANIMATION_PREFERENCES,
   appPreferences,
-  CANVAS_RENDERING_MODES,
   CHANGE_PREVIEW_SIZES,
   DESIGN_CHECK_PRESETS,
   REASONING_DISPLAYS,
@@ -33,7 +32,6 @@ export interface AutomationSettings {
     accent: AppPreferences['appearance']['accent']
   }
   editing: AppPreferences['editing']
-  rendering: AppPreferences['rendering']
   recovery: AppPreferences['recovery']
   chat: AppPreferences['chat']
   designCheck: AppPreferences['designCheck']
@@ -60,9 +58,6 @@ const automationSettingsPatchSchema = v.strictObject({
         })
       )
     })
-  ),
-  rendering: v.optional(
-    v.strictObject({ canvasMode: v.optional(v.picklist(CANVAS_RENDERING_MODES)) })
   ),
   recovery: v.optional(v.strictObject({ enabled: optionalBooleanSchema })),
   chat: v.optional(
@@ -94,7 +89,6 @@ export function readAutomationSettings(): AutomationSettings {
       accent: { ...preferences.appearance.accent }
     },
     editing: { snapping: { ...preferences.editing.snapping } },
-    rendering: { ...preferences.rendering },
     recovery: { ...preferences.recovery },
     chat: { ...preferences.chat },
     designCheck: {
@@ -122,7 +116,6 @@ export function updateAutomationSettings(input: unknown): AutomationSettings {
   appPreferences.value = {
     ...current,
     appearance: { ...current.appearance, ...appearance },
-    rendering: { ...current.rendering, ...patch.rendering },
     recovery: { ...current.recovery, ...patch.recovery },
     chat: { ...current.chat, ...patch.chat }
   }

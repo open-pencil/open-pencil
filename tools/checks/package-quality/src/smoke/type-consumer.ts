@@ -61,7 +61,7 @@ export async function verifyTypeConsumer(root: string, consumerDirectory: string
     root,
     'node_modules',
     '.bin',
-    process.platform === 'win32' ? 'tsgo.cmd' : 'tsgo'
+    process.platform === 'win32' ? 'tsc.cmd' : 'tsc'
   )
   await runCommand({
     command: executable,

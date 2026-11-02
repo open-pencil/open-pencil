@@ -244,7 +244,7 @@ export function runAgentId(store: EditorStore): string | undefined {
 
 /** Keep `snapshot` as the run's starting state of its page unless the run already edited it. */
 export function recordRunBaseline(run: Run, snapshot: PageSnapshot): void {
-  const pageId = snapshot.values().next().value?.id
+  const pageId = snapshot.nodes.values().next().value?.id
   if (pageId && !run.baselines.has(pageId)) run.baselines.set(pageId, snapshot)
 }
 

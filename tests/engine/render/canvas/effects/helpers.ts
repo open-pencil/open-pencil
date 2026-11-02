@@ -89,6 +89,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
         setImageFilter = mock(() => undefined)
         setAntiAlias = mock(() => undefined)
         setColor = mock(() => undefined)
+        setColorComponents = mock(() => undefined)
         setShader = mock(() => undefined)
         setStyle = mock(() => undefined)
         delete = mock(() => undefined)
@@ -100,6 +101,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     },
     auxFill: {
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setMaskFilter: mock(() => undefined),
       setImageFilter: mock(() => undefined),
       setAlphaf: mock(() => undefined),
@@ -110,6 +112,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     auxStroke: {
       setStrokeWidth: mock(() => undefined),
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setPathEffect: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setBlendMode: mock(() => undefined),
@@ -117,6 +120,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     },
     fillPaint: {
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setShader: mock(() => undefined),
       getColor: mock(() => new Float32Array([0, 0, 0, 1])),
@@ -125,6 +129,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     },
     strokePaint: {
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setShader: mock(() => undefined),
       setStrokeWidth: mock(() => undefined),
       setAlphaf: mock(() => undefined),
@@ -142,6 +147,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     },
     effectLayerPaint: {
       setColor: mock(() => undefined),
+      setColorComponents: mock(() => undefined),
       setMaskFilter: mock(() => undefined),
       setImageFilter: mock(() => undefined),
       setColorFilter: mock(() => undefined),
@@ -177,11 +183,13 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     drawNodeStroke: mock(() => undefined),
     drawStrokeWithAlign: mock(() => undefined),
     resolveStrokeColor: mock(() => ({ r: 0, g: 0, b: 0, a: 1 })),
-    nodePictureCache: {
-      get: mock(() => null),
-      set: mock(() => undefined)
+    nodePictures: {
+      get: mock(() => undefined),
+      set: mock(() => undefined),
+      delete: mock(() => false)
     },
     isRectangularType: mock(() => true),
+    drawCounts: { nodes: 0, culled: 0 },
     worldViewport: { x: 0, y: 0, w: 1000, h: 1000 },
     ...overrides
   })

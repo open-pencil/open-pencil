@@ -120,6 +120,6 @@ People who open a link without an account, where the server allows it, join unde
 
 ## AI on Cloud
 
-When your workspace's plan includes AI and the server offers it, the AI assistant can use models through Cloud instead of a key of your own. In **Settings → AI**, add a model, choose **OpenPencil Cloud** as the provider, and pick the workspace whose plan pays for it; the models and their prices come from the server. **OpenPencil Cloud** is listed while you are signed in to the server Home shows.
+When your workspace's plan includes AI and the server offers it, the AI assistant can use models through Cloud instead of a key of your own. In **Settings → Models**, add a model, choose **OpenPencil Cloud** as the provider, and pick the workspace whose plan pays for it; the models and their prices come from the server. **OpenPencil Cloud** is listed while you are signed in to the server Home shows.
 
 Each request uses the workspace's AI credits for the month. When they run out, the assistant says so and, if the server bills, offers **Manage plan**. Self-hosted servers run their own AI service with their own models and limits ([self-hosting guide](/reference/self-hosting-cloud#ai)).

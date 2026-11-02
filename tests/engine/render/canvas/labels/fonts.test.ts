@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs'
 import { initCanvasKit } from '#cli/headless'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
 import { resolveLabelFontCoverage } from '#core/canvas/renderer/fonts'
-import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
-import { fontManager } from '#core/text/fonts'
+import { resolveParagraphFontFamilies } from '#core/text/font/families'
+import { fontManager } from '#core/text/font/manager'
 import { FontResolver, missingGlyphOccurrences } from '#core/text/resolver'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -56,7 +56,7 @@ test.each([
   const families = () =>
     resolveParagraphFontFamilies(
       'Inter',
-      'Regular',
+      { weight: 400, italic: false, style: 'Regular' },
       loaded && fixture.arabic ? [fixture.family] : [],
       loaded && !fixture.arabic ? [fixture.family] : []
     )

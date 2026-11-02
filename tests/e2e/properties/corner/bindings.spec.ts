@@ -8,7 +8,7 @@ const paths = ['topLeftRadius', 'topRightRadius', 'bottomRightRadius', 'bottomLe
 test('collapsed equivalent corners preserve their shared token through expansion and edits', async ({
   page
 }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   const id = await page.evaluate(() => {

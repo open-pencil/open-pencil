@@ -1,0 +1,1 @@
+- On Windows and Linux, the Software Update window no longer shows the editor menu bar (#1230).

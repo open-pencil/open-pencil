@@ -20,17 +20,17 @@ description: Встроенный помощник с более чем 90 ин�
 
 ### Поставщики
 
-| Поставщик | Модели | Настройка |
-|-----------|--------|-----------|
-| **OpenRouter** | Claude, GPT, Gemini, DeepSeek, Qwen и другие | Ключ API с [openrouter.ai](https://openrouter.ai) |
-| **Anthropic** | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | Ключ API с [console.anthropic.com](https://console.anthropic.com) |
-| **OpenAI** | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna | Ключ API с [platform.openai.com](https://platform.openai.com) |
-| **Google AI** | Gemini 3.8 Flash, Gemini 4 Argon | Ключ API с [aistudio.google.dev](https://aistudio.google.dev) |
-| **DeepSeek** | DeepSeek Flash, DeepSeek V4 Pro | Ключ API с [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
-| **Z.ai** | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo | Ключ API из [документации Z.ai](https://docs.z.ai/devpack/quick-start) |
-| **MiniMax** | MiniMax-M3.1-Flash, MiniMax-M3 | Ключ API с [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
-| **Совместимый с OpenAI** | Любая конечная точка в формате OpenAI API | Собственные базовый URL и ключ; можно выбрать Completions API или Responses API |
-| **Совместимый с Anthropic** | Любая конечная точка в формате Anthropic API | Собственные базовый URL и ключ |
+| Поставщик                   | Модели                                                                 | Настройка                                                                                                 |
+| --------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **OpenRouter**              | Claude, GPT, Gemini, DeepSeek, Qwen и другие                           | Ключ API с [openrouter.ai](https://openrouter.ai)                                                         |
+| **Anthropic**               | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | Ключ API с [console.anthropic.com](https://console.anthropic.com)                                         |
+| **OpenAI**                  | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna                                   | Ключ API с [platform.openai.com](https://platform.openai.com)                                             |
+| **Google AI**               | Gemini 3.8 Flash, Gemini 4 Argon                                       | Ключ API с [aistudio.google.dev](https://aistudio.google.dev)                                             |
+| **DeepSeek**                | DeepSeek Flash, DeepSeek V4 Pro                                        | Ключ API с [platform.deepseek.com](https://platform.deepseek.com/api_keys)                                |
+| **Z.ai**                    | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo                   | Ключ API из [документации Z.ai](https://docs.z.ai/devpack/quick-start)                                    |
+| **MiniMax**                 | MiniMax-M3.1-Flash, MiniMax-M3                                         | Ключ API с [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **Совместимый с OpenAI**    | Любая конечная точка в формате OpenAI API                              | Собственные базовый URL и ключ; можно выбрать Completions API или Responses API                           |
+| **Совместимый с Anthropic** | Любая конечная точка в формате Anthropic API                           | Собственные базовый URL и ключ                                                                            |
 
 Отдельный сервер и подписка OpenPencil не требуются: запросы отправляются поставщику напрямую с вашим ключом. В браузере действуют правила CORS поставщика. Разные развёртывания моделей также по-разному поддерживают потоковые вызовы инструментов. Результаты проверок и инструкции находятся в разделе [Совместимость поставщиков и моделей BYOK](/programmable/byok-provider-compatibility).
 
@@ -56,6 +56,12 @@ description: Встроенный помощник с более чем 90 ин�
 - **Анализ:** палитра, типографика, интервалы и повторяющиеся группы.
 - **Экспорт:** PNG, SVG и JSX с классами Tailwind; визуальная проверка через `export_image`.
 - **Векторы:** логические операции и изменение контуров.
+
+## Навыки
+
+Навыки — это папки с `SKILL.md` в формате [Agent Skills](https://agentskills.io/specification): инструкции для определённой работы с необязательными справочными файлами. Встроенный ИИ видит имя и описание каждого включённого навыка и загружает его инструкции, когда запрос подходит; скрипты из навыков не запускаются.
+
+В разделе «Настройки → Навыки» загрузите навык как ZIP его папки или как `SKILL.md`. В настольном приложении также читаются `~/.agents/skills` и `~/.claude/skills`, а ещё папки `.agents/skills` и `.claude/skills` рядом с открытым документом — они используются только после «Доверять папке». Наберите `/` в начале сообщения, чтобы выбрать навык, и `@`, чтобы упомянуть слой, страницу или навык. Упоминания показываются как чипы, в том числе в ответах; щелчок показывает слой на холсте.
 
 ## Визуальная проверка
 

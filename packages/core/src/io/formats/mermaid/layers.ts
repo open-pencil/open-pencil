@@ -13,15 +13,16 @@ import {
   freeEndpoint
 } from '@open-pencil/scene-graph/connectors'
 import { BLACK } from '@open-pencil/scene-graph/constants'
-import { createShapeWithText } from '@open-pencil/scene-graph/generated'
+import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { layoutAuthoredNodes } from '#core/layout'
-import { layoutDiagram, type DiagramInput } from '#core/layout/diagram'
-import { applyDiagramLayout, type DiagramPlacement } from '#core/layout/diagram/apply'
-import { connectorLabelSize } from '#core/layout/diagram/routes'
+import { applyArrangement, type ArrangePlacement } from '#core/layout/arrange/apply'
+import { arrangeBoxes, type ArrangeInput } from '#core/layout/arrange/boxes'
+import { connectorLabelSize } from '#core/layout/arrange/routes'
 import { shapeWithTextWidthFor } from '#core/layout/shape-with-text'
+import { markdownText } from '#core/text/markdown'
 import { prepareGraphFonts } from '#core/text/prepare'
 
 import { figJamShape } from './shapes'
@@ -50,10 +51,16 @@ function solid(color: Color): Fill {
   return { type: 'SOLID', color: { ...color }, opacity: 1, visible: true }
 }
 
-/** Markdown's emphasis marks taken out, which a label shows as plain text for now. */
+/** A label's words, its Markdown read as text, for a layer name or section title. */
 function labelText(label: FlowLabel): string {
   if (label.format === 'text') return label.text
-  return label.text.replace(/(\*\*|__)(.+?)\1/g, '$2').replace(/([*_])(.+?)\1/g, '$2')
+  return markdownText(label.text, { fontSize: 1, fontWeight: 400 }).text
+}
+
+/** Styles a label layer as its Markdown says, over the label's own style. */
+function styleLabel(graph: SceneGraph, labelLayer: SceneNode | null, label: FlowLabel): void {
+  if (!labelLayer || label.format === 'text') return
+  graph.updateNode(labelLayer.id, markdownText(label.text, labelLayer))
 }
 
 function styledFills(layer: Partial<SceneNode>, style: FlowStyle): Fill[] | undefined {
@@ -160,6 +167,7 @@ class FlowchartBuilder {
       },
       style.color ? { text, fills: [solid(style.color)] } : { text }
     )
+    styleLabel(graph, shapeWithTextLabel(graph, shape), node.label)
     this.layers.set(node.id, shape.id)
   }
 
@@ -212,6 +220,7 @@ class FlowchartBuilder {
       })
       if (style.color) graph.updateNode(parts.label.id, { fills: [solid(style.color)] })
     }
+    if (parts && edge.label) styleLabel(graph, parts.label, edge.label)
     this.connectors.set(edge.id, connector.id)
   }
 }
@@ -236,7 +245,7 @@ export async function addFlowchart(
   graph: SceneGraph,
   parentId: string,
   chart: Flowchart,
-  placement: DiagramPlacement = { topLeft: { x: 0, y: 0 } }
+  placement: ArrangePlacement = { topLeft: { x: 0, y: 0 } }
 ): Promise<FlowchartLayers> {
   const before = new Set(graph.getNode(parentId)?.childIds)
   const builder = new FlowchartBuilder(graph, parentId, chart)
@@ -264,9 +273,10 @@ export async function addFlowchart(
       const connectorId = builder.connectors.get(edgeId)
       return (connectorId && connectorLabelSize(graph, connectorId)) || undefined
     }
-    const input: DiagramInput = {
+    const input: ArrangeInput = {
+      layout: 'flow',
       direction: chart.direction,
-      nodes: chart.nodes.map((node) => ({
+      boxes: chart.nodes.map((node) => ({
         id: node.id,
         ...size(node.id),
         group: enclosing.get(node.id)
@@ -282,11 +292,11 @@ export async function addFlowchart(
         label: labelSize(edge.id)
       }))
     }
-    const layout = await layoutDiagram(input)
-    applyDiagramLayout(
+    const arrangement = await arrangeBoxes(input)
+    applyArrangement(
       graph,
       input,
-      layout,
+      arrangement,
       { boxes: builder.layers, connectors: builder.connectors },
       placement
     )

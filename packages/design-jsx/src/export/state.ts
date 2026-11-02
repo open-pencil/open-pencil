@@ -1,8 +1,10 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { CONSTRAINT, MASK_TYPE } from '../enums'
+import { collectBindingProps, collectModeProps } from './bindings'
 import type { getNodeContext } from './helpers'
-import { helperCall, type JSXProp, type JSXValue } from './value'
+import type { JSXProp } from './value'
+import type { VariableExport } from './variables'
 
 /** Constraints apply where a parent does not lay its children out. */
 function hasConstraints(node: SceneNode, ctx: ReturnType<typeof getNodeContext>): boolean {
@@ -34,36 +36,17 @@ function collectSizeLimitProps(node: SceneNode, props: JSXProp[]): void {
   if (node.maxHeight != null) props.push(['maxH', node.maxHeight])
 }
 
-/**
- * Variables are named when the name is unique in the document, which is how `designVar`
- * resolves them, and referenced by ID otherwise.
- */
-function variableRef(graph: SceneGraph, variableId: string): JSXValue {
-  const variable = graph.variables.get(variableId)
-  if (!variable) return variableId
-  const sameName = [...graph.variables.values()].filter((v) => v.name === variable.name)
-  return sameName.length === 1 ? helperCall('designVar', variable.name) : variableId
-}
-
-function collectBindingProps(node: SceneNode, graph: SceneGraph, props: JSXProp[]): void {
-  const bindings = Object.entries(node.boundVariables).toSorted(([a], [b]) => a.localeCompare(b))
-  if (bindings.length === 0) return
-  props.push([
-    'bind',
-    Object.fromEntries(bindings.map(([field, id]) => [field, variableRef(graph, id)]))
-  ])
-}
-
 export function collectStateProps(
   node: SceneNode,
   ctx: ReturnType<typeof getNodeContext>,
-  graph: SceneGraph,
-  props: JSXProp[]
+  props: JSXProp[],
+  variables: VariableExport
 ): void {
   collectConstraintProps(node, ctx, props)
   collectSizeLimitProps(node, props)
   if (node.isMask) props.push(['mask', MASK_TYPE.print(node.maskType)])
   if (!node.visible) props.push(['visible', false])
   if (node.locked) props.push(['locked', true])
-  collectBindingProps(node, graph, props)
+  collectModeProps(node, props, variables)
+  collectBindingProps(node, props, variables)
 }

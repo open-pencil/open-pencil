@@ -216,25 +216,31 @@ function diffRecords<T>(previous: Map<string, T>, current: Map<string, T>): Reco
 }
 
 /** Restores records in place where they exist, as views may hold them, as atomic tools do. */
+/** Make `target` hold `value` under `id`, or nothing; an existing record is kept and rewritten. */
+export function writeRecord<T extends object>(
+  target: Map<string, T>,
+  id: string,
+  value: T | null
+): void {
+  const existing = target.get(id)
+  if (!value) {
+    target.delete(id)
+  } else if (existing) {
+    for (const key of Object.keys(existing)) {
+      if (!Object.hasOwn(value, key)) Reflect.deleteProperty(existing, key)
+    }
+    Object.assign(existing, structuredClone(value))
+  } else {
+    target.set(id, structuredClone(value))
+  }
+}
+
 function restoreRecords<T extends object>(
   target: Map<string, T>,
   changes: RecordChange<T>[],
   side: Side
 ): void {
-  for (const change of changes) {
-    const value = change[side]
-    const existing = target.get(change.id)
-    if (!value) {
-      target.delete(change.id)
-    } else if (existing) {
-      for (const key of Object.keys(existing)) {
-        if (!Object.hasOwn(value, key)) Reflect.deleteProperty(existing, key)
-      }
-      Object.assign(existing, structuredClone(value))
-    } else {
-      target.set(change.id, structuredClone(value))
-    }
-  }
+  for (const change of changes) writeRecord(target, change.id, change[side])
 }
 
 /**

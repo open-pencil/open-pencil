@@ -15,6 +15,7 @@ import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
 import IconLucidePanelTop from '~icons/lucide/panel-top'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import type { PlacedStatusLabel } from '@open-pencil/core/canvas'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
@@ -27,6 +28,7 @@ import {
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
 import { useCanvasDrop } from '@open-pencil/vue/canvas/drop'
+import { useEyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
 import { useCanvasIssueMarkers } from '@open-pencil/vue/canvas/issues'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 import { useCanvasStatusLabels } from '@open-pencil/vue/canvas/statuses'
@@ -43,9 +45,11 @@ import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
+import CanvasEyedropperLoupe from '@/components/canvas/CanvasEyedropperLoupe.vue'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
-import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
+import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
@@ -79,6 +83,7 @@ function updatePaneCursor(cx: number, cy: number) {
 const getRenderState = paneId ? () => store.getPaneRenderState(paneId) : undefined
 /** This pane's view: its pan, zoom, page, and whether it previews. */
 const paneView = computed(() => (paneId ? store.getPaneRenderState(paneId) : store.state))
+const paneProfile = computed(() => resolveEditorProfile(paneView.value))
 const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
@@ -94,6 +99,8 @@ const shouldSuspendRender = () =>
 
 /** The pan and zoom of the scene's last drawn frame, which preview islands follow. */
 const drawnView = shallowRef<ViewportTransform | null>(null)
+/** Where popovers on the canvas are placed: the drawn frame, or the live view before one is drawn. */
+const overlayView = computed(() => drawnView.value ?? paneView.value)
 
 // The tab's scene is presented only here once the canvas can draw, so waiting for it times out
 // only while it is shown and drawing, not while the renderer and its fonts download.
@@ -109,7 +116,6 @@ useCanvas(sceneCanvasRef, store, {
   onFrame: (view) => {
     drawnView.value = view
   },
-  sceneRenderer: appRuntimeConfig.sceneRenderer,
   onReady: canvasReady,
   onFailed: (error) =>
     store.preparationController.failCanvas(
@@ -136,7 +142,12 @@ const {
   // The scene canvas reports a canvas that cannot start.
   onFailed: () => undefined,
   get showRulers() {
-    return appRuntimeConfig.showRulers && store.state.showRulers && paneView.value.play === null
+    return (
+      appRuntimeConfig.showRulers &&
+      store.state.showRulers &&
+      paneProfile.value.editChrome &&
+      paneProfile.value.rulers
+    )
   },
   getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
   shouldSuspendRender,
@@ -144,8 +155,10 @@ const {
   onViewportResize
 })
 const {
+  drag,
   cursorOverride,
   canvasLabelEdit,
+  startCanvasLabelEdit,
   updateCanvasLabelEdit,
   commitCanvasLabelEdit,
   cancelCanvasLabelEdit,
@@ -215,7 +228,8 @@ const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
   const origin = store.graph.getAbsolutePosition(node.id)
-  const { zoom, panX, panY } = store.state
+  // The view the reference projects through, so screen-sized offsets match the drawn frame.
+  const { zoom, panX, panY } = overlayView.value
   const kind = canvasLabelEdit.value?.kind
   // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
   const abs = {
@@ -236,16 +250,37 @@ const canvasLabelEditAnchor = computed(() => {
   }
   return { x: abs.x, y: abs.y }
 })
-const canvasLabelEditReference = useCanvasVirtualReference(canvasRef, store, canvasLabelEditAnchor)
+const canvasLabelEditReference = useCanvasVirtualReference(
+  canvasRef,
+  overlayView,
+  canvasLabelEditAnchor
+)
 const canvasLabelEditPresentation = computed(() =>
   canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
+)
+
+/** Names the selected section on the canvas, as its title does on a double-click. */
+function renameSelectedSection() {
+  const [id] = store.state.selectedIds
+  const section = id ? store.graph.getNode(id) : undefined
+  if (section?.type === 'SECTION') startCanvasLabelEdit('section-title', section)
+}
+
+// With the side panels away, a sticky, shape, or connector shows its controls over the canvas,
+// as FigJam does.
+const selectionToolbar = computed(
+  () =>
+    isActivePane.value &&
+    !store.state.showUI &&
+    paneProfile.value.edits &&
+    paneProfile.value.editChrome
 )
 
 const valueEditorAnchor = computed(() => {
   const edit = autoLayoutValueEdit.value
   return edit ? autoLayoutValueAnchor(store, edit.nodeId, edit.field, edit.gap) : null
 })
-const valueEditorReference = useCanvasVirtualReference(canvasRef, store, valueEditorAnchor)
+const valueEditorReference = useCanvasVirtualReference(canvasRef, overlayView, valueEditorAnchor)
 const valueEditorIcon = computed(() => {
   const edit = autoLayoutValueEdit.value
   if (!edit) return IconLucidePanelTop
@@ -255,11 +290,16 @@ const valueEditorIcon = computed(() => {
     : IconLucideAlignHorizontalSpaceBetween
 })
 
+const eyedropperLoupe = useEyedropperLoupe(store, canvasRef, () => isActivePane.value)
+
+// The eyedropper's loupe stands in for the cursor while it shows.
 const cursor = computed(() =>
-  toolCursor(
-    store.state.activeTool,
-    issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
-  )
+  eyedropperLoupe.visible.value
+    ? 'none'
+    : toolCursor(
+        store.state.activeTool,
+        issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
+      )
 )
 </script>
 
@@ -295,6 +335,7 @@ const cursor = computed(() =>
         <PlayIslands :view="paneView" :drawn="drawnView" :canvas="canvasRef" />
         <AppDropOverlay :visible="isDraggingOver" />
         <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
+        <CanvasEyedropperLoupe :loupe="eyedropperLoupe" />
         <StatusLabelMenu
           :label="openStatusLabel"
           :canvas="canvasRef"
@@ -307,6 +348,13 @@ const cursor = computed(() =>
           @update="updateCanvasLabelEdit"
           @commit="commitCanvasLabelEdit"
           @cancel="cancelCanvasLabelEdit"
+        />
+        <SelectionToolbar
+          v-if="selectionToolbar"
+          :canvas="canvasRef"
+          :view="overlayView"
+          :hidden="!!drag || !!canvasLabelEdit"
+          @rename-section="renameSelectedSection"
         />
         <PopoverRoot :open="!!autoLayoutValueEdit">
           <PopoverPortal>

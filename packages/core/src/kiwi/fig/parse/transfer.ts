@@ -1,5 +1,5 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { EnabledLibraryBinding, SceneNode } from '@open-pencil/scene-graph'
+import type { DocumentKind, EnabledLibraryBinding, SceneNode } from '@open-pencil/scene-graph'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
@@ -7,6 +7,7 @@ export interface SerializedSceneGraph extends PortableSceneGraphData {
   instanceIndex: Array<[string, string[]]>
   figKiwiVersion: number | null
   figSchemaDeflated: Uint8Array | null
+  documentKind: DocumentKind
   enabledLibraries?: Array<[string, EnabledLibraryBinding]>
 }
 
@@ -22,6 +23,7 @@ export function serializeSceneGraph(graph: SceneGraph): SerializedSceneGraph {
     figKiwiVersion: graph.figKiwiVersion,
     figSchemaDeflated: graph.figSchemaDeflated,
     documentColorSpace: graph.documentColorSpace,
+    documentKind: graph.documentKind,
     enabledLibraries: [...graph.enabledLibraries]
   }
 }
@@ -72,6 +74,7 @@ export function cloneSceneGraphForFigExport(graph: SceneGraph): SceneGraph {
   cloned.figKiwiVersion = graph.figKiwiVersion
   cloned.figSchemaDeflated = graph.figSchemaDeflated
   cloned.documentColorSpace = graph.documentColorSpace
+  cloned.documentKind = graph.documentKind
   cloned.enabledLibraries = new Map(graph.enabledLibraries)
 
   return cloned
@@ -103,6 +106,7 @@ export function deserializeSceneGraph(data: SerializedSceneGraph): SceneGraph {
   graph.figKiwiVersion = data.figKiwiVersion
   graph.figSchemaDeflated = data.figSchemaDeflated
   graph.documentColorSpace = data.documentColorSpace
+  graph.documentKind = data.documentKind
   graph.enabledLibraries = data.enabledLibraries ? new Map(data.enabledLibraries) : new Map()
 
   return graph

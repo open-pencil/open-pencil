@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { beforeAll, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
@@ -9,6 +9,10 @@ import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 /** The Kiwi codec types only `symbolID`; the rest of the symbol payload is read through here. */
 const symbolDataOf = (record: NodeChange): SymbolData | undefined =>
@@ -78,7 +82,9 @@ test('a swap of a nested instance is addressed by the nested instance record', a
   const { nodeChanges } = parseFigBuffer(bytes.slice().buffer as ArrayBuffer)
   const exported = expectDefined(
     nodeChanges.find(
-      (node) => node.type === 'INSTANCE' && symbolDataOf(node)?.symbolOverrides?.length
+      (node) =>
+        node.type === 'INSTANCE' &&
+        symbolDataOf(node)?.symbolOverrides?.some((override) => override.overriddenSymbolID)
     ),
     'exported instance'
   )

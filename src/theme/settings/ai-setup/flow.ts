@@ -10,9 +10,9 @@ export default {
     tour: 'flex items-start justify-between gap-4 rounded-lg border border-border p-4',
     tourAction: 'shrink-0',
     group: 'flex flex-col gap-2',
-    groupHeading: 'text-[11px] font-semibold text-muted',
+    groupHeading: 'text-2xs font-semibold text-muted',
     // Reads as a group heading; the gap below lives inside the animated content.
-    moreTrigger: 'py-1.5 text-[11px] font-semibold text-muted transition-colors hover:text-surface',
+    moreTrigger: 'py-1.5 text-2xs font-semibold text-muted transition-colors hover:text-surface',
     moreGroup: 'flex flex-col gap-2 pt-1',
     connection: 'flex flex-col gap-3 rounded-md border border-border p-3',
     connectionHeading: 'flex items-center gap-2 text-xs font-semibold text-surface',

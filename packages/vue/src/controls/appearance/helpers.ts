@@ -294,7 +294,7 @@ export function createAppearanceActions({
                 topRightRadius: uniform,
                 bottomRightRadius: uniform,
                 bottomLeftRadius: uniform
-              } as Partial<SceneNode>,
+              },
               'Uniform corner radius'
             )
           }
@@ -329,7 +329,7 @@ export function createAppearanceActions({
       for (const target of targets) {
         editor.commitNodeUpdate(
           target.id,
-          { [key]: snapshots?.get(target.id) ?? previous } as Partial<SceneNode>,
+          { [key]: snapshots?.get(target.id) ?? previous },
           `Change ${key}`
         )
       }

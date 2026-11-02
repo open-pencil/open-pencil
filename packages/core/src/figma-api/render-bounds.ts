@@ -9,6 +9,7 @@ import {
 } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 const INTRINSIC_CONTAINER_TYPES = new Set([
   'FRAME',
@@ -85,7 +86,9 @@ function translatedBounds(bounds: VisualBounds, offset: Vector, overflow: number
 function ownRenderBounds(node: SceneNode, graph: SceneGraph): VisualBounds | null {
   if (!hasRenderableGeometry(node)) return null
 
-  const base = transformedRect(node, graph, 0, 0, node.width, node.height)
+  // Text lines past a fixed-size box draw, and cast their shadow, as in Figma.
+  const linesOverflow = textLinesOverflow(node)
+  const base = transformedRect(node, graph, 0, 0, node.width, node.height + linesOverflow)
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
   let bounds = transformedRect(
     node,
@@ -110,6 +113,8 @@ function ownRenderBounds(node: SceneNode, graph: SceneGraph): VisualBounds | nul
         )
       ) ?? bounds
   }
+
+  if (linesOverflow > 0) bounds = unionVisualBounds(bounds, base) ?? bounds
 
   for (const effect of node.effects) {
     if (!effect.visible) continue

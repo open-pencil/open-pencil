@@ -1,1 +1,0 @@
-- PDF exports from the editor embed the fonts their text uses, and keep each paragraph broken into the lines the canvas draws, instead of drawing text in a standard PDF font. Text in a variable font is embedded as a static instance at the weight, optical size, and other axes it is drawn with.

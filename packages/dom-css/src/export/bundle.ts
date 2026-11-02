@@ -218,25 +218,11 @@ async function compileTailwindClasses(classNames: string[], tokens: string): Pro
   return compiler.build(classNames)
 }
 
-function stripFontFamilyQuotes(value: string): string {
-  if (value.length < 2) return value
-  const first = value[0]
-  const last = value[value.length - 1]
-  if ((first === '"' && last === '"') || (first === "'" && last === "'")) return value.slice(1, -1)
-  return value
-}
-
-function firstFontFamily(value: string): string {
-  const commaIndex = value.indexOf(',')
-  const raw = commaIndex !== -1 ? value.slice(0, commaIndex) : value
-  return stripFontFamilyQuotes(raw.trim())
-}
-
 function collectFontRequests(node: DesignNode, fonts: Map<string, WebFontFaceRequest>): void {
   if (node.type === 'text') return
   const source = node.sourceSceneNode
   if (source?.type === 'TEXT') {
-    const family = normalizeFontFamily(firstFontFamily(source.fontFamily))
+    const family = normalizeFontFamily(source.fontFamily)
     const style = source.italic ? 'italic' : 'normal'
     const key = `${family}|${source.fontWeight}|${style}`
     fonts.set(key, { family, weight: source.fontWeight, style })

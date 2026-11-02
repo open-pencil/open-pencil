@@ -7,7 +7,7 @@ import {
   type Unifont
 } from 'unifont'
 
-import type { WebFontProviderId } from '#core/text/web-fonts'
+import type { WebFontProviderId } from '#core/text/web-font/resolver'
 
 export type WebFontProvider =
   | ReturnType<typeof providers.google>

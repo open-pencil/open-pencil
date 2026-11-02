@@ -114,7 +114,7 @@ describe('preview islands', () => {
     editor.startPlay()
     editor.resetPlay()
     editor.replaceGraph(new SceneGraph())
-    expect(editor.state.play).toEqual({ revision: 2 })
+    expect(editor.state.canvasView).toEqual({ id: 'play', revision: 2 })
   })
 
   test('a copy paints bound colors in the mode the canvas is showing, not as they were saved', () => {

@@ -1,4 +1,4 @@
-import CanvasKitInit, { type CanvasKit } from 'canvaskit-wasm'
+import CanvasKitInit, { type CanvasKit } from 'canvaskit-wasm/full'
 
 import { IS_BROWSER } from './constants'
 
@@ -17,14 +17,17 @@ export interface CanvasKitOptions {
 }
 
 let locator: CanvasKitLocator = (file) =>
-  IS_BROWSER ? `/${file}` : new URL(file, import.meta.resolve('canvaskit-wasm')).href
+  IS_BROWSER ? `/${file}` : new URL(file, import.meta.resolve('canvaskit-wasm/full')).href
 
 /** Points CanvasKit at the host's copy of its files. Call before the first {@link getCanvasKit}. */
 export function setCanvasKitLocator(locate: CanvasKitLocator): void {
   locator = locate
 }
 
-/** Loads CanvasKit once; callers that ask while it loads share the load, and a failed load is retried. */
+/**
+ * Loads CanvasKit once; callers that ask while it loads share the load, and a failed load is
+ * retried. It is the full build, whose encoders write JPEG and WebP as well as PNG.
+ */
 export function getCanvasKit(options?: CanvasKitOptions): Promise<CanvasKit> {
   if (instance) return instance
   const loading = CanvasKitInit({ locateFile: options?.locateFile ?? locator })

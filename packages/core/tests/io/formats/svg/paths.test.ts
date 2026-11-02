@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import type { NodeType, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
-import { nodeOutlinePath, vectorNetworkToSVGPaths } from '#core/io/formats/svg/paths'
+import { nodeOutlinePath } from '#core/io/formats/svg/paths'
 
 const corner = { x: 0, y: 0 }
 const line = (start: number, end: number) => ({
@@ -25,16 +25,6 @@ const network: VectorNetwork = {
   segments: [line(0, 1), line(1, 2), line(2, 0), line(3, 4)],
   regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
 }
-
-test('segments outside every region draw as open paths after the regions', () => {
-  expect(vectorNetworkToSVGPaths(network)).toEqual(['M19 20L9 12L19 4L19 20Z', 'M5 19L5 5'])
-})
-
-test('a network with regions only draws the regions', () => {
-  expect(vectorNetworkToSVGPaths({ ...network, segments: network.segments.slice(0, 3) })).toEqual([
-    'M19 20L9 12L19 4L19 20Z'
-  ])
-})
 
 const shape = (type: NodeType, overrides: Partial<SceneNode> = {}) =>
   createDefaultNode(() => 'shape', type, { width: 100, height: 50, ...overrides })

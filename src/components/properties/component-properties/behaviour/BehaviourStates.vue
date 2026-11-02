@@ -47,9 +47,9 @@ function map(state: InteractionState, value: string | number) {
 
 <template>
   <div class="flex flex-col gap-1.5" data-property="behaviour-states">
-    <div class="text-[11px] text-muted">{{ panels.behaviourStates }}</div>
+    <div class="text-2xs text-muted">{{ panels.behaviourStates }}</div>
     <template v-if="!states.options.length">
-      <p class="text-[11px] leading-4 text-muted">{{ panels.behaviourStatesHint }}</p>
+      <p class="text-2xs leading-4 text-muted">{{ panels.behaviourStatesHint }}</p>
       <BehaviourBindingField
         :label="panels.behaviourStates"
         :property-id="null"

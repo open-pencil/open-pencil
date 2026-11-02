@@ -1,6 +1,7 @@
 import type { InputMatrix, Shader } from 'canvaskit-wasm'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { compiledEffect } from '#core/canvas/renderer/shaders'
 
 const DIAMOND_GRADIENT = `
 uniform shader ramp;
@@ -17,14 +18,13 @@ export function makeDiamondGradient(
   positions: number[],
   localMatrix: InputMatrix
 ): Shader {
-  if (!r.diamondGradientEffect) {
-    let error = ''
-    const effect = r.ck.RuntimeEffect.Make(DIAMOND_GRADIENT, (message) => {
-      error = message
-    })
-    if (!effect) throw new Error(`Cannot compile diamond gradient: ${error}`)
-    r.diamondGradientEffect = effect
-  }
+  const effect = compiledEffect(
+    r.ck,
+    r.shaders,
+    'diamondGradient',
+    DIAMOND_GRADIENT,
+    'diamond gradient'
+  )
   const ramp = r.ck.Shader.MakeLinearGradient(
     [0, 0],
     [1, 0],
@@ -33,7 +33,7 @@ export function makeDiamondGradient(
     r.ck.TileMode.Clamp
   )
   try {
-    return r.diamondGradientEffect.makeShaderWithChildren([], [ramp], localMatrix)
+    return effect.makeShaderWithChildren([], [ramp], localMatrix)
   } finally {
     ramp.delete()
   }

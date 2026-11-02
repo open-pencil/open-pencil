@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { beforeAll, expect, test } from 'bun:test'
 
 import { guid } from '#core-tests/helpers/fig/guid'
 
@@ -7,6 +7,10 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { interpretInstance, materializeInstance } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(() => registerTestFont())
 
 test('nested instances retain their outer source-child correspondence during sync', () => {
   const source: NodeChange[] = [

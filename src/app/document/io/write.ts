@@ -1,3 +1,5 @@
+import { writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
+
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
@@ -52,7 +54,6 @@ export function createDocumentWriter({
       const filePath = getFilePath()
       const fileHandle = getFileHandle()
       if (filePath && isTauri()) {
-        const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
         await tauriWrite(filePath, data)
         return await finishWrite(version)
       }

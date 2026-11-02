@@ -1,0 +1,1 @@
+- The interface draws in Inter's own medium and semibold weights, and in Inter on Home, also on systems without Inter installed, such as most Linux desktops; once a document opened, every weight used to come from the regular face.

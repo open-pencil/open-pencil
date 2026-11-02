@@ -1,7 +1,9 @@
+import { invoke } from '@tauri-apps/api/core'
 import { computed, watch } from 'vue'
 
 import { isCloudBinding } from '@/app/cloud/integration'
 import { useEditorStore } from '@/app/editor/active-store'
+import { showsDocument } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 import type { AppMenuFeature } from './schema'
@@ -9,6 +11,8 @@ import type { AppMenuFeature } from './schema'
 const store = useEditorStore()
 
 const available: Record<AppMenuFeature, () => boolean> = {
+  // Home and a New file tab hold no document, so they leave out what edits or shows one.
+  document: () => showsDocument(),
   // Cloud and storage documents always save; auto-save is a choice only for a file on disk.
   'local-file': () => store.hasWritableSource() && !store.getStorageBinding(),
   // Version history lives on the Cloud server that keeps the document.
@@ -30,11 +34,9 @@ export function watchNativeMenuFeatures(): () => void {
     availableFeatures,
     (features) => {
       if (!isTauri()) return
-      void import('@tauri-apps/api/core')
-        .then(({ invoke }) => invoke('set_native_menu_features', { features }))
-        .catch((error: unknown) => {
-          console.warn('[Menu] Failed to update the native menu', error)
-        })
+      invoke('set_native_menu_features', { features }).catch((error: unknown) => {
+        console.warn('[Menu] Failed to update the native menu', error)
+      })
     },
     { immediate: true }
   )

@@ -1,13 +1,16 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
+import { createAPI, registerTestFont, solidFill } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+
+
+beforeAll(() => registerTestFont())
 
 // Recorded with the same script in Figma desktop 126.
 

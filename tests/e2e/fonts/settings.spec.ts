@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 test('the font settings gear opens Settings › Fonts without desktop-only cache actions', async ({
   page
 }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 

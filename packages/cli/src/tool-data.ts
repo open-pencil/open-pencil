@@ -45,5 +45,6 @@ export async function runToolData(
   populateWholeDocument(graph)
   await measureDocumentText(graph)
   const figma = await createHeadlessFigma(graph)
+  await tool.loadFonts(figma, args)
   return { result: await editDocument(graph, () => tool.execute(figma, args)), graph }
 }

@@ -9,7 +9,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { getCanvasKit } from '#core/canvaskit'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 const run = (start: number, length: number, style: StyleRun['style']): StyleRun => ({
   start,
@@ -177,6 +177,17 @@ describe('lines of mixed sizes', () => {
     expect(Math.ceil(empty.getHeight())).toBe(106)
   })
 
+  // Typing Enter at the end grows the box at once, and the caret starts the new line.
+  test('counts the empty line a closing newline makes', () => {
+    const closed = layOut({ text: 'abc\n' })
+    const open = layOut({ text: 'abc\nx' })
+    expect(Math.ceil(closed.getHeight())).toBe(Math.ceil(open.getHeight()))
+    const caret = expectDefined(closed.getCaretRect(4, false), 'caret after the newline')
+    const lineTwo = expectDefined(open.getCaretRect(4, false), 'caret before x')
+    expect(caret.x).toBe(lineTwo.x)
+    expect(caret.top).toBeCloseTo(lineTwo.top, 2)
+  })
+
   test('draws, selects, and hits each line where it is placed', () => {
     const layout = layOut({
       text: 'first line\nSmall LARGE',
@@ -204,5 +215,28 @@ describe('lines of mixed sizes', () => {
         expect(Math.abs(glyphRun.positions[1] - line.baseline)).toBeLessThan(1)
       }
     }
+  })
+
+  test('fits the number of lines whose individual heights fit the box', () => {
+    const smaller = layOut({
+      text: 'small\nsmall\nsmall',
+      fontSize: 40,
+      height: 34,
+      textAutoResize: 'NONE',
+      textTruncation: 'ENDING',
+      styleRuns: [run(0, 17, { fontSize: 12 })]
+    })
+    expect(smaller.getLineMetrics()).toHaveLength(2)
+    expect(smaller.didExceedMaxLines()).toBe(true)
+
+    const larger = layOut({
+      text: 'small\nLARGE\nsmall',
+      height: 70,
+      textAutoResize: 'NONE',
+      textTruncation: 'ENDING',
+      styleRuns: [run(6, 5, { fontSize: 40 })]
+    })
+    expect(larger.getLineMetrics()).toHaveLength(1)
+    expect(larger.didExceedMaxLines()).toBe(true)
   })
 })

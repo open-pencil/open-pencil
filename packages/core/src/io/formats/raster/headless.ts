@@ -45,6 +45,8 @@ export async function headlessRenderNodes(
   } = {}
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
+  // One renderer serves every document: paths keyed by layer id must not outlive theirs.
+  renderer.nodePaths.clear()
   renderer.invalidateAllPictures()
   await renderer.prepareForExport(graph, pageId, nodeIds)
   return renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
@@ -62,6 +64,8 @@ export async function headlessRenderThumbnail(
   height: number
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
+  // One renderer serves every document: paths keyed by layer id must not outlive theirs.
+  renderer.nodePaths.clear()
   renderer.invalidateAllPictures()
   await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
   return renderThumbnail(ck, renderer, graph, pageId, width, height)

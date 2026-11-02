@@ -14,7 +14,9 @@ import {
   makeBooleanOperationPath,
   nodeHasVisibleFill,
   nodeHasVisibleStroke,
-  strokeAreaPath
+  placedPath,
+  strokeAreaPath,
+  windingRuleOf
 } from './boolean'
 import type { SkiaRenderer } from './renderer'
 import { textGlyphPaths } from './text/outlines'
@@ -76,10 +78,8 @@ function boundsOf(paths: readonly Path[]): Box | null {
 
 /** A path as a vector network, moved so `box` starts at the origin. */
 function networkIn(r: SkiaRenderer, path: Path, box: Box): SceneNode['vectorNetwork'] {
-  const builder = new r.ck.PathBuilder()
-  builder.addPath(path, r.ck.Matrix.translated(-box.x, -box.y))
-  const moved = builder.detachAndDelete()
-  const network = parseSVGPath(moved.toSVGString())
+  const moved = placedPath(r, path, r.ck.Matrix.translated(-box.x, -box.y))
+  const network = parseSVGPath(moved.toSVGString(), windingRuleOf(r, moved))
   moved.delete()
   return network
 }

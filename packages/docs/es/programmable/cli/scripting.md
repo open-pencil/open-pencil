@@ -104,7 +104,7 @@ Las propiedades habituales se leen y modifican mediante el objeto correspondient
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` — no bloquea la edición de texto;
+- `figma.loadFontAsync(fontName)` — carga la fuente; como en Figma, cambiar el texto, su tamaño o su fuente exige cargar antes las fuentes que usa;
 - `figma.listAvailableFontsAsync()` — devuelve las fuentes del sistema;
 - `figma.notify(message)` — escribe un aviso cuando no hay interfaz;
 - `figma.viewport`.

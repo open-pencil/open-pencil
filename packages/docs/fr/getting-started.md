@@ -74,7 +74,7 @@ L'éditeur sera accessible à l'adresse `http://localhost:1420`.
 | ------------------------------- | ------------------------------------------------------------------------------------------- |
 | `bun run dev` | Démarrer le serveur de développement avec HMR |
 | `bun run build` | Générer la version de production |
-| `bun run check` | Exécuter oxlint et vérifier les types avec tsgo |
+| `bun run check` | Exécuter oxlint et vérifier les types avec TypeScript 7 |
 | `bun run test` | Exécuter les tests E2E et de régression visuelle avec Playwright |
 | `bun run test:update` | Mettre à jour les captures de référence |
 | `bun run test:unit` | Exécuter les tests unitaires avec bun:test |

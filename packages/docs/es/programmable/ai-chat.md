@@ -33,6 +33,12 @@ El token se guarda en el almacén seguro de credenciales, no en los ajustes ordi
 
 Las herramientas cubren lectura, creación, modificación, estructura, variables, vectores, análisis, descripción, generación de código e imágenes de stock. Cada llamada actúa sobre el editor activo y participa en su historial de deshacer cuando corresponde.
 
+## Habilidades
+
+Las habilidades son carpetas con un `SKILL.md` en el formato [Agent Skills](https://agentskills.io/specification): instrucciones para un tipo de trabajo, con archivos de referencia opcionales. La IA integrada ve el nombre y la descripción de cada habilidad activa y carga sus instrucciones cuando una solicitud coincide; los scripts de una habilidad no se ejecutan.
+
+En **Ajustes → Habilidades** sube una habilidad como ZIP de su carpeta o como `SKILL.md`. En la app de escritorio también se leen `~/.agents/skills` y `~/.claude/skills`, y las carpetas `.agents/skills` y `.claude/skills` junto al documento abierto, que solo se usan tras **Confiar en la carpeta**. Escribe `/` al principio de un mensaje para elegir una habilidad, y `@` para mencionar una capa, una página o una habilidad. Las menciones aparecen como chips, también en las respuestas; al hacer clic se muestra la capa en el lienzo.
+
 ## Verificación visual
 
 El asistente puede comprobar su trabajo visualmente. Con `export_image` activada, captura una imagen tras crear o modificar diseños y la compara con lo que se pidió. `diff_visual`, activada por defecto, compara un objeto editado con una copia de referencia y devuelve los píxeles y la región que cambiaron, de modo que el asistente puede confirmar que la edición se limitó a su objetivo.

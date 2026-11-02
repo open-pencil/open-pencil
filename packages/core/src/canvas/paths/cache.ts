@@ -56,6 +56,8 @@ export class NodePathCaches {
   readonly strokeOutline: NodePathCache
   readonly fillGeometry: NodePathCache
   readonly strokeGeometry: NodePathCache
+  readonly shared: NodePathCache
+  readonly sharedKeys: ResourceCache<string, string>
   private readonly caches: readonly NodePathCache[]
   private uncached: Path[][] = []
 
@@ -65,12 +67,17 @@ export class NodePathCaches {
     this.strokeOutline = createPathCache(limits)
     this.fillGeometry = createPathCache(limits)
     this.strokeGeometry = createPathCache(limits)
+    this.shared = createPathCache(limits)
+    this.sharedKeys = new ResourceCache<string, string>({
+      maxEntries: limits.maxEntries ?? PATH_CACHE_ENTRIES
+    })
     this.caches = [
       this.vector,
       this.vectorStroke,
       this.strokeOutline,
       this.fillGeometry,
-      this.strokeGeometry
+      this.strokeGeometry,
+      this.shared
     ]
   }
 
@@ -84,6 +91,7 @@ export class NodePathCaches {
     for (const cache of this.caches) cache.delete(nodeId)
     const outlinePrefix = `${nodeId}|`
     this.strokeOutline.deleteWhere((_, key) => key.startsWith(outlinePrefix))
+    this.sharedKeys.deleteWhere((_, key) => key.startsWith(outlinePrefix))
   }
 
   /** Deletes the paths `store` could not cache. */
@@ -96,6 +104,7 @@ export class NodePathCaches {
 
   clear(): void {
     for (const cache of this.caches) cache.clear()
+    this.sharedKeys.clear()
     this.releaseUncached()
   }
 }

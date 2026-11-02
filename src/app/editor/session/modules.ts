@@ -1,6 +1,6 @@
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { IORegistry } from '@open-pencil/core/io'
 import { createSelectedNodeState } from '@open-pencil/vue/editor/selection-state'
 
@@ -67,6 +67,14 @@ export function createEditorStoreModules(
   const mobileClipboard = createMobileClipboardActions(editor)
   const profiler = createProfilerActions(editor)
   const designCheck = createDesignCheck(editor, state)
+  // A document opens with the panels its kind starts with: a board on the canvas alone.
+  watch(
+    () => state.documentKind,
+    () => {
+      state.showUI = resolveEditorProfile(state).panelsOpen
+    },
+    { immediate: true }
+  )
 
   return {
     ...flash,
@@ -84,6 +92,9 @@ export function createEditorStoreModules(
     getViewportSize: documentIO.getViewportSize,
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
+    renameDocument: documentIO.renameDocument,
+    /** Calls back with each name the person gives the document. */
+    onDocumentRenamed: documentIO.onDocumentRenamed,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
     /** Counts the document changed by something outside its history, so it gets saved. */

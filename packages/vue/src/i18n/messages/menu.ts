@@ -8,10 +8,11 @@ export const menuMessageDefaults = {
   arrange: 'Arrange',
   text: 'Text',
 
-  new: 'New',
+  new: 'New design',
+  newTab: 'New tab',
   open: 'Open…',
-  browseFiles: 'Browse files…',
   openTour: 'Open the Tour',
+  diagnostics: 'Diagnostics…',
   save: 'Save',
   saveAs: 'Save as…',
   saveTo: 'Save to…',
@@ -52,6 +53,7 @@ export const menuMessageDefaults = {
   checkUpdates: 'Check for updates…',
 
   moveToPage: 'Move to page',
+  autoArrange: 'Auto arrange',
   createInstance: 'Create instance',
   hide: 'Hide',
   show: 'Show',

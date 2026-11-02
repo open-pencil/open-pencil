@@ -1,5 +1,5 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
+import { styleSpelling, styleToWeight } from '@open-pencil/scene-graph/font-style'
 
 interface TableRange {
   offset: number
@@ -50,10 +50,6 @@ export function hasTrueTypeOutlines(data: ArrayBuffer): boolean {
 
 function fixed(view: DataView, offset: number): number {
   return view.getInt32(offset) / 65536
-}
-
-function normalizeStyleName(style: string): string {
-  return style.toLowerCase().replace(/\s+/g, '')
 }
 
 function fontName(view: DataView, name: TableRange, nameId: number): string | null {
@@ -146,10 +142,17 @@ export function fontAxes(data: ArrayBuffer): FontAxis[] | null {
   return variationTable(data)?.axes ?? null
 }
 
-/** A named instance of a variable font, such as Inter's `Semi Bold`, with every axis' value. */
+/** A named instance of a variable font, such as Inter's `SemiBold`, with every axis' value. */
 export interface NamedInstance {
   name: string
   variations: FontVariation[]
+}
+
+/** Whether a variable font has a named instance of this name, spelled alike but for case and spaces. */
+export function hasNamedInstance(data: ArrayBuffer, style: string): boolean {
+  return namedInstances(data).some(
+    (instance) => styleSpelling(instance.name) === styleSpelling(style)
+  )
 }
 
 /** A variable font's named instances, in its order. */
@@ -177,11 +180,11 @@ export function namedInstanceVariations(data: ArrayBuffer, style: string): FontV
   const table = variationTable(data)
   if (!table) return null
   const { view, axes, instances, name } = table
-  const requested = normalizeStyleName(style)
+  const requested = styleSpelling(style)
   const instance = name
     ? instances.find((offset) => {
         const instanceName = fontName(view, name, view.getUint16(offset))
-        return instanceName !== null && normalizeStyleName(instanceName) === requested
+        return instanceName !== null && styleSpelling(instanceName) === requested
       })
     : undefined
   if (instance !== undefined) {

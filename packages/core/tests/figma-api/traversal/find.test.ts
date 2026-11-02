@@ -1,7 +1,10 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { createAPI } from '#core-tests/helpers/figma-api'
+import { createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
+
+
+beforeAll(() => registerTestFont())
 
 describe('traversal', () => {
   test('findAll finds deep descendants', () => {

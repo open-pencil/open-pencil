@@ -10,8 +10,15 @@ import type { ToolbarUI } from '@/components/toolbar/types'
 
 import IconPicker from './IconPicker.vue'
 
-/** The toolbar's icon picker, also opened by the Insert Icon command. */
-const { ui, mobile = false } = defineProps<{ ui?: ToolbarUI; mobile?: boolean }>()
+/**
+ * The toolbar's icon picker, also opened by the Insert Icon command. `anchored` mounts it without
+ * its button, over the toolbar, while the button is hidden from it.
+ */
+const {
+  ui,
+  mobile = false,
+  anchored = false
+} = defineProps<{ ui?: ToolbarUI; mobile?: boolean; anchored?: boolean }>()
 const store = useEditorStore()
 const panels = usePanelMessages()
 
@@ -29,7 +36,10 @@ function insert(name: string) {
     align="center"
     @select="insert"
   >
-    <template #trigger>
+    <template v-if="anchored" #anchor>
+      <span aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0" />
+    </template>
+    <template v-else #trigger>
       <ToolButton
         :icon="IconSmilePlus"
         :label="panels.insertIcon"

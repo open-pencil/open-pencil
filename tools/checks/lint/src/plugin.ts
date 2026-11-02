@@ -4,6 +4,7 @@ import {
   noCloudSecretLoggingRule
 } from '#lint/rules/cloud.ts'
 import {
+  noEditorProfileInputs,
   noConditionalObjectSpreads,
   noFlatKiwiModules,
   noMixedCaseAcronymIdentifiers
@@ -13,7 +14,10 @@ import { preferEsToolkitRule } from '#lint/rules/quality/es-toolkit.ts'
 import { noUnvalidatedJSONParseRule } from '#lint/rules/quality/json-parse.ts'
 import { noModuleMockingRule } from '#lint/rules/quality/module-mocking.ts'
 import { noReduceAccumulatorCopyRule } from '#lint/rules/quality/reduce-accumulator-copy.ts'
-import { noUnknownTailwindClassesRule } from '#lint/rules/quality/tailwind-classes.ts'
+import {
+  noPxTailwindValuesRule,
+  noUnknownTailwindClassesRule
+} from '#lint/rules/quality/tailwind-classes.ts'
 import { valibotSchemaConventionsRule } from '#lint/rules/quality/valibot-schemas.ts'
 import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
 import { noRawSQLRule } from '#lint/rules/sql.ts'
@@ -385,13 +389,15 @@ import {
   noDeepParentRelativeImports,
   noDeepParentRelativePaths,
   noCoreParentRelativeImports,
+  noDocumentChangeCapture,
   noMcpParentRelativeImports,
   noVueParentRelativeImports,
   noCliParentRelativeImports,
   noCoreSelfPackageImports,
   noInlinePromptConstants,
   noAppImportsInPackages,
-  noCoreFrameworkImports
+  noCoreFrameworkImports,
+  noInlineTauriImports
 } from '#lint/rules/imports.ts'
 import {
   noDirectStorageAccess,
@@ -454,6 +460,7 @@ const plugin = {
     'no-math-random': noMathRandom,
     'no-hardcoded-color-constants': noHardcodedColorConstants,
     'no-unknown-tailwind-classes': noUnknownTailwindClassesRule,
+    'no-px-tailwind-values': noPxTailwindValuesRule,
     'no-hand-rolled-color': noHandRolledColor,
     'no-raw-console-format': noRawConsoleFormat,
     'no-silent-catch': noSilentCatch,
@@ -463,6 +470,7 @@ const plugin = {
     'no-deep-parent-relative-imports': noDeepParentRelativeImports,
     'no-deep-parent-relative-paths': noDeepParentRelativePaths,
     'no-core-parent-relative-imports': noCoreParentRelativeImports,
+    'no-document-change-capture': noDocumentChangeCapture,
     'no-mcp-parent-relative-imports': noMcpParentRelativeImports,
     'no-vue-parent-relative-imports': noVueParentRelativeImports,
     'no-cli-parent-relative-imports': noCliParentRelativeImports,
@@ -470,6 +478,7 @@ const plugin = {
     'no-inline-prompt-constants': noInlinePromptConstants,
     'no-app-imports-in-packages': noAppImportsInPackages,
     'no-core-framework-imports': noCoreFrameworkImports,
+    'no-inline-tauri-imports': noInlineTauriImports,
     'no-direct-storage-access': noDirectStorageAccess,
     'no-broad-double-cast': noBroadDoubleCast,
     'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
@@ -499,6 +508,7 @@ const plugin = {
     'no-flat-kiwi-modules': noFlatKiwiModules,
     'no-bun-globals-in-cli': noBunGlobalsInCli,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
+    'no-editor-profile-inputs': noEditorProfileInputs,
     'no-conditional-object-spreads': noConditionalObjectSpreads,
     'no-hand-rolled-base64': noHandRolledBase64Rule,
     'no-raw-sql': noRawSQLRule,

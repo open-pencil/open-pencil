@@ -1,11 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
+import type { TextNode } from '@figma/plugin-typings/plugin-api-standalone'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 // Recorded with the same script in live Figma on 2026-10-07, Inter Regular. Line metrics round
 // differently by up to a pixel.

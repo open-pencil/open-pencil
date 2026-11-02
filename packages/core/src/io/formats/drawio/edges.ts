@@ -18,7 +18,7 @@ import {
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { bendConnectorThrough } from '#core/layout/diagram/routes'
+import { bendConnectorThrough } from '#core/layout/arrange/routes'
 
 import { readLabel } from './label'
 import { dashOf, labelFields, labelFormat, lineColor } from './paint'

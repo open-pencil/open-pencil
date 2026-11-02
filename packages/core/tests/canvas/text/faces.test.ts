@@ -9,10 +9,10 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { buildParagraph } from '#core/canvas/text'
-import { withFigExportRuntime } from '#core/canvas/text/shape'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
-import { FontManager, fontManager } from '#core/text/fonts'
-import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-fonts'
+import { FontManager, fontManager } from '#core/text/font/manager'
+import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-font/resolver'
 import { glyphOutlineSourceSync } from '#core/text/font/glyphs'
 
 /** A family only these tests load, so faces other tests load cannot answer for it. */
@@ -99,10 +99,14 @@ describe('text faces', () => {
     const ck = await getCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
-    await fontManager.markLoaded(FAMILY, 'Regular', await bundled('/InterVariable.ttf'))
-    const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
-    expect(drawn(ck, fontProvider, { fontWeight: 400, italic: true })).toEqual(regular)
-    expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).toEqual(regular)
+    // A family of its own, whose Bold and italic no other test loads.
+    const fontFamily = 'Faces Test Missing'
+    await fontManager.markLoaded(fontFamily, 'Regular', await bundled('/InterVariable.ttf'))
+    const face = (weight: number, italic: boolean) =>
+      drawn(ck, fontProvider, { fontFamily, fontWeight: weight, italic })
+    const regular = face(400, false)
+    expect(face(400, true)).toEqual(regular)
+    expect(face(700, false)).toEqual(regular)
   })
 
   test('draws a face the family has loaded', async () => {
@@ -113,6 +117,25 @@ describe('text faces', () => {
     await fontManager.markLoaded(FAMILY, 'Bold', await bundled('/InterVariable.ttf'))
     const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
     expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).not.toEqual(regular)
+  })
+
+  test('draws a face named apart from its weight as the named instance of that name', async () => {
+    const ck = await getCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    // Inter with an extra instance, "Display Heavy" at wght 850, as Roboto has "Condensed Bold".
+    const fontFamily = 'Faces Test Named'
+    await fontManager.markLoaded(fontFamily, 'Regular', await fixtureFont('InterVariable-Named.ttf'))
+    expect(await fontManager.loadFont(fontFamily, 'Display Heavy')).not.toBeNull()
+    // A name the font has no instance of is not drawn by some other instance.
+    expect(await fontManager.loadFont(fontFamily, 'Condensed Bold')).toBeNull()
+    const face = (fields: Partial<SceneNode>) =>
+      drawn(ck, fontProvider, { fontFamily, fontWeight: 400, italic: false, ...fields })
+    const named = face({ fontWeight: 850, fontStyle: 'Display Heavy' })
+    expect(named).toEqual(face({ fontVariations: [{ axis: 'wght', value: 850 }] }))
+    expect(named).not.toEqual(face({}))
+    // Its weight alone picks the instance its weight is nearest, Black at 900, not this face.
+    expect(named).not.toEqual(face({ fontWeight: 850 }))
   })
 
   test('draws optical size at the font size unless the text detaches it, as Figma does', async () => {
@@ -135,6 +158,13 @@ describe('text faces', () => {
     expect(
       face({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 32 }] })
     ).toEqual(automatic)
+    // A range detaches its own optical size, as Figma saves one, over text that follows it.
+    const range = (style: Partial<SceneNode['styleRuns'][number]['style']>) =>
+      face({ styleRuns: [{ start: 0, length: 5, style }] })
+    expect(range({ fontVariations: [{ axis: 'opsz', value: 14 }] })).toEqual(automatic)
+    expect(
+      range({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] })
+    ).toEqual(face({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] }))
   })
 
   test('draws each style of a family loaded from several files from its own file', async () => {
