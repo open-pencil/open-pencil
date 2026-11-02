@@ -5,12 +5,15 @@ import { messageMetadata } from '@/app/ai/chat/metadata'
 
 /**
  * A compaction: the summary that stands for the conversation before it, whether the person or
- * the context filling up asked for it, and what the conversation held when it ran.
+ * the context filling up asked for it, and what the conversation held when it ran. An agent
+ * that keeps its own context, such as Pi, compacts it there and may report no summary; its
+ * compaction is only drawn, and the chat's own requests read past it.
  */
 const compactionSchema = v.object({
   summary: v.string(),
   trigger: v.picklist(['manual', 'auto']),
-  tokensBefore: v.nullable(v.number())
+  tokensBefore: v.nullable(v.number()),
+  agent: v.optional(v.literal(true))
 })
 
 export type Compaction = v.InferOutput<typeof compactionSchema>
@@ -47,6 +50,18 @@ export function compactionMessage(compaction: Compaction, id = generateId()): UI
   }
 }
 
+/** The divider for a compaction an agent ran in its own context and reported no summary of. */
+export function agentCompactionMessage(trigger: Compaction['trigger']): UIMessage {
+  const compaction: Compaction = { summary: '', trigger, tokensBefore: null, agent: true }
+  return { id: generateId(), role: 'user', parts: [], metadata: { compaction } }
+}
+
+/** Whether the message is a compaction's summary, which a model reads. */
+function summarizes(message: UIMessage): boolean {
+  const compaction = compactionOf(message)
+  return (compaction !== null && !compaction.agent) || replyCompactions(message).length > 0
+}
+
 /** Where the reply's `step`th step starts, each with a `step-start` part; its end past the last. */
 function stepStart(reply: UIMessage, step: number): number {
   let seen = 0
@@ -75,16 +90,16 @@ export function replyCompactions(message: UIMessage): StepCompaction[] {
  * sees the whole conversation.
  */
 export function messagesSinceCompaction(messages: readonly UIMessage[]): UIMessage[] {
-  const at = messages.findLastIndex(
-    (message) => compactionOf(message) !== null || replyCompactions(message).length > 0
-  )
-  if (at === -1) return [...messages]
-  const message = messages[at]
+  // An agent's own compaction holds nothing for a model to read.
+  const read = messages.filter((message) => !compactionOf(message)?.agent)
+  const at = read.findLastIndex(summarizes)
+  if (at === -1) return read
+  const message = read[at]
   const compaction = replyCompactions(message).at(-1)
-  if (!compaction) return messages.slice(at)
+  if (!compaction) return read.slice(at)
   return [
     compactionMessage(compaction, `${message.id}-summary`),
     { ...message, parts: replySteps(message, compaction.step) },
-    ...messages.slice(at + 1)
+    ...read.slice(at + 1)
   ]
 }

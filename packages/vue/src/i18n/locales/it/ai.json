@@ -433,6 +433,7 @@
   "chatContextLimit": "La conversazione è più lunga di quanto il modello possa leggere.",
   "conversationCompacted": "Conversazione compattata",
   "compactionKeepsMessages": "Ora il modello riceve questo riepilogo al posto dei messaggi sopra; tu continui a vederli.",
+  "agentCompactionKeepsMessages": "L’agente ora lavora sul proprio riepilogo dei messaggi sopra; tu continui a vederli.",
   "compactionTokens": "{before} → {after} token",
   "tokenUsage": "Uso dei token",
   "tokenUsageHint": "Mostra i token di ogni risposta.",

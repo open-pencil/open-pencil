@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import type { HarnessCompactionEvent } from '@open-pencil/harness'
+
 import { spawnHarnessProcess } from '@/app/ai/agents/pi/process'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
@@ -65,7 +67,12 @@ describe('Harness sidecar process', () => {
       environment: {},
       onUnexpectedClose: () => undefined
     })
-    const event = { type: 'compaction', trigger: 'manual', summary: 'Greeted.', tokensBefore: 1200 }
+    const event: HarnessCompactionEvent = {
+      type: 'compaction',
+      trigger: 'manual',
+      summary: 'Greeted.',
+      tokensBefore: 1200
+    }
     const line = `${JSON.stringify({ type: 'turn.event', id: 'turn', event })}\n`
     onEvent?.({ event: 'Stdout', payload: Array.from(new TextEncoder().encode(line)) })
     expect((await process.messages.getReader().read()).value).toEqual({

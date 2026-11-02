@@ -11,7 +11,8 @@ import { chatContextTheme } from '../ui'
 
 /**
  * Where a conversation was compacted: a rule across the transcript. The messages above it stay;
- * the model reads the summary in their place, which its label opens.
+ * the model reads the summary in their place, which its label opens. An agent that compacted
+ * its own context may have reported no summary to open.
  */
 const { compaction, tokensAfter = null } = defineProps<{
   compaction: Compaction
@@ -43,7 +44,9 @@ const open = ref(false)
       <span :class="ui.dividerLine()" aria-hidden="true" />
     </div>
     <div v-if="open" :class="ui.summary()">
-      <p :class="ui.dividerNote()">{{ ai.compactionKeepsMessages }}</p>
+      <p :class="ui.dividerNote()">
+        {{ compaction.agent ? ai.agentCompactionKeepsMessages : ai.compactionKeepsMessages }}
+      </p>
       <p v-if="compaction.tokensBefore !== null && tokensAfter !== null" :class="ui.dividerNote()">
         {{
           ai.compactionTokens({
@@ -52,7 +55,7 @@ const open = ref(false)
           })
         }}
       </p>
-      <ChatMarkdown :content="compaction.summary" mode="static" />
+      <ChatMarkdown v-if="compaction.summary" :content="compaction.summary" mode="static" />
     </div>
   </section>
 </template>

@@ -433,6 +433,7 @@
   "chatContextLimit": "对话超出了模型能读取的长度。",
   "conversationCompacted": "对话已压缩",
   "compactionKeepsMessages": "模型现在收到这份总结，而不是上面的消息；你仍然能看到它们。",
+  "agentCompactionKeepsMessages": "智能体现在基于它自己对上面消息的总结工作；你仍然能看到它们。",
   "compactionTokens": "{before} → {after} 词元",
   "tokenUsage": "词元用量",
   "tokenUsageHint": "显示每条回复的词元。",

@@ -8,7 +8,7 @@ import type {
 } from '@open-pencil/harness'
 
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
-import type { StepCompaction } from '@/app/ai/chat/compaction/marker'
+import { compactionOf, type StepCompaction } from '@/app/ai/chat/compaction/marker'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'
 
 interface PendingRequest {
@@ -56,6 +56,8 @@ function mapEvent(event: HarnessTurnEvent, pending: PendingRequest): UIMessageCh
   const { stream } = pending
   switch (event.type) {
     case 'compaction': {
+      // A manual compaction ran between turns, and the chat drew its divider when Pi confirmed it.
+      if (event.trigger === 'manual') return []
       // The reply draws the compaction where it ran, as the built-in chat's between steps.
       pending.compactions = [
         ...pending.compactions,
@@ -117,7 +119,10 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
       })
       this.sessionCreated = true
     }
-    const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user')
+    // A compaction's divider is not something the person said.
+    const lastUserMessage = messages.findLast(
+      (message) => message.role === 'user' && compactionOf(message) === null
+    )
     const text =
       lastUserMessage?.parts
         .filter((part): part is { type: 'text'; text: string } => part.type === 'text')

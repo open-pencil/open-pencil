@@ -433,6 +433,7 @@
   "chatContextLimit": "会話がモデルの読める長さを超えています。",
   "conversationCompacted": "会話を圧縮しました",
   "compactionKeepsMessages": "モデルは上のメッセージの代わりにこの要約を受け取ります。メッセージは引き続き表示されます。",
+  "agentCompactionKeepsMessages": "エージェントは上のメッセージを自身で要約し、その要約をもとに作業します。メッセージは引き続き表示されます。",
   "compactionTokens": "{before} → {after} トークン",
   "tokenUsage": "トークン使用量",
   "tokenUsageHint": "各返信のトークンを表示します。",

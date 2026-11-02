@@ -433,6 +433,7 @@
   "chatContextLimit": "Rozmowa jest dłuższa, niż model może przeczytać.",
   "conversationCompacted": "Rozmowa skompaktowana",
   "compactionKeepsMessages": "Model dostaje teraz to streszczenie zamiast wiadomości powyżej; nadal je widzisz.",
+  "agentCompactionKeepsMessages": "Agent pracuje teraz na własnym streszczeniu wiadomości powyżej; nadal je widzisz.",
   "compactionTokens": "{before} → {after} tokenów",
   "tokenUsage": "Użycie tokenów",
   "tokenUsageHint": "Pokazuje tokeny każdej odpowiedzi.",

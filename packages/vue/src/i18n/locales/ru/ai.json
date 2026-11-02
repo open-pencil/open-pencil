@@ -433,6 +433,7 @@
   "chatContextLimit": "Разговор длиннее, чем модель может прочитать.",
   "conversationCompacted": "Разговор сжат",
   "compactionKeepsMessages": "Теперь модель получает этот пересказ вместо сообщений выше; вы по-прежнему их видите.",
+  "agentCompactionKeepsMessages": "Теперь агент работает со своим пересказом сообщений выше; вы по-прежнему их видите.",
   "compactionTokens": "{before} → {after} токенов",
   "tokenUsage": "Расход токенов",
   "tokenUsageHint": "Показывает токены каждого ответа.",

@@ -12,7 +12,7 @@ import {
   estimatedTokens,
   summaryBudget
 } from './limits'
-import { compactionMessage, type Compaction } from './marker'
+import { agentCompactionMessage, compactionMessage, type Compaction } from './marker'
 import { summarizeConversation } from './summarize'
 
 interface CompactionOptions {
@@ -57,7 +57,8 @@ export function useChatCompaction(options: CompactionOptions) {
     const target = request.chat ?? options.chat.value ?? (await options.ensureChat())
     if (!target || target.messages.length === 0 || replying(target)) return false
     const runtime = await createAIModelRuntime('design')
-    if (runtime?.kind === 'harness' && request.trigger === 'manual') return compactAgent(request)
+    if (runtime?.kind === 'harness' && request.trigger === 'manual')
+      return compactAgent(target, request)
     if (runtime?.kind !== 'direct') return false
     const at = request.before
       ? target.messages.findIndex((message) => message.id === request.before)
@@ -97,12 +98,20 @@ export function useChatCompaction(options: CompactionOptions) {
     }
   }
 
-  /** An agent compacts its own context and reports the summary on its next turn. */
-  async function compactAgent(request: CompactRequest): Promise<boolean> {
+  /**
+   * An agent compacts its own context. Pi reports no summary of a compaction it ran between
+   * turns, so the chat draws its own divider once the agent confirms it.
+   */
+  async function compactAgent(target: ChatInstance, request: CompactRequest): Promise<boolean> {
     if (!options.compactAgent) return false
     failed.value = null
     try {
-      return await options.compactAgent(request.instructions)
+      if (!(await options.compactAgent(request.instructions))) return false
+      // A conversation switched meanwhile keeps its messages as they were.
+      if (options.chat.value === target)
+        target.messages = [...target.messages, agentCompactionMessage(request.trigger)]
+      await options.flush?.().catch(() => undefined)
+      return true
     } catch {
       const { chat: _chat, ...retry } = request
       failed.value = retry

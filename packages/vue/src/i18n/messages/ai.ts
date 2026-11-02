@@ -499,6 +499,8 @@ export const aiMessageDefaults = {
   conversationCompacted: 'Conversation compacted',
   compactionKeepsMessages:
     'The model now gets this summary instead of the messages above; you still see them.',
+  agentCompactionKeepsMessages:
+    'The agent now works from its own summary of the messages above; you still see them.',
   compactionTokens: params('{before} → {after} tokens'),
   tokenUsage: 'Token usage',
   tokenUsageHint: "Shows each reply's tokens.",

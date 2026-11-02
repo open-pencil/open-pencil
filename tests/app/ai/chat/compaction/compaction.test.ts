@@ -5,6 +5,7 @@ import { MockLanguageModelV4 } from 'ai/test'
 
 import { autoCompactAt, contextTokensSinceCompaction } from '@/app/ai/chat/compaction/limits'
 import {
+  agentCompactionMessage,
   compactionMessage,
   compactionOf,
   messagesSinceCompaction
@@ -53,6 +54,14 @@ describe('compaction', () => {
     expect(messagesSinceCompaction([text('a', 'user', 'Hi')]).map((message) => message.id)).toEqual(
       ['a']
     )
+    // An agent's own compaction is drawn, but holds nothing the chat's model reads.
+    const agent = agentCompactionMessage('manual')
+    expect(compactionOf(agent)).toMatchObject({ agent: true, summary: '' })
+    expect(
+      messagesSinceCompaction([...messages, agent, text('d', 'user', 'And a nav')]).map(
+        (message) => message.id
+      )
+    ).toEqual([marker.id, 'c', 'd'])
   })
 
   test('the next request starts from the last reply since the summary, or the summary itself', () => {
