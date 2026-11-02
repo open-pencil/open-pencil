@@ -308,6 +308,10 @@ function branchLine(issue: v.BaseIssue<unknown>, root: Schema): string {
   if (last?.origin === 'key' && issue.expected === 'never') {
     return `Unrecognized key: "${String(last.key)}"${where(path.slice(0, -1))}`
   }
+  // Valibot quotes the string a literal expects, as Figma does.
+  if (issue.type === 'literal' && issue.expected) {
+    return `Invalid input: expected ${issue.expected}${where(path)}`
+  }
   if (issue.type === 'picklist' && issue.expected) {
     return `Invalid option: expected one of ${issue.expected.replace(/^\((.*)\)$/, '$1').replaceAll(' | ', '|')}${where(path)}`
   }
