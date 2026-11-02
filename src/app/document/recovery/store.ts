@@ -64,6 +64,14 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
     })
   }
 
+  /** Hands the durable copy over too: a memory-only claim would leave other windows listing it. */
+  function claimInAll(id: string, sessionId: string): Promise<void> {
+    return serialized(async () => {
+      await primary.claim(id, sessionId)
+      if (current !== primary) await current.claim(id, sessionId)
+    })
+  }
+
   function clearAll(): Promise<void> {
     return serialized(async () => {
       await primary.clear()
@@ -77,7 +85,7 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
     write: (input: RecoverySnapshotInput): Promise<RecoverySnapshotMeta> =>
       run((store) => store.write(input)),
     remove: removeFromAll,
-    claim: (id: string, sessionId: string) => run((store) => store.claim(id, sessionId)),
+    claim: claimInAll,
     clear: clearAll
   }
 }
