@@ -1,4 +1,5 @@
-import { geometryCommandCoordCount } from '../geometry'
+import { cubicPoint } from '../cubic'
+import { GeometryCommand, readGeometryBlob } from '../geometry'
 import type { PolygonOutlineCommand } from '../polygon'
 import type { Vector } from '../primitives'
 import type { VectorNetwork } from '../types'
@@ -28,14 +29,7 @@ function curveSteps(p0: Vector, p1: Vector, p2: Vector, p3: Vector, tolerance: n
 function cubicPoints(p0: Vector, p1: Vector, p2: Vector, p3: Vector, tolerance: number): Vector[] {
   const steps = curveSteps(p0, p1, p2, p3, tolerance)
   const points: Vector[] = []
-  for (let step = 1; step <= steps; step++) {
-    const t = step / steps
-    const u = 1 - t
-    points.push({
-      x: u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
-      y: u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y
-    })
-  }
+  for (let step = 1; step <= steps; step++) points.push(cubicPoint(p0, p1, p2, p3, step / steps))
   return points
 }
 
@@ -108,45 +102,33 @@ export function segmentRuns(network: VectorNetwork, tolerance: number): Vector[]
 
 /** The contours of a Figma geometry blob, curves flattened to within `tolerance`. */
 export function blobContours(blob: Uint8Array, tolerance: number): Vector[][] {
-  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   const contours: Vector[][] = []
   let contour: Vector[] = []
-  let offset = 0
-  const read = (): Vector | null => {
-    if (offset + 8 > blob.length) return null
-    const point = { x: view.getFloat32(offset, true), y: view.getFloat32(offset + 4, true) }
-    offset += 8
-    return point
-  }
   const flush = () => {
     if (contour.length > 1) contours.push(contour)
     contour = []
   }
-  while (offset < blob.length) {
-    const command = blob[offset++]
-    const coords = geometryCommandCoordCount(command)
-    if (coords == null) break
-    const points: Vector[] = []
-    for (let i = 0; i < coords; i++) {
-      const point = read()
-      if (!point) return contours
-      points.push(point)
-    }
-    const last = contour.at(-1)
-    if (command === 0) flush()
-    else if (command === 1) {
+  readGeometryBlob(blob, (command, c) => {
+    if (command === GeometryCommand.CLOSE) return flush()
+    if (command === GeometryCommand.MOVE) {
       flush()
-      contour.push(points[0])
-    } else if (!last) contour.push(...points.slice(-1))
-    else if (command === 2) contour.push(points[0])
-    else if (command === 3) {
+      contour.push({ x: c[0], y: c[1] })
+      return
+    }
+    const end = { x: c[c.length - 2], y: c[c.length - 1] }
+    const last = contour.at(-1)
+    if (!last || command === GeometryCommand.LINE) {
+      contour.push(end)
+    } else if (command === GeometryCommand.QUAD) {
       // A quadratic as the cubic with the same curve.
-      const [q, p] = points
+      const q = { x: c[0], y: c[1] }
       const c1 = { x: last.x + (2 / 3) * (q.x - last.x), y: last.y + (2 / 3) * (q.y - last.y) }
-      const c2 = { x: p.x + (2 / 3) * (q.x - p.x), y: p.y + (2 / 3) * (q.y - p.y) }
-      contour.push(...cubicPoints(last, c1, c2, p, tolerance))
-    } else contour.push(...cubicPoints(last, points[0], points[1], points[2], tolerance))
-  }
+      const c2 = { x: end.x + (2 / 3) * (q.x - end.x), y: end.y + (2 / 3) * (q.y - end.y) }
+      contour.push(...cubicPoints(last, c1, c2, end, tolerance))
+    } else {
+      contour.push(...cubicPoints(last, { x: c[0], y: c[1] }, { x: c[2], y: c[3] }, end, tolerance))
+    }
+  })
   flush()
   return contours
 }

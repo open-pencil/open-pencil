@@ -7,6 +7,7 @@ import type {
   SceneGraph
 } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { cubicPoint } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
@@ -18,7 +19,7 @@ import {
   vectorHandleParts,
   vectorNetworkToPath
 } from '#core/vector'
-import { evalCubic, segmentToAbsolute } from '#core/vector/curve-math'
+import { segmentToAbsolute } from '#core/vector/curve-math'
 
 import { drawRegionHatch } from './region-hatch'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
@@ -312,7 +313,7 @@ function drawSelectedSegments(
     canvas.drawPath(path, segmentSelectedPaint)
     path.delete()
 
-    const mid = evalCubic(s0.x, s0.y, s1.x, s1.y, s2.x, s2.y, s3.x, s3.y, 0.5)
+    const mid = cubicPoint(s0, s1, s2, s3, 0.5)
     canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, r.penVertexFill)
     canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, vertexStroke1px)
   }
