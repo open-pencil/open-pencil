@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
 
+import { corePackagePath } from '#core-tests/helpers/paths'
+
 import { browserFaceDescriptors, facesFromStyles, nearestFamilyFace } from '@open-pencil/core/text'
 
 // Lora's faces as Figma desktop 126 lists them.
@@ -39,8 +41,8 @@ test('a family without the slant gives the nearest weight, and a tie takes the l
 // The page draws its own text, such as the interface and fields over canvas labels, from these
 // faces: a variable font registered at one weight would serve every weight from that instance.
 test('registers a variable font for the page across its whole weight axis', async () => {
-  const upright = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
-  const italic = await Bun.file('packages/core/assets/InterVariable-Italic.ttf').arrayBuffer()
+  const upright = await Bun.file(corePackagePath('assets', 'InterVariable.ttf')).arrayBuffer()
+  const italic = await Bun.file(corePackagePath('assets', 'InterVariable-Italic.ttf')).arrayBuffer()
 
   expect(browserFaceDescriptors('Regular', upright)).toEqual({ weight: '100 900', style: 'normal' })
   expect(browserFaceDescriptors('Bold', upright)).toEqual({ weight: '100 900', style: 'normal' })
@@ -48,7 +50,7 @@ test('registers a variable font for the page across its whole weight axis', asyn
 })
 
 test('registers a static font for the page at the weight of its style', async () => {
-  const semiBold = await Bun.file('packages/core/assets/Inter-SemiBold.ttf').arrayBuffer()
+  const semiBold = await Bun.file(corePackagePath('assets', 'Inter-SemiBold.ttf')).arrayBuffer()
 
   expect(browserFaceDescriptors('SemiBold', semiBold)).toEqual({ weight: '600', style: 'normal' })
   expect(browserFaceDescriptors('SemiBold Italic', semiBold)).toEqual({
