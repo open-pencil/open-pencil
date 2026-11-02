@@ -162,4 +162,20 @@ describe('Figma’s validation messages', () => {
         '  Invalid input: expected "NONE"'
     )
   })
+
+  test('a literal left out on the first read names what it must be', () => {
+    const choice = v.union([v.strictObject({ type: v.literal('SOLID') }), v.literal('NONE')])
+    let reads = 0
+    const value = {
+      get type() {
+        reads += 1
+        return reads === 1 ? undefined : 'SOLID'
+      }
+    }
+    expect(refusal(choice, value)).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Invalid input: expected "SOLID" at .type\n' +
+        '  Invalid input: expected "NONE"'
+    )
+  })
 })

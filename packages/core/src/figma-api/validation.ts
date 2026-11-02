@@ -17,14 +17,18 @@ export function received(value: unknown): string {
   return value === null ? 'null' : typeof value
 }
 
-/** A value outside a fixed list of options. */
-function invalidOption(options: Iterable<string>, at = ''): string {
-  return `Invalid option: expected one of ${[...options].map((option) => `"${option}"`).join('|')}${at}`
+/**
+ * The values in one of Valibot's `expected` texts, such as `("A" | "B")` for a picklist or `"A"`
+ * for a literal, which Figma lists without Valibot's grouping.
+ */
+function expectedValues(expected: string | null | undefined): string[] {
+  return [...(expected ?? '').matchAll(/"([^"]*)"/g)].map((match) => match[1])
 }
 
-/** A literal value, such as a paint type, that the input does not match. */
-function invalidLiteral(expected: string, at = ''): string {
-  return `Invalid input: expected "${expected}"${at}`
+/** A value outside a fixed list of options. */
+function invalidOption(expected: string | null | undefined, at = ''): string {
+  const options = expectedValues(expected).map((option) => `"${option}"`)
+  return `Invalid option: expected one of ${options.join('|')}${at}`
 }
 
 export function tooSmall(minimum: number, at = ''): string {
@@ -90,11 +94,6 @@ function options(schema: Schema): readonly Schema[] {
   return listProperty(base(schema), 'options').filter(isSchema)
 }
 
-/** A picklist's options, as Figma lists them in its messages. */
-function choices(schema: Schema | undefined): string[] {
-  return schema ? listProperty(base(schema), 'options').map(String) : []
-}
-
 /** The option of a variant that `input`'s discriminator picks. */
 function variantOption(schema: Schema, input: unknown): Schema | undefined {
   const key = property(base(schema), 'key')
@@ -151,43 +150,36 @@ const EXPECTED: Partial<Record<string, string>> = {
   null: 'null'
 }
 
-function literalOf(schema: Schema | undefined): string | undefined {
-  const literal = schema && property(base(schema), 'literal')
-  return typeof literal === 'string' || typeof literal === 'number' || typeof literal === 'boolean'
-    ? String(literal)
-    : undefined
-}
-
-/** A field left out: an option or literal is refused as such, anything else as missing. */
+/**
+ * A field left out. Zod checks it as undefined, so an option or literal is refused as such and
+ * anything else as missing; Valibot reports it against the key, so its schema says which.
+ */
 function missing(schema: Schema | undefined, path: readonly PathItem[]): string {
   const own = schema && base(schema)
-  if (own?.type === 'picklist') return invalidOption(choices(own), where(path))
-  const literal = literalOf(own)
-  if (literal !== undefined) return invalidLiteral(literal, where(path))
+  if (own?.type === 'picklist') return invalidOption(own.expects, where(path))
+  if (own?.type === 'literal') return `Invalid input: expected ${own.expects}${where(path)}`
   return `Required value missing${where(path)}`
 }
 
-/** Every key of `input` the object schema does not know, in one line as Figma lists them. */
-function unrecognized(schema: Schema | undefined, input: unknown, at: string): string {
+/**
+ * Every key of `input` the object schema does not know, in one line as Figma lists them. Valibot
+ * stops at the first; without the schema, only that one is named.
+ */
+function unrecognized(
+  schema: Schema | undefined,
+  input: unknown,
+  first: unknown,
+  at: string
+): string {
   // A variant's keys are those of the option the input's discriminator picks.
   const object = schema && base(schema).type === 'variant' ? variantOption(schema, input) : schema
-  const known = object ? entries(object) : {}
-  const keys = Object.keys(input && typeof input === 'object' ? input : {}).filter(
-    (key) => !Object.hasOwn(known, key)
-  )
+  const keys = object
+    ? Object.keys(input && typeof input === 'object' ? input : {}).filter(
+        (key) => !Object.hasOwn(entries(object), key)
+      )
+    : [String(first)]
   const names = keys.map((key) => `"${key}"`).join(', ')
   return `${keys.length === 1 ? 'Unrecognized key' : 'Unrecognized keys'}: ${names}${at}`
-}
-
-/** A discriminator no option of the variant takes, listing the ones it knows. */
-function unknownDiscriminator(variant: Schema | undefined, key: string, at: string): string {
-  const values = (variant ? options(variant) : []).flatMap((option) => {
-    const discriminator = entries(option)[key]
-    return discriminator && base(discriminator).type === 'picklist'
-      ? choices(discriminator)
-      : [literalOf(discriminator)]
-  })
-  return `Expected ${at}.${key} to be one of the following: ${values.join(', ')}`
 }
 
 /** Figma's line for a number outside its bounds, or a check's own message; null for others. */
@@ -220,7 +212,7 @@ function line(issue: v.BaseIssue<unknown>, root: Schema, prefix: readonly PathIt
   if (last?.origin === 'key') {
     if (issue.expected === 'never') {
       const parent = relative.slice(0, -1)
-      return unrecognized(schemaAt(root, parent), last.input, where(path.slice(0, -1)))
+      return unrecognized(schemaAt(root, parent), last.input, last.key, where(path.slice(0, -1)))
     }
     return missing(schemaAt(root, relative), path)
   }
@@ -229,16 +221,14 @@ function line(issue: v.BaseIssue<unknown>, root: Schema, prefix: readonly PathIt
     case 'variant': {
       const variant = schemaAt(root, relative.slice(0, -1))
       if (!last || !variant || property(base(variant), 'key') !== last.key) break
-      return unknownDiscriminator(variant, String(last.key), pathText(path.slice(0, -1)))
+      const values = expectedValues(issue.expected).join(', ')
+      return `Expected ${pathText(path.slice(0, -1))}.${String(last.key)} to be one of the following: ${values}`
     }
     case 'picklist':
-      return invalidOption(choices(schemaAt(root, relative)), where(path))
-    case 'literal': {
-      const literal = literalOf(schemaAt(root, relative))
-      // Valibot quotes a string literal it expects, as Figma does.
-      if (literal === undefined) return `Invalid input: expected ${issue.expected}${where(path)}`
-      return invalidLiteral(literal, where(path))
-    }
+      return invalidOption(issue.expected, where(path))
+    // Valibot quotes the string a literal expects, as Figma does.
+    case 'literal':
+      return `Invalid input: expected ${issue.expected}${where(path)}`
   }
   const refinement = refinementLine(issue, where(path))
   if (refinement) return refinement
@@ -246,72 +236,64 @@ function line(issue: v.BaseIssue<unknown>, root: Schema, prefix: readonly PathIt
   return `Expected ${EXPECTED[issue.type] ?? issue.type}, received ${received(issue.input)}${where(path)}`
 }
 
-/** Refusals that do not stop a choice between shapes from settling on the one they came from. */
-const REFINEMENTS = ['Too small', 'Too big', 'Expected int', 'Unrecognized key']
+/**
+ * Whether a shape matched but for checks on its values, such as a bound, an integer, or a key it
+ * does not know, so a choice settles on it. Valibot counts a key left out and a number that is not
+ * finite as matching too; Zod, and so Figma, refuses those as the wrong type.
+ */
+function matchedButForChecks(issues: readonly v.BaseIssue<unknown>[]): boolean {
+  return issues.every((issue) =>
+    issue.kind === 'validation'
+      ? issue.type !== 'finite'
+      : issue.path?.at(-1)?.origin === 'key' && issue.expected === 'never'
+  )
+}
 
 /**
  * Figma's lines for `value` against `schema`, empty when it passes. A choice between shapes that
- * fails is worded as Zod words it: the one shape that matched but for its refinements reports
+ * fails is worded as Zod words it: the one shape that matched but for checks on its values reports
  * alone; otherwise every shape reports, several problems of one shape grouped.
  */
 function figmaProblems(schema: Schema, value: unknown, prefix: readonly PathItem[] = []): string[] {
   const own = base(schema)
-  if (own.type === 'union') {
-    const branches = options(own).map((option) => figmaProblems(option, value, prefix))
-    if (branches.some((lines) => lines.length === 0)) return []
-    const settled = branches.filter((lines) =>
-      lines.every((text) => REFINEMENTS.some((refinement) => text.startsWith(refinement)))
-    )
-    if (settled.length === 1) return settled[0] ?? []
-    // Shapes that fail alike, as every shape fails a missing value, read once.
-    return [
-      noneMatched(
-        uniq(
-          branches.map((lines) =>
-            lines.length === 1
-              ? (lines[0] ?? '')
-              : `Multiple issues${where(prefix)}:\n${lines.map((text) => indent(text)).join('\n')}`
-          )
-        ),
-        pathText(prefix)
-      )
-    ]
+  if (own.type !== 'union') {
+    const result = v.safeParse(schema, value)
+    return result.success ? [] : wordIssues(schema, result.issues, prefix)
   }
-  const result = v.safeParse(schema, value)
-  if (result.success) return []
-  return result.issues.map((issue) => {
-    // A choice nested in the schema is worded as one, from where it sits.
-    if (issue.type === 'union') {
-      const at = [...prefix, ...(issue.path ?? [])]
-      const nested = schemaAt(schema, issue.path ?? [])
-      return nested
-        ? figmaProblems(nested, issue.input, at).join('\n')
-        : line(issue, schema, prefix)
-    }
-    return line(issue, schema, prefix)
+  const branches = options(own).map((option) => ({ option, result: v.safeParse(option, value) }))
+  const failed = branches.flatMap(({ option, result }) =>
+    result.success ? [] : [{ option, issues: result.issues }]
+  )
+  if (failed.length < branches.length) return []
+  const settled = failed.filter(({ issues }) => matchedButForChecks(issues))
+  if (settled.length === 1) return wordIssues(settled[0].option, settled[0].issues, prefix)
+  // Shapes that fail alike, as every shape fails a missing value, read once.
+  const lines = failed.map(({ option, issues }) => {
+    const problems = wordIssues(option, issues, prefix)
+    return problems.length === 1
+      ? (problems[0] ?? '')
+      : `Multiple issues${where(prefix)}:\n${problems.map((text) => indent(text)).join('\n')}`
+  })
+  return [noneMatched(uniq(lines), pathText(prefix))]
+}
+
+/** Figma's lines for the issues `schema` found; a choice nested in it is worded from where it sits. */
+function wordIssues(
+  schema: Schema,
+  issues: readonly v.BaseIssue<unknown>[],
+  prefix: readonly PathItem[]
+): string[] {
+  return issues.map((issue) => {
+    const nested = issue.type === 'union' ? schemaAt(schema, issue.path ?? []) : undefined
+    if (!nested) return line(issue, schema, prefix)
+    return figmaProblems(nested, issue.input, [...prefix, ...(issue.path ?? [])]).join('\n')
   })
 }
 
 /** A line from an issue alone, a choice listing what each of its shapes found. */
 function fallback(issue: v.BaseIssue<unknown>, root: Schema): string {
   if (issue.type !== 'union' || !issue.issues) return line(issue, root, [])
-  return noneMatched(uniq(issue.issues.map((nested) => branchLine(nested, root))))
-}
-
-/**
- * A line for an issue of a choice's shape, which Valibot reports without the shape it came from:
- * what the issue itself says stands in for what the schema would.
- */
-function branchLine(issue: v.BaseIssue<unknown>, root: Schema): string {
-  const path = issue.path ?? []
-  const last = path.at(-1)
-  if (last?.origin === 'key' && issue.expected === 'never') {
-    return `Unrecognized key: "${String(last.key)}"${where(path.slice(0, -1))}`
-  }
-  if (issue.type === 'picklist' && issue.expected) {
-    return `Invalid option: expected one of ${issue.expected.replace(/^\((.*)\)$/, '$1').replaceAll(' | ', '|')}${where(path)}`
-  }
-  return line(issue, root, [])
+  return noneMatched(uniq(issue.issues.map((nested) => line(nested, root, []))))
 }
 
 /**
