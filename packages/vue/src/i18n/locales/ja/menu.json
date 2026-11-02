@@ -80,6 +80,8 @@
   "closeView": "ビューを閉じる",
   "removeGuide": "ガイドを削除",
   "exportSelectionAsPNG": "選択範囲を PNG としてエクスポート",
+  "exportSelectionAsJPG": "選択範囲を JPG としてエクスポート",
+  "exportSelectionAsWebP": "選択範囲を WebP としてエクスポート",
   "exportSelectionAsSVG": "選択範囲を SVG としてエクスポート",
   "exportSelectionAsPPTX": "選択範囲を PPTX としてエクスポート",
   "exportSelectionAsDrawIO": "選択範囲を draw.io としてエクスポート",

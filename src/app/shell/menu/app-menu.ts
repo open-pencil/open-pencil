@@ -19,10 +19,7 @@ import type { BuiltinIOFormatId } from '@lawha/core/io'
 import { shortcutPlatform, useEditorCommands } from '@lawha/vue/editor/commands'
 import type { MenuEntry } from '@lawha/vue/editor/menu-model'
 import { useI18n } from '@lawha/vue/i18n'
-import type {
-  CommandPaletteGroup,
-  CommandPaletteItem
-} from '@lawha/vue/primitives/CommandPalette'
+import type { CommandPaletteGroup, CommandPaletteItem } from '@lawha/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -193,6 +190,8 @@ export function useAppMenu() {
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
     'export-png': () => exportSelection('png'),
+    'export-jpg': () => exportSelection('jpg'),
+    'export-webp': () => exportSelection('webp'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
     'export-drawio': () => exportSelection('drawio'),

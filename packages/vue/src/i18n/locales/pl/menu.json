@@ -80,6 +80,8 @@
   "closeView": "Zamknij widok",
   "removeGuide": "Usuń prowadnicę",
   "exportSelectionAsPNG": "Eksportuj zaznaczenie jako PNG",
+  "exportSelectionAsJPG": "Eksportuj zaznaczenie jako JPG",
+  "exportSelectionAsWebP": "Eksportuj zaznaczenie jako WebP",
   "exportSelectionAsSVG": "Eksportuj zaznaczenie jako SVG",
   "exportSelectionAsPPTX": "Eksportuj zaznaczenie jako PPTX",
   "exportSelectionAsDrawIO": "Eksportuj zaznaczenie jako draw.io",

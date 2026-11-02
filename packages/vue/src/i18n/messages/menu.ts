@@ -20,6 +20,8 @@ export const menuMessageDefaults = {
   saveToVersionHistory: 'Save to version history…',
   exportSelection: 'Export selection…',
   exportSelectionAsPNG: 'Export selection as PNG',
+  exportSelectionAsJPG: 'Export selection as JPG',
+  exportSelectionAsWebP: 'Export selection as WebP',
   exportSelectionAsSVG: 'Export selection as SVG',
   exportSelectionAsPPTX: 'Export selection as PPTX',
   exportSelectionAsDrawIO: 'Export selection as draw.io',

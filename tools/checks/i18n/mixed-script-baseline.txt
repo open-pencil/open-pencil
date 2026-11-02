@@ -608,3 +608,7 @@ zh-cn:ai.notifyReplyFailed
 ja:print.toSocial
 ja:print.toSocialHint
 zh-cn:print.toSocialHint
+ja:menu.exportSelectionAsJPG
+ja:menu.exportSelectionAsWebP
+zh-cn:menu.exportSelectionAsJPG
+zh-cn:menu.exportSelectionAsWebP

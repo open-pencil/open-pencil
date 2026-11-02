@@ -20,6 +20,8 @@ export type AppMenuIcon =
 
 export type AppMenuPaletteLabel =
   | 'exportSelectionAsPNG'
+  | 'exportSelectionAsJPG'
+  | 'exportSelectionAsWebP'
   | 'exportSelectionAsSVG'
   | 'exportSelectionAsPPTX'
   | 'exportSelectionAsDrawIO'
@@ -113,6 +115,16 @@ export const APP_MENU_SCHEMA = [
             id: 'export-png',
             label: 'PNG',
             palette: { icon: 'download', label: 'exportSelectionAsPNG' }
+          },
+          {
+            id: 'export-jpg',
+            label: 'JPG',
+            palette: { icon: 'download', label: 'exportSelectionAsJPG' }
+          },
+          {
+            id: 'export-webp',
+            label: 'WebP',
+            palette: { icon: 'download', label: 'exportSelectionAsWebP' }
           },
           {
             id: 'export-svg',

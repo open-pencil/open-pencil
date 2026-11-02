@@ -70,6 +70,14 @@
             "label": "PNG"
           },
           {
+            "id": "export-jpg",
+            "label": "JPG"
+          },
+          {
+            "id": "export-webp",
+            "label": "WebP"
+          },
+          {
             "id": "export-svg",
             "label": "SVG"
           },

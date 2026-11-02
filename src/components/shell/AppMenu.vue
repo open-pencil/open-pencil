@@ -135,7 +135,9 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
                     <MenubarSeparator v-if="isMenuSeparator(item)" :class="menuCls.separator" />
                     <MenubarSub v-else-if="hasMenuSubItems(item)">
                       <MenubarSubTrigger :class="menuCls.item" :disabled="menuDisabled(item)">
-                        <span class="flex-1">{{ menuLabel(item) }}</span>
+                        <span class="flex-1"
+                          ><bdi>{{ menuLabel(item) }}</bdi></span
+                        >
                         <IconChevronRight class="size-3 text-muted rtl:-scale-x-100" />
                       </MenubarSubTrigger>
                       <MenubarPortal>
@@ -152,7 +154,9 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
                                 :class="menuCls.item"
                                 @update:model-value="updateMenuChecked(sub, $event as boolean)"
                               >
-                                <span class="flex-1">{{ menuLabel(sub) }}</span>
+                                <span class="flex-1"
+                                  ><bdi>{{ menuLabel(sub) }}</bdi></span
+                                >
                                 <MenubarItemIndicator class="text-surface">
                                   <icon-lucide-check class="size-3.5" />
                                 </MenubarItemIndicator>
@@ -163,7 +167,9 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
                                 :disabled="menuDisabled(sub)"
                                 @select="runMenuAction(sub)"
                               >
-                                <span class="flex-1">{{ menuLabel(sub) }}</span>
+                                <span class="flex-1"
+                                  ><bdi>{{ menuLabel(sub) }}</bdi></span
+                                >
                                 <AppShortcutText v-if="menuShortcut(sub)">{{
                                   menuShortcut(sub)
                                 }}</AppShortcutText>
@@ -179,7 +185,9 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
                       :class="menuCls.item"
                       @update:model-value="updateMenuChecked(item, $event as boolean)"
                     >
-                      <span class="flex-1">{{ menuLabel(item) }}</span>
+                      <span class="flex-1"
+                        ><bdi>{{ menuLabel(item) }}</bdi></span
+                      >
                       <MenubarItemIndicator class="text-surface">
                         <icon-lucide-check class="size-3.5" />
                       </MenubarItemIndicator>
@@ -190,7 +198,9 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
                       :disabled="menuDisabled(item)"
                       @select="runMenuAction(item)"
                     >
-                      <span class="flex-1">{{ menuLabel(item) }}</span>
+                      <span class="flex-1"
+                        ><bdi>{{ menuLabel(item) }}</bdi></span
+                      >
                       <AppShortcutText v-if="menuShortcut(item)">{{
                         menuShortcut(item)
                       }}</AppShortcutText>

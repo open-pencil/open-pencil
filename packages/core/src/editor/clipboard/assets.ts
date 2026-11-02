@@ -5,7 +5,8 @@ import type { Fill } from '@lawha/scene-graph'
 import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import {
   computeImageHash,
-  IMPORTABLE_RASTER_TYPES,
+  imageSize,
+  isImportableRasterFile,
   isSVGFile
 } from '@lawha/scene-graph/images'
 import Matrix from '@lawha/scene-graph/matrix'
@@ -60,14 +61,22 @@ export function createClipboardAssetActions(
     return hash
   }
 
+  /** The pixel size: decoded by CanvasKit when a renderer runs, else read from the header. */
   function decodeImageDimensions(bytes: Uint8Array): { width: number; height: number } | null {
     const ck = ctx.getCk()
-    if (!ck) return null
-    const skImg = ck.MakeImageFromEncoded(bytes)
-    if (!skImg) return null
-    let width = skImg.width()
-    let height = skImg.height()
-    skImg.delete()
+    let size: { width: number; height: number } | null
+    if (ck) {
+      const skImg = ck.MakeImageFromEncoded(bytes)
+      if (!skImg) return null
+      size = { width: skImg.width(), height: skImg.height() }
+      skImg.delete()
+    } else {
+      // Headless editors (CLI, MCP, tests) have no CanvasKit yet; PNG, JPEG, GIF and WebP
+      // headers carry their size.
+      size = imageSize(bytes)
+    }
+    if (!size) return null
+    let { width, height } = size
     if (width > IMAGE_MAX_DIMENSION || height > IMAGE_MAX_DIMENSION) {
       const ratio = Math.min(IMAGE_MAX_DIMENSION / width, IMAGE_MAX_DIMENSION / height)
       width = Math.round(width * ratio)
@@ -89,7 +98,7 @@ export function createClipboardAssetActions(
           }
         : null
     }
-    if (!IMPORTABLE_RASTER_TYPES.has(file.type)) return null
+    if (!isImportableRasterFile(file)) return null
     const bytes = new Uint8Array(await file.arrayBuffer())
     const dimensions = decodeImageDimensions(bytes)
     return dimensions ? { kind: 'raster', bytes, name: file.name, ...dimensions } : null
@@ -215,7 +224,7 @@ export function createClipboardAssetActions(
 
   function placeImageFiles(files: File[], cx: number, cy: number) {
     return placeFiles(
-      files.filter((file) => IMPORTABLE_RASTER_TYPES.has(file.type)),
+      files.filter((file) => isImportableRasterFile(file)),
       cx,
       cy
     )

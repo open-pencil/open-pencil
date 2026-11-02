@@ -17,6 +17,8 @@
   "saveToVersionHistory": "حفظ في سجل الإصدارات…",
   "exportSelection": "تصدير التحديد…",
   "exportSelectionAsPNG": "تصدير التحديد بتنسيق PNG",
+  "exportSelectionAsJPG": "تصدير التحديد بتنسيق JPG",
+  "exportSelectionAsWebP": "تصدير التحديد بتنسيق WebP",
   "exportSelectionAsSVG": "تصدير التحديد بتنسيق SVG",
   "exportSelectionAsPPTX": "تصدير التحديد بتنسيق PPTX",
   "exportSelectionAsDrawIO": "تصدير التحديد بتنسيق draw.io",

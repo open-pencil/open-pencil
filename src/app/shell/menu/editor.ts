@@ -53,6 +53,12 @@ export function useEditorMenu() {
     'export-png': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
     },
+    'export-jpg': () => {
+      if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'jpg')
+    },
+    'export-webp': () => {
+      if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'webp')
+    },
     'export-svg': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'svg')
     },

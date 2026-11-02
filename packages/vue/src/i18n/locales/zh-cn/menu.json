@@ -80,6 +80,8 @@
   "closeView": "关闭视图",
   "removeGuide": "移除参考线",
   "exportSelectionAsPNG": "将所选内容导出为 PNG",
+  "exportSelectionAsJPG": "将所选内容导出为 JPG",
+  "exportSelectionAsWebP": "将所选内容导出为 WebP",
   "exportSelectionAsSVG": "将所选内容导出为 SVG",
   "exportSelectionAsPPTX": "将所选内容导出为 PPTX",
   "exportSelectionAsDrawIO": "将所选内容导出为 draw.io",

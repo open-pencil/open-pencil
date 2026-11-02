@@ -142,7 +142,9 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
           <ContextMenuSeparator v-if="item.separator" :class="cls.sep" />
           <ContextMenuSub v-else-if="item.sub">
             <ContextMenuSubTrigger v-test-id="item.testId" :class="cls.item">
-              <span>{{ item.label }}</span>
+              <span
+                ><bdi>{{ item.label }}</bdi></span
+              >
               <IconChevronRight class="size-3.5 text-muted rtl:-scale-x-100" />
             </ContextMenuSubTrigger>
             <ContextMenuPortal>
@@ -157,7 +159,9 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
                       :disabled="sub.disabled"
                       @select="sub.action?.()"
                     >
-                      <span class="min-w-0 flex-1 truncate">{{ sub.label }}</span>
+                      <span class="min-w-0 flex-1 truncate"
+                        ><bdi>{{ sub.label }}</bdi></span
+                      >
                       <AppShortcutText v-if="sub.shortcut">{{ sub.shortcut }}</AppShortcutText>
                     </ContextMenuItem>
                   </template>
@@ -172,7 +176,9 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
             :disabled="item.disabled"
             @select="item.action?.()"
           >
-            <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+            <span class="min-w-0 flex-1 truncate"
+              ><bdi>{{ item.label }}</bdi></span
+            >
             <span
               v-if="item.shortcut"
               class="text-[11px]"

@@ -32,6 +32,18 @@ export const IMPORTABLE_RASTER_TYPES: ReadonlySet<string> = new Set([
   'image/avif'
 ])
 
+const RASTER_EXTENSIONS = /\.(png|jpe?g|webp|gif|avif)$/i
+
+/**
+ * Whether a dropped, pasted or opened file can become an image fill. Some systems (and native
+ * file pickers) report no media type, so the file name decides then, as it does for SVG.
+ */
+export function isImportableRasterFile(file: { name: string; type: string }): boolean {
+  if (IMPORTABLE_RASTER_TYPES.has(file.type)) return true
+  const untyped = file.type === '' || file.type === 'application/octet-stream'
+  return untyped && RASTER_EXTENSIONS.test(file.name)
+}
+
 /** Whether a file is an SVG image, which some systems report without a media type. */
 export function isSVGFile(file: { name: string; type: string }): boolean {
   return (

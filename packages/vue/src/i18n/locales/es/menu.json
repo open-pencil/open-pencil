@@ -80,6 +80,8 @@
   "closeView": "Cerrar vista",
   "removeGuide": "Eliminar guía",
   "exportSelectionAsPNG": "Exportar selección como PNG",
+  "exportSelectionAsJPG": "Exportar selección como JPG",
+  "exportSelectionAsWebP": "Exportar selección como WebP",
   "exportSelectionAsSVG": "Exportar selección como SVG",
   "exportSelectionAsPPTX": "Exportar selección como PPTX",
   "exportSelectionAsDrawIO": "Exportar selección como draw.io",

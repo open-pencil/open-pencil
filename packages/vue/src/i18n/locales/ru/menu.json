@@ -80,6 +80,8 @@
   "closeView": "Закрыть вид",
   "removeGuide": "Удалить направляющую",
   "exportSelectionAsPNG": "Экспортировать выделение как PNG",
+  "exportSelectionAsJPG": "Экспортировать выделение как JPG",
+  "exportSelectionAsWebP": "Экспортировать выделение как WebP",
   "exportSelectionAsSVG": "Экспортировать выделение как SVG",
   "exportSelectionAsPPTX": "Экспортировать выделение как PPTX",
   "exportSelectionAsDrawIO": "Экспортировать выделение как draw.io",
