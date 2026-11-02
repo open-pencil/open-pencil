@@ -34,11 +34,18 @@ function card() {
   return { figma, frame, badge }
 }
 
+interface MockupPresetList {
+  formats: { id: string }[]
+  devices: { id: string }[]
+}
+
 const close = (a: number, b: number) => expect(Math.abs(a - b)).toBeLessThan(1e-6)
 
 describe('fitScale', () => {
   test('contain uses the smaller ratio, cover the larger', () => {
-    expect(fitScale({ width: 400, height: 300 }, { width: 1080, height: 1920 }, 'contain')).toBe(2.7)
+    expect(fitScale({ width: 400, height: 300 }, { width: 1080, height: 1920 }, 'contain')).toBe(
+      2.7
+    )
     close(fitScale({ width: 400, height: 300 }, { width: 1080, height: 1920 }, 'cover'), 6.4)
     expect(fitScale({ width: 100, height: 100 }, { width: 100, height: 100 }, 'cover')).toBe(1)
   })
@@ -74,7 +81,7 @@ describe('presets', () => {
 
   test('list_mockup_presets returns every format and device', () => {
     const { figma } = card()
-    const out = listPresets(figma, {}) as { formats: unknown[]; devices: unknown[] }
+    const out = listPresets(figma, {}) as MockupPresetList
     expect(out.formats).toHaveLength(SOCIAL_FORMAT_IDS.length)
     expect(out.devices).toHaveLength(DEVICE_IDS.length)
   })
@@ -85,7 +92,14 @@ describe('create_social_post', () => {
     const { figma } = card()
     const out = createPost(figma, { format: 'instagram-story', x: 10, y: 20 }) as { id: string }
     const frame = figma.getNodeById(out.id)
-    expect(frame).toMatchObject({ type: 'FRAME', x: 10, y: 20, width: 1080, height: 1920, clipsContent: true })
+    expect(frame).toMatchObject({
+      type: 'FRAME',
+      x: 10,
+      y: 20,
+      width: 1080,
+      height: 1920,
+      clipsContent: true
+    })
     expect(frame?.name).toBe('Instagram Story / Reel · 1080×1920')
   })
 
@@ -105,7 +119,9 @@ describe('resize_for_platforms', () => {
   test('makes one copy per format at the exact size, original untouched', () => {
     const { figma, frame, badge } = card()
     const formats = ['instagram-post', 'instagram-story', 'youtube-thumbnail']
-    const out = resize(figma, { id: frame.id, formats }) as { created: { id: string; content: string }[] }
+    const out = resize(figma, { id: frame.id, formats }) as {
+      created: { id: string; content: string }[]
+    }
     expect(out.created).toHaveLength(3)
     formats.forEach((id, i) => {
       const node = figma.getNodeById(out.created[i].id)
@@ -171,7 +187,11 @@ describe('create_device_mockup', () => {
   test.each(DEVICE_IDS)('%s: body, clipped screen and a cover-fitted copy', (device) => {
     const { figma, frame } = card()
     const d = DEVICES[device]
-    const out = mockup(figma, { id: frame.id, device }) as { id: string; screen: string; content: string }
+    const out = mockup(figma, { id: frame.id, device }) as {
+      id: string
+      screen: string
+      content: string
+    }
     const root = figma.getNodeById(out.id)
     const screen = figma.getNodeById(out.screen)
     const content = figma.getNodeById(out.content)
@@ -204,7 +224,9 @@ describe('create_device_mockup', () => {
 
   test('contain keeps the whole design visible', () => {
     const { figma, frame } = card()
-    const out = mockup(figma, { id: frame.id, device: 'phone-modern', fit: 'contain' }) as { content: string }
+    const out = mockup(figma, { id: frame.id, device: 'phone-modern', fit: 'contain' }) as {
+      content: string
+    }
     const content = figma.getNodeById(out.content)
     expect(content?.width ?? 0).toBeLessThanOrEqual(393 + 1e-6)
     expect(content?.height ?? 0).toBeLessThanOrEqual(852 + 1e-6)
@@ -213,12 +235,37 @@ describe('create_device_mockup', () => {
 
 describe('exposure', () => {
   test('mockup tools are exposed to AI chat and MCP', () => {
-    for (const name of ['list_mockup_presets', 'create_social_post', 'resize_for_platforms', 'create_device_mockup']) {
+    for (const name of [
+      'list_mockup_presets',
+      'create_social_post',
+      'resize_for_platforms',
+      'create_device_mockup'
+    ]) {
       const def = ALL_TOOLS.find((t) => t.name === name)
       expect(def).toBeDefined()
       if (!def) continue
       expect(isToolExposed(def, 'mcp')).toBe(true)
       expect(isToolExposed(def, 'ai')).toBe(true)
     }
+  })
+})
+
+describe('resize_for_platforms placement', () => {
+  test('copies of a top-level design stay on its row', () => {
+    const { figma, frame } = card()
+    frame.y = 250
+    const out = resize(figma, { id: frame.id, formats: ['x-post'] }) as {
+      created: { id: string }[]
+    }
+    expect(figma.getNodeById(out.created[0].id)?.y).toBe(250)
+  })
+
+  test('copies of a nested design start at the page top', () => {
+    const { figma, frame, badge } = card()
+    frame.y = 250
+    const out = resize(figma, { id: badge.id, formats: ['x-post'] }) as {
+      created: { id: string }[]
+    }
+    expect(figma.getNodeById(out.created[0].id)?.y).toBe(0)
   })
 })

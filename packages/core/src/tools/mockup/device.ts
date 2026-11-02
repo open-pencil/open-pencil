@@ -45,9 +45,21 @@ function drawDetails(figma: FigmaAPI, root: FigmaNodeProxy, d: DevicePreset, bod
   const s = d.screen
   if (d.kind === 'phone' && s.y === s.x) {
     // Edge-to-edge phone: a pill-shaped camera island over the screen.
-    rect(figma, root, 'Camera island', { x: s.x + s.width / 2 - 62, y: s.y + 11, width: 124, height: 36, radius: 18 }, { r: 0, g: 0, b: 0 })
+    rect(
+      figma,
+      root,
+      'Camera island',
+      { x: s.x + s.width / 2 - 62, y: s.y + 11, width: 124, height: 36, radius: 18 },
+      { r: 0, g: 0, b: 0 }
+    )
   } else if (d.kind === 'phone') {
-    rect(figma, root, 'Speaker', { x: d.width / 2 - 30, y: 34, width: 60, height: 6, radius: 3 }, { r: 0.3, g: 0.3, b: 0.32 })
+    rect(
+      figma,
+      root,
+      'Speaker',
+      { x: d.width / 2 - 30, y: 34, width: 60, height: 6, radius: 3 },
+      { r: 0.3, g: 0.3, b: 0.32 }
+    )
     const button = figma.createEllipse()
     root.appendChild(button)
     button.name = 'Home button'
@@ -58,11 +70,29 @@ function drawDetails(figma: FigmaAPI, root: FigmaNodeProxy, d: DevicePreset, bod
     button.strokes = solid({ r: 0.3, g: 0.3, b: 0.32 })
     button.strokeWeight = 2
   } else if (d.kind === 'laptop') {
-    rect(figma, root, 'Base', { x: -80, y: d.height - 4, width: d.width + 160, height: 26, radius: 12 }, body)
-    rect(figma, root, 'Notch', { x: d.width / 2 - 90, y: d.height - 4, width: 180, height: 10, radius: 5 }, { r: 0.6, g: 0.6, b: 0.62 })
+    rect(
+      figma,
+      root,
+      'Base',
+      { x: -80, y: d.height - 4, width: d.width + 160, height: 26, radius: 12 },
+      body
+    )
+    rect(
+      figma,
+      root,
+      'Notch',
+      { x: d.width / 2 - 90, y: d.height - 4, width: 180, height: 10, radius: 5 },
+      { r: 0.6, g: 0.6, b: 0.62 }
+    )
   } else if (d.kind === 'desktop') {
     rect(figma, root, 'Neck', { x: d.width / 2 - 110, y: d.height, width: 220, height: 180 }, body)
-    rect(figma, root, 'Stand', { x: d.width / 2 - 300, y: d.height + 180, width: 600, height: 28, radius: 14 }, body)
+    rect(
+      figma,
+      root,
+      'Stand',
+      { x: d.width / 2 - 300, y: d.height + 180, width: 600, height: 28, radius: 14 },
+      body
+    )
   } else if (d.kind === 'browser') {
     rect(figma, root, 'Toolbar', { x: 0, y: 0, width: d.width, height: s.y }, CHROME)
     TRAFFIC.forEach((color, i) => {
@@ -74,7 +104,13 @@ function drawDetails(figma: FigmaAPI, root: FigmaNodeProxy, d: DevicePreset, bod
       dot.y = s.y / 2 - 6.5
       dot.fills = solid(color)
     })
-    rect(figma, root, 'Address bar', { x: d.width / 2 - 320, y: 12, width: 640, height: 28, radius: 8 }, { r: 1, g: 1, b: 1 })
+    rect(
+      figma,
+      root,
+      'Address bar',
+      { x: d.width / 2 - 320, y: 12, width: 640, height: 28, radius: 8 },
+      { r: 1, g: 1, b: 1 }
+    )
   }
 }
 
@@ -87,11 +123,21 @@ export const createDeviceMockup = defineTool({
     id: v.pipe(v.string(), v.description('Frame showing the screen design')),
     device: v.pipe(v.picklist(DEVICE_IDS), v.description('Device id from list_mockup_presets')),
     fit: v.optional(
-      v.pipe(v.picklist(['contain', 'cover']), v.description('Default cover: fill the screen, cropping overflow')),
+      v.pipe(
+        v.picklist(['contain', 'cover']),
+        v.description('Default cover: fill the screen, cropping overflow')
+      ),
       'cover'
     ),
-    color: v.optional(v.pipe(v.picklist(['dark', 'light']), v.description('Device body colour')), 'dark'),
-    x: v.optional(toolNumber(v.pipe(v.number(), v.description('X on the page; default: right of existing content')))),
+    color: v.optional(
+      v.pipe(v.picklist(['dark', 'light']), v.description('Device body colour')),
+      'dark'
+    ),
+    x: v.optional(
+      toolNumber(
+        v.pipe(v.number(), v.description('X on the page; default: right of existing content'))
+      )
+    ),
     y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y on the page; default 0'))))
   }),
   execute: (figma, args) => {
@@ -118,10 +164,14 @@ export const createDeviceMockup = defineTool({
     screen.cornerRadius = d.screen.radius
     screen.clipsContent = true
     screen.fills = solid({ r: 0, g: 0, b: 0 })
-    const content = placeCopy(source, screen, { width: d.screen.width, height: d.screen.height }, args.fit)
+    const content = placeCopy(
+      source,
+      screen,
+      { width: d.screen.width, height: d.screen.height },
+      args.fit
+    )
 
     drawDetails(figma, root, d, body)
     return { ...nodeSummary(root), screen: screen.id, content: content.id }
   }
 })
-

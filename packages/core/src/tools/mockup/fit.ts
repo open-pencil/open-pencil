@@ -1,16 +1,4 @@
-import * as v from 'valibot'
-
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
-
-export const fitInputSchema = v.optional(
-  v.pipe(
-    v.picklist(['contain', 'cover']),
-    v.description(
-      'contain: scale the design to fit entirely inside (may leave margins). cover: scale to fill, cropping the overflow. Default contain.'
-    )
-  ),
-  'contain'
-)
 
 export type Fit = 'contain' | 'cover'
 
@@ -33,7 +21,7 @@ export function fitScale(content: Box, target: Box, fit: Fit): number {
 export function placeCopy(
   source: FigmaNodeProxy,
   container: FigmaNodeProxy,
-  target: Box & { x?: number; y?: number },
+  target: Box,
   fit: Fit
 ): FigmaNodeProxy {
   if (source.width <= 0 || source.height <= 0) throw new Error(`Node ${source.id} has no size`)
@@ -41,8 +29,8 @@ export function placeCopy(
   container.appendChild(copy)
   const scale = fitScale(source, target, fit)
   if (Math.abs(scale - 1) > 1e-9) copy.rescale(scale)
-  copy.x = (target.x ?? 0) + (target.width - copy.width) / 2
-  copy.y = (target.y ?? 0) + (target.height - copy.height) / 2
+  copy.x = (target.width - copy.width) / 2
+  copy.y = (target.height - copy.height) / 2
   return copy
 }
 

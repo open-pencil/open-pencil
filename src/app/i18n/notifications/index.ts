@@ -44,6 +44,7 @@ export const notificationMessageDefaults = {
 } as const
 
 const localeLoaders = {
+  ar: () => import('./locales/ar.json'),
   de: () => import('./locales/de.json'),
   es: () => import('./locales/es.json'),
   fr: () => import('./locales/fr.json'),

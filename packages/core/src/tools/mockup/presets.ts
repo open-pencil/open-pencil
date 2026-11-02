@@ -1,7 +1,12 @@
 /** Canvas sizes, in pixels, that each platform recommends for a post. */
 export const SOCIAL_FORMATS = {
   'instagram-post': { platform: 'Instagram', label: 'Post (square)', width: 1080, height: 1080 },
-  'instagram-portrait': { platform: 'Instagram', label: 'Post (portrait)', width: 1080, height: 1350 },
+  'instagram-portrait': {
+    platform: 'Instagram',
+    label: 'Post (portrait)',
+    width: 1080,
+    height: 1350
+  },
   'instagram-story': { platform: 'Instagram', label: 'Story / Reel', width: 1080, height: 1920 },
   'tiktok-video': { platform: 'TikTok', label: 'Video cover', width: 1080, height: 1920 },
   'snapchat-story': { platform: 'Snapchat', label: 'Story', width: 1080, height: 1920 },
@@ -16,11 +21,19 @@ export const SOCIAL_FORMATS = {
   'youtube-banner': { platform: 'YouTube', label: 'Channel banner', width: 2560, height: 1440 },
   'pinterest-pin': { platform: 'Pinterest', label: 'Pin', width: 1000, height: 1500 },
   'a4-portrait': { platform: 'Print', label: 'A4 portrait (150 dpi)', width: 1240, height: 1754 },
-  'poster-18x24': { platform: 'Print', label: 'Poster 18×24 in (100 dpi)', width: 1800, height: 2400 }
+  'poster-18x24': {
+    platform: 'Print',
+    label: 'Poster 18×24 in (100 dpi)',
+    width: 1800,
+    height: 2400
+  }
 } as const
 
 export type SocialFormatId = keyof typeof SOCIAL_FORMATS
-export const SOCIAL_FORMAT_IDS = Object.keys(SOCIAL_FORMATS) as [SocialFormatId, ...SocialFormatId[]]
+export const SOCIAL_FORMAT_IDS = Object.keys(SOCIAL_FORMATS) as [
+  SocialFormatId,
+  ...SocialFormatId[]
+]
 
 export interface DevicePreset {
   label: string

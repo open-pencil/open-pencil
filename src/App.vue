@@ -66,23 +66,23 @@ onMounted(() => {
 
 <template>
   <ConfigProvider :dir="dir">
-  <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
-    <TooltipProvider :delay-duration="400">
-      <AppShell>
-        <RouterView />
-      </AppShell>
-      <SettingsDialog />
-      <AISetupDialog />
-      <SaveToHost />
-      <CloudHosts />
-      <RecoveryDialog />
-      <UnsavedChangesDialog />
-      <PublishLibraryDialog />
-      <LibraryUpdateReviewDialog />
-      <UsageStatsPrompt />
-      <AppToaster />
-      <VoiceCallAudio />
-    </TooltipProvider>
-  </MotionConfig>
+    <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
+      <TooltipProvider :delay-duration="400">
+        <AppShell>
+          <RouterView />
+        </AppShell>
+        <SettingsDialog />
+        <AISetupDialog />
+        <SaveToHost />
+        <CloudHosts />
+        <RecoveryDialog />
+        <UnsavedChangesDialog />
+        <PublishLibraryDialog />
+        <LibraryUpdateReviewDialog />
+        <UsageStatsPrompt />
+        <AppToaster />
+        <VoiceCallAudio />
+      </TooltipProvider>
+    </MotionConfig>
   </ConfigProvider>
 </template>

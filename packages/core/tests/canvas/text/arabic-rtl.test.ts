@@ -1,10 +1,9 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import type { Paragraph, Surface, TypefaceFontProvider } from 'canvaskit-wasm'
-
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
+import type { Paragraph, Surface, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
@@ -16,9 +15,9 @@ import {
   resolveTextDirection
 } from '@open-pencil/scene-graph/text/direction'
 
-import { getCanvasKit } from '#core/canvaskit'
 import { renderText } from '#core/canvas/scene'
 import { buildParagraph } from '#core/canvas/text'
+import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/font/manager'
 
 type CK = Awaited<ReturnType<typeof getCanvasKit>>
@@ -34,7 +33,9 @@ beforeAll(async () => {
   ck = await getCanvasKit()
   provider = ck.TypefaceFontProvider.Make()
   fontManager.attachProvider(ck, provider)
-  const arabic = await Bun.file(join(FIXTURES, 'fonts', 'NotoNaskhArabic-Regular.ttf')).arrayBuffer()
+  const arabic = await Bun.file(
+    join(FIXTURES, 'fonts', 'NotoNaskhArabic-Regular.ttf')
+  ).arrayBuffer()
   const inter = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
   provider.registerFont(arabic, ARABIC_FAMILY)
   provider.registerFont(inter, 'Inter')
@@ -90,6 +91,13 @@ interface PlacedGlyph {
   glyph: number
 }
 
+function utf8Length(code: number): number {
+  if (code < 0x80) return 1
+  if (code < 0x800) return 2
+  if (code < 0x10000) return 3
+  return 4
+}
+
 /** Shaped glyphs in visual order. Skia reports UTF-8 byte offsets; map them back to UTF-16. */
 function glyphs(p: Paragraph, text: string): PlacedGlyph[] {
   const byteToIndex = new Map<number, number>()
@@ -97,7 +105,7 @@ function glyphs(p: Paragraph, text: string): PlacedGlyph[] {
   for (let i = 0; i < text.length; i++) {
     byteToIndex.set(bytes, i)
     const code = text.codePointAt(i) ?? 0
-    bytes += code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4
+    bytes += utf8Length(code)
     if (code >= 0x10000) i++
   }
   const out: PlacedGlyph[] = []
@@ -116,7 +124,7 @@ function glyphs(p: Paragraph, text: string): PlacedGlyph[] {
 function glyphSets(text: string): string[] {
   return withParagraph({ text }, (p) => {
     const g = glyphs(p, text)
-    return [...text].map((_, i) =>
+    return Array.from({ length: text.length }, (_, i) =>
       g
         .filter((x) => x.index === i)
         .map((x) => x.glyph)
@@ -127,7 +135,10 @@ function glyphSets(text: string): string[] {
 }
 
 function xOf(g: PlacedGlyph[], index: number): number {
-  return expectDefined(g.find((x) => x.index === index), `glyph for character ${index}`).x
+  return expectDefined(
+    g.find((x) => x.index === index),
+    `glyph for character ${index}`
+  ).x
 }
 
 /** Leftmost and rightmost columns holding dark ink after rendering the node. */
@@ -354,7 +365,12 @@ describe('Arabic rendered pixels', () => {
   })
 
   test('an explicitly RTL Latin line aligned RIGHT still hugs the right edge', () => {
-    const b = inkBounds({ text: 'Hello', fontFamily: 'Inter', textDirection: 'RTL', textAlignHorizontal: 'RIGHT' })
+    const b = inkBounds({
+      text: 'Hello',
+      fontFamily: 'Inter',
+      textDirection: 'RTL',
+      textAlignHorizontal: 'RIGHT'
+    })
     expect(b.right).toBeGreaterThan(W - 12)
   })
 
@@ -363,4 +379,3 @@ describe('Arabic rendered pixels', () => {
     expect(Math.abs(b.left - (W - 1 - b.right))).toBeLessThanOrEqual(4)
   })
 })
-

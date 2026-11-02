@@ -1,13 +1,13 @@
 import * as v from 'valibot'
 
-import type { FigmaNodeProxy } from '#core/figma-api'
-import { fitInputSchema, nextFreeX, placeCopy } from '#core/tools/mockup/fit'
+import { nextFreeX, placeCopy } from '#core/tools/mockup/fit'
 import {
   DEVICES,
   SOCIAL_FORMAT_IDS,
   SOCIAL_FORMATS,
   type SocialFormatId
 } from '#core/tools/mockup/presets'
+import { fitInputSchema } from '#core/tools/mockup/schema'
 import { defineTool, nodeSummary, requireNode, toolNumber } from '#core/tools/schema'
 
 const formatSchema = v.pipe(
@@ -43,7 +43,11 @@ export const createSocialPost = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     format: formatSchema,
-    x: v.optional(toolNumber(v.pipe(v.number(), v.description('X on the page; default: right of existing content')))),
+    x: v.optional(
+      toolNumber(
+        v.pipe(v.number(), v.description('X on the page; default: right of existing content'))
+      )
+    ),
     y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y on the page; default 0')))),
     name: v.optional(v.pipe(v.string(), v.description('Frame name')))
   }),
@@ -66,16 +70,26 @@ export const resizeForPlatforms = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: v.pipe(v.string(), v.description('Frame (or any node) to adapt')),
-    formats: v.pipe(v.array(formatSchema), v.minLength(1), v.maxLength(20), v.description('Target formats')),
+    formats: v.pipe(
+      v.array(formatSchema),
+      v.minLength(1),
+      v.maxLength(20),
+      v.description('Target formats')
+    ),
     fit: fitInputSchema,
-    gap: v.optional(toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Space between copies'))), 100)
+    gap: v.optional(
+      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Space between copies'))),
+      100
+    )
   }),
   execute: (figma, args) => {
     const source = requireNode(figma, args.id)
     if (!source) return { error: `Node ${args.id} not found` }
-    const background = 'fills' in source ? (source.fills as FigmaNodeProxy['fills']) : []
+    // Mixed fills (a figma.mixed symbol) have no single background to copy.
+    const background = Array.isArray(source.fills) ? source.fills : []
     let x = nextFreeX(figma, args.gap)
-    const y = source.parent?.type === 'PAGE' ? source.y : 0
+    // Top-level designs keep their row; nested ones start at the page top.
+    const y = source.parent?.id === figma.currentPage.id ? source.y : 0
     const results = args.formats.map((id) => {
       const f = SOCIAL_FORMATS[id]
       const frame = figma.createFrame()
@@ -87,7 +101,13 @@ export const resizeForPlatforms = defineTool({
       frame.fills = background
       const copy = placeCopy(source, frame, f, args.fit)
       x += f.width + args.gap
-      return { ...nodeSummary(frame), format: id, width: f.width, height: f.height, content: copy.id }
+      return {
+        ...nodeSummary(frame),
+        format: id,
+        width: f.width,
+        height: f.height,
+        content: copy.id
+      }
     })
     return { created: results }
   }
