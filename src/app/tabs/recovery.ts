@@ -1,4 +1,6 @@
-import { shallowReadonly, shallowRef } from 'vue'
+import { shallowReadonly, shallowRef, watch } from 'vue'
+
+import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
 
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
@@ -7,6 +9,7 @@ import {
   recoverySessionStates,
   type RecoverySessionStates
 } from '@/app/document/recovery/session'
+import { getRecoveryStore } from '@/app/document/recovery/store'
 import {
   discardRecoverySnapshot,
   listRecoverySnapshots,
@@ -40,13 +43,17 @@ let listGeneration = 0
 /** The copies Home lists, as of the last `refreshRecoverableSnapshots`. */
 export const recoverable = shallowReadonly(listed)
 
-/**
- * Lists the copies left to recover. `reportCrash` reports the crashed sessions found, so later
- * lists mark their copies as kept ones and the next start does not ask about them again.
- */
-export async function refreshRecoverableSnapshots({
-  reportCrash = false
-}: { reportCrash?: boolean } = {}): Promise<readonly RecoverableSnapshot[]> {
+/** A crashed session is remembered while copies it wrote are left, so their cards keep saying so. */
+export function crashedSessionsWithoutCopies(
+  snapshots: readonly RecoverySnapshotMeta[],
+  sessions: RecoverySessionStates
+): Set<string> {
+  const written = new Set(snapshots.map((snapshot) => snapshot.sessionId))
+  return new Set([...sessions.crashed].filter((id) => !written.has(id)))
+}
+
+/** Lists the copies left to recover. */
+export async function refreshRecoverableSnapshots(): Promise<readonly RecoverableSnapshot[]> {
   const generation = ++listGeneration
   if (!recoveryEnabled.value) {
     listed.value = []
@@ -57,7 +64,7 @@ export async function refreshRecoverableSnapshots({
     recoverySessionStates()
   ])
   const found = recoverableSnapshots(snapshots, sessions, openRecoveryIds())
-  if (reportCrash) forgetCrashedSessions(sessions.crashed)
+  forgetCrashedSessions(crashedSessionsWithoutCopies(snapshots, sessions))
   if (generation === listGeneration) listed.value = found
   return found
 }
@@ -75,4 +82,22 @@ export async function restoreRecoverable(id: string): Promise<void> {
 export async function discardRecoverable(id: string): Promise<void> {
   await discardRecoverySnapshot(id)
   drop(id)
+}
+
+/** The listed copies with their covers, as Home's cards show them. */
+export function useRecoverableWorkspace() {
+  const workspace = useDocumentWorkspace({
+    source: {
+      async refresh() {
+        return recoverable.value.map((snapshot) => ({ ...snapshot, name: snapshot.documentName }))
+      },
+      loadPreview: (id) => getRecoveryStore().readCover(id)
+    },
+    refreshOnFocus: false,
+    refreshOnReconnect: false,
+    previewConcurrency: 2,
+    onPreviewError: (id, error) => console.warn(`[Recovery] No cover for ${id}:`, error)
+  })
+  watch(recoverable, () => void workspace.invalidate())
+  return workspace
 }

@@ -12,6 +12,7 @@ import {
   discardRecoverable,
   refreshRecoverableSnapshots,
   restoreRecoverable,
+  useRecoverableWorkspace,
   type RecoverableSnapshot
 } from '@/app/tabs/recovery'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
@@ -26,6 +27,9 @@ const { recovery, files } = useI18n()
 const notifications = useNotificationMessages()
 const dates = useDateFormat()
 const focused = useWindowFocus()
+const workspace = useRecoverableWorkspace()
+const previewURL = workspace.previewURL
+const vWorkspacePreview = workspace.previewDirective
 
 // A closed tab or another window that went away can leave a copy behind.
 watchImmediate([() => allTabs.value.length, focused], () => {
@@ -34,8 +38,10 @@ watchImmediate([() => allTabs.value.length, focused], () => {
   })
 })
 
+/** When and how big; a crash's copy says so first, as the start no longer asks about it. */
 function metadata(snapshot: RecoverableSnapshot): string {
-  return `${dates.format(snapshot.updatedAt, 'dateTime')} · ${formatStorageBytes(snapshot.byteLength)}`
+  const details = `${dates.format(snapshot.updatedAt, 'dateTime')} · ${formatStorageBytes(snapshot.byteLength)}`
+  return snapshot.crashed ? `${recovery.value.crashNote} · ${details}` : details
 }
 
 function menu(snapshot: RecoverableSnapshot) {
@@ -86,9 +92,11 @@ async function discard(snapshot: RecoverableSnapshot): Promise<void> {
       <DocumentEntry
         v-for="snapshot in snapshots"
         :key="snapshot.id"
+        v-workspace-preview="snapshot.id"
         :view="view"
         :name="snapshot.documentName"
         :metadata="metadata(snapshot)"
+        :previewURL="previewURL(snapshot.id)"
         :menu="menu(snapshot)"
         @open="restore(snapshot)"
         @delete="discard(snapshot)"

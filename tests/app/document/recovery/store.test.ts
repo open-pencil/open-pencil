@@ -1,7 +1,10 @@
+import 'fake-indexeddb/auto'
 import { afterAll, afterEach, describe, expect, test } from 'bun:test'
 
 import { IDBFactory } from 'fake-indexeddb'
 
+import { createIdbRecoveryStore } from '@/app/document/recovery/idb'
+import { createMemoryRecoveryStore } from '@/app/document/recovery/memory'
 import {
   getRecoveryStore,
   isRecoveryStoreMemoryFallback,
@@ -38,5 +41,32 @@ describe('recovery store fallback', () => {
     await store.claim('copy', 'restoring')
 
     expect((await store.list()).map((snapshot) => snapshot.sessionId)).toEqual(['restoring'])
+  })
+})
+
+describe('recovery covers', () => {
+  const sharedFactory = globalThis.indexedDB
+  const cover = new Uint8Array([137, 80, 78, 71])
+
+  afterAll(() => {
+    globalThis.indexedDB = sharedFactory
+  })
+
+  test.each([
+    ['IndexedDB', createIdbRecoveryStore],
+    ['memory', createMemoryRecoveryStore]
+  ])('a %s store keeps the cover of the last write until the copy goes', async (_, create) => {
+    globalThis.indexedDB = new IDBFactory()
+    const store = create()
+    const copy = { id: 'copy', sessionId: 'one', documentName: 'Draft', figBytes: cover }
+    await store.write({ ...copy, cover })
+    expect(await store.readCover('copy')).toEqual(cover)
+
+    await store.write(copy)
+    expect(await store.readCover('copy')).toBeNull()
+
+    await store.write({ ...copy, cover })
+    await store.remove('copy')
+    expect(await store.readCover('copy')).toBeNull()
   })
 })

@@ -86,7 +86,7 @@ export async function recoverySessionStates(
   )
 }
 
-/** A crash is reported once: its copies stay on Home, but the next start does not ask again. */
+/** Forgets crashed sessions, once no copy they wrote is left to mark as a crash's. */
 export function forgetCrashedSessions(crashed: ReadonlySet<string>): void {
   for (const id of crashed) markSessionStarted(id, false)
 }

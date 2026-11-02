@@ -45,12 +45,12 @@ test('keeps recovery independent from cancelling an unsaved-document close', asy
     )
     .toBe(1)
 
-  // A reload leaves the copy on purpose, so Home lists it rather than asking at start.
+  // A reload leaves the copy on purpose, so Home lists it without calling it a crash's.
   page.once('dialog', (dialog) => dialog.accept())
   await page.goto('/?recent-files')
   const kept = page.getByTestId('home-recovery').locator('[data-slot="document-entry"]')
   await expect(kept).toHaveCount(1)
-  await expect(page.getByRole('alertdialog', { name: 'Recover unsaved work' })).toHaveCount(0)
+  await expect(kept).not.toContainText('Kept after a crash')
   await kept.locator('[data-slot="trigger"]').click()
   await expect(page.getByText('Retained recovery rectangle')).toBeVisible()
   await expect(page.getByTestId('home-recovery')).toHaveCount(0)
@@ -58,7 +58,7 @@ test('keeps recovery independent from cancelling an unsaved-document close', asy
   await context.close()
 })
 
-test('asks to recover the unsaved work of a window that crashed', async ({ browser, baseURL }) => {
+test('lists the unsaved work of a window that crashed on Home', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ baseURL })
   const crashing = await context.newPage()
   await crashing.goto('/?test')
@@ -79,9 +79,13 @@ test('asks to recover the unsaved work of a window that crashed', async ({ brows
 
   const page = await context.newPage()
   await page.goto('/?recent-files')
-  const dialog = page.getByRole('alertdialog', { name: 'Recover unsaved work' })
-  await expect(dialog).toBeVisible()
-  await dialog.getByRole('button', { name: 'Restore' }).click()
+  const lost = page.getByTestId('home-recovery').locator('[data-slot="document-entry"]')
+  await expect(lost).toHaveCount(1)
+  await expect(lost).toContainText('Kept after a crash')
+  // The cover drawn with the copy, so the card shows the work rather than a blank.
+  await expect(lost.locator('img')).toHaveAttribute('src', /^blob:/)
+  await expect(page.getByRole('alertdialog')).toHaveCount(0)
+  await lost.locator('[data-slot="trigger"]').click()
   await expect(page.getByText('Crashed recovery rectangle')).toBeVisible()
 
   await context.close()

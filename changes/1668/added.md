@@ -1,1 +1,1 @@
-- Home lists unsaved work kept from documents closed without saving, and the recovery prompt at start appears only after a crash.
+- Home lists unsaved work kept from documents closed without saving or open when OpenPencil quit, with a preview of each, in place of the recovery prompt at start.

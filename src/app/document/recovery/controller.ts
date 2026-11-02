@@ -11,6 +11,8 @@ interface DocumentRecoveryOptions {
   /** The document's content revision; rendering and layout do not advance it. */
   version: () => number
   buildFigFile: () => Promise<Uint8Array> | Uint8Array
+  /** The copy's Home card cover, drawn with the document as `buildFigFile` writes it. */
+  buildCover?: () => Uint8Array | null
   hasWritableSource: () => boolean
   isEnabled?: () => boolean
   store?: RecoveryStore
@@ -30,6 +32,7 @@ export function createDocumentRecovery({
   state,
   version: currentVersion,
   buildFigFile,
+  buildCover,
   hasWritableSource,
   isEnabled = () => true,
   store = getRecoveryStore(),
@@ -44,17 +47,29 @@ export function createDocumentRecovery({
   let cleanup: Promise<void> = Promise.resolve()
   let disposed = false
 
+  /** A copy without a cover still keeps the work, so a failed drawing never stops the write. */
+  function drawCover(): Uint8Array | null {
+    try {
+      return buildCover?.() ?? null
+    } catch (error) {
+      console.warn('[Recovery] Could not draw the cover:', error)
+      return null
+    }
+  }
+
   async function runWrites(generation: number): Promise<void> {
     if (disposed || generation !== lifecycleGeneration || !isEnabled()) return
     if (hasWritableSource() || requestedVersion === protectedVersion) return
     const version = requestedVersion
+    const cover = drawCover()
     const bytes = await buildFigFile()
     if (generation !== lifecycleGeneration || hasWritableSource() || !isEnabled()) return
     await store.write({
       id,
       sessionId: recoverySessionId,
       documentName: state.documentName,
-      figBytes: bytes
+      figBytes: bytes,
+      cover
     })
     persistedVersion = version
     if (generation !== lifecycleGeneration) return

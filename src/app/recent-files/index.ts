@@ -16,6 +16,7 @@ export {
 } from './store'
 export {
   cacheRecentFileCover,
+  drawHomeCardCover,
   cacheRecentFileThumbnail,
   loadCachedRecentFileThumbnail,
   loadRecentFileThumbnail

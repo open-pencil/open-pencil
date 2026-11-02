@@ -24,7 +24,6 @@ import { CloudHosts } from '@/components/cloud/integration'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
-import RecoveryDialog from '@/components/recovery/RecoveryDialog.vue'
 import SaveToHost from '@/components/save-to/SaveToHost.vue'
 import AISetupDialog from '@/components/settings/ai-setup/AISetupDialog.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
@@ -78,7 +77,6 @@ onMounted(() => {
       <AISetupDialog />
       <SaveToHost />
       <CloudHosts />
-      <RecoveryDialog />
       <UnsavedChangesDialog />
       <PublishLibraryDialog />
       <LibraryUpdateReviewDialog />

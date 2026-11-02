@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
-import { recoverableSnapshots } from '@/app/tabs/recovery'
+import { crashedSessionsWithoutCopies, recoverableSnapshots } from '@/app/tabs/recovery'
 
 function snapshot(id: string, sessionId: string): RecoverySnapshotMeta {
   return {
@@ -26,6 +26,13 @@ describe('recoverable snapshots', () => {
     expect(listed.map(({ id, crashed }) => [id, crashed])).toEqual([
       ['lost', true],
       ['kept', false]
+    ])
+  })
+
+  test('forgets a crashed session only once no copy it wrote is left', () => {
+    const crashed = { live: new Set<string>(), crashed: new Set(['restored', 'still-lost']) }
+    expect([...crashedSessionsWithoutCopies([snapshot('lost', 'still-lost')], crashed)]).toEqual([
+      'restored'
     ])
   })
 

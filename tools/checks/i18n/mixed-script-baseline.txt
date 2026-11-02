@@ -205,7 +205,6 @@ ja:panels.yAxis
 ja:panels.shaderPreset
 ja:panels.invalidShaderPreset
 ja:panels.shaderNeedsWebGPU
-ja:recovery.dialogDescription
 ja:recovery.sectionDescription
 ja:settings.baseURLHint
 ja:settings.invalidURL
@@ -424,7 +423,6 @@ zh-cn:panels.sizingFillFr
 zh-cn:panels.sizingFixedPx
 zh-cn:panels.xAxis
 zh-cn:panels.yAxis
-zh-cn:recovery.dialogDescription
 zh-cn:recovery.sectionDescription
 zh-cn:settings.baseURLHint
 zh-cn:settings.invalidURL
