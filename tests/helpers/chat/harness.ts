@@ -33,12 +33,6 @@ export class ChatHarness {
     await this.page.getByRole('button', { name: 'Manage models and roles…' }).click()
   }
 
-  /** Images are attached from the composer's add menu. */
-  async attachImages(): Promise<void> {
-    await this.page.getByTestId('chat-add-menu').click()
-    await this.page.getByRole('menuitem', { name: 'Attach images' }).click()
-  }
-
   userMessage() {
     return this.page.getByTestId('chat-message-user').last()
   }

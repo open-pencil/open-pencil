@@ -31,8 +31,6 @@ export default {
     dividerTokens: 'shrink-0 text-muted',
     dividerNote: 'leading-snug text-muted',
     summary: 'rounded-md bg-hover px-2.5 py-2 text-xs leading-relaxed',
-    addTrigger:
-      'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-default disabled:opacity-50 data-[state=open]:bg-hover data-[state=open]:text-surface',
     // Shown while the reply is hovered or focused, unless the setting shows it always.
     usage:
       'inline-flex items-center gap-2 px-2 text-[11px] text-muted transition-opacity data-[display=hover]:opacity-0 data-[display=hover]:group-hover/reply:opacity-100 data-[display=hover]:group-focus-within/reply:opacity-100'

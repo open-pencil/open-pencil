@@ -480,8 +480,6 @@ export const aiMessageDefaults = {
   skillWarningLongDescription: params('The description is longer than {max} characters.'),
   skillErrorNoFrontmatter: 'SKILL.md does not start with YAML frontmatter between --- lines.',
   skillErrorInvalidFrontmatter: params('The SKILL.md frontmatter is invalid: {detail}'),
-  addToMessage: 'Add images, layers, or a command',
-  commandsAndSkills: 'Commands and skills',
   contextUsed: params('Context: {percent}% used'),
   contextTitle: 'Context',
   contextTokens: params('{used} of {total} tokens'),

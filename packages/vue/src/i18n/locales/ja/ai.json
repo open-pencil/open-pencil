@@ -417,8 +417,6 @@
   "skillWarningLongDescription": "説明が {max} 文字を超えています。",
   "skillErrorNoFrontmatter": "SKILL.md が --- 行で囲まれた YAML フロントマターで始まっていません。",
   "skillErrorInvalidFrontmatter": "SKILL.md のフロントマターが無効です: {detail}",
-  "addToMessage": "画像、レイヤー、コマンドを追加",
-  "commandsAndSkills": "コマンドとスキル",
   "contextUsed": "コンテキスト：{percent}% 使用",
   "contextTitle": "コンテキスト",
   "contextTokens": "{total} トークン中 {used}",

@@ -417,8 +417,6 @@
   "skillWarningLongDescription": "Die Beschreibung ist länger als {max} Zeichen.",
   "skillErrorNoFrontmatter": "SKILL.md beginnt nicht mit YAML-Frontmatter zwischen Zeilen mit ---.",
   "skillErrorInvalidFrontmatter": "Das Frontmatter der SKILL.md ist ungültig: {detail}",
-  "addToMessage": "Bilder, Ebenen oder einen Befehl hinzufügen",
-  "commandsAndSkills": "Befehle und Skills",
   "contextUsed": "Kontext: {percent} % belegt",
   "contextTitle": "Kontext",
   "contextTokens": "{used} von {total} Tokens",

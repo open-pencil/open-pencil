@@ -78,7 +78,6 @@ function restoreDraft(draft: string): boolean {
 defineExpose({
   restoreDraft,
   insert: editor.insert,
-  startCommand: editor.startCommand,
   focus: editor.focus
 })
 </script>

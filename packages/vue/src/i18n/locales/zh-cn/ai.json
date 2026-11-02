@@ -417,8 +417,6 @@
   "skillWarningLongDescription": "描述超过 {max} 个字符。",
   "skillErrorNoFrontmatter": "SKILL.md 没有以 --- 行之间的 YAML frontmatter 开头。",
   "skillErrorInvalidFrontmatter": "SKILL.md 的 frontmatter 无效：{detail}",
-  "addToMessage": "添加图片、图层或命令",
-  "commandsAndSkills": "命令和技能",
   "contextUsed": "上下文：已用 {percent}%",
   "contextTitle": "上下文",
   "contextTokens": "{used} / {total} 词元",

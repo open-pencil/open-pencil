@@ -417,8 +417,6 @@
   "skillWarningLongDescription": "Описание длиннее {max} символов.",
   "skillErrorNoFrontmatter": "SKILL.md не начинается с YAML-frontmatter между строками ---.",
   "skillErrorInvalidFrontmatter": "Frontmatter файла SKILL.md некорректен: {detail}",
-  "addToMessage": "Добавить изображения, слои или команду",
-  "commandsAndSkills": "Команды и навыки",
   "contextUsed": "Контекст: занято {percent}%",
   "contextTitle": "Контекст",
   "contextTokens": "{used} из {total} токенов",

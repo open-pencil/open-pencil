@@ -3,7 +3,6 @@ import {
   autocompletion,
   completionKeymap,
   completionStatus,
-  startCompletion,
   type Completion,
   type CompletionSource
 } from '@codemirror/autocomplete'
@@ -81,6 +80,9 @@ export function useChatEditor(
         override: options.completions,
         icons: false,
         activateOnTyping: true,
+        // The field sits at the panel's bottom: a short list fits under its first line but would
+        // cover the field's own buttons, so lists always open above.
+        aboveCursor: true,
         addToOptions: [{ render: renderCompletionIcon, position: 20 }]
       }),
       // The list opens above the field and may be wider than the panel, which clips its content.
@@ -160,21 +162,6 @@ export function useChatEditor(
     editor.focus()
   }
 
-  /**
-   * Starts a command: `/` at the start of the message, which opens the commands it offers. The
-   * one chosen replaces a command already there and comes before any text already typed.
-   */
-  function startCommand() {
-    const editor = view.value
-    if (!editor) return
-    const current = editor.state.doc.toString()
-    if (!current.startsWith('/'))
-      editor.dispatch({ changes: { from: 0, insert: /^(\s|$)/.test(current) ? '/' : '/ ' } })
-    editor.dispatch({ selection: EditorSelection.cursor(1) })
-    editor.focus()
-    startCompletion(editor)
-  }
-
   /** Focuses the field with the caret at the end of the message. */
   function focusEnd() {
     const editor = view.value
@@ -183,5 +170,5 @@ export function useChatEditor(
     editor.focus()
   }
 
-  return { text, setText, insert, startCommand, focus: () => view.value?.focus(), focusEnd }
+  return { text, setText, insert, focus: () => view.value?.focus(), focusEnd }
 }

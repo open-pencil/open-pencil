@@ -18,7 +18,7 @@ The first time you open OpenPencil, guided setup asks what AI should help with a
 
 You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. Models using the same provider connection reuse its stored credential.
 
-The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/compact`, or one of an ACP agent's commands. The **+** button beside the field attaches images, mentions the selected layers, and starts a command. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
+The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/compact`, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
 
 ## Step limit
 

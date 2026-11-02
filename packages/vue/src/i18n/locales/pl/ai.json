@@ -417,8 +417,6 @@
   "skillWarningLongDescription": "Opis jest dłuższy niż {max} znaki.",
   "skillErrorNoFrontmatter": "SKILL.md nie zaczyna się od frontmattera YAML między wierszami ---.",
   "skillErrorInvalidFrontmatter": "Frontmatter pliku SKILL.md jest nieprawidłowy: {detail}",
-  "addToMessage": "Dodaj obrazy, warstwy lub polecenie",
-  "commandsAndSkills": "Polecenia i umiejętności",
   "contextUsed": "Kontekst: {percent}% użyte",
   "contextTitle": "Kontekst",
   "contextTokens": "{used} z {total} tokenów",
