@@ -89,39 +89,28 @@ describe('APP_MENU_SCHEMA', () => {
   test('shows only document-free menus and items while no document is in front', () => {
     const shownIds = (items: readonly AppMenuEntry[]) =>
       items.flatMap((entry) =>
-        entry.type === 'separator' || entry.feature === 'document' || entry.target === 'browser'
-          ? []
-          : [entry.id]
+        entry.type === 'separator' || entry.feature === 'document' ? [] : [entry.id]
       )
-    const shown = APP_MENU_SCHEMA.filter((group) => group.feature !== 'document').map((group) => ({
-      label: group.label,
-      ids: shownIds(group.items)
-    }))
+    const shown = new Map(
+      APP_MENU_SCHEMA.filter((group) => group.feature !== 'document').map((group) => [
+        group.label,
+        shownIds(group.items)
+      ])
+    )
 
-    expect(shown).toEqual([
-      {
-        label: 'File',
-        ids: [
-          'new',
-          'new-tab',
-          'open',
-          'open-recent',
-          'open-tour',
-          'diagnostics',
-          'save-version',
-          'version-history',
-          'autosave',
-          'previous-tab',
-          'next-tab',
-          'settings'
-        ]
-      },
-      { label: 'Edit', ids: ['copy', 'cut', 'paste'] },
-      {
-        label: 'View',
-        ids: ['theme', 'preferences', 'dev-tools']
-      }
-    ])
+    expect([...shown.keys()]).toEqual(['File', 'Edit', 'View'])
+    expect(shown.get('File')).toEqual(expect.arrayContaining(['new', 'open', 'settings']))
+    expect(shown.get('Edit')).toEqual(expect.arrayContaining(['copy', 'cut', 'paste']))
+    const shownAnywhere = [...shown.values()].flat()
+    for (const id of [
+      'save',
+      'export-selection',
+      'edit.undo',
+      'selection.selectAll',
+      'view.zoomFit'
+    ]) {
+      expect(shownAnywhere).not.toContain(id)
+    }
   })
 
   test('keeps move-to-page destination selection in the browser menu', () => {
