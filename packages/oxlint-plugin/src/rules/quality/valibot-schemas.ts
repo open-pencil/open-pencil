@@ -107,7 +107,13 @@ const SCHEMA_NAME = /^[a-z][A-Za-z0-9]*Schema$/
  * project names, such as a contract shared with other services, where a reader looks.
  */
 function placesExportedSchemas(file: string, schemaModules: readonly string[]): boolean {
-  return file.endsWith('/schema.ts') || schemaModules.some((directory) => file.includes(directory))
+  return (
+    file.endsWith('/schema.ts') ||
+    // A directory matches whole, so `src/contract` does not also take in `src/contracts/`.
+    schemaModules.some((directory) =>
+      file.includes(directory.endsWith('/') ? directory : `${directory}/`)
+    )
+  )
 }
 
 /** The call a declaration's value is, past `as` and `satisfies`. */

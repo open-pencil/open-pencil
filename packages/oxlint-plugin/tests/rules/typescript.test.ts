@@ -9,7 +9,8 @@ async function count(rule: string, source: string): Promise<number> {
 describe('no-broad-double-cast', () => {
   test.each([
     'export const result = value as unknown as Point',
-    'export const result = <unknown>value as Point'
+    'export const result = <unknown>value as Point',
+    'export const result = ((value as unknown)) as Point'
   ])('rejects %s', async (source) => {
     expect(await count('no-broad-double-cast', source)).toBe(1)
   })
@@ -102,7 +103,8 @@ describe('no-ts-suppression-comments', () => {
     }
   )
 
-  test('accepts other comments', async () => {
+  test('accepts other comments and @ts-check, which turns checking on', async () => {
     expect(await count('no-ts-suppression-comments', '// ts is fine\nexport const a = 1')).toBe(0)
+    expect(await count('no-ts-suppression-comments', '// @ts-check\nexport const a = 1')).toBe(0)
   })
 })

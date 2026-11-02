@@ -43,6 +43,16 @@ describe(rule, () => {
       expect(ruleDiagnostics(await lint(source, withContract, path), rule)).toHaveLength(1)
     })
 
+    test('matches a named directory whole, not as a prefix of another', async () => {
+      const prefixOnly = {
+        [`open-pencil/${rule}`]: ['error', { schemaModules: ['/packages/cloud/src/contract'] }]
+      }
+      const inside = 'packages/cloud/src/contract/documents.ts'
+      const beside = 'packages/cloud/src/contracts-extra/documents.ts'
+      expect(ruleDiagnostics(await lint(source, prefixOnly, inside), rule)).toHaveLength(0)
+      expect(ruleDiagnostics(await lint(source, prefixOnly, beside), rule)).toHaveLength(1)
+    })
+
     test('rejects one from a contract folder no option names', async () => {
       const path = 'packages/cloud/src/contract/documents.ts'
       expect(ruleDiagnostics(await lint(source, rules, path), rule)).toHaveLength(1)

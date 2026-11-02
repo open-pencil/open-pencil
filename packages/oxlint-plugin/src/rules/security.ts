@@ -57,11 +57,17 @@ function loggedNames(node: ESTree.Node | null): string[] {
   }
 }
 
-/** APIs answer with typed JSON or a constant body, never HTML assembled from values. */
+/**
+ * APIs answer with typed JSON or a constant body, never HTML assembled from values. It reads every
+ * `.html(...)` call as a response, as Hono's `context.html` is, so turn it on for server code only.
+ */
 export const noDynamicHTMLRule = defineRule({
   meta: {
     type: 'problem',
-    docs: { description: 'Disallow HTML responses built from values.' },
+    docs: {
+      description:
+        'Disallow HTML responses built from values; for server code, where `.html()` sends a response.'
+    },
     messages: {
       dynamic:
         'Return typed JSON or a constant HTML body; never build an HTML response from values.'

@@ -299,7 +299,7 @@ const noTsSuppressionComments = defineRule({
     return {
       Program() {
         for (const comment of context.sourceCode.getAllComments()) {
-          if (!/@ts-(?:ignore|expect-error|nocheck|check)\b/.test(comment.value)) continue
+          if (!/@ts-(?:ignore|expect-error|nocheck)\b/.test(comment.value)) continue
           context.report({
             node: comment,
             message:

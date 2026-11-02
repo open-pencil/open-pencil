@@ -47,16 +47,16 @@ The plugin is named `open-pencil`. Every rule is off until the configuration tur
 
 ### Runtime and security
 
-| Rule                                          | What it asks for                                                                  |
-| --------------------------------------------- | --------------------------------------------------------------------------------- |
-| `no-silent-catch`                             | No empty `catch` blocks.                                                          |
-| `no-math-random`                              | `crypto.getRandomValues()` instead of `Math.random()`.                            |
-| `no-reflect-delete-global-this-outside-tests` | No `Reflect.deleteProperty(globalThis, …)` outside `tests/`.                      |
-| `no-module-mocking`                           | Inject dependencies instead of mocking modules in tests.                          |
-| `no-secret-in-query`                          | Secrets and tokens in a URL fragment or request body, never its query string.     |
-| `no-secret-logging`                           | Never log secrets, tokens, cookies, or authorization values.                      |
-| `no-dynamic-html`                             | Return typed JSON or a constant body; never build an HTML response from values.   |
-| `no-conditional-object-spreads`               | An explicit branch instead of several or large conditional spreads in one object. |
+| Rule                                          | What it asks for                                                                                                                                                                               |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-silent-catch`                             | No empty `catch` blocks.                                                                                                                                                                       |
+| `no-math-random`                              | `crypto.getRandomValues()` instead of `Math.random()`.                                                                                                                                         |
+| `no-reflect-delete-global-this-outside-tests` | No `Reflect.deleteProperty(globalThis, …)` outside `tests/`.                                                                                                                                   |
+| `no-module-mocking`                           | Inject dependencies instead of mocking modules in tests.                                                                                                                                       |
+| `no-secret-in-query`                          | Secrets and tokens in a URL fragment or request body, never its query string.                                                                                                                  |
+| `no-secret-logging`                           | Never log secrets, tokens, cookies, or authorization values.                                                                                                                                   |
+| `no-dynamic-html`                             | Return typed JSON or a constant body; never build an HTML response from values. Every `.html(...)` call counts as a response, as Hono's `context.html` is, so turn it on for server code only. |
+| `no-conditional-object-spreads`               | An explicit branch instead of several or large conditional spreads in one object.                                                                                                              |
 
 ### Imports, naming, and layout
 
