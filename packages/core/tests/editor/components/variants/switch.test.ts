@@ -160,4 +160,61 @@ test('a switch lays out the auto layout around it, and undo puts the siblings ba
   expect(editor.state.selectedIds.size).toBe(0)
   editor.undo.redo()
   expect(must(graph.getNode(sibling.id)).x).toBe(90)
+  expect(must(graph.getNode(chip.id)).width).toBe(80)
+})
+
+function variantsOf(
+  editor: ReturnType<typeof createEditor>,
+  fill: (componentId: string, size: string) => void
+) {
+  const { graph } = editor
+  const pageId = editor.state.currentPageId
+  const set = graph.createNode('COMPONENT_SET', pageId, {
+    name: 'Chip',
+    componentPropertyDefinitions: [
+      { id: 'prop:size', name: 'Size', type: 'VARIANT', defaultValue: 'Small' }
+    ]
+  })
+  for (const size of ['Small', 'Large']) {
+    const component = graph.createNode('COMPONENT', set.id, {
+      name: `Size=${size}`,
+      width: 40,
+      height: 20,
+      componentPropertyValues: { Size: size }
+    })
+    fill(component.id, size)
+  }
+  const small = must(graph.getChildren(set.id)[0])
+  const chip = must(graph.createInstance(small.id, pageId, { x: 500 }))
+  const child = () => must(graph.getChildren(chip.id)[0])
+  return { chip, child }
+}
+
+test('a nested instance hidden in the instance stays hidden after a switch', () => {
+  const editor = createEditor()
+  const { graph } = editor
+  const dot = graph.createNode('COMPONENT', editor.state.currentPageId, {
+    name: 'Dot',
+    width: 4,
+    height: 4
+  })
+  const { chip, child } = variantsOf(editor, (componentId) => {
+    graph.createInstance(dot.id, componentId, { name: 'Dot' })
+  })
+  editor.updateNodeWithUndo(child().id, { visible: false })
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  expect(child().visible).toBe(false)
+})
+
+test('a boolean layer takes the union of a variant that sets no operation', () => {
+  const editor = createEditor()
+  const { chip, child } = variantsOf(editor, (componentId, size) => {
+    editor.graph.createNode('BOOLEAN_OPERATION', componentId, {
+      name: 'Shape',
+      booleanOperation: size === 'Small' ? 'SUBTRACT' : undefined
+    })
+  })
+  expect(child().booleanOperation).toBe('SUBTRACT')
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  expect(child().booleanOperation).toBe('UNION')
 })

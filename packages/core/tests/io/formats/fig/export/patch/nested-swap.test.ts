@@ -72,6 +72,7 @@ test('a nested swap saves without the overrides an outer instance held on remove
   const placed = named(opened, 'Placed')
 
   opened.swapInstanceComponent(layerIn(opened, placed, 'Badge').id, named(opened, 'Size=large').id)
+  expect(layerIn(opened, placed, 'Ring').name).toBe('Ring')
 
   expect(opacityOverrides(await exportFigFile(opened))).toBe(0)
 })

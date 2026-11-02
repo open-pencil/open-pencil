@@ -62,6 +62,8 @@ export function copyProp(
     setSceneProp(target, key, source.gridPosition ? { ...source.gridPosition } : null)
   } else if (key === 'targetAspectRatio') {
     setSceneProp(target, key, source.targetAspectRatio ? { ...source.targetAspectRatio } : null)
+  } else if (key === 'booleanOperation') {
+    setSceneProp(target, key, source.booleanOperation ?? 'UNION')
   } else {
     const value = source[key]
     setSceneProp(target, key, Array.isArray(value) ? structuredClone(value) : value)

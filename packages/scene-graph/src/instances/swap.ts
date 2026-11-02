@@ -190,13 +190,13 @@ function copyProtection(swap: Swap, copy: SceneNode): (field: string) => boolean
       scopes.push(new Set(fields.keys()))
     }
   }
+  const own = copy.instanceOverrides.self
+  const ownsField = (field: string) => own.has(field) || ownsSelfFillField(copy, field)
   if (scopes.length === 0) {
-    return copy.instanceOverrides.self.size === 0
-      ? NOTHING_PROTECTED
-      : (field) => ownsSelfFillField(copy, field)
+    return own.size === 0 ? NOTHING_PROTECTED : ownsField
   }
   const protectedField = bindingProtection(scopes)
-  return (field) => protectedField(field) || ownsSelfFillField(copy, field)
+  return (field) => protectedField(field) || ownsField(field)
 }
 
 function followReplacedLayerFields(graph: SceneGraph, copy: SceneNode, layer: SceneNode): void {
