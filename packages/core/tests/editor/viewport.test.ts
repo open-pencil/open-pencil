@@ -98,6 +98,17 @@ describe('zoomToFit', () => {
     expect(editor.state.zoom).toBeCloseTo(470 / 400, 6)
   })
 
+  test('leaves hidden layers and children outside an unclipped frame out of the fit', () => {
+    const { editor } = withRect({ x: 100, y: 200, width: 300, height: 180 })
+    const page = editor.state.currentPageId
+    editor.graph.createNode('RECTANGLE', page, { x: 3000, y: 3000, width: 100, height: 100, visible: false })
+    const frame = editor.graph.createNode('FRAME', page, { x: 100, y: 200, width: 300, height: 180, clipsContent: false })
+    editor.graph.createNode('RECTANGLE', frame.id, { x: 400, y: 0, width: 100, height: 100 })
+
+    editor.zoomToFit()
+    expect(editor.state.zoom).toBeCloseTo(730 / 300, 6)
+  })
+
   test('shows the origin at the centre at 100% on an empty page', () => {
     const editor = createEditor({ getViewportSize: () => VIEWPORT })
     editor.state.zoom = 3
@@ -109,6 +120,17 @@ describe('zoomToFit', () => {
 })
 
 describe('zoomToSelection', () => {
+  test('fits a rotated layer by the box it draws in', () => {
+    const { editor, node } = withRect({ x: 0, y: 0, width: 400, height: 40 })
+    editor.graph.updateNode(node.id, { rotation: 90 })
+    editor.select([node.id])
+
+    editor.zoomToSelection()
+
+    // Standing upright, the 400 × 40 bar fits the 440 px tall area by its length.
+    expect(editor.state.zoom).toBeCloseTo(440 / 400, 6)
+  })
+
   test('fills the canvas less the selection insets with the selected layers', () => {
     const { editor, node } = withRect({ x: 700, y: 500, width: 120, height: 90 })
     editor.select([node.id])

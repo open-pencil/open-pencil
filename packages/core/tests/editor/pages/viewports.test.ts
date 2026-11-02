@@ -45,11 +45,18 @@ describe('page viewports', () => {
     expect(editor.state).toMatchObject({ panX: -120, panY: 80, zoom: 0.5 })
   })
 
-  test('an unmeasured canvas leaves the first visit at the origin', async () => {
-    const editor = createEditor({ getViewportSize: () => ({ width: 0, height: 0 }) })
+  test('an unmeasured canvas leaves the first visit at the origin, and fits it once measured', async () => {
+    let size = { width: 0, height: 0 }
+    const editor = createEditor({ getViewportSize: () => size })
+    const first = editor.state.currentPageId
     const second = editor.graph.addPage('Second').id
     editor.graph.createNode('RECTANGLE', second, { x: 100, y: 200, width: 300, height: 180 })
     await editor.switchPage(second)
     expect(editor.state).toMatchObject({ panX: 0, panY: 0, zoom: 1 })
+
+    await editor.switchPage(first)
+    size = VIEWPORT
+    await editor.switchPage(second)
+    expect(editor.state.zoom).toBeCloseTo(730 / 300, 6)
   })
 })

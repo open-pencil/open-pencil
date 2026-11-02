@@ -1,6 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
-import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { ZOOM_DIVISOR, ZOOM_MAX, ZOOM_MIN, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
@@ -29,12 +29,16 @@ export const FIT_INSETS: ViewportInsets = { left: 45, right: 25, top: 45, bottom
 /** Figma's insets for zoom to selection: 50 px a side plus the same chrome allowance. */
 export const SELECTION_INSETS: ViewportInsets = { left: 60, right: 40, top: 60, bottom: 100 }
 
-/** The world box every layer of the page draws in, rotation included; null for an empty page. */
+/**
+ * The world box the page's visible top-level layers take, rotation included; null when it shows
+ * none. As in Figma, hidden layers count for nothing and each layer counts by its own box, so
+ * children drawn outside an unclipped frame are left out.
+ */
 export function pageContentBounds(
   graph: Pick<SceneGraph, 'getChildren' | 'getNode'>,
   pageId: string
 ): Rect | null {
-  const nodes = graph.getChildren(pageId)
+  const nodes = graph.getChildren(pageId).filter((node) => node.visible)
   if (nodes.length === 0) return null
   return computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, graph)))
 }
@@ -186,7 +190,7 @@ export function createViewportActions(ctx: EditorContext) {
       .filter((n): n is NonNullable<typeof n> => n != null)
     if (nodes.length === 0) return
 
-    const b = computeAbsoluteBounds(nodes, (id) => ctx.graph.getAbsolutePosition(id))
+    const b = computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, ctx.graph)))
     zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height)
   }
 
