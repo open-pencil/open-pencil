@@ -217,7 +217,7 @@ function divergesFromLayer(copy: SceneNode, layer: SceneNode, field: string): bo
     return false
   }
   const key = field as keyof SceneNode
-  return !layer.instanceOverrides.self.has(field) || !isEqual(copy[key], layer[key])
+  return !isEqual(copy[key], layer[key])
 }
 
 function followReplacedLayerFields(graph: SceneGraph, copy: SceneNode, layer: SceneNode): void {

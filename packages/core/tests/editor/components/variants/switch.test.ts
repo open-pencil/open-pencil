@@ -241,7 +241,12 @@ test('a nested instance follows what the new variant sets on it, past its own bi
   const { editor, chip, child } = withNestedDot((editing, dotId, size) => {
     const { graph } = editing
     const collection = graph.createCollection(`Tokens ${size}`)
-    const height = graph.createVariable('Height', 'FLOAT', collection.id, 10).id
+    const height = graph.createVariable(
+      'Height',
+      'FLOAT',
+      collection.id,
+      size === 'Small' ? 10 : 20
+    ).id
     if (size === 'Small') {
       tokens.small = height
       tokens.width = graph.createVariable('Width', 'FLOAT', collection.id, 12).id
@@ -254,6 +259,24 @@ test('a nested instance follows what the new variant sets on it, past its own bi
   editor.bindVariable(child().id, 'width', tokens.width)
   editor.switchInstanceVariant(chip.id, 'Size', 'Large')
   expect(child().boundVariables.height).toBe(tokens.large)
+  expect(child().height).toBe(20)
   expect(child().boundVariables.width).toBe(tokens.width)
   expect(child().visible).toBe(true)
+})
+
+test('a nested instance drops a binding the new variant does not set, and keeps its own', () => {
+  const tokens = { small: '', own: '' }
+  const { editor, chip, child } = withNestedDot((editing, dotId, size) => {
+    if (size === 'Small') {
+      const collection = editing.graph.createCollection('Tokens')
+      tokens.small = editing.graph.createVariable('Height', 'FLOAT', collection.id, 10).id
+      tokens.own = editing.graph.createVariable('Radius', 'FLOAT', collection.id, 2).id
+      editing.bindVariable(dotId, 'height', tokens.small)
+      editing.bindVariable(dotId, 'cornerRadius', tokens.small)
+    }
+  })
+  editor.bindVariable(child().id, 'cornerRadius', tokens.own)
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  expect(child().boundVariables.height).toBeUndefined()
+  expect(child().boundVariables.cornerRadius).toBe(tokens.own)
 })
