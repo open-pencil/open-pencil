@@ -2,6 +2,7 @@ import { createHead } from '@unhead/vue/client'
 import { createApp, nextTick } from 'vue'
 
 import { ReadOnlyDocumentError } from '@open-pencil/core'
+import { reportUnpreparedText } from '@open-pencil/core/layout'
 import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 import './app.css'
@@ -23,6 +24,15 @@ import router from './router'
  * evaluates the app bundle and can still show the gate's guidance.
  */
 export async function boot(): Promise<void> {
+  // Text is laid out only after its fonts are prepared; in development, a path that skips that
+  // is an error, which the app's browser tests report.
+  if (import.meta.env.DEV) {
+    reportUnpreparedText((node) =>
+      console.error(
+        `[text] ${node.id} "${node.name}" was laid out before its fonts (${node.fontFamily}) were prepared`
+      )
+    )
+  }
   installBundledFonts()
   if (IS_TAURI) installNativeFigArchives()
   installCanvasKitBinary()

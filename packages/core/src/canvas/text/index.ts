@@ -191,6 +191,19 @@ export function measureTextNode(
   maxWidth?: number
 ): { width: number; height: number } | null {
   if (!r.fontsLoaded || !r.fontProvider || !isNodeFontLoaded(r, node)) return null
+  return measureTextAsDrawn(r, node, maxWidth)
+}
+
+/**
+ * `node`'s size in the fonts the canvas draws it with now, ready or not: what a text being typed
+ * shows, which its edit draws from the same fonts.
+ */
+export function measureTextAsDrawn(
+  r: TextRenderer,
+  node: SceneNode,
+  maxWidth?: number
+): { width: number; height: number } | null {
+  if (!r.fontsLoaded || !r.fontProvider) return null
   if (node.type !== 'TEXT' || !node.text) return null
 
   const layoutWidth = resolveParagraphLayoutWidth(node, maxWidth)

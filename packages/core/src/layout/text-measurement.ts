@@ -46,12 +46,33 @@ export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
 }
 
-/** The size of `node`'s text: measured when a measurer is installed and can, estimated otherwise. */
+let unpreparedTextReport: ((node: SceneNode) => void) | null = null
+
+/**
+ * Has `report` hear of every text layout reached before the text's fonts were prepared, which
+ * layout leaves at its stored size. A host that prepares all text first reports it as an error,
+ * so a path that skips `prepareGraphFonts` fails where it runs instead of mis-measuring.
+ */
+export function reportUnpreparedText(report: ((node: SceneNode) => void) | null): void {
+  unpreparedTextReport = report
+}
+
+/**
+ * The size of `node`'s text. With a measurer installed, that is its size in its own fonts; text
+ * whose fonts are not prepared keeps the size it has, never one guessed in another face. With
+ * none, as in a host without fonts, it is estimated.
+ */
 export function measureTextForLayout(
   node: SceneNode,
   maxWidth?: number
 ): { width: number; height: number } {
-  return globalTextMeasurer?.(node, maxWidth) ?? estimateTextSize(node, maxWidth)
+  if (!globalTextMeasurer) return estimateTextSize(node, maxWidth)
+  const measured = globalTextMeasurer(node, maxWidth)
+  if (measured) return measured
+  // Empty text measures nothing but its line, which needs no fonts beyond the default.
+  if (node.type !== 'TEXT' || !node.text) return estimateTextSize(node, maxWidth)
+  unpreparedTextReport?.(node)
+  return { width: node.width, height: node.height }
 }
 
 const installedMeasurers: TextMeasurer[] = []

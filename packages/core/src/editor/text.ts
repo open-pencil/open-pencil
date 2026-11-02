@@ -7,9 +7,12 @@ import {
   type InstanceOverrideState
 } from '@open-pencil/scene-graph/instances/overrides'
 
+import { isNodeFontLoaded } from '#core/canvas/text'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { getTextMeasurer, withTextMeasurer } from '#core/layout/text-measurement'
 import type { TextEditorState } from '#core/text/editor'
 import { hasGlyphOutlines } from '#core/text/font/glyphs'
+import { prepareTextFonts } from '#core/text/prepare'
 
 import { applyBoundTextEdit } from './components/authoring/text-edit'
 import { fitEmptyLabelToPlaceholder } from './connectors/label-edit'
@@ -106,7 +109,15 @@ function applyTextInstanceOverride(
   }
 }
 
-export function createTextActions(ctx: EditorContext) {
+/** How text edits learn that a write to their text is waiting for its fonts. */
+interface TextWrites {
+  textWriteSettled: (id: string) => Promise<void> | null
+}
+
+/** Text actions used on their own have no writes waiting for fonts. */
+const NO_WAITING_WRITES: TextWrites = { textWriteSettled: () => null }
+
+export function createTextActions(ctx: EditorContext, writes: TextWrites = NO_WAITING_WRITES) {
   let activeSession: TextEditSession | null = null
   /** Puts back the size an empty connector label had before its placeholder sized it. */
   let restoreEmptyLabel: (() => void) | null = null
@@ -122,12 +133,57 @@ export function createTextActions(ctx: EditorContext) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const { width, height } = node
-    ctx.graph.updateNode(nodeId, {
-      ...textAutoResizeChanges(node, changes),
-      ...changes,
-      ...pathTextEditChanges(node, changes)
+    measuringEditedText(nodeId, () => {
+      ctx.graph.updateNode(nodeId, {
+        ...textAutoResizeChanges(node, changes),
+        ...changes,
+        ...pathTextEditChanges(node, changes)
+      })
+      if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
     })
-    if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
+    if ('text' in changes || 'styleRuns' in changes) prepareEditedText(nodeId)
+  }
+
+  /**
+   * Runs `fn` with the text being typed measured in the fonts it is drawn with now, as its edit
+   * draws it, so its size and its glyphs agree while it waits for fonts it newly needs. Other text
+   * is measured as layout measures it.
+   */
+  function measuringEditedText(nodeId: string, fn: () => void) {
+    const renderer = ctx.getRenderer()
+    const measure = getTextMeasurer()
+    if (!renderer || !measure) return fn()
+    withTextMeasurer(
+      (node, maxWidth) =>
+        node.id === nodeId ? renderer.measureTextAsDrawn(node, maxWidth) : measure(node, maxWidth),
+      fn
+    )
+  }
+
+  /**
+   * Prepares the fonts the typed text newly needs, such as a script's fallback, through the one
+   * gate, and once they are in, redraws the edit and sizes the text in them.
+   */
+  function prepareEditedText(nodeId: string) {
+    const renderer = ctx.getRenderer()
+    const node = ctx.graph.getNode(nodeId)
+    if (!renderer?.fontsLoaded || !node || isNodeFontLoaded(renderer, node)) return
+    void sizeInPreparedFonts(nodeId, node)
+  }
+
+  async function sizeInPreparedFonts(nodeId: string, node: SceneNode) {
+    await prepareTextFonts([node], { loadFont: ctx.loadFont })
+    const te = ctx.getTextEditor()
+    const current = ctx.graph.getNode(nodeId)
+    if (!current) return
+    if (te?.isActive && te.nodeId === nodeId) te.rebuildParagraph(current)
+    measuringEditedText(nodeId, () => {
+      const sized = textAutoResizeChanges(current, { text: current.text })
+      const { width, height } = current
+      ctx.graph.updateNode(nodeId, sized)
+      if (current.width !== width || current.height !== height) ctx.runLayoutForNode(nodeId)
+    })
+    ctx.requestRender()
   }
 
   /** A text draws from its live layout while edited, so it is drawn afresh as the edit starts and ends. */
@@ -257,7 +313,7 @@ export function createTextActions(ctx: EditorContext) {
    * becomes a step first, and the edit then goes on from the text the change leaves, which an
    * undo or redo can also be.
    */
-  function runTextEditStep(change: () => void) {
+  function runTextEditStep(change: () => unknown) {
     const te = ctx.getTextEditor()
     const textState = te?.isActive ? te.state : null
     if (!te || !textState) {
@@ -266,7 +322,23 @@ export function createTextActions(ctx: EditorContext) {
     }
     recordTextEdit(textState)
     change()
-    const node = ctx.graph.getNode(textState.nodeId)
+    // A change that waits for its text's fonts goes on from the text once it has landed.
+    const waiting = writes.textWriteSettled(textState.nodeId)
+    if (waiting) void continueOnceWritten(waiting, te, textState.nodeId)
+    else continueTextEdit(te, textState.nodeId)
+  }
+
+  async function continueOnceWritten(
+    waiting: Promise<void>,
+    te: NonNullable<ReturnType<typeof ctx.getTextEditor>>,
+    nodeId: string
+  ) {
+    await waiting
+    continueTextEdit(te, nodeId)
+  }
+
+  function continueTextEdit(te: NonNullable<ReturnType<typeof ctx.getTextEditor>>, nodeId: string) {
+    const node = ctx.graph.getNode(nodeId)
     if (!node) {
       // The change took the text away, such as an undo past the step that made it: the edit
       // ends with it, recording nothing of a node that is gone.

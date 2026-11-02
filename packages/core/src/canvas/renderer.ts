@@ -651,6 +651,10 @@ export class SkiaRenderer {
     return RenderText.measureTextNode(this, node, maxWidth)
   }
 
+  measureTextAsDrawn(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
+    return RenderText.measureTextAsDrawn(this, node, maxWidth)
+  }
+
   nodeFontReadiness(node: SceneNode): RenderText.NodeFontReadiness {
     if (node.type !== 'TEXT') return 'ready'
     const cached = this.textFonts.readiness.get(node.id)
