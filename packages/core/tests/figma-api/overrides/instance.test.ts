@@ -152,6 +152,21 @@ describe('instance.resetOverrides', () => {
   })
 })
 
+describe('a detached instance', () => {
+  test('is a frame without the instance’s override members', () => {
+    const { instance } = setup()
+    const frame = instance.detachInstance()
+    expect(['overrides', 'removeOverrides', 'resetOverrides'].map((name) => name in frame)).toEqual(
+      [false, false, false]
+    )
+    // A reference kept from before refuses them.
+    expect(instance.overrides).toBeUndefined()
+    expect(() => instance.removeOverrides()).toThrow(
+      'removeOverrides() can only be called on instances'
+    )
+  })
+})
+
 describe('instance.removeOverrides', () => {
   test('does what resetOverrides does, under the name Figma gives it now', () => {
     const { card, instance, find, overrides, show } = setup()

@@ -146,5 +146,11 @@ describe('text setters check their values as Figma does', () => {
     expect(() =>
       text.setRangeFontName(0, 3, { family: 'Inter', variationSettings: 3 } as never)
     ).toThrow('Expected record, received number at .variationSettings')
+    expect(() => text.setRangeLetterSpacing(0, 3, { unit: ['PIXELS'], value: 1 } as never)).toThrow(
+      'Invalid option: expected one of "PIXELS"|"PERCENT" at .unit'
+    )
+    expect(() => text.setRangeLineHeight(0, 3, { unit: ['PIXELS'], value: 1 } as never)).toThrow(
+      'Expected .unit to be one of the following: PIXELS, PERCENT, AUTO'
+    )
   })
 })

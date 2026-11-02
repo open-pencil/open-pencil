@@ -53,6 +53,9 @@ describe('guides', () => {
     expect(() => (frame.guides = [{ axis: 'X' }] as never)).toThrow(
       message('Required value missing at [0].offset')
     )
+    expect(() => (frame.guides = [{ axis: 'X', offset: Infinity }])).toThrow(
+      message('Expected number, received Infinity at [0].offset')
+    )
     expect(() => (frame.guides = [5] as never)).toThrow(
       message('Expected object, received number at index 0')
     )
@@ -90,5 +93,12 @@ describe('horizontal and vertical padding', () => {
     expect(() => (frame.horizontalPadding = 'x' as never)).toThrow(
       message('Expected number, received string')
     )
+    expect(() => (frame.horizontalPadding = Infinity)).toThrow(
+      message('Expected number, received Infinity')
+    )
+    expect(() => (frame.paddingLeft = Infinity)).toThrow(
+      'in set_paddingLeft: Property "paddingLeft" failed validation: Expected number, received Infinity'
+    )
+    expect([frame.paddingLeft, frame.paddingRight]).toEqual([0, 0])
   })
 })

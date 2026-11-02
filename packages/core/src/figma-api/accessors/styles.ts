@@ -6,12 +6,13 @@ import { sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
 import {
   graph,
   raw,
+  strokeOwner,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { invalid, received } from '#core/figma-api/accessors/text/messages'
-import { STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
+import { bindStylePaints, STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
 import { getTextStyle } from '#core/figma-api/text/style'
 
 /** Layers with frames' layout guides, which a grid style gives. */
@@ -32,7 +33,10 @@ function styleKinds(type: SceneNode['type'], isDocument: boolean): SharedStyleKi
   return kinds
 }
 
-/** Gives `target` the style, or refuses it, as the setter named `method` does. */
+/**
+ * Gives `target` the style, or refuses it with `refusal`. A stroke style goes to the layer that
+ * draws the strokes, a connector's line, and the layer binds to the variables its paints follow.
+ */
 function applyStyle(
   target: ProxyThis,
   internals: NodeProxyInternals,
@@ -40,9 +44,12 @@ function applyStyle(
   styleId: string,
   refusal: string
 ): void {
-  const changes = styleChanges(graph(target, internals), raw(target, internals), kind, styleId)
+  const holder = kind === 'stroke' ? strokeOwner(target, internals) : target
+  const scene = graph(target, internals)
+  const changes = styleChanges(scene, raw(holder, internals), kind, styleId)
   if (!changes) throw new Error(refusal)
-  updateNode(target, internals, changes)
+  updateNode(holder, internals, changes)
+  bindStylePaints(scene, raw(holder, internals), kind, styleId)
 }
 
 function styleMembers(internals: NodeProxyInternals, kind: SharedStyleKind, mixed: symbol) {
@@ -57,6 +64,7 @@ function styleMembers(internals: NodeProxyInternals, kind: SharedStyleKind, mixe
             | string
             | symbol
         }
+        if (kind === 'stroke') return raw(strokeOwner(this, internals), internals)[field] ?? ''
         return node[field] ?? ''
       },
       set(this: ProxyThis, value: unknown) {

@@ -40,6 +40,10 @@ const SOLID_PAINT_KEYS = new Set([
   'boundVariables'
 ])
 
+function isLengthUnit(unit: unknown): unit is 'PIXELS' | 'PERCENT' {
+  return typeof unit === 'string' && LENGTH_UNITS.has(unit)
+}
+
 /** A length in pixels for a font size: a percent is of the size of the characters it styles. */
 export type SizedLength<T> = (fontSize: number) => T
 
@@ -79,7 +83,7 @@ export function letterSpacingLength(
   property = 'value'
 ): TextLength {
   return length(method, value, property, (unit) =>
-    LENGTH_UNITS.has(String(unit)) ? null : invalidOption(LENGTH_UNITS, ' at .unit')
+    isLengthUnit(unit) ? null : invalidOption(LENGTH_UNITS, ' at .unit')
   )
 }
 
@@ -95,9 +99,7 @@ export function lengthOrAuto(
     return null
   }
   return length(method, value, property, (unit) =>
-    LENGTH_UNITS.has(String(unit))
-      ? null
-      : 'Expected .unit to be one of the following: PIXELS, PERCENT, AUTO'
+    isLengthUnit(unit) ? null : 'Expected .unit to be one of the following: PIXELS, PERCENT, AUTO'
   )
 }
 

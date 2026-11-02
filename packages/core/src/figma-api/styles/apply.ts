@@ -16,10 +16,12 @@ import {
   sharedStyleTypeForKind
 } from '@open-pencil/scene-graph/shared-styles'
 
+import { figmaFills } from '#core/figma-api/accessors/visual'
 import { rangeSharedStylePatch } from '#core/figma-api/text/bindings'
+import { setPaintBindings } from '#core/figma-api/variables/bindings'
 import {
   layerTextStyleChanges,
-  styleRunsWithPatch,
+  styleRunsWithPatchOver,
   textStyleChanges
 } from '#core/text/character-style'
 
@@ -34,8 +36,15 @@ const KINDS_OF_TYPE: Record<SharedStyleType, readonly SharedStyleKind[]> = {
   GRID: ['grid']
 }
 
-/** Applies changes to a layer the way the plugin API's own setters do. */
-export type LayerUpdate = (node: SceneNode, changes: Partial<SceneNode>) => void
+/**
+ * Applies changes to a layer the way the plugin API's own setters do. A layer inside an instance
+ * takes a style's values without them counting as its own overrides.
+ */
+export type LayerUpdate = (
+  node: SceneNode,
+  changes: Partial<SceneNode>,
+  inInstance: boolean
+) => void
 
 /**
  * The changes that give `node` the style with `styleId`, or take its style off when the ID is
@@ -60,15 +69,36 @@ export function styleChanges(
   return wholeText ? layerTextStyleChanges(node, patch) : patch
 }
 
+/**
+ * Binds `node`'s fills or strokes to the variables its paint style's paints are bound to, and
+ * drops bindings the style's paints do not carry, so the layer follows them as in Figma.
+ */
+export function bindStylePaints(
+  graph: SceneGraph,
+  node: SceneNode,
+  kind: SharedStyleKind,
+  styleId: string
+): void {
+  if ((kind !== 'fill' && kind !== 'stroke') || !styleId) return
+  const style = findSharedStyle(graph, styleId, 'FILL')
+  if (!style) return
+  setPaintBindings(graph, node, kind === 'fill' ? 'fills' : 'strokes', figmaFills(graph, style))
+}
+
 /** A layer that uses a style itself, and the fields it uses it through, as Figma lists them. */
 export interface StyleConsumer {
   node: SceneNode
   fields: InheritedStyleField[]
 }
 
-function usesStyles(graph: SceneGraph, node: SceneNode): boolean {
+/** Whether `node` sits inside an instance; an instance itself does not. */
+function insideInstance(graph: SceneGraph, node: SceneNode): boolean {
+  return node.parentId !== null && findInstanceAncestor(graph, node.parentId) !== undefined
+}
+
+function listedConsumer(graph: SceneGraph, node: SceneNode): boolean {
   // A style's own node is no consumer, and layers inside an instance follow their component.
-  return node.sharedStyleType === null && !findInstanceAncestor(graph, node.id)
+  return node.sharedStyleType === null && !insideInstance(graph, node)
 }
 
 /** The layers that use `style` themselves; characters of a text that use it are not listed. */
@@ -76,7 +106,7 @@ export function styleConsumers(graph: SceneGraph, style: SceneNode): StyleConsum
   const kinds = style.sharedStyleType ? KINDS_OF_TYPE[style.sharedStyleType] : []
   const consumers: StyleConsumer[] = []
   for (const node of graph.getAllNodes()) {
-    if (!usesStyles(graph, node)) continue
+    if (!listedConsumer(graph, node)) continue
     const fields = kinds
       .map((kind) => sharedStyleRefKey(kind))
       .filter((field) => node[field] === style.source.id)
@@ -85,57 +115,52 @@ export function styleConsumers(graph: SceneGraph, style: SceneNode): StyleConsum
   return consumers
 }
 
-/** The runs of a text after `patch` restyles every run that refers to the style with `id`. */
+/** The runs of a text after `patch` restyles, in one pass, every run that uses the style `id`. */
 function restyledRuns(
   node: SceneNode,
   field: 'textStyleId' | 'fillStyleId',
   id: string,
   patch: CharacterStyleOverride
 ): SceneNode['styleRuns'] | null {
-  let current = node
-  let changed = false
-  for (const run of node.styleRuns) {
-    if (run.style[field] !== id) continue
-    const styleRuns = styleRunsWithPatch(current, run.start, run.start + run.length, patch)
-    current = { ...current, styleRuns }
-    changed = true
-  }
-  return changed ? current.styleRuns : null
+  const ranges = node.styleRuns
+    .filter((run) => run.style[field] === id)
+    .map((run) => [run.start, run.start + run.length] as const)
+  return ranges.length > 0 ? styleRunsWithPatchOver(node, ranges, patch) : null
 }
 
 /**
- * Gives every layer and every text range that uses `style` its current values, as Figma does
- * once a style changes; `patch` decides each layer's changes for each kind it uses.
+ * Gives every layer and text range that uses `style` its current values, as Figma does once a
+ * style changes; `patch` decides each layer's changes for each kind it uses, and `after` runs on
+ * each layer that uses it itself once its changes are in. Layers inside instances are updated
+ * too, so one that overrides a style follows it, without the update counting as an override.
  */
 function updateUsers(
   graph: SceneGraph,
   style: SceneNode,
   update: LayerUpdate,
   patch: (node: SceneNode, kind: SharedStyleKind) => Partial<SceneNode>,
-  rangePatch: (kind: 'text' | 'fill') => CharacterStyleOverride
+  rangePatch: (kind: 'text' | 'fill') => CharacterStyleOverride,
+  after?: (node: SceneNode, kind: SharedStyleKind) => void
 ): void {
   const id = style.source.id
   if (!id || !style.sharedStyleType) return
   const kinds = KINDS_OF_TYPE[style.sharedStyleType]
   for (const node of graph.getAllNodes()) {
-    if (!usesStyles(graph, node)) continue
+    if (node.sharedStyleType !== null) continue
+    const own = kinds.filter((kind) => node[sharedStyleRefKey(kind)] === id)
     const changes: Partial<SceneNode> = {}
-    for (const kind of kinds) {
-      if (node[sharedStyleRefKey(kind)] === id) Object.assign(changes, patch(node, kind))
-    }
+    for (const kind of own) Object.assign(changes, patch(node, kind))
     if (node.type === 'TEXT') {
-      for (const kind of kinds) {
-        if (kind !== 'text' && kind !== 'fill') continue
-        const runs = restyledRuns(
-          node,
-          kind === 'text' ? 'textStyleId' : 'fillStyleId',
-          id,
-          rangePatch(kind)
-        )
-        if (runs) changes.styleRuns = runs
-      }
+      // A text or fill style reaches characters through one kind of run reference.
+      const runKind = kinds.find((kind) => kind === 'text' || kind === 'fill')
+      const field = runKind === 'text' ? 'textStyleId' : 'fillStyleId'
+      const runs = runKind && restyledRuns(node, field, id, rangePatch(runKind))
+      if (runs) changes.styleRuns = runs
     }
-    if (Object.keys(changes).length > 0) update(node, changes)
+    if (Object.keys(changes).length === 0) continue
+    update(node, changes, insideInstance(graph, node))
+    const updated = graph.getNode(node.id)
+    if (updated && after) for (const kind of own) after(updated, kind)
   }
 }
 
@@ -148,7 +173,8 @@ export function restyleUsers(graph: SceneGraph, style: SceneNode, update: LayerU
     update,
     // A layer's own fields only: its ranges keep the values they set themselves.
     (node, kind) => sharedStylePatch(kind, node, id, style),
-    (kind) => rangeSharedStylePatch(graph, kind, id) ?? {}
+    (kind) => rangeSharedStylePatch(graph, kind, id) ?? {},
+    (node, kind) => bindStylePaints(graph, node, kind, id)
   )
 }
 

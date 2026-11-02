@@ -10,6 +10,7 @@ import { invalid, received } from '#core/figma-api/accessors/text/messages'
 import { figmaFills } from '#core/figma-api/accessors/visual'
 import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
+import { setPaintBindings } from '#core/figma-api/variables/bindings'
 
 import { releaseUsers, restyleUsers, styleConsumers, type LayerUpdate } from './apply'
 
@@ -144,6 +145,8 @@ export class FigmaPaintStyle extends FigmaBaseStyle {
     const node = this[NODE]('set_paints')
     const fills = parseFigmaPaints(value, 'set_paints', 'paints')
     this[HOST].graph.updateNode(node.id, { fills })
+    // A paint bound to a variable keeps following it, as the style's consumers then do.
+    setPaintBindings(this[HOST].graph, node, 'fills', value)
     this[RESTYLE]()
   }
 }

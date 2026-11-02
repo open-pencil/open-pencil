@@ -118,6 +118,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   private _currentPageId: string
   private _selection: FigmaNodeProxy[] = []
   private _nodeCache = new Map<string, FigmaNodeProxy>()
+  private _nodeTypes = new Map<string, string | undefined>()
   private _pageProxies = new WeakSet<FigmaNodeProxy>()
   private _renderer: SkiaRenderer | null = null
   private _unbindRendererEvents: (() => void) | null = null
@@ -181,10 +182,13 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   }
 
   wrapNode(id: string): FigmaNodeProxy {
+    const type = this.graph.getNode(id)?.type
     let proxy = this._nodeCache.get(id)
-    if (!proxy) {
+    // A node that changed type, such as a detached instance, gets the members of its new type.
+    if (!proxy || this._nodeTypes.get(id) !== type) {
       proxy = new FigmaNodeProxy(id, this.graph, this)
       this._nodeCache.set(id, proxy)
+      this._nodeTypes.set(id, type)
     }
     return proxy
   }

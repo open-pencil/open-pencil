@@ -250,21 +250,30 @@ export function installInstanceOverrideAccessors(
   type: SceneNode['type']
 ): void {
   if (type !== 'INSTANCE') return
-  const removeOverrides = {
-    value(this: ProxyThis) {
-      assertProxyEditable(this, internals)
-      resetInstanceOverrides(graph(this, internals), raw(this, internals))
-    }
+  // A proxy a script kept from before the instance was detached checks that it still is one.
+  const instance = (target: ProxyThis, method: string): SceneNode => {
+    const node = raw(target, internals)
+    if (node.type !== 'INSTANCE') throw new TypeError(`${method}() can only be called on instances`)
+    return node
   }
+  const removal = (method: string) => ({
+    value(this: ProxyThis) {
+      const node = instance(this, method)
+      assertProxyEditable(this, internals)
+      resetInstanceOverrides(graph(this, internals), node)
+    }
+  })
   Object.defineProperties(target, {
     overrides: {
-      get(this: ProxyThis): FigmaInstanceOverride[] {
+      get(this: ProxyThis): FigmaInstanceOverride[] | undefined {
+        const node = raw(this, internals)
+        if (node.type !== 'INSTANCE') return undefined
         // Figma lists the size its layout gives the instance.
         flushPendingLayout(graph(this, internals))
-        return instanceOverrides(graph(this, internals), raw(this, internals))
+        return instanceOverrides(graph(this, internals), node)
       }
     },
-    resetOverrides: removeOverrides,
-    removeOverrides
+    resetOverrides: removal('resetOverrides'),
+    removeOverrides: removal('removeOverrides')
   })
 }

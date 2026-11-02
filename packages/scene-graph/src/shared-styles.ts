@@ -181,23 +181,23 @@ export function internalCanvas(graph: SceneGraph): SceneNode {
   })
 }
 
-/** A stroke style's paints over a layer's strokes, which keep their weight and alignment. */
+/**
+ * A paint style's paints as a layer's strokes: every paint, each keeping the weight, alignment,
+ * and line style of the stroke it replaces, or of the layer's first; no paints clear the strokes
+ * (Figma desktop 126).
+ */
 function strokesFromStyle(target: SceneNode, style: SceneNode): SceneNode['strokes'] {
-  const fills = style.fills.filter((fill) => fill.type === 'SOLID')
-  if (fills.length === 0) return target.strokes
-  const fallback = target.strokes[0] ?? {
-    type: 'SOLID' as const,
+  const fallback: Stroke = target.strokes[0] ?? {
+    type: 'SOLID',
     color: BLACK,
     weight: 1,
     opacity: 1,
     visible: true,
-    align: 'CENTER' as const
+    align: 'CENTER'
   }
-  return fills.map((fill, index) => ({
-    ...(target.strokes[index] ?? fallback),
-    color: { ...fill.color },
-    opacity: fill.opacity,
-    visible: fill.visible
+  return copyFills(style.fills).map((paint, index) => ({
+    ...paint,
+    ...pick(target.strokes[index] ?? fallback, STROKE_LINE_KEYS)
   }))
 }
 

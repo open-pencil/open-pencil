@@ -6,14 +6,15 @@ export function invalid(method: string, problem: string, property = 'value'): Er
 }
 
 export function received(value: unknown): string {
-  if (typeof value === 'number' && Number.isNaN(value)) return 'NaN'
+  // Figma names NaN and the infinities rather than calling them numbers.
+  if (typeof value === 'number' && !Number.isFinite(value)) return String(value)
   if (Array.isArray(value)) return 'array'
   return value === null ? 'null' : typeof value
 }
 
-/** Figma's complaint about `value` as a number at `at`, or null when it is one. */
+/** Figma's complaint about `value` as a finite number at `at`, or null when it is one. */
 export function numberProblem(value: unknown, at = ''): string | null {
-  if (typeof value === 'number' && !Number.isNaN(value)) return null
+  if (typeof value === 'number' && Number.isFinite(value)) return null
   if (value === undefined) return `Required value missing${at}`
   return `Expected number, received ${received(value)}${at}`
 }

@@ -53,8 +53,8 @@ function host(owner: StyleOwner): StyleHost {
   return {
     graph: owner.graph,
     wrapNode: (id) => owner.wrapNode(id),
-    updateLayer: (node, changes) =>
-      applyLayerChanges(owner.graph, node.id, changes, owner.groupFitOptions),
+    updateLayer: (node, changes, inInstance) =>
+      applyLayerChanges(owner.graph, node.id, changes, owner.groupFitOptions, !inInstance),
     forgetStyle: (id) => handles(owner).delete(id)
   }
 }

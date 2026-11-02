@@ -32,6 +32,29 @@ describe('component and component set members', () => {
     expect((await component.getInstancesAsync()).map((instance) => instance.id).sort()).toEqual(ids)
   })
 
+  test('a removed component’s instances reject', async () => {
+    const component = createAPI().createComponent()
+    component.remove()
+    await expect(component.getInstancesAsync()).rejects.toThrow()
+  })
+
+  test('a set read from a file without its option lists gives its variants’ values', () => {
+    const figma = createAPI()
+    const small = figma.createComponent()
+    small.name = 'size=s'
+    const large = figma.createComponent()
+    large.name = 'size=l'
+    const set = figma.combineAsVariants([small, large], figma.currentPage)
+    const node = figma.graph.getNode(set.id)
+    if (!node) throw new Error('Expected the set')
+    figma.graph.updateNode(set.id, {
+      componentPropertyDefinitions: node.componentPropertyDefinitions.map(
+        ({ variantOptions: _options, ...definition }) => definition
+      )
+    })
+    expect(set.variantGroupProperties).toEqual({ size: { values: ['s', 'l'] } })
+  })
+
   test('a set’s default variant, the first in reading order, and its variant values', () => {
     const figma = createAPI()
     const variant = (name: string, x: number, y: number) => {

@@ -130,13 +130,15 @@ export function updateNode(
 /**
  * Changes a layer as the plugin API's setters do: auto-sizing text measures its new content, a
  * vector's regions take its new fills, an edit to a style's fields leaves the style, overrides
- * record only what changed, and the groups around a moved or resized layer refit.
+ * record only what changed, and the groups around a moved or resized layer refit. A change that
+ * follows the layer's source, such as a style it uses, records no override.
  */
 export function applyLayerChanges(
   g: SceneGraph,
   id: string,
   changes: Partial<SceneNode>,
-  fitOptions: GroupFitOptions
+  fitOptions: GroupFitOptions,
+  recordOverrides = true
 ): void {
   const applied = Object.fromEntries(
     Object.keys(changes)
@@ -153,7 +155,7 @@ export function applyLayerChanges(
     (key) => !before || !isEqual(Reflect.get(edit, key), Reflect.get(before, key))
   )
   g.updateNode(id, edit)
-  recordInstanceOverride(g, id, changed)
+  if (recordOverrides) recordInstanceOverride(g, id, changed)
   if (Object.keys(edit).some((key) => GEOMETRY_FIELDS.has(key))) {
     fitGroupsAround(g, g.getNode(id)?.parentId, fitOptions)
   }

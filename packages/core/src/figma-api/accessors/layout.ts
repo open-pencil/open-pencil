@@ -90,12 +90,13 @@ export function installLayoutNodeProxyAccessors(
     counterAxisAlignItems: mappedAccessor(internals, 'counterAxisAlign'),
     itemSpacing: simpleAccessor(internals, 'itemSpacing'),
     counterAxisSpacing: simpleAccessor(internals, 'counterAxisSpacing'),
-    paddingTop: simpleAccessor(internals, 'paddingTop'),
-    paddingRight: simpleAccessor(internals, 'paddingRight'),
-    paddingBottom: simpleAccessor(internals, 'paddingBottom'),
-    paddingLeft: simpleAccessor(internals, 'paddingLeft'),
-    horizontalPadding: pairedPadding(internals, 'horizontalPadding', 'paddingLeft', 'paddingRight'),
-    verticalPadding: pairedPadding(internals, 'verticalPadding', 'paddingTop', 'paddingBottom'),
+    paddingTop: padding(internals, 'paddingTop', ['paddingTop']),
+    paddingRight: padding(internals, 'paddingRight', ['paddingRight']),
+    paddingBottom: padding(internals, 'paddingBottom', ['paddingBottom']),
+    paddingLeft: padding(internals, 'paddingLeft', ['paddingLeft']),
+    // Figma's deprecated pairs read their first side and set both (Figma desktop 126).
+    horizontalPadding: padding(internals, 'horizontalPadding', ['paddingLeft', 'paddingRight']),
+    verticalPadding: padding(internals, 'verticalPadding', ['paddingTop', 'paddingBottom']),
     layoutWrap: mappedAccessor(internals, 'layoutWrap'),
     primaryAxisSizingMode: axisSizingModeAccessor(internals, 'primaryAxisSizing'),
     counterAxisSizingMode: axisSizingModeAccessor(internals, 'counterAxisSizing'),
@@ -231,26 +232,24 @@ function layoutSizingAccessor(
   }
 }
 
-/**
- * Figma's deprecated `horizontalPadding` and `verticalPadding`: each reads its first side and
- * sets both (Figma desktop 126).
- */
-function pairedPadding(
+type PaddingSide = 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft'
+
+/** A padding that reads its first side and sets each of `sides` to a finite number of 0 or more. */
+function padding(
   internals: NodeProxyInternals,
-  property: 'horizontalPadding' | 'verticalPadding',
-  first: 'paddingLeft' | 'paddingTop',
-  second: 'paddingRight' | 'paddingBottom'
+  property: string,
+  sides: readonly [PaddingSide, ...PaddingSide[]]
 ): PropertyDescriptor {
   return {
     get(this: ProxyThis): number {
-      return raw(this, internals)[first]
+      return raw(this, internals)[sides[0]]
     },
     set(this: ProxyThis, value: unknown) {
       const problem =
         numberProblem(value) ??
         ((value as number) < 0 ? 'Too small: expected number to be >=0' : null)
       if (problem) throw invalid(`set_${property}`, problem, property)
-      updateNode(this, internals, { [first]: value, [second]: value })
+      updateNode(this, internals, Object.fromEntries(sides.map((side) => [side, value])))
     }
   }
 }

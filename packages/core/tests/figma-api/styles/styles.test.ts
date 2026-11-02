@@ -146,6 +146,69 @@ describe('using styles', () => {
     expect(await rectangle.setFillStyleIdAsync(3 as never)).toBeUndefined()
   })
 
+  test('a stroke style gives every paint, keeping the stroke’s weight, and an empty one clears it', async () => {
+    const figma = createAPI()
+    const gradient = figma.createPaintStyle()
+    gradient.paints = [
+      {
+        type: 'GRADIENT_LINEAR',
+        gradientTransform: [
+          [1, 0, 0],
+          [0, 1, 0]
+        ],
+        gradientStops: [
+          { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+          { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+        ]
+      }
+    ]
+    const rectangle = figma.createRectangle()
+    rectangle.strokes = solid(GREEN)
+    rectangle.strokeWeight = 3
+    await rectangle.setStrokeStyleIdAsync(gradient.id)
+    expect([rectangle.strokes.map((stroke) => stroke.type), rectangle.strokeWeight]).toEqual([
+      ['GRADIENT_LINEAR'],
+      3
+    ])
+    await rectangle.setStrokeStyleIdAsync(figma.createPaintStyle().id)
+    expect([rectangle.strokes, rectangle.strokeWeight]).toEqual([[], 3])
+  })
+
+  test('a paint bound to a variable keeps it in the style and in the layers that use it', async () => {
+    const figma = createAPI()
+    const collection = figma.variables.createVariableCollection('Colors')
+    const brand = figma.variables.createVariable('Brand', collection, 'COLOR')
+    brand.setValueForMode(collection.defaultModeId, { r: 1, g: 0, b: 0, a: 1 })
+    const style = figma.createPaintStyle()
+    style.paints = [
+      figma.variables.setBoundVariableForPaint(
+        { type: 'SOLID', color: { r: 0, g: 0, b: 0 } },
+        'color',
+        brand
+      )
+    ]
+    const [paint] = style.paints
+    expect(paint && 'boundVariables' in paint ? paint.boundVariables?.color?.id : null).toBe(
+      brand.id
+    )
+    const rectangle = figma.createRectangle()
+    await rectangle.setFillStyleIdAsync(style.id)
+    expect(rectangle.fills).toMatchObject([
+      { color: RED, boundVariables: { color: { id: brand.id } } }
+    ])
+    brand.setValueForMode(collection.defaultModeId, { r: 0, g: 1, b: 0, a: 1 })
+    expect(rectangle.fills).toMatchObject([{ color: GREEN }])
+  })
+
+  test('a connector’s stroke style strokes its line', async () => {
+    const figma = createAPI()
+    const style = figma.createPaintStyle()
+    style.paints = solid(BLUE)
+    const connector = figma.createConnector()
+    await connector.setStrokeStyleIdAsync(style.id)
+    expect([connector.strokeStyleId, connector.strokes]).toMatchObject([style.id, solid(BLUE)])
+  })
+
   test('effect and grid styles give their effects and grids', async () => {
     const figma = createAPI()
     const effect = figma.createEffectStyle()
@@ -240,6 +303,30 @@ describe('text styles', () => {
   })
 })
 
+describe('styles inside instances', () => {
+  test('a text inside an instance that uses a style follows it and lets it go, as an override', async () => {
+    const figma = createAPI()
+    await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })
+    const style = figma.createTextStyle()
+    const component = figma.createComponent()
+    const label = figma.createText()
+    label.characters = 'Label'
+    component.appendChild(label)
+    const instance = component.createInstance()
+    const copy = instance.findOne((node) => node.type === 'TEXT')
+    if (!copy) throw new Error('Expected the instance’s text')
+    await copy.setTextStyleIdAsync(style.id)
+    const overridden = () => instance.overrides?.map((override) => override.overriddenFields)
+    const before = overridden()
+    style.fontSize = 30
+    expect(copy.fontSize).toBe(30)
+    expect(overridden()).toEqual(before)
+    style.remove()
+    expect(copy.textStyleId).toBe('')
+    expect(copy.fontSize).toBe(30)
+  })
+})
+
 describe('removing a style', () => {
   test('leaves what used it its values, and the style refuses to be read', async () => {
     const figma = createAPI()
@@ -276,6 +363,9 @@ test('a style made by a script is saved with the file and the layers that use it
   const reopened = await parseFigFile(saved.slice().buffer)
   const [found] = getSharedStyles(reopened, 'fill')
   expect(found?.name).toBe('Brand/Primary')
+  expect(reopened.getNode(found?.nodeId ?? '')?.fills).toMatchObject([
+    { type: 'SOLID', color: { r: 1, g: 0, b: 0 } }
+  ])
   const card = [...reopened.getAllNodes()].find((node) => node.name === 'Card')
   expect(card?.fillStyleId).toBe(found?.id)
 })

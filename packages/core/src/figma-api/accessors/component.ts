@@ -1,4 +1,5 @@
 import type { ComponentSetNode } from '@figma/plugin-typings/plugin-api-standalone'
+import { compact, uniq } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { defaultVariant } from '@open-pencil/scene-graph/components'
@@ -57,9 +58,10 @@ export function installComponentNodeAccessors(
           return instancesOf(this, internals)
         }
       },
+      // Async, so a removed component rejects rather than throwing.
       getInstancesAsync: {
-        value(this: ProxyThis): Promise<FigmaNodeProxy[]> {
-          return Promise.resolve(instancesOf(this, internals))
+        async value(this: ProxyThis): Promise<FigmaNodeProxy[]> {
+          return instancesOf(this, internals)
         }
       }
     })
@@ -75,12 +77,25 @@ export function installComponentNodeAccessors(
     // Figma's deprecated reading of the variant properties: each one's values, in order.
     variantGroupProperties: {
       get(this: ProxyThis): ComponentSetNode['variantGroupProperties'] {
+        const set = raw(this, internals)
+        const variants = graph(this, internals)
+          .getChildren(set.id)
+          .filter((child) => child.type === 'COMPONENT')
         return Object.fromEntries(
-          raw(this, internals)
-            .componentPropertyDefinitions.filter((definition) => definition.type === 'VARIANT')
+          set.componentPropertyDefinitions
+            .filter((definition) => definition.type === 'VARIANT')
             .map((definition) => [
               definition.name,
-              { values: [...(definition.variantOptions ?? [])] }
+              // A file may leave the options out; the variants still hold their values.
+              {
+                values: definition.variantOptions
+                  ? [...definition.variantOptions]
+                  : uniq(
+                      compact(
+                        variants.map((variant) => variant.componentPropertyValues[definition.name])
+                      )
+                    )
+              }
             ])
         )
       }
