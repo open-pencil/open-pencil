@@ -114,7 +114,8 @@ describe('no-px-tailwind-values', () => {
       '-bottom-[9px]',
       'grid-cols-[24px_minmax(0,1fr)]',
       'w-[min(360px,100%)]',
-      '[width:10px]'
+      '[width:10px]',
+      'w-[10PX]'
     ]
     const accepted = [
       'text-2xs',
@@ -123,7 +124,9 @@ describe('no-px-tailwind-values', () => {
       'rounded-md',
       'w-px',
       'shadow-[0_8px_30px_var(--color-border)]',
-      'grid-cols-[repeat(2,1fr)]'
+      'grid-cols-[repeat(2,1fr)]',
+      '[box-shadow:0_1px_2px_var(--color-border)]',
+      'after:content-["10px_wide"]'
     ]
     const diagnostics = ruleDiagnostics(
       await lintFiles(

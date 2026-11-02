@@ -231,11 +231,11 @@ export const noUnknownTailwindClassesRule = defineClassRule(
 
 /** Sources sized with the interface: the app and the SDK's primitives. */
 const INTERFACE_SOURCES = ['src/', 'packages/vue/src/']
-const PX_LENGTH = /(?:^|[\s(,])-?(?:\d*\.)?\d+px\b/
+const PX_LENGTH = /(?:^|[\s(,])-?(?:\d*\.)?\d+px\b/i
 
 /**
  * The pixel length in a class's arbitrary value, such as `text-[11px]` or `grid-cols-[24px_1fr]`.
- * Shadows keep pixel offsets: they are decoration, not layout.
+ * Shadows keep pixel offsets: they are decoration, not layout. `content` values are text.
  */
 function pxValue(theme: Theme, className: string): string | null {
   for (const candidate of theme.system.parseCandidate(className)) {
@@ -247,11 +247,16 @@ function pxValue(theme: Theme, className: string): string | null {
 
 type Candidate = ReturnType<DesignSystem['parseCandidate']>[number]
 
-/** A class's arbitrary value, `[width:10px]` or `w-[10px]`, other than a shadow's. */
+/** Whether a utility or property takes values that are not sizes: shadows and text content. */
+function exempt(name: string): boolean {
+  return name.endsWith('shadow') || name === 'content'
+}
+
+/** A class's arbitrary size value, `[width:10px]` or `w-[10px]`. */
 function arbitraryValue(candidate: Candidate): string | null {
-  if (candidate.kind === 'arbitrary') return candidate.value
+  if (candidate.kind === 'arbitrary') return exempt(candidate.property) ? null : candidate.value
   if (candidate.kind !== 'functional' || candidate.value?.kind !== 'arbitrary') return null
-  return candidate.root.endsWith('shadow') ? null : candidate.value.value
+  return exempt(candidate.root) ? null : candidate.value.value
 }
 
 /**
