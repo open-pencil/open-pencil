@@ -19,7 +19,7 @@ import { createDocumentRecovery } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
-import { cacheRecentFileCover } from '@/app/recent-files'
+import { cacheRecentFileCover, drawHomeCardCover } from '@/app/recent-files'
 import { createCanvasId } from '@/app/storage/id'
 import { isTauri } from '@/app/tauri/env'
 import { trackDocumentFormat } from '@/app/telemetry'
@@ -105,6 +105,10 @@ export function createDocumentSourceActions({
     version: changes.capture,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
+    buildCover: () => {
+      const renderer = getRenderer()
+      return renderer ? drawHomeCardCover(editor.graph, renderer) : null
+    },
     hasWritableSource
   })
 
