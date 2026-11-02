@@ -382,7 +382,13 @@ test('a compacted conversation reaches the model as its summary and what followe
       expect.objectContaining({
         type: 'finish',
         messageMetadata: {
-          usage: { contextTokens: 2, inputTokens: 1, outputTokens: 1, cacheReadTokens: null }
+          usage: {
+            contextTokens: 2,
+            firstRequestTokens: 1,
+            inputTokens: 1,
+            outputTokens: 1,
+            cacheReadTokens: null
+          }
         }
       })
     )

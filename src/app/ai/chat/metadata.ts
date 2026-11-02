@@ -66,6 +66,8 @@ export function withUndo(message: UIMessage, undo: ReplyUndo): UIMessage {
  */
 const replyUsageSchema = v.object({
   contextTokens: v.number(),
+  /** What its first request held: the instructions and tools every request carries, and history. */
+  firstRequestTokens: v.optional(v.number()),
   inputTokens: v.number(),
   outputTokens: v.number(),
   cacheReadTokens: v.nullable(v.number())

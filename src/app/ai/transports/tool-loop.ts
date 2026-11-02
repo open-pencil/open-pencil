@@ -123,6 +123,7 @@ export function createToolLoopTransport({
   let recording: RunRecording | undefined
   // The last step's tokens: what the reply's final request held, which the next one starts from.
   let lastStep: { inputTokens: number; outputTokens: number } | null = null
+  let firstRequestTokens: number | undefined
   const stepCompaction = createStepCompaction(model, contextLimits)
   const agent = new ToolLoopAgent({
     model,
@@ -160,8 +161,10 @@ export function createToolLoopTransport({
     onStepFinish: (step) => {
       const { usage } = step
       // A step without a count says nothing of what the request held, so the last counted stands.
-      if (usage.inputTokens !== undefined)
+      if (usage.inputTokens !== undefined) {
         lastStep = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens ?? 0 }
+        firstRequestTokens ??= usage.inputTokens
+      }
       preview.clear()
       recordStep(store)
       recording?.step(step)
@@ -196,6 +199,7 @@ export function createToolLoopTransport({
       if (part.type !== 'finish' || !lastStep) return undefined
       const usage: ReplyUsage = {
         contextTokens: lastStep.inputTokens + lastStep.outputTokens,
+        firstRequestTokens,
         inputTokens: part.totalUsage.inputTokens ?? 0,
         outputTokens: part.totalUsage.outputTokens ?? 0,
         cacheReadTokens: part.totalUsage.inputTokenDetails.cacheReadTokens ?? null
@@ -212,6 +216,7 @@ export function createToolLoopTransport({
       const started = startRun(store, maxAgentSteps.value, effectiveModelID)
       run = started
       lastStep = null
+      firstRequestTokens = undefined
       await stepCompaction.begin(options.messages, options.abortSignal)
       await skills.refresh()
       offeredSkills = modelSkills()

@@ -2,7 +2,7 @@ import { computedAsync } from '@vueuse/core'
 import type { UIMessage } from 'ai'
 import { computed, type Ref } from 'vue'
 
-import { contextTokensOf } from '@/app/ai/chat/metadata'
+import { contextTokensOf, usageOf } from '@/app/ai/chat/metadata'
 import { resolveModelsDevModel } from '@/app/ai/models/catalog'
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
@@ -62,16 +62,44 @@ export function estimatedTokens(text: string): number {
   return Math.ceil(text.length / CHARACTERS_PER_TOKEN)
 }
 
+/** The text a message holds, for estimating its tokens. */
+function messageText(message: UIMessage): string {
+  return message.parts.map((part) => (part.type === 'text' ? part.text : '')).join('')
+}
+
+/**
+ * What every request carries before any history, its instructions and tools: from the latest
+ * reply that opened a context, the conversation's first or the first after a compaction, its
+ * first request less the summary and the request it answered.
+ */
+function requestBaseline(messages: readonly UIMessage[]): number {
+  for (let index = messages.length - 1; index >= 1; index--) {
+    const first = usageOf(messages[index])?.firstRequestTokens
+    const request = messages[index - 1]
+    if (first === undefined || request.role !== 'user') continue
+    const before = index >= 2 ? messages[index - 2] : undefined
+    const summary = before ? compactionOf(before)?.summary : undefined
+    if (index > 1 && summary === undefined) continue
+    return Math.max(
+      0,
+      first - estimatedTokens(messageText(request)) - estimatedTokens(summary ?? '')
+    )
+  }
+  return 0
+}
+
 /**
  * The tokens the next request starts from: what the last reply since the latest compaction
- * reported, or, right after a compaction, an estimate of its summary.
+ * reported, or, right after a compaction, an estimate of its summary with what every request
+ * carries.
  */
 export function contextTokensSinceCompaction(messages: readonly UIMessage[]): number | null {
   const since = messagesSinceCompaction(messages)
   const reported = contextTokensOf(since)
   if (reported !== null) return reported
   const compaction = since.at(0) ? compactionOf(since[0]) : null
-  return compaction ? estimatedTokens(compaction.summary) : null
+  if (!compaction) return null
+  return requestBaseline(messages) + estimatedTokens(compaction.summary)
 }
 
 /** How full the Design model's context is for `messages`, for the chat's context meter. */

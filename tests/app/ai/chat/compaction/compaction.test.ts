@@ -65,6 +65,30 @@ describe('compaction', () => {
     expect(contextTokensSinceCompaction([reply('a', 9000), marker])).toBe(100)
     expect(contextTokensSinceCompaction([reply('a', 9000), marker, reply('b', 1200)])).toBe(1200)
     expect(contextTokensSinceCompaction([text('a', 'user', 'Hi')])).toBeNull()
+    // Right after a compaction, every request carries its instructions and tools with the
+    // summary: what the reply that opened the conversation sent, less its request.
+    const opened = withMetadata(text('f', 'assistant', 'Done'), {
+      usage: {
+        contextTokens: 21_000,
+        firstRequestTokens: 20_010,
+        inputTokens: 30_000,
+        outputTokens: 10,
+        cacheReadTokens: null
+      }
+    })
+    const later = withMetadata(text('g', 'assistant', 'Done'), {
+      usage: {
+        contextTokens: 40_000,
+        firstRequestTokens: 39_000,
+        inputTokens: 39_000,
+        outputTokens: 10,
+        cacheReadTokens: null
+      }
+    })
+    const ask = text('q', 'user', 'x'.repeat(40))
+    expect(
+      contextTokensSinceCompaction([ask, opened, text('r', 'user', 'More'), later, marker])
+    ).toBe(20_100)
   })
 
   test('compacts automatically before the window, keeping the whole reply allowance and some room', () => {
