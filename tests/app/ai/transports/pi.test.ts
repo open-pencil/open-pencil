@@ -1,12 +1,22 @@
 import { expect, test } from 'bun:test'
 
+import { readUIMessageStream, type UIMessage } from 'ai'
+import * as v from 'valibot'
+
 import type {
   HarnessSidecarMessage,
   HarnessTurnEvent,
   HarnessTurnUsage
 } from '@open-pencil/harness'
 
+import {
+  agentCompactionMessage,
+  messagesSinceCompaction,
+  replyCompactions
+} from '@/app/ai/chat/compaction/marker'
 import { HarnessChatTransport } from '@/app/ai/transports/pi'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 test('failed session stop kills the process without deleting resume state', async () => {
   let output: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
@@ -87,10 +97,13 @@ const configuration = {
  * A companion that answers session requests at once and holds each turn open, so the test
  * decides when its events and its answer arrive, as Pi's do after a Stop.
  */
+const promptParams = v.object({ prompt: v.string() })
+
 function fakeCompanion({ turnsFail = false } = {}) {
   let output: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
   const methods: string[] = []
   const turns: string[] = []
+  const prompts: unknown[] = []
   let spawns = 0
   const spawn = async () => {
     spawns++
@@ -107,8 +120,11 @@ function fakeCompanion({ turnsFail = false } = {}) {
         if (typeof id !== 'string' || typeof method !== 'string') throw new Error('Invalid request')
         methods.push(method)
         if (method === 'session.turn' && turnsFail) throw new Error('Pipe closed')
-        if (method === 'session.turn') turns.push(id)
-        else output?.enqueue({ type: 'response', id, result: {} })
+        if (method === 'session.turn') {
+          turns.push(id)
+          if ('params' in request && v.is(promptParams, request.params))
+            prompts.push(request.params.prompt)
+        } else output?.enqueue({ type: 'response', id, result: {} })
       }
     }
   }
@@ -131,7 +147,8 @@ function fakeCompanion({ turnsFail = false } = {}) {
         id: turn,
         event: { type: 'finish', finishReason: 'stop', ...(usage ? { usage } : {}) }
       }),
-    turns
+    turns,
+    prompts
   }
 }
 
@@ -271,5 +288,76 @@ test('text after a tool call starts a new part, and a stopped turn closes its te
   expect(types.filter((type) => type === 'text-start')).toHaveLength(2)
   expect(types.filter((type) => type === 'text-end')).toHaveLength(2)
   expect(types.at(-1)).toBe('finish')
+  await transport.destroy()
+})
+
+test('compacting asks Pi to, and a turn keeps each compaction Pi runs in it', async () => {
+  const companion = fakeCompanion()
+  const transport = new HarnessChatTransport('compact-session', configuration, {}, companion.spawn)
+  // Before any turn there is no context to compact.
+  expect(await transport.compact()).toBe(false)
+
+  const first = (await send(transport)).getReader()
+  await Promise.resolve()
+  const firstTurn = companion.turns.at(-1) ?? ''
+  companion.text(firstTurn, 'Hi')
+  companion.complete(firstTurn)
+  while (!(await first.read()).done);
+  expect(await transport.compact('keep the colors')).toBe(true)
+  expect(companion.methods).toContain('session.compact')
+
+  // The chat draws its own divider for it, which is not the person's message to send.
+  const stream = await transport.sendMessages({
+    chatId: 'test',
+    trigger: 'submit-message',
+    messageId: undefined,
+    messages: [
+      { id: 'hi', role: 'user', parts: [{ type: 'text', text: 'Hi' }] },
+      { id: 'answer', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
+      agentCompactionMessage('manual'),
+      { id: 'again', role: 'user', parts: [{ type: 'text', text: 'Again' }] }
+    ],
+    abortSignal: undefined
+  })
+  await Promise.resolve()
+  expect(companion.prompts.at(-1)).toBe('Again')
+  const turn = companion.turns.at(-1) ?? ''
+  // A manual compaction Pi reports later is the one the chat drew already.
+  companion.event(turn, {
+    type: 'compaction',
+    trigger: 'manual',
+    summary: 'Greeted.',
+    tokensBefore: 1200
+  })
+  companion.text(turn, 'Hello again')
+  // A long turn can fill the context; the reply keeps every compaction Pi runs in it.
+  companion.event(turn, {
+    type: 'compaction',
+    trigger: 'auto',
+    summary: 'Greeted twice.',
+    tokensBefore: 3400
+  })
+  companion.text(turn, 'And again')
+  companion.event(turn, {
+    type: 'compaction',
+    trigger: 'auto',
+    summary: 'Greeted thrice.',
+    tokensBefore: 3500
+  })
+  companion.text(turn, 'And once more')
+  companion.complete(turn)
+  let reply: UIMessage | undefined
+  for await (const message of readUIMessageStream({ stream })) reply = message
+  const message = expectDefined(reply)
+  expect(replyCompactions(message)).toEqual([
+    { summary: 'Greeted twice.', trigger: 'auto', tokensBefore: 3400, step: 1 },
+    { summary: 'Greeted thrice.', trigger: 'auto', tokensBefore: 3500, step: 2 }
+  ])
+  // The latest summary stands before the step that followed it.
+  const next = messagesSinceCompaction([message])
+  expect(next.map((entry) => entry.role)).toEqual(['user', 'assistant'])
+  expect(JSON.stringify(next[0])).toContain('Greeted thrice.')
+  expect(JSON.stringify(next[1])).toContain('And once more')
+  expect(JSON.stringify(next[1])).not.toContain('And again')
   await transport.destroy()
 })
