@@ -27,11 +27,9 @@ import {
   type FigmaFontName,
   type FigmaFontNameInput
 } from '#core/figma-api/fonts/names'
-import {
-  readVariationSettings,
-  type FigmaVariationSettings
-} from '#core/figma-api/fonts/variations'
+import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import type { FigmaPaint } from '#core/figma-api/paints'
+import { fontNameSchema } from '#core/figma-api/schema'
 import {
   getRangeIndentation,
   getRangeListOptions,
@@ -50,6 +48,7 @@ import {
   type StyledTextSegment,
   type TextSegmentField
 } from '#core/figma-api/text/style'
+import { parseFigma } from '#core/figma-api/validation'
 import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
 import {
   characterStyles,
@@ -61,7 +60,6 @@ import { textStyleName } from '#core/text/font/names'
 
 import { rangeDecorationPatch, type DecorationField } from './decoration'
 import { hyperlinkTarget } from './hyperlink'
-import { invalid, received, unrecognizedKeys } from './messages'
 import { installTextReferenceMethods } from './references'
 import {
   DECORATIONS,
@@ -70,9 +68,7 @@ import {
   fontSizeValue,
   lengthOrAuto,
   letterSpacingLength,
-  stringProblem,
-  textCaseValue,
-  variationSettingsProblem
+  textCaseValue
 } from './values'
 
 /** The font Figma reads for the character at `index`, as a font name left out reads from. */
@@ -97,8 +93,6 @@ function currentFont(node: SceneNode, index: number): CurrentFont {
  * A font name Figma takes: a family, and a style and variation settings that may be left out, as
  * in `FontNameInput`. What is left out reads from the font of the character at `start`.
  */
-const FONT_NAME_KEYS = new Set(['family', 'style', 'variationSettings'])
-
 export function fontNameStyle(
   method: string,
   node: SceneNode,
@@ -106,25 +100,8 @@ export function fontNameStyle(
   value: unknown,
   property = 'value'
 ): CharacterStyleOverride {
-  if (!value || typeof value !== 'object') {
-    throw invalid(method, `Expected object, received ${received(value)}`, property)
-  }
-  const fontName = value as Partial<Record<keyof FigmaFontName, unknown>>
-  const problem =
-    stringProblem(fontName.family, '.family') ??
-    (fontName.style === undefined ? null : stringProblem(fontName.style, '.style')) ??
-    variationSettingsProblem(fontName.variationSettings) ??
-    unrecognizedKeys(value, FONT_NAME_KEYS)
-  if (problem) throw invalid(method, problem, property)
-  return fontNameInputStyle(
-    method,
-    {
-      family: fontName.family as string,
-      style: fontName.style as string | undefined,
-      variationSettings: fontName.variationSettings as FigmaVariationSettings | undefined
-    },
-    currentFont(node, start)
-  )
+  const fontName = parseFigma(fontNameSchema, value, method, property)
+  return fontNameInputStyle(method, fontName, currentFont(node, start))
 }
 
 type RangeSetter = (

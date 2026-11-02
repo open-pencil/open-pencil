@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { ArcData, SceneNode } from '@open-pencil/scene-graph'
 import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
 
@@ -10,57 +12,40 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, numberProblem, received } from '#core/figma-api/accessors/text/messages'
+import { finiteNumberSchema, unitIntervalSchema } from '#core/figma-api/schema'
+import { parseFigma } from '#core/figma-api/validation'
 
 /** Figma caps a polygon or star at this many points, past which it keeps the cap. */
 const MAX_POINT_COUNT = 60
 
 type BooleanOperation = NonNullable<SceneNode['booleanOperation']>
 
-const BOOLEAN_OPERATIONS = new Set<BooleanOperation>(['UNION', 'INTERSECT', 'SUBTRACT', 'EXCLUDE'])
+const BOOLEAN_OPERATIONS = [
+  'UNION',
+  'INTERSECT',
+  'SUBTRACT',
+  'EXCLUDE'
+] as const satisfies readonly BooleanOperation[]
 
-const ARC_FIELDS = ['startingAngle', 'endingAngle', 'innerRadius'] as const
-
-/** Figma's complaint about a ratio outside 0 to 1, or null. */
-function ratioProblem(value: number, at = ''): string | null {
-  if (value < 0) return `Too small: expected number to be >=0${at}`
-  if (value > 1) return `Too big: expected number to be <=1${at}`
-  return null
-}
+const pointCountSchema = v.pipe(finiteNumberSchema, v.integer(), v.minValue(3))
+/** Figma's `ArcData`; it checks every field and lists each problem on its own line. */
+const arcDataSchema = v.object({
+  startingAngle: finiteNumberSchema,
+  endingAngle: finiteNumberSchema,
+  innerRadius: unitIntervalSchema
+})
 
 function parsePointCount(value: unknown): number {
-  const problem =
-    numberProblem(value) ??
-    (Number.isInteger(value) ? null : 'Expected int, received number') ??
-    ((value as number) < 3 ? 'Too small: expected number to be >=3' : null)
-  if (problem) throw invalid('set_pointCount', problem, 'pointCount')
-  return Math.min(value as number, MAX_POINT_COUNT)
+  const count = parseFigma(pointCountSchema, value, 'set_pointCount', 'pointCount')
+  return Math.min(count, MAX_POINT_COUNT)
 }
 
 function parseInnerRadius(value: unknown): number {
-  const problem = numberProblem(value) ?? ratioProblem(value as number)
-  if (problem) throw invalid('set_innerRadius', problem, 'innerRadius')
-  return value as number
+  return parseFigma(unitIntervalSchema, value, 'set_innerRadius', 'innerRadius')
 }
 
-/** Figma checks every field and lists each problem on its own line. */
 function parseArcData(value: unknown): ArcData {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw invalid('set_arcData', `Expected object, received ${received(value)}`, 'arcData')
-  }
-  const fields = value as Partial<Record<(typeof ARC_FIELDS)[number], unknown>>
-  // Each field read once, so a getter cannot pass the checks and then store something else.
-  const values = ARC_FIELDS.map((field) => fields[field])
-  const problems = values.map((value, index) => numberProblem(value, ` at .${ARC_FIELDS[index]}`))
-  const [startingAngle, endingAngle, innerRadius] = values
-  if (!problems[2]) problems[2] = ratioProblem(innerRadius as number, ' at .innerRadius')
-  const listed = problems.filter((problem) => problem !== null)
-  if (listed.length > 0) throw invalid('set_arcData', listed.join('\n'), 'arcData')
-  return {
-    startingAngle: startingAngle as number,
-    endingAngle: endingAngle as number,
-    innerRadius: innerRadius as number
-  }
+  return parseFigma(arcDataSchema, value, 'set_arcData', 'arcData')
 }
 
 /** An ellipse without arc data is a whole one, which Figma reports as a full turn. */
@@ -102,14 +87,13 @@ export function installShapeNodeProxyAccessors(
         return raw(this, internals).booleanOperation ?? 'UNION'
       },
       set(this: ProxyThis, value: unknown) {
-        if (!BOOLEAN_OPERATIONS.has(value as BooleanOperation)) {
-          throw invalid(
-            'set_booleanOperation',
-            'Invalid option: expected one of "UNION"|"INTERSECT"|"SUBTRACT"|"EXCLUDE"',
-            'booleanOperation'
-          )
-        }
-        updateNode(this, internals, { booleanOperation: value as BooleanOperation })
+        const booleanOperation = parseFigma(
+          v.picklist(BOOLEAN_OPERATIONS),
+          value,
+          'set_booleanOperation',
+          'booleanOperation'
+        )
+        updateNode(this, internals, { booleanOperation })
         // The result's bounds change with the operation, and the groups around it follow.
         fitEnclosingGroups(
           graph(this, internals),

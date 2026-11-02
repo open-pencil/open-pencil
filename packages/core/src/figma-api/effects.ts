@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import type { BlendMode, Effect } from '@open-pencil/scene-graph'
 
 import { TRANSPARENT } from '#core/constants'
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
+import { invalid, parseFigma } from '#core/figma-api/validation'
 
 /** Blend modes in the order Figma lists them in its messages. */
 const BLEND_MODE_KEYS = {
@@ -74,13 +74,6 @@ const effectsSchema = v.array(effectSchema)
 /** An effect as Figma's plugin API reads and writes it (`Effect` in `@figma/plugin-typings`). */
 export type FigmaEffect = v.InferOutput<typeof effectSchema>
 
-/** Figma's spelling of a path into a value: `[0].color.r`. */
-export function issuePath(path: readonly v.IssuePathItem[] | undefined): string {
-  return (path ?? [])
-    .map((item) => (typeof item.key === 'number' ? `[${item.key}]` : `.${String(item.key)}`))
-    .join('')
-}
-
 function unsupportedEffect(value: unknown): string | null {
   if (!Array.isArray(value)) return null
   for (const [index, effect] of value.entries()) {
@@ -95,24 +88,12 @@ function unsupportedEffect(value: unknown): string | null {
   return null
 }
 
-/**
- * Check `value` against Figma's effect shapes and convert it to scene effects.
- * Throws with the first problem, as Figma's `effects` setter does.
- */
+/** Check `value` against Figma's effect shapes and convert it to scene effects. */
 export function parseFigmaEffects(value: unknown): Effect[] {
   const method = 'set_effects'
-  if (!Array.isArray(value)) {
-    throw invalid(method, `Expected array, received ${received(value)}`, 'effects')
-  }
   const unsupported = unsupportedEffect(value)
   if (unsupported) throw invalid(method, unsupported, 'effects')
-  const result = v.safeParse(effectsSchema, value)
-  if (!result.success) {
-    const [issue] = result.issues
-    const at = issuePath(issue.path) || 'effects'
-    throw invalid(method, `${issue.message} at ${at}`, 'effects')
-  }
-  return result.output.map(toSceneEffect)
+  return parseFigma(effectsSchema, value, method, 'effects').map(toSceneEffect)
 }
 
 /** `value` as scene effects when it holds valid Figma effects, or null. */

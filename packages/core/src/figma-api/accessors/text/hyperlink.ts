@@ -1,8 +1,14 @@
+import * as v from 'valibot'
+
 import type { HyperlinkTarget, NodeType, SceneGraph } from '@open-pencil/scene-graph'
 
-import { invalid, invalidOption, noneMatched, received } from './messages'
+import { parseFigma } from '#core/figma-api/validation'
 
-const HYPERLINK_TYPES = new Set(['URL', 'NODE'])
+/** Figma's `HyperlinkTarget`, or null to remove a link; Figma checks a value against both. */
+const hyperlinkSchema = v.union([
+  v.object({ type: v.picklist(['URL', 'NODE']), value: v.string() }),
+  v.null()
+])
 
 /**
  * URLs Figma links to: web addresses with a host, in lower case and without surrounding space,
@@ -32,23 +38,8 @@ export function hyperlinkTarget(
   graph: SceneGraph,
   property: string
 ): HyperlinkTarget | null {
-  if (value === null) return null
-  // Figma checks a link against a target and against null, and reports both.
-  const refuse: (problem: string) => never = (problem) => {
-    throw invalid(
-      method,
-      noneMatched([problem, `Expected null, received ${received(value)}`]),
-      property
-    )
-  }
-  if (typeof value !== 'object' || Array.isArray(value))
-    refuse(`Expected object, received ${received(value)}`)
-  const target = value as Partial<Record<keyof HyperlinkTarget, unknown>>
-  if (!HYPERLINK_TYPES.has(target.type as string))
-    refuse(invalidOption(HYPERLINK_TYPES, ' at .type'))
-  if (typeof target.value !== 'string') {
-    refuse(`Expected string, received ${received(target.value)} at .value`)
-  }
+  const target = parseFigma(hyperlinkSchema, value, method, property)
+  if (target === null) return null
   if (target.type === 'URL') {
     if (target.value === '') return null
     if (!LINK_URL.test(target.value)) {
