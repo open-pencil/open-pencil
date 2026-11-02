@@ -434,8 +434,6 @@
   "conversationCompacted": "Разговор сжат",
   "compactionKeepsMessages": "Теперь модель получает этот пересказ вместо сообщений выше; вы по-прежнему их видите.",
   "compactionTokens": "{before} → {after} токенов",
-  "showSummary": "Показать пересказ",
-  "hideSummary": "Скрыть пересказ",
   "tokenUsage": "Расход токенов",
   "tokenUsageHint": "Показывает токены каждого ответа.",
   "tokenUsageHover": "При наведении",

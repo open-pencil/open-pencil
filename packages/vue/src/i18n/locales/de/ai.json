@@ -434,8 +434,6 @@
   "conversationCompacted": "Unterhaltung komprimiert",
   "compactionKeepsMessages": "Das Modell erhält jetzt diese Zusammenfassung statt der Nachrichten darüber; du siehst sie weiterhin.",
   "compactionTokens": "{before} → {after} Tokens",
-  "showSummary": "Zusammenfassung zeigen",
-  "hideSummary": "Zusammenfassung ausblenden",
   "tokenUsage": "Token-Verbrauch",
   "tokenUsageHint": "Zeigt die Tokens jeder Antwort.",
   "tokenUsageHover": "Beim Überfahren",

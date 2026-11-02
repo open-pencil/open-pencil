@@ -500,8 +500,6 @@ export const aiMessageDefaults = {
   compactionKeepsMessages:
     'The model now gets this summary instead of the messages above; you still see them.',
   compactionTokens: params('{before} → {after} tokens'),
-  showSummary: 'Show summary',
-  hideSummary: 'Hide summary',
   tokenUsage: 'Token usage',
   tokenUsageHint: "Shows each reply's tokens.",
   tokenUsageHover: 'On hover',

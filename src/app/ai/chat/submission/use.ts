@@ -1,4 +1,4 @@
-import { computed, markRaw, ref, type Ref } from 'vue'
+import { computed, markRaw, ref, shallowReadonly, shallowRef, type Ref } from 'vue'
 
 import { designMessageWithImageFindings } from '@/app/ai/attachment/image/analyze'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
@@ -17,6 +17,7 @@ import { mentionedNodes } from '@/app/ai/chat/references/nodes'
 import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
 import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
 import { chatToResend } from '@/app/ai/chat/submission/resend'
+import { sendText } from '@/app/ai/chat/submission/text'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
 import { restoreTurn, revertTurn } from '@/app/ai/reply/turns'
 import { useUndoRecords } from '@/app/ai/reply/undo'
@@ -34,6 +35,8 @@ interface SubmissionOptions extends SubmissionErrorOptions {
 
 export function useChatSubmission(options: SubmissionOptions) {
   const isPreparingAttachments = ref(false)
+  /** A message sent but not in the chat yet, shown while the chat connects or compacts first. */
+  const sending = shallowRef<ChatSubmission | null>(null)
   let operationVersion = 0
 
   const undone = useUndoRecords(options)
@@ -49,22 +52,6 @@ export function useChatSubmission(options: SubmissionOptions) {
   async function revert(messageId: string): Promise<void> {
     if (!readyChat() || !revertTurn(messageId)) return
     await options.flush?.().catch(() => undefined)
-  }
-
-  async function sendText(
-    currentChat: ChatInstance,
-    submission: ChatSubmission,
-    dispatch: () => void
-  ): Promise<void> {
-    const previousIds = new Set(currentChat.messages.map((message) => message.id))
-    dispatch()
-    await withTurn(currentChat, () =>
-      currentChat.sendMessage({ text: submission.modelText }).catch(() => undefined)
-    )
-    const message = currentChat.messages.find(
-      (candidate) => candidate.role === 'user' && !previousIds.has(candidate.id)
-    )
-    if (message) setVisibleMessageText(message.id, submission.displayText)
   }
 
   /**
@@ -151,6 +138,7 @@ export function useChatSubmission(options: SubmissionOptions) {
     const dispatch = () => {
       sent = true
     }
+    sending.value = submission
     isPreparingAttachments.value = submission.images.length > 0
     options.clearFailure()
     try {
@@ -167,8 +155,10 @@ export function useChatSubmission(options: SubmissionOptions) {
       await options.prepare?.(currentChat, noted.modelText)
       if (version !== operationVersion) return false
       const previousIds = new Set(currentChat.messages.map((message) => message.id))
+      // Both ways of sending add the message to the chat at once, which shows it from then on.
+      sending.value = null
       if (submission.images.length === 0 && submission.nodes.length === 0) {
-        await sendText(currentChat, noted, dispatch)
+        await sendText(currentChat, noted, dispatch, withTurn)
       } else {
         await sendAttachments(currentChat, noted, version, dispatch)
       }
@@ -182,7 +172,10 @@ export function useChatSubmission(options: SubmissionOptions) {
       return sent
     } finally {
       await options.flush?.().catch(() => undefined)
-      if (version === operationVersion) isPreparingAttachments.value = false
+      if (version === operationVersion) {
+        isPreparingAttachments.value = false
+        sending.value = null
+      }
     }
   }
 
@@ -243,12 +236,14 @@ export function useChatSubmission(options: SubmissionOptions) {
   function cancel(): void {
     operationVersion += 1
     isPreparingAttachments.value = false
+    sending.value = null
   }
 
   const busy = computed(() => isPreparingAttachments.value)
 
   return {
     busy,
+    sending: shallowReadonly(sending),
     cancel,
     stop: () => options.chat.value?.stop(),
     submit,

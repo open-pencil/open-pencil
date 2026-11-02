@@ -11,7 +11,10 @@ import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 import { compactionOf } from '@/app/ai/chat/compaction/marker'
 import { undoOf, usageOf, wasStopped } from '@/app/ai/chat/metadata'
-import { reasoningDisplay as preferredReasoningDisplay } from '@/app/ai/chat/preferences'
+import {
+  reasoningDisplay as preferredReasoningDisplay,
+  tokenUsageDisplay
+} from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
@@ -25,6 +28,9 @@ import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
 import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
+
+import { usageParts } from './turn/usage'
 
 const {
   message,
@@ -92,6 +98,12 @@ async function copyResponse(): Promise<void> {
 // the cards' computed state to see the new values.
 const undo = computed(() => undoOf(message))
 const usage = computed(() => usageOf(message))
+/** With usage shown on hover, resting on the reply shows it, over what follows, in no row of its own. */
+const usageTip = computed(() =>
+  usage.value && tokenUsageDisplay.value === 'hover'
+    ? usageParts(ai.value, usage.value).join(' · ')
+    : undefined
+)
 const undoneCalls = computed(() => new Set(undo.value?.undone))
 const reverted = computed(
   () =>
@@ -130,59 +142,63 @@ function groupKey(group: MessagePartGroup): string {
       <template v-if="message.role === 'assistant'">
         <!-- A reverted reply's edits are gone; its content stays, dimmed, under its actions. Text
              dims to the muted color rather than through opacity, so it still reads at 4.5:1. -->
-        <div
-          class="space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
-          data-slot="chat-reply-content"
-          :data-reverted="reverted"
-        >
-          <template v-for="group in groups" :key="groupKey(group)">
-            <template v-if="group.kind === 'compaction'">
-              <ChatCompactionDivider
-                v-if="compaction"
-                :compaction="compaction"
-                :tokens-after="streaming ? null : (usage?.contextTokens ?? null)"
+        <Tip side="bottom" :label="usageTip" :disabled="!usageTip">
+          <div
+            class="space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
+            data-slot="chat-reply-content"
+            :data-reverted="reverted"
+          >
+            <template v-for="group in groups" :key="groupKey(group)">
+              <template v-if="group.kind === 'compaction'">
+                <ChatCompactionDivider
+                  v-if="compaction"
+                  :compaction="compaction"
+                  :tokens-after="streaming ? null : (usage?.contextTokens ?? null)"
+                />
+              </template>
+              <ChatToolCallGroup
+                v-else-if="group.kind === 'tools'"
+                :parts="group.parts.map(({ part }) => part)"
+                :undone="undoneCalls"
               />
-            </template>
-            <ChatToolCallGroup
-              v-else-if="group.kind === 'tools'"
-              :parts="group.parts.map(({ part }) => part)"
-              :undone="undoneCalls"
-            />
 
-            <!-- Reasoning -->
-            <ChatReasoning
-              v-else-if="isReasoningUIPart(group.part) && group.part.text"
-              :text="group.part.text"
-              :display="reasoningDisplay ?? preferredReasoningDisplay"
-              :streaming="streaming && group.part.state === 'streaming'"
-              :thinking-label="ai.thinking"
-              :reasoning-label="ai.reasoning"
-              :duration-label="(seconds) => ai.thoughtFor({ seconds })"
-            />
+              <!-- Reasoning -->
+              <ChatReasoning
+                v-else-if="isReasoningUIPart(group.part) && group.part.text"
+                :text="group.part.text"
+                :display="reasoningDisplay ?? preferredReasoningDisplay"
+                :streaming="streaming && group.part.state === 'streaming'"
+                :thinking-label="ai.thinking"
+                :reasoning-label="ai.reasoning"
+                :duration-label="(seconds) => ai.thoughtFor({ seconds })"
+              />
 
-            <!-- Text -->
-            <div
-              v-else-if="isTextUIPart(group.part) && group.part.text"
-              data-test-id="chat-text-bubble"
-              class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
-            >
-              <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
-              <IconButton
-                v-if="
-                  group.index === firstAssistantTextPartIndex && assistantText && clipboardSupported
-                "
-                :label="copied ? ai.responseCopied : ai.copyResponse"
-                size="xs"
-                data-slot="chat-copy-response"
-                class="absolute right-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
-                @click="copyResponse"
+              <!-- Text -->
+              <div
+                v-else-if="isTextUIPart(group.part) && group.part.text"
+                data-test-id="chat-text-bubble"
+                class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
               >
-                <icon-lucide-check v-if="copied" class="size-3 text-success" />
-                <icon-lucide-copy v-else class="size-3" />
-              </IconButton>
-            </div>
-          </template>
-        </div>
+                <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
+                <IconButton
+                  v-if="
+                    group.index === firstAssistantTextPartIndex &&
+                    assistantText &&
+                    clipboardSupported
+                  "
+                  :label="copied ? ai.responseCopied : ai.copyResponse"
+                  size="xs"
+                  data-slot="chat-copy-response"
+                  class="absolute right-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
+                  @click="copyResponse"
+                >
+                  <icon-lucide-check v-if="copied" class="size-3 text-success" />
+                  <icon-lucide-copy v-else class="size-3" />
+                </IconButton>
+              </div>
+            </template>
+          </div>
+        </Tip>
         <ChatTurnActions
           v-if="!streaming"
           :message-id="message.id"

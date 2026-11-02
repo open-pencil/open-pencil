@@ -434,8 +434,6 @@
   "conversationCompacted": "会話を圧縮しました",
   "compactionKeepsMessages": "モデルは上のメッセージの代わりにこの要約を受け取ります。メッセージは引き続き表示されます。",
   "compactionTokens": "{before} → {after} トークン",
-  "showSummary": "要約を表示",
-  "hideSummary": "要約を隠す",
   "tokenUsage": "トークン使用量",
   "tokenUsageHint": "各返信のトークンを表示します。",
   "tokenUsageHover": "ホバー時",

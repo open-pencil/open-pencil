@@ -23,16 +23,18 @@ export default {
     warning:
       'mx-2.5 mb-1 flex items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-2.5 py-1.5 text-[11px] text-warning',
     warningLabel: 'min-w-0 flex-1 truncate',
-    divider:
-      'flex flex-col gap-1.5 rounded-lg border border-border bg-panel px-3 py-2 text-[11px] text-surface',
-    dividerHeader: 'flex items-center gap-2',
-    dividerIcon: 'size-3.5 shrink-0 text-accent',
-    dividerTitle: 'flex-1 font-medium',
-    dividerTokens: 'shrink-0 text-muted',
-    dividerNote: 'leading-snug text-muted',
-    summary: 'rounded-md bg-hover px-2.5 py-2 text-xs leading-relaxed',
-    // Shown while the reply is hovered or focused, unless the setting shows it always.
-    usage:
-      'inline-flex items-center gap-2 px-2 text-[11px] text-muted transition-opacity data-[display=hover]:opacity-0 data-[display=hover]:group-hover/reply:opacity-100 data-[display=hover]:group-focus-within/reply:opacity-100'
+    // A rule across the transcript with its label in the middle; the label opens the summary.
+    divider: 'flex flex-col gap-2',
+    dividerRule: 'flex items-center gap-2 text-[11px] text-muted',
+    dividerLine: 'h-px min-w-3 flex-1 bg-border',
+    dividerToggle:
+      'inline-flex min-w-0 items-center gap-1.5 rounded px-1.5 py-0.5 outline-none hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent',
+    dividerIcon: 'size-3 shrink-0',
+    dividerTitle: 'truncate',
+    dividerChevron: 'size-3 shrink-0 transition-transform data-[open=true]:rotate-180',
+    dividerNote: 'text-[11px] leading-snug text-muted',
+    summary: 'flex flex-col gap-1.5 rounded-md bg-hover px-2.5 py-2 text-xs leading-relaxed',
+    // Shown under the reply when the setting shows it always; on hover it is the reply's tooltip.
+    usage: 'inline-flex items-center gap-2 px-2 text-[11px] text-muted'
   }
 } as const

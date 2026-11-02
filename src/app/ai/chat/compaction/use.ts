@@ -64,7 +64,6 @@ export function useChatCompaction(options: CompactionOptions) {
       : target.messages.length
     if (at <= 0) return false
     const covered = target.messages.slice(0, at)
-    compacting.value = true
     failed.value = null
     abort = new AbortController()
     try {
@@ -94,7 +93,6 @@ export function useChatCompaction(options: CompactionOptions) {
       }
       return false
     } finally {
-      compacting.value = false
       abort = null
     }
   }
@@ -102,7 +100,6 @@ export function useChatCompaction(options: CompactionOptions) {
   /** An agent compacts its own context and reports the summary on its next turn. */
   async function compactAgent(request: CompactRequest): Promise<boolean> {
     if (!options.compactAgent) return false
-    compacting.value = true
     failed.value = null
     try {
       return await options.compactAgent(request.instructions)
@@ -110,15 +107,18 @@ export function useChatCompaction(options: CompactionOptions) {
       const { chat: _chat, ...retry } = request
       failed.value = retry
       return false
-    } finally {
-      compacting.value = false
     }
   }
 
-  /** Compacts the conversation; one compaction runs at a time. */
+  /**
+   * Compacts the conversation; one compaction runs at a time. It shows as compacting from the
+   * start, while the chat and its model are still being reached.
+   */
   function compact(request: CompactRequest): Promise<boolean> {
     if (pending) return Promise.resolve(false)
+    compacting.value = true
     pending = run(request).finally(() => {
+      compacting.value = false
       pending = null
     })
     return pending

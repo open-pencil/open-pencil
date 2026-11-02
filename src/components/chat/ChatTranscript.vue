@@ -11,6 +11,7 @@ import { compactionOf } from '@/app/ai/chat/compaction/marker'
 import { usageOf } from '@/app/ai/chat/metadata'
 import type { QueuedMessage } from '@/app/ai/chat/queue'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
+import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -30,7 +31,9 @@ const {
   nodesLive = true,
   reasoningDisplay,
   queued = [],
-  steers = false
+  steers = false,
+  sending = null,
+  compacting = false
 } = defineProps<{
   messages: UIMessage[]
   status: ChatStatus
@@ -46,6 +49,10 @@ const {
   queued?: readonly QueuedMessage[]
   /** Whether the agent takes a waiting message mid-turn. */
   steers?: boolean
+  /** The text of a message sent but not in the chat yet, shown at once while the chat connects. */
+  sending?: string | null
+  /** The conversation is being compacted, from a `/compact` or before a message goes. */
+  compacting?: boolean
 }>()
 const emit = defineEmits<{
   continue: []
@@ -62,6 +69,7 @@ provide(
 )
 const running = computed(() => status === 'submitted' || status === 'streaming')
 const isThinking = computed(() => {
+  if (sending !== null && !compacting) return true
   if (!running.value) return false
   const last = messages.at(-1)
   if (!last || last.role !== 'assistant') return true
@@ -127,7 +135,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
   <ScrollAreaRoot class="relative min-h-0 flex-1">
     <ScrollAreaViewport ref="viewportComponent" class="h-full px-3 py-3 [&>div]:h-full">
       <AppPlaceholder
-        v-if="messages.length === 0"
+        v-if="messages.length === 0 && sending === null && !compacting"
         data-test-id="chat-empty-state"
         :label="ai.describeCreateOrChange"
         :ui="{ root: 'h-full' }"
@@ -163,6 +171,27 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
             @edit="(text) => emit('edit', msg.id, text)"
           />
         </template>
+
+        <div v-if="sending !== null" class="flex justify-end" data-test-id="chat-sending-message">
+          <div
+            class="max-w-[85%] rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
+          >
+            <ChatReferenceText :text="sending" />
+          </div>
+        </div>
+
+        <p
+          v-if="compacting"
+          role="status"
+          class="flex items-center justify-center gap-1.5 py-1 text-[11px] text-muted"
+          data-test-id="chat-compacting"
+        >
+          <icon-lucide-loader-circle
+            class="size-3 animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
+          {{ ai.compacting }}
+        </p>
 
         <!-- Thinking indicator: shown when AI is working but no visible activity -->
         <div v-if="isThinking" data-test-id="chat-typing-indicator" class="flex gap-2">

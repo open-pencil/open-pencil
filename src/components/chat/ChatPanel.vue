@@ -417,6 +417,8 @@ function handleStop() {
         :show-continue="showContinue"
         :queued="queuedMessages"
         :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
+        :sending="submission.sending.value?.displayText ?? null"
+        :compacting="compaction.compacting.value"
         @remove-queued="removeQueuedMessage"
         :nodes-live="!history.readOnly.value"
         :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"

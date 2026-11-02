@@ -434,8 +434,6 @@
   "conversationCompacted": "Conversazione compattata",
   "compactionKeepsMessages": "Ora il modello riceve questo riepilogo al posto dei messaggi sopra; tu continui a vederli.",
   "compactionTokens": "{before} → {after} token",
-  "showSummary": "Mostra riepilogo",
-  "hideSummary": "Nascondi riepilogo",
   "tokenUsage": "Uso dei token",
   "tokenUsageHint": "Mostra i token di ogni risposta.",
   "tokenUsageHover": "Al passaggio del mouse",

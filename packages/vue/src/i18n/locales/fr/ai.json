@@ -434,8 +434,6 @@
   "conversationCompacted": "Conversation compactée",
   "compactionKeepsMessages": "Le modèle reçoit désormais ce résumé à la place des messages ci-dessus ; vous les voyez toujours.",
   "compactionTokens": "{before} → {after} jetons",
-  "showSummary": "Afficher le résumé",
-  "hideSummary": "Masquer le résumé",
   "tokenUsage": "Utilisation des jetons",
   "tokenUsageHint": "Affiche les jetons de chaque réponse.",
   "tokenUsageHover": "Au survol",

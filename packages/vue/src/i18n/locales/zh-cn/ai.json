@@ -434,8 +434,6 @@
   "conversationCompacted": "对话已压缩",
   "compactionKeepsMessages": "模型现在收到这份总结，而不是上面的消息；你仍然能看到它们。",
   "compactionTokens": "{before} → {after} 词元",
-  "showSummary": "显示总结",
-  "hideSummary": "隐藏总结",
   "tokenUsage": "词元用量",
   "tokenUsageHint": "显示每条回复的词元。",
   "tokenUsageHover": "悬停时",

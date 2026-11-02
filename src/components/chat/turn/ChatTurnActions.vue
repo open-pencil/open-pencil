@@ -6,10 +6,10 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import type { ReplyUsage } from '@/app/ai/chat/metadata'
 import { tokenUsageDisplay } from '@/app/ai/chat/preferences'
 import { turnEdits } from '@/app/ai/reply/turns'
-import { formatCompactNumber } from '@/app/i18n/number'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import { chatContextTheme } from '../ui'
+import { usageParts } from './usage'
 
 const {
   messageId,
@@ -43,12 +43,15 @@ const revertable = computed(() => turn.value?.revertable === true)
 const restorable = computed(() => turn.value?.restorable === true)
 const partlyUndone = computed(() => undone > 0 && undone < edits)
 const ui = chatContextTheme()
-const showsUsage = computed(() => usage !== null && tokenUsageDisplay.value !== 'hidden')
+/** On hover the usage is the reply's tooltip, so a reply with nothing else here leaves no row. */
+const inlineUsage = computed(() =>
+  usage && tokenUsageDisplay.value === 'always' ? usageParts(ai.value, usage) : null
+)
 </script>
 
 <template>
   <div
-    v-if="stopped || partlyUndone || revertable || reverted || canRegenerate || showsUsage"
+    v-if="stopped || partlyUndone || revertable || reverted || canRegenerate || inlineUsage"
     class="flex flex-wrap items-center gap-1"
     data-slot="chat-turn-actions"
   >
@@ -107,23 +110,8 @@ const showsUsage = computed(() => usage !== null && tokenUsageDisplay.value !== 
       <template #leading><icon-lucide-refresh-cw aria-hidden="true" /></template>
       {{ empty ? ai.retryRequest : revertable ? ai.revertAndRegenerate : ai.regenerate }}
     </AppButton>
-    <span
-      v-if="showsUsage && usage"
-      :class="ui.usage()"
-      :data-display="tokenUsageDisplay"
-      data-slot="chat-turn-usage"
-    >
-      <span>
-        {{
-          ai.replyTokens({
-            input: formatCompactNumber(usage.inputTokens),
-            output: formatCompactNumber(usage.outputTokens)
-          })
-        }}
-      </span>
-      <span v-if="usage.cacheReadTokens">
-        {{ ai.replyCachedTokens({ cached: formatCompactNumber(usage.cacheReadTokens) }) }}
-      </span>
+    <span v-if="inlineUsage" :class="ui.usage()" data-slot="chat-turn-usage">
+      <span v-for="part in inlineUsage" :key="part">{{ part }}</span>
     </span>
   </div>
 </template>
