@@ -51,7 +51,7 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     if (!size && node.type === 'TEXT' && node.text) defer(node.id)
     else if (size && renderer.nodeFontReadiness(node) === 'substituted') {
       note(substituted, node.id, ctx.getGraph().isApplyingDerivedLayout)
-    }
+    } else if (size) substituted.delete(node.id)
     return size
   }
 
