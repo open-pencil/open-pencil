@@ -39,9 +39,9 @@ export interface EyedropperLoupe {
 
 /**
  * Tracks the pointer over a canvas while the eyedropper is active. The position follows each
- * move at once; the pixels are sampled on the next frame, and again only when the pointer or the
- * view moved, so a still pointer costs nothing. `enabled` is false for a canvas that takes no
- * input, such as a split view's inactive pane.
+ * move at once; the pixels are sampled on the next frame, and again only when the pointer, the
+ * view, or the page changed, so a still pointer costs nothing. `enabled` is false for a canvas
+ * that takes no input, such as a split view's inactive pane.
  */
 export function useEyedropperLoupe(
   editor: Editor,
@@ -60,8 +60,8 @@ export function useEyedropperLoupe(
     () => {
       const sx = pointer.elementX.value
       const sy = pointer.elementY.value
-      const { zoom, panX, panY } = editor.state
-      const at = `${sx} ${sy} ${zoom} ${panX} ${panY}`
+      const { zoom, panX, panY, currentPageId } = editor.state
+      const at = `${sx} ${sy} ${zoom} ${panX} ${panY} ${currentPageId}`
       if (at === sampledAt) return
       sampledAt = at
       const { x, y } = editor.screenToCanvas(sx, sy)
