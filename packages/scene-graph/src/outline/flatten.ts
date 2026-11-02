@@ -3,8 +3,12 @@ import type { PolygonOutlineCommand } from '../polygon'
 import type { Vector } from '../primitives'
 import type { VectorNetwork } from '../types'
 
-/** Keeps a huge curve at a tiny tolerance from flattening into an unbounded number of points. */
-const MAX_CURVE_STEPS = 1024
+/**
+ * Keeps a huge curve at a tiny tolerance from flattening into an unbounded number of points, while
+ * leaving room for the largest arcs at the maximum zoom: a 100,000-unit circle at 25,600% needs
+ * about 12,000 steps to stay within the click pad.
+ */
+const MAX_CURVE_STEPS = 65_536
 
 /**
  * Steps that keep a cubic's polyline within `tolerance` of it: equal steps in t stray at most
@@ -41,6 +45,8 @@ export function segmentPoints(
   index: number,
   tolerance: number
 ): Vector[] | null {
+  // `at` counts a negative index from the end; a loop naming one refers to no segment.
+  if (index < 0) return null
   const segment = network.segments.at(index)
   if (!segment || segment.start < 0 || segment.end < 0) return null
   const p0 = network.vertices.at(segment.start)

@@ -27,6 +27,7 @@ function insideArea(area: OutlineArea, point: Vector): boolean {
   return containsByWinding(area.contours, area.windingRule, point)
 }
 
+/** A stroke's weight; with independent borders the widest side, for layers without per-side lines. */
 function strokeWeightOf(node: SceneNode, stroke: Stroke): number {
   if (node.independentStrokeWeights) {
     return Math.max(
@@ -59,8 +60,12 @@ function localPoint(graph: SceneGraph, node: SceneNode, px: number, py: number):
 
 interface Probe {
   inside: boolean
-  /** Distance to the nearest outline or line, in canvas units. */
-  distance: number
+  /** Distance to the outline of the filled area, in canvas units. */
+  edge: number
+  /** Distance to each line a stroke follows, in canvas units. */
+  lines: number[]
+  /** Each line's own stroke weight, where sides differ. */
+  lineWeights?: number[]
   /** Whether the layer has an area of its own; strokes on lines are always centred. */
   closed: boolean
 }
@@ -68,9 +73,19 @@ interface Probe {
 function probeOutline(outline: ShapeOutline, point: Vector): Probe {
   return {
     inside: outline.areas.some((area) => insideArea(area, point)),
-    distance: distanceToLines(outline.lines, point),
+    edge: distanceToLines(
+      outline.areas.flatMap((area) => area.contours.map(closedLoop)),
+      point
+    ),
+    lines: outline.lines.map((line) => distanceToLines([line], point)),
+    lineWeights: outline.lineWeights,
     closed: outline.areas.some((area) => area.contours.length > 0)
   }
+}
+
+function closedLoop(contour: Vector[]): Vector[] {
+  const first = contour.at(0)
+  return first ? [...contour, first] : contour
 }
 
 const BOOLEAN_COMBINE: Record<
@@ -102,7 +117,8 @@ function probeBoolean(
   const combine = BOOLEAN_COMBINE[node.booleanOperation ?? 'UNION']
   return {
     inside: combine(probes.map((probe) => probe.inside)),
-    distance: Math.min(...probes.map((probe) => probe.distance)),
+    edge: Math.min(...probes.map((probe) => probe.edge)),
+    lines: probes.flatMap((probe) => probe.lines),
     closed: true
   }
 }
@@ -127,11 +143,13 @@ function probeNode(
 }
 
 function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number): boolean {
-  const weight = strokeWeightOf(node, stroke)
   const align = probe.closed ? stroke.align : 'CENTER'
-  if (align === 'INSIDE') return probe.distance <= (probe.inside ? weight : 0) + pad
-  if (align === 'OUTSIDE') return probe.distance <= (probe.inside ? 0 : weight) + pad
-  return probe.distance <= weight / 2 + pad
+  return probe.lines.some((distance, index) => {
+    const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
+    if (align === 'INSIDE') return distance <= (probe.inside ? weight : 0) + pad
+    if (align === 'OUTSIDE') return distance <= (probe.inside ? 0 : weight) + pad
+    return distance <= weight / 2 + pad
+  })
 }
 
 /**
@@ -151,6 +169,6 @@ export function hitsShape(
   const probe = probeNode(graph, node, px, py, tolerance)
   if (!probe) return null
   const fills = node.fills.filter(isHitPaint)
-  if (fills.length > 0 && probe.closed && (probe.inside || probe.distance <= pad)) return true
+  if (fills.length > 0 && probe.closed && (probe.inside || probe.edge <= pad)) return true
   return node.strokes.some((stroke) => isHitPaint(stroke) && strokeHits(node, stroke, probe, pad))
 }

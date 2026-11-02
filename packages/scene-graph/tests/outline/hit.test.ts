@@ -188,6 +188,95 @@ test('a rotated line is hit where it draws, not where it would lie unrotated', (
   expect(hits(line, 200, 100)).toBe(false)
 })
 
+describe('outline details', () => {
+  test('a sloped line is hit along the diagonal it draws', () => {
+    const { add, hits } = setup()
+    const line = add('LINE', { width: 100, height: 100, strokes: [stroke(1)] })
+    expect(hits(line, 50, 50)).toBe(true)
+    expect(hits(line, 50, 0)).toBe(false)
+  })
+
+  test('each side of a rectangle with independent borders reaches by its own weight', () => {
+    const { add, hits } = setup()
+    const box = add('RECTANGLE', {
+      width: 200,
+      height: 150,
+      strokes: [stroke(1, 'INSIDE')],
+      independentStrokeWeights: true,
+      borderTopWeight: 20,
+      borderRightWeight: 1,
+      borderBottomWeight: 1,
+      borderLeftWeight: 1
+    })
+    // 15 units in from the thick top border is on it; 15 in from the thin left one is not.
+    expect(hits(box, 100, 15)).toBe(true)
+    expect(hits(box, 15, 75)).toBe(false)
+  })
+
+  test("a fill's pad follows the filled area, not a stray open segment", () => {
+    const { add, hits } = setup()
+    const shape = add('VECTOR', {
+      width: 300,
+      height: 100,
+      fills: [fill()],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+          { x: 100, y: 100 },
+          { x: 300, y: 50 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 2, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
+      }
+    })
+    expect(hits(shape, 80, 20)).toBe(true)
+    // On the unstroked open segment, far from the triangle.
+    expect(hits(shape, 200, 75)).toBe(false)
+  })
+
+  test('a loop naming a negative segment index adds no geometry', () => {
+    const { add, hits } = setup()
+    const shape = add('VECTOR', {
+      width: 100,
+      height: 100,
+      fills: [fill()],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+          { x: 100, y: 100 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: [{ windingRule: 'NONZERO', loops: [[0, 1, -1]] }]
+      }
+    })
+    // Without the stray index the loop is the triangle (0,0)–(100,0)–(100,100), closed back.
+    expect(hits(shape, 80, 20)).toBe(true)
+    expect(hits(shape, 20, 80)).toBe(false)
+  })
+
+  test("a huge ellipse's edge stays within the pad at the maximum zoom", () => {
+    const { add, hits } = setup()
+    const radius = 50_000
+    const ellipse = add('ELLIPSE', { width: radius * 2, height: radius * 2, fills: [fill()] })
+    const pad = PAD / 256
+    // Just inside the rim, midway along the first chord of a 1,024-step polygon, which cuts the
+    // rim there by about 0.24 units, far more than the 0.014-unit pad.
+    const angle = Math.PI / 1024
+    const r = radius - pad / 2
+    expect(hits(ellipse, radius + r * Math.cos(angle), radius + r * Math.sin(angle), pad)).toBe(true)
+  })
+})
+
 test('text is left to its box', () => {
   const { add, hits } = setup()
   const text = add('TEXT', { width: 100, height: 20, text: 'Label' })

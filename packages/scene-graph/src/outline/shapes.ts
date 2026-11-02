@@ -23,6 +23,8 @@ export interface OutlineArea {
 export interface ShapeOutline {
   areas: OutlineArea[]
   lines: Vector[][]
+  /** Each line's own stroke weight, where sides differ, as a rectangle's independent borders. */
+  lineWeights?: number[]
 }
 
 function closed(contour: Vector[]): Vector[] {
@@ -55,6 +57,26 @@ function rectangleContour(node: SceneNode, tolerance: number): Vector[] {
     ...corner(bl, h - bl, bl, Math.PI / 2),
     ...corner(tl, tl, tl, Math.PI)
   ]
+}
+
+/** A rectangle's four sides with the weight each draws its border at: top, right, bottom, left. */
+function rectangleSides(node: SceneNode): Pick<ShapeOutline, 'lines' | 'lineWeights'> {
+  const { width: w, height: h } = node
+  const corners = [
+    { x: 0, y: 0 },
+    { x: w, y: 0 },
+    { x: w, y: h },
+    { x: 0, y: h }
+  ]
+  return {
+    lines: corners.map((corner, index) => [corner, corners[(index + 1) % corners.length]]),
+    lineWeights: [
+      node.borderTopWeight,
+      node.borderRightWeight,
+      node.borderBottomWeight,
+      node.borderLeftWeight
+    ]
+  }
 }
 
 const FULL_TURN = Math.PI * 2
@@ -115,8 +137,10 @@ function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null 
 export function shapeOutline(node: SceneNode, tolerance: number): ShapeOutline | null {
   switch (node.type) {
     case 'RECTANGLE':
-    case 'ROUNDED_RECTANGLE':
-      return fromContours([rectangleContour(node, tolerance)])
+    case 'ROUNDED_RECTANGLE': {
+      const outline = fromContours([rectangleContour(node, tolerance)])
+      return node.independentStrokeWeights ? { ...outline, ...rectangleSides(node) } : outline
+    }
     case 'ELLIPSE': {
       if (node.fillGeometry.length > 0) return vectorOutline(node, tolerance)
       return fromContours(ellipseContours(node, tolerance))
@@ -130,7 +154,7 @@ export function shapeOutline(node: SceneNode, tolerance: number): ShapeOutline |
         lines: [
           [
             { x: 0, y: 0 },
-            { x: node.width, y: 0 }
+            { x: node.width, y: node.height }
           ]
         ]
       }
