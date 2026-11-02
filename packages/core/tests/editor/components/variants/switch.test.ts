@@ -262,6 +262,10 @@ test('a nested instance follows what the new variant sets on it, past its own bi
   expect(child().height).toBe(20)
   expect(child().boundVariables.width).toBe(tokens.width)
   expect(child().visible).toBe(true)
+  const large = must(editor.graph.variables.get(tokens.large))
+  const mode = must(editor.graph.variableCollections.get(large.collectionId)).defaultModeId
+  editor.updateVariableValue(tokens.large, mode, 30)
+  expect(child().height).toBe(30)
 })
 
 test('a nested instance drops a binding the new variant does not set, and keeps its own', () => {
@@ -276,6 +280,7 @@ test('a nested instance drops a binding the new variant does not set, and keeps 
     }
   })
   editor.bindVariable(child().id, 'cornerRadius', tokens.own)
+  expect(child().boundVariables.height).toBe(tokens.small)
   editor.switchInstanceVariant(chip.id, 'Size', 'Large')
   expect(child().boundVariables.height).toBeUndefined()
   expect(child().boundVariables.cornerRadius).toBe(tokens.own)
