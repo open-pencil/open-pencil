@@ -1,5 +1,6 @@
 import { useLocalStorage } from '@vueuse/core'
 import { basename } from 'pathe'
+import * as v from 'valibot'
 import { computed } from 'vue'
 
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
@@ -14,9 +15,12 @@ import {
 } from '@/app/integrations/storage'
 
 import { recentFilesLimit } from './preferences'
+import { recentDocumentViewSchema } from './schema'
 import { clearRecentFileThumbnails } from './thumbnails'
 
 const RECENT_DOCUMENTS_STORAGE_KEY = 'open-pencil:recent-documents'
+
+export type RecentDocumentView = v.InferOutput<typeof recentDocumentViewSchema>
 
 export interface RecentLocalDocument {
   id: string
@@ -26,6 +30,7 @@ export interface RecentLocalDocument {
   updatedAt: string
   /** A design or a board; entries recorded before this was kept have none. */
   documentKind?: DocumentKind
+  view?: RecentDocumentView
 }
 
 export interface RecentStorageDocument {
@@ -39,6 +44,7 @@ export interface RecentStorageDocument {
   updatedAt: string
   /** A design or a board; entries recorded before this was kept have none. */
   documentKind?: DocumentKind
+  view?: RecentDocumentView
 }
 
 export type RecentDocument = RecentLocalDocument | RecentStorageDocument
@@ -74,10 +80,41 @@ export const recentLocalFilePaths = computed<string[]>(() =>
 )
 
 function remember(document: RecentDocument): void {
-  recentDocuments.value = [
-    document,
-    ...normalizedRecentDocuments().filter((recent) => recent.id !== document.id)
-  ].slice(0, recentFilesLimit.value)
+  const others = normalizedRecentDocuments().filter((recent) => recent.id !== document.id)
+  const previous = recentDocuments.value.find((recent) => recent.id === document.id)
+  // Opening or saving a document again keeps the view it was left at.
+  const view = document.view ?? previous?.view
+  recentDocuments.value = [view ? { ...document, view } : document, ...others].slice(
+    0,
+    recentFilesLimit.value
+  )
+}
+
+/**
+ * The recent-files id of an open document: a stored one by its binding, a file by its path; none
+ * for a document that is neither, which recent files do not list.
+ */
+export function recentDocumentIdOf(
+  path: string | null,
+  binding: StorageDocumentBinding | null
+): string | null {
+  if (binding) return storageDocumentId(binding)
+  return path ? localDocumentId(path) : null
+}
+
+/** Keeps the view a listed document was left at, without moving it up the list. */
+export function rememberRecentDocumentView(id: string, view: RecentDocumentView): void {
+  if (!recentDocuments.value.some((document) => document.id === id)) return
+  recentDocuments.value = recentDocuments.value.map((document) =>
+    document.id === id ? { ...document, view } : document
+  )
+}
+
+/** The view a listed document was left at, if one was kept and stored intact. */
+export function recentDocumentView(id: string): RecentDocumentView | null {
+  const view: unknown = recentDocuments.value.find((document) => document.id === id)?.view
+  const parsed = v.safeParse(recentDocumentViewSchema, view)
+  return parsed.success ? parsed.output : null
 }
 
 /** What a file on this device is by its name: a FigJam `.jam` is a board, anything else a design. */

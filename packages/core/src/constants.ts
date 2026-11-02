@@ -277,6 +277,9 @@ export const SECTION_DEFAULT_STROKE: Stroke = {
 export const SECTION_CORNER_RADIUS = 2
 
 export const ZOOM_DIVISOR = 50
+/** Figma's zoom range, 2% to 25,600%. */
+export const ZOOM_MIN = 0.02
+export const ZOOM_MAX = 256
 export const ZOOM_SCALE_MIN = 0.75
 export const ZOOM_SCALE_MAX = 1.25
 
