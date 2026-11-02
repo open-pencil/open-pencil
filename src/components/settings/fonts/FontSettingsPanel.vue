@@ -91,6 +91,7 @@ onMounted(() => {
             as="label"
             :label="fonts.onlineFonts"
             :modified="online !== DEFAULT_ONLINE_FONTS"
+            :reset-disabled="busyAction !== null"
             @reset="setOnlineFontsEnabled(DEFAULT_ONLINE_FONTS)"
           >
             <AppSwitch
@@ -106,6 +107,7 @@ onMounted(() => {
             as="label"
             :label="WEB_FONT_PROVIDER_LABELS[provider]"
             :modified="providerEnabled(provider) !== DEFAULT_WEB_FONT_PROVIDER_SETTINGS[provider]"
+            :reset-disabled="busyAction !== null || !online"
             @reset="setFontProviderEnabled(provider, DEFAULT_WEB_FONT_PROVIDER_SETTINGS[provider])"
           >
             <AppSwitch
