@@ -1,0 +1,1 @@
+- Switching a variant in the editor, and undoing it, is faster: only what the switch changes is recorded for undo.

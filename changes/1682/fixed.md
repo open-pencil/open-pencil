@@ -1,0 +1,1 @@
+- Switching an instance's variant keeps its layers, their IDs and the overrides on them wherever the new variant has a matching layer, and undo restores the instance exactly.
