@@ -38,21 +38,50 @@ fn needs_workaround(session: &Session) -> bool {
     session.existing.is_none() && session.nvidia && session.wayland && session.webkit < FIXED_WEBKIT
 }
 
-/// Whether GTK will open a Wayland display: `GDK_BACKEND` names the backend it tries first,
-/// and without it GTK uses Wayland when the session has one.
-fn wayland_session(
-    gdk_backend: Option<&OsStr>,
-    wayland_display: Option<&OsStr>,
-    session_type: Option<&OsStr>,
-) -> bool {
-    if let Some(backend) = gdk_backend.and_then(OsStr::to_str) {
-        let first = backend.split(',').next().unwrap_or_default().trim();
-        if !first.is_empty() && first != "*" && first != "wayland" {
-            return false;
+/// The displays GTK could open: a Wayland socket and an X server.
+struct Displays {
+    wayland: bool,
+    x11: bool,
+}
+
+/// Whether GTK will open a Wayland display. It tries the backends `GDK_BACKEND` lists in order,
+/// or Wayland and then X11 without it, and takes the first that opens. Wayland is tried even
+/// without a socket in sight when it is the last choice left, so that case counts as Wayland.
+fn wayland_session(gdk_backend: Option<&OsStr>, displays: &Displays) -> bool {
+    let listed = gdk_backend
+        .and_then(OsStr::to_str)
+        .map(str::trim)
+        .filter(|list| !list.is_empty())
+        .unwrap_or("*");
+    let backends: Vec<&str> = listed
+        .split(',')
+        .map(str::trim)
+        .flat_map(|backend| match backend {
+            "*" => vec!["wayland", "x11"],
+            other => vec![other],
+        })
+        .collect();
+    for (index, backend) in backends.iter().enumerate() {
+        match *backend {
+            "wayland" if displays.wayland || index == backends.len() - 1 => return true,
+            "x11" if displays.x11 => return false,
+            _ => {}
         }
     }
-    wayland_display.is_some_and(|display| !display.is_empty())
-        || session_type.is_some_and(|kind| kind == "wayland")
+    false
+}
+
+/// What libwayland and Xlib would connect to: `WAYLAND_DISPLAY`, or `wayland-0` in the runtime
+/// directory without it, and `DISPLAY`.
+#[cfg(target_os = "linux")]
+fn displays() -> Displays {
+    let set = |name: &str| std::env::var_os(name).is_some_and(|value| !value.is_empty());
+    let default_socket = std::env::var_os("XDG_RUNTIME_DIR")
+        .is_some_and(|dir| std::path::Path::new(&dir).join("wayland-0").exists());
+    Displays {
+        wayland: set("WAYLAND_DISPLAY") || default_socket,
+        x11: set("DISPLAY"),
+    }
 }
 
 /// The WebKitGTK the app has loaded, which for the AppImage is the bundled one.
@@ -76,11 +105,7 @@ pub fn disable_nvidia_explicit_sync() {
     let session = Session {
         existing: existing.as_deref(),
         nvidia: std::path::Path::new(NVIDIA_VERSION_FILE).is_file(),
-        wayland: wayland_session(
-            std::env::var_os("GDK_BACKEND").as_deref(),
-            std::env::var_os("WAYLAND_DISPLAY").as_deref(),
-            std::env::var_os("XDG_SESSION_TYPE").as_deref(),
-        ),
+        wayland: wayland_session(std::env::var_os("GDK_BACKEND").as_deref(), &displays()),
         webkit: webkit_version(),
     };
     if needs_workaround(&session) {
@@ -92,7 +117,7 @@ pub fn disable_nvidia_explicit_sync() {
 mod tests {
     use std::ffi::OsStr;
 
-    use super::{needs_workaround, wayland_session, Session};
+    use super::{needs_workaround, wayland_session, Displays, Session};
 
     fn affected() -> Session<'static> {
         Session {
@@ -138,17 +163,37 @@ mod tests {
 
     #[test]
     fn follows_the_backend_gtk_opens() {
-        let wayland = Some(OsStr::new("wayland-1"));
-        assert!(wayland_session(None, wayland, None));
-        assert!(wayland_session(None, None, Some(OsStr::new("wayland"))));
-        assert!(wayland_session(
-            Some(OsStr::new("wayland,x11")),
-            wayland,
-            None
-        ));
-        assert!(wayland_session(Some(OsStr::new("*")), wayland, None));
-        assert!(!wayland_session(Some(OsStr::new("x11")), wayland, None));
-        assert!(!wayland_session(None, None, Some(OsStr::new("x11"))));
-        assert!(!wayland_session(None, Some(OsStr::new("")), None));
+        let both = Displays {
+            wayland: true,
+            x11: true,
+        };
+        let x11_only = Displays {
+            wayland: false,
+            x11: true,
+        };
+        let wayland_only = Displays {
+            wayland: true,
+            x11: false,
+        };
+        let none = Displays {
+            wayland: false,
+            x11: false,
+        };
+        let backend = |list: &'static str| Some(OsStr::new(list));
+
+        // Without GDK_BACKEND, or with `*`, GTK tries Wayland first, then X11.
+        assert!(wayland_session(None, &both));
+        assert!(wayland_session(backend("*"), &both));
+        assert!(wayland_session(backend(""), &wayland_only));
+        assert!(!wayland_session(None, &x11_only));
+        // The list order wins, and a backend that cannot open falls through to the next.
+        assert!(wayland_session(backend("wayland,x11"), &both));
+        assert!(!wayland_session(backend("x11,wayland"), &both));
+        assert!(wayland_session(backend("x11,wayland"), &wayland_only));
+        assert!(!wayland_session(backend("wayland,x11"), &x11_only));
+        assert!(!wayland_session(backend("x11"), &both));
+        // Wayland as the last choice is tried with libwayland's default socket.
+        assert!(wayland_session(backend("wayland"), &none));
+        assert!(wayland_session(backend("x11,wayland"), &none));
     }
 }
