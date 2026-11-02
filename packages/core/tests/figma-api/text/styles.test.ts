@@ -128,7 +128,7 @@ describe('styled text segments', () => {
       "in getStyledTextSegments: Invalid range. Must provide both 'start' and 'end'"
     )
     expect(() => text.getStyledTextSegments(['nope' as 'fontSize'])).toThrow(
-      `in getStyledTextSegments: Property "getStyledTextSegments" failed validation: Invalid enum value. Expected 'fontSize' | 'fontName'`
+      `in getStyledTextSegments: Property "getStyledTextSegments" failed validation: Invalid option: expected one of "fontSize"|"fontName"|`
     )
     expect(styledText('').text.getStyledTextSegments(['fontSize'])).toEqual([])
   })
@@ -251,10 +251,10 @@ describe('character style ranges', () => {
     const message = (method: string, problem: string) =>
       `in ${method}: Property "value" failed validation: ${problem}`
     expect(() => text.setRangeFontSize(0, 1, 0)).toThrow(
-      message('setRangeFontSize', 'Number must be greater than or equal to 1')
+      message('setRangeFontSize', 'Too small: expected number to be >=1')
     )
     expect(() => text.setRangeFontSize(0, 1, Number.NaN)).toThrow(
-      message('setRangeFontSize', 'Expected number, received nan')
+      message('setRangeFontSize', 'Expected number, received NaN')
     )
     // The range is checked before the value.
     expect(() => text.setRangeFontSize(5, 9, 0)).toThrow(
@@ -263,22 +263,22 @@ describe('character style ranges', () => {
     expect(() => text.setRangeLetterSpacing(0, 1, { value: 1, unit: 'EM' as 'PIXELS' })).toThrow(
       message(
         'setRangeLetterSpacing',
-        "Invalid enum value. Expected 'PIXELS' | 'PERCENT', received 'EM' at .unit"
+        'Invalid option: expected one of "PIXELS"|"PERCENT" at .unit'
       )
     )
     expect(() => text.setRangeLineHeight(0, 1, { value: 1, unit: 'EM' as 'PIXELS' })).toThrow(
       message(
         'setRangeLineHeight',
-        "Invalid discriminator value. Expected 'PIXELS' | 'PERCENT' | 'AUTO' at .unit"
+        'Expected .unit to be one of the following: PIXELS, PERCENT, AUTO'
       )
     )
     expect(() =>
       text.setRangeFills(0, 1, [{ type: 'SOLID', color: { r: 2, g: 0, b: 0 } }])
-    ).toThrow(message('setRangeFills', 'Number must be less than or equal to 1 at [0].color.r'))
+    ).toThrow(message('setRangeFills', 'Too big: expected number to be <=1 at [0].color.r'))
     expect(() => text.setRangeTextDecoration(0, 1, 'OVERLINE' as 'NONE')).toThrow(
       message(
         'setRangeTextDecoration',
-        "Invalid enum value. Expected 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH', received 'OVERLINE'"
+        'Invalid option: expected one of "NONE"|"UNDERLINE"|"STRIKETHROUGH"'
       )
     )
     expect(() => text.setRangeFontName(0, 1, null as never)).toThrow(
@@ -296,12 +296,11 @@ describe('character style ranges', () => {
   test('reject paints Figma rejects, which would not survive saving', () => {
     const { text } = styledText('Abc')
     const paintTypes =
-      "'SOLID' | 'SHADER' | 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | " +
-      "'GRADIENT_DIAMOND' | 'IMAGE' | 'VIDEO'"
+      'SOLID, SHADER, GRADIENT_LINEAR, GRADIENT_RADIAL, GRADIENT_ANGULAR, GRADIENT_DIAMOND, IMAGE, VIDEO'
     const fills = (problem: string) =>
       `in setRangeFills: Property "value" failed validation: ${problem}`
     expect(() => text.setRangeFills(0, 1, [{ color: BLUE } as never])).toThrow(
-      fills(`Invalid discriminator value. Expected ${paintTypes} at [0].type`)
+      fills(`Expected [0].type to be one of the following: ${paintTypes}`)
     )
     expect(() => text.setRangeFills(0, 1, [{ type: 'SOLID' } as never])).toThrow(
       fills('Required value missing at [0].color')
@@ -314,19 +313,19 @@ describe('character style ranges', () => {
     expect(() => solid(null)).toThrow(fills('Expected object, received null at [0].color'))
     expect(() => solid({ r: 0, g: 0 })).toThrow(fills('Required value missing at [0].color.b'))
     expect(() => solid({ r: -0.1, g: 0, b: 0 })).toThrow(
-      fills('Number must be greater than or equal to 0 at [0].color.r')
+      fills('Too small: expected number to be >=0 at [0].color.r')
     )
     expect(() => solid({ r: Number.NaN, g: 0, b: 0 })).toThrow(
-      fills('Expected number, received nan at [0].color.r')
+      fills('Expected number, received NaN at [0].color.r')
     )
     expect(() => solid({ r: '1', g: 0, b: 0 })).toThrow(
       fills('Expected number, received string at [0].color.r')
     )
     expect(() => solid({ r: 0, g: 0, b: 0, a: 2 })).toThrow(
-      fills('Number must be less than or equal to 1 at [0].color.a')
+      fills('Too big: expected number to be <=1 at [0].color.a')
     )
     expect(() => solid({ r: 0, g: 0, b: 0 }, 2)).toThrow(
-      fills('Number must be less than or equal to 1 at [0].opacity')
+      fills('Too big: expected number to be <=1 at [0].opacity')
     )
     expect(() => solid({ r: 0, g: 0, b: 0, a: 0.5 })).not.toThrow()
 
@@ -336,24 +335,24 @@ describe('character style ranges', () => {
     const noneMatched = (issues: string) =>
       color(
         `Expected one of the following, but none matched:\n${issues}\n` +
-          '  Invalid literal value, expected "AUTO" at .value'
+          '  Invalid input: expected "AUTO" at .value'
       )
     expect(() => text.setRangeTextDecorationColor(0, 1, { value: BLUE as never })).toThrow(
       noneMatched(
         '  Multiple issues:\n' +
-          '    Invalid literal value, expected "SOLID" at .value.type\n' +
+          '    Invalid input: expected "SOLID" at .value.type\n' +
           '    Required value missing at .value.color\n' +
-          "    Unrecognized key(s) in object: 'r', 'g', 'b', 'a' at .value"
+          '    Unrecognized keys: "r", "g", "b", "a" at .value'
       )
     )
     expect(() =>
       text.setRangeTextDecorationColor(0, 1, { value: { type: 'NOPE', color: RGB_BLUE } as never })
-    ).toThrow(noneMatched('  Invalid literal value, expected "SOLID" at .value.type'))
+    ).toThrow(noneMatched('  Invalid input: expected "SOLID" at .value.type'))
     expect(() =>
       text.setRangeTextDecorationColor(0, 1, {
         value: { type: 'SOLID', color: RGB_BLUE, foo: 1 } as never
       })
-    ).toThrow(color("Unrecognized key(s) in object: 'foo' at .value"))
+    ).toThrow(color('Unrecognized key: "foo" at .value'))
     expect(() =>
       text.setRangeTextDecorationColor(0, 1, { value: { type: 'SOLID', color: null } as never })
     ).toThrow(noneMatched('  Expected object, received null at .value.color'))
@@ -361,7 +360,7 @@ describe('character style ranges', () => {
       text.setRangeTextDecorationColor(0, 1, {
         value: { type: 'SOLID', color: { r: -1, g: 0, b: 0 } } as never
       })
-    ).toThrow(color('Number must be greater than or equal to 0 at .value.color.r'))
+    ).toThrow(color('Too small: expected number to be >=0 at .value.color.r'))
   })
 })
 

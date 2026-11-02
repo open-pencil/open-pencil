@@ -8,7 +8,7 @@ import {
 } from '@open-pencil/scene-graph/gradient'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { invalid, received } from './accessors/text/messages'
+import { invalid, invalidOption, received } from './accessors/text/messages'
 import { BLEND_MODES, issuePath } from './effects'
 import type { FigmaTransform } from './types'
 import { variableAlias, type FigmaVariableAlias } from './variables/values'
@@ -57,10 +57,6 @@ const NO_FILTERS: ImageFilters = {
 const SHA1_HASH = /^[0-9a-f]{40}$/i
 
 /** Figma's message for a value that is none of `options`. */
-function invalidOption(options: readonly string[]): string {
-  return `Invalid option: expected one of ${options.map((option) => `"${option}"`).join('|')}`
-}
-
 const unitSchema = v.pipe(v.number(), v.minValue(0), v.maxValue(1))
 const aliasSchema = v.object({ type: v.literal('VARIABLE_ALIAS'), id: v.string() })
 const colorBindingSchema = v.optional(v.strictObject({ color: v.optional(aliasSchema) }))
@@ -245,8 +241,9 @@ function issueProblem(issue: v.BaseIssue<unknown>): string {
 /** Figma's complaint about a paint type it does not take, or OpenPencil does not model. */
 function typeProblem(value: readonly unknown[]): string | null {
   for (const [index, paint] of value.entries()) {
-    if (!v.is(v.object({ type: v.unknown() }), paint)) continue
-    const { type } = paint
+    // A paint without a type is refused as one of an unknown type, as in Figma.
+    if (!paint || typeof paint !== 'object') continue
+    const { type } = paint as { type?: unknown }
     if (typeof type === 'string' && UNSUPPORTED_PAINT_TYPES.has(type)) {
       return `${type} paints are not supported at [${index}].type`
     }

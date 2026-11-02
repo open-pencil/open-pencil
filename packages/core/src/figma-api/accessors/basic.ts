@@ -29,7 +29,7 @@ import {
 } from '#core/figma-api/accessor-utils'
 import { invalid, numberProblem } from '#core/figma-api/accessors/text/messages'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
-import type { NodeProxyHost } from '#core/figma-api/proxy'
+import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
 import {
   containerTransform,
@@ -252,7 +252,34 @@ export function installBasicNodeProxyAccessors(
       if (node.parentId && findInstanceAncestor(scene, node.parentId))
         throw new Error('This property cannot be overridden in an instance: size')
       rescaleNodeTree(scene, node.id, scale)
+    },
+    getTopLevelFrame(this: ProxyThis): FigmaNodeProxy | undefined {
+      const top = topLevelFrame(graph(this, internals), raw(this, internals))
+      return top ? (this[internals.api] as NodeProxyHost).wrapNode(top.id) : undefined
     }
+  })
+}
+
+/** The layers `getTopLevelFrame` can return; a shape or boolean is never one. */
+const TOP_LEVEL_FRAME_TYPES: ReadonlySet<SceneNode['type']> = new Set([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/**
+ * The container a layer sits in at the top of its page or section: the nearest of the layer and
+ * its ancestors that is a frame, group, section, component, or instance directly under a page or
+ * section. A shape directly on a page has none (Figma desktop 126).
+ */
+function topLevelFrame(scene: SceneGraph, node: SceneNode): SceneNode | undefined {
+  return scene.closest(node.id, (current) => {
+    const parent = current.parentId ? scene.getNode(current.parentId) : undefined
+    const topLevel = parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+    return topLevel && TOP_LEVEL_FRAME_TYPES.has(current.type)
   })
 }
 

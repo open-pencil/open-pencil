@@ -42,6 +42,26 @@ describe('default variants', () => {
     expect(defaultVariant(graph, set)?.name).toBe('Size=Small')
   })
 
+  test('read the set as Figma does: across a row first, then down', () => {
+    const at = (x: number, y: number, size = 50) => ({ x, y, width: size, height: size })
+    const pick = (...places: Array<ReturnType<typeof at>>) => {
+      const graph = new SceneGraph()
+      const set = graph.createNode('COMPONENT_SET', graph.getPages()[0].id, { name: 'Set' })
+      for (const [index, place] of places.entries())
+        graph.createNode('COMPONENT', set.id, { name: `v=${index}`, ...place })
+      return defaultVariant(graph, set)?.name
+    }
+    // Rows apart: the higher one, however far right it is.
+    expect(pick(at(100, 0), at(0, 100))).toBe('v=0')
+    expect(pick(at(0, 60), at(30, 0))).toBe('v=1')
+    // Rows overlapping, or touching, read left to right.
+    expect(pick(at(10, 0), at(0, 10))).toBe('v=1')
+    expect(pick(at(0, 40), at(30, 0))).toBe('v=0')
+    expect(pick(at(200, 0, 100), at(0, 100, 100), at(100, 0, 100))).toBe('v=1')
+    // At the same place, the first in layer order.
+    expect(pick(at(0, 0), at(0, 0))).toBe('v=0')
+  })
+
   test('give a property its default value when the document leaves it out', () => {
     const empty = sizes('')
     expect(variantDefaultValue(empty.graph, empty.set, empty.definition)).toBe('Small')

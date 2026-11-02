@@ -16,7 +16,9 @@ export const TEXT_METRIC_FIELDS = [
   'listSpacing',
   'paragraphSpacing',
   'paragraphIndent',
-  'hangingList'
+  'hangingList',
+  // A cap-height trim drops the space above and below the glyphs, so the text measures shorter.
+  'leadingTrim'
 ] as const satisfies readonly (keyof SceneNode)[]
 
 export const TEXT_SHAPING_FIELDS = [

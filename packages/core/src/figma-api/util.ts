@@ -1,5 +1,10 @@
-/// <reference types="@figma/plugin-typings" />
-
+import type {
+  BlendMode,
+  RGB,
+  RGBA,
+  SolidPaint,
+  UtilAPI
+} from '@figma/plugin-typings/plugin-api-standalone'
 import { clampRgb as clampRGB, converter, parse, type Color as CuloriColor } from 'culori'
 
 import { invalid, received } from './accessors/text/messages'
