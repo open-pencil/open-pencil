@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
+import { SceneGraph } from '@lawha/scene-graph'
+import { remapCopiedReferences } from '@lawha/scene-graph/transfer'
 
 const end = (nodeId: string) => ({ nodeId, magnet: 'AUTO' as const, position: { x: 0, y: 0 } })
 

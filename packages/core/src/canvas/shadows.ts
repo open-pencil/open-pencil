@@ -1,9 +1,9 @@
 import type { Canvas, ImageFilter } from 'canvaskit-wasm'
 
-import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import { regionFills } from '@open-pencil/scene-graph/vector-network'
+import type { BlendMode, Effect, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import Matrix from '@lawha/scene-graph/matrix'
+import { isLayerContainer } from '@lawha/scene-graph/node-defaults'
+import { regionFills } from '@lawha/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
 

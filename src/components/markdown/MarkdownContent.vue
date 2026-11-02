@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 import { computed, type Component } from 'vue'
 import { Markdown } from 'vue-stream-markdown'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { IS_BROWSER } from '@lawha/core/constants'
 
 import { createMarkdownHardenOptions, markdownExtensions } from '@/app/shell/markdown/config'
 import { animationsEnabled } from '@/app/shell/motion'

@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import {
   autoLayoutSizingFields,
   fillSizingFields,
   layoutSizing,
   layoutSizingUpdates
-} from '@open-pencil/scene-graph/layout'
+} from '@lawha/scene-graph/layout'
 
 function child(parent: Partial<SceneNode>, node: Partial<SceneNode> = {}) {
   const graph = new SceneGraph()

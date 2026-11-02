@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import {
   canonicalHomeFor,
@@ -16,7 +16,7 @@ import {
 const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
 
 async function repoWithBaseline(files: readonly string[]) {
-  const repoRoot = await mkdtemp(join(tmpdir(), 'open-pencil-test-homes-'))
+  const repoRoot = await mkdtemp(join(tmpdir(), 'lawha-test-homes-'))
   await mkdir(join(repoRoot, 'tools/checks/test-homes'), { recursive: true })
   await writeFile(
     join(repoRoot, 'tools/checks/test-homes/engine-baseline.txt'),
@@ -78,7 +78,7 @@ describe('checkTestHomes', () => {
   })
 
   test('fails without a baseline file', async () => {
-    const repoRoot = await mkdtemp(join(tmpdir(), 'open-pencil-test-homes-empty-'))
+    const repoRoot = await mkdtemp(join(tmpdir(), 'lawha-test-homes-empty-'))
 
     expect((await checkTestHomes({ repoRoot })).errors).toHaveLength(1)
   })

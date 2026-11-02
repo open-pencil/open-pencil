@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCommonMessages } from '@lawha/vue/i18n'
 
 import type { ControlSize } from '@/theme/control'
 

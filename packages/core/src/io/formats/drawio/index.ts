@@ -1,8 +1,8 @@
-import type { DrawIOCell, DrawIOFile, DrawIOPage, DrawIOStyle } from '@open-pencil/drawio'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { connectorRoute, placeConnectorLabel } from '@open-pencil/scene-graph/connectors'
-import { createShapeWithText } from '@open-pencil/scene-graph/generated'
-import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
+import type { DrawIOCell, DrawIOFile, DrawIOPage, DrawIOStyle } from '@lawha/drawio'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { connectorRoute, placeConnectorLabel } from '@lawha/scene-graph/connectors'
+import { createShapeWithText } from '@lawha/scene-graph/generated'
+import { fitEnclosingGroups } from '@lawha/scene-graph/group-bounds'
 
 import { bindEdge, createEdge, labelPositionOf, type PendingEdge } from './edges'
 import { readLabel } from './label'

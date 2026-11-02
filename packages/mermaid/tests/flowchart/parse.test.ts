@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseFlowchart, type FlowEdge, type Flowchart } from '@open-pencil/mermaid'
+import { parseFlowchart, type FlowEdge, type Flowchart } from '@lawha/mermaid'
 
 function node(chart: Flowchart, id: string) {
   const found = chart.nodes.find((candidate) => candidate.id === id)

@@ -1,6 +1,6 @@
 import type { TypefaceFontProvider } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'

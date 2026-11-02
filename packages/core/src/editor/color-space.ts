@@ -1,6 +1,6 @@
-import type { DocumentColorSpace, SceneNode } from '@open-pencil/scene-graph'
-import { resolveOkHCLForPreview, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
-import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '@open-pencil/scene-graph/copy'
+import type { DocumentColorSpace, SceneNode } from '@lawha/scene-graph'
+import { resolveOkHCLForPreview, rgbaToOkHCL } from '@lawha/scene-graph/color'
+import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '@lawha/scene-graph/copy'
 
 import type { EditorContext } from './types'
 

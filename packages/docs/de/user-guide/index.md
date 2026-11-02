@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: Benutzerhandbuch
-description: OpenPencil verwenden — Navigation, Zeichnen, Text, Komponenten, automatische Anordnung und weitere Funktionen.
+description: Lawha verwenden — Navigation, Zeichnen, Text, Komponenten, automatische Anordnung und weitere Funktionen.
 ---
 
 # Benutzerhandbuch
 
-OpenPencil ist ein lokaler Open-Source-Design-Editor mit Figma-Kompatibilität, integrierter KI und Automatisierungs-APIs. Dieses Handbuch erklärt die wichtigsten Arbeitsabläufe.
+Lawha ist ein lokaler Open-Source-Design-Editor mit Figma-Kompatibilität, integrierter KI und Automatisierungs-APIs. Dieses Handbuch erklärt die wichtigsten Arbeitsabläufe.
 
 ::: tip Tastenkürzel auf verschiedenen Betriebssystemen
 Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <kbd>Command</kbd> beziehungsweise <kbd>Strg</kbd> unter Windows und Linux, <kbd>⌥</kbd> entspricht <kbd>Option</kbd> beziehungsweise <kbd>Alt</kbd> und <kbd>⇧</kbd> entspricht <kbd>Shift</kbd>.

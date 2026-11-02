@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 
 import type { Channel } from '@tauri-apps/api/core'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@lawha/core/constants'
 
 import { installAgentAdapter, lookupAgents } from '@/app/ai/agents/setup/native'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -17,13 +17,13 @@ test('validates native discovery responses', async () => {
     expect(command).toBe('agent_lookup')
     return {
       executables: { claude: '/bin/claude', npm: null },
-      versions: { '@open-pencil/mcp': '0.15.1' },
+      versions: { '@lawha/mcp': '0.15.1' },
       searchPath: '/bin'
     }
   })
   const lookup = await lookupAgents()
   expect(lookup.executables.claude).toBe('/bin/claude')
-  expect(lookup.versions['@open-pencil/mcp']).toBe('0.15.1')
+  expect(lookup.versions['@lawha/mcp']).toBe('0.15.1')
   await mockTauriIPC(() => ({ executables: { claude: true }, versions: {}, searchPath: '/bin' }))
   await expect(lookupAgents()).rejects.toThrow()
 })

@@ -1,9 +1,9 @@
 {
-  "name": "@open-pencil/harness",
+  "name": "@lawha/harness",
   "version": "0.17.0-beta.1",
   "private": false,
   "license": "MIT",
-  "description": "Optional OpenPencil companion CLI for coding-agent Harness sessions",
+  "description": "Optional Lawha companion CLI for coding-agent Harness sessions",
   "type": "module",
   "exports": {
     ".": {
@@ -14,7 +14,7 @@
     }
   },
   "bin": {
-    "openpencil-harness": "./dist/stdio.mjs"
+    "lawha-harness": "./dist/stdio.mjs"
   },
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/harness"
   },
   "publishConfig": {
@@ -37,7 +37,7 @@
     "@ai-sdk/harness-pi": "1.0.140",
     "@ai-sdk/sandbox-just-bash": "1.0.138",
     "@earendil-works/pi-tui": "0.85.1",
-    "@open-pencil/core": "workspace:*",
+    "@lawha/core": "workspace:*",
     "amaro": "1.2.2"
   },
   "devDependencies": {

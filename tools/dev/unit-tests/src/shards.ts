@@ -4,7 +4,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 
 import { uniq } from 'es-toolkit/array'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
 

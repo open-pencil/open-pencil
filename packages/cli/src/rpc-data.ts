@@ -1,4 +1,4 @@
-import { executeRPCCommand } from '@open-pencil/core/rpc'
+import { executeRPCCommand } from '@lawha/core/rpc'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app/target'

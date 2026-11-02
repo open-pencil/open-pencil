@@ -118,7 +118,7 @@ describe('tauriFetch', () => {
     await mockTauriIPC((command, args) => {
       expect(command).toBe('proxy_http_request')
       captured.value = args as InvokeArgs
-      return respond(args, { status: 201, headers: [{ name: 'x-open-pencil', value: 'ok' }] }, [
+      return respond(args, { status: 201, headers: [{ name: 'x-lawha', value: 'ok' }] }, [
         bytes('OK')
       ])
     })
@@ -131,7 +131,7 @@ describe('tauriFetch', () => {
 
     if (!captured.value) throw new Error('Expected proxy_http_request to be invoked')
     expect(response.status).toBe(201)
-    expect(response.headers.get('x-open-pencil')).toBe('ok')
+    expect(response.headers.get('x-lawha')).toBe('ok')
     expect(await response.text()).toBe('OK')
     expect(captured.value.request.url).toBe('https://example.test/check')
     expect(captured.value.request.method).toBe('POST')

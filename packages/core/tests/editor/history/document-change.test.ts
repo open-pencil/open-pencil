@@ -3,9 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import { captureDocumentChange } from '#core/editor/history/document-change'
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core'
-import type { CommentThread } from '@open-pencil/scene-graph'
-import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
+import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@lawha/core'
+import type { CommentThread } from '@lawha/scene-graph'
+import { readComments, writeComments } from '@lawha/scene-graph/comments'
 
 function setup() {
   const editor = createEditor()

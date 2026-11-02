@@ -4,8 +4,8 @@ import type {
   VariableCollection,
   VariableCollectionMode,
   VariableValue
-} from '@open-pencil/scene-graph'
-import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph'
+import { variableValueReferences } from '@lawha/scene-graph/variables'
 
 import { cssColor } from '../export/css'
 import { formulaToCSS } from './formula'

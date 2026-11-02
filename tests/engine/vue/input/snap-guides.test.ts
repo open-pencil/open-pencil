@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
-import { computeSnap } from '@open-pencil/scene-graph/snap'
+import { createEditor } from '@lawha/core'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
+import { computeSnap } from '@lawha/scene-graph/snap'
 
 import { applyResizeSnap } from '#vue/shared/input/resize/snap'
 import { computePixelGridSnap, resolveObjectPixelSnap } from '#vue/shared/input/snap'

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -24,8 +24,8 @@ test.afterAll(async () => {
 async function createRects() {
   await canvas.clearCanvas()
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.snappingPreferences = { geometry: true, objects: true, pixelGrid: false }
     store.createShape('RECTANGLE', 100, 100, 80, 80)
     const b = store.createShape('RECTANGLE', 300, 100, 80, 80)
@@ -36,8 +36,8 @@ async function createRects() {
 
 async function selectedPosition(): Promise<Vector> {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = store.state.selectedIds.values().next().value
     const node = id ? store.graph.getNode(id) : undefined
     if (!node) throw new Error('Selected node not found')
@@ -46,7 +46,7 @@ async function selectedPosition(): Promise<Vector> {
 }
 
 async function snapGuides() {
-  return page.evaluate(() => window.openPencil?.getStore?.().state.snapGuides ?? [])
+  return page.evaluate(() => window.lawha?.getStore?.().state.snapGuides ?? [])
 }
 
 // Snap guide visual tests compare the canvas at a snap position vs a non-snap position
@@ -118,8 +118,8 @@ test('center snap guide: canvas differs at snap vs non-snap position', async () 
 test('pixel snapping preference controls fractional object movement', async () => {
   await canvas.clearCanvas()
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.snappingPreferences = { geometry: true, objects: false, pixelGrid: false }
     const id = store.createShape('RECTANGLE', 120.25, 100.25, 80, 80)
     store.select([id])
@@ -134,8 +134,8 @@ test('pixel snapping preference controls fractional object movement', async () =
   expect(await selectedPosition()).toEqual({ x: 126.25, y: 107.25 })
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.snappingPreferences.pixelGrid = true
   })
   await page.mouse.move(box.x + 166.25, box.y + 147.25)
@@ -153,8 +153,8 @@ test('pixel snapping preference controls fractional object movement', async () =
 test('Control bypasses object and pixel snapping during a real pointer drag', async () => {
   await canvas.clearCanvas()
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.snappingPreferences = { geometry: true, objects: true, pixelGrid: true }
     store.createShape('RECTANGLE', 100, 100, 80, 80)
     const id = store.createShape('RECTANGLE', 300, 100, 80, 80)

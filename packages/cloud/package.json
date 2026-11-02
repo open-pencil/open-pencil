@@ -1,16 +1,16 @@
 {
-  "name": "@open-pencil/cloud",
+  "name": "@lawha/cloud",
   "version": "0.17.0-beta.1",
-  "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
+  "description": "Self-hostable Lawha Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
   "license": "Apache-2.0 AND MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/cloud"
   },
   "bin": {
-    "openpencil-ai-relay": "./dist/bin/ai-relay.mjs",
-    "openpencil-cloud": "./dist/bin/server.mjs"
+    "lawha-ai-relay": "./dist/bin/ai-relay.mjs",
+    "lawha-cloud": "./dist/bin/server.mjs"
   },
   "files": [
     "dist",
@@ -116,7 +116,7 @@
     "@hono/node-server": "^1.19.17",
     "@internationalized/date": "^3.12.3",
     "@noble/hashes": "^2.4.0",
-    "@open-pencil/scene-graph": "workspace:*",
+    "@lawha/scene-graph": "workspace:*",
     "@openfeature/server-sdk": "^1.23.0",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",

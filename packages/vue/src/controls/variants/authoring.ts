@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
-import type { VariantConflict } from '@open-pencil/core'
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+import type { VariantConflict } from '@lawha/core'
+import type { ComponentPropertyDefinition, SceneNode } from '@lawha/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

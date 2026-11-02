@@ -5,30 +5,30 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
 // Only inspect known executables. Discovery never launches an agent or reads credentials;
-// it runs only OpenPencil's own companions, and only to ask their version.
+// it runs only Lawha's own companions, and only to ask their version.
 const EXECUTABLES: &[&str] = &[
     "claude",
     "claude-agent-acp",
     "codex",
     "codex-acp",
     "gemini",
-    "openpencil-mcp-http",
-    "openpencil-harness",
+    "lawha-mcp-http",
+    "lawha-harness",
     "npm",
     "bun",
 ];
 
-// OpenPencil's own companions, whose installed version must match the app.
+// Lawha's own companions, whose installed version must match the app.
 const PACKAGES: &[(&str, &str)] = &[
-    ("openpencil-mcp-http", "@open-pencil/mcp"),
-    ("openpencil-harness", "@open-pencil/harness"),
+    ("lawha-mcp-http", "@lawha/mcp"),
+    ("lawha-harness", "@lawha/harness"),
 ];
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentLookup {
     executables: BTreeMap<String, Option<String>>,
-    /// Versions OpenPencil's companions report for `--version`; `None` when one predates it.
+    /// Versions Lawha's companions report for `--version`; `None` when one predates it.
     versions: BTreeMap<String, Option<String>>,
     /// Whether this user can write npm's global package folder; `None` without npm or when npm
     /// does not say where it is. A distribution's Node usually needs administrator rights there.
@@ -46,7 +46,7 @@ fn parse_version(output: &str) -> Option<String> {
     semver::Version::parse(line).ok().map(|_| line.to_owned())
 }
 
-/// Asks one of OpenPencil's own companions for its version. Asking the program reports what
+/// Asks one of Lawha's own companions for its version. Asking the program reports what
 /// actually runs, through npm and bun shims, `.cmd` wrappers on Windows, and version managers.
 /// `--help` follows so that a release older than `--version` prints its help and exits; it has
 /// no version line, which reads as outdated.
@@ -113,7 +113,7 @@ fn nearest_existing(path: &Path) -> Option<&Path> {
 /// Whether this process can create files in `dir`, checked by creating and removing one, since
 /// permission bits alone do not account for ownership, ACLs, or read-only mounts.
 fn can_write(dir: &Path) -> bool {
-    let probe = dir.join(format!(".openpencil-write-check-{}", std::process::id()));
+    let probe = dir.join(format!(".lawha-write-check-{}", std::process::id()));
     match std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -217,7 +217,7 @@ mod tests {
         let result = lookup_with(
             "/agents/bin".to_owned(),
             |command| match command {
-                "claude" | "npm" | "openpencil-mcp-http" => {
+                "claude" | "npm" | "lawha-mcp-http" => {
                     Some(PathBuf::from("/agents/bin").join(command))
                 }
                 _ => None,
@@ -232,10 +232,10 @@ mod tests {
         );
         assert_eq!(result.executables["claude-agent-acp"], None);
         assert_eq!(
-            result.versions["@open-pencil/mcp"],
+            result.versions["@lawha/mcp"],
             Some("0.15.1".to_owned())
         );
-        assert_eq!(result.versions["@open-pencil/harness"], None);
+        assert_eq!(result.versions["@lawha/harness"], None);
     }
 
     #[test]
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn probes_write_access_to_the_global_package_folder() {
-        let prefix = std::env::temp_dir().join(format!("open-pencil-npm-{}", std::process::id()));
+        let prefix = std::env::temp_dir().join(format!("lawha-npm-{}", std::process::id()));
         let packages = if cfg!(windows) {
             prefix.join("node_modules")
         } else {
@@ -277,7 +277,7 @@ mod tests {
         );
         // A release older than `--version` prints its help instead.
         assert_eq!(
-            parse_version("openpencil-mcp-http\n\nStart the server."),
+            parse_version("lawha-mcp-http\n\nStart the server."),
             None
         );
         assert_eq!(parse_version("1.2\n"), None);
@@ -287,7 +287,7 @@ mod tests {
     #[cfg(unix)]
     fn script(name: &str, body: &str) -> PathBuf {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("openpencil-agents-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("lawha-agents-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join(name);
         std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();

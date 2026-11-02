@@ -9,7 +9,7 @@ import type {
   LibrarySummary,
   PublishLibraryInput,
   StoredLibraryLatestManifest
-} from '@open-pencil/core/library'
+} from '@lawha/core/library'
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
@@ -19,8 +19,8 @@ import {
   storedLibraryLatestManifestSchema,
   storedLibraryRevisionSchema,
   validateLibraryRevision
-} from '@open-pencil/core/library'
-import { writeFileAtomic } from '@open-pencil/core/node/fs'
+} from '@lawha/core/library'
+import { writeFileAtomic } from '@lawha/core/node/fs'
 
 const catalogPublicationQueues = new Map<string, Promise<void>>()
 

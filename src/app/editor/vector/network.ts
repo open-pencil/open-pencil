@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core'
-import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@open-pencil/core/vector'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
+import type { Editor } from '@lawha/core'
+import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@lawha/core/vector'
+import type { VectorNetwork } from '@lawha/scene-graph'
 
 import { pushNodeEditHistory } from './history'
 import type { NodeEditState, VectorEditState } from './types'

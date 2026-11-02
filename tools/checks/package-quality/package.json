@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/package-quality-tools",
+  "name": "@lawha/package-quality-tools",
   "private": true,
   "type": "module",
   "imports": {
@@ -12,7 +12,7 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*",
     "citty": "^0.1.6",
     "es-toolkit": "^1.52.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2"

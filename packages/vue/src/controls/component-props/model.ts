@@ -1,11 +1,11 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyType,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { canCreateInstance } from '@open-pencil/scene-graph/instances'
+} from '@lawha/scene-graph'
+import { canCreateInstance } from '@lawha/scene-graph/instances'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/helpers'
 

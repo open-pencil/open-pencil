@@ -1,8 +1,8 @@
 import { type CalendarDate, parseDate } from '@internationalized/date'
 import * as v from 'valibot'
 
-/** Where official OpenPencil builds send pings, usage stats, and waitlist sign-ups. */
-export const FEEDBACK_ORIGIN = 'https://feedback.openpencil.dev'
+/** Where official Lawha builds send pings, usage stats, and waitlist sign-ups. */
+export const FEEDBACK_ORIGIN = 'https://feedback.lawha.invalid'
 
 export const PLATFORMS = ['macos', 'windows', 'linux', 'ios', 'android', 'unknown'] as const
 export const ARCHITECTURES = ['arm64', 'x64', 'unknown'] as const
@@ -35,7 +35,7 @@ export const AI_PROVIDERS = [
   'zai',
   'minimax',
   'anthropic-compatible',
-  'openpencil',
+  'lawha',
   'harness:pi',
   'acp:claude-code',
   'acp:codex',

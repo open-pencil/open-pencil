@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import {
   isHeavyUnitTest,

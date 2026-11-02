@@ -1,4 +1,4 @@
-import type { Variable, VariableLiteral, VariableValue } from '@open-pencil/scene-graph'
+import type { Variable, VariableLiteral, VariableValue } from '@lawha/scene-graph'
 
 import { parseTokenValueText, tokenValueText, type TokenFormulaActions } from './model'
 

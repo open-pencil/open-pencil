@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import dedent from 'dedent'
 
-import { compileTailwindCSS } from '@open-pencil/dom-css'
-import { tokenStylesheet } from '@open-pencil/dom-css/export'
-import { SceneGraph, type Variable, type VariableValue } from '@open-pencil/scene-graph'
+import { compileTailwindCSS } from '@lawha/dom-css'
+import { tokenStylesheet } from '@lawha/dom-css/export'
+import { SceneGraph, type Variable, type VariableValue } from '@lawha/scene-graph'
 
 const BLUE_500 = { r: 0.23, g: 0.51, b: 0.96, a: 1 }
 const BLUE_300 = { r: 0.58, g: 0.77, b: 0.99, a: 1 }

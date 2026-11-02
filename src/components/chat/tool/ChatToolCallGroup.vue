@@ -2,7 +2,7 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { toolDisplayName, type ToolCallPart } from '@/app/ai/chat/tool-calls/display'
 import ChatToolCallCard from '@/components/chat/tool/ChatToolCallCard.vue'

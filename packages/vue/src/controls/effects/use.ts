@@ -1,6 +1,6 @@
 import { ref, shallowRef } from 'vue'
 
-import type { Effect } from '@open-pencil/scene-graph'
+import type { Effect } from '@lawha/scene-graph'
 
 import {
   EFFECT_OPTIONS,

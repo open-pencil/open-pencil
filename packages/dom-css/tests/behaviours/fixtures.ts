@@ -1,6 +1,6 @@
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { emptyBehaviour, withBehaviour, type Behaviour } from '@open-pencil/scene-graph/behaviours'
-import { withIcon } from '@open-pencil/scene-graph/icons'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { emptyBehaviour, withBehaviour, type Behaviour } from '@lawha/scene-graph/behaviours'
+import { withIcon } from '@lawha/scene-graph/icons'
 
 const solid = (r: number, g: number, b: number) => [
   { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }

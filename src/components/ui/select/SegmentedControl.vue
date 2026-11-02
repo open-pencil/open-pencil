@@ -31,7 +31,7 @@ import { computed } from 'vue'
 import {
   SegmentedControlItem,
   SegmentedControlRoot
-} from '@open-pencil/vue/primitives/SegmentedControl'
+} from '@lawha/vue/primitives/SegmentedControl'
 
 import theme from '@/theme/select/segmented-control'
 

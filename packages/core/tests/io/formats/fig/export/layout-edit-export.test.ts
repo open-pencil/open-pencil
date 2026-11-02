@@ -2,9 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { guid } from '#core-tests/helpers/fig/guid'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { materializeDocument, parseFigBuffer } from '@lawha/fig'
+import { initCodec, type NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('retained implicit layout survives import but does not override an explicit sizing edit', async () => {
   await initCodec()
@@ -50,7 +50,7 @@ test('retained implicit layout survives import but does not override an explicit
   expect(exported?.stackCounterAlignItems).toBe('MAX')
   expect(exported?.stackCounterSizing).toBe('FIXED')
   expect(exported?.pluginData).toContainEqual({
-    pluginID: 'open-pencil',
+    pluginID: 'lawha',
     key: 'layoutDirection',
     value: 'RTL'
   })

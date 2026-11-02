@@ -2,13 +2,13 @@ import { expect, test } from 'bun:test'
 
 import { nestedLayoutScaleFixtureSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-import { createEditor } from '@open-pencil/core'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
-import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { createEditor } from '@lawha/core'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { computeAllLayouts } from '@lawha/core/layout'
+import { materializeDocument, parseFigBuffer } from '@lawha/fig'
+import { symbolOverridesOf } from '@lawha/fig/instance-overrides'
+import { initCodec, type NodeChange } from '@lawha/kiwi/fig/codec'
+import { hasInstanceOverride } from '@lawha/scene-graph/instances'
 
 const fixture = readFixture('nested-layout-scale.json', nestedLayoutScaleFixtureSchema)
 

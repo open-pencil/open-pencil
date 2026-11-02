@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 /** Pattern fills drawn from a hidden source node. */
 export function createPatternFillScene(graph: SceneGraph, pageId: string): void {

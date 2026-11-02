@@ -2,11 +2,11 @@ import { stat, open, SeekMode } from '@tauri-apps/plugin-fs'
 import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
 
-import type { Editor } from '@open-pencil/core'
-import { figThumbnailPageId } from '@open-pencil/core/io/formats/fig'
-import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
-import { extractFigThumbnailFromReader } from '@open-pencil/fig'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { Editor } from '@lawha/core'
+import { figThumbnailPageId } from '@lawha/core/io/formats/fig'
+import { renderThumbnail } from '@lawha/core/io/formats/raster'
+import { extractFigThumbnailFromReader } from '@lawha/fig'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import {
   readCacheBytes,

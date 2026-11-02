@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
+import { createEditor } from '@lawha/core'
+import { getAxisAlignedWorldBounds } from '@lawha/scene-graph/coordinate'
 
 describe('create instance undo/redo', () => {
   test('places a nested component beside its world bounds on the page', () => {

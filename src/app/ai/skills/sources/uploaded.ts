@@ -39,7 +39,7 @@ export type SkillUploadFailure =
 
 export type SkillUpload = { ok: true; skill: StoredSkill } | ({ ok: false } & SkillUploadFailure)
 
-/** A path OpenPencil keeps: no hidden or packaging folders, which skills never refer to. */
+/** A path Lawha keeps: no hidden or packaging folders, which skills never refer to. */
 function isKeptPath(path: string): boolean {
   return path
     .split('/')
@@ -129,7 +129,7 @@ export function skillsFromUploads(stored: readonly StoredSkill[]): SkillScan {
   const [skills, problems] = partition(
     stored.map((upload) =>
       skillFromFolder({
-        source: 'openpencil',
+        source: 'lawha',
         // The name it was stored under stands in for a folder, which a SKILL.md may name itself by.
         folder: upload.name,
         location: upload.name,

@@ -5,7 +5,7 @@ import type { StateElement, StateNode, StateStyles } from '#dom-css/behaviours/s
 import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
 import { zip } from 'es-toolkit/array'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { extractImageAssets, type ExportHTMLFile } from '../bundle'
 import { serializedElements, serializeHTML } from '../html'

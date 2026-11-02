@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Editor } from '@lawha/core'
+import { getAxisAlignedWorldBounds } from '@lawha/scene-graph/coordinate'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragMarquee } from '#vue/shared/input/types'

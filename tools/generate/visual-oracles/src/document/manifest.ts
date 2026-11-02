@@ -4,7 +4,7 @@ export interface VisualOracleTarget {
   page: string
   node: string
   figmaNodeId: string
-  openPencilNodeId?: string
+  lawhaNodeId?: string
   scale?: number
   fuzz?: string
   maximumDifferentPercent?: number
@@ -20,7 +20,7 @@ export interface VisualOracleManifest {
   targets: VisualOracleTarget[]
 }
 
-const OPTIONAL_STRING_FIELDS = ['openPencilNodeId', 'fuzz'] as const
+const OPTIONAL_STRING_FIELDS = ['lawhaNodeId', 'fuzz'] as const
 const OPTIONAL_NUMBER_FIELDS = [
   'scale',
   'maximumDifferentPercent',

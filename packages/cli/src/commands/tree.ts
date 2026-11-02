@@ -1,7 +1,7 @@
 import type { TreeNode } from 'agentfmt'
 import { defineCommand } from 'citty'
 
-import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
+import type { TreeNodeResult, TreeResult } from '@lawha/core/rpc'
 
 import { appTargetOptions } from '#cli/app/target'
 import { fmtTree, printError, entity, formatType } from '#cli/format'

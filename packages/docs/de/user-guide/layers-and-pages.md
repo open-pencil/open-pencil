@@ -1,6 +1,6 @@
 ---
 title: Ebenen und Seiten
-description: Ebenen, Seiten und das Eigenschaften-Panel in OpenPencil verwenden.
+description: Ebenen, Seiten und das Eigenschaften-Panel in Lawha verwenden.
 ---
 
 # Ebenen und Seiten

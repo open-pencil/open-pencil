@@ -1,7 +1,7 @@
 import { mapValues } from 'es-toolkit/object'
 
-import { TOOL_SHORTCUTS, type Tool } from '@open-pencil/core'
-import { formatShortcut, type ShortcutPlatform } from '@open-pencil/vue/editor/commands'
+import { TOOL_SHORTCUTS, type Tool } from '@lawha/core'
+import { formatShortcut, type ShortcutPlatform } from '@lawha/vue/editor/commands'
 
 /** A key code (`KeyR`, `Shift+KeyS`) in the command registry's notation (`R`, `SHIFT+S`). */
 function registryKeys(code: string): string {

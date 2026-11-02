@@ -1,13 +1,13 @@
 import { omit, pick } from 'es-toolkit'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   buildShapeWithTextLabel,
   SHAPE_WITH_TEXT_LABEL_LAYOUT,
   shapeWithTextFrameFields,
   shapeWithTextLabel
-} from '@open-pencil/scene-graph/generated'
+} from '@lawha/scene-graph/generated'
 
 import { cloneRecord } from '../clone'
 import { nodeChangeToProps } from '../convert'

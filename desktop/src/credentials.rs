@@ -9,7 +9,7 @@ use keyring::{Entry, Error as KeyringError};
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "native-test"))]
-const CREDENTIAL_SERVICE: &str = "net.dannote.open-pencil.credentials";
+const CREDENTIAL_SERVICE: &str = "app.lawha.desktop.credentials";
 const AVAILABILITY_ACCOUNT: &str = "v1:system:default:availability";
 const MAX_SEGMENT_LENGTH: usize = 64;
 const MAX_CREDENTIAL_LENGTH: usize = 16 * 1024;
@@ -147,7 +147,7 @@ impl CredentialBackend for NativeCredentialBackend {
     }
     fn write(&self, account: &str, value: &str) -> Result<(), BackendError> {
         // Reserved fixture value in the memory-only native-test backend.
-        if value == "open-pencil-native-test-denied" {
+        if value == "lawha-native-test-denied" {
             return Err(BackendError::Locked);
         }
         TEST_CREDENTIALS

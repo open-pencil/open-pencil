@@ -109,7 +109,7 @@ export type CloudUpload = v.InferOutput<typeof uploadResponseSchema>
 function apiURL(baseURL: string): string {
   const url = new URL(baseURL)
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new CloudAPIError('OpenPencil Cloud API URL must use HTTP or HTTPS', 0)
+    throw new CloudAPIError('Lawha Cloud API URL must use HTTP or HTTPS', 0)
   }
   url.pathname = url.pathname.replace(/\/$/, '')
   url.search = ''

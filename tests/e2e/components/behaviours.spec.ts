@@ -1,4 +1,4 @@
-import { colorToCSS } from '@open-pencil/scene-graph/color'
+import { colorToCSS } from '@lawha/scene-graph/color'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { propertySection } from '#tests/helpers/properties'
@@ -21,8 +21,8 @@ async function startPreview() {
  */
 async function createSwitch({ nested = false } = {}) {
   return editor.page.evaluate((inFrame) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const graph = store.graph
     const pageId = store.state.currentPageId
     const solid = (r: number, g: number, b: number) => [
@@ -118,7 +118,7 @@ test('a Switch behaviour flips in preview and leaves the document alone', async 
   await control.click()
 
   const document = await editor.page.evaluate((instanceId) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return store?.graph.getNode(instanceId)?.componentId
   }, ids.instanceId)
   expect(document).toBe(ids.offId)
@@ -155,8 +155,8 @@ test('preview islands move with the frames the canvas draws, not ahead of them',
   const placed = await layer.evaluate((element) => element.style.transform)
   // Hold the canvas's drawing, as a slow frame does, and move the view meanwhile.
   const held = await editor.page.evaluateHandle(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const preparation = store.preparationController.begin({
       kind: 'document-open',
       phase: 'materializing'
@@ -186,8 +186,8 @@ test('preview islands move with the frames the canvas draws, not ahead of them',
 
 test('a Button behaviour maps its states and shows them in preview', async () => {
   const ids = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const graph = store.graph
     const pageId = store.state.currentPageId
     const values = ['Default', 'Hover', 'Pressed', 'Focus', 'Disabled']
@@ -266,8 +266,8 @@ test('a Button behaviour maps its states and shows them in preview', async () =>
 
 test('a Text field takes typing in preview without triggering shortcuts', async () => {
   const instanceId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const graph = store.graph
     const pageId = store.state.currentPageId
     const component = graph.createNode('COMPONENT', pageId, {
@@ -318,7 +318,7 @@ test('a Text field takes typing in preview without triggering shortcuts', async 
   await editor.page.keyboard.press('Shift+ArrowRight')
   await editor.page.keyboard.type('S')
   await expect(input).toHaveValue('Same Vera T')
-  expect(await editor.page.evaluate(() => window.openPencil?.getStore?.()?.state.activeTool)).toBe(
+  expect(await editor.page.evaluate(() => window.lawha?.getStore?.()?.state.activeTool)).toBe(
     'SELECT'
   )
   await editor.page.getByRole('button', { name: /Leave preview/ }).click()
@@ -327,8 +327,8 @@ test('a Text field takes typing in preview without triggering shortcuts', async 
 
 test('a rectangle made a Textarea gets its text layer from the panel and takes typing', async () => {
   const componentId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const component = store.graph.createNode('COMPONENT', store.state.currentPageId, {
       name: 'Component',
       x: 120,
@@ -357,7 +357,7 @@ test('a rectangle made a Textarea gets its text layer from the panel and takes t
   await expect(section.getByText('Ready', { exact: true })).toBeVisible()
 
   const instanceId = await editor.page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const instance = store?.graph.createInstance(id, store.state.currentPageId, { x: 120, y: 300 })
     return instance?.id ?? ''
   }, componentId)

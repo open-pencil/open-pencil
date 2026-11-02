@@ -6,13 +6,13 @@ import type {
   NodeType,
   LayoutGrid,
   LayoutMode
-} from '@open-pencil/scene-graph'
-import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
-import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
-import { createsComponentCycle, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph'
+import { attachedConnectors } from '@lawha/scene-graph/connectors'
+import type { GroupFitOptions } from '@lawha/scene-graph/group-bounds'
+import { createsComponentCycle, recordInstanceOverride } from '@lawha/scene-graph/instances'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaEffect } from '#core/figma-api/effects'

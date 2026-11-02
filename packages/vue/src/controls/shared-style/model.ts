@@ -1,7 +1,7 @@
-import { BLACK } from '@open-pencil/core/constants'
-import type { SceneNode, SharedStyleKind } from '@open-pencil/scene-graph'
-import { copyEffects, copyFills, copyLayoutGrids } from '@open-pencil/scene-graph/copy'
-import { sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
+import { BLACK } from '@lawha/core/constants'
+import type { SceneNode, SharedStyleKind } from '@lawha/scene-graph'
+import { copyEffects, copyFills, copyLayoutGrids } from '@lawha/scene-graph/copy'
+import { sharedStyleRefKey } from '@lawha/scene-graph/shared-styles'
 
 function strokePaintsFromStyle(target: SceneNode, style: SceneNode): SceneNode['strokes'] {
   const fills = style.fills.filter((fill) => fill.type === 'SOLID')

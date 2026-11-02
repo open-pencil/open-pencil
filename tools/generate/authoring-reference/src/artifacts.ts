@@ -1,13 +1,13 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
-import { JSX_REFERENCE } from '@open-pencil/design-jsx'
+import { JSX_REFERENCE } from '@lawha/design-jsx'
 
 const HEADER =
   '<!-- Generated from design-jsx reference and renderer metadata. Do not edit; run bun run generate:authoring-reference. -->\n\n'
 
 export const AUTHORING_REFERENCE_ARTIFACTS = {
-  'skills/open-pencil/references/design-authoring.md': HEADER + JSX_REFERENCE,
+  'skills/lawha/references/design-authoring.md': HEADER + JSX_REFERENCE,
   'packages/docs/reference/design-authoring.md': HEADER + JSX_REFERENCE
 }
 

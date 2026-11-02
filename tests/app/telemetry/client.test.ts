@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { ref } from 'vue'
 
-import type { Build } from '@open-pencil/feedback/contract'
+import type { Build } from '@lawha/feedback/contract'
 
 import { createDeferred } from '@/app/runtime/deferred'
 import type { SharingPreferences } from '@/app/settings/preferences/store'

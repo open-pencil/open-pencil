@@ -1,7 +1,7 @@
 import { chmod, lstat, open, realpath, rename, unlink, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 export interface AtomicWriteOptions {
   /** The file's mode; an existing file otherwise keeps its own, and a new one gets the default. */

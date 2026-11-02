@@ -10,14 +10,14 @@ Mehrere Personen können dasselbe Dokument gleichzeitig bearbeiten. Die Teilnehm
 ## Raum teilen
 
 1. Schaltfläche „Teilen“ oben rechts öffnen.
-2. **Diese Datei teilen** wählen – der Link `app.openpencil.dev/rooms/<room-id>` wird kopiert.
+2. **Diese Datei teilen** wählen – der Link `app.lawha.invalid/rooms/<room-id>` wird kopiert.
 3. Link an die anderen Teilnehmer senden.
 
 Nur „Teilen“ bringt ein Dokument in einen Raum: Der Tab, aus dem Sie teilen, wird zum Tab des Raums und bleibt mit seiner Datei verbunden. Jede Person mit dem Link kann beitreten.
 
 ## Raum beitreten
 
-Öffnen Sie den Link oder fügen Sie ihn (oder nur die Raumkennung) unter **Beitreten** im Teilen-Panel oder unter **Raum beitreten…** auf der Startseite ein. Der Raum öffnet sich in einem eigenen Tab, sodass bereits geöffnete Dokumente unverändert bleiben. Auf einem Computer bietet der Browser außerdem **In der Desktop-App öffnen** an; der Raum öffnet sich dann über einen `openpencil://join`-Link in OpenPencil.
+Öffnen Sie den Link oder fügen Sie ihn (oder nur die Raumkennung) unter **Beitreten** im Teilen-Panel oder unter **Raum beitreten…** auf der Startseite ein. Der Raum öffnet sich in einem eigenen Tab, sodass bereits geöffnete Dokumente unverändert bleiben. Auf einem Computer bietet der Browser außerdem **In der Desktop-App öffnen** an; der Raum öffnet sich dann über einen `lawha://join`-Link in Lawha.
 
 Sie treten sofort unter einem erzeugten Namen wie *Teal Fox* bei. Ihren eigenen Namen legen Sie im Teilen-Panel oder in den Einstellungen fest; er gilt in jedem Raum.
 
@@ -50,7 +50,7 @@ Yjs synchronisiert den Dokumentzustand als CRDT und führt gleichzeitige Änderu
 
 Auch das Verschieben und Umordnen von Ebenen wird zusammengeführt. Jede Ebene merkt sich jedes Elternelement, in das sie verschoben wurde, und ihre Position unter ihren Geschwistern; jeder Teilnehmer leitet daraus denselben Ebenenbaum ab ([Evan Wallaces Baum-CRDT](https://madebyevan.com/algos/crdt-mutable-tree-hierarchy/)). Verschiebungen, Umordnungen und neue Ebenen verschiedener Personen werden alle übernommen; verschieben zwei Personen gleichzeitig dieselbe Ebene, setzt sich bei allen dieselbe Verschiebung durch. Würden gleichzeitige Verschiebungen zwei Ebenen ineinander legen, wird die spätere rückgängig gemacht, und eine Ebene, deren neues Elternelement inzwischen gelöscht wurde, kehrt an ihren vorherigen Platz zurück.
 
-Alle Teilnehmer eines Raums brauchen eine OpenPencil-Version, die den Ebenenbaum auf dieselbe Weise speichert; Versionen, die ihn anders speichern, sehen die Räume der jeweils anderen nicht.
+Alle Teilnehmer eines Raums brauchen eine Lawha-Version, die den Ebenenbaum auf dieselbe Weise speichert; Versionen, die ihn anders speichern, sehen die Räume der jeweils anderen nicht.
 
 IndexedDB speichert den lokalen Stand: Beim Neuladen der Seite treten Sie dem Raum automatisch mit demselben Stand wieder bei.
 

@@ -1,8 +1,8 @@
 import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
-import type { GUID } from '@open-pencil/scene-graph/primitives'
-import { ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import type { ComponentPropertyDefinition, SceneNode } from '@lawha/scene-graph'
+import type { GUID } from '@lawha/scene-graph/primitives'
+import { ownsSlotContent, slotPropertyId } from '@lawha/scene-graph/slots'
 
 import type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 

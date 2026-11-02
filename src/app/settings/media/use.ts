@@ -1,7 +1,7 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
-import type { StockPhotoKeyCheck } from '@open-pencil/core/tools'
+import type { StockPhotoKeyCheck } from '@lawha/core/tools'
 
 import { vectorizeProviderID } from '@/app/editor/vectorize'
 import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'

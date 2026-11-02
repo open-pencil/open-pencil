@@ -2,11 +2,11 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { parseFigBuffer } from '@lawha/fig'
+import { initCodec, type NodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 

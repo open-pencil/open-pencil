@@ -1,11 +1,11 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { regionFills } from '@open-pencil/scene-graph/vector-network'
+import type { Fill, SceneGraph, SceneNode, Stroke } from '@lawha/scene-graph'
+import { strokeOverflow as strokeReach } from '@lawha/scene-graph/geometry'
+import Matrix from '@lawha/scene-graph/matrix'
+import { isLayerContainer } from '@lawha/scene-graph/node-defaults'
+import type { Rect } from '@lawha/scene-graph/primitives'
+import { regionFills } from '@lawha/scene-graph/vector-network'
 
 import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'

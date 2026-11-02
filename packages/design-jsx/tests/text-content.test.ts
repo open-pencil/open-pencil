@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { createDesignJSXRenderer } from '#design-jsx/index'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { colorToFill } from '@open-pencil/scene-graph/color'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { colorToFill } from '@lawha/scene-graph/color'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 const renderer = createDesignJSXRenderer<never>({
   icon: () => Promise.resolve(null),
@@ -31,7 +31,7 @@ async function renderText(source: string): Promise<{ node: SceneNode; warnings: 
 describe('Span', () => {
   test('cases and links its characters', async () => {
     const { node, warnings } = await renderText(
-      '<Text textCase="upper">Read <Span textCase="original" href="https://openpencil.dev">the docs</Span></Text>'
+      '<Text textCase="upper">Read <Span textCase="original" href="https://github.com/aliaaldihnayn-lab/design#readme">the docs</Span></Text>'
     )
     expect(warnings).toEqual([])
     expect(node.textCase).toBe('UPPER')
@@ -39,7 +39,7 @@ describe('Span', () => {
       {
         start: 5,
         length: 8,
-        style: { textCase: 'ORIGINAL', hyperlink: { type: 'URL', value: 'https://openpencil.dev' } }
+        style: { textCase: 'ORIGINAL', hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
       }
     ])
   })

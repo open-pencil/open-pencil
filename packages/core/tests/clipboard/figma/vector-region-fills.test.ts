@@ -4,10 +4,10 @@ import { join } from 'node:path'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
 
-import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core/clipboard'
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { buildFigmaClipboardHTML, importClipboardNodes } from '@lawha/core/clipboard'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 /**
  * A vector as Figma copies it, with three regions: red of its own, the layer's grey, and an empty

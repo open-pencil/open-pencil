@@ -1,9 +1,9 @@
 import { uniqBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import type { Fill, SceneNode, TextLength } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import type { Fill, SceneNode, TextLength } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 import { TEXT_DECORATION_STYLE } from '../enums'
 import { parseScriptInput } from '../schema'

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 function defined<T>(value: T | null | undefined): T {
   if (value == null) throw new Error('Expected value')

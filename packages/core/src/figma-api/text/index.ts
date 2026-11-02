@@ -8,8 +8,8 @@ import type {
   TextLength,
   TextParagraphSpacingField,
   TextParagraphStyle
-} from '@open-pencil/scene-graph'
-import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+} from '@lawha/scene-graph'
+import { recordInstanceOverride } from '@lawha/scene-graph/instances'
 import {
   MAX_LIST_INDENTATION,
   paragraphIndexAt,
@@ -23,7 +23,7 @@ import {
   withIndentation,
   withListType,
   withParagraphSpacing
-} from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/text'
 
 import { invalid, received } from '#core/figma-api/accessors/text/messages'
 import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
@@ -58,7 +58,7 @@ function lengthObject(method: string, property: string, value: unknown) {
 
 /**
  * Accepts Figma's object, kept in its unit so a percent follows the font size as in Figma, or a
- * bare number of pixels or `null` for automatic, as earlier OpenPencil scripts wrote it.
+ * bare number of pixels or `null` for automatic, as earlier Lawha scripts wrote it.
  */
 export function lineHeightValue(value: unknown): TextLength | null {
   if (value === null) return null

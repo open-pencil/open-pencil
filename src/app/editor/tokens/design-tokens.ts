@@ -5,7 +5,7 @@ import type {
   DesignTokenBundle,
   DesignTokenIssue,
   DesignTokenSourceFile
-} from '@open-pencil/core/io/formats/design-tokens'
+} from '@lawha/core/io/formats/design-tokens'
 
 import { saveExportedFile } from '@/app/document/export/files'
 import { downloadBlob } from '@/app/document/io/browser'
@@ -33,7 +33,7 @@ function issueName(issue: DesignTokenIssue): string {
 }
 
 /** The W3C token reader and writer load with the first import or export. */
-const loadDesignTokens = () => import('@open-pencil/core/io/formats/design-tokens')
+const loadDesignTokens = () => import('@lawha/core/io/formats/design-tokens')
 
 /**
  * Saves the document's variables and styles as W3C design tokens: a zip of one file per

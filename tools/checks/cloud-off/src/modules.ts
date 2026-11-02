@@ -1,5 +1,5 @@
 /**
- * Which source modules belong to OpenPencil Cloud, so a build without it can show it bundled none.
+ * Which source modules belong to Lawha Cloud, so a build without it can show it bundled none.
  * The protocol in `packages/cloud/src/contract` is shared with peer-to-peer rooms and may stay;
  * Cloud's two entry points stand in for it through their `off` modules.
  */

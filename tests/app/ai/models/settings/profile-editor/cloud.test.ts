@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, ref, type EffectScope } from 'vue'
 
-import type { AICatalog } from '@open-pencil/cloud/contract'
+import type { AICatalog } from '@lawha/cloud/contract'
 
 import {
   useCloudModelSelection,
@@ -10,7 +10,7 @@ import {
 } from '@/app/ai/models/settings/profile-editor/cloud'
 import { createModelProfileDraft } from '@/app/ai/models/store'
 import type { AIModelProfileDraft } from '@/app/ai/models/types'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import type { CloudAIWorkspace } from '@/app/cloud/integration'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
@@ -63,7 +63,7 @@ afterEach(() => {
 
 function select(source: CloudModelSource) {
   const draft = reactive(createModelProfileDraft())
-  draft.providerID = OPENPENCIL_AI_PROVIDER
+  draft.providerID = LAWHA_AI_PROVIDER
   return selectDraft(draft, source)
 }
 
@@ -192,7 +192,7 @@ describe('useCloudModelSelection', () => {
   test('keeps a catalog failure for a saved workspace when the list arrives later', async () => {
     const home = homeCloud()
     const draft = reactive(createModelProfileDraft())
-    draft.providerID = OPENPENCIL_AI_PROVIDER
+    draft.providerID = LAWHA_AI_PROVIDER
     draft.cloudWorkspaceId = 'team'
     const editor = selectDraft(draft, home.source)
     home.catalogAnswers[0]?.reject(new Error('offline'))

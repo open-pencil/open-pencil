@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import { STATUS_WORKFLOW_PRESETS, writeStatusWorkflow } from '@open-pencil/scene-graph/statuses'
+import { createEditor, type Editor } from '@lawha/core'
+import { STATUS_WORKFLOW_PRESETS, writeStatusWorkflow } from '@lawha/scene-graph/statuses'
 
 let editor: Editor
 

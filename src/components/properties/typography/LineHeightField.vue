@@ -2,11 +2,11 @@
 import { SelectRoot, SelectTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
-import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import type { SceneNode, TextLength } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
+import { useEditor } from '@lawha/vue'
+import { useI18n } from '@lawha/vue/i18n'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'

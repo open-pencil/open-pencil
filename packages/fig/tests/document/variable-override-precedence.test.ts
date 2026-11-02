@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
 
-import { materializeFigArchive } from '@open-pencil/fig'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { materializeFigArchive } from '@lawha/fig'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 /**
  * An override and a variable binding can both state a text node's content, and which one Figma

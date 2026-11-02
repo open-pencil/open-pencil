@@ -29,7 +29,7 @@ Premi <kbd>Delete</kbd> o <kbd>Backspace</kbd> per eliminare i punti selezionati
 
 ## Segmenti
 
-Fai clic su un segmento per selezionarlo. Trascinalo per incurvarlo; OpenPencil crea le maniglie necessarie. Fai doppio clic per aggiungere un punto.
+Fai clic su un segmento per selezionarlo. Trascinalo per incurvarlo; Lawha crea le maniglie necessarie. Fai doppio clic per aggiungere un punto.
 
 ## Continuare tracciati aperti
 

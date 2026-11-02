@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { STATUS_WORKFLOW_PRESETS, writeStatusWorkflow } from '@open-pencil/scene-graph/statuses'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
+import { STATUS_WORKFLOW_PRESETS, writeStatusWorkflow } from '@lawha/scene-graph/statuses'
 
 import { getStatuses, setStatus } from '#core/tools/statuses'
 

@@ -2,8 +2,8 @@ import { isEqual } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 import type * as Y from 'yjs'
 
-import type { Variable, VariableCollection } from '@open-pencil/scene-graph'
-import { variableCollectionSchema, variableSchema } from '@open-pencil/scene-graph/variables'
+import type { Variable, VariableCollection } from '@lawha/scene-graph'
+import { variableCollectionSchema, variableSchema } from '@lawha/scene-graph/variables'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

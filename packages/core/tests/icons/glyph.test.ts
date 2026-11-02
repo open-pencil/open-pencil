@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
-import { isIconModified, readIcon, readIconTint, withIcon } from '@open-pencil/scene-graph/icons'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { SceneGraph } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
+import { isIconModified, readIcon, readIconTint, withIcon } from '@lawha/scene-graph/icons'
 import {
   collectResizeDescendants,
   computeConstrainedResizeChanges
-} from '@open-pencil/scene-graph/resize'
+} from '@lawha/scene-graph/resize'
 
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import { buildIconData } from '#core/icons/svg'

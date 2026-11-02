@@ -1,6 +1,6 @@
-# OpenPencil i Penpot: architektura oraz wydajność
+# Lawha i Penpot: architektura oraz wydajność
 
-OpenPencil i Penpot to narzędzia projektowe o otwartym kodzie źródłowym, ale różnią się przeznaczeniem i architekturą.
+Lawha i Penpot to narzędzia projektowe o otwartym kodzie źródłowym, ale różnią się przeznaczeniem i architekturą.
 
 ::: info Renderer WASM w Penpot
 Penpot 2.x zawiera renderer Rust/Skia WASM `render-wasm/v1`, włączany opcjami serwera albo parametrem `?wasm=true`. Domyślnie nadal działa renderer SVG. Poniżej uwzględniono oba warianty.
@@ -8,7 +8,7 @@ Penpot 2.x zawiera renderer Rust/Skia WASM `render-wasm/v1`, włączany opcjami 
 
 ## 1. Rozmiar bazy kodu
 
-| Wskaźnik | OpenPencil | Penpot |
+| Wskaźnik | Lawha | Penpot |
 |----------|------------|--------|
 | Wiersze kodu | **około 26 000** | **około 299 000** |
 | Pliki źródłowe | około 143 | około 2 900 |
@@ -18,11 +18,11 @@ Penpot 2.x zawiera renderer Rust/Skia WASM `render-wasm/v1`, włączany opcjami 
 | Część serwerowa | Brak, architektura lokalna | 32 600 wierszy i 151 plików SQL |
 | Stosunek | **1×** | **około 11×** |
 
-OpenPencil jest około jedenaście razy mniejszy. Wynika to przede wszystkim z innej architektury, a nie tylko z mniejszej liczby funkcji.
+Lawha jest około jedenaście razy mniejszy. Wynika to przede wszystkim z innej architektury, a nie tylko z mniejszej liczby funkcji.
 
 ## 2. Architektura
 
-### OpenPencil: jeden proces klienta
+### Lawha: jeden proces klienta
 
 ```text
 ┌─────────────────────────────────┐
@@ -51,11 +51,11 @@ Edytor, SceneGraph, kodek plików i renderer działają w jednym procesie. Oddzi
 
 Pełna instalacja Penpota obejmuje interfejs, część serwerową JVM, PostgreSQL, Valkey, MinIO i eksporter oparty na Chromium bez interfejsu. Środowisko programistyczne wymaga Docker Compose, JVM, Node i zestawu narzędzi Rust.
 
-OpenPencil unika opóźnień sieciowych, serializacji między usługami, zarządzania kontenerami i zapytań do bazy danych podczas zwykłych operacji. Penpot jest przeznaczony do wieloosobowej pracy na serwerze, a OpenPencil — do lokalnej edycji z małym opóźnieniem.
+Lawha unika opóźnień sieciowych, serializacji między usługami, zarządzania kontenerami i zapytań do bazy danych podczas zwykłych operacji. Penpot jest przeznaczony do wieloosobowej pracy na serwerze, a Lawha — do lokalnej edycji z małym opóźnieniem.
 
 ## 3. Potok renderowania
 
-### OpenPencil: TypeScript → CanvasKit WASM
+### Lawha: TypeScript → CanvasKit WASM
 
 ```typescript
 renderSceneToCanvas(canvas, graph, pageId) {
@@ -80,9 +80,9 @@ ClojureScript → JavaScript
 
 Bez WASM każdy kształt jest renderowany jako element SVG DOM przez React/Reagent. W trybie WASM identyfikatory UUID, transformacje, zalewy i obwiednie są pakowane do struktur binarnych. Renderer używa pamięci podręcznej kafelków, obszarów zainteresowania, jedenastu powierzchni i globalnego zmiennego stanu przez `unsafe`.
 
-Pamięć podręczna może przechowywać do 1024 tekstur. OpenPencil przerysowuje całą widoczną część dokumentu.
+Pamięć podręczna może przechowywać do 1024 tekstur. Lawha przerysowuje całą widoczną część dokumentu.
 
-| Aspekt | OpenPencil | Penpot |
+| Aspekt | Lawha | Penpot |
 |--------|------------|--------|
 | JavaScript → WASM | Bezpośrednie wywołania z obiektami TypeScript | Struktury binarne |
 | Model | Pełne przerysowanie widoku | Pamięć podręczna kafelków |
@@ -99,13 +99,13 @@ Bezpośredni potok CanvasKit wymaga mniej przetwarzania pośredniego w małych i
 nodes: Map<string, SceneNode>
 ```
 
-OpenPencil zapewnia wyszukiwanie po identyfikatorze w O(1), 29 typów obiektów ze schematu Kiwi, około 390 pól w `NodeChange`, ścisłe typy TypeScript i identyfikatory GUID w formacie Figma `sessionID:localID`.
+Lawha zapewnia wyszukiwanie po identyfikatorze w O(1), 29 typów obiektów ze schematu Kiwi, około 390 pól w `NodeChange`, ścisłe typy TypeScript i identyfikatory GUID w formacie Figma `sessionID:localID`.
 
 Penpot utrzymuje własne definicje typów w Clojure/ClojureScript i Rust. Oddzielne moduły odpowiadają za kolory, komponenty, kontenery, zalewy, siatkę, modyfikatory, strony i ścieżki. Malli sprawdza schematy podczas działania, a dane renderowania przekraczają granicę CLJS → Rust.
 
 ## 5. Silnik układu
 
-OpenPencil synchronicznie korzysta z Yoga WASM:
+Lawha synchronicznie korzysta z Yoga WASM:
 
 ```typescript
 const root = Yoga.Node.create()
@@ -113,23 +113,23 @@ root.setFlexDirection(FlexDirection.Row)
 root.calculateLayout()
 ```
 
-Penpot utrzymuje własne implementacje Flex i Grid w ClojureScript i Rust WASM. Oba silniki muszą zwracać ten sam wynik. OpenPencil używa Yoga, w tym odmiany z obsługą Grid; Penpot utrzymuje tysiące wierszy własnego kodu układu w dwóch językach.
+Penpot utrzymuje własne implementacje Flex i Grid w ClojureScript i Rust WASM. Oba silniki muszą zwracać ten sam wynik. Lawha używa Yoga, w tym odmiany z obsługą Grid; Penpot utrzymuje tysiące wierszy własnego kodu układu w dwóch językach.
 
 ## 6. Formaty i Figma
 
-OpenPencil używa binarnego formatu Kiwi Figma, bezpośrednio importuje `.fig`, odczytuje dane Kiwi ze schowka i jest zgodny z protokołem współpracy Figma.
+Lawha używa binarnego formatu Kiwi Figma, bezpośrednio importuje `.fig`, odczytuje dane Kiwi ze schowka i jest zgodny z protokołem współpracy Figma.
 
 Plik `.penpot` to archiwum ZIP z manifestami JSON, danymi dokumentu, zasobami binarnymi i miniaturami. Penpot nie importuje `.fig` bezpośrednio i obsługuje kilka generacji formatu przez migracje.
 
 ## 7. Stan i cofanie
 
-OpenPencil używa poleceń odwrotnych: funkcje wykonania i cofania przechowują tylko niezbędny stan, a kilka operacji można grupować.
+Lawha używa poleceń odwrotnych: funkcje wykonania i cofania przechowują tylko niezbędny stan, a kilka operacji można grupować.
 
 Penpot korzysta z Potok. `UpdateEvent` zmienia stan, `WatchEvent` wykonuje skutki uboczne przez RxJS, a historia przechowuje odwrotne zestawy zmian, ogranicza się do 50 wpisów i grupuje szybkie zmiany w transakcje.
 
 ## 8. Programowanie
 
-| Wskaźnik | OpenPencil | Penpot |
+| Wskaźnik | Lawha | Penpot |
 |----------|------------|--------|
 | Przygotowanie | `bun install && bun dev` | Docker Compose, JVM, Node i Rust |
 | Szybkie odświeżanie | Vite | shadow-cljs |
@@ -139,7 +139,7 @@ Penpot korzysta z Potok. `UpdateEvent` zmienia stan, `WatchEvent` wykonuje skutk
 
 ## 9. Wydajność
 
-| Scenariusz | OpenPencil | Penpot |
+| Scenariusz | Lawha | Penpot |
 |------------|------------|--------|
 | Zimny start | poniżej 2 s z WASM | ponad 10 s dla serwera, klienta i WASM |
 | Zwykła operacja | W jednym procesie | Możliwa wymiana sieciowa |
@@ -153,7 +153,7 @@ Penpot korzysta z Potok. `UpdateEvent` zmienia stan, `WatchEvent` wykonuje skutk
 1. **Współpraca przez serwer:** konta, kontrola dostępu i centralne przechowywanie.
 2. **System wtyczek:** wykonanie w izolacji i API wtyczek.
 3. **Tokeny projektu:** wbudowana obsługa.
-4. **CSS Grid:** własna implementacja; OpenPencil używa odmiany Yoga z Grid.
+4. **CSS Grid:** własna implementacja; Lawha używa odmiany Yoga z Grid.
 5. **Samodzielne wdrożenie:** platforma zespołowa uruchamiana przez Docker.
 6. **Dojrzałość:** wiele lat użycia produkcyjnego.
 
@@ -167,15 +167,15 @@ Penpot oferuje wtyczki wykonywane w izolacji, ale nie ma porównywalnego API dla
 
 | Obszar | Przewaga | Powód |
 |--------|----------|-------|
-| Prostota | OpenPencil | Jeden proces zamiast wielu usług |
-| Renderowanie | OpenPencil | Bezpośredni potok CanvasKit |
-| Kod | OpenPencil | Około 26 000 wobec 299 000 wierszy |
-| Zgodność z Figmą | OpenPencil | Natywne Kiwi i `.fig` |
-| Programowanie | OpenPencil | TypeScript i Vue zamiast Clojure, Rust i Docker |
-| Aplikacja komputerowa | OpenPencil | Tauri |
-| Układ | OpenPencil | Yoga zamiast dwóch własnych implementacji |
-| Współpraca | Różne mocne strony | Penpot: serwer i kontrola dostępu; OpenPencil: P2P bez hostingu |
+| Prostota | Lawha | Jeden proces zamiast wielu usług |
+| Renderowanie | Lawha | Bezpośredni potok CanvasKit |
+| Kod | Lawha | Około 26 000 wobec 299 000 wierszy |
+| Zgodność z Figmą | Lawha | Natywne Kiwi i `.fig` |
+| Programowanie | Lawha | TypeScript i Vue zamiast Clojure, Rust i Docker |
+| Aplikacja komputerowa | Lawha | Tauri |
+| Układ | Lawha | Yoga zamiast dwóch własnych implementacji |
+| Współpraca | Różne mocne strony | Penpot: serwer i kontrola dostępu; Lawha: P2P bez hostingu |
 | Samodzielne wdrożenie | Penpot | Docker |
 | Dojrzałość | Penpot | Wieloletnie użycie produkcyjne |
 
-OpenPencil to zwarty edytor działający w jednym procesie, z CanvasKit i natywną obsługą `.fig`. Penpot to pełna platforma klient-serwer wykorzystująca Clojure, ClojureScript, Rust, bazy danych i usługi Docker. Oba narzędzia obsługują współpracę, ale korzystają z innych modeli.
+Lawha to zwarty edytor działający w jednym procesie, z CanvasKit i natywną obsługą `.fig`. Penpot to pełna platforma klient-serwer wykorzystująca Clojure, ClojureScript, Rust, bazy danych i usługi Docker. Oba narzędzia obsługują współpracę, ale korzystają z innych modeli.

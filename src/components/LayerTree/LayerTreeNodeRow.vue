@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
+import type { LayerNode } from '@lawha/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { LayerIssueMark as LayerIssueMarkData } from '@/app/editor/design-check/layers'

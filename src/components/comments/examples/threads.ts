@@ -1,4 +1,4 @@
-import type { CommentThread } from '@open-pencil/scene-graph'
+import type { CommentThread } from '@lawha/scene-graph'
 
 // Dark enough for white initials to read, as in the presence stories' sample room.
 const red = { r: 0.75, g: 0.16, b: 0.16, a: 1 }
@@ -18,7 +18,7 @@ export const discussed: CommentThread = {
   y: 80,
   author: 'Dana Scully',
   authorColor: red,
-  text: 'The **total** gets lost here. Could we:\n- make it *bigger*\n- drop the ~~divider~~\n\nSee [the brief](https://openpencil.dev).',
+  text: 'The **total** gets lost here. Could we:\n- make it *bigger*\n- drop the ~~divider~~\n\nSee [the brief](https://github.com/aliaaldihnayn-lab/design#readme).',
   createdAt: ago(5),
   updatedAt: ago(1),
   resolved: false,

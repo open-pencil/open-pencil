@@ -4,7 +4,7 @@ import {
   parseFontStyle,
   standardStyleName,
   type ParsedFontStyle
-} from '@open-pencil/scene-graph/font-style'
+} from '@lawha/scene-graph/font-style'
 
 /** A weight, upright or italic. */
 export interface FaceWeight {

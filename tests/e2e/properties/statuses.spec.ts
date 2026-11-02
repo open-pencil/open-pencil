@@ -6,8 +6,8 @@ const editor = useEditorSetupWithClear('/?test')
 /** Builds a section and selects it, returning its id. */
 async function createSection() {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const section = store.graph.createNode('SECTION', store.state.currentPageId, {
       name: 'Checkout',
       x: 120,
@@ -33,8 +33,8 @@ async function createSection() {
 
 function statusOf(id: string) {
   return editor.page.evaluate((nodeId) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.graph.getNode(nodeId)?.status ?? null
   }, id)
 }
@@ -49,13 +49,13 @@ test('sets a status from the Status section and from the label on the canvas', a
 
   await editor.canvas.waitForRender()
   const pill = await editor.page.evaluate((nodeId) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const label = store?.renderer?.statusLabels.find((entry) => entry.nodeId === nodeId)
     if (!label) throw new Error('Status label not drawn')
     return { x: label.rect.x + label.rect.width / 2, y: label.rect.y + label.rect.height / 2 }
   }, id)
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     store?.clearSelection()
   })
   await editor.canvas.click(pill.x, pill.y)
@@ -69,7 +69,7 @@ test('sets a status from the Status section and from the label on the canvas', a
 test('dialog edits stay a draft that says what it changes until Apply, one undo step', async () => {
   const id = await createSection()
   await editor.page.evaluate((nodeId) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     store?.setStatus([nodeId], 'ready-for-dev')
   }, id)
   await propertySection(editor.page, 'Status')
@@ -118,7 +118,7 @@ test('closing the dialog with edits not applied asks before discarding them', as
   await confirm.getByRole('button', { name: 'Discard' }).click()
   await expect(dialog).toBeHidden()
   const names = await editor.page.evaluate(() =>
-    window.openPencil
+    window.lawha
       ?.getStore?.()
       .statusWorkflow()
       .states.map((state) => state.name)

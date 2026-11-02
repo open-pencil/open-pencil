@@ -1,6 +1,6 @@
 ---
 title: Variablen
-description: Designvariablen, Sammlungen, Modi und Farbbindungen in OpenPencil.
+description: Designvariablen, Sammlungen, Modi und Farbbindungen in Lawha.
 ---
 
 # Variablen
@@ -73,7 +73,7 @@ Unten im Dialog wird die aktive Sammlung als CSS-Custom-Properties angezeigt. Di
 
 ## Design-Tokens importieren und exportieren
 
-Variablen und Stile wandern als [W3C-Design-Tokens](https://www.designtokens.org/) zwischen OpenPencil, Figma und Code:
+Variablen und Stile wandern als [W3C-Design-Tokens](https://www.designtokens.org/) zwischen Lawha, Figma und Code:
 
 - **Exportieren:** Wähle im Kopiermenü des Stylesheets **Als Design-Tokens exportieren**. Das ZIP enthält je Modus einer Sammlung eine Datei, die Figma als Modus importiert, Text- und Effektstile als Typografie- und Schatten-Tokens sowie einen Resolver, der alles für Werkzeuge wie Style Dictionary zusammenführt
 - **Importieren:** Klicke in der Werkzeugleiste auf **Design-Tokens importieren** und wähle Token-Dateien oder ein ZIP. Dateien aus Figma, ein Resolver mit den Dateien, die er nennt, und Tokens-Studio-Themes funktionieren

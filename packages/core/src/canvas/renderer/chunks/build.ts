@@ -1,8 +1,8 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
-import type { Mat3 } from '@open-pencil/scene-graph/matrix'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import { computeDescendantVisualBounds, type VisualBounds } from '@lawha/scene-graph/geometry'
+import type { Mat3 } from '@lawha/scene-graph/matrix'
+import Matrix from '@lawha/scene-graph/matrix'
 
 import { worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'

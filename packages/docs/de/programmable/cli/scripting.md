@@ -5,15 +5,15 @@ description: JavaScript mit einer Figma-kompatiblen Plugin API ausführen, um De
 
 # Skripte
 
-`openpencil eval` führt JavaScript für ein OpenPencil-Dokument aus und stellt das globale Objekt `figma` bereit. Der Befehl eignet sich für Massenänderungen, Prüfungen, Testdaten und Automatisierung ohne Editoroberfläche.
+`lawha eval` führt JavaScript für ein Lawha-Dokument aus und stellt das globale Objekt `figma` bereit. Der Befehl eignet sich für Massenänderungen, Prüfungen, Testdaten und Automatisierung ohne Editoroberfläche.
 
 ## Grundlagen
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.length"
+lawha eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-Beginnt der Code nicht mit `return`, führt OpenPencil ihn in einer asynchronen Funktion aus.
+Beginnt der Code nicht mit `return`, führt Lawha ihn in einer asynchronen Funktion aus.
 
 ## Ändern und speichern
 
@@ -29,7 +29,7 @@ Nicht interaktive Ausgabe verwendet standardmäßig JSON. `--quiet` unterdrückt
 
 ## Unterstützte API
 
-Die API orientiert sich an Figma Plugin API und arbeitet mit SceneGraph und dem OpenPencil-Dateiformat.
+Die API orientiert sich an Figma Plugin API und arbeitet mit SceneGraph und dem Lawha-Dateiformat.
 
 Sie umfasst Dokumente und Seiten, Objekterstellung, Baumoperationen, Komponenten, Variablen sowie häufige Eigenschaften für Geometrie, Darstellung, Text, automatische Anordnung und Konturen.
 

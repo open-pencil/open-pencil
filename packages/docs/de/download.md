@@ -3,8 +3,8 @@ layout: page
 landing: true
 sidebar: false
 aside: false
-title: OpenPencil herunterladen
-description: Die OpenPencil-Desktop-App für macOS, Windows und Linux herunterladen oder mit Homebrew installieren.
+title: Lawha herunterladen
+description: Die Lawha-Desktop-App für macOS, Windows und Linux herunterladen oder mit Homebrew installieren.
 ---
 
 <script setup>

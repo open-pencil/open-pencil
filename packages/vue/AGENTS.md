@@ -21,9 +21,9 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 
 ## Preview islands
 
-- Preview runs controls as real components, never as canvas simulations: `packages/vue/src/canvas/islands/` renders each top-level layer that holds an instance with a behaviour as DOM in a shadow root over the canvas, projected through `@open-pencil/dom-css`, and mounts each behaviour's Reka UI primitives on its layers. Typing, focus, and keyboard handling belong to the browser and Reka.
+- Preview runs controls as real components, never as canvas simulations: `packages/vue/src/canvas/islands/` renders each top-level layer that holds an instance with a behaviour as DOM in a shadow root over the canvas, projected through `@lawha/dom-css`, and mounts each behaviour's Reka UI primitives on its layers. Typing, focus, and keyboard handling belong to the browser and Reka.
 - Islands adopt one token stylesheet `IslandLayer.vue` builds for all of them, with `:root` rewritten to `:host`, so the projection's `var()` references resolve in the modes their layers set; vector layers come from Core's `vectorElement`, and a shader fill draws each frame the canvas's own player publishes for its image through `canvas/surface/shader/frames.ts`, never a player of its own (`IslandShader.vue`).
-- Islands only map layers to Reka components. Which layer is a control, part, item, trigger, panel, or input comes from `behaviourControls` and `controlRoles` in `@open-pencil/dom-css`, which code export shares; never derive roles in Vue (`packages/dom-css/tests/behaviours/controls.test.ts`).
+- Islands only map layers to Reka components. Which layer is a control, part, item, trigger, panel, or input comes from `behaviourControls` and `controlRoles` in `@lawha/dom-css`, which code export shares; never derive roles in Vue (`packages/dom-css/tests/behaviours/controls.test.ts`).
 - The concept, the pipeline from state to DOM, and how to add a kind are in `packages/docs/development/behaviours-and-preview.md`.
 - Variants draw control states: Core's `resolvePlayState` shows instances in a state on a private graph, and controls are keyed by layer path so a variant switch keeps their DOM, including a focused input. The document is never changed (`packages/core/tests/editor/play/states.test.ts`, `tests/e2e/components/behaviours.spec.ts`).
 

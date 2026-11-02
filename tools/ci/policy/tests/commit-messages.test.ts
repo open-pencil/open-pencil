@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import { hasAICoauthor } from '#ci/commit-attribution'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const root = await resolveWorkspaceRoot(import.meta.dir)
 
@@ -33,7 +33,7 @@ test.each([
   'Release v0.14.0',
   'Release v0.16.0-beta.1',
   'Release v0.16.0-beta.1 (#1089)',
-  'Merge pull request #697 from open-pencil/mcp-v2-webmcp'
+  'Merge pull request #697 from lawha/mcp-v2-webmcp'
 ])('accepts supported commit: %s', async (message) => {
   const result = await lint(message)
   expect(result.output).toContain('found 0 problems')
@@ -123,7 +123,7 @@ test.each([
 })
 
 test.each([
-  'Merge pull request #700 from open-pencil/build/commitlint',
+  'Merge pull request #700 from lawha/build/commitlint',
   "Merge remote-tracking branch 'origin/master' into build/commitlint",
   'Revert "fix: preserve selection"',
   'Fixed stuff'
@@ -134,7 +134,7 @@ test.each([
 })
 
 test('checks the full PR range while excluding existing base history', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'open-pencil-commitlint-'))
+  const directory = await mkdtemp(join(tmpdir(), 'lawha-commitlint-'))
   async function git(...args: string[]) {
     const child = Bun.spawn(['git', ...args], { cwd: directory, stdout: 'pipe', stderr: 'pipe' })
     const [code, stdout, stderr] = await Promise.all([

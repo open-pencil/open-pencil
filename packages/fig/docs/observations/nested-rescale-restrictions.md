@@ -9,7 +9,7 @@ A separate clone of the outer component definition permits rescaling its nested 
 2: width 25→50, height 14→28, bound left padding 10→20. These are different contexts: a child
 inside a definition is not an override of a placed occurrence.
 
-OpenPencil's Figma API rejects rescale on occurrence descendants before mutation and permits
+Lawha's Figma API rejects rescale on occurrence descendants before mutation and permits
 rescale inside component definitions. The format-neutral SceneGraph scaling operation is not
 restricted by this Plugin API policy. Tests cover unchanged rejected targets and allowed
 component-definition children. This evidence does not establish definition-edit propagation,

@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 type FixtureNode = Pick<
   SceneNode,

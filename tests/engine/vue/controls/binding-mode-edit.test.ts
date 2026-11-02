@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
-import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
+import { createLawhaBindingProvider } from '#vue/controls/binding-provider/lawha'
 import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
 import { resolveEffectiveBindingValue } from '#vue/controls/binding-provider/resolution'
 
@@ -47,7 +47,7 @@ test('prepared edits retain modes after targets change and undo atomically', () 
   const b = editor.graph.createNode('FRAME', page.id, {
     variableModes: { [collection.id]: 'alternate' }
   })
-  const provider = createOpenPencilBindingProvider(editor, {
+  const provider = createLawhaBindingProvider(editor, {
     types: ['FLOAT'],
     resolve: (e, id, target) =>
       target

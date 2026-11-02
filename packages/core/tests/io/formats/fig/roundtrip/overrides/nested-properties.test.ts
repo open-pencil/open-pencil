@@ -2,15 +2,15 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { createEditor } from '@open-pencil/core/editor'
-import { parseFigBuffer } from '@open-pencil/fig'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { createEditor } from '@lawha/core/editor'
+import { parseFigBuffer } from '@lawha/fig'
 import {
   componentPropertyDefinitions,
   createComponentPropertyId
-} from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph/components'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 

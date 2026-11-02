@@ -2,9 +2,9 @@ import { symbolOverridesOf, type SymbolOverride } from '#fig/instance-overrides/
 import { variableConsumptionEntries } from '#fig/node-change/variable/bindings'
 import { visitVariableReferences } from '#fig/node-change/variable/expression'
 
-import type { GUID } from '@open-pencil/kiwi/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { GUID } from '@lawha/kiwi/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { guidToString, stringToGuid } from '@lawha/kiwi/fig/guid'
 
 import { normalizeComponentPropertyRecords } from '../property-records'
 import { createResourceResolver } from '../resource-reference'

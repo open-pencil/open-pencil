@@ -1,4 +1,4 @@
-import type { OpenPencilWindowAPI } from './app/browser-bridge'
+import type { LawhaWindowAPI } from './app/browser-bridge'
 import type { TurnstileAPI } from './app/cloud/waitlist/turnstile'
 
 export {}
@@ -21,7 +21,7 @@ declare global {
   }
 
   interface Window {
-    openPencil?: OpenPencilWindowAPI
+    lawha?: LawhaWindowAPI
     showOpenFilePicker?(options?: FilePickerOptions): Promise<FileSystemFileHandle[]>
     showSaveFilePicker?(options?: FilePickerOptions): Promise<FileSystemFileHandle>
     mockWindowOpen?(url: string): void

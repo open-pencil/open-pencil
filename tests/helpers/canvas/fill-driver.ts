@@ -5,7 +5,7 @@ export function fillDriver(page: () => Page) {
   return {
     selectedColor() {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         const id = store ? [...store.state.selectedIds][0] : undefined
         return id ? (store?.graph.getNode(id)?.fills[0]?.color ?? null) : null
       })
@@ -13,7 +13,7 @@ export function fillDriver(page: () => Page) {
 
     /** As in a freshly opened document: nothing to undo yet. */
     clearHistory() {
-      return page().evaluate(() => window.openPencil?.getStore?.().undo.clear())
+      return page().evaluate(() => window.lawha?.getStore?.().undo.clear())
     }
   }
 }

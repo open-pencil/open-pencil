@@ -19,7 +19,7 @@ It exposes state and actions for:
 ## Usage
 
 ```ts
-import { useLayout } from '@open-pencil/vue/controls/layout'
+import { useLayout } from '@lawha/vue/controls/layout'
 
 const layout = useLayout()
 ```

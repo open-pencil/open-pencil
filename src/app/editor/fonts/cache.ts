@@ -1,7 +1,7 @@
 import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import type { DownloadedFontCache } from '@open-pencil/core/text'
+import type { DownloadedFontCache } from '@lawha/core/text'
 
 import {
   readCacheBytes,

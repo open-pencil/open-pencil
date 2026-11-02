@@ -3,15 +3,15 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { shallowRef } from 'vue'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
-import type { CommentThread } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { ALL_TOOLS } from '@lawha/core/tools'
+import type { CommentThread } from '@lawha/scene-graph'
 import {
   COMMENT_SORTS,
   listCommentThreads,
   readComments,
   writeComments
-} from '@open-pencil/scene-graph/comments'
+} from '@lawha/scene-graph/comments'
 
 import { executeWithDocumentUndo } from '@/app/automation/execution/editor'
 import { openDocumentRoom, roomForStore, leaveRoom } from '@/app/collab/rooms'

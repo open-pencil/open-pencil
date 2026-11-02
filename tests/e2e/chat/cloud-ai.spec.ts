@@ -22,7 +22,7 @@ test.use({
           origin: new URL(baseURL).origin,
           localStorage: [
             {
-              name: 'open-pencil:preferences:v1',
+              name: 'lawha:preferences:v1',
               value: JSON.stringify({ version: 1, onboarding: { aiSetup: 'done' } })
             },
             cloudHomeStorage()
@@ -53,7 +53,7 @@ async function openCloudChat(
   await page.getByTestId('provider-setup-open-settings').click()
   await page.locator('[data-model-id]').first().click()
   await page.getByTestId('settings-model-provider').click()
-  await page.getByRole('option', { name: 'OpenPencil Cloud' }).click()
+  await page.getByRole('option', { name: 'Lawha Cloud' }).click()
   await expect(page.getByTestId('settings-cloud-ai-workspace')).toContainText('Studio')
   await expect(page.getByTestId('settings-model-editor')).toContainText(CLOUD_AI_MODEL)
   await page.getByLabel('Name').fill('Cloud')

@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodeToJSX } from '#design-jsx/export/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { iconGlyph, withIcon, withIconTint } from '@open-pencil/scene-graph/icons'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { SceneGraph } from '@lawha/scene-graph'
+import { iconGlyph, withIcon, withIconTint } from '@lawha/scene-graph/icons'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 /** An icon frame as placing one leaves it: its name on the frame, its tinted path inside. */
 function iconFrame(color: Color, name?: string) {

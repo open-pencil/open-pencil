@@ -3,7 +3,7 @@ import { basename, dirname, join, normalize } from 'pathe'
 import * as v from 'valibot'
 
 import { pathName } from './paths'
-import { OPENPENCIL_EXTENSION } from './types'
+import { LAWHA_EXTENSION } from './types'
 
 /** A file the user picked: its path within the folder or archive, and its text. */
 export interface DesignTokenSourceFile {
@@ -15,7 +15,7 @@ export interface DesignTokenSourceFile {
 export interface ReadToken {
   /** Placed path, `$root` included, as references name it. */
   path: string[]
-  /** Layer-panel name: the original OpenPencil kept, or the path joined with `/`. */
+  /** Layer-panel name: the original Lawha kept, or the path joined with `/`. */
   name: string
   type: string | undefined
   value: unknown
@@ -96,9 +96,9 @@ function extensionsOf(node: Record<string, unknown>): Record<string, unknown> {
   return isPlainObject(node.$extensions) ? node.$extensions : {}
 }
 
-/** The collection and mode a file says it holds, which OpenPencil writes into each mode file. */
+/** The collection and mode a file says it holds, which Lawha writes into each mode file. */
 function modeInfo(parsed: Record<string, unknown> | undefined) {
-  const own = v.safeParse(modeExtensionSchema, parsed && extensionsOf(parsed)[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(modeExtensionSchema, parsed && extensionsOf(parsed)[LAWHA_EXTENSION])
   return own.success ? own.output : {}
 }
 
@@ -115,7 +115,7 @@ export function documentTokens(parsed: Record<string, unknown>): ReadToken[] {
         continue
       }
       const extensions = extensionsOf(child)
-      const own = v.safeParse(nameExtensionSchema, extensions[OPENPENCIL_EXTENSION])
+      const own = v.safeParse(nameExtensionSchema, extensions[LAWHA_EXTENSION])
       tokens.push({
         path: at,
         name: (own.success ? own.output.name : undefined) ?? pathName(at),
@@ -332,7 +332,7 @@ function splitComposites(collections: readonly ReadCollection[]) {
 
 /**
  * Reads token files into collections and modes. A resolver document, a Tokens Studio `$themes`
- * file, or OpenPencil's mode extension says how files combine; otherwise each file is a mode of a
+ * file, or Lawha's mode extension says how files combine; otherwise each file is a mode of a
  * collection named after its folder, as Figma imports one mode per file.
  */
 export function readDesignTokens(files: readonly DesignTokenSourceFile[]): DesignTokenBundle {

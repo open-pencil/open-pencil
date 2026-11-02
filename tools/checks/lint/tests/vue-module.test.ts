@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const execute = promisify(execFile)
 const root = await resolveWorkspaceRoot(import.meta.dir)
@@ -13,7 +13,7 @@ const root = await resolveWorkspaceRoot(import.meta.dir)
 test.each(['app-first', 'sdk-first'])(
   'Vue module declarations preserve Storybook default args (%s)',
   async (order) => {
-    const directory = await mkdtemp(join(tmpdir(), 'open-pencil-vue-module-'))
+    const directory = await mkdtemp(join(tmpdir(), 'lawha-vue-module-'))
     try {
       const declarations = [join(root, 'src/env.d.ts'), join(root, 'packages/vue/src/global.d.ts')]
       if (order === 'sdk-first') declarations.reverse()

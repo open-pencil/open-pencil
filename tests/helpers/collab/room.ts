@@ -127,9 +127,9 @@ export async function createPeer(
   try {
     const page = await context.newPage()
     await page.goto(relayURLFor(path, relayURL))
-    await page.waitForFunction(() => window.openPencil?.test?.collab !== undefined)
+    await page.waitForFunction(() => window.lawha?.test?.collab !== undefined)
     await page.evaluate(
-      (localName) => window.openPencil?.test?.collab?.setLocalName(localName),
+      (localName) => window.lawha?.test?.collab?.setLocalName(localName),
       name
     )
     const canvas = new CanvasHelper(page)
@@ -149,7 +149,7 @@ export function collaborationErrors(peer: Peer): string[] {
 /** Joins the room in a tab of its own, as pasting its link does. */
 export async function connect(peer: Peer, roomId = ROOM_ID) {
   await peer.page.evaluate((id) => {
-    const collab = window.openPencil?.test?.collab
+    const collab = window.lawha?.test?.collab
     if (!collab) throw new Error('Collaboration bridge unavailable')
     if (!collab.connect(id)) throw new Error(`Not a room ID: ${id}`)
   }, roomId)
@@ -158,7 +158,7 @@ export async function connect(peer: Peer, roomId = ROOM_ID) {
 /** Shares the peer's document into the test room, as Share does. */
 export async function share(peer: Peer, roomId = ROOM_ID) {
   await peer.page.evaluate((id) => {
-    const collab = window.openPencil?.test?.collab
+    const collab = window.lawha?.test?.collab
     if (!collab) throw new Error('Collaboration bridge unavailable')
     collab.share(id)
   }, roomId)
@@ -166,5 +166,5 @@ export async function share(peer: Peer, roomId = ROOM_ID) {
 
 /** The active tab's room status, from the test bridge. */
 export function roomStatus(peer: Peer) {
-  return peer.page.evaluate(() => window.openPencil?.test?.collab?.status() ?? null)
+  return peer.page.evaluate(() => window.lawha?.test?.collab?.status() ?? null)
 }

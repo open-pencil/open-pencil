@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCommonMessages } from '@lawha/vue/i18n'
 
 import PersonAvatar from './PersonAvatar.vue'
 import type { PresencePersonRow } from './rows'

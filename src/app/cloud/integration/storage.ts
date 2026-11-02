@@ -12,8 +12,8 @@ import { CLOUD_SESSION_FIELD, CLOUD_STORAGE_PROVIDER_ID } from '../sessions/toke
 export const CLOUD_STORAGE_PROVIDERS: readonly StorageProviderRegistration[] = [
   defineStorageProvider({
     id: CLOUD_STORAGE_PROVIDER_ID,
-    label: 'OpenPencil Cloud',
-    description: 'Workspaces on OpenPencil Cloud or your team’s own server',
+    label: 'Lawha Cloud',
+    description: 'Workspaces on Lawha Cloud or your team’s own server',
     preferenceFields: [],
     credentialFields: [{ id: CLOUD_SESSION_FIELD, label: 'Session' }],
     createAdapter: (runtime) => createCloudStorageAdapter(runtime)

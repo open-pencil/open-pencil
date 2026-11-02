@@ -12,7 +12,7 @@ for (const theme of ['light', 'dark']) {
           origins: [
             {
               origin: new URL(baseURL).origin,
-              localStorage: [{ name: 'open-pencil:theme', value: theme }]
+              localStorage: [{ name: 'lawha:theme', value: theme }]
             }
           ]
         })
@@ -23,7 +23,7 @@ for (const theme of ['light', 'dark']) {
       await page.goto('/?test')
       await new CanvasHelper(page).waitForInit()
       await page.evaluate(() => {
-        const editor = window.openPencil?.getStore?.()
+        const editor = window.lawha?.getStore?.()
         if (!editor) throw new Error('Editor unavailable')
         const id = editor.createShape('TEXT', 100, 100, 240, 80)
         editor.updateNode(id, {

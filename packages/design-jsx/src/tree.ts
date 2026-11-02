@@ -1,5 +1,5 @@
-import type { Effect, Fill } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Effect, Fill } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { ComponentProperty } from './components/properties'
 import type { LayerRef } from './refs'

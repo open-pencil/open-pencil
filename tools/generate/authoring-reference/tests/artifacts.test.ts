@@ -15,7 +15,7 @@ afterEach(async () => {
 })
 
 test('detects missing and edited references without rewriting during checks', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'open-pencil-authoring-'))
+  const root = await mkdtemp(join(tmpdir(), 'lawha-authoring-'))
   roots.push(root)
   const paths = Object.keys(AUTHORING_REFERENCE_ARTIFACTS)
   expect(await staleReferences(root)).toEqual(paths)

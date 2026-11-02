@@ -1,8 +1,8 @@
-import type { GradientTransform, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { GradientTransform, SceneGraph, SceneNode, Stroke } from '@lawha/scene-graph'
 import {
   DEFAULT_GRADIENT_TRANSFORM,
   IDENTITY_GRADIENT_TRANSFORM
-} from '@open-pencil/scene-graph/gradient'
+} from '@lawha/scene-graph/gradient'
 
 const ALIGNS = ['INSIDE', 'CENTER', 'OUTSIDE'] as const
 const CORNERS = [

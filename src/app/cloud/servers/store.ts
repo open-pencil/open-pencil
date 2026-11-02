@@ -2,13 +2,13 @@ import { StorageSerializers, useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { computed, ref } from 'vue'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { IS_BROWSER } from '@lawha/core/constants'
 
 import { OFFICIAL_CLOUD_URL } from '@/constants'
 
 import { normalizeCloudServerURL } from './address'
 
-const CLOUD_SERVERS_KEY = 'open-pencil:cloud-servers'
+const CLOUD_SERVERS_KEY = 'lawha:cloud-servers'
 
 const cloudAccountSchema = v.object({
   id: v.string(),

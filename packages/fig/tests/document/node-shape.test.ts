@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
 
-import { createFigDocumentSession } from '@open-pencil/fig'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { createFigDocumentSession } from '@lawha/fig'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 
 // Imported nodes must keep the shape every node is created with: a key outside it turns each
 // node into a JavaScriptCore dictionary, which made opening large files in WebKit take about a

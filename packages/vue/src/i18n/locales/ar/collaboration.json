@@ -49,7 +49,7 @@
     "input": "ينتظرون أيضًا: {names}"
   },
   "unreachableTitle": "يتعذّر الوصول إلى خوادم الغرفة",
-  "unreachableDescription": "تحقق من اتصالك بالإنترنت. يواصل OpenPencil المحاولة ويفتح الملف فور الاتصال.",
+  "unreachableDescription": "تحقق من اتصالك بالإنترنت. يواصل Lawha المحاولة ويفتح الملف فور الاتصال.",
   "waitingTitle": "في انتظار شخص لديه هذا الملف",
   "waitingDescription": "لا تُخزَّن الغرف على خادم. يوجد الملف على أجهزة الأشخاص الذين كانوا في الغرفة، لذا لا يمكن فتحه إلا عندما يكون أحدهم متصلًا.",
   "waitingAskSharer": "اطلب من الشخص الذي شارك الرابط أن يفتحه.",
@@ -91,7 +91,7 @@
   },
   "nobodyInCall": "لا أحد في المكالمة بعد.",
   "voiceDeniedTitle": "الوصول إلى الميكروفون محظور",
-  "voiceDeniedDescription": "اسمح لـ OpenPencil باستخدام الميكروفون في إعدادات المتصفح أو النظام، ثم حاول مرة أخرى.",
+  "voiceDeniedDescription": "اسمح لـ Lawha باستخدام الميكروفون في إعدادات المتصفح أو النظام، ثم حاول مرة أخرى.",
   "voiceNoMicrophoneTitle": "لم يُعثر على ميكروفون",
   "voiceNoMicrophoneDescription": "وصّل ميكروفونًا، ثم حاول مرة أخرى.",
   "voiceUnavailableTitle": "يتعذّر فتح الميكروفون",

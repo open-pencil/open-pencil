@@ -30,7 +30,7 @@ describe('app cache', () => {
 
     await writeCacheText('providers/models', 'cached')
 
-    expect(storage.get('open-pencil:cache:v1:providers/models')).toBe('cached')
+    expect(storage.get('lawha:cache:v1:providers/models')).toBe('cached')
     await expect(readCacheText('providers/models')).resolves.toBe('cached')
   })
 
@@ -50,9 +50,9 @@ describe('app cache', () => {
     const { readCacheJSON, writeCacheJSON } = await import('@/app/cache')
     const schema = v.object({ ok: v.boolean() })
 
-    storage.set('open-pencil:cache:v1:json/key', '{not json')
+    storage.set('lawha:cache:v1:json/key', '{not json')
     await expect(readCacheJSON('json/key', schema)).resolves.toBeNull()
-    storage.set('open-pencil:cache:v1:json/key', JSON.stringify({ value: { ok: true } }))
+    storage.set('lawha:cache:v1:json/key', JSON.stringify({ value: { ok: true } }))
     await expect(readCacheJSON('json/key', schema)).resolves.toBeNull()
     await writeCacheJSON('json/key', { ok: 'yes' })
     await expect(readCacheJSON('json/key', schema)).resolves.toBeNull()

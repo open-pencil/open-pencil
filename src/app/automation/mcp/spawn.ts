@@ -6,14 +6,14 @@ import { promiseTimeout } from '@vueuse/core'
 import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
+import { AUTOMATION_HTTP_PORT } from '@lawha/core/constants'
+import type { DiscoveryInfo } from '@lawha/mcp/discovery'
 import {
   parseToolDescriptor,
   serializeDisabledTools,
   type ToolDescriptor
-} from '@open-pencil/mcp/tools'
-import { randomHex } from '@open-pencil/scene-graph/random'
+} from '@lawha/mcp/tools'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { APP_VERSION } from '@/app/runtime/version'
 import { decodeTauriStderr } from '@/app/shell/ui'
@@ -55,15 +55,15 @@ export interface AutomationServerHandle {
 }
 
 const DEV_AUTOMATION_HTTP_URL = import.meta.env.DEV
-  ? __OPENPENCIL_LOCAL_AUTOMATION_HTTP_URL__
+  ? __LAWHA_LOCAL_AUTOMATION_HTTP_URL__
   : `http://127.0.0.1:${AUTOMATION_HTTP_PORT}`
 export function getMCPServerURL(): string {
   return `${DEV_AUTOMATION_HTTP_URL}/mcp`
 }
 
 const DEV_AUTOMATION_AUTH_TOKEN =
-  import.meta.env.DEV && typeof __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__ === 'string'
-    ? __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__
+  import.meta.env.DEV && typeof __LAWHA_LOCAL_AUTOMATION_TOKEN__ === 'string'
+    ? __LAWHA_LOCAL_AUTOMATION_TOKEN__
     : null
 const noop = () => undefined
 const MAX_STARTUP_STDERR_LENGTH = 8_192
@@ -123,7 +123,7 @@ function toError(error: unknown): Error {
 
 function missingMCPError(searched: string[] = []): Error {
   return new MCPStartupError(
-    `MCP automation is not installed. Install ${MCP_INSTALL_TARGET} globally with your package manager, then restart OpenPencil.`,
+    `MCP automation is not installed. Install ${MCP_INSTALL_TARGET} globally with your package manager, then restart Lawha.`,
     searched.length > 0
       ? mcpFailure('not-installed', searched.join(', '))
       : mcpFailure('not-installed')
@@ -184,16 +184,16 @@ async function computeExpectedDiscoveryPath(): Promise<string> {
   // matches the server's path in the common case. When it doesn't (custom
   // LOCALAPPDATA), resolveDiscoveryPath() falls back to the /health endpoint.
   if (isMac) {
-    return join(home, 'Library', 'Application Support', 'OpenPencil', 'mcp.json')
+    return join(home, 'Library', 'Application Support', 'Lawha', 'mcp.json')
   }
   if (isWindows) {
-    return join(home, 'AppData', 'Local', 'OpenPencil', 'mcp.json')
+    return join(home, 'AppData', 'Local', 'Lawha', 'mcp.json')
   }
-  // Linux: $XDG_RUNTIME_DIR/openpencil/mcp.json or ~/.openpencil/mcp.json.
+  // Linux: $XDG_RUNTIME_DIR/lawha/mcp.json or ~/.lawha/mcp.json.
   // In Tauri we don't have direct env access, so we use the home-directory
   // fallback. The server may use XDG_RUNTIME_DIR if set — when the paths
   // differ, resolveDiscoveryPath() falls back to the /health endpoint.
-  return join(home, '.openpencil', 'mcp.json')
+  return join(home, '.lawha', 'mcp.json')
 }
 
 /**
@@ -208,8 +208,8 @@ async function computeExpectedDiscoveryPath(): Promise<string> {
  * compromised server could redirect us to a malicious path. This is mitigated
  * by the fact that the server is on localhost and was spawned by us. The
  * fallback exists because local computation can be wrong (e.g., XDG_RUNTIME_DIR
- * mismatches on Linux where the server uses `$XDG_RUNTIME_DIR/openpencil` but
- * the local computation falls back to `~/.openpencil`).
+ * mismatches on Linux where the server uses `$XDG_RUNTIME_DIR/lawha` but
+ * the local computation falls back to `~/.lawha`).
  */
 async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<string> {
   const expected = await computeExpectedDiscoveryPath()
@@ -349,7 +349,7 @@ function assertCompatibleMCPVersion(health: AutomationHealth): void {
   // The running server's own install command names its own version, so the fix always
   // comes from this app's version.
   throw new MCPStartupError(
-    `OpenPencil desktop v${APP_VERSION} requires ${MCP_PACKAGE_NAME} v${oursMajorMinor}.x ` +
+    `Lawha desktop v${APP_VERSION} requires ${MCP_PACKAGE_NAME} v${oursMajorMinor}.x ` +
       `(major.minor compatibility), but the running MCP server is ${runningVersion}. ` +
       `Run: ${MCP_INSTALL_COMMAND}, then restart the MCP server.`,
     mcpFailure('outdated', health.version)
@@ -529,16 +529,16 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
   const command = Command.create(resolved.command, resolved.args, {
     env: {
       PORT: String(AUTOMATION_HTTP_PORT),
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
-      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
-      OPENPENCIL_MCP_TCP: '1',
-      OPENPENCIL_MCP_ROOT: mcpRoot,
-      OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
+      LAWHA_MCP_AUTH_TOKEN: authToken ?? '',
+      LAWHA_MCP_CORS_ORIGIN: window.location.origin,
+      LAWHA_MCP_TCP: '1',
+      LAWHA_MCP_ROOT: mcpRoot,
+      LAWHA_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
       // Killing the shell wrapper on Windows leaves the server it started running; the app's end
       // of the pipe closes with it, and the server exits on that.
-      OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1',
-      OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
-      OPENPENCIL_MCP_SCOPE: mcpScope()
+      LAWHA_MCP_EXIT_ON_STDIN_CLOSE: '1',
+      LAWHA_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
+      LAWHA_MCP_SCOPE: mcpScope()
     }
   })
 
@@ -643,7 +643,7 @@ export async function spawnMCPIfNeeded(
 }
 
 /**
- * Returns the user's home directory. Used as the default OPENPENCIL_MCP_ROOT
+ * Returns the user's home directory. Used as the default LAWHA_MCP_ROOT
  * so file-scoped tools operate on paths inside ~, which is writable and
  * matches user expectations. Throws if the Tauri path plugin is unavailable
  * — this function is only invoked under !import.meta.env.DEV && isTauri(),

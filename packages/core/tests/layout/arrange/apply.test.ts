@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { connectorRoute, createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+import { SceneGraph } from '@lawha/scene-graph'
+import { connectorRoute, createConnector, freeEndpoint } from '@lawha/scene-graph/connectors'
 
 import { applyArrangement } from '#core/layout/arrange/apply'
 import { arrangeBoxes, type ArrangeInput } from '#core/layout/arrange/boxes'

@@ -1,6 +1,6 @@
 # Backend security checks
 
-OpenPencil Cloud handles authentication, bearer capabilities, database writes, and object-storage
+Lawha Cloud handles authentication, bearer capabilities, database writes, and object-storage
 credentials, so it is held to stricter checks than the rest of the repository. They complement code
 review; they do not replace authorization and abuse-case testing.
 
@@ -8,7 +8,7 @@ review; they do not replace authorization and abuse-case testing.
 
 ```sh
 bun run test:cloud                       # type-check, unit, and PGlite integration tests
-bun --filter @open-pencil/cloud test:e2e # Docker Compose end-to-end suite
+bun --filter @lawha/cloud test:e2e # Docker Compose end-to-end suite
 bun run check:audit                      # fails on critical dependency advisories
 bun run check:secrets                    # Gitleaks over the working tree
 ```

@@ -35,7 +35,7 @@ const { entries, busy, run } = useTerminalSession(useEditorStore(), () => void s
       aria-live="polite"
     >
       <p v-if="entries.length === 0" class="text-muted">
-        <span class="text-accent select-none">$</span> openpencil
+        <span class="text-accent select-none">$</span> lawha
         <span class="animate-pulse">▍</span>
       </p>
       <div v-for="entry in entries" :key="entry.id" class="mb-2 last:mb-0">

@@ -1,4 +1,4 @@
-import type { ImagePreviewDecoder } from '@open-pencil/core/canvas'
+import type { ImagePreviewDecoder } from '@lawha/core/canvas'
 
 /**
  * WebP keeps transparency at a fraction of PNG's size and encoding time for photos; browsers

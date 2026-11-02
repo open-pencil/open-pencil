@@ -6,8 +6,8 @@ describe('native clipboard routing', () => {
   it('keeps copy and paste inside a focused editable field', async function () {
     if (process.platform !== 'win32') this.skip()
     await browser.waitUntil(
-      async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
-      { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
+      async () => browser.execute(() => Boolean(window.lawha?.getStore?.())),
+      { timeout: 30_000, timeoutMsg: 'Lawha editor did not initialize' }
     )
     await browser.execute(() => {
       const input = document.createElement('input')

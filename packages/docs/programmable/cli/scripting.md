@@ -5,18 +5,18 @@ description: Execute JavaScript with a Figma-compatible Plugin API to query, bat
 
 # Scripting
 
-`openpencil eval` runs JavaScript against an OpenPencil document with a Figma-compatible `figma` global. Use it for headless batch edits, inspection, fixture setup, and automation without opening the editor UI.
+`lawha eval` runs JavaScript against an Lawha document with a Figma-compatible `figma` global. Use it for headless batch edits, inspection, fixture setup, and automation without opening the editor UI.
 
 ## Basic usage
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.length"
+lawha eval design.fig -c "return figma.currentPage.children.length"
 ```
 
 The `-c` flag accepts JavaScript. Its last expression is the result, so `return` is optional; `await` works at the top level. A script whose last statement is not an expression, such as a declaration, has no result and prints nothing.
 
 ```sh
-openpencil eval design.fig -c "
+lawha eval design.fig -c "
   const frame = figma.createFrame()
   frame.name = 'Card'
   frame.resize(300, 200)
@@ -28,30 +28,30 @@ openpencil eval design.fig -c "
 
 ## Variable formulas
 
-Use `openpencil.setVariableFormula(collectionName, variableName, source, modeName?)` to replace a variable's definition with a formula. It validates before changing the document and returns the resolved value. Omitting the mode name edits the collection's default mode.
+Use `lawha.setVariableFormula(collectionName, variableName, source, modeName?)` to replace a variable's definition with a formula. It validates before changing the document and returns the resolved value. Omitting the mode name edits the collection's default mode.
 
 ```js
-openpencil.setVariableFormula('Spacing', 'large', '{base} * 2')
-openpencil.setVariableFormula('State', 'visible', '{viewport} > 1024 and not {loading}')
-openpencil.setVariableFormula('Copy', 'greeting', 'if({compact}, "Hi", "Hello, " + {name})')
+lawha.setVariableFormula('Spacing', 'large', '{base} * 2')
+lawha.setVariableFormula('State', 'visible', '{viewport} > 1024 and not {loading}')
+lawha.setVariableFormula('Copy', 'greeting', 'if({compact}, "Hi", "Hello, " + {name})')
 ```
 
 References use variable names or `{Collection::variable}` and are stored as stable IDs. Formulas use stored units, so lengths are in pixels. See [Variables](/user-guide/variables) for operators and export limitations.
 
 ## Variable bindings
 
-Figma's `node.setBoundVariable(field, variable)` binds with Figma's field names and type rules. Use `openpencil.bindVariable(node, field, variable)` to bind a layer field to a variable from `figma.variables` the way the layer panel does, and `openpencil.unbindVariable(node, field)` to let it go; the field keeps the value the variable last gave it. Fields use OpenPencil's names, such as `text`, `visible`, `opacity`, `paddingLeft` or `fills/0/color`. Bindings follow the layer panel, which takes more than Figma's `setBoundVariable`: text content takes a text or number variable, a number shown as text, and visibility a boolean or a text variable that shows the layer unless it is empty or reads `false`, `no` or `off`.
+Figma's `node.setBoundVariable(field, variable)` binds with Figma's field names and type rules. Use `lawha.bindVariable(node, field, variable)` to bind a layer field to a variable from `figma.variables` the way the layer panel does, and `lawha.unbindVariable(node, field)` to let it go; the field keeps the value the variable last gave it. Fields use Lawha's names, such as `text`, `visible`, `opacity`, `paddingLeft` or `fills/0/color`. Bindings follow the layer panel, which takes more than Figma's `setBoundVariable`: text content takes a text or number variable, a number shown as text, and visibility a boolean or a text variable that shows the layer unless it is empty or reads `false`, `no` or `off`.
 
 ```js
 const [price] = figma.variables.getLocalVariables('FLOAT')
 const label = figma.currentPage.findOne((node) => node.name === 'Price')
-openpencil.bindVariable(label, 'text', price)
+lawha.bindVariable(label, 'text', price)
 ```
 
 ## Query nodes
 
 ```sh
-openpencil eval design.fig -c "
+lawha eval design.fig -c "
   return figma.currentPage
     .findAll((node) => node.type === 'FRAME' && node.name.includes('Button'))
     .map((button) => ({
@@ -68,7 +68,7 @@ openpencil eval design.fig -c "
 Use `--write` / `-w` to write changes back to the input file:
 
 ```sh
-openpencil eval design.fig -c "
+lawha eval design.fig -c "
   figma.currentPage.children.forEach((node) => {
     node.opacity = 0.5
   })
@@ -78,13 +78,13 @@ openpencil eval design.fig -c "
 Use `--output` / `-o` to write to a new file:
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
+lawha eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
 ```
 
 ## Read scripts from stdin
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin --write
+cat transform.js | lawha eval design.fig --stdin --write
 ```
 
 ## Live app mode
@@ -92,7 +92,7 @@ cat transform.js | openpencil eval design.fig --stdin --write
 Omit the file path to run against the currently open document in the desktop app:
 
 ```sh
-openpencil eval -c "return figma.currentPage.name"
+lawha eval -c "return figma.currentPage.name"
 ```
 
 The desktop app must be running with a document open.
@@ -102,21 +102,21 @@ The desktop app must be running with a document open.
 By default, non-TTY output is JSON. Use `--json` to force JSON output:
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.map((n) => n.name)" --json
+lawha eval design.fig -c "return figma.currentPage.children.map((n) => n.name)" --json
 ```
 
 Use `--quiet` / `-q` to suppress output when only writing a file.
 
-## The `openpencil` API
+## The `lawha` API
 
-Next to `figma`, scripts get `openpencil`: what OpenPencil adds to the Figma Plugin API, in the same style. The same global is available to the `eval` tool and the running app's automation.
+Next to `figma`, scripts get `lawha`: what Lawha adds to the Figma Plugin API, in the same style. The same global is available to the `eval` tool and the running app's automation.
 
 A main component or component set can [behave as a Reka UI control](/user-guide/components#behaviours-and-preview). Bind it by its own property and slot names:
 
 ```sh
-openpencil eval design.fig -w -c '
+lawha eval design.fig -w -c '
   const set = figma.currentPage.findOne((n) => n.type === "COMPONENT_SET" && n.name === "Switch")
-  const behaviour = openpencil.setBehaviour(set, "switch")
+  const behaviour = lawha.setBehaviour(set, "switch")
     .bindValue("value", "State")                          // On and Off guessed from the variants
     .bindPart("thumb", set.findOne((n) => n.name === "Thumb")) // the frame becomes a slot
   behaviour.states = "Interaction"
@@ -124,63 +124,63 @@ openpencil eval design.fig -w -c '
 '
 ```
 
-- `openpencil.setBehaviour(node, kindOrSpec)` replaces a component's behaviour: a kind alone, or a spec such as `{ kind: "slider", parts: { track: "Track", thumb: "Thumb" }, numbers: { value: { min: 0, max: 10 } } }`. It returns the behaviour.
-- `openpencil.getBehaviour(node)` reads one, or `null`; a variant reads its set's.
+- `lawha.setBehaviour(node, kindOrSpec)` replaces a component's behaviour: a kind alone, or a spec such as `{ kind: "slider", parts: { track: "Track", thumb: "Thumb" }, numbers: { value: { min: 0, max: 10 } } }`. It returns the behaviour.
+- `lawha.getBehaviour(node)` reads one, or `null`; a variant reads its set's.
 - A behaviour has `kind`, `spec` (by name), `missing` (required values and parts still unbound), and `states`, and `bindValue(valueId, property, { on, off })`, `bindPart(partId, slotNameOrFrame)`, `setNumber(valueId, { min, max, step, default })`, and `remove()`.
-- `openpencil.behaviourKinds` lists every kind with the values and parts it binds.
-- `openpencil.createSlot(frame)` makes a frame of a main component a slot and returns its name.
+- `lawha.behaviourKinds` lists every kind with the values and parts it binds.
+- `lawha.createSlot(frame)` makes a frame of a main component a slot and returns its name.
 
 Names the component does not have fail with an error that lists the ones it has.
 
-`openpencil.setTextMarkdown(text, markdown)` sets a text layer's text from Markdown, styled over the layer's own style as FigJam styles Markdown typed into a text: `#` and `##` headings bold at 2.5× and 1.5× its size, deeper ones bold at its size, `**bold**`, `*italic*`, `~~strike~~`, `` `code` `` in Roboto Mono, links, lists, and quotes. Load the fonts it uses first, as for `characters`; an unloaded one fails with the font to load. Over MCP, `set_text` takes `markdown: true` for the same.
+`lawha.setTextMarkdown(text, markdown)` sets a text layer's text from Markdown, styled over the layer's own style as FigJam styles Markdown typed into a text: `#` and `##` headings bold at 2.5× and 1.5× its size, deeper ones bold at its size, `**bold**`, `*italic*`, `~~strike~~`, `` `code` `` in Roboto Mono, links, lists, and quotes. Load the fonts it uses first, as for `characters`; an unloaded one fails with the font to load. Over MCP, `set_text` takes `markdown: true` for the same.
 
 ```sh
-openpencil eval design.fig -w -c '
+lawha eval design.fig -w -c '
   const text = figma.currentPage.findOne((n) => n.type === "TEXT" && n.name === "Notes")
   await figma.loadFontAsync({ family: "Inter", style: "Bold" })
-  openpencil.setTextMarkdown(text, "## Next\n- **Ship** the beta\n- Write the post")
+  lawha.setTextMarkdown(text, "## Next\n- **Ship** the beta\n- Write the post")
 '
 ```
 
 Comments people leave with the Comment tool are part of the document, so scripts and agents can read the feedback on a file, act on it, and answer:
 
 ```sh
-openpencil eval design.fig -w -c '
-  for (const comment of openpencil.getComments({ resolved: false })) {
+lawha eval design.fig -w -c '
+  for (const comment of lawha.getComments({ resolved: false })) {
     console.log(comment.author, comment.node?.name, comment.text)
     comment.reply("Bumped the title to 24px", { author: "Claude" }).resolve()
   }
 '
 ```
 
-- `openpencil.getComments(filter)` lists threads oldest first: all of them, or `{ resolved: false }` for open ones, `{ page }` for one page's, `{ author }` for those a person started or replied to.
-- `openpencil.addComment(text, { node, page, x, y, author })` pins a comment on a layer, which it follows, or at a point of a page; the current page by default. `author` is `"Agent"` when left out.
-- A comment has `id`, `text` (Markdown), `author`, `createdAt`, `resolved`, `page`, `node` (the top-level layer it is pinned to), `position`, and `replies`, and `reply(text, { author })`, `resolve()`, `reopen()`, and `remove()`. `openpencil.getComment(id)` finds one.
+- `lawha.getComments(filter)` lists threads oldest first: all of them, or `{ resolved: false }` for open ones, `{ page }` for one page's, `{ author }` for those a person started or replied to.
+- `lawha.addComment(text, { node, page, x, y, author })` pins a comment on a layer, which it follows, or at a point of a page; the current page by default. `author` is `"Agent"` when left out.
+- A comment has `id`, `text` (Markdown), `author`, `createdAt`, `resolved`, `page`, `node` (the top-level layer it is pinned to), `position`, and `replies`, and `reply(text, { author })`, `resolve()`, `reopen()`, and `remove()`. `lawha.getComment(id)` finds one.
 
 Statuses mark where a section, frame, component, or instance stands, from the document's own list such as Draft, In review, or Ready for dev:
 
 ```sh
-openpencil eval design.fig -w -c '
+lawha eval design.fig -w -c '
   const checkout = figma.currentPage.findOne(n => n.name === "Checkout")
-  openpencil.setStatus(checkout, "Approved")
-  openpencil.statuses.map(status => status.name)
+  lawha.setStatus(checkout, "Approved")
+  lawha.statuses.map(status => status.name)
 '
 ```
 
-- `openpencil.statuses` lists the document's statuses in order, each with `name`, `color` (`#RRGGBB`), and `figma`, the status Figma shows for it (`READY_FOR_DEV`, `COMPLETED`, or `null`).
-- `openpencil.getStatus(node)` reads the name of the status a layer shows, or `null`, also while a section around it shows its own.
-- `openpencil.setStatus(node, name)` sets one by name, and `null` clears it. Only sections, frames, components, component sets, and instances directly on a page or in a section take one; anything else fails with an error that says why, and an unknown name lists the statuses there are.
+- `lawha.statuses` lists the document's statuses in order, each with `name`, `color` (`#RRGGBB`), and `figma`, the status Figma shows for it (`READY_FOR_DEV`, `COMPLETED`, or `null`).
+- `lawha.getStatus(node)` reads the name of the status a layer shows, or `null`, also while a section around it shows its own.
+- `lawha.setStatus(node, name)` sets one by name, and `null` clears it. Only sections, frames, components, component sets, and instances directly on a page or in a section take one; anything else fails with an error that says why, and an unknown name lists the statuses there are.
 
 Layer features Figma's API has no member for:
 
-- `openpencil.getLayoutDirection(node)` / `setLayoutDirection(node, direction)` and `getTextDirection(node)` / `setTextDirection(node, direction)` read and set which way an auto layout or a text runs: `AUTO`, `LTR`, or `RTL`.
-- `openpencil.getFillOkHCL(node, index?)` / `setFillOkHCL(node, color, index?)` and the `Stroke` pair read and set a paint's color in OkHCL, `{ h, c, l, a? }`; its RGB follows in the document's color space.
-- `openpencil.exposeInstanceSwap(instances, candidates, name?)` exposes swapping those instances as one instance swap property offering the candidate components, and returns the layer that holds it.
-- `openpencil.getFontStatus()` reports whether the current page's fonts are available: the faces asked for, where each loaded from, substitutions, and the layers affected.
+- `lawha.getLayoutDirection(node)` / `setLayoutDirection(node, direction)` and `getTextDirection(node)` / `setTextDirection(node, direction)` read and set which way an auto layout or a text runs: `AUTO`, `LTR`, or `RTL`.
+- `lawha.getFillOkHCL(node, index?)` / `setFillOkHCL(node, color, index?)` and the `Stroke` pair read and set a paint's color in OkHCL, `{ h, c, l, a? }`; its RGB follows in the document's color space.
+- `lawha.exposeInstanceSwap(instances, candidates, name?)` exposes swapping those instances as one instance swap property offering the candidate components, and returns the layer that holds it.
+- `lawha.getFontStatus()` reports whether the current page's fonts are available: the faces asked for, where each loaded from, substitutions, and the layers affected.
 
 ## Supported API surface
 
-The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil's scene graph and file format.
+The API is intentionally close to Figma's Plugin API, but it maps to Lawha's scene graph and file format.
 
 ### Document and pages
 
@@ -275,9 +275,9 @@ Common node properties are readable/writable through the proxy, including:
 These Figma APIs are not exposed as compatible helpers yet:
 
 - `node.exportAsync()`
-- `figma.util.normalizeMarkdown()`, which fails because OpenPencil has no rich-text descriptions or annotations to normalize for
+- `figma.util.normalizeMarkdown()`, which fails because Lawha has no rich-text descriptions or annotations to normalize for
 - Library variables, extended collections, and variable bindings on effects and layout grids
 - Figma style APIs such as `figma.createPaintStyle()` / `figma.createTextStyle()`
 - Full vector boolean operation parity
 
-Use OpenPencil CLI export commands, core tools, or direct scene-graph helpers where available.
+Use Lawha CLI export commands, core tools, or direct scene-graph helpers where available.

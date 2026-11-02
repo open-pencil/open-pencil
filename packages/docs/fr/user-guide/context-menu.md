@@ -5,7 +5,7 @@ description: Presse-papiers, ordre, groupes, composants, visibilité et pages.
 
 # Menu contextuel
 
-Faites un clic droit dans la zone de travail. Si le pointeur se trouve sur un objet, OpenPencil le sélectionne d’abord ; dans une zone vide, la sélection est annulée.
+Faites un clic droit dans la zone de travail. Si le pointeur se trouve sur un objet, Lawha le sélectionne d’abord ; dans une zone vide, la sélection est annulée.
 
 ## Presse-papiers
 

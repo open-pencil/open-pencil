@@ -11,7 +11,7 @@ import * as v from 'valibot'
 
 let service: TestService
 
-const REPO = 'https://api.github.com/repos/open-pencil/open-pencil'
+const REPO = 'https://api.github.com/repos/lawha/lawha'
 const GRAPHQL = 'https://api.cloudflare.com/client/v4/graphql'
 // The cron fires just after midnight, so the day that just ended is Oct 19.
 const RUN_AT = new Date('2026-10-20T00:05:00.000Z')
@@ -42,19 +42,19 @@ const RELEASES = [
   {
     tag_name: 'v0.16.0',
     assets: [
-      { name: 'OpenPencil_0.16.0_aarch64.dmg', download_count: 100 },
-      { name: 'OpenPencil_aarch64.app.tar.gz', download_count: 300 },
-      { name: 'OpenPencil_aarch64.app.tar.gz.sig', download_count: 6 },
-      { name: 'OpenPencil_0.16.0_x64-setup.exe', download_count: 234 },
-      { name: 'OpenPencil_0.16.0_x64_en-US.msi', download_count: 42 },
-      { name: 'OpenPencil_0.16.0_amd64.deb', download_count: 72 },
+      { name: 'Lawha_0.16.0_aarch64.dmg', download_count: 100 },
+      { name: 'Lawha_aarch64.app.tar.gz', download_count: 300 },
+      { name: 'Lawha_aarch64.app.tar.gz.sig', download_count: 6 },
+      { name: 'Lawha_0.16.0_x64-setup.exe', download_count: 234 },
+      { name: 'Lawha_0.16.0_x64_en-US.msi', download_count: 42 },
+      { name: 'Lawha_0.16.0_amd64.deb', download_count: 72 },
       { name: 'latest.json', download_count: 1110 },
       { name: 'SHA256SUMS', download_count: 23 }
     ]
   },
   {
     tag_name: 'v0.15.1',
-    assets: [{ name: 'OpenPencil_0.15.1_amd64.AppImage', download_count: 393 }]
+    assets: [{ name: 'Lawha_0.15.1_amd64.AppImage', download_count: 393 }]
   }
 ]
 
@@ -112,8 +112,8 @@ function answerOnce(call: FetchCall, pages: string[] = ['/', '/download']): Resp
   if (typeof variables.start === 'string' && typeof variables.end === 'string') {
     const days = eachDay(parseDate(variables.start), parseDate(variables.end))
     const groups = days.map(String).flatMap((date) => [
-      { sum: { visits: 4000 }, dimensions: { date, clientRequestHTTPHost: 'openpencil.dev' } },
-      { sum: { visits: 1000 }, dimensions: { date, clientRequestHTTPHost: 'app.openpencil.dev' } }
+      { sum: { visits: 4000 }, dimensions: { date, clientRequestHTTPHost: 'lawha.invalid' } },
+      { sum: { visits: 1000 }, dimensions: { date, clientRequestHTTPHost: 'app.lawha.invalid' } }
     ])
     return Response.json({
       data: { viewer: { zones: [{ httpRequestsAdaptiveGroups: groups }] } }
@@ -174,12 +174,12 @@ afterAll(async () => {
 
 describe('release files', () => {
   test('counts installers, macOS updates, and update checks, and nothing else', () => {
-    expect(releaseFileKind('OpenPencil_0.16.0_aarch64.dmg')).toBe('macos-installer')
-    expect(releaseFileKind('OpenPencil_x64.app.tar.gz')).toBe('macos-update')
-    expect(releaseFileKind('OpenPencil_0.16.0_arm64-setup.exe')).toBe('windows-installer')
-    expect(releaseFileKind('OpenPencil-0.16.0-1.x86_64.rpm')).toBe('linux-installer')
+    expect(releaseFileKind('Lawha_0.16.0_aarch64.dmg')).toBe('macos-installer')
+    expect(releaseFileKind('Lawha_x64.app.tar.gz')).toBe('macos-update')
+    expect(releaseFileKind('Lawha_0.16.0_arm64-setup.exe')).toBe('windows-installer')
+    expect(releaseFileKind('Lawha-0.16.0-1.x86_64.rpm')).toBe('linux-installer')
     expect(releaseFileKind('latest.json')).toBe('update-check')
-    expect(releaseFileKind('OpenPencil_x64.app.tar.gz.sig')).toBeUndefined()
+    expect(releaseFileKind('Lawha_x64.app.tar.gz.sig')).toBeUndefined()
     expect(releaseFileKind('SHA256SUMS')).toBeUndefined()
   })
 })
@@ -235,11 +235,11 @@ describe('metrics snapshot', () => {
       zone: '6a1c3366d17c9cdefab66cf5dd4e1cbe',
       start: '2026-09-22',
       end: '2026-10-19',
-      hosts: ['openpencil.dev', 'app.openpencil.dev']
+      hosts: ['lawha.invalid', 'app.lawha.invalid']
     })
     expect(new Headers(visits?.init?.headers).get('Authorization')).toBe('Bearer cloudflare-token')
     expect(breakdowns.map((call) => variablesOf(call).host)).toEqual(
-      Array.from({ length: 28 }, () => 'openpencil.dev')
+      Array.from({ length: 28 }, () => 'lawha.invalid')
     )
     expect(await rows.siteVisits()).toHaveLength(56)
     expect(await rows.siteCountries()).toHaveLength(28)
@@ -259,7 +259,7 @@ describe('metrics snapshot', () => {
     const recorded = parseDate('2026-10-19').subtract({ days: 10 })
     await database()
       .insertInto('siteVisits')
-      .values({ day: recorded.toString(), host: 'openpencil.dev', visits: 1 })
+      .values({ day: recorded.toString(), host: 'lawha.invalid', visits: 1 })
       .execute()
     await runSnapshot(service.env, service.services)
     const [visits] = cloudflareCalls()
@@ -302,7 +302,7 @@ describe('metrics snapshot', () => {
       // Only the website had visits, and only on the last day.
       const group = {
         sum: { visits: 3000 },
-        dimensions: { date: '2026-10-19', clientRequestHTTPHost: 'openpencil.dev' }
+        dimensions: { date: '2026-10-19', clientRequestHTTPHost: 'lawha.invalid' }
       }
       return Response.json({
         data: { viewer: { zones: [{ httpRequestsAdaptiveGroups: [group] }] } }
@@ -312,7 +312,7 @@ describe('metrics snapshot', () => {
     const visits = await rows.siteVisits()
     expect(visits).toHaveLength(56)
     expect(visits.filter((row) => row.visits > 0)).toEqual([
-      { day: '2026-10-19', host: 'openpencil.dev', visits: 3000 }
+      { day: '2026-10-19', host: 'lawha.invalid', visits: 3000 }
     ])
   })
 
@@ -320,8 +320,8 @@ describe('metrics snapshot', () => {
     await database()
       .insertInto('siteVisits')
       .values([
-        { day: '2026-10-19', host: 'app.openpencil.dev', visits: 999 },
-        { day: '2026-10-18', host: 'openpencil.dev', visits: 5 }
+        { day: '2026-10-19', host: 'app.lawha.invalid', visits: 999 },
+        { day: '2026-10-18', host: 'lawha.invalid', visits: 5 }
       ])
       .execute()
     service.respond(GRAPHQL, (call) => {
@@ -329,7 +329,7 @@ describe('metrics snapshot', () => {
       if (typeof variables.start !== 'string') return answerOnce(call)
       const group = {
         sum: { visits: 4000 },
-        dimensions: { date: '2026-10-19', clientRequestHTTPHost: 'openpencil.dev' }
+        dimensions: { date: '2026-10-19', clientRequestHTTPHost: 'lawha.invalid' }
       }
       return Response.json({
         data: { viewer: { zones: [{ httpRequestsAdaptiveGroups: [group] }] } }
@@ -338,26 +338,26 @@ describe('metrics snapshot', () => {
     await runSnapshot(service.env, service.services)
     const visits = await rows.siteVisits()
     expect(visits.filter((row) => row.day >= '2026-10-18')).toEqual([
-      { day: '2026-10-18', host: 'app.openpencil.dev', visits: 0 },
-      { day: '2026-10-18', host: 'openpencil.dev', visits: 0 },
-      { day: '2026-10-19', host: 'app.openpencil.dev', visits: 0 },
-      { day: '2026-10-19', host: 'openpencil.dev', visits: 4000 }
+      { day: '2026-10-18', host: 'app.lawha.invalid', visits: 0 },
+      { day: '2026-10-18', host: 'lawha.invalid', visits: 0 },
+      { day: '2026-10-19', host: 'app.lawha.invalid', visits: 0 },
+      { day: '2026-10-19', host: 'lawha.invalid', visits: 4000 }
     ])
   })
 
   test('a replacement that fails to insert leaves the day as it was', async () => {
     await database()
       .insertInto('siteVisits')
-      .values({ day: '2026-10-19', host: 'openpencil.dev', visits: 4258 })
+      .values({ day: '2026-10-19', host: 'lawha.invalid', visits: 4258 })
       .execute()
     const store = { db: database(), d1: service.db }
     // Two rows with the same key: the insert fails after the delete was already queued.
-    const duplicate = { day: '2026-10-19', host: 'openpencil.dev', visits: 1 }
+    const duplicate = { day: '2026-10-19', host: 'lawha.invalid', visits: 1 }
     await expect(
       replaceDays(store, 'siteVisits', [parseDate('2026-10-19')], [duplicate, duplicate])
     ).rejects.toThrow()
     expect(await rows.siteVisits()).toEqual([
-      { day: '2026-10-19', host: 'openpencil.dev', visits: 4258 }
+      { day: '2026-10-19', host: 'lawha.invalid', visits: 4258 }
     ])
   })
 

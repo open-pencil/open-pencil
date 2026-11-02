@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import { vectorNetworkToPath } from '@open-pencil/core/vector'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { vectorNetworkToPath } from '@lawha/core/vector'
+import type { VectorNetwork } from '@lawha/scene-graph'
 
 import { asDouble } from '#tests/helpers/doubles'
 

@@ -1,4 +1,4 @@
-import type { Paint, StyleReference } from '@open-pencil/kiwi/fig/codec'
+import type { Paint, StyleReference } from '@lawha/kiwi/fig/codec'
 import type {
   HandleMirroring,
   VectorNetwork,
@@ -6,7 +6,7 @@ import type {
   VectorSegment,
   VectorVertex,
   WindingRule
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 
 import { convertFills, fillToKiwiPaint } from '../paint'
 import { styleRefId } from '../style/refs'

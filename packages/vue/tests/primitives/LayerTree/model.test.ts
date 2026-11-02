@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { reactive } from 'vue'
 
-import { createShapeWithText } from '@open-pencil/scene-graph/generated'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { withIcon } from '@open-pencil/scene-graph/icons'
-import { colorToFill } from '@open-pencil/scene-graph/color'
-import { buildLayerTreeModel, patchLayerNode } from '@open-pencil/vue/primitives/LayerTree'
+import { createShapeWithText } from '@lawha/scene-graph/generated'
+import { SceneGraph } from '@lawha/scene-graph'
+import { withIcon } from '@lawha/scene-graph/icons'
+import { colorToFill } from '@lawha/scene-graph/color'
+import { buildLayerTreeModel, patchLayerNode } from '@lawha/vue/primitives/LayerTree'
 
 import { dropIndex } from '#vue/primitives/LayerTree/model'
 

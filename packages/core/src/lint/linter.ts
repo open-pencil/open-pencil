@@ -1,8 +1,8 @@
 import { uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
+import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@lawha/scene-graph/generated'
 
 import { presets } from './presets'
 import { allRules } from './rules'

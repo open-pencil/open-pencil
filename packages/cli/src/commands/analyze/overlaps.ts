@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { AnalyzeOverlapsResult } from '@open-pencil/core/rpc'
+import type { AnalyzeOverlapsResult } from '@lawha/core/rpc'
 import {
   VALID_OVERLAP_CATEGORIES,
   VALID_OVERLAP_SCOPES,
@@ -8,7 +8,7 @@ import {
   parseOverlapCategories,
   parseOverlapScope,
   parseOverlapSeverity
-} from '@open-pencil/core/tools'
+} from '@lawha/core/tools'
 
 import { bold, fail, fmtList, fmtSummary, kv } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
@@ -178,7 +178,7 @@ export default defineCommand({
     },
     'document-id': {
       type: 'string',
-      description: 'Target OpenPencil document/tab ID when connected to the running app',
+      description: 'Target Lawha document/tab ID when connected to the running app',
       required: false
     },
     type: {

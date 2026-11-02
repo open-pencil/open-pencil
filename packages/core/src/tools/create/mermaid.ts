@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { detectMermaidDiagram, parseFlowchart } from '@open-pencil/mermaid'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import { detectMermaidDiagram, parseFlowchart } from '@lawha/mermaid'
+import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
 
 import { addFlowchart } from '#core/io/formats/mermaid'
 import { toolNumber, defineTool } from '#core/tools/schema'

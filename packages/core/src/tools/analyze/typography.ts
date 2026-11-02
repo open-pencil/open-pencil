@@ -1,7 +1,7 @@
 import { orderBy, sortBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import { formatTextLength } from '@open-pencil/scene-graph/text'
+import { formatTextLength } from '@lawha/scene-graph/text'
 
 import { defineTool } from '#core/tools/schema'
 

@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { checkDocsIntegrity } from '../src/integrity'
 
 async function fixture() {
-  const docsRoot = await mkdtemp(join(tmpdir(), 'open-pencil-docs-integrity-'))
+  const docsRoot = await mkdtemp(join(tmpdir(), 'lawha-docs-integrity-'))
   await mkdir(join(docsRoot, 'public'), { recursive: true })
   return docsRoot
 }

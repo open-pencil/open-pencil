@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 import type { DragState } from '#vue/shared/input/types'
 

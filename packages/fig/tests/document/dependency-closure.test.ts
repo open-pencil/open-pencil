@@ -4,8 +4,8 @@ import { guid } from '#fig-tests/helpers/guid'
 import { collectSceneDependencies } from '#fig/document/dependency-closure'
 import { createSourceIndex } from '#fig/instance-overrides/source-index'
 
-import { materializeDocument } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { materializeDocument } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('retains external preferred choices separately from required component dependencies', () => {
   const changes = [

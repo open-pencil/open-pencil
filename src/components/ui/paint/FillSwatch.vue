@@ -1,8 +1,8 @@
 <script lang="ts">
 import type { VNode } from 'vue'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import type { FillSwatchSlotProps } from '@open-pencil/vue/primitives/Fill'
+import type { Fill } from '@lawha/scene-graph'
+import type { FillSwatchSlotProps } from '@lawha/vue/primitives/Fill'
 
 import type { ComponentUI } from '@/components/ui/types'
 import type theme from '@/theme/paint/fill-swatch'
@@ -24,7 +24,7 @@ export interface FillSwatchSlots {
 import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, useAttrs } from 'vue'
 
-import { FillSwatch as FillSwatchPrimitive } from '@open-pencil/vue/primitives/Fill'
+import { FillSwatch as FillSwatchPrimitive } from '@lawha/vue/primitives/Fill'
 
 import fillSwatchTheme from '@/theme/paint/fill-swatch'
 

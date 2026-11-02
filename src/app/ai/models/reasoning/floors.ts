@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { AI_PROVIDERS, REASONING_EFFORTS } from '@open-pencil/core/constants'
-import type { AIProviderID, ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, REASONING_EFFORTS } from '@lawha/core/constants'
+import type { AIProviderID, ModelOption, ReasoningEffort } from '@lawha/core/constants'
 
 import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
 import { cachedChatGPTModels } from '@/app/ai/providers/chatgpt/catalog'

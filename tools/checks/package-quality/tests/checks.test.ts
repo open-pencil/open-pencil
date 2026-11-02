@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { runPackageChecks } from '#package-quality/checks/run'
 
-import { CommandError, type CommandRequest } from '@open-pencil/package-artifacts-tools'
+import { CommandError, type CommandRequest } from '@lawha/package-artifacts-tools'
 
 test('bounded checks drain after failures and preserve diagnostic order', async () => {
   const requests = Array.from({ length: 5 }, (_, index) => ({

@@ -1,6 +1,6 @@
 import { defineComponent } from 'vue'
 
-/** A Cloud component in a build without Cloud (`VITE_OPENPENCIL_CLOUD=off`): it renders nothing. */
+/** A Cloud component in a build without Cloud (`VITE_LAWHA_CLOUD=off`): it renders nothing. */
 function absent(name: string) {
   return defineComponent({ name, inheritAttrs: false, render: () => null })
 }

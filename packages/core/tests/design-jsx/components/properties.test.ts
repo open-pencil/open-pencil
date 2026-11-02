@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 
-import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { Component, Instance, Text, property } from '@open-pencil/design-jsx'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type ComponentPropertyDefinition } from '@open-pencil/scene-graph'
+import { renderJSX, renderTree } from '@lawha/core/design-jsx'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { Component, Instance, Text, property } from '@lawha/design-jsx'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type ComponentPropertyDefinition } from '@lawha/scene-graph'
 
 const CARD = `
 const title = property("Title", "Default title")

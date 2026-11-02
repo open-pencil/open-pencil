@@ -29,8 +29,8 @@ async function drawStrokedRectangle(x: number, y: number) {
 
 async function selectedStrokeGeometry() {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return [...store.state.selectedIds].map((id) => {
       const node = store.graph.getNode(id)
       return node

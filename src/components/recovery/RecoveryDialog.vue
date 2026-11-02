@@ -3,7 +3,7 @@ import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'rek
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'

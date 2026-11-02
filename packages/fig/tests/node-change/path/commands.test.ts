@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { encodePathCommandsBlob, type OutlineCommand } from '@open-pencil/fig/node-change'
+import { encodePathCommandsBlob, type OutlineCommand } from '@lawha/fig/node-change'
 
 const outline: OutlineCommand[] = [
   { type: 'M', x: 2, y: 4 },

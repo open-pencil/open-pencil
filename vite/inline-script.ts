@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { build, type Plugin } from 'vite'
 
 import { viteBuildTarget } from '../src/app/shell/support/baseline.ts'
-import { createOpenPencilAliases } from './aliases.ts'
+import { createLawhaAliases } from './aliases.ts'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 /** `?script` among an id's query, which Vite extends, as with `?t=…&script` after a hot update. */
@@ -21,7 +21,7 @@ const withoutQuery = (id: string) => id.replace(/[?#].*$/s, '')
  */
 export function inlineScriptPlugin(): Plugin {
   return {
-    name: 'open-pencil-inline-script',
+    name: 'lawha-inline-script',
     load: {
       filter: { id: SCRIPT_QUERY },
       async handler(id) {
@@ -31,7 +31,7 @@ export function inlineScriptPlugin(): Plugin {
           root: REPO_ROOT,
           publicDir: false,
           logLevel: 'warn',
-          resolve: { alias: createOpenPencilAliases(REPO_ROOT) },
+          resolve: { alias: createLawhaAliases(REPO_ROOT) },
           // An entry may itself inline another, as the sandbox frame inlines its worker.
           plugins: [inlineScriptPlugin()],
           build: {
@@ -40,7 +40,7 @@ export function inlineScriptPlugin(): Plugin {
             target: viteBuildTarget(),
             emptyOutDir: false,
             copyPublicDir: false,
-            lib: { entry, formats: ['iife'], name: 'openPencilInlineScript' }
+            lib: { entry, formats: ['iife'], name: 'lawhaInlineScript' }
           }
         })
         // One IIFE entry builds one chunk, which comes first.

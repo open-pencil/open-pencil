@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import { nodeChangeToProps, sceneNodeToKiwi } from '@open-pencil/fig/node-change'
-import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { nodeChangeToProps, sceneNodeToKiwi } from '@lawha/fig/node-change'
+import type { NodeChange, Paint } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const oracleLengthSchema = v.object({ unit: v.string(), value: v.number() })
 

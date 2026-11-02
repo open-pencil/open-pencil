@@ -21,7 +21,7 @@ for (const colorSpace of ['srgb', 'display-p3'] as const) {
     ]
     await page.evaluate(
       async ({ colorSpace, samples }) => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         if (!store) throw new Error('Editor unavailable')
         store.setDocumentColorSpace(colorSpace)
         const source = document.createElement('canvas')

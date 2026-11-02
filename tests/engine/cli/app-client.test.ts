@@ -3,7 +3,7 @@ import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { join } from 'node:path'
 
-import { removeDiscoveryFile, writeDiscoveryFile } from '@open-pencil/mcp/discovery'
+import { removeDiscoveryFile, writeDiscoveryFile } from '@lawha/mcp/discovery'
 
 import { rpc } from '#cli/app/client'
 
@@ -40,7 +40,7 @@ describe('CLI app transport discovery', () => {
 
     await writeDiscoveryFile({
       pid: process.pid,
-      socketPath: join('/tmp', `missing-openpencil-${process.pid}.sock`),
+      socketPath: join('/tmp', `missing-lawha-${process.pid}.sock`),
       httpPort: address.port,
       authRequired: true,
       authToken: token,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { testIdSelector } from '@open-pencil/vue/testing'
+import { testIdSelector } from '@lawha/vue/testing'
 
 const originalCSSDescriptor = Reflect.getOwnPropertyDescriptor(globalThis, 'CSS')
 

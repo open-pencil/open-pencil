@@ -1,11 +1,11 @@
 import { isEqual, pick } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
-import { readIcon } from '@open-pencil/scene-graph/icons'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { isGeneratedFrame } from '@lawha/scene-graph/generated'
+import { readIcon } from '@lawha/scene-graph/icons'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { LAYER_OUTLINE_FIELDS } from '#vue/primitives/LayerTree/context'
 import type {

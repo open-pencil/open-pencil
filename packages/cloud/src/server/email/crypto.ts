@@ -10,7 +10,7 @@ import { utf8ToBytes } from '@noble/hashes/utils.js'
 import { compactDecrypt, CompactEncrypt } from 'jose'
 import * as v from 'valibot'
 
-const EMAIL_PAYLOAD_SALT = utf8ToBytes('openpencil-cloud-transactional-email')
+const EMAIL_PAYLOAD_SALT = utf8ToBytes('lawha-cloud-transactional-email')
 const EMAIL_PAYLOAD_HEADER = { alg: 'dir', enc: 'A256GCM' } as const
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -20,7 +20,7 @@ function emailPayloadKey(secret: string, id: string, kind: TransactionalEmailKin
     sha256,
     utf8ToBytes(secret),
     EMAIL_PAYLOAD_SALT,
-    encoder.encode(`openpencil-cloud-email:${kind}:${id}`),
+    encoder.encode(`lawha-cloud-email:${kind}:${id}`),
     32
   )
 }

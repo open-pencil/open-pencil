@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-# OpenPencil Cloud: the server and the editor and pages it serves. Build from the repository root:
-#   docker build -f packages/cloud/deploy/Dockerfile -t openpencil-cloud .
-# The image also runs the AI relay: `docker run … openpencil-cloud node ai-relay.mjs`.
+# Lawha Cloud: the server and the editor and pages it serves. Build from the repository root:
+#   docker build -f packages/cloud/deploy/Dockerfile -t lawha-cloud .
+# The image also runs the AI relay: `docker run … lawha-cloud node ai-relay.mjs`.
 
 # The build's output is JavaScript and static files, so it runs on the builder's own platform
 # once, whichever platforms the image is for, with Bun for that platform too. Playwright's
@@ -16,11 +16,11 @@ COPY . .
 RUN bun install --frozen-lockfile
 RUN bun run build:packages
 RUN bun run build:cloud
-RUN bun --filter @open-pencil/cloud build:standalone
+RUN bun --filter @lawha/cloud build:standalone
 
 FROM node:22-bookworm-slim
 ENV NODE_ENV=production \
-    OPENPENCIL_CLOUD_SITE_DIR=/app/site \
+    LAWHA_CLOUD_SITE_DIR=/app/site \
     HOST=0.0.0.0 \
     PORT=8787
 WORKDIR /app

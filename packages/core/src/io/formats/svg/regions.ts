@@ -1,9 +1,9 @@
-import type { Fill, SceneNode, WindingRule } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode, WindingRule } from '@lawha/scene-graph'
 import {
   fillGeometryMatchesRegions,
   hasRegionFills,
   regionSVGPaths
-} from '@open-pencil/scene-graph/vector-network'
+} from '@lawha/scene-graph/vector-network'
 
 import { drawnFills, solidFillOpacity, type SVGExportContext } from './defs'
 import { svg, type SVGNode } from './node'

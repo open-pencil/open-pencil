@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import type { SceneGraph, VariableType } from '@lawha/scene-graph'
 
 import type { DesignTokenFile } from '#core/io/formats/design-tokens'
 import { defineTool } from '#core/tools/schema'
@@ -39,7 +39,7 @@ export async function exportTokenStylesheet(
   )
   if (ids.size === 0) return { css: '', tokenCount: 0, issues: [] }
 
-  const { tokenStylesheet } = await import('@open-pencil/dom-css/export')
+  const { tokenStylesheet } = await import('@lawha/dom-css/export')
   const { css, issues } = await tokenStylesheet(graph, {
     format: options.format,
     include: (variable) => ids.has(variable.id)

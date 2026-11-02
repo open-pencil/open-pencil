@@ -1,10 +1,10 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   createShapeWithText,
   SHAPE_WITH_TEXT_CORNER_RADIUS,
   SHAPE_WITH_TEXT_SIZE,
   shapeWithTextLabel
-} from '@open-pencil/scene-graph/generated'
+} from '@lawha/scene-graph/generated'
 
 import { SHAPE_KIND } from '../enums'
 import { collectFillProps, collectStrokeProps } from '../export/paints'

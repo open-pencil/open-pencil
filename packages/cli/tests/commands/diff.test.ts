@@ -25,7 +25,7 @@ async function cli(args: string[]) {
 
 describe('diff CLI', () => {
   test('show, apply, and files round-trip an attribute patch headlessly', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-diff-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-diff-'))
     const patchPath = join(dir, 'logo.diff')
     const outPath = join(dir, 'out.fig')
 
@@ -74,7 +74,7 @@ describe('diff CLI', () => {
   })
 
   test('visual writes a PNG and reports the changed area', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-diff-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-diff-'))
     const output = join(dir, 'diff.png')
 
     const result = await cli([

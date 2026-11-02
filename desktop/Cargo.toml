@@ -1,8 +1,8 @@
 [package]
-name = "open_pencil"
+name = "lawha"
 version = "0.17.0-beta.1"
-description = "OpenPencil desktop app"
-authors = ["Danila Poyarkov"]
+description = "Lawha desktop app"
+authors = ["Lawha contributors"]
 edition = "2021"
 
 [features]
@@ -12,11 +12,11 @@ native-test = ["dep:tauri-plugin-wdio-webdriver"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "OpenPencil"
+name = "Lawha"
 path = "src/main.rs"
 
 [lib]
-name = "open_pencil_lib"
+name = "lawha_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

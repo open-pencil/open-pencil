@@ -91,7 +91,7 @@ export function createBetterAuthAdapter(
   const emailChangeAvailable = Boolean(config.emailPasswordEnabled && authenticationEmail)
   // The plugins are built first, so the options below name their endpoints by the paths they declare.
   const twoStep = twoFactor({
-    issuer: 'OpenPencil Cloud',
+    issuer: 'Lawha Cloud',
     trustDeviceMaxAge: config.mfaTrustedDeviceDays * 24 * 60 * 60,
     allowPasswordless: true,
     totpOptions: { disable: !config.totpEnabled, allowPasswordless: true },
@@ -107,11 +107,11 @@ export function createBetterAuthAdapter(
   })
   const devices = deviceAuthorization({
     verificationUri: new URL('/auth/device', config.publicURL).href,
-    validateClient: (clientId) => clientId.startsWith('openpencil-desktop:')
+    validateClient: (clientId) => clientId.startsWith('lawha-desktop:')
   })
   const administration = admin()
   const auth = betterAuth({
-    appName: 'OpenPencil Cloud',
+    appName: 'Lawha Cloud',
     baseURL: config.publicURL,
     basePath: AUTH_BASE_PATH,
     // Clients never reach Better Auth's own administration, which `/api/admin` replaces with MFA,

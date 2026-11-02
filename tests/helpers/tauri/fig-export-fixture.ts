@@ -1,7 +1,7 @@
 import { mockIPC } from '@tauri-apps/api/mocks'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { installNativeFigArchives } from '@/app/document/io/native-fig'
 

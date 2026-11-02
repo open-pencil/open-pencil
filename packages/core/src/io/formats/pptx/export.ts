@@ -1,10 +1,10 @@
 import { fromUint8Array } from 'js-base64'
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import TransformMatrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import { lineHeightPixels, textLengthPixels } from '@lawha/scene-graph/text'
 
 import {
   hasUnsupportedTransform,

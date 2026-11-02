@@ -1,4 +1,4 @@
-//! Coding agents, their companions, and the MCP server they reach OpenPencil through.
+//! Coding agents, their companions, and the MCP server they reach Lawha through.
 
 pub mod lookup;
 pub mod mcp;

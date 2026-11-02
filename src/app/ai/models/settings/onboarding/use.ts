@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { ACP_AGENTS, IS_TAURI } from '@open-pencil/core/constants'
+import { ACP_AGENTS, IS_TAURI } from '@lawha/core/constants'
 
 import {
   codingAgentDetection,

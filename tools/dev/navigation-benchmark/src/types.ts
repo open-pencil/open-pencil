@@ -1,4 +1,4 @@
-import type { RecordedWheelSample } from '@open-pencil/core/profiler'
+import type { RecordedWheelSample } from '@lawha/core/profiler'
 
 export type WheelSample = RecordedWheelSample
 

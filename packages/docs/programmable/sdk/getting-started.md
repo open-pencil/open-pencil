@@ -1,6 +1,6 @@
 ---
 title: SDK Getting Started
-description: Set up @open-pencil/vue with createEditor, provideEditor, and a canvas.
+description: Set up @lawha/vue with createEditor, provideEditor, and a canvas.
 ---
 
 # SDK Getting Started
@@ -8,23 +8,23 @@ description: Set up @open-pencil/vue with createEditor, provideEditor, and a can
 ## Installation
 
 ```bash
-bun add @open-pencil/core @open-pencil/scene-graph @open-pencil/vue canvaskit-wasm
+bun add @lawha/core @lawha/scene-graph @lawha/vue canvaskit-wasm
 ```
 
-The SDK lives in the monorepo and is published as `@open-pencil/vue`. The current development version requires Vue `^3.5.41` and, when using its optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. Check the installed package's peer requirements when using an older release.
+The SDK lives in the monorepo and is published as `@lawha/vue`. The current development version requires Vue `^3.5.41` and, when using its optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. Check the installed package's peer requirements when using an older release.
 
 ```ts
-import { createEditor } from '@open-pencil/core'
-import { provideEditor } from '@open-pencil/vue'
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
+import { createEditor } from '@lawha/core'
+import { provideEditor } from '@lawha/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
 ```
 
 ## Mental model
 
 There are three layers:
 
-1. `@open-pencil/core` — framework-agnostic editor engine
-2. `@open-pencil/vue` — Vue composables and headless primitives
+1. `@lawha/core` — framework-agnostic editor engine
+2. `@lawha/vue` — Vue composables and headless primitives
 3. your app — styling, routing, file flows, product-specific UI
 
 ## Minimal setup
@@ -36,8 +36,8 @@ There are three layers:
 // @moduleResolution: bundler
 // ---cut---
 import { reactive } from 'vue'
-import { createDefaultEditorState, createEditor } from '@open-pencil/core'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDefaultEditorState, createEditor } from '@lawha/core'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const graph = new SceneGraph()
 const page = graph.getPages()[0]
@@ -52,15 +52,15 @@ const editor = createEditor({
 
 Core state is framework-neutral; passing reactive state lets Vue controls observe editor changes. For a resizable editor, have `getViewportSize` return the current canvas container dimensions. `width` and `height` are not `EditorOptions` properties.
 
-Icons come from Iconify by default. To serve them from elsewhere, such as a bundled or self-hosted set, pass an `IconProvider` from `@open-pencil/core/icons` as `icons`; the editor's commands, its icon picker, and its AI tools all use it.
+Icons come from Iconify by default. To serve them from elsewhere, such as a bundled or self-hosted set, pass an `IconProvider` from `@lawha/core/icons` as `icons`; the editor's commands, its icon picker, and its AI tools all use it.
 
 ### 2. Provide it to Vue
 
 ```vue
 <script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 const props = defineProps<{
   editor: Editor
@@ -82,8 +82,8 @@ You can think of this as the provider layer for the editor tree. The docs prefer
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -101,8 +101,8 @@ useCanvas(canvasRef, editor)
 Once the editor is provided, child components can read selection and issue commands:
 
 ```ts
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
 
 const selection = useSelectionState()
 const commands = useEditorCommands()
@@ -114,9 +114,9 @@ const commands = useEditorCommands()
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -143,7 +143,7 @@ useCanvas(canvasRef, editor, {
 
 These changes describe the current development version; use them when upgrading beyond v0.14.0.
 
-- **Scene Graph overrides:** replace `SceneNode.overrides` records with `instanceOverrides`, whose `self` and `descendants` maps distinguish instance-level and descendant overrides. Use the public override helpers from `@open-pencil/scene-graph` rather than treating this as a simple field rename.
+- **Scene Graph overrides:** replace `SceneNode.overrides` records with `instanceOverrides`, whose `self` and `descendants` maps distinguish instance-level and descendant overrides. Use the public override helpers from `@lawha/scene-graph` rather than treating this as a simple field rename.
 - **Derived geometry:** rename `figmaDerivedLayout` to `derivedLayout`, `figmaDerivedTextGlyphs` to `derivedTextGlyphs`, and the exported `FigmaDerivedTextGlyph` type to `DerivedTextGlyph`.
 - **Binding providers:** implement `getBindingId()` and handle `unresolved`. For `edit-variable`, replace `setValue()` with `prepareEdit()`, which captures the edit key, value, setter, and restoration callback. See [BindableValue](./api/components/bindable-value).
 - **Translations:** replace `useDialogMessages()` and `dialogMessages` with the relevant product-domain composables and catalogs, such as `useSettingsMessages()` or `useRenameMessages()`. Catalog keys have also moved; do not just rename the import. See [useI18n](./api/composables/use-i18n).

@@ -1,6 +1,6 @@
 import { computed, effectScope, ref, shallowRef, watch } from 'vue'
 
-import type { DocumentVersion } from '@open-pencil/cloud/contract'
+import type { DocumentVersion } from '@lawha/cloud/contract'
 
 import type { EditorStore } from '@/app/editor/session'
 

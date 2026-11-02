@@ -2,9 +2,9 @@
 
 ## Versión web
 
-OpenPencil funciona directamente en el navegador y no requiere instalación. Abre [app.openpencil.dev](https://app.openpencil.dev) para empezar a diseñar.
+Lawha funciona directamente en el navegador y no requiere instalación. Abre [app.lawha.invalid](https://app.lawha.invalid) para empezar a diseñar.
 
-Si quieres crear un producto basado en OpenPencil en lugar de limitarte a la aplicación predeterminada, consulta la sección [Automatización](/programmable/) y la documentación del [Vue SDK](/programmable/sdk/).
+Si quieres crear un producto basado en Lawha en lugar de limitarte a la aplicación predeterminada, consulta la sección [Automatización](/programmable/) y la documentación del [Vue SDK](/programmable/sdk/).
 
 ## Aplicación de escritorio
 
@@ -20,7 +20,7 @@ Las versiones preparadas para macOS, Windows y Linux están disponibles en la [p
 
 ## Requisitos del sistema {#system-requirements}
 
-OpenPencil dibuja con CanvasKit sobre WebGL y usa funciones recientes de la plataforma web, por lo que necesita un motor de navegador actual. La versión web admite Chrome 111, Edge 111, Firefox 128 y Safari 16.4 o posteriores; los navegadores basados en Chromium, como Brave u Opera, siguen la versión de Chrome en la que se basan. La aplicación de escritorio dibuja en el WebView del sistema, así que el mínimo depende del motor del sistema operativo:
+Lawha dibuja con CanvasKit sobre WebGL y usa funciones recientes de la plataforma web, por lo que necesita un motor de navegador actual. La versión web admite Chrome 111, Edge 111, Firefox 128 y Safari 16.4 o posteriores; los navegadores basados en Chromium, como Brave u Opera, siguen la versión de Chrome en la que se basan. La aplicación de escritorio dibuja en el WebView del sistema, así que el mínimo depende del motor del sistema operativo:
 
 | Plataforma | Requisito |
 | ---------- | --------- |
@@ -28,21 +28,21 @@ OpenPencil dibuja con CanvasKit sobre WebGL y usa funciones recientes de la plat
 | Windows | Windows 10 o posterior con el runtime Evergreen de Microsoft Edge WebView2, que se actualiza solo. |
 | Linux | WebKitGTK 2.40 o posterior (`webkit2gtk-4.1`). |
 
-Si el motor es demasiado antiguo, OpenPencil muestra qué debes actualizar en lugar de una ventana en blanco. Si ves ese aviso en un sistema que cumple los requisitos, usa su enlace «Report a problem», que rellena de antemano los datos del navegador y del motor.
+Si el motor es demasiado antiguo, Lawha muestra qué debes actualizar en lugar de una ventana en blanco. Si ves ese aviso en un sistema que cumple los requisitos, usa su enlace «Report a problem», que rellena de antemano los datos del navegador y del motor.
 
 ## Instalación en macOS con Homebrew
 
 ```sh
-brew install --cask openpencil
+brew install --cask lawha
 ```
 
-El comando instala la aplicación firmada para Mac con Apple Silicon o procesador Intel desde el [catálogo oficial de Homebrew](https://formulae.brew.sh/cask/openpencil). Homebrew revisa las actualizaciones, que pueden aparecer después de las versiones en GitHub. Mientras tanto, utiliza la [descarga directa](https://github.com/open-pencil/open-pencil/releases/latest). La CLI se instala por separado: `npm install -g @open-pencil/cli`.
+El comando instala la aplicación firmada para Mac con Apple Silicon o procesador Intel desde el [catálogo oficial de Homebrew](https://formulae.brew.sh/cask/lawha). Homebrew revisa las actualizaciones, que pueden aparecer después de las versiones en GitHub. Mientras tanto, utiliza la [descarga directa](https://github.com/aliaaldihnayn-lab/design/releases/latest). La CLI se instala por separado: `npm install -g @lawha/cli`.
 
 Si usabas el tap propio archivado, migra con:
 
 ```sh
-brew uninstall open-pencil/tap/open-pencil
-brew install --cask openpencil
+brew uninstall lawha/tap/lawha
+brew install --cask lawha
 ```
 
 ## Compilación desde el código fuente {#building-from-source}
@@ -55,8 +55,8 @@ brew install --cask openpencil
 ### Instalación
 
 ```sh
-git clone https://github.com/open-pencil/open-pencil.git
-cd open-pencil
+git clone https://github.com/aliaaldihnayn-lab/design.git
+cd lawha
 bun install
 ```
 

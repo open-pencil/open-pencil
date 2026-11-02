@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { FIXTURES } from '#core-tests/helpers/paths'
 
-import { isVariableFont, isWOFF2, WebFontResolver } from '@open-pencil/core/text'
+import { isVariableFont, isWOFF2, WebFontResolver } from '@lawha/core/text'
 
 const FONT_URL = 'https://fonts.gstatic.com/s/test/faces.woff2'
 

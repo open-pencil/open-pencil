@@ -2,15 +2,15 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
-import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { derivedSymbolDataOf } from '@open-pencil/fig/instance-overrides'
-import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core/editor'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { renderNodesToSVG } from '@lawha/core/io/formats/svg'
+import { materializeDocument, parseFigBuffer } from '@lawha/fig'
+import { derivedSymbolDataOf } from '@lawha/fig/instance-overrides'
+import { encodePathCommandsBlob } from '@lawha/fig/node-change'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 

@@ -15,9 +15,9 @@ test('carries the release version and names each architecture apart', async () =
   try {
     const reported = await Promise.all(
       [
-        `OpenPencil Chromium_${VERSION}_x64.dmg`,
-        'OpenPencil Chromium.app.tar.gz',
-        'OpenPencil Chromium.app.tar.gz.sig'
+        `Lawha Chromium_${VERSION}_x64.dmg`,
+        'Lawha Chromium.app.tar.gz',
+        'Lawha Chromium.app.tar.gz.sig'
       ].map(async (name) => {
         await writeFile(join(root, name), 'fixture')
         return join(root, name)
@@ -30,9 +30,9 @@ test('carries the release version and names each architecture apart', async () =
     )
 
     expect(assets.map((asset) => asset.name).sort()).toEqual([
-      'OpenPencil-Chromium_0.17.0-beta.1_x64.dmg',
-      'OpenPencil-Chromium_x64.app.tar.gz',
-      'OpenPencil-Chromium_x64.app.tar.gz.sig'
+      'Lawha-Chromium_0.17.0-beta.1_x64.dmg',
+      'Lawha-Chromium_x64.app.tar.gz',
+      'Lawha-Chromium_x64.app.tar.gz.sig'
     ])
   } finally {
     await rm(root, { recursive: true, force: true })
@@ -43,8 +43,8 @@ test('feeds each architecture to its updater platform', () => {
   expect(
     chromiumAssets('aarch64-apple-darwin', VERSION).map((asset) => [asset.name, asset.updaterKeys])
   ).toEqual([
-    ['OpenPencil-Chromium_0.17.0-beta.1_aarch64.dmg', []],
-    ['OpenPencil-Chromium_aarch64.app.tar.gz', ['darwin-aarch64', 'darwin-aarch64-app']]
+    ['Lawha-Chromium_0.17.0-beta.1_aarch64.dmg', []],
+    ['Lawha-Chromium_aarch64.app.tar.gz', ['darwin-aarch64', 'darwin-aarch64-app']]
   ])
   expect(
     chromiumAssets('x86_64-apple-darwin', VERSION).flatMap((asset) => asset.updaterKeys)

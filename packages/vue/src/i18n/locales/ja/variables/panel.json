@@ -133,5 +133,5 @@
   "formulaIf": "条件、真のとき、偽のとき",
   "formulaText": "数値をテキストに",
   "formulaTruthy": "値を真偽値に",
-  "unsupportedExpression": "OpenPencil はまだ {name} を評価できません。保存してもそのまま残ります。"
+  "unsupportedExpression": "Lawha はまだ {name} を評価できません。保存してもそのまま残ります。"
 }

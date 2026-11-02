@@ -5,7 +5,7 @@ import { operationCommand } from './commands/operation'
 const main = defineCommand({
   meta: {
     name: 'visual-oracles',
-    description: 'Figma and OpenPencil visual comparison tools'
+    description: 'Figma and Lawha visual comparison tools'
   },
   subCommands: {
     compare: () => import('./commands/compare').then((module) => module.default),
@@ -16,7 +16,7 @@ const main = defineCommand({
     ),
     'export-fixtures': operationCommand(
       'export-fixtures',
-      'Export configured OpenPencil fixture images',
+      'Export configured Lawha fixture images',
       'tools/generate/visual-oracles/src/operations/export-fixtures.ts'
     ),
     analyze: () => import('./commands/analyze').then((module) => module.default),

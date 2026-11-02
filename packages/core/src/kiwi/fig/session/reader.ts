@@ -1,5 +1,5 @@
-import { createFigDocumentSession } from '@open-pencil/fig'
-import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
+import { createFigDocumentSession } from '@lawha/fig'
+import type { FigPageManifestEntry } from '@lawha/kiwi/fig'
 
 import { buildFigPopulationDelta, installFigMutationJournal } from '#core/kiwi/fig/population/delta'
 import { readerSessionOptions, type FigReaderDiagnostic } from '#core/kiwi/fig/session/options'

@@ -9,10 +9,10 @@ describe('room links and IDs', () => {
     for (const input of [
       ROOM,
       `  ${ROOM}  `,
-      `https://app.openpencil.dev/rooms/${ROOM}`,
-      `https://app.openpencil.dev/rooms/${ROOM}/`,
-      `https://app.openpencil.dev/rooms/${ROOM}?test#layers`,
-      `open-pencil.localhost/rooms/${ROOM}#x`
+      `https://app.lawha.invalid/rooms/${ROOM}`,
+      `https://app.lawha.invalid/rooms/${ROOM}/`,
+      `https://app.lawha.invalid/rooms/${ROOM}?test#layers`,
+      `lawha.localhost/rooms/${ROOM}#x`
     ]) {
       expect(parseRoomInput(input)).toBe(ROOM)
     }
@@ -25,8 +25,8 @@ describe('room links and IDs', () => {
       ROOM.slice(1),
       `${ROOM}0`,
       ROOM.toUpperCase(),
-      `https://app.openpencil.dev/rooms/${ROOM.slice(0, 31)}!`,
-      `https://app.openpencil.dev/demo`
+      `https://app.lawha.invalid/rooms/${ROOM.slice(0, 31)}!`,
+      `https://app.lawha.invalid/demo`
     ]) {
       expect(parseRoomInput(input)).toBeNull()
     }

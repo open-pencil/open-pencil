@@ -1,5 +1,5 @@
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { compileScript } from '@open-pencil/core/tools'
+import type { FigmaAPI } from '@lawha/core/figma-api'
+import { compileScript } from '@lawha/core/tools'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { automationUndoLabel, executeWithDocumentUndo } from '@/app/automation/execution/editor'

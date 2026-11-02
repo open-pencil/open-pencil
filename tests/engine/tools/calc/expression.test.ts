@@ -4,7 +4,7 @@ import {
   CALC_FUNCTIONS,
   CalcSyntaxError,
   evaluateExpression
-} from '@open-pencil/core/tools/calc/expression'
+} from '@lawha/core/tools/calc/expression'
 
 describe('calc expression evaluator', () => {
   test.each([

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import {

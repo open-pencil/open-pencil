@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { computeAllLayouts } from '@open-pencil/core/layout'
+import { computeAllLayouts } from '@lawha/core/layout'
 import {
   allRules,
   applyLintFixes,
@@ -11,7 +11,7 @@ import {
   presets,
   safeFixes,
   type LintMessage
-} from '@open-pencil/core/lint'
+} from '@lawha/core/lint'
 
 import { bold, dim, fail, fmtList, ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, writeFigDocument } from '#cli/headless'

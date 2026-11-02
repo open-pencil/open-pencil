@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { withIcon } from '@open-pencil/scene-graph/icons'
+import { SceneGraph } from '@lawha/scene-graph'
+import { withIcon } from '@lawha/scene-graph/icons'
 
 import { LabelCache } from '#core/canvas/labels/cache'
 

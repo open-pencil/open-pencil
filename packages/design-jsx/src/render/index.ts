@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { REKA_ELEMENTS } from '../behaviours'
 import { componentPropNames } from '../components/instances'
@@ -144,7 +144,7 @@ async function renderJSX<Artwork>(
 
 /**
  * A Design JSX renderer bound to an engine. Rendering needs `services` for icons, inline
- * SVG, and layout; OpenPencil's engine provides them through `@open-pencil/core/design-jsx`.
+ * SVG, and layout; Lawha's engine provides them through `@lawha/core/design-jsx`.
  */
 export function createDesignJSXRenderer<Artwork>(services: DesignJSXServices<Artwork>) {
   return {

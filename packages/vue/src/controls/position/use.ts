@@ -5,9 +5,9 @@ import {
   panelPositionChange,
   panelRotation,
   panelRotationChange
-} from '@open-pencil/core/geometry'
-import type { NumericNodeProperty, SceneNode } from '@open-pencil/scene-graph'
-import { layerRotates } from '@open-pencil/scene-graph/generated'
+} from '@lawha/core/geometry'
+import type { NumericNodeProperty, SceneNode } from '@lawha/scene-graph'
+import { layerRotates } from '@lawha/scene-graph/generated'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
 import { usePropScrub } from '#vue/controls/prop-scrub/use'

@@ -3,7 +3,7 @@ import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka
 import { tv } from 'tailwind-variants'
 import { computed, useId } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useCollaborationMessages } from '@lawha/vue/i18n'
 
 import type { VoiceCallError } from '@/app/collab/voice/call'
 import AvatarStack from '@/components/presence/AvatarStack.vue'

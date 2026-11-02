@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useSettingsMessages } from '@lawha/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 

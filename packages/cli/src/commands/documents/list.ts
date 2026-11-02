@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
+import type { AutomationDocumentSummary } from '@lawha/core/rpc'
 
 import { rpc } from '#cli/app/client'
 import { bold, entity, fmtList, kv, printError } from '#cli/format'

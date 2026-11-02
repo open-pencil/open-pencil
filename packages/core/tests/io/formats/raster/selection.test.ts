@@ -2,9 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { initCanvasKit, renderNodesToImage } from '@lawha/core/io/formats/raster'
+import { SceneGraph, type Effect } from '@lawha/scene-graph'
 
 const ck = await initCanvasKit()
 

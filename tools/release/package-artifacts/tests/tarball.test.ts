@@ -53,7 +53,7 @@ describe('inspectTarball', () => {
 
   /** Build the archive in-process, so the test never depends on a tar executable. */
   async function createTarball(files: Record<string, string>): Promise<string> {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-tarball-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-tarball-'))
     temporaryDirectories.push(root)
     const tarball = join(root, 'package.tgz')
     await writeFile(

@@ -8,8 +8,8 @@ import { join } from 'node:path'
 import { delay } from 'es-toolkit'
 import type { Plugin } from 'vite'
 
-import { serializeDisabledTools } from '@open-pencil/mcp/tools'
-import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
+import { serializeDisabledTools } from '@lawha/mcp/tools'
+import { platformHasUnixSockets } from '@lawha/mcp/transport'
 
 import {
   DEV_MCP_RESTART_PATH,
@@ -34,20 +34,20 @@ export function createAutomationEnvironment(
   const { authToken, baseEnv, configuration, corsOrigin, discoveryPath, httpPort, socketPath } =
     options
   const childEnv = { ...baseEnv }
-  delete childEnv.OPENPENCIL_MCP_SOCKET
-  delete childEnv.OPENPENCIL_MCP_AUTH_TOKEN
+  delete childEnv.LAWHA_MCP_SOCKET
+  delete childEnv.LAWHA_MCP_AUTH_TOKEN
   const environment: NodeJS.ProcessEnv = {
     ...childEnv,
     PORT: String(httpPort),
-    OPENPENCIL_MCP_TCP: '1',
-    OPENPENCIL_MCP_AUTH_TOKEN: configuration.authenticationEnabled ? (authToken ?? '') : '',
-    OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin,
-    OPENPENCIL_MCP_ROOT: configuration.rootDirectory.trim() || process.cwd(),
-    OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(configuration.disabledTools),
-    OPENPENCIL_MCP_SCOPE: configuration.scope
+    LAWHA_MCP_TCP: '1',
+    LAWHA_MCP_AUTH_TOKEN: configuration.authenticationEnabled ? (authToken ?? '') : '',
+    LAWHA_MCP_CORS_ORIGIN: corsOrigin,
+    LAWHA_MCP_ROOT: configuration.rootDirectory.trim() || process.cwd(),
+    LAWHA_MCP_DISABLED_TOOLS: serializeDisabledTools(configuration.disabledTools),
+    LAWHA_MCP_SCOPE: configuration.scope
   }
-  if (socketPath) environment.OPENPENCIL_MCP_SOCKET = socketPath
-  if (discoveryPath) environment.OPENPENCIL_MCP_DISCOVERY_PATH = discoveryPath
+  if (socketPath) environment.LAWHA_MCP_SOCKET = socketPath
+  if (discoveryPath) environment.LAWHA_MCP_DISCOVERY_PATH = discoveryPath
   return environment
 }
 
@@ -193,7 +193,7 @@ export function automationPlugin(
   }
 
   async function startChild(): Promise<void> {
-    const runtimeDir = join(tmpdir(), 'open-pencil-mcp', safeRuntimeId(options.runtimeId))
+    const runtimeDir = join(tmpdir(), 'lawha-mcp', safeRuntimeId(options.runtimeId))
     await mkdir(runtimeDir, { recursive: true, mode: 0o700 })
     const socketPath = platformHasUnixSockets() ? join(runtimeDir, 'mcp.sock') : null
     const discoveryPath = join(runtimeDir, 'mcp.json')
@@ -202,7 +202,7 @@ export function automationPlugin(
     const spawnArgs = options.portlessServiceName
       ? ['run', '--name', options.portlessServiceName, ...command]
       : command.slice(1)
-    const readyMarker = `open-pencil-ready:${randomUUID()}`
+    const readyMarker = `lawha-ready:${randomUUID()}`
     const spawned = spawn(spawnCommand, spawnArgs, {
       stdio: ['ignore', 'inherit', 'pipe'],
       env: {
@@ -215,7 +215,7 @@ export function automationPlugin(
           httpPort: options.httpPort,
           socketPath
         }),
-        OPENPENCIL_MCP_READY_MARKER: readyMarker
+        LAWHA_MCP_READY_MARKER: readyMarker
       }
     })
     const ready = waitForChildReady(spawned, readyMarker)
@@ -230,7 +230,7 @@ export function automationPlugin(
       const text = data.toString()
       if (text.includes('EADDRINUSE')) {
         console.error(
-          `\x1b[31m[MCP] MCP bind failed (${options.browserURL}${socketPath ? ` or socket ${socketPath}` : ''}). Is another OpenPencil instance running?\x1b[0m`
+          `\x1b[31m[MCP] MCP bind failed (${options.browserURL}${socketPath ? ` or socket ${socketPath}` : ''}). Is another Lawha instance running?\x1b[0m`
         )
         spawned.kill()
         if (child === spawned) child = null
@@ -267,7 +267,7 @@ export function automationPlugin(
   }
 
   return {
-    name: 'open-pencil-automation',
+    name: 'lawha-automation',
     async configureServer(server) {
       server.middlewares.use(DEV_MCP_RESTART_PATH, (request, response, next) => {
         if (request.method !== 'POST') {

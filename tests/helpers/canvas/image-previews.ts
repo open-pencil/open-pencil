@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test'
 
 export async function createImagePreviewScene(page: Page) {
   await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const canvas = document.createElement('canvas')
     canvas.width = 512
@@ -56,7 +56,7 @@ export async function createImagePreviewScene(page: Page) {
 
 export async function imagePreviewState(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const renderer = store?.canvasRenderers.find((value) => value.tracksSceneSettlement)
     if (!renderer || !store) throw new Error('Scene renderer unavailable')
     return {

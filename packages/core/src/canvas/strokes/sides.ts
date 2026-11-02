@@ -1,6 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { SceneNode, Stroke } from '@lawha/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { nodeHasSmoothCorners } from '#core/canvas/shapes'

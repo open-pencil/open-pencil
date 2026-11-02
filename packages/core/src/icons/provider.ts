@@ -1,7 +1,7 @@
 import { iconToHTML, iconToSVG } from '@iconify/utils'
 import { chunk } from 'es-toolkit'
 
-import type { IconOptions } from '@open-pencil/scene-graph/icons'
+import type { IconOptions } from '@lawha/scene-graph/icons'
 
 import { createIconifyAPIClient } from './api'
 import { buildIconData } from './svg'

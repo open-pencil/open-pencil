@@ -4,8 +4,8 @@ import {
   createLibraryRevision,
   createSelectiveLibraryRevision,
   discoverPublishableLibraryChanges
-} from '@open-pencil/core/library'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/core/library'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 function source(buttonWidth: number, includeCard = true) {
   const graph = new SceneGraph()

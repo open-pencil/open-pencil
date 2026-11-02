@@ -8,23 +8,23 @@ import type {
   DrawIOPage,
   DrawIOPoint,
   DrawIOStyle
-} from '@open-pencil/drawio'
-import type { ConnectorEndpoint, SceneGraph, SceneNode, StrokeCap } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+} from '@lawha/drawio'
+import type { ConnectorEndpoint, SceneGraph, SceneNode, StrokeCap } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
 import {
   connectorRoute,
   connectorRouteEnds,
   connectorSublayers,
   curveMidpoint
-} from '@open-pencil/scene-graph/connectors'
-import { getParentWorldMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+} from '@lawha/scene-graph/connectors'
+import { getParentWorldMatrix, getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import {
   isGeneratedFrame,
   shapeWithTextLabel,
   stickySublayers
-} from '@open-pencil/scene-graph/generated'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/generated'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG } from '#core/io/formats/svg'

@@ -1,9 +1,9 @@
 import { computed } from 'vue'
 
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { colorToHex } from '@lawha/scene-graph/color'
+import { STICKY_COLORS } from '@lawha/scene-graph/generated'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { useI18n } from '@lawha/vue/i18n'
 
 export type StickyColorName = keyof typeof STICKY_COLORS
 

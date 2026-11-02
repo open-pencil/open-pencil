@@ -1,4 +1,4 @@
-import { executeRPCCommand } from '@open-pencil/core/rpc'
+import { executeRPCCommand } from '@lawha/core/rpc'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 

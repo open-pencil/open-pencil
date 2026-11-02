@@ -7,9 +7,9 @@ import {
 } from 'reka-ui'
 import { computed, ref, useTemplateRef } from 'vue'
 
-import type { CommentThread } from '@open-pencil/scene-graph'
-import { liveReplies } from '@open-pencil/scene-graph/comments'
-import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import type { CommentThread } from '@lawha/scene-graph'
+import { liveReplies } from '@lawha/scene-graph/comments'
+import { useCommentMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'

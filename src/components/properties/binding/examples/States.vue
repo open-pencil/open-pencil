@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { Variable } from '@open-pencil/scene-graph'
+import type { Variable } from '@lawha/scene-graph'
 import type {
   BindingProvider,
   BindingState,
   BindingTarget
-} from '@open-pencil/vue/controls/binding-provider'
+} from '@lawha/vue/controls/binding-provider'
 
 import Field from './Field.vue'
 

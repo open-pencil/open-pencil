@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode, Variable } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode, Variable } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { collectionVariables, variableCSSNames, variableNamespace } from './names'
 import { modeAttribute } from './stylesheet'

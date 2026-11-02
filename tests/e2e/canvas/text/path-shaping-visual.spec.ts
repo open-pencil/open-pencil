@@ -8,7 +8,7 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
  */
 test('reflows text on a path with its kerning, ligatures, and marks', async () => {
   const reflowed = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const box = { x: 40, y: 40, width: 400, height: 100 }
     const node = store.graph.createNode('TEXT', store.state.currentPageId, {

@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 
-import { decodeVectorNetworkBlob, encodeVectorNetworkBlob } from '@open-pencil/fig/node-change'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { decodeVectorNetworkBlob, encodeVectorNetworkBlob } from '@lawha/fig/node-change'
+import type { VectorNetwork } from '@lawha/scene-graph'
 
 // ---------------------------------------------------------------------------
 // vectorNetworkBlob — precision and handleMirroring round-trip

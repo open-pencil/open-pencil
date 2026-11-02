@@ -3,8 +3,8 @@ import { basename, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { layoutAuthoredNodes } from '@open-pencil/core/layout'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
+import { layoutAuthoredNodes } from '@lawha/core/layout'
 
 import { requireFile } from '#cli/app/client'
 import { FONT_POLICIES, reportFontStatus } from '#cli/commands/export/font-policy'

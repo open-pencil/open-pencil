@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
-import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCanvasKit, renderNodesToImage } from '@lawha/core/io/formats/raster'
+import { SceneGraph } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
+import { readIcon, readIconTint } from '@lawha/scene-graph/icons'
 
 import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import { buildIconData } from '#core/icons/svg'

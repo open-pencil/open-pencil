@@ -1,15 +1,15 @@
 {
-  "name": "@open-pencil/mcp",
+  "name": "@lawha/mcp",
   "version": "0.17.0-beta.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/mcp"
   },
   "bin": {
-    "openpencil-mcp": "./dist/stdio.mjs",
-    "openpencil-mcp-http": "./dist/index.mjs"
+    "lawha-mcp": "./dist/stdio.mjs",
+    "lawha-mcp-http": "./dist/index.mjs"
   },
   "files": [
     "dist",
@@ -65,8 +65,8 @@
   "dependencies": {
     "@hono/node-server": "^1.19.17",
     "@modelcontextprotocol/server": "^2.0.0",
-    "@open-pencil/core": "workspace:*",
-    "@open-pencil/scene-graph": "workspace:*",
+    "@lawha/core": "workspace:*",
+    "@lawha/scene-graph": "workspace:*",
     "@valibot/to-json-schema": "^1.8.0",
     "es-toolkit": "^1.52.0",
     "hono": "^4.13.13",

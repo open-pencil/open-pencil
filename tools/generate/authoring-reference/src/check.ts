@@ -1,7 +1,7 @@
 import { staleReferences } from '#authoring-reference/artifacts'
 import dedent from 'dedent'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const stale = await staleReferences(await resolveWorkspaceRoot(process.cwd()))
 if (stale.length > 0) {

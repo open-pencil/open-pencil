@@ -13,8 +13,8 @@ import {
   type LocalFontAccessState,
   type WebFontProviderId,
   UnsupportedFontFormatError
-} from '@open-pencil/core/text'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/text'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { browserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
 import {

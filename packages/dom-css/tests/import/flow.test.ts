@@ -2,8 +2,8 @@ import { describe, expect, it } from 'bun:test'
 
 import { createHeadlessCSSRuntime, htmlToSceneGraph } from '#dom-css/index'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { layoutSizing } from '@lawha/scene-graph/layout'
 
 async function importHTML(html: string) {
   const graph = await htmlToSceneGraph(html, { runtime: createHeadlessCSSRuntime() })

@@ -1,5 +1,5 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { createShaderPaint, withShaderPaints } from '@open-pencil/scene-graph/shaders'
+import { SceneGraph } from '@lawha/scene-graph'
+import { createShaderPaint, withShaderPaints } from '@lawha/scene-graph/shaders'
 
 /** The preset the hero plays: an aurora with a few props, and film grain over it. */
 export const HERO_PRESET = {

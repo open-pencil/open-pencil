@@ -1,15 +1,15 @@
 import { convertToHsb, convertToHsl, convertToRgb } from 'reka-ui'
 import type { Color as RekaColor, HSBColor, HSLColor, RGBColor } from 'reka-ui'
 
-import type { Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, Stroke } from '@lawha/scene-graph'
 import {
   colorToCSS,
   okhclToRGBA,
   rgba255ToColor,
   rgbaToOkHCL
-} from '@open-pencil/scene-graph/color'
-import type { OkHCLColor } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/color'
+import type { OkHCLColor } from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type {
   HSBChannel,

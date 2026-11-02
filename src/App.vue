@@ -6,8 +6,8 @@ import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { provideEditor } from '@open-pencil/vue'
-import { localeDirection, useI18n } from '@open-pencil/vue/i18n'
+import { provideEditor } from '@lawha/vue'
+import { localeDirection, useI18n } from '@lawha/vue/i18n'
 
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
@@ -38,7 +38,7 @@ const router = useRouter()
 const dir = computed(() => localeDirection(locale.value))
 
 useHead({
-  titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
+  titleTemplate: (title) => (title ? `${title} — Lawha` : 'Lawha'),
   htmlAttrs: {
     lang: locale,
     dir,

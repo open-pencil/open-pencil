@@ -1,6 +1,6 @@
 import { computed, ref, shallowRef, triggerRef } from 'vue'
 
-import { type EditorState, copyEditorViewState, pickEditorViewState } from '@open-pencil/core'
+import { type EditorState, copyEditorViewState, pickEditorViewState } from '@lawha/core'
 
 import {
   closePaneNode,

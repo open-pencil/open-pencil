@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
-import { createCloudAPIClient } from '@open-pencil/cloud/client'
+import { createCloudAPIClient } from '@lawha/cloud/client'
 
 import { StorageRevisionConflictError } from '@/app/integrations/storage'
 import { createCloudStorageAdapter } from '@/app/integrations/storage/cloud/adapter'

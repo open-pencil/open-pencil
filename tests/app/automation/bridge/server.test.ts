@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { agentStarted, endAgentSession, type AgentSession } from '@/app/automation/agents'
 import { connectAutomation } from '@/app/automation/bridge/server'

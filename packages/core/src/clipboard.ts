@@ -2,7 +2,7 @@ import {
   embedClipboardImages,
   encodeFigmaClipboard,
   type FigmaClipboardAssetType
-} from '@open-pencil/fig/clipboard'
+} from '@lawha/fig/clipboard'
 import {
   figmaLineHeight,
   placeSlotContent,
@@ -11,14 +11,14 @@ import {
   sceneNodeToKiwi,
   makeDocumentNodeChange,
   makeCanvasNodeChange
-} from '@open-pencil/fig/node-change'
-import type { GUID } from '@open-pencil/kiwi/fig'
-import { initCodec, type NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { derivedAssetKey, derivedAssetVersion } from '@open-pencil/scene-graph/asset-keys'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-import { randomInt } from '@open-pencil/scene-graph/random'
-import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+} from '@lawha/fig/node-change'
+import type { GUID } from '@lawha/kiwi/fig'
+import { initCodec, type NodeChange as KiwiNodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { derivedAssetKey, derivedAssetVersion } from '@lawha/scene-graph/asset-keys'
+import { fractionalPosition } from '@lawha/scene-graph/order-keys'
+import { randomInt } from '@lawha/scene-graph/random'
+import { ownsSlotContent } from '@lawha/scene-graph/slots'
 
 import {
   collectComponentPropertyIds,
@@ -63,7 +63,7 @@ export function importClipboardNodes(
 /**
  * The document as the clipboard writes it. Figma names the variables and collections a paste
  * uses by key, and keeps a binding to one it knows only by key as a remote variable, as it does
- * for its own clipboard; variables made in OpenPencil have no key, so they take one derived from
+ * for its own clipboard; variables made in Lawha have no key, so they take one derived from
  * their ID here, for this copy only. Figma keeps the first value it pasted for a key and version,
  * so the version follows their content and an edited variable pastes with its new value.
  */
@@ -253,8 +253,8 @@ async function writeFigmaClipboardHTML(
 }
 
 export {
-  buildOpenPencilClipboardHTML,
-  parseOpenPencilClipboard,
-  type OpenPencilClipboardData,
+  buildLawhaClipboardHTML,
+  parseLawhaClipboard,
+  type LawhaClipboardData,
   type TextPictureBuilder
-} from './clipboard/openpencil'
+} from './clipboard/lawha'

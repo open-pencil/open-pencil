@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, type VariableValue } from '@open-pencil/scene-graph'
+import { SceneGraph, type VariableValue } from '@lawha/scene-graph'
 import {
   mapVariableValueReferences,
   variablesResolvingThrough
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 function setup() {
   const graph = new SceneGraph()

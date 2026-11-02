@@ -5,7 +5,7 @@ import { guid } from '#fig-tests/helpers/guid'
 import { checkpointComponent } from '#fig/document/component/checkpoint'
 import { createFigDocumentSession, materializeDocument } from '#fig/document/materialize'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('constructs nested definitions once under their actual component parent', () => {
   const changes: NodeChange[] = [

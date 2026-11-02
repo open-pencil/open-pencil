@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 
-import type { Tool, EditorToolDef } from '@open-pencil/core'
+import type { Tool, EditorToolDef } from '@lawha/core'
 
 const CATEGORY_COUNT = 3
 

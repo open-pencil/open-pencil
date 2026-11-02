@@ -1,4 +1,4 @@
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 import { missingSupportSentinels } from './baseline'
 import { describeEnvironment, type DesktopFacts, type SupportEnvironment } from './detect'

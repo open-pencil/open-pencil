@@ -1,5 +1,5 @@
-import { createFigDocumentSession, type FigSessionCheckpoint } from '@open-pencil/fig'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { createFigDocumentSession, type FigSessionCheckpoint } from '@lawha/fig'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { readerSessionOptions, type FigReaderDiagnostic } from '#core/kiwi/fig/session/options'
 

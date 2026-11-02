@@ -1,6 +1,6 @@
 import type { VNode } from 'vue'
 
-import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
+import type { BlendMode, SceneNode } from '@lawha/scene-graph'
 
 import type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 import type { MixedValue } from '#vue/controls/node-props/use'

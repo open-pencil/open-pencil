@@ -46,7 +46,7 @@ describe('Storybook export rules', () => {
   })
 
   test('read a rules file, and reject one that is not valid JSON or not rules', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-rules-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-rules-'))
     const good = join(dir, 'good.json')
     await writeFile(good, JSON.stringify({ rules: [{ match: '**', stories: 'single' }] }))
     expect(await readStoryRules(good)).toEqual({ rules: [{ match: '**', stories: 'single' }] })

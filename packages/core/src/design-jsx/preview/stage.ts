@@ -1,5 +1,5 @@
-import type { TreeNode } from '@open-pencil/design-jsx'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { TreeNode } from '@lawha/design-jsx'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import {
   finishRenderPlacement,

@@ -1,6 +1,6 @@
-import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { FigmaAPI, type FigmaNodeProxy } from '@lawha/core/figma-api'
+import { SceneGraph, type Fill } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 // Plugin API support for the render and colour suites still under tests/engine. Core's own Plugin
 // API tests use #core-tests/helpers/figma-api, which root tests cannot address; this goes when

@@ -1,14 +1,14 @@
 import { sumBy } from 'es-toolkit'
 import { filename } from 'pathe/utils'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import type { Fill } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import {
   computeImageHash,
   IMPORTABLE_RASTER_TYPES,
   isSVGFile
-} from '@open-pencil/scene-graph/images'
-import Matrix from '@open-pencil/scene-graph/matrix'
+} from '@lawha/scene-graph/images'
+import Matrix from '@lawha/scene-graph/matrix'
 
 import { TRANSPARENT } from '#core/constants'
 import { resolvePasteTarget } from '#core/editor/clipboard/paste/target'
@@ -197,7 +197,7 @@ export function createClipboardAssetActions(
    * the point; false when the text is not one.
    */
   async function pasteMermaid(text: string, cx: number, cy: number): Promise<boolean> {
-    const { detectMermaidDiagram, parseFlowchart } = await import('@open-pencil/mermaid')
+    const { detectMermaidDiagram, parseFlowchart } = await import('@lawha/mermaid')
     if (!detectMermaidDiagram(text)) return false
     const chart = parseFlowchart(text)
     const { addFlowchart } = await import('#core/io/formats/mermaid')

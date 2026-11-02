@@ -2,7 +2,7 @@ import { afterEach, describe, expect, jest, test } from 'bun:test'
 
 import { nextTick, watch } from 'vue'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
 

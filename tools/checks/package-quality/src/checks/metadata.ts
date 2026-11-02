@@ -5,7 +5,7 @@ import {
   readPackageManifest,
   validateManifest,
   type PackageDiagnostic
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 
 export async function validatePackageMetadata(root: string): Promise<PackageDiagnostic[]> {
   const packages = await discoverPublicPackages(root)

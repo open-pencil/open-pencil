@@ -8,7 +8,7 @@ import * as v from 'valibot'
  */
 export const CLOUD_AI_CONTRACT_VERSION = '1' as const
 /** The `aud` of every token Cloud signs for an AI service. */
-export const CLOUD_AI_TOKEN_AUDIENCE = 'openpencil-ai' as const
+export const CLOUD_AI_TOKEN_AUDIENCE = 'lawha-ai' as const
 /** Where Cloud publishes the public keys an AI service verifies its tokens with. */
 export const CLOUD_AI_JWKS_PATH = '/.well-known/jwks.json' as const
 

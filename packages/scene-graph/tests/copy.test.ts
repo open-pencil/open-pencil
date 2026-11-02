@@ -7,7 +7,7 @@ import type {
   StyleRun,
   GeometryPath,
   VectorNetwork
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   copyFill,
   copyFills,
@@ -17,7 +17,7 @@ import {
   cloneVectorNetwork,
   copyGeometryPaths,
   scaleGeometryPaths
-} from '@open-pencil/scene-graph/copy'
+} from '@lawha/scene-graph/copy'
 
 import { expectDefined } from './helpers/assert'
 

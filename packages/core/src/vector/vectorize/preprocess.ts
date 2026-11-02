@@ -1,6 +1,6 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import type { Size } from '@open-pencil/scene-graph/primitives'
+import type { Size } from '@lawha/scene-graph/primitives'
 
 const MIN_DIMENSION = 256
 const MAX_DIMENSION = 4096

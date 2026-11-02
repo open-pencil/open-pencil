@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CloudDeviceAuthorizationError } from '@open-pencil/cloud/client'
+import { CloudDeviceAuthorizationError } from '@lawha/cloud/client'
 
 import {
   createCloudDeviceSignIn,

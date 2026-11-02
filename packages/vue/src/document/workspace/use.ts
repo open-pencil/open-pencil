@@ -1,7 +1,7 @@
 import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, readonly, ref, shallowRef, type Ref } from 'vue'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { IS_BROWSER } from '@lawha/core/constants'
 
 import { createDocumentPreviews } from './previews'
 

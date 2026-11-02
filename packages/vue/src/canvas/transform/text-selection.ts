@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 export function handleTextSelectMove(editor: Editor, cx: number, cy: number) {
   const textEditor = editor.textEditor

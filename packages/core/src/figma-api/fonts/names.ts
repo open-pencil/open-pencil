@@ -1,6 +1,6 @@
-import type { FontVariation } from '@open-pencil/scene-graph'
-import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
-import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import type { FontVariation } from '@lawha/scene-graph'
+import type { FontFamilyStyle } from '@lawha/scene-graph/font-style'
+import { parseFontStyle } from '@lawha/scene-graph/font-style'
 
 import {
   checkedVariation,

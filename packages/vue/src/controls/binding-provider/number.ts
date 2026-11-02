@@ -1,8 +1,8 @@
-import type { Editor } from '@open-pencil/core'
-import type { VariableCollection } from '@open-pencil/scene-graph'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import type { Editor } from '@lawha/core'
+import type { VariableCollection } from '@lawha/scene-graph'
+import { randomHex } from '@lawha/scene-graph/random'
 
-import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
+import { useLawhaBindingProvider } from '#vue/controls/binding-provider/lawha'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
 
 import { prepareModeEdit } from './mode-edit'
@@ -57,7 +57,7 @@ function resolveNumber(editor: Editor, id: string, target?: BindingTarget) {
 }
 
 export function useNumberBindingProvider() {
-  return useOpenPencilBindingProvider<number>({
+  return useLawhaBindingProvider<number>({
     types: ['FLOAT'],
     resolve: resolveNumber,
     prepareEdit: (editor, id, target) =>

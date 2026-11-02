@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
-import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import { createEditor } from '@lawha/core'
+import { computeAllLayouts, setTextMeasurer } from '@lawha/core/layout'
+import { colorToHex } from '@lawha/scene-graph/color'
+import { shapeWithTextLabel } from '@lawha/scene-graph/generated'
+import { lineHeightPixels } from '@lawha/scene-graph/text'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
 

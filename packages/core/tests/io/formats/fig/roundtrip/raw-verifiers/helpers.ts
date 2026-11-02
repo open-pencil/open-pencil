@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@lawha/scene-graph/primitives'
 
 import type { VerifierContext } from '../helpers'
 

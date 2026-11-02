@@ -1,8 +1,8 @@
 import { fromUint8Array, toUint8Array } from 'js-base64'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { reencodeImage } from '@open-pencil/core/io/formats/raster'
-import type { ModelImage } from '@open-pencil/core/tools'
+import { getCanvasKit } from '@lawha/core/canvaskit'
+import { reencodeImage } from '@lawha/core/io/formats/raster'
+import type { ModelImage } from '@lawha/core/tools'
 
 /** The export default for WebP, measured on design renders against their PNGs in `ai-chat.md`. */
 const WEBP_QUALITY = 90

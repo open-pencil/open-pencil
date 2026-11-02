@@ -1,11 +1,11 @@
 ---
 title: Photos
-description: Fill a layer with a free stock photo from Unsplash or Pexels in OpenPencil.
+description: Fill a layer with a free stock photo from Unsplash or Pexels in Lawha.
 ---
 
 # Photos
 
-OpenPencil searches the free photo libraries of [Unsplash](https://unsplash.com) and [Pexels](https://www.pexels.com) from a layer's image fill. Both let anyone use their photos for free, and both ask for an API key to search them, which is free too. The key stays on your device.
+Lawha searches the free photo libraries of [Unsplash](https://unsplash.com) and [Pexels](https://www.pexels.com) from a layer's image fill. Both let anyone use their photos for free, and both ask for an API key to search them, which is free too. The key stays on your device.
 
 Searching and using photos needs a network connection to the service you search.
 
@@ -26,6 +26,6 @@ Pexels has paused issuing new API keys. If you already have a Pexels key, it sti
 
 ## Credits and Keys
 
-Unsplash and Pexels ask that photos are credited to the people who took them; the picker names the photographer of each photo. OpenPencil tells Unsplash when one of its photos is used, as its API terms require.
+Unsplash and Pexels ask that photos are credited to the people who took them; the picker names the photographer of each photo. Lawha tells Unsplash when one of its photos is used, as its API terms require.
 
 Change or remove the keys in **Settings → Media**. The AI chat's stock photo tool uses the same keys.

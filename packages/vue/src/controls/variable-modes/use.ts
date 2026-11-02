@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { setVariableMode, variableModeChoices } from '#vue/controls/variable-modes/helpers'
 import { useEditor } from '#vue/editor/context'

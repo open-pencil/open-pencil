@@ -8,16 +8,16 @@ import { developmentSiteFiles, nodeSiteFiles } from '#cloud/runtime/node/site'
 let directory = ''
 
 beforeAll(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'openpencil-site-'))
+  directory = await mkdtemp(join(tmpdir(), 'lawha-site-'))
   await mkdir(join(directory, 'assets'))
   await writeFile(join(directory, 'assets', 'cloud-abc.js'), 'export {}')
   await writeFile(join(directory, 'demo.fig'), 'fig-kiwi')
-  await writeFile(join(tmpdir(), 'openpencil-site-outside.txt'), 'secret')
+  await writeFile(join(tmpdir(), 'lawha-site-outside.txt'), 'secret')
 })
 
 afterAll(async () => {
   await rm(directory, { recursive: true, force: true })
-  await rm(join(tmpdir(), 'openpencil-site-outside.txt'), { force: true })
+  await rm(join(tmpdir(), 'lawha-site-outside.txt'), { force: true })
 })
 
 const request = new Request('https://cloud.example/')
@@ -33,7 +33,7 @@ describe('Node site files', () => {
 
   test('never reads outside its directory or answers missing files', async () => {
     const files = nodeSiteFiles(directory)
-    expect(await files('/..%2Fopenpencil-site-outside.txt', request)).toBeNull()
+    expect(await files('/..%2Flawha-site-outside.txt', request)).toBeNull()
     expect(await files('/assets/missing.js', request)).toBeNull()
   })
 

@@ -1,4 +1,4 @@
-import type { Effect } from '@open-pencil/scene-graph'
+import type { Effect } from '@lawha/scene-graph'
 
 import { mapBlendMode } from './paints'
 import type { PenEffect, PenNode } from './schema'

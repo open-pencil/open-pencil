@@ -3,12 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import { bytesToHex, hexToBytes } from '#fig/node-change/bytes'
 import { figImageEntries, nameImagesForFigma } from '#fig/node-change/images'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { computeImageHash } from '@lawha/scene-graph/images'
 import {
-  OPEN_PENCIL_PLUGIN_DATA,
-  OPEN_PENCIL_PLUGIN_ID
-} from '@open-pencil/scene-graph/plugin-data'
+  LAWHA_PLUGIN_DATA,
+  LAWHA_PLUGIN_ID
+} from '@lawha/scene-graph/plugin-data'
 
 const STILL = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3])
 /** A shader still's own name, which is not the SHA-1 of its bytes. */
@@ -27,9 +27,9 @@ function records(): NodeChange[] {
       fillPaints: [imagePaint(STILL_NAME)],
       pluginData: [
         {
-          pluginID: OPEN_PENCIL_PLUGIN_ID,
-          key: OPEN_PENCIL_PLUGIN_DATA.shader.key,
-          value: OPEN_PENCIL_PLUGIN_DATA.shader.encode({ image: STILL_NAME, preset: PRESET })
+          pluginID: LAWHA_PLUGIN_ID,
+          key: LAWHA_PLUGIN_DATA.shader.key,
+          value: LAWHA_PLUGIN_DATA.shader.encode({ image: STILL_NAME, preset: PRESET })
         }
       ],
       textData: { characters: '', styleOverrideTable: [{ fillPaints: [imagePaint(STILL_NAME)] }] }
@@ -58,7 +58,7 @@ describe('nameImagesForFigma', () => {
     nameImagesForFigma(changes, new Map([[STILL_NAME, STILL]]))
     const entry = changes[0].pluginData?.[0]
 
-    expect(OPEN_PENCIL_PLUGIN_DATA.shader.decode(entry?.value)).toEqual({
+    expect(LAWHA_PLUGIN_DATA.shader.decode(entry?.value)).toEqual({
       image: FIGMA_NAME,
       preset: PRESET
     })

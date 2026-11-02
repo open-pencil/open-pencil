@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import {
   claimSlotContent,
   clearSlotContent,
@@ -8,7 +8,7 @@ import {
   resetSlotContent,
   slotPropertyId,
   slotScope
-} from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph/slots'
 
 /** A component set with a Small and a Large variant, each with a `Content` slot. */
 function panel(graph: SceneGraph, page: SceneNode) {

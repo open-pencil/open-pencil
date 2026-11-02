@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import {
   discoverPublicPackages,
   orderPackagesByDependencies
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 
 import { measurePhase } from '../timing'
 import { verifyArtifactConsumers } from './consumer'
@@ -13,7 +13,7 @@ import { verifyPackagingGuards } from './guards'
 import { packPublicPackages } from './pack'
 
 export async function verifyPackedPackages(root: string): Promise<void> {
-  const temporaryRoot = await mkdtemp(join(tmpdir(), 'open-pencil-package-smoke-'))
+  const temporaryRoot = await mkdtemp(join(tmpdir(), 'lawha-package-smoke-'))
   try {
     // Broken fixture manifests must fail before the same checks vouch for real packages.
     await measurePhase('packaging guards', () => verifyPackagingGuards())

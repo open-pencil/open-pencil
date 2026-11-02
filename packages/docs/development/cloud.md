@@ -1,10 +1,10 @@
 # Cloud Architecture
 
-OpenPencil Cloud is an optional, self-hostable backend for storing, sharing, and collaborating on
+Lawha Cloud is an optional, self-hostable backend for storing, sharing, and collaborating on
 documents. The editor stays local-first: opening, editing, and saving local files never needs this
 package, a network connection, or an account.
 
-`@open-pencil/cloud` holds the network contracts, a typed client, a runtime-neutral Hono server, and
+`@lawha/cloud` holds the network contracts, a typed client, a runtime-neutral Hono server, and
 two runtimes that wire PostgreSQL, S3-compatible storage, email, and background work into it: a Node
 process, and Cloudflare Workers.
 
@@ -25,16 +25,16 @@ flowchart LR
 
 | Subpath                           | Contents                                                                   |
 | --------------------------------- | -------------------------------------------------------------------------- |
-| `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
-| `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
-| `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
-| `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
-| `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
+| `@lawha/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
+| `@lawha/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
+| `@lawha/cloud/email`        | Vue Email rendering for transactional mail                                 |
+| `@lawha/cloud/server`       | Hono routes and services; every dependency is injected                     |
+| `@lawha/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 
 The Cloudflare runtime, `src/runtime/cloudflare`, isn't a subpath: Wrangler bundles it from
 a deployment folder, type-checked against the Workers types by its own `tsconfig.json`.
 `deploy/cloudflare` is the folder self-hosters copy; the official deployments are filled-in copies
-under `deploy/openpencil/<target>`, which the Deploy Cloud workflow deploys with the secrets of the
+under `deploy/lawha/<target>`, which the Deploy Cloud workflow deploys with the secrets of the
 `cloud-<target>` GitHub environment. A new target needs its folder, that environment, and an option
 in the workflow.
 
@@ -106,7 +106,7 @@ keeps on its own, and versions someone named (`document_version`, one per revisi
 ## Authentication and authorization
 
 Better Auth owns users, sessions, social sign-in, email and password, passkeys, TOTP, and recovery
-codes. OpenPencil owns workspace and document authorization. For clients that cannot host a browser
+codes. Lawha owns workspace and document authorization. For clients that cannot host a browser
 redirect, such as the desktop app, the server supports the OAuth device authorization flow and
 accepts the resulting bearer token.
 
@@ -251,14 +251,14 @@ back to the editor.
 framed. Both runtimes put the API behind the same Hono router, `createCloudServer` in
 `src/runtime/site`, which answers portal pages before the API, and only where the API returns 404
 the site's files, then the editor's `index.html` for any other page, so the editor's router keeps
-its own addresses. Node reads the build named by `OPENPENCIL_CLOUD_SITE_DIR`, and the Worker reads
+its own addresses. Node reads the build named by `LAWHA_CLOUD_SITE_DIR`, and the Worker reads
 its static assets. `bun run cloud:dev` builds nothing: it runs Vite's development server for the
 site under its own portless name and points the Node server at it with
-`OPENPENCIL_CLOUD_DEV_SITE_URL`, so the server takes each file from source, uncached, and pages
+`LAWHA_CLOUD_DEV_SITE_URL`, so the server takes each file from source, uncached, and pages
 update in place. Vite's update socket connects to its own address, since the server accepts
 WebSockets only for collaboration.
 
-The editor a server serves knows it from the build (`__OPENPENCIL_CLOUD_SITE__`). Before it boots,
+The editor a server serves knows it from the build (`__LAWHA_CLOUD_SITE__`). Before it boots,
 it asks who is signed in: an account that may use the server gets the editor, and anyone else at
 the root goes to `/welcome`, which signs them in, sends an account waiting for review to its
 standing page, or opens the editor without an account; this browser then keeps that choice.
@@ -267,11 +267,11 @@ Links to documents, shared files, and invitations always open the editor, which 
 and an unreachable server does too, since the editor works without it. The editor adds its server at startup and reaches it with the
 server's own sign-in session, and the portal leaves for the editor as a page load, never through
 its router. An official deployment builds the editor with its own address as
-`VITE_OPENPENCIL_OFFICIAL_CLOUD_URL`, so staging is the official server in its own editor.
+`VITE_LAWHA_OFFICIAL_CLOUD_URL`, so staging is the official server in its own editor.
 
 ## Editor client
 
-The editor treats each Cloud server as a profile of the `openpencil-cloud` storage provider, with a
+The editor treats each Cloud server as a profile of the `lawha-cloud` storage provider, with a
 workspace as the container, so the sync engine, recent files, and tabs handle Cloud documents the
 way they handle a bucket. A server's id is hex from its address, which also names its credentials.
 Email and password sign in inside the connect dialog wherever the server accepts the editor's
@@ -357,9 +357,9 @@ writer is down.
 
 ## Rate limiting
 
-OpenPencil routes use `hono-rate-limiter` with one PostgreSQL store that atomically increments
+Lawha routes use `hono-rate-limiter` with one PostgreSQL store that atomically increments
 hashed, namespaced keys, so limits hold across instances. Better Auth keeps its own limiter for
-`/api/auth/**`; those routes mount before OpenPencil middleware and are never counted twice.
+`/api/auth/**`; those routes mount before Lawha middleware and are never counted twice.
 
 ## Transactional email
 
@@ -436,8 +436,8 @@ the person may still open elsewhere.
 with the person, and the storage bucket are separate places in a sidebar, so Cloud does not crowd
 the local file list and one server's workspaces show at a time.
 
-**2026-10 · Cloud entry points wait for the official server's listing.** Settings → OpenPencil Cloud
-and Save to Cloud stay hidden until `cloud.openpencil.dev` answers discovery with a `listing` whose
+**2026-10 · Cloud entry points wait for the official server's listing.** Settings → Lawha Cloud
+and Save to Cloud stay hidden until `cloud.lawha.invalid` answers discovery with a `listing` whose
 minimum editor version this editor meets, a server is already connected on the device, or someone
 opened the editor with `?cloud=preview`. Launching, or pulling back, is a change to that server's
 config rather than an editor release, and a launch that needs a client change sets the minimum to the
@@ -467,9 +467,9 @@ says whether it is for a document or a workspace, so one link format, one email 
 editor dialog cover both, and the desktop app's link handling needs no new kind. Invitation
 continuations through OAuth stay document-only; the editor keeps a pending invitation itself.
 
-**2026-10 · Cloud links hand off to the desktop app through `openpencil://cloud`.** Links stay web
+**2026-10 · Cloud links hand off to the desktop app through `lawha://cloud`.** Links stay web
 addresses on the server's editor, so they work for anyone; the web editor on a computer offers the
-desktop app, which gets the web link as `openpencil://cloud?url=<link>#<secret>`. The native side
+desktop app, which gets the web link as `lawha://cloud?url=<link>#<secret>`. The native side
 checks the link, ID, and secret before the editor sees it. The secret is
 visible in the launch arguments to other processes on the same computer; pasting links into the
 app would avoid that at the cost of a manual step for everyone.
@@ -478,7 +478,7 @@ app would avoid that at the cost of a manual step for everyone.
 administration, and the pages the server serves are Apache-2.0 for its patent grant; the protocol
 in `contract` and `client` stays MIT, so the editor and other clients stay MIT. `REUSE.toml` maps
 the paths rather than a separate package, which would have moved the protocol out of
-`packages/cloud` for no legal gain. `VITE_OPENPENCIL_CLOUD=off` swaps Cloud's two entry points for
+`packages/cloud` for no legal gain. `VITE_LAWHA_CLOUD=off` swaps Cloud's two entry points for
 stand-ins, and `check:cloud-off` proves that build bundles none of Cloud.
 
 **2026-10 · History is versions over revisions, compacted on the server.** Every save stays a
@@ -503,11 +503,11 @@ sockets without hibernation, so the relay runs unchanged; hibernating would need
 rebuild rooms and peers on every wake.
 
 **2026-10 · Every Cloud server serves the editor at its root.** The official web editor moves from
-app.openpencil.dev to the official server's own address, so one site holds the editor, sign-in,
+app.lawha.invalid to the official server's own address, so one site holds the editor, sign-in,
 and documents, and a self-hosted server is a complete product too. On its own origin the editor
 signs in through the server's pages and its session, with no device code and no CORS. A welcome
 page meets visitors who are not signed in, and the editor stays usable without an account, as it
-is on app.openpencil.dev, which can then redirect there. Keeping the editor only on a separate
+is on app.lawha.invalid, which can then redirect there. Keeping the editor only on a separate
 static host left a signed-in person on account settings with no way to their files.
 
 **2026-10 · Links name their server by their own address.** A document is `/documents/:id`, a
@@ -515,7 +515,7 @@ shared link `/share/:id`, and an invitation `/invitations/:id` on the server tha
 no `server` parameter and no `/cloud` prefix, and the server has no separate editor address to
 send them to. Peer-to-peer rooms move to `/rooms/:id` so "share" names a shared document. The
 cost is that a browser editor at any other address cannot keep a Cloud document in its address
-bar; every server serves its own editor, and the desktop app gets links through `openpencil://`.
+bar; every server serves its own editor, and the desktop app gets links through `lawha://`.
 
 **2026-10 · A link shows nothing until its document does.** A document link asks someone signed
 out to sign in on the server's page before the editor loads, and comes back to the document. A
@@ -539,7 +539,7 @@ viewer's address and a hash of each person's email to a third party, which a sel
 should not do by default; copying a linked Google picture instead of linking to it follows the
 same rule.
 
-**2026-10 · Tables are named for what they hold.** OpenPencil's tables beside Better Auth's had a
+**2026-10 · Tables are named for what they hold.** Lawha's tables beside Better Auth's had a
 `cloud_` prefix the rest never had; they lose it, and only a name Better Auth already uses gets a
 qualifier (`api_rate_limit` beside its `rate_limit`). Migrations that shipped before the rename
 type their queries against the names they ran with, so their SQL never changes.

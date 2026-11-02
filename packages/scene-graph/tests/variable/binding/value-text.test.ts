@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { variableText } from '@open-pencil/scene-graph/variables'
+import { variableText } from '@lawha/scene-graph/variables'
 
 // What Figma desktop 126 showed for text bound to each float32 variable value.
 const FIGMA_TEXT: Array<[number, string]> = [

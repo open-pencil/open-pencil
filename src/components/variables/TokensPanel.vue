@@ -3,21 +3,21 @@ import { useElementSize } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import type { VariableTokenFields } from '@open-pencil/core'
-import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
+import type { VariableTokenFields } from '@lawha/core'
+import type { TokenStylesheetFormat } from '@lawha/dom-css/export'
 import {
   isLibraryCollection,
   type VariableType,
   type VariableValue
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   formatVariableFormula,
   parseVariableFormula,
   variableFormulaReference
-} from '@open-pencil/scene-graph/variables'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
-import { useVariables } from '@open-pencil/vue/variables'
+} from '@lawha/scene-graph/variables'
+import { useI18n } from '@lawha/vue/i18n'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
+import { useVariables } from '@lawha/vue/variables'
 
 import {
   aliasCandidates,

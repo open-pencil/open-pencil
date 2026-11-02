@@ -1,6 +1,6 @@
-import { CloudAPIError, type CloudAPIClient } from '@open-pencil/cloud/client'
-import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@open-pencil/cloud/contract'
-import { extractFigThumbnailFromReader, figArchiveKind } from '@open-pencil/fig'
+import { CloudAPIError, type CloudAPIClient } from '@lawha/cloud/client'
+import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@lawha/cloud/contract'
+import { extractFigThumbnailFromReader, figArchiveKind } from '@lawha/fig'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
@@ -89,7 +89,7 @@ export function createCloudStorageAdapter(
         const workspaces = await (await client()).listWorkspaces()
         const found = workspaces.workspaces.some((workspace) => workspace.id === workspaceId())
         return found
-          ? { ok: true, message: 'Connected to OpenPencil Cloud.' }
+          ? { ok: true, message: 'Connected to Lawha Cloud.' }
           : { ok: false, message: 'This workspace is no longer available.' }
       } catch (error) {
         return { ok: false, message: error instanceof Error ? error.message : String(error) }

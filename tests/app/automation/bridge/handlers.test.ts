@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
 import { toRaw } from 'vue'
 
-import * as layoutModule from '@open-pencil/core/layout'
+import * as layoutModule from '@lawha/core/layout'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -25,7 +25,7 @@ function setupGlobals() {
       return 0
     },
     cancelAnimationFrame: vi.fn(),
-    openPencil: {},
+    lawha: {},
     location: { href: 'http://localhost/' } as Location,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn()

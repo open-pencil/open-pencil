@@ -5,12 +5,12 @@ import {
 } from '#fig/node-change/variable/bindings'
 import { linearVariableExpression } from '#fig/node-change/variable/expression'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   bindingOverrideField,
   setInstanceOverride
-} from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/instances/overrides'
 
 import type { InstanceOccurrence } from '../occurrence/types'
 import { uniformScaleOf } from '../types'

@@ -10,7 +10,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 
-import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
+import { useInlineRename } from '@lawha/vue/editor/inline-rename'
 import {
   LayerTreeRoot,
   LayerTreeItem,
@@ -20,7 +20,7 @@ import {
   type LayerRow,
   type LayerSelectionMode,
   type LayerTreeVirtualizer
-} from '@open-pencil/vue/primitives/LayerTree'
+} from '@lawha/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { layerIssueMarks } from '@/app/editor/design-check/layers'
@@ -139,7 +139,7 @@ function isLayerNode(value: unknown): value is LayerNode {
 
 function toLayerNode(value: unknown): LayerNode {
   if (isLayerNode(value)) return value
-  throw new Error('[open-pencil] Invalid layer tree item')
+  throw new Error('[lawha] Invalid layer tree item')
 }
 
 function layerTextContent(value: unknown): string {

@@ -16,7 +16,7 @@ export const FIXTURES = join(workspaceRoot(), 'tests/fixtures')
 /** A file inside this package, for assets that are not modules. */
 export function corePackagePath(...segments: string[]): string {
   return join(
-    dirname(Bun.resolveSync('@open-pencil/core/package.json', import.meta.dir)),
+    dirname(Bun.resolveSync('@lawha/core/package.json', import.meta.dir)),
     ...segments
   )
 }

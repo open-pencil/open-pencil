@@ -9,7 +9,7 @@ import {
   featureConditionCSS,
   parseFeatureCondition,
   type FeatureCondition
-} from '@open-pencil/dom-css/export'
+} from '@lawha/dom-css/export'
 
 export const CONDITION_KINDS = [
   'manual',

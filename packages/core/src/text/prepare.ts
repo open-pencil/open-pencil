@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {

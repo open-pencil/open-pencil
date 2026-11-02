@@ -4,9 +4,9 @@ import { computed } from 'vue'
 import {
   useComponentProperties,
   useExposedInstances
-} from '@open-pencil/vue/controls/component-props'
-import { useSlotProperties } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+} from '@lawha/vue/controls/component-props'
+import { useSlotProperties } from '@lawha/vue/controls/slots'
+import { useI18n } from '@lawha/vue/i18n'
 
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'

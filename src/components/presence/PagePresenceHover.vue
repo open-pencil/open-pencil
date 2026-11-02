@@ -3,7 +3,7 @@ import { HoverCardContent, HoverCardPortal, HoverCardRoot, HoverCardTrigger } fr
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useCollaborationMessages } from '@lawha/vue/i18n'
 
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'

@@ -15,7 +15,7 @@ async function fixtureRoot({
   rootLicense = true,
   license
 }: { rootLicense?: boolean; license?: string } = {}) {
-  const root = join(tmpdir(), `open-pencil-release-packages-${crypto.randomUUID()}`)
+  const root = join(tmpdir(), `lawha-release-packages-${crypto.randomUUID()}`)
   await mkdir(join(root, 'packages/example/dist'), { recursive: true })
   await writeFile(join(root, 'packages/example/dist/index.js'), 'export {}\n')
   await writeFile(join(root, 'packages/example/README.md'), '# Example\n')
@@ -25,12 +25,12 @@ async function fixtureRoot({
     join(root, 'packages/example/package.json'),
     JSON.stringify(
       {
-        name: '@open-pencil/example',
+        name: '@lawha/example',
         version: '1.0.0',
         ...(license ? { license } : {}),
         files: ['dist', 'README.md'],
         scripts: { build: 'tsdown' },
-        dependencies: { '@open-pencil/core': 'workspace:*', zod: '^4.0.0' },
+        dependencies: { '@lawha/core': 'workspace:*', zod: '^4.0.0' },
         exports: {
           '.': { bun: './dist/index.js', import: './dist/index.js' }
         },
@@ -78,10 +78,10 @@ describe('publishPackageJSON', () => {
     const exports = { '.': { bun: './dist/index.js', import: './dist/index.js' } }
     const json = publishPackageJSON(
       {
-        name: '@open-pencil/example',
+        name: '@lawha/example',
         version: '1.0.0',
         scripts: { build: 'tsdown' },
-        dependencies: { '@open-pencil/core': 'workspace:*', zod: '^4.0.0' },
+        dependencies: { '@lawha/core': 'workspace:*', zod: '^4.0.0' },
         exports,
         devDependencies: { typescript: '^5.0.0' },
         main: './dist/index.js',
@@ -91,9 +91,9 @@ describe('publishPackageJSON', () => {
     )
 
     expect(json).toEqual({
-      name: '@open-pencil/example',
+      name: '@lawha/example',
       version: '1.0.0',
-      dependencies: { '@open-pencil/core': '^0.13.2', zod: '^4.0.0' },
+      dependencies: { '@lawha/core': '^0.13.2', zod: '^4.0.0' },
       exports,
       main: './dist/index.js'
     })
@@ -124,10 +124,10 @@ describe('preparePublishDirectories', () => {
     expect(await readFile(join(outRoot, 'example/LICENSE'), 'utf8')).toBe('root license\n')
     expect(await readFile(join(outRoot, 'example/README.md'), 'utf8')).toBe('# Example\n')
     expect(JSON.parse(await readFile(join(outRoot, 'example/package.json'), 'utf8'))).toEqual({
-      name: '@open-pencil/example',
+      name: '@lawha/example',
       version: '1.0.0',
       files: ['dist', 'README.md'],
-      dependencies: { '@open-pencil/core': '^0.13.2', zod: '^4.0.0' },
+      dependencies: { '@lawha/core': '^0.13.2', zod: '^4.0.0' },
       exports: { '.': { bun: './dist/index.js', import: './dist/index.js' } },
       main: './dist/index.js',
       types: './dist/index.d.ts'

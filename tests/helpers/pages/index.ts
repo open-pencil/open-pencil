@@ -3,8 +3,8 @@ import { expect, type Page } from '@playwright/test'
 /** Setup: add pages by name without visiting them. */
 export function addPages(page: Page, names: string[]): Promise<void> {
   return page.evaluate((pageNames) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     for (const name of pageNames) store.graph.addPage(name)
     store.requestRender()
   }, names)
@@ -13,7 +13,7 @@ export function addPages(page: Page, names: string[]): Promise<void> {
 /** Probe: the name of the page on screen. */
 export function currentPageName(page: Page): Promise<string | undefined> {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return store?.graph.getNode(store.state.currentPageId)?.name
   })
 }

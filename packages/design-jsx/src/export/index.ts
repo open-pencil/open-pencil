@@ -1,12 +1,12 @@
 import { compact } from 'es-toolkit'
 
-import { jsx, type SyntaxNode } from '@open-pencil/emit'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { jsx, type SyntaxNode } from '@lawha/emit'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   isGeneratedFrame,
   shapeWithTextLabel,
   type GeneratedFrameType
-} from '@open-pencil/scene-graph/generated'
+} from '@lawha/scene-graph/generated'
 
 import { rekaExport, type RekaExport } from '../behaviours/export'
 import { elementTag } from '../elements'

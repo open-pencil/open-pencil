@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /** `createInstance` returns null when the component cannot be placed; these fixtures require one. */
 function placeInstance(graph: SceneGraph, componentId: string, parentId: string) {

@@ -7,8 +7,8 @@ import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignNode } from '#dom-css/index'
 import { createHeadlessCSSRuntime, htmlToDesignDocument, htmlToSceneGraph } from '#dom-css/index'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { TEST_COLORS, cardCSS, cardHTML, fixtureCSS, fixtureHTML } from '../helpers'
 
@@ -155,7 +155,7 @@ function expectStyleRoundTripHTML(graph: SceneGraph) {
   expectRoundTripHeadingStyle(roundTripHeading)
 }
 
-describe('@open-pencil/dom-css conversion', () => {
+describe('@lawha/dom-css conversion', () => {
   it('rejects pre-aborted browser conversion before runtime work', async () => {
     const abort = new AbortController()
     abort.abort()
@@ -259,7 +259,7 @@ describe('@open-pencil/dom-css conversion', () => {
     const document = sceneGraphToDesignDocument(graph)
     const html = serializeHTML(document)
 
-    expect(html).toContain('OpenPencil')
+    expect(html).toContain('Lawha')
     expect(html).toContain('box-shadow')
   })
 
@@ -313,7 +313,7 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(image.fills[0]).toBeUndefined()
     expect(image.pluginData).toContainEqual({
-      pluginId: 'open-pencil-dom-css',
+      pluginId: 'lawha-dom-css',
       key: 'image-source-url',
       value: 'https://example.com/hero.png'
     })

@@ -6,8 +6,8 @@ import {
   cloudDocumentPath,
   cloudDocumentURL,
   parseCloudLinkPath
-} from '@open-pencil/cloud/contract'
-import { cloudMessages } from '@open-pencil/vue/i18n'
+} from '@lawha/cloud/contract'
+import { cloudMessages } from '@lawha/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'
@@ -37,7 +37,7 @@ const linkSchema = v.object({
 
 /** The link this tab is opening while it signs in, kept for the tab so it survives leaving. */
 const stored = IS_BROWSER
-  ? useSessionStorage<string | null>('open-pencil:cloud-document-link', null)
+  ? useSessionStorage<string | null>('lawha:cloud-document-link', null)
   : ref<string | null>(null)
 
 /** The document link a web address carries, if it is one; its server is the address's own. */

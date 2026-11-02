@@ -32,7 +32,7 @@ const source = computed(() => {
   <img
     :src="source"
     :class="brandMark({ class: className })"
-    :alt="decorative ? '' : 'OpenPencil'"
+    :alt="decorative ? '' : 'Lawha'"
     width="16"
     height="16"
   />

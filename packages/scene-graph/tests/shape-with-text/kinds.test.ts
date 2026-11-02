@@ -4,7 +4,7 @@ import {
   SHAPE_WITH_TEXT_GROUPS,
   SHAPE_WITH_TEXT_TYPES,
   isShapeWithTextType
-} from '@open-pencil/scene-graph/shape-with-text'
+} from '@lawha/scene-graph/shape-with-text'
 
 describe('shape-with-text kinds', () => {
   test('FigJam has 30 kinds, named as in .fig files and the plugin API', () => {

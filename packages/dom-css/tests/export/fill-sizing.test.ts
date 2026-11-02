@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import { sceneNodeToDesignDocument, type DesignNode } from '@open-pencil/dom-css/export'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { sceneNodeToDesignDocument, type DesignNode } from '@lawha/dom-css/export'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 function styleOf(nodes: DesignNode[], name: string): Record<string, string> | undefined {
   for (const node of nodes) {

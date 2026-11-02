@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 
-import { ACP_AGENTS, type ACPAgentID } from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentID } from '@lawha/core/constants'
 
 import type { AgentAccount } from '@/app/ai/agents/setup/accounts'
 import type { DetectedAgent } from '@/app/ai/agents/setup/discovery'
@@ -38,7 +38,7 @@ function agentSetup(overrides: Partial<AgentSetupState>): AgentSetupState {
     detected: null,
     bridge: false,
     bridgeOutdated: false,
-    bridgeCommand: 'npm i -g @open-pencil/mcp@0.15.1',
+    bridgeCommand: 'npm i -g @lawha/mcp@0.15.1',
     npm: true,
     installingAgent: false,
     installingBridge: false,
@@ -69,10 +69,10 @@ function piSetup(overrides: Partial<PiSetupState>): PiSetupState {
     scanning: false,
     companion: false,
     companionOutdated: false,
-    companionCommand: 'npm i -g @open-pencil/harness@0.15.1',
+    companionCommand: 'npm i -g @lawha/harness@0.15.1',
     bridge: false,
     bridgeOutdated: false,
-    bridgeCommand: 'npm i -g @open-pencil/mcp@0.15.1',
+    bridgeCommand: 'npm i -g @lawha/mcp@0.15.1',
     npm: true,
     installingCompanion: false,
     installingBridge: false,
@@ -129,7 +129,7 @@ export const OpenRouterWaiting: Story = {
 }
 export const OpenRouterVerifying: Story = { args: { signInStatus: 'verifying' } }
 export const OpenRouterSignedIn: Story = {
-  args: { account: { label: 'OpenPencil', freeTier: false } },
+  args: { account: { label: 'Lawha', freeTier: false } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status')).toHaveTextContent('Signed in to OpenRouter')
@@ -138,7 +138,7 @@ export const OpenRouterSignedIn: Story = {
   }
 }
 export const OpenRouterSignedInWithoutCredits: Story = {
-  args: { account: { label: 'OpenPencil', freeTier: true } }
+  args: { account: { label: 'Lawha', freeTier: true } }
 }
 export const OpenRouterPopupBlocked: Story = { args: { signInStatus: 'blocked' } }
 export const OpenRouterFailed: Story = { args: { signInStatus: 'failed' } }
@@ -189,7 +189,7 @@ export const CodingAgentNeedsAdapter: Story = {
     await expect(canvas.getByRole('button', { name: 'Install MCP server' })).toBeVisible()
     await expect(canvas.getByRole('link', { name: 'Learn more' })).toHaveAttribute(
       'href',
-      'https://openpencil.dev/programmable/coding-agents#codex'
+      'https://github.com/aliaaldihnayn-lab/design#readme'
     )
   }
 }
@@ -203,7 +203,7 @@ export const CodingAgentNeedsNpm: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('npm i -g @agentclientprotocol/claude-agent-acp')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: 'Install adapter' })).toBeNull()
-    await expect(canvas.getByText(/npm i -g @open-pencil\/mcp@/)).toBeVisible()
+    await expect(canvas.getByText(/npm i -g @lawha\/mcp@/)).toBeVisible()
   }
 }
 export const CodingAgentSignedIn: Story = {
@@ -222,7 +222,7 @@ export const CodingAgentSignedIn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/Claude Max · ada@example\.com/)).toBeVisible()
-    await expect(canvas.getByText(/OpenPencil tools · connected/)).toBeVisible()
+    await expect(canvas.getByText(/Lawha tools · connected/)).toBeVisible()
     await expect(canvas.queryByRole('button', { name: 'Sign in' })).toBeNull()
   }
 }
@@ -239,15 +239,15 @@ export const CodingAgentToolsUnreachable: Story = {
         tools: {
           connected: false,
           reason:
-            '[codex-acp] MCP server `open-pencil` was not started, because the Codex config already defines an MCP server with this name.'
+            '[codex-acp] MCP server `lawha` was not started, because the Codex config already defines an MCP server with this name.'
         }
       })
     })
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/OpenPencil tools · not reachable/)).toBeVisible()
-    await expect(canvas.getByText(/Codex can’t reach OpenPencil’s tools/)).toBeVisible()
+    await expect(canvas.getByText(/Lawha tools · not reachable/)).toBeVisible()
+    await expect(canvas.getByText(/Codex can’t reach Lawha’s tools/)).toBeVisible()
     await expect(canvas.getByText(/already defines an MCP server/)).toBeVisible()
   }
 }
@@ -337,7 +337,7 @@ export const PiNeedsNpm: Story = {
   args: { providerID: 'harness:pi', recommended: false, piSetup: piSetup({ npm: false }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/npm i -g @open-pencil\/harness@/)).toBeVisible()
+    await expect(canvas.getByText(/npm i -g @lawha\/harness@/)).toBeVisible()
   }
 }
 export const PiOutdatedMCPFromBun: Story = {
@@ -348,15 +348,15 @@ export const PiOutdatedMCPFromBun: Story = {
       companion: true,
       bridge: true,
       bridgeOutdated: true,
-      bridgeCommand: 'bun add -g @open-pencil/mcp@0.15.1',
+      bridgeCommand: 'bun add -g @lawha/mcp@0.15.1',
       defaultModel: 'openai-codex/gpt-5.6',
       error: 'canvas-install'
     })
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/OpenPencil MCP server · update needed/)).toBeVisible()
+    await expect(canvas.getByText(/Lawha MCP server · update needed/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Update MCP server' })).toBeVisible()
-    await expect(canvas.getByText('bun add -g @open-pencil/mcp@0.15.1')).toBeVisible()
+    await expect(canvas.getByText('bun add -g @lawha/mcp@0.15.1')).toBeVisible()
   }
 }

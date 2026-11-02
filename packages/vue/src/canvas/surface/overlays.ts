@@ -1,9 +1,9 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 import {
   hitTestIssueMarkers,
   hitTestStatusLabels,
   type SkiaRenderer
-} from '@open-pencil/core/canvas'
+} from '@lawha/core/canvas'
 
 import { useViewportKind } from '#vue/editor/viewport-kind/use'
 

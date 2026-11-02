@@ -1,12 +1,12 @@
-import type { Editor } from '@open-pencil/core'
-import { vectorChangesFromPagePath } from '@open-pencil/core/vector'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
-import { slotScope } from '@open-pencil/scene-graph/slots'
+import type { Editor } from '@lawha/core'
+import { vectorChangesFromPagePath } from '@lawha/core/vector'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import { cloneVectorNetwork } from '@lawha/scene-graph/copy'
+import { slotScope } from '@lawha/scene-graph/slots'
 import {
   transformVectorNetwork,
   vectorNetworksEqual
-} from '@open-pencil/scene-graph/vector-network'
+} from '@lawha/scene-graph/vector-network'
 
 import { getLiveNetwork } from './network'
 import type { VectorEditState } from './types'

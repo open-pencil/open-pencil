@@ -1,5 +1,5 @@
 /**
- * Minimum browser engines OpenPencil supports.
+ * Minimum browser engines Lawha supports.
  *
  * This is the single source for the Vite `build.target` (syntax lowering), the
  * startup support gate, and the system requirements in the docs. Chrome, Edge

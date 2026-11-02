@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentDef } from '@lawha/core/constants'
 
 import type { AgentAuthCheck } from '@/app/ai/agents/acp/auth/session'
 import type { AgentAuthStatus } from '@/app/ai/agents/acp/auth/status'

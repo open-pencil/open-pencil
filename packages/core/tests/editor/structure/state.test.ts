@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { rect } from '#core-tests/helpers/layout'
 
-import { createEditor } from '@open-pencil/core'
-import { computeAllLayouts } from '@open-pencil/core/layout'
+import { createEditor } from '@lawha/core'
+import { computeAllLayouts } from '@lawha/core/layout'
 
 describe('structure state actions', () => {
   test('hiding a layer refits its group, and undo puts the group back', () => {

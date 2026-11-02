@@ -44,7 +44,7 @@ export const userGuideSidebar = (
       { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
       { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
       // English only until translated; locales link to the canonical page.
-      { text: labels.openPencilCloud, link: '/user-guide/openpencil-cloud' },
+      { text: labels.lawhaCloud, link: '/user-guide/lawha-cloud' },
       { text: labels.cloudStorage, link: '/user-guide/cloud-storage' },
     ],
   },

@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI } from '@lawha/core/figma-api'
 import {
   analyzeOverlaps,
   computeOverlaps,
   findPageId,
   type AnalyzeOverlapsResult
-} from '@open-pencil/core/tools/analyze/overlaps'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/tools/analyze/overlaps'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { pageId, rect } from './helpers'
 

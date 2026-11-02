@@ -12,7 +12,7 @@ description: Создание моделей меню приложения и х
 ## Использование
 
 ```ts
-import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
+import { useMenuModel } from '@lawha/vue/editor/menu-model'
 
 const { appMenu, canvasMenu, selectionLabelMenu } = useMenuModel()
 ```

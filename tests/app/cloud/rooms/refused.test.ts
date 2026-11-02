@@ -75,7 +75,7 @@ describe('a refused tab over time', () => {
     spyOn(globalThis, 'fetch').mockImplementation(
       fetchStub(async (input) => {
         const url = new URL(input instanceof Request ? input.url : String(input))
-        if (url.pathname === '/.well-known/openpencil') {
+        if (url.pathname === '/.well-known/lawha') {
           return Response.json(cloudDiscoveryFixture(ORIGIN))
         }
         if (url.pathname === '/api/account/status') {

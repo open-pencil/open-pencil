@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 
-import { getTextMeasurer } from '@open-pencil/core/layout'
+import { getTextMeasurer } from '@lawha/core/layout'
 
 import { loadDocument, measureDocumentText } from '#cli/headless'
 
@@ -23,7 +23,7 @@ async function cli(args: string[]) {
 
 describe('convert CLI', () => {
   test('saves a .pen document with its text measured in its own fonts', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-convert-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-convert-'))
     const source = join(dir, 'tag.pen')
     const output = join(dir, 'tag.fig')
     await Bun.write(
@@ -64,7 +64,7 @@ describe('convert CLI', () => {
   })
 
   test('reports a font it cannot load, and with --font-policy strict writes nothing', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-convert-fonts-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-convert-fonts-'))
     const source = join(dir, 'note.pen')
     await Bun.write(
       source,
@@ -93,7 +93,7 @@ describe('convert CLI', () => {
   })
 
   test('saves a .fig with a thumbnail of its layers', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-convert-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-convert-'))
     const source = join(dir, 'card.pen')
     const output = join(dir, 'card.fig')
     await Bun.write(

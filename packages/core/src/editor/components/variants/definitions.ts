@@ -4,8 +4,8 @@ import type {
   ComponentPropertyDefinition,
   ComponentPropertyType,
   SceneGraph
-} from '@open-pencil/scene-graph'
-import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph'
+import { createComponentPropertyId } from '@lawha/scene-graph/components'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'

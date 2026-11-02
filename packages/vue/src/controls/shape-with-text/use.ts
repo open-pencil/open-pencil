@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   figJamColorName,
   figJamFillMode,
@@ -12,9 +12,9 @@ import {
   type FigJamLineStyle,
   type FigJamTextSize,
   type FigJamTypeface
-} from '@open-pencil/scene-graph/figjam'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+} from '@lawha/scene-graph/figjam'
+import { shapeWithTextLabel } from '@lawha/scene-graph/generated'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
 
 import { useEditor } from '#vue/editor/context'
 import { useSelectionState } from '#vue/editor/selection-state/use'

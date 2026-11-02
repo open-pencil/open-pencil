@@ -1,15 +1,15 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import {
   geometryBlobBounds,
   intersectVisualBounds,
   strokeOverflow,
   unionVisualBounds,
   type VisualBounds
-} from '@open-pencil/scene-graph/geometry'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import { textLinesOverflow } from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/geometry'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+import { textLinesOverflow } from '@lawha/scene-graph/text'
 
 const INTRINSIC_CONTAINER_TYPES = new Set([
   'FRAME',

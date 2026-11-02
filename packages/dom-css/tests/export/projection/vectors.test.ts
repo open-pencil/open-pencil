@@ -4,7 +4,7 @@ import { sceneNodeToDesignDocument, sceneNodesToTailwindJSX } from '#dom-css/exp
 import type { VectorElementRenderer } from '#dom-css/export/projection'
 import type { DesignElement } from '#dom-css/types'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /** A star with a fill, a stroke, and a shadow, inside a frame. */
 function starInFrame() {

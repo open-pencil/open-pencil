@@ -1,4 +1,4 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 import {
   CODE_SYNTAX_PLATFORMS,
   VARIABLE_SCOPES,
@@ -7,7 +7,7 @@ import {
   type Variable,
   type VariableCollection,
   type VariableScope
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 
 import { extractPluginData, mergePluginData } from '../plugin-data'
 import {

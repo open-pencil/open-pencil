@@ -2,12 +2,12 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, parseFigFile, populateAllFigPages } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { exportFigFile, parseFigFile, populateAllFigPages } from '@lawha/core/io/formats/fig'
+import { parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { guidToString } from '@lawha/kiwi/fig/guid'
+import { SceneGraph } from '@lawha/scene-graph'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 /** An Icon component, and a Card instance whose slot holds an instance of Icon. */
 async function savedDocument(): Promise<Uint8Array> {

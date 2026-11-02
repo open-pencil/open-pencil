@@ -5,15 +5,15 @@ import {
   withoutPluginData,
   withPluginData
 } from '../plugin-data/field'
-import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
+import { LAWHA_PLUGIN_DATA } from '../plugin-data/fields'
 import type { CommentThread, PluginDataEntry } from '../types'
 
-const { comments } = OPEN_PENCIL_PLUGIN_DATA
+const { comments } = LAWHA_PLUGIN_DATA
 
 /**
  * A document's comment threads, deleted ones included. Comments are part of the document: they
- * live in OpenPencil's plugin data on the document node, so they travel with the `.fig` file,
- * its storage copy and a collaboration room, and Figma or an older OpenPencil open the file as
+ * live in Lawha's plugin data on the document node, so they travel with the `.fig` file,
+ * its storage copy and a collaboration room, and Figma or an older Lawha open the file as
  * before.
  */
 export function readComments(graph: SceneGraph): CommentThread[] {

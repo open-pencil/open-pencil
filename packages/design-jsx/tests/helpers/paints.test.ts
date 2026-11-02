@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { linearGradient, radialGradient } from '@open-pencil/design-jsx'
-import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
+import { linearGradient, radialGradient } from '@lawha/design-jsx'
+import { DEFAULT_GRADIENT_TRANSFORM } from '@lawha/scene-graph/gradient'
 
 const expected =
   "linearGradient() expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]]"

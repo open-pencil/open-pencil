@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import type { Fill, GeometryPath, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
-import { cloneVectorNetwork, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
-import { collectResizeDescendants } from '@open-pencil/scene-graph/resize'
+import { createEditor } from '@lawha/core'
+import type { Fill, GeometryPath, SceneNode, Stroke, VectorNetwork } from '@lawha/scene-graph'
+import { cloneVectorNetwork, copyGeometryPaths, copyStrokes } from '@lawha/scene-graph/copy'
+import { collectResizeDescendants } from '@lawha/scene-graph/resize'
 
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'

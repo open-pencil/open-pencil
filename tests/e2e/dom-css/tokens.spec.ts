@@ -2,7 +2,7 @@ import { browserTokenStylesheet } from '#tests/helpers/dom-css-browser'
 
 import { expect, test } from '../fixtures'
 
-test.describe('@open-pencil/dom-css token stylesheet in a browser', () => {
+test.describe('@lawha/dom-css token stylesheet in a browser', () => {
   test("checks token values and conditions with the browser's CSS parser", async ({ page }) => {
     const { css, issues } = await browserTokenStylesheet(page)
 

@@ -1,5 +1,5 @@
-import { ROTATION_HANDLE_DISTANCE } from '@open-pencil/core/constants'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { ROTATION_HANDLE_DISTANCE } from '@lawha/core/constants'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
@@ -12,7 +12,7 @@ for (const flipX of [false, true]) {
     test(`nested rotation, labels and cancellation (flipX=${flipX}, flipY=${flipY})`, async () => {
       const data = nestedGeometryData(flipX, flipY)
       const id = await editor.page.evaluate((fixture) => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         if (!store) throw new Error('Editor unavailable')
         const s = fixture.section
         const sectionId = store.createShape('SECTION', s.x, s.y, s.width, s.height)
@@ -42,7 +42,7 @@ for (const flipX of [false, true]) {
         'canvas bounds'
       )
       const viewport = await editor.page.evaluate(() => {
-        const state = window.openPencil?.getStore?.().state
+        const state = window.lawha?.getStore?.().state
         if (!state) throw new Error('Editor unavailable')
         return { zoom: state.zoom, panX: state.panX, panY: state.panY }
       })
@@ -76,7 +76,7 @@ for (const flipX of [false, true]) {
         await move(end, 8)
         await editor.canvas.waitForRender()
         const held = await editor.page.evaluate((nodeId) => {
-          const store = window.openPencil?.getStore?.()
+          const store = window.lawha?.getStore?.()
           return {
             rotation: store?.graph.getNode(nodeId)?.rotation,
             preview: store?.state.rotationPreview
@@ -93,11 +93,11 @@ for (const flipX of [false, true]) {
         await editor.page.keyboard.press('Escape')
         await editor.canvas.waitForRender()
         expect(
-          await editor.page.evaluate(() => window.openPencil?.getStore?.().state.rotationPreview)
+          await editor.page.evaluate(() => window.lawha?.getStore?.().state.rotationPreview)
         ).toBeNull()
         expect(
           await editor.page.evaluate(() => [
-            ...(window.openPencil?.getStore?.().state.selectedIds ?? [])
+            ...(window.lawha?.getStore?.().state.selectedIds ?? [])
           ])
         ).toEqual([id])
         await editor.page.mouse.up()
@@ -109,7 +109,7 @@ for (const flipX of [false, true]) {
         await move(end, 8)
         const committedAngle = expectDefined(
           await editor.page.evaluate(
-            () => window.openPencil?.getStore?.().state.rotationPreview?.angle
+            () => window.lawha?.getStore?.().state.rotationPreview?.angle
           ),
           'preview angle'
         )
@@ -117,21 +117,21 @@ for (const flipX of [false, true]) {
         await editor.canvas.waitForRender()
         expect(
           await editor.page.evaluate(
-            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.rotation,
+            (nodeId) => window.lawha?.getStore?.().graph.getNode(nodeId)?.rotation,
             id
           )
         ).toBe(committedAngle)
-        await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+        await editor.page.evaluate(() => window.lawha?.getStore?.().undoAction())
         expect(
           await editor.page.evaluate(
-            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.rotation,
+            (nodeId) => window.lawha?.getStore?.().graph.getNode(nodeId)?.rotation,
             id
           )
         ).toBe(data.frame.rotation)
-        await editor.page.evaluate(() => window.openPencil?.getStore?.().redoAction())
+        await editor.page.evaluate(() => window.lawha?.getStore?.().redoAction())
         expect(
           await editor.page.evaluate(
-            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.rotation,
+            (nodeId) => window.lawha?.getStore?.().graph.getNode(nodeId)?.rotation,
             id
           )
         ).toBe(committedAngle)

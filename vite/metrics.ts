@@ -11,7 +11,7 @@ import type { Plugin, ResolvedConfig } from 'vite'
 export function metricsBrandPlugin(site?: (outDir: string) => string): Plugin {
   let config: ResolvedConfig | undefined
   return {
-    name: 'open-pencil-metrics-brand',
+    name: 'lawha-metrics-brand',
     apply: 'build',
     configResolved(resolved) {
       config = resolved

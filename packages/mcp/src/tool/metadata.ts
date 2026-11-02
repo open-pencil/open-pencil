@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { ToolCapability } from '@open-pencil/core/tools'
+import type { ToolCapability } from '@lawha/core/tools'
 
 import type { MCPToolScope } from '#mcp/tool/scope'
 

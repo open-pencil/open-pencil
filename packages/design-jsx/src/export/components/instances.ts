@@ -1,15 +1,15 @@
 import { DESIGN_JSX_SUPPORTED_PROPERTIES } from '#design-jsx/definitions'
 import { countBy, isEmptyObject, isEqual } from 'es-toolkit'
 
-import { es } from '@open-pencil/emit'
+import { es } from '@lawha/emit'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReference,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { componentPropertyDefinitions } from '@open-pencil/scene-graph/components'
-import { INSTANCE_OVERRIDE_FIELDS, instanceMainComponent } from '@open-pencil/scene-graph/instances'
+} from '@lawha/scene-graph'
+import { componentPropertyDefinitions } from '@lawha/scene-graph/components'
+import { INSTANCE_OVERRIDE_FIELDS, instanceMainComponent } from '@lawha/scene-graph/instances'
 
 import { collectProps, positionProps } from '../props'
 import { plainValue, type JSXProp, type JSXValue } from '../value'

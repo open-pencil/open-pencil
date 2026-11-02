@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef, type ComponentPublicInstance } from 'vue'
 
-import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
-import { canDrawShaders } from '@open-pencil/vue/canvas/surface'
+import type { ShaderPreset } from '@lawha/scene-graph/shaders'
+import { canDrawShaders } from '@lawha/vue/canvas/surface'
 import {
   addShaderEffect,
   DEFAULT_SHADER_EFFECT,
@@ -14,9 +14,9 @@ import {
   shaderEffectLabel,
   shaderPresetJSON,
   type ShaderEffect
-} from '@open-pencil/vue/controls/shader'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
+} from '@lawha/vue/controls/shader'
+import { useI18n } from '@lawha/vue/i18n'
+import { useFlatReorderDrag } from '@lawha/vue/shared/drag'
 
 import ShaderEffectControls from '@/components/fill-picker/shader/ShaderEffectControls.vue'
 import ShaderEffectThumb from '@/components/fill-picker/shader/ShaderEffectThumb.vue'

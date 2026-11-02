@@ -6,7 +6,7 @@ import {
   type StyleOverride
 } from '#fig/node-change/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const ROOT_GUID = { sessionID: 1, localID: 0 }
 

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 
-import type { ConnectorLineType, StrokeCap } from '@open-pencil/scene-graph'
+import type { ConnectorLineType, StrokeCap } from '@lawha/scene-graph'
 
 import ConnectorControls from './ConnectorControls.vue'
 

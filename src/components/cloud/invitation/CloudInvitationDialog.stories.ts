@@ -21,7 +21,7 @@ const invitation: CloudInvitationSummary = {
   permission: 'edit',
   expiresIn: '6 days',
   recipientHint: 'b•••@studio.example',
-  host: 'cloud.openpencil.dev'
+  host: 'cloud.lawha.invalid'
 }
 
 const meta = {
@@ -74,7 +74,7 @@ export const JoinWorkspace: Story = {
       inviterName: 'Ana Duarte',
       expiresIn: '6 days',
       recipientHint: 'b•••@studio.example',
-      host: 'cloud.openpencil.dev'
+      host: 'cloud.lawha.invalid'
     }
   }
 }

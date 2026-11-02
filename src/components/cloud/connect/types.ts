@@ -1,4 +1,4 @@
-import type { CloudAuthFailure } from '@open-pencil/cloud/client'
+import type { CloudAuthFailure } from '@lawha/cloud/client'
 
 export type CloudServerKind = 'official' | 'self-hosted'
 

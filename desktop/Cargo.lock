@@ -3308,7 +3308,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "open_pencil"
+name = "lawha"
 version = "0.17.0-beta.1"
 dependencies = [
  "fix-path-env",

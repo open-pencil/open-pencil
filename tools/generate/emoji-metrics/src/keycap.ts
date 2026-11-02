@@ -1,6 +1,6 @@
 import * as hb from 'harfbuzzjs'
 
-import type { OutlineCommand } from '@open-pencil/core/text'
+import type { OutlineCommand } from '@lawha/core/text'
 
 /** The combining enclosing keycap, which draws a keycap's frame around the character before it. */
 export const COMBINING_KEYCAP = 0x20e3

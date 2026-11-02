@@ -1,8 +1,8 @@
 {
-  "upToDate": "OpenPencilは最新の状態です",
+  "upToDate": "Lawhaは最新の状態です",
   "windowTitle": "ソフトウェア・アップデート",
   "checking": "アップデートを確認しています…",
-  "available": "OpenPencil {version} が利用可能です",
+  "available": "Lawha {version} が利用可能です",
   "currentVersion": "現在のバージョンは {version} です。",
   "whatsNew": "新機能",
   "noNotes": "このリリースにはリリースノートがありません。",
@@ -14,12 +14,12 @@
   "downloadProgress": "{percent}% · {downloaded} / {total}",
   "downloadProgressUnknown": "{downloaded} をダウンロード済み",
   "installing": "インストールしています…",
-  "installed": "OpenPencil {version} をインストールしました",
-  "restartToFinish": "新しいバージョンを使うには OpenPencil を再起動してください。",
+  "installed": "Lawha {version} をインストールしました",
+  "restartToFinish": "新しいバージョンを使うには Lawha を再起動してください。",
   "restartNow": "今すぐ再起動",
   "downloadFailed": "アップデートをダウンロードできませんでした: {error}",
   "installFailed": "アップデートをインストールできませんでした: {error}",
-  "restartFailed": "OpenPencil を再起動できませんでした: {error}",
+  "restartFailed": "Lawha を再起動できませんでした: {error}",
   "unavailable": "アップデートはまだ利用できません。まず、latest.json を含む署名付きバージョンを公開してください。",
   "checkFailed": "アップデートの確認中にエラーが発生しました: {error}"
 }

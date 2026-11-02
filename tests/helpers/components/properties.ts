@@ -10,8 +10,8 @@ export interface PropertyAuthoringScene {
 /** A Button component with a Label text, nested in a Card component, and an instance of Card. */
 export function createPropertyAuthoringScene(page: Page): Promise<PropertyAuthoringScene> {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const button = store.graph.createNode('COMPONENT', pageId, { name: 'Button', width: 120 })
     const label = store.graph.createNode('TEXT', button.id, { name: 'Label', text: 'Button' })
@@ -30,8 +30,8 @@ export function createPropertyAuthoringScene(page: Page): Promise<PropertyAuthor
 
 export async function selectNode(page: Page, nodeId: string): Promise<void> {
   await page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.select([id])
   }, nodeId)
 }
@@ -39,7 +39,7 @@ export async function selectNode(page: Page, nodeId: string): Promise<void> {
 /** A component's property definitions, as name, type, and default. */
 export function componentPropertyDefinitions(page: Page, componentId: string) {
   return page.evaluate((id) => {
-    const node = window.openPencil?.getStore?.()?.graph.getNode(id)
+    const node = window.lawha?.getStore?.()?.graph.getNode(id)
     return (node?.componentPropertyDefinitions ?? []).map(({ name, type, defaultValue }) => ({
       name,
       type,
@@ -52,7 +52,7 @@ export function componentPropertyDefinitions(page: Page, componentId: string) {
 export function nestedInstanceText(page: Page, instanceId: string, nestedName: string) {
   return page.evaluate(
     ({ id, name }) => {
-      const graph = window.openPencil?.getStore?.()?.graph
+      const graph = window.lawha?.getStore?.()?.graph
       const nested = graph?.getChildren(id).find((node) => node.name === name)
       if (!graph || !nested) return null
       return graph.getChildren(nested.id).find((node) => node.type === 'TEXT')?.text ?? null

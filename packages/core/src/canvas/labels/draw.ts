@@ -1,9 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
-import type { Mat3 } from '@open-pencil/scene-graph/matrix'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { shownStatusState } from '@open-pencil/scene-graph/statuses'
+import type { SceneNode, SceneGraph } from '@lawha/scene-graph'
+import type { Mat3 } from '@lawha/scene-graph/matrix'
+import type { Rect } from '@lawha/scene-graph/primitives'
+import { shownStatusState } from '@lawha/scene-graph/statuses'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { SECTION_TITLE_RADIUS } from '#core/constants'

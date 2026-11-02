@@ -9,8 +9,8 @@ import {
 import { createDesignJSXRenderer } from '#design-jsx/index'
 import { elementPropWarnings } from '#design-jsx/schema'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { GENERATED_FRAME_TYPES } from '@open-pencil/scene-graph/generated'
+import { SceneGraph } from '@lawha/scene-graph'
+import { GENERATED_FRAME_TYPES } from '@lawha/scene-graph/generated'
 
 const renderer = createDesignJSXRenderer<never>({
   icon: () => Promise.resolve(null),

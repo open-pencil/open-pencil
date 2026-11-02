@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 const component = { sessionID: 1, localID: 1 }
 const label = { sessionID: 1, localID: 2 }

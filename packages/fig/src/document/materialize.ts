@@ -1,8 +1,8 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { generateId, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
-import { remapStyleRunReferences } from '@open-pencil/scene-graph/text'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { guidToString } from '@lawha/kiwi/fig/guid'
+import { generateId, SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { LAWHA_PLUGIN_DATA } from '@lawha/scene-graph/plugin-data'
+import { remapStyleRunReferences } from '@lawha/scene-graph/text'
 
 import {
   reconcileLiveComponentEdits,
@@ -277,11 +277,11 @@ function createImportedGraph(
 }
 
 /**
- * The root's id: the one OpenPencil saved it under, or else the document record's GUID, which
+ * The root's id: the one Lawha saved it under, or else the document record's GUID, which
  * Figma always saves as `0:0`.
  */
 function documentRootId(document: NodeChange, recordIds: ReadonlySet<string>): string | undefined {
-  const saved = readNodeChangePluginData(document, OPEN_PENCIL_PLUGIN_DATA.documentId)
+  const saved = readNodeChangePluginData(document, LAWHA_PLUGIN_DATA.documentId)
   if (saved && !recordIds.has(saved)) return saved
   return document.guid && guidToString(document.guid)
 }

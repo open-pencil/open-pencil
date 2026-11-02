@@ -8,7 +8,7 @@ test('variable text follows its font size on the optical size axis unless detach
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const card = store.graph.createNode('FRAME', store.state.currentPageId, {
       name: 'Card',

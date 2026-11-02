@@ -6,8 +6,8 @@ import {
   removeStyleFromRange,
   toggleBoldInRange,
   toggleItalicInRange
-} from '@open-pencil/core/text'
-import type { StyleRun } from '@open-pencil/scene-graph'
+} from '@lawha/core/text'
+import type { StyleRun } from '@lawha/scene-graph'
 
 // ---------------------------------------------------------------------------
 // toggleBoldInRange — mutation coverage

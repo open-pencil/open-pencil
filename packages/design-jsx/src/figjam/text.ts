@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   figJamTextSize,
   figJamTextSizeFields,
@@ -6,7 +6,7 @@ import {
   figJamTypefaceFields,
   type FigJamTextSize,
   type FigJamTypeface
-} from '@open-pencil/scene-graph/figjam'
+} from '@lawha/scene-graph/figjam'
 
 import { FIGJAM_TEXT_SIZE, FIGJAM_TYPEFACE } from '../enums'
 

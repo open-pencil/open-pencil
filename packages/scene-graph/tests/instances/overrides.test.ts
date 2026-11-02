@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   bindingOverrideField,
   overriddenBindingField
-} from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/instances/overrides'
 
 describe('binding override fields', () => {
   test('claim one binding of the layer, which they name', () => {

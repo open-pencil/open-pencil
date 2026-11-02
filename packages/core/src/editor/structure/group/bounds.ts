@@ -4,7 +4,7 @@ import {
   fitEnclosingGroups,
   redoGroupFit,
   undoGroupFit
-} from '@open-pencil/scene-graph/group-bounds'
+} from '@lawha/scene-graph/group-bounds'
 
 import { groupFitOptions } from '#core/canvas/boolean'
 import type { EditorContext } from '#core/editor/types'

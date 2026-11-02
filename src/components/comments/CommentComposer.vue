@@ -2,8 +2,8 @@
 import { useTextareaAutosize } from '@vueuse/core'
 import { computed, nextTick, useTemplateRef } from 'vue'
 
-import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { shortcutPlatform } from '@lawha/vue/editor/commands'
+import { useCommentMessages } from '@lawha/vue/i18n'
 
 import {
   commentFormatForKey,

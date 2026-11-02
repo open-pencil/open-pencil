@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import type * as Geometry from '@open-pencil/core/geometry'
+import type * as Geometry from '@lawha/core/geometry'
 
 import type * as GradientScene from '#tests/helpers/canvas/gradient/scene'
 
@@ -12,8 +12,8 @@ export function gradientDriver(page: () => Page) {
     /** The gradient rectangle, selected, at 200% with its top-left 100 px into the canvas. */
     async show(type: GradientType) {
       return page().evaluate(async (type) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const fixtureURL = '/tests/helpers/canvas/gradient/scene.ts'
         const scene: typeof GradientScene = await import(fixtureURL)
         const { nodeId } = scene.createGradientScene(store.graph, store.state.currentPageId, type)
@@ -33,7 +33,7 @@ export function gradientDriver(page: () => Page) {
 
     fill(nodeId: string) {
       return page().evaluate((id) => {
-        const fill = window.openPencil?.getStore?.().graph.getNode(id)?.fills[0]
+        const fill = window.lawha?.getStore?.().graph.getNode(id)?.fills[0]
         return fill
           ? {
               transform: fill.gradientTransform,
@@ -46,7 +46,7 @@ export function gradientDriver(page: () => Page) {
     /** A linear gradient's start and end in the layer's own pixels. */
     ends(nodeId: string) {
       return page().evaluate(async (id) => {
-        const node = window.openPencil?.getStore?.().graph.getNode(id)
+        const node = window.lawha?.getStore?.().graph.getNode(id)
         const transform = node?.fills[0]?.gradientTransform
         if (!node || !transform) return null
         const geometryURL = '/packages/core/src/geometry/gradient.ts'
@@ -62,21 +62,21 @@ export function gradientDriver(page: () => Page) {
     },
 
     editedStop() {
-      return page().evaluate(() => window.openPencil?.getStore?.().state.gradientEdit?.stop ?? null)
+      return page().evaluate(() => window.lawha?.getStore?.().state.gradientEdit?.stop ?? null)
     },
 
     /** Shows the handles without the picker, as when its fill picker is open. */
     edit(nodeId: string) {
       return page().evaluate((nodeId) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         store.state.gradientEdit = { nodeId, paint: 'fills', index: 0, stop: 1 }
         store.requestRender()
       }, nodeId)
     },
 
     editing() {
-      return page().evaluate(() => Boolean(window.openPencil?.getStore?.().state.gradientEdit))
+      return page().evaluate(() => Boolean(window.lawha?.getStore?.().state.gradientEdit))
     }
   }
 }

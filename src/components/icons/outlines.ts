@@ -1,10 +1,10 @@
 import { toRaw, type FunctionalComponent } from 'vue'
 
-import { nodeOutlinePath } from '@open-pencil/core/io/formats/svg'
-import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { validateVectorNetwork } from '@open-pencil/scene-graph/vector-network'
-import type { LayerOutline } from '@open-pencil/vue/primitives/LayerTree'
+import { nodeOutlinePath } from '@lawha/core/io/formats/svg'
+import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import { validateVectorNetwork } from '@lawha/scene-graph/vector-network'
+import type { LayerOutline } from '@lawha/vue/primitives/LayerTree'
 
 import { maskIcon } from './mask'
 

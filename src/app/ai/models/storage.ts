@@ -1,6 +1,6 @@
 import { StorageSerializers, useLocalStorage } from '@vueuse/core'
 
-const STORAGE_PREFIX = 'open-pencil:'
+const STORAGE_PREFIX = 'lawha:'
 const MODEL_SETTINGS_KEY = `${STORAGE_PREFIX}ai-model-settings`
 
 const modelSettings = useLocalStorage<unknown>(MODEL_SETTINGS_KEY, null, {

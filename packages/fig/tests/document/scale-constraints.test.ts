@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { materializeDocument } from '@open-pencil/fig'
+import { materializeDocument } from '@lawha/fig'
 
 for (const image of [false, true]) {
   test(`SCALE constrained occurrence resizes ${image ? 'rectangle' : 'vector'} without changing MIN sibling`, () => {

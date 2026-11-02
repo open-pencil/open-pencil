@@ -1,9 +1,9 @@
-// OpenPencil Cloud on Cloudflare Workers. To deploy, copy this folder next to it (for example to
-// deploy/mine), add your deployment TOML as openpencil-cloud.toml, replace the values marked below,
+// Lawha Cloud on Cloudflare Workers. To deploy, copy this folder next to it (for example to
+// deploy/mine), add your deployment TOML as lawha-cloud.toml, replace the values marked below,
 // and run `wrangler deploy --assets "$(git rev-parse --show-toplevel)/dist-cloud"` there. The
 // self-hosting guide walks through it.
 {
-  "name": "openpencil-cloud",
+  "name": "lawha-cloud",
   "main": "worker.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],

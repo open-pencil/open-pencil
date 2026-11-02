@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 // Live Figma swapComponent probe: untouched name follows replacement, custom name stays.
 test('a nested swap adopts the replacement name when no instance name is supplied', () => {

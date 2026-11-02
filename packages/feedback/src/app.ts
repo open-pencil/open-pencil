@@ -3,7 +3,7 @@ import { bodyLimit } from 'hono/body-limit'
 
 import { adminRoutes } from './admin/route'
 import type { FeedbackEnv, FeedbackServices } from './env'
-import { allowOpenPencilOrigins } from './http/cors'
+import { allowLawhaOrigins } from './http/cors'
 import { ingestRoutes } from './ingest/route'
 import { pingRoutes } from './ping/route'
 import { waitlistRoutes } from './waitlist/route'
@@ -20,7 +20,7 @@ export const defaultServices: FeedbackServices = {
 
 export function createFeedbackApp(services: FeedbackServices = defaultServices) {
   return new Hono<FeedbackEnv>()
-    .use('*', allowOpenPencilOrigins)
+    .use('*', allowLawhaOrigins)
     .use('*', bodyLimit({ maxSize: MAX_BODY_BYTES }))
     .route('/', pingRoutes(services))
     .route('/', ingestRoutes(services))

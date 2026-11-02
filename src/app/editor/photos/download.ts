@@ -1,5 +1,5 @@
-import { getStockPhotoProvider, type StockPhotoResult } from '@open-pencil/core/tools'
-import { IMPORTABLE_RASTER_TYPES } from '@open-pencil/scene-graph/images'
+import { getStockPhotoProvider, type StockPhotoResult } from '@lawha/core/tools'
+import { IMPORTABLE_RASTER_TYPES } from '@lawha/scene-graph/images'
 
 import type { PhotoService } from './search'
 

@@ -2,9 +2,9 @@
 import { tryOnScopeDispose, useObjectUrl } from '@vueuse/core'
 import { computed, onActivated, onDeactivated, ref, shallowRef, watch } from 'vue'
 
-import { useExport } from '@open-pencil/vue/document/export'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useRetainedActivity } from '@open-pencil/vue/lifecycle/retention'
+import { useExport } from '@lawha/vue/document/export'
+import { useI18n } from '@lawha/vue/i18n'
+import { useRetainedActivity } from '@lawha/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'

@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 import {
   getInstanceOverride,
   setInstanceOverride
-} from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/instances/overrides'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 import { StorageLibraryCatalog } from '@/app/libraries/catalog/storage'
@@ -62,8 +62,8 @@ describe('storage library catalog', () => {
     })
 
     expect([...objects.values.keys()]).toEqual([
-      `open-pencil/libraries/design-system/revisions/${revision.manifest.revisionId}.json`,
-      'open-pencil/libraries/design-system/manifest.json'
+      `lawha/libraries/design-system/revisions/${revision.manifest.revisionId}.json`,
+      'lawha/libraries/design-system/manifest.json'
     ])
     expect(await catalog.listLibraries()).toMatchObject([
       { libraryId: 'design-system', latestRevisionId: revision.manifest.revisionId }
@@ -88,7 +88,7 @@ describe('storage library catalog', () => {
     const instance = graph.createInstance(nestedComponent.id, component.id)
     if (!instance) throw new Error('Expected instance')
     setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'pluginData', {
-      $openPencilType: 'openpencil/map',
+      $lawhaType: 'lawha/map',
       entries: []
     })
 
@@ -111,7 +111,7 @@ describe('storage library catalog', () => {
         restoredInstance.id,
         'pluginData'
       )
-    ).toEqual({ $openPencilType: 'openpencil/map', entries: [] })
+    ).toEqual({ $lawhaType: 'lawha/map', entries: [] })
   })
 
   test('rejects corrupted revision content', async () => {
@@ -122,7 +122,7 @@ describe('storage library catalog', () => {
       name: 'Design system',
       graph: sourceGraph()
     })
-    const key = `open-pencil/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
+    const key = `lawha/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
     const bytes = objects.values.get(key)
     if (!bytes) throw new Error('Expected revision object')
     const source = new TextDecoder().decode(bytes).replace('Button', 'Corrupted')
@@ -140,7 +140,7 @@ describe('storage library catalog', () => {
       name: 'Design system',
       graph: sourceGraph()
     })
-    const key = `open-pencil/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
+    const key = `lawha/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
     for (const source of [
       '{not json',
       JSON.stringify({ manifest: revision.manifest, graph: { nodes: 'none' } })
@@ -176,7 +176,7 @@ describe('storage library catalog', () => {
       name: 'Design system',
       graph
     })
-    const key = `open-pencil/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
+    const key = `lawha/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
     const bytes = objects.values.get(key)
     if (!bytes) throw new Error('Expected revision object')
     const source = new TextDecoder().decode(bytes)

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import type { ConnectorControlPoint } from '@open-pencil/scene-graph'
+import type { ConnectorControlPoint } from '@lawha/scene-graph'
 import {
   connectorNetwork,
   dragCurve,
@@ -13,7 +13,7 @@ import {
   routeConnector,
   connectorSides,
   type ConnectorRouteEnd
-} from '@open-pencil/scene-graph/connectors'
+} from '@lawha/scene-graph/connectors'
 
 const pairSchema = v.tuple([v.number(), v.number()])
 const boxSchema = v.tuple([v.number(), v.number(), v.number(), v.number()])

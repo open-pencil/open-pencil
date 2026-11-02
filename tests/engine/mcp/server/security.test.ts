@@ -6,8 +6,8 @@ import { dirname, join } from 'node:path'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import * as v from 'valibot'
 
-import { toolNumber } from '@open-pencil/core/tools'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { toolNumber } from '@lawha/core/tools'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { startServer } from '#mcp/server'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
@@ -21,7 +21,7 @@ import {
 } from '#tests/helpers/mcp/server'
 
 const isUnix = process.platform !== 'win32'
-const SOCKET_DIR = join(tmpdir(), `openpencil-test-server-${process.pid}`)
+const SOCKET_DIR = join(tmpdir(), `lawha-test-server-${process.pid}`)
 const TEST_AUTH_TOKEN = 'test-auth-token'
 const NO_AUTH_TOKEN = null as string | null
 let testCounter = 0
@@ -37,7 +37,7 @@ function testSocketPath(): string | null {
 
 describe('MCP server CORS', () => {
   test('accepts authenticated health preflight from the configured worktree origin', async () => {
-    const origin = 'https://feature.open-pencil.localhost'
+    const origin = 'https://feature.lawha.localhost'
     const handle = await startServer({
       httpPort: 0,
       withTcp: true,

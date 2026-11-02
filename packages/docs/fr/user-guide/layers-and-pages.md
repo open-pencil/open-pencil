@@ -22,7 +22,7 @@ La sélection de l’arbre et celle de la zone de travail restent synchronisées
 
 La liste permet de créer, ouvrir, renommer et supprimer des pages. Chacune conserve sa position et son niveau de zoom.
 
-Le menu contextuel déplace la sélection vers une autre page. Lors d’un changement de page, OpenPencil restaure sa vue et sa sélection.
+Le menu contextuel déplace la sélection vers une autre page. Lors d’un changement de page, Lawha restaure sa vue et sa sélection.
 
 ## Propriétés
 

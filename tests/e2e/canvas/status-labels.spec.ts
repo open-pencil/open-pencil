@@ -4,8 +4,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('status pills beside section titles and dots after frame names, cut short when narrow', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const solid = (r: number, g: number, b: number) => [
       { type: 'SOLID' as const, color: { r, g, b, a: 1 }, visible: true, opacity: 1 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useColorModel } from '@open-pencil/vue/controls/color-model'
-import { inputValue } from '@open-pencil/vue/shared/dom-events'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { useColorModel } from '@lawha/vue/controls/color-model'
+import { inputValue } from '@lawha/vue/shared/dom-events'
 
 import { BindingPill } from '@/components/ui/binding'
 

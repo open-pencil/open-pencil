@@ -17,7 +17,7 @@ description: Font family, Style, Size, Alignment und Formatting von Text objects
 ## Verwendung
 
 ```ts
-import { useTypography } from '@open-pencil/vue/controls/typography'
+import { useTypography } from '@lawha/vue/controls/typography'
 
 const typography = useTypography()
 ```

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { isLayerRef, isMode, isVariable } from '@open-pencil/design-jsx'
+import { isLayerRef, isMode, isVariable } from '@lawha/design-jsx'
 
 import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'
 import { sandboxDocument } from '@/app/code/sandbox/document'
@@ -36,7 +36,7 @@ describe('Design JSX sandbox output', () => {
 
   test('validates and converts the same serialized element contract', () => {
     const roots = validateDesignJSXOutput(
-      frame({ fill: { __openPencilHelper: 'solid', args: ['#ff0000'] } }, [
+      frame({ fill: { __lawhaHelper: 'solid', args: ['#ff0000'] } }, [
         { type: 'text', props: {}, children: ['Hello ', 2] }
       ]),
       limits
@@ -52,11 +52,11 @@ describe('Design JSX sandbox output', () => {
 
   test('rejects empty output and malformed elements before rendering', () => {
     expect(() => validateDesignJSXOutput(undefined, limits)).toThrow(
-      'must return an OpenPencil element'
+      'must return an Lawha element'
     )
-    expect(() => validateDesignJSXOutput([], limits)).toThrow('must return an OpenPencil element')
+    expect(() => validateDesignJSXOutput([], limits)).toThrow('must return an Lawha element')
     expect(() => convertDesignJSXRoots([{ type: 'frame', props: {}, children: null }])).toThrow(
-      'must return an OpenPencil element'
+      'must return an Lawha element'
     )
   })
 
@@ -92,7 +92,7 @@ describe('Design JSX sandbox output', () => {
 
   test('counts container and primitive data toward the output limit', () => {
     const tiny = resolveDesignJSXValidationLimits({ outputBytes: 1 })
-    expect(() => validateDesignJSXOutput([], tiny)).toThrow('must return an OpenPencil element')
+    expect(() => validateDesignJSXOutput([], tiny)).toThrow('must return an Lawha element')
     expect(() => validateDesignJSXOutput(true, tiny)).toThrow('too large')
     expect(() => validateDesignJSXOutput(1, tiny)).toThrow('too large')
     expect(() => validateDesignJSXOutput(frame(), tiny)).toThrow('too large')
@@ -101,7 +101,7 @@ describe('Design JSX sandbox output', () => {
   test('converts every helper the renderer gives JSX, and nothing else', () => {
     const [frameWithShader] = convertDesignJSXRoots(
       validateDesignJSXOutput(
-        frame({ fill: { __openPencilHelper: 'shader', args: [[{ type: 'Aurora', props: {} }]] } }),
+        frame({ fill: { __lawhaHelper: 'shader', args: [[{ type: 'Aurora', props: {} }]] } }),
         limits
       )
     )
@@ -109,14 +109,14 @@ describe('Design JSX sandbox output', () => {
       shader: { components: [{ type: 'Aurora' }] }
     })
     expect(() =>
-      convertDesignJSXRoots([frame({ fill: { __openPencilHelper: 'isVariableInput', args: [] } })])
+      convertDesignJSXRoots([frame({ fill: { __lawhaHelper: 'isVariableInput', args: [] } })])
     ).toThrow('Unknown Design JSX helper "isVariableInput"')
   })
 
   test('rejects unknown helper descriptors during trusted conversion', () => {
     for (const helperName of ['unknown', 'toString', 'constructor', 'valueOf']) {
       const roots = validateDesignJSXOutput(
-        frame({ fill: { __openPencilHelper: helperName, args: [] } }),
+        frame({ fill: { __lawhaHelper: helperName, args: [] } }),
         limits
       )
       expect(() => convertDesignJSXRoots(roots)).toThrow('Unknown Design JSX helper')
@@ -124,7 +124,7 @@ describe('Design JSX sandbox output', () => {
   })
 
   test('converts each numbered ref() to one handle across the elements of an evaluation', () => {
-    const marked = (number: number) => ({ __openPencilHelper: 'ref', args: [number] })
+    const marked = (number: number) => ({ __lawhaHelper: 'ref', args: [number] })
     const [first, second, connector] = convertDesignJSXRoots([
       frame({ ref: marked(1) }),
       frame({ ref: marked(2) }),
@@ -137,7 +137,7 @@ describe('Design JSX sandbox output', () => {
   })
 
   test('converts each written collection once, its modes able to alias its own variables', () => {
-    const variable = (name: string) => ({ __openPencilHelper: 'variable', args: [0, name] })
+    const variable = (name: string) => ({ __lawhaHelper: 'variable', args: [0, name] })
     const collections = [
       {
         collection: 'Theme',
@@ -148,7 +148,7 @@ describe('Design JSX sandbox output', () => {
     ]
     const roots = validateDesignJSXOutput(
       [
-        frame({ fill: variable('Page'), mode: { __openPencilHelper: 'mode', args: [0, 'Dark'] } }),
+        frame({ fill: variable('Page'), mode: { __lawhaHelper: 'mode', args: [0, 'Dark'] } }),
         frame({ fill: variable('Page') })
       ],
       limits,
@@ -165,7 +165,7 @@ describe('Design JSX sandbox output', () => {
       { name: 'Dark', values: { Page: '#111111', Text: page } }
     ])
     expect(() =>
-      convertDesignJSXRoots([frame({ fill: { __openPencilHelper: 'variable', args: [3, 'X'] } })])
+      convertDesignJSXRoots([frame({ fill: { __lawhaHelper: 'variable', args: [3, 'X'] } })])
     ).toThrow('Unknown variable collection')
   })
 
@@ -190,8 +190,8 @@ return __h(Frame, { fill: t.Page, mode: dark }, __h(Button.Root, null), 'Hi', fa
       value: {
         type: 'frame',
         props: {
-          fill: { __openPencilHelper: 'variable', args: [0, 'Page'] },
-          mode: { __openPencilHelper: 'mode', args: [0, 'Dark'] }
+          fill: { __lawhaHelper: 'variable', args: [0, 'Page'] },
+          mode: { __lawhaHelper: 'mode', args: [0, 'Dark'] }
         },
         children: [{ type: 'Button.Root', props: {}, children: [] }, 'Hi']
       },
@@ -207,7 +207,7 @@ return __h(Frame, { fill: t.Page, mode: dark }, __h(Button.Root, null), 'Hi', fa
     expect(run('none', 'const frame = __h(Frame, null)')).toEqual({
       id: 'none',
       ok: false,
-      error: 'Design JSX must return an OpenPencil element.'
+      error: 'Design JSX must return an Lawha element.'
     })
     expect(run('date', 'return __h(Frame, { when: new Date(0) })')).toEqual({
       id: 'date',

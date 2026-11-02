@@ -1,4 +1,4 @@
-import { IS_BROWSER, IS_TAURI } from '@open-pencil/core/constants'
+import { IS_BROWSER, IS_TAURI } from '@lawha/core/constants'
 
 export {
   IS_BROWSER,
@@ -57,16 +57,16 @@ export {
   COMPONENT_LABEL_ICON_GAP,
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
-} from '@open-pencil/core/constants'
+} from '@lawha/core/constants'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 /**
  * The collaboration namespace. It names the shared document format and how peers send it, so
  * builds that sync the layer tree or variables differently, or encode what they send
  * differently, never join each other's rooms; change it with either.
  */
-export const COLLAB_APP_ID = 'openpencil/7'
+export const COLLAB_APP_ID = 'lawha/7'
 
 // 32 base36 characters provide roughly 165 bits of entropy. The room ID is a
 // bearer credential and must resist offline enumeration from public signaling topics.
@@ -77,33 +77,33 @@ export const ROOM_UNREACHABLE_MS = 20_000
 /** How often a room tab rechecks its connection while it waits for the file. */
 export const ROOM_STATUS_TICK_MS = 500
 
-export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
+export const WEB_APP_ORIGIN = 'https://app.lawha.invalid'
 /** The privacy page: every request the app makes, and every usage event and field. */
-export const PRIVACY_URL = 'https://openpencil.dev/overview/privacy'
-/** The OpenPencil Cloud section of the website, with its waitlist form. */
-export const CLOUD_WAITLIST_URL = 'https://openpencil.dev/#cloud'
+export const PRIVACY_URL = 'https://github.com/aliaaldihnayn-lab/design#readme'
+/** The Lawha Cloud section of the website, with its waitlist form. */
+export const CLOUD_WAITLIST_URL = 'https://github.com/aliaaldihnayn-lab/design#readme'
 /**
- * The hosted OpenPencil Cloud server, offered first when connecting. An official deployment's own
+ * The hosted Lawha Cloud server, offered first when connecting. An official deployment's own
  * editor build names that deployment, such as staging.
  */
 export const OFFICIAL_CLOUD_URL =
-  (typeof __OPENPENCIL_OFFICIAL_CLOUD_URL__ === 'string' && __OPENPENCIL_OFFICIAL_CLOUD_URL__) ||
-  'https://cloud.openpencil.dev'
+  (typeof __LAWHA_OFFICIAL_CLOUD_URL__ === 'string' && __LAWHA_OFFICIAL_CLOUD_URL__) ||
+  'https://cloud.lawha.invalid'
 /** Whether this is the editor a Cloud server serves on its own address (`bun run build:cloud`). */
 export const IS_CLOUD_SITE =
-  typeof __OPENPENCIL_CLOUD_SITE__ === 'boolean' && __OPENPENCIL_CLOUD_SITE__
+  typeof __LAWHA_CLOUD_SITE__ === 'boolean' && __LAWHA_CLOUD_SITE__
 /** Where the desktop app's installers are published. */
-export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
+export const DESKTOP_DOWNLOAD_URL = 'https://github.com/aliaaldihnayn-lab/design/releases/latest'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'
 
 /**
  * Published guides. Settings links each integration section to its guide with one "Learn more"
  * at the end of the section description; alerts link only to the fix, never to docs.
  */
-const DOCS_ORIGIN = 'https://openpencil.dev'
+const DOCS_ORIGIN = 'https://github.com/aliaaldihnayn-lab/design#readme'
 export const MCP_SERVER_DOCS_URL = `${DOCS_ORIGIN}/programmable/mcp-server`
-/** The guide to OpenPencil Cloud, linked from the Cloud server's own pages. */
-export const CLOUD_DOCS_URL = `${DOCS_ORIGIN}/user-guide/openpencil-cloud`
+/** The guide to Lawha Cloud, linked from the Cloud server's own pages. */
+export const CLOUD_DOCS_URL = `${DOCS_ORIGIN}/user-guide/lawha-cloud`
 export const WEBMCP_DOCS_URL = `${MCP_SERVER_DOCS_URL}#webmcp`
 export const MCP_CONNECTIONS_DOCS_URL = `${DOCS_ORIGIN}/programmable/ai-chat#external-mcp-connections`
 export const CODING_AGENTS_GUIDE_URL = `${DOCS_ORIGIN}/programmable/coding-agents`
@@ -111,7 +111,7 @@ export const PI_GUIDE_URL = `${CODING_AGENTS_GUIDE_URL}#pi`
 
 /** The published release page, with its full notes, for a desktop version. */
 export function releaseNotesURL(version: string): string {
-  return `https://github.com/open-pencil/open-pencil/releases/tag/v${version}`
+  return `https://github.com/aliaaldihnayn-lab/design/releases/tag/v${version}`
 }
 
 export function getShareURL(roomId: string): string {
@@ -136,7 +136,7 @@ export {
   ZOOM_DIVISOR,
   ZOOM_SCALE_MIN,
   ZOOM_SCALE_MAX
-} from '@open-pencil/core/constants'
+} from '@lawha/core/constants'
 
 export const ASSET_GRID_THUMBNAIL_SIZE = 96
 export const ASSET_LIST_THUMBNAIL_SIZE = 40

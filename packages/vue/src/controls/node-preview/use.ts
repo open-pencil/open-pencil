@@ -1,8 +1,8 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { getCurrentInstance, onDeactivated } from 'vue'
 
-import type { Editor, NodePreview } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Editor, NodePreview } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 /** Keeps an edit's original targets until its terminal event, even after selection changes. */
 export function useNodePreview(editor: Editor) {

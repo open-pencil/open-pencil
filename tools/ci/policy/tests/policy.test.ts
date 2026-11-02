@@ -28,8 +28,8 @@ const documentation = [
   'tools/AGENTS.md',
   'packages/docs/programmable/sdk/api/components/bindable-value.md',
   'packages/docs/public/logo.svg',
-  'skills/open-pencil/SKILL.md',
-  'skills/open-pencil/references/design-authoring.md',
+  'skills/lawha/SKILL.md',
+  'skills/lawha/references/design-authoring.md',
   'openspec/proposal.md'
 ]
 const code = [
@@ -42,7 +42,7 @@ const code = [
   'packages/core/src/AGENTS.md.ts',
   'packages/docs/.vitepress/config.ts',
   'packages/docs/demo.vue',
-  'skills/open-pencil/scripts/create.ts',
+  'skills/lawha/scripts/create.ts',
   'changes/1095/notes.txt',
   'package.json',
   'bun.lock',

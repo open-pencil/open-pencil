@@ -1,8 +1,8 @@
 import { uniq } from 'es-toolkit'
 import { computed } from 'vue'
 
-import { figJamColoredLayers } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { figJamColoredLayers } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   figJamLayerColorName,
   figJamOutlineColorName,
@@ -14,8 +14,8 @@ import {
   type FigJamLineStyle,
   type FigJamTextSize,
   type FigJamTypeface
-} from '@open-pencil/scene-graph/figjam'
-import { generatedFrameText } from '@open-pencil/scene-graph/generated'
+} from '@lawha/scene-graph/figjam'
+import { generatedFrameText } from '@lawha/scene-graph/generated'
 
 import { useEditor } from '#vue/editor/context'
 import { useSelectionState } from '#vue/editor/selection-state/use'

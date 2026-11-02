@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { OkHCLControls } from '#vue/controls/color-model/types'
 import { useColorModel } from '#vue/controls/color-model/use'

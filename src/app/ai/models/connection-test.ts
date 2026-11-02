@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS } from '@lawha/core/constants'
 
 import { isInsufficientCreditError, providerErrorStatus } from '@/app/ai/chat/failure'
 import {
@@ -8,8 +8,8 @@ import {
   resolveLanguageModelID,
   type ModelConfig
 } from '@/app/ai/models/language-model'
-import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudCreditRefusal } from '@/app/ai/providers/lawha/failure'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import type { ModelProviderRuntime } from '@/app/ai/providers/types'
 import { isTauri } from '@/app/tauri/env'
 
@@ -108,7 +108,7 @@ function classifyError(
   providerID: ModelConfig['providerID']
 ): ProviderConnectionTestFailureReason {
   // The workspace's plan holds Cloud's credits, not a provider account to top up.
-  if (providerID === OPENPENCIL_AI_PROVIDER && cloudCreditRefusal(error)) {
+  if (providerID === LAWHA_AI_PROVIDER && cloudCreditRefusal(error)) {
     return 'cloud-credits-exhausted'
   }
   if (isInsufficientCreditError(error)) return 'insufficient-credit'

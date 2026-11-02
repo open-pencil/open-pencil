@@ -3,12 +3,12 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { inflateSync, unzipSync } from 'fflate'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
-import { ByteBuffer, compileSchema, decodeBinarySchema } from '@open-pencil/kiwi/schema-runtime'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Color, GUID } from '@open-pencil/scene-graph/primitives'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { parseFigKiwiContainer } from '@lawha/kiwi/fig/parse'
+import { ByteBuffer, compileSchema, decodeBinarySchema } from '@lawha/kiwi/schema-runtime'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { Color, GUID } from '@lawha/scene-graph/primitives'
 
 interface DecodedPaint {
   color?: Color

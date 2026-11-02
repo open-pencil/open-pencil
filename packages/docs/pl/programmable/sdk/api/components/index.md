@@ -1,11 +1,11 @@
 ---
 title: Komponenty
-description: Komponenty pakietu @open-pencil/vue bez narzuconego wyglądu.
+description: Komponenty pakietu @lawha/vue bez narzuconego wyglądu.
 ---
 
 # Komponenty
 
-`@open-pencil/vue` udostępnia komponenty bez narzuconego wyglądu dla obszaru roboczego, nawigacji, paneli właściwości i wyspecjalizowanych pól.
+`@lawha/vue` udostępnia komponenty bez narzuconego wyglądu dla obszaru roboczego, nawigacji, paneli właściwości i wyspecjalizowanych pól.
 
 ## Edytor
 

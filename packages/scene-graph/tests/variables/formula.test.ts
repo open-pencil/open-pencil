@@ -2,7 +2,7 @@ import { expect, test, spyOn } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { SceneGraph, type VariableFormulaNode, type VariableValue } from '@open-pencil/scene-graph'
+import { SceneGraph, type VariableFormulaNode, type VariableValue } from '@lawha/scene-graph'
 import {
   parseVariableFormula,
   formatVariableFormula,
@@ -12,7 +12,7 @@ import {
   collectionsBoundIn,
   formulaTokens,
   createBatchVariableResolver
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 function setup(type: 'FLOAT' | 'BOOLEAN' = 'FLOAT') {
   const graph = new SceneGraph()

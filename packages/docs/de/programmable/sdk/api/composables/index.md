@@ -1,11 +1,11 @@
 ---
 title: Composables
-description: Zentrale Composable-APIs aus @open-pencil/vue.
+description: Zentrale Composable-APIs aus @lawha/vue.
 ---
 
 # Composables
 
-Diese Composables liefern Zustand und Aktionen, die eigene OpenPencil-Oberflächen typischerweise benötigen.
+Diese Composables liefern Zustand und Aktionen, die eigene Lawha-Oberflächen typischerweise benötigen.
 
 ## Kontext und Arbeitsfläche
 

@@ -1,13 +1,13 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   getAxisAlignedWorldBounds,
   getNodeLocalMatrix,
   getNodeRotationOrigin,
   getWorldHandles,
   getWorldMatrix
-} from '@open-pencil/scene-graph/coordinate'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/coordinate'
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import type { Vector, Rect } from '@lawha/scene-graph/primitives'
 
 import type { RotationPreview, ViewportTransform } from './types'
 

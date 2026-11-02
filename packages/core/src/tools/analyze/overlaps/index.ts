@@ -1,7 +1,7 @@
 import { orderBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
 import { toolNumber, defineTool } from '#core/tools/schema'

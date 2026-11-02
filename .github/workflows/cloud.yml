@@ -1,6 +1,6 @@
 name: Deploy Cloud
 
-# Deploys an official OpenPencil Cloud deployment: packages/cloud/deploy/openpencil/<target>, with
+# Deploys an official Lawha Cloud deployment: packages/cloud/deploy/lawha/<target>, with
 # the secrets and reviewers of the cloud-<target> GitHub environment.
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
       contents: read
       deployments: write
     env:
-      DEPLOYMENT: packages/cloud/deploy/openpencil/${{ inputs.target }}
+      DEPLOYMENT: packages/cloud/deploy/lawha/${{ inputs.target }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -37,25 +37,25 @@ jobs:
       - uses: ./.github/actions/setup-playwright
 
       # The Worker serves the editor and the portal as static assets. The editor names this
-      # deployment as the official server and, like app.openpencil.dev, sends the daily ping.
+      # deployment as the official server and, like app.lawha.invalid, sends the daily ping.
       - name: Build the Cloud site
         env:
-          VITE_OPENPENCIL_OFFICIAL_CLOUD_URL: ${{ vars.CLOUD_URL }}
-          VITE_OPENPENCIL_FEEDBACK: "on"
+          VITE_LAWHA_OFFICIAL_CLOUD_URL: ${{ vars.CLOUD_URL }}
+          VITE_LAWHA_FEEDBACK: "on"
         run: bun run build:packages && bun run build:cloud
 
       # Migrations run before the new code, over the direct connection rather than Hyperdrive. The
       # config reads every secret it names, so only this step and the next one see them.
       - name: Migrate the database
         env:
-          OPENPENCIL_CLOUD_CONFIG: ${{ github.workspace }}/${{ env.DEPLOYMENT }}/openpencil-cloud.toml
+          LAWHA_CLOUD_CONFIG: ${{ github.workspace }}/${{ env.DEPLOYMENT }}/lawha-cloud.toml
           DATABASE_URL: ${{ secrets.NEON_MIGRATOR_DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-        run: bun --filter @open-pencil/cloud migrate
+        run: bun --filter @lawha/cloud migrate
 
       - name: Collect the Worker's secrets
         env:
@@ -87,7 +87,7 @@ jobs:
         # Pages are asked for as a browser does; the API is not, so a missing route can't turn into
         # the editor's page.
         run: |
-          for path in /health /ready /.well-known/openpencil / /welcome /auth/sign-in; do
+          for path in /health /ready /.well-known/lawha / /welcome /auth/sign-in; do
             accept='application/json'
             case "$path" in /|/welcome|/auth/*) accept='text/html' ;; esac
             status=$(curl --silent --show-error --retry 10 --retry-all-errors --retry-delay 3 \

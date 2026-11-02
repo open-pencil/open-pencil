@@ -72,7 +72,7 @@ export function parseCloudLinkPath(
 }
 
 /**
- * The desktop app's form of a Cloud link, `openpencil://cloud?url=<link>#secret`: the web link,
+ * The desktop app's form of a Cloud link, `lawha://cloud?url=<link>#secret`: the web link,
  * whose address names the server, with its secret kept in the fragment.
  * `desktop/src/launch/links.rs` validates it before the editor sees it.
  */
@@ -83,5 +83,5 @@ export function cloudDesktopLinkURL(
   secret: string
 ): string {
   const link = serverLink(serverURL, `/${kind}/${encodeParam(id)}`)
-  return withFragment(withQuery('openpencil://cloud', { url: link }), secret)
+  return withFragment(withQuery('lawha://cloud', { url: link }), secret)
 }

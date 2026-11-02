@@ -2,9 +2,9 @@
 import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import type { SlotDefinitionControl, SlotInstanceOption } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import type { SlotDefinitionControl, SlotInstanceOption } from '@lawha/vue/controls/slots'
+import { useI18n } from '@lawha/vue/i18n'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'

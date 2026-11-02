@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { AnalyzeTypographyResult } from '@open-pencil/core/rpc'
+import type { AnalyzeTypographyResult } from '@lawha/core/rpc'
 
 import { appTargetOptions } from '#cli/app/target'
 import { bold, fmtHistogram, fmtSummary } from '#cli/format'

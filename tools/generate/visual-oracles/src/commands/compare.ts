@@ -3,7 +3,7 @@ import { defineCommand } from 'citty'
 import { operationCommand } from './operation'
 
 export default defineCommand({
-  meta: { name: 'compare', description: 'Compare Figma and OpenPencil rendering' },
+  meta: { name: 'compare', description: 'Compare Figma and Lawha rendering' },
   subCommands: {
     node: operationCommand(
       'node',

@@ -1,8 +1,8 @@
 import type { Color as RekaColor } from 'reka-ui'
 import type { MaybeRefOrGetter } from 'vue'
 
-import type { OkHCLColor, RenderColorSpace } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { OkHCLColor, RenderColorSpace } from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 export type BuiltInColorFormat = 'hex' | 'rgb' | 'hsl' | 'hsb' | 'okhcl'
 export type ColorFieldFormat = BuiltInColorFormat | (string & {})

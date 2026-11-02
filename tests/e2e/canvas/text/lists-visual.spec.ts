@@ -1,4 +1,4 @@
-import type { Fill, StyleRun, TextParagraphStyle } from '@open-pencil/scene-graph'
+import type { Fill, StyleRun, TextParagraphStyle } from '@lawha/scene-graph'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import listGlyphs from '#tests/fixtures/list-saved-glyphs.json' with { type: 'json' }
@@ -7,7 +7,7 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('draws list markers, indents, and spacing as Figma lays them out', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const item = (listType: 'ORDERED' | 'UNORDERED', indentation = 1) => ({
       listType,
@@ -77,7 +77,7 @@ test('draws list markers, indents, and spacing as Figma lays them out', async ()
   // Glyphs Figma saved for a list whose first character is larger and red: its markers take
   // that style, and the canvas draws them as saved.
   await editor.page.evaluate((fixture) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     store.graph.createNode('TEXT', store.state.currentPageId, {
       ...fixture,
@@ -95,7 +95,7 @@ test('draws list markers, indents, and spacing as Figma lays them out', async ()
     store.requestRender()
   }, listGlyphs)
   await editor.page.waitForFunction(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return (
       store?.graph.getChildren(store.state.currentPageId).filter((node) => node.type === 'TEXT')
         .length === 6

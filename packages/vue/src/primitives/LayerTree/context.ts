@@ -1,8 +1,8 @@
 import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
 
 /** What a shape layer's row draws as its icon: its outline in its box, turned and reflected. */
 export const LAYER_OUTLINE_FIELDS = [
@@ -104,6 +104,6 @@ export function provideLayerTree(ctx: LayerTreeContext) {
 
 export function useLayerTree(): LayerTreeContext {
   const ctx = inject(LAYER_TREE_KEY)
-  if (!ctx) throw new Error('[open-pencil] useLayerTree() called outside <LayerTreeRoot>')
+  if (!ctx) throw new Error('[lawha] useLayerTree() called outside <LayerTreeRoot>')
   return ctx
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/vue",
+  "name": "@lawha/vue",
   "version": "0.17.0-beta.1",
   "license": "MIT",
   "type": "module",
@@ -428,7 +428,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/vue"
   },
   "publishConfig": {
@@ -436,7 +436,7 @@
     "provenance": true
   },
   "peerDependencies": {
-    "@open-pencil/core": "workspace:*",
+    "@lawha/core": "workspace:*",
     "canvaskit-wasm": ">=0.41.1",
     "vue": "^3.5.41"
   },
@@ -450,8 +450,8 @@
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",
     "@nanostores/i18n": "^1.3.3",
     "@nanostores/vue": "^1.1.0",
-    "@open-pencil/dom-css": "workspace:*",
-    "@open-pencil/scene-graph": "workspace:*",
+    "@lawha/dom-css": "workspace:*",
+    "@lawha/scene-graph": "workspace:*",
     "@vueuse/core": "^14.4.0",
     "es-toolkit": "^1.52.0",
     "fuse.js": "^7.5.0",

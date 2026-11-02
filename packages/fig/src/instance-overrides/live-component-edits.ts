@@ -1,6 +1,6 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { INSTANCE_SYNC_FIELDS } from '@open-pencil/scene-graph/instances'
-import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { INSTANCE_SYNC_FIELDS } from '@lawha/scene-graph/instances'
+import { copiedComponentLayerId } from '@lawha/scene-graph/instances/overrides'
 
 import type { MaterializedInstance } from './materialize-instance'
 

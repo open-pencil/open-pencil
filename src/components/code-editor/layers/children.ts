@@ -1,7 +1,7 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 
-import type { DesignJSXElement } from '@open-pencil/design-jsx'
+import type { DesignJSXElement } from '@lawha/design-jsx'
 
 import type { PatchContext, Rewrite } from './context'
 import type { LinkedElement } from './links'

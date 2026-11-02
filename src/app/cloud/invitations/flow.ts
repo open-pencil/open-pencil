@@ -2,12 +2,12 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { computed, ref, shallowRef } from 'vue'
 
-import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
+import { CloudAPIError, createCloudAPIClient } from '@lawha/cloud/client'
 import {
   cloudDesktopLinkURL,
   type AcceptedInvitation,
   type InvitationPreview
-} from '@open-pencil/cloud/contract'
+} from '@lawha/cloud/contract'
 
 import { openHomeLocation } from '@/app/shell/menu/navigation'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
@@ -41,7 +41,7 @@ type PendingInvitation = v.InferOutput<typeof pendingSchema>
  * sign-in pages, and cleared once accepted or dismissed.
  */
 const stored = IS_BROWSER
-  ? useSessionStorage<string | null>('open-pencil:cloud-invitation', null)
+  ? useSessionStorage<string | null>('lawha:cloud-invitation', null)
   : ref<string | null>(null)
 const pending = computed<PendingInvitation | null>(() => {
   const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), pendingSchema), stored.value ?? '')

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useAIMessages } from '@lawha/vue/i18n'
 
 import type { QueuedMessage } from '@/app/ai/chat/queue'
 import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'

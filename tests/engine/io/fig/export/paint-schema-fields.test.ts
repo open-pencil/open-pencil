@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { sceneNodeToKiwi } from '@lawha/fig/node-change'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('Figma paint schema field export', () => {
   test('exports pattern, noise, and custom fill metadata', () => {

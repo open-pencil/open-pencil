@@ -20,7 +20,7 @@ export const accountAuthenticationConfig = parseCloudServerConfig({
   smtpSecure: true,
   s3Endpoint: 'https://objects.example.com',
   s3Region: 'us-east-1',
-  s3Bucket: 'openpencil',
+  s3Bucket: 'lawha',
   s3AccessKeyId: 'access-key',
   s3SecretAccessKey: 'secret-key'
 })

@@ -457,7 +457,7 @@ export interface PluginRelaunchDataEntry {
 
 /**
  * One derived glyph outline for display (path text / missing-font fidelity).
- * Figma import is one producer; OpenPencil editing and reflow can regenerate it.
+ * Figma import is one producer; Lawha editing and reflow can regenerate it.
  * commandsBlob is in font units; paint multiplies by fontSize (and scaleX/Y).
  */
 export interface TextPathData {
@@ -951,7 +951,7 @@ export interface VariableFormula {
   value: VariableFormulaNode
 }
 /**
- * An imported expression OpenPencil cannot evaluate, kept as the file wrote it so saving writes it
+ * An imported expression Lawha cannot evaluate, kept as the file wrote it so saving writes it
  * back. `references` holds one entry per alias in `value`, in the order the format walks them, and
  * `null` where the alias names a variable this document does not have. `modes` holds the mode id of
  * each mode key in `value`, in the same walk order.

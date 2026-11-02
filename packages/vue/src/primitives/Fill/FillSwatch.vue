@@ -2,7 +2,7 @@
 import { Primitive } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { useOptionalBindableValue } from '#vue/primitives/BindableValue/context'
 
@@ -46,7 +46,7 @@ const slotProps = computed(() => ({
     :data-fill-type="effectiveFill.type"
     :data-fill-category="category"
     :data-transparent="transparent ? '' : undefined"
-    :style="{ '--open-pencil-fill-swatch-background': background }"
+    :style="{ '--lawha-fill-swatch-background': background }"
     role="img"
     aria-roledescription="fill swatch"
     data-slot="swatch"

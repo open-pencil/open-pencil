@@ -4,7 +4,7 @@ import type { InjectionKey } from 'vue'
 import type { BindingProvider } from '#vue/controls/binding-provider/types'
 
 export const BINDING_PROVIDER_KEY: InjectionKey<BindingProvider> = Symbol(
-  'open-pencil-binding-provider'
+  'lawha-binding-provider'
 )
 
 export function provideBindingProvider(provider: BindingProvider) {

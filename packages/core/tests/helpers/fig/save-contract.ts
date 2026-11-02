@@ -2,7 +2,7 @@ import { expect } from 'bun:test'
 
 import { omit } from 'es-toolkit/object'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 function pageOf(graph: SceneGraph, node: SceneNode): string | undefined {
   let current: SceneNode | undefined = node

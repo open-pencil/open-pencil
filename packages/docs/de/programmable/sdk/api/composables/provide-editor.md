@@ -1,6 +1,6 @@
 ---
 title: provideEditor
-description: Eine OpenPencil-Editor-Instanz über Vue dependency injection bereitstellen.
+description: Eine Lawha-Editor-Instanz über Vue dependency injection bereitstellen.
 ---
 
 # provideEditor
@@ -12,7 +12,7 @@ description: Eine OpenPencil-Editor-Instanz über Vue dependency injection berei
 ## Verwendung
 
 ```ts
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
 provideEditor(editor)
 ```
@@ -21,9 +21,9 @@ provideEditor(editor)
 
 ```vue
 <script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 const props = defineProps<{
   editor: Editor
@@ -39,7 +39,7 @@ provideEditor(props.editor)
 
 ## Hinweise
 
-Das aktuelle SDK verwendet direkt `provideEditor()` und `useEditor()`. Ältere Beispiele und einzelne Fehlermeldungen erwähnen noch `OpenPencilProvider`; dieser Component gehört jedoch nicht zum aktuellen öffentlichen API.
+Das aktuelle SDK verwendet direkt `provideEditor()` und `useEditor()`. Ältere Beispiele und einzelne Fehlermeldungen erwähnen noch `LawhaProvider`; dieser Component gehört jedoch nicht zum aktuellen öffentlichen API.
 
 ## Siehe auch
 

@@ -10,13 +10,13 @@ const SECRET = 'ab'.repeat(32)
 const SERVER = 'http://127.0.0.1:9'
 
 function invitationLink(secret: string): string {
-  return `openpencil://cloud?url=${encodeURIComponent(`${SERVER}/invitations/${INVITATION}`)}#${secret}`
+  return `lawha://cloud?url=${encodeURIComponent(`${SERVER}/invitations/${INVITATION}`)}#${secret}`
 }
 
 describe('native Cloud links', () => {
   before(async () => {
     await browser.waitUntil(
-      async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
+      async () => browser.execute(() => Boolean(window.lawha?.getStore?.())),
       { timeout: 30_000 }
     )
   })

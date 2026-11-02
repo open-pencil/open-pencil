@@ -1,4 +1,4 @@
-import { transformGeometryBlob } from '@open-pencil/scene-graph/copy'
+import { transformGeometryBlob } from '@lawha/scene-graph/copy'
 export interface OutlineCommand {
   type: string
   x?: number

@@ -1,11 +1,11 @@
 ---
 title: useEditor
-description: Dostęp do instancji edytora OpenPencil przekazanej przez provideEditor.
+description: Dostęp do instancji edytora Lawha przekazanej przez provideEditor.
 ---
 
 # useEditor
 
-`useEditor()` zwraca instancję edytora OpenPencil przekazaną przez najbliższe wywołanie `provideEditor()`.
+`useEditor()` zwraca instancję edytora Lawha przekazaną przez najbliższe wywołanie `provideEditor()`.
 
 To główny punkt wejścia dla composables i komponentów bez narzuconego wyglądu wymagających dostępu do edytora.
 
@@ -14,7 +14,7 @@ To główny punkt wejścia dla composables i komponentów bez narzuconego wyglą
 Wywołaj `useEditor()` wewnątrz drzewa komponentów, w którym wcześniej wykonano `provideEditor(editor)`.
 
 ```ts
-import { useEditor } from '@open-pencil/vue'
+import { useEditor } from '@lawha/vue'
 
 const editor = useEditor()
 ```
@@ -25,7 +25,7 @@ const editor = useEditor()
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useEditor } from '@open-pencil/vue'
+import { useEditor } from '@lawha/vue'
 
 const editor = useEditor()
 const pageId = computed(() => editor.state.currentPageId)

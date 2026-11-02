@@ -4,8 +4,8 @@ import { compact } from 'es-toolkit'
 import { computed, h } from 'vue'
 import IconLayers from '~icons/lucide/layers'
 
-import type { WorkspaceRole } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { WorkspaceRole } from '@lawha/cloud/contract'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list'
 import { portalTable } from '@/components/cloud-portal/table/ui'

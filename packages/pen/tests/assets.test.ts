@@ -9,9 +9,9 @@ import {
   parsePenDocument,
   type PenDocument,
   type PenNode
-} from '@open-pencil/pen'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/pen'
+import type { SceneGraph } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'

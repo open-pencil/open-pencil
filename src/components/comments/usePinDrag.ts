@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** How far, in screen pixels, a press moves before it drags the pin instead of clicking it. */
 const PIN_DRAG_THRESHOLD = 3

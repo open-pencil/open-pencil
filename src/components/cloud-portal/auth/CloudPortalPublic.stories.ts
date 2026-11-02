@@ -75,7 +75,7 @@ export const ApproveDesktopSignIn = story(
   `<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`
 )
 export const DesktopSignInApproved = story(`
-  <PortalNotice :host="host" tone="success" heading="You’re signed in" description="Go back to the OpenPencil app; it has already picked this up. You can close this tab.">
+  <PortalNotice :host="host" tone="success" heading="You’re signed in" description="Go back to the Lawha app; it has already picked this up. You can close this tab.">
     <template #icon><IconCheck class="size-5" /></template>
   </PortalNotice>`)
 export const DesktopSignInDenied = story(`

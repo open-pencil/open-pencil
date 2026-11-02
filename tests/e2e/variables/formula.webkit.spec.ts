@@ -11,8 +11,8 @@ import {
 } from '#tests/helpers/variables/formula'
 
 test.beforeEach(async ({ page }) => {
-  await page.route('https://cloud.openpencil.dev/.well-known/openpencil', (route) =>
-    route.fulfill({ json: cloudDiscoveryFixture('https://cloud.openpencil.dev') })
+  await page.route('https://cloud.lawha.invalid/.well-known/lawha', (route) =>
+    route.fulfill({ json: cloudDiscoveryFixture('https://cloud.lawha.invalid') })
   )
 })
 
@@ -172,7 +172,7 @@ test('the variable picker shows the numeric value of the edited mode', async ({ 
   await canvas.waitForInit()
   const ids = await seedFormulaScene(page)
   await page.evaluate(({ base, width }) => {
-    const editor = window.openPencil?.getStore?.()
+    const editor = window.lawha?.getStore?.()
     const variable = editor?.graph.variables.get(base)
     if (!editor || !variable) throw new Error('Missing variable')
     const mode = editor.graph.createMode(variable.collectionId, 'Dense')

@@ -52,11 +52,11 @@ describe('Kiwi schema runtime', () => {
     const encodeItem = codec.encodeItem as (value: RuntimeMessage) => Uint8Array
     const decodeItem = codec.decodeItem as (value: Uint8Array) => RuntimeMessage
 
-    const encoded = encodeItem({ id: 42, name: 'OpenPencil', kind: 'CARD', tags: ['kiwi'] })
+    const encoded = encodeItem({ id: 42, name: 'Lawha', kind: 'CARD', tags: ['kiwi'] })
     expect(encoded.length).toBeGreaterThan(0)
     expect(decodeItem(encoded)).toEqual({
       id: 42,
-      name: 'OpenPencil',
+      name: 'Lawha',
       kind: 'CARD',
       tags: ['kiwi']
     })

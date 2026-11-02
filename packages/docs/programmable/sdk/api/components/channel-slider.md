@@ -11,7 +11,7 @@ import { data } from './channel-slider.data'
 # ChannelSlider
 
 `ChannelSlider` provides the same Root/Track/Thumb composition and keyboard behavior as Reka's
-Slider while accepting an arbitrary scalar channel. OpenPencil uses it only for OkHCL channels;
+Slider while accepting an arbitrary scalar channel. Lawha uses it only for OkHCL channels;
 standard RGB, HSL, and HSB controls should use Reka `ColorSlider` directly.
 
 <FillStates />
@@ -29,7 +29,7 @@ provides first-class OkHCL support.
 ```vue twoslash
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ChannelSliderRoot, ChannelSliderThumb, ChannelSliderTrack } from '@open-pencil/vue/primitives/ChannelSlider'
+import { ChannelSliderRoot, ChannelSliderThumb, ChannelSliderTrack } from '@lawha/vue/primitives/ChannelSlider'
 
 const chroma = ref(0.16)
 </script>

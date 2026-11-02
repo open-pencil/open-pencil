@@ -3,14 +3,14 @@ import { readFileSync } from 'node:fs'
 
 import {
   buildFigmaClipboardHTML,
-  buildOpenPencilClipboardHTML,
+  buildLawhaClipboardHTML,
   importClipboardNodes,
-  parseOpenPencilClipboard
-} from '@open-pencil/core/clipboard'
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+  parseLawhaClipboard
+} from '@lawha/core/clipboard'
+import { readFigFile } from '@lawha/core/io/formats/fig'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { type SceneNode, SceneGraph } from '@lawha/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
@@ -42,10 +42,10 @@ heavy('gold-preview.fig clipboard roundtrip', () => {
     { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
 
-  it('OpenPencil format: zero property differences', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
-    const parsed = parseOpenPencilClipboard(html)
-    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+  it('Lawha format: zero property differences', () => {
+    const html = buildLawhaClipboardHTML(topLevelNodes, graph)
+    const parsed = parseLawhaClipboard(html)
+    const clipboard = expectDefined(parsed, 'Lawha clipboard')
 
     const origAll = flatten(graph, pageId)
 
@@ -76,8 +76,8 @@ heavy('gold-preview.fig clipboard roundtrip', () => {
     expect(diffs).toBe(0)
   })
 
-  it('OpenPencil format: compressed data is under 1MB', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
+  it('Lawha format: compressed data is under 1MB', () => {
+    const html = buildLawhaClipboardHTML(topLevelNodes, graph)
     expect(html.length).toBeLessThan(5 * 1024 * 1024)
   })
 

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { designModelConnection } from '@/app/ai/models'
-import { useCloudCreditBalance } from '@/app/ai/providers/openpencil/balance'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { useCloudCreditBalance } from '@/app/ai/providers/lawha/balance'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import { cloudBillingURL } from '@/app/cloud/integration'
 import { useDateFormat } from '@/app/i18n/date'
 import { formatNumber } from '@/app/i18n/number'
@@ -22,7 +22,7 @@ const ui = chatProfileTheme()
 const { balance, renewsAt } = useCloudCreditBalance({
   workspaceId: () => {
     const connection = designModelConnection.value
-    return connection?.providerID === OPENPENCIL_AI_PROVIDER
+    return connection?.providerID === LAWHA_AI_PROVIDER
       ? (connection.cloudWorkspaceId ?? null)
       : null
   },

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER } from '@lawha/core/constants'
 
 import { replaceMCPConnectionSettings, setMCPConnectionCredential } from '@/app/integrations/mcp'
 import { buildPiMCPServers } from '@/app/integrations/mcp/pi'
@@ -39,7 +39,7 @@ describe('Pi MCP configuration', () => {
       headers: { Authorization: 'Bearer external-token' },
       auth: false
     })
-    expect(servers['open-pencil']).toEqual({
+    expect(servers['lawha']).toEqual({
       url: expect.stringContaining('/mcp'),
       headers: { [MCP_AGENT_HEADER]: 'harness', Authorization: 'Bearer built-in-token' },
       auth: false

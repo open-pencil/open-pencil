@@ -1,4 +1,4 @@
-import type { SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import type { SceneGraph, VariableType } from '@lawha/scene-graph'
 
 import { FIGMA_DEFAULT_VALUES, variableAlias, type FigmaVariableAlias } from './values'
 import { FigmaVariable, FigmaVariableCollection, assertVariableName } from './variable'
@@ -13,7 +13,7 @@ export {
   type FigmaBindableField
 } from './bindings'
 
-/** Figma's variable types, including the motion types OpenPencil does not model. */
+/** Figma's variable types, including the motion types Lawha does not model. */
 const FIGMA_TYPES = ['BOOLEAN', 'COLOR', 'FLOAT', 'STRING', 'EASING', 'TIMING'] as const
 export type FigmaVariableResolvedType = (typeof FIGMA_TYPES)[number]
 
@@ -92,7 +92,7 @@ export class FigmaVariablesAPI {
   ): FigmaVariable {
     const type = assertType('createVariable', resolvedType)
     if (!isModelledType(type))
-      throw new Error(`in createVariable: OpenPencil does not support ${type} variables`)
+      throw new Error(`in createVariable: Lawha does not support ${type} variables`)
     const collectionId = typeof collection === 'string' ? collection : collection.id
     if (!this.#graph.variableCollections.has(collectionId)) {
       throw new Error('in createVariable: Could not find variable collection')

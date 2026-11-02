@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodeToDesignDocument, type DesignElement } from '#dom-css/export/index'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { BLUE_300, BLUE_500, card, designSystem } from '../token-fixtures'
 

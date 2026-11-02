@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import { guid } from '#fig-tests/helpers/guid'
 import { createDocumentReader } from '#fig/document/read'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 function records(): NodeChange[] {
   return [

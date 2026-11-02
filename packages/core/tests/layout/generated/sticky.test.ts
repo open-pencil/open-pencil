@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { createSticky, stickySublayers } from '@open-pencil/scene-graph/generated'
-import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import { computeAllLayouts, setTextMeasurer } from '@lawha/core/layout'
+import { SceneGraph } from '@lawha/scene-graph'
+import { createSticky, stickySublayers } from '@lawha/scene-graph/generated'
+import { lineHeightPixels } from '@lawha/scene-graph/text'
 
 /** One line per line break, each as tall as the text's line height. */
 function measureLines(): void {

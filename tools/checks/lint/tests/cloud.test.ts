@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 async function diagnostics(rule: string, source: string) {
-  return ruleDiagnostics(await lint(source, { [`open-pencil/${rule}`]: 'error' }), rule)
+  return ruleDiagnostics(await lint(source, { [`lawha/${rule}`]: 'error' }), rule)
 }
 
 describe('no-cloud-dynamic-html', () => {

@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 import {
   createSticky,
   shapeWithTextLabel,
   stickySublayers
-} from '@open-pencil/scene-graph/generated'
+} from '@lawha/scene-graph/generated'
 
 function setup() {
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })

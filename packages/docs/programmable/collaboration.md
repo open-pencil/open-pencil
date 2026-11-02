@@ -10,14 +10,14 @@ Edit designs together in real time. Peers connect directly — no server relays 
 ## Sharing a Room
 
 1. Click the share button in the top-right corner
-2. Click **Share this file** — the link (`app.openpencil.dev/rooms/<room-id>`) is copied
+2. Click **Share this file** — the link (`app.lawha.invalid/rooms/<room-id>`) is copied
 3. Send it to your collaborators
 
 Only Share puts a document into a room: the tab you share from becomes the room's tab and stays tied to its file. Anyone with the link can join.
 
 ## Joining a Room
 
-Open the link, or paste it (or just the room ID) into **Join** in the share panel or **Join room…** on Home. The room opens in a tab of its own, so the documents you already have open are never changed. On a computer, a browser also offers **Open in desktop app**, which opens the room in OpenPencil through an `openpencil://join` link.
+Open the link, or paste it (or just the room ID) into **Join** in the share panel or **Join room…** on Home. The room opens in a tab of its own, so the documents you already have open are never changed. On a computer, a browser also offers **Open in desktop app**, which opens the room in Lawha through an `lawha://join` link.
 
 You join right away under a generated name such as *Teal Fox*; set your own in the share panel or in Settings, and it is used in every room.
 
@@ -48,7 +48,7 @@ Peers connect directly via WebRTC — your design data goes straight from browse
 
 Moving and reordering layers merges too. Each layer remembers every parent it has been moved into and its position among its siblings, and every peer works out the same layer tree from that history ([Evan Wallace's tree CRDT](https://madebyevan.com/algos/crdt-mutable-tree-hierarchy/)). Moves, reorders, and new layers from different people all apply; if two people move the same layer at once, one move wins on every peer. When moves made at the same time would put two layers inside each other, the later move is undone, and a layer whose new parent was deleted meanwhile returns to where it was.
 
-Everyone in a room needs a version of OpenPencil that records the layer tree the same way; versions that record it differently do not see each other's rooms.
+Everyone in a room needs a version of Lawha that records the layer tree the same way; versions that record it differently do not see each other's rooms.
 
 The room persists locally — if you refresh the page, you rejoin it automatically with the same state.
 

@@ -4,7 +4,7 @@
 
 Open and save native Figma files directly. The import/export pipeline uses the same Kiwi binary codec as Figma — 194 schema definitions, ~390 fields per node. Save with <kbd>⌘</kbd><kbd>S</kbd>, Save As with <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd>.
 
-**Copy & paste with Figma** — select nodes in Figma, <kbd>⌘</kbd><kbd>C</kbd>, switch to OpenPencil, <kbd>⌘</kbd><kbd>V</kbd>. Fills, strokes, auto-layout, text, effects, corner radii, and vector networks are preserved. Works both ways.
+**Copy & paste with Figma** — select nodes in Figma, <kbd>⌘</kbd><kbd>C</kbd>, switch to Lawha, <kbd>⌘</kbd><kbd>V</kbd>. Fills, strokes, auto-layout, text, effects, corner radii, and vector networks are preserved. Works both ways.
 
 ## Drawing & Editing
 
@@ -65,11 +65,11 @@ Open multiple documents in tabs. <kbd>⌘</kbd><kbd>T</kbd> new tab, <kbd>⌘</k
 - **Tailwind JSX** — HTML with Tailwind v4 utility classes, ready for React or Vue
 - **Copy as** — text, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), or JSX via context menu
 
-CLI: `openpencil export design.fig -f jsx --style tailwind`
+CLI: `lawha export design.fig -f jsx --style tailwind`
 
 ## AI Chat
 
-Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. 90+ tools that can create shapes, set styles, manage layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Connect Anthropic, OpenAI, Google AI, OpenRouter, any compatible endpoint, or the AI your [OpenPencil Cloud](/user-guide/openpencil-cloud#ai-on-cloud) plan includes.
+Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. 90+ tools that can create shapes, set styles, manage layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Connect Anthropic, OpenAI, Google AI, OpenRouter, any compatible endpoint, or the AI your [Lawha Cloud](/user-guide/lawha-cloud#ai-on-cloud) plan includes.
 
 Tool calls display as collapsible timeline entries. Visual verification — the assistant renders its work and checks it against your request. Full undo support for all AI mutations.
 
@@ -80,14 +80,14 @@ See [AI Chat](/programmable/ai-chat) for setup and provider details.
 Connect Claude Code, Cursor, Windsurf, or any MCP client to read and write `.fig` files headlessly. 90+ tools. Two transports: stdio and HTTP.
 
 ```sh
-npm install -g @open-pencil/mcp
+npm install -g @lawha/mcp
 ```
 
 ```json
 {
   "mcpServers": {
-    "open-pencil": {
-      "command": "openpencil-mcp"
+    "lawha": {
+      "command": "lawha-mcp"
     }
   }
 }
@@ -100,22 +100,22 @@ See [MCP Tools reference](/programmable/mcp-server) for the full tool list.
 Inspect, export, and analyze `.fig` files from the terminal:
 
 ```sh
-openpencil tree design.fig          # Node tree
-openpencil find design.fig --type TEXT  # Search
-openpencil export design.fig -f png     # Render
-openpencil analyze colors design.fig    # Color audit
-openpencil analyze clusters design.fig  # Repeated patterns
-openpencil eval design.fig -c "..."     # Figma Plugin API
+lawha tree design.fig          # Node tree
+lawha find design.fig --type TEXT  # Search
+lawha export design.fig -f png     # Render
+lawha analyze colors design.fig    # Color audit
+lawha analyze clusters design.fig  # Repeated patterns
+lawha eval design.fig -c "..."     # Figma Plugin API
 ```
 
 When the desktop app is running, omit the file to control the live editor via RPC:
 
 ```sh
-openpencil tree                     # Live document
-openpencil export -f png            # Screenshot canvas
+lawha tree                     # Live document
+lawha export -f png            # Screenshot canvas
 ```
 
-All commands support `--json`. Install: `npm install -g @open-pencil/cli` (or `bun add -g @open-pencil/cli`).
+All commands support `--json`. Install: `npm install -g @lawha/cli` (or `bun add -g @lawha/cli`).
 
 ## Real-Time Collaboration
 
@@ -132,14 +132,14 @@ P2P via WebRTC — no server required. Share a link and edit together.
 
 **Desktop** — Tauri v2, ~7 MB. macOS (signed & notarized), Windows, Linux. Native menus, offline, autosave.
 
-**Web** — runs at [app.openpencil.dev](https://app.openpencil.dev), installable as a PWA on mobile with touch-optimized UI.
+**Web** — runs at [app.lawha.invalid](https://app.lawha.invalid), installable as a PWA on mobile with touch-optimized UI.
 
 **Homebrew:**
 
 ```sh
-brew install --cask openpencil
+brew install --cask lawha
 ```
 
 ## Google Fonts Fallback
 
-When a font isn't available locally, OpenPencil fetches it from Google Fonts automatically. No manual installation needed when opening .fig files with unfamiliar fonts.
+When a font isn't available locally, Lawha fetches it from Google Fonts automatically. No manual installation needed when opening .fig files with unfamiliar fonts.

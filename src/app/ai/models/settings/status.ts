@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import { ACP_AGENTS, HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
+import { ACP_AGENTS, HARNESS_PROVIDER_ID } from '@lawha/core/constants'
 
 import {
   codingAgentDetection,
@@ -9,7 +9,7 @@ import {
 } from '@/app/ai/agents/setup/detection'
 import { useAgentSetup } from '@/app/ai/agents/setup/use'
 import { agentSetupView } from '@/app/ai/agents/setup/view'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import { cloudAIAvailable } from '@/app/cloud/integration'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 
@@ -23,7 +23,7 @@ export type ModelConnectionState =
   /** Installed, for an agent that reports no login to check. */
   | 'installed'
   | 'signed-out'
-  /** Signed in, but a session did not reach OpenPencil's tools. */
+  /** Signed in, but a session did not reach Lawha's tools. */
   | 'tools-unreachable'
   /** An agent seen outside the desktop app, where it cannot run. */
   | 'agent'
@@ -50,7 +50,7 @@ export function modelConnectionState({
   cloudAI = false
 }: ModelConnectionInput): ModelConnectionState {
   // Cloud's AI service signs in with the Home server, not a saved key.
-  if (providerID === OPENPENCIL_AI_PROVIDER) return cloudAI ? 'connected' : 'unavailable'
+  if (providerID === LAWHA_AI_PROVIDER) return cloudAI ? 'connected' : 'unavailable'
   // Pi uses its own sign-ins unless an AI Gateway key is saved.
   if (credential === 'configured' && !providerID.startsWith('acp:')) return 'connected'
   if (isAgentProvider(providerID)) {

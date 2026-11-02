@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 
-import type { Fill } from '@open-pencil/scene-graph'
+import type { Fill } from '@lawha/scene-graph'
 
 import { useGradientStops } from '#vue/primitives/GradientEditor/useGradientStops'
 

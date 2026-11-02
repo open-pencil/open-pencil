@@ -23,7 +23,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: What behavior would you like OpenPencil to support?
+      description: What behavior would you like Lawha to support?
       placeholder: |
         Add support for …
         It should work by …

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'no-hand-rolled-base64'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 
 describe('no-hand-rolled-base64', () => {
   test.each([

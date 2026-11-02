@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseToolDescriptor, type ToolDescriptor } from '@open-pencil/mcp/tools'
+import { parseToolDescriptor, type ToolDescriptor } from '@lawha/mcp/tools'
 
 const descriptor = {
   name: 'export_image',

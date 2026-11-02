@@ -1,8 +1,8 @@
 import { computed, watch } from 'vue'
 
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import type { IORegistry } from '@open-pencil/core/io'
-import { createSelectedNodeState } from '@open-pencil/vue/editor/selection-state'
+import { resolveEditorProfile, type Editor } from '@lawha/core'
+import type { IORegistry } from '@lawha/core/io'
+import { createSelectedNodeState } from '@lawha/vue/editor/selection-state'
 
 import { createDocumentExportActions } from '@/app/document/export'
 import { createDocumentIOActions } from '@/app/document/io'

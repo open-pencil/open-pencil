@@ -81,7 +81,7 @@ const TEXT_INPUT: BehaviourContract = {
 }
 
 /**
- * The behaviours OpenPencil knows, after Reka UI's primitives. Their states are drawn as the
+ * The behaviours Lawha knows, after Reka UI's primitives. Their states are drawn as the
  * component's variants and properties; their subcomponents (thumb, range, trigger, …) are the
  * component's slots, and the component itself is the control's root.
  */

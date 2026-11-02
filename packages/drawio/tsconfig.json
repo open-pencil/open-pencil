@@ -16,7 +16,7 @@
     "types": ["bun"],
     "paths": {
       "#drawio/*": ["./src/*"],
-      "@open-pencil/drawio": ["./src/index.ts"]
+      "@lawha/drawio": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

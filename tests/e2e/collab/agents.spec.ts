@@ -13,7 +13,7 @@ import {
 function pageNames(peer: Peer) {
   return peer.page.evaluate(
     () =>
-      window.openPencil
+      window.lawha
         ?.getStore?.()
         .graph.getPages()
         .map((page) => page.name) ?? []
@@ -32,12 +32,12 @@ test("a guest's agent shows on their avatar and can be followed until Escape", a
     await share(host)
     await connect(guest)
     await expect
-      .poll(() => host?.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+      .poll(() => host?.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(1)
 
     await host.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       store.graph.addPage('Checkout')
     })
     const peer = guest
@@ -54,7 +54,7 @@ test("a guest's agent shows on their avatar and can be followed until Escape", a
 
     await card.getByRole('button', { name: `Follow ${agent.name}` }).click()
     await expect
-      .poll(() => host?.page.evaluate(() => window.openPencil?.getStore?.().state.currentPageId))
+      .poll(() => host?.page.evaluate(() => window.lawha?.getStore?.().state.currentPageId))
       .toBe(agent.pageId)
     const frame = host.page.getByTestId('follow-frame')
     await expect(frame).toContainText(`Following ${agent.name}`)
@@ -83,8 +83,8 @@ test('an MCP session shows as an agent at the layers it touches, to collaborator
     await share(host)
     await connect(guest)
     const nodeId = await host.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       return store.graph.createNode('FRAME', store.state.currentPageId, {
         name: 'Card',
         x: 240,
@@ -97,7 +97,7 @@ test('an MCP session shows as an agent at the layers it touches, to collaborator
     // A tool call as the MCP bridge delivers it, from a session of an outside client.
     await host.page.evaluate(
       (id) =>
-        window.openPencil?.test?.automation?.('tool', {
+        window.lawha?.test?.automation?.('tool', {
           name: 'rename_node',
           args: { id, name: 'Checkout card' },
           agent: { session: 'session-1', kind: 'mcp', client: 'claude-code' }
@@ -105,7 +105,7 @@ test('an MCP session shows as an agent at the layers it touches, to collaborator
       nodeId
     )
     const agent = await host.page.evaluate(() => {
-      const cursor = window.openPencil
+      const cursor = window.lawha
         ?.getStore?.()
         .state.presenceCursors.find((entry) => entry.kind === 'agent')
       return cursor ? { name: cursor.name, x: cursor.x, y: cursor.y } : null
@@ -131,7 +131,7 @@ test('an MCP session shows as an agent at the layers it touches, to collaborator
 
     // When the session ends, the agent leaves.
     await host.page.evaluate(() =>
-      window.openPencil?.test?.automation?.('agent_session_closed', { session: 'session-1' })
+      window.lawha?.test?.automation?.('agent_session_closed', { session: 'session-1' })
     )
     await expect(frame).toHaveCount(0)
     expect(collaborationErrors(host)).toEqual([])

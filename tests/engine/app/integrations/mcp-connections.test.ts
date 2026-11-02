@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
-import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER } from '@lawha/core/constants'
 
 import {
   buildACPMCPServers,
@@ -56,7 +56,7 @@ describe('MCP connections', () => {
           },
           {
             id: 'mcp-reserved',
-            name: 'Open-Pencil',
+            name: 'Lawha',
             enabled: true,
             transport: { type: 'streamable-http', url: 'https://reserved.example.com/mcp' },
             authentication: { type: 'none' }
@@ -128,7 +128,7 @@ describe('MCP connections', () => {
     duplicate.name = 'github'
     duplicate.url = 'https://other.example.com/mcp'
     expect(() => saveMCPConnectionDraft(duplicate)).toThrow('unique')
-    duplicate.name = 'open-pencil'
+    duplicate.name = 'lawha'
     expect(() => saveMCPConnectionDraft(duplicate)).toThrow('reserved')
 
     duplicate.id = 'mcp-../../unsafe' as typeof duplicate.id
@@ -148,7 +148,7 @@ describe('MCP connections', () => {
       expect(await buildACPMCPServers({ authorizationToken: 'built-in-token' })).toEqual([
         {
           type: 'http',
-          name: 'open-pencil',
+          name: 'lawha',
           url: expect.stringContaining('/mcp'),
           headers: [
             { name: MCP_AGENT_HEADER, value: 'acp' },
@@ -192,7 +192,7 @@ describe('MCP connections', () => {
     expect(await captureACPSessionMCPServers()).toEqual([
       {
         type: 'http',
-        name: 'open-pencil',
+        name: 'lawha',
         url: expect.stringContaining('/mcp'),
         headers: [
           { name: MCP_AGENT_HEADER, value: 'acp' },

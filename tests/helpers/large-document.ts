@@ -13,8 +13,8 @@ export async function seedLargeDocument(
   nodeCount: number
 ): Promise<LargeDocumentProfile> {
   return page.evaluate((count) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const graph = store.graph
     const pageId = store.state.currentPageId
     const leafIds: string[] = []

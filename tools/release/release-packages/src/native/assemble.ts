@@ -34,7 +34,7 @@ const config = v.parse(
   JSON.parse(await readFile(paths.tauriConfig, 'utf8'))
 )
 
-const temporary = await mkdtemp(join(tmpdir(), 'open-pencil-signatures-'))
+const temporary = await mkdtemp(join(tmpdir(), 'lawha-signatures-'))
 const output = paths.output
 await rm(output, { recursive: true, force: true })
 await mkdir(output, { recursive: true })

@@ -12,7 +12,7 @@ import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely, UpdateObject } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { advanceCollaborationEpoch, requireSharingAccess } from '../access'
 import { shareContract } from '../contracts'

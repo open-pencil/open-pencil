@@ -2,9 +2,9 @@
 import { tv } from 'tailwind-variants'
 import { ref, watch } from 'vue'
 
-import { iconLayerName } from '@open-pencil/scene-graph/icons'
-import { useIcon } from '@open-pencil/vue/controls/icon'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { iconLayerName } from '@lawha/scene-graph/icons'
+import { useIcon } from '@lawha/vue/controls/icon'
+import { useCommonMessages, usePanelMessages } from '@lawha/vue/i18n'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import IconPicker from '@/components/icon-picker/IconPicker.vue'

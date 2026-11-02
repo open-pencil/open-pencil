@@ -1,5 +1,5 @@
-import { cssTokenProperty, cssValueTokens, TOKEN_UNIT_PROPERTY } from '@open-pencil/dom-css/export'
-import type { TokenUnit } from '@open-pencil/scene-graph'
+import { cssTokenProperty, cssValueTokens, TOKEN_UNIT_PROPERTY } from '@lawha/dom-css/export'
+import type { TokenUnit } from '@lawha/scene-graph'
 
 /**
  * Units that resolve against the window, a container or the text, which a preview can only

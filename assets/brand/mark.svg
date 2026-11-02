@@ -3,18 +3,18 @@
     <pattern id="pixel-grid" x="76" y="52" width="10" height="10" patternUnits="userSpaceOnUse">
       <path d="M10 0H0V10" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.65"/>
     </pattern>
-    <clipPath id="pencil-grid-clip">
-      <use href="#pencil-body"/>
+    <clipPath id="lawha-grid-clip">
+      <use href="#lawha-body"/>
     </clipPath>
   </defs>
-  <path id="pencil-body" clip-rule="evenodd" data-part="body" fill="#167C76" fill-rule="evenodd" d="M76 52H144C186 52 208 80 208 118S186 184 144 184H116V222L96 248L76 222ZM116 92V144H140C157 144 168 134 168 118S157 92 140 92Z"/>
-  <path data-part="upper" fill="#0A6C65" d="M76 52H116V92H76Z"/>
-  <path data-part="middle" fill="#65C2B1" d="M76 92H116V144H76Z"/>
-  <path data-part="lower" fill="#299D8D" d="M76 144H116V184H76Z"/>
-  <path data-part="point" fill="#095F58" d="M76 184H116V222L96 248L76 222Z"/>
-  <rect data-detail="grid" x="28" y="28" width="228" height="228" fill="url(#pixel-grid)" clip-path="url(#pencil-grid-clip)"/>
-  <path data-part="handle" fill="#005CFF" d="M60 36H92V68H60Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M68 44H84V60H68Z"/>
-  <path data-part="handle" fill="#005CFF" d="M226 118A18 18 0 1 1 190 118A18 18 0 1 1 226 118Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M218 118A10 10 0 1 1 198 118A10 10 0 1 1 218 118Z"/>
+  <path id="lawha-body" data-part="body" fill="#4F46E5" d="M176 44H206V170A78 78 0 0 1 50 170V150H80V170A48 48 0 0 0 176 170Z"/>
+  <path data-part="upper" fill="#3730A3" d="M176 44H206V88H176Z"/>
+  <path data-part="middle" fill="#818CF8" d="M176 88H206V130H176Z"/>
+  <path data-part="lower" fill="#6366F1" d="M176 130H206V170H176Z"/>
+  <path data-part="point" fill="#312E81" d="M50 150H80V170H50Z"/>
+  <rect data-detail="grid" x="28" y="28" width="228" height="228" fill="url(#pixel-grid)" clip-path="url(#lawha-grid-clip)"/>
+  <path data-part="handle" fill="#EA580C" d="M160 30H192V62H160Z"/>
+  <path data-part="handle-surface" fill="#FFFFFF" d="M168 38H184V54H168Z"/>
+  <path data-part="handle" fill="#EA580C" d="M91 225A18 18 0 1 1 55 225A18 18 0 1 1 91 225Z"/>
+  <path data-part="handle-surface" fill="#FFFFFF" d="M83 225A10 10 0 1 1 63 225A10 10 0 1 1 83 225Z"/>
 </svg>

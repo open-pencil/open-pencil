@@ -1,6 +1,6 @@
 ---
 title: CanvasRoot
-description: Komponente ohne vorgegebenes Erscheinungsbild für den Kontext der OpenPencil-Arbeitsfläche.
+description: Komponente ohne vorgegebenes Erscheinungsbild für den Kontext der Lawha-Arbeitsfläche.
 ---
 
 # CanvasRoot

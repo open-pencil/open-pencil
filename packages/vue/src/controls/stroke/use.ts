@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
-import type { Stroke } from '@open-pencil/scene-graph'
-import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
+import type { Stroke } from '@lawha/scene-graph'
+import { newStrokeGeometry } from '@lawha/scene-graph/node-defaults'
 
 import { useNodeProps } from '#vue/controls/node-props/use'
 import {

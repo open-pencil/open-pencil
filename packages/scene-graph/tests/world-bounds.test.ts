@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 import {
   getAxisAlignedBoundsInParent,
   getAxisAlignedWorldBounds
-} from '@open-pencil/scene-graph/coordinate'
+} from '@lawha/scene-graph/coordinate'
 
 describe('axis-aligned world bounds', () => {
   test('includes a node own rotation', () => {

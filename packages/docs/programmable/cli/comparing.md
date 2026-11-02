@@ -10,7 +10,7 @@ The `diff` commands compare two nodes, preview or apply changes as patches, rend
 ## Patches
 
 ```sh
-openpencil diff create design.fig --from 1:23 --to 1:87
+lawha diff create design.fig --from 1:23 --to 1:87
 ```
 
 Prints a patch that turns the first tree into the second. Its properties are the JSX attributes the [JSX export](../jsx-renderer#exporting-to-jsx) writes, so it covers everything the export does. Children match by name, and a reordered child reads as one move:
@@ -33,15 +33,15 @@ Each hunk names a node by path, for reading, and by ID, which locates it. `-` li
 `diff show` previews setting attributes on a node without changing it, and prints the patch:
 
 ```sh
-openpencil diff show 1:24 design.fig --attributes 'bg="#F4F4F5" rounded={8}' > header.diff
+lawha diff show 1:24 design.fig --attributes 'bg="#F4F4F5" rounded={8}' > header.diff
 ```
 
 `diff apply` applies a patch to the document whose IDs it names. Every node must still have the patch's old values unless `--force` skips that check, and nothing changes unless every hunk applies, so a patch never half-applies:
 
 ```sh
-openpencil diff apply header.diff design.fig --dry-run   # validate first
-openpencil diff apply header.diff design.fig --write     # save in place
-openpencil diff apply header.diff design.fig -o out.fig  # save elsewhere
+lawha diff apply header.diff design.fig --dry-run   # validate first
+lawha diff apply header.diff design.fig --write     # save in place
+lawha diff apply header.diff design.fig -o out.fig  # save elsewhere
 ```
 
 Updates change only the fields their attributes set, so node IDs, instance links, and state JSX does not describe stay intact. Removed nodes are deleted and added nodes are rendered from their JSX.
@@ -49,7 +49,7 @@ Updates change only the fields their attributes set, so node IDs, instance links
 ## JSX diff
 
 ```sh
-openpencil diff jsx design.fig --from 1:23 --to 1:87
+lawha diff jsx design.fig --from 1:23 --to 1:87
 ```
 
 Compares two subtrees as a line diff of their design JSX, for reading rather than applying.
@@ -57,7 +57,7 @@ Compares two subtrees as a line diff of their design JSX, for reading rather tha
 ## Visual diff
 
 ```sh
-openpencil diff visual design.fig --from 1:23 --to 1:87 --output diff.png
+lawha diff visual design.fig --from 1:23 --to 1:87 --output diff.png
 ```
 
 Renders both nodes at the same scale and writes a PNG with changed pixels in red over a faded copy of the source. The report includes the changed pixel ratio and the changed region in source-node coordinates. `--scale` and `--max-edge` bound the render the same way `export_image` does; `--threshold` sets the color tolerance.
@@ -65,8 +65,8 @@ Renders both nodes at the same scale and writes a PNG with changed pixels in red
 ## Comparing documents
 
 ```sh
-openpencil diff files before.fig after.fig
-openpencil diff files before.fig after.fig --page "Mobile" --json
+lawha diff files before.fig after.fig
+lawha diff files before.fig after.fig --page "Mobile" --json
 ```
 
 Compares two documents page by page. Pages match by name and nodes by name path, so two versions of a file compare even though node IDs differ; the patch applies to the first document. Patches do not add or remove pages: a page only one document has is listed by name and status instead. Like `diff(1)`, the command exits with status 1 when the documents differ.

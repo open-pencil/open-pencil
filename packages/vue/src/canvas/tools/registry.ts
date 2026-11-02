@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import type { Editor, Tool } from '@open-pencil/core'
+import type { Editor, Tool } from '@lawha/core'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'

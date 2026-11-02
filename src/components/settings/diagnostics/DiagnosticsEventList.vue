@@ -2,7 +2,7 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { summarizeDiagnosticEvent, type DiagnosticCategory } from '@/app/diagnostics'
 import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'

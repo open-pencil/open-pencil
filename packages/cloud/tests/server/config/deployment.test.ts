@@ -59,17 +59,17 @@ secure = true
 [object_storage]
 endpoint = "https://objects.example.com"
 region = "us-east-1"
-bucket = "openpencil"
+bucket = "lawha"
 `
 
 const environment = {
-  DATABASE_URL: 'postgresql://user:password@database/openpencil',
+  DATABASE_URL: 'postgresql://user:password@database/lawha',
   BETTER_AUTH_SECRET: 'auth-secret-at-least-32-characters-long',
   TURNSTILE_SECRET_KEY: 'turnstile-secret',
   GOOGLE_CLIENT_ID: 'google-public-client-id',
   GOOGLE_CLIENT_SECRET: 'google-secret',
-  OPENPENCIL_CLOUD_SMTP_USER: 'smtp-user',
-  OPENPENCIL_CLOUD_SMTP_PASSWORD: 'smtp-password',
+  LAWHA_CLOUD_SMTP_USER: 'smtp-user',
+  LAWHA_CLOUD_SMTP_PASSWORD: 'smtp-password',
   S3_ACCESS_KEY_ID: 'access-key',
   S3_SECRET_ACCESS_KEY: 'secret-key'
 }
@@ -201,8 +201,8 @@ portal_url = "https://billing.example.com"
 `
     const withSecrets = {
       ...environment,
-      OPENPENCIL_CLOUD_AI_SIGNING_KEY: 'signing-key-pem',
-      OPENPENCIL_CLOUD_SERVICE_TOKEN: 'service-token-with-at-least-32-characters'
+      LAWHA_CLOUD_AI_SIGNING_KEY: 'signing-key-pem',
+      LAWHA_CLOUD_SERVICE_TOKEN: 'service-token-with-at-least-32-characters'
     }
     const config = parseCloudDeploymentTOML(source, withSecrets)
     expect(config).toMatchObject({
@@ -217,7 +217,7 @@ portal_url = "https://billing.example.com"
     expect(discovery.billing).toEqual({ portalURL: 'https://billing.example.com' })
 
     expect(() => parseCloudDeploymentTOML(source, environment)).toThrow(
-      'OPENPENCIL_CLOUD_AI_SIGNING_KEY'
+      'LAWHA_CLOUD_AI_SIGNING_KEY'
     )
     expect(() =>
       parseCloudDeploymentTOML(`${source}\n[entitlements]\nsource = "static"\n`, withSecrets)

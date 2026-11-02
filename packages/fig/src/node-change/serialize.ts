@@ -1,16 +1,16 @@
-import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
-import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { NodeChange, StyleReference } from '@lawha/kiwi/fig/codec'
+import { guidToString, stringToGuid } from '@lawha/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   PluginDataEntry,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { DEFAULT_STROKE_WEIGHT } from '@open-pencil/scene-graph/constants'
-import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
-import type { GUID, JSONObject } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import { DEFAULT_STROKE_WEIGHT } from '@lawha/scene-graph/constants'
+import { normalizeFontFamily } from '@lawha/scene-graph/font-style'
+import { fractionalPosition } from '@lawha/scene-graph/order-keys'
+import { LAWHA_PLUGIN_DATA, withPluginData } from '@lawha/scene-graph/plugin-data'
+import type { GUID, JSONObject } from '@lawha/scene-graph/primitives'
 
 import { effectiveFigmaRawNodeFields } from '../source-metadata'
 import { computeExportTransform, mapToFigmaType } from './basics'
@@ -88,7 +88,7 @@ function serializeTextProps(
 ): void {
   node.pluginData = withPluginData(
     node.pluginData,
-    OPEN_PENCIL_PLUGIN_DATA.textDirection,
+    LAWHA_PLUGIN_DATA.textDirection,
     node.textDirection
   )
   nc.fontSize = node.fontSize
@@ -281,7 +281,7 @@ function applyEditedLayoutFields(node: SceneNode, nc: KiwiNodeChange): void {
 function writeLayoutDirection(node: SceneNode): void {
   node.pluginData = withPluginData(
     node.pluginData,
-    OPEN_PENCIL_PLUGIN_DATA.layoutDirection,
+    LAWHA_PLUGIN_DATA.layoutDirection,
     node.layoutDirection
   )
 }
@@ -431,7 +431,7 @@ function serializeVariableBindings(
   // empty map, and writing one leaves the record in every file the node is exported to.
   node.pluginData = withPluginData(
     node.pluginData,
-    OPEN_PENCIL_PLUGIN_DATA.boundVariables,
+    LAWHA_PLUGIN_DATA.boundVariables,
     Object.keys(roundtripBindings).length > 0 ? roundtripBindings : undefined
   )
   if (entries.length > 0) {

@@ -7,7 +7,7 @@ import {
   useCredentialMessages,
   useMediaMessages,
   useSettingsMessages
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import { useMediaSettingsEditor, type MediaSettingsService } from '@/app/settings/media/use'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'

@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 export function expectDefined<T>(value: T | null | undefined, label = 'value'): NonNullable<T> {
   if (value == null) {

@@ -1,6 +1,6 @@
 import { Command } from '@tauri-apps/plugin-shell'
 
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import type { ACPAgentDef } from '@lawha/core/constants'
 
 import { createDeferred } from '@/app/runtime/deferred'
 import { resolveScopedCommand } from '@/app/tauri/command'

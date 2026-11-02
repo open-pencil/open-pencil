@@ -4,12 +4,12 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { parseFixture } from '#core-tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#core-tests/helpers/test-utils'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { createEditor } from '@lawha/core/editor'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type Variable } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 setDefaultTimeout(60_000)
 
@@ -267,7 +267,7 @@ describe('variable roundtrip', () => {
       defaultModeId: '4:3',
       variableIds: [],
       pluginData: [
-        { pluginId: 'open-pencil', key: 'note', value: 'collection' },
+        { pluginId: 'lawha', key: 'note', value: 'collection' },
         { pluginId: 'tokens-studio', key: 'theme', value: 'base' }
       ]
     })
@@ -282,7 +282,7 @@ describe('variable roundtrip', () => {
       scopes: ['CORNER_RADIUS'],
       codeSyntax: { WEB: '--radius-card', iOS: 'Radius.card' },
       pluginData: [
-        { pluginId: 'open-pencil', key: 'note', value: 'variable' },
+        { pluginId: 'lawha', key: 'note', value: 'variable' },
         { pluginId: 'tokens-studio', key: 'path', value: 'radius.card' }
       ]
     })

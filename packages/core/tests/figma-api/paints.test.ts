@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill } from '@lawha/scene-graph'
 
 import { FigmaAPI } from '#core/figma-api'
 
@@ -277,7 +277,7 @@ describe('an image paint', () => {
         imageHash: HASH
       }
     ])
-    // The renderer reads OpenPencil's names, so the image draws fitted and turned.
+    // The renderer reads Lawha's names, so the image draws fitted and turned.
     expect(graph.getNode(rectangle.id)?.fills[0]).toMatchObject({
       imageScaleMode: 'FIT',
       imageRotation: 90
@@ -326,7 +326,7 @@ describe('an image paint', () => {
     expect(fill).not.toHaveProperty('rotation')
   })
 
-  test('refuses a missing or unknown scale mode, OpenPencil names, and a missing hash', () => {
+  test('refuses a missing or unknown scale mode, Lawha names, and a missing hash', () => {
     const rectangle = api().figma.createRectangle()
     const scaleMode = 'Invalid option: expected one of "FILL"|"FIT"|"CROP"|"TILE" at [0].scaleMode'
     expect(() => setFills(rectangle, [{ type: 'IMAGE', imageHash: HASH }])).toThrow(

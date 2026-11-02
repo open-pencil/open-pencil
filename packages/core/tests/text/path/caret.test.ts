@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph } from '@lawha/scene-graph'
 
 import { pathTextCaret, pathTextIndexAt, pathTextSelectionQuads } from '#core/text/path'
 

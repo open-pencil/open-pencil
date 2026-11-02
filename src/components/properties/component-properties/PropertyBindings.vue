@@ -4,8 +4,8 @@ import { CollapsibleRoot, CollapsibleContent, CollapsibleTrigger } from 'reka-ui
 import type {
   ComponentBinding,
   ComponentBindingGroup
-} from '@open-pencil/vue/controls/component-props'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+} from '@lawha/vue/controls/component-props'
+import { usePanelMessages } from '@lawha/vue/i18n'
 
 import { sceneNodeIcon } from '@/components/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'

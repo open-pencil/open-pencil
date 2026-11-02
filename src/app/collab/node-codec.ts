@@ -1,19 +1,19 @@
 import { isPlainObject, omit } from 'es-toolkit'
 import * as v from 'valibot'
 
-import type { Fill, GeometryPath, SceneNode, SourceMetadata } from '@open-pencil/scene-graph'
+import type { Fill, GeometryPath, SceneNode, SourceMetadata } from '@lawha/scene-graph'
 import {
   deserializeInstanceOverrideState,
   serializeInstanceOverrideState
-} from '@open-pencil/scene-graph/instances/overrides'
-import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
-import { fillSchema } from '@open-pencil/scene-graph/paints'
+} from '@lawha/scene-graph/instances/overrides'
+import { createDefaultSourceMetadata } from '@lawha/scene-graph/node-defaults'
+import { fillSchema } from '@lawha/scene-graph/paints'
 import {
   matrixSchema,
   vectorSchema,
   type Matrix,
   type Vector
-} from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/primitives'
 
 import { ORDER_KEY_FIELD, PAGE_FIELD, PARENTS_FIELD } from '@/app/collab/shared-tree/fields'
 

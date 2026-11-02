@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 
 import { nodeFontReadiness } from '#core/canvas/text'
 import { getCanvasKit } from '#core/canvaskit'

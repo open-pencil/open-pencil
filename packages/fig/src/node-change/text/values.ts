@@ -1,5 +1,5 @@
-import type { TextDecoration, TextLength } from '@open-pencil/scene-graph'
-import { NO_LETTER_SPACING, percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import type { TextDecoration, TextLength } from '@lawha/scene-graph'
+import { NO_LETTER_SPACING, percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 export function mapTextDecoration(d?: string): TextDecoration {
   switch (d) {

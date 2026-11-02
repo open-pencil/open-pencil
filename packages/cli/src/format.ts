@@ -19,7 +19,7 @@ import {
 import type { TreeNode, ListItem, NodeData } from 'agentfmt'
 import { isEmptyObject } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 export {
   ok,

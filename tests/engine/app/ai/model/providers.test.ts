@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { LanguageModel } from 'ai'
 
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
-import type { AIProviderID } from '@open-pencil/core/constants'
+import { AI_PROVIDERS } from '@lawha/core/constants'
+import type { AIProviderID } from '@lawha/core/constants'
 
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'

@@ -1,4 +1,4 @@
-import { useEditorCommands, type EditorCommandId } from '@open-pencil/vue/editor/commands'
+import { useEditorCommands, type EditorCommandId } from '@lawha/vue/editor/commands'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'

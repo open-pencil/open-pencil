@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
-import { checkForAppUpdate } from '@/app/shell/updater/check'
+import { checkForAppUpdate, updaterSettings } from '@/app/shell/updater/check'
 import { UPDATER_WINDOW_LABEL, UPDATER_WINDOW_URL } from '@/app/shell/updater/window'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
@@ -25,6 +25,14 @@ afterEach(async () => {
 })
 
 describe('checkForAppUpdate', () => {
+  // These cover the checks once updates are switched on; the default is off (see below).
+  beforeEach(() => {
+    updaterSettings.enabled = true
+  })
+  afterEach(() => {
+    updaterSettings.enabled = false
+  })
+
   test('returns quietly when no update is available', async () => {
     const calls: string[] = []
     await mockTauriIPC((cmd) => {
@@ -95,5 +103,19 @@ describe('checkForAppUpdate', () => {
     expect(toast.toasts.value.map((entry) => entry.message)).toEqual([
       messages.value.checkFailed({ error: 'offline' })
     ])
+  })
+})
+
+describe('checkForAppUpdate while updates are off', () => {
+  test('is off by default and never reaches the updater', async () => {
+    expect(updaterSettings.enabled).toBe(false)
+    let invoked = 0
+    await mockTauriIPC(() => {
+      invoked++
+      return null
+    })
+    await checkForAppUpdate({ messages: useI18n().updates })
+    expect(invoked).toBe(0)
+    clearTauriMocks()
   })
 })

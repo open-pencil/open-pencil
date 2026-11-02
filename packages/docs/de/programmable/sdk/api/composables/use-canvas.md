@@ -1,6 +1,6 @@
 ---
 title: useCanvas
-description: Den CanvasKit renderer mit einem Canvas element und einem OpenPencil-Editor verbinden.
+description: Den CanvasKit renderer mit einem Canvas element und einem Lawha-Editor verbinden.
 ---
 
 # useCanvas
@@ -21,8 +21,8 @@ Das composable übernimmt:
 ```ts
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -36,8 +36,8 @@ useCanvas(canvasRef, editor)
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

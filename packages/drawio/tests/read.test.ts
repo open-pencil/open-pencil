@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { deflateSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
-import { MAX_INFLATED_BYTES, parseDrawIOFile, readDrawIOBytes } from '@open-pencil/drawio'
+import { MAX_INFLATED_BYTES, parseDrawIOFile, readDrawIOBytes } from '@lawha/drawio'
 
 /**
  * A page as draw.io saves it: the root and default layer, a second hidden layer, a plain shape,

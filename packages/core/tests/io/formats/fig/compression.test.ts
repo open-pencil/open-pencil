@@ -2,12 +2,12 @@ import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { unzipSync } from 'fflate'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
-import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
-import type { FigCompression } from '@open-pencil/scene-graph/fig-compression'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { parseFigKiwiChunks } from '@lawha/kiwi/fig/container'
+import { LAWHA_PLUGIN_DATA, withPluginData } from '@lawha/scene-graph/plugin-data'
+import type { FigCompression } from '@lawha/scene-graph/fig-compression'
 
 import { figCompressionOf } from '#core/io/formats/fig/compression'
 import { hasPendingReaderPages } from '#core/kiwi/fig/session/document-state'
@@ -35,7 +35,7 @@ function setCompression(graph: SceneGraph, compression: FigCompression) {
   const root = graph.getNode(graph.rootId)
   if (!root) throw new Error('Missing document node')
   graph.updateNode(graph.rootId, {
-    pluginData: withPluginData(root.pluginData, OPEN_PENCIL_PLUGIN_DATA.figCompression, compression)
+    pluginData: withPluginData(root.pluginData, LAWHA_PLUGIN_DATA.figCompression, compression)
   })
 }
 

@@ -3,7 +3,7 @@ import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 
 import { TRANSPARENT } from '../constants'
 import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
-import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
+import { LAWHA_PLUGIN_DATA } from '../plugin-data/fields'
 import { randomHex } from '../random'
 import type { Fill, SceneNode } from '../types'
 import type { ShaderPaint, ShaderPreset } from './schema'
@@ -13,7 +13,7 @@ type ShaderNode = Pick<SceneNode, 'fills' | 'strokes' | 'pluginData'>
 
 /** Every shader a node's fills and strokes draw, whether or not a paint still shows it. */
 export function readShaderPaints(node: Pick<SceneNode, 'pluginData'>): ShaderPaint[] {
-  return readAllPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.shader)
+  return readAllPluginData(node.pluginData, LAWHA_PLUGIN_DATA.shader)
 }
 
 /**
@@ -50,7 +50,7 @@ export function withShaderPaints(
   for (const shader of shaders) byImage.set(shader.image, shader)
   return withAllPluginData(
     node.pluginData,
-    OPEN_PENCIL_PLUGIN_DATA.shader,
+    LAWHA_PLUGIN_DATA.shader,
     [...byImage.values()].filter((shader) => shown.has(shader.image))
   )
 }

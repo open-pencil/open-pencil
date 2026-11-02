@@ -29,7 +29,7 @@ Pulsa <kbd>Delete</kbd> o <kbd>Backspace</kbd> para eliminar los puntos seleccio
 
 ## Segmentos
 
-Haz clic en un segmento para seleccionarlo. Arrástralo para curvarlo; OpenPencil crea los tiradores necesarios. Haz doble clic para añadir un punto.
+Haz clic en un segmento para seleccionarlo. Arrástralo para curvarlo; Lawha crea los tiradores necesarios. Haz doble clic para añadir un punto.
 
 ## Continuar rutas abiertas
 

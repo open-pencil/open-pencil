@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { mergeCSSText } from './import/css-text'
 import { jsxToDesignDocumentCore, type JSXChild } from './import/jsx/core'

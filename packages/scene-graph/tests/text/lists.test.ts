@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { TextParagraphStyle } from '@open-pencil/scene-graph'
+import type { TextParagraphStyle } from '@lawha/scene-graph'
 import {
   paragraphStylesAfterEdit,
   paragraphStylesAfterTextChange,
@@ -9,7 +9,7 @@ import {
   topLevelNumberDigits,
   withIndentation,
   withListType
-} from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/text'
 
 const ol = (indentation = 1): TextParagraphStyle => ({ listType: 'ORDERED', indentation })
 const ul = (indentation = 1): TextParagraphStyle => ({ listType: 'UNORDERED', indentation })

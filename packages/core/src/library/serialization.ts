@@ -1,8 +1,8 @@
 import { mapValues } from 'es-toolkit'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
@@ -38,13 +38,13 @@ export function serializeLibraryRevision(
   }
 }
 
-const MAP_TAG = 'openpencil/map'
-const OBJECT_TAG = 'openpencil/object'
+const MAP_TAG = 'lawha/map'
+const OBJECT_TAG = 'lawha/object'
 
 function encodeStoredValue(value: unknown): unknown {
   if (value instanceof Map) {
     return {
-      $openPencilType: MAP_TAG,
+      $lawhaType: MAP_TAG,
       entries: [...value].map(([key, entry]) => [encodeStoredValue(key), encodeStoredValue(entry)])
     }
   }
@@ -53,8 +53,8 @@ function encodeStoredValue(value: unknown): unknown {
   if (value && typeof value === 'object') {
     const encoded = mapValues(value, encodeStoredValue)
     // An object that already looks like a tag is wrapped, so decoding cannot mistake it for one.
-    return '$openPencilType' in value || '$bytes' in value
-      ? { $openPencilType: OBJECT_TAG, value: encoded }
+    return '$lawhaType' in value || '$bytes' in value
+      ? { $lawhaType: OBJECT_TAG, value: encoded }
       : encoded
   }
   return value
@@ -72,9 +72,9 @@ export function encodeStoredLibraryRevision(revision: ComponentLibraryRevision):
 export function decodeStoredLibraryValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(decodeStoredLibraryValue)
   if (!value || typeof value !== 'object') return value
-  if ('$openPencilType' in value) {
+  if ('$lawhaType' in value) {
     if (
-      value.$openPencilType === OBJECT_TAG &&
+      value.$lawhaType === OBJECT_TAG &&
       'value' in value &&
       value.value &&
       typeof value.value === 'object' &&
@@ -82,7 +82,7 @@ export function decodeStoredLibraryValue(value: unknown): unknown {
     ) {
       return mapValues(value.value, decodeStoredLibraryValue)
     }
-    if (value.$openPencilType === MAP_TAG && 'entries' in value && Array.isArray(value.entries)) {
+    if (value.$lawhaType === MAP_TAG && 'entries' in value && Array.isArray(value.entries)) {
       return new Map(
         value.entries.flatMap((entry) =>
           Array.isArray(entry) && entry.length === 2

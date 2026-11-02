@@ -36,7 +36,7 @@ test('evaluates JSX into plain inert data', async ({ page }) => {
         type: 'frame',
         props: {
           w: 320,
-          fill: { __openPencilHelper: 'solid', args: ['#fff'] }
+          fill: { __lawhaHelper: 'solid', args: ['#fff'] }
         },
         children: [{ type: 'text', props: {}, children: ['Hello'], source: 1 }],
         source: 1
@@ -101,7 +101,7 @@ return <Frame mode={dark} fill={theme.Page}><Text color={designVar('Ink')}>Hello
       modes: [
         {
           mode: 'Dark',
-          values: { Page: '#111111', Text: { __openPencilHelper: 'variable', args: [0, 'Page'] } }
+          values: { Page: '#111111', Text: { __lawhaHelper: 'variable', args: [0, 'Page'] } }
         }
       ]
     }
@@ -109,8 +109,8 @@ return <Frame mode={dark} fill={theme.Page}><Text color={designVar('Ink')}>Hello
   expect(result.roots[0]).toMatchObject({
     type: 'frame',
     props: {
-      mode: { __openPencilHelper: 'mode', args: [0, 'Dark'] },
-      fill: { __openPencilHelper: 'variable', args: [0, 'Page'] }
+      mode: { __lawhaHelper: 'mode', args: [0, 'Dark'] },
+      fill: { __lawhaHelper: 'variable', args: [0, 'Page'] }
     }
   })
 })
@@ -128,7 +128,7 @@ return <Frame>
   )
   expect(result.ok).toBe(true)
   if (!result.ok) return
-  const ref = (number: number) => ({ __openPencilHelper: 'ref', args: [number] })
+  const ref = (number: number) => ({ __lawhaHelper: 'ref', args: [number] })
   expect(result.roots[0]).toMatchObject({
     children: [
       { props: { ref: ref(1) } },

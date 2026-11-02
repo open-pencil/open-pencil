@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
-import type { Fill } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import type { Fill } from '@lawha/scene-graph'
 
 const solid = (r: number, g: number, b: number): Fill => ({
   type: 'SOLID',

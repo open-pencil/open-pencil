@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'no-module-mocking'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 
 test('rejects parser failures instead of treating them as valid examples', async () => {
   await expect(lint('const = ;', rules)).rejects.toThrow('could not parse')
@@ -11,7 +11,7 @@ test('rejects parser failures instead of treating them as valid examples', async
 
 test('rejects invalid rule configuration', async () => {
   await expect(
-    lint('export const value = 1', { 'open-pencil/missing-rule': 'error' })
+    lint('export const value = 1', { 'lawha/missing-rule': 'error' })
   ).rejects.toThrow()
 })
 

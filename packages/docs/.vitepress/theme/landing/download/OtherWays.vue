@@ -23,7 +23,7 @@ const localePath = useLocalePath()
         <IconBeer class="icon" aria-hidden="true" />
         <dt>{{ messages.download.others.homebrew.title }}</dt>
         <dd>{{ messages.download.others.homebrew.detail }}</dd>
-        <dd class="action"><CopyCommand command="brew install --cask openpencil" /></dd>
+        <dd class="action"><CopyCommand command="brew install --cask lawha" /></dd>
       </div>
       <div class="way">
         <IconGlobe class="icon" aria-hidden="true" />
@@ -39,7 +39,7 @@ const localePath = useLocalePath()
         <IconTerminal class="icon" aria-hidden="true" />
         <dt>{{ messages.download.others.cli.title }}</dt>
         <dd>{{ messages.download.others.cli.detail }}</dd>
-        <dd class="action"><CopyCommand command="npm install -g @open-pencil/cli" /></dd>
+        <dd class="action"><CopyCommand command="npm install -g @lawha/cli" /></dd>
       </div>
       <div class="way">
         <IconCode class="icon" aria-hidden="true" />

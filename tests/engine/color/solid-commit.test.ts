@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import { applySolidFillColor, applySolidStrokeColor } from '@open-pencil/vue/controls/color-model'
+import type { Fill } from '@lawha/scene-graph'
+import { applySolidFillColor, applySolidStrokeColor } from '@lawha/vue/controls/color-model'
 
 describe('solid color commit helpers', () => {
   test('syncs fill opacity with color alpha', () => {

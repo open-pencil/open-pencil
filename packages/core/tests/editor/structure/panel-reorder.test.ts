@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
+import { createEditor } from '@lawha/core'
+import { getAxisAlignedWorldBounds } from '@lawha/scene-graph/coordinate'
 
 describe('moving a layer from the layers panel', () => {
   test('into a frame keeps it where it is drawn, and one undo puts it back', () => {

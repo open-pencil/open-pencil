@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { effectiveFigmaRawNodeFields } from '@open-pencil/fig'
-import type { Effect, Fill, SceneNode } from '@open-pencil/scene-graph'
-import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { createEditor } from '@lawha/core'
+import { effectiveFigmaRawNodeFields } from '@lawha/fig'
+import type { Effect, Fill, SceneNode } from '@lawha/scene-graph'
+import { getSharedStyles } from '@lawha/scene-graph/shared-styles'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { sharedStyleDetachPatch, sharedStylePatch } from '#vue/controls/shared-style/model'
 

@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import type { LayoutMode, NodeType, SceneNode } from '@open-pencil/scene-graph'
+import type { LayoutMode, NodeType, SceneNode } from '@lawha/scene-graph'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
 import { useUndoBatch } from '#vue/controls/undo-batch/use'

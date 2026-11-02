@@ -1,5 +1,5 @@
-import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
-import { createShapeWithText } from '@open-pencil/scene-graph/generated'
+import type { NodeType, SceneNode } from '@lawha/scene-graph'
+import { createShapeWithText } from '@lawha/scene-graph/generated'
 
 import { prepareSlotEdits } from './components/slots'
 import { restoreSubtree, snapshotSubtree } from './history/subtree'

@@ -4,11 +4,11 @@ import { dirname, join } from 'node:path'
 
 import { isEqual } from 'es-toolkit'
 
-import { CommandError, parseNpmPack, runCommand } from '@open-pencil/package-artifacts-tools'
+import { CommandError, parseNpmPack, runCommand } from '@lawha/package-artifacts-tools'
 import {
   inspectTarball,
   type TarballDiagnostic
-} from '@open-pencil/package-artifacts-tools/tarball'
+} from '@lawha/package-artifacts-tools/tarball'
 
 import { installPackedPackages } from './install'
 import { evaluateRuntime, type RuntimeName } from './runtime'
@@ -198,7 +198,7 @@ async function observeGuard(
 
 /** Prove the packaging checks catch broken manifests before trusting them on real packages. */
 export async function verifyPackagingGuards(guards = packagingGuards): Promise<void> {
-  const root = await mkdtemp(join(tmpdir(), 'open-pencil-packaging-guards-'))
+  const root = await mkdtemp(join(tmpdir(), 'lawha-packaging-guards-'))
   try {
     const mismatches: string[] = []
     for (const [index, guard] of guards.entries()) {

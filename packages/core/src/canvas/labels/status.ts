@@ -1,8 +1,8 @@
 import type { Canvas, Paragraph } from 'canvaskit-wasm'
 
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { StatusState } from '@open-pencil/scene-graph/statuses'
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import type { StatusState } from '@lawha/scene-graph/statuses'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {

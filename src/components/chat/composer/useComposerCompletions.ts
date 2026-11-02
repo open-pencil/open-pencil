@@ -1,6 +1,6 @@
 import { onMounted } from 'vue'
 
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useAIMessages } from '@lawha/vue/i18n'
 
 import { agentCommands } from '@/app/ai/agents/acp/commands'
 import { commandCandidates, referenceCandidates } from '@/app/ai/chat/references/candidates'

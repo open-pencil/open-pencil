@@ -13,7 +13,7 @@ export function createContext<T>(name: string) {
     const value = inject(key)
     if (!value) {
       throw new Error(
-        `[open-pencil] Injection \`${name}\` not found. Component must be used within the corresponding Root.`
+        `[lawha] Injection \`${name}\` not found. Component must be used within the corresponding Root.`
       )
     }
     return value

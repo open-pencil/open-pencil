@@ -1,5 +1,5 @@
-import type { EditorState } from '@open-pencil/core'
-import { filesMessages } from '@open-pencil/vue/i18n'
+import type { EditorState } from '@lawha/core'
+import { filesMessages } from '@lawha/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import { isFileWriteRefused } from '@/app/document/io/capability'

@@ -1,16 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 import {
   aimLine,
   draggedLineEnds,
   isLineLike,
   lineWorldEnds,
   type LineEnd
-} from '@open-pencil/core/geometry'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/core/geometry'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { createConnector, freeEndpoint } from '@lawha/scene-graph/connectors'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** An arrow as Figma's Arrow tool draws one: a flat vector along its width, aimed by rotation. */
 function arrow(graph: SceneGraph, start: Vector, end: Vector): SceneNode {

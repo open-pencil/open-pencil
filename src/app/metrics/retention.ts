@@ -1,6 +1,6 @@
 import { sumBy } from 'es-toolkit'
 
-import type { MetricsUsage } from '@open-pencil/feedback/contract'
+import type { MetricsUsage } from '@lawha/feedback/contract'
 
 /** Installs first seen on `cohort`, then how many opened the app again each day after. */
 export type RetentionCohort = MetricsUsage['retention'][number]

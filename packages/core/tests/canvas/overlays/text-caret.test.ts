@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import type { Fill } from '@lawha/scene-graph'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 
 import { textCaretColor } from '#core/canvas/overlays/text-edit'
 

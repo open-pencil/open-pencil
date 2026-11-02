@@ -7,13 +7,13 @@ import type {
   Stroke,
   StrokeCap,
   StrokeJoin
-} from '@open-pencil/scene-graph'
-import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
+} from '@lawha/scene-graph'
+import { TRANSPARENT } from '@lawha/scene-graph/constants'
 import {
   ellipticalGradientTransform,
   linearGradientTransformFromAxes
-} from '@open-pencil/scene-graph/gradient'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/gradient'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { imagePaint, type PenImages } from './images'
 import type {

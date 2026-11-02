@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 
-import type { CommentThread } from '@open-pencil/scene-graph'
+import type { CommentThread } from '@lawha/scene-graph'
 
 import CommentListItem from './CommentListItem.vue'
 import CommentPin from './CommentPin.vue'

@@ -6,7 +6,7 @@ import {
   cloudPresenceSchema,
   RELAY_SERVER_PEER,
   type CollaborationTicket
-} from '@open-pencil/cloud/contract'
+} from '@lawha/cloud/contract'
 
 import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'

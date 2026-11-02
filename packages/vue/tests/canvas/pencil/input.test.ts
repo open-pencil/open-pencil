@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { createEditor, type Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { finishPencilDrag, handlePencilDragMove, startPencilInput } from '#vue/canvas/pencil/input'
 

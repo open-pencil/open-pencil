@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
 
 // Accepted shapes, read-back values, and rejections were recorded by running the
 // same assignments against a rectangle in live Figma through figma-use.
@@ -136,7 +136,7 @@ describe('node.effects', () => {
     expect(() => assign([shadow, { ...shadow, foo: 1 }])).toThrow('[1]')
   })
 
-  test('reports Figma effects OpenPencil does not model yet', () => {
+  test('reports Figma effects Lawha does not model yet', () => {
     expect(() => assign([{ type: 'NOISE' }])).toThrow('NOISE effects are not supported')
     expect(() =>
       assign([{ type: 'LAYER_BLUR', blurType: 'PROGRESSIVE', radius: 4, visible: true }])

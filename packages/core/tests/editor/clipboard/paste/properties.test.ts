@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import { colorToFill } from '@open-pencil/scene-graph/color'
+import { createEditor, type Editor } from '@lawha/core'
+import { colorToFill } from '@lawha/scene-graph/color'
 
 import { withResolvableLinks } from '#core/editor/clipboard/paste/properties'
 

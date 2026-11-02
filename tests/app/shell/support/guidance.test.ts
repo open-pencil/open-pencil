@@ -32,7 +32,7 @@ describe('unsupported engine guidance', () => {
       environment({ host: 'desktop', os: 'macos', browser: 'safari', osVersion: '13.7.8' }),
       MISSING
     )
-    expect(notice.heading).toBe('Update macOS to run OpenPencil')
+    expect(notice.heading).toBe('Update macOS to run Lawha')
     expect(notice.paragraphs[0]).toContain('macOS 13.7.8')
     expect(notice.paragraphs[1]).toContain('Software Update')
     expect(reportLink(notice).searchParams.get('platform')).toBe('macOS (Tauri)')
@@ -43,7 +43,7 @@ describe('unsupported engine guidance', () => {
       environment({ host: 'desktop', os: 'macos', browser: 'safari', osVersion: '12.6.4' }),
       MISSING
     )
-    expect(notice.heading).toBe('OpenPencil needs macOS 13 or later')
+    expect(notice.heading).toBe('Lawha needs macOS 13 or later')
   })
 
   test('names the WebKitGTK package on Linux desktops', () => {
@@ -51,7 +51,7 @@ describe('unsupported engine guidance', () => {
       environment({ host: 'desktop', os: 'linux', browser: 'safari', webviewVersion: '2.38.6' }),
       MISSING
     )
-    expect(notice.heading).toBe('Update WebKitGTK to run OpenPencil')
+    expect(notice.heading).toBe('Update WebKitGTK to run Lawha')
     expect(notice.paragraphs[0]).toContain('2.38.6')
     expect(notice.paragraphs[1]).toContain('webkit2gtk-4.1')
   })
@@ -61,7 +61,7 @@ describe('unsupported engine guidance', () => {
       environment({ host: 'desktop', os: 'windows', browser: 'edge', browserVersion: 100 }),
       MISSING
     )
-    expect(notice.heading).toBe('Update WebView2 to run OpenPencil')
+    expect(notice.heading).toBe('Update WebView2 to run Lawha')
     expect(notice.links.map((link) => link.url)).toContain(WEBVIEW2_DOWNLOAD_URL)
   })
 
@@ -69,32 +69,32 @@ describe('unsupported engine guidance', () => {
     [
       'chrome',
       105,
-      'Update Chrome to run OpenPencil',
-      'Chrome 105 detected. OpenPencil needs Chrome 111 or later.'
+      'Update Chrome to run Lawha',
+      'Chrome 105 detected. Lawha needs Chrome 111 or later.'
     ],
     [
       'edge',
       109,
-      'Update Edge to run OpenPencil',
-      'Edge 109 detected. OpenPencil needs Edge 111 or later.'
+      'Update Edge to run Lawha',
+      'Edge 109 detected. Lawha needs Edge 111 or later.'
     ],
     [
       'firefox',
       115,
-      'Update Firefox to run OpenPencil',
-      'Firefox 115 detected. OpenPencil needs Firefox 128 or later.'
+      'Update Firefox to run Lawha',
+      'Firefox 115 detected. Lawha needs Firefox 128 or later.'
     ],
     [
       'safari',
       16.2,
-      'Update Safari to run OpenPencil',
-      'Safari 16.2 detected. OpenPencil needs Safari 16.4 or later.'
+      'Update Safari to run Lawha',
+      'Safari 16.2 detected. Lawha needs Safari 16.4 or later.'
     ],
     [
       'opera',
       108,
-      'Update Opera to run OpenPencil',
-      'Opera 108 detected. OpenPencil needs Opera built on Chrome 111 or later.'
+      'Update Opera to run Lawha',
+      'Opera 108 detected. Lawha needs Opera built on Chrome 111 or later.'
     ]
   ] as const)(
     'names the outdated %s version and the minimum',
@@ -114,7 +114,7 @@ describe('unsupported engine guidance', () => {
       environment({ os: 'ios', browser: 'safari', browserVersion: 16.1 }),
       MISSING
     )
-    expect(notice.heading).toBe('Update iOS to run OpenPencil')
+    expect(notice.heading).toBe('Update iOS to run Lawha')
     expect(notice.paragraphs[0]).toContain('iOS 16.4')
   })
 
@@ -130,9 +130,9 @@ describe('unsupported engine guidance', () => {
 
   test('falls back to the full requirements for an unknown browser', () => {
     const notice = unsupportedNotice(environment({}), MISSING)
-    expect(notice.heading).toBe("OpenPencil can't run in this browser")
+    expect(notice.heading).toBe("Lawha can't run in this browser")
     expect(notice.paragraphs[0]).toBe(
-      'OpenPencil needs Chrome 111, Edge 111, Firefox 128, or Safari 16.4 or later.'
+      'Lawha needs Chrome 111, Edge 111, Firefox 128, or Safari 16.4 or later.'
     )
   })
 
@@ -142,9 +142,9 @@ describe('unsupported engine guidance', () => {
       MISSING
     )
     const url = reportLink(notice)
-    expect(url.origin + url.pathname).toBe('https://github.com/open-pencil/open-pencil/issues/new')
+    expect(url.origin + url.pathname).toBe('https://github.com/aliaaldihnayn-lab/design/issues/new')
     expect(url.searchParams.get('template')).toBe('bug_report.yml')
-    expect(url.searchParams.get('platform')).toBe('Web (app.openpencil.dev)')
+    expect(url.searchParams.get('platform')).toBe('Web (app.lawha.invalid)')
     expect(url.searchParams.get('browser')).toBe('test-agent')
     expect(url.searchParams.get('logs')).toContain('Missing: String.prototype.isWellFormed')
     expect(url.searchParams.get('logs')).toContain('Browser: Firefox 115')
@@ -159,7 +159,7 @@ describe('boot failure guidance', () => {
       environment({ host: 'desktop', os: 'macos', browser: 'safari', osVersion: '13.7.8' }),
       error
     )
-    expect(notice.heading).toBe("OpenPencil couldn't start")
+    expect(notice.heading).toBe("Lawha couldn't start")
     expect(notice.paragraphs[1]).toContain('Safari updates')
     expect(notice.details[0]).toBe('TypeError: Promise.withResolvers is not a function')
     expect(reportLink(notice).searchParams.get('logs')).toContain('OS: macos 13.7.8')

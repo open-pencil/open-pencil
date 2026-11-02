@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 
-import { EDITOR_TOOLS, type EditorToolDef, type Tool } from '@open-pencil/core'
+import { EDITOR_TOOLS, type EditorToolDef, type Tool } from '@lawha/core'
 
 import { useEditor } from '#vue/editor/context'
 import { provideToolbar } from '#vue/primitives/Toolbar/context'

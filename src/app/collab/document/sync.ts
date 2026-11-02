@@ -9,21 +9,21 @@ import type {
   DocumentKind,
   EnabledLibraryBinding,
   PluginDataEntry
-} from '@open-pencil/scene-graph'
-import { commentThreadsSchema } from '@open-pencil/scene-graph/comments'
+} from '@lawha/scene-graph'
+import { commentThreadsSchema } from '@lawha/scene-graph/comments'
 import {
   isPluginDataEntry,
-  OPEN_PENCIL_PLUGIN_DATA,
+  LAWHA_PLUGIN_DATA,
   readPluginData,
   withPluginData
-} from '@open-pencil/scene-graph/plugin-data'
+} from '@lawha/scene-graph/plugin-data'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
 import { changedIds, writeChanges, type YRecords } from '../records'
 import { readRoot, type YMeta } from '../shared-tree/fields'
 
-const { comments } = OPEN_PENCIL_PLUGIN_DATA
+const { comments } = LAWHA_PLUGIN_DATA
 const COLOR_SPACE_KEY = 'colorSpace'
 const KIND_KEY = 'documentKind'
 /** A thread's replies are a map of their own by id, so replies written at once all stay. */

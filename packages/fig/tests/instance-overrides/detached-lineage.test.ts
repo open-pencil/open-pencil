@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { createOccurrenceInterpreter } from '#fig/instance-overrides/interpret'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 const guid = (sessionID: number, localID: number) => ({ sessionID, localID })
 

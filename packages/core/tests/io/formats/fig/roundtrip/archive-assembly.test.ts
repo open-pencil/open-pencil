@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { materializeDocument, materializeFigArchive, parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { materializeDocument, materializeFigArchive, parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 test('archive-owned assembly matches record-based assembly and isolates returned graphs', async () => {
   await initCodec()

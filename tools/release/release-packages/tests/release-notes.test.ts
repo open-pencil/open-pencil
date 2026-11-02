@@ -31,7 +31,7 @@ const changelog = `# Changelog
 `
 
 async function changelogPath(contents = changelog) {
-  const directory = join(tmpdir(), `open-pencil-release-notes-${crypto.randomUUID()}`)
+  const directory = join(tmpdir(), `lawha-release-notes-${crypto.randomUUID()}`)
   await mkdir(directory, { recursive: true })
   const path = join(directory, 'CHANGELOG.md')
   await writeFile(path, contents)

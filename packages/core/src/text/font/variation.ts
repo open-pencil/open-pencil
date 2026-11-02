@@ -1,5 +1,5 @@
-import type { FontVariation } from '@open-pencil/scene-graph'
-import { styleSpelling, styleToWeight } from '@open-pencil/scene-graph/font-style'
+import type { FontVariation } from '@lawha/scene-graph'
+import { styleSpelling, styleToWeight } from '@lawha/scene-graph/font-style'
 
 interface TableRange {
   offset: number

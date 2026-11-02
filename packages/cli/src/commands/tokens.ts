@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import type { TokensResult } from '@open-pencil/core/rpc'
+import type { TokensResult } from '@lawha/core/rpc'
 
 import { fmtList } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'

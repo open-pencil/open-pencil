@@ -1,9 +1,9 @@
 import { omit } from 'es-toolkit/object'
 import { computed, type ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import { drawnFontAxes, layerTextStyleChanges, type DrawnFontAxis } from '@open-pencil/core/text'
-import type { FontVariation, SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@lawha/core'
+import { drawnFontAxes, layerTextStyleChanges, type DrawnFontAxis } from '@lawha/core/text'
+import type { FontVariation, SceneNode } from '@lawha/scene-graph'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 import { useUndoBatch } from '#vue/controls/undo-batch/use'

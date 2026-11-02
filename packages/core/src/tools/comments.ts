@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { DEFAULT_COMMENT_AUTHOR, OpenPencilAPI } from '#core/openpencil-api'
+import { DEFAULT_COMMENT_AUTHOR, LawhaAPI } from '#core/lawha-api'
 import { defineTool, toolFailure } from '#core/tools/schema'
 
 const authorSchema = v.optional(
@@ -29,7 +29,7 @@ export const getComments = defineTool({
   }),
   execute: (figma, { includeResolved, page, author }) => {
     try {
-      const comments = new OpenPencilAPI(figma).getComments({
+      const comments = new LawhaAPI(figma).getComments({
         resolved: includeResolved ? undefined : false,
         page,
         author
@@ -64,7 +64,7 @@ export const addComment = defineTool({
   }),
   execute: (figma, { text, ...options }) => {
     try {
-      return new OpenPencilAPI(figma).addComment(text, options).toJSON()
+      return new LawhaAPI(figma).addComment(text, options).toJSON()
     } catch (error) {
       return toolFailure(error)
     }
@@ -84,7 +84,7 @@ export const replyToComment = defineTool({
   }),
   execute: (figma, { id, text, author }) => {
     try {
-      const comment = new OpenPencilAPI(figma).getComment(id)
+      const comment = new LawhaAPI(figma).getComment(id)
       if (!comment) return { error: `No comment ${id}` }
       return comment.reply(text, { author }).toJSON()
     } catch (error) {
@@ -107,7 +107,7 @@ export const resolveComment = defineTool({
   }),
   execute: (figma, { id, resolved = true }) => {
     try {
-      const comment = new OpenPencilAPI(figma).getComment(id)
+      const comment = new LawhaAPI(figma).getComment(id)
       if (!comment) return { error: `No comment ${id}` }
       return (resolved ? comment.resolve() : comment.reopen()).toJSON()
     } catch (error) {

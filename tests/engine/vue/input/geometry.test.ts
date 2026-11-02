@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 import {
   createSceneGeometry,
   rotationHandleLayout,
   selectionHandleRect
-} from '@open-pencil/core/geometry'
+} from '@lawha/core/geometry'
 
 import {
   canvasToLocalPoint,

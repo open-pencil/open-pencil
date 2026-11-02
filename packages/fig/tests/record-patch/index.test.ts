@@ -9,7 +9,7 @@ import {
   getSchemaBytes,
   initCodec,
   type NodeChange
-} from '@open-pencil/kiwi/fig/codec'
+} from '@lawha/kiwi/fig/codec'
 
 const record = (localID: number, parent: number | null, extra: Partial<NodeChange> = {}) =>
   ({

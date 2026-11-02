@@ -21,7 +21,7 @@ describe('type shape source discovery', () => {
   })
 
   test('does not discover installed or generated TypeScript sources', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-type-shapes-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-type-shapes-'))
     try {
       await Promise.all([
         mkdir(join(root, 'src'), { recursive: true }),

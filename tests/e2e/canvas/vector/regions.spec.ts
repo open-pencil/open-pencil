@@ -6,8 +6,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 // and so is a picked one.
 test('vector edit mode hatches the hovered and the picked region', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const line = (start: number, end: number) => ({
       start,
       end,
@@ -59,7 +59,7 @@ test('vector edit mode hatches the hovered and the picked region', async () => {
   await editor.canvas.waitForRender()
 
   const regions = await editor.page.evaluate(() => {
-    const edit = window.openPencil?.getStore?.().getNodeEditState?.()
+    const edit = window.lawha?.getStore?.().getNodeEditState?.()
     return { picked: [...(edit?.selectedRegions ?? [])], hovered: edit?.hoveredRegion ?? null }
   })
   expect(regions).toEqual({ picked: [0], hovered: 1 })

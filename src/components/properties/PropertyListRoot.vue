@@ -1,13 +1,13 @@
 <script setup lang="ts" generic="K extends PropertyListKey">
 import type { VNode } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { useEditorPropertyList } from '@open-pencil/vue/controls/property-list'
+import type { SceneNode } from '@lawha/scene-graph'
+import { useEditorPropertyList } from '@lawha/vue/controls/property-list'
 import {
   PropertyListRoot as HeadlessPropertyListRoot,
   type PropertyListKey,
   type PropertyListRootSlotProps
-} from '@open-pencil/vue/primitives/PropertyList'
+} from '@lawha/vue/primitives/PropertyList'
 
 const { propKey, label } = defineProps<{
   propKey: K

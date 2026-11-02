@@ -1,4 +1,4 @@
-import type { Effect, SceneGraph } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph } from '@lawha/scene-graph'
 
 const solid = (r: number, g: number, b: number, opacity = 1) => ({
   type: 'SOLID' as const,

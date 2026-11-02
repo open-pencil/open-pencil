@@ -10,8 +10,8 @@ async function expectCanvas(name: string) {
 
 test('complex text fills preserve native paragraph layout', async () => {
   await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
 
     store.graph.createNode('FRAME', pageId, {
@@ -79,8 +79,8 @@ test('complex text fills preserve native paragraph layout', async () => {
 
 test('text decoration styles and OpenType features', async () => {
   await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
 
     store.graph.createNode('FRAME', pageId, {
@@ -169,8 +169,8 @@ test('text decoration styles and OpenType features', async () => {
 
 test('text case by character range', async () => {
   await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const fills = [
       {

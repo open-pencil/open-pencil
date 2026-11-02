@@ -8,14 +8,14 @@ describe('native test credential isolation', () => {
   it('uses disposable memory credentials and exposes explicit retry without Keychain access', async function () {
     this.timeout(180_000)
     await browser.waitUntil(
-      async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
+      async () => browser.execute(() => Boolean(window.lawha?.getStore?.())),
       { timeout: 30_000 }
     )
     const previousLaunch = await browser.execute(() => {
       // Probe the WebView itself, not an adapter, to verify profile isolation.
-      // oxlint-disable-next-line open-pencil/no-direct-storage-access
+      // oxlint-disable-next-line lawha/no-direct-storage-access
       const previous = localStorage.getItem('native-test-launch-marker')
-      // oxlint-disable-next-line open-pencil/no-direct-storage-access
+      // oxlint-disable-next-line lawha/no-direct-storage-access
       localStorage.setItem('native-test-launch-marker', 'present')
       return previous
     })
@@ -43,7 +43,7 @@ describe('native test credential isolation', () => {
   it('shows a paused section after denial and hides it after retry', async function () {
     this.timeout(180_000)
     await assert.rejects(
-      invokeNative('credential_write', { reference, value: 'open-pencil-native-test-denied' })
+      invokeNative('credential_write', { reference, value: 'lawha-native-test-denied' })
     )
     assert.equal(await $('[data-test-id="settings-general-panel"]').isDisplayed(), true)
     const retry = await $('button=Retry access')

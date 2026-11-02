@@ -82,7 +82,7 @@ export function githubClient(
       headers: {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${token}`,
-        'User-Agent': 'openpencil-feedback',
+        'User-Agent': 'lawha-feedback',
         'X-GitHub-Api-Version': '2026-03-10'
       },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)

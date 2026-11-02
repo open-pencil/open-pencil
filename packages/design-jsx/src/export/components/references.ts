@@ -1,7 +1,7 @@
 import { refName } from '#design-jsx/refs'
 import { countBy } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { Reference, type JSXValue } from '../value'
 

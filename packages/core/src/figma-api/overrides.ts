@@ -6,9 +6,9 @@ import type {
   SceneGraph,
   SceneNode,
   Stroke
-} from '@open-pencil/scene-graph'
-import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
-import type { InstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph'
+import { findInstanceAncestor } from '@lawha/scene-graph/instances'
+import type { InstanceOverrideState } from '@lawha/scene-graph/instances/overrides'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { assertProxyEditable, graph, raw } from './accessor-utils'

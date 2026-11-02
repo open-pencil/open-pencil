@@ -1,4 +1,4 @@
-import type { Editor, EditorState } from '@open-pencil/core'
+import type { Editor, EditorState } from '@lawha/core'
 
 export function createFlashActions(editor: Editor, state: EditorState) {
   let flashRafId = 0

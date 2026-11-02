@@ -5,8 +5,8 @@ const editor = useEditorSetup()
 
 function getPageChildren() {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
       id: n.id,
       type: n.type,
@@ -19,8 +19,8 @@ function getPageChildren() {
 
 function getSelectedCount() {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.state.selectedIds.size
   })
 }
@@ -109,8 +109,8 @@ test('toggle visibility via context menu', async () => {
   await editor.canvas.waitForRender()
 
   const nodeId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return [...store.state.selectedIds][0]
   })
 
@@ -119,8 +119,8 @@ test('toggle visibility via context menu', async () => {
   await editor.canvas.waitForRender()
 
   const hidden = await editor.page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const n = store.graph.getNode(id)
     return n ? { visible: n.visible } : null
   }, nodeId)
@@ -128,15 +128,15 @@ test('toggle visibility via context menu', async () => {
 
   // Toggle back: select via store since invisible nodes can't be hit-tested
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.toggleVisibility()
   })
   await editor.canvas.waitForRender()
 
   const restored = await editor.page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const n = store.graph.getNode(id)
     return n ? { visible: n.visible } : null
   }, nodeId)
@@ -191,8 +191,8 @@ test('group via context menu', async () => {
 test('ungroup via store after context-menu group', async () => {
   // Groups are click-through, so ungroup via store instead
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const group = store.graph.getChildren(store.state.currentPageId).find((n) => n.type === 'GROUP')
     if (group) store.select([group.id])
     store.ungroupSelected()

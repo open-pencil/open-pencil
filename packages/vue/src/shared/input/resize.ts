@@ -3,29 +3,29 @@ export { tryStartResize } from '#vue/shared/input/resize/start'
 import { isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import { resizedPathTextGlyphs, type Editor } from '@open-pencil/core'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
-import type { SceneNode, DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
+import { resizedPathTextGlyphs, type Editor } from '@lawha/core'
+import { computeAllLayouts } from '@lawha/core/layout'
+import { calibratePathTextLayout, reflowPathTextGlyphs } from '@lawha/core/text'
+import type { SceneNode, DerivedTextGlyph, TextPathData } from '@lawha/scene-graph'
 import {
   cloneVectorNetwork,
   copyDerivedGlyphs,
   copyGeometryPaths,
   copyStrokes
-} from '@open-pencil/scene-graph/copy'
-import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+} from '@lawha/scene-graph/copy'
+import { findInstanceAncestor, recordInstanceOverride } from '@lawha/scene-graph/instances'
 import {
   cloneInstanceOverrideState,
   type InstanceOverrideState
-} from '@open-pencil/scene-graph/instances/overrides'
-import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/instances/overrides'
+import { recapturedAspectRatio } from '@lawha/scene-graph/layout'
+import type { Rect } from '@lawha/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
   scaledGeometryChanges,
   type ResizeSnapshot
-} from '@open-pencil/scene-graph/resize'
-import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
+} from '@lawha/scene-graph/resize'
+import { markSourceFieldsEdited } from '@lawha/scene-graph/source-metadata'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'

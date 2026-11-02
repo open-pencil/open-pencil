@@ -10,7 +10,7 @@ Los subcomandos `analyze` examinan el documento completo y ayudan a descubrir in
 ## Colores
 
 ```sh
-bun open-pencil analyze colors design.fig
+bun lawha analyze colors design.fig
 ```
 
 Agrupa los colores de rellenos y contornos, cuenta su uso y ayuda a detectar tonos casi idénticos.
@@ -18,7 +18,7 @@ Agrupa los colores de rellenos y contornos, cuenta su uso y ayuda a detectar ton
 ## Tipografía
 
 ```sh
-bun open-pencil analyze typography design.fig
+bun lawha analyze typography design.fig
 ```
 
 Enumera las combinaciones de familia, tamaño y estilo con su frecuencia. Así se identifican estilos aislados.
@@ -26,7 +26,7 @@ Enumera las combinaciones de familia, tamaño y estilo con su frecuencia. Así s
 ## Espaciado
 
 ```sh
-bun open-pencil analyze spacing design.fig
+bun lawha analyze spacing design.fig
 ```
 
 Examina separación y relleno en marcos con disposición automática. Permite detectar, por ejemplo, un valor de `13px` entre los habituales `8/16/24`.
@@ -34,7 +34,7 @@ Examina separación y relleno en marcos con disposición automática. Permite de
 ## Estructuras repetidas
 
 ```sh
-bun open-pencil analyze clusters design.fig
+bun lawha analyze clusters design.fig
 ```
 
 Busca jerarquías similares que podrían convertirse en componentes y muestra coincidencia, tamaño y estructura.
@@ -44,7 +44,7 @@ Busca jerarquías similares que podrían convertirse en componentes y muestra co
 Añade `--json` para procesar los resultados en CI, generar informes o aplicar reglas propias.
 
 ```sh
-bun open-pencil analyze colors design.fig --json
+bun lawha analyze colors design.fig --json
 ```
 
 Estos análisis no modifican el archivo. Para transformaciones usa [`eval`](./scripting).

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, mock, test } from 'bun:test'
 
 import { ref } from 'vue'
 
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createEditor, type Editor } from '@lawha/core'
 
 import { handleNodeEditPointerUp } from '#vue/canvas/vector-input/input'
 import type { DragState } from '#vue/shared/input/types'

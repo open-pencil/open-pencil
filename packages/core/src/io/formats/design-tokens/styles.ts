@@ -1,12 +1,12 @@
 import { isEmptyObject, isPlainObject } from 'es-toolkit/predicate'
 
-import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import type { Effect, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { lineHeightPixels, textLengthPixels } from '@lawha/scene-graph/text'
 
 import { toFigmaEffect } from '#core/figma-api/effects'
 
 import { pathName, placeTokens, tokenPath, tokenReference } from './paths'
-import { OPENPENCIL_EXTENSION, type DesignToken, type DesignTokenIssue } from './types'
+import { LAWHA_EXTENSION, type DesignToken, type DesignTokenIssue } from './types'
 import { colorTokenValue, dimensionTokenValue, trimNumber } from './values'
 
 /** Where a variable's token sits, for references to it. */
@@ -56,14 +56,14 @@ export function typographyValue(
   }
 }
 
-/** A text style as a typography token; its own fields ride along so OpenPencil reads it back exactly. */
+/** A text style as a typography token; its own fields ride along so Lawha reads it back exactly. */
 function typographyToken(node: SceneNode, references: TokenReferences): DesignToken {
   const bound = bindingReferences(node, references)
   return {
     $type: 'typography',
     $value: typographyValue(node, bound),
     $extensions: {
-      [OPENPENCIL_EXTENSION]: {
+      [LAWHA_EXTENSION]: {
         text: {
           fontFamily: node.fontFamily,
           fontWeight: node.fontWeight,
@@ -104,7 +104,7 @@ export function shadowTokenValue(effects: readonly Effect[]) {
 
 /**
  * An effect style's shadows as a shadow token. Effects a shadow token cannot express, such as
- * blurs or hidden shadows, ride along whole in OpenPencil's extension, in the plugin API's shape;
+ * blurs or hidden shadows, ride along whole in Lawha's extension, in the plugin API's shape;
  * a style with no visible shadow has no token.
  */
 function shadowToken(node: SceneNode): DesignToken | undefined {
@@ -122,7 +122,7 @@ function shadowToken(node: SceneNode): DesignToken | undefined {
     $value,
     ...(exact
       ? {}
-      : { $extensions: { [OPENPENCIL_EXTENSION]: { effects: node.effects.map(toFigmaEffect) } } })
+      : { $extensions: { [LAWHA_EXTENSION]: { effects: node.effects.map(toFigmaEffect) } } })
   }
 }
 
@@ -156,19 +156,19 @@ export function styleTokens(
   return { tokens, issues }
 }
 
-/** Keeps a name the token path could not hold, such as one with a `.`, in OpenPencil's extension. */
+/** Keeps a name the token path could not hold, such as one with a `.`, in Lawha's extension. */
 export function withOriginalName(
   token: DesignToken,
   name: string,
   path: readonly string[]
 ): DesignToken {
   if (pathName(path) === name) return token
-  const own = token.$extensions?.[OPENPENCIL_EXTENSION]
+  const own = token.$extensions?.[LAWHA_EXTENSION]
   return {
     ...token,
     $extensions: {
       ...token.$extensions,
-      [OPENPENCIL_EXTENSION]: { ...(isPlainObject(own) ? own : {}), name }
+      [LAWHA_EXTENSION]: { ...(isPlainObject(own) ? own : {}), name }
     }
   }
 }

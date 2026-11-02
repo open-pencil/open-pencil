@@ -1,5 +1,5 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneNode } from '@lawha/scene-graph'
 
 type DerivedTextData = NonNullable<NodeChange['derivedTextData']>
 

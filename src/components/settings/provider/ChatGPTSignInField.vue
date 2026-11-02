@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import type { ProfileSignInStatus } from '@/app/ai/models/settings/profile-editor/sign-in'
 import AppButton from '@/components/ui/button/AppButton.vue'

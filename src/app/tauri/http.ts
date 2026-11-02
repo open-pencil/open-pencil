@@ -1,6 +1,6 @@
 import { Channel, invoke } from '@tauri-apps/api/core'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import type { FetchFunction } from '@/app/http/types'
 

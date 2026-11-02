@@ -1,5 +1,5 @@
-import { CloudPortalAPIError, type CloudAuthFailure } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { CloudPortalAPIError, type CloudAuthFailure } from '@lawha/cloud/client'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { cloudAuthFailureMessage } from '@/app/cloud/sessions/account-form'
 

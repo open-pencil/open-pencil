@@ -1,6 +1,6 @@
-import type { VectorRegion, VectorVertex } from '@open-pencil/scene-graph'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+import type { VectorRegion, VectorVertex } from '@lawha/scene-graph'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import type { SnapGuide } from '@lawha/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'

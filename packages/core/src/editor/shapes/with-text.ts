@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   figJamColorName,
   figJamFillMode,
@@ -11,9 +11,9 @@ import {
   type FigJamFillMode,
   type FigJamLineStyle,
   type FigJamTextSize
-} from '@open-pencil/scene-graph/figjam'
-import { shapeWithTextKindFields, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+} from '@lawha/scene-graph/figjam'
+import { shapeWithTextKindFields, shapeWithTextLabel } from '@lawha/scene-graph/generated'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { NodeActions } from '#core/editor/nodes'

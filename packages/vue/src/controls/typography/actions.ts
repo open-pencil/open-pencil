@@ -1,16 +1,16 @@
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import { faceForStyle, fontManager, nearestFamilyFace } from '@open-pencil/core/text'
+import type { Editor } from '@lawha/core'
+import { faceForStyle, fontManager, nearestFamilyFace } from '@lawha/core/text'
 import type {
   SceneNode,
   TextLength,
   TextListType,
   TextParagraphSpacingField
-} from '@open-pencil/scene-graph'
-import { faceLoadKey, faceStyleKey } from '@open-pencil/scene-graph/font-style'
-import { generatedFrameText } from '@open-pencil/scene-graph/generated'
+} from '@lawha/scene-graph'
+import { faceLoadKey, faceStyleKey } from '@lawha/scene-graph/font-style'
+import { generatedFrameText } from '@lawha/scene-graph/generated'
 
 import {
   createTextListActions,

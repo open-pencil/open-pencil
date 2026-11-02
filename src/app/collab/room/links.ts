@@ -2,16 +2,16 @@ import * as v from 'valibot'
 
 import { bindDesktopLinkQueue } from '@/app/tauri/link-queue'
 
-/** Desktop events and commands for `openpencil://join?room=<id>` links (`desktop/src/launch/mod.rs`). */
+/** Desktop events and commands for `lawha://join?room=<id>` links (`desktop/src/launch/mod.rs`). */
 export const ROOM_LINKS_EVENT = 'open-room-links'
 const TAKE_PENDING_ROOMS = 'take_pending_rooms'
 
 export function roomLinkURL(roomId: string): string {
-  return `openpencil://join?room=${encodeURIComponent(roomId)}`
+  return `lawha://join?room=${encodeURIComponent(roomId)}`
 }
 
 /**
- * Opens the rooms of `openpencil://join` links the desktop app received, at startup and while
+ * Opens the rooms of `lawha://join` links the desktop app received, at startup and while
  * running. The native side validates each room ID; `open` validates it again before joining.
  */
 export function bindDesktopRoomLinks(open: (roomId: string) => void): Promise<() => void> {

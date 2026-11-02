@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
@@ -30,7 +30,7 @@ test('reused Unicode section labels match fresh paragraphs across zoom reversals
     const canvas = new CanvasHelper(page)
     await canvas.waitForInit()
     await page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       const names = [
         'Button',
@@ -69,7 +69,7 @@ test('reused Unicode section labels match fresh paragraphs across zoom reversals
     await expect
       .poll(() =>
         page.evaluate(() => {
-          const renderer = window.openPencil
+          const renderer = window.lawha
             ?.getStore?.()
             .canvasRenderers.find((r) => r.fontsLoaded && r.fontProvider)
           const provider = renderer?.fontProvider
@@ -102,15 +102,15 @@ test('reused Unicode section labels match fresh paragraphs across zoom reversals
     await canvas.waitForRender()
     for (const zoom of [1.25, 0.6, 1.1, 0.75, 1]) {
       await page.evaluate((scale) => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         if (!store) throw new Error('Editor unavailable')
         store.setZoomAroundPoint(scale, 0, 0)
       }, zoom)
-      await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+      await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
       await canvas.waitForRender()
       const reused = await canvas.screenshotCanvasRegion(520, 840)
       await page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         if (!store?.canvasRenderers.length) throw new Error('Renderer unavailable')
         for (const renderer of store.canvasRenderers) renderer.labelParagraphCache.clear()
         store.requestRepaint()
@@ -136,7 +136,7 @@ for (const rotation of [-145, -40, 50]) {
     const canvas = new CanvasHelper(page)
     await canvas.waitForInit()
     await page.evaluate((angle) => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       const id = store.createShape('FRAME', 250, 250, 300, 180)
       store.updateNode(id, { name: 'Frame', rotation: angle })
@@ -159,7 +159,7 @@ for (const zoom of [0.5, 1, 2]) {
     const canvas = new CanvasHelper(page)
     await canvas.waitForInit()
     const lightId = await page.evaluate((scale) => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       const sectionPaint = {
         fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
@@ -215,7 +215,7 @@ for (const zoom of [0.5, 1, 2]) {
     // Nested titles have a fixed six-pixel inset and a screen-sized pill.
     await page.mouse.move(box.x + 76 * zoom + 18, box.y + 130 * zoom + 18)
     await expect
-      .poll(() => page.evaluate(() => window.openPencil?.getStore?.().state.hoveredNodeId))
+      .poll(() => page.evaluate(() => window.lawha?.getStore?.().state.hoveredNodeId))
       .toBe(lightId)
     await expect(page).toHaveScreenshot(`section-pills-hover-${zoom}.png`, {
       clip,

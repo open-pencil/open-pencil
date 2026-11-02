@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { pathTextEditChanges, resizedPathTextGlyphs } from '#core/editor/text/path-edit'
 import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'

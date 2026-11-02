@@ -4,7 +4,7 @@ import type { ChatStatus } from 'ai'
 import { TooltipProvider } from 'reka-ui'
 import { computed, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useChatEditor } from '@/components/chat/composer/useChatEditor'
 import IconButton from '@/components/ui/button/IconButton.vue'

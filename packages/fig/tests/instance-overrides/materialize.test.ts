@@ -6,8 +6,8 @@ import { interpretComponent, interpretInstance } from '#fig/instance-overrides/i
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
 import type { MissingComponentDiagnostic } from '#fig/instance-overrides/occurrence/types'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import fixture from './fixtures/accordion-source-closure.json'
 

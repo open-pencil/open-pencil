@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { detectMermaidDiagram } from '@open-pencil/mermaid'
+import { detectMermaidDiagram } from '@lawha/mermaid'
 
 describe('detectMermaidDiagram', () => {
   test('recognises flowcharts after front matter, directives, and comments', () => {

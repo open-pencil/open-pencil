@@ -4,8 +4,8 @@ import {
   createLibraryRevision,
   materializeLibraryAsset,
   MemoryLibraryCatalog
-} from '@open-pencil/core/library'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/library'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
 import { LibraryService } from '@/app/libraries/service'

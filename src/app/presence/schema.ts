@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { MAX_PRESENCE_NAME_LENGTH } from '@open-pencil/cloud/contract'
-import { ZOOM_MAX, ZOOM_MIN } from '@open-pencil/core/constants'
+import { MAX_PRESENCE_NAME_LENGTH } from '@lawha/cloud/contract'
+import { ZOOM_MAX, ZOOM_MIN } from '@lawha/core/constants'
 
 import type { RemotePeer } from '@/app/collab/types'
 import { PEER_COLORS } from '@/constants'

@@ -2,11 +2,11 @@ import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { renderNodesToImage } from '@lawha/core/io/formats/raster'
+import { SceneGraph } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { initCanvasKit } from '#cli/headless'
 import { NodePathCaches } from '#core/canvas/paths/cache'

@@ -14,7 +14,7 @@ for (const appearance of [undefined, null, { animations: 'invalid' }]) {
               origin: new URL(baseURL).origin,
               localStorage: [
                 {
-                  name: 'open-pencil:preferences:v1',
+                  name: 'lawha:preferences:v1',
                   value: JSON.stringify({ version: 1, appearance })
                 }
               ]

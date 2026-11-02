@@ -7,8 +7,8 @@ export function maskSceneDriver(page: () => Page) {
   return {
     show(name: MaskScenes.MaskSceneName) {
       return page().evaluate(async (name) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const sceneURL = '/tests/helpers/canvas/masks/scene.ts'
         const scenes: typeof MaskScenes = await import(sceneURL)
         await scenes.MASK_SCENES[name](store.graph, store.state.currentPageId, (bytes) =>

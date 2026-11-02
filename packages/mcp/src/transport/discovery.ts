@@ -3,7 +3,7 @@ import { Socket } from 'node:net'
 
 import * as v from 'valibot'
 
-import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { writeFileAtomic } from '@lawha/core/node/fs'
 
 import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
@@ -189,7 +189,7 @@ export async function removeStaleSocket(socketPathOverride?: string): Promise<vo
   if (!exists) return
 
   // Verify the path is actually a socket before unlinking it.
-  // A misconfigured OPENPENCIL_MCP_SOCKET could point at a regular file;
+  // A misconfigured LAWHA_MCP_SOCKET could point at a regular file;
   // we must never delete non-socket paths.
   const stat = await lstat(socketPath).catch((e) => {
     if (isEnoent(e)) return null

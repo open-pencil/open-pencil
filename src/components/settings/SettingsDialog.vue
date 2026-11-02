@@ -17,8 +17,8 @@ import IconSlidersHorizontal from '~icons/lucide/sliders-horizontal'
 import IconSparkles from '~icons/lucide/sparkles'
 import IconType from '~icons/lucide/type'
 
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { CLOUD_INCLUDED } from '@/app/cloud/integration'
 import {

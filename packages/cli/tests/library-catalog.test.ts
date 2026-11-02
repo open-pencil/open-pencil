@@ -3,13 +3,13 @@ import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { FileSystemLibraryCatalog } from '@open-pencil/cli/library'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { FileSystemLibraryCatalog } from '@lawha/cli/library'
+import { SceneGraph } from '@lawha/scene-graph'
+import { recordInstanceOverride } from '@lawha/scene-graph/instances'
 
 describe('filesystem library catalog', () => {
   test('publishes and restores revisions under a bounded root', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-libraries-'))
     const graph = new SceneGraph()
     graph.createNode('COMPONENT', graph.getPages()[0].id, {
       name: 'Button',
@@ -28,7 +28,7 @@ describe('filesystem library catalog', () => {
   })
 
   test('rejects traversal and preserves malformed indexes', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-libraries-'))
     const catalog = new FileSystemLibraryCatalog(root)
     await expect(catalog.getRevision('../outside')).rejects.toThrow('Invalid catalog path')
     await Bun.write(join(root, 'libraries.json'), '{invalid')
@@ -42,7 +42,7 @@ describe('filesystem library catalog', () => {
   })
 
   test('restores image bytes from stored revisions', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-libraries-'))
     const graph = new SceneGraph()
     graph.images.set('image-hash', new Uint8Array([1, 2, 3]))
     graph.createNode('COMPONENT', graph.getPages()[0].id, {
@@ -66,7 +66,7 @@ describe('filesystem library catalog', () => {
   })
 
   test('restores vector geometry and instance overrides from stored revisions', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-libraries-'))
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const icon = graph.createNode('COMPONENT', page.id, { name: 'Icon', componentKey: 'icon' })
@@ -99,7 +99,7 @@ describe('filesystem library catalog', () => {
   })
 
   test('rejects revisions that are malformed or fail integrity validation', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-libraries-'))
     const graph = new SceneGraph()
     graph.createNode('COMPONENT', graph.getPages()[0].id, {
       name: 'Button',
@@ -127,7 +127,7 @@ describe('filesystem library catalog', () => {
   })
 
   test('serializes concurrent publishers and keeps a valid index', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-libraries-'))
     const graph = new SceneGraph()
     graph.createNode('COMPONENT', graph.getPages()[0].id, {
       name: 'Button',

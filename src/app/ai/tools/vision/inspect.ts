@@ -2,7 +2,7 @@ import { valibotSchema } from '@ai-sdk/valibot'
 import { generateText, tool } from 'ai'
 import * as v from 'valibot'
 
-import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
+import { computeContentBounds } from '@lawha/core/io/formats/raster'
 
 import { createAIModelRuntime } from '@/app/ai/models'
 import { runtimeReasoningSettings } from '@/app/ai/models/reasoning/settings'

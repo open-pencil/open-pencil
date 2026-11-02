@@ -1,8 +1,8 @@
 import { createGlobalState, useLocalStorage } from '@vueuse/core'
 import { computed } from 'vue'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { randomIndex } from '@open-pencil/scene-graph/random'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { randomIndex } from '@lawha/scene-graph/random'
 
 import { generateGuestName } from '@/app/collab/guest-name'
 import { PEER_COLORS } from '@/constants'

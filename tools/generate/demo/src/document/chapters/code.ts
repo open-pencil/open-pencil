@@ -1,4 +1,4 @@
-import { Instance } from '@open-pencil/design-jsx'
+import { Instance } from '@lawha/design-jsx'
 
 import { panelTabs } from '../chrome'
 import { layoutChapter, type Chapter, type ChapterContext } from './chapter'

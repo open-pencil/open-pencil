@@ -1,6 +1,6 @@
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { ALL_TOOLS, registerComponentCatalog, isToolExposed } from '@open-pencil/core/tools'
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import type { FigmaAPI } from '@lawha/core/figma-api'
+import { ALL_TOOLS, registerComponentCatalog, isToolExposed } from '@lawha/core/tools'
+import type { JSONObject } from '@lawha/scene-graph/primitives'
 
 import { agentReplyRun } from '@/app/ai/reply/run'
 import { runEditorTool, type ReplyCall } from '@/app/ai/tools/runner'

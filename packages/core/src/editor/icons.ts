@@ -1,7 +1,7 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import { readIcon, type IconOptions } from '@open-pencil/scene-graph/icons'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { SceneNode } from '@lawha/scene-graph'
+import { BLACK } from '@lawha/scene-graph/constants'
+import { readIcon, type IconOptions } from '@lawha/scene-graph/icons'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import type { EditorContext } from '#core/editor/types'

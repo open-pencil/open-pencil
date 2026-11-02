@@ -60,8 +60,8 @@ test('Unsplash results credit the photographer with referral links, and a used p
     width: 1200,
     height: 800,
     photographer: 'Ann Lee',
-    photographerURL: 'https://unsplash.com/@ann?utm_source=openpencil&utm_medium=referral',
-    pageURL: 'https://unsplash.com/photos/abc?utm_source=openpencil&utm_medium=referral',
+    photographerURL: 'https://unsplash.com/@ann?utm_source=lawha&utm_medium=referral',
+    pageURL: 'https://unsplash.com/photos/abc?utm_source=lawha&utm_medium=referral',
     sourceId: 'abc'
   })
   expect(Object.fromEntries(requests[0].searchParams)).toEqual({

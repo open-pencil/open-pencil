@@ -5,7 +5,7 @@ import {
   narrowestScope,
   parseToolScope,
   type ToolDescriptor
-} from '@open-pencil/mcp/tools'
+} from '@lawha/mcp/tools'
 
 function tool(name: string): ToolDescriptor {
   return {
@@ -23,7 +23,7 @@ describe('MCP tool scope', () => {
     expect(parseToolScope(undefined)).toBe('document')
     expect(parseToolScope('selection')).toBe('selection')
     expect(parseToolScope(' ')).toBe('document')
-    expect(() => parseToolScope('page')).toThrow(/OPENPENCIL_MCP_SCOPE/)
+    expect(() => parseToolScope('page')).toThrow(/LAWHA_MCP_SCOPE/)
   })
 
   test('keeps only the selection tools in selection scope', () => {

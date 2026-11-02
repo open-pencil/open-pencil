@@ -12,8 +12,8 @@ import { WEB_APP_ORIGIN } from '@/constants'
 
 describe('cloud S3 CORS helpers', () => {
   test('builds XML with required methods and wildcard headers', () => {
-    const xml = buildCORSConfigurationXML(['https://app.openpencil.dev', 'http://localhost:1420'])
-    expect(xml).toContain('<AllowedOrigin>https://app.openpencil.dev</AllowedOrigin>')
+    const xml = buildCORSConfigurationXML(['https://app.lawha.invalid', 'http://localhost:1420'])
+    expect(xml).toContain('<AllowedOrigin>https://app.lawha.invalid</AllowedOrigin>')
     expect(xml).toContain('<AllowedOrigin>http://localhost:1420</AllowedOrigin>')
     expect(xml).toContain('<AllowedMethod>GET</AllowedMethod>')
     expect(xml).toContain('<AllowedMethod>PUT</AllowedMethod>')
@@ -43,10 +43,10 @@ describe('cloud S3 CORS helpers', () => {
           })
         )
       ),
-      buildCORSConfigurationJSON(['https://app.openpencil.dev'])
+      buildCORSConfigurationJSON(['https://app.lawha.invalid'])
     )
     expect(json).toHaveLength(1)
-    expect(json[0]?.AllowedOrigins).toContain('https://app.openpencil.dev')
+    expect(json[0]?.AllowedOrigins).toContain('https://app.lawha.invalid')
     expect(json[0]?.ExposeHeaders).toEqual(expect.arrayContaining(['ETag', 'Content-Range']))
     expect(json[0]?.AllowedMethods).toEqual(
       expect.arrayContaining(['GET', 'PUT', 'POST', 'DELETE', 'HEAD'])
@@ -57,8 +57,8 @@ describe('cloud S3 CORS helpers', () => {
   test('collects static web and localhost origins', () => {
     const origins = collectCloudCORSOrigins()
     expect(origins).toContain(WEB_APP_ORIGIN)
-    expect(origins).toContain('https://*.openpencil.dev')
-    expect(origins).toContain('https://*.openpencil-app.pages.dev')
+    expect(origins).toContain('https://*.lawha.invalid')
+    expect(origins).toContain('https://*.lawha-app.pages.dev')
     expect(origins).toContain('http://localhost:*')
     expect(origins).toContain('http://127.0.0.1:*')
   })

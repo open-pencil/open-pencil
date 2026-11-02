@@ -1,8 +1,8 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { boundEndpoint, layoutConnector } from '@open-pencil/scene-graph/connectors'
-import { getParentWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { boundEndpoint, layoutConnector } from '@lawha/scene-graph/connectors'
+import { getParentWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import type { ArrangeInput, ArrangedRoute, Arrangement } from './boxes'
 import { runConnectorAlong } from './routes'

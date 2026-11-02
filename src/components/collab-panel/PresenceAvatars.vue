@@ -11,7 +11,7 @@ import {
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import type { FollowTarget } from '@/app/presence/types'
 import AvatarStack from '@/components/presence/AvatarStack.vue'

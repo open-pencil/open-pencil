@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { designJSXProp } from '#design-jsx/index'
 import { propsToOverrides } from '#design-jsx/overrides/index'
 
-import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
+import { DEFAULT_GRADIENT_TRANSFORM } from '@lawha/scene-graph/gradient'
 
 describe('property names', () => {
   test('reads the first name of a property that is set', () => {

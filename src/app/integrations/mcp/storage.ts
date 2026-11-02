@@ -1,9 +1,9 @@
 import { StorageSerializers, useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { IS_BROWSER } from '@lawha/core/constants'
 
-const MCP_CONNECTION_SETTINGS_KEY = 'open-pencil:mcp-connections'
+const MCP_CONNECTION_SETTINGS_KEY = 'lawha:mcp-connections'
 
 const connectionSettings = !IS_BROWSER
   ? ref<unknown>(null)

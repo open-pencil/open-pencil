@@ -4,8 +4,8 @@ import type { Surface } from 'canvaskit-wasm'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
 import type { ImagePreview, ImagePreviewDecoder } from '#core/canvas/images/previews'

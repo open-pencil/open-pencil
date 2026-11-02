@@ -4,8 +4,8 @@ import { serializeHTML } from '#dom-css/export/html'
 import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
 import { sceneNodesToTailwindJSXWithLayers } from '#dom-css/export/tailwind-jsx'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { createShaderPaint, withShaderPaints } from '@open-pencil/scene-graph/shaders'
+import { SceneGraph } from '@lawha/scene-graph'
+import { createShaderPaint, withShaderPaints } from '@lawha/scene-graph/shaders'
 
 const PRESET = {
   components: [{ type: 'Aurora', props: { colorA: '#ff3300', speed: 2 } }, { type: 'FilmGrain' }]

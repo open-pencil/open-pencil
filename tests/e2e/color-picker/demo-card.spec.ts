@@ -23,8 +23,8 @@ async function selectDemoCard(page: Page, canvas: CanvasHelper) {
   await waitForDemo(page)
 
   await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const nodes = Array.from(store.graph.nodes.values())
     // The Lint chapter's button keeps a hard-coded fill on purpose, for the rules to find.
     const card = nodes.find((node) => node.name === 'Frame 3' && node.type === 'FRAME')
@@ -51,8 +51,8 @@ async function selectDemoCard(page: Page, canvas: CanvasHelper) {
 
 async function getSelectedFill(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = store.graph.getNode(id)
     return node

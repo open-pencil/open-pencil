@@ -68,7 +68,7 @@
   "paletteSearchPlaceholder": "コマンドを入力または検索…",
   "paletteAriaLabel": "コマンドパレット",
   "paletteSearchAriaLabel": "コマンドを検索",
-  "paletteDescription": "OpenPencil のコマンドを検索して実行します。",
+  "paletteDescription": "Lawha のコマンドを検索して実行します。",
   "paletteNoCommands": "コマンドが見つかりません。",
   "paletteBack": "戻る"
 }

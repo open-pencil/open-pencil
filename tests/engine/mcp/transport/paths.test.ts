@@ -20,56 +20,56 @@ describe('transport/paths', () => {
       expect(typeof dir).toBe('string')
     })
 
-    it('respects OPENPENCIL_MCP_SOCKET env override', async () => {
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      process.env.OPENPENCIL_MCP_SOCKET = join(tmpdir(), 'test-openpencil-socket', 'mcp.sock')
+    it('respects LAWHA_MCP_SOCKET env override', async () => {
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      process.env.LAWHA_MCP_SOCKET = join(tmpdir(), 'test-lawha-socket', 'mcp.sock')
       try {
         const dir = await getSocketDir()
-        expect(dir).toBe(join(tmpdir(), 'test-openpencil-socket'))
+        expect(dir).toBe(join(tmpdir(), 'test-lawha-socket'))
       } finally {
         if (originalSocket == null) {
-          delete process.env.OPENPENCIL_MCP_SOCKET
+          delete process.env.LAWHA_MCP_SOCKET
         } else {
-          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+          process.env.LAWHA_MCP_SOCKET = originalSocket
         }
       }
     })
 
     it('uses platform-appropriate default path', async () => {
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      delete process.env.OPENPENCIL_MCP_SOCKET
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      delete process.env.LAWHA_MCP_SOCKET
       try {
         const dir = await getSocketDir()
         if (process.platform === 'darwin') {
-          expect(dir).toContain('Library/Application Support/OpenPencil')
+          expect(dir).toContain('Library/Application Support/Lawha')
         } else if (process.platform === 'win32') {
           const localAppData = process.env.LOCALAPPDATA
           if (localAppData) {
             expect(dir.toLowerCase()).toContain(localAppData.toLowerCase())
           }
-          expect(dir.toLowerCase()).toContain('openpencil')
+          expect(dir.toLowerCase()).toContain('lawha')
         } else {
           // Linux / other Unix
           const xdg = process.env.XDG_RUNTIME_DIR
           if (xdg) {
             expect(dir).toContain(xdg)
           } else {
-            expect(dir).toContain('.openpencil')
+            expect(dir).toContain('.lawha')
           }
         }
       } finally {
         if (originalSocket == null) {
-          delete process.env.OPENPENCIL_MCP_SOCKET
+          delete process.env.LAWHA_MCP_SOCKET
         } else {
-          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+          process.env.LAWHA_MCP_SOCKET = originalSocket
         }
       }
     })
 
     it('creates the directory if it does not exist', async () => {
-      const testDir = join(tmpdir(), `openpencil-test-${Date.now()}`)
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      process.env.OPENPENCIL_MCP_SOCKET = `${testDir}/mcp.sock`
+      const testDir = join(tmpdir(), `lawha-test-${Date.now()}`)
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      process.env.LAWHA_MCP_SOCKET = `${testDir}/mcp.sock`
       try {
         const dir = await getSocketDir()
         expect(dir).toBe(testDir)
@@ -78,9 +78,9 @@ describe('transport/paths', () => {
         expect(info?.isDirectory()).toBe(true)
       } finally {
         if (originalSocket == null) {
-          delete process.env.OPENPENCIL_MCP_SOCKET
+          delete process.env.LAWHA_MCP_SOCKET
         } else {
-          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+          process.env.LAWHA_MCP_SOCKET = originalSocket
         }
         const { rm } = await import('node:fs/promises')
         await rm(testDir, { recursive: true, force: true }).catch(() => null)
@@ -90,32 +90,32 @@ describe('transport/paths', () => {
 
   describe('getSocketPath', () => {
     it('returns a path ending in mcp.sock', async () => {
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      delete process.env.OPENPENCIL_MCP_SOCKET
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      delete process.env.LAWHA_MCP_SOCKET
       try {
         const path = await getSocketPath()
         expect(path).toMatch(/mcp\.sock$/)
       } finally {
         if (originalSocket == null) {
-          delete process.env.OPENPENCIL_MCP_SOCKET
+          delete process.env.LAWHA_MCP_SOCKET
         } else {
-          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+          process.env.LAWHA_MCP_SOCKET = originalSocket
         }
       }
     })
 
-    it('respects OPENPENCIL_MCP_SOCKET override', async () => {
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      const overrideDir = join(tmpdir(), 'openpencil-test-override')
-      process.env.OPENPENCIL_MCP_SOCKET = join(overrideDir, 'mcp.sock')
+    it('respects LAWHA_MCP_SOCKET override', async () => {
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      const overrideDir = join(tmpdir(), 'lawha-test-override')
+      process.env.LAWHA_MCP_SOCKET = join(overrideDir, 'mcp.sock')
       try {
         const path = await getSocketPath()
         expect(path).toBe(join(overrideDir, 'mcp.sock'))
       } finally {
         if (originalSocket == null) {
-          delete process.env.OPENPENCIL_MCP_SOCKET
+          delete process.env.LAWHA_MCP_SOCKET
         } else {
-          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+          process.env.LAWHA_MCP_SOCKET = originalSocket
         }
         const { rm } = await import('node:fs/promises')
         await rm(overrideDir, { recursive: true, force: true }).catch(() => null)
@@ -125,31 +125,31 @@ describe('transport/paths', () => {
 
   describe('getDiscoveryPath', () => {
     // The test preload (tests/helpers/mcp/discovery-isolation.ts) sets
-    // OPENPENCIL_MCP_DISCOVERY_PATH to a per-process temp path. Each case
+    // LAWHA_MCP_DISCOVERY_PATH to a per-process temp path. Each case
     // below saves/clears/restores both env vars so platform-default behavior
     // can be asserted independently of the preload.
     it('returns a path ending in mcp.json', async () => {
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      const originalDiscovery = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
-      delete process.env.OPENPENCIL_MCP_SOCKET
-      delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      const originalDiscovery = process.env.LAWHA_MCP_DISCOVERY_PATH
+      delete process.env.LAWHA_MCP_SOCKET
+      delete process.env.LAWHA_MCP_DISCOVERY_PATH
       try {
         const path = await getDiscoveryPath()
         expect(path).toMatch(/mcp\.json$/)
       } finally {
-        if (originalSocket == null) delete process.env.OPENPENCIL_MCP_SOCKET
-        else process.env.OPENPENCIL_MCP_SOCKET = originalSocket
-        if (originalDiscovery == null) delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
-        else process.env.OPENPENCIL_MCP_DISCOVERY_PATH = originalDiscovery
+        if (originalSocket == null) delete process.env.LAWHA_MCP_SOCKET
+        else process.env.LAWHA_MCP_SOCKET = originalSocket
+        if (originalDiscovery == null) delete process.env.LAWHA_MCP_DISCOVERY_PATH
+        else process.env.LAWHA_MCP_DISCOVERY_PATH = originalDiscovery
       }
     })
 
-    it('ignores OPENPENCIL_MCP_SOCKET override (stays on platform path)', async () => {
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      const originalDiscovery = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
-      const overrideDir = join(tmpdir(), 'openpencil-test-discovery-override')
-      process.env.OPENPENCIL_MCP_SOCKET = join(overrideDir, 'mcp.sock')
-      delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+    it('ignores LAWHA_MCP_SOCKET override (stays on platform path)', async () => {
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      const originalDiscovery = process.env.LAWHA_MCP_DISCOVERY_PATH
+      const overrideDir = join(tmpdir(), 'lawha-test-discovery-override')
+      process.env.LAWHA_MCP_SOCKET = join(overrideDir, 'mcp.sock')
+      delete process.env.LAWHA_MCP_DISCOVERY_PATH
       try {
         const path = await getDiscoveryPath()
         // The discovery file must NOT be co-located with the override socket —
@@ -158,19 +158,19 @@ describe('transport/paths', () => {
         expect(path).not.toBe(join(overrideDir, 'mcp.json'))
         expect(path).toMatch(/mcp\.json$/)
       } finally {
-        if (originalSocket == null) delete process.env.OPENPENCIL_MCP_SOCKET
-        else process.env.OPENPENCIL_MCP_SOCKET = originalSocket
-        if (originalDiscovery == null) delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
-        else process.env.OPENPENCIL_MCP_DISCOVERY_PATH = originalDiscovery
+        if (originalSocket == null) delete process.env.LAWHA_MCP_SOCKET
+        else process.env.LAWHA_MCP_SOCKET = originalSocket
+        if (originalDiscovery == null) delete process.env.LAWHA_MCP_DISCOVERY_PATH
+        else process.env.LAWHA_MCP_DISCOVERY_PATH = originalDiscovery
       }
     })
 
-    it('respects OPENPENCIL_MCP_DISCOVERY_PATH override', async () => {
-      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
-      const originalDiscovery = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
-      const overrideDir = join(tmpdir(), `openpencil-test-discovery-path-${randomUUID()}`)
+    it('respects LAWHA_MCP_DISCOVERY_PATH override', async () => {
+      const originalSocket = process.env.LAWHA_MCP_SOCKET
+      const originalDiscovery = process.env.LAWHA_MCP_DISCOVERY_PATH
+      const overrideDir = join(tmpdir(), `lawha-test-discovery-path-${randomUUID()}`)
       const overridePath = join(overrideDir, 'mcp.json')
-      process.env.OPENPENCIL_MCP_DISCOVERY_PATH = overridePath
+      process.env.LAWHA_MCP_DISCOVERY_PATH = overridePath
       try {
         const path = await getDiscoveryPath()
         expect(path).toBe(overridePath)
@@ -180,10 +180,10 @@ describe('transport/paths', () => {
         expect(info).not.toBeNull()
         expect(info?.isDirectory()).toBe(true)
       } finally {
-        if (originalSocket == null) delete process.env.OPENPENCIL_MCP_SOCKET
-        else process.env.OPENPENCIL_MCP_SOCKET = originalSocket
-        if (originalDiscovery == null) delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
-        else process.env.OPENPENCIL_MCP_DISCOVERY_PATH = originalDiscovery
+        if (originalSocket == null) delete process.env.LAWHA_MCP_SOCKET
+        else process.env.LAWHA_MCP_SOCKET = originalSocket
+        if (originalDiscovery == null) delete process.env.LAWHA_MCP_DISCOVERY_PATH
+        else process.env.LAWHA_MCP_DISCOVERY_PATH = originalDiscovery
         const { rm } = await import('node:fs/promises')
         await rm(overrideDir, { recursive: true, force: true }).catch(() => null)
       }

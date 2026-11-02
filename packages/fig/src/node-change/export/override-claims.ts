@@ -5,15 +5,15 @@ import {
 } from '#fig/instance-overrides/fields'
 import { compact } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   forEachInstanceOverride,
   overriddenBindingField
-} from '@open-pencil/scene-graph/instances/overrides'
-import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
-import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
-import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
-import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/instances/overrides'
+import type { GUID, Vector } from '@lawha/scene-graph/primitives'
+import { scaleNodeChanges } from '@lawha/scene-graph/scaling'
+import { ownsSlotContent } from '@lawha/scene-graph/slots'
+import { paintBindingTarget } from '@lawha/scene-graph/variables'
 
 import { instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'

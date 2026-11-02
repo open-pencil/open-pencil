@@ -1,5 +1,5 @@
-import type { CloudSignInMethod } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { CloudSignInMethod } from '@lawha/cloud/contract'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 /** Words for where a session or sign-in came from, and for how it signed in. */
 export function usePortalDeviceLabels() {

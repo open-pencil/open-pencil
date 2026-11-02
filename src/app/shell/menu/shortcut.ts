@@ -1,4 +1,4 @@
-import { editorCommandMetadata, formatShortcut } from '@open-pencil/vue/editor/commands'
+import { editorCommandMetadata, formatShortcut } from '@lawha/vue/editor/commands'
 
 import type { AppMenuActionItem, AppMenuEntry } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'

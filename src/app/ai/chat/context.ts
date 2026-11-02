@@ -1,6 +1,6 @@
 import { escape } from 'es-toolkit/string'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 export const MAX_REFERENCED_NODES = 20
 

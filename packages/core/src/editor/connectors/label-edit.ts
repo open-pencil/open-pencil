@@ -1,5 +1,5 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { labelledConnector } from '@open-pencil/scene-graph/connectors'
+import type { SceneNode } from '@lawha/scene-graph'
+import { labelledConnector } from '@lawha/scene-graph/connectors'
 
 import type { EditorContext } from '#core/editor/types'
 import { measureTextForLayout } from '#core/layout/text-measurement'

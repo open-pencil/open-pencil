@@ -7,8 +7,8 @@ export function vectorEditDriver(page: () => Page) {
   return {
     build() {
       return page().evaluate(async () => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const fixtureURL = '/tests/helpers/canvas/vector-edit/scene.ts'
         const scene: typeof VectorEditScene = await import(fixtureURL)
         const ids = scene.createComponentVectorScene(store.graph, store.state.currentPageId)
@@ -18,18 +18,18 @@ export function vectorEditDriver(page: () => Page) {
     },
 
     select(id: string) {
-      return page().evaluate((nodeId) => window.openPencil?.getStore?.().select([nodeId]), id)
+      return page().evaluate((nodeId) => window.lawha?.getStore?.().select([nodeId]), id)
     },
 
     /** The layer whose path is open for editing, if any. */
     editedNode() {
       return page().evaluate(
-        () => window.openPencil?.getStore?.().state.nodeEditState?.nodeId ?? null
+        () => window.lawha?.getStore?.().state.nodeEditState?.nodeId ?? null
       )
     },
 
     closeEdit() {
-      return page().evaluate(() => window.openPencil?.getStore?.().exitNodeEditMode(true))
+      return page().evaluate(() => window.lawha?.getStore?.().exitNodeEditMode(true))
     }
   }
 }

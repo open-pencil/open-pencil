@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   connectorLabelPositionAt,
   connectorRoute,
@@ -8,10 +8,10 @@ import {
   dragElbowSegment,
   elbowJoints,
   type ConnectorPiece
-} from '@open-pencil/scene-graph/connectors'
-import { getParentWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/connectors'
+import { getParentWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import type { NodePreview } from '#core/editor/node-preview'
 import type { EditorContext } from '#core/editor/types'

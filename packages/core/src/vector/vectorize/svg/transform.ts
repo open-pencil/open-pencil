@@ -1,7 +1,7 @@
 import { compact } from 'es-toolkit/array'
 import svgpath from 'svgpath'
 
-import type { Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Size, Vector } from '@lawha/scene-graph/primitives'
 
 import { parseSVGDocument } from '#core/io/formats/svg/document'
 

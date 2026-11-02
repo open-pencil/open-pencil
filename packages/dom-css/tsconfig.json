@@ -13,15 +13,15 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "@open-pencil/dom-css",
+    "jsxImportSource": "@lawha/dom-css",
     "types": ["bun"],
     "paths": {
       "#dom-css/*": ["./src/*"],
-      "@open-pencil/dom-css": ["./src/index.ts"],
-      "@open-pencil/dom-css/browser": ["./src/browser.ts"],
-      "@open-pencil/dom-css/export": ["./src/export/index.ts"],
-      "@open-pencil/dom-css/jsx-runtime": ["./src/import/jsx/runtime.ts"],
-      "@open-pencil/dom-css/jsx-dev-runtime": ["./src/import/jsx/dev-runtime.ts"]
+      "@lawha/dom-css": ["./src/index.ts"],
+      "@lawha/dom-css/browser": ["./src/browser.ts"],
+      "@lawha/dom-css/export": ["./src/export/index.ts"],
+      "@lawha/dom-css/jsx-runtime": ["./src/import/jsx/runtime.ts"],
+      "@lawha/dom-css/jsx-dev-runtime": ["./src/import/jsx/dev-runtime.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],

@@ -2,8 +2,8 @@ import { expect, spyOn, test } from 'bun:test'
 
 import { scriptResult } from '#core-tests/helpers/script'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
 
 // Figma refuses every API call after closePlugin, so Figma's docs end a plugin with
 // `figma.closePlugin(); return`. A script here is one call with nothing to close, and code after

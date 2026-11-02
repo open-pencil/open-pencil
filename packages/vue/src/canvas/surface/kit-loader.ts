@@ -3,7 +3,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { getCanvasKit } from '@lawha/core/canvaskit'
 
 type CanvasKitLoaderOptions = {
   canvasRef: Ref<HTMLCanvasElement | null>

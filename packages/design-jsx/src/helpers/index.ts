@@ -123,4 +123,4 @@ export type DesignJSXHelperName = keyof ReturnType<typeof designJSXHelpers>
 
 export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = Object.keys(
   designJSXHelpers([])
-).map((name) => ({ name, description: `OpenPencil ${name} helper.` }))
+).map((name) => ({ name, description: `Lawha ${name} helper.` }))

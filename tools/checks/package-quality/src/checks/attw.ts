@@ -1,6 +1,6 @@
 import { availableParallelism } from 'node:os'
 
-import { runCommand } from '@open-pencil/package-artifacts-tools'
+import { runCommand } from '@lawha/package-artifacts-tools'
 
 import { publicPackageDirs } from '../packages'
 import { runPackageChecks } from './run'

@@ -32,7 +32,7 @@
   "collapseIssues": "Ocultar problemas de fuentes",
   "noSubstitute": "sin sustituto disponible",
   "unsupportedFormatShort": "formato no compatible",
-  "unsupportedFormat": "Instalada, pero en un formato que OpenPencil aún no puede dibujar",
+  "unsupportedFormat": "Instalada, pero en un formato que Lawha aún no puede dibujar",
   "settingsDesktopDescription": "Accede a fuentes del sistema, proveedores en línea, paquetes de respaldo y descargas en caché.",
   "settingsBrowserDescription": "Permite al navegador acceder a fuentes locales y gestiona proveedores de fuentes en línea.",
   "providerEnabled": "{provider} activado.",

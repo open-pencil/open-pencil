@@ -15,8 +15,8 @@ import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
 import IconLucidePanelTop from '~icons/lucide/panel-top'
 
-import { resolveEditorProfile } from '@open-pencil/core'
-import type { PlacedStatusLabel } from '@open-pencil/core/canvas'
+import { resolveEditorProfile } from '@lawha/core'
+import type { PlacedStatusLabel } from '@lawha/core/canvas'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y,
@@ -24,17 +24,17 @@ import {
   COMPONENT_LABEL_ICON_SIZE,
   SECTION_TITLE_GAP,
   SECTION_TITLE_HEIGHT
-} from '@open-pencil/core/constants'
-import type { ViewportTransform } from '@open-pencil/core/geometry'
-import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
-import { useCanvasDrop } from '@open-pencil/vue/canvas/drop'
-import { useCanvasIssueMarkers } from '@open-pencil/vue/canvas/issues'
-import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
-import { useCanvasStatusLabels } from '@open-pencil/vue/canvas/statuses'
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useTextEdit } from '@open-pencil/vue/canvas/text-edit'
-import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
-import { autoLayoutValueAnchor, type AutoLayoutValueField } from '@open-pencil/vue/shared/input'
+} from '@lawha/core/constants'
+import type { ViewportTransform } from '@lawha/core/geometry'
+import { PlayIslands, useCanvasInput } from '@lawha/vue/canvas'
+import { useCanvasDrop } from '@lawha/vue/canvas/drop'
+import { useCanvasIssueMarkers } from '@lawha/vue/canvas/issues'
+import { useCanvasVirtualReference } from '@lawha/vue/canvas/overlays'
+import { useCanvasStatusLabels } from '@lawha/vue/canvas/statuses'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useTextEdit } from '@lawha/vue/canvas/text-edit'
+import { toolCursor } from '@lawha/vue/editor/tool-cursor'
+import { autoLayoutValueAnchor, type AutoLayoutValueField } from '@lawha/vue/shared/input'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'

@@ -1,9 +1,9 @@
 import { orderBy, sortBy } from 'es-toolkit/array'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex, colorDistance as colorDist } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { formatTextLength } from '@open-pencil/scene-graph/text'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { colorToHex, colorDistance as colorDist } from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { formatTextLength } from '@lawha/scene-graph/text'
 
 import type { ColorUsageEntry } from '#core/tools/analyze/colors'
 import {

@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { drawDerivedText } from '#core/canvas/text/derived'

@@ -9,7 +9,7 @@ import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
-import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@lawha/core/constants'
 
 import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
@@ -51,8 +51,8 @@ async function resolveMCPInstallCommand(): Promise<string> {
       })
     )?.agent ??
     'npm'
-  const resolved = resolveCommand(agent, 'global', [`@open-pencil/mcp@${MCP_VERSION}`])
-  if (!resolved) return `npm install -g @open-pencil/mcp@${MCP_VERSION}`
+  const resolved = resolveCommand(agent, 'global', [`@lawha/mcp@${MCP_VERSION}`])
+  if (!resolved) return `npm install -g @lawha/mcp@${MCP_VERSION}`
   return [resolved.command, ...resolved.args].join(' ')
 }
 
@@ -320,7 +320,7 @@ function buildServerContext(options: ServerOptions) {
     scope: options.scope ?? 'document'
   }
   const mcpRoot = options.mcpRoot ?? null
-  // Auto-generated so all transports require auth by default. Override via OPENPENCIL_MCP_AUTH_TOKEN or authToken option.
+  // Auto-generated so all transports require auth by default. Override via LAWHA_MCP_AUTH_TOKEN or authToken option.
   // Pass authToken: null explicitly to disable auth entirely.
   const authToken =
     options.authToken === undefined ? randomBytes(16).toString('hex') : options.authToken
@@ -335,7 +335,7 @@ function buildServerContext(options: ServerOptions) {
     process.stderr.write(
       `WARNING: MCP server is running without authentication on TCP port ${httpPort}. ` +
         'Any local process can interact with the server. ' +
-        'Set OPENPENCIL_MCP_AUTH_TOKEN to enable auth, or use PORT=0 for socket-only transport.\n'
+        'Set LAWHA_MCP_AUTH_TOKEN to enable auth, or use PORT=0 for socket-only transport.\n'
     )
   }
 

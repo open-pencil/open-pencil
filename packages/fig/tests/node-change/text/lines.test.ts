@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { exportTextData } from '#fig/node-change/text/data-export'
 import { exportTextLines, importParagraphStyles } from '#fig/node-change/text/lines'
 
-import { SceneGraph, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import { SceneGraph, type TextParagraphStyle } from '@lawha/scene-graph'
 
 describe('importParagraphStyles', () => {
   test('nests a list line with no stored level at the first level', () => {

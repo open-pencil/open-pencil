@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { figJamToolbarKind } from '@open-pencil/core'
-import type { Fill, NodeType } from '@open-pencil/scene-graph'
+import { figJamToolbarKind } from '@lawha/core'
+import type { Fill, NodeType } from '@lawha/scene-graph'
 
 const layer = (type: NodeType, fills: Fill[] = []) => ({ type, fills })
 const image: Fill = {

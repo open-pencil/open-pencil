@@ -1,8 +1,8 @@
-# Deploying OpenPencil Cloud
+# Deploying Lawha Cloud
 
-OpenPencil Cloud runs as one Node 22+ process in front of PostgreSQL and an S3-compatible object
+Lawha Cloud runs as one Node 22+ process in front of PostgreSQL and an S3-compatible object
 store, with optional SMTP for email, or on Cloudflare Workers by copying [`cloudflare/`](./cloudflare). The project's own deployments
-live in [`openpencil/`](./openpencil). See
+live in [`lawha/`](./lawha). See
 [security.md](./security.md) for hardening checks.
 
 ## Local development
@@ -11,8 +11,8 @@ From the repository root, with Docker running:
 
 ```sh
 bun run cloud:dev
-# OpenPencil Cloud: https://<branch>.cloud.open-pencil.localhost
-# Captured email:  https://<branch>.mail.open-pencil.localhost
+# Lawha Cloud: https://<branch>.cloud.lawha.localhost
+# Captured email:  https://<branch>.mail.lawha.localhost
 ```
 
 The command starts PostgreSQL, SeaweedFS, and Mailpit from [`compose.yml`](./compose.yml) as a
@@ -30,19 +30,19 @@ are kept.
 
 Building, configuring, and running a server, the editor address, the first administrator, operator
 commands, email, storage, backups, and upgrades are covered in the
-[self-hosting guide](https://openpencil.dev/reference/self-hosting-cloud)
+[self-hosting guide](https://github.com/aliaaldihnayn-lab/design#readme)
 (`packages/docs/reference/self-hosting-cloud.md`). The example files it refers to are here:
-[`openpencil-cloud.example.toml`](./openpencil-cloud.example.toml) and [`.env.example`](./.env.example).
-[`Dockerfile`](./Dockerfile) builds the published image, `ghcr.io/open-pencil/cloud`, from the
+[`lawha-cloud.example.toml`](./lawha-cloud.example.toml) and [`.env.example`](./.env.example).
+[`Dockerfile`](./Dockerfile) builds the published image, `ghcr.io/lawha/cloud`, from the
 repository root, and [`compose.self-hosted.yml`](./compose.self-hosted.yml) runs it on one machine
-with [`self-hosted/openpencil-cloud.toml`](./self-hosted/openpencil-cloud.toml).
+with [`self-hosted/lawha-cloud.toml`](./self-hosted/lawha-cloud.toml).
 
 ## End-to-end tests
 
 ```sh
-bun --filter @open-pencil/cloud test:e2e         # PostgreSQL and SeaweedFS
-bun --filter @open-pencil/cloud test:e2e:garage  # Garage S3 compatibility
-bun --filter @open-pencil/cloud test:e2e:cloudflare  # the Worker under wrangler dev
+bun --filter @lawha/cloud test:e2e         # PostgreSQL and SeaweedFS
+bun --filter @lawha/cloud test:e2e:garage  # Garage S3 compatibility
+bun --filter @lawha/cloud test:e2e:cloudflare  # the Worker under wrangler dev
 ```
 
 The Cloudflare run needs `dist-cloud/` (`bun run build:cloud`), which the Worker serves.

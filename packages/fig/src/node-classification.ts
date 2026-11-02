@@ -1,4 +1,4 @@
-import { GENERATED_FRAME_TYPES } from '@open-pencil/scene-graph/generated'
+import { GENERATED_FRAME_TYPES } from '@lawha/scene-graph/generated'
 
 const UNSUPPORTED_FRAGMENT_TYPES: ReadonlySet<string> = new Set([
   'STYLE',

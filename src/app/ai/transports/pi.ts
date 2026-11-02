@@ -5,7 +5,7 @@ import type {
   HarnessSidecarMessage,
   HarnessTurnEvent,
   HarnessTurnUsage
-} from '@open-pencil/harness'
+} from '@lawha/harness'
 
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'

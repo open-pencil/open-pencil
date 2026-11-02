@@ -1,16 +1,16 @@
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 import { invert } from 'es-toolkit/object'
 
-import type { GUID } from '@open-pencil/kiwi/fig'
-import type { VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
-import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { GUID } from '@lawha/kiwi/fig'
+import type { VariableConsumptionEntry } from '@lawha/kiwi/fig/codec'
+import { guidToString, stringToGuid } from '@lawha/kiwi/fig/guid'
 import type {
   SceneNode,
   SceneGraph,
   TextBindableField,
   TextBoundVariables
-} from '@open-pencil/scene-graph'
-import { boundNumberValue, isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph'
+import { boundNumberValue, isNumericVariableBindingField } from '@lawha/scene-graph/variables'
 
 import { cloneRecord } from '../clone'
 import { linearVariableExpression } from './expression'

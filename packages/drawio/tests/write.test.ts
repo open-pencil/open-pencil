@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { parseDrawIOFile, writeDrawIOFile } from '@open-pencil/drawio'
+import { parseDrawIOFile, writeDrawIOFile } from '@lawha/drawio'
 
 const MODEL = `<mxGraphModel grid="1"><root>
   <mxCell id="0"/><mxCell id="1" parent="0"/>
@@ -30,7 +30,7 @@ test('a written file reads back as the file it was written from', () => {
   const file = parseDrawIOFile(`<mxfile><diagram id="p" name="Page">${MODEL}</diagram></mxfile>`)
   if (!file) throw new Error('Fixture did not read')
   const written = writeDrawIOFile(file)
-  expect(written).toStartWith('<mxfile host="OpenPencil">')
+  expect(written).toStartWith('<mxfile host="Lawha">')
   // Saved uncompressed, as draw.io saves by default.
   expect(written).toContain('<mxGraphModel grid="1"><root><mxCell id="0"/>')
   expect(parseDrawIOFile(written)).toEqual(file)

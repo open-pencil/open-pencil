@@ -1,19 +1,19 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
   getDefaultRenderColorSpace,
   type RenderColorSpace
-} from '@open-pencil/scene-graph/color'
+} from '@lawha/scene-graph/color'
 import {
   gradientPoint,
   invertGradientTransform,
   isIdentityGradientTransform
-} from '@open-pencil/scene-graph/gradient'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/gradient'
+import { imageMimeType } from '@lawha/scene-graph/images'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { FontFaceRef } from '#core/text/font/faces'
 

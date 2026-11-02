@@ -1,8 +1,8 @@
 import { uniq } from 'es-toolkit/array'
 import { computed } from 'vue'
 
-import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
-import { MIXED } from '@open-pencil/vue/controls/node-props'
+import type { SceneNode, TextLength } from '@lawha/scene-graph'
+import { MIXED } from '@lawha/vue/controls/node-props'
 
 type LengthField = 'lineHeight' | 'letterSpacing'
 

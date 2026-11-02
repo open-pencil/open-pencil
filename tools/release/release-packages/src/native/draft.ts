@@ -25,7 +25,7 @@ export function assertDraftReplacement(
     throw new Error('Missing release manifest')
   }
 
-  // OpenPencil Chromium's files arrive from their own workflow and stay when the stable set is replaced.
+  // Lawha Chromium's files arrive from their own workflow and stay when the stable set is replaced.
   const unexpected =
     release?.assets.filter(
       (asset) => !names.includes(asset.name) && !isChromiumAsset(asset.name)

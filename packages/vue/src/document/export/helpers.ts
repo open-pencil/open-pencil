@@ -1,16 +1,16 @@
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import { BUILTIN_IO_FORMATS, IORegistry, type BuiltinIOFormatId } from '@open-pencil/core/io'
-import type { ExportSetting, PluginDataEntry } from '@open-pencil/scene-graph'
-import { EXPORT_FORMAT_IDS, type ExportFormatId } from '@open-pencil/scene-graph/export-format'
+import type { Editor } from '@lawha/core'
+import { BUILTIN_IO_FORMATS, IORegistry, type BuiltinIOFormatId } from '@lawha/core/io'
+import type { ExportSetting, PluginDataEntry } from '@lawha/scene-graph'
+import { EXPORT_FORMAT_IDS, type ExportFormatId } from '@lawha/scene-graph/export-format'
 import {
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
   clampExportScale
-} from '@open-pencil/scene-graph/export-scale'
-import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
+} from '@lawha/scene-graph/export-scale'
+import { LAWHA_PLUGIN_DATA, withPluginData } from '@lawha/scene-graph/plugin-data'
 
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
@@ -127,7 +127,7 @@ function syncExportSettingsPluginData(
 ): PluginDataEntry[] {
   return withPluginData(
     pluginData,
-    OPEN_PENCIL_PLUGIN_DATA.exportSettings,
+    LAWHA_PLUGIN_DATA.exportSettings,
     settings.length > 0 ? settings : undefined
   )
 }

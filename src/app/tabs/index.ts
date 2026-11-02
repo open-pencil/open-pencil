@@ -2,13 +2,13 @@ import { promiseTimeout } from '@vueuse/core'
 import { filename } from 'pathe/utils'
 import { shallowRef, computed, triggerRef } from 'vue'
 
-import { createDocumentGraph } from '@open-pencil/core'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
+import { createDocumentGraph } from '@lawha/core'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
+import { figThumbnailPageId, populateFigPage } from '@lawha/core/io/formats/fig'
+import { computeAllLayouts } from '@lawha/core/layout'
+import type { DocumentKind, SceneGraph } from '@lawha/scene-graph'
 
-import { setOpenPencilStore } from '@/app/browser-bridge'
+import { setLawhaStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { confirmAllDocuments } from '@/app/document/close/all'
@@ -191,7 +191,7 @@ function activateTab(tab: Tab) {
   activeTabId.value = tab.id
   setActiveEditorStore(tab.store)
   triggerRef(tabsRef)
-  setOpenPencilStore(tab.store)
+  setLawhaStore(tab.store)
 }
 
 /** Activates the tab. False when no tab carries that id, so callers can tell a no-op apart. */

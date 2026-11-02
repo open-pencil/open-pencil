@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { Fill } from '@open-pencil/scene-graph'
+import type { Fill } from '@lawha/scene-graph'
 
 import PropertyListAdd from '#vue/primitives/PropertyList/PropertyListAdd.vue'
 import PropertyListItem from '#vue/primitives/PropertyList/PropertyListItem.vue'

@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { toUint8Array } from 'js-base64'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
+import { SceneGraph } from '@lawha/scene-graph'
+import { TRANSPARENT } from '@lawha/scene-graph/constants'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -85,7 +85,7 @@ describe('HTML export asset paths', () => {
 })
 
 describe('Tailwind JSX export format', () => {
-  test('is a registered export next to OpenPencil JSX', async () => {
+  test('is a registered export next to Lawha JSX', async () => {
     const { graph, card } = cardGraph()
     const result = await io.exportContent('tailwind-jsx', {
       graph,

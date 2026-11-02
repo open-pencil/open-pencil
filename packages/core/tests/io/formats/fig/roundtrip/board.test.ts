@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { unzipSync } from 'fflate'
 
-import { createDocumentGraph } from '@open-pencil/core'
-import { getPageBackgrounds } from '@open-pencil/core/figma-api'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { createDocumentGraph } from '@lawha/core'
+import { getPageBackgrounds } from '@lawha/core/figma-api'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
 
 describe('FigJam boards', () => {
   test('a board saves as a .jam canvas and opens as a board again', async () => {

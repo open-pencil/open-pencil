@@ -11,12 +11,12 @@ import {
   type FigNodeChangeExportRuntime
 } from '#fig/node-change/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-import type { GUID } from '@open-pencil/scene-graph/primitives'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph } from '@lawha/scene-graph'
+import { fractionalPosition } from '@lawha/scene-graph/order-keys'
+import type { GUID } from '@lawha/scene-graph/primitives'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
-describe('@open-pencil/fig SceneGraph export policy', () => {
+describe('@lawha/fig SceneGraph export policy', () => {
   test('maps node types deterministically', () => {
     expect(mapToFigmaType('COMPONENT')).toBe('SYMBOL')
   })
@@ -610,7 +610,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     expect(change.fillPaints?.[0]?.colorVar).toBeUndefined()
   })
 
-  test('drops the OpenPencil bindings entry when an imported node is no longer bound', () => {
+  test('drops the Lawha bindings entry when an imported node is no longer bound', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const node = graph.createNode('RECTANGLE', page.id, {
@@ -619,7 +619,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       height: 40,
       boundVariables: {},
       pluginData: [
-        { pluginId: 'open-pencil', key: 'boundVariables', value: '{"fills/0/color":"0:12"}' },
+        { pluginId: 'lawha', key: 'boundVariables', value: '{"fills/0/color":"0:12"}' },
         { pluginId: 'other-plugin', key: 'boundVariables', value: 'kept' }
       ]
     })

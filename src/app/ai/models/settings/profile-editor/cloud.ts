@@ -1,11 +1,11 @@
 import { computed, ref, watch, type Ref } from 'vue'
 
-import type { CloudAIClient } from '@open-pencil/cloud/client'
-import type { ModelOption } from '@open-pencil/core/constants'
+import type { CloudAIClient } from '@lawha/cloud/client'
+import type { ModelOption } from '@lawha/core/constants'
 
 import type { AIModelProfileDraft } from '@/app/ai/models'
-import { cloudCatalogModels } from '@/app/ai/providers/openpencil/catalog'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudCatalogModels } from '@/app/ai/providers/lawha/catalog'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import {
   cloudAIClient,
   cloudAIIdentity,
@@ -51,7 +51,7 @@ export function useCloudModelSelection(
   chooseModel: (modelID: string) => void,
   cloud: CloudModelSource = HOME_CLOUD
 ) {
-  const isCloud = computed(() => draft.providerID === OPENPENCIL_AI_PROVIDER)
+  const isCloud = computed(() => draft.providerID === LAWHA_AI_PROVIDER)
   const workspaces = ref<CloudAIWorkspace[]>([])
   const models = ref<ModelOption[]>([])
   // The workspace list and the catalog load separately, so neither's answer hides the other's failure.

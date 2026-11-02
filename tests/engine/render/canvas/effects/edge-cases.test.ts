@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 
 import { renderEffects } from '#core/canvas/shadows'
 

@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language'
 import { linter, type Diagnostic } from '@codemirror/lint'
 import { StateEffect, StateField, type EditorState, type Extension } from '@codemirror/state'
 
-import { designJSXPropertyNames } from '@open-pencil/design-jsx'
+import { designJSXPropertyNames } from '@lawha/design-jsx'
 
 import type { LayerIssue } from '@/app/code/layers/issues'
 

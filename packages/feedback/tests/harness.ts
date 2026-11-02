@@ -60,11 +60,11 @@ export async function createTestService() {
     POSTHOG_HOST: 'https://eu.i.posthog.com',
     POSTHOG_KEY: 'phc_test',
     TURNSTILE_SECRET: 'turnstile-secret',
-    TURNSTILE_HOSTNAMES: 'openpencil.dev,app.openpencil.dev',
-    EMAIL_FROM: 'hello@openpencil.dev',
+    TURNSTILE_HOSTNAMES: 'lawha.invalid,app.lawha.invalid',
+    EMAIL_FROM: 'hello@lawha.invalid',
     GITHUB_TOKEN: 'github-token',
     CLOUDFLARE_ANALYTICS_TOKEN: 'cloudflare-token',
-    ACCESS_TEAM_DOMAIN: 'https://openpencil.cloudflareaccess.com',
+    ACCESS_TEAM_DOMAIN: 'https://lawha.cloudflareaccess.com',
     ACCESS_AUD: 'admin-audience',
     POSTHOG_PERSONAL_KEY: 'phx_test',
     // The built dashboard page as the asset binding serves it, at its file path only.
@@ -117,7 +117,7 @@ export async function createTestService() {
     const headers = new Headers(init?.headers)
     if (typeof init?.body === 'string')
       headers.set('Content-Length', String(new TextEncoder().encode(init.body).length))
-    const sent = new Request(`https://feedback.openpencil.dev${path}`, { ...init, headers })
+    const sent = new Request(`https://feedback.lawha.invalid${path}`, { ...init, headers })
     if (cf) Object.defineProperty(sent, 'cf', { value: cf })
     return app.request(sent, undefined, env)
   }

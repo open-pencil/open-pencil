@@ -8,26 +8,26 @@ import { composeCommand, runProcess } from '#cloud-tests/helpers/process'
 // deploy/cloudflare template in deploy/generated, with a TOML for these services, as a
 // self-hosted deployment would be.
 const deployDirectory = cloudDeployPath()
-const compose = composeCommand(`openpencil-cloud-workers-e2e-${process.pid}`, 'compose.yml')
+const compose = composeCommand(`lawha-cloud-workers-e2e-${process.pid}`, 'compose.yml')
 const portOffset = process.pid % 1_000
 const workerPort = 23_000 + portOffset
-const databaseURL = `postgresql://openpencil:openpencil-development-password@127.0.0.1:${20_000 + portOffset}/openpencil`
+const databaseURL = `postgresql://lawha:lawha-development-password@127.0.0.1:${20_000 + portOffset}/lawha`
 const s3Endpoint = `http://127.0.0.1:${21_000 + portOffset}`
 const secrets = {
   BETTER_AUTH_SECRET: 'cloudflare-e2e-secret-at-least-32-characters',
-  S3_ACCESS_KEY_ID: 'openpencil',
-  S3_SECRET_ACCESS_KEY: 'openpencil-development-secret'
+  S3_ACCESS_KEY_ID: 'lawha',
+  S3_SECRET_ACCESS_KEY: 'lawha-development-secret'
 }
 const environment = {
   ...process.env,
-  S3_BUCKET: 'openpencil',
+  S3_BUCKET: 'lawha',
   POSTGRES_PORT: String(20_000 + portOffset),
   SEAWEEDFS_S3_PORT: String(21_000 + portOffset),
   SEAWEEDFS_MASTER_PORT: String(22_000 + portOffset),
   ...secrets,
   DATABASE_URL: databaseURL,
   CLOUD_WORKER_URL: `http://127.0.0.1:${workerPort}`,
-  OPENPENCIL_CLOUD_CONFIG: cloudDeployPath('generated/openpencil-cloud.toml'),
+  LAWHA_CLOUD_CONFIG: cloudDeployPath('generated/lawha-cloud.toml'),
   CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: databaseURL
 }
 
@@ -51,7 +51,7 @@ addresses = []
 [object_storage]
 endpoint = "${s3Endpoint}"
 region = "us-east-1"
-bucket = "openpencil"
+bucket = "lawha"
 force_path_style = true
 checksum_verification = "metadata"
 
@@ -86,7 +86,7 @@ try {
   for (const file of ['wrangler.jsonc', 'worker.ts']) {
     await copyFile(cloudDeployPath('cloudflare', file), cloudDeployPath('generated', file))
   }
-  await writeFile(environment.OPENPENCIL_CLOUD_CONFIG, config)
+  await writeFile(environment.LAWHA_CLOUD_CONFIG, config)
   await run([...compose, 'up', '-d', '--wait', 'postgres', 'seaweedfs'])
   await run([...compose, 'run', '--rm', 'seaweedfs-init'])
   await run(['bun', cloudPackagePath('src/runtime/node/migrate.ts')], cloudPackagePath())

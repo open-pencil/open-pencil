@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { renderJSX } from '@lawha/core/design-jsx'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('<Text markdown>', () => {
   test('reads its text as Markdown over the text’s own style, its shared indent left out', async () => {

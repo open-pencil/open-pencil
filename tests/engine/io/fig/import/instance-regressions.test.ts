@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { parseFigFile } from '@lawha/core/io/formats/fig'
+import { computeAllLayouts } from '@lawha/core/layout'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { computeContentBounds } from '#core/io/formats/raster/render'
 

@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
-import { scaledGeometryChanges } from '@open-pencil/scene-graph/resize'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { copyStyleRuns } from '@lawha/scene-graph/copy'
+import { scaledGeometryChanges } from '@lawha/scene-graph/resize'
 
 const shapingEdits: Partial<SceneNode>[] = [
   { fontVariations: [{ axis: 'wght', value: 600 }] },

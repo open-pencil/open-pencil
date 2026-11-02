@@ -3,8 +3,8 @@ import { useFileDialog } from '@vueuse/core'
 import { DialogTitle } from 'reka-ui'
 import { computed, defineAsyncComponent, ref, shallowRef, watch } from 'vue'
 
-import type { DesignTokenBundle } from '@open-pencil/core/io/formats/design-tokens'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { DesignTokenBundle } from '@lawha/core/io/formats/design-tokens'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTokenCopy } from '@/app/editor/tokens/copy'

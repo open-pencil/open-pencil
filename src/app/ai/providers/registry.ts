@@ -2,7 +2,7 @@ import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
-import type { AIProviderID } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@lawha/core/constants'
 
 import { chatGPTAdapter } from '@/app/ai/providers/chatgpt/adapter'
 import {
@@ -20,8 +20,8 @@ const MODEL_PROVIDER_ADAPTERS = {
         apiKey: config.apiKey,
         fetch: runtime.fetch,
         headers: {
-          'X-OpenRouter-Title': 'OpenPencil',
-          'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
+          'X-OpenRouter-Title': 'Lawha',
+          'HTTP-Referer': 'https://github.com/aliaaldihnayn-lab/design'
         }
       })
       return provider(config.customModelID.trim() || config.modelID)
@@ -58,7 +58,7 @@ const MODEL_PROVIDER_ADAPTERS = {
     baseURL: (config) => config.customBaseURL
   }),
   // The base URL and the token-carrying fetch come from Cloud's AI service, not from settings.
-  openpencil: createOpenAICompatibleAdapter({
+  lawha: createOpenAICompatibleAdapter({
     baseURL: (config) => config.customBaseURL,
     mode: 'chat'
   })

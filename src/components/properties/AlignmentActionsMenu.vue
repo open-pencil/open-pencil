@@ -16,10 +16,10 @@ import {
   formatShortcut,
   useEditorCommands,
   type EditorCommandId
-} from '@open-pencil/vue/editor/commands'
-import { AUTO_ARRANGE_GROUPS } from '@open-pencil/vue/editor/menu-model'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+} from '@lawha/vue/editor/commands'
+import { AUTO_ARRANGE_GROUPS } from '@lawha/vue/editor/menu-model'
+import { useI18n } from '@lawha/vue/i18n'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'

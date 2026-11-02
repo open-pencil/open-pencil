@@ -5,8 +5,8 @@ import { getEditingTextId } from '#tests/helpers/store'
 
 async function addTwoTopLevelTexts(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0
@@ -22,8 +22,8 @@ async function addTwoTopLevelTexts(page: Page) {
 
 async function addTopLevelText(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0
@@ -43,8 +43,8 @@ const WHITE = [
 async function addFrameWithNestedText(page: Page, inner = false) {
   return page.evaluate(
     ({ inner, white }) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       store.state.zoom = 1
       store.state.panX = 0
       store.state.panY = 0
@@ -88,8 +88,8 @@ async function addFrameWithNestedText(page: Page, inner = false) {
 
 const selectedIds = (page: Page) =>
   page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return [...store.state.selectedIds]
   })
 
@@ -127,7 +127,7 @@ test('quick clicks reach nested text and select it; a double-click then edits', 
 
   const ids = await addFrameWithNestedText(page, true)
   await canvas.waitForRender()
-  await page.evaluate(() => window.openPencil?.getStore?.().clearSelection())
+  await page.evaluate(() => window.lawha?.getStore?.().clearSelection())
 
   // Card is top-level: click one reaches Inner, click two the text, click three keeps it.
   const box = await page.getByTestId('canvas-element').boundingBox()

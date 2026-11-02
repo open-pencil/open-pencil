@@ -103,7 +103,7 @@ describe('document sharing invitations integration', () => {
       })
       const email = createTransactionalEmailService(context.runtime.database, {
         encryptionSecret: 'outbox-test-secret-at-least-32-characters',
-        from: 'OpenPencil <cloud@example.com>'
+        from: 'Lawha <cloud@example.com>'
       })
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',

@@ -3,7 +3,7 @@ import { basename, dirname, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
+import { readHTMLDocument, type ReadHTMLResult } from '@lawha/core/io/formats/html/import'
 
 import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
@@ -73,7 +73,7 @@ async function writeOutput(args: ImportArgs, { styled, graph }: ReadHTMLResult) 
 }
 
 export default defineCommand({
-  meta: { description: 'Import HTML/CSS/Tailwind into an OpenPencil document' },
+  meta: { description: 'Import HTML/CSS/Tailwind into an Lawha document' },
   args: {
     file: {
       type: 'positional',

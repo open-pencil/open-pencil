@@ -10,9 +10,9 @@ describe('Storybook export manifest paths', () => {
       'Button.tsx',
       'Button.module.css',
       'Button.design/Default.png',
-      'openpencil/kit-design/fonts.css',
-      'openpencil/kit-design/tokens.css',
-      'openpencil/kit-design/fonts/inter-400-normal.woff2'
+      'lawha/kit-design/fonts.css',
+      'lawha/kit-design/tokens.css',
+      'lawha/kit-design/fonts/inter-400-normal.woff2'
     ])
       expect(isGeneratedPath(path)).toBe(true)
   })
@@ -23,7 +23,7 @@ describe('Storybook export manifest paths', () => {
       '/tmp/Button.vue',
       'src/../../Button.tsx',
       'components/Button.vue',
-      'openpencil/kit/notes.txt',
+      'lawha/kit/notes.txt',
       'Button.design/../../x.png'
     ])
       expect(isGeneratedPath(path)).toBe(false)

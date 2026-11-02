@@ -10,7 +10,7 @@ let service: TestService
 let signingKey: CryptoKey
 let strangerKey: CryptoKey
 
-const TEAM = 'https://openpencil.cloudflareaccess.com'
+const TEAM = 'https://lawha.cloudflareaccess.com'
 const AUDIENCE = 'admin-audience'
 const POSTHOG_QUERY = 'https://eu.posthog.com/api/projects/267806/query/'
 const NOW = new Date('2026-10-20T12:00:00.000Z')
@@ -284,7 +284,7 @@ describe('metrics snapshot API', () => {
     expect((await snapshot()).earliest).toBe('2026-10-12')
     await database()
       .insertInto('siteVisits')
-      .values({ day: '2026-09-22', host: 'openpencil.dev', visits: 2000 })
+      .values({ day: '2026-09-22', host: 'lawha.invalid', visits: 2000 })
       .execute()
     expect((await snapshot()).earliest).toBe('2026-09-22')
   })
@@ -369,8 +369,8 @@ describe('metrics snapshot API', () => {
     await database()
       .insertInto('siteVisits')
       .values([
-        { day: '2026-10-14', host: 'openpencil.dev', visits: 3884 },
-        { day: '2026-10-14', host: 'app.openpencil.dev', visits: 729 }
+        { day: '2026-10-14', host: 'lawha.invalid', visits: 3884 },
+        { day: '2026-10-14', host: 'app.lawha.invalid', visits: 729 }
       ])
       .execute()
     await database()
@@ -564,7 +564,7 @@ describe('metrics snapshot API', () => {
     await ping('2026-10-15', { platform: 'macos', app: 'desktop' }, 400)
     await database()
       .insertInto('siteVisits')
-      .values({ day: '2026-10-15', host: 'openpencil.dev', visits: 3000 })
+      .values({ day: '2026-10-15', host: 'lawha.invalid', visits: 3000 })
       .execute()
     const response = await getSnapshot(
       'start=2026-10-14&end=2026-10-20',

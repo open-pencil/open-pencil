@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
-import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
+import type { SceneNode } from '@lawha/scene-graph'
+import { resolvedPaintBindings } from '@lawha/scene-graph/variables'
+import { regionFillsDiffer } from '@lawha/scene-graph/vector-network'
 
 import { isNodeArrayMixed } from '#vue/controls/node-props/helpers'
 import { useNodeProps } from '#vue/controls/node-props/use'

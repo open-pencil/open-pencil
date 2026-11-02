@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import { buildOpenPencilClipboardHTML } from '@open-pencil/core/clipboard'
-import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { createEditor, type Editor } from '@lawha/core'
+import { buildLawhaClipboardHTML } from '@lawha/core/clipboard'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@lawha/scene-graph/coordinate'
 
 function copiedRectangleHTML(name = 'Pasted') {
   const source = createEditor()
@@ -14,7 +14,7 @@ function copiedRectangleHTML(name = 'Pasted') {
     width: 20,
     height: 20
   })
-  return buildOpenPencilClipboardHTML([pasted], source.graph)
+  return buildLawhaClipboardHTML([pasted], source.graph)
 }
 
 function copiedFrameHTML() {
@@ -34,7 +34,7 @@ function copiedFrameHTML() {
     width: 10,
     height: 12
   })
-  return buildOpenPencilClipboardHTML([frame], source.graph)
+  return buildLawhaClipboardHTML([frame], source.graph)
 }
 
 function canvasBox(editor: Editor, id: string) {
@@ -63,7 +63,7 @@ function createTarget(editor: Editor, parentId = editor.state.currentPageId) {
 }
 
 describe('paste to replace', () => {
-  test('replaces selected nodes with pasted OpenPencil nodes', async () => {
+  test('replaces selected nodes with pasted Lawha nodes', async () => {
     const html = copiedRectangleHTML()
     const editor = createEditor()
     const pageId = editor.state.currentPageId

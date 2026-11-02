@@ -63,7 +63,7 @@ const meta = {
           :open="true"
           v-model:kind="kind"
           v-model:address="address"
-          official="cloud.openpencil.dev"
+          official="cloud.lawha.invalid"
           :step="args.step"
           :choosing="args.choosing"
           :server="args.server"
@@ -102,7 +102,7 @@ export const SignIn: Story = {
     step: 'sign-in',
     choosing: false,
     server: {
-      host: 'cloud.openpencil.dev',
+      host: 'cloud.lawha.invalid',
       methods: ['google', 'apple'],
       emailPassword: EMAIL_PASSWORD,
       approvalRequired: false

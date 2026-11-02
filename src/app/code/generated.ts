@@ -1,12 +1,12 @@
-import { vectorElement } from '@open-pencil/core/io'
-import { selectionToJSXWithLayers } from '@open-pencil/design-jsx'
+import { vectorElement } from '@lawha/core/io'
+import { selectionToJSXWithLayers } from '@lawha/design-jsx'
 import {
   layerComponents,
   layerMarkup,
   type ComponentStyling,
   type LayerComponent
-} from '@open-pencil/dom-css/export'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/dom-css/export'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 

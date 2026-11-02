@@ -1,10 +1,10 @@
 import { pick } from 'es-toolkit/object'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
-import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
-import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
-import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
+import type { SceneNode } from '@lawha/scene-graph'
+import { findInstanceAncestor, recordInstanceOverride } from '@lawha/scene-graph/instances'
+import { cloneInstanceOverrideState } from '@lawha/scene-graph/instances/overrides'
+import { styleDetachmentChanges } from '@lawha/scene-graph/shared-styles'
+import { regionFillChanges } from '@lawha/scene-graph/vector-network'
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { reconcileVariableLayouts } from '#core/layout/variables'

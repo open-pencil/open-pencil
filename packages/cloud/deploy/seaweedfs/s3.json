@@ -1,11 +1,11 @@
 {
   "identities": [
     {
-      "name": "openpencil-cloud",
+      "name": "lawha-cloud",
       "credentials": [
         {
-          "accessKey": "openpencil",
-          "secretKey": "openpencil-development-secret"
+          "accessKey": "lawha",
+          "secretKey": "lawha-development-secret"
         }
       ],
       "actions": ["Admin", "Read", "List", "Write"]

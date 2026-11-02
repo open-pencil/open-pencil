@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { CONTAINER_TYPES } from '@lawha/scene-graph/node-defaults'
 
 import { acceptingParent } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'

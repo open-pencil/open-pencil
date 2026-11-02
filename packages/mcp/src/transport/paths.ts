@@ -6,27 +6,27 @@ import { dirname, join } from 'node:path'
  * Platform-specific paths for the MCP server's Unix domain socket
  * and the discovery JSON file.
  *
- * Socket directory layout (overridable via OPENPENCIL_MCP_SOCKET):
- *   macOS:   ~/Library/Application Support/OpenPencil/
- *   Linux:   $XDG_RUNTIME_DIR/openpencil/  (fallback: ~/.openpencil/)
- *   Windows: %LOCALAPPDATA%\OpenPencil\  (fallback: ~\AppData\Local\OpenPencil\)
+ * Socket directory layout (overridable via LAWHA_MCP_SOCKET):
+ *   macOS:   ~/Library/Application Support/Lawha/
+ *   Linux:   $XDG_RUNTIME_DIR/lawha/  (fallback: ~/.lawha/)
+ *   Windows: %LOCALAPPDATA%\Lawha\  (fallback: ~\AppData\Local\Lawha\)
  *
  * On Windows, Unix domain sockets are unavailable — the server uses TCP only.
  *
  * Discovery file: at the platform-default path above, UNLESS
- * OPENPENCIL_MCP_DISCOVERY_PATH is set (see getDiscoveryPath()). The socket
- * override (OPENPENCIL_MCP_SOCKET) never moves the discovery file — it is
+ * LAWHA_MCP_DISCOVERY_PATH is set (see getDiscoveryPath()). The socket
+ * override (LAWHA_MCP_SOCKET) never moves the discovery file — it is
  * recorded in the discovery file's `socketPath` field so clients read it
  * from the well-known location.
  * Socket file:     <socketDir>/mcp.sock  (or the override path)
  *
  * IMPORTANT: getSocketDir() returns the directory that contains the socket
  * file. It does NOT always contain the discovery file — when
- * OPENPENCIL_MCP_SOCKET is set, the discovery file stays at getPlatformDir().
+ * LAWHA_MCP_SOCKET is set, the discovery file stays at getPlatformDir().
  */
 
-const DIR_NAME_UNIX = 'openpencil'
-const DIR_NAME_MACOS = 'OpenPencil'
+const DIR_NAME_UNIX = 'lawha'
+const DIR_NAME_MACOS = 'Lawha'
 const SOCKET_FILENAME = 'mcp.sock'
 const DISCOVERY_FILENAME = 'mcp.json'
 
@@ -35,7 +35,7 @@ const isWindows = platform() === 'win32'
 
 /**
  * Returns the platform-specific default directory for MCP runtime files,
- * ignoring OPENPENCIL_MCP_SOCKET. The discovery file always lives here so
+ * ignoring LAWHA_MCP_SOCKET. The discovery file always lives here so
  * clients can find it at a well-known location regardless of socket overrides.
  * Creates the directory (with restrictive permissions) if it does not exist.
  *
@@ -73,15 +73,15 @@ async function getPlatformDir(): Promise<string> {
 /**
  * Returns the directory for the MCP socket file.
  *
- * When OPENPENCIL_MCP_SOCKET is set, its dirname is used as the socket
+ * When LAWHA_MCP_SOCKET is set, its dirname is used as the socket
  * directory. When unset, the platform default from getPlatformDir() is used.
  * Creates the directory (with restrictive permissions) if it does not exist.
  *
  * NOTE: The discovery file always lives at getPlatformDir(), regardless of
- * OPENPENCIL_MCP_SOCKET. This function should NOT be used to locate it.
+ * LAWHA_MCP_SOCKET. This function should NOT be used to locate it.
  */
 export async function getSocketDir(): Promise<string> {
-  const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
+  const socketOverride = process.env.LAWHA_MCP_SOCKET?.trim()
 
   if (socketOverride) {
     const dir = dirname(socketOverride)
@@ -100,11 +100,11 @@ export async function getSocketDir(): Promise<string> {
  *
  * On macOS/Linux: <socketDir>/mcp.sock
  *
- * When OPENPENCIL_MCP_SOCKET is set, its value is returned directly
+ * When LAWHA_MCP_SOCKET is set, its value is returned directly
  * (no directory resolution needed).
  */
 export async function getSocketPath(): Promise<string> {
-  const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
+  const socketOverride = process.env.LAWHA_MCP_SOCKET?.trim()
   if (socketOverride) {
     // Ensure the override directory exists. getSocketDir() creates the
     // directory for the custom socket path (dirname of the override).
@@ -120,12 +120,12 @@ export async function getSocketPath(): Promise<string> {
  * Returns the full path to the MCP discovery JSON file.
  *
  * The discovery file lives at the platform-default location so clients can
- * find it without knowing whether OPENPENCIL_MCP_SOCKET is set. It contains
+ * find it without knowing whether LAWHA_MCP_SOCKET is set. It contains
  * the actual socket path (which may be overridden) in its `socketPath` field,
  * so clients read the discovery file to learn where to connect — not the other
  * way around.
  *
- * Set OPENPENCIL_MCP_DISCOVERY_PATH to relocate the discovery file (e.g. to a
+ * Set LAWHA_MCP_DISCOVERY_PATH to relocate the discovery file (e.g. to a
  * temp directory for test isolation). The desktop app reads the platform
  * default via its own path computation (src/app/automation/mcp/spawn.ts) and
  * does not honor this override, so it is primarily useful for tests and
@@ -133,7 +133,7 @@ export async function getSocketPath(): Promise<string> {
  * writeDiscoveryFile's atomic temp-then-rename succeeds.
  */
 export async function getDiscoveryPath(): Promise<string> {
-  const override = process.env.OPENPENCIL_MCP_DISCOVERY_PATH?.trim()
+  const override = process.env.LAWHA_MCP_DISCOVERY_PATH?.trim()
   if (override) {
     const dir = dirname(override)
     await mkdir(dir, { recursive: true, mode: 0o700 })

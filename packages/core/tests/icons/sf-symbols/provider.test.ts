@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import { SceneGraph } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import { placeIcon, recolorIcon } from '#core/icons/render'
 import { createSFSymbolsProvider, type SFSymbolsHost } from '#core/icons/sf-symbols/provider'

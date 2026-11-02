@@ -5,7 +5,7 @@ import {
   hasOrderKeyBetween,
   orderKeyBetween,
   siblingOrderKeys
-} from '@open-pencil/scene-graph/order-keys'
+} from '@lawha/scene-graph/order-keys'
 
 function expectStrictlyIncreasing(keys: string[]) {
   for (let i = 1; i < keys.length; i++) expect(keys[i] > keys[i - 1]).toBe(true)

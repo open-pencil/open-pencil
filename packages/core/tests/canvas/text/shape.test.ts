@@ -4,10 +4,10 @@ import { join } from 'node:path'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
 
-import type { ShapedText } from '@open-pencil/fig/node-change'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import type { ShapedText } from '@lawha/fig/node-change'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
@@ -51,7 +51,7 @@ describe('text shaping for saved glyphs', () => {
    */
   test('lays an emoji out 1 em wide, a joined sequence and a flag as one', async () => {
     const metrics = expectDefined(
-      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      await fontManager.fetchBundledFont('/LawhaEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
     await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
@@ -72,7 +72,7 @@ describe('text shaping for saved glyphs', () => {
    */
   test('saves an emoji as Figma does: a placeholder square with its code points', async () => {
     const metrics = expectDefined(
-      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      await fontManager.fetchBundledFont('/LawhaEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
     await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
@@ -149,7 +149,7 @@ describe('text shaping for saved glyphs', () => {
   /** An emoji sequence the font does not join is several glyphs; Figma gets the emoji once. */
   test('saves an unjoined emoji sequence once, at its first glyph', async () => {
     const metrics = expectDefined(
-      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      await fontManager.fetchBundledFont('/LawhaEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
     await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
@@ -171,7 +171,7 @@ describe('text shaping for saved glyphs', () => {
    */
   test('keeps the outlines of letters an emoji precedes in right-to-left text', async () => {
     const metrics = expectDefined(
-      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      await fontManager.fetchBundledFont('/LawhaEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
     await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
@@ -198,7 +198,7 @@ describe('text shaping for saved glyphs', () => {
    */
   test('outlines letters beside a tag sequence and a supplementary tag character', async () => {
     const metrics = expectDefined(
-      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      await fontManager.fetchBundledFont('/LawhaEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
     await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)

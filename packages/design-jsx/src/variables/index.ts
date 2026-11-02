@@ -1,9 +1,9 @@
 import { isPlainObject } from 'es-toolkit'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
-const VAR_SYMBOL = Symbol.for('open-pencil.variable')
-const MODE_SYMBOL = Symbol.for('open-pencil.variable-mode')
+const VAR_SYMBOL = Symbol.for('lawha.variable')
+const MODE_SYMBOL = Symbol.for('lawha.variable-mode')
 
 /** The name a collection's first mode has when `defineVars` names none, as Figma names it. */
 export const DEFAULT_MODE_NAME = 'Mode 1'

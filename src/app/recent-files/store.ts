@@ -3,8 +3,8 @@ import { basename } from 'pathe'
 import * as v from 'valibot'
 import { computed } from 'vue'
 
-import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import { DOCUMENT_EXTENSIONS } from '@lawha/core/io'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 import {
   DEFAULT_STORAGE_PROFILE,
@@ -18,7 +18,7 @@ import { recentFilesLimit } from './preferences'
 import { recentDocumentViewSchema } from './schema'
 import { clearRecentFileThumbnails } from './thumbnails'
 
-const RECENT_DOCUMENTS_STORAGE_KEY = 'open-pencil:recent-documents'
+const RECENT_DOCUMENTS_STORAGE_KEY = 'lawha:recent-documents'
 
 export type RecentDocumentView = v.InferOutput<typeof recentDocumentViewSchema>
 

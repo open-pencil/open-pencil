@@ -55,7 +55,7 @@ export class CanvasHelper {
    */
   async useLightPage() {
     await this.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) return
       const pages = store.graph.getPages()
       const [first] = pages
@@ -82,8 +82,8 @@ export class CanvasHelper {
   async pasteSVG(markup: string, x: number, y: number) {
     return this.page.evaluate(
       async ({ markup, x, y }) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const pasted = await store.pasteSVG(markup, x, y)
         store.clearSelection()
         store.requestRender()

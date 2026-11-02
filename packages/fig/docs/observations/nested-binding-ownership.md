@@ -36,4 +36,4 @@ at scale 8. A headless raster regression edits the imported token to 16 and back
 compares exact decoded sRGB RGBA pixels with this independent image, without fuzz or resampling.
 
 This establishes the captured imported declaration's behavior, not all new binding assignments
-through OpenPencil's APIs, scaled text metrics, or general file parity.
+through Lawha's APIs, scaled text metrics, or general file parity.

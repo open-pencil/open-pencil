@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { pick } from 'es-toolkit'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { shapeWithTextFrameFields } from '@open-pencil/scene-graph/generated'
+import { SceneGraph } from '@lawha/scene-graph'
+import { shapeWithTextFrameFields } from '@lawha/scene-graph/generated'
 
 import { registerTestFont } from '#core-tests/helpers/figma-api'
 

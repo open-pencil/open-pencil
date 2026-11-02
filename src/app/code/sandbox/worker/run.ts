@@ -38,7 +38,7 @@ function createElement(
 
 function helper(name: string) {
   return (...args: unknown[]): DesignJSXHelperDescriptor => ({
-    __openPencilHelper: name,
+    __lawhaHelper: name,
     args
   })
 }
@@ -119,7 +119,7 @@ export function runDesignJSX({
       ...names.map((name) => tags[name]),
       ...helpers.map(runtime.byName)
     )
-    if (value === undefined) throw new Error('Design JSX must return an OpenPencil element.')
+    if (value === undefined) throw new Error('Design JSX must return an Lawha element.')
     validateStructuredData(runtime.collections, limits, validateStructuredData(value, limits))
     return { id, ok: true, value, collections: runtime.collections }
   } catch (error) {

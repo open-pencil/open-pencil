@@ -1,15 +1,15 @@
 import harfBuzzSubset from 'harfbuzzjs/dist/harfbuzz-subset.wasm?url'
 
-import caveatVariable from '@open-pencil/core/assets/CaveatVariable.woff2?url'
-import interSemiBold from '@open-pencil/core/assets/Inter-SemiBold.ttf?url'
-import interVariableItalic from '@open-pencil/core/assets/InterVariable-Italic.ttf?url'
-import interVariable from '@open-pencil/core/assets/InterVariable.ttf?url'
-import notoNaskhArabic from '@open-pencil/core/assets/NotoNaskhArabic-Regular.ttf?url'
-import emojiMetrics from '@open-pencil/core/assets/OpenPencilEmojiMetrics-Regular.ttf?url'
-import { fontManager, setHarfBuzzSubsetLocator } from '@open-pencil/core/text'
+import caveatVariable from '@lawha/core/assets/CaveatVariable.woff2?url'
+import interSemiBold from '@lawha/core/assets/Inter-SemiBold.ttf?url'
+import interVariableItalic from '@lawha/core/assets/InterVariable-Italic.ttf?url'
+import interVariable from '@lawha/core/assets/InterVariable.ttf?url'
+import notoNaskhArabic from '@lawha/core/assets/NotoNaskhArabic-Regular.ttf?url'
+import emojiMetrics from '@lawha/core/assets/LawhaEmojiMetrics-Regular.ttf?url'
+import { fontManager, setHarfBuzzSubsetLocator } from '@lawha/core/text'
 
 /**
- * Core ships its bundled fonts in `@open-pencil/core/assets`. Importing them as assets lets
+ * Core ships its bundled fonts in `@lawha/core/assets`. Importing them as assets lets
  * Vite serve them in development and emit hashed copies with the build, so no host keeps a
  * second copy in `public/`. Kept apart from `index.ts` because `?url` imports only resolve
  * in a Vite build, not in the Bun test runner.
@@ -19,7 +19,7 @@ const BUNDLED_FONT_URLS: Record<string, string> = {
   'InterVariable-Italic.ttf': interVariableItalic,
   'Inter-SemiBold.ttf': interSemiBold,
   'NotoNaskhArabic-Regular.ttf': notoNaskhArabic,
-  'OpenPencilEmojiMetrics-Regular.ttf': emojiMetrics,
+  'LawhaEmojiMetrics-Regular.ttf': emojiMetrics,
   'CaveatVariable.woff2': caveatVariable
 }
 

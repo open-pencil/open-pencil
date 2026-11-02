@@ -1,4 +1,4 @@
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import type { FigmaAPI } from '@lawha/core/figma-api'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'

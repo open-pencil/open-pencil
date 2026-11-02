@@ -1,6 +1,6 @@
 ---
 title: useEditor
-description: Auf die mit provideEditor bereitgestellte OpenPencil-Editorinstanz zugreifen.
+description: Auf die mit provideEditor bereitgestellte Lawha-Editorinstanz zugreifen.
 ---
 
 # useEditor

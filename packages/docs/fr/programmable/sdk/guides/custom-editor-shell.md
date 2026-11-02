@@ -5,15 +5,15 @@ description: Créer une interface avec provideEditor, CanvasRoot, Menus, Panneau
 
 # Interface d’édition personnalisée
 
-Une application OpenPencil avec Vue comporte généralement trois couches :
+Une application Lawha avec Vue comporte généralement trois couches :
 
-1. `@open-pencil/core` crée l’éditeur ;
-2. `@open-pencil/vue` le relie aux composables et composants sans styles de Vue ;
+1. `@lawha/core` crée l’éditeur ;
+2. `@lawha/vue` le relie aux composables et composants sans styles de Vue ;
 3. l’application définit la disposition, les styles et le comportement propre au produit.
 
 ## Cas d’usage
 
-L’application OpenPencil n’est qu’une interface possible. Le SDK permet de créer un éditeur intégré à un autre produit, un outil interne pour les ressources, un éditeur de modèles, une interface d’annotation ou un éditeur spécialisé avec assistance AI.
+L’application Lawha n’est qu’une interface possible. Le SDK permet de créer un éditeur intégré à un autre produit, un outil interne pour les ressources, un éditeur de modèles, une interface d’annotation ou un éditeur spécialisé avec assistance AI.
 
 ## Structure recommandée
 
@@ -29,12 +29,12 @@ Une interface courante :
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core'
-import { provideEditor } from '@open-pencil/vue'
-import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
-import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
-import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
-import { LayerTreeRoot } from '@open-pencil/vue/primitives/LayerTree'
+import { createEditor } from '@lawha/core'
+import { provideEditor } from '@lawha/vue'
+import { CanvasRoot, CanvasSurface } from '@lawha/vue/canvas'
+import { ToolbarRoot } from '@lawha/vue/primitives/Toolbar'
+import { PageListRoot } from '@lawha/vue/primitives/PageList'
+import { LayerTreeRoot } from '@lawha/vue/primitives/LayerTree'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)

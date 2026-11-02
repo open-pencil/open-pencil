@@ -4,10 +4,10 @@
  * and one tip per chapter; nothing else. Chapters stack top to bottom, so scrolling reads the
  * tour in order and zooming out shows it whole.
  */
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { Frame, Section, Text } from '@open-pencil/design-jsx'
-import type { TreeNode } from '@open-pencil/design-jsx'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { computeAllLayouts } from '@lawha/core/layout'
+import { Frame, Section, Text } from '@lawha/design-jsx'
+import type { TreeNode } from '@lawha/design-jsx'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { tipInstance, type Tip } from '../callout'
 import { renderTree } from '../icons'

@@ -5,7 +5,7 @@ import type {
   CloudSessionResolver
 } from '#cloud/server'
 
-const TEST_SESSION_COOKIE = 'openpencil-cloud-e2e-session'
+const TEST_SESSION_COOKIE = 'lawha-cloud-e2e-session'
 
 export const cloudE2EActors = {
   owner: {

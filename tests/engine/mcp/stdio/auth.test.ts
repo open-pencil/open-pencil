@@ -7,7 +7,7 @@ import { join } from 'node:path'
 
 import { createStdioRPCBridge } from '#mcp/stdio/bridge'
 
-const TEST_DIR = join(tmpdir(), `openpencil-test-stdio-auth-${process.pid}`)
+const TEST_DIR = join(tmpdir(), `lawha-test-stdio-auth-${process.pid}`)
 const TEST_SOCKET = join(TEST_DIR, 'mcp-test.sock')
 const TEST_DISCOVERY_PATH = join(TEST_DIR, 'test-mcp.json')
 const AUTH_TOKEN = 'test-auto-token'
@@ -133,18 +133,18 @@ const isUnix = process.platform !== 'win32'
 describe.skipIf(!isUnix)('MCP stdio authentication', () => {
   let httpServer: Server | null = null
   let bridges: Array<ReturnType<typeof createStdioRPCBridge>> = []
-  const origSocketEnv = process.env.OPENPENCIL_MCP_SOCKET
-  const origDiscoveryEnv = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+  const origSocketEnv = process.env.LAWHA_MCP_SOCKET
+  const origDiscoveryEnv = process.env.LAWHA_MCP_DISCOVERY_PATH
 
   beforeAll(() => {
-    process.env.OPENPENCIL_MCP_DISCOVERY_PATH = TEST_DISCOVERY_PATH
+    process.env.LAWHA_MCP_DISCOVERY_PATH = TEST_DISCOVERY_PATH
   })
 
   afterAll(() => {
     if (origDiscoveryEnv === undefined) {
-      delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+      delete process.env.LAWHA_MCP_DISCOVERY_PATH
     } else {
-      process.env.OPENPENCIL_MCP_DISCOVERY_PATH = origDiscoveryEnv
+      process.env.LAWHA_MCP_DISCOVERY_PATH = origDiscoveryEnv
     }
   })
 
@@ -164,9 +164,9 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
       httpServer = null
     }
     if (origSocketEnv === undefined) {
-      delete process.env.OPENPENCIL_MCP_SOCKET
+      delete process.env.LAWHA_MCP_SOCKET
     } else {
-      process.env.OPENPENCIL_MCP_SOCKET = origSocketEnv
+      process.env.LAWHA_MCP_SOCKET = origSocketEnv
     }
     try {
       if (existsSync(TEST_SOCKET)) await unlink(TEST_SOCKET)
@@ -187,7 +187,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     // Set up infrastructure BEFORE creating the bridge, so its async
     // connect() succeeds on the first attempt.
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
-    process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
+    process.env.LAWHA_MCP_SOCKET = TEST_SOCKET
     httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
 
     // Bridge without explicit authToken — should auto-discover
@@ -203,7 +203,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
   test('401 with auto-discovered token retries transparently', async () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
-    process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
+    process.env.LAWHA_MCP_SOCKET = TEST_SOCKET
     httpServer = await createMockMCPServer(TEST_SOCKET, {
       authToken: AUTH_TOKEN,
       firstRPCFailsWith401: true
@@ -225,7 +225,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
   test('401 with explicit auth token surfaces error immediately (no retry)', async () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
-    process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
+    process.env.LAWHA_MCP_SOCKET = TEST_SOCKET
     httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
 
     // Bridge has EXPLICIT wrong token — 401 must surface immediately
@@ -237,14 +237,14 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     bridges.push(bridge)
 
     await expect(bridge.sendRPC({ command: 'test' })).rejects.toThrow(
-      'Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'
+      'Unauthorized: check LAWHA_MCP_AUTH_TOKEN'
     )
   }, 10_000)
 
   test('explicit auth token is NOT overridden by discovery file', async () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, 'discovery-token-unused')
-    process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
+    process.env.LAWHA_MCP_SOCKET = TEST_SOCKET
     httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: 'explicit-token' })
 
     const bridge = await createBridgeAndWaitForReady({
@@ -261,7 +261,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
   test('/rpc rejects unauthenticated requests when authToken is set', async () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
-    process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
+    process.env.LAWHA_MCP_SOCKET = TEST_SOCKET
     httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
 
     // Bridge with no explicit token — it auto-discovers from the discovery
@@ -284,7 +284,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     bridges.push(badBridge)
 
     await expect(badBridge.sendRPC({ command: 'test' })).rejects.toThrow(
-      'Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'
+      'Unauthorized: check LAWHA_MCP_AUTH_TOKEN'
     )
   }, 10_000)
 })

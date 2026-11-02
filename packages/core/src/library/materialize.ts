@@ -1,13 +1,13 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
-import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
-import { regionFills } from '@open-pencil/scene-graph/vector-network'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { cloneNodeProps } from '@lawha/scene-graph/copy'
+import { remapCopiedReferences } from '@lawha/scene-graph/transfer'
+import { regionFills } from '@lawha/scene-graph/vector-network'
 
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
 
-const INTERNAL_LIBRARY_PAGE_NAME = 'OpenPencil library definitions'
+const INTERNAL_LIBRARY_PAGE_NAME = 'Lawha library definitions'
 
 export interface MaterializedLibraryAsset {
   componentId: string

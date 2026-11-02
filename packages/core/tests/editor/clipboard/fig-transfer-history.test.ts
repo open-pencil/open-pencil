@@ -3,11 +3,11 @@ import { expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-import { createEditor } from '@open-pencil/core'
-import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
-import { materializeFigFragment } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { CommittedGraphEventError } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import { buildFigmaClipboardHTML } from '@lawha/core/clipboard'
+import { materializeFigFragment } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { CommittedGraphEventError } from '@lawha/scene-graph'
 
 const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)
 

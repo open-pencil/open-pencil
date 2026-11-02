@@ -6,8 +6,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('collaborator cursor names are shaped and long names end with an ellipsis', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const red = { r: 0.92, g: 0.34, b: 0.29, a: 1 }
     const blue = { r: 0.2, g: 0.55, b: 0.95, a: 1 }
     store.state.panX = 0

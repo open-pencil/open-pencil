@@ -6,7 +6,7 @@ import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from '#release/native/c
 import { createReleaseContext, releaseVersion } from '#release/native/context'
 import { releasePaths } from '#release/workflow'
 
-import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
+import type { CommandRequest } from '@lawha/package-artifacts-tools'
 
 const environment = {
   RELEASE_TAG: 'v0.15.0',
@@ -15,7 +15,7 @@ const environment = {
   GITHUB_RUN_ID: '123',
   GITHUB_RUN_ATTEMPT: '1',
   FRONTEND_SHA256: 'c'.repeat(64),
-  GITHUB_REPOSITORY: 'open-pencil/open-pencil'
+  GITHUB_REPOSITORY: 'lawha/lawha'
 }
 
 test('one context owns release identity and reuses existing npm paths', () => {

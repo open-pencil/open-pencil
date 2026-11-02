@@ -77,11 +77,11 @@ mod tests {
     #[test]
     fn augment_path_appends_missing_candidates_once() {
         let current_dir = std::env::temp_dir();
-        let appended_dir = std::env::temp_dir().join("open-pencil-appended");
+        let appended_dir = std::env::temp_dir().join("lawha-appended");
         std::fs::create_dir_all(&appended_dir).expect("create candidate dir");
 
         let current =
-            std::env::join_paths([PathBuf::from("/open-pencil-first"), current_dir.clone()])
+            std::env::join_paths([PathBuf::from("/lawha-first"), current_dir.clone()])
                 .expect("join path list");
         let candidates = vec![current_dir.clone(), appended_dir.clone()];
         let entries: Vec<PathBuf> =
@@ -92,7 +92,7 @@ mod tests {
         assert_eq!(
             entries,
             vec![
-                PathBuf::from("/open-pencil-first"),
+                PathBuf::from("/lawha-first"),
                 current_dir,
                 appended_dir.clone(),
             ]
@@ -104,10 +104,10 @@ mod tests {
     #[test]
     fn augment_path_ignores_candidates_that_do_not_exist() {
         let current =
-            std::env::join_paths([PathBuf::from("/open-pencil-only")]).expect("join path list");
+            std::env::join_paths([PathBuf::from("/lawha-only")]).expect("join path list");
         let augmented = augment_path(
             &current.to_string_lossy(),
-            &[PathBuf::from("/open-pencil-nonexistent")],
+            &[PathBuf::from("/lawha-nonexistent")],
         );
 
         assert!(!augmented.contains("nonexistent"));

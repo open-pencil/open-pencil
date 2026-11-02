@@ -4,8 +4,8 @@ import * as v from 'valibot'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { CloudPortalAPIError } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { CloudPortalAPIError } from '@lawha/cloud/client'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'

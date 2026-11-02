@@ -77,7 +77,7 @@ export async function requestCloudDeviceAuthorization(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      client_id: `openpencil-desktop:${connectionId}`,
+      client_id: `lawha-desktop:${connectionId}`,
       scope: 'openid profile'
     })
   })
@@ -106,7 +106,7 @@ export async function pollCloudDeviceToken(
       body: JSON.stringify({
         grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
         device_code: authorization.device_code,
-        client_id: `openpencil-desktop:${connectionId}`
+        client_id: `lawha-desktop:${connectionId}`
       }),
       signal: options.signal
     })

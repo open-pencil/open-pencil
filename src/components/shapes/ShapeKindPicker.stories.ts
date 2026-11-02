@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
 
 import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 

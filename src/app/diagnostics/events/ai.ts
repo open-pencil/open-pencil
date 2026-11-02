@@ -96,7 +96,7 @@ type ToolOutcome = { level: DiagnosticLevel; details: Record<string, DiagnosticV
 
 /**
  * A failed call is a warning, since models often call a tool wrongly, and keeps only the
- * error's name: its message quotes the call's input. A bug in OpenPencil is an error and
+ * error's name: its message quotes the call's input. A bug in Lawha is an error and
  * keeps its message and stack, which name code rather than content.
  */
 function toolOutcome(failed: boolean, cause: unknown): ToolOutcome {

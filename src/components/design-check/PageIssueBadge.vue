@@ -3,7 +3,7 @@ import { compact } from 'es-toolkit/array'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useDesignCheckMessages } from '@lawha/vue/i18n'
 
 import type { DesignIssueCounts } from '@/app/editor/design-check/issues'
 import Tip from '@/components/ui/overlay/Tip.vue'

@@ -1,4 +1,4 @@
-import { randomIndex } from '@open-pencil/scene-graph/random'
+import { randomIndex } from '@lawha/scene-graph/random'
 
 /** Friendly words for a guest who has not set a name: "Teal Fox". */
 const GUEST_COLORS = [

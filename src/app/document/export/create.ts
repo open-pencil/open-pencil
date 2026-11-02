@@ -1,5 +1,5 @@
-import type { Editor, EditorState } from '@open-pencil/core'
-import type { BuiltinIOFormatId, ExportRequest, IORegistry } from '@open-pencil/core/io'
+import type { Editor, EditorState } from '@lawha/core'
+import type { BuiltinIOFormatId, ExportRequest, IORegistry } from '@lawha/core/io'
 
 import {
   bundleExportFiles,

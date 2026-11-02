@@ -1,4 +1,4 @@
-import type { AIProviderID } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@lawha/core/constants'
 
 export const AI_MODEL_ROLES = ['design', 'review', 'fast', 'vision'] as const
 export const AI_MODEL_CAPABILITIES = ['tools', 'vision'] as const
@@ -29,7 +29,7 @@ export type AIModelConnection = {
   customBaseURL: string
   customAPIType: 'completions' | 'responses'
   credentialProfileId: string
-  /** The Home Cloud workspace whose plan pays for an `openpencil` connection. */
+  /** The Home Cloud workspace whose plan pays for an `lawha` connection. */
   cloudWorkspaceId?: string
 }
 

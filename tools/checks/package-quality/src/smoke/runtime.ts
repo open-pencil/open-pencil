@@ -5,7 +5,7 @@ import {
   runCommand,
   type CommandRequest,
   type PackageManifest
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 
 import { runPackageChecks } from '../checks/run'
 
@@ -37,7 +37,7 @@ export async function verifyPublicImports(
   consumerDirectory: string,
   execute: typeof runCommand = runCommand
 ): Promise<void> {
-  const skipped = new Set(['@open-pencil/mcp/stdio'])
+  const skipped = new Set(['@lawha/mcp/stdio'])
   const specifiers = manifests
     .flatMap(concreteImportSpecifiers)
     .filter((specifier) => !skipped.has(specifier))
@@ -68,11 +68,11 @@ export async function verifyRuntimeScenarios(
 export async function verifyPackageBinaries(consumerDirectory: string): Promise<void> {
   const binaryDirectory = join(consumerDirectory, 'node_modules', '.bin')
   const binaries = [
-    'openpencil',
-    'openpencil-mcp',
-    'openpencil-mcp-http',
-    'openpencil-cloud',
-    'openpencil-ai-relay'
+    'lawha',
+    'lawha-mcp',
+    'lawha-mcp-http',
+    'lawha-cloud',
+    'lawha-ai-relay'
   ]
   for (const runtime of RUNTIMES) {
     for (const binary of binaries) {

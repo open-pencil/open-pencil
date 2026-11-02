@@ -1,4 +1,4 @@
-import { generatedFrameOwner } from '@open-pencil/scene-graph/generated'
+import { generatedFrameOwner } from '@lawha/scene-graph/generated'
 
 import { createSelectionContainerActions } from './selection/container'
 import { createSelectionHitTestActions } from './selection/hit-test'

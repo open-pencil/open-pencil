@@ -1,9 +1,9 @@
-import { styleNumber, type DrawIOStyle } from '@open-pencil/drawio'
-import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { tryParseColor } from '@open-pencil/scene-graph/color'
-import { BLACK, WHITE } from '@open-pencil/scene-graph/constants'
-import { parseCSSFontFamily } from '@open-pencil/scene-graph/css'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { styleNumber, type DrawIOStyle } from '@lawha/drawio'
+import type { Fill, SceneNode, Stroke } from '@lawha/scene-graph'
+import { tryParseColor } from '@lawha/scene-graph/color'
+import { BLACK, WHITE } from '@lawha/scene-graph/constants'
+import { parseCSSFontFamily } from '@lawha/scene-graph/css'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { LabelFormat } from './label'
 

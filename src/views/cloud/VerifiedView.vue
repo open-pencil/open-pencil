@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import PortalNotice from '@/components/cloud-portal/auth/PortalNotice.vue'

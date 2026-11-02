@@ -2,7 +2,7 @@ import type { WaitlistSignup } from '#feedback/contract'
 import type { FeedbackDatabase } from '#feedback/db'
 import type { Kysely } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 /** How long before a repeated sign-up sends another confirmation email. */
 const RESEND_AFTER_MS = 10 * 60 * 1000

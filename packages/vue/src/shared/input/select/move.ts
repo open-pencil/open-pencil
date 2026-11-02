@@ -1,5 +1,5 @@
-import { resolveEditorProfile, type Editor, type MovePlace } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { resolveEditorProfile, type Editor, type MovePlace } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import { collectFlowDrags } from '#vue/shared/input/flow-reorder'

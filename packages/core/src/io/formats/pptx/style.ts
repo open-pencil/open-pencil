@@ -1,9 +1,9 @@
 import { clamp } from 'es-toolkit'
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Fill, SceneNode, Stroke } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 /** Scene paint/effect/text style → PPT property mapping (no slide geometry). */
 

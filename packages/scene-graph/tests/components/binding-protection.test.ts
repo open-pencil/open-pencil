@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { SceneGraph } from '@lawha/scene-graph'
+import { setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 import { expectDefined } from '../helpers/assert'
 

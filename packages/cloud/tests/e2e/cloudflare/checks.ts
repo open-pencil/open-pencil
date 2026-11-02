@@ -136,14 +136,14 @@ async function seed(database: ReturnType<typeof createPostgresCloudDatabase>) {
   return documentId
 }
 
-for (const path of ['/health', '/ready', '/.well-known/openpencil']) {
+for (const path of ['/health', '/ready', '/.well-known/lawha']) {
   const response = await fetch(`${base}${path}`)
   check(response.ok, `${path} answered HTTP ${response.status}`)
 }
 for (const [path, title] of [
-  ['/auth/sign-in', 'OpenPencil Cloud'],
-  ['/', 'OpenPencil'],
-  ['/documents/missing', 'OpenPencil']
+  ['/auth/sign-in', 'Lawha Cloud'],
+  ['/', 'Lawha'],
+  ['/documents/missing', 'Lawha']
 ]) {
   const page = await fetch(`${base}${path}`, { headers: { Accept: 'text/html' } })
   check(

@@ -2,8 +2,8 @@ import { beforeAll, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import { fontManager } from '#core/text/font/manager'

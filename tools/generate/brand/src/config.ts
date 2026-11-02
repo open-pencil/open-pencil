@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/workspace'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools/workspace'
 
 export const repositoryRoot = await resolveWorkspaceRoot(fileURLToPath(import.meta.url))
 export const targets = ['web', 'docs', 'desktop'] as const
@@ -8,15 +8,15 @@ export type BrandTarget = (typeof targets)[number]
 
 export const brand = {
   background: '#F5F5EF',
-  darkBackground: '#202B2D',
+  darkBackground: '#1E1B2E',
   darkPalette: {
-    body: '#55BAAC',
-    upper: '#258E83',
-    middle: '#86D5C6',
-    lower: '#45AFA0',
-    point: '#29978A',
-    handle: '#438CFF',
-    'handle-surface': '#F4FBFA'
+    body: '#818CF8',
+    upper: '#6366F1',
+    middle: '#A5B4FC',
+    lower: '#8B93F9',
+    point: '#5B5BD6',
+    handle: '#FB923C',
+    'handle-surface': '#F5F5FF'
   },
   darkGridOpacity: 0.6,
   tileInset: 64,

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
 
-import type { CloudAdminEmailFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import type { CloudAdminEmailFilter } from '@lawha/cloud/contract'
+import { useCloudPortalMessages, useI18n } from '@lawha/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import type { PortalListRequest } from '@/app/cloud-portal/list'

@@ -5,7 +5,7 @@ description: Creare pannelli delle proprietà con composable e componenti elenco
 
 # Pannelli delle proprietà
 
-`@open-pencil/vue` fornisce soprattutto composable per leggere valori dalla selezione e applicare modifiche tramite l’editor.
+`@lawha/vue` fornisce soprattutto composable per leggere valori dalla selezione e applicare modifiche tramite l’editor.
 
 Usa un composable quando il pannello deve calcolare valori e offrire azioni. Usa un componente strutturale come `PropertyListRoot` per elenchi controllati di riempimenti, contorni o effetti.
 

@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { remapCopiedReferences } from '@lawha/scene-graph/transfer'
 
 /**
  * Fields a layer keeps when its code is rendered again: its place in the tree and the identity

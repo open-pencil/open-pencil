@@ -1,12 +1,12 @@
 {
-  "name": "@open-pencil/cloud-off-tools",
+  "name": "@lawha/cloud-off-tools",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "bun test tests"
   },
   "dependencies": {
-    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*",
     "vite": "8.1.4"
   }
 }

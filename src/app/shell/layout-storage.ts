@@ -1,9 +1,9 @@
 import { clamp } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { IS_BROWSER } from '@lawha/core/constants'
 
-const EDITOR_LAYOUT_KEY = 'open-pencil:editor-layout'
+const EDITOR_LAYOUT_KEY = 'lawha:editor-layout'
 /** The left panel's share of the window, in percent, when the editor first opens. */
 const DEFAULT_LEFT_PANEL = 18
 /**

@@ -7,13 +7,13 @@ import type {
   SourceMetadata,
   Variable,
   VariableCollection
-} from '@open-pencil/scene-graph'
-import { withLiveComments } from '@open-pencil/scene-graph/comments'
-import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph'
+import { withLiveComments } from '@lawha/scene-graph/comments'
+import { cloneInstanceOverrideState } from '@lawha/scene-graph/instances/overrides'
 import {
   createSceneMutationImpact,
   recordSceneMutations
-} from '@open-pencil/scene-graph/mutation-impact'
+} from '@lawha/scene-graph/mutation-impact'
 
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
@@ -136,7 +136,7 @@ function restoreLayer(graph: SceneGraph, update: LayerUpdate, side: Side): void 
 
 /**
  * A copy that keeps the layer's values as they are now. Values are replaced, never written into
- * (`materialize-instance.ts` in `@open-pencil/fig`), so sharing them is safe; the graph edits
+ * (`materialize-instance.ts` in `@lawha/fig`), so sharing them is safe; the graph edits
  * child lists, source metadata, and override maps in place, so those are copied.
  */
 function captureNode(node: SceneNode): SceneNode {

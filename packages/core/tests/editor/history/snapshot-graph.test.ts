@@ -2,13 +2,13 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor, graphFromPageSnapshot } from '@open-pencil/core'
+import { createEditor, graphFromPageSnapshot } from '@lawha/core'
 import {
   comparePNGs,
   createCanvasKitRasterCodec,
   initCanvasKit,
   renderRegionToImage
-} from '@open-pencil/core/io/formats/raster'
+} from '@lawha/core/io/formats/raster'
 
 function setup() {
   const editor = createEditor()

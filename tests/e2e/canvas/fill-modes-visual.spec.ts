@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises'
 
-import type * as FigNodeChange from '@open-pencil/fig/node-change'
-import type { Fill } from '@open-pencil/scene-graph'
-import { shaderPresetKey } from '@open-pencil/scene-graph/shaders'
+import type * as FigNodeChange from '@lawha/fig/node-change'
+import type { Fill } from '@lawha/scene-graph'
+import { shaderPresetKey } from '@lawha/scene-graph/shaders'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
@@ -19,8 +19,8 @@ test('FIT avatar preserves the full clipboard fixture image', async () => {
   const bytes = await readFile('tests/fixtures/vectorize/pilot_avatar.png')
   await editor.page.evaluate(
     (data) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       const hash = store.storeImage(new Uint8Array(data))
       store.graph.createNode('RECTANGLE', store.state.currentPageId, {
         name: 'Bitmap background',
@@ -66,10 +66,10 @@ test('FIT avatar preserves the full clipboard fixture image', async () => {
 
 test('gradients and image fill modes', async () => {
   await editor.page.evaluate(async () => {
-    const figURL = '/@id/@open-pencil/fig/node-change'
+    const figURL = '/@id/@lawha/fig/node-change'
     const { convertFills, nodeChangeToProps }: typeof FigNodeChange = await import(figURL)
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
 
     const imageCanvas = document.createElement('canvas')
@@ -321,8 +321,8 @@ test('a shader paint draws its saved frame, and its live frame while one plays',
   const presetKey = shaderPresetKey(preset)
   await editor.page.evaluate(
     ({ frame, preset, presetKey }) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
         name: 'Shader',
         x: 120,
@@ -358,8 +358,8 @@ test('a shader paint draws its saved frame, and its live frame while one plays',
 
   const live = await square('#22d3ee')
   await editor.page.evaluate(async (frame) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const node = [...store.graph.getAllNodes()].find((item) => item.name === 'Shader')
     const hash = node?.fills[0]?.imageHash
     if (!node || !hash) throw new Error('No shader paint')
@@ -371,8 +371,8 @@ test('a shader paint draws its saved frame, and its live frame while one plays',
   await expectCanvas('shader-live-frame')
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const node = [...store.graph.getAllNodes()].find((item) => item.name === 'Shader')
     const hash = node?.fills[0]?.imageHash
     if (!node || !hash) throw new Error('No shader paint')

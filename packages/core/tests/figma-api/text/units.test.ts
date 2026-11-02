@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { lineHeightPixels, percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
+import { lineHeightPixels, percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 import { registerTestFont } from '#core-tests/helpers/figma-api'
 
@@ -76,7 +76,7 @@ describe('text units in the plugin API', () => {
   })
 
   // Plugin typings allow only the object; untyped eval scripts may still pass a number.
-  test('a bare number still sets pixels and null automatic, as earlier OpenPencil scripts wrote them', () => {
+  test('a bare number still sets pixels and null automatic, as earlier Lawha scripts wrote them', () => {
     const { node, raw } = text()
     Reflect.set(node, 'lineHeight', 18)
     Reflect.set(node, 'letterSpacing', 1)

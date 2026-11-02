@@ -1,4 +1,4 @@
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { IS_BROWSER } from '@lawha/core/constants'
 
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
 import { propertiesTab } from '@/app/ai/chat/panel'

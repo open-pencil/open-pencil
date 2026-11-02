@@ -41,7 +41,7 @@ type NativeEventRecorderState = {
 }
 
 type NativeEventRecorderWindow = Window & {
-  __OPENPENCIL_NATIVE_EVENT_RECORDER__?: NativeEventRecorderState
+  __LAWHA_NATIVE_EVENT_RECORDER__?: NativeEventRecorderState
 }
 
 const EVENT_TYPES = [
@@ -75,7 +75,7 @@ async function installRecorder(): Promise<void> {
   await browser.execute(
     (eventTypes, maxRecords) => {
       const recorderWindow = window as NativeEventRecorderWindow
-      const existing = recorderWindow.__OPENPENCIL_NATIVE_EVENT_RECORDER__
+      const existing = recorderWindow.__LAWHA_NATIVE_EVENT_RECORDER__
       if (existing) {
         for (const { type, listener } of existing.listeners) {
           window.removeEventListener(type, listener, true)
@@ -152,7 +152,7 @@ async function installRecorder(): Promise<void> {
         window.addEventListener(type, listener, true)
         state.listeners.push({ type, listener })
       }
-      recorderWindow.__OPENPENCIL_NATIVE_EVENT_RECORDER__ = state
+      recorderWindow.__LAWHA_NATIVE_EVENT_RECORDER__ = state
     },
     EVENT_TYPES,
     MAX_EVENT_RECORDS
@@ -164,7 +164,7 @@ export async function startNativeEventRecorder(): Promise<NativeEventRecorder> {
   return {
     async clear() {
       await browser.execute(() => {
-        const state = (window as NativeEventRecorderWindow).__OPENPENCIL_NATIVE_EVENT_RECORDER__
+        const state = (window as NativeEventRecorderWindow).__LAWHA_NATIVE_EVENT_RECORDER__
         if (!state) return
         state.events.length = 0
         state.sequence = 0
@@ -172,19 +172,19 @@ export async function startNativeEventRecorder(): Promise<NativeEventRecorder> {
     },
     async read() {
       return browser.execute(() => {
-        const state = (window as NativeEventRecorderWindow).__OPENPENCIL_NATIVE_EVENT_RECORDER__
+        const state = (window as NativeEventRecorderWindow).__LAWHA_NATIVE_EVENT_RECORDER__
         return structuredClone(state?.events ?? [])
       })
     },
     async stop() {
       await browser.execute(() => {
         const recorderWindow = window as NativeEventRecorderWindow
-        const state = recorderWindow.__OPENPENCIL_NATIVE_EVENT_RECORDER__
+        const state = recorderWindow.__LAWHA_NATIVE_EVENT_RECORDER__
         if (!state) return
         for (const { type, listener } of state.listeners) {
           window.removeEventListener(type, listener, true)
         }
-        delete recorderWindow.__OPENPENCIL_NATIVE_EVENT_RECORDER__
+        delete recorderWindow.__LAWHA_NATIVE_EVENT_RECORDER__
       })
     }
   }

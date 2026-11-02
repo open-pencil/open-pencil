@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/package-artifacts-tools",
+  "name": "@lawha/package-artifacts-tools",
   "private": true,
   "type": "module",
   "imports": {

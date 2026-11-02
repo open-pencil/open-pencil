@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 function renameOptions(replacement: string, match = '', startNumber = 1) {
   return { match, replacement, startNumber }

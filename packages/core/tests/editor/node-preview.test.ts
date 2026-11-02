@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 function layerNamed(graph: SceneGraph, name: string) {
   const found = [...graph.getAllNodes()].find((node) => node.name === name)

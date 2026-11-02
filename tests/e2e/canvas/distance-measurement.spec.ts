@@ -4,8 +4,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('Option hover shows temporary distances between layers', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0
@@ -38,7 +38,7 @@ test('Option hover shows temporary distances between layers', async () => {
   await editor.canvas.hover(340, 330)
   await editor.page.keyboard.down('Alt')
   await expect
-    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.measurementMode))
+    .poll(() => editor.page.evaluate(() => window.lawha?.getStore?.().state.measurementMode))
     .toBe('shallow')
   await editor.canvas.waitForRender()
 
@@ -50,14 +50,14 @@ test('Option hover shows temporary distances between layers', async () => {
 
   await editor.page.keyboard.up('Alt')
   await expect
-    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.measurementMode))
+    .poll(() => editor.page.evaluate(() => window.lawha?.getStore?.().state.measurementMode))
     .toBe('off')
 })
 
 test('deep measurement modifier targets a nested component child', async () => {
   const ids = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0
@@ -90,11 +90,11 @@ test('deep measurement modifier targets a nested component child', async () => {
 
   await editor.page.keyboard.down('Alt')
   await expect
-    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.hoveredNodeId))
+    .poll(() => editor.page.evaluate(() => window.lawha?.getStore?.().state.hoveredNodeId))
     .toBe(ids.componentId)
   await editor.page.keyboard.down('Control')
   await expect
-    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.hoveredNodeId))
+    .poll(() => editor.page.evaluate(() => window.lawha?.getStore?.().state.hoveredNodeId))
     .toBe(ids.childId)
 
   await editor.page.keyboard.up('Control')

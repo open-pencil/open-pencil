@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import { computeBounds } from '@lawha/scene-graph/geometry'
 
 import { defineTool } from '#core/tools/schema'
 

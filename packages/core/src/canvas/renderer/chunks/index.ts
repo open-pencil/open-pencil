@@ -1,6 +1,6 @@
 import RBush from 'rbush'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 

@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { linkComponentPropertyValues } from '#fig/document/component/values'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 // Layers inside instances hold their component layers' own objects, so linking replaces a
 // layer's definitions and assignments instead of writing into objects other layers hold.

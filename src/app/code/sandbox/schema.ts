@@ -15,9 +15,9 @@ const designJSXValidationLimitsSchema = v.object({
 
 export type DesignJSXValidationLimits = v.InferOutput<typeof designJSXValidationLimitsSchema>
 
-export const SANDBOX_READY = 'open-pencil-design-jsx-ready'
-export const SANDBOX_RUN = 'open-pencil-design-jsx-run'
-export const SANDBOX_RESULT = 'open-pencil-design-jsx-result'
+export const SANDBOX_READY = 'lawha-design-jsx-ready'
+export const SANDBOX_RUN = 'lawha-design-jsx-run'
+export const SANDBOX_RESULT = 'lawha-design-jsx-result'
 
 const runRequestEntries = {
   id: v.string(),

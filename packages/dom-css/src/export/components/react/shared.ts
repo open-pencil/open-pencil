@@ -1,4 +1,4 @@
-import { es, jsx } from '@open-pencil/emit'
+import { es, jsx } from '@lawha/emit'
 
 import type { ComponentModel, GeneratedKind } from '../model'
 

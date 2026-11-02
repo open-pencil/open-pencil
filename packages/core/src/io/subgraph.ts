@@ -1,7 +1,7 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { referencedStyleIds } from '@open-pencil/scene-graph/shared-styles'
-import { styleRunReferences } from '@open-pencil/scene-graph/text'
-import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { SceneGraph } from '@lawha/scene-graph'
+import { referencedStyleIds } from '@lawha/scene-graph/shared-styles'
+import { styleRunReferences } from '@lawha/scene-graph/text'
+import { variableValueReferences } from '@lawha/scene-graph/variables'
 
 import type { ExportTarget } from './types'
 

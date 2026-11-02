@@ -2,17 +2,17 @@ import { describe, expect, test } from 'bun:test'
 
 import { applyDocumentMetadata } from '#fig/document/metadata'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 import {
-  OPEN_PENCIL_PLUGIN_DATA,
-  OPEN_PENCIL_PLUGIN_ID
-} from '@open-pencil/scene-graph/plugin-data'
+  LAWHA_PLUGIN_DATA,
+  LAWHA_PLUGIN_ID
+} from '@lawha/scene-graph/plugin-data'
 
 function enabledLibraries(value: string) {
   const graph = new SceneGraph()
   applyDocumentMetadata(graph, {
     pluginData: [
-      { pluginID: OPEN_PENCIL_PLUGIN_ID, key: OPEN_PENCIL_PLUGIN_DATA.enabledLibraries.key, value }
+      { pluginID: LAWHA_PLUGIN_ID, key: LAWHA_PLUGIN_DATA.enabledLibraries.key, value }
     ]
   })
   return [...graph.enabledLibraries.values()]

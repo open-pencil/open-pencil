@@ -1,7 +1,7 @@
 import type { LocationQuery, RouteLocationRaw, RouteMeta } from 'vue-router'
 
-import { cloudRedirectPath } from '@open-pencil/cloud/client'
-import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
+import { cloudRedirectPath } from '@lawha/cloud/client'
+import type { CloudAccountStatus } from '@lawha/cloud/contract'
 
 /** Where signed-in people land when nothing else asked for them: the editor. */
 export const PORTAL_HOME = '/'

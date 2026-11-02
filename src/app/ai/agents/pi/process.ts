@@ -1,7 +1,7 @@
 import { Command } from '@tauri-apps/plugin-shell'
 import * as v from 'valibot'
 
-import type { HarnessSidecarMessage, JSONValue } from '@open-pencil/harness'
+import type { HarnessSidecarMessage, JSONValue } from '@lawha/harness'
 
 import { tokenUsageSchema } from '@/app/diagnostics/events/schema'
 import { resolvePlatformCommand } from '@/app/tauri/command'
@@ -62,7 +62,7 @@ export async function spawnHarnessProcess(options: {
   environment: Record<string, string>
   onUnexpectedClose: () => void
 }): Promise<HarnessProcess> {
-  const resolved = resolvePlatformCommand('openpencil-harness')
+  const resolved = resolvePlatformCommand('lawha-harness')
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',
     env: options.environment

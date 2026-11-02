@@ -1,8 +1,8 @@
-import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import { copyStrokes } from '@open-pencil/scene-graph/copy'
-import { deriveVariantProperties } from '@open-pencil/scene-graph/variant-properties'
+import type { SceneGraph, SceneNode, Stroke } from '@lawha/scene-graph'
+import { createComponentPropertyId } from '@lawha/scene-graph/components'
+import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
+import { copyStrokes } from '@lawha/scene-graph/copy'
+import { deriveVariantProperties } from '@lawha/scene-graph/variant-properties'
 
 /**
  * How a new component set looks. Figma's Combine as variants command (`canvas`) pads the variants

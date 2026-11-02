@@ -1,8 +1,8 @@
 import { isEmptyObject, isUndefined, mapValues, omitBy, pick } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { INSTANCE_OVERRIDE_FIELDS } from '@open-pencil/scene-graph/instances'
-import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { INSTANCE_OVERRIDE_FIELDS } from '@lawha/scene-graph/instances'
+import { setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 import { DESIGN_JSX_SUPPORTED_PROPERTIES } from '../definitions'
 import { propsToOverrides } from '../overrides'

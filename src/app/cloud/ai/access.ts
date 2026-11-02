@@ -5,8 +5,8 @@ import {
   createCloudAIClient,
   type CloudAIClient,
   type CloudAITokenSource
-} from '@open-pencil/cloud/client'
-import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
+} from '@lawha/cloud/client'
+import type { WorkspaceSummary } from '@lawha/cloud/contract'
 
 import { homeCloudServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection, cloudFetch } from '../sessions/connection'

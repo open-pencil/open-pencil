@@ -1,4 +1,4 @@
-# @open-pencil/vue architecture
+# @lawha/vue architecture
 
 ## Folder conventions
 

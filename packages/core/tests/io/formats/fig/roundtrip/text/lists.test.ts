@@ -2,11 +2,11 @@ import { beforeAll, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { fontManager } from '@open-pencil/core/text'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { fontManager } from '@lawha/core/text'
+import { parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type TextParagraphStyle } from '@lawha/scene-graph'
 
 const LIST: TextParagraphStyle[] = [
   { listType: 'NONE', indentation: 0, paragraphSpacing: 24, paragraphIndent: 30 },

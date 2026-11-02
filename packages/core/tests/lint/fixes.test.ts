@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 import {
   applyLintFixes,
   createLinter,
   graphFixTarget,
   safeFixes,
   type LintMessage
-} from '@open-pencil/core/lint'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/core/lint'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 import { getNodeOrThrow } from '../helpers/assert'
 

@@ -36,7 +36,7 @@ export function providerPictures(pictures: UserPictureService): BetterAuthPlugin
     if (picture) await pictures.copyFromProvider(account.userId, picture)
   }
   return {
-    id: 'openpencil-provider-pictures',
+    id: 'lawha-provider-pictures',
     init: () => ({
       options: {
         databaseHooks: {

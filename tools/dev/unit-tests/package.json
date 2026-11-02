@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/unit-tests-tools",
+  "name": "@lawha/unit-tests-tools",
   "private": true,
   "type": "module",
   "exports": {
@@ -9,7 +9,7 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*",
     "es-toolkit": "^1.52.0"
   }
 }

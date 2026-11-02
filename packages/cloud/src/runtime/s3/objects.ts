@@ -11,11 +11,11 @@ import {
   S3Client,
   UploadPartCommand
 } from '@aws-sdk/client-s3'
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line lawha/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { getSignedUrl as getSignedURL } from '@aws-sdk/s3-request-presigner'
 
-const CHECKSUM_METADATA_KEY = 'openpencil-sha256'
-const READINESS_BODY = new TextEncoder().encode('openpencil-ready')
+const CHECKSUM_METADATA_KEY = 'lawha-sha256'
+const READINESS_BODY = new TextEncoder().encode('lawha-ready')
 const READINESS_CHECKSUM = 'Hq6g3mmWpyBNobXoWZIz/d0/d8KLjJyEKqNnJh6KXjA='
 const MULTIPART_THRESHOLD = 32 * 1024 * 1024
 const MULTIPART_PART_SIZE = 16 * 1024 * 1024
@@ -78,7 +78,7 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
     },
 
     async checkReadiness() {
-      const key = `.openpencil/readiness/${crypto.randomUUID()}`
+      const key = `.lawha/readiness/${crypto.randomUUID()}`
       try {
         await client.send(
           new PutObjectCommand({

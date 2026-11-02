@@ -1,4 +1,4 @@
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createEditor, type Editor } from '@lawha/core'
 
 export function setupEditorPage() {
   const editor = createEditor()

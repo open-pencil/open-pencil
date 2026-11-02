@@ -1,11 +1,11 @@
 ---
 title: Composables
-description: Najważniejsze composables pakietu @open-pencil/vue.
+description: Najważniejsze composables pakietu @lawha/vue.
 ---
 
 # Composables
 
-Poniżej znajdują się composables najczęściej używane podczas pracy z `@open-pencil/vue`.
+Poniżej znajdują się composables najczęściej używane podczas pracy z `@lawha/vue`.
 
 ## Kontekst i obszar roboczy
 

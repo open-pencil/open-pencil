@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { sumBy } from 'es-toolkit'
 import { computed, ref } from 'vue'
 
-import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
+import type { MetricsSnapshot } from '@lawha/feedback/contract'
 
 import { utcDayOfTimestamp } from '@/app/metrics/days'
 import { presetRange } from '@/app/metrics/range'
@@ -285,7 +285,7 @@ function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): 
       referrers: [
         { name: 'Google', value: 1722 },
         { name: 'github.com', value: 847 },
-        { name: 'openpencil.dev', value: 467 },
+        { name: 'lawha.invalid', value: 467 },
         { name: 'Bing', value: 124 },
         { name: 'youtube.com', value: 80 }
       ],
@@ -338,7 +338,7 @@ const story = (frame: string, withUsage = true, withActivity = true): Story => (
       const snapshot = computed(() => scope(range.value, withUsage, withActivity))
       return { range, snapshot }
     },
-    template: `<div class="${frame}"><MetricsDashboard host="feedback.openpencil.dev" :snapshot="snapshot" v-model:range="range" /></div>`
+    template: `<div class="${frame}"><MetricsDashboard host="feedback.lawha.invalid" :snapshot="snapshot" v-model:range="range" /></div>`
   })
 })
 

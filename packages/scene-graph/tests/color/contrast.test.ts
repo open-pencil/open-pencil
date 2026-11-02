@@ -5,8 +5,8 @@ import {
   contrastRatio,
   darkenForContrast,
   readableForeground
-} from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }
 const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }

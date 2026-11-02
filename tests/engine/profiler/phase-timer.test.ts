@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
-import { PhaseTimer } from '@open-pencil/core/profiler'
+import { PhaseTimer } from '@lawha/core/profiler'
 
 describe('PhaseTimer', () => {
   it('is disabled by default', () => {

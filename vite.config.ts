@@ -8,23 +8,23 @@ import Icons from 'unplugin-icons/vite'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig, loadEnv } from 'vite'
 
-import { ensureBrandAssets } from '@open-pencil/brand-tools'
-import { ensureDemoDocument } from '@open-pencil/demo-tools'
+import { ensureBrandAssets } from '@lawha/brand-tools'
+import { ensureDemoDocument } from '@lawha/demo-tools'
 
 import packageJson from './package.json'
 import { viteBuildTarget } from './src/app/shell/support/baseline'
-import { createOpenPencilAliases } from './vite/aliases'
+import { createLawhaAliases } from './vite/aliases'
 import {
   localAutomationRoute,
   localAutomationToken,
-  openPencilAutomationPlugin
+  lawhaAutomationPlugin
 } from './vite/automation'
 import { bootSplashPlugin } from './vite/boot-splash'
 import { cloudSitePlugin } from './vite/cloud-site'
 import { aiIconCollection } from './vite/icons'
 import { inlineScriptPlugin } from './vite/inline-script'
 import { metricsBrandPlugin } from './vite/metrics'
-import { openPencilPwaPlugin } from './vite/pwa'
+import { lawhaPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
 
@@ -39,27 +39,27 @@ export default defineConfig(async ({ command, mode }) => {
   // which serves it under /admin behind Cloudflare Access.
   const metrics = mode === 'metrics'
   const env = loadEnv(mode, __dirname, 'VITE_')
-  // `VITE_OPENPENCIL_CLOUD=off` builds the editor without OpenPencil Cloud.
+  // `VITE_LAWHA_CLOUD=off` builds the editor without Lawha Cloud.
   // Off unless asked for: the hosted Cloud belongs to the upstream project.
-  const cloud = env.VITE_OPENPENCIL_CLOUD === 'on'
+  const cloud = env.VITE_LAWHA_CLOUD === 'on'
   // Agents automate the editor's own development server; a Cloud site, built or served, has none.
   const automation = !metrics && !cloudSite
   await Promise.all([ensureBrandAssets(['web']), metrics ? undefined : ensureDemoDocument()])
   return {
     resolve: {
-      alias: createOpenPencilAliases(__dirname, { cloud })
+      alias: createLawhaAliases(__dirname, { cloud })
     },
     define: {
-      __OPENPENCIL_APP_VERSION__: JSON.stringify(packageJson.version),
-      __OPENPENCIL_CLOUD_SITE__: JSON.stringify(cloudSite),
-      __OPENPENCIL_OFFICIAL_CLOUD_URL__: JSON.stringify(
-        env.VITE_OPENPENCIL_OFFICIAL_CLOUD_URL ?? null
+      __LAWHA_APP_VERSION__: JSON.stringify(packageJson.version),
+      __LAWHA_CLOUD_SITE__: JSON.stringify(cloudSite),
+      __LAWHA_OFFICIAL_CLOUD_URL__: JSON.stringify(
+        env.VITE_LAWHA_OFFICIAL_CLOUD_URL ?? null
       ),
-      __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(
+      __LAWHA_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(
         automation ? localAutomationToken(command) : null
       ),
-      __OPENPENCIL_LOCAL_AUTOMATION_URL__: JSON.stringify(automationRoute.browserURL),
-      __OPENPENCIL_LOCAL_AUTOMATION_HTTP_URL__: JSON.stringify(
+      __LAWHA_LOCAL_AUTOMATION_URL__: JSON.stringify(automationRoute.browserURL),
+      __LAWHA_LOCAL_AUTOMATION_HTTP_URL__: JSON.stringify(
         automationRoute.browserURL.replace(/^ws/, 'http')
       )
     },
@@ -75,9 +75,9 @@ export default defineConfig(async ({ command, mode }) => {
       tailwindcss(),
       Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
-      automation ? openPencilAutomationPlugin(command, host) : undefined,
+      automation ? lawhaAutomationPlugin(command, host) : undefined,
       vue(),
-      metrics ? metricsBrandPlugin((outDir) => resolve(outDir, '..')) : openPencilPwaPlugin(),
+      metrics ? metricsBrandPlugin((outDir) => resolve(outDir, '..')) : lawhaPwaPlugin(),
       cloudSite ? cloudSitePlugin() : undefined
     ],
     clearScreen: false,

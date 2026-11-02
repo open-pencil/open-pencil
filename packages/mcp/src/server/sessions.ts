@@ -160,7 +160,7 @@ export function createMCPSessionManager({
     if (inFlight) return inFlight
 
     const promise = (async () => {
-      const server = new McpServer({ name: 'open-pencil', version: serverVersion })
+      const server = new McpServer({ name: 'lawha', version: serverVersion })
       const agent: MCPAgentSession = { id, ...opener }
 
       const transport = new WebStandardStreamableHTTPServerTransport({

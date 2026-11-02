@@ -5,7 +5,7 @@ description: Estado y acciones reutilizables para crear interfaces de edición c
 
 # Composables
 
-Estos composables proporcionan el estado y las acciones que suelen necesitar las interfaces propias basadas en OpenPencil.
+Estos composables proporcionan el estado y las acciones que suelen necesitar las interfaces propias basadas en Lawha.
 
 ## Editor y lienzo
 

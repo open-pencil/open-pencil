@@ -11,7 +11,7 @@
   "collapseIssues": "إخفاء مشكلات الخطوط",
   "noSubstitute": "لا يتوفر بديل",
   "unsupportedFormatShort": "تنسيق غير مدعوم",
-  "unsupportedFormat": "مُثبَّت، لكن بتنسيق لا يستطيع OpenPencil رسمه بعد",
+  "unsupportedFormat": "مُثبَّت، لكن بتنسيق لا يستطيع Lawha رسمه بعد",
   "affectedLayer": "طبقة واحدة متأثرة",
   "affectedLayerCount": {
     "input": "{count} طبقات متأثرة"

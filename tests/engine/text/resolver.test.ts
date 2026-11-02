@@ -8,7 +8,7 @@ import {
   type FontResolutionCandidate,
   type FontResolutionDemand,
   type ObservedShapedLine
-} from '@open-pencil/core/text'
+} from '@lawha/core/text'
 
 function candidate(source: FontResolutionCandidate['source']): FontResolutionCandidate {
   return { id: source, family: 'Example', style: 'Regular', source }

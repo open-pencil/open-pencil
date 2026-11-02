@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { previewFocus } from '@/app/ai/preview/canvas'
 import { MAX_OUTLINE } from '@/app/presence/schema'

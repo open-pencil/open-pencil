@@ -6,7 +6,7 @@ import { readCharacterMap } from '#emoji-metrics/cmap'
 import { EMOJI_METRICS_ASSET, EMOJI_METRICS_FAMILY } from '#emoji-metrics/metrics'
 import { readFontTables } from '#emoji-metrics/sfnt'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 async function committedFont() {
   const root = await resolveWorkspaceRoot(import.meta.dir)

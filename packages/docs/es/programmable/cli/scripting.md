@@ -5,18 +5,18 @@ description: Ejecutar JavaScript con una API compatible con plugins de Figma par
 
 # Scripting
 
-`openpencil eval` ejecuta JavaScript sobre un documento y proporciona un objeto global `figma`. Resulta útil para cambios por lotes, inspección, datos de prueba y automatización sin abrir la interfaz del editor.
+`lawha eval` ejecuta JavaScript sobre un documento y proporciona un objeto global `figma`. Resulta útil para cambios por lotes, inspección, datos de prueba y automatización sin abrir la interfaz del editor.
 
 ## Uso básico
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.length"
+lawha eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-`-c` acepta JavaScript. Si el código no empieza por `return`, OpenPencil lo ejecuta dentro de una función asíncrona y devuelve el resultado cuando existe.
+`-c` acepta JavaScript. Si el código no empieza por `return`, Lawha lo ejecuta dentro de una función asíncrona y devuelve el resultado cuando existe.
 
 ```sh
-openpencil eval design.fig -c "
+lawha eval design.fig -c "
   const frame = figma.createFrame()
   frame.name = 'Card'
   frame.resize(300, 200)
@@ -29,7 +29,7 @@ openpencil eval design.fig -c "
 ## Consultar objetos
 
 ```sh
-openpencil eval design.fig -c "
+lawha eval design.fig -c "
   return figma.currentPage
     .findAll((node) => node.type === 'FRAME' && node.name.includes('Button'))
     .map((button) => ({ id: button.id, name: button.name }))
@@ -41,13 +41,13 @@ openpencil eval design.fig -c "
 `--write` o `-w` sobrescribe el archivo de entrada. `--output` o `-o` crea otro.
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
+lawha eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
 ```
 
 ## Leer el script de stdin
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin --write
+cat transform.js | lawha eval design.fig --stdin --write
 ```
 
 ## Documento abierto
@@ -55,7 +55,7 @@ cat transform.js | openpencil eval design.fig --stdin --write
 Omite la ruta para ejecutar el script sobre el documento activo en la aplicación de escritorio:
 
 ```sh
-openpencil eval -c "return figma.currentPage.name"
+lawha eval -c "return figma.currentPage.name"
 ```
 
 ## Salida
@@ -64,7 +64,7 @@ En entornos no interactivos, `eval` usa JSON de forma predeterminada. `--json` l
 
 ## API compatible
 
-La API sigue el modelo de Figma Plugin API, pero actúa sobre SceneGraph y los formatos de OpenPencil.
+La API sigue el modelo de Figma Plugin API, pero actúa sobre SceneGraph y los formatos de Lawha.
 
 ### Documento y páginas
 
@@ -94,7 +94,7 @@ La API sigue el modelo de Figma Plugin API, pero actúa sobre SceneGraph y los f
 
 ### Componentes y variables
 
-Se admiten creación de componentes e instancias, consulta del componente principal y `figma.variables` como en la API de plugins de Figma: colecciones, modos, creación y eliminación de variables, `node.setBoundVariable` y `node.boundVariables`. Los enlaces tal como los hace el panel de capas usan `openpencil.bindVariable` y `openpencil.unbindVariable`. La dirección del diseño automático y del texto (`AUTO`, `LTR`, `RTL`) se fija con `openpencil.setLayoutDirection` y `openpencil.setTextDirection`, el color OkHCL con `openpencil.setFillOkHCL` y `setStrokeOkHCL`, y `openpencil.exposeInstanceSwap` y `openpencil.getFontStatus()` exponen el intercambio de instancias y el estado de las fuentes.
+Se admiten creación de componentes e instancias, consulta del componente principal y `figma.variables` como en la API de plugins de Figma: colecciones, modos, creación y eliminación de variables, `node.setBoundVariable` y `node.boundVariables`. Los enlaces tal como los hace el panel de capas usan `lawha.bindVariable` y `lawha.unbindVariable`. La dirección del diseño automático y del texto (`AUTO`, `LTR`, `RTL`) se fija con `lawha.setLayoutDirection` y `lawha.setTextDirection`, el color OkHCL con `lawha.setFillOkHCL` y `setStrokeOkHCL`, y `lawha.exposeInstanceSwap` y `lawha.getFontStatus()` exponen el intercambio de instancias y el estado de las fuentes.
 
 ### Propiedades
 

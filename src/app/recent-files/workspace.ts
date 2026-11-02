@@ -1,6 +1,6 @@
 import { watch } from 'vue'
 
-import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
+import { useDocumentWorkspace } from '@lawha/vue/document/workspace'
 
 import {
   createStorageAdapter,

@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 
@@ -42,8 +42,8 @@ export function stickyDriver(page: () => Page) {
     /** Setup: shows the page's origin at a known canvas point. */
     showOrigin() {
       return page().evaluate((origin) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         store.state.zoom = 1
         store.state.panX = origin
         store.state.panY = origin
@@ -54,8 +54,8 @@ export function stickyDriver(page: () => Page) {
     /** Setup: notes centred on page points, for specs whose subject is how notes look. */
     add(notes: StickyNoteSetup[]) {
       return page().evaluate((specs) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         for (const spec of specs) {
           const note = store.createStickyNote(store.state.currentPageId, spec)
           const [body, author] = store.graph.getChildren(note.id)
@@ -72,8 +72,8 @@ export function stickyDriver(page: () => Page) {
     /** Probe: the page's notes, the last placed last. */
     notes(): Promise<StickyNoteState[]> {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const hex = (value = 0) =>
           Math.round(value * 255)
             .toString(16)
@@ -102,8 +102,8 @@ export function stickyDriver(page: () => Page) {
     /** Probe: the active tool, the selection, and the text being typed into. */
     focus(): Promise<StickyFocus> {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         return {
           tool: store.state.activeTool,
           selected: [...store.state.selectedIds],

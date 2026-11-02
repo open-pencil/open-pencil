@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Fill, SceneNode, Stroke } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'

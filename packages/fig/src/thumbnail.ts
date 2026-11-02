@@ -1,6 +1,6 @@
 import { inflateSync } from 'fflate'
 
-import { imageHeader } from '@open-pencil/scene-graph/images'
+import { imageHeader } from '@lawha/scene-graph/images'
 
 export interface FigRangeReader {
   readonly size: number

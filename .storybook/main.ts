@@ -1,7 +1,7 @@
 import type { StorybookConfig } from '@storybook/vue3-vite'
 import type { PluginOption } from 'vite'
 
-import { ensureBrandAssets } from '@open-pencil/brand-tools'
+import { ensureBrandAssets } from '@lawha/brand-tools'
 
 function flattenPlugins(plugins: PluginOption[]): PluginOption[] {
   return plugins.flatMap((plugin) => (Array.isArray(plugin) ? flattenPlugins(plugin) : [plugin]))
@@ -18,7 +18,7 @@ const config: StorybookConfig = {
     options: { docgen: false }
   },
   viteFinal(config) {
-    const excludedPluginPrefixes = ['open-pencil-automation', 'vite-plugin-pwa']
+    const excludedPluginPrefixes = ['lawha-automation', 'vite-plugin-pwa']
 
     config.plugins = flattenPlugins(config.plugins ?? []).filter((plugin) => {
       if (!plugin || typeof plugin !== 'object' || !('name' in plugin)) return true

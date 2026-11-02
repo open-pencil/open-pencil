@@ -1,7 +1,7 @@
-import type { CharacterStyleOverride, FontVariation, SceneNode } from '@open-pencil/scene-graph'
-import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
-import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import type { CharacterStyleOverride, FontVariation, SceneNode } from '@lawha/scene-graph'
+import { faceStyleKey } from '@lawha/scene-graph/font-style'
+import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
+import { lineHeightPixels, textLengthPixels } from '@lawha/scene-graph/text'
 
 import { drawnFontVariations } from '#core/text/font/families'
 import {

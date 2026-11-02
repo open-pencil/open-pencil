@@ -16,11 +16,11 @@ describe('Harness sidecar process', () => {
       calls.push({ cmd, args })
       if (cmd === 'plugin:shell|spawn') {
         expect(args).toMatchObject({
-          program: 'openpencil-harness',
+          program: 'lawha-harness',
           args: [],
           options: {
             encoding: 'raw',
-            env: { OPENPENCIL_HARNESS_API_KEY: 'secret' }
+            env: { LAWHA_HARNESS_API_KEY: 'secret' }
           }
         })
         onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent.onmessage
@@ -30,7 +30,7 @@ describe('Harness sidecar process', () => {
     })
 
     const process = await spawnHarnessProcess({
-      environment: { OPENPENCIL_HARNESS_API_KEY: 'secret' },
+      environment: { LAWHA_HARNESS_API_KEY: 'secret' },
       onUnexpectedClose: () => undefined
     })
     await process.send({ id: 'one', method: 'service.shutdown' })
@@ -62,8 +62,8 @@ describe('Harness sidecar process', () => {
       await mockTauriIPC((cmd, args) => {
         if (cmd === 'plugin:shell|spawn') {
           expect(args).toMatchObject({
-            program: 'cmd-openpencil-harness',
-            args: ['/c', 'openpencil-harness'],
+            program: 'cmd-lawha-harness',
+            args: ['/c', 'lawha-harness'],
             options: { encoding: 'raw', env: {} }
           })
           return 46

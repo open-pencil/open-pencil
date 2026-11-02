@@ -5,8 +5,8 @@ import {
   type FigNodeChangeExportRuntime,
   type PlacedTextGlyph,
   type TextDecorationRecord
-} from '@open-pencil/fig/node-change'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/fig/node-change'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { withTextShaper } from '#core/io/shaping'

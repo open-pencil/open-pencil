@@ -5,7 +5,7 @@ const editor = useEditorSetupWithClear('/?test')
 
 test.beforeEach(async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const id = store.createShape('FRAME', 100, 100, 320, 120)
     store.select([id])
@@ -28,12 +28,12 @@ test('position fields follow movement before the pointer is released', async () 
       editor.page.getByRole('spinbutton', { name: 'Y Axis', exact: true })
     ).toHaveAttribute('aria-valuenow', '135')
     const selected = await editor.page.evaluate(() => {
-      const node = window.openPencil?.getStore?.().selectedNode.value
+      const node = window.lawha?.getStore?.().selectedNode.value
       return node ? { x: node.x, y: node.y } : null
     })
     expect(selected).toEqual({ x: 180, y: 135 })
     const reads = await editor.page.evaluateHandle(() => {
-      const graph = window.openPencil?.getStore?.().graph
+      const graph = window.lawha?.getStore?.().graph
       if (!graph) throw new Error('Editor unavailable')
       const original = graph.getAllNodes
       let count = 0
@@ -77,7 +77,7 @@ for (const field of [
     const input = editor.page.getByRole('spinbutton', { name: field.name, exact: true })
     const box = expectDefined(await input.boundingBox(), 'field bounds')
     const version = await editor.page.evaluate(
-      () => window.openPencil?.getStore?.().state.sceneVersion
+      () => window.lawha?.getStore?.().state.sceneVersion
     )
     await editor.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     await editor.page.mouse.down()
@@ -85,12 +85,12 @@ for (const field of [
       await editor.page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2, { steps: 4 })
       await expect(input).toHaveAttribute('aria-valuenow', String(field.initial + 20))
       expect(
-        await editor.page.evaluate(() => window.openPencil?.getStore?.().state.sceneVersion)
+        await editor.page.evaluate(() => window.lawha?.getStore?.().state.sceneVersion)
       ).toBe(version)
     } finally {
       await editor.page.mouse.up()
     }
-    await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+    await editor.page.evaluate(() => window.lawha?.getStore?.().undoAction())
     await expect(input).toHaveAttribute('aria-valuenow', String(field.initial))
   })
 }

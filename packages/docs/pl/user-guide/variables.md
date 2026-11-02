@@ -1,6 +1,6 @@
 ---
 title: Zmienne
-description: Zmienne projektu, kolekcje, tryby i powiązania kolorów w OpenPencil.
+description: Zmienne projektu, kolekcje, tryby i powiązania kolorów w Lawha.
 ---
 
 # Zmienne
@@ -73,7 +73,7 @@ Dół okna pokazuje aktywną kolekcję jako właściwości niestandardowe CSS. P
 
 ## Import i eksport tokenów projektowych
 
-Zmienne i style przechodzą między OpenPencil, Figmą i kodem jako [tokeny projektowe W3C](https://www.designtokens.org/):
+Zmienne i style przechodzą między Lawha, Figmą i kodem jako [tokeny projektowe W3C](https://www.designtokens.org/):
 
 - **Eksport:** w menu kopiowania arkusza stylów wybierz **Eksportuj jako tokeny projektowe**. Archiwum zip zawiera po jednym pliku na każdy tryb kolekcji, który Figma importuje jako tryb; style tekstu i efektów jako tokeny typografii i cieni; oraz resolver, który łączy je dla narzędzi takich jak Style Dictionary
 - **Import:** kliknij **Importuj tokeny projektowe** na pasku narzędzi i wybierz pliki tokenów lub zip. Działają pliki z Figmy, resolver z plikami, które wskazuje, oraz motywy Tokens Studio

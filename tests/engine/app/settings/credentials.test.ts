@@ -135,7 +135,7 @@ describe('browser credential store', () => {
     await store.write(API_KEY, 'browser-secret')
     expect(await store.read(API_KEY)).toBe('browser-secret')
 
-    const database = await openDB('open-pencil-credentials', 1)
+    const database = await openDB('lawha-credentials', 1)
     const record = await database.get('credentials', credentialKey(API_KEY))
     expect(record).toBeDefined()
     expect(JSON.stringify(record)).not.toContain('browser-secret')

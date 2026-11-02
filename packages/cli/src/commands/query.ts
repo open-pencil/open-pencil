@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { QueryNodeResult } from '@open-pencil/core/rpc'
+import type { QueryNodeResult } from '@lawha/core/rpc'
 
 import { appTargetOptions } from '#cli/app/target'
 import { printNodeResults, printError } from '#cli/format'

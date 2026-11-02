@@ -3,8 +3,8 @@ layout: page
 landing: true
 sidebar: false
 aside: false
-title: Descargar OpenPencil
-description: Descarga la app de escritorio de OpenPencil para macOS, Windows y Linux, o instálala con Homebrew.
+title: Descargar Lawha
+description: Descarga la app de escritorio de Lawha para macOS, Windows y Linux, o instálala con Homebrew.
 ---
 
 <script setup>

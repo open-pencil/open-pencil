@@ -72,7 +72,7 @@ async function startRelay(appOrigin: string) {
           ]
         }
       },
-      { DATABASE_URL: 'postgresql://unused', OPENPENCIL_AI_RELAY_UPSTREAM_KEY: 'upstream-key' }
+      { DATABASE_URL: 'postgresql://unused', LAWHA_AI_RELAY_UPSTREAM_KEY: 'upstream-key' }
     ),
     database,
     keys: createLocalJWKSet({ keys: [{ ...(await exportJWK(publicKey)), kid: 'cloud' }] }),
@@ -112,7 +112,7 @@ async function forward(route: Route, fetch: (request: Request) => Promise<Respon
 export function cloudHomeStorage(): { name: string; value: string } {
   const serverId = createHash('sha256').update(CLOUD).digest('hex').slice(0, 32)
   return {
-    name: 'open-pencil:cloud-servers',
+    name: 'lawha:cloud-servers',
     value: JSON.stringify({
       servers: [
         {
@@ -142,7 +142,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
     ...(options.billingURL ? { billing: { portalURL: options.billingURL } } : {})
   }
   const cloud: Record<string, () => unknown | Promise<unknown>> = {
-    'GET /.well-known/openpencil': () => discovery,
+    'GET /.well-known/lawha': () => discovery,
     'GET /api/account/status': () => ({
       user: { userId: ACCOUNT.id, email: ACCOUNT.email, name: ACCOUNT.name },
       state: 'active'

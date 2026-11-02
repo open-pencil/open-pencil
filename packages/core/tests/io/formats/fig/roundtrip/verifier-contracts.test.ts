@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { RAW_VERIFIERS, SCENE_VERIFIERS, type VerifierContext } from './helpers'
 

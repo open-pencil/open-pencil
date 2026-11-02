@@ -2,8 +2,8 @@ import * as v from 'valibot'
 
 import type { PluginDataEntry } from '../types'
 
-/** The plugin id OpenPencil keeps its own state under, on nodes and in `.fig` files. */
-export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
+/** The plugin id Lawha keeps its own state under, on nodes and in `.fig` files. */
+export const LAWHA_PLUGIN_ID = 'lawha'
 
 /**
  * What a field holds:
@@ -15,7 +15,7 @@ export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
  */
 export type PluginDataRole = 'content' | 'format' | 'bookkeeping'
 
-/** One OpenPencil plugin-data key. */
+/** One Lawha plugin-data key. */
 export interface PluginDataKey {
   readonly key: string
   readonly role: PluginDataRole
@@ -68,7 +68,7 @@ export function textPluginDataField<const T extends string>(
 }
 
 export function isPluginDataEntry(entry: PluginDataEntry, field: PluginDataKey): boolean {
-  return entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === field.key
+  return entry.pluginId === LAWHA_PLUGIN_ID && entry.key === field.key
 }
 
 export function hasPluginData(
@@ -98,7 +98,7 @@ export function readAllPluginData<T>(
 }
 
 export function pluginDataEntry<T>(field: PluginDataField<T>, value: T): PluginDataEntry {
-  return { pluginId: OPEN_PENCIL_PLUGIN_ID, key: field.key, value: field.encode(value) }
+  return { pluginId: LAWHA_PLUGIN_ID, key: field.key, value: field.encode(value) }
 }
 
 /** Entries other than those of `fields`; other plugins' entries are always kept. */

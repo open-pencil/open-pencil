@@ -44,7 +44,7 @@ export interface DesktopAsset {
   signed: boolean
 }
 
-/** Required OpenPencil release outputs, not a discovery or packaging implementation. */
+/** Required Lawha release outputs, not a discovery or packaging implementation. */
 export function desktopAssets(target: DesktopTarget, version: string): DesktopAsset[] {
   releaseVersion(`v${version}`)
 
@@ -53,14 +53,14 @@ export function desktopAssets(target: DesktopTarget, version: string): DesktopAs
     const platform = arch === 'x64' ? 'darwin-x86_64' : 'darwin-aarch64'
     return [
       {
-        source: `OpenPencil_${version}_${arch}.dmg`,
-        name: `OpenPencil_${version}_${arch}.dmg`,
+        source: `Lawha_${version}_${arch}.dmg`,
+        name: `Lawha_${version}_${arch}.dmg`,
         updaterKeys: [],
         signed: false
       },
       {
-        source: 'OpenPencil.app.tar.gz',
-        name: `OpenPencil_${arch}.app.tar.gz`,
+        source: 'Lawha.app.tar.gz',
+        name: `Lawha_${arch}.app.tar.gz`,
         updaterKeys: [platform, `${platform}-app`],
         signed: true
       }
@@ -71,14 +71,14 @@ export function desktopAssets(target: DesktopTarget, version: string): DesktopAs
     const platform = target.startsWith('aarch64') ? 'windows-aarch64' : 'windows-x86_64'
     return [
       {
-        source: `OpenPencil_${version}_${arch}-setup.exe`,
-        name: `OpenPencil_${version}_${arch}-setup.exe`,
+        source: `Lawha_${version}_${arch}-setup.exe`,
+        name: `Lawha_${version}_${arch}-setup.exe`,
         updaterKeys: [`${platform}-nsis`],
         signed: true
       },
       {
-        source: `OpenPencil_${version}_${arch}_en-US.msi`,
-        name: `OpenPencil_${version}_${arch}_en-US.msi`,
+        source: `Lawha_${version}_${arch}_en-US.msi`,
+        name: `Lawha_${version}_${arch}_en-US.msi`,
         updaterKeys: [platform, `${platform}-msi`],
         signed: true
       }
@@ -86,20 +86,20 @@ export function desktopAssets(target: DesktopTarget, version: string): DesktopAs
   }
   return [
     {
-      source: `OpenPencil_${version}_amd64.AppImage`,
-      name: `OpenPencil_${version}_amd64.AppImage`,
+      source: `Lawha_${version}_amd64.AppImage`,
+      name: `Lawha_${version}_amd64.AppImage`,
       updaterKeys: ['linux-x86_64', 'linux-x86_64-appimage'],
       signed: true
     },
     {
-      source: `OpenPencil_${version}_amd64.deb`,
-      name: `OpenPencil_${version}_amd64.deb`,
+      source: `Lawha_${version}_amd64.deb`,
+      name: `Lawha_${version}_amd64.deb`,
       updaterKeys: ['linux-x86_64-deb'],
       signed: true
     },
     {
-      source: `OpenPencil-${version}-1.x86_64.rpm`,
-      name: `OpenPencil-${version}-1.x86_64.rpm`,
+      source: `Lawha-${version}-1.x86_64.rpm`,
+      name: `Lawha-${version}-1.x86_64.rpm`,
       updaterKeys: ['linux-x86_64-rpm'],
       signed: true
     }

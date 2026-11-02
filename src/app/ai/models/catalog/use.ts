@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from 'vue'
 
-import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
+import type { AIProviderID, ModelOption } from '@lawha/core/constants'
 
 import { listCatalogModels } from './index'
 

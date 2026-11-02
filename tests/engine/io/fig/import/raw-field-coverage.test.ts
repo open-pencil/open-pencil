@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FIGMA_RAW_NODE_FIELD_KEYS } from '@open-pencil/fig/node-change'
+import { FIGMA_RAW_NODE_FIELD_KEYS } from '@lawha/fig/node-change'
 
 const RAW_FIELD_COVERAGE = {
   rendered: [

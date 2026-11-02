@@ -170,7 +170,7 @@ const unsplashListSchema = v.array(unsplashPhotoSchema)
 const REPORT_USE_TIMEOUT_MS = 10_000
 
 /** Unsplash asks for links back to it to name the app they come from. */
-const UNSPLASH_REFERRAL = 'utm_source=openpencil&utm_medium=referral'
+const UNSPLASH_REFERRAL = 'utm_source=lawha&utm_medium=referral'
 
 function unsplashLink(url: string): string {
   return `${url}${url.includes('?') ? '&' : '?'}${UNSPLASH_REFERRAL}`

@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 
-import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { buildFigmaClipboardHTML } from '@lawha/core/clipboard'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 // Valid PNG: Figma validates the embedded bytes against the SHA-1 image reference.
 const bytes = new Uint8Array(

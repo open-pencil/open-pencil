@@ -1,10 +1,10 @@
 import { useIntervalFn } from '@vueuse/core'
 import type { ShallowRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { paragraphStylesAfterTextChange } from '@open-pencil/scene-graph/text'
+import type { Editor } from '@lawha/core'
+import { adjustRunsForDelete, adjustRunsForInsert } from '@lawha/core/text'
+import type { SceneNode } from '@lawha/scene-graph'
+import { paragraphStylesAfterTextChange } from '@lawha/scene-graph/text'
 
 const CARET_BLINK_MS = 530
 

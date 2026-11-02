@@ -1,4 +1,4 @@
-import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
+import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@lawha/scene-graph'
 import {
   aspectRatioLockEditable,
   layoutSizing,
@@ -9,8 +9,8 @@ import {
   AUTO_LAYOUT_GRID_COUNT,
   isAutoGridCount,
   layoutGridCount
-} from '@open-pencil/scene-graph/layout'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/layout'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import {
   prepareFollowedFieldEdit,

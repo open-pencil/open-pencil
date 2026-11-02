@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { createEditor } from '@lawha/core'
+import { layoutSizing } from '@lawha/scene-graph/layout'
 
 /** A Hug row with padding and gap 10 around a 60 × 40 and a 50 × 30 rectangle. */
 function row() {

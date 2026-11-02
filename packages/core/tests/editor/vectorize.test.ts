@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { svgToVectorPaths } from '@open-pencil/core/vector'
+import { createEditor } from '@lawha/core'
+import { svgToVectorPaths } from '@lawha/core/vector'
 
 import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 

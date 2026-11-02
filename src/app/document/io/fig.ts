@@ -1,6 +1,6 @@
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { isUnsupportedVariableValue } from '@open-pencil/scene-graph/variables'
+import { readFigFile } from '@lawha/core/io/formats/fig'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { isUnsupportedVariableValue } from '@lawha/scene-graph/variables'
 
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
@@ -14,7 +14,7 @@ export async function readFigDocument(file: File, signal?: AbortSignal) {
   return graph
 }
 
-/** Names the variables whose expressions OpenPencil cannot evaluate, which draw as saved. */
+/** Names the variables whose expressions Lawha cannot evaluate, which draw as saved. */
 function warnUnsupportedVariableExpressions(graph: SceneGraph) {
   const names = [...graph.variables.values()]
     .filter((variable) => Object.values(variable.valuesByMode).some(isUnsupportedVariableValue))

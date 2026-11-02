@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
+import { SceneGraph } from '@lawha/scene-graph'
+import { reconcileVariableBindings } from '@lawha/scene-graph/variables'
 
 /** A text layer with shared styles whose letter spacing a variable drives. */
 function styledText() {

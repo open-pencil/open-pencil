@@ -8,7 +8,7 @@ test('wrap clears automatic spacing and restores both properties with one Undo',
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   const id = await page.evaluate(() => {
-    const editor = window.openPencil?.getStore?.()
+    const editor = window.lawha?.getStore?.()
     if (!editor) throw new Error('Editor unavailable')
     const id = editor.createShape('FRAME', 100, 100, 320, 240)
     editor.updateNode(id, {
@@ -21,7 +21,7 @@ test('wrap clears automatic spacing and restores both properties with one Undo',
   })
   const state = () =>
     page.evaluate((id) => {
-      const node = window.openPencil?.getStore?.().graph.getNode(id)
+      const node = window.lawha?.getStore?.().graph.getNode(id)
       return [node?.layoutWrap, node?.primaryAxisAlign]
     }, id)
   await page.getByRole('button', { name: 'Wrap layout', exact: true }).click()
@@ -34,7 +34,7 @@ test('layout guide live numeric edits form one Undo record', async ({ page }) =>
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   const id = await page.evaluate(() => {
-    const editor = window.openPencil?.getStore?.()
+    const editor = window.lawha?.getStore?.()
     if (!editor) throw new Error('Editor unavailable')
     const id = editor.createShape('FRAME', 100, 100, 320, 240)
     editor.updateNode(id, {
@@ -54,7 +54,7 @@ test('layout guide live numeric edits form one Undo record', async ({ page }) =>
   })
   const value = () =>
     page.evaluate(
-      (id) => window.openPencil?.getStore?.().graph.getNode(id)?.layoutGrids[0].count,
+      (id) => window.lawha?.getStore?.().graph.getNode(id)?.layoutGrids[0].count,
       id
     )
   const field = page.getByRole('spinbutton', { name: 'Count', exact: true })

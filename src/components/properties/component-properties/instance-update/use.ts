@@ -1,7 +1,7 @@
 import { ref, watch, type Ref } from 'vue'
 
-import { libraryAssetKeyForComponent } from '@open-pencil/core/library'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { libraryAssetKeyForComponent } from '@lawha/core/library'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'

@@ -7,14 +7,14 @@ import type {
   SceneNode,
   StyleRun,
   TextParagraphStyle
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   parseCSSColor,
   parseCSSFontFamily,
   parseCSSLetterSpacing,
   parseCSSLineHeight,
   parseCSSNumber
-} from '@open-pencil/scene-graph/css'
+} from '@lawha/scene-graph/css'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, mergedStyle, pickStyle } from './css-values'

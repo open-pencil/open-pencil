@@ -8,8 +8,8 @@ test('editing section labels preserve dark and light label presentation', async 
     { id: 'light-section', y: 400, color: { r: 0.92, g: 0.82, b: 0.38, a: 1 } }
   ] as const
   await editor.page.evaluate((items) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     for (const item of items) {
       store.graph.createNode('SECTION', store.state.currentPageId, {
         id: item.id,
@@ -49,8 +49,8 @@ test('editing section labels preserve dark and light label presentation', async 
 
 test('double-clicking a section title renames it inline', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     store.graph.createNode('SECTION', pageId, {
       id: 'section-inline-rename',
@@ -80,7 +80,7 @@ test('double-clicking a section title renames it inline', async () => {
   await expect
     .poll(() =>
       editor.page.evaluate(
-        () => window.openPencil?.getStore?.().graph.getNode('section-inline-rename')?.name
+        () => window.lawha?.getStore?.().graph.getNode('section-inline-rename')?.name
       )
     )
     .toBe('Primitives')
@@ -89,8 +89,8 @@ test('double-clicking a section title renames it inline', async () => {
 // Figma shows only the field while a name is renamed: a shorter name leaves none of the old one.
 test('a section title being renamed leaves the canvas title to the field', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.graph.createNode('SECTION', store.state.currentPageId, {
       id: 'section-rename-shorter',
       name: 'Section 1',
@@ -119,8 +119,8 @@ test('a section title being renamed leaves the canvas title to the field', async
 // Figma desktop 126: the name above a frame or component renames in place and stays selected.
 test('double-clicking a frame or component name renames it inline and keeps it selected', async () => {
   const ids = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const white = [
       { type: 'SOLID' as const, color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }
@@ -163,7 +163,7 @@ test('double-clicking a frame or component name renames it inline and keeps it s
     await expect
       .poll(() =>
         editor.page.evaluate((nodeId) => {
-          const store = window.openPencil?.getStore?.()
+          const store = window.lawha?.getStore?.()
           return {
             name: store?.graph.getNode(nodeId)?.name,
             selected: [...(store?.state.selectedIds ?? [])]

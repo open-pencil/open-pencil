@@ -5,7 +5,7 @@ description: Создание панелей свойств с помощью co
 
 # Панели свойств
 
-Панели свойств в `@open-pencil/vue` строятся прежде всего с помощью composables.
+Панели свойств в `@lawha/vue` строятся прежде всего с помощью composables.
 
 Если панели нужны вычисленные из выделения значения и действия для их изменения, используйте composable. Если важна переиспользуемая структура массива или списка, используйте компонент без встроенного оформления, например `PropertyListRoot`.
 
@@ -35,13 +35,13 @@ description: Создание панелей свойств с помощью co
 - Отдельное действие для удаления привязки лучше разместить в окне выбора, а не превращать значок рядом с полем в опасную кнопку без подтверждения.
 - Замену привязки, её удаление при редактировании и изменение нескольких объектов выполняйте одной пакетной операцией поставщика.
 
-В интерфейсе приложения OpenPencil связанное поле в обычном состоянии показывает имя переменной на фиолетовом фоне. После начала редактирования `NumberField` показывает вычисленное числовое значение. В собственном интерфейсе редактора то же состояние можно представить иначе.
+В интерфейсе приложения Lawha связанное поле в обычном состоянии показывает имя переменной на фиолетовом фоне. После начала редактирования `NumberField` показывает вычисленное числовое значение. В собственном интерфейсе редактора то же состояние можно представить иначе.
 
 ## Пример: положение и размер
 
 ```vue
 <script setup lang="ts">
-import { usePosition } from '@open-pencil/vue/controls/position'
+import { usePosition } from '@lawha/vue/controls/position'
 
 const { x, y, width, height, updateProp, commitProp } = usePosition()
 </script>
@@ -60,9 +60,9 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot } from '@open-pencil/vue/primitives/PropertyList'
-import { useEditorPropertyList } from '@open-pencil/vue/controls/property-list'
-import { useFillControls } from '@open-pencil/vue/controls/fill'
+import { PropertyListRoot } from '@lawha/vue/primitives/PropertyList'
+import { useEditorPropertyList } from '@lawha/vue/controls/property-list'
+import { useFillControls } from '@lawha/vue/controls/fill'
 
 const fillControls = useFillControls()
 const fills = useEditorPropertyList('fills')

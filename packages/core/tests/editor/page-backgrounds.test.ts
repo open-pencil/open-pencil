@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createDefaultEditorState, createDocumentGraph, createEditor } from '@open-pencil/core'
-import { BOARD_PAGE_BACKGROUND } from '@open-pencil/core/constants'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { createDefaultEditorState, createDocumentGraph, createEditor } from '@lawha/core'
+import { BOARD_PAGE_BACKGROUND } from '@lawha/core/constants'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 // Exact float32 backgroundColor from the reported finance FIG canvas 0:4.
 const navy: Color = {

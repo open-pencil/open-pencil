@@ -3,8 +3,8 @@ import { describe, expect, it } from 'bun:test'
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createClipboardGraph } from '#core-tests/helpers/clipboard'
 
-import { importClipboardNodes } from '@open-pencil/core/clipboard'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { importClipboardNodes } from '@lawha/core/clipboard'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 describe('importClipboardNodes: styling', () => {
   it('preserves fills and strokes', () => {

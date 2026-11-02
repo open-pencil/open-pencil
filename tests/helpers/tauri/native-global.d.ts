@@ -39,7 +39,7 @@ type NativeTestStore = {
 declare global {
   interface Window {
     __TAURI__?: Pick<typeof TauriAPI, 'core'> & { os?: typeof TauriOS }
-    openPencil?: {
+    lawha?: {
       getStore?: () => NativeTestStore
     }
   }

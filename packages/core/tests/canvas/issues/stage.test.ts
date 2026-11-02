@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { placeIssueMarkers } from '#core/canvas/issues/layout'
 import { IssueMarkerStage } from '#core/canvas/issues/stage'

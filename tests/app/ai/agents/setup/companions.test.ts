@@ -29,7 +29,7 @@ describe('companionPackageManager', () => {
 
 describe('globalInstallCommand', () => {
   test('names the package manager, and sudo only where npm needs administrator rights', () => {
-    const target = '@open-pencil/mcp@0.15.1'
+    const target = '@lawha/mcp@0.15.1'
     expect(globalInstallCommand(target, 'bun', { admin: true })).toBe(`bun add -g ${target}`)
     expect(globalInstallCommand(target, 'npm')).toBe(`npm i -g ${target}`)
     expect(globalInstallCommand(target, 'npm', { admin: true })).toBe(`sudo npm i -g ${target}`)

@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/tauri-menu-tools",
+  "name": "@lawha/tauri-menu-tools",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "es-toolkit": "^1.52.0"
   },
   "devDependencies": {
-    "@open-pencil/package-artifacts-tools": "workspace:*",
-    "@open-pencil/vue": "workspace:*"
+    "@lawha/package-artifacts-tools": "workspace:*",
+    "@lawha/vue": "workspace:*"
   }
 }

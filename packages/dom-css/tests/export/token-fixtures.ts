@@ -1,4 +1,4 @@
-import { SceneGraph, type Fill, type Variable, type VariableValue } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill, type Variable, type VariableValue } from '@lawha/scene-graph'
 
 export const BLUE_500 = { r: 0.23, g: 0.51, b: 0.96, a: 1 }
 export const BLUE_300 = { r: 0.58, g: 0.77, b: 0.99, a: 1 }

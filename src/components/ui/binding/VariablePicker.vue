@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'

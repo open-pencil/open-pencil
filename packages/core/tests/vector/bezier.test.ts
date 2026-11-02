@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
+import type { VectorNetwork, VectorSegment } from '@lawha/scene-graph'
 
 import { deleteVectorParts, removeVertex } from '#core/vector/bezier'
 

@@ -1,12 +1,12 @@
 import { expect, test } from 'bun:test'
 import { resolve } from 'node:path'
 
-import { createEditor } from '@open-pencil/core'
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { materializeDocument } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+import { createEditor } from '@lawha/core'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { initCanvasKit, renderNodesToImage } from '@lawha/core/io/formats/raster'
+import { materializeDocument } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { rescaleNodeTree } from '@lawha/scene-graph/scaling'
 
 import { expectDefined } from '../helpers/assert'
 import {

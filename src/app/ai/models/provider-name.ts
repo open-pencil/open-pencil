@@ -1,4 +1,4 @@
-import { ACP_AGENTS, AI_PROVIDERS, HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
+import { ACP_AGENTS, AI_PROVIDERS, HARNESS_PROVIDER_ID } from '@lawha/core/constants'
 
 /** Display name for a provider, agent, or the Pi harness. */
 export function modelProviderName(providerID: string): string {

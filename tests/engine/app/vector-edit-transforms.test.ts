@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import { computeHandleVisibleVertices } from '@open-pencil/core/canvas/overlays'
-import { regenerateFillGeometry } from '@open-pencil/core/vector'
-import { SceneGraph, type SceneNode, type VectorNetwork } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import { createEditor, type Editor } from '@lawha/core'
+import { computeHandleVisibleVertices } from '@lawha/core/canvas/overlays'
+import { regenerateFillGeometry } from '@lawha/core/vector'
+import { SceneGraph, type SceneNode, type VectorNetwork } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
 
 import { createVectorEditHistoryActions } from '@/app/editor/vector/history'
 import { createVectorEditLifecycle } from '@/app/editor/vector/lifecycle'

@@ -14,9 +14,9 @@
     "resolveJsonModule": true,
     "types": ["bun"],
     "paths": {
-      "@open-pencil/fig": ["./src/index.ts"],
-      "@open-pencil/fig/instance-overrides": ["./src/instance-overrides/index.ts"],
-      "@open-pencil/fig/node-change": ["./src/node-change/index.ts"]
+      "@lawha/fig": ["./src/index.ts"],
+      "@lawha/fig/instance-overrides": ["./src/instance-overrides/index.ts"],
+      "@lawha/fig/node-change": ["./src/node-change/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

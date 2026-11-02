@@ -1,4 +1,4 @@
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line lawha/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { parse, type CssNodePlain as CSSNodePlain, type FeaturePlain } from 'css-tree'
 
 /** What a feature is tested against: a keyword such as `dark`, or a length such as `640px`. */

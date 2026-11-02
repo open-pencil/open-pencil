@@ -1,4 +1,4 @@
-import type { StrokeCap } from '@open-pencil/scene-graph'
+import type { StrokeCap } from '@lawha/scene-graph'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { strokeSceneDriver } from '#tests/helpers/canvas/strokes/driver'
@@ -13,8 +13,8 @@ const gradientLines = strokeSceneDriver(() => editor.page, 'createGradientLinesS
  */
 test('gradient strokes', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const stops = [
       { color: { r: 0.96, g: 0.35, b: 0.12, a: 1 }, position: 0 },

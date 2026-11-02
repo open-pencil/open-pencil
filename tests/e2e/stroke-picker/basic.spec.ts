@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { SceneNode, Stroke } from '@lawha/scene-graph'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { waitForDemo } from '#tests/helpers/demo'
@@ -34,8 +34,8 @@ async function chooseFormat(page: Page, label: 'RGB' | 'HSL' | 'HSB' | 'OkHCL') 
 
 async function getSelectedStroke(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = store.graph.getNode(id)
     return node?.strokes?.[0] ?? null
@@ -91,8 +91,8 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
   await waitForDemo(page)
 
   await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const nodes = Array.from(store.graph.nodes.values())
     // The Lint chapter's button keeps a hard-coded fill on purpose, for the rules to find.
     const card = nodes.find((node) => node.name === 'Frame 3' && node.type === 'FRAME')
@@ -151,8 +151,8 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
   await canvas.waitForRender()
 
   const before = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const collection = store.graph.createCollection('Colors')
     const variable = store.graph.createVariable('stroke-brand', 'COLOR', collection.id, {
       r: 0.9,
@@ -172,8 +172,8 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
   await openStrokePicker(page)
   expect(
     await page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       const id = [...store.state.selectedIds][0]
       return id ? store.getNode(id)?.boundVariables['strokes/0/color'] : undefined
     })
@@ -183,8 +183,8 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
   await page.keyboard.press('Escape')
   await canvas.waitForRender()
   const afterEscape = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = id ? store.getNode(id) : null
     return { color: node?.strokes[0]?.color, binding: node?.boundVariables['strokes/0/color'] }
@@ -203,8 +203,8 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
   await canvas.undo()
   await canvas.waitForRender()
   const restored = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = id ? store.getNode(id) : null
     return { color: node?.strokes[0]?.color, binding: node?.boundVariables['strokes/0/color'] }

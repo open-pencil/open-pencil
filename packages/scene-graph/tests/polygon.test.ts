@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { compact } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { polygonCorners, polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
+import { polygonCorners, polygonOutline, type PolygonOutlineCommand } from '@lawha/scene-graph/polygon'
 
 // Outlines Figma desktop gives as `fillGeometry` for polygons and stars, recorded on 2026-10-10.
 const oracleSchema = v.object({

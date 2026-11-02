@@ -10,7 +10,7 @@ for (const theme of ['light', 'dark']) {
       const path = '/src/app/shell/theme.ts'
       const module = await import(path)
       module.useAppTheme().setTheme(mode)
-      const editor = window.openPencil?.getStore?.()
+      const editor = window.lawha?.getStore?.()
       if (!editor) throw new Error('Editor unavailable')
       const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
       editor.updateNode(id, {
@@ -38,7 +38,7 @@ for (const theme of ['light', 'dark']) {
     await expect
       .poll(() =>
         page.evaluate(
-          (id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0].radius,
+          (id) => window.lawha?.getStore?.().graph.getNode(id)?.effects[0].radius,
           id
         )
       )
@@ -48,7 +48,7 @@ for (const theme of ['light', 'dark']) {
     await expect
       .poll(() =>
         page.evaluate(
-          (id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0].radius,
+          (id) => window.lawha?.getStore?.().graph.getNode(id)?.effects[0].radius,
           id
         )
       )
@@ -59,7 +59,7 @@ for (const theme of ['light', 'dark']) {
     await section.getByRole('button', { name: 'Remove effect' }).click()
     await expect
       .poll(() =>
-        page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects, id)
+        page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.effects, id)
       )
       .toEqual([])
     await expect(section.locator('[data-slot="effect-settings"]')).toHaveCount(0)

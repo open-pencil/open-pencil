@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 
-import type { StatusWorkflowPreset } from '@open-pencil/scene-graph/statuses'
-import { useCommonMessages, useStatusMessages } from '@open-pencil/vue/i18n'
-import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
+import type { StatusWorkflowPreset } from '@lawha/scene-graph/statuses'
+import { useCommonMessages, useStatusMessages } from '@lawha/vue/i18n'
+import { useFlatReorderDrag } from '@lawha/vue/shared/drag'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useStatusWorkflowDraft } from '@/app/editor/statuses/workflow'

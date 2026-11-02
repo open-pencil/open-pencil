@@ -3,8 +3,8 @@ import { expect, test } from 'bun:test'
 import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 
-import { parseFigBuffer } from '@open-pencil/fig'
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import { parseFigBuffer } from '@lawha/fig'
+import { nodeChangeToProps } from '@lawha/fig/node-change'
 
 test('omitted primary sizing is Hug only for auto-layout; explicit Fixed remains Fixed', () => {
   expect(nodeChangeToProps({ type: 'FRAME', stackMode: 'HORIZONTAL' }, []).primaryAxisSizing).toBe(

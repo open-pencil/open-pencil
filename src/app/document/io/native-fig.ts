@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 
-import { setFigArchiveAssembler } from '@open-pencil/core/io/formats/fig'
+import { setFigArchiveAssembler } from '@lawha/core/io/formats/fig'
 
 /**
  * The desktop app packs every `.fig` it writes in Rust, on a blocking thread, since high

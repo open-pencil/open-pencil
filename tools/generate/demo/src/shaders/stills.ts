@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 import { toUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   isShaderFrameCurrent,
   shaderFramePixels,
@@ -11,7 +11,7 @@ import {
   shaderPresetKey,
   withShaderPaints,
   type ShaderPaint
-} from '@open-pencil/scene-graph/shaders'
+} from '@lawha/scene-graph/shaders'
 
 import type { ShaderStillPage } from './page'
 

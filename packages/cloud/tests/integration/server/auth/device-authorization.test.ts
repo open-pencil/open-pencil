@@ -19,7 +19,7 @@ test('email-only desktop authorization stays on its issuing instance', async () 
     }
   })
   try {
-    const clientId = 'openpencil-desktop:test-connection'
+    const clientId = 'lawha-desktop:test-connection'
     const issued = await fixture.app.fetch(
       accountAuthenticationRequest('/api/auth/device/code', {
         client_id: clientId,
@@ -84,7 +84,7 @@ test('email-only desktop authorization stays on its issuing instance', async () 
     expect(stored?.userId).toBe(user.userId)
     expect(new Date(stored?.expiresAt ?? 0).getTime()).toBeGreaterThan(Date.now())
     const discoveryResponse = await fixture.app.fetch(
-      accountAuthenticationRequest('/.well-known/openpencil')
+      accountAuthenticationRequest('/.well-known/lawha')
     )
     const discovery = parseCloudDiscovery(await discoveryResponse.json())
     const session = await fixture.app.fetch(

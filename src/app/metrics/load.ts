@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 import { ref, shallowRef, watch, type Ref } from 'vue'
 
-import { createFeedbackClient } from '@open-pencil/feedback/client'
-import { metricsSnapshotSchema, type MetricsSnapshot } from '@open-pencil/feedback/contract'
+import { createFeedbackClient } from '@lawha/feedback/client'
+import { metricsSnapshotSchema, type MetricsSnapshot } from '@lawha/feedback/contract'
 
 import type { MetricsRange } from './range'
 

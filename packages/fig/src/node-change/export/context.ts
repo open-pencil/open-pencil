@@ -1,14 +1,14 @@
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 
-import type { NodeChange, Paint, StyleReference } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { NodeChange, Paint, StyleReference } from '@lawha/kiwi/fig/codec'
+import { stringToGuid } from '@lawha/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   PluginDataEntry,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import type { Color, GUID, Matrix } from '@lawha/scene-graph/primitives'
 
 import { variableAlias } from '../variable/bindings'
 
@@ -40,7 +40,7 @@ export function buildStyleReferences(graph: SceneGraph): ReadonlyMap<string, Sty
 
 /**
  * The GUID a layer names a style with: the record written for the local style of that ID, or
- * the GUID the ID spells. Styles made in OpenPencil, by token import or by pasting from another
+ * the GUID the ID spells. Styles made in Lawha, by token import or by pasting from another
  * document, have IDs that spell no GUID, so only their records can name them.
  */
 export function styleReferenceGuid(

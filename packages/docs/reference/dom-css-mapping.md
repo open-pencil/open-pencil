@@ -1,6 +1,6 @@
 # DOM/CSS mapping reference
 
-OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `@open-pencil/dom-css`. Browser adapters should use native DOM/CSSOM and `getComputedStyle()` as the source of truth. Headless conversion is an approximation for tests and CLI usage.
+Lawha maps browser-computed DOM/CSS styles into SceneGraph fields through `@lawha/dom-css`. Browser adapters should use native DOM/CSSOM and `getComputedStyle()` as the source of truth. Headless conversion is an approximation for tests and CLI usage.
 
 ## Layout
 

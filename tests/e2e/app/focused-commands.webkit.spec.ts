@@ -1,4 +1,4 @@
-import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+import type { EditorCommandId } from '@lawha/vue/editor/commands'
 
 import type { runFocusedCommand } from '@/app/shell/commands/focused'
 
@@ -13,8 +13,8 @@ function runAsNativeMenu(id: EditorCommandId): Promise<string[]> {
   return editor.page.evaluate(async (id) => {
     const modulePath = '/src/app/shell/commands/focused.ts'
     const commands: FocusedCommands = await import(modulePath)
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const ran: string[] = []
     commands.runFocusedCommand(store, (command) => ran.push(command), id)
     return ran

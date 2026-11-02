@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/dev-server-tools",
+  "name": "@lawha/dev-server-tools",
   "private": true,
   "type": "module",
   "scripts": {

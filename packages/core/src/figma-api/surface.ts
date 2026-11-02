@@ -1,7 +1,7 @@
 /**
  * What `figma` and its objects have beyond Figma's Plugin API. `compatibility.ts` checks the
  * types against these lists and `tests/figma-api/surface.test.ts` checks what scripts can reach.
- * A feature Figma has no API for goes on `openpencil`, never on these lists; entries only leave.
+ * A feature Figma has no API for goes on `lawha`, never on these lists; entries only leave.
  */
 
 /** Members a host or tool wires up on `figma`, which scripts do not write against. */

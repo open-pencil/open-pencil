@@ -15,7 +15,7 @@ const state: HarnessResumeState = {
 
 describe('FileResumeStateStore', () => {
   test('atomically persists and removes opaque state', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-harness-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-harness-'))
     try {
       const store = new FileResumeStateStore(root)
       expect(await store.load('session-1')).toBeUndefined()
@@ -30,7 +30,7 @@ describe('FileResumeStateStore', () => {
   })
 
   test('concurrent saves leave valid state', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'open-pencil-harness-'))
+    const root = await mkdtemp(join(tmpdir(), 'lawha-harness-'))
     try {
       const store = new FileResumeStateStore(root)
       await Promise.all([

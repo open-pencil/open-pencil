@@ -1,10 +1,10 @@
 {
-  "name": "@open-pencil/pen",
+  "name": "@lawha/pen",
   "version": "0.17.0-beta.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/pen"
   },
   "files": [
@@ -44,6 +44,6 @@
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   },
   "peerDependencies": {
-    "@open-pencil/scene-graph": "workspace:*"
+    "@lawha/scene-graph": "workspace:*"
   }
 }

@@ -1,6 +1,6 @@
 import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
 
-import { colorToCSS } from '@open-pencil/scene-graph/color'
+import { colorToCSS } from '@lawha/scene-graph/color'
 
 import type { DesignDocument } from '../src/index'
 
@@ -27,7 +27,7 @@ export const cardDocument: DesignDocument = {
           type: 'element',
           tagName: 'h1',
           attrs: { class: 'title' },
-          children: [{ type: 'text', text: 'OpenPencil' }]
+          children: [{ type: 'text', text: 'Lawha' }]
         }
       ]
     }
@@ -36,7 +36,7 @@ export const cardDocument: DesignDocument = {
 
 export const cardHTML = `
   <article class="card">
-    <h1 class="title">OpenPencil</h1>
+    <h1 class="title">Lawha</h1>
     <p class="description">Design with code-shaped CSS.</p>
   </article>
 `
@@ -70,10 +70,10 @@ export const cardCSS = `
 export const fixtureHTML = `
   <section class="shell">
     <nav class="navbar">
-      <span class="brand">OpenPencil</span>
+      <span class="brand">Lawha</span>
       <span class="badge">Beta</span>
     </nav>
-    <input class="input" value="https://openpencil.dev" />
+    <input class="input" value="https://github.com/aliaaldihnayn-lab/design#readme" />
   </section>
 `
 

@@ -5,8 +5,8 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 
 import { buildParagraph } from '#core/canvas/text'
 import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'

@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     store.createShape('RECTANGLE', 100, 100, 100, 100)
   })
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 
 test('Cancel retains the dirty document and recovery does not mark it saved', async ({ page }) => {
   await page.evaluate(async () => {
-    await window.openPencil?.getStore?.().persistRecoveryNow()
+    await window.lawha?.getStore?.().persistRecoveryNow()
   })
   await page.getByTestId('tabbar-close').click()
   const dialog = page.getByRole('alertdialog', { name: /Save changes to/ })
@@ -25,7 +25,7 @@ test('Cancel retains the dirty document and recovery does not mark it saved', as
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await expect(page.getByRole('img', { name: 'Unsaved changes' })).toBeVisible()
-  expect(await page.evaluate(() => window.openPencil?.getStore?.().hasUnsavedChanges())).toBe(true)
+  expect(await page.evaluate(() => window.lawha?.getStore?.().hasUnsavedChanges())).toBe(true)
 })
 
 test('Don’t Save closes the document', async ({ page }) => {

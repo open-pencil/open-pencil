@@ -1,4 +1,4 @@
-import type { useI18n } from '@open-pencil/vue/i18n'
+import type { useI18n } from '@lawha/vue/i18n'
 
 export type UpdaterMessages = ReturnType<typeof useI18n>['updates']['value']
 

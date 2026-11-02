@@ -1,4 +1,4 @@
-import type { DesignJSXProgram } from '@open-pencil/design-jsx'
+import type { DesignJSXProgram } from '@lawha/design-jsx'
 
 import type { DesignJSXValidationLimits } from '@/app/code/sandbox/schema'
 
@@ -38,7 +38,7 @@ export function resolveDesignJSXValidationLimits(
 }
 
 export type DesignJSXHelperDescriptor = {
-  __openPencilHelper: string
+  __lawhaHelper: string
   args: unknown[]
 }
 

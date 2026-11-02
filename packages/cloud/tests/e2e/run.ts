@@ -3,15 +3,15 @@ import { composeCommand, runProcess } from '#cloud-tests/helpers/process'
 
 const deployDirectory = cloudDeployPath()
 const e2ePath = (...segments: string[]) => cloudPackagePath('tests/e2e', ...segments)
-const compose = composeCommand(`openpencil-cloud-e2e-${process.pid}`, 'compose.yml')
+const compose = composeCommand(`lawha-cloud-e2e-${process.pid}`, 'compose.yml')
 const portOffset = process.pid % 1_000
 const environment = {
   ...process.env,
-  S3_BUCKET: process.env.S3_BUCKET ?? 'openpencil',
+  S3_BUCKET: process.env.S3_BUCKET ?? 'lawha',
   POSTGRES_PORT: String(20_000 + portOffset),
   SEAWEEDFS_S3_PORT: String(21_000 + portOffset),
   SEAWEEDFS_MASTER_PORT: String(22_000 + portOffset),
-  DATABASE_URL: `postgresql://openpencil:openpencil-development-password@127.0.0.1:${20_000 + portOffset}/openpencil`,
+  DATABASE_URL: `postgresql://lawha:lawha-development-password@127.0.0.1:${20_000 + portOffset}/lawha`,
   S3_ENDPOINT: `http://127.0.0.1:${21_000 + portOffset}`
 }
 

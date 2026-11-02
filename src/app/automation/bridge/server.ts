@@ -6,7 +6,7 @@
  */
 import * as v from 'valibot'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { endAgentSession, readAgentSession } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
@@ -50,7 +50,7 @@ export function automationFiles(automationURL: string, token: string): Automatio
 export function connectAutomation(
   getStore: () => EditorStore,
   authToken: string | null = null,
-  automationURL = __OPENPENCIL_LOCAL_AUTOMATION_URL__
+  automationURL = __LAWHA_LOCAL_AUTOMATION_URL__
 ) {
   const token = authToken ?? randomHex(32)
   let ws: WebSocket | null = null

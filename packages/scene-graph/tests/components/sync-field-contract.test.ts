@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { expectDefined } from '../helpers/assert'
 

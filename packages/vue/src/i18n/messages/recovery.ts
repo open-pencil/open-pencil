@@ -2,7 +2,7 @@ import { i18n } from '#vue/i18n/create'
 
 export const recoveryMessageDefaults = {
   dialogTitle: 'Recover unsaved work',
-  dialogDescription: 'OpenPencil found documents from a previous session.',
+  dialogDescription: 'Lawha found documents from a previous session.',
   restoreFailed: 'Could not restore this document.',
   settingsTitle: 'Recovery',
   settingsDescription: 'Control local crash-recovery copies for unsaved documents.',

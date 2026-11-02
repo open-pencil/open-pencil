@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import 'fake-indexeddb/auto'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
@@ -81,7 +81,7 @@ describe('routed library catalog', () => {
       name: 'Design system',
       graph: graph()
     })
-    const key = `open-pencil/libraries/design-system/revisions/${published.manifest.revisionId}.json`
+    const key = `lawha/libraries/design-system/revisions/${published.manifest.revisionId}.json`
     const bytes = objects.values.get(key)
     if (!bytes) throw new Error('Expected remote revision')
     objects.values.set(

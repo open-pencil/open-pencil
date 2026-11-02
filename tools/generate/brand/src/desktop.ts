@@ -8,7 +8,7 @@ import { canonicalIcns } from './validate.ts'
 import type { BrandFiles } from './web.ts'
 
 export async function generateDesktop(root: string): Promise<BrandFiles> {
-  const directory = await mkdtemp(join(tmpdir(), 'open-pencil-icons-'))
+  const directory = await mkdtemp(join(tmpdir(), 'lawha-icons-'))
   try {
     const { adapter, main } = await loadArtwork(root)
     const source = join(directory, 'app.svg')

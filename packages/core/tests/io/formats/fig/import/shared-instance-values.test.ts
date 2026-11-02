@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 const red = { r: 1, g: 0, b: 0, a: 1 }
 const blue = { r: 0, g: 0, b: 1, a: 1 }

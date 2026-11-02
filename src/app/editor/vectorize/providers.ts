@@ -1,7 +1,7 @@
 import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 import { readBoundedBody } from '@/app/document/io/browser'
 import { tauriFetch } from '@/app/tauri/http'

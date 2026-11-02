@@ -3,7 +3,7 @@ import { useClipboard } from '@vueuse/core'
 import { compact } from 'es-toolkit/array'
 import { computed, ref } from 'vue'
 
-import { useAutomationMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useAutomationMessages, useI18n } from '@lawha/vue/i18n'
 
 import { mcpServerSetupView, type MCPServerSetupState } from '@/app/ai/agents/setup/view'
 import {

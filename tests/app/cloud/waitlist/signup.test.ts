@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createFeedbackClient } from '@open-pencil/feedback/client'
+import { createFeedbackClient } from '@lawha/feedback/client'
 
 import { joinWaitlist } from '@/app/cloud/waitlist/signup'
 

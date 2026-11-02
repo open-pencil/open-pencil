@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { connectorDash, connectorLineStyle, connectorLineStyleFields, connectorStroke } from '@open-pencil/scene-graph/connectors'
+import { connectorDash, connectorLineStyle, connectorLineStyleFields, connectorStroke } from '@lawha/scene-graph/connectors'
 
 describe('connector line style', () => {
   test("FigJam's dash is longer for a thick line", () => {

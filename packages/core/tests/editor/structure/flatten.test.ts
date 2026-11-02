@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { BLACK, TRANSPARENT } from '@open-pencil/core/constants'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { fontManager } from '@open-pencil/core/text'
-import { vectorNetworkToPath } from '@open-pencil/core/vector'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { BLACK, TRANSPARENT } from '@lawha/core/constants'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
+import { fontManager } from '@lawha/core/text'
+import { vectorNetworkToPath } from '@lawha/core/vector'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
 

@@ -10,9 +10,9 @@ The CLI lets you explore design documents without opening the editor. Every comm
 ::: tip Install
 
 ```sh
-npm install -g @open-pencil/cli
+npm install -g @lawha/cli
 # or
-bun add -g @open-pencil/cli
+bun add -g @lawha/cli
 ```
 
 :::
@@ -22,7 +22,7 @@ bun add -g @open-pencil/cli
 Get a quick overview — page count, total nodes, fonts used, file size:
 
 ```sh
-openpencil info design.fig
+lawha info design.fig
 ```
 
 ## Font Diagnostics
@@ -30,9 +30,9 @@ openpencil info design.fig
 Report requested font faces, available sources, substitutions, and affected layers:
 
 ```sh
-openpencil fonts design.fig
-openpencil fonts design.fig --json
-openpencil fonts --document-id tab-123 --page-id 0:1
+lawha fonts design.fig
+lawha fonts design.fig --json
+lawha fonts --document-id tab-123 --page-id 0:1
 ```
 
 File mode checks all document pages using the CLI host's available fonts without downloading online fonts. Live mode reports the targeted app document/page, whose loaded fonts may differ from the CLI host. Faces are reported as `available`, `substituted`, or `unresolved`; JSON output includes `faithful`, `faces`, and `issues`.
@@ -44,7 +44,7 @@ Use [export font policies](./exporting#font-substitution-policy) to warn about o
 Print the full node hierarchy:
 
 ```sh
-openpencil tree design.fig
+lawha tree design.fig
 ```
 
 ```
@@ -61,13 +61,13 @@ openpencil tree design.fig
 Search by type:
 
 ```sh
-openpencil find design.fig --type TEXT
+lawha find design.fig --type TEXT
 ```
 
 Search by name:
 
 ```sh
-openpencil find design.fig --name "Button"
+lawha find design.fig --name "Button"
 ```
 
 Both flags can be combined to narrow results further.
@@ -77,7 +77,7 @@ Both flags can be combined to narrow results further.
 Use XPath selectors to find nodes by type, attributes, and tree structure:
 
 ```sh
-openpencil query design.fig "//FRAME"
+lawha query design.fig "//FRAME"
 ```
 
 ### Useful patterns
@@ -85,34 +85,34 @@ openpencil query design.fig "//FRAME"
 **By type:**
 
 ```sh
-openpencil query design.fig "//TEXT"                    # All text nodes
-openpencil query design.fig "//COMPONENT"               # All components
-openpencil query design.fig "//INSTANCE"                # All instances
+lawha query design.fig "//TEXT"                    # All text nodes
+lawha query design.fig "//COMPONENT"               # All components
+lawha query design.fig "//INSTANCE"                # All instances
 ```
 
 **By attributes:**
 
 ```sh
-openpencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px wide
-openpencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
-openpencil query design.fig "//*[@visible = false]"                # Hidden nodes
-openpencil query design.fig "//TEXT[@fontSize >= 24]"              # Large text
-openpencil query design.fig "//*[@opacity < 1]"                    # Semi-transparent nodes
+lawha query design.fig "//FRAME[@width < 300]"                # Frames under 300px wide
+lawha query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
+lawha query design.fig "//*[@visible = false]"                # Hidden nodes
+lawha query design.fig "//TEXT[@fontSize >= 24]"              # Large text
+lawha query design.fig "//*[@opacity < 1]"                    # Semi-transparent nodes
 ```
 
 **By name and text content:**
 
 ```sh
-openpencil query design.fig "//TEXT[contains(@name, 'Button')]"    # Name contains 'Button'
-openpencil query design.fig "//TEXT[contains(@text, 'Hello')]"     # Text content contains 'Hello'
+lawha query design.fig "//TEXT[contains(@name, 'Button')]"    # Name contains 'Button'
+lawha query design.fig "//TEXT[contains(@text, 'Hello')]"     # Text content contains 'Hello'
 ```
 
 **By hierarchy:**
 
 ```sh
-openpencil query design.fig "//SECTION//TEXT"            # Text inside sections
-openpencil query design.fig "//FRAME/TEXT"               # Direct text children of frames
-openpencil query design.fig "//COMPONENT_SET//INSTANCE"  # Instances inside component sets
+lawha query design.fig "//SECTION//TEXT"            # Text inside sections
+lawha query design.fig "//FRAME/TEXT"               # Direct text children of frames
+lawha query design.fig "//COMPONENT_SET//INSTANCE"  # Instances inside component sets
 ```
 
 ### Queryable attributes
@@ -136,7 +136,7 @@ openpencil query design.fig "//COMPONENT_SET//INSTANCE"  # Instances inside comp
 Inspect all properties of a specific node by its ID:
 
 ```sh
-openpencil node design.fig --id 1:23
+lawha node design.fig --id 1:23
 ```
 
 ## Pages
@@ -144,7 +144,7 @@ openpencil node design.fig --id 1:23
 List all pages in the document:
 
 ```sh
-openpencil pages design.fig
+lawha pages design.fig
 ```
 
 ## Variables
@@ -152,7 +152,7 @@ openpencil pages design.fig
 List design variables and their collections:
 
 ```sh
-openpencil variables design.fig
+lawha variables design.fig
 ```
 
 ## Live App Mode
@@ -160,24 +160,24 @@ openpencil variables design.fig
 When the desktop app is running, omit the file argument — the CLI connects via RPC and operates on the live canvas:
 
 ```sh
-openpencil documents list    # list open document/page IDs
-openpencil tree              # inspect the active live document
-openpencil tree --document-id tab-123 --page-id 0:1
-openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
+lawha documents list    # list open document/page IDs
+lawha tree              # inspect the active live document
+lawha tree --document-id tab-123 --page-id 0:1
+lawha eval --document-id tab-123 --page-id 0:1 -c "..."
 ```
 
-Use `openpencil documents list --json` in agent workflows, then pass `--document-id` and `--page-id` explicitly instead of relying on the visible active tab/page. To open, save, switch, and close documents, undo, change settings, or call any editor tool, see [Controlling the App](/programmable/cli/app-control).
+Use `lawha documents list --json` in agent workflows, then pass `--document-id` and `--page-id` explicitly instead of relying on the visible active tab/page. To open, save, switch, and close documents, undo, change settings, or call any editor tool, see [Controlling the App](/programmable/cli/app-control).
 
 ## Lint Designs
 
 Check documents for naming, layout, structure, and accessibility issues:
 
 ```sh
-openpencil lint design.fig
-openpencil lint design.pen --preset strict
-openpencil lint design.fig --rule color-contrast
-openpencil lint design.fig --list-rules
-openpencil lint design.fig --fix -o fixed.fig
+lawha lint design.fig
+lawha lint design.pen --preset strict
+lawha lint design.fig --rule color-contrast
+lawha lint design.fig --list-rules
+lawha lint design.fig --fix -o fixed.fig
 ```
 
 Use `--json` for machine-readable output; each message carries its `fix` and `suggestions` as data. `--fix` applies the safe fixes — binding colors to the color variable they match and rounding geometry to whole pixels — and writes the result to the `.fig` file given with `-o`.
@@ -187,5 +187,5 @@ Use `--json` for machine-readable output; each message carries its `fix` and `su
 All commands support `--json` for machine-readable output — pipe into `jq`, feed to CI scripts, or process with other tools:
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+lawha tree design.fig --json | jq '.[] | .name'
 ```

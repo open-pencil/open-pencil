@@ -1,6 +1,6 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import {
   PEN_ANCHOR_RADIUS,

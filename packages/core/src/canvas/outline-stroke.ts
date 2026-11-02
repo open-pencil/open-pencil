@@ -1,11 +1,11 @@
 import type { Path } from 'canvaskit-wasm'
 import { omit, pick } from 'es-toolkit/object'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix, localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
-import { copyFills } from '@open-pencil/scene-graph/copy'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getNodeLocalMatrix, localTransformFromWorld } from '@lawha/scene-graph/coordinate'
+import { copyFills } from '@lawha/scene-graph/copy'
+import Matrix from '@lawha/scene-graph/matrix'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 
 import {
   baseShapePath,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { TextParagraphStyle } from '@open-pencil/scene-graph'
+import type { TextParagraphStyle } from '@lawha/scene-graph'
 import {
   paragraphSpacingAt,
   paragraphStylesAfterEdit,
@@ -9,7 +9,7 @@ import {
   trimParagraphStyles,
   withListType,
   withParagraphSpacing
-} from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/text'
 
 const plain: TextParagraphStyle = { listType: 'NONE', indentation: 0 }
 const node = (textParagraphs: TextParagraphStyle[]) => ({

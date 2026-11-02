@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { vTestId } from '@open-pencil/vue/testing'
+import { vTestId } from '@lawha/vue/testing'
 
 import theme from '@/theme/settings/breadcrumb'
 

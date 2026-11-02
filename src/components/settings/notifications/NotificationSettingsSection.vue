@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { IS_TAURI } from '@lawha/core/constants'
+import { useI18n } from '@lawha/vue/i18n'
 
 import {
   browserNotificationPermission,

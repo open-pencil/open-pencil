@@ -5,20 +5,20 @@ description: Exécuter JavaScript avec une API compatible avec les plugins Figma
 
 # Scripting
 
-`openpencil eval` exécute JavaScript sur un document et fournit un objet global `figma`. Cette commande convient aux modifications par lots, à l’inspection, aux données de test et à l’automatisation sans ouvrir l’interface de l’éditeur.
+`lawha eval` exécute JavaScript sur un document et fournit un objet global `figma`. Cette commande convient aux modifications par lots, à l’inspection, aux données de test et à l’automatisation sans ouvrir l’interface de l’éditeur.
 
 ## Utilisation de base
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.length"
+lawha eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-`-c` accepte JavaScript. Si le code ne commence pas par `return`, OpenPencil l’exécute dans une fonction asynchrone et renvoie le résultat éventuel.
+`-c` accepte JavaScript. Si le code ne commence pas par `return`, Lawha l’exécute dans une fonction asynchrone et renvoie le résultat éventuel.
 
 ## Interroger des objets
 
 ```sh
-openpencil eval design.fig -c "
+lawha eval design.fig -c "
   return figma.currentPage
     .findAll((node) => node.type === 'FRAME')
     .map((node) => ({ id: node.id, name: node.name }))
@@ -30,13 +30,13 @@ openpencil eval design.fig -c "
 `--write` ou `-w` remplace le fichier d’entrée. `--output` ou `-o` crée un autre fichier.
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
+lawha eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
 ```
 
 ## Lire le script depuis stdin
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin --write
+cat transform.js | lawha eval design.fig --stdin --write
 ```
 
 ## Document ouvert
@@ -49,7 +49,7 @@ Dans un environnement non interactif, `eval` utilise JSON par défaut. `--json` 
 
 ## API compatible
 
-L’API suit le modèle de Figma Plugin API, mais agit sur SceneGraph et les formats OpenPencil. Elle couvre document, pages, création d’objets, opérations d’arbre, composants, variables et propriétés courantes.
+L’API suit le modèle de Figma Plugin API, mais agit sur SceneGraph et les formats Lawha. Elle couvre document, pages, création d’objets, opérations d’arbre, composants, variables et propriétés courantes.
 
 Les identifiants exacts comme `figma.currentPage`, `createFrame`, `appendChild`, `fills`, `fontSize`, `layoutMode` et `strokeWeight` restent inchangés.
 

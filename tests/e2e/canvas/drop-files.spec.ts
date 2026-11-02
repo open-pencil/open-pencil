@@ -47,15 +47,15 @@ test('mixed SVG and raster drops share placement, selection, and undo', async ()
   await expect
     .poll(() =>
       editor.page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return store?.graph.getChildren(store.state.currentPageId).length ?? 0
       })
     )
     .toBe(2)
 
   const placed = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return {
       nodes: store.graph
         .getChildren(store.state.currentPageId)
@@ -75,21 +75,21 @@ test('mixed SVG and raster drops share placement, selection, and undo', async ()
   await editor.canvas.waitForRender()
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('dropped-svg-multicolor.png')
 
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await editor.page.evaluate(() => window.lawha?.getStore?.().undoAction())
   await expect
     .poll(() =>
       editor.page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return store?.graph.getChildren(store.state.currentPageId).length ?? 0
       })
     )
     .toBe(0)
 
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().redoAction())
+  await editor.page.evaluate(() => window.lawha?.getStore?.().redoAction())
   await expect
     .poll(() =>
       editor.page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return store?.graph.getChildren(store.state.currentPageId).length ?? 0
       })
     )

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
+import type { CloudAccountStatus } from '@lawha/cloud/contract'
 
 import {
   isSecretCloudLink,

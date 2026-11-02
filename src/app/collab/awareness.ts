@@ -1,4 +1,4 @@
-import { randomIndex } from '@open-pencil/scene-graph/random'
+import { randomIndex } from '@lawha/scene-graph/random'
 
 import { parsePeer } from '@/app/presence/schema'
 import { ROOM_ID_CHARS, ROOM_ID_LENGTH } from '@/constants'

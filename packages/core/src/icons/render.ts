@@ -1,6 +1,6 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
-import { BLACK } from '@open-pencil/scene-graph/constants'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
+import { BLACK } from '@lawha/scene-graph/constants'
 import {
   iconGlyph,
   iconLayerName,
@@ -11,15 +11,15 @@ import {
   withIconTint,
   type IconOptions,
   type IconPaint
-} from '@open-pencil/scene-graph/icons'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/icons'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Color } from '@lawha/scene-graph/primitives'
 import {
   createResizeSnapshot,
   scaledChildRect,
   scaledGeometryChanges
-} from '@open-pencil/scene-graph/resize'
-import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+} from '@lawha/scene-graph/resize'
+import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { createPathStroke, pathStrokeLineStyle } from '#core/icons/path-style'
 

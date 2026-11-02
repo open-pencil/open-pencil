@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import {
   arrangeBoxes,

@@ -1,7 +1,7 @@
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
-import { computeSelectionBounds } from '@open-pencil/scene-graph/snap'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getAxisAlignedWorldBounds } from '@lawha/scene-graph/coordinate'
+import { computeSelectionBounds } from '@lawha/scene-graph/snap'
 
 import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
 import {

@@ -28,10 +28,10 @@ export function resolveDiagnosticsRetention(value: unknown): DiagnosticsRetentio
   return clamp(whole, DIAGNOSTICS_RETENTION_MIN, DIAGNOSTICS_RETENTION_MAX)
 }
 
-const diagnosticsEnabled = useLocalStorage('open-pencil:diagnostics-enabled', true)
-const usageEnabled = useLocalStorage('open-pencil:usage-enabled', true)
+const diagnosticsEnabled = useLocalStorage('lawha:diagnostics-enabled', true)
+const usageEnabled = useLocalStorage('lawha:usage-enabled', true)
 const diagnosticsRetention = useLocalStorage<DiagnosticsRetention>(
-  'open-pencil:diagnostics-retention',
+  'lawha:diagnostics-retention',
   500,
   { serializer: { read: (value) => resolveDiagnosticsRetention(value), write: String } }
 )

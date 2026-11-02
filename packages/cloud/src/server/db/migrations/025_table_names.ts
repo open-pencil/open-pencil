@@ -1,7 +1,7 @@
 import { sql, type Kysely } from 'kysely'
 
 /**
- * OpenPencil's tables beside Better Auth's lose the `cloud_` prefix the rest never had; only the
+ * Lawha's tables beside Better Auth's lose the `cloud_` prefix the rest never had; only the
  * rate limit keeps a qualifier, since Better Auth has a `rate_limit` of its own. Their keys,
  * checks, and indexes follow, so no name keeps the old prefix.
  */

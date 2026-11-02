@@ -1,10 +1,10 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   resolvedNumericBindings,
   resolvedPaintBindings,
   resolvedRunBindings,
   resolvedValueBindings
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 /**
  * Figma draws the value a bound field stores until something makes it resolve the binding

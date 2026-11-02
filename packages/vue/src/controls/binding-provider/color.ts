@@ -1,9 +1,9 @@
-import type { Editor } from '@open-pencil/core'
-import type { VariableCollection } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import type { Editor } from '@lawha/core'
+import type { VariableCollection } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { randomHex } from '@lawha/scene-graph/random'
 
-import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
+import { useLawhaBindingProvider } from '#vue/controls/binding-provider/lawha'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
 
 import { prepareModeEdit } from './mode-edit'
@@ -60,7 +60,7 @@ function resolveColor(editor: Editor, id: string, target?: BindingTarget) {
 }
 
 export function useColorBindingProvider() {
-  return useOpenPencilBindingProvider<Color>({
+  return useLawhaBindingProvider<Color>({
     types: ['COLOR'],
     resolve: resolveColor,
     prepareEdit: (editor, id, target) =>

@@ -1,10 +1,10 @@
 import { toRaw } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { STICKY_SIZE, stickySublayers } from '@open-pencil/scene-graph/generated'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { STICKY_SIZE, stickySublayers } from '@lawha/scene-graph/generated'
+import type { Vector } from '@lawha/scene-graph/primitives'
+import { scaleNodeChanges } from '@lawha/scene-graph/scaling'
 
 import { parentSpace } from '#vue/shared/input/draw'
 import { findDrawParent } from '#vue/shared/input/drop-target'

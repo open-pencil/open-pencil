@@ -7,7 +7,7 @@ interface LibraryPreferences {
   priorities: Record<string, number>
 }
 
-const preferences = useLocalStorage<LibraryPreferences>('open-pencil:library-preferences', {
+const preferences = useLocalStorage<LibraryPreferences>('lawha:library-preferences', {
   catalogSource: 'local',
   priorities: {}
 })

@@ -33,7 +33,7 @@
   "collapseIssues": "Скрыть проблемы со шрифтами",
   "noSubstitute": "замена недоступна",
   "unsupportedFormatShort": "неподдерживаемый формат",
-  "unsupportedFormat": "Установлен, но в формате, который OpenPencil пока не умеет отображать",
+  "unsupportedFormat": "Установлен, но в формате, который Lawha пока не умеет отображать",
   "settingsDesktopDescription": "Доступ к системным шрифтам, онлайн-провайдерам, резервным наборам и кэшу загрузок.",
   "settingsBrowserDescription": "Разрешите браузеру доступ к локальным шрифтам и управляйте онлайн-провайдерами шрифтов.",
   "providerEnabled": "{provider} включён.",

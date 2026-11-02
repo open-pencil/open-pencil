@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { commonMessages, filesMessages } from '@open-pencil/vue/i18n'
+import { commonMessages, filesMessages } from '@lawha/vue/i18n'
 
 import { chooseNativeDocumentClose } from '@/app/document/close/native'
 

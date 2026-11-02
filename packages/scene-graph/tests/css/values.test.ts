@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseCSSColor, parseCSSNumber } from '@open-pencil/scene-graph/css'
+import { parseCSSColor, parseCSSNumber } from '@lawha/scene-graph/css'
 
 describe('parseCSSNumber', () => {
   test.each([

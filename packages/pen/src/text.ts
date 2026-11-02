@@ -1,5 +1,5 @@
-import type { SceneNode, TextAlignVertical, TextAutoResize } from '@open-pencil/scene-graph'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import type { SceneNode, TextAlignVertical, TextAutoResize } from '@lawha/scene-graph'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 import type { PenNode } from './schema'
 import { bindIfVar, isVarRef, resolveNumber, resolveString, type VarContext } from './variables'

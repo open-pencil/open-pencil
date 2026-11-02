@@ -14,10 +14,10 @@ describe('fetchOpenRouterKeyInfo', () => {
     const fetchImpl = fetchStub(async (input, init) => {
       const url = String(input)
       requests.push({ url, authorization: new Headers(init?.headers).get('authorization') })
-      return Response.json({ data: { label: 'OpenPencil', is_free_tier: true, usage: 0 } })
+      return Response.json({ data: { label: 'Lawha', is_free_tier: true, usage: 0 } })
     })
     expect(await fetchOpenRouterKeyInfo('sk-or-v1-test', fetchImpl)).toEqual({
-      label: 'OpenPencil',
+      label: 'Lawha',
       freeTier: true
     })
     expect(requests).toEqual([

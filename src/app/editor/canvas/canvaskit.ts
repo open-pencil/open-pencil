@@ -1,6 +1,6 @@
 import canvasKitWasm from 'canvaskit-wasm/bin/full/canvaskit.wasm?url'
 
-import { getCanvasKit, setCanvasKitLocator } from '@open-pencil/core/canvaskit'
+import { getCanvasKit, setCanvasKitLocator } from '@lawha/core/canvaskit'
 
 /**
  * Importing CanvasKit's binary as an asset lets Vite serve it in development and emit a hashed

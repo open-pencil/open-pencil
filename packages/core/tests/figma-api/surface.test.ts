@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import ts from 'typescript'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { FigmaAPI } from '#core/figma-api/index'
 import { FIGMA_API_HOST_MEMBERS, SERIALIZATION_MEMBERS } from '#core/figma-api/surface'

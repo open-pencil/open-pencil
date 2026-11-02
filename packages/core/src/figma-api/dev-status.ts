@@ -8,7 +8,7 @@ import {
   statusPlacement,
   STATUS_NODE_TYPES,
   type FigmaDevStatus
-} from '@open-pencil/scene-graph/statuses'
+} from '@lawha/scene-graph/statuses'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'

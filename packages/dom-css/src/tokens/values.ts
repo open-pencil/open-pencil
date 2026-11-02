@@ -1,5 +1,5 @@
-import type { TokenUnit, Variable, VariableScope } from '@open-pencil/scene-graph'
-import { tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
+import type { TokenUnit, Variable, VariableScope } from '@lawha/scene-graph'
+import { tokenNumberInUnit } from '@lawha/scene-graph/variables'
 
 import { variableNamespace } from './names'
 

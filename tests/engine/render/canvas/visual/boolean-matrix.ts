@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { SceneNode } from '@lawha/scene-graph'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
@@ -12,7 +12,7 @@ import { asPageNode, createAPI } from '#tests/helpers/plugin-api'
 const CELL_W = 180
 const CELL_H = 150
 const COLUMNS = 4
-const OUT = '/tmp/open-pencil-boolean-matrix.png'
+const OUT = '/tmp/lawha-boolean-matrix.png'
 
 type Operation = 'union' | 'subtract' | 'intersect' | 'exclude'
 type CaseName = 'rect' | 'rounded' | 'ellipse' | 'arc' | 'line' | 'polygon' | 'star' | 'vector'

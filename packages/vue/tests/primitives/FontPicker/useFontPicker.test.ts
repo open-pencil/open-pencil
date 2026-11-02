@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { nextTick, ref } from 'vue'
 
-import { useFontPicker } from '@open-pencil/vue/primitives/FontPicker'
+import { useFontPicker } from '@lawha/vue/primitives/FontPicker'
 
 test('a search lists the family it names first, then families it begins, as Figma does', async () => {
   const picker = useFontPicker({

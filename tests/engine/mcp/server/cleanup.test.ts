@@ -12,7 +12,7 @@ import { getDiscoveryPath } from '#mcp/transport/paths'
 import { readHealth, socketRequest } from '#tests/helpers/mcp/server'
 
 const isUnix = process.platform !== 'win32'
-const SOCKET_DIR = join(tmpdir(), `openpencil-test-lifecycle-${process.pid}`)
+const SOCKET_DIR = join(tmpdir(), `lawha-test-lifecycle-${process.pid}`)
 const TEST_AUTH_TOKEN = 'test-auth-token'
 let testCounter = 0
 

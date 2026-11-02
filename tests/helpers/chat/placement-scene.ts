@@ -1,8 +1,8 @@
 import type { Page } from '@playwright/test'
 
-import type { RenderPlacementInput } from '@open-pencil/core/design-jsx'
-import type { Fill } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { RenderPlacementInput } from '@lawha/core/design-jsx'
+import type { Fill } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 export type PlacementScenario =
   | 'nested-fill'
@@ -14,7 +14,7 @@ export type PlacementScenario =
 
 export function setupPlacementScene(page: Page, scenario: PlacementScenario) {
   return page.evaluate((scenario) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const pageId = store.state.currentPageId
     const solid = (color: Color): Fill => ({ type: 'SOLID', color, opacity: 1, visible: true })

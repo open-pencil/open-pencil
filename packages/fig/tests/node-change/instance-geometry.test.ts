@@ -4,10 +4,10 @@ import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 import { snapshotInstanceGeometry } from '#fig/node-change/instance/geometry'
 
-import { materializeDocument } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { materializeDocument } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { stringToGuid, UNSET_GUID } from '@lawha/kiwi/fig/guid'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { expectDefined } from '../helpers/assert'
 

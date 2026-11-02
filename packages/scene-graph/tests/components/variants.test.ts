@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 import {
   defaultVariant,
   restingVariant,
   variantDefaultValue
-} from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph/components'
 
 /** A set of sizes laid out with Large first in its children but Small in the top-left corner. */
 function sizes(defaultValue: string) {

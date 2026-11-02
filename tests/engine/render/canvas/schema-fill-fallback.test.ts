@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { Fill, SceneNode } from '@lawha/scene-graph'
 
 import { applyFill } from '#core/canvas/fills'
 

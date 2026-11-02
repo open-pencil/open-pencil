@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { RAW_VERIFIERS, SCENE_VERIFIERS, type VerifierContext } from './helpers'
 

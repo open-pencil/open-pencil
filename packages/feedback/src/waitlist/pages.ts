@@ -8,8 +8,8 @@ export function page(title: string, body: string | ReturnType<typeof html>) {
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex" />
-        <title>${title} · OpenPencil</title>
-        <link rel="icon" href="https://openpencil.dev/favicon.ico" />
+        <title>${title} · Lawha</title>
+        <link rel="icon" href="https://github.com/aliaaldihnayn-lab/design#readme" />
         <style>
           :root {
             --page: #f5f5ef;
@@ -82,10 +82,10 @@ export function page(title: string, body: string | ReturnType<typeof html>) {
       <body>
         <main>
           <img
-            src="https://openpencil.dev/brand/app-icon-1024.png"
+            src="https://github.com/aliaaldihnayn-lab/design#readme"
             width="44"
             height="44"
-            alt="OpenPencil"
+            alt="Lawha"
           />
           <h1>${title}</h1>
           ${typeof body === 'string' ? html`<p>${body}</p>` : body}

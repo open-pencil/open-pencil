@@ -1,9 +1,9 @@
 import { mapValues } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { tryParseColor } from '@open-pencil/scene-graph/color'
-import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { tryParseColor } from '@lawha/scene-graph/color'
+import { STICKY_COLORS } from '@lawha/scene-graph/generated'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import {
   CONNECTOR_LINE,

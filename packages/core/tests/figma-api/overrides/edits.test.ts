@@ -3,11 +3,11 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { createAPI, registerTestFont, solidFill } from '#core-tests/helpers/figma-api'
 
-import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
-import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
-import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { FigmaAPI, type FigmaNodeProxy } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
+import { createComponentPropertyId } from '@lawha/scene-graph/components'
+import { hasInstanceOverride } from '@lawha/scene-graph/instances'
+import { getInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 
 beforeAll(() => registerTestFont())

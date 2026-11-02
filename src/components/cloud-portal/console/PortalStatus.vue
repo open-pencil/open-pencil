@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'

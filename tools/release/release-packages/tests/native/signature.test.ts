@@ -12,14 +12,14 @@ function minisign(trustedComment: string): string {
 }
 
 test('reads the version the Tauri CLI records in the trusted comment', () => {
-  expect(signedVersion(minisign('timestamp:1\tfile:OpenPencil.app.tar.gz\tversion:0.16.0'))).toBe(
+  expect(signedVersion(minisign('timestamp:1\tfile:Lawha.app.tar.gz\tversion:0.16.0'))).toBe(
     '0.16.0'
   )
-  expect(signedVersion(minisign('timestamp:1\tfile:OpenPencil.app.tar.gz'))).toBeNull()
+  expect(signedVersion(minisign('timestamp:1\tfile:Lawha.app.tar.gz'))).toBeNull()
 })
 
 test('accepts only a signature made for the released version', () => {
-  const asset = 'OpenPencil.app.tar.gz'
+  const asset = 'Lawha.app.tar.gz'
   expect(() =>
     assertSignedVersion(minisign(`timestamp:1\tfile:${asset}\tversion:0.16.0`), '0.16.0', asset)
   ).not.toThrow()

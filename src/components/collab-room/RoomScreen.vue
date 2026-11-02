@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useCollaborationMessages } from '@lawha/vue/i18n'
 
 import { isFetchingRoom, type PendingRoomStatus } from '@/app/collab/room/status'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -32,7 +32,7 @@ const {
   /** The person's name in the room, generated until they set one. */
   name: string
   copied?: boolean
-  /** An `openpencil://join` link, offered in desktop browsers. */
+  /** An `lawha://join` link, offered in desktop browsers. */
   desktopLink?: string | null
   /** Where to get the desktop app, offered beside `desktopLink`. */
   downloadURL?: string | null

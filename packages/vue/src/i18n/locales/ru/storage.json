@@ -16,7 +16,7 @@
   "region": "Регион",
   "accessKeyID": "Идентификатор ключа доступа",
   "secretAccessKey": "Секретный ключ доступа",
-  "cloudTitle": "OpenPencil Cloud",
+  "cloudTitle": "Lawha Cloud",
   "cloudDescription": "Рабочее пространство вашей команды на нашем хостинге: живая синхронизация, ссылки для доступа, командные библиотеки и ИИ без своих ключей, и никакого бакета настраивать не нужно. Запишитесь в лист ожидания, и мы напишем, когда откроемся.",
   "waitlistEmail": "Адрес электронной почты",
   "waitlistPlaceholder": "you@example.com",
@@ -24,10 +24,10 @@
   "waitlistConfirmHuman": "Подтвердите, что вы человек",
   "waitlistInvalid": "Введите корректный адрес электронной почты.",
   "waitlistJoined": "Проверьте почту",
-  "waitlistJoinedDetail": "Откройте ссылку из письма, чтобы подтвердить адрес. Мы пишем только об OpenPencil Cloud.",
+  "waitlistJoinedDetail": "Откройте ссылку из письма, чтобы подтвердить адрес. Мы пишем только об Lawha Cloud.",
   "waitlistRefused": "Не удалось подтвердить, что вы не бот. Попробуйте ещё раз.",
   "waitlistLimited": "Слишком много попыток. Попробуйте через минуту.",
   "waitlistFailed": "Не удалось связаться с листом ожидания. Проверьте подключение и попробуйте ещё раз.",
-  "waitlistUnavailable": "Отсюда записаться нельзя. Запишитесь на openpencil.dev.",
-  "waitlistOpenWebsite": "Записаться на openpencil.dev"
+  "waitlistUnavailable": "Отсюда записаться нельзя. Запишитесь на lawha.invalid.",
+  "waitlistOpenWebsite": "Записаться на lawha.invalid"
 }

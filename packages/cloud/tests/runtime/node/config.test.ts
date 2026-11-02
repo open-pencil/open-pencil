@@ -15,11 +15,11 @@ indexing = "deny"
 [object_storage]
 endpoint = "https://objects.example.com"
 region = "us-east-1"
-bucket = "openpencil"
+bucket = "lawha"
 `
 
 const secrets = {
-  DATABASE_URL: 'postgresql://user:password@database/openpencil',
+  DATABASE_URL: 'postgresql://user:password@database/lawha',
   BETTER_AUTH_SECRET: 'auth-secret-at-least-32-characters-long',
   S3_ACCESS_KEY_ID: 'access-key',
   S3_SECRET_ACCESS_KEY: 'secret-key'
@@ -27,15 +27,15 @@ const secrets = {
 
 describe('Node Cloud configuration', () => {
   test('ignores flat environment variables that the TOML file owns', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'openpencil-cloud-config-'))
+    const directory = await mkdtemp(join(tmpdir(), 'lawha-cloud-config-'))
     const path = join(directory, 'cloud.toml')
     try {
       await writeFile(path, source)
       const config = await loadNodeCloudServerConfig({
         ...secrets,
-        OPENPENCIL_CLOUD_CONFIG: path,
-        OPENPENCIL_CLOUD_URL: 'https://ignored.example.com',
-        OPENPENCIL_CLOUD_INDEXING_POLICY: 'allow'
+        LAWHA_CLOUD_CONFIG: path,
+        LAWHA_CLOUD_URL: 'https://ignored.example.com',
+        LAWHA_CLOUD_INDEXING_POLICY: 'allow'
       })
       expect(config.publicURL).toBe('https://toml.example.com')
       expect(config.indexingPolicy).toBe('deny')
@@ -45,6 +45,6 @@ describe('Node Cloud configuration', () => {
   })
 
   test('requires a deployment TOML file', async () => {
-    await expect(loadNodeCloudServerConfig(secrets)).rejects.toThrow('OPENPENCIL_CLOUD_CONFIG')
+    await expect(loadNodeCloudServerConfig(secrets)).rejects.toThrow('LAWHA_CLOUD_CONFIG')
   })
 })

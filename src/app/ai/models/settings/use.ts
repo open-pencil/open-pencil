@@ -1,7 +1,7 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS } from '@lawha/core/constants'
 
 import {
   aiModelSettings,

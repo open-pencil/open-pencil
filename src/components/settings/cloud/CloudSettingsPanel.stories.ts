@@ -15,7 +15,7 @@ type Args = {
 
 const official: CloudServerEntry = {
   id: 'official',
-  host: 'cloud.openpencil.dev',
+  host: 'cloud.lawha.invalid',
   kind: 'official',
   account: { id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example' },
   session: 'signed-in',
@@ -44,7 +44,7 @@ const meta = {
           <CloudSettingsPanel :servers="args.servers" :listed="args.listed" @connect="args.onConnect">
             <template #hosted>
               <div class="rounded border border-dashed border-border p-3 text-[11px] text-muted">
-                The OpenPencil Cloud waitlist
+                The Lawha Cloud waitlist
               </div>
             </template>
           </CloudSettingsPanel>

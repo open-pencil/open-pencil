@@ -5,14 +5,14 @@ description: Flags reactivos Mobile y Desktop para una interfaz de edición prop
 
 # useViewportKind
 
-`useViewportKind()` devuelve una clasificación simplificada del Viewport size utilizada por la UI responsive de OpenPencil.
+`useViewportKind()` devuelve una clasificación simplificada del Viewport size utilizada por la UI responsive de Lawha.
 
 Usa el composable cuando solo necesites distinguir entre Mobile y Desktop sin configurar `useBreakpoints()` directamente.
 
 ## Uso
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
 
 const { isMobile, isDesktop } = useViewportKind()
 ```

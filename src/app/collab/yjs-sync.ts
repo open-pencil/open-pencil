@@ -1,8 +1,8 @@
 import { isEmptyObject, isEqual, omit, pickBy } from 'es-toolkit'
 import * as Y from 'yjs'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { siblingOrderKeys } from '@lawha/scene-graph/order-keys'
 
 import {
   decodeNodeFromYjs,

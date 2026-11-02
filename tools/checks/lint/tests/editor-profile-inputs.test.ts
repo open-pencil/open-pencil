@@ -5,7 +5,7 @@ import dedent from 'dedent'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'no-editor-profile-inputs'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 const check = "export const previewing = editor.state.canvasView.id === 'play'"
 const path = 'packages/vue/src/canvas/useCanvasInput.ts'
 

@@ -1,7 +1,7 @@
-import type { BlendMode, Effect } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
-import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import type { BlendMode, Effect } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
+import { TRANSPARENT } from '@lawha/scene-graph/constants'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 export type EffectColor = string | Color
 

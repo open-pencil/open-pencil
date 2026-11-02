@@ -88,7 +88,7 @@ export function bootSplashPlugin({ entry, pages }: BootSplashOptions): Plugin {
     return source
   }
   return {
-    name: 'open-pencil-boot-splash',
+    name: 'lawha-boot-splash',
     configResolved(resolved) {
       config = resolved
     },

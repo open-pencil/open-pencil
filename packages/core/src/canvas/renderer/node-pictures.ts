@@ -1,7 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
+import type { SceneNode } from '@lawha/scene-graph'
+import { strokeOverflow } from '@lawha/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 

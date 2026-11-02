@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { Command } from '@tauri-apps/plugin-shell'
 import * as v from 'valibot'
 
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import type { ACPAgentDef } from '@lawha/core/constants'
 
 import { HARNESS_INSTALL_TARGET } from '@/app/ai/agents/pi/companion'
 import { MCP_INSTALL_TARGET } from '@/app/automation/mcp/failure'
@@ -12,7 +12,7 @@ import type { PackageManager } from './companions'
 
 const lookupSchema = v.object({
   executables: v.record(v.string(), v.nullable(v.string())),
-  /** Versions of OpenPencil's own companions, keyed by package name. */
+  /** Versions of Lawha's own companions, keyed by package name. */
   versions: v.record(v.string(), v.nullable(v.string())),
   /** Whether this user can write npm's global folder; null without npm. */
   npmGlobalWritable: v.nullish(v.boolean()),

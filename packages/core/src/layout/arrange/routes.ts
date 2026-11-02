@@ -1,4 +1,4 @@
-import type { ConnectorControlPoint, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ConnectorControlPoint, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   connectorRoute,
   connectorSublayers,
@@ -9,8 +9,8 @@ import {
   elbowControlPoints,
   layoutConnector,
   type ConnectorPiece
-} from '@open-pencil/scene-graph/connectors'
-import type { Size, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/connectors'
+import type { Size, Vector } from '@lawha/scene-graph/primitives'
 
 /**
  * The control lines an elbow takes to run through bend points in turn: across to each point,

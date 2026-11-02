@@ -6,12 +6,12 @@ import {
   renderNodesToSVG,
   renderSVGNode,
   type SVGExportOptions
-} from '@open-pencil/core/io/formats/svg'
-import { parsePenFile } from '@open-pencil/pen'
-import { SceneGraph, type Fill, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
-import { createShapeWithText } from '@open-pencil/scene-graph/generated'
-import { outlineSVGPath } from '@open-pencil/scene-graph/polygon'
-import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
+} from '@lawha/core/io/formats/svg'
+import { parsePenFile } from '@lawha/pen'
+import { SceneGraph, type Fill, type SceneNode, type Stroke } from '@lawha/scene-graph'
+import { createShapeWithText } from '@lawha/scene-graph/generated'
+import { outlineSVGPath } from '@lawha/scene-graph/polygon'
+import { shapeWithTextGeometry } from '@lawha/scene-graph/shape-with-text'
 
 import { renderNodeSVGElement } from '#core/io/formats/svg/export'
 

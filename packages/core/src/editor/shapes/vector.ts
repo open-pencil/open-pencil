@@ -1,7 +1,7 @@
-import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+import type { SceneNode, VectorNetwork } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import type { EditorContext } from '#core/editor/types'
 import { computeAccurateBounds } from '#core/vector'

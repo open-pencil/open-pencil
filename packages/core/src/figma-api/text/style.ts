@@ -1,12 +1,12 @@
 import { mapValues, pickBy } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   paragraphIndexAt,
   paragraphSpacingAt,
   paragraphStyleAt
-} from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/text'
 
 import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'

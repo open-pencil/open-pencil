@@ -4,7 +4,7 @@ import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument } from '#fig/document/materialize'
 import { createDocumentReader } from '#fig/document/read'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('copies archive images into document-owned resources', () => {
   const bytes = new Uint8Array([1, 2, 3])

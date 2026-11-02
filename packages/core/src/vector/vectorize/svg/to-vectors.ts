@@ -7,12 +7,12 @@
  */
 import svgpath from 'svgpath'
 
-import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import type { Mat3 } from '@open-pencil/scene-graph/matrix'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import type { Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Fill, Stroke, VectorNetwork, WindingRule } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import type { Mat3 } from '@lawha/scene-graph/matrix'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
+import type { Rect, Size, Vector } from '@lawha/scene-graph/primitives'
 
 import { createPathStroke } from '#core/icons/path-style'
 import { extractSVGContent, isSVGPathShown } from '#core/icons/svg'

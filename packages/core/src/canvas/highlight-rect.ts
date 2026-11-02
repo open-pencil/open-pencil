@@ -1,6 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { FLASH_PADDING, FLASH_RADIUS, FLASH_STROKE_WIDTH } from '#core/constants'
 import { type RotationPreview } from '#core/geometry'

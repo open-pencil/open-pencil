@@ -3,8 +3,8 @@ import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, watchEffect } from 'vue'
 
-import { resolveEditorProfile } from '@open-pencil/core'
-import { useDesignCheckMessages, useI18n } from '@open-pencil/vue/i18n'
+import { resolveEditorProfile } from '@lawha/core'
+import { useDesignCheckMessages, useI18n } from '@lawha/vue/i18n'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { isVersionHistoryOpen } from '@/app/cloud/integration'

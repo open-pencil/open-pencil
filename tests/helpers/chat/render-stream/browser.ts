@@ -4,8 +4,8 @@ import { createRenderStreamModel, type RenderStreamScenario } from './model'
 
 /** Test-only browser entrypoint. Uses the existing transport override, not production test hooks. */
 export function installBrowserRenderStream(scenario: RenderStreamScenario) {
-  const store = window.openPencil?.getStore?.()
-  const setTransport = window.openPencil?.setChatTransport
+  const store = window.lawha?.getStore?.()
+  const setTransport = window.lawha?.setChatTransport
   if (!store || !setTransport) throw new Error('Editor/chat bridge unavailable')
   const { model, ...controls } = createRenderStreamModel(scenario)
   setTransport(() =>

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createLibraryRevision, materializeLibraryAsset } from '@open-pencil/core/library'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { applyComponentPropertyValue } from '@open-pencil/scene-graph/components'
+import { createLibraryRevision, materializeLibraryAsset } from '@lawha/core/library'
+import { SceneGraph } from '@lawha/scene-graph'
+import { applyComponentPropertyValue } from '@lawha/scene-graph/components'
 
 /** A library whose button swaps its icon through an instance-swap property. */
 function libraryWithIconProperty() {

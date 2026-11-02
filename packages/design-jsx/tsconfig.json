@@ -16,7 +16,7 @@
     "types": ["bun"],
     "paths": {
       "#design-jsx/*": ["./src/*"],
-      "@open-pencil/design-jsx": ["./src/index.ts"]
+      "@lawha/design-jsx": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

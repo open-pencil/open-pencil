@@ -1,6 +1,6 @@
 # Compatibilité avec Figma
 
-Comparaison entre les fonctions de Figma Design et l’état actuel d’OpenPencil.
+Comparaison entre les fonctions de Figma Design et l’état actuel d’Lawha.
 
 ::: tip État
 ✅ Pris en charge — fonctionne de bout en bout · 🟡 Partiel — le comportement principal existe, mais certaines fonctions manquent · 🔲 Non implémenté
@@ -73,7 +73,7 @@ Connexions, déclencheurs, actions, animations, superpositions, défilement, par
 | Copier vers Figma | ✅ | Produit un binaire Kiwi lisible par Figma |
 | Importer Sketch | 🔲 | Pas d’analyseur `.sketch` |
 | Export image/SVG/PDF | ✅ | PNG, JPG, WEBP, SVG, PDF avec polices intégrées lorsque leurs fichiers peuvent l’être, PPTX et draw.io |
-| Historique des versions | 🟡 | Documents OpenPencil Cloud (en préversion) : versions nommées, consultation, aperçu, restauration et duplication ; pas pour les fichiers locaux |
+| Historique des versions | 🟡 | Documents Lawha Cloud (en préversion) : versions nommées, consultation, aperçu, restauration et duplication ; pas pour les fichiers locaux |
 | Ressources entre outils | ✅ | Presse-papiers Figma et copie en texte/SVG/PNG/JSX |
 
 ## API de plugins et scripts
@@ -95,7 +95,7 @@ Connexions, déclencheurs, actions, animations, superpositions, défilement, par
 | Extraits de code | 🟡 | Design JSX, HTML, Vue et React avec CSS ou Tailwind et valeurs liées aux tokens ; pas de Swift, Kotlin ni Compose |
 | Tailwind CSS v4 | ✅ | HTML avec classes utilitaires depuis Code, la CLI ou l’API |
 | Figma pour VS Code | 🔲 | Pas d’intégration à l’extension de l’éditeur |
-| Serveur MCP | ✅ | `@open-pencil/mcp` avec stdio et HTTP ; 125 outils du cœur plus des outils de document, d’historique et de réglages |
+| Serveur MCP | ✅ | `@lawha/mcp` avec stdio et HTTP ; 125 outils du cœur plus des outils de document, d’historique et de réglages |
 | CLI | ✅ | 24 commandes, dont `info`, `tree`, `find`, `query`, `node`, `pages`, `variables`, `tokens`, `fonts`, `lint`, `analyze`, `export`, `import`, `convert`, `diff`, `eval` et `tool` |
 
 ## Figma Draw

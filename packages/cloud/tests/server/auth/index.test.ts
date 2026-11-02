@@ -28,11 +28,11 @@ function dummyPostgresDialect(): Dialect {
 const baseConfig = {
   deployment: 'self-hosted',
   publicURL: 'https://pencil.example.com',
-  databaseURL: 'postgresql://openpencil:secret@database/openpencil',
+  databaseURL: 'postgresql://lawha:secret@database/lawha',
   authSecret: 'a-secure-auth-secret-with-at-least-32-characters',
   s3Endpoint: 'https://objects.example.com',
   s3Region: 'us-east-1',
-  s3Bucket: 'openpencil',
+  s3Bucket: 'lawha',
   s3AccessKeyId: 'access-key',
   s3SecretAccessKey: 'secret-key'
 }

@@ -1,5 +1,5 @@
-import { parseFlowchart } from '@open-pencil/mermaid'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { parseFlowchart } from '@lawha/mermaid'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { addFlowchart } from './layers'
 

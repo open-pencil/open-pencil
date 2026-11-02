@@ -5,7 +5,7 @@ description: Panele boczne ze stronami i warstwami oparte na PageListRoot, Layer
 
 # Panele nawigacyjne
 
-Panele boczne OpenPencil zwykle zawierają:
+Panele boczne Lawha zwykle zawierają:
 
 - listę stron;
 - drzewo warstw.

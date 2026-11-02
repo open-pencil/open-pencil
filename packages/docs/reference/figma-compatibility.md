@@ -1,6 +1,6 @@
 # Figma Feature Matrix
 
-Feature-by-feature comparison of Figma Design capabilities with Open Pencil's current implementation status.
+Feature-by-feature comparison of Figma Design capabilities with Lawha's current implementation status.
 
 ::: tip Status Legend
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
@@ -197,7 +197,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Figma clipboard (copy) | ✅ | Encode Kiwi binary that Figma can read |
 | Sketch file import | 🔲 | .sketch file parsing |
 | Image/SVG/PDF export | ✅ | PNG, JPG, WEBP, SVG, PDF with embedded fonts where their files can be embedded, PPTX, and draw.io |
-| Version history | 🟡 | OpenPencil Cloud documents (in preview): save named versions, browse, preview, restore, and duplicate; not for local files |
+| Version history | 🟡 | Lawha Cloud documents (in preview): save named versions, browse, preview, restore, and duplicate; not for local files |
 | Copy assets between tools | ✅ | Figma clipboard (Kiwi binary), Copy as text/SVG/PNG/JSX |
 
 ## Plugin API & Scripting
@@ -219,7 +219,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Code snippets | 🟡 | Design JSX, HTML, Vue, and React with CSS or Tailwind and token-aware values; no Swift, Kotlin, or Compose |
 | Tailwind CSS v4 export | ✅ | Export as HTML with Tailwind utility classes from Code panel, CLI, or programmatically |
 | Figma for VS Code | 🔲 | Editor plugin integration |
-| MCP server | ✅ | `@open-pencil/mcp` with stdio + HTTP transports; 125 core tools plus document, history, and settings tools |
+| MCP server | ✅ | `@lawha/mcp` with stdio + HTTP transports; 125 core tools plus document, history, and settings tools |
 | CLI tools | ✅ | 24 commands, including info, tree, find, query, node, pages, variables, tokens, fonts, lint, analyze, export, import, convert, diff, eval, and tool |
 
 ## Figma Draw

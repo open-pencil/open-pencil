@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import type { GUID } from '@open-pencil/kiwi/fig'
-import type { VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@lawha/kiwi/fig'
+import type { VariableDataEntry } from '@lawha/kiwi/fig/codec'
 
 const guidSchema = v.looseObject({
   sessionID: v.pipe(v.number(), v.integer(), v.minValue(0)),
@@ -58,7 +58,7 @@ const dataSchema: v.GenericSchema<VariableDataEntry> = v.lazy(() =>
 type Alias = NonNullable<NonNullable<VariableDataEntry['value']>['alias']>
 
 /**
- * Walk the aliases and mode keys of an expression OpenPencil does not evaluate, always in the same
+ * Walk the aliases and mode keys of an expression Lawha does not evaluate, always in the same
  * order, without reading the function. `alias` gets each alias with its position and may return a
  * replacement; `mode` does the same for each mode key. Changes `entry` in place.
  */

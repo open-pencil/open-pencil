@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 
-import type { CloudSignInMethod, WorkspaceRole } from '@open-pencil/cloud/contract'
+import type { CloudSignInMethod, WorkspaceRole } from '@lawha/cloud/contract'
 
 export type PortalSection = {
   id: string

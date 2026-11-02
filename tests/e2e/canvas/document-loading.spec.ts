@@ -4,8 +4,8 @@ const editor = useEditorSetup('/?test&no-chrome&no-rulers')
 
 test('shows staged and determinate document loading progress in the existing canvas overlay', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const load = store.preparationController.begin({
       kind: 'document-open',
       phase: 'resolving-fonts',
@@ -43,7 +43,7 @@ test('shows staged and determinate document loading progress in the existing can
   }
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) return
     store.preparationController.dispose()
   })

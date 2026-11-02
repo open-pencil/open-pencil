@@ -1,6 +1,6 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { readIcon } from '@open-pencil/scene-graph/icons'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneNode } from '@lawha/scene-graph'
+import { readIcon } from '@lawha/scene-graph/icons'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import {
   COMPONENT_LABEL_FONT_SIZE,

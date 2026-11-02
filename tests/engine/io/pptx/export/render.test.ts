@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderNodesToPPTX, type PPTXExportStats, BUILTIN_IO_FORMATS } from '@open-pencil/core/io'
+import { renderNodesToPPTX, type PPTXExportStats, BUILTIN_IO_FORMATS } from '@lawha/core/io'
 
 import { expectDefined } from '#tests/helpers/assert'
 

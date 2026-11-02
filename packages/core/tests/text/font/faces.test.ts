@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { facesFromStyles, nearestFamilyFace } from '@open-pencil/core/text'
+import { facesFromStyles, nearestFamilyFace } from '@lawha/core/text'
 
 // Lora's faces as Figma desktop 126 lists them.
 const lora = facesFromStyles([

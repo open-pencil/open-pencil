@@ -16,7 +16,7 @@ function pkg(name: string, dependencies: Record<string, string> = {}): Workspace
 
 describe('discoverPublicPackages', () => {
   test('discovers public workspaces and excludes private tooling', async () => {
-    const root = join(tmpdir(), `open-pencil-package-catalog-${crypto.randomUUID()}`)
+    const root = join(tmpdir(), `lawha-package-catalog-${crypto.randomUUID()}`)
     await mkdir(join(root, 'packages/public'), { recursive: true })
     await mkdir(join(root, 'tools/private'), { recursive: true })
     await writeFile(

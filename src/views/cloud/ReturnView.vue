@@ -2,8 +2,8 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { cloudEditorReturnURL } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { cloudEditorReturnURL } from '@lawha/cloud/client'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { PORTAL_HOME } from '@/app/cloud-portal/navigation'

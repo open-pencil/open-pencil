@@ -92,7 +92,7 @@ export interface FigKiwiDecodeResult {
   kind: FigFileKind
 }
 
-/** Decode one raw `fig-kiwi` canvas payload. Outer `.fig` archive handling lives in `@open-pencil/fig`. */
+/** Decode one raw `fig-kiwi` canvas payload. Outer `.fig` archive handling lives in `@lawha/fig`. */
 export function decodeFigKiwiCanvas(
   data: Uint8Array,
   onPages?: (pages: FigPageManifestEntry[]) => void,

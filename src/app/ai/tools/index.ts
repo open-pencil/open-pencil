@@ -1,13 +1,13 @@
 import { tool } from 'ai'
 import { isPlainObject } from 'es-toolkit'
 
-import { graphFromPageSnapshot } from '@open-pencil/core'
+import { graphFromPageSnapshot } from '@lawha/core'
 import {
   registerComponentCatalog,
   isAtomicTool,
   toolsToAI,
   type AIAdapterOptions
-} from '@open-pencil/core/tools'
+} from '@lawha/core/tools'
 
 import {
   currentRun,

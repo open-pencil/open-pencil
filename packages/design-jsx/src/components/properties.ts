@@ -5,17 +5,17 @@ import type {
   ComponentPropertyReference,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   componentPropertyDefinitions,
   createComponentPropertyId,
   exposableInstances,
   instanceExposureIssue
-} from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph/components'
 
 import { isLayerRef, type LayerRef } from '../refs'
 
-const PROPERTY_SYMBOL = Symbol.for('open-pencil.component-property')
+const PROPERTY_SYMBOL = Symbol.for('lawha.component-property')
 
 /**
  * A component property, by its name in the component that holds it. Where it is placed picks

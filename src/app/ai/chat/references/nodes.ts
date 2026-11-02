@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { resolveReferencedNodes, type ReferencedNode } from '@/app/ai/chat/context'
 

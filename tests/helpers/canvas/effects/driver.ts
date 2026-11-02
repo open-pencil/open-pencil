@@ -7,8 +7,8 @@ export function blurEffectsDriver(page: () => Page) {
   return {
     show() {
       return page().evaluate(async () => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const sceneURL = '/tests/helpers/canvas/effects/scene.ts'
         const scenes: typeof EffectScenes = await import(sceneURL)
         scenes.createBlurEffectsScene(store.graph, store.state.currentPageId)
@@ -24,8 +24,8 @@ export function shadowSilhouetteDriver(page: () => Page) {
   return {
     show() {
       return page().evaluate(async () => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const sceneURL = '/tests/helpers/canvas/effects/scene.ts'
         const scenes: typeof EffectScenes = await import(sceneURL)
         scenes.createShadowSilhouetteScene(store.graph, store.state.currentPageId)

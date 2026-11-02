@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import { nodeChangeToProps, sceneNodeToKiwi } from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type MaskType } from '@open-pencil/scene-graph'
+import { nodeChangeToProps, sceneNodeToKiwi } from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type MaskType } from '@lawha/scene-graph'
 
 const MASK_TYPE_VALUES = ['ALPHA', 'VECTOR', 'LUMINANCE'] as const satisfies readonly MaskType[]
 

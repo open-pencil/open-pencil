@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/demo-tools",
+  "name": "@lawha/demo-tools",
   "private": true,
   "type": "module",
   "imports": {
@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.139",
-    "@open-pencil/core": "workspace:*",
-    "@open-pencil/design-jsx": "workspace:*",
-    "@open-pencil/package-artifacts-tools": "workspace:*",
-    "@open-pencil/scene-graph": "workspace:*",
+    "@lawha/core": "workspace:*",
+    "@lawha/design-jsx": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*",
+    "@lawha/scene-graph": "workspace:*",
     "@playwright/test": "^1.63.0",
     "js-base64": "^3.9.3",
     "proper-lockfile": "4.1.2",

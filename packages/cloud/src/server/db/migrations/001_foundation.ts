@@ -3,7 +3,7 @@ import { type Kysely, sql } from 'kysely'
 
 import { addCurrentTimestampColumns } from './helpers'
 
-const UPDATED_AT_TRIGGER = 'openpencil_set_updated_at'
+const UPDATED_AT_TRIGGER = 'lawha_set_updated_at'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema

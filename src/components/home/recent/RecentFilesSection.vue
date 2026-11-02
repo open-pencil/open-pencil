@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
 import { clearRecentFiles, recentDocumentKind, type RecentDocument } from '@/app/recent-files'

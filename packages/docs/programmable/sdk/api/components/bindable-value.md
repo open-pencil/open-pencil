@@ -38,8 +38,8 @@ where possible.
 ## Provider example
 
 ```ts twoslash
-import type { Variable } from '@open-pencil/scene-graph'
-import type { BindingProvider, BindingTarget } from '@open-pencil/vue/controls/binding-provider'
+import type { Variable } from '@lawha/scene-graph'
+import type { BindingProvider, BindingTarget } from '@lawha/vue/controls/binding-provider'
 
 const variable: Variable = {
   id: 'spacing/md', name: 'Spacing / Medium', type: 'FLOAT',

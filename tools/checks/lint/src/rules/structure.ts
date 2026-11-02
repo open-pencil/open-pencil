@@ -262,17 +262,17 @@ const noFunctionAliasImports = {
   }
 } satisfies RuleDefinition
 
-const noDirectOpenPencilBrowserStore = {
+const noDirectLawhaBrowserStore = {
   meta: {
     docs: {
-      description: 'Disallow direct window.openPencil.store access'
+      description: 'Disallow direct window.lawha.store access'
     }
   },
   create(context) {
-    function isOpenPencilMember(node: TSESTree.Expression): boolean {
+    function isLawhaMember(node: TSESTree.Expression): boolean {
       return (
         node?.type === 'MemberExpression' &&
-        staticPropertyName(node.property) === 'openPencil' &&
+        staticPropertyName(node.property) === 'lawha' &&
         ((node.object?.type === 'Identifier' && node.object.name === 'window') ||
           (node.object?.type === 'Identifier' && node.object.name === 'globalThis'))
       )
@@ -281,32 +281,32 @@ const noDirectOpenPencilBrowserStore = {
     return {
       MemberExpression(node) {
         if (staticPropertyName(node.property) !== 'store') return
-        if (!isOpenPencilMember(node.object)) return
+        if (!isLawhaMember(node.object)) return
         context.report({
           node,
           message:
-            'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
+            'Use window.lawha.getStore() instead of accessing window.lawha.store directly.'
         })
       }
     }
   }
 } satisfies RuleDefinition
 
-const noDirectOpenPencilWindowInternals = {
+const noDirectLawhaWindowInternals = {
   meta: {
     docs: {
-      description: 'Disallow direct access to private OpenPencil window internals'
+      description: 'Disallow direct access to private Lawha window internals'
     }
   },
   create(context) {
     return {
       MemberExpression(node) {
         const name = staticPropertyName(node.property)
-        if (!name?.startsWith('__OPEN_PENCIL')) return
+        if (!name?.startsWith('__LAWHA')) return
         context.report({
           node,
           message:
-            'Do not access window.__OPEN_PENCIL* directly. Use src/app/browser-bridge.ts or tests/helpers/store.ts instead.'
+            'Do not access window.__LAWHA* directly. Use src/app/browser-bridge.ts or tests/helpers/store.ts instead.'
         })
       }
     }
@@ -366,8 +366,8 @@ export {
   noComponentRootSiblingFolder,
   noUselessPassThroughWrappers,
   noFunctionAliasImports,
-  noDirectOpenPencilBrowserStore,
-  noDirectOpenPencilWindowInternals,
+  noDirectLawhaBrowserStore,
+  noDirectLawhaWindowInternals,
   noBunGlobalsInCli,
   noTopLevelPrefixedTestFiles,
   noSiblingDomainPrefixedFiles

@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import type { ConstraintType, SceneNode } from '@open-pencil/scene-graph'
+import type { ConstraintType, SceneNode } from '@lawha/scene-graph'
 
 import {
   isConstraintEligible,

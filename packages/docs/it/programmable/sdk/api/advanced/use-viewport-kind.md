@@ -5,7 +5,7 @@ description: Indicatori reattivi per viewport mobile e desktop in un’interfacc
 
 # useViewportKind
 
-`useViewportKind()` restituisce una classificazione semplificata della dimensione del viewport usata dall’interfaccia reattiva di OpenPencil.
+`useViewportKind()` restituisce una classificazione semplificata della dimensione del viewport usata dall’interfaccia reattiva di Lawha.
 
 Usalo quando basta distinguere mobile e desktop senza configurare direttamente `useBreakpoints()`.
 

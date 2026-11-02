@@ -5,7 +5,7 @@
  */
 import { join } from 'node:path'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import { keycapModule, keycapOutline } from './keycap'
 import { EMOJI_METRICS_ASSET, emojiMetricsFont } from './metrics'
@@ -36,7 +36,7 @@ const root = await resolveWorkspaceRoot(import.meta.dir)
 const assets = join(root, 'packages/core/assets')
 const output = writeFontTables(emojiMetricsFont(readFontTables(emoji), EMOJI_COPYRIGHT))
 await Bun.write(join(assets, EMOJI_METRICS_ASSET), output)
-await Bun.write(join(assets, 'OpenPencilEmojiMetrics-OFL.txt'), emojiLicence)
+await Bun.write(join(assets, 'LawhaEmojiMetrics-OFL.txt'), emojiLicence)
 await Bun.write(join(assets, 'NotoSansSymbols-OFL.txt'), symbolsLicence)
 const keycap = join(root, 'packages/core/src/text/font/keycap.ts')
 await Bun.write(keycap, keycapModule(keycapOutline(symbols), SYMBOLS_COPYRIGHT))

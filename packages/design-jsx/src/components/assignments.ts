@@ -1,13 +1,13 @@
 import { isPlainObject, mapValues, omit, omitBy, pick, pickBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
   exposedInstances
-} from '@open-pencil/scene-graph/components'
-import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+} from '@lawha/scene-graph/components'
+import { instanceMainComponent } from '@lawha/scene-graph/instances'
 
 import { DESIGN_JSX_SUPPORTED_PROPERTIES } from '../definitions'
 import { isLayerRef, type LayerRef } from '../refs'

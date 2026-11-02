@@ -13,7 +13,7 @@ export const en: LandingMessages = {
     figma: {
       title: 'Open what you already have',
       detail:
-        'OpenPencil reads .fig files directly: pages, components, instances, variables, and auto layout arrive as editable layers, and you can save back to .fig. Paste SVG or open HTML and CSS, and they become layers too, laid out as a browser lays them out.',
+        'Lawha reads .fig files directly: pages, components, instances, variables, and auto layout arrive as editable layers, and you can save back to .fig. Paste SVG or open HTML and CSS, and they become layers too, laid out as a browser lays them out.',
       hint: 'This is the app’s own tour, a real .fig file. Open a chapter in the layers and click around.'
     },
     design: {
@@ -43,7 +43,7 @@ export const en: LandingMessages = {
     linting: {
       title: 'Linting',
       detail:
-        'OpenPencil checks the design as you work: contrast, text too small to read, default names, hidden and empty layers, stray groups. Problems are marked on the canvas, many come with a fix you apply in one click, and the same rules run in the CLI and for agents.',
+        'Lawha checks the design as you work: contrast, text too small to read, default names, hidden and empty layers, stray groups. Problems are marked on the canvas, many come with a fix you apply in one click, and the same rules run in the CLI and for agents.',
       hint: 'Click a marker on the canvas, or apply a fix from the list.'
     },
     ai: {
@@ -67,13 +67,13 @@ export const en: LandingMessages = {
     script: {
       title: 'Script everything',
       detail:
-        'The openpencil CLI works on a file with no app running, or drives the app you have open. Inspect a document, query it with XPath, lint it, export it, or run Figma plugin code against it with eval. The MCP server gives agents the same reach over stdio or HTTP.',
+        'The lawha CLI works on a file with no app running, or drives the app you have open. Inspect a document, query it with XPath, lint it, export it, or run Figma plugin code against it with eval. The MCP server gives agents the same reach over stdio or HTTP.',
       hint: 'Run a command and watch the canvas.'
     },
     sdk: {
       title: 'Build it into your own product',
       detail:
-        'OpenPencil is a toolkit as much as an app: a framework-neutral engine, a headless Vue SDK, and separate packages for the scene graph and file formats. Embed a canvas in your product, render and check designs in CI, or build a different editor on the same engine. Every canvas on this page is that SDK running inside a documentation site.',
+        'Lawha is a toolkit as much as an app: a framework-neutral engine, a headless Vue SDK, and separate packages for the scene graph and file formats. Embed a canvas in your product, render and check designs in CI, or build a different editor on the same engine. Every canvas on this page is that SDK running inside a documentation site.',
       hint: 'The code beside the canvas is all it takes to mount one.'
     }
   },
@@ -146,7 +146,7 @@ export const en: LandingMessages = {
     next: {
       label: 'Next',
       lead: {
-        title: 'Self-hosted OpenPencil',
+        title: 'Self-hosted Lawha',
         detail:
           'The whole workspace inside your own network: sync, sharing, comments, and team libraries without sending a file to anyone else.',
         features: [
@@ -172,7 +172,7 @@ export const en: LandingMessages = {
         }
       ],
       cloud: {
-        title: 'OpenPencil Cloud',
+        title: 'Lawha Cloud',
         detail:
           'The hosted workspace for teams: live sync, sharing, libraries, and AI, with nothing to run.'
       }
@@ -190,7 +190,7 @@ export const en: LandingMessages = {
   },
   cloud: {
     badge: 'Early access',
-    title: 'OpenPencil Cloud',
+    title: 'Lawha Cloud',
     lede: "Your team's design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI, with nothing to install or run. Your files stay open: export them as .fig whenever you like.",
     features: [
       {
@@ -221,14 +221,14 @@ export const en: LandingMessages = {
     joined: 'Check your inbox',
     joinedDetail: 'Open the link we sent to confirm your address.',
     failed: 'Couldn’t reach the waitlist. Check your connection and try again.',
-    privacy: 'We only email you about OpenPencil Cloud.',
+    privacy: 'We only email you about Lawha Cloud.',
     refused: 'We couldn’t confirm you’re not a bot. Try again.',
     limited: 'Too many attempts. Try again in a minute.',
-    unavailable: 'You can’t join from here. Join on openpencil.dev instead.'
+    unavailable: 'You can’t join from here. Join on lawha.invalid instead.'
   },
   closing: {
     title: 'Take your designs with you.',
-    download: 'Download OpenPencil',
+    download: 'Download Lawha',
     docs: 'Read the docs',
     cloud: 'Join the Cloud waitlist'
   },
@@ -266,7 +266,7 @@ export const en: LandingMessages = {
     }
   },
   download: {
-    title: 'Download OpenPencil',
+    title: 'Download Lawha',
     lede: 'The desktop app for macOS, Windows, and Linux. Free and open source, with nothing to sign up for.',
     version: 'Version {version}, released {date}',
     forPlatform: 'Download for {platform}',
@@ -302,7 +302,7 @@ export const en: LandingMessages = {
       },
       web: {
         title: 'In the browser',
-        detail: 'The same editor at app.openpencil.dev, with nothing to install.',
+        detail: 'The same editor at app.lawha.invalid, with nothing to install.',
         action: 'Open the web app'
       },
       cli: {

@@ -1,11 +1,11 @@
-import type { EditorState } from '@open-pencil/core'
+import type { EditorState } from '@lawha/core'
 import type {
   VectorNetwork,
   VectorRegion,
   VectorSegment,
   VectorVertex
-} from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 export type NodeEditState = {
   nodeId: string

@@ -13,7 +13,7 @@ import {
 import type { PublicationPlanEntry } from '#release/workflow'
 
 const source = {
-  repository: 'open-pencil/open-pencil',
+  repository: 'lawha/lawha',
   tag: 'v1.0.0-beta.1',
   commit: 'a'.repeat(40)
 }
@@ -47,7 +47,7 @@ async function fixture() {
       expect(release).toEqual(source)
       verified.push(`${name}@${version}`)
       return {
-        run: 'https://github.com/open-pencil/open-pencil/actions/runs/1/attempts/1',
+        run: 'https://github.com/aliaaldihnayn-lab/design/actions/runs/1/attempts/1',
         integrity: tarballIntegrity(registryBytes),
         tarball: 'https://registry.npmjs.org/one/-/one-1.0.0-beta.1.tgz'
       }

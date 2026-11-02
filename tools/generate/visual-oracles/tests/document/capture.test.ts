@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { captureDocumentOracle } from '#visual/capture/document'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /** Two captures only line up if every node is addressed by page as well as position. */
 test('each page keeps its own node paths under a page prefix', () => {

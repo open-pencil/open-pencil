@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 type CornerProps = Partial<
   Pick<
@@ -27,8 +27,8 @@ export function shapeHandlesDriver(page: () => Page) {
     show(props: CornerProps = {}, type: CornerShape = 'RECTANGLE') {
       return page().evaluate(
         ({ props, type }) => {
-          const store = window.openPencil?.getStore?.()
-          if (!store) throw new Error('OpenPencil store not initialized')
+          const store = window.lawha?.getStore?.()
+          if (!store) throw new Error('Lawha store not initialized')
           const node = store.graph.createNode(type, store.state.currentPageId, {
             name: 'Card',
             x: 0,
@@ -59,7 +59,7 @@ export function shapeHandlesDriver(page: () => Page) {
     /** Top-left, top-right, bottom-right, and bottom-left radii as drawn. */
     radii(nodeId: string) {
       return page().evaluate((id) => {
-        const node = window.openPencil?.getStore?.().graph.getNode(id)
+        const node = window.lawha?.getStore?.().graph.getNode(id)
         if (!node) return null
         const { cornerRadius: radius } = node
         return node.independentCorners
@@ -71,7 +71,7 @@ export function shapeHandlesDriver(page: () => Page) {
     /** A polygon's or star's point count and a star's inner ratio. */
     points(nodeId: string) {
       return page().evaluate((id) => {
-        const node = window.openPencil?.getStore?.().graph.getNode(id)
+        const node = window.lawha?.getStore?.().graph.getNode(id)
         return node ? { count: node.pointCount, ratio: node.starInnerRadius } : null
       }, nodeId)
     },
@@ -79,7 +79,7 @@ export function shapeHandlesDriver(page: () => Page) {
     /** An ellipse's start and end in whole degrees and its inner ratio, or null for a whole one. */
     arc(nodeId: string) {
       return page().evaluate((id) => {
-        const arc = window.openPencil?.getStore?.().graph.getNode(id)?.arcData
+        const arc = window.lawha?.getStore?.().graph.getNode(id)?.arcData
         if (!arc) return null
         const degrees = (angle: number) => Math.round((angle * 180) / Math.PI)
         return {

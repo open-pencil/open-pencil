@@ -14,9 +14,9 @@ const PREVIEW_PARAM = 'cloud'
  * offline start shows what the last online one did.
  */
 const listedFrom = IS_BROWSER
-  ? useLocalStorage<string | null>('open-pencil:cloud-listed-from', null)
+  ? useLocalStorage<string | null>('lawha:cloud-listed-from', null)
   : ref<string | null>(null)
-const preview = IS_BROWSER ? useLocalStorage('open-pencil:cloud-preview', false) : ref(false)
+const preview = IS_BROWSER ? useLocalStorage('lawha:cloud-preview', false) : ref(false)
 
 function versionParts(version: string): number[] | null {
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version)

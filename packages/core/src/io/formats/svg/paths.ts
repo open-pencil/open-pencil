@@ -1,10 +1,10 @@
 import { compact } from 'es-toolkit/array'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { polygonVertices } from '@open-pencil/scene-graph/geometry'
-import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
-import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
-import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network'
+import type { SceneNode } from '@lawha/scene-graph'
+import { polygonVertices } from '@lawha/scene-graph/geometry'
+import { outlineSVGPath, polygonOutline } from '@lawha/scene-graph/polygon'
+import { shapeWithTextGeometry } from '@lawha/scene-graph/shape-with-text'
+import { vectorNetworkToSVGPaths } from '@lawha/scene-graph/vector-network'
 
 import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
 import { nodeHasRadius } from '#core/canvas/shapes'

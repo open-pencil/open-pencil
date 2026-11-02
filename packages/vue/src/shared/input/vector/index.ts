@@ -25,9 +25,9 @@ export {
   isEndpoint,
   NODE_HIT_THRESHOLD
 } from '#vue/shared/input/vector/hit-test'
-import type { Editor } from '@open-pencil/core'
-import { regionVertexIndices, vectorHandleId } from '@open-pencil/core/vector'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Editor } from '@lawha/core'
+import { regionVertexIndices, vectorHandleId } from '@lawha/core/vector'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 type NodeEditEditor = Partial<{
   nodeEditSelectVertex: (vertexIndex: number, addToSelection: boolean) => void

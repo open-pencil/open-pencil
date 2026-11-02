@@ -1,15 +1,15 @@
 import {
-  OPEN_PENCIL_PLUGIN_DATA,
+  LAWHA_PLUGIN_DATA,
   readPluginData,
   withPluginData
-} from '@open-pencil/scene-graph/plugin-data'
+} from '@lawha/scene-graph/plugin-data'
 import {
   cachedStatusWorkflow,
   shownStatusState,
   statusPlacement,
   type StatusState,
   type StatusWorkflow
-} from '@open-pencil/scene-graph/statuses'
+} from '@lawha/scene-graph/statuses'
 
 import type { EditorContext } from './types'
 
@@ -65,7 +65,7 @@ export function createStatusActions(ctx: EditorContext) {
     next: StatusWorkflow,
     moves: Readonly<Record<string, string | null>> = {}
   ): void {
-    const { statuses } = OPEN_PENCIL_PLUGIN_DATA
+    const { statuses } = LAWHA_PLUGIN_DATA
     const rootId = ctx.graph.rootId
     const previous = readPluginData(ctx.graph.getNode(rootId)?.pluginData, statuses)
     const write = (value: StatusWorkflow | undefined) => {

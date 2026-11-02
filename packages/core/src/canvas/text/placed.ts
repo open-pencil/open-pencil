@@ -2,9 +2,9 @@ import type { Paragraph } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { textLengthPixels } from '@open-pencil/scene-graph/text'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import type { SceneNode } from '@lawha/scene-graph'
+import { textLengthPixels } from '@lawha/scene-graph/text'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
 
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { shownCharacters } from '#core/text/case'

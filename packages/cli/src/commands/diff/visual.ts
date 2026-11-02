@@ -4,7 +4,7 @@ import { defineCommand } from 'citty'
 import { isUndefined, omitBy } from 'es-toolkit'
 import { toUint8Array } from 'js-base64'
 
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { dim, fmtSummary, kv, ok, printError } from '#cli/format'
 import { runToolData } from '#cli/tool-data'

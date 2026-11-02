@@ -1,10 +1,10 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
+import type { VectorNetwork, VectorSegment } from '@lawha/scene-graph'
 import {
   normalizeVectorNetwork,
   validateVectorNetwork
-} from '@open-pencil/scene-graph/vector-network'
+} from '@lawha/scene-graph/vector-network'
 
 describe('validateVectorNetwork', () => {
   test('valid network returns no errors', () => {

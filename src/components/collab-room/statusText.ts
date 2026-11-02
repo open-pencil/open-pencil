@@ -1,4 +1,4 @@
-import type { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import type { useCollaborationMessages } from '@lawha/vue/i18n'
 
 import type { RoomStatus } from '@/app/collab/room/status'
 

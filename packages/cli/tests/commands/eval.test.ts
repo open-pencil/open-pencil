@@ -7,7 +7,7 @@ import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
 import * as v from 'valibot'
 
-import { getTextMeasurer } from '@open-pencil/core/layout'
+import { getTextMeasurer } from '@lawha/core/layout'
 
 import { loadDocument, measureDocumentText } from '#cli/headless'
 
@@ -28,7 +28,7 @@ async function cli(args: string[], stdin?: string) {
 
 describe('eval CLI', () => {
   test('measures the text a script edits in the font the document sets for it', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-eval-fonts-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-eval-fonts-'))
     const source = join(dir, 'tag.pen')
     const output = join(dir, 'tag.fig')
     // Inter at 600 is not among the faces the measurer starts with.
@@ -101,7 +101,7 @@ describe('eval CLI', () => {
   })
 
   test('saves a script’s edits laid out, though the script never read them back', async () => {
-    const out = join(await mkdtemp(join(tmpdir(), 'open-pencil-eval-')), 'badge.fig')
+    const out = join(await mkdtemp(join(tmpdir(), 'lawha-eval-')), 'badge.fig')
     // A hugging badge whose label a property shortens: its saved width fits the new label.
     const script = `
       const badge = figma.createComponent()
@@ -140,7 +140,7 @@ describe('eval CLI', () => {
   })
 
   test('--write saves a thumbnail of the Cover page', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-eval-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-eval-'))
     const html = join(dir, 'tall.html')
     const file = join(dir, 'cover.fig')
     await writeFile(html, '<div style="width:100px;height:400px;background:#000"></div>')

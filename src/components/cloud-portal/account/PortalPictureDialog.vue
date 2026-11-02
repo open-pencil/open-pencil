@@ -3,8 +3,8 @@ import { useObjectUrl } from '@vueuse/core'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import type { Size } from '@open-pencil/scene-graph/primitives'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { Size } from '@lawha/scene-graph/primitives'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import {
   centredCrop,

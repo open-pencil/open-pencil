@@ -1,6 +1,6 @@
 ---
 title: Справочник API
-description: Компоненты, composables и низкоуровневые API пакета @open-pencil/vue.
+description: Компоненты, composables и низкоуровневые API пакета @lawha/vue.
 ---
 
 # Справочник API

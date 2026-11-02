@@ -26,7 +26,7 @@ export const localeThemeConfig = (
     { text: nav.sdk, link: `${prefix}/programmable/sdk/` },
     { text: nav.reference, link: `${prefix}/reference/keyboard-shortcuts` },
     { text: nav.development, link: '/development/contributing' },
-    { text: nav.openApp, link: 'https://app.openpencil.dev' },
+    { text: nav.openApp, link: 'https://app.lawha.invalid' },
   ],
   sidebar: {
     [`${prefix}/user-guide/`]: userGuideSidebar(prefix, sidebar),

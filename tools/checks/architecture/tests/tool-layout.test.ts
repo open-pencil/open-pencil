@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { openPencilArchitecturePlugin } from '../src/steiger-rules/index'
+import { lawhaArchitecturePlugin } from '../src/steiger-rules/index'
 
 test('keeps tool test helpers beside tests without allowing arbitrary tool locations', () => {
-  const rule = openPencilArchitecturePlugin.ruleDefinitions.find(
-    (rule) => rule.name === 'open-pencil/strict-tools-layout'
+  const rule = lawhaArchitecturePlugin.ruleDefinitions.find(
+    (rule) => rule.name === 'lawha/strict-tools-layout'
   )
   if (!rule) throw new Error('Missing tool layout rule')
   for (const [file, valid] of [

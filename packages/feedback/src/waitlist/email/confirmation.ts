@@ -1,7 +1,7 @@
 import { render } from '@vue-email/render'
 import { defineComponent } from 'vue'
 
-import { emailLayout } from '@open-pencil/cloud/email'
+import { emailLayout } from '@lawha/cloud/email'
 
 const ConfirmationEmail = defineComponent({
   props: {
@@ -11,10 +11,10 @@ const ConfirmationEmail = defineComponent({
   setup(props) {
     return () =>
       emailLayout({
-        preview: 'One click to join the OpenPencil Cloud waitlist.',
+        preview: 'One click to join the Lawha Cloud waitlist.',
         heading: 'Confirm your email',
         message:
-          'Thanks for your interest in OpenPencil Cloud. Confirm this address to join the waitlist, and we will write once, when Cloud is ready for you.',
+          'Thanks for your interest in Lawha Cloud. Confirm this address to join the waitlist, and we will write once, when Cloud is ready for you.',
         actionLabel: 'Join the waitlist',
         actionURL: props.confirmURL,
         note: {
@@ -31,5 +31,5 @@ export async function confirmationEmail(links: { confirmURL: string; leaveURL: s
     render(ConfirmationEmail, links),
     render(ConfirmationEmail, links, { plainText: true })
   ])
-  return { subject: 'Confirm your place on the OpenPencil Cloud waitlist', html, text }
+  return { subject: 'Confirm your place on the Lawha Cloud waitlist', html, text }
 }

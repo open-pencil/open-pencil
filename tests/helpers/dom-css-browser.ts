@@ -2,11 +2,11 @@ import process from 'node:process'
 
 import { test, type Page } from '@playwright/test'
 
-import type { DesignDocument } from '@open-pencil/dom-css'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { DesignDocument } from '@lawha/dom-css'
+import type { SceneNode } from '@lawha/scene-graph'
 
 const BROWSER_RUNTIME_MODULE = `/@fs${process.cwd()}/packages/dom-css/src/runtime/browser.ts`
-const DOM_CSS_BROWSER_MODULE = '/@id/@open-pencil/dom-css/browser'
+const DOM_CSS_BROWSER_MODULE = '/@id/@lawha/dom-css/browser'
 
 async function ensureAppPage(page: Page) {
   const baseURL = test.info().project.use.baseURL
@@ -78,8 +78,8 @@ export async function browserTokenStylesheet(page: Page) {
       return { css, issues: issues.map((issue: { message: string }) => issue.message) }
     },
     {
-      exportModule: '/@id/@open-pencil/dom-css/export',
-      graphModule: '/@id/@open-pencil/scene-graph'
+      exportModule: '/@id/@lawha/dom-css/export',
+      graphModule: '/@id/@lawha/scene-graph'
     }
   )
 }
@@ -149,7 +149,7 @@ export async function publicBrowserSceneGraph(page: Page, classes: string[], css
       const graph = await browserJSXToSceneGraph(
         jsx('article', {
           class: candidates.join(' '),
-          children: jsx('h1', { children: 'OpenPencil' })
+          children: jsx('h1', { children: 'Lawha' })
         }),
         { cssText: css }
       )

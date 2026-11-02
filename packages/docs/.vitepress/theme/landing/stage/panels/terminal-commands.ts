@@ -6,7 +6,7 @@ import IconListTree from '~icons/lucide/list-tree'
 import IconMousePointerClick from '~icons/lucide/mouse-pointer-click'
 import IconWand from '~icons/lucide/wand-sparkles'
 
-import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
+import type { TreeNodeResult, TreeResult } from '@lawha/core/rpc'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -17,7 +17,7 @@ import { reframeStage } from '../scenes'
 /**
  * The CLI reaches a running app through `createAutomationCommandHandlers`. The landing page
  * calls that same handler in-process, so each command below does exactly what
- * `openpencil <command>` does against the desktop or web app; only the transport is skipped.
+ * `lawha <command>` does against the desktop or web app; only the transport is skipped.
  */
 const { handleRequest } = createAutomationCommandHandlers(makeFigmaFromStore)
 
@@ -119,7 +119,7 @@ return 'Night Shift added'`
 
 /** The real CLI reads the script from stdin, so multi-line code needs no shell quoting. */
 function evalLine(code: string): string {
-  return `openpencil eval --stdin <<'JS'\n${code}\nJS`
+  return `lawha eval --stdin <<'JS'\n${code}\nJS`
 }
 
 async function runEval(store: EditorStore, code: string): Promise<string> {
@@ -134,7 +134,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
   {
     id: 'tree',
     icon: IconListTree,
-    line: 'openpencil tree --depth 2',
+    line: 'lawha tree --depth 2',
     run: (store) => printTree(store, 2)
   },
   {
@@ -152,13 +152,13 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
   {
     id: 'selection',
     icon: IconMousePointerClick,
-    line: 'openpencil selection',
+    line: 'lawha selection',
     run: printSelection
   },
   {
     id: 'export',
     icon: IconCode,
-    line: 'openpencil export -f tailwind-jsx',
+    line: 'lawha export -f tailwind-jsx',
     run: printTailwind
   }
 ]

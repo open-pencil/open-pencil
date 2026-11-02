@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Stroke } from '@open-pencil/scene-graph'
-import { lineStrokeEnds } from '@open-pencil/scene-graph/arrow-caps'
-import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
+import type { Stroke } from '@lawha/scene-graph'
+import { lineStrokeEnds } from '@lawha/scene-graph/arrow-caps'
+import { strokeOverflow } from '@lawha/scene-graph/geometry'
 
 // From Figma 126 stroke geometry: a 300 px line with a 6 px stroke runs its stroke along y = -3,
 // over the whole line without a cap or with an equilateral arrow, and from 3 to 297 under the

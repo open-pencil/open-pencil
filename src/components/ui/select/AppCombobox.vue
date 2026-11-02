@@ -17,8 +17,8 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
-import { fuzzySearch } from '@open-pencil/vue/shared/search'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
+import { fuzzySearch } from '@lawha/vue/shared/search'
 
 import type { ComponentUI } from '@/components/ui/types'
 import type { ControlSize } from '@/theme/control'

@@ -23,7 +23,7 @@ body:
     attributes:
       label: Platform
       options:
-        - Web (app.openpencil.dev)
+        - Web (app.lawha.invalid)
         - macOS (Tauri)
         - Windows (Tauri)
         - Linux (Tauri)
@@ -39,7 +39,7 @@ body:
       label: Steps to reproduce
       description: Optional, but very helpful when you know the exact steps.
       placeholder: |
-        1. Open OpenPencil on …
+        1. Open Lawha on …
         2. Import …
         3. Select …
         4. See …

@@ -7,8 +7,8 @@ import {
   signUpToCloudWithEmail,
   type CloudAuthFailure,
   type CloudDiscoveryFailure
-} from '@open-pencil/cloud/client'
-import type { CloudDiscovery } from '@open-pencil/cloud/contract'
+} from '@lawha/cloud/client'
+import type { CloudDiscovery } from '@lawha/cloud/contract'
 
 import { IS_TAURI, OFFICIAL_CLOUD_URL } from '@/constants'
 
@@ -149,7 +149,7 @@ export async function signInToOpen(serverId: string): Promise<void> {
   openCloudConnect({ serverId })
 }
 
-/** Checks the chosen server answers as OpenPencil Cloud before asking anyone to sign in. */
+/** Checks the chosen server answers as Lawha Cloud before asking anyone to sign in. */
 export function continueCloudConnect(): void {
   const url =
     cloudConnectKind.value === 'official'

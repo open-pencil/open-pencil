@@ -1,4 +1,4 @@
-import type { FontVariation } from '@open-pencil/scene-graph'
+import type { FontVariation } from '@lawha/scene-graph'
 
 import { loadHarfBuzzSubsetter } from './harfbuzz'
 import { fontAxes } from './variation'

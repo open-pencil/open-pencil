@@ -5,8 +5,8 @@ const editor = useEditorSetupWithClear()
 /** A frame with three children, the frame selected; ids listed bottom to top. */
 function createFrameWithChildren() {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const frame = store.graph.createNode('FRAME', pageId, { x: 100, y: 100, width: 300 })
     const children = ['Bottom', 'Middle', 'Top'].map(
@@ -25,7 +25,7 @@ function createFrameWithChildren() {
 }
 
 function selectedIds() {
-  return editor.page.evaluate(() => [...(window.openPencil?.getStore?.().state.selectedIds ?? [])])
+  return editor.page.evaluate(() => [...(window.lawha?.getStore?.().state.selectedIds ?? [])])
 }
 
 test('Enter, Shift+Enter, Tab, and Shift+Tab move through the layer tree', async () => {
@@ -38,7 +38,7 @@ test('Enter, Shift+Enter, Tab, and Shift+Tab move through the layer tree', async
   await editor.page.keyboard.press('Shift+Enter')
   expect(await selectedIds()).toEqual([frameId])
 
-  await editor.page.evaluate((id) => window.openPencil?.getStore?.().select([id]), top)
+  await editor.page.evaluate((id) => window.lawha?.getStore?.().select([id]), top)
   await editor.page.keyboard.press('Tab')
   expect(await selectedIds()).toEqual([middle])
   await editor.page.keyboard.press('Shift+Tab')
@@ -63,8 +63,8 @@ test('Tab keeps moving focus while a panel control holds it', async () => {
 
 test('N and Shift+N zoom to the next and previous top-level frame', async () => {
   const frames = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     return [0, 600].map(
       (x) => store.graph.createNode('FRAME', pageId, { x, y: 0, width: 200, height: 200 }).id
@@ -81,15 +81,15 @@ test('N and Shift+N zoom to the next and previous top-level frame', async () => 
 
 test('Page Down and Page Up switch pages', async () => {
   const [first, second] = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pages = store.graph.getPages()
     const firstPage = pages[0]
     const secondPage = pages[1] ?? store.graph.addPage('Second')
     return [firstPage.id, secondPage.id]
   })
   const currentPage = () =>
-    editor.page.evaluate(() => window.openPencil?.getStore?.().state.currentPageId)
+    editor.page.evaluate(() => window.lawha?.getStore?.().state.currentPageId)
 
   await editor.page.keyboard.press('PageDown')
   await expect.poll(currentPage).toBe(second)
@@ -99,11 +99,11 @@ test('Page Down and Page Up switch pages', async () => {
 
 test('Shift+0 zooms to 100%', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (store) store.state.zoom = 2
   })
 
   await editor.page.keyboard.press('Shift+Digit0')
 
-  expect(await editor.page.evaluate(() => window.openPencil?.getStore?.().state.zoom)).toBe(1)
+  expect(await editor.page.evaluate(() => window.lawha?.getStore?.().state.zoom)).toBe(1)
 })

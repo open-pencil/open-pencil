@@ -1,11 +1,11 @@
 ---
 title: Roadmap
-description: OpenPencil product roadmap and Figma compatibility tracking.
+description: Lawha product roadmap and Figma compatibility tracking.
 ---
 
 # Roadmap
 
-OpenPencil is moving toward production-grade Figma compatibility while keeping design documents programmable, local-first, and fast on large files.
+Lawha is moving toward production-grade Figma compatibility while keeping design documents programmable, local-first, and fast on large files.
 
 ## Current focus
 
@@ -14,7 +14,7 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 - Keep large design systems responsive in the browser and desktop app.
 - Make international text reliable across platforms, starting with non-Latin font discovery, Arabic/Persian shaping, RTL layout, and broader CJK fixtures.
 - Treat the scene graph as a programmable design document: every important read, write, export, diff, and validation operation should be reachable through UI, CLI, MCP, and SDK surfaces.
-- Keep local files and local-first workflows first-class while making an optional OpenPencil Cloud backend and self-hosted deployments practical.
+- Keep local files and local-first workflows first-class while making an optional Lawha Cloud backend and self-hosted deployments practical.
 
 ## Recently delivered
 
@@ -24,7 +24,7 @@ v0.15.0 and v0.15.1 shipped work that earlier versions of this roadmap listed as
 - Multidimensional component variants and published component libraries with revision review and linked-instance updates.
 - Local recovery of unsaved documents, saved AI conversations, and CLI font diagnostics.
 - Opt-in browser WebMCP access, separate controls for the local MCP server and remote connections, and per-tool permissions.
-- `openpencil://` and web links that open a document and select a layer.
+- `lawha://` and web links that open a document and select a layer.
 
 ### Current development version
 
@@ -35,7 +35,7 @@ Since v0.15.1, the development branch adds:
 - Live design checks: a Lint panel with canvas markers and one-click fixes.
 - AI agents shown on the canvas and to collaborators, with follow mode for people and agents, per-page presence, and MCP agents in rooms.
 - AI chat turns that can be reverted, regenerated, and edited, with tool calls summarised by what they changed and a thinking level per message.
-- The Code tab linked to canvas layers both ways, and visual diff and patch tools, including `openpencil diff`.
+- The Code tab linked to canvas layers both ways, and visual diff and patch tools, including `lawha diff`.
 - Collaboration rooms that sync layer trees as a CRDT and open in their own tab.
 - Slots, progressive canvas previews while an AI provider streams JSX, Storybook export, HTML and Tailwind JSX export, and a faster occurrence-scoped `.fig` reader with wider override and variable export.
 - Comments pinned to layers and voice calls in shared rooms, with collaborators watching the AI chat's streamed JSX as it builds.
@@ -53,14 +53,14 @@ Work with open pull requests. It may change before it merges:
 
 - Storybook stories generated as Reka UI components for Vue and Radix UI components for React.
 - Component authoring: variant editing and canvas selection inside components.
-- The OpenPencil Cloud foundation.
+- The Lawha Cloud foundation.
 
 ## Near-term work
 
 ### Figma fidelity
 
 - Preserve and round-trip more Figma metadata safely.
-- Add visual regression coverage for full multi-page `.fig` documents. `bun tools/generate/visual-oracles/src/cli.ts export-fixtures` exports current smoke fixture pages to `/tmp` for manual comparison without committing large images; `tests/fixtures/figma-oracles/visual-comparison-report.json` records the current Figma-vs-OpenPencil oracle diff findings.
+- Add visual regression coverage for full multi-page `.fig` documents. `bun tools/generate/visual-oracles/src/cli.ts export-fixtures` exports current smoke fixture pages to `/tmp` for manual comparison without committing large images; `tests/fixtures/figma-oracles/visual-comparison-report.json` records the current Figma-vs-Lawha oracle diff findings.
 - Close high-impact renderer gaps: remaining mask edge cases, blend isolation, pattern fills, and broader variable-font fixtures.
 - Improve boolean operation editing/export now that imported Figma `BOOLEAN_OPERATION` nodes remain boolean operations.
 
@@ -79,11 +79,11 @@ Work with open pull requests. It may change before it merges:
 - Surface provider, model-budget, renderer, and automation failures with actionable recovery paths instead of silent stalls.
 - Make desktop automation recover from orphaned processes and renderer crashes without manual cleanup.
 - Prevent non-Latin font discovery and rendering crashes across platforms; add Arabic/Persian shaping and RTL layout, then broaden CJK and mixed-script visual fixtures.
-- Build a portable-font strategy for reproducible documents across machines on top of existing substitution visibility and agent-readable font status, including curated redistributable fonts, embedded or linked document fonts, and licensing metadata ([#502](https://github.com/open-pencil/open-pencil/issues/502), [#503](https://github.com/open-pencil/open-pencil/issues/503)).
+- Build a portable-font strategy for reproducible documents across machines on top of existing substitution visibility and agent-readable font status, including curated redistributable fonts, embedded or linked document fonts, and licensing metadata ([#502](https://github.com/aliaaldihnayn-lab/design/issues/502), [#503](https://github.com/aliaaldihnayn-lab/design/issues/503)).
 
 ### Cloud and self-hosting
 
-- Provide an optional OpenPencil Cloud backend for account-based workspace sync, sharing, collaboration, comments, and managed team libraries without making cloud accounts mandatory for the editor.
+- Provide an optional Lawha Cloud backend for account-based workspace sync, sharing, collaboration, comments, and managed team libraries without making cloud accounts mandatory for the editor.
 - Support organizations and teams with invitations, viewer/editor/admin roles, link-sharing policies, service accounts, API tokens, and enterprise identity through standard OIDC/SSO integrations.
 - Publish documented backend APIs and webhooks for workspace, document, membership, comment, version, and automation events so Cloud and self-hosted deployments integrate with existing developer workflows.
 - Add workspace organization for projects, folders, templates, search, indexing, and server-generated previews while preserving stable document identity.
@@ -93,12 +93,12 @@ Work with open pull requests. It may change before it merges:
 - Make self-hosting maintainable with guided deployment, upgrades, backups, health monitoring, observability, and documented recovery procedures.
 - Provide explicit data-governance controls for export, deletion, encryption, retention, auditability, and deployment-region or residency requirements.
 - Keep AI and media capabilities BYOK so Cloud and self-hosted users connect and control their own model and provider credentials.
-- Let documents move between device-only, OpenPencil Cloud, self-hosted, and user-owned storage without losing identity or history.
+- Let documents move between device-only, Lawha Cloud, self-hosted, and user-owned storage without losing identity or history.
 - Add explicit conflict, offline, sync-health, migration, backup, quota, and recovery UX for every remote deployment mode.
 
 ### Agent workflows
 
-- Polish the official `SKILL.md` guidance for OpenPencil so agents use the full inspect → act → render/measure → compare → iterate loop instead of relying on one-shot prompting.
+- Polish the official `SKILL.md` guidance for Lawha so agents use the full inspect → act → render/measure → compare → iterate loop instead of relying on one-shot prompting.
 - Publish tested AI workflow recipes for common tasks: create from prompt, edit a selected design, compare against a screenshot or Figma reference, fix visual regressions, extract tokens, and batch-migrate files.
 - Accept screenshots and reference images as first-class agent inputs, and return selection/page/viewport renders as native image content to vision-capable MCP and chat clients.
 - Support opt-in web retrieval, external MCP connectors, and sandboxed code execution through explicit capability and permission boundaries rather than granting every model ambient access.
@@ -132,7 +132,7 @@ Work with open pull requests. It may change before it merges:
 - Provide a preset-first editor for common generative visuals before exposing raw shader code.
 - Support timeline and interaction inputs such as time, pointer position, scroll, layer bounds, colors, variables, and imported image textures.
 - Render shader layers through CanvasKit/WebGL while keeping deterministic raster export for PNG/JPG/WEBP and thumbnails.
-- Store shader layer configuration in OpenPencil documents and export graceful fallbacks when a target format cannot preserve the live effect.
+- Store shader layer configuration in Lawha documents and export graceful fallbacks when a target format cannot preserve the live effect.
 
 ## Later
 
@@ -140,7 +140,7 @@ Work with open pull requests. It may change before it merges:
 
 - Expand the documented Vue SDK and core package platform with complete example applications for custom editor shells, embedded design surfaces, and automation-specific UIs.
 - Provide maintained examples for read-only previews, editable canvases, design review surfaces, and agent-controlled editors.
-- Ship an official VS Code/Cursor extension ([#81](https://github.com/open-pencil/open-pencil/issues/81)) for previewing and opening `.fig`/`.pen` documents, connecting to the running editor, invoking CLI/MCP workflows, handing selections between code and canvas, and navigating between generated code and design nodes. Reuse the app, SDK, and automation bridge rather than implementing a second editor inside the extension.
+- Ship an official VS Code/Cursor extension ([#81](https://github.com/aliaaldihnayn-lab/design/issues/81)) for previewing and opening `.fig`/`.pen` documents, connecting to the running editor, invoking CLI/MCP workflows, handing selections between code and canvas, and navigating between generated code and design nodes. Reuse the app, SDK, and automation bridge rather than implementing a second editor inside the extension.
 - Define public API stability and migration expectations across the reusable npm packages.
 - Keep the renderer, editor core, and tool registry framework-agnostic enough for headless and embedded use.
 
@@ -157,25 +157,25 @@ Work with open pull requests. It may change before it merges:
 
 ## Non-goals
 
-- Mandatory accounts or a cloud-only document model. OpenPencil Cloud, self-hosted backends, and user-owned remote storage must remain optional alongside local files.
-- A hosted service that requires OpenPencil to proxy users' AI provider keys; AI and media integrations remain BYOK even when a backend provides identity, sync, or collaboration.
+- Mandatory accounts or a cloud-only document model. Lawha Cloud, self-hosted backends, and user-owned remote storage must remain optional alongside local files.
+- A hosted service that requires Lawha to proxy users' AI provider keys; AI and media integrations remain BYOK even when a backend provides identity, sync, or collaboration.
 - Read-only automation surfaces that cannot modify documents.
 - Feature work that sacrifices `.fig` import/export fidelity for convenience.
 
-This section tracks OpenPencil's current compatibility with Figma Design features. It is based on Figma's public Help Center feature areas and the current OpenPencil scene graph, Kiwi import/export, CanvasKit renderer, UI panels, CLI, and MCP tools.
+This section tracks Lawha's current compatibility with Figma Design features. It is based on Figma's public Help Center feature areas and the current Lawha scene graph, Kiwi import/export, CanvasKit renderer, UI panels, CLI, and MCP tools.
 
 Legend:
 
 - **✅ Supported** — implemented for common files and expected to work directly.
 - **◐ Partial** — implemented for important cases, but missing parity, UI, or edge-case behavior.
-- **↩ Round-trip only** — imported/preserved/exported for `.fig` fidelity, but not rendered or editable as a first-class OpenPencil feature.
+- **↩ Round-trip only** — imported/preserved/exported for `.fig` fidelity, but not rendered or editable as a first-class Lawha feature.
 - **— Not supported** — not currently modeled or intentionally out of scope.
 
 Support tiers used for prioritization:
 
 1. **Visual fidelity** — fields that change pixels in normal design exports. These get real Figma oracle fixtures, renderer tests, and visual metrics first.
-2. **Round-trip fidelity** — fields that should survive read → write → Figma import but do not need OpenPencil UI/rendering yet. These need raw-preservation and invalidation tests.
-3. **Product/runtime systems** — prototypes, libraries, FigJam, Slides, Dev Mode, CMS/AI, and media timelines. These stay schema-only or raw-preserved until OpenPencil has matching product concepts.
+2. **Round-trip fidelity** — fields that should survive read → write → Figma import but do not need Lawha UI/rendering yet. These need raw-preservation and invalidation tests.
+3. **Product/runtime systems** — prototypes, libraries, FigJam, Slides, Dev Mode, CMS/AI, and media timelines. These stay schema-only or raw-preserved until Lawha has matching product concepts.
 4. **Unsafe/internal metadata** — fields that can corrupt Figma import or overwrite user edits when stale. These are filtered or preserved only with fixture evidence.
 
 ## Official Figma feature areas
@@ -198,7 +198,7 @@ Figma's design documentation groups features into these areas:
 | Pages / canvases                                     |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Multi-page documents and per-page viewport are supported.                                                                                                                                                                                          |
 | Frames                                               |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Includes clipping and auto-layout container behavior.                                                                                                                                                                                              |
 | Groups                                               |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Grouping preserves visual positions.                                                                                                                                                                                                               |
-| Sections                                             |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Section rendering and title pills are OpenPencil-specific approximations.                                                                                                                                                                          |
+| Sections                                             |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Section rendering and title pills are Lawha-specific approximations.                                                                                                                                                                          |
 | Rectangles / rounded rectangles                      |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Per-corner radii and smoothed corners render for fills, strokes, clips, masks, and effects.                                                                                                                                                        |
 | Ellipses / arcs                                      |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | `arcData` renders/exports; no full inspector controls.                                                                                                                                                                                             |
 | Lines                                                |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Stroke caps, joins, dashes, alignment, and miter limits render and have inspector controls.                                                                                                                                                       |
@@ -213,12 +213,12 @@ Figma's design documentation groups features into these areas:
 | Connectors                                           |      ◐ |      ◐ |       — |                 ◐ |       ◐ | Type exists, but Figma connector semantics are weak.                                                                                                                                                                                               |
 | Shape-with-text / FigJam shapes                      |      ◐ |      ◐ |       — |                 ◐ |       ◐ | Type exists, but not a full FigJam feature implementation.                                                                                                                                                                                         |
 | Slices                                               |      ◐ |      — |       ◐ |                 ◐ |      ✅ | Slice-like export regions exist via tooling, not as true Figma slice nodes.                                                                                                                                                                        |
-| FigJam / Slides / Code / CMS / Buzz node families    |      ↩ |      — |       — |                 ↩ |       — | Current Kiwi schema recognizes many newer Figma node families (`TABLE`, `SLIDE`, `CODE_COMPONENT`, `CMS_RICH_TEXT`, `REPEATER`, `WEBPAGE`, etc.), but OpenPencil only preserves/round-trips them where safe; they are not first-class scene nodes. |
+| FigJam / Slides / Code / CMS / Buzz node families    |      ↩ |      — |       — |                 ↩ |       — | Current Kiwi schema recognizes many newer Figma node families (`TABLE`, `SLIDE`, `CODE_COMPONENT`, `CMS_RICH_TEXT`, `REPEATER`, `WEBPAGE`, etc.), but Lawha only preserves/round-trips them where safe; they are not first-class scene nodes. |
 | Solid fills                                          |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Color variables supported for common fill cases.                                                                                                                                                                                                   |
 | Gradients                                            |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Linear/radial/angular/diamond support; Figma edge cases may differ.                                                                                                                                                                                |
 | Image fills                                          |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | Fill/fit/crop/tile support exists; imported crop/tile affine transforms are applied, but exact Figma parity is still partial.                                                                                                                      |
 | Pattern / noise / custom fills                       |     ✅ |      ◐ |       — |                ✅ |       — | Schema metadata imports/exports; Figma pattern fills with a referenced source node render as repeated source tiles with scale, spacing, alignment, and basic hex offsets. Noise/custom paints still render with a solid fallback pending real paint payload samples; Figma-authored noise/texture/glass effect payloads are captured separately. |
-| Video/GIF/media fills                                |      ↩ |      — |       — |                 ↩ |       — | Kiwi schema includes media paint/export enums, but OpenPencil has no video/GIF playback or media layer support.                                                                                                                                    |
+| Video/GIF/media fills                                |      ↩ |      — |       — |                 ↩ |       — | Kiwi schema includes media paint/export enums, but Lawha has no video/GIF playback or media layer support.                                                                                                                                    |
 | Layer/fill/effect blend modes                        |     ✅ |      ◐ |      ✅ |                ✅ |      ✅ | Appearance, fill, and effect controls are exposed; Canvas applies common modes, while Figma isolation edge cases remain partial.                                                                                                                                        |
 | Opacity                                              |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Node opacity uses save layers in the renderer.                                                                                                                                                                                                     |
 | Strokes                                              |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Weight, alignment, dashes, and side weights are supported.                                                                                                                                                                                         |
@@ -250,21 +250,21 @@ Figma's design documentation groups features into these areas:
 | Variables bound to fills/strokes                     |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Common color bindings render and edit.                                                                                                                                                                                                             |
 | Variables bound to text/layout/visibility/effects    |      ◐ |      ◐ |       ◐ |                 ◐ |      ✅ | Text content and numeric layout bindings resolve on read; colour, numeric, text, and visibility bindings also re-resolve when a variable or mode changes, font family ones do not. Effect bindings are not modelled.                                                                                                                                                                                             |
 | Variables in prototypes / expressions / conditionals |      — |      — |       — |                 — |       — | Depends on prototype system, which is not implemented.                                                                                                                                                                                             |
-| Libraries / publish / update review                  |      ↩ |      — |       ◐ |                 ↩ |       — | Figma library metadata survives round-trip. OpenPencil supports its own component-library publishing, catalogs, revision previews, and linked-instance updates, not synchronization with Figma-hosted libraries.                                                                                                                                                                                         |
+| Libraries / publish / update review                  |      ↩ |      — |       ◐ |                 ↩ |       — | Figma library metadata survives round-trip. Lawha supports its own component-library publishing, catalogs, revision previews, and linked-instance updates, not synchronization with Figma-hosted libraries.                                                                                                                                                                                         |
 | Prototype flows / starting points                    |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Prototype hotspots / triggers / actions              |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Prototype overlays / scroll-to                       |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Smart animate / easing / spring / duration           |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
-| Interactive components                               |      — |      — |       — |                 — |       — | Figma's component-level prototype connections are not supported; OpenPencil's own behaviours make components run as Reka UI controls in preview.                                                                                                                                                                                           |
-| Dev Mode inspect / measurements / annotations        |      — |      ◐ |       ◐ |                 — |       ◐ | OpenPencil has CLI/MCP inspection and Option/Alt distance overlays, but not Figma Dev Mode annotations or its full UI.                                                                                                                                                                                      |
+| Interactive components                               |      — |      — |       — |                 — |       — | Figma's component-level prototype connections are not supported; Lawha's own behaviours make components run as Reka UI controls in preview.                                                                                                                                                                                           |
+| Dev Mode inspect / measurements / annotations        |      — |      ◐ |       ◐ |                 — |       ◐ | Lawha has CLI/MCP inspection and Option/Alt distance overlays, but not Figma Dev Mode annotations or its full UI.                                                                                                                                                                                      |
 | Code Connect / dev resources / ready-for-dev         |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Comments                                             |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Version history / branches                           |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
-| Real-time collaboration                              |      — |     ✅ |      ✅ |                 — |       — | OpenPencil has its own P2P collaboration, not Figma-compatible metadata.                                                                                                                                                                           |
+| Real-time collaboration                              |      — |     ✅ |      ✅ |                 — |       — | Lawha has its own P2P collaboration, not Figma-compatible metadata.                                                                                                                                                                           |
 
 ## Raw Kiwi metadata coverage
 
-OpenPencil deliberately preserves many Figma/Kiwi fields even when they are not rendered or editable. These live under `SceneNode.source.fig` and are applied late during `.fig` export. A schema coverage test compares the current `fig.kiwi` `NodeChange` fields against modeled codec fields, raw-preserved fields, and intentionally schema-only metadata buckets so drift stays visible.
+Lawha deliberately preserves many Figma/Kiwi fields even when they are not rendered or editable. These live under `SceneNode.source.fig` and are applied late during `.fig` export. A schema coverage test compares the current `fig.kiwi` `NodeChange` fields against modeled codec fields, raw-preserved fields, and intentionally schema-only metadata buckets so drift stays visible.
 
 | Field group                                                             | Import/export |   Render |  UI | Fidelity impact                                                                                                                                                                                                                                                                                                                                         |
 | ----------------------------------------------------------------------- | ------------: | -------: | --: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -277,10 +277,10 @@ OpenPencil deliberately preserves many Figma/Kiwi fields even when they are not 
 | `source.fig.derivedSymbolData`                                          |            ✅ | Indirect |   — | Critical for instance-derived geometry/layout/text.                                                                                                                                                                                                                                                                                                     |
 | `source.fig.derivedSymbolDataLayoutVersion`                             |            ✅ |        — |   — | Figma bookkeeping.                                                                                                                                                                                                                                                                                                                                      |
 | `source.fig.uniformScaleFactor`                                         |            ✅ | Indirect |   — | Important for scaled instances.                                                                                                                                                                                                                                                                                                                         |
-| Style IDs: fill/stroke/text/effect/grid                                 |             ↩ |        — |   — | Preserves style linkage for Figma, but OpenPencil has no style manager yet.                                                                                                                                                                                                                                                                             |
+| Style IDs: fill/stroke/text/effect/grid                                 |             ↩ |        — |   — | Preserves style linkage for Figma, but Lawha has no style manager yet.                                                                                                                                                                                                                                                                             |
 | Component property refs/defs/specs                                      |            ✅ | Indirect |   ◐ | Text, boolean, and instance-swap properties, their links, and exposed nested instances (`propsAreBubbled`) are authored in the panel.                                                                                                                                                                                                                   |
 | State-group metadata                                                    |             ↩ |        — |   — | Preserved only.                                                                                                                                                                                                                                                                                                                                         |
-| Version/sort/publish/library metadata                                   |             ↩ |        — |   ◐ | Figma metadata is preserved; OpenPencil's component-library publish/update workflow uses its own stable asset identities and revision review.                                                                                                                                                                                                                                                                                           |
+| Version/sort/publish/library metadata                                   |             ↩ |        — |   ◐ | Figma metadata is preserved; Lawha's component-library publish/update workflow uses its own stable asset identities and revision review.                                                                                                                                                                                                                                                                                           |
 | Variable and parameter consumption maps                                 |            ✅ |        ◐ |   ◐ | Filtered/preserved for safe round-trip; normalized bindings cover common cases.                                                                                                                                                                                                                                                                         |
 | Page fields: background, page type, guides                              |             ↩ |        ◐ |   ◐ | Background color, background paints, page type, and guides round-trip for imported pages. Normalized page/frame guides render as overlays and support undoable editing.                                                                                                                                                                                                         |
 | Text internals: `textData`, layout versions, font version, derived data |            ✅ |       ✅ |   — | Important for text fidelity; most internals are not editable. Imported derived text data, leading trim, decoration style, underline decoration paint/offset/thickness/skip-ink, semantic font metadata, and raw OpenType feature toggles are preserved for round-trip when safe; decoration style/thickness/color and leading trim now render through CanvasKit, and raster export bounds account for decoration overflow. |

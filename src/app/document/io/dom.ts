@@ -1,6 +1,6 @@
-import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
-import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
-import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
+import { resolveEditorProfile, type Editor, type EditorState } from '@lawha/core'
+import { sceneGraphFromStyledHTML } from '@lawha/core/io/formats/html/layers'
+import { browserHTMLToDesignDocument } from '@lawha/dom-css/browser'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { yieldToUI } from '@/app/document/io/browser'

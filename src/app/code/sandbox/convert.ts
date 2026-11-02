@@ -12,7 +12,7 @@ import {
   type LayerRef,
   type TreeNode,
   type VariableInput
-} from '@open-pencil/design-jsx'
+} from '@lawha/design-jsx'
 
 import type { DesignJSXHelperDescriptor } from '@/app/code/sandbox/types'
 
@@ -49,7 +49,7 @@ function isSerializedElement(value: unknown): value is SerializedDesignJSXElemen
 
 function isHelper(value: unknown): value is DesignJSXHelperDescriptor {
   return (
-    isRecord(value) && typeof value.__openPencilHelper === 'string' && Array.isArray(value.args)
+    isRecord(value) && typeof value.__lawhaHelper === 'string' && Array.isArray(value.args)
   )
 }
 
@@ -107,7 +107,7 @@ function collection(index: unknown, handles: Handles): Collection {
 
 function convertValue(value: unknown, handles: Handles): unknown {
   if (isHelper(value)) {
-    const helperName = value.__openPencilHelper
+    const helperName = value.__lawhaHelper
     const [first, second] = value.args
     if (helperName === 'ref') {
       const handle = handles.refs.get(first) ?? layerRef()
@@ -139,7 +139,7 @@ function convertValue(value: unknown, handles: Handles): unknown {
 
 function convertTree(value: unknown, handles: Handles, lineOffset?: number): TreeNode {
   if (!isSerializedElement(value)) {
-    throw new Error('Design JSX must return an OpenPencil element.')
+    throw new Error('Design JSX must return an Lawha element.')
   }
   const children = value.children.map((child): TreeNode | string => {
     if (typeof child === 'string') return child

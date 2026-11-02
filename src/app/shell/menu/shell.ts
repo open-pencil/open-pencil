@@ -1,4 +1,4 @@
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { openTour } from '@/app/demo/document'
 import { requestAppExit } from '@/app/document/close/exit'

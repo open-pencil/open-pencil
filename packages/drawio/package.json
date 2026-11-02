@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/drawio",
+  "name": "@lawha/drawio",
   "version": "0.17.0-beta.1",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/drawio"
   },
   "publishConfig": {

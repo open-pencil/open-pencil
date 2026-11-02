@@ -4,7 +4,7 @@ import type { UIMessageChunk } from 'ai'
 export interface ReplyToolCall {
   id: string
   name: string
-  /** The agent's own title, for its own tools; OpenPencil's are named by `name`. */
+  /** The agent's own title, for its own tools; Lawha's are named by `name`. */
   title?: string
 }
 

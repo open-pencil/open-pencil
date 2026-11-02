@@ -1,9 +1,9 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   figJamTextSizeFields,
   figJamTypeface,
   type FigJamTextSize
-} from '@open-pencil/scene-graph/figjam'
+} from '@lawha/scene-graph/figjam'
 import {
   createSticky,
   DEFAULT_STICKY_COLOR,
@@ -11,9 +11,9 @@ import {
   stickyWidth,
   STICKY_SIZE,
   stickySublayers
-} from '@open-pencil/scene-graph/generated'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
-import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+} from '@lawha/scene-graph/generated'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
+import { rescaleNodeTree } from '@lawha/scene-graph/scaling'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'

@@ -25,7 +25,7 @@ test.use({ viewport: { width: 1200, height: 900 } })
 test('the tour opens on its first chapter, the rest below it', async ({ page }) => {
   const canvas = await openDemo(page)
   const opened = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const pageId = store.state.currentPageId
     const sections = store.graph
@@ -78,7 +78,7 @@ test('the tour follows the app theme without becoming an edit', async ({ page })
   const canvas = await openDemo(page)
   const read = () =>
     page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       const pageId = store.state.currentPageId
       const modeOf = (name: string) => {
@@ -114,7 +114,7 @@ test('the tour follows the app theme without becoming an edit', async ({ page })
 test('tour tokens and main-component edits survive undo', async ({ page }) => {
   await openDemo(page)
   const result = await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const graph = store.graph
     // The tour is opened from `.fig`, which gives variables and modes ids of its own.

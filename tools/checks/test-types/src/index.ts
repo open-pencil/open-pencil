@@ -5,7 +5,7 @@
  * config only its own `src`, and bun strips types without checking them.
  *
  * Application and package sources are reported only by `bun run typecheck`, never here. Both
- * programs reach them — tests drive the app, and tools read `window.openPencil` in pages — but
+ * programs reach them — tests drive the app, and tools read `window.lawha` in pages — but
  * narrow `types` to Bun's, whose globals disagree with the browser ones the app is built against:
  * `fetch` carries a `preconnect` the DOM one does not. Judging source by those globals would fail
  * the build for a shape the app never ships.

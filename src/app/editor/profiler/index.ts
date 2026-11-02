@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 export function createProfilerActions(editor: Editor) {
   function activeCanvas() {

@@ -2,7 +2,7 @@ import { createI18n, params } from '@nanostores/i18n'
 import type { ComponentsJSON } from '@nanostores/i18n'
 import { useStore } from '@nanostores/vue'
 
-import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue/i18n'
+import { locale, type Locale, type TranslatedLocale } from '@lawha/vue/i18n'
 
 export const notificationMessageDefaults = {
   chatInitializationFailed: params('Could not initialize chat: {error}'),
@@ -15,7 +15,7 @@ export const notificationMessageDefaults = {
   designTokensLeftOut: params('Left out of the design tokens: {names}.'),
   designTokensImported: params('Imported {count} design tokens.'),
   unsupportedVariableExpressions: params(
-    'OpenPencil can’t evaluate these variables yet, so layers keep the values saved in the file: {names}.'
+    'Lawha can’t evaluate these variables yet, so layers keep the values saved in the file: {names}.'
   ),
   nodeID: 'node ID',
   nodeIDs: 'node IDs',
@@ -40,7 +40,7 @@ export const notificationMessageDefaults = {
   deepLinkPickerDismissed: 'Link cancelled: no file was chosen.',
   deepLinkCancelled: params('Link cancelled: expected a file ending in “{file}”.'),
   deepLinkNodeNotFound: params('Node “{node}” was not found in “{file}”.'),
-  openQueuedFilesFailed: params('Could not open the files handed to OpenPencil: {error}')
+  openQueuedFilesFailed: params('Could not open the files handed to Lawha: {error}')
 } as const
 
 const localeLoaders = {

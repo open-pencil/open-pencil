@@ -10,7 +10,7 @@ export async function injectToolLoopTransport(page: Page): Promise<void> {
   await page.evaluate(async () => {
     const transportsPath = '/src/app/ai/transports/tool-loop.ts'
     const { createToolLoopTransport } = await import(transportsPath)
-    const api = window.openPencil
+    const api = window.lawha
     const store = api?.getStore?.()
     if (!api?.setChatTransport || !store) throw new Error('Chat transport override not available')
 

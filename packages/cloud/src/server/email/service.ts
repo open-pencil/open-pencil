@@ -194,7 +194,7 @@ export function createTransactionalEmailService(
             subject: rendered.subject,
             html: rendered.html,
             text: rendered.text,
-            headers: { 'X-OpenPencil-Delivery-ID': message.id }
+            headers: { 'X-Lawha-Delivery-ID': message.id }
           })
           await database
             .updateTable('transactionalEmail')

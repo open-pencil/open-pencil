@@ -1,8 +1,8 @@
 import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
 
-import { readEffectiveFigmaRawField } from '@open-pencil/fig'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { readEffectiveFigmaRawField } from '@lawha/fig'
+import type { SceneNode } from '@lawha/scene-graph'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
 import { BLACK } from '#core/constants'

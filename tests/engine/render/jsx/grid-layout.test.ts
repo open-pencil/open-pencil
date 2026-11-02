@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderTree, renderJSX } from '@open-pencil/core/design-jsx'
-import { computeLayout, computeAllLayouts } from '@open-pencil/core/layout'
-import { Frame, Rectangle } from '@open-pencil/design-jsx'
+import { renderTree, renderJSX } from '@lawha/core/design-jsx'
+import { computeLayout, computeAllLayouts } from '@lawha/core/layout'
+import { Frame, Rectangle } from '@lawha/design-jsx'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'

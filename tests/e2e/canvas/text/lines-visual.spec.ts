@@ -4,7 +4,7 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('places and truncates lines of mixed sizes as Figma does', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const big = (start: number, length: number) => ({ start, length, style: { fontSize: 36 } })
     const wrapping = 'Small words LARGE then wraps onto more lines'
@@ -106,7 +106,7 @@ test('places and truncates lines of mixed sizes as Figma does', async () => {
     store.requestRender()
   })
   await editor.page.waitForFunction(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return (
       store?.graph.getChildren(store.state.currentPageId).filter((node) => node.type === 'TEXT')
         .length === 8

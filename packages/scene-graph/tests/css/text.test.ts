@@ -4,8 +4,8 @@ import {
   parseCSSFontFamily,
   parseCSSLetterSpacing,
   parseCSSLineHeight
-} from '@open-pencil/scene-graph/css'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/css'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 describe('parseCSSFontFamily', () => {
   test.each([

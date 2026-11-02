@@ -1,15 +1,15 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { DerivedTextGlyph } from '@lawha/scene-graph'
 
 type DerivedTextData = NonNullable<NodeChange['derivedTextData']>
 
 /**
- * OpenPencil wrote text it had no glyphs for as one unwrapped line at `y = lineHeight`, with a
+ * Lawha wrote text it had no glyphs for as one unwrapped line at `y = lineHeight`, with a
  * character offset map one entry longer than the text. Figma's map has one entry per character,
- * and later OpenPencil writers follow it, so that length together with every glyph on the one
+ * and later Lawha writers follow it, so that length together with every glyph on the one
  * written baseline identifies glyphs that were never laid out at the node's width (#914).
  */
-function isUnshapedOpenPencilText(derivedTextData: DerivedTextData, characters: string): boolean {
+function isUnshapedLawhaText(derivedTextData: DerivedTextData, characters: string): boolean {
   const baselines = derivedTextData.baselines ?? []
   if (derivedTextData.logicalIndexToCharacterOffsetMap?.length !== characters.length + 1) {
     return false
@@ -47,7 +47,7 @@ export function convertFigmaDerivedTextGlyphs(
   blobs: Uint8Array[],
   characters: string
 ): DerivedTextGlyph[] {
-  if (!derivedTextData || isUnshapedOpenPencilText(derivedTextData, characters)) return []
+  if (!derivedTextData || isUnshapedLawhaText(derivedTextData, characters)) return []
   const glyphs: DerivedTextGlyph[] = []
   // Truncated text is laid out whole, with an ellipsis glyph where it is cut; Figma hides the
   // glyphs from `truncationStartIndex` on, so they are not drawn here either.

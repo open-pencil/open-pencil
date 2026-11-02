@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { ref } from 'vue'
 import type { WebMCP } from 'webmcp-types'
 
-import { ALL_TOOLS, isToolExposed, type ToolDef } from '@open-pencil/core/tools'
+import { ALL_TOOLS, isToolExposed, type ToolDef } from '@lawha/core/tools'
 
 import { getWebMCPTools, resolveWebMCPMode } from '@/app/automation/webmcp/policy'
 import { type WebMCPMode } from '@/app/automation/webmcp/schema'

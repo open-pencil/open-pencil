@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { TooltipProvider } from 'reka-ui'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
-import type { CommentThread } from '@open-pencil/scene-graph'
+import type { CommentThread } from '@lawha/scene-graph'
 
 import CommentComposer from './CommentComposer.vue'
 import CommentThreadCard from './CommentThreadCard.vue'

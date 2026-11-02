@@ -2,8 +2,8 @@ import { tryOnScopeDispose, watchImmediate } from '@vueuse/core'
 import { computed, shallowReactive, shallowRef } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useRetainedActivity } from '#vue/lifecycle/retention/context'

@@ -1,4 +1,4 @@
-import type { Fill, GradientTransform, SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill, GradientTransform, SceneGraph } from '@lawha/scene-graph'
 
 type GradientType = 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND'
 

@@ -5,11 +5,11 @@ import type {
   ConnectorMagnet,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { boundEndpoint, freeEndpoint } from '@open-pencil/scene-graph/connectors'
-import { getAxisAlignedBoundsInParent, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import { boundEndpoint, freeEndpoint } from '@lawha/scene-graph/connectors'
+import { getAxisAlignedBoundsInParent, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 /**
  * Where Figma Design attaches a connector end dropped on a layer, measured on 200 and 400 px

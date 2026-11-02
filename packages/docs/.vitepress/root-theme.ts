@@ -11,7 +11,7 @@ import {
 } from './sidebars.ts'
 
 export const rootThemeConfig = (): DefaultTheme.Config => ({
-  logo: { light: '/brand/mark.svg', dark: '/brand/mark-dark.svg', alt: 'OpenPencil' },
+  logo: { light: '/brand/mark.svg', dark: '/brand/mark-dark.svg', alt: 'Lawha' },
   search: { provider: 'local' },
 
   nav: [
@@ -21,7 +21,7 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     { text: 'SDK', link: '/programmable/sdk/' },
     { text: 'Reference', link: '/reference/keyboard-shortcuts' },
     { text: 'Development', link: '/development/contributing' },
-    { text: 'Open App', link: 'https://app.openpencil.dev' }
+    { text: 'Open App', link: 'https://app.lawha.invalid' }
   ],
 
   sidebar: {
@@ -34,12 +34,12 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
   },
 
   socialLinks: [
-    { icon: 'github', link: 'https://github.com/open-pencil/open-pencil' },
+    { icon: 'github', link: 'https://github.com/aliaaldihnayn-lab/design' },
     { icon: 'discord', link: 'https://discord.gg/4wXc9fuZfm', ariaLabel: 'Discord' }
   ],
 
   editLink: {
-    pattern: 'https://github.com/open-pencil/open-pencil/edit/master/packages/docs/:path'
+    pattern: 'https://github.com/aliaaldihnayn-lab/design/edit/master/packages/docs/:path'
   },
 
   footer: {

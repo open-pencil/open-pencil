@@ -1,4 +1,4 @@
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 import type { StorageLocation } from '@/app/integrations/storage'
 import { rememberRecentStorageDocument } from '@/app/recent-files'

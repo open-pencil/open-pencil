@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@lawha/core/constants'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import type { AIModelCapability, AIModelProfileId, AIModelRole } from '@/app/ai/models/types'
@@ -16,7 +16,7 @@ export const ONBOARDING_AGENTS = [
   'acp:gemini-cli',
   'harness:pi'
 ] as const
-/** Subscriptions OpenPencil's own agent signs in to; the sign-in needs the desktop app. */
+/** Subscriptions Lawha's own agent signs in to; the sign-in needs the desktop app. */
 export const ONBOARDING_SUBSCRIPTIONS = ['chatgpt'] as const
 /** API accounts, in the order onboarding prefers them when several are available. */
 export const ONBOARDING_API_PROVIDERS = ['anthropic', 'openai', 'google', 'openrouter'] as const

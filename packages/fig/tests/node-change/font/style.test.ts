@@ -4,9 +4,9 @@ import {
   EMPTY_EXPORT_RUNTIME,
   nodeChangeToProps,
   sceneNodeToKiwi
-} from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 function write(fields: Partial<SceneNode>, runtime = EMPTY_EXPORT_RUNTIME): NodeChange {
   const graph = new SceneGraph()

@@ -13,7 +13,7 @@ export const pl: LandingMessages = {
     figma: {
       title: 'Otwórz to, co już masz',
       detail:
-        'OpenPencil czyta pliki .fig bezpośrednio: strony, komponenty, instancje, zmienne i auto layout trafiają jako edytowalne warstwy, a zapisać możesz znowu do .fig. Wklej SVG albo otwórz HTML i CSS, a one też stają się warstwami, ułożonymi tak, jak układa je przeglądarka.',
+        'Lawha czyta pliki .fig bezpośrednio: strony, komponenty, instancje, zmienne i auto layout trafiają jako edytowalne warstwy, a zapisać możesz znowu do .fig. Wklej SVG albo otwórz HTML i CSS, a one też stają się warstwami, ułożonymi tak, jak układa je przeglądarka.',
       hint: 'To przewodnik samej aplikacji, prawdziwy plik .fig. Otwórz rozdział w warstwach i poklikaj.'
     },
     design: {
@@ -43,7 +43,7 @@ export const pl: LandingMessages = {
     linting: {
       title: 'Linting',
       detail:
-        'OpenPencil sprawdza projekt w trakcie pracy: kontrast, zbyt mały tekst, domyślne nazwy, ukryte i puste warstwy, zbędne grupy. Problemy są oznaczane na obszarze roboczym, wiele z nich naprawisz jednym kliknięciem, a te same reguły działają w CLI i dla agentów.',
+        'Lawha sprawdza projekt w trakcie pracy: kontrast, zbyt mały tekst, domyślne nazwy, ukryte i puste warstwy, zbędne grupy. Problemy są oznaczane na obszarze roboczym, wiele z nich naprawisz jednym kliknięciem, a te same reguły działają w CLI i dla agentów.',
       hint: 'Kliknij znacznik na obszarze roboczym albo zastosuj poprawkę z listy.'
     },
     ai: {
@@ -67,13 +67,13 @@ export const pl: LandingMessages = {
     script: {
       title: 'Wszystko da się oskryptować',
       detail:
-        'CLI openpencil pracuje na pliku bez uruchomionej aplikacji albo steruje otwartą aplikacją. Przejrzyj dokument, odpytaj go przez XPath, sprawdź linterem, wyeksportuj albo uruchom na nim kod wtyczek Figmy przez eval. Serwer MCP daje agentom te same możliwości przez stdio lub HTTP.',
+        'CLI lawha pracuje na pliku bez uruchomionej aplikacji albo steruje otwartą aplikacją. Przejrzyj dokument, odpytaj go przez XPath, sprawdź linterem, wyeksportuj albo uruchom na nim kod wtyczek Figmy przez eval. Serwer MCP daje agentom te same możliwości przez stdio lub HTTP.',
       hint: 'Uruchom polecenie i obserwuj obszar roboczy.'
     },
     sdk: {
       title: 'Wbuduj go we własny produkt',
       detail:
-        'OpenPencil to nie tylko aplikacja, ale też zestaw narzędzi: silnik niezależny od frameworka, SDK Vue bez interfejsu oraz osobne pakiety dla grafu sceny i formatów plików. Osadź obszar roboczy w swoim produkcie, renderuj i sprawdzaj projekty w CI albo zbuduj inny edytor na tym samym silniku. Każdy obszar roboczy na tej stronie to właśnie to SDK działające w witrynie z dokumentacją.',
+        'Lawha to nie tylko aplikacja, ale też zestaw narzędzi: silnik niezależny od frameworka, SDK Vue bez interfejsu oraz osobne pakiety dla grafu sceny i formatów plików. Osadź obszar roboczy w swoim produkcie, renderuj i sprawdzaj projekty w CI albo zbuduj inny edytor na tym samym silniku. Każdy obszar roboczy na tej stronie to właśnie to SDK działające w witrynie z dokumentacją.',
       hint: 'Kod obok obszaru roboczego wystarczy, żeby go zamontować.'
     }
   },
@@ -147,7 +147,7 @@ export const pl: LandingMessages = {
     next: {
       label: 'Następnie',
       lead: {
-        title: 'OpenPencil na własnym serwerze',
+        title: 'Lawha na własnym serwerze',
         detail:
           'Cała przestrzeń robocza we własnej sieci: synchronizacja, udostępnianie, komentarze i biblioteki zespołu bez wysyłania pliku komukolwiek innemu.',
         features: [
@@ -176,7 +176,7 @@ export const pl: LandingMessages = {
         }
       ],
       cloud: {
-        title: 'OpenPencil Cloud',
+        title: 'Lawha Cloud',
         detail:
           'Hostowana przestrzeń dla zespołów: synchronizacja na żywo, udostępnianie, biblioteki i AI, bez utrzymywania czegokolwiek.'
       }
@@ -197,7 +197,7 @@ export const pl: LandingMessages = {
   },
   cloud: {
     badge: 'Wczesny dostęp',
-    title: 'OpenPencil Cloud',
+    title: 'Lawha Cloud',
     lede: 'Przestrzeń projektowa Twojego zespołu, hostowana za Ciebie. Wszyscy edytują te same pliki na żywo, udostępniają je linkiem i projektują z AI, bez instalowania i utrzymywania czegokolwiek. Pliki pozostają otwarte: eksportuj je do .fig, kiedy chcesz.',
     features: [
       {
@@ -231,14 +231,14 @@ export const pl: LandingMessages = {
     joined: 'Sprawdź skrzynkę',
     joinedDetail: 'Otwórz link, który wysłaliśmy, aby potwierdzić adres.',
     failed: 'Nie udało się połączyć z listą oczekujących. Sprawdź połączenie i spróbuj ponownie.',
-    privacy: 'Piszemy tylko w sprawie OpenPencil Cloud.',
+    privacy: 'Piszemy tylko w sprawie Lawha Cloud.',
     refused: 'Nie udało się potwierdzić, że nie jesteś botem. Spróbuj ponownie.',
     limited: 'Zbyt wiele prób. Spróbuj ponownie za minutę.',
-    unavailable: 'Stąd nie można się zapisać. Zapisz się na openpencil.dev.'
+    unavailable: 'Stąd nie można się zapisać. Zapisz się na lawha.invalid.'
   },
   closing: {
     title: 'Zabierz swoje projekty ze sobą.',
-    download: 'Pobierz OpenPencil',
+    download: 'Pobierz Lawha',
     docs: 'Czytaj dokumentację',
     cloud: 'Zapisz się na listę Cloud'
   },
@@ -276,7 +276,7 @@ export const pl: LandingMessages = {
     }
   },
   download: {
-    title: 'Pobierz OpenPencil',
+    title: 'Pobierz Lawha',
     lede: 'Aplikacja desktopowa na macOS, Windows i Linux. Darmowa i otwartoźródłowa, bez rejestracji.',
     version: 'Wersja {version}, wydana {date}',
     forPlatform: 'Pobierz na {platform}',
@@ -312,7 +312,7 @@ export const pl: LandingMessages = {
       },
       web: {
         title: 'W przeglądarce',
-        detail: 'Ten sam edytor na app.openpencil.dev, bez instalacji.',
+        detail: 'Ten sam edytor na app.lawha.invalid, bez instalacji.',
         action: 'Otwórz aplikację webową'
       },
       cli: {

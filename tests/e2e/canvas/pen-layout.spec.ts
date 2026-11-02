@@ -4,13 +4,13 @@ const editor = useEditorSetup('/?test&no-chrome&no-rulers')
 
 test('lays out Pen frames whose default horizontal layout is omitted', async () => {
   await editor.page.evaluate(() =>
-    window.openPencil?.openFile?.('/tests/fixtures/pen-layout-defaults.pen')
+    window.lawha?.openFile?.('/tests/fixtures/pen-layout-defaults.pen')
   )
   await editor.canvas.waitForInit()
 
   const geometry = await editor.page.evaluate(() => {
-    const graph = window.openPencil?.getStore?.().graph
-    if (!graph) throw new Error('OpenPencil graph not initialized')
+    const graph = window.lawha?.getStore?.().graph
+    if (!graph) throw new Error('Lawha graph not initialized')
     const section = graph.getNode('section')
     const fixed = graph.getNode('fixed-child')
     const fill = graph.getNode('fill-child')

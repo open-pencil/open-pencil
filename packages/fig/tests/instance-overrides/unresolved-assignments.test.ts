@@ -5,7 +5,7 @@ import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import type { InstanceAssignmentDiagnostic } from '#fig/instance-overrides/occurrence/types'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('missing assignment targets require explicit partial-evaluation acknowledgement', () => {
   const changes = [

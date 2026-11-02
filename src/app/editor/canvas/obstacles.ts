@@ -1,4 +1,4 @@
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 /** Marks UI that floats over the canvas, such as the toolbar, for overlays to keep clear of. */
 const CANVAS_OBSTACLE_ATTRIBUTE = 'data-canvas-obstacle'

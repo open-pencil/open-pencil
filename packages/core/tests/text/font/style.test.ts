@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { chooseLocalFontMatch, fontWeightMatchOrder } from '@open-pencil/core/text'
+import { chooseLocalFontMatch, fontWeightMatchOrder } from '@lawha/core/text'
 
 describe('chooseLocalFontMatch', () => {
   const fonts = [

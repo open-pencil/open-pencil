@@ -1,7 +1,7 @@
 # Bun configuration.
 # Preload discovery-file isolation for every `bun test` run so engine tests
-# never clobber the real ~/Library/Application Support/OpenPencil/mcp.json
-# (which would break a running OpenPencil desktop app). See
+# never clobber the real ~/Library/Application Support/Lawha/mcp.json
+# (which would break a running Lawha desktop app). See
 # tests/helpers/mcp/discovery-isolation.ts for the rationale. Web font
 # providers start off, so no test reaches the network (tests/helpers/fonts/offline.ts).
 [test]

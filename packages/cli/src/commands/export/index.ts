@@ -4,8 +4,8 @@ import { basename, dirname, extname, join, resolve } from 'node:path'
 import { defineCommand } from 'citty'
 import { toUint8Array } from 'js-base64'
 
-import { BUILTIN_IO_FORMATS, IORegistry, type ExportResult } from '@open-pencil/core/io'
-import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
+import { BUILTIN_IO_FORMATS, IORegistry, type ExportResult } from '@lawha/core/io'
+import type { AutomationDocumentSummary } from '@lawha/core/rpc'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
@@ -29,7 +29,7 @@ const FORMAT_LIST = `${FORMAT_IDS.slice(0, -1).join(', ')}, or ${FORMAT_IDS.at(-
 function formatSupportsScale(format: string): boolean {
   return io.getFormat(format.toLowerCase())?.exportOptions?.scale ?? false
 }
-const JSX_STYLES = new Set(['openpencil', 'tailwind'])
+const JSX_STYLES = new Set(['lawha', 'tailwind'])
 const HTML_STYLES = new Set(['inline', 'tailwind'])
 const HTML_MODES = new Set(['fragment', 'standalone'])
 const HTML_ASSETS = new Set(['inline', 'external'])
@@ -306,8 +306,8 @@ export default defineCommand({
     },
     style: {
       type: 'string',
-      description: 'JSX style: openpencil or tailwind (default: openpencil)',
-      default: 'openpencil'
+      description: 'JSX style: lawha or tailwind (default: lawha)',
+      default: 'lawha'
     },
     html: {
       type: 'string',
@@ -351,7 +351,7 @@ export default defineCommand({
     rules: {
       type: 'string',
       description:
-        'Storybook: rules file for which stories each component gets and its title (default: openpencil.stories.json when present)'
+        'Storybook: rules file for which stories each component gets and its title (default: lawha.stories.json when present)'
     },
     'font-policy': {
       type: 'string',
@@ -371,7 +371,7 @@ export default defineCommand({
     }
 
     if (format === 'JSX' && !JSX_STYLES.has(args.style)) {
-      printError(`Invalid JSX style "${args.style}". Use openpencil or tailwind.`)
+      printError(`Invalid JSX style "${args.style}". Use lawha or tailwind.`)
       process.exit(1)
     }
 

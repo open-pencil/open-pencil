@@ -71,10 +71,10 @@
       "identifier": "fs:allow-open",
       "allow": [{ "path": "**" }],
       "deny": [
-        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
-        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
-        { "path": "$RUNTIME/openpencil/mcp.json" },
-        { "path": "$HOME/.openpencil/mcp.json" }
+        { "path": "$HOME/Library/Application Support/Lawha/mcp.json" },
+        { "path": "$LOCALDATA/Lawha/mcp.json" },
+        { "path": "$RUNTIME/lawha/mcp.json" },
+        { "path": "$HOME/.lawha/mcp.json" }
       ]
     },
     "fs:allow-fstat",
@@ -84,30 +84,30 @@
       "identifier": "fs:allow-read-text-file",
       "allow": [
         { "path": "$HOME/.pi/agent/settings.json" },
-        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
-        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
-        { "path": "$RUNTIME/openpencil/mcp.json" },
-        { "path": "$HOME/.openpencil/mcp.json" }
+        { "path": "$HOME/Library/Application Support/Lawha/mcp.json" },
+        { "path": "$LOCALDATA/Lawha/mcp.json" },
+        { "path": "$RUNTIME/lawha/mcp.json" },
+        { "path": "$HOME/.lawha/mcp.json" }
       ]
     },
     {
       "identifier": "fs:allow-write-file",
       "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }],
       "deny": [
-        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
-        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
-        { "path": "$RUNTIME/openpencil/mcp.json" },
-        { "path": "$HOME/.openpencil/mcp.json" }
+        { "path": "$HOME/Library/Application Support/Lawha/mcp.json" },
+        { "path": "$LOCALDATA/Lawha/mcp.json" },
+        { "path": "$RUNTIME/lawha/mcp.json" },
+        { "path": "$HOME/.lawha/mcp.json" }
       ]
     },
     {
       "identifier": "fs:allow-exists",
       "allow": [
         { "path": "$HOME/.pi/agent/auth.json" },
-        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
-        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
-        { "path": "$RUNTIME/openpencil/mcp.json" },
-        { "path": "$HOME/.openpencil/mcp.json" }
+        { "path": "$HOME/Library/Application Support/Lawha/mcp.json" },
+        { "path": "$LOCALDATA/Lawha/mcp.json" },
+        { "path": "$RUNTIME/lawha/mcp.json" },
+        { "path": "$HOME/.lawha/mcp.json" }
       ]
     },
     {
@@ -118,10 +118,10 @@
       "identifier": "fs:allow-remove",
       "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }],
       "deny": [
-        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
-        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
-        { "path": "$RUNTIME/openpencil/mcp.json" },
-        { "path": "$HOME/.openpencil/mcp.json" }
+        { "path": "$HOME/Library/Application Support/Lawha/mcp.json" },
+        { "path": "$LOCALDATA/Lawha/mcp.json" },
+        { "path": "$RUNTIME/lawha/mcp.json" },
+        { "path": "$HOME/.lawha/mcp.json" }
       ]
     },
     {
@@ -147,7 +147,7 @@
             "install",
             "--global",
             {
-              "validator": "^(@agentclientprotocol/(claude-agent-acp|codex-acp)|@open-pencil/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?)$"
+              "validator": "^(@agentclientprotocol/(claude-agent-acp|codex-acp)|@lawha/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?)$"
             },
             "--registry=https://registry.npmjs.org"
           ]
@@ -159,13 +159,13 @@
             "add",
             "--global",
             {
-              "validator": "^@open-pencil/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?$"
+              "validator": "^@lawha/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?$"
             },
             "--registry=https://registry.npmjs.org"
           ]
         },
-        { "name": "openpencil-mcp-http", "cmd": "openpencil-mcp-http", "args": false },
-        { "name": "openpencil-harness", "cmd": "openpencil-harness", "args": false },
+        { "name": "lawha-mcp-http", "cmd": "lawha-mcp-http", "args": false },
+        { "name": "lawha-harness", "cmd": "lawha-harness", "args": false },
         { "name": "cmd-claude-agent-acp", "cmd": "cmd", "args": ["/c", "claude-agent-acp"] },
         {
           "name": "cmd-claude-agent-acp-sign-in",
@@ -183,7 +183,7 @@
             "install",
             "--global",
             {
-              "validator": "^(@agentclientprotocol/(claude-agent-acp|codex-acp)|@open-pencil/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?)$"
+              "validator": "^(@agentclientprotocol/(claude-agent-acp|codex-acp)|@lawha/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?)$"
             },
             "--registry=https://registry.npmjs.org"
           ]
@@ -197,13 +197,13 @@
             "add",
             "--global",
             {
-              "validator": "^@open-pencil/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?$"
+              "validator": "^@lawha/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[1-9][0-9]*)?$"
             },
             "--registry=https://registry.npmjs.org"
           ]
         },
-        { "name": "cmd-openpencil-mcp-http", "cmd": "cmd", "args": ["/c", "openpencil-mcp-http"] },
-        { "name": "cmd-openpencil-harness", "cmd": "cmd", "args": ["/c", "openpencil-harness"] }
+        { "name": "cmd-lawha-mcp-http", "cmd": "cmd", "args": ["/c", "lawha-mcp-http"] },
+        { "name": "cmd-lawha-harness", "cmd": "cmd", "args": ["/c", "lawha-harness"] }
       ]
     },
     "shell:allow-stdin-write",

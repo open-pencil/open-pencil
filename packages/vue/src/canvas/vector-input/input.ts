@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 import {
   getCanvasNodeEditState,

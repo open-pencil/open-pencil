@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test'
 
 export function probeParagraphBuilds(page: Page) {
   return page.evaluateHandle(() => {
-    const renderers = window.openPencil?.getStore?.().canvasRenderers
+    const renderers = window.lawha?.getStore?.().canvasRenderers
     if (!renderers?.length) throw new Error('Renderer unavailable')
     const restores: Array<() => void> = []
     const counts = { builds: 0, readiness: 0 }

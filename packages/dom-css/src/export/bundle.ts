@@ -2,7 +2,7 @@ import type { CSSFontFaceRule } from '@acemir/cssom'
 import { isValid, toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
-import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { normalizeFontFamily } from '@lawha/scene-graph/font-style'
 
 import { tokenStylesheet, type TokenStylesheetFormat } from '../tokens/stylesheet'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -385,8 +385,8 @@ async function exportStandaloneHTML(
       fontFaceAssets(document, options)
     ])
     body = extracted.html
-    const cssPath = `${options.assetBasePath}/openpencil.css`
-    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${stylesheetLink(cssPath)}</head><body><main data-open-pencil-html="standalone" class="op-stage">${body}</main></body></html>`
+    const cssPath = `${options.assetBasePath}/lawha.css`
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${stylesheetLink(cssPath)}</head><body><main data-lawha-html="standalone" class="op-stage">${body}</main></body></html>`
     return {
       entrypoint: 'index.html',
       files: [
@@ -398,7 +398,7 @@ async function exportStandaloneHTML(
     }
   }
 
-  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${styleTag(css)}</head><body><main data-open-pencil-html="standalone" class="op-stage">${body}</main></body></html>`
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${styleTag(css)}</head><body><main data-lawha-html="standalone" class="op-stage">${body}</main></body></html>`
   return { entrypoint: 'index.html', files: [{ path: 'index.html', content: html }] }
 }
 

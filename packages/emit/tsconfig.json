@@ -16,7 +16,7 @@
     "types": ["bun"],
     "paths": {
       "#emit/*": ["./src/*"],
-      "@open-pencil/emit": ["./src/index.ts"]
+      "@lawha/emit": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

@@ -1,5 +1,5 @@
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { buildVariantName } from '@open-pencil/scene-graph/variant-name'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { buildVariantName } from '@lawha/scene-graph/variant-name'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'

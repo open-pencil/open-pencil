@@ -1,6 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 
-import { presenceName } from '@open-pencil/cloud/contract'
+import { presenceName } from '@lawha/cloud/contract'
 
 import type { RoomIdentity } from '@/app/collab/session'
 import { PEER_COLORS } from '@/constants'

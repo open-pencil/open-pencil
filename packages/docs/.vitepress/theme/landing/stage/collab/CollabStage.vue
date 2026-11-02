@@ -5,8 +5,8 @@ import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { BLACK } from '@lawha/scene-graph/constants'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { PEER_COLORS } from '@/constants'
 

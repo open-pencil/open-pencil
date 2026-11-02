@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ToolbarRoot } from 'reka-ui'
 
-import type { EditorToolDef, Tool } from '@open-pencil/core'
+import type { EditorToolDef, Tool } from '@lawha/core'
 import {
   getToolbarToolSelection,
   isToolbarToolActive,
   ToolbarItem
-} from '@open-pencil/vue/primitives/Toolbar'
-import { toolbarToolTestId } from '@open-pencil/vue/testing'
+} from '@lawha/vue/primitives/Toolbar'
+import { toolbarToolTestId } from '@lawha/vue/testing'
 
 import type { ToolbarAction, ToolbarItem as ToolbarLayoutItem } from '@/app/editor/toolbar/layout'
 import { toolTip } from '@/app/editor/toolbar/shortcuts'

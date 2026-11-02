@@ -1,6 +1,6 @@
-import { getNodeEditCapability, resolveEditorProfile, type Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { generatedFrameOwner, generatedFrameText } from '@open-pencil/scene-graph/generated'
+import { getNodeEditCapability, resolveEditorProfile, type Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { generatedFrameOwner, generatedFrameText } from '@lawha/scene-graph/generated'
 
 import type { CanvasLabelKind } from '#vue/canvas/labels/edit'
 import type { DragState } from '#vue/shared/input/types'

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createCloudAIClient } from '@open-pencil/cloud/client'
+import { createCloudAIClient } from '@lawha/cloud/client'
 
 import { testProviderConnection } from '@/app/ai/models/connection-test'
-import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
+import { cloudModelConfig } from '@/app/ai/providers/lawha/model'
 
 /** Tests a Cloud model whose service answers every request with `status` and `body`. */
 function testCloudModel(status: number, body: unknown) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted } from 'vue'
 
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useSettingsMessages } from '@lawha/vue/i18n'
 
 import { mcpToolAccessOpen } from '@/app/automation/tool-access/settings/use'
 import { webmcpMode } from '@/app/automation/webmcp/preferences'

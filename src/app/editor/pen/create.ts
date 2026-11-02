@@ -1,8 +1,8 @@
-import type { Editor, Tool } from '@open-pencil/core'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+import type { Editor, Tool } from '@lawha/core'
+import type { VectorNetwork } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import type { Vector } from '@lawha/scene-graph/primitives'
+import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import {
   chainEndingAt,

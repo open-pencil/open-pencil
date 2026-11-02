@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OpenPencil",
+  "productName": "Lawha",
   "version": "0.17.0-beta.1",
-  "identifier": "net.dannote.open-pencil",
+  "identifier": "app.lawha.desktop",
   "build": {
     "beforeDevCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "OpenPencil",
+        "title": "Lawha",
         "width": 1280,
         "height": 800,
         "dragDropEnabled": false,
@@ -86,14 +86,13 @@
     },
     "macOS": {
       "minimumSystemVersion": "13.0",
-      "signingIdentity": "Developer ID Application: Danila Poyarkov (N7D7M3Q3CD)",
       "entitlements": "Entitlements.plist"
     }
   },
   "plugins": {
     "fs": { "requireLiteralLeadingDot": true },
     "deep-link": {
-      "desktop": { "schemes": ["openpencil"] }
+      "desktop": { "schemes": ["lawha"] }
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4QzBCRjBFNzhFNEVEMDEKUldRQjdlUjREci9BV0hLaEJPeG5tRXdsWkhQWFdEa0VxcEtNR1o1S2VJeGlKU1VDTldQTi9wYncK",

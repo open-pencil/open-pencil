@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
 import {

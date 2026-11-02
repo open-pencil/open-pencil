@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const temporaryDirectories: string[] = []
 const repositoryRoot = await resolveWorkspaceRoot(import.meta.dir)
@@ -11,7 +11,7 @@ const oxlint = join(repositoryRoot, 'node_modules/.bin/oxlint')
 const plugin = join(repositoryRoot, 'lint/plugin.js')
 
 function lint(source: string): ReturnType<typeof Bun.spawnSync> {
-  const directory = mkdtempSync(join(tmpdir(), 'open-pencil-acronym-lint-'))
+  const directory = mkdtempSync(join(tmpdir(), 'lawha-acronym-lint-'))
   temporaryDirectories.push(directory)
   const config = join(directory, 'oxlint.json')
   const file = join(directory, 'fixture.ts')
@@ -19,7 +19,7 @@ function lint(source: string): ReturnType<typeof Bun.spawnSync> {
     config,
     JSON.stringify({
       jsPlugins: [plugin],
-      rules: { 'open-pencil/no-mixed-case-acronym-identifiers': 'error' }
+      rules: { 'lawha/no-mixed-case-acronym-identifiers': 'error' }
     })
   )
   writeFileSync(file, source)

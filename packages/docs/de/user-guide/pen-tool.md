@@ -29,7 +29,7 @@ Klicken Sie auf den ersten Punkt. Ein geschlossener Pfad kann eine Füllung besi
 
 ## Vektornetze
 
-OpenPencil speichert Vektoren als Vektornetze statt als einfache Punktlisten. Dadurch sind verzweigte Strukturen möglich und die Geometrie kann ohne Umwandlung im `.fig`-Format gespeichert werden.
+Lawha speichert Vektoren als Vektornetze statt als einfache Punktlisten. Dadurch sind verzweigte Strukturen möglich und die Geometrie kann ohne Umwandlung im `.fig`-Format gespeichert werden.
 
 ## Im Bearbeitungsmodus fortsetzen
 

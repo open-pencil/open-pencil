@@ -1,9 +1,9 @@
 import { groupBy } from 'es-toolkit/array'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { WHITE } from '@open-pencil/scene-graph/constants'
-import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
-import type { Size } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { WHITE } from '@lawha/scene-graph/constants'
+import { fitEnclosingGroups } from '@lawha/scene-graph/group-bounds'
+import type { Size } from '@lawha/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
 import type { SVGElementLayer } from '#core/icons/types'

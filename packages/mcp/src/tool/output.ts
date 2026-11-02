@@ -90,7 +90,7 @@ function assertNarrowRoot(rootPath: string, original: string): void {
   if (normalized === '/' || normalized === osSep || normalized === parsedRoot) {
     throw new Error(
       `Root path is too broad: "${original}" (resolved to "${normalized}"). ` +
-        'Specify a narrower OPENPENCIL_MCP_ROOT directory.'
+        'Specify a narrower LAWHA_MCP_ROOT directory.'
     )
   }
 }

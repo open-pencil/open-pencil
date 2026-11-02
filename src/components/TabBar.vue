@@ -3,7 +3,7 @@ import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { openNewFileTab, useTabsStore } from '@/app/tabs'

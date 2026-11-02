@@ -1,5 +1,5 @@
-import { IS_BROWSER } from '@open-pencil/core/constants'
-import type { DocumentColorSpace } from '@open-pencil/scene-graph'
+import { IS_BROWSER } from '@lawha/core/constants'
+import type { DocumentColorSpace } from '@lawha/scene-graph'
 
 export type PresentationColorSpace = 'srgb' | 'display-p3'
 

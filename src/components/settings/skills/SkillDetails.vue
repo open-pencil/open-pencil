@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAIMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useAIMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import type { SelectedSkill } from '@/app/ai/skills/settings/use'
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
@@ -24,7 +24,7 @@ const common = useCommonMessages()
 const messages = useSkillMessages()
 
 const skill = computed(() => entry.skill)
-const uploaded = computed(() => skill.value.source === 'openpencil')
+const uploaded = computed(() => skill.value.source === 'lawha')
 const useDescription = computed(() => {
   if (entry.untrusted) return ai.value.skillsFolderUntrusted
   if (!entry.sourceEnabled) return ai.value.skillsSourceOff

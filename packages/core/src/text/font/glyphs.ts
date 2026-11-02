@@ -1,4 +1,4 @@
-import type { FontVariation } from '@open-pencil/scene-graph'
+import type { FontVariation } from '@lawha/scene-graph'
 
 import { fontManager } from '#core/text/font/manager'
 

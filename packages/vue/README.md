@@ -1,8 +1,8 @@
-# @open-pencil/vue
+# @lawha/vue
 
-Headless Vue 3 SDK for building OpenPencil-powered editors.
+Headless Vue 3 SDK for building Lawha-powered editors.
 
-`@open-pencil/vue` sits on top of `@open-pencil/core` and provides:
+`@lawha/vue` sits on top of `@lawha/core` and provides:
 
 - Vue editor injection via `provideEditor()` / `useEditor()`
 - canvas integration via `useCanvas()`, `useCanvasInput()`, and `useTextEdit()`
@@ -14,20 +14,20 @@ The SDK is headless by design: it provides logic and structure, while your app o
 ## Install
 
 ```bash
-bun add @open-pencil/vue @open-pencil/core @open-pencil/scene-graph canvaskit-wasm
+bun add @lawha/vue @lawha/core @lawha/scene-graph canvaskit-wasm
 ```
 
-The current development version requires Vue `^3.5.41` and, when supplying the optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. See [SDK Getting Started](https://openpencil.dev/programmable/sdk/getting-started) for migration guidance; older releases may have different peer requirements.
+The current development version requires Vue `^3.5.41` and, when supplying the optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. See [SDK Getting Started](https://github.com/aliaaldihnayn-lab/design#readme) for migration guidance; older releases may have different peer requirements.
 
 ## Quick start
 
 ```vue
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { createDefaultEditorState, createEditor } from '@open-pencil/core'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
-import { provideEditor } from '@open-pencil/vue'
+import { createDefaultEditorState, createEditor } from '@lawha/core'
+import { SceneGraph } from '@lawha/scene-graph'
+import { CanvasRoot, CanvasSurface } from '@lawha/vue/canvas'
+import { provideEditor } from '@lawha/vue'
 
 const graph = new SceneGraph()
 const page = graph.getPages()[0]
@@ -58,7 +58,7 @@ The fixed viewport size above is illustrative; a resizable shell should return i
 
 ## Entry points
 
-The root exports only the editor context: `provideEditor`, `useEditor`, and `EDITOR_KEY`. Everything else comes from the subpath named after its source folder, such as `@open-pencil/vue/canvas`, `@open-pencil/vue/controls/fill`, `@open-pencil/vue/editor/commands`, `@open-pencil/vue/primitives/NumberField`, and `@open-pencil/vue/i18n`; `package.json` lists them all.
+The root exports only the editor context: `provideEditor`, `useEditor`, and `EDITOR_KEY`. Everything else comes from the subpath named after its source folder, such as `@lawha/vue/canvas`, `@lawha/vue/controls/fill`, `@lawha/vue/editor/commands`, `@lawha/vue/primitives/NumberField`, and `@lawha/vue/i18n`; `package.json` lists them all.
 
 ## Core concepts
 
@@ -67,7 +67,7 @@ The root exports only the editor context: `provideEditor`, `useEditor`, and `EDI
 Use `provideEditor(editor)` once near the top of your subtree.
 
 ```ts
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
 provideEditor(editor)
 ```
@@ -75,7 +75,7 @@ provideEditor(editor)
 Read it anywhere below with `useEditor()`.
 
 ```ts
-import { useEditor } from '@open-pencil/vue'
+import { useEditor } from '@lawha/vue'
 
 const editor = useEditor()
 ```
@@ -122,7 +122,7 @@ dimension can switch that axis to Fixed inside the same provider transaction.
 and undo-batched multi-selection updates. `AppearanceControlsRoot`
 exposes selection-derived independent-corner presentation state so consumers do not need parallel
 expansion heuristics. `PropertyListRoot` is controlled and
-editor-agnostic; OpenPencil panels connect it to selection and undo through
+editor-agnostic; Lawha panels connect it to selection and undo through
 `useEditorPropertyList()`. `useColorModel()` provides precise scene-color/Reka bridges, reactive
 RGB/HSL/HSB/OkHCL channels, extensible format state, and shared slider presentation data.
 `FillRoot` and `FillSwatch` separate fill behavior and binding-aware previews from popover
@@ -243,9 +243,9 @@ These are mostly useful when extending SDK primitives rather than building from 
 
 ```vue
 <script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 const props = defineProps<{
   editor: Editor
@@ -262,7 +262,7 @@ provideEditor(props.editor)
 ### Read selection state
 
 ```ts
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
 
 const { hasSelection, selectedCount, selectedNode } = useSelectionState()
 ```
@@ -270,7 +270,7 @@ const { hasSelection, selectedCount, selectedNode } = useSelectionState()
 ### Build a menu
 
 ```ts
-import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
+import { useMenuModel } from '@lawha/vue/editor/menu-model'
 
 const { appMenu, canvasMenu } = useMenuModel()
 ```

@@ -1,6 +1,6 @@
 import { omit } from 'es-toolkit'
 
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { designJSXProp } from '../definitions'
 import { isTreeNode, type TreeNode } from '../tree'

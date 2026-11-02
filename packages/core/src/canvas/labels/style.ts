@@ -1,8 +1,8 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { compositeOver } from '@open-pencil/scene-graph/color'
-import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { compositeOver } from '@lawha/scene-graph/color'
+import { figJamSectionTitleColors } from '@lawha/scene-graph/figjam'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { RotationPreview, SceneGeometry } from '#core/geometry'

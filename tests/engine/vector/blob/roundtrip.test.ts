@@ -5,8 +5,8 @@ import {
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
   textPathStartSegment
-} from '@open-pencil/fig/node-change'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
+} from '@lawha/fig/node-change'
+import type { VectorNetwork } from '@lawha/scene-graph'
 
 import {
   lineNetwork,

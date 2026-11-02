@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Stroke } from '@open-pencil/scene-graph'
-import { useStrokeControls } from '@open-pencil/vue/controls/stroke'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { Stroke } from '@lawha/scene-graph'
+import { useStrokeControls } from '@lawha/vue/controls/stroke'
+import { useI18n } from '@lawha/vue/i18n'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'

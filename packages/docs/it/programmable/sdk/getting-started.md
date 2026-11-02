@@ -1,6 +1,6 @@
 ---
 title: Primi passi con l'SDK
-description: Collega @open-pencil/vue, crea un editor e configura l'area di lavoro.
+description: Collega @lawha/vue, crea un editor e configura l'area di lavoro.
 ---
 
 # Primi passi con l'SDK
@@ -8,23 +8,23 @@ description: Collega @open-pencil/vue, crea un editor e configura l'area di lavo
 ## Installazione
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @lawha/core @lawha/vue canvaskit-wasm
 ```
 
-L'SDK si trova nel monorepo OpenPencil ed è pubblicato come pacchetto `@open-pencil/vue`.
+L'SDK si trova nel monorepo Lawha ed è pubblicato come pacchetto `@lawha/vue`.
 
 ```ts
-import { createEditor } from '@open-pencil/core'
-import { provideEditor } from '@open-pencil/vue'
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
+import { createEditor } from '@lawha/core'
+import { provideEditor } from '@lawha/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
 ```
 
 ## Livelli dell'applicazione
 
 Un'applicazione basata sull'SDK è composta da tre livelli:
 
-1. `@open-pencil/core` — il motore dell'editor, indipendente dal framework;
-2. `@open-pencil/vue` — composable e componenti senza stile per Vue;
+1. `@lawha/core` — il motore dell'editor, indipendente dal framework;
+2. `@lawha/vue` — composable e componenti senza stile per Vue;
 3. l'applicazione — stile, routing, gestione dei file e interfaccia specifica del prodotto.
 
 ## Configurazione minima
@@ -32,7 +32,7 @@ Un'applicazione basata sull'SDK è composta da tre livelli:
 ### 1. Crea un editor
 
 ```ts
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 const editor = createEditor({
   width: 1200,
@@ -44,9 +44,9 @@ const editor = createEditor({
 
 ```vue
 <script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 const props = defineProps<{
   editor: Editor
@@ -68,8 +68,8 @@ provideEditor(props.editor)
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -87,8 +87,8 @@ useCanvas(canvasRef, editor)
 Dopo la chiamata a `provideEditor()`, i componenti discendenti possono leggere la selezione ed eseguire i comandi dell'editor:
 
 ```ts
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
 
 const selection = useSelectionState()
 const commands = useEditorCommands()
@@ -100,9 +100,9 @@ const commands = useEditorCommands()
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

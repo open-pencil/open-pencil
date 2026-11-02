@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument } from '#fig/document/materialize'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('a connector binds to an instance read in the same pass', () => {
   const changes: NodeChange[] = [

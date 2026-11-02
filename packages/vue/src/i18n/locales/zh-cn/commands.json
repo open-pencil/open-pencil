@@ -68,7 +68,7 @@
   "paletteSearchPlaceholder": "输入命令或搜索…",
   "paletteAriaLabel": "命令面板",
   "paletteSearchAriaLabel": "搜索命令",
-  "paletteDescription": "搜索并运行 OpenPencil 命令。",
+  "paletteDescription": "搜索并运行 Lawha 命令。",
   "paletteNoCommands": "未找到命令。",
   "paletteBack": "返回"
 }

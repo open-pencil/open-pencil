@@ -9,11 +9,11 @@ const FRONT_END_SOURCES = /^(src|packages\/(cli|mcp|vue|harness)\/src)\//u
 
 /** Entry points that build layers from authored content without laying them out. */
 function isGraphBuilder(specifier: string, name: string): boolean {
-  if (specifier === '@open-pencil/dom-css' || specifier === '@open-pencil/dom-css/browser') {
+  if (specifier === '@lawha/dom-css' || specifier === '@lawha/dom-css/browser') {
     return name.endsWith('ToSceneGraph')
   }
-  if (specifier === '@open-pencil/pen') return name === 'parsePenFile' || name === 'readPenFile'
-  if (specifier === '@open-pencil/design-jsx') {
+  if (specifier === '@lawha/pen') return name === 'parsePenFile' || name === 'readPenFile'
+  if (specifier === '@lawha/design-jsx') {
     return ['renderTree', 'renderJSX', 'renderRoots', 'createDesignJSXRenderer'].includes(name)
   }
   return false
@@ -59,10 +59,10 @@ export function graphBuilderImports(sourceRel: string, content: string): GraphBu
 }
 
 export const noGraphBuildersInFrontEnds: Rule = createTextRule(
-  'open-pencil/no-graph-builders-in-front-ends',
+  'lawha/no-graph-builders-in-front-ends',
   (sourceRel, content) =>
     graphBuilderImports(sourceRel, content).map(({ specifier, name, line }) => ({
-      message: `Build layers from authored content through Core, which lays them out: \`${name}\` from \`${specifier}\` skips that. Use IO \`readDocument\`, \`readHTMLDocument\`, \`sceneGraphFromStyledHTML\` from \`@open-pencil/core/io/formats/html/layers\`, or \`@open-pencil/core/design-jsx\`.`,
+      message: `Build layers from authored content through Core, which lays them out: \`${name}\` from \`${specifier}\` skips that. Use IO \`readDocument\`, \`readHTMLDocument\`, \`sceneGraphFromStyledHTML\` from \`@lawha/core/io/formats/html/layers\`, or \`@lawha/core/design-jsx\`.`,
       line,
       column: 0
     }))

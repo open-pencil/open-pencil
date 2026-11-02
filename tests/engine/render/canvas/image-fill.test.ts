@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Fill, SceneNode } from '@lawha/scene-graph'
+import Matrix from '@lawha/scene-graph/matrix'
 
 import { makeImageFillLocalMatrix, patternTileLayout } from '#core/canvas/fills'
 

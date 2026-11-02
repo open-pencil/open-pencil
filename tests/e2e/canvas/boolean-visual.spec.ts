@@ -12,8 +12,8 @@ async function expectCanvas(name: string) {
 
 test('boolean operations', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const operations = ['UNION', 'SUBTRACT', 'INTERSECT', 'EXCLUDE'] as const
     const colors = [

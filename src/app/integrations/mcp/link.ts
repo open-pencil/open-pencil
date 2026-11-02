@@ -1,14 +1,14 @@
 import { promiseTimeout } from '@vueuse/core'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { watchChatAgent } from '@/app/automation/agents'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 
-/** How long an agent may take to reach OpenPencil's tools once its session starts. */
+/** How long an agent may take to reach Lawha's tools once its session starts. */
 export const AGENT_CONNECT_TIMEOUT_MS = 20_000
 
-/** A chat's agent, linked to OpenPencil's MCP server by the chat id its session carries. */
+/** A chat's agent, linked to Lawha's MCP server by the chat id its session carries. */
 export interface ChatAgentLink<Servers> {
   /** The id the agent's MCP session and tool calls carry, which ties them to this chat. */
   chat: string
@@ -23,7 +23,7 @@ export interface ChatAgentLink<Servers> {
 }
 
 /**
- * Names a chat's agent to OpenPencil's MCP server, so the server can report when this agent
+ * Names a chat's agent to Lawha's MCP server, so the server can report when this agent
  * connects and which chat its tool calls belong to. Link before the agent's session starts: the
  * agent connects while it starts.
  */

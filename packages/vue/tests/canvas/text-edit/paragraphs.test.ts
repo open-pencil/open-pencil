@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createEditor, type Editor } from '@lawha/core'
 
 import {
   createTextListActions,

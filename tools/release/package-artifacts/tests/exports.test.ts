@@ -8,7 +8,7 @@ import {
 import type { PackageManifest } from '#package-artifacts/manifest/types'
 
 const validManifest: PackageManifest = {
-  name: '@open-pencil/example',
+  name: '@lawha/example',
   version: '1.0.0',
   files: ['dist'],
   exports: {
@@ -34,8 +34,8 @@ describe('export metadata', () => {
 
   test('derives only concrete public import specifiers', () => {
     expect(concreteImportSpecifiers(validManifest)).toEqual([
-      '@open-pencil/example',
-      '@open-pencil/example/feature'
+      '@lawha/example',
+      '@lawha/example/feature'
     ])
   })
 

@@ -30,7 +30,7 @@ export class AIRelayConfigError extends Error {
 
 const DEFAULT_SECRET_NAMES = {
   databaseURL: 'DATABASE_URL',
-  upstreamKey: 'OPENPENCIL_AI_RELAY_UPSTREAM_KEY'
+  upstreamKey: 'LAWHA_AI_RELAY_UPSTREAM_KEY'
 } as const
 
 const textSchema = v.pipe(v.string(), v.trim(), v.minLength(1))

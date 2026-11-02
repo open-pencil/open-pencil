@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 async function diagnostics(source: string) {
-  return ruleDiagnostics(await lint(source, { 'open-pencil/no-raw-sql': 'error' }), 'no-raw-sql')
+  return ruleDiagnostics(await lint(source, { 'lawha/no-raw-sql': 'error' }), 'no-raw-sql')
 }
 
 describe('no-raw-sql', () => {

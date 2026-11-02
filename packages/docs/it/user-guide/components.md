@@ -29,7 +29,7 @@ Sono supportati testo, visibilità booleana, scambio di istanza e varianti. Le p
 
 ## Insiemi e varianti
 
-Combina i componenti con <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> o <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>K</kbd>. Ogni dimensione, per esempio stato o dimensione, può avere più valori. OpenPencil supporta combinazioni sparse, impedisce duplicati e usa come predefinita la variante in alto a sinistra.
+Combina i componenti con <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> o <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>K</kbd>. Ogni dimensione, per esempio stato o dimensione, può avere più valori. Lawha supporta combinazioni sparse, impedisce duplicati e usa come predefinita la variante in alto a sinistra.
 
 ## Sincronizzazione
 

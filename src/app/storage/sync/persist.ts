@@ -1,4 +1,4 @@
-import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { extractFigThumbnailFromReader } from '@lawha/fig'
 
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageLocation } from '@/app/integrations/storage/types'

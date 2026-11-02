@@ -15,7 +15,7 @@ import {
   type ViewUpdate
 } from '@codemirror/view'
 
-import type { DesignJSXElement } from '@open-pencil/design-jsx'
+import type { DesignJSXElement } from '@lawha/design-jsx'
 
 import type { LayerLinkSource } from '@/app/code/layers/links'
 

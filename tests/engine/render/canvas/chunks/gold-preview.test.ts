@@ -1,6 +1,6 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { RenderChunkIndex } from '#core/canvas/renderer/chunks'
 

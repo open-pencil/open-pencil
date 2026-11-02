@@ -2,10 +2,10 @@ import { afterAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
-import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
+import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
+import { DEFAULT_GRADIENT_TRANSFORM } from '@lawha/scene-graph/gradient'
 
 const WIDTH = 400
 const HEIGHT = 40

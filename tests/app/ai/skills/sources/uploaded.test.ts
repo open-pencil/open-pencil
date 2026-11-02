@@ -102,7 +102,7 @@ describe('skillsFromUploads', () => {
       }
     ])
     expect(skills.map((skill) => [skill.source, skill.name, skill.files])).toEqual([
-      ['openpencil', 'grid', ['references/spacing.md']]
+      ['lawha', 'grid', ['references/spacing.md']]
     ])
     expect(await skills[0]?.readFile('references/spacing.md')).toBe('8')
   })

@@ -7,19 +7,19 @@ test('populates a real lazy FIG page in the retained parse worker', async () => 
   await editor.page.evaluate(() => {
     const events: unknown[] = []
     Object.assign(window, { figPopulationWorkerEvents: events })
-    window.addEventListener('openpencil:fig-population-worker', (event) => {
+    window.addEventListener('lawha:fig-population-worker', (event) => {
       if (event instanceof CustomEvent) events.push(event.detail)
     })
   })
   const openFile = editor.page.evaluate(() =>
-    window.openPencil?.openFile?.('/tests/fixtures/material3.fig')
+    window.lawha?.openFile?.('/tests/fixtures/material3.fig')
   )
   await openFile
   await editor.canvas.waitForRender()
 
   const targetPageId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.graph.getPages(true).at(-1)?.id
   })
   if (!targetPageId) throw new Error('Target page not found')
@@ -31,8 +31,8 @@ test('populates a real lazy FIG page in the retained parse worker', async () => 
       ).length
   )
   await editor.page.evaluate((pageId) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.switchPage(pageId)
   }, targetPageId)
   await expect
@@ -50,8 +50,8 @@ test('populates a real lazy FIG page in the retained parse worker', async () => 
     .toBe(true)
 
   const currentPage = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return {
       currentPageId: store.state.currentPageId,
       childCount: store.graph.getChildren(store.state.currentPageId).length
@@ -67,7 +67,7 @@ test('populates a real lazy FIG page in the retained parse worker', async () => 
     expect.arrayContaining(['registered', 'populate'])
   )
 
-  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.dispose())
+  await editor.page.evaluate(() => window.lawha?.getStore?.()?.dispose())
   await expect
     .poll(() =>
       editor.page.evaluate(

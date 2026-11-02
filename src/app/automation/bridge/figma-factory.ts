@@ -1,5 +1,5 @@
-import { FigmaAPI, MAX_IMAGE_FETCH_BYTES } from '@open-pencil/core/figma-api'
-import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
+import { FigmaAPI, MAX_IMAGE_FETCH_BYTES } from '@lawha/core/figma-api'
+import { createCanvasKitRasterCodec } from '@lawha/core/io/formats/raster'
 
 import { renderAutomationImage } from '@/app/automation/bridge/export-handlers'
 import type { EditorStore } from '@/app/editor/active-store'

@@ -2,15 +2,15 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
+import { renderJSX } from '@lawha/core/design-jsx'
 import {
   designJSXElement,
   sceneNodeToJSX,
   selectionToJSX,
   selectionToJSXWithLayers
-} from '@open-pencil/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { connectorRouteEnds, connectorSublayers } from '@open-pencil/scene-graph/connectors'
+} from '@lawha/design-jsx'
+import { SceneGraph } from '@lawha/scene-graph'
+import { connectorRouteEnds, connectorSublayers } from '@lawha/scene-graph/connectors'
 
 const FLOW = `
   <Frame name="Flow" w={800} h={400}>

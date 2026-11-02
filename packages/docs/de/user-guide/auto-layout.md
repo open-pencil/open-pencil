@@ -12,7 +12,7 @@ Die automatische Anordnung verteilt untergeordnete Objekte innerhalb eines Rahme
 - Rahmen auswählen und <kbd>⇧</kbd><kbd>A</kbd> drücken.
 - Mehrere freie Objekte auswählen und denselben Kurzbefehl verwenden, um sie in einen neuen Rahmen einzuschließen.
 
-OpenPencil sortiert die Objekte zunächst nach ihrer sichtbaren Position.
+Lawha sortiert die Objekte zunächst nach ihrer sichtbaren Position.
 
 ## Richtung
 

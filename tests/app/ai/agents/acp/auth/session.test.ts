@@ -9,7 +9,7 @@ import {
   type NewSessionRequest
 } from '@agentclientprotocol/sdk'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@lawha/core/constants'
 
 import {
   checkAgentAuth,
@@ -175,7 +175,7 @@ describe('signInWithAgent', () => {
   })
 })
 
-/** A link to OpenPencil's tools that reports the given outcome once the session exists. */
+/** A link to Lawha's tools that reports the given outcome once the session exists. */
 function toolsProbe(outcome: OwnToolsOutcome) {
   const linked: string[] = []
   const probe: ToolsProbe = {
@@ -185,9 +185,9 @@ function toolsProbe(outcome: OwnToolsOutcome) {
       return {
         chat: '0123456789abcdef',
         mcpServers: [
-          { type: 'http', name: 'open-pencil', url: 'http://127.0.0.1:7600/mcp', headers: [] }
+          { type: 'http', name: 'lawha', url: 'http://127.0.0.1:7600/mcp', headers: [] }
         ],
-        meta: { claudeCode: { options: { allowedTools: ['mcp__open-pencil'] } } },
+        meta: { claudeCode: { options: { allowedTools: ['mcp__lawha'] } } },
         noteUpdate: () => undefined,
         outcome: async () => outcome,
         stop: () => undefined
@@ -197,7 +197,7 @@ function toolsProbe(outcome: OwnToolsOutcome) {
   return { probe, linked }
 }
 
-describe("checking a signed-in agent reaches OpenPencil's tools", () => {
+describe("checking a signed-in agent reaches Lawha's tools", () => {
   test('starts a session as a chat does, sends no prompt, and reports the outcome', async () => {
     const agent = fakeAgent({ status: SIGNED_IN, startsSessions: true })
     const { probe } = toolsProbe({ connected: true })
@@ -206,8 +206,8 @@ describe("checking a signed-in agent reaches OpenPencil's tools", () => {
     expect(agent.sessions).toHaveLength(1)
     expect(agent.sessions[0]).toMatchObject({
       cwd: '/workspace',
-      mcpServers: [{ name: 'open-pencil' }],
-      _meta: { claudeCode: { options: { allowedTools: ['mcp__open-pencil'] } } }
+      mcpServers: [{ name: 'lawha' }],
+      _meta: { claudeCode: { options: { allowedTools: ['mcp__lawha'] } } }
     })
     await agent.closed
   })

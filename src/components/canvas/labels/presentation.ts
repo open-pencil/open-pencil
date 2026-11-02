@@ -1,9 +1,9 @@
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import { canvasLabelForeground, outlineColorInMode } from '@open-pencil/core/canvas'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { CanvasLabelKind } from '@open-pencil/vue/canvas/labels'
+import { resolveEditorProfile, type Editor } from '@lawha/core'
+import { canvasLabelForeground, outlineColorInMode } from '@lawha/core/canvas'
+import type { SceneNode } from '@lawha/scene-graph'
+import { figJamSectionTitleColors } from '@lawha/scene-graph/figjam'
+import type { Color } from '@lawha/scene-graph/primitives'
+import type { CanvasLabelKind } from '@lawha/vue/canvas/labels'
 
 export interface CanvasLabelPresentation {
   background: Color

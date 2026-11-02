@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Builds the editor with `VITE_OPENPENCIL_CLOUD=off` and fails when any of OpenPencil Cloud's
+ * Builds the editor with `VITE_LAWHA_CLOUD=off` and fails when any of Lawha Cloud's
  * modules made it into the bundle. The build is not written to disk.
  *
  *   bun tools/checks/cloud-off/src/index.ts
@@ -9,12 +9,12 @@ import { resolve } from 'node:path'
 
 import { build } from 'vite'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import { cloudModulesIn } from './modules'
 
 const repoRoot = await resolveWorkspaceRoot(process.cwd())
-process.env.VITE_OPENPENCIL_CLOUD = 'off'
+process.env.VITE_LAWHA_CLOUD = 'off'
 
 const moduleIds = new Set<string>()
 await build({
@@ -26,7 +26,7 @@ await build({
   build: { write: false },
   plugins: [
     {
-      name: 'open-pencil-cloud-off-modules',
+      name: 'lawha-cloud-off-modules',
       buildEnd() {
         for (const id of this.getModuleIds()) moduleIds.add(id)
       }

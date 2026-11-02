@@ -3,7 +3,7 @@ import { createUIMessageStream, DirectChatTransport, stepCountIs, ToolLoopAgent 
 import type { ChatTransport, LanguageModel, ToolExecutionOptions, UIMessage } from 'ai'
 import { toMerged } from 'es-toolkit'
 
-import type { AIProviderID, ReasoningEffort } from '@open-pencil/core/constants'
+import type { AIProviderID, ReasoningEffort } from '@lawha/core/constants'
 
 import { resumableTransport } from '@/app/ai/chat/history/continuation'
 import { maxAgentSteps } from '@/app/ai/chat/preferences'

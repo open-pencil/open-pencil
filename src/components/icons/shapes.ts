@@ -1,11 +1,11 @@
 import type { FunctionalComponent } from 'vue'
 
-import { outlineSVGPath, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
+import { outlineSVGPath, type PolygonOutlineCommand } from '@lawha/scene-graph/polygon'
 import {
   SHAPE_WITH_TEXT_TYPES,
   shapeWithTextGeometry,
   type ShapeWithTextType
-} from '@open-pencil/scene-graph/shape-with-text'
+} from '@lawha/scene-graph/shape-with-text'
 
 import { maskIcon } from './mask'
 

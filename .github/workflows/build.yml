@@ -70,7 +70,7 @@ jobs:
       - name: Build shared desktop frontend and package outputs
         env:
           # Official releases only: lets the app send its daily ping and, with consent, usage stats.
-          VITE_OPENPENCIL_FEEDBACK: "on"
+          VITE_LAWHA_FEEDBACK: "on"
         run: |
           bun run generate:icons --target desktop
           bun run generate:tauri-menu

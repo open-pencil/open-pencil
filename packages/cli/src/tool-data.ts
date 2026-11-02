@@ -1,11 +1,11 @@
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI } from '@lawha/core/figma-api'
 import {
   createCanvasKitRasterCodec,
   headlessRenderNodes,
   initCanvasKit
-} from '@open-pencil/core/io/formats/raster'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/io/formats/raster'
+import { ALL_TOOLS } from '@lawha/core/tools'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app/target'

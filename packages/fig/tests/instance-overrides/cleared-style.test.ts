@@ -6,9 +6,9 @@ import { CLEARED_STYLE, SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fi
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import { staleFigmaRawFields } from '#fig/source-metadata'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneNode, SharedStyleKind } from '@open-pencil/scene-graph'
-import { SHARED_STYLE_FIELDS, sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneNode, SharedStyleKind } from '@lawha/scene-graph'
+import { SHARED_STYLE_FIELDS, sharedStyleRefKey } from '@lawha/scene-graph/shared-styles'
 
 const solid = (r: number, g: number, b: number): NodeChange['fillPaints'] => [
   { type: 'SOLID', color: { r, g, b, a: 1 }, opacity: 1, visible: true }

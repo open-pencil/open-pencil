@@ -1,4 +1,4 @@
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 import { buildFigmaClipboardHTML } from '#core/clipboard'
 import type { EditorContext } from '#core/editor/types'

@@ -3,9 +3,9 @@ import {
   type DesignIssueHighlight,
   type DesignIssueMarker,
   type DesignIssueSeverity
-} from '@open-pencil/core/canvas'
-import type { LintMessage } from '@open-pencil/core/lint'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/canvas'
+import type { LintMessage } from '@lawha/core/lint'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 export type { DesignIssueSeverity }
 

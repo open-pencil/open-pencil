@@ -10,7 +10,7 @@ const piSettingsSchema = v.object({
 export interface PiAccount {
   /** Pi's agent folder; the Harness companion reuses the sign-ins stored there. */
   agentDir: string
-  /** Pi's default model, used when an OpenPencil Pi profile names none. */
+  /** Pi's default model, used when an Lawha Pi profile names none. */
   defaultModel: string | null
   /** Pi keeps sign-ins in `auth.json`; only whether it exists is checked, never its contents. */
   signedIn: boolean

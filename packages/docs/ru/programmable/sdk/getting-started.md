@@ -1,6 +1,6 @@
 ---
 title: Начало работы с SDK
-description: Подключение @open-pencil/vue, создание редактора и настройка холста.
+description: Подключение @lawha/vue, создание редактора и настройка холста.
 ---
 
 # Начало работы с SDK
@@ -8,23 +8,23 @@ description: Подключение @open-pencil/vue, создание реда�
 ## Установка
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @lawha/core @lawha/vue canvaskit-wasm
 ```
 
-SDK находится в монорепозитории OpenPencil и опубликован как пакет `@open-pencil/vue`.
+SDK находится в монорепозитории Lawha и опубликован как пакет `@lawha/vue`.
 
 ```ts
-import { createEditor } from '@open-pencil/core'
-import { provideEditor } from '@open-pencil/vue'
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
+import { createEditor } from '@lawha/core'
+import { provideEditor } from '@lawha/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
 ```
 
 ## Из чего состоит приложение
 
 В приложении на базе SDK можно выделить три уровня:
 
-1. `@open-pencil/core` — движок редактора, не зависящий от конкретного framework;
-2. `@open-pencil/vue` — компонуемые функции и компоненты без предустановленных стилей для Vue;
+1. `@lawha/core` — движок редактора, не зависящий от конкретного framework;
+2. `@lawha/vue` — компонуемые функции и компоненты без предустановленных стилей для Vue;
 3. ваше приложение — оформление, маршрутизация, работа с файлами и интерфейс продукта.
 
 ## Минимальная настройка
@@ -32,7 +32,7 @@ import { useCanvas } from '@open-pencil/vue/canvas/surface'
 ### 1. Создайте редактор
 
 ```ts
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 const editor = createEditor({
   width: 1200,
@@ -44,9 +44,9 @@ const editor = createEditor({
 
 ```vue
 <script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 const props = defineProps<{
   editor: Editor
@@ -68,8 +68,8 @@ provideEditor(props.editor)
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -87,8 +87,8 @@ useCanvas(canvasRef, editor)
 После вызова `provideEditor()` дочерние компоненты могут получать сведения о выделении и выполнять команды редактора:
 
 ```ts
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
 
 const selection = useSelectionState()
 const commands = useEditorCommands()
@@ -100,9 +100,9 @@ const commands = useEditorCommands()
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas } from '@open-pencil/vue/canvas/surface'
-import { useEditor } from '@open-pencil/vue'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useCanvas } from '@lawha/vue/canvas/surface'
+import { useEditor } from '@lawha/vue'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

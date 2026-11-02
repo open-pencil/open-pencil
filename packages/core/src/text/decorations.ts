@@ -5,8 +5,8 @@ import type {
   Fill,
   SceneNode,
   TextDecorationStyle
-} from '@open-pencil/scene-graph'
-import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+} from '@lawha/scene-graph'
+import { faceStyleKey } from '@lawha/scene-graph/font-style'
 
 import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from './character-style'
 import { fontDecorationMetricsSync, type FontDecorationMetrics } from './font/glyphs'

@@ -1,10 +1,10 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { createShapeWithText, shapeWithTextKindFields } from '@open-pencil/scene-graph/generated'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { createShapeWithText, shapeWithTextKindFields } from '@lawha/scene-graph/generated'
 import {
   isShapeWithTextType,
   SHAPE_WITH_TEXT_TYPES,
   type ShapeWithTextType
-} from '@open-pencil/scene-graph/shape-with-text'
+} from '@lawha/scene-graph/shape-with-text'
 
 import type { InterfaceTheme } from '#core/constants'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'

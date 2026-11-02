@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
-import type { Vector } from '@open-pencil/scene-graph'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+import type { Vector } from '@lawha/scene-graph/primitives'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
+import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import { nextFreeX, placeCopy } from '#core/tools/mockup/fit'

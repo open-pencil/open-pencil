@@ -10,11 +10,11 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
-import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
+import type { SceneNode } from '@lawha/scene-graph'
+import { useInlineRename } from '@lawha/vue/editor/inline-rename'
+import { useI18n } from '@lawha/vue/i18n'
+import { PageListRoot } from '@lawha/vue/primitives/PageList'
+import { useFlatReorderDrag } from '@lawha/vue/shared/drag'
 
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { presenceByPage } from '@/app/presence/registry'

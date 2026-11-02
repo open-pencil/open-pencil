@@ -37,7 +37,7 @@ beforeEach(() => {
       const url = new URL(input instanceof Request ? input.url : String(input))
       authorization.push(new Headers(init?.headers).get('Authorization'))
       if (url.pathname === '/api/account/status') statusRequests += 1
-      if (url.pathname === '/.well-known/openpencil')
+      if (url.pathname === '/.well-known/lawha')
         return Response.json(cloudDiscoveryFixture(ORIGIN))
       const answer = answers[url.pathname]
       if (!answer) return new Response(null, { status: 404 })

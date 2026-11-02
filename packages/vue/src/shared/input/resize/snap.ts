@@ -1,8 +1,8 @@
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import type { HandlePosition } from '@open-pencil/core/geometry'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { resolveEditorProfile, type Editor } from '@lawha/core'
+import type { HandlePosition } from '@lawha/core/geometry'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
 import {

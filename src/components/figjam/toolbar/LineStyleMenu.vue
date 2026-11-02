@@ -5,8 +5,8 @@ import IconBan from '~icons/lucide/ban'
 import IconMinus from '~icons/lucide/minus'
 import IconSeparator from '~icons/lucide/separator-horizontal'
 
-import type { FigJamColorName, FigJamLineStyle } from '@open-pencil/scene-graph/figjam'
-import { useFigJamMessages, useShapeMessages } from '@open-pencil/vue/i18n'
+import type { FigJamColorName, FigJamLineStyle } from '@lawha/scene-graph/figjam'
+import { useFigJamMessages, useShapeMessages } from '@lawha/vue/i18n'
 
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import theme from '@/theme/figjam/toolbar'

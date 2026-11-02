@@ -24,7 +24,7 @@ export class CloudAIError extends Error {
     readonly status: number,
     readonly code?: AIErrorCode
   ) {
-    super(`OpenPencil AI request failed with HTTP ${status}`)
+    super(`Lawha AI request failed with HTTP ${status}`)
   }
 }
 

@@ -1,13 +1,13 @@
 import type { DesktopAsset } from '../native/catalog.ts'
 import { releaseVersion } from '../native/context.ts'
 
-/** OpenPencil Chromium's update feed, published on each release beside the stable `latest.json`. */
+/** Lawha Chromium's update feed, published on each release beside the stable `latest.json`. */
 export const CHROMIUM_FEED = 'latest-chromium.json'
 
-const CHROMIUM_PREFIX = 'OpenPencil-Chromium_'
+const CHROMIUM_PREFIX = 'Lawha-Chromium_'
 
 /**
- * Whether a release asset belongs to OpenPencil Chromium, which the Chromium workflow adds to a
+ * Whether a release asset belongs to Lawha Chromium, which the Chromium workflow adds to a
  * release after its stable build, so the stable tooling leaves it in place.
  */
 export function isChromiumAsset(name: string): boolean {
@@ -24,7 +24,7 @@ export const chromiumTargets = chromiumBuilds.map((build) => build.target)
 export type ChromiumTarget = (typeof chromiumTargets)[number]
 
 /**
- * Bundles the Tauri CLI writes for OpenPencil Chromium. They carry the release's version, named
+ * Bundles the Tauri CLI writes for Lawha Chromium. They carry the release's version, named
  * apart from the stable bundles and per architecture.
  */
 export function chromiumAssets(target: ChromiumTarget, version: string): DesktopAsset[] {
@@ -34,13 +34,13 @@ export function chromiumAssets(target: ChromiumTarget, version: string): Desktop
 
   return [
     {
-      source: `OpenPencil Chromium_${version}_${build.arch}.dmg`,
+      source: `Lawha Chromium_${version}_${build.arch}.dmg`,
       name: `${CHROMIUM_PREFIX}${version}_${build.arch}.dmg`,
       updaterKeys: [],
       signed: false
     },
     {
-      source: 'OpenPencil Chromium.app.tar.gz',
+      source: 'Lawha Chromium.app.tar.gz',
       name: `${CHROMIUM_PREFIX}${build.arch}.app.tar.gz`,
       updaterKeys: [build.platform, `${build.platform}-app`],
       signed: true

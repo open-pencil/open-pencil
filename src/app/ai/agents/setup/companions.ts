@@ -6,7 +6,7 @@ function majorMinor(version: string): string | null {
 }
 
 /**
- * Whether an installed OpenPencil companion (MCP server, Harness) is too old or new for this app.
+ * Whether an installed Lawha companion (MCP server, Harness) is too old or new for this app.
  * Companions must match the app's major.minor version. One that reports no version predates
  * `--version`, which the desktop app asks every installed companion, so it is outdated too.
  */

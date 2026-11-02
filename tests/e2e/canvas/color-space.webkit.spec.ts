@@ -68,10 +68,10 @@ test('warns when a Display-P3 document cannot be presented in wide gamut', async
 
   // This project renders through SwiftShader or WebKit, so wide gamut is unavailable and an
   // sRGB buffer is what a Display-P3 document gets.
-  await page.evaluate(() => window.openPencil?.getStore?.()?.setDocumentColorSpace('display-p3'))
+  await page.evaluate(() => window.lawha?.getStore?.()?.setDocumentColorSpace('display-p3'))
   await expect(banner).toBeVisible()
   await expect(banner).toContainText('Display-P3')
 
-  await page.evaluate(() => window.openPencil?.getStore?.()?.setDocumentColorSpace('srgb'))
+  await page.evaluate(() => window.lawha?.getStore?.()?.setDocumentColorSpace('srgb'))
   await expect(banner).toBeHidden()
 })

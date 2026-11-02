@@ -9,9 +9,9 @@ import {
   type TextDecorationRecord
 } from '#fig/node-change/index'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 const SQUARE = [
   { type: 'M', x: 0, y: 0 },
@@ -217,7 +217,7 @@ describe('derived text writer', () => {
 
 type DerivedTextData = NonNullable<NodeChange['derivedTextData']>
 
-function earlierOpenPencilData(characters: string, lineHeight: number): DerivedTextData {
+function earlierLawhaData(characters: string, lineHeight: number): DerivedTextData {
   return {
     baselines: [
       {
@@ -251,7 +251,7 @@ describe('derived text reader', () => {
     // Figma lays truncated text out whole and puts an ellipsis, with no character, where it is
     // cut; the glyphs after it, from `truncationStartIndex`, are not drawn.
     const characters = 'Long label'
-    const data = earlierOpenPencilData(characters, 16)
+    const data = earlierLawhaData(characters, 16)
     data.logicalIndexToCharacterOffsetMap = data.logicalIndexToCharacterOffsetMap?.slice(0, -1)
     const glyphs = data.glyphs ?? []
     glyphs.splice(4, 0, { ...glyphs[4], firstCharacter: undefined })
@@ -263,7 +263,7 @@ describe('derived text reader', () => {
 
   test("keeps a glyph's own advance through reading and saving", () => {
     const characters = 'Table item'
-    const data = earlierOpenPencilData(characters, 16)
+    const data = earlierLawhaData(characters, 16)
     // One offset per character, as Figma writes, so the reader keeps the glyphs.
     data.logicalIndexToCharacterOffsetMap = data.logicalIndexToCharacterOffsetMap?.slice(0, -1)
     for (const glyph of data.glyphs ?? []) glyph.advance = 0.5
@@ -280,25 +280,25 @@ describe('derived text reader', () => {
     expect(saved.glyphs?.at(-1)?.advance).toBe(0.5)
   })
 
-  test('drops one-line glyphs an earlier OpenPencil wrote without shaping (#914)', () => {
+  test('drops one-line glyphs an earlier Lawha wrote without shaping (#914)', () => {
     const characters = 'A sentence long enough that it has to wrap onto a second line.'
 
     expect(
-      convertFigmaDerivedTextGlyphs(earlierOpenPencilData(characters, 16), blobs, characters)
+      convertFigmaDerivedTextGlyphs(earlierLawhaData(characters, 16), blobs, characters)
     ).toEqual([])
   })
 
   test('keeps Figma glyphs, whose offset map has one entry per character', () => {
     const characters = 'Table item'
-    const data = earlierOpenPencilData(characters, 16)
+    const data = earlierLawhaData(characters, 16)
     data.logicalIndexToCharacterOffsetMap = data.logicalIndexToCharacterOffsetMap?.slice(0, -1)
 
     expect(convertFigmaDerivedTextGlyphs(data, blobs, characters)).toHaveLength(characters.length)
   })
 
-  test('keeps Figma glyphs an earlier OpenPencil carried over', () => {
+  test('keeps Figma glyphs an earlier Lawha carried over', () => {
     const characters = 'Table item'
-    const data = earlierOpenPencilData(characters, 20)
+    const data = earlierLawhaData(characters, 20)
     for (const glyph of data.glyphs ?? []) glyph.position.y = 15.09
 
     expect(convertFigmaDerivedTextGlyphs(data, blobs, characters)).toHaveLength(characters.length)

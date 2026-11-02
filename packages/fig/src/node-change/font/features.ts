@@ -1,6 +1,6 @@
-import { figmaSchema } from '@open-pencil/kiwi/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { FontFeature } from '@open-pencil/scene-graph'
+import { figmaSchema } from '@lawha/kiwi/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { FontFeature } from '@lawha/scene-graph'
 
 /**
  * `toggledOn/OffOTFeatures` are typed as `OpenTypeFeature[]`, so only tags Figma's schema

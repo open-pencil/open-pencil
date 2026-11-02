@@ -5,10 +5,10 @@ import type {
   NodeType,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
-import { fillSizingFields } from '@open-pencil/scene-graph/layout'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import { CORNER_FIELDS } from '@lawha/scene-graph/fields'
+import { fillSizingFields } from '@lawha/scene-graph/layout'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { convertEffects } from './effects'
 import { ellipseArc } from './geometry'

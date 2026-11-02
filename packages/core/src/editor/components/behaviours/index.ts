@@ -1,4 +1,4 @@
-import { readBehaviour, withBehaviour, type Behaviour } from '@open-pencil/scene-graph/behaviours'
+import { readBehaviour, withBehaviour, type Behaviour } from '@lawha/scene-graph/behaviours'
 
 import type { EditorContext } from '#core/editor/types'
 

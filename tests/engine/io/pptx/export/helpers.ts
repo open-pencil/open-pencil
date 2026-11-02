@@ -3,8 +3,8 @@ import { expect } from 'bun:test'
 import { unzipSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
-import type { Fill, Stroke } from '@open-pencil/scene-graph'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill, Stroke } from '@lawha/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 // 1x1 transparent PNG — stub rasterizer output so unit tests avoid CanvasKit.
 export const TINY_PNG = toUint8Array(

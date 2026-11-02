@@ -1,9 +1,9 @@
 import { request as httpRequest } from 'node:http'
 import type { IncomingMessage } from 'node:http'
 
-import { readDiscoveryFile } from '@open-pencil/mcp/discovery'
-import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
-import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
+import { readDiscoveryFile } from '@lawha/mcp/discovery'
+import type { DiscoveryInfo } from '@lawha/mcp/discovery'
+import { platformHasUnixSockets } from '@lawha/mcp/transport'
 
 import type { AppTarget } from '#cli/app/target'
 

@@ -2,21 +2,21 @@ import { describe, expect, test } from 'bun:test'
 
 import { composeProjectName, localCloudDeploymentTOML } from '#cloud-dev/config'
 
-import { parseCloudDeploymentTOML } from '@open-pencil/cloud/server'
+import { parseCloudDeploymentTOML } from '@lawha/cloud/server'
 
 const secrets = {
-  DATABASE_URL: 'postgresql://openpencil:password@127.0.0.1:54329/openpencil',
+  DATABASE_URL: 'postgresql://lawha:password@127.0.0.1:54329/lawha',
   BETTER_AUTH_SECRET: 'local-development-secret-at-least-32-characters',
-  S3_ACCESS_KEY_ID: 'openpencil',
-  S3_SECRET_ACCESS_KEY: 'openpencil-development-secret'
+  S3_ACCESS_KEY_ID: 'lawha',
+  S3_SECRET_ACCESS_KEY: 'lawha-development-secret'
 }
 
 describe('local Cloud development configuration', () => {
   test('points branch URLs at the Compose services published on loopback', () => {
     const config = parseCloudDeploymentTOML(
       localCloudDeploymentTOML({
-        cloudURL: 'https://feature.cloud.open-pencil.localhost',
-        editorURL: 'https://feature.open-pencil.localhost',
+        cloudURL: 'https://feature.cloud.lawha.localhost',
+        editorURL: 'https://feature.lawha.localhost',
         objectStorageURL: 'http://127.0.0.1:41000',
         smtpPort: 41025
       }),
@@ -25,10 +25,10 @@ describe('local Cloud development configuration', () => {
 
     expect(config).toMatchObject({
       deployment: 'self-hosted',
-      publicURL: 'https://feature.cloud.open-pencil.localhost',
+      publicURL: 'https://feature.cloud.lawha.localhost',
       trustedOrigins: [
-        'https://feature.open-pencil.localhost',
-        'https://feature.cloud.open-pencil.localhost'
+        'https://feature.lawha.localhost',
+        'https://feature.cloud.lawha.localhost'
       ],
       emailPasswordEnabled: true,
       emailPasswordSignUpEnabled: true,
@@ -42,7 +42,7 @@ describe('local Cloud development configuration', () => {
   })
 
   test('derives a Compose project name from the branch', () => {
-    expect(composeProjectName('feature/cloud auth')).toBe('openpencil-cloud-feature-cloud-auth')
-    expect(composeProjectName('')).toBe('openpencil-cloud-development')
+    expect(composeProjectName('feature/cloud auth')).toBe('lawha-cloud-feature-cloud-auth')
+    expect(composeProjectName('')).toBe('lawha-cloud-development')
   })
 })

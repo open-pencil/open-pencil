@@ -1,4 +1,4 @@
-import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
+import type { AutomationDocumentSummary } from '@lawha/core/rpc'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { getTabById, getTabForStore, getTabsSnapshot } from '@/app/tabs'
@@ -83,7 +83,7 @@ export function resolveAutomationTarget(
     throw new Error(
       requestedDocumentId
         ? `Document "${requestedDocumentId}" not found`
-        : 'No active OpenPencil document'
+        : 'No active Lawha document'
     )
   }
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { IS_TAURI, type AIProviderID } from '@open-pencil/core/constants'
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { IS_TAURI, type AIProviderID } from '@lawha/core/constants'
+import { useAIMessages } from '@lawha/vue/i18n'
 
 import { aiModelSettings, modelConnection } from '@/app/ai/models'
 import { modelProviderName } from '@/app/ai/models/provider-name'
@@ -13,7 +13,7 @@ import {
   ONBOARDING_SERVER_PROVIDER,
   ONBOARDING_SUBSCRIPTIONS
 } from '@/app/ai/models/settings/onboarding/plan'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import { cloudAIAvailable } from '@/app/cloud/integration'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -84,8 +84,8 @@ const groups = computed(() => {
   if (cloudAIAvailable.value) {
     groups.push({
       key: 'cloud',
-      title: modelProviderName(OPENPENCIL_AI_PROVIDER),
-      choices: [{ id: OPENPENCIL_AI_PROVIDER }]
+      title: modelProviderName(LAWHA_AI_PROVIDER),
+      choices: [{ id: LAWHA_AI_PROVIDER }]
     })
   }
   return groups

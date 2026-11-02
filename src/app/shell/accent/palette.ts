@@ -1,16 +1,16 @@
 import { maxBy } from 'es-toolkit'
 
-import type { SelectionTheme } from '@open-pencil/core/canvas'
-import { SELECTION_COLOR } from '@open-pencil/core/constants'
+import type { SelectionTheme } from '@lawha/core/canvas'
+import { SELECTION_COLOR } from '@lawha/core/constants'
 import {
   colorToHex,
   contrastRatio,
   okhclToRGBA,
   parseColor,
   rgbaToOkHCL
-} from '@open-pencil/scene-graph/color'
-import { WHITE } from '@open-pencil/scene-graph/constants'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/color'
+import { WHITE } from '@lawha/scene-graph/constants'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { AccentPreference, AccentPreset } from './schema'
 

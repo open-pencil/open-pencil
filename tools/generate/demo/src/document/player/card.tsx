@@ -1,4 +1,4 @@
-/** @jsxImportSource @open-pencil/design-jsx */
+/** @jsxImportSource @lawha/design-jsx */
 /**
  * The player card: the one object the tour keeps coming back to. A main component with text
  * properties for the track, a slot for the artwork, and the controls as nested instances.
@@ -12,8 +12,8 @@ import {
   property,
   shader,
   type TreeNode
-} from '@open-pencil/design-jsx'
-import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
+} from '@lawha/design-jsx'
+import type { ShaderPreset } from '@lawha/scene-graph/shaders'
 
 import type { Theme } from '../theme'
 

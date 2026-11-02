@@ -14,7 +14,7 @@ import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { requireSharingAccess } from '../access'
 import {
@@ -82,7 +82,7 @@ export function createInvitationService(
     return {
       kind: 'document',
       documentName: invitation.documentName,
-      inviterName: inviter?.name ?? 'An OpenPencil user',
+      inviterName: inviter?.name ?? 'An Lawha user',
       permission: invitation.permission,
       expiresAt: dateString(invitation.expiresAt) ?? '',
       recipientHint: recipientHint(invitation.emailNormalized)
@@ -153,7 +153,7 @@ export function createInvitationService(
           ? {
               deliveryId: id,
               recipientEmail: input.email,
-              inviterName: deliveryContext[0]?.name ?? 'An OpenPencil user',
+              inviterName: deliveryContext[0]?.name ?? 'An Lawha user',
               documentName: deliveryContext[1].name,
               permission: input.permission,
               expiresAt: expiresAt.toISOString(),

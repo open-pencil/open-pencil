@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { ZOOM_MAX, ZOOM_MIN } from '@open-pencil/core/constants'
+import { ZOOM_MAX, ZOOM_MIN } from '@lawha/core/constants'
 
 export const RECENT_FILES_LIMIT_MIN = 1
 export const RECENT_FILES_LIMIT_MAX = 1000

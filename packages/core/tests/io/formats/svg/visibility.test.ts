@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { createSVGNodes } from '@open-pencil/core/io/formats/svg'
-import { importSVG } from '@open-pencil/core/tools'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { createSVGNodes } from '@lawha/core/io/formats/svg'
+import { importSVG } from '@lawha/core/tools'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 /**
  * Each tree is what `figma.createNodeFromSvg` built in Figma 126 from the same markup, with

@@ -1,6 +1,6 @@
 import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
 
-import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { computeDescendantVisualBounds, type VisualBounds } from '@lawha/scene-graph/geometry'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture } from '#core/canvas/renderer/picture'

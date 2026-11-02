@@ -1,5 +1,5 @@
-import { createEditor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { handleMoveMove, handleMoveUp, type MoveModifiers } from '#vue/shared/input/move/drag'
 import { createSelectionMoveDrag } from '#vue/shared/input/select/move'

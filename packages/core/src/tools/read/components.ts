@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition } from '@lawha/scene-graph'
 
 import { getComponentCatalog } from '#core/tools/component-catalog'
 import { toolNumber, defineTool } from '#core/tools/schema'

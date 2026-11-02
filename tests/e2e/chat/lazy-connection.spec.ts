@@ -6,7 +6,7 @@ test('creating a new chat does not connect before an explicit submission', async
   page
 }) => {
   const probe = await page.evaluateHandle(() => {
-    const setTransport = window.openPencil?.setChatTransport
+    const setTransport = window.lawha?.setChatTransport
     if (!setTransport) throw new Error('Transport override unavailable')
     const state = { connections: 0 }
     setTransport(() => {

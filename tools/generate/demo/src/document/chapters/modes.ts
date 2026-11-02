@@ -1,4 +1,4 @@
-import { Frame, Instance, type DesignMode } from '@open-pencil/design-jsx'
+import { Frame, Instance, type DesignMode } from '@lawha/design-jsx'
 
 import { variablesRow } from '../chrome'
 import { layoutChapter, type Chapter, type ChapterContext } from './chapter'

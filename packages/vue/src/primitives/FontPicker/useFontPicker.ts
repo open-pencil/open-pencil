@@ -3,7 +3,7 @@ import { sortBy } from 'es-toolkit'
 import { useFilter } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import type { FontFamilyOption } from '@open-pencil/core/text'
+import type { FontFamilyOption } from '@lawha/core/text'
 
 import { useRetainedActivity } from '#vue/lifecycle/retention/context'
 

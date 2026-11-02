@@ -1,9 +1,9 @@
 import { useLocalStorage, usePreferredDark } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import type { RulerTheme } from '@open-pencil/core/canvas'
-import { IS_BROWSER } from '@open-pencil/core/constants'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import type { RulerTheme } from '@lawha/core/canvas'
+import { IS_BROWSER } from '@lawha/core/constants'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import { getActiveEditorStoreOrNull, useActiveEditorStoreRef } from '@/app/editor/active-store'
 import {

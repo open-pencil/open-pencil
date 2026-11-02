@@ -6,7 +6,7 @@ const RULE = 'no-overlay-content-from-open-state'
 const SCRIPT = '<script setup lang="ts">\nconst removing = null\nconst shown = null\n</script>\n'
 
 async function flagged(files: Record<string, string>): Promise<string[]> {
-  const diagnostics = await lintFiles(files, { [`open-pencil/${RULE}`]: 'error' })
+  const diagnostics = await lintFiles(files, { [`lawha/${RULE}`]: 'error' })
   return ruleDiagnostics(diagnostics, RULE)
     .map((item) => item.filename?.split('/').pop() ?? '')
     .sort()

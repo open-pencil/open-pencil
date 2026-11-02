@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test'
 
 import type { Font } from 'canvaskit-wasm'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import { SceneGraph } from '@lawha/scene-graph'
+import Matrix from '@lawha/scene-graph/matrix'
 
 import { hitTestComponentLabel, hitTestFrameTitle } from '#core/canvas/labels/hit-test'
 import { labelLayout } from '#core/canvas/labels/layout'

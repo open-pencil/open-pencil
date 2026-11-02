@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCommonMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useCommonMessages, useSettingsMessages } from '@lawha/vue/i18n'
 
 import { AppDialogBody } from '@/components/ui/dialog'
 import AppInput from '@/components/ui/input/AppInput.vue'

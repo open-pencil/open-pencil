@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import type { VectorNetwork } from '@open-pencil/scene-graph'
-import { validateVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+import type { VectorNetwork } from '@lawha/scene-graph'
+import { validateVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 const finiteNumberSchema = v.pipe(v.number(), v.finite())
 const zeroVector = () => ({ x: 0, y: 0 })

@@ -5,7 +5,7 @@ description: État et actions réutilisables pour créer des interfaces d’édi
 
 # Composables
 
-Ces composables fournissent l’état et les actions généralement nécessaires aux interfaces construites sur OpenPencil.
+Ces composables fournissent l’état et les actions généralement nécessaires aux interfaces construites sur Lawha.
 
 ## Éditeur et zone de travail
 

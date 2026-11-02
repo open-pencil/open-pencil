@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { materializeDocument } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { materializeDocument } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 for (const wrapper of [false, true]) {
   test(`target-aspect metadata does not override child constraints (wrapper=${wrapper})`, () => {

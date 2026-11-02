@@ -17,7 +17,7 @@ function cwdOf(transport: object): string | null {
 
 describe('Tauri ACP transport', () => {
   test('starts the agent in the folder the desktop shell sets aside for agents', async () => {
-    const workspace = '/Users/tester/Library/Application Support/OpenPencil/agent-workspace'
+    const workspace = '/Users/tester/Library/Application Support/Lawha/agent-workspace'
     await mockTauriIPC((cmd) => {
       expect(cmd).toBe('agent_workspace')
       return workspace

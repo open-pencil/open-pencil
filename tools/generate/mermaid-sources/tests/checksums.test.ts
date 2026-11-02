@@ -5,7 +5,7 @@ import { checksum, CHECKSUMS_FILE } from '#mermaid-sources/checksums'
 import { UPSTREAM_DIR } from '#mermaid-sources/sources'
 import * as v from 'valibot'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const root = await resolveWorkspaceRoot(import.meta.dir)
 

@@ -1,6 +1,6 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
-import { buildVariantName } from '@open-pencil/scene-graph/variant-name'
+import type { SceneNode } from '@lawha/scene-graph'
+import { createComponentPropertyId } from '@lawha/scene-graph/components'
+import { buildVariantName } from '@lawha/scene-graph/variant-name'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/variant-set'

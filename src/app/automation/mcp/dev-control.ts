@@ -1,6 +1,6 @@
-import { MCP_TOOL_SCOPES, type MCPToolScope } from '@open-pencil/mcp/tools'
+import { MCP_TOOL_SCOPES, type MCPToolScope } from '@lawha/mcp/tools'
 
-export const DEV_MCP_RESTART_PATH = '/__openpencil/mcp/restart'
+export const DEV_MCP_RESTART_PATH = '/__lawha/mcp/restart'
 
 const MAX_ROOT_DIRECTORY_LENGTH = 4_096
 const MAX_DISABLED_TOOL_COUNT = 512

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import {
   createRemotePreviewRouter,

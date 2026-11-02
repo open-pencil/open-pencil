@@ -1,6 +1,6 @@
 import { test, expect } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { createImageCache } from '#core/canvas/images/cache'
 import {

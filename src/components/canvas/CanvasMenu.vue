@@ -16,11 +16,11 @@ import {
   editorCommandMetadata,
   formatShortcut,
   type EditorCommandId
-} from '@open-pencil/vue/editor/commands'
-import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { vTestId } from '@open-pencil/vue/testing'
+} from '@lawha/vue/editor/commands'
+import { useMenuModel } from '@lawha/vue/editor/menu-model'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
+import { useI18n } from '@lawha/vue/i18n'
+import { vTestId } from '@lawha/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'

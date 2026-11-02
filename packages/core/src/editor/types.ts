@@ -9,12 +9,12 @@ import type {
   VectorNetwork,
   VectorSegment,
   VectorVertex
-} from '@open-pencil/scene-graph'
-import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
-import type { UndoManager } from '@open-pencil/scene-graph/undo'
+} from '@lawha/scene-graph'
+import type { CanvasGuide } from '@lawha/scene-graph/guides'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import type { SnapGuide } from '@lawha/scene-graph/snap'
+import type { UndoManager } from '@lawha/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'

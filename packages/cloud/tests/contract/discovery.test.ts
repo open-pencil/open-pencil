@@ -37,7 +37,7 @@ const discovery = {
 
 describe('Cloud discovery contract', () => {
   test('publishes the stable discovery path and protocol version', () => {
-    expect(CLOUD_DISCOVERY_PATH).toBe('/.well-known/openpencil')
+    expect(CLOUD_DISCOVERY_PATH).toBe('/.well-known/lawha')
     expect(CLOUD_PROTOCOL_VERSION).toBe('1')
   })
 

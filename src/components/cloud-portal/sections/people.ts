@@ -1,5 +1,5 @@
-import type { CloudPortalClient } from '@open-pencil/cloud/client'
-import type { CloudAdminUser } from '@open-pencil/cloud/contract'
+import type { CloudPortalClient } from '@lawha/cloud/client'
+import type { CloudAdminUser } from '@lawha/cloud/contract'
 
 import type { useDateFormat } from '@/app/i18n/date'
 

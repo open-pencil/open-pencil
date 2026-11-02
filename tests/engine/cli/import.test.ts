@@ -3,16 +3,16 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { parseFigFile } from '@open-pencil/core/io/formats/fig'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { parseFigFile } from '@lawha/core/io/formats/fig'
+import type { SceneNode } from '@lawha/scene-graph'
 
-import { runOpenPencilCLI } from '#tests/helpers/cli'
+import { runLawhaCLI } from '#tests/helpers/cli'
 import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 
 setDefaultTimeout(30_000)
 
 async function createFixture() {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-'))
+  const dir = await mkdtemp(join(tmpdir(), 'lawha-import-cli-'))
   const htmlPath = join(dir, 'card.html')
   const cssPath = join(dir, 'card.css')
 
@@ -59,7 +59,7 @@ test.each(['card.json', 'missing/nested/card.json'])(
     const { htmlPath, cssPath, dir } = await createFixture()
     const output = join(dir, relativeOutput)
 
-    const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    const { stdout, stderr, exitCode } = await runLawhaCLI([
       'import',
       htmlPath,
       '--css',
@@ -85,7 +85,7 @@ test.each(['card.json', 'missing/nested/card.json'])(
 )
 
 test('import CLI reads embedded HTML styles without a sidecar CSS file', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-embedded-'))
+  const dir = await mkdtemp(join(tmpdir(), 'lawha-import-cli-embedded-'))
   const htmlPath = join(dir, 'embedded.html')
   const output = join(dir, 'embedded.json')
 
@@ -102,7 +102,7 @@ test('import CLI reads embedded HTML styles without a sidecar CSS file', async (
     </html>`
   )
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+  const { stdout, stderr, exitCode } = await runLawhaCLI([
     'import',
     htmlPath,
     '--format',
@@ -128,7 +128,7 @@ test.each(['card.fig', 'missing/nested/card.fig'])(
     const { htmlPath, cssPath, dir } = await createFixture()
     const output = join(dir, relativeOutput)
 
-    const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    const { stdout, stderr, exitCode } = await runLawhaCLI([
       'import',
       htmlPath,
       '--css',
@@ -155,7 +155,7 @@ test.each(['card.fig', 'missing/nested/card.fig'])(
 )
 
 test('import CLI compiles Tailwind candidates before import', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-tailwind-'))
+  const dir = await mkdtemp(join(tmpdir(), 'lawha-import-cli-tailwind-'))
   const htmlPath = join(dir, 'tailwind.html')
   const output = join(dir, 'tailwind.json')
   const classes = ['flex', 'flex-col', 'gap-2', 'w-60', 'p-6', 'rounded-xl', 'bg-white']
@@ -165,7 +165,7 @@ test('import CLI compiles Tailwind candidates before import', async () => {
     `<article class="${classes.join(' ')}"><h1 class="text-2xl">Tailwind card</h1></article>`
   )
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+  const { stdout, stderr, exitCode } = await runLawhaCLI([
     'import',
     htmlPath,
     '--tailwind',

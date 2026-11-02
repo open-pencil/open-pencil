@@ -11,14 +11,14 @@
     "order": "asc",
     "ignoreCase": true,
     "newlinesBetween": true,
-    "internalPattern": ["@open-pencil/", "@/", "#core/", "#vue/", "#cli/", "#mcp/", "#tests/"],
+    "internalPattern": ["@lawha/", "@/", "#core/", "#vue/", "#cli/", "#mcp/", "#tests/"],
     "customGroups": [
       {
         "groupName": "type-workspace",
-        "elementNamePattern": ["@open-pencil/**"],
+        "elementNamePattern": ["@lawha/**"],
         "modifiers": ["type"]
       },
-      { "groupName": "workspace", "elementNamePattern": ["@open-pencil/**"] },
+      { "groupName": "workspace", "elementNamePattern": ["@lawha/**"] },
       { "groupName": "type-app", "elementNamePattern": ["@/**"], "modifiers": ["type"] },
       { "groupName": "app", "elementNamePattern": ["@/**"] },
       {

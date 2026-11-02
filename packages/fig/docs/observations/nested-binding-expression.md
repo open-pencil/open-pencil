@@ -13,7 +13,7 @@ The expression is in its own record's
 placed units: its coefficient must not be multiplied by the same instance scale again. The
 outer occurrence's 0.5 factor still applies, giving a final binding multiplier of 0.25.
 
-OpenPencil edits the token to 40 and re-encodes the document. Reopened Figma reports padding 10,
+Lawha edits the token to 40 and re-encodes the document. Reopened Figma reports padding 10,
 nested width 17.5, and outer size 37.5×7. Changing the reopened token to 60 gives padding 15 and
 outer width 42.5, proving the expression remains live. It is restored to 40 before PNG capture.
 Figma's `boundVariables` projection is empty for this inherited expression; that does not mean

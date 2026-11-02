@@ -3,9 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import { expectFills } from '#core-tests/helpers/assert'
 import { createAPI, createStackHost } from '#core-tests/helpers/figma-api'
 
-import type { FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
+import type { FigmaNodeProxy } from '@lawha/core/figma-api'
+import { computeAllLayouts } from '@lawha/core/layout'
+import { LawhaAPI } from '@lawha/core/lawha-api'
 
 describe('createComponentFromNode', () => {
   test('converts frame to component', () => {
@@ -38,7 +38,7 @@ describe('createComponentFromNode', () => {
     frame.name = 'Card'
     frame.resize(200, 50)
     frame.cornerRadius = 8
-    new OpenPencilAPI(api).bindVariable(frame, 'cornerRadius', variable)
+    new LawhaAPI(api).bindVariable(frame, 'cornerRadius', variable)
     api.graph.updateNode(frame.id, {
       variableModes: { [collection.id]: collection.defaultModeId }
     })

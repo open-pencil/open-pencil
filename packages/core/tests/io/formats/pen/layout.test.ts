@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { layoutAuthoredNodes } from '@open-pencil/core/layout'
-import { parsePenFile, type PenDocument, type PenIconSource, type PenNode } from '@open-pencil/pen'
-import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import { layoutAuthoredNodes } from '@lawha/core/layout'
+import { parsePenFile, type PenDocument, type PenIconSource, type PenNode } from '@lawha/pen'
+import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
 
 function parseLayoutDocument(
   children: PenNode[],

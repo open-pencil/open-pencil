@@ -10,7 +10,7 @@ test('wrapped text keeps its lines after a .fig is saved and reopened (#914)', a
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await page.evaluate((message) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const card = store.graph.createNode('FRAME', store.state.currentPageId, {
       name: 'Card',
@@ -46,7 +46,7 @@ test('wrapped text keeps its lines after a .fig is saved and reopened (#914)', a
   try {
     page.once('dialog', (dialog) => dialog.accept('Card.fig'))
     const download = page.waitForEvent('download')
-    await page.evaluate(() => window.openPencil?.getStore?.().saveFigFileAs())
+    await page.evaluate(() => window.lawha?.getStore?.().saveFigFileAs())
     bytes = [...(await readFile(await (await download).path()))]
   } finally {
     await picker.evaluate((handle) => handle.restore())
@@ -54,7 +54,7 @@ test('wrapped text keeps its lines after a .fig is saved and reopened (#914)', a
   }
 
   const lines = await page.evaluate(async (saved) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     await store.openFigFile(new File([new Uint8Array(saved)], 'Card.fig'))
     const message = [...store.graph.nodes.values()].find((node) => node.name === 'Message')

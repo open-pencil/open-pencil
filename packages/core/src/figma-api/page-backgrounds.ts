@@ -1,7 +1,7 @@
-import { convertFills, fillToKiwiPaint } from '@open-pencil/fig/node-change'
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { convertFills, fillToKiwiPaint } from '@lawha/fig/node-change'
+import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { copyFills } from '@lawha/scene-graph/copy'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { CANVAS_BG_COLOR, PAGE_DEFAULT_BACKGROUNDS, type InterfaceTheme } from '#core/constants'
 

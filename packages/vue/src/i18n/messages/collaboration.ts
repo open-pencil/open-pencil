@@ -38,7 +38,7 @@ export const collaborationMessageDefaults = {
   othersWaiting: params('Also waiting: {names}'),
   unreachableTitle: 'Can’t reach the room’s servers',
   unreachableDescription:
-    'Check your internet connection. OpenPencil keeps trying and opens the file once it connects.',
+    'Check your internet connection. Lawha keeps trying and opens the file once it connects.',
   waitingTitle: 'Waiting for someone who has this file',
   waitingDescription:
     'Rooms aren’t stored on a server. The file lives on the devices of the people who’ve been in the room, so it can only open while one of them is online.',
@@ -76,7 +76,7 @@ export const collaborationMessageDefaults = {
   nobodyInCall: 'Nobody is in the call yet.',
   voiceDeniedTitle: 'Microphone access is blocked',
   voiceDeniedDescription:
-    'Allow OpenPencil to use the microphone in your browser or system settings, then try again.',
+    'Allow Lawha to use the microphone in your browser or system settings, then try again.',
   voiceNoMicrophoneTitle: 'No microphone found',
   voiceNoMicrophoneDescription: 'Connect a microphone, then try again.',
   voiceUnavailableTitle: 'Can’t open the microphone',

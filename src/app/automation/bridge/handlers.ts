@@ -1,4 +1,4 @@
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import type { FigmaAPI } from '@lawha/core/figma-api'
 
 import { agentSessionOpened, endAgentSession } from '@/app/automation/agents'
 import {

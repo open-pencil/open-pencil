@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
-import type { Rect } from '@open-pencil/scene-graph/primitives'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+import type { Rect } from '@lawha/scene-graph/primitives'
+import type { SnapGuide } from '@lawha/scene-graph/snap'
 
 import type { GuidePreview } from '#core/canvas/guides/types'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'

@@ -2,7 +2,7 @@ import { compact } from 'es-toolkit/array'
 import valueParser from 'postcss-value-parser'
 import { themeNamespaces, type ThemeNamespace } from 'twirlwind'
 
-import type { SceneGraph, Variable, VariableScope } from '@open-pencil/scene-graph'
+import type { SceneGraph, Variable, VariableScope } from '@lawha/scene-graph'
 
 /** Every variable, collection by collection, in each collection's own order. */
 export function collectionVariables(

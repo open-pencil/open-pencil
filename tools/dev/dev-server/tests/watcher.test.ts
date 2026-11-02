@@ -18,7 +18,7 @@ async function waitFor(check: () => boolean | Promise<boolean>, description: str
 }
 
 test('Vite invalidates source inside an active worktree while excluding nested checkouts', async () => {
-  const directory = await realpath(await mkdtemp(join(tmpdir(), 'open-pencil-watch-')))
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'lawha-watch-')))
   let server: ViteDevServer | undefined
   try {
     const root = join(directory, '.worktrees', 'active')

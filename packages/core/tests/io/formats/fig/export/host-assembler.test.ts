@@ -5,8 +5,8 @@ import {
   exportFigFile,
   setFigArchiveAssembler,
   type FigArchiveParts
-} from '@open-pencil/core/io/formats/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/io/formats/fig'
+import { SceneGraph } from '@lawha/scene-graph'
 
 afterEach(() => setFigArchiveAssembler(null))
 

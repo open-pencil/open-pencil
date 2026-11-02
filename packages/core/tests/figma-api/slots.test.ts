@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, type FigmaNodeProxy, type FigmaSlotNode } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI, type FigmaNodeProxy, type FigmaSlotNode } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /** Figma's typings only expose the slot members on `SlotNode`, so narrow before reading them. */
 const isSlot = (node: FigmaNodeProxy): node is FigmaSlotNode => node.type === 'SLOT'
@@ -112,8 +112,8 @@ describe('slots', () => {
   })
 
   // Figma returns the copy as a SLOT without references; the typings promise a FrameNode,
-  // and OpenPencil, whose slots are frames bound to a property, returns that frame. Figma
-  // also moves the copy to the page, so it reads null references; OpenPencil's clone stays
+  // and Lawha, whose slots are frames bound to a property, returns that frame. Figma
+  // also moves the copy to the page, so it reads null references; Lawha's clone stays
   // beside the original, inside the component, where it binds nothing.
   test('a cloned slot is a plain frame bound to nothing', () => {
     const { component } = setup()

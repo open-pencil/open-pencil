@@ -1,7 +1,7 @@
 import type { PrimitiveProps } from 'reka-ui'
 import type { ComputedRef, Ref, VNode } from 'vue'
 
-import type { Variable } from '@open-pencil/scene-graph'
+import type { Variable } from '@lawha/scene-graph'
 
 import type {
   BindingMutationSource,

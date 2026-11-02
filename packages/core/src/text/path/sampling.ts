@@ -1,7 +1,7 @@
 import { clamp } from 'es-toolkit'
 
-import type { TextPathData } from '@open-pencil/scene-graph'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { TextPathData } from '@lawha/scene-graph'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 interface Cubic {
   p0: Vector

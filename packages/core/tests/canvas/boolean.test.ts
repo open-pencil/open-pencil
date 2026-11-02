@@ -3,9 +3,9 @@ import { afterAll, describe, expect, spyOn, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { renderRow } from '#core-tests/helpers/figma-rows'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
+import { SceneGraph, type Stroke } from '@lawha/scene-graph'
 
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 

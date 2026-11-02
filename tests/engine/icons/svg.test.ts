@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { VectorNetwork, VectorSegment } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'

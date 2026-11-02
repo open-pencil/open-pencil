@@ -5,7 +5,7 @@ import {
   IS_TAURI,
   type ACPAgentDef,
   type ACPAgentID
-} from '@open-pencil/core/constants'
+} from '@lawha/core/constants'
 
 import {
   HARNESS_EXECUTABLE,

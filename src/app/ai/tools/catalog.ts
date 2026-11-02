@@ -1,4 +1,4 @@
-import { ALL_TOOLS, CORE_TOOLS, isToolExposed, toolChangesDocument } from '@open-pencil/core/tools'
+import { ALL_TOOLS, CORE_TOOLS, isToolExposed, toolChangesDocument } from '@lawha/core/tools'
 
 import type { ToolAccessEntry } from '@/app/automation/tool-access/types'
 

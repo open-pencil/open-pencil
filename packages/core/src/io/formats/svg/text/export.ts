@@ -1,7 +1,7 @@
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
-import { textLengthPixels } from '@open-pencil/scene-graph/text'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import type { CharacterStyleOverride, SceneNode } from '@lawha/scene-graph'
+import { parseFontStyle } from '@lawha/scene-graph/font-style'
+import { textLengthPixels } from '@lawha/scene-graph/text'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
 
 import {
   formatColor,

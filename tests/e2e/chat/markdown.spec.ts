@@ -56,7 +56,7 @@ test('Markdown blocks unsafe links and cross-origin images', async ({ configured
   await expect(assistant.getByRole('img', { name: 'insecure' })).toHaveCount(0)
   await expect(assistant.getByRole('link', { name: 'safe' })).toHaveAttribute(
     'href',
-    'https://openpencil.dev/'
+    'https://github.com/aliaaldihnayn-lab/design#readme'
   )
 })
 

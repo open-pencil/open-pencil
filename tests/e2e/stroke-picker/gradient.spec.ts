@@ -5,8 +5,8 @@ import { propertyItems, propertySection } from '#tests/helpers/properties'
 
 async function selectedStroke(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = [...store.state.selectedIds][0]
     return store.graph.getNode(id)?.strokes?.[0] ?? null
   })

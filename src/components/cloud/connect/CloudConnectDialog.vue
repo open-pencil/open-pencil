@@ -3,7 +3,7 @@ import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCloudPortalMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCloudPortalMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import {
   cloudAuthFailureMessage,
@@ -33,7 +33,7 @@ import type {
 const cloudConnect = tv(cloudConnectTheme)
 
 /**
- * Connecting the editor to an OpenPencil Cloud server and signing in: the server's address when
+ * Connecting the editor to an Lawha Cloud server and signing in: the server's address when
  * none was chosen yet, then email and password right here, or a provider in the browser. The
  * desktop app and other editors approve a one-time code in the browser for providers.
  */

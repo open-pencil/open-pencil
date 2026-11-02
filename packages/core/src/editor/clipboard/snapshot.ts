@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { referencedStyleIds } from '@open-pencil/scene-graph/shared-styles'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { referencedStyleIds } from '@lawha/scene-graph/shared-styles'
 
 import { clipboardPlacement, type ClipboardPlacement } from './placement'
 import { captureClipboardVariables, type ClipboardVariables } from './variables'

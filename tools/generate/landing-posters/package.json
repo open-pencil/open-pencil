@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/landing-posters-tools",
+  "name": "@lawha/landing-posters-tools",
   "private": true,
   "type": "module",
   "imports": {
@@ -12,7 +12,7 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*",
     "@playwright/test": "^1.63.0",
     "sharp": "0.34.5"
   },

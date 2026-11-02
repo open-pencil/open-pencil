@@ -1,6 +1,6 @@
 import { computed, shallowRef } from 'vue'
 
-import { canMakeBooleanSourceNode, layersToOutline } from '@open-pencil/core/canvas'
+import { canMakeBooleanSourceNode, layersToOutline } from '@lawha/core/canvas'
 
 import { useEditorEvent } from '#vue/editor/events/use'
 import { useSelectionState } from '#vue/editor/selection-state/use'

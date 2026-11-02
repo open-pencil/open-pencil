@@ -1,6 +1,6 @@
 {
   "dialogTitle": "استعادة العمل غير المحفوظ",
-  "dialogDescription": "عثر OpenPencil على مستندات من جلسة سابقة.",
+  "dialogDescription": "عثر Lawha على مستندات من جلسة سابقة.",
   "restoreFailed": "تعذّرت استعادة هذا المستند.",
   "settingsTitle": "الاستعادة",
   "settingsDescription": "التحكم في نسخ الاستعادة المحلية من الأعطال للمستندات غير المحفوظة.",

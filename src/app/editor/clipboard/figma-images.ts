@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { computeImageHash } from '@lawha/scene-graph/images'
 
 import { tauriFetch } from '@/app/tauri/http'
 

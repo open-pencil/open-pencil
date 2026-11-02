@@ -1,6 +1,6 @@
 ---
 title: Warstwy i strony
-description: Praca z warstwami, stronami i panelem właściwości w OpenPencil.
+description: Praca z warstwami, stronami i panelem właściwości w Lawha.
 ---
 
 # Warstwy i strony
@@ -20,7 +20,7 @@ Wybranie warstwy na liście zaznacza odpowiadający jej obiekt na obszarze roboc
 
 ## Strony
 
-- Kliknij stronę, aby do niej przejść. OpenPencil przywróci zapisane położenie i powiększenie.
+- Kliknij stronę, aby do niej przejść. Lawha przywróci zapisane położenie i powiększenie.
 - Użyj przycisku dodawania, aby utworzyć stronę.
 - Usuń bieżącą stronę za pomocą odpowiedniego działania.
 - Kliknij nazwę dwukrotnie, aby ją zmienić.

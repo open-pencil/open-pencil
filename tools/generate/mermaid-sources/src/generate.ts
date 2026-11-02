@@ -1,5 +1,5 @@
 /**
- * Writes the Mermaid sources `@open-pencil/mermaid` runs into `packages/mermaid/src/upstream`,
+ * Writes the Mermaid sources `@lawha/mermaid` runs into `packages/mermaid/src/upstream`,
  * from the release pinned in `sources.ts`, with Mermaid's licence beside them: each grammar and
  * the parser built from it, the modules copied whole, and the declarations copied out of others.
  *
@@ -9,7 +9,7 @@
  */
 import { join } from 'node:path'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import { checksums, CHECKSUMS_FILE } from './checksums'
 import { extractDeclarations, hasImports } from './extract'
@@ -95,7 +95,7 @@ if (process.argv.includes('--check')) {
   }
   console.log(
     changed
-      ? `${latest.tag} changes the sources above: pin it in sources.ts, regenerate, and follow the changes to FlowDB and the shapes in @open-pencil/mermaid.`
+      ? `${latest.tag} changes the sources above: pin it in sources.ts, regenerate, and follow the changes to FlowDB and the shapes in @lawha/mermaid.`
       : `${latest.tag} is out, with the same sources as ${MERMAID_RELEASE.tag}.`
   )
   process.exit(changed ? 1 : 0)

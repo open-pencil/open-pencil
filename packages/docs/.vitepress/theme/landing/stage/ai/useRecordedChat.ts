@@ -3,7 +3,7 @@ import { usePreferredReducedMotion } from '@vueuse/core'
 import type { UIMessage } from 'ai'
 import { computed, onScopeDispose, shallowRef } from 'vue'
 
-import { CHAPTERS } from '@open-pencil/demo-tools/chapters'
+import { CHAPTERS } from '@lawha/demo-tools/chapters'
 
 import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import type { EditorStore } from '@/app/editor/active-store'

@@ -1,5 +1,5 @@
-import type { DesignDocument, DesignElement, DesignNode } from '@open-pencil/dom-css'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
+import type { DesignDocument, DesignElement, DesignNode } from '@lawha/dom-css'
+import { colorToCSS } from '@lawha/scene-graph/color'
 
 export function findTextElement(nodes: DesignNode[]): DesignElement | undefined {
   for (const node of nodes) {
@@ -33,14 +33,14 @@ export const simpleCardDocument: DesignDocument = {
       type: 'element',
       tagName: 'div',
       attrs: { class: 'card', 'data-id': 'node-1' },
-      children: [{ type: 'text', text: 'OpenPencil' }]
+      children: [{ type: 'text', text: 'Lawha' }]
     }
   ]
 }
 
 export const cssCardHTML = `
   <article class="card">
-    <h1 class="title">OpenPencil</h1>
+    <h1 class="title">Lawha</h1>
     <p class="description">Design with code-shaped CSS.</p>
   </article>
 `
@@ -98,7 +98,7 @@ export const computedCardDocument: DesignDocument = {
             'font-weight': '700',
             'line-height': '32px'
           },
-          children: [{ type: 'text', text: 'OpenPencil' }]
+          children: [{ type: 'text', text: 'Lawha' }]
         }
       ]
     }
@@ -134,7 +134,7 @@ export const tailwindButtonClasses = [
 export const fixtureMatrixHTML = `
   <section class="fixture-shell">
     <nav class="navbar">
-      <span class="brand">OpenPencil</span>
+      <span class="brand">Lawha</span>
       <div class="nav-actions">
         <span class="nav-item">Docs</span>
         <span class="badge">Beta</span>
@@ -143,7 +143,7 @@ export const fixtureMatrixHTML = `
     <dialog class="dialog" open>
       <h2 class="dialog-title">Import from web</h2>
       <p class="dialog-description">Convert HTML and CSS into editable design layers.</p>
-      <input class="input" value="https://openpencil.dev" />
+      <input class="input" value="https://github.com/aliaaldihnayn-lab/design#readme" />
       <button class="primary-button">Create design</button>
     </dialog>
   </section>

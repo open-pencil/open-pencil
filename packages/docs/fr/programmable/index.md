@@ -6,7 +6,7 @@ description: AI, MCP, CLI, JSX et Figma Plugin API pour automatiser les designs.
 
 # Automatisation et API
 
-OpenPencil traite les fichiers de design comme des données structurées. Les opérations de l’éditeur — créer des formes, modifier des remplissages, configurer la disposition automatique ou exporter des ressources — sont aussi disponibles via la CLI, des agents AI et des API.
+Lawha traite les fichiers de design comme des données structurées. Les opérations de l’éditeur — créer des formes, modifier des remplissages, configurer la disposition automatique ou exporter des ressources — sont aussi disponibles via la CLI, des agents AI et des API.
 
 ## Chat avec l’AI
 
@@ -32,7 +32,7 @@ La CLI se connecte aussi à l’application de bureau en cours d’exécution vi
 
 Une interface peut être décrite de manière déclarative en JSX. Un seul appel crée un arbre complet de cadres, textes, dispositions, remplissages et contours.
 
-Dans l’autre sens, OpenPencil exporte une sélection en JSX ou HTML avec des classes Tailwind, comme point de départ pour l’implémentation ou la revue de code.
+Dans l’autre sens, Lawha exporte une sélection en JSX ou HTML avec des classes Tailwind, comme point de départ pour l’implémentation ou la revue de code.
 
 [Moteur JSX →](./jsx-renderer)
 
@@ -44,10 +44,10 @@ La commande `eval` exécute JavaScript avec un objet global `figma` compatible. 
 
 ## Schéma d’URL {#url-scheme}
 
-L’application de bureau enregistre `openpencil://` : une page publiée — une story Storybook, une revue de design, un README — peut ainsi pointer directement vers un calque :
+L’application de bureau enregistre `lawha://` : une page publiée — une story Storybook, une revue de design, un README — peut ainsi pointer directement vers un calque :
 
 ```
-openpencil://open?file=web/design/hikyo.pen&node=Button/Large/Default
+lawha://open?file=web/design/hikyo.pen&node=Button/Large/Default
 ```
 
 `file` est un chemin relatif au dépôt se terminant par `.pen` ou `.fig` ; les chemins absolus et les segments `.` ou `..` sont refusés. `node` est facultatif. Les deux valeurs sont encodées en URL — les séparateurs de chemin peuvent rester littéraux, mais un `+` littéral doit être envoyé sous la forme `%2B` — et une clé répétée prend sa dernière valeur.
@@ -59,11 +59,11 @@ Avec un nom d’objet, l’application sélectionne tous les calques portant exa
 L’application web accepte le même lien depuis sa propre barre d’adresse :
 
 ```
-https://app.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
+https://app.lawha.invalid/?file=https://raw.githubusercontent.com/lawha/lawha/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
 ```
 
 Ici, `file` est une URL `https:` absolue se terminant par `.pen` ou `.fig` — l’application web n’a pas de système de fichiers ; un chemin relatif, une URL `http:` ou toute autre extension est donc refusé avec un avertissement dans la console, sans autre effet. `node` se comporte exactement comme ci-dessus. Le navigateur récupère le fichier d’une autre origine : l’hôte doit l’autoriser (`raw.githubusercontent.com` envoie `Access-Control-Allow-Origin: *` et convient). La requête n’envoie aucun identifiant et refuse de suivre les redirections ; une URL `https://github.com/<owner>/<repo>/raw/...` est donc refusée, et il faut pointer directement vers l’hôte brut. `file` et `node` sont retirés de la barre d’adresse dès leur lecture, de sorte qu’un rechargement ne rouvre pas le document. Un document lié est limité à 64 Mio. Un déploiement qui sert l’application avec une Content-Security-Policy doit autoriser l’hôte lié dans `connect-src`.
 
 Sous macOS, le schéma appartient au bundle de l’application installée : les liens atteignent donc une version installée et non un processus `tauri dev`. Sous Windows et Linux, le lien arrive par le plugin de liens profonds, y compris lorsque l’application n’est pas encore lancée : il est mis en file d’attente au démarrage et traité dès que l’éditeur est prêt.
 
-OpenPencil est sous licence MIT et conserve les documents localement. Les fichiers `.fig` peuvent être examinés, transformés, traités en CI ou fournis comme contexte à un modèle sans dépendre d’un hébergeur particulier.
+Lawha est sous licence MIT et conserve les documents localement. Les fichiers `.fig` peuvent être examinés, transformés, traités en CI ou fournis comme contexte à un modèle sans dépendre d’un hébergeur particulier.

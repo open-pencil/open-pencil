@@ -1,20 +1,20 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { runCommand } from '@open-pencil/package-artifacts-tools'
+import { runCommand } from '@lawha/package-artifacts-tools'
 
-const TYPE_CONSUMER = `import { createEditor, type Editor } from '@open-pencil/core'
-import { Frame, type TreeNode } from '@open-pencil/design-jsx'
-import { htmlToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
-import { parseDrawIOFile, type DrawIOFile } from '@open-pencil/drawio'
-import { FIG_PACKAGE_STATUS, type FigContainerDocument } from '@open-pencil/fig'
-import { FIG_KIWI_DEFAULT_VERSION, buildFigKiwi } from '@open-pencil/kiwi/fig/container'
-import type { GUID as KiwiGUID } from '@open-pencil/kiwi/fig'
-import { parseFlowchart, type Flowchart } from '@open-pencil/mermaid'
-import { parsePenFile, type PenDocument } from '@open-pencil/pen'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
-import { testIdSelector } from '@open-pencil/vue/testing'
+const TYPE_CONSUMER = `import { createEditor, type Editor } from '@lawha/core'
+import { Frame, type TreeNode } from '@lawha/design-jsx'
+import { htmlToDesignDocument, type DesignDocument } from '@lawha/dom-css'
+import { parseDrawIOFile, type DrawIOFile } from '@lawha/drawio'
+import { FIG_PACKAGE_STATUS, type FigContainerDocument } from '@lawha/fig'
+import { FIG_KIWI_DEFAULT_VERSION, buildFigKiwi } from '@lawha/kiwi/fig/container'
+import type { GUID as KiwiGUID } from '@lawha/kiwi/fig'
+import { parseFlowchart, type Flowchart } from '@lawha/mermaid'
+import { parsePenFile, type PenDocument } from '@lawha/pen'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
+import { testIdSelector } from '@lawha/vue/testing'
 
 const graph = new SceneGraph()
 const editorFactory: typeof createEditor = createEditor

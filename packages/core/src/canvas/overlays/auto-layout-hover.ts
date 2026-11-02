@@ -1,7 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { strokeLayoutChildren } from '#core/canvas/overlays/layout-outlines'

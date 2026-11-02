@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { effectiveFigmaRawNodeFields, parseFigBuffer, materializeDocument } from '@open-pencil/fig'
-import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { MAX_EXPORT_SCALE } from '@open-pencil/scene-graph/export-scale'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { effectiveFigmaRawNodeFields, parseFigBuffer, materializeDocument } from '@lawha/fig'
+import { initCodec, type NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { MAX_EXPORT_SCALE } from '@lawha/scene-graph/export-scale'
 
 function decodeExport(bytes: Uint8Array) {
   return parseFigBuffer(new Uint8Array(bytes).buffer)
@@ -107,7 +107,7 @@ describe('fig roundtrip export settings', () => {
 
     expect(
       exportedRect?.pluginData?.some(
-        (entry) => entry.pluginID === 'open-pencil' && entry.key === 'exportSettings'
+        (entry) => entry.pluginID === 'lawha' && entry.key === 'exportSettings'
       ) ?? false
     ).toBe(false)
   })

@@ -6,7 +6,7 @@ import { injectToolLoopTransport } from '#tests/helpers/chat/tool-loop'
 
 const cardCount = (page: Page) =>
   page.evaluate(() => {
-    const graph = window.openPencil?.getStore?.().graph
+    const graph = window.lawha?.getStore?.().graph
     return graph ? [...graph.nodes.values()].filter((node) => node.name === 'Card').length : -1
   })
 

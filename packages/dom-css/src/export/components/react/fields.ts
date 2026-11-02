@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 
-import { es, jsx } from '@open-pencil/emit'
+import { es, jsx } from '@lawha/emit'
 
 import { progressWidth } from '../fields'
 import type { ComponentElement, ComponentModel, GeneratedKind } from '../model'

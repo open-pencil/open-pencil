@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
@@ -24,8 +24,8 @@ interface Scene {
 function buildScene(page: Page): Promise<Scene> {
   return page.evaluate(
     ({ card, close }) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       store.state.zoom = 1
       store.state.panX = 0
       store.state.panY = 0
@@ -102,7 +102,7 @@ async function openLint(page: Page) {
 
 function highlightedNode(page: Page) {
   return page.evaluate(
-    () => window.openPencil?.getStore?.().state.designIssues?.highlight?.nodeId ?? null
+    () => window.lawha?.getStore?.().state.designIssues?.highlight?.nodeId ?? null
   )
 }
 
@@ -110,7 +110,7 @@ function highlightedNode(page: Page) {
 async function waitForMarkers(page: Page) {
   await expect
     .poll(() =>
-      page.evaluate(() => window.openPencil?.getStore?.().state.designIssues?.markers.length ?? 0)
+      page.evaluate(() => window.lawha?.getStore?.().state.designIssues?.markers.length ?? 0)
     )
     .toBeGreaterThan(0)
   await page.evaluate(() => new Promise(requestAnimationFrame))
@@ -127,14 +127,14 @@ async function hoverMarker(point: Vector) {
       nudge = nudge === 0 ? 1 : 0
       await editor.canvas.hover(point.x + nudge, point.y)
       return editor.page.evaluate(
-        () => window.openPencil?.getStore?.().state.designIssues?.hoveredMarkerKey ?? null
+        () => window.lawha?.getStore?.().state.designIssues?.hoveredMarkerKey ?? null
       )
     })
     .not.toBeNull()
 }
 
 function selectedIds(page: Page) {
-  return page.evaluate(() => [...(window.openPencil?.getStore?.().state.selectedIds ?? [])])
+  return page.evaluate(() => [...(window.lawha?.getStore?.().state.selectedIds ?? [])])
 }
 
 test.afterEach(async () => {
@@ -183,7 +183,7 @@ test('Binding a suggested variable resolves the issue and undoes in one step', a
   await expect
     .poll(() =>
       editor.page.evaluate(
-        (id) => window.openPencil?.getStore?.().graph.getNode(id)?.boundVariables['fills/0/color'],
+        (id) => window.lawha?.getStore?.().graph.getNode(id)?.boundVariables['fills/0/color'],
         scene.swatchId
       )
     )
@@ -196,8 +196,8 @@ test('Binding a suggested variable resolves the issue and undoes in one step', a
 test('A suggestion applies to its row only', async () => {
   const scene = await buildScene(editor.page)
   const noteId = await editor.page.evaluate((cardId) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.graph.createNode('TEXT', cardId, {
       name: 'Footnote',
       x: 24,
@@ -222,7 +222,7 @@ test('A suggestion applies to its row only', async () => {
   await expect
     .poll(() =>
       editor.page.evaluate(
-        (id) => window.openPencil?.getStore?.().graph.getNode(id)?.fontSize,
+        (id) => window.lawha?.getStore?.().graph.getNode(id)?.fontSize,
         noteId
       )
     )
@@ -307,8 +307,8 @@ test('Issues off screen are pinned to the canvas edge and lead to the nearest mo
   // Pan the card off the left edge; the caption's contrast error is the most severe issue.
   const panX = -1000
   await editor.page.evaluate((x) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.panX = x
     store.requestRender()
   }, panX)
@@ -330,7 +330,7 @@ test('Issues off screen are pinned to the canvas edge and lead to the nearest mo
   await editor.canvas.click(pin.x, pin.y)
   await expect.poll(() => selectedIds(editor.page)).toEqual([scene.captionId])
   await expect
-    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.panX ?? 0))
+    .poll(() => editor.page.evaluate(() => window.lawha?.getStore?.().state.panX ?? 0))
     .toBeGreaterThan(panX)
   await expect(lintPanel(editor.page).locator(`[data-node-id="${scene.captionId}"]`)).toBeVisible()
 })
@@ -338,8 +338,8 @@ test('Issues off screen are pinned to the canvas edge and lead to the nearest mo
 test('Other pages are checked for the page list and the Document scope', async () => {
   await buildScene(editor.page)
   const cartCaptionId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const checkout = store.graph.addPage('Checkout')
     const cart = store.graph.createNode('FRAME', checkout.id, {
       name: 'Cart',
@@ -378,7 +378,7 @@ test('Other pages are checked for the page list and the Document scope', async (
   await expect
     .poll(() =>
       editor.page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return store ? store.graph.getNode(store.state.currentPageId)?.name : null
       })
     )
@@ -398,7 +398,7 @@ test('Canvas markers and Layers panel marks can be turned off from the View menu
   await expect(cardMark).toHaveAccessibleName('Contains errors or warnings')
   const markerCount = () =>
     editor.page.evaluate(
-      () => window.openPencil?.getStore?.().state.designIssues?.markers.length ?? 0
+      () => window.lawha?.getStore?.().state.designIssues?.markers.length ?? 0
     )
 
   await editor.page.getByRole('menuitem', { name: 'View' }).click()
@@ -422,8 +422,8 @@ const NOTE = { columns: 6, gapX: 100, gapY: 50, width: 40, height: 10, left: 40,
 /** Adds the notes at zoom 1 and returns their ids in order; each is too small to read. */
 function addNotes(page: Page): Promise<string[]> {
   return page.evaluate((note) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0

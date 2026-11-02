@@ -1,7 +1,7 @@
-import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
-import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
-import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
+import type { SceneGraph, SceneNode, Stroke } from '@lawha/scene-graph'
+import { newStrokeGeometry } from '@lawha/scene-graph/node-defaults'
+import { independentCornerChanges, resolvedPaintBindings } from '@lawha/scene-graph/variables'
+import { regionFillsDiffer } from '@lawha/scene-graph/vector-network'
 
 import {
   graph,

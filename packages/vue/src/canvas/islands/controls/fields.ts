@@ -11,8 +11,8 @@ import {
   INPUT_RESET,
   type ControlModel,
   type ControlRole
-} from '@open-pencil/dom-css/export'
-import { numberSettings } from '@open-pencil/scene-graph/behaviours'
+} from '@lawha/dom-css/export'
+import { numberSettings } from '@lawha/scene-graph/behaviours'
 
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
 

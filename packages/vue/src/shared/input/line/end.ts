@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core'
-import { isLineLike, lineWorldEnds, TRANSFORM_ZONE, type LineEnd } from '@open-pencil/core/geometry'
-import { layerRotates } from '@open-pencil/scene-graph/generated'
+import type { Editor } from '@lawha/core'
+import { isLineLike, lineWorldEnds, TRANSFORM_ZONE, type LineEnd } from '@lawha/core/geometry'
+import { layerRotates } from '@lawha/scene-graph/generated'
 
 import type { DragState } from '#vue/shared/input/types'
 

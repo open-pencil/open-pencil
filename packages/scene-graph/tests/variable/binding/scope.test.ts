@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 import {
   reconcileVariableBindings,
   variablesResolvingThrough
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 /** Two layers saved at 10 while their bindings say otherwise, as layers in imported files can be. */
 function drifted() {

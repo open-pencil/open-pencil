@@ -1,5 +1,5 @@
-import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { renderNodesToSVG } from '@lawha/core/io/formats/svg'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 

@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit/array'
 
-import { exportWebFontFaceAssets } from '@open-pencil/core/text/web-font/assets'
-import type { WebFontFaceResolver } from '@open-pencil/dom-css/export'
+import { exportWebFontFaceAssets } from '@lawha/core/text/web-font/assets'
+import type { WebFontFaceResolver } from '@lawha/dom-css/export'
 
 import { warn } from '#cli/format'
 
@@ -23,7 +23,7 @@ export const storyFonts: WebFontFaceResolver = async (fonts, assetBasePath) => {
 
 /**
  * The folder a document's shared files, its fonts and design tokens, go in, named by its own
- * folder and file name, such as `openpencil/kit-design` for `../kit/design.fig`, so documents of
+ * folder and file name, such as `lawha/kit-design` for `../kit/design.fig`, so documents of
  * the same name in different folders exported together keep theirs apart; a one-page export
  * adds the page.
  */
@@ -35,5 +35,5 @@ export function documentFolder(source: string, page: string | undefined): string
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  return `openpencil/${name || 'document'}`
+  return `lawha/${name || 'document'}`
 }

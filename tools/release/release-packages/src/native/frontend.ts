@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { msiVersion } from '#release/version'
 
-import { readPackageManifest } from '@open-pencil/package-artifacts-tools'
+import { readPackageManifest } from '@lawha/package-artifacts-tools'
 
 import { releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'

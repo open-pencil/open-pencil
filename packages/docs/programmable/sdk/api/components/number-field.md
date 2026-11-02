@@ -46,7 +46,7 @@ commits and Escape restores the interaction-start value.
 ```vue twoslash
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NumberFieldInput, NumberFieldLeading, NumberFieldRoot, NumberFieldUnit, NumberFieldValue } from '@open-pencil/vue/primitives/NumberField'
+import { NumberFieldInput, NumberFieldLeading, NumberFieldRoot, NumberFieldUnit, NumberFieldValue } from '@lawha/vue/primitives/NumberField'
 
 const width = ref(120)
 //    ^?

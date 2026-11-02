@@ -1,7 +1,7 @@
 import { difference } from 'es-toolkit'
 
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { shapeWithTextLabel } from '@lawha/scene-graph/generated'
 
 import { REKA_ELEMENTS, rekaRole } from '../behaviours'
 import {

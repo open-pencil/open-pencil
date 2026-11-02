@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 
-import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core/clipboard'
-import { fontManager } from '@open-pencil/core/text'
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { buildFigmaClipboardHTML, importClipboardNodes } from '@lawha/core/clipboard'
+import { fontManager } from '@lawha/core/text'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { expectDefined } from '#tests/helpers/assert'
 

@@ -5,15 +5,15 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
 import type { Paragraph, Surface, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 import {
   detectTextDirection,
   isLogicalTextAlignEnd,
   isLogicalTextAlignStart,
   resolveTextDirection
-} from '@open-pencil/scene-graph/text/direction'
+} from '@lawha/scene-graph/text/direction'
 
 import { renderText } from '#core/canvas/scene'
 import { buildParagraph } from '#core/canvas/text'

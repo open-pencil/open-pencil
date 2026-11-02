@@ -18,7 +18,7 @@ describe('translation quality checks', () => {
   })
 
   test('still detects visible Latin text mixed with CJK text', () => {
-    expect(hasMixedLatinAndCjk('画像 OpenPencil を表示')).toBe(true)
+    expect(hasMixedLatinAndCjk('画像 Lawha を表示')).toBe(true)
     expect(hasMixedLatinAndCjk('APIキーを更新')).toBe(true)
     expect(hasMixedLatinAndCjk('画像を表示')).toBe(false)
   })

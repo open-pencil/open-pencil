@@ -1,9 +1,9 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 import {
   DEFAULT_FIG_COMPRESSION,
   type FigCompression
-} from '@open-pencil/scene-graph/fig-compression'
-import { OPEN_PENCIL_PLUGIN_DATA, readPluginData } from '@open-pencil/scene-graph/plugin-data'
+} from '@lawha/scene-graph/fig-compression'
+import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
 
 /**
  * The zstd level each preset writes at. Reading costs the same at every level; writing does
@@ -20,7 +20,7 @@ export function figCompressionOf(graph: SceneGraph): FigCompression {
   return (
     readPluginData(
       graph.getNode(graph.rootId)?.pluginData,
-      OPEN_PENCIL_PLUGIN_DATA.figCompression
+      LAWHA_PLUGIN_DATA.figCompression
     ) ?? DEFAULT_FIG_COMPRESSION
   )
 }

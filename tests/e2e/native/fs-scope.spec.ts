@@ -5,8 +5,8 @@ import { join } from 'node:path'
 
 import { invokeNative, writeNativeFile } from '#tests/helpers/tauri/invoke'
 
-const NAME = 'openpencil-native-test-scope.txt'
-const DISCOVERY = join(homedir(), 'Library', 'Application Support', 'OpenPencil', 'mcp.json')
+const NAME = 'lawha-native-test-scope.txt'
+const DISCOVERY = join(homedir(), 'Library', 'Application Support', 'Lawha', 'mcp.json')
 
 describe('desktop file scope', () => {
   // The protected paths below are macOS ones; other platforms are not claimed.
@@ -15,11 +15,11 @@ describe('desktop file scope', () => {
   })
 
   it('saves documents but not where a written file would run', async () => {
-    const documents = mkdtempSync(join(tmpdir(), 'openpencil-scope-'))
+    const documents = mkdtempSync(join(tmpdir(), 'lawha-scope-'))
     const refused = [
       join(homedir(), 'Library', 'LaunchAgents', NAME),
       join(homedir(), `.${NAME}`),
-      join(homedir(), '.openpencil', 'mcp.json')
+      join(homedir(), '.lawha', 'mcp.json')
     ]
     // Only files this test would have created are removed afterwards.
     const created = refused.filter((path) => !existsSync(path))

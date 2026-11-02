@@ -1,7 +1,7 @@
 import { omit, pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, SceneNode, StyleRun } from '@lawha/scene-graph'
 
 import type { EditorContext } from '#core/editor/types'
 import {

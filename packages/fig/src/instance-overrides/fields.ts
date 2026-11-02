@@ -1,7 +1,7 @@
 import { groupBy } from 'es-toolkit'
 
-import { UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { UNSET_GUID } from '@lawha/kiwi/fig/guid'
+import type { SceneNode } from '@lawha/scene-graph'
 
 /** The style reference Figma writes for a style an instance has cleared. */
 export const CLEARED_STYLE = { guid: { ...UNSET_GUID } }

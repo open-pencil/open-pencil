@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { useShapeMessages } from '@open-pencil/vue/i18n'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import { useShapeMessages } from '@lawha/vue/i18n'
 
 type ShapeMessages = ReturnType<typeof useShapeMessages>['value']
 

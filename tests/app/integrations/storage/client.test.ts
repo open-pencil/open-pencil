@@ -43,13 +43,13 @@ describe('S3 client', () => {
   test('signs path-style requests that bypass the browser cache', async () => {
     respond = () => new Response('fig', { status: 200, headers: { 'content-length': '3' } })
 
-    expect(await getObject(config, 'open_pencil_storage/canvases/a b.fig')).toEqual(
+    expect(await getObject(config, 'lawha_storage/canvases/a b.fig')).toEqual(
       new TextEncoder().encode('fig')
     )
     const [request] = requests
     const url = new URL(request?.url ?? '')
     expect(url.origin + url.pathname).toBe(
-      'https://storage.example.com/designs/open_pencil_storage/canvases/a%20b.fig'
+      'https://storage.example.com/designs/lawha_storage/canvases/a%20b.fig'
     )
     expect(request?.headers.get('authorization')).toStartWith('AWS4-HMAC-SHA256 ')
     expect(request?.cache).toBe('no-store')
@@ -65,11 +65,11 @@ describe('S3 client', () => {
             `<ListBucketResult><Contents><Key>first.fig</Key><LastModified>2026-01-02T03:04:05.000Z</LastModified><Size>1</Size></Contents><IsTruncated>true</IsTruncated><NextContinuationToken>a&amp;b</NextContinuationToken></ListBucketResult>`
           )
 
-    expect(await listObjects(config, 'open_pencil_storage/')).toEqual([
+    expect(await listObjects(config, 'lawha_storage/')).toEqual([
       { key: 'first.fig', lastModified: '2026-01-02T03:04:05.000Z', size: 1 },
       { key: 'second.fig', lastModified: null, size: 2 }
     ])
-    expect(new URL(requests[0]?.url ?? '').searchParams.get('prefix')).toBe('open_pencil_storage/')
+    expect(new URL(requests[0]?.url ?? '').searchParams.get('prefix')).toBe('lawha_storage/')
   })
 
   test('treats missing objects as absent', async () => {

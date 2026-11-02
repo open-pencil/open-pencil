@@ -5,7 +5,7 @@ description: Pannelli laterali per pagine e livelli con PageListRoot, LayerTreeR
 
 # Pannelli di navigazione
 
-Un pannello laterale di OpenPencil contiene spesso un elenco di pagine e l’albero dei livelli. Il Vue SDK fornisce componenti senza stile per entrambe le aree.
+Un pannello laterale di Lawha contiene spesso un elenco di pagine e l’albero dei livelli. Il Vue SDK fornisce componenti senza stile per entrambe le aree.
 
 ## Pagine
 

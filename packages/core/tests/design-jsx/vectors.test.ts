@@ -3,10 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 import { pick } from 'es-toolkit'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
+import { renderJSX } from '@lawha/core/design-jsx'
+import { sceneNodeToJSX } from '@lawha/design-jsx'
+import { SceneGraph } from '@lawha/scene-graph'
+import { vectorNetworkPaths } from '@lawha/scene-graph/vector-network'
 
 async function render(jsx: string) {
   const graph = new SceneGraph()

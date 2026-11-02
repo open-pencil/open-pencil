@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
+import type { SceneNode } from '@lawha/scene-graph'
+import { styleDetachmentChanges } from '@lawha/scene-graph/shared-styles'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaNodeProxy } from '#core/figma-api'

@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { invalidateInheritedTextData } from '#fig/instance-overrides/text-provenance'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 for (const patch of [
   { fontSize: 20 },

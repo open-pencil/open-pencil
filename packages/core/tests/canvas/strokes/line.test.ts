@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
+import { SceneGraph, type SceneNode, type Stroke } from '@lawha/scene-graph'
 
 import { silhouetteBounds } from '#core/canvas/shadows/silhouette'
 import { makeLineStrokeOutline } from '#core/canvas/strokes/line'

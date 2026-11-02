@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
 
 import { SkiaRenderer } from '#core/canvas'
 

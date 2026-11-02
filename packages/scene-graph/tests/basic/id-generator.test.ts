@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, setIdSession } from '@open-pencil/scene-graph'
+import { SceneGraph, setIdSession } from '@lawha/scene-graph'
 
 import { pageId } from './helpers'
 

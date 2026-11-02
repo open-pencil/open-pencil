@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { nodeChangeToProps, importStyleRuns } from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { nodeChangeToProps, importStyleRuns } from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 describe('Figma font variation import', () => {
   test('imports base text variable font axes', () => {

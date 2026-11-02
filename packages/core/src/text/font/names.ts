@@ -1,12 +1,12 @@
 import { uniqBy } from 'es-toolkit/array'
 
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, SceneNode } from '@lawha/scene-graph'
 import {
   parseFontStyle,
   standardStyleName,
   styleSpelling
-} from '@open-pencil/scene-graph/font-style'
-import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+} from '@lawha/scene-graph/font-style'
+import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
 
 import type { FamilyFace } from '#core/text/font/faces'
 import { fontManager } from '#core/text/font/manager'

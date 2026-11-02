@@ -41,7 +41,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           packageManager: npm
-          command: pages deploy dist --project-name=openpencil-app --branch=pr-${{ github.event.workflow_run.pull_requests[0].number }}
+          command: pages deploy dist --project-name=lawha-app --branch=pr-${{ github.event.workflow_run.pull_requests[0].number }}
 
       - name: Comment preview URL
         uses: actions/github-script@v9

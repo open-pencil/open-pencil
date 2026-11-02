@@ -1,8 +1,8 @@
 {
-  "upToDate": "OpenPencil est à jour",
+  "upToDate": "Lawha est à jour",
   "windowTitle": "Mise à jour logicielle",
   "checking": "Recherche de mises à jour…",
-  "available": "OpenPencil {version} est disponible",
+  "available": "Lawha {version} est disponible",
   "currentVersion": "Vous avez la version {version}.",
   "whatsNew": "Nouveautés",
   "noNotes": "Cette version n’a pas de notes de version.",
@@ -14,12 +14,12 @@
   "downloadProgress": "{percent} % · {downloaded} sur {total}",
   "downloadProgressUnknown": "{downloaded} téléchargés",
   "installing": "Installation…",
-  "installed": "OpenPencil {version} est installé",
-  "restartToFinish": "Redémarrez OpenPencil pour utiliser la nouvelle version.",
+  "installed": "Lawha {version} est installé",
+  "restartToFinish": "Redémarrez Lawha pour utiliser la nouvelle version.",
   "restartNow": "Redémarrer maintenant",
   "downloadFailed": "Impossible de télécharger la mise à jour : {error}",
   "installFailed": "Impossible d’installer la mise à jour : {error}",
-  "restartFailed": "Impossible de redémarrer OpenPencil : {error}",
+  "restartFailed": "Impossible de redémarrer Lawha : {error}",
   "unavailable": "Les mises à jour ne sont pas encore disponibles. Publiez d’abord une version signée avec latest.json.",
   "checkFailed": "Impossible de rechercher des mises à jour : {error}"
 }

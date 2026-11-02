@@ -94,8 +94,8 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, shallowRef, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
-import { fuzzySearch } from '@open-pencil/vue/shared/search'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
+import { fuzzySearch } from '@lawha/vue/shared/search'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'

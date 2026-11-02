@@ -2,8 +2,8 @@ import { afterEach, describe, expect, mock, test } from 'bun:test'
 
 import { ref } from 'vue'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { createEditor, type Editor } from '@lawha/core'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { resolveVertexSnap } from '#vue/shared/input/snap'

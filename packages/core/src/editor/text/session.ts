@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneNode, StyleRun, TextParagraphStyle } from '@open-pencil/scene-graph'
-import { copyDerivedGlyphs, copyGeometryPaths, copyStyleRuns } from '@open-pencil/scene-graph/copy'
+import type { SceneNode, StyleRun, TextParagraphStyle } from '@lawha/scene-graph'
+import { copyDerivedGlyphs, copyGeometryPaths, copyStyleRuns } from '@lawha/scene-graph/copy'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 

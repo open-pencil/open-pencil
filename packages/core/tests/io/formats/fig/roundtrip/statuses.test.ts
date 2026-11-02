@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { createEditor } from '@lawha/core'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
 import {
   readStatusWorkflow,
   STATUS_WORKFLOW_PRESETS,
   writeStatusWorkflow
-} from '@open-pencil/scene-graph/statuses'
+} from '@lawha/scene-graph/statuses'
 
 describe('.fig round trip of statuses', () => {
   test('keeps the workflow and every status, Figma-shown or not', async () => {

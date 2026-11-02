@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { TEXT_METRIC_FIELDS } from '@lawha/scene-graph/fields'
 
 import { measureTextForLayout } from './text-measurement'
 

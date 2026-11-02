@@ -5,7 +5,7 @@ description: Stato e azioni riutilizzabili per creare interfacce di editing con 
 
 # Composable
 
-Questi composable forniscono stato e azioni comunemente necessari alle interfacce basate su OpenPencil.
+Questi composable forniscono stato e azioni comunemente necessari alle interfacce basate su Lawha.
 
 ## Editor e area di lavoro
 

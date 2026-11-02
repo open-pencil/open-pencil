@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode, VariableModeMap } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, VariableModeMap } from '@lawha/scene-graph'
 
 import { prepareScalarBindings } from '../overrides/scalar-bindings'
 import { isVariable } from '../variables'

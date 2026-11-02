@@ -1,9 +1,9 @@
 import { shallowReactive } from 'vue'
 
-import { createEditor } from '@open-pencil/core'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { createShaderRasterizer } from '@open-pencil/vue/canvas/surface'
+import { createEditor } from '@lawha/core'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
+import { SceneGraph } from '@lawha/scene-graph'
+import { createShaderRasterizer } from '@lawha/vue/canvas/surface'
 
 import { useCollabIdentity } from '@/app/collab/identity'
 import { recordPreparationOutcome } from '@/app/diagnostics'
@@ -37,8 +37,8 @@ import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 import { IS_BROWSER, IS_TAURI } from '@/constants'
 
-export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core'
-export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core'
+export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@lawha/core'
+export type { EditorToolDef as ToolDef, Tool } from '@lawha/core'
 
 function buildEditorStore(initialGraph?: SceneGraph) {
   const graph = initialGraph ?? new SceneGraph()

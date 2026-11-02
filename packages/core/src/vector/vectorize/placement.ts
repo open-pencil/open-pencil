@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode, VectorNetwork } from '@lawha/scene-graph'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { pathStrokeLineStyle } from '#core/icons/path-style'
 import { isSVGPathShown } from '#core/icons/svg'

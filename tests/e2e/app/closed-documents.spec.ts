@@ -17,7 +17,7 @@ async function openFixtureInNewTab(page: Page) {
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return Boolean(store && store.graph.nodes.size > 100 && !store.state.preparation)
       })
     )

@@ -1,6 +1,6 @@
 import valueParser, { type Node } from 'postcss-value-parser'
 
-import type { TokenUnit } from '@open-pencil/scene-graph'
+import type { TokenUnit } from '@lawha/scene-graph'
 
 import { parseCSSName } from './names'
 import type { TokenValidator } from './validate'

@@ -21,7 +21,7 @@ import { hashCapability } from '#cloud/server/sharing/crypto'
 import { findWorkspace, type WorkspaceDatabase } from '#cloud/server/workspaces/repository'
 import type { Kysely } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 const INVITATION_SECRET_BYTES = 24
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
@@ -222,7 +222,7 @@ export function createWorkspaceMemberService(
           kind: 'workspace-invitation',
           recipientEmail: input.email,
           payload: {
-            inviterName: inviter?.name ?? 'An OpenPencil user',
+            inviterName: inviter?.name ?? 'An Lawha user',
             workspaceName: workspace.name,
             role: input.role,
             expiresAt: expiresAt.toISOString(),
@@ -436,7 +436,7 @@ export function createWorkspaceMemberService(
         kind: 'workspace',
         workspaceName: invitation.workspaceName,
         role: invitation.role,
-        inviterName: inviter?.name ?? 'An OpenPencil user',
+        inviterName: inviter?.name ?? 'An Lawha user',
         expiresAt: dateString(invitation.expiresAt) ?? '',
         recipientHint: recipientHint(invitation.emailNormalized)
       }

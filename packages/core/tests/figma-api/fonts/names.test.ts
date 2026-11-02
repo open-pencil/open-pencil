@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { asTextNode, registerTestFont } from '#core-tests/helpers/figma-api'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { fontManager } from '@open-pencil/core/text'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { fontManager } from '@lawha/core/text'
+import { SceneGraph } from '@lawha/scene-graph'
 
 beforeAll(async () => {
   await registerTestFont()

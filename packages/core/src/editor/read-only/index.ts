@@ -1,4 +1,4 @@
-import type { UndoManager } from '@open-pencil/scene-graph/undo'
+import type { UndoManager } from '@lawha/scene-graph/undo'
 
 import type { EditorContext } from '#core/editor/types'
 import { offeredTool } from '#core/editor/views'

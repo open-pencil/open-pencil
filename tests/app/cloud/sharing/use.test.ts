@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { shallowRef } from 'vue'
 
-import type { CloudAPIClient } from '@open-pencil/cloud/client'
+import type { CloudAPIClient } from '@lawha/cloud/client'
 
 import type { cloudShareTarget } from '@/app/cloud/sharing/document'
 import { useCloudSharing } from '@/app/cloud/sharing/use'

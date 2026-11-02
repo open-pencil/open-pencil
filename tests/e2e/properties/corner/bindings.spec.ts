@@ -12,7 +12,7 @@ test('collapsed equivalent corners preserve their shared token through expansion
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   const id = await page.evaluate(() => {
-    const editor = window.openPencil?.getStore?.()
+    const editor = window.lawha?.getStore?.()
     if (!editor) throw new Error('Editor unavailable')
     const collection = editor.graph.createCollection('Corners')
     const variable = editor.graph.createVariable('Radius/shared', 'FLOAT', collection.id, 12)
@@ -48,7 +48,7 @@ test('collapsed equivalent corners preserve their shared token through expansion
   const readCorners = () =>
     page.evaluate(
       ({ id, paths }) => {
-        const node = window.openPencil?.getStore?.().graph.getNode(id)
+        const node = window.lawha?.getStore?.().graph.getNode(id)
         if (!node) throw new Error('Missing fixture')
         return {
           values: paths.map((path) => node[path]),

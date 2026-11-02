@@ -1,5 +1,5 @@
-import type { Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
-import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { Paint, Effect as KiwiEffect } from '@lawha/kiwi/fig/codec'
+import { guidToString, stringToGuid } from '@lawha/kiwi/fig/guid'
 import type {
   Fill,
   Stroke,
@@ -9,9 +9,9 @@ import type {
   GradientTransform,
   StrokeCap,
   StrokeJoin
-} from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import { BLACK } from '@lawha/scene-graph/constants'
+import type { Color, Matrix } from '@lawha/scene-graph/primitives'
 
 import { hexToBytes } from './bytes'
 

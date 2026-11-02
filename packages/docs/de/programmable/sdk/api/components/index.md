@@ -1,11 +1,11 @@
 ---
 title: Komponenten
-description: Komponenten ohne vorgegebenes Erscheinungsbild aus @open-pencil/vue.
+description: Komponenten ohne vorgegebenes Erscheinungsbild aus @lawha/vue.
 ---
 
 # Komponenten
 
-`@open-pencil/vue` stellt Komponenten für Arbeitsfläche, Navigation, Eigenschaften und spezialisierte Eingaben bereit, ohne deren Gestaltung vorzuschreiben.
+`@lawha/vue` stellt Komponenten für Arbeitsfläche, Navigation, Eigenschaften und spezialisierte Eingaben bereit, ohne deren Gestaltung vorzuschreiben.
 
 ## Editor
 

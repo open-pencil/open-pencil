@@ -1,14 +1,14 @@
 import { pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
-import { generateId, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { generateId, type SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import {
   detachInstance,
   INSTANCE_OVERRIDE_FIELDS,
   populateInstanceChildren,
   recordInstanceOverride,
   swapInstanceComponent
-} from '@open-pencil/scene-graph/instances'
+} from '@lawha/scene-graph/instances'
 
 import { applyPenProperties, createSceneNode, fieldsSetBy, type Build } from './nodes'
 import type { PenNode, PenOverride } from './schema'

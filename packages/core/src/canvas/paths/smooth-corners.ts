@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 /** What a rectangle's smoothed corners are drawn from. */
 export type SmoothRectNode = Pick<

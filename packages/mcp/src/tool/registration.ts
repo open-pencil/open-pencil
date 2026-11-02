@@ -7,11 +7,11 @@ import type {
   ToolAnnotations,
   ServerContext
 } from '@modelcontextprotocol/server'
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line lawha/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
 import * as v from 'valibot'
 
-import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
+import { CODEGEN_PROMPT } from '@lawha/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
@@ -26,7 +26,7 @@ export type MCPToolSettled = (context: ServerContext) => Promise<void>
 
 const automationTargetSchema = {
   document_id: v.optional(
-    v.pipe(v.string(), v.description('Optional OpenPencil document/tab ID to target'))
+    v.pipe(v.string(), v.description('Optional Lawha document/tab ID to target'))
   ),
   page_id: v.optional(
     v.pipe(v.string(), v.description('Optional page ID to target within the document'))
@@ -73,7 +73,7 @@ export type MCPAgentKind = (typeof MCP_AGENT_KINDS)[number]
 export interface MCPAgentSession {
   id: string
   kind: MCPAgentKind
-  /** The app chat the session belongs to, from its `x-openpencil-chat` header. */
+  /** The app chat the session belongs to, from its `x-lawha-chat` header. */
   chat?: string
 }
 
@@ -136,7 +136,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         description: toolOptions.description ?? descriptor.description,
         inputSchema: toStandardJSONSchema(toolOptions.inputSchema),
         annotations: toolAnnotations(descriptor.effect),
-        _meta: { 'openpencil/capabilities': descriptor.capabilities }
+        _meta: { 'lawha/capabilities': descriptor.capabilities }
       },
       async (args, context) => {
         try {
@@ -223,7 +223,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     'list_documents',
     {
       description:
-        'List open OpenPencil documents/tabs with their IDs, file paths, current pages, and pages.',
+        'List open Lawha documents/tabs with their IDs, file paths, current pages, and pages.',
       inputSchema: v.strictObject({})
     },
     async () => {

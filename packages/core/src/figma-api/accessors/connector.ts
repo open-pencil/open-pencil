@@ -3,14 +3,14 @@ import type {
   ConnectorLineType,
   SceneNode,
   StrokeCap
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   boundEndpoint,
   connectorSublayers,
   freeEndpoint,
   layoutConnector
-} from '@open-pencil/scene-graph/connectors'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/connectors'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import {
   graph,

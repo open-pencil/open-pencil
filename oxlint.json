@@ -48,7 +48,7 @@
         "paths": [
           {
             "name": "@/types",
-            "message": "Import types directly from @open-pencil/core."
+            "message": "Import types directly from @lawha/core."
           },
           {
             "name": "node:module",
@@ -63,7 +63,7 @@
             "group": [
               "@/engine/*"
             ],
-            "message": "Import from @open-pencil/core unless the module adds platform-specific logic.",
+            "message": "Import from @lawha/core unless the module adds platform-specific logic.",
             "allowImportNames": [
               "loadFont",
               "listFamilies",
@@ -76,7 +76,7 @@
               "../../packages/*",
               "../../../packages/*"
             ],
-            "message": "Use the workspace package name (e.g. @open-pencil/core) instead of relative paths to packages/."
+            "message": "Use the workspace package name (e.g. @lawha/core) instead of relative paths to packages/."
           }
         ]
       }
@@ -151,8 +151,8 @@
     "vue/prop-name-casing": "error",
     "vue/valid-define-options": "error",
     "vue/valid-next-tick": "error",
-    "open-pencil/no-import-type-annotations": "error",
-    "open-pencil/no-inline-named-types": [
+    "lawha/no-import-type-annotations": "error",
+    "lawha/no-inline-named-types": [
       "error",
       {
         "Vector": "x:number,y:number",
@@ -162,79 +162,79 @@
         "Matrix": "m00:number,m01:number,m02:number,m10:number,m11:number,m12:number"
       }
     ],
-    "open-pencil/no-structuredclone-scene-arrays": "error",
-    "open-pencil/no-vue-style-blocks": "error",
-    "open-pencil/no-native-title-attributes-in-vue": "error",
-    "open-pencil/no-overlay-content-from-open-state": "error",
-    "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
-    "open-pencil/no-raw-svg-in-app-vue-templates": "error",
-    "open-pencil/no-ui-helper-calls-in-vue-templates": "error",
-    "open-pencil/no-large-property-section-components": "error",
-    "open-pencil/no-raw-test-id-string-props": "error",
-    "open-pencil/no-dynamic-data-test-id-in-vue": "error",
-    "open-pencil/no-test-id-helper-bind-in-vue": "error",
-    "open-pencil/no-invalid-test-id-attributes": "error",
-    "open-pencil/no-raw-test-id-selectors-in-tests": "error",
-    "open-pencil/no-generated-test-id-literals": "error",
-    "open-pencil/no-browser-side-effects-in-vue": "error",
-    "open-pencil/no-document-query-selector-in-vue": "error",
-    "open-pencil/no-direct-selection-tool-state-mutation": "error",
-    "open-pencil/no-math-random": "error",
-    "open-pencil/no-hardcoded-color-constants": "error",
-    "open-pencil/no-unknown-tailwind-classes": "error",
-    "open-pencil/no-hand-rolled-color": "error",
-    "open-pencil/no-raw-console-format": "off",
-    "open-pencil/no-silent-catch": "error",
-    "open-pencil/no-typeof-window-check": "error",
-    "open-pencil/no-vue-self-package-imports": "error",
-    "open-pencil/no-cross-package-source-imports": "error",
-    "open-pencil/no-app-imports-in-packages": "error",
-    "open-pencil/no-core-framework-imports": "error",
-    "open-pencil/no-inline-tauri-imports": "error",
-    "open-pencil/no-direct-storage-access": "error",
-    "open-pencil/no-deep-parent-relative-imports": "error",
-    "open-pencil/no-deep-parent-relative-paths": "error",
-    "open-pencil/no-broad-double-cast": "error",
-    "open-pencil/no-unknown-record-double-cast": "error",
-    "open-pencil/no-broad-unknown-type-assertions": "error",
-    "open-pencil/no-local-json-object-aliases": "error",
-    "open-pencil/no-duplicate-type-shapes": "error",
-    "open-pencil/no-ts-suppression-comments": "error",
-    "open-pencil/no-reflect-delete-global-this-outside-tests": "error",
-    "open-pencil/no-core-browser-globals": "error",
-    "open-pencil/no-zoom-in-scene-drawing": "error",
-    "open-pencil/no-direct-open-pencil-window-internals": "error",
-    "open-pencil/no-direct-open-pencil-browser-store": "error",
-    "open-pencil/no-function-alias-imports": "error",
-    "open-pencil/max-composition-root-lines": [
+    "lawha/no-structuredclone-scene-arrays": "error",
+    "lawha/no-vue-style-blocks": "error",
+    "lawha/no-native-title-attributes-in-vue": "error",
+    "lawha/no-overlay-content-from-open-state": "error",
+    "lawha/no-hardcoded-tip-labels-in-vue": "error",
+    "lawha/no-raw-svg-in-app-vue-templates": "error",
+    "lawha/no-ui-helper-calls-in-vue-templates": "error",
+    "lawha/no-large-property-section-components": "error",
+    "lawha/no-raw-test-id-string-props": "error",
+    "lawha/no-dynamic-data-test-id-in-vue": "error",
+    "lawha/no-test-id-helper-bind-in-vue": "error",
+    "lawha/no-invalid-test-id-attributes": "error",
+    "lawha/no-raw-test-id-selectors-in-tests": "error",
+    "lawha/no-generated-test-id-literals": "error",
+    "lawha/no-browser-side-effects-in-vue": "error",
+    "lawha/no-document-query-selector-in-vue": "error",
+    "lawha/no-direct-selection-tool-state-mutation": "error",
+    "lawha/no-math-random": "error",
+    "lawha/no-hardcoded-color-constants": "error",
+    "lawha/no-unknown-tailwind-classes": "error",
+    "lawha/no-hand-rolled-color": "error",
+    "lawha/no-raw-console-format": "off",
+    "lawha/no-silent-catch": "error",
+    "lawha/no-typeof-window-check": "error",
+    "lawha/no-vue-self-package-imports": "error",
+    "lawha/no-cross-package-source-imports": "error",
+    "lawha/no-app-imports-in-packages": "error",
+    "lawha/no-core-framework-imports": "error",
+    "lawha/no-inline-tauri-imports": "error",
+    "lawha/no-direct-storage-access": "error",
+    "lawha/no-deep-parent-relative-imports": "error",
+    "lawha/no-deep-parent-relative-paths": "error",
+    "lawha/no-broad-double-cast": "error",
+    "lawha/no-unknown-record-double-cast": "error",
+    "lawha/no-broad-unknown-type-assertions": "error",
+    "lawha/no-local-json-object-aliases": "error",
+    "lawha/no-duplicate-type-shapes": "error",
+    "lawha/no-ts-suppression-comments": "error",
+    "lawha/no-reflect-delete-global-this-outside-tests": "error",
+    "lawha/no-core-browser-globals": "error",
+    "lawha/no-zoom-in-scene-drawing": "error",
+    "lawha/no-direct-lawha-window-internals": "error",
+    "lawha/no-direct-lawha-browser-store": "error",
+    "lawha/no-function-alias-imports": "error",
+    "lawha/max-composition-root-lines": [
       "error",
       {
         "max": 260
       }
     ],
-    "open-pencil/no-core-parent-relative-imports": "error",
-    "open-pencil/no-document-change-capture": "error",
-    "open-pencil/no-mcp-parent-relative-imports": "error",
-    "open-pencil/no-vue-parent-relative-imports": "error",
-    "open-pencil/no-cli-parent-relative-imports": "error",
-    "open-pencil/no-core-self-package-imports": "error",
-    "open-pencil/no-inline-prompt-constants": "error",
-    "open-pencil/no-direct-graph-emitter-subscriptions": "error",
-    "open-pencil/no-on-unmounted-in-composition-roots": "error",
-    "open-pencil/no-composable-state-wrappers": "error",
-    "open-pencil/prefer-vueuse-intervals": "error",
-    "open-pencil/prefer-vueuse-timeouts": "error",
-    "open-pencil/vue-component-file-pascal-case": "error",
-    "open-pencil/component-namespace-casing": "error",
-    "open-pencil/no-mixed-case-acronym-identifiers": "error",
-    "open-pencil/non-component-source-directories-kebab-case": "error",
-    "open-pencil/no-component-root-sibling-folder": "error",
-    "open-pencil/no-flat-kiwi-modules": "error",
-    "open-pencil/no-bun-globals-in-cli": "error",
-    "open-pencil/no-top-level-prefixed-test-files": "error",
-    "open-pencil/no-editor-profile-inputs": "error",
-    "open-pencil/no-conditional-object-spreads": "error",
-    "open-pencil/no-sibling-domain-prefixed-files": "error",
+    "lawha/no-core-parent-relative-imports": "error",
+    "lawha/no-document-change-capture": "error",
+    "lawha/no-mcp-parent-relative-imports": "error",
+    "lawha/no-vue-parent-relative-imports": "error",
+    "lawha/no-cli-parent-relative-imports": "error",
+    "lawha/no-core-self-package-imports": "error",
+    "lawha/no-inline-prompt-constants": "error",
+    "lawha/no-direct-graph-emitter-subscriptions": "error",
+    "lawha/no-on-unmounted-in-composition-roots": "error",
+    "lawha/no-composable-state-wrappers": "error",
+    "lawha/prefer-vueuse-intervals": "error",
+    "lawha/prefer-vueuse-timeouts": "error",
+    "lawha/vue-component-file-pascal-case": "error",
+    "lawha/component-namespace-casing": "error",
+    "lawha/no-mixed-case-acronym-identifiers": "error",
+    "lawha/non-component-source-directories-kebab-case": "error",
+    "lawha/no-component-root-sibling-folder": "error",
+    "lawha/no-flat-kiwi-modules": "error",
+    "lawha/no-bun-globals-in-cli": "error",
+    "lawha/no-top-level-prefixed-test-files": "error",
+    "lawha/no-editor-profile-inputs": "error",
+    "lawha/no-conditional-object-spreads": "error",
+    "lawha/no-sibling-domain-prefixed-files": "error",
     "array-callback-return": "error",
     "block-scoped-var": "error",
     "default-case-last": "error",
@@ -432,11 +432,11 @@
     "unicorn/prefer-includes": "error",
     "no-loop-func": "error",
     "typescript/no-dynamic-delete": "error",
-    "open-pencil/no-hand-rolled-base64": "error",
-    "open-pencil/prefer-es-toolkit": "error",
-    "open-pencil/no-module-mocking": "error",
-    "open-pencil/no-reduce-accumulator-copy": "error",
-    "open-pencil/no-widen-then-assert": "error"
+    "lawha/no-hand-rolled-base64": "error",
+    "lawha/prefer-es-toolkit": "error",
+    "lawha/no-module-mocking": "error",
+    "lawha/no-reduce-accumulator-copy": "error",
+    "lawha/no-widen-then-assert": "error"
   },
   "overrides": [
     {
@@ -448,7 +448,7 @@
     {
       "files": ["packages/docs/.vitepress/theme/landing/**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/no-app-imports-in-packages": "off"
+        "lawha/no-app-imports-in-packages": "off"
       }
     },
     {
@@ -468,14 +468,14 @@
     {
       "files": ["packages/cloud/src/server/**/*.ts"],
       "rules": {
-        "open-pencil/no-raw-sql": "error",
-        "open-pencil/no-cloud-dynamic-html": "error"
+        "lawha/no-raw-sql": "error",
+        "lawha/no-cloud-dynamic-html": "error"
       }
     },
     {
       "files": ["packages/feedback/src/**/*.ts"],
       "rules": {
-        "open-pencil/no-raw-sql": "error"
+        "lawha/no-raw-sql": "error"
       }
     },
     {
@@ -485,7 +485,7 @@
         "packages/cloud/src/server/db/migrations/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-raw-sql": "off"
+        "lawha/no-raw-sql": "off"
       }
     },
     {
@@ -496,14 +496,14 @@
         "src/app/integrations/storage/cloud/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-cloud-secret-in-query": "error",
-        "open-pencil/no-cloud-secret-logging": "error"
+        "lawha/no-cloud-secret-in-query": "error",
+        "lawha/no-cloud-secret-logging": "error"
       }
     },
     {
       "files": ["tools/ci/policy/src/**/*.ts"],
       "rules": {
-        "open-pencil/prefer-es-toolkit": "off"
+        "lawha/prefer-es-toolkit": "off"
       }
     },
     {
@@ -518,9 +518,9 @@
         "tools/checks/lint/tests/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-generated-test-id-literals": "off",
-        "open-pencil/no-hardcoded-color-constants": "off",
-        "open-pencil/no-mixed-case-acronym-identifiers": "off"
+        "lawha/no-generated-test-id-literals": "off",
+        "lawha/no-hardcoded-color-constants": "off",
+        "lawha/no-mixed-case-acronym-identifiers": "off"
       }
     },
     {
@@ -529,25 +529,25 @@
         "packages/*/src/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-useless-pass-through-wrappers": "error"
+        "lawha/no-useless-pass-through-wrappers": "error"
       }
     },
     {
       "files": ["**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/no-unvalidated-json-parse": "error"
+        "lawha/no-unvalidated-json-parse": "error"
       }
     },
     {
       "files": ["src/**/*.{ts,vue}", "packages/*/src/**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/valibot-schema-conventions": "error"
+        "lawha/valibot-schema-conventions": "error"
       }
     },
     {
       "files": ["tools/*/*/src/**/*.ts"],
       "rules": {
-        "open-pencil/valibot-schema-conventions": ["error", { "placement": false }]
+        "lawha/valibot-schema-conventions": ["error", { "placement": false }]
       }
     },
     {
@@ -596,7 +596,7 @@
         "packages/cli/src/commands/**"
       ],
       "rules": {
-        "open-pencil/no-raw-console-format": "error"
+        "lawha/no-raw-console-format": "error"
       }
     },
     {
@@ -623,7 +623,7 @@
         "packages/scene-graph/src/constants.ts"
       ],
       "rules": {
-        "open-pencil/no-hardcoded-color-constants": "off"
+        "lawha/no-hardcoded-color-constants": "off"
       }
     },
     {
@@ -631,7 +631,7 @@
         "packages/scene-graph/src/index.ts"
       ],
       "rules": {
-        "open-pencil/no-direct-graph-emitter-subscriptions": "off"
+        "lawha/no-direct-graph-emitter-subscriptions": "off"
       }
     },
     {

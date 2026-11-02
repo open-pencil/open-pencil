@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { executeWithDocumentUndo } from '@/app/automation/execution/editor'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'

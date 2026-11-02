@@ -8,7 +8,7 @@ import { diagnostics } from './recorder'
 export async function saveDiagnosticsReport(): Promise<boolean> {
   return saveExportedFile(
     getExportBytes(await diagnostics.export(diagnosticsEnvironment())),
-    'OpenPencil diagnostics.json',
+    'Lawha diagnostics.json',
     'JSON',
     '.json',
     'application/json',

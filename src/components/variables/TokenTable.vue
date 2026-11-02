@@ -7,9 +7,9 @@ import {
   isLibraryCollection,
   type VariableCollection,
   type VariableValue
-} from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
+} from '@lawha/scene-graph'
+import { useI18n } from '@lawha/vue/i18n'
+import { useFlatReorderDrag } from '@lawha/vue/shared/drag'
 
 import {
   parseTokenValueText,

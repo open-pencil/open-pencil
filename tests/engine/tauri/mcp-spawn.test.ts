@@ -11,10 +11,10 @@ import {
 import { fetchStub } from '#tests/helpers/fetch'
 import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
-const DISCOVERY_PATH = '/mock/home/.openpencil/mcp.json'
+const DISCOVERY_PATH = '/mock/home/.lawha/mcp.json'
 const DISCOVERY_JSON = JSON.stringify({
   pid: 1234,
-  socketPath: '/mock/home/.openpencil/mcp.sock',
+  socketPath: '/mock/home/.lawha/mcp.sock',
   httpPort: 7600,
   authRequired: true,
   authToken: 'discovery-token',
@@ -81,7 +81,7 @@ describe('Tauri MCP spawning', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd, args) => {
       if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
+        return { available: true, path: '/mock/bin/lawha-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
       if (cmd === 'plugin:shell|spawn') {
@@ -120,7 +120,7 @@ describe('Tauri MCP spawning', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd) => {
       if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
+        return { available: true, path: '/mock/bin/lawha-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
       if (cmd === 'plugin:shell|spawn') throw new Error('shell permission denied')
@@ -171,7 +171,7 @@ describe('Tauri MCP spawning', () => {
         Response.json({
           status: 'ok',
           version: '0.15.1',
-          installCommand: 'npm i -g @open-pencil/mcp@0.15.1'
+          installCommand: 'npm i -g @lawha/mcp@0.15.1'
         })
       )
     )
@@ -186,8 +186,8 @@ describe('Tauri MCP spawning', () => {
     // The old server names its own version; the fix must name this app's.
     const error = await getAutomationAuthToken().catch((reason: unknown) => reason)
     expect(error).toBeInstanceOf(Error)
-    expect(String(error)).toContain('npm i -g @open-pencil/mcp@0.0.0-test')
-    expect(String(error)).not.toContain('@open-pencil/mcp@0.15.1')
+    expect(String(error)).toContain('npm i -g @lawha/mcp@0.0.0-test')
+    expect(String(error)).not.toContain('@lawha/mcp@0.15.1')
   })
 
   test('spawns MCP server with shell plugin when health check is missing', async () => {
@@ -220,20 +220,20 @@ describe('Tauri MCP spawning', () => {
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
       if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
+        return { available: true, path: '/mock/bin/lawha-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:shell|spawn') {
         expect(args).toMatchObject({
-          program: 'openpencil-mcp-http',
+          program: 'lawha-mcp-http',
           args: [],
           options: {
             env: {
               PORT: '7600',
-              OPENPENCIL_MCP_AUTH_TOKEN: expect.any(String),
-              OPENPENCIL_MCP_CORS_ORIGIN: 'tauri://localhost',
-              OPENPENCIL_MCP_TCP: '1',
-              OPENPENCIL_MCP_ROOT: '/mock/home',
-              OPENPENCIL_MCP_APP_TIMEOUT_MS: '30000',
-              OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1'
+              LAWHA_MCP_AUTH_TOKEN: expect.any(String),
+              LAWHA_MCP_CORS_ORIGIN: 'tauri://localhost',
+              LAWHA_MCP_TCP: '1',
+              LAWHA_MCP_ROOT: '/mock/home',
+              LAWHA_MCP_APP_TIMEOUT_MS: '30000',
+              LAWHA_MCP_EXIT_ON_STDIN_CLOSE: '1'
             }
           }
         })
@@ -303,7 +303,7 @@ describe('Tauri MCP spawning', () => {
     )
     await mockTauriIPC((cmd, args) => {
       if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
+        return { available: true, path: '/mock/bin/lawha-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:shell|spawn') return 77
       const pathArg = (args as { path?: string })?.path
       if (cmd === 'plugin:fs|exists') return pathArg === DISCOVERY_PATH
@@ -333,7 +333,7 @@ describe('Tauri MCP spawning', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd, args) => {
       if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
+        return { available: true, path: '/mock/bin/lawha-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
       if (cmd === 'plugin:shell|spawn') {

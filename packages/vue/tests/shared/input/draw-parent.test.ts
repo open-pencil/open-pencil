@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor, type Tool } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createEditor, type Editor, type Tool } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { handleDrawMove, startShapeDraw } from '#vue/shared/input/draw'
 import type { DragState } from '#vue/shared/input/types'

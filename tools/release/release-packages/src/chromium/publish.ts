@@ -44,7 +44,7 @@ const config = v.parse(
 
 // Every architecture must be present and signed for this version before anything is uploaded.
 const platforms: Record<string, { signature: string; url: string }> = {}
-const temporary = await mkdtemp(join(tmpdir(), 'open-pencil-chromium-'))
+const temporary = await mkdtemp(join(tmpdir(), 'lawha-chromium-'))
 
 try {
   const publicKey = join(temporary, 'key.pub')
@@ -93,7 +93,7 @@ await github(
   ARTIFACT_TRANSFER_TIMEOUT_MS
 )
 
-const downloaded = await mkdtemp(join(tmpdir(), 'open-pencil-chromium-verify-'))
+const downloaded = await mkdtemp(join(tmpdir(), 'lawha-chromium-verify-'))
 
 try {
   await github(
@@ -122,4 +122,4 @@ try {
   await rm(downloaded, { recursive: true, force: true })
 }
 
-console.log(`Added OpenPencil Chromium ${version} to ${tag} with ${names.length} files`)
+console.log(`Added Lawha Chromium ${version} to ${tag} with ${names.length} files`)

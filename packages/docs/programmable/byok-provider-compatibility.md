@@ -1,6 +1,6 @@
 # BYOK provider and model compatibility
 
-OpenPencil has no backend. When you bring your own API key, the browser talks to the provider
+Lawha has no backend. When you bring your own API key, the browser talks to the provider
 directly — so a provider only works in the **web build** if it sets CORS headers correctly, and a
 model is only useful for the AI chat panel if its **streaming tool calls** are well-formed.
 
@@ -30,14 +30,14 @@ Whether the **web build** can reach the provider at all. The desktop build bypas
 | MiniMax              | `https://api.minimax.io/v1`                       | ✅      | echoes origin                                                                                  | 2026-07-30 |
 | Nebius AI Studio     | `https://api.studio.nebius.com/v1`                | ✅      | `ACAO: *`                                                                                      | 2026-07-30 |
 | Nebius Token Factory | `https://api.tokenfactory.<region>.nebius.com/v1` | ✅      | `ACAO: *`; catalog differs per region                                                          | 2026-07-30 |
-| Anthropic            | `https://api.anthropic.com`                       | ✅      | Requires `anthropic-dangerous-direct-browser-access: true`; OpenPencil sends it in the web app | 2026-07-30 |
+| Anthropic            | `https://api.anthropic.com`                       | ✅      | Requires `anthropic-dangerous-direct-browser-access: true`; Lawha sends it in the web app | 2026-07-30 |
 | Scaleway             | `https://api.scaleway.ai/<project-id>/v1`         | ⚠️      | `ACAO: *` on success, **absent on errors** — a bad key reads as a network failure              | 2026-07-31 |
 | TensorX              | `https://api.tensorx.ai/v1`                       | ⚠️      | `ACAO: *` on success, **absent on errors** (401/403/500). Reported to their support            | 2026-07-31 |
 
 ### The common failure
 
 A provider that answers the `OPTIONS` preflight correctly but omits `Access-Control-Allow-Origin`
-on the **actual response** will fail in the browser with a generic `Failed to fetch`. OpenPencil
+on the **actual response** will fail in the browser with a generic `Failed to fetch`. Lawha
 surfaces that as _"Could not reach this endpoint from the browser"_ — which is indistinguishable
 from a wrong API key. **Always verify with curl before assuming the app is at fault.**
 
@@ -200,8 +200,8 @@ genuinely declined.
 | `"chat_template_kwargs": {"enable_thinking": false}` | 5,133 ch  | ✅ 3       |
 
 Only `"none"` actually eliminated reasoning on Scaleway; `"low"` had no measurable effect.
-OpenPencil cannot send this today — see
-[#454](https://github.com/open-pencil/open-pencil/issues/454).
+Lawha cannot send this today — see
+[#454](https://github.com/aliaaldihnayn-lab/design/issues/454).
 
 ### Known issue: reasoning models and the connection test
 
@@ -235,7 +235,7 @@ configuration is owner-readable only and is removed on exit.
 set -euo pipefail
 BASE="https://api.example.com/v1"
 MODEL="MODEL"
-ORIGIN="https://openpencil.dev"
+ORIGIN="https://github.com/aliaaldihnayn-lab/design#readme"
 read -rsp "API key: " API_KEY; printf '\n'
 CURL_CONFIG="$(mktemp)"
 PREFLIGHT_HEADERS="$(mktemp)"

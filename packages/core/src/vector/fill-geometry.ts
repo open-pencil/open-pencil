@@ -1,4 +1,4 @@
-import type { GeometryPath, VectorNetwork } from '@open-pencil/scene-graph'
+import type { GeometryPath, VectorNetwork } from '@lawha/scene-graph'
 
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 import type { PathSink } from './path-helpers'

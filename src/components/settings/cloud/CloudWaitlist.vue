@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { useStorageMessages } from '@open-pencil/vue/i18n'
+import { useStorageMessages } from '@lawha/vue/i18n'
 
 import { useWaitlistSignup } from '@/app/cloud/waitlist/signup'
 import { openExternalLink } from '@/app/shell/ui'
@@ -14,7 +14,7 @@ import { CLOUD_WAITLIST_URL, IS_TAURI } from '@/constants'
 import { cloudServers } from './ui'
 
 /**
- * The hosted OpenPencil Cloud before it opens: its waitlist, in place of connecting to it. The web
+ * The hosted Lawha Cloud before it opens: its waitlist, in place of connecting to it. The web
  * app signs up here; the desktop app opens the website, since Turnstile runs only on the sites
  * the service accepts.
  */

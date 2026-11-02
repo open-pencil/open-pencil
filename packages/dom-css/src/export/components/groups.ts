@@ -1,8 +1,8 @@
 import type { StateElement } from '#dom-css/behaviours/states/types'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { behaviourOwner, findLayerByPath } from '@open-pencil/scene-graph/behaviours'
-import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { behaviourOwner, findLayerByPath } from '@lawha/scene-graph/behaviours'
+import { instanceMainComponent } from '@lawha/scene-graph/instances'
 
 import type { ComponentModel } from './model'
 import { placementOnly, referenceValues, shownText, type UsedLayer } from './references'

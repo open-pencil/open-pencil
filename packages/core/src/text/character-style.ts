@@ -9,13 +9,13 @@ import {
   type StyleRun,
   type TextBoundVariables,
   type TextLength
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   FACE_KEYS,
   rangeFontStyle,
   SHARED_TEXT_STYLE_FIELDS,
   styleDetachmentChanges
-} from '@open-pencil/scene-graph/shared-styles'
+} from '@lawha/scene-graph/shared-styles'
 
 /** A character's style: the text's own, with its run's overrides over it. */
 export type CharacterStyle = Required<

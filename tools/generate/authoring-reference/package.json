@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/authoring-reference-tools",
+  "name": "@lawha/authoring-reference-tools",
   "private": true,
   "type": "module",
   "imports": {
@@ -9,9 +9,9 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@open-pencil/core": "workspace:*",
-    "@open-pencil/design-jsx": "workspace:*",
-    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@lawha/core": "workspace:*",
+    "@lawha/design-jsx": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*",
     "dedent": "^1.7.2"
   }
 }

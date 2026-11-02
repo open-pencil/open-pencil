@@ -3,11 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#fig-tests/helpers/assert'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions
-} from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph/components'
 
 interface Assignment {
   defID?: unknown

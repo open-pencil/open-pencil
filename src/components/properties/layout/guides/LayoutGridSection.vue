@@ -2,11 +2,11 @@
 import { isEqual } from 'es-toolkit/predicate'
 import { computed, ref } from 'vue'
 
-import type { LayoutGrid, SceneNode } from '@open-pencil/scene-graph'
-import { AUTO_LAYOUT_GRID_COUNT, layoutGridCount } from '@open-pencil/scene-graph/layout'
-import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import type { LayoutGrid, SceneNode } from '@lawha/scene-graph'
+import { AUTO_LAYOUT_GRID_COUNT, layoutGridCount } from '@lawha/scene-graph/layout'
+import { useEditor } from '@lawha/vue'
+import { useI18n } from '@lawha/vue/i18n'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import NumberField from '@/components/inputs/NumberField.vue'

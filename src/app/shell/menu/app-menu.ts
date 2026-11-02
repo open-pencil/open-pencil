@@ -15,14 +15,14 @@ import IconVariables from '~icons/lucide/variable'
 import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
-import type { BuiltinIOFormatId } from '@open-pencil/core/io'
-import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
-import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { BuiltinIOFormatId } from '@lawha/core/io'
+import { shortcutPlatform, useEditorCommands } from '@lawha/vue/editor/commands'
+import type { MenuEntry } from '@lawha/vue/editor/menu-model'
+import { useI18n } from '@lawha/vue/i18n'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem
-} from '@open-pencil/vue/primitives/CommandPalette'
+} from '@lawha/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'

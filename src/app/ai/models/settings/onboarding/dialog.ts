@@ -5,7 +5,7 @@ import { appPreferences, updateAISetupState } from '@/app/settings/preferences/s
 
 import { isUnconfiguredModelSettings } from './apply'
 
-/** `welcome` introduces OpenPencil first; `guided` starts at the setup questions. */
+/** `welcome` introduces Lawha first; `guided` starts at the setup questions. */
 export type AISetupEntry = 'welcome' | 'guided'
 
 export const aiSetupDialogOpen = ref(false)

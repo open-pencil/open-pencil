@@ -1,9 +1,9 @@
 import type { Canvas, Path, PathOp } from 'canvaskit-wasm'
 
-import type { Fill, SceneGraph, SceneNode, Stroke, WindingRule } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { Fill, SceneGraph, SceneNode, Stroke, WindingRule } from '@lawha/scene-graph'
+import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import type { GroupFitOptions } from '@lawha/scene-graph/group-bounds'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 
 import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { nodeVisualBounds, type VisualBoundsNode } from '@open-pencil/scene-graph/geometry'
+import { nodeVisualBounds, type VisualBoundsNode } from '@lawha/scene-graph/geometry'
 
 const at = () => ({ x: 10, y: 20 })
 

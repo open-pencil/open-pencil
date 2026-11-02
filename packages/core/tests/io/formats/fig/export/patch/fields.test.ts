@@ -5,13 +5,13 @@ import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
 import { sortBy, uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
-import { createEditor } from '@open-pencil/core'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
-import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { parseFigBuffer } from '@lawha/fig'
+import { symbolOverridesOf } from '@lawha/fig/instance-overrides'
+import { initCodec, type NodeChange } from '@lawha/kiwi/fig/codec'
+import { guidToString } from '@lawha/kiwi/fig/guid'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 setDefaultTimeout(120_000)
 
@@ -45,7 +45,7 @@ async function openGoldPreview(): Promise<{ bytes: ArrayBuffer; graph: SceneGrap
   return { bytes, graph: await parseFigFile(bytes.slice(0), { populate: 'first-page' }) }
 }
 
-test('an edit rewrites only the fields it changed, keeping those OpenPencil does not model', async () => {
+test('an edit rewrites only the fields it changed, keeping those Lawha does not model', async () => {
   const { bytes, graph } = await openGoldPreview()
   const list = expectDefined([...graph.nodes.values()].find((node) => node.name === 'Checked List'))
   const [instance] = graph.getChildren(list.id)

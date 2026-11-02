@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import {
   documentFontStatus,
   FontManager,
   fontTableView,
   sfntFont
-} from '@open-pencil/core/text'
+} from '@lawha/core/text'
 import { FONT_STAND_INS, standInFont } from '#core/text/font/stand-in'
 
 const FIGMA_HAND = FONT_STAND_INS['Figma Hand']

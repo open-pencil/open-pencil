@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { normalizeFigFragment } from '#fig/document/fragment'
 
-import { materializeDocument, materializeFigFragment } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { materializeDocument, materializeFigFragment } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 const guid = (localID: number) => ({ sessionID: 0, localID })
 test('fragment containers avoid existing IDs and retain source input', () => {

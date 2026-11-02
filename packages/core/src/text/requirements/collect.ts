@@ -1,8 +1,8 @@
 import { uniqBy } from 'es-toolkit/array'
 
-import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
-import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { faceStyleKey } from '@lawha/scene-graph/font-style'
+import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'

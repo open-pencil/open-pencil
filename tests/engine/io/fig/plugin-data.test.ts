@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { materializeDocument } from '@open-pencil/fig'
-import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { materializeDocument } from '@lawha/fig'
+import { initCodec, type NodeChange } from '@lawha/kiwi/fig/codec'
+import { deduplicateNodeChangePluginData } from '@lawha/kiwi/fig/parse'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
@@ -98,7 +98,7 @@ describe('plugin data', () => {
     expect(parsedFrame).toBeDefined()
     // Private plugin data roundtrips directly in pluginData array
     expect(parsedFrame?.pluginData).toContainEqual({
-      pluginId: 'open-pencil',
+      pluginId: 'lawha',
       key: 'okhcl',
       value: '{"l":0.7,"c":0.12,"h":240}'
     })
@@ -141,9 +141,9 @@ describe('plugin data', () => {
 describe('plugin data deduplication', () => {
   test('deduplicateNodeChangePluginData removes duplicate pluginData entries', () => {
     const entries = [
-      { pluginID: 'open-pencil', key: 'textDirection', value: 'RTL' },
-      { pluginID: 'open-pencil', key: 'textDirection', value: 'RTL' },
-      { pluginID: 'open-pencil', key: 'textDirection', value: 'RTL' }
+      { pluginID: 'lawha', key: 'textDirection', value: 'RTL' },
+      { pluginID: 'lawha', key: 'textDirection', value: 'RTL' },
+      { pluginID: 'lawha', key: 'textDirection', value: 'RTL' }
     ]
     const changes: NodeChange[] = [doc(), canvas(), node('FRAME', 10, 1, { pluginData: entries })]
 
@@ -154,7 +154,7 @@ describe('plugin data deduplication', () => {
     )
     expect(frameChange.pluginData).toHaveLength(1)
     expect(expectDefined(frameChange.pluginData?.[0], 'plugin data entry')).toEqual({
-      pluginID: 'open-pencil',
+      pluginID: 'lawha',
       key: 'textDirection',
       value: 'RTL'
     })
@@ -162,8 +162,8 @@ describe('plugin data deduplication', () => {
 
   test('importNodeChanges with unique pluginData entries preserves all', () => {
     const entries = [
-      { pluginID: 'open-pencil', key: 'textDirection', value: 'RTL' },
-      { pluginID: 'open-pencil', key: 'layoutDirection', value: 'LTR' },
+      { pluginID: 'lawha', key: 'textDirection', value: 'RTL' },
+      { pluginID: 'lawha', key: 'layoutDirection', value: 'LTR' },
       { pluginID: 'my-plugin', key: 'customKey', value: 'hello' }
     ]
 
@@ -177,12 +177,12 @@ describe('plugin data deduplication', () => {
     const frame = graph.getChildren(page.id)[0]
     expect(frame.pluginData).toHaveLength(3)
     expect(frame.pluginData).toContainEqual({
-      pluginId: 'open-pencil',
+      pluginId: 'lawha',
       key: 'textDirection',
       value: 'RTL'
     })
     expect(frame.pluginData).toContainEqual({
-      pluginId: 'open-pencil',
+      pluginId: 'lawha',
       key: 'layoutDirection',
       value: 'LTR'
     })
@@ -194,7 +194,7 @@ describe('plugin data deduplication', () => {
   })
 
   test('importNodeChanges with single pluginData entry preserves it (zero-copy path)', () => {
-    const entries = [{ pluginID: 'open-pencil', key: 'textDirection', value: 'LTR' }]
+    const entries = [{ pluginID: 'lawha', key: 'textDirection', value: 'LTR' }]
 
     const graph = materializeDocument([
       doc(),
@@ -206,7 +206,7 @@ describe('plugin data deduplication', () => {
     const frame = graph.getChildren(page.id)[0]
     expect(frame.pluginData).toHaveLength(1)
     expect(frame.pluginData[0]).toEqual({
-      pluginId: 'open-pencil',
+      pluginId: 'lawha',
       key: 'textDirection',
       value: 'LTR'
     })
@@ -423,16 +423,16 @@ describe('plugin data namespace collision guards', () => {
 
     frame.setPluginData('foo', 'private-value')
     frame.setPluginData('foo/bar', 'private-slash-value')
-    frame.setSharedPluginData('open-pencil', 'bar', 'shared-value')
+    frame.setSharedPluginData('lawha', 'bar', 'shared-value')
 
     const keys = frame.getPluginDataKeys()
     expect(keys).toContain('foo')
     expect(keys).toContain('foo/bar')
-    expect(keys).not.toContain('open-pencil/bar')
+    expect(keys).not.toContain('lawha/bar')
     expect(keys).not.toContain('bar')
   })
 
-  test('getSharedPluginData does not read private open-pencil plugin data', () => {
+  test('getSharedPluginData does not read private lawha plugin data', () => {
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
     const frame = api.createFrame()
@@ -440,9 +440,9 @@ describe('plugin data namespace collision guards', () => {
     // Write private data via setPluginData
     frame.setPluginData('textDirection', 'RTL')
 
-    // getSharedPluginData with the 'open-pencil' namespace should NOT
-    // return the private entry (which uses {pluginId: 'open-pencil', key: 'textDirection'})
-    const sharedValue = frame.getSharedPluginData('open-pencil', 'textDirection')
+    // getSharedPluginData with the 'lawha' namespace should NOT
+    // return the private entry (which uses {pluginId: 'lawha', key: 'textDirection'})
+    const sharedValue = frame.getSharedPluginData('lawha', 'textDirection')
     expect(sharedValue).toBe('')
 
     // Private data is still accessible via getPluginData
@@ -450,7 +450,7 @@ describe('plugin data namespace collision guards', () => {
     expect(privateValue).toBe('RTL')
   })
 
-  test('setSharedPluginData does not delete private open-pencil plugin data', () => {
+  test('setSharedPluginData does not delete private lawha plugin data', () => {
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
     const frame = api.createFrame()
@@ -458,25 +458,25 @@ describe('plugin data namespace collision guards', () => {
     // Write private data
     frame.setPluginData('layoutDirection', 'LTR')
 
-    // Set shared data using the 'open-pencil' namespace —
+    // Set shared data using the 'lawha' namespace —
     // this should NOT delete the private 'layoutDirection' entry
-    frame.setSharedPluginData('open-pencil', 'custom-key', 'shared')
+    frame.setSharedPluginData('lawha', 'custom-key', 'shared')
 
     const privateValue = frame.getPluginData('layoutDirection')
     expect(privateValue).toBe('LTR')
 
     // The shared data is stored correctly
-    const sharedValue = frame.getSharedPluginData('open-pencil', 'custom-key')
+    const sharedValue = frame.getSharedPluginData('lawha', 'custom-key')
     expect(sharedValue).toBe('shared')
 
     // And the private data key list does not include the shared-format key
     const keys = frame.getPluginDataKeys()
     expect(keys).toContain('layoutDirection')
-    expect(keys).not.toContain('open-pencil/custom-key')
+    expect(keys).not.toContain('lawha/custom-key')
     expect(keys).not.toContain('custom-key')
   })
 
-  test('getSharedPluginDataKeys does not leak private open-pencil keys', () => {
+  test('getSharedPluginDataKeys does not leak private lawha keys', () => {
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
     const frame = api.createFrame()
@@ -487,10 +487,10 @@ describe('plugin data namespace collision guards', () => {
     // Write shared data for another namespace (should still work)
     frame.setSharedPluginData('tokens', 'accent', '#ff0000')
 
-    const sharedKeys = frame.getSharedPluginDataKeys('open-pencil')
+    const sharedKeys = frame.getSharedPluginDataKeys('lawha')
     expect(sharedKeys).not.toContain('textDirection')
 
-    // Non-open-pencil shared data is accessible
+    // Non-lawha shared data is accessible
     const tokensKeys = frame.getSharedPluginDataKeys('tokens')
     expect(tokensKeys).toContain('accent')
   })

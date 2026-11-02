@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { renderJSX } from '@lawha/core/design-jsx'
+import { SceneGraph } from '@lawha/scene-graph'
 
 test('finds an override layer among the instance children, by its name before renames', async () => {
   const graph = new SceneGraph()

@@ -2,14 +2,14 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI } from '@lawha/core/figma-api'
 import {
   createCanvasKitRasterCodec,
   headlessRenderThumbnail,
   initCanvasKit,
   thumbnailFrame
-} from '@open-pencil/core/io/formats/raster'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/io/formats/raster'
+import { SceneGraph } from '@lawha/scene-graph'
 
 setDefaultTimeout(60_000)
 

@@ -54,7 +54,7 @@ async function renderWorkspaceInvitation(payload: WorkspaceInvitationEmailPayloa
     {
       heading: `Join ${payload.workspaceName}`,
       preview: `${payload.inviterName} invited you to ${payload.workspaceName}`,
-      message: `${payload.inviterName} invited you to ${action} the workspace “${payload.workspaceName}” on OpenPencil Cloud. You will see its documents on Home once you join.`,
+      message: `${payload.inviterName} invited you to ${action} the workspace “${payload.workspaceName}” on Lawha Cloud. You will see its documents on Home once you join.`,
       actionLabel: 'Join workspace',
       actionURL: payload.acceptanceURL,
       footer: `This invitation expires ${new Date(payload.expiresAt).toUTCString()}.`
@@ -86,28 +86,28 @@ type EnrollmentCopy = {
 
 const ENROLLMENT_COPY: Record<EnrollmentMessageKind, Omit<EnrollmentCopy, 'message'>> = {
   'enrollment-requested': {
-    subject: 'We received your OpenPencil Cloud request',
+    subject: 'We received your Lawha Cloud request',
     heading: 'Request received',
-    preview: 'Your OpenPencil Cloud access request is awaiting review.',
-    actionLabel: 'Open OpenPencil Cloud'
+    preview: 'Your Lawha Cloud access request is awaiting review.',
+    actionLabel: 'Open Lawha Cloud'
   },
   'enrollment-approved': {
-    subject: 'Your OpenPencil Cloud access is ready',
+    subject: 'Your Lawha Cloud access is ready',
     heading: 'Access approved',
-    preview: 'You can now sign in to OpenPencil Cloud.',
+    preview: 'You can now sign in to Lawha Cloud.',
     actionLabel: 'Sign in'
   },
   'enrollment-rejected': {
-    subject: 'Your OpenPencil Cloud request was reviewed',
+    subject: 'Your Lawha Cloud request was reviewed',
     heading: 'Request reviewed',
     preview: 'Your current access request was not approved.',
     actionLabel: 'Request access again'
   },
   'enrollment-revoked': {
-    subject: 'Your OpenPencil Cloud access has changed',
+    subject: 'Your Lawha Cloud access has changed',
     heading: 'Access changed',
-    preview: 'Your OpenPencil Cloud access is no longer active.',
-    actionLabel: 'Open OpenPencil'
+    preview: 'Your Lawha Cloud access is no longer active.',
+    actionLabel: 'Open Lawha'
   }
 }
 
@@ -132,12 +132,12 @@ async function renderAdminNotification(payload: AdminEnrollmentNotificationPaylo
     EnrollmentEmail,
     {
       heading: 'New Cloud access request',
-      preview: `${payload.requesterEmail} requested OpenPencil Cloud access.`,
+      preview: `${payload.requesterEmail} requested Lawha Cloud access.`,
       message: `${payload.requesterName} (${payload.requesterEmail}) requested access. ${payload.reason}`,
       actionLabel: 'Review request',
       actionURL: payload.actionURL
     },
-    'New OpenPencil Cloud access request'
+    'New Lawha Cloud access request'
   )
 }
 
@@ -149,23 +149,23 @@ async function renderAuthentication(
     'email-verification':
       payload.purpose === 'change'
         ? {
-            subject: 'Confirm your new OpenPencil Cloud email',
+            subject: 'Confirm your new Lawha Cloud email',
             heading: 'Confirm your new email',
-            preview: 'One click to move your OpenPencil Cloud account to this address.',
-            message: `Hi ${payload.name}, confirm this address to make it your OpenPencil Cloud account’s email. Your old address stays until you do.`,
+            preview: 'One click to move your Lawha Cloud account to this address.',
+            message: `Hi ${payload.name}, confirm this address to make it your Lawha Cloud account’s email. Your old address stays until you do.`,
             actionLabel: 'Confirm email',
             footer: 'Didn’t ask for this? Ignore this email and nothing changes.'
           }
         : {
-            subject: 'Confirm your OpenPencil Cloud email',
+            subject: 'Confirm your Lawha Cloud email',
             heading: 'Confirm your email',
-            preview: 'One click to finish creating your OpenPencil Cloud account.',
-            message: `Hi ${payload.name}, confirm this address to finish creating your OpenPencil Cloud account. Then go back to OpenPencil; it signs you in by itself.`,
+            preview: 'One click to finish creating your Lawha Cloud account.',
+            message: `Hi ${payload.name}, confirm this address to finish creating your Lawha Cloud account. Then go back to Lawha; it signs you in by itself.`,
             actionLabel: 'Confirm email',
             footer: 'Didn’t create an account? Ignore this email and nothing happens.'
           },
     'password-reset': {
-      subject: 'Reset your OpenPencil Cloud password',
+      subject: 'Reset your Lawha Cloud password',
       heading: 'Reset your password',
       preview: 'Use this secure link to choose a new password.',
       message: `Hi ${payload.name}, use the link below to choose a new password.`,
@@ -173,11 +173,11 @@ async function renderAuthentication(
       footer: 'Didn’t ask for this? Ignore this email and your password stays the same.'
     },
     'password-changed': {
-      subject: 'Your OpenPencil Cloud password changed',
+      subject: 'Your Lawha Cloud password changed',
       heading: 'Password changed',
-      preview: 'Your OpenPencil Cloud password was changed.',
+      preview: 'Your Lawha Cloud password was changed.',
       message: `Hi ${payload.name}, your password was changed. If this was not you, contact your administrator.`,
-      actionLabel: 'Open OpenPencil Cloud'
+      actionLabel: 'Open Lawha Cloud'
     }
   }[kind]
   return rendered(EnrollmentEmail, { ...copy, actionURL: payload.actionURL ?? '#' }, copy.subject)
@@ -188,30 +188,30 @@ async function renderEmailChangeRequested(payload: EmailChangeRequestedPayload) 
     EnrollmentEmail,
     {
       heading: 'Your email is changing',
-      preview: `Your OpenPencil Cloud email is changing to ${payload.newEmail}.`,
+      preview: `Your Lawha Cloud email is changing to ${payload.newEmail}.`,
       message: `Hi ${payload.name}, someone signed in to your account asked to change its email to ${payload.newEmail}. It changes once that address confirms it. If this wasn’t you, change your password and sign out of your other sessions.`,
       actionLabel: 'Review your account',
       actionURL: payload.actionURL
     },
-    'Your OpenPencil Cloud email is changing'
+    'Your Lawha Cloud email is changing'
   )
 }
 
 async function renderNewSignIn(payload: NewSignInPayload) {
   const device = payload.desktop
-    ? 'the OpenPencil app'
+    ? 'the Lawha app'
     : compact([payload.browser, payload.system]).join(' on ') || 'an unknown browser'
   const place = payload.ipAddress ? ` from ${payload.ipAddress}` : ''
   return rendered(
     EnrollmentEmail,
     {
       heading: 'New sign-in to your account',
-      preview: `Your OpenPencil Cloud account was signed in to with ${device}.`,
+      preview: `Your Lawha Cloud account was signed in to with ${device}.`,
       message: `Hi ${payload.name}, your account was signed in to with ${device}${place} on ${new Date(payload.signedInAt).toUTCString()}. If this was you, there’s nothing to do. If it wasn’t, sign that session out and change your password.`,
       actionLabel: 'Review sessions',
       actionURL: payload.actionURL
     },
-    'New sign-in to your OpenPencil Cloud account'
+    'New sign-in to your Lawha Cloud account'
   )
 }
 
@@ -245,12 +245,12 @@ async function renderTwoStepChanged(payload: TwoStepChangedPayload) {
     EnrollmentEmail,
     {
       heading: copy.heading,
-      preview: `${copy.heading} on your OpenPencil Cloud account.`,
+      preview: `${copy.heading} on your Lawha Cloud account.`,
       message: `Hi ${payload.name}, ${copy.message} If this wasn’t you, change your password and contact your administrator.`,
       actionLabel: 'Review security',
       actionURL: payload.actionURL
     },
-    `${copy.heading} on your OpenPencil Cloud account`
+    `${copy.heading} on your Lawha Cloud account`
   )
 }
 

@@ -1,8 +1,8 @@
 import { limitAsync } from 'es-toolkit/promise'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { instanceMainComponent } from '@lawha/scene-graph/instances'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import {
   getPageColor,

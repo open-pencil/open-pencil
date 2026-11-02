@@ -1,6 +1,6 @@
 import type { Canvas, SkPicture } from 'canvaskit-wasm'
 
-import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { VisualBounds } from '@lawha/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 

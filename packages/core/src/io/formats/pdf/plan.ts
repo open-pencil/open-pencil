@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 export const PDF_MODES = ['single', 'frames', 'pages'] as const
 export type PDFMode = (typeof PDF_MODES)[number]

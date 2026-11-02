@@ -43,7 +43,7 @@ test('renders streamed JSX without document mutations, then commits once with un
     )
     expect(await documentState(chat.page)).toEqual({ children: [], undo: false })
     await chat.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       store.state.panX = 30
       store.state.panY = 20
@@ -61,7 +61,7 @@ test('renders streamed JSX without document mutations, then commits once with un
     const committed = await documentState(chat.page)
     expect(committed.children).toHaveLength(1)
     expect(committed.undo).toBe(true)
-    await chat.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+    await chat.page.evaluate(() => window.lawha?.getStore?.().undoAction())
     expect(await documentState(chat.page)).toEqual({ children: [], undo: false })
   } finally {
     await stream.evaluate((s) => s.dispose())
@@ -74,7 +74,7 @@ test('preserves a replacement target until completion and restores it on undo', 
 }) => {
   await setupCanvas(chat.page)
   const originalId = await chat.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const node = store.graph.createNode('FRAME', store.state.currentPageId, {
       name: 'Placeholder',
@@ -99,7 +99,7 @@ test('preserves a replacement target until completion and restores it on undo', 
     await stream.evaluate((s) => s.complete())
     await expect(chat.assistantMessage()).toContainText('Rendered.')
     expect((await documentState(chat.page)).children).not.toContain(originalId)
-    await chat.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+    await chat.page.evaluate(() => window.lawha?.getStore?.().undoAction())
     expect(await documentState(chat.page)).toEqual({ children: [originalId], undo: false })
   } finally {
     await stream.evaluate((s) => s.dispose())
@@ -143,7 +143,7 @@ test('keeps the run and its preview on their page while the user views another',
     expect((await documentState(chat.page, pages.current)).children).toHaveLength(1)
     expect((await documentState(chat.page, pages.added)).children).toHaveLength(0)
     expect(
-      await chat.page.evaluate(() => window.openPencil?.getStore?.().state.currentPageId)
+      await chat.page.evaluate(() => window.lawha?.getStore?.().state.currentPageId)
     ).toBe(pages.added)
   } finally {
     await stream.evaluate((s) => s.dispose())
@@ -184,7 +184,7 @@ test("the chat's agent moves through the streamed elements and outlines them", a
   const stream = await installRenderStream(chat.page, scenario)
   const agentCursor = () =>
     chat.page.evaluate(() => {
-      const cursor = window.openPencil
+      const cursor = window.lawha
         ?.getStore?.()
         .state.presenceCursors.find((entry) => entry.kind === 'agent')
       return cursor

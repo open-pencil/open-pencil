@@ -1,9 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import { readEffectiveFigmaRawField } from '@open-pencil/fig'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { layoutGridCount, layoutGuideSections } from '@open-pencil/scene-graph/layout'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { readEffectiveFigmaRawField } from '@lawha/fig'
+import type { SceneNode } from '@lawha/scene-graph'
+import { layoutGridCount, layoutGuideSections } from '@lawha/scene-graph/layout'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { SELECTION_COLOR } from '#core/constants'
 

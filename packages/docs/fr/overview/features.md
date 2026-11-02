@@ -2,9 +2,9 @@
 
 ## Fichiers Figma
 
-OpenPencil ouvre et enregistre directement les fichiers `.fig`. L’import et l’export utilisent le même codec binaire Kiwi que Figma : 194 définitions de schéma et environ 390 champs par objet. Enregistrer : <kbd>⌘</kbd><kbd>S</kbd>. Enregistrer sous : <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd>.
+Lawha ouvre et enregistre directement les fichiers `.fig`. L’import et l’export utilisent le même codec binaire Kiwi que Figma : 194 définitions de schéma et environ 390 champs par objet. Enregistrer : <kbd>⌘</kbd><kbd>S</kbd>. Enregistrer sous : <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd>.
 
-**Copier et coller avec Figma :** sélectionnez des objets dans Figma, appuyez sur <kbd>⌘</kbd><kbd>C</kbd>, passez à OpenPencil puis utilisez <kbd>⌘</kbd><kbd>V</kbd>. Remplissages, contours, disposition automatique, texte, effets, rayons des coins et réseaux vectoriels sont conservés dans les deux sens.
+**Copier et coller avec Figma :** sélectionnez des objets dans Figma, appuyez sur <kbd>⌘</kbd><kbd>C</kbd>, passez à Lawha puis utilisez <kbd>⌘</kbd><kbd>V</kbd>. Remplissages, contours, disposition automatique, texte, effets, rayons des coins et réseaux vectoriels sont conservés dans les deux sens.
 
 ## Dessin et édition
 
@@ -33,7 +33,7 @@ Les onglets Design, Code, IA et Vérifier s’adaptent à la sélection :
 
 ## Rendu
 
-OpenPencil utilise Skia via CanvasKit WASM, le même moteur graphique que Figma :
+Lawha utilise Skia via CanvasKit WASM, le même moteur graphique que Figma :
 
 - dégradés linéaires, radiaux, angulaires et diamant ;
 - remplissages d’image avec plusieurs modes d’échelle ;
@@ -60,7 +60,7 @@ Vous pouvez créer, supprimer et renommer des pages ; chacune conserve sa positi
 - **Copier comme :** texte, SVG, PNG ou JSX depuis le menu contextuel.
 
 ```sh
-openpencil export design.fig -f jsx --style tailwind
+lawha export design.fig -f jsx --style tailwind
 ```
 
 ## Chat AI
@@ -74,7 +74,7 @@ Les appels d’outils apparaissent sur une chronologie repliable. Pour vérifier
 Claude Code, Cursor, Windsurf et les autres clients MCP peuvent lire et modifier des fichiers `.fig` grâce à plus de 90 outils. stdio et HTTP sont disponibles.
 
 ```sh
-npm install -g @open-pencil/mcp
+npm install -g @lawha/mcp
 ```
 
 ## CLI
@@ -82,15 +82,15 @@ npm install -g @open-pencil/mcp
 La CLI examine, exporte et analyse les fichiers `.fig` :
 
 ```sh
-openpencil tree design.fig              # Arbre du document
-openpencil find design.fig --type TEXT  # Recherche
-openpencil export design.fig -f png     # Export
-openpencil analyze colors design.fig    # Analyse des couleurs
-openpencil analyze clusters design.fig  # Structures répétées
-openpencil eval design.fig -c "..."     # Figma Plugin API
+lawha tree design.fig              # Arbre du document
+lawha find design.fig --type TEXT  # Recherche
+lawha export design.fig -f png     # Export
+lawha analyze colors design.fig    # Analyse des couleurs
+lawha analyze clusters design.fig  # Structures répétées
+lawha eval design.fig -c "..."     # Figma Plugin API
 ```
 
-Toutes les commandes acceptent `--json`. Installation : `npm install -g @open-pencil/cli` ou `bun add -g @open-pencil/cli`.
+Toutes les commandes acceptent `--json`. Installation : `npm install -g @lawha/cli` ou `bun add -g @lawha/cli`.
 
 ## Collaboration en temps réel
 
@@ -100,8 +100,8 @@ La collaboration fonctionne directement entre participants via WebRTC et ne néc
 
 **Bureau :** Tauri v2, environ 7 Mo, pour macOS, Windows et Linux, avec menus natifs, fonctionnement hors ligne et enregistrement automatique.
 
-**Web :** [app.openpencil.dev](https://app.openpencil.dev), installable comme PWA et adapté aux écrans tactiles.
+**Web :** [app.lawha.invalid](https://app.lawha.invalid), installable comme PWA et adapté aux écrans tactiles.
 
 ## Chargement de secours depuis Google Fonts
 
-Si une police n’est pas disponible localement, OpenPencil la télécharge automatiquement depuis Google Fonts. Aucune installation manuelle n’est nécessaire.
+Si une police n’est pas disponible localement, Lawha la télécharge automatiquement depuis Google Fonts. Aucune installation manuelle n’est nécessaire.

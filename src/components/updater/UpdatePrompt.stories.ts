@@ -11,7 +11,7 @@ const release: ReleaseInfo = {
 
 - Configure built-in AI and local MCP tool access independently on a **Tool access** page, including optional extended AI tools and per-target defaults (#584).
 - Set the built-in AI's maximum steps per message in Chat settings (#573).
-- Open documents and jump to a named layer from \`openpencil://open?file=&node=\` links.
+- Open documents and jump to a named layer from \`lawha://open?file=&node=\` links.
 
 ### Changed
 
@@ -21,10 +21,10 @@ const release: ReleaseInfo = {
 ### Fixed
 
 - Store colours edited in the colour picker in the document's colour profile, and convert them on the way to the display.
-- Let the desktop app use an MCP server you started yourself by allowing the app's own origin by default, instead of requiring \`OPENPENCIL_MCP_CORS_ORIGIN\`.
+- Let the desktop app use an MCP server you started yourself by allowing the app's own origin by default, instead of requiring \`LAWHA_MCP_CORS_ORIGIN\`.
 - Mark unsaved documents and ask whether to save before closing a tab, the desktop window, or the application.
 - Update instance text properties on the canvas while typing, with grouped undo for rapid edits.
-- Point Homebrew installation instructions to the official [\`openpencil\` cask](https://formulae.brew.sh/cask/openpencil).
+- Point Homebrew installation instructions to the official [\`lawha\` cask](https://formulae.brew.sh/cask/lawha).
 
 ### Performance
 

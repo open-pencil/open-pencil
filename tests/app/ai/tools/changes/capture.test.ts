@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test'
 import type { ToolExecutionOptions } from 'ai'
 import { toRaw } from 'vue'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI } from '@lawha/core/figma-api'
 
 import { snapshotMessages, restoreMessages } from '@/app/ai/chat/history/messages'
 import { changePreviewSize } from '@/app/ai/chat/preferences'

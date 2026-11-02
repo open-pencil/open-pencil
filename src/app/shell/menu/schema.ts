@@ -1,4 +1,4 @@
-import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+import type { EditorCommandId } from '@lawha/vue/editor/commands'
 
 export type AppMenuTarget = 'all' | 'browser' | 'native'
 
@@ -551,8 +551,8 @@ export const APP_MENU_SCHEMA = [
  * sit between them. Only the labels and accelerators are shared here.
  */
 export const APP_MENU_APP_ITEMS = [
-  { id: 'about', label: 'About OpenPencil' },
+  { id: 'about', label: 'About Lawha' },
   { id: 'check-updates', label: 'Check for Updates…' },
   SETTINGS_MENU_ITEM,
-  { id: 'quit', label: 'Quit OpenPencil', shortcut: 'MOD+Q' }
+  { id: 'quit', label: 'Quit Lawha', shortcut: 'MOD+Q' }
 ] satisfies AppMenuActionItem[]

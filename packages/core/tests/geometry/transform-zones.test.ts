@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { pressesTinyLayer, transformZoneAt } from '@open-pencil/core/geometry'
+import { pressesTinyLayer, transformZoneAt } from '@lawha/core/geometry'
 
 /** The zone at a point given in screen pixels from a layer's top-left corner, as a short name. */
 function zone(width: number, height: number, x: number, y: number, zoom = 1) {

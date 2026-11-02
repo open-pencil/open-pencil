@@ -11,7 +11,7 @@ export interface PreparedSource {
   title?: string
 }
 
-/** The front matter OpenPencil reads: the title, which YAML may give as a number or a flag. */
+/** The front matter Lawha reads: the title, which YAML may give as a number or a flag. */
 const frontMatterSchema = v.looseObject({
   title: v.optional(v.pipe(v.union([v.string(), v.number(), v.boolean()]), v.toString()))
 })

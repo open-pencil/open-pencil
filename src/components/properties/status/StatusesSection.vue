@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useStatusMessages } from '@open-pencil/vue/i18n'
-import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import { useStatusMessages } from '@lawha/vue/i18n'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'

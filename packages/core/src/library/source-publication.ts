@@ -1,13 +1,13 @@
-import type { SceneGraph, SourceLibraryPublication } from '@open-pencil/scene-graph'
+import type { SceneGraph, SourceLibraryPublication } from '@lawha/scene-graph'
 import {
-  OPEN_PENCIL_PLUGIN_DATA,
+  LAWHA_PLUGIN_DATA,
   readPluginData,
   withPluginData
-} from '@open-pencil/scene-graph/plugin-data'
+} from '@lawha/scene-graph/plugin-data'
 
 export function readSourceLibraryPublication(graph: SceneGraph): SourceLibraryPublication | null {
   const root = graph.getNode(graph.rootId)
-  return readPluginData(root?.pluginData, OPEN_PENCIL_PLUGIN_DATA.sourceLibraryPublication) ?? null
+  return readPluginData(root?.pluginData, LAWHA_PLUGIN_DATA.sourceLibraryPublication) ?? null
 }
 
 export function writeSourceLibraryPublication(
@@ -19,7 +19,7 @@ export function writeSourceLibraryPublication(
   graph.updateNode(root.id, {
     pluginData: withPluginData(
       root.pluginData,
-      OPEN_PENCIL_PLUGIN_DATA.sourceLibraryPublication,
+      LAWHA_PLUGIN_DATA.sourceLibraryPublication,
       publication
     )
   })

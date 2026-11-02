@@ -1,4 +1,4 @@
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 /** Which files a list shows: every file, or one kind of them. */
 export type DocumentKindFilter = 'all' | DocumentKind

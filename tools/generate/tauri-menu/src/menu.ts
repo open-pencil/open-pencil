@@ -1,6 +1,6 @@
 import { compact } from 'es-toolkit/array'
 
-import { editorCommandMetadata } from '@open-pencil/vue/editor/commands'
+import { editorCommandMetadata } from '@lawha/vue/editor/commands'
 
 import { APP_MENU_APP_ITEMS, APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'

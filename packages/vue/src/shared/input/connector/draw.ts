@@ -1,4 +1,4 @@
-import type { AttachModifiers, Editor } from '@open-pencil/core'
+import type { AttachModifiers, Editor } from '@lawha/core'
 
 import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragConnectorDraw, DragState } from '#vue/shared/input/types'

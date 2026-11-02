@@ -1,8 +1,8 @@
 import { countBy } from 'es-toolkit'
 import type * as v from 'valibot'
 
-import type { ConnectorEndpoint, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import type { ConnectorEndpoint, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
 import {
   boundEndpoint,
   CONNECTOR_COLOR,
@@ -13,9 +13,9 @@ import {
   connectorSublayers,
   createConnector,
   freeEndpoint
-} from '@open-pencil/scene-graph/connectors'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/connectors'
+import { isGeneratedFrame } from '@lawha/scene-graph/generated'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { CONNECTOR_LINE, CONNECTOR_SIDE, STROKE_CAP } from '../enums'
 import { Reference } from '../export/value'

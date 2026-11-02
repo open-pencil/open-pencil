@@ -1,6 +1,6 @@
 import { afterEach, expect, jest, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { createPopulationWorkerClient } from '#core/kiwi/fig/population/client'
 import type { FigSessionPopulateRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'

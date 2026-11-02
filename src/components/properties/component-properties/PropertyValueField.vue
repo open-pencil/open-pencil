@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
-import type { ComponentPropertyType } from '@open-pencil/scene-graph'
+import type { ComponentPropertyType } from '@lawha/scene-graph'
 
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'

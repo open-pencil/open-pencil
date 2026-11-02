@@ -2,13 +2,13 @@
 import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import type { ComponentPropertyType } from '@open-pencil/scene-graph'
+import type { ComponentPropertyType } from '@lawha/scene-graph'
 import type {
   ComponentBinding,
   ComponentBindingGroup
-} from '@open-pencil/vue/controls/component-props'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+} from '@lawha/vue/controls/component-props'
+import { useI18n } from '@lawha/vue/i18n'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'

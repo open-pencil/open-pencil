@@ -140,11 +140,11 @@ const sourceLibraryPublicationSchema: v.GenericSchema<unknown, SourceLibraryPubl
 )
 
 /**
- * Every plugin-data entry OpenPencil writes under {@link OPEN_PENCIL_PLUGIN_ID}: state Figma's
+ * Every plugin-data entry Lawha writes under {@link LAWHA_PLUGIN_ID}: state Figma's
  * format has no field for. Add a key here, never as a string elsewhere, so reading and writing
  * it share one schema.
  */
-export const OPEN_PENCIL_PLUGIN_DATA = {
+export const LAWHA_PLUGIN_DATA = {
   /** A text node's direction, on TEXT nodes. */
   textDirection: textPluginDataField('textDirection', 'format', DIRECTIONS),
   /** An auto-layout frame's direction. */
@@ -209,12 +209,12 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   shader: jsonPluginDataField('shader', 'content', shaderPaintSchema)
 } satisfies Record<string, PluginDataKey>
 
-const NOT_CONTENT = Object.values(OPEN_PENCIL_PLUGIN_DATA).filter(
+const NOT_CONTENT = Object.values(LAWHA_PLUGIN_DATA).filter(
   (field) => field.role !== 'content'
 )
 
 /**
- * A node's plugin data that is part of its content, in a stable order: OpenPencil's content
+ * A node's plugin data that is part of its content, in a stable order: Lawha's content
  * fields and every other plugin's entries, which the node carries wherever it goes. Format
  * copies of node fields and bookkeeping are left out.
  */

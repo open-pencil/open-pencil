@@ -4,7 +4,7 @@ import {
   editorCommandMetadata,
   useEditorCommands,
   type EditorCommandId
-} from '@open-pencil/vue/editor/commands'
+} from '@lawha/vue/editor/commands'
 
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { shortcutEvent } from '@/app/shell/keyboard/layout'

@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { applyTextRunReferences } from '../text/run-references'
 import type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'

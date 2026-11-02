@@ -9,7 +9,7 @@ import {
   runCommand,
   type PackageManifest,
   type WorkspacePackage
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 
 import { NPM_RELEASE_POLICY } from './policy'
 

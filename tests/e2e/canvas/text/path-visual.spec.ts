@@ -7,11 +7,11 @@ const editor = useEditorSetup('/?test&no-chrome&no-rulers')
  * snapshot is of the text and its overlay, not of artwork that would make it a large image.
  */
 async function selectPathText(editing: boolean) {
-  await editor.page.evaluate(() => window.openPencil?.openFile?.('/tests/fixtures/circle-text.fig'))
+  await editor.page.evaluate(() => window.lawha?.openFile?.('/tests/fixtures/circle-text.fig'))
   await editor.canvas.waitForRender()
   return editor.page.evaluate((edit) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const nodes = [...store.graph.getAllNodes()]
     for (const artwork of nodes.filter((node) => node.name === 'back' || node.name === 'ArnoIcon'))
       store.graph.updateNode(artwork.id, { visible: false })

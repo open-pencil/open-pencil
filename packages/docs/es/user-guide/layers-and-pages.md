@@ -22,7 +22,7 @@ La selección del árbol y la del lienzo permanecen sincronizadas. <kbd>Shift</k
 
 La lista de páginas permite crear, cambiar, renombrar y eliminar páginas. Cada página conserva su propia posición y escala de vista.
 
-El menú contextual mueve la selección a otra página. Al cambiar de página, OpenPencil restaura su vista y selección.
+El menú contextual mueve la selección a otra página. Al cambiar de página, Lawha restaura su vista y selección.
 
 ## Propiedades
 

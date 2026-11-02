@@ -3,10 +3,10 @@ import { chmod, lstat, mkdtemp, readdir, readFile, stat, symlink, writeFile } fr
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { writeFileAtomic } from '@lawha/core/node/fs'
 
 async function scratch() {
-  return mkdtemp(join(tmpdir(), 'open-pencil-atomic-'))
+  return mkdtemp(join(tmpdir(), 'lawha-atomic-'))
 }
 
 describe('writeFileAtomic', () => {

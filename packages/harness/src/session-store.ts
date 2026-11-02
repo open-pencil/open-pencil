@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
-import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { writeFileAtomic } from '@lawha/core/node/fs'
 
 import type { HarnessResumeState } from './backends/types'
 

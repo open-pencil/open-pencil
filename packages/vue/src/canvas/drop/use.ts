@@ -1,12 +1,12 @@
 import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import { IMPORTABLE_RASTER_TYPES, isSVGFile } from '@open-pencil/scene-graph/images'
+import type { Editor } from '@lawha/core'
+import { IMPORTABLE_RASTER_TYPES, isSVGFile } from '@lawha/scene-graph/images'
 
 import { cycleSafeTarget, findMoveDropTarget } from '#vue/shared/input/drop-target'
 
-const COMPONENT_MIME = 'application/x-openpencil-component'
+const COMPONENT_MIME = 'application/x-lawha-component'
 
 function hasComponentData(e: DragEvent): boolean {
   return e.dataTransfer?.types.includes(COMPONENT_MIME) ?? false

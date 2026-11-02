@@ -3,8 +3,8 @@ import { expect, test } from 'bun:test'
 import { resolveVectorNetwork } from '#fig/node-change/vector/geometry'
 import { encodeVectorNetworkBlob } from '#fig/node-change/vector/network'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** A node whose path was saved at `normalized` and is drawn at `size`, as Figma saves copies. */
 function savedPath(normalized: Vector, size: Vector) {

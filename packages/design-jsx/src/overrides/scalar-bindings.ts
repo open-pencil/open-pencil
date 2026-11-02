@@ -1,4 +1,4 @@
-import type { SceneGraph, VariableLiteral } from '@open-pencil/scene-graph'
+import type { SceneGraph, VariableLiteral } from '@lawha/scene-graph'
 
 import { isVariable } from '../variables'
 import { requireVariableId } from '../variables/graph'

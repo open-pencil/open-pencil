@@ -6,11 +6,11 @@ import {
   recordJSXPreview,
   stageJSXPreview,
   type StagedJSXPreview
-} from '@open-pencil/core/design-jsx'
-import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
-import type { JSXPreviewNode } from '@open-pencil/design-jsx'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/core/design-jsx'
+import { computeContentBounds } from '@lawha/core/io/formats/raster'
+import type { JSXPreviewNode } from '@lawha/design-jsx'
+import type { SceneGraph } from '@lawha/scene-graph'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import {
   getActiveEditorStoreOrNull,

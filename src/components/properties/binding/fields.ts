@@ -1,7 +1,7 @@
 import {
   useTextContentBindingProvider,
   useVisibilityBindingProvider
-} from '@open-pencil/vue/controls/binding-provider'
+} from '@lawha/vue/controls/binding-provider'
 
 /** The layer fields a component property or a variable can decide, as Figma's layer panel offers. */
 export type BoundLayerField = 'VISIBLE' | 'TEXT'

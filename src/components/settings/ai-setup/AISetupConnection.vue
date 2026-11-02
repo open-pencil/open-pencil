@@ -2,8 +2,8 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { ACP_AGENTS, AI_PROVIDERS } from '@lawha/core/constants'
+import { useI18n } from '@lawha/vue/i18n'
 
 import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup/view'
 import { modelProviderName } from '@/app/ai/models/provider-name'

@@ -78,7 +78,7 @@ export function nativeTitles(sourceRel: string, content: string): NativeTitle[] 
 }
 
 export const noNativeTitleAttributesInVue: Rule = createTextRule(
-  'open-pencil/no-native-title-attributes-in-vue',
+  'lawha/no-native-title-attributes-in-vue',
   (sourceRel, content) =>
     nativeTitles(sourceRel, content).map((position) => ({
       message: 'Use Tip/Reka tooltip patterns instead of native title attributes.',

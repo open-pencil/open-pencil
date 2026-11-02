@@ -2,7 +2,7 @@ import { dirname } from '@tauri-apps/api/path'
 import { mkdir } from '@tauri-apps/plugin-fs'
 import * as v from 'valibot'
 
-import { parseToolArgs } from '@open-pencil/core/tools'
+import { parseToolArgs } from '@lawha/core/tools'
 
 import {
   resolveAutomationTarget,

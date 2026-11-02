@@ -1,15 +1,15 @@
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneNode } from '@lawha/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
   findComponentPropertyTargets,
   resolveComponentPropertyValue,
   type ComponentPropertyTarget
-} from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph/components'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride
-} from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/instances/overrides'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'

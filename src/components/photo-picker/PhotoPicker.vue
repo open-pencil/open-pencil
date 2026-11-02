@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 
-import type { StockPhotoResult } from '@open-pencil/core/tools'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import type { StockPhotoResult } from '@lawha/core/tools'
+import { useCommonMessages, usePanelMessages } from '@lawha/vue/i18n'
 
 import { PHOTO_SERVICES, usePhotoSearch, type PhotoService } from '@/app/editor/photos/search'
 import { refreshMediaCredentials } from '@/app/settings/credentials/media'

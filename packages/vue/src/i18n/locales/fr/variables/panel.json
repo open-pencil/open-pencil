@@ -133,5 +133,5 @@
   "formulaIf": "condition, alors, sinon",
   "formulaText": "nombre en texte",
   "formulaTruthy": "valeur en vrai ou faux",
-  "unsupportedExpression": "OpenPencil ne sait pas encore évaluer {name}. L’enregistrement le conserve tel quel."
+  "unsupportedExpression": "Lawha ne sait pas encore évaluer {name}. L’enregistrement le conserve tel quel."
 }

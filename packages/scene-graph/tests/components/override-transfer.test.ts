@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import {
   createInstanceOverrideState,
   remapInstanceOverrideState
-} from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/instances/overrides'
 
 test('override transfer remaps typed identities without rewriting equal text', () => {
   const state = createInstanceOverrideState()

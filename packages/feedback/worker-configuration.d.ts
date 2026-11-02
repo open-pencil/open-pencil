@@ -8,11 +8,11 @@ interface __BaseEnv_Env {
 	WAITLIST_LIMITER: RateLimit;
 	ASSETS: Fetcher;
 	POSTHOG_HOST: "https://eu.i.posthog.com";
-	EMAIL_FROM: "hello@openpencil.dev";
-	TURNSTILE_HOSTNAMES: "openpencil.dev,app.openpencil.dev";
-	GITHUB_REPOSITORY: "open-pencil/open-pencil";
+	EMAIL_FROM: "hello@lawha.invalid";
+	TURNSTILE_HOSTNAMES: "lawha.invalid,app.lawha.invalid";
+	GITHUB_REPOSITORY: "lawha/lawha";
 	SITE_ZONE_ID: "6a1c3366d17c9cdefab66cf5dd4e1cbe";
-	SITE_HOSTS: "openpencil.dev,app.openpencil.dev";
+	SITE_HOSTS: "lawha.invalid,app.lawha.invalid";
 	POSTHOG_APP_HOST: "https://eu.posthog.com";
 	POSTHOG_PROJECT_ID: "267806";
 	POSTHOG_KEY: string;

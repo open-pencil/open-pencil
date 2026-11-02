@@ -5,7 +5,7 @@ import { readUIMessageStream, simulateReadableStream } from 'ai'
 import type { UIMessage } from 'ai'
 import { MockLanguageModelV4 } from 'ai/test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI } from '@lawha/core/figma-api'
 
 import { matchesRecordedStep, rebuildStepMessages } from '@/app/ai/chat/trace/rebuild'
 import { createRunRecorder } from '@/app/ai/chat/trace/recorder'

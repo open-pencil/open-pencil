@@ -4,9 +4,9 @@ import type {
   VectorRegion,
   VectorSegment,
   VectorVertex
-} from '@open-pencil/scene-graph'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import { cloneVectorNetwork } from '@lawha/scene-graph/copy'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
 import { createVectorFromNetwork, type CreateShape } from '#core/editor/shapes/vector'

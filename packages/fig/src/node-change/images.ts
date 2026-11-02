@@ -1,16 +1,16 @@
-import type { NodeChange, PluginData } from '@open-pencil/kiwi/fig/codec'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import type { NodeChange, PluginData } from '@lawha/kiwi/fig/codec'
+import { computeImageHash } from '@lawha/scene-graph/images'
 import {
-  OPEN_PENCIL_PLUGIN_DATA,
-  OPEN_PENCIL_PLUGIN_ID
-} from '@open-pencil/scene-graph/plugin-data'
+  LAWHA_PLUGIN_DATA,
+  LAWHA_PLUGIN_ID
+} from '@lawha/scene-graph/plugin-data'
 
 import { bytesToHex, hexToBytes } from './bytes'
 
 /** The fields of a paint that reference an image. */
 const IMAGE_FIELDS = ['image', 'imageThumbnail', 'animatedImage'] as const
 
-const { shader } = OPEN_PENCIL_PLUGIN_DATA
+const { shader } = LAWHA_PLUGIN_DATA
 
 /** An image reference as a written paint holds it. */
 export interface ImageReference {
@@ -98,7 +98,7 @@ export function nameImagesForFigma(
       image.hash = typeof image.hash === 'string' ? renamed : hexToBytes(renamed)
     },
     pluginData(entry) {
-      if (entry.pluginID !== OPEN_PENCIL_PLUGIN_ID || entry.key !== shader.key) return
+      if (entry.pluginID !== LAWHA_PLUGIN_ID || entry.key !== shader.key) return
       const paint = shader.decode(entry.value)
       const renamed = paint ? figmaName(paint.image) : null
       if (!paint || !renamed || renamed === paint.image) return

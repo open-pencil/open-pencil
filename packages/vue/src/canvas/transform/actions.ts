@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 import { handleMarqueeMove as handleMarqueeMoveAction } from '#vue/canvas/transform/marquee'
 import { handlePanMove as handlePanMoveAction } from '#vue/canvas/transform/pan'

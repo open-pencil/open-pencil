@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { OpenPencilAPI } from '#core/openpencil-api'
+import { LawhaAPI } from '#core/lawha-api'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setLayout = defineTool({
@@ -80,7 +80,7 @@ export const setLayout = defineTool({
     if (args.align !== undefined) node.primaryAxisAlignItems = args.align
     if (args.counter_align !== undefined) node.counterAxisAlignItems = args.counter_align
     if (args.flow_direction !== undefined)
-      new OpenPencilAPI(figma).setLayoutDirection(node, args.flow_direction)
+      new LawhaAPI(figma).setLayoutDirection(node, args.flow_direction)
 
     if (args.padding !== undefined) {
       node.paddingTop = args.padding

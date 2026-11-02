@@ -1,19 +1,19 @@
-# @open-pencil/kiwi
+# @lawha/kiwi
 
-Scene-graph-agnostic Kiwi runtime utilities for OpenPencil.
+Scene-graph-agnostic Kiwi runtime utilities for Lawha.
 
-This package owns pure Kiwi schema parsing, Figma Kiwi schema data, low-level Figma message encode/decode, raw `fig-kiwi` container helpers, and GUID formatting. Complete `.fig` archive parsing lives in `@open-pencil/fig`; SceneGraph integration remains outside this package.
+This package owns pure Kiwi schema parsing, Figma Kiwi schema data, low-level Figma message encode/decode, raw `fig-kiwi` container helpers, and GUID formatting. Complete `.fig` archive parsing lives in `@lawha/fig`; SceneGraph integration remains outside this package.
 
 ## Credits and licensing
 
 The schema runtime is based on [Kiwi](https://github.com/evanw/kiwi), a
 schema-based binary format and JavaScript implementation by Evan Wallace.
 The original Kiwi implementation is copyright (c) 2016–2023 Evan Wallace and
-is licensed under the MIT License. OpenPencil's adapted runtime is distributed
+is licensed under the MIT License. Lawha's adapted runtime is distributed
 under the terms of that license; see [`NOTICE`](./NOTICE).
 
 ```sh
-bun add @open-pencil/kiwi
+bun add @lawha/kiwi
 ```
 
 ## Package-local checks
@@ -33,7 +33,7 @@ Package scripts:
 ## Schema runtime
 
 ```ts
-import { compileSchema, parseSchema, validateSchema } from '@open-pencil/kiwi/schema-runtime'
+import { compileSchema, parseSchema, validateSchema } from '@lawha/kiwi/schema-runtime'
 
 const schema = parseSchema(`
 message Point {
@@ -51,7 +51,7 @@ const point = codec.decodeMessage(bytes)
 ## Figma Kiwi codec
 
 ```ts
-import { createNodeChangesMessage, encodeMessage, initCodec } from '@open-pencil/kiwi/fig/codec'
+import { createNodeChangesMessage, encodeMessage, initCodec } from '@lawha/kiwi/fig/codec'
 
 await initCodec()
 
@@ -73,7 +73,7 @@ Boolean operation payloads use Figma's Kiwi enum names. SceneGraph `EXCLUDE` is 
 ## FIG Kiwi containers
 
 ```ts
-import { buildFigKiwi, parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
+import { buildFigKiwi, parseFigKiwiChunks } from '@lawha/kiwi/fig/container'
 
 const container = buildFigKiwi(new Uint8Array([1, 2, 3]))
 const chunks = parseFigKiwiChunks(container)
@@ -82,18 +82,18 @@ const chunks = parseFigKiwiChunks(container)
 ## Raw `fig-kiwi` payload decoding
 
 ```ts
-import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
+import { decodeFigKiwiCanvas } from '@lawha/kiwi/fig/parse'
 
 const decoded = decodeFigKiwiCanvas(canvasBytes)
 console.log(decoded.nodeChanges.length, decoded.blobs.length)
 ```
 
-Use `parseFigBuffer()` from `@open-pencil/fig` for complete zipped `.fig` files, including image resources. Use `@open-pencil/core/io` for conversion into an editable `SceneGraph`.
+Use `parseFigBuffer()` from `@lawha/fig` for complete zipped `.fig` files, including image resources. Use `@lawha/core/io` for conversion into an editable `SceneGraph`.
 
 ## GUID helpers
 
 ```ts
-import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, stringToGuid } from '@lawha/kiwi/fig/guid'
 
 const id = guidToString({ sessionID: 1, localID: 42 })
 const guid = stringToGuid('1:42')
@@ -103,11 +103,11 @@ const guid = stringToGuid('1:42')
 
 The package has no root entry; import each name from its subpath.
 
-- `@open-pencil/kiwi/schema-runtime`
-- `@open-pencil/kiwi/fig`
-- `@open-pencil/kiwi/fig/codec`
-- `@open-pencil/kiwi/fig/container`
-- `@open-pencil/kiwi/fig/guid`
-- `@open-pencil/kiwi/fig/parse`
+- `@lawha/kiwi/schema-runtime`
+- `@lawha/kiwi/fig`
+- `@lawha/kiwi/fig/codec`
+- `@lawha/kiwi/fig/container`
+- `@lawha/kiwi/fig/guid`
+- `@lawha/kiwi/fig/parse`
 
-`@open-pencil/kiwi` must not import `@open-pencil/core`, `#core/*`, app code, Vue code, CLI code, or MCP code.
+`@lawha/kiwi` must not import `@lawha/core`, `#core/*`, app code, Vue code, CLI code, or MCP code.

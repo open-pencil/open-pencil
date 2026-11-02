@@ -1,6 +1,6 @@
 ---
 title: Kształty
-description: Tworzenie prostokątów, elips, linii, ramek, sekcji, wielokątów i gwiazd w OpenPencil.
+description: Tworzenie prostokątów, elips, linii, ramek, sekcji, wielokątów i gwiazd w Lawha.
 ---
 
 # Kształty

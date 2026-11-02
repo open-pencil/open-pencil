@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 import { nativeCredentialAccessRevision, invalidateNativeCredentialAccess } from '../access-state'
 import { browserCredentialsRemembered } from '../app'

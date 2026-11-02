@@ -1,16 +1,16 @@
-# @open-pencil/dom-css
+# @lawha/dom-css
 
-DOM and CSS projection utilities for OpenPencil.
+DOM and CSS projection utilities for Lawha.
 
-This package is the compatibility layer between OpenPencil's scene graph and DOM-shaped design documents. It is intentionally separate from `@open-pencil/core` so browser/CSS parser integrations can evolve without adding DOM dependencies to the renderer and editor core.
+This package is the compatibility layer between Lawha's scene graph and DOM-shaped design documents. It is intentionally separate from `@lawha/core` so browser/CSS parser integrations can evolve without adding DOM dependencies to the renderer and editor core.
 
 ## Installation
 
 ```sh
-bun add @open-pencil/dom-css @open-pencil/core
+bun add @lawha/dom-css @lawha/core
 ```
 
-`@open-pencil/core` is a peer dependency because `@open-pencil/dom-css` projects to and from OpenPencil scene graphs. Consumers that only parse/serialize DesignDOM still need the peer installed for the package entrypoint.
+`@lawha/core` is a peer dependency because `@lawha/dom-css` projects to and from Lawha scene graphs. Consumers that only parse/serialize DesignDOM still need the peer installed for the package entrypoint.
 
 ## Package-local checks
 
@@ -37,17 +37,17 @@ The repository also keeps integration/oracle coverage under `tests/engine/dom-cs
 Use the browser runtime as the high-fidelity source of truth whenever a DOM is available. It uses native parsing and `getComputedStyle()` inside an isolated sandbox. Prefer `sandbox: 'iframe'` for production-style conversion because it isolates authored CSS from host-page styles:
 
 ```ts
-import { createBrowserCSSRuntime } from '@open-pencil/dom-css'
+import { createBrowserCSSRuntime } from '@lawha/dom-css'
 
 const runtime = createBrowserCSSRuntime({ sandbox: 'iframe' })
-const document = runtime.parseHTML('<article class="card">OpenPencil</article>')
+const document = runtime.parseHTML('<article class="card">Lawha</article>')
 const styled = await runtime.computeStyles(document, '.card { width: calc(10rem + 16px); }')
 ```
 
 The headless runtime is useful for Bun/Node tests, CLI flows, and fast approximate conversion. It supports common selectors, inheritance, shorthands, CSSOM grouping rules, and simple variable/calc values, but it is not a browser replacement. Do not use it as an oracle for browser-only CSS behavior such as layout-dependent computed values, full custom-property fallback behavior, modern color serialization, or UA defaults. Do not expand headless CSS parsing with ad hoc regex/string parsers; add a maintained parser/runtime dependency or use the browser runtime instead.
 
 ```ts
-import { createHeadlessCSSRuntime } from '@open-pencil/dom-css'
+import { createHeadlessCSSRuntime } from '@lawha/dom-css'
 
 const runtime = createHeadlessCSSRuntime()
 ```
@@ -57,10 +57,10 @@ const runtime = createHeadlessCSSRuntime()
 The convenience helpers run the full pipeline:
 
 ```ts
-import { htmlToSceneGraph } from '@open-pencil/dom-css'
+import { htmlToSceneGraph } from '@lawha/dom-css'
 
 const graph = await htmlToSceneGraph(
-  '<article class="card"><h1>OpenPencil</h1></article>',
+  '<article class="card"><h1>Lawha</h1></article>',
   {
     cssText: '.card { display: flex; gap: 12px; width: 320px; padding: 24px; }'
   }
@@ -74,12 +74,12 @@ For DesignDOM output without creating a scene graph, use `htmlToDesignDocument()
 Use the package as a JSX import source when you want DOM-shaped authoring that still flows through DesignDOM, CSSOM, and SceneGraph conversion:
 
 ```tsx
-/** @jsxImportSource @open-pencil/dom-css */
-import { createBrowserCSSRuntime, jsxToSceneGraph } from '@open-pencil/dom-css'
+/** @jsxImportSource @lawha/dom-css */
+import { createBrowserCSSRuntime, jsxToSceneGraph } from '@lawha/dom-css'
 
 const graph = await jsxToSceneGraph(
   <article class="card">
-    <h1>OpenPencil</h1>
+    <h1>Lawha</h1>
   </article>,
   {
     cssText: '.card { display: flex; width: 320px; padding: 24px; }',
@@ -90,15 +90,15 @@ const graph = await jsxToSceneGraph(
 
 The JSX runtime preserves `class`, attributes, inline `style`, text, fragments, and simple function components as DesignDOM. Class semantics still come from generated or authored CSS passed to a CSS runtime; the JSX layer does not interpret Tailwind or CSS utility names directly.
 
-When running in a browser, use the browser-first helpers so native `getComputedStyle()` is used automatically. Import them from `@open-pencil/dom-css/browser` so browser bundles do not load headless-only CSSOM dependencies:
+When running in a browser, use the browser-first helpers so native `getComputedStyle()` is used automatically. Import them from `@lawha/dom-css/browser` so browser bundles do not load headless-only CSSOM dependencies:
 
 ```tsx
-/** @jsxImportSource @open-pencil/dom-css */
-import { browserJSXToSceneGraph } from '@open-pencil/dom-css/browser'
+/** @jsxImportSource @lawha/dom-css */
+import { browserJSXToSceneGraph } from '@lawha/dom-css/browser'
 
 const graph = await browserJSXToSceneGraph(
   <article class="card">
-    <h1>OpenPencil</h1>
+    <h1>Lawha</h1>
   </article>,
   {
     cssText: '.card { display: flex; width: 320px; padding: 24px; }',
@@ -118,12 +118,12 @@ Tailwind classes flow through Tailwind's own compiler, then through the CSS runt
 The most portable browser path is to compile Tailwind CSS in the host app, then pass the resulting CSS as normal `cssText`:
 
 ```ts
-import { browserHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
+import { browserHTMLToSceneGraph } from '@lawha/dom-css/browser'
 
 import tailwindCSS from './generated-tailwind.css?raw'
 
 const graph = await browserHTMLToSceneGraph(
-  '<article class="flex w-80 rounded-xl bg-white p-6">OpenPencil</article>',
+  '<article class="flex w-80 rounded-xl bg-white p-6">Lawha</article>',
   {
     cssText: tailwindCSS,
     sandbox: 'iframe'
@@ -134,13 +134,13 @@ const graph = await browserHTMLToSceneGraph(
 This also works with JSX:
 
 ```tsx
-/** @jsxImportSource @open-pencil/dom-css */
-import { browserJSXToSceneGraph } from '@open-pencil/dom-css/browser'
+/** @jsxImportSource @lawha/dom-css */
+import { browserJSXToSceneGraph } from '@lawha/dom-css/browser'
 
 import tailwindCSS from './generated-tailwind.css?raw'
 
 const graph = await browserJSXToSceneGraph(
-  <article class="flex w-80 rounded-xl bg-white p-6">OpenPencil</article>,
+  <article class="flex w-80 rounded-xl bg-white p-6">Lawha</article>,
   {
     cssText: tailwindCSS,
     sandbox: 'iframe'
@@ -153,11 +153,11 @@ const graph = await browserJSXToSceneGraph(
 If the app wants to compile utility candidates at runtime, provide Tailwind source CSS yourself. Do not rely on the default Node-oriented stylesheet loader in browser bundles:
 
 ```ts
-import { browserTailwindHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
+import { browserTailwindHTMLToSceneGraph } from '@lawha/dom-css/browser'
 
 const classes = ['flex', 'w-80', 'rounded-xl', 'bg-white', 'p-6']
 const graph = await browserTailwindHTMLToSceneGraph(
-  `<article class="${classes.join(' ')}">OpenPencil</article>`,
+  `<article class="${classes.join(' ')}">Lawha</article>`,
   classes,
   {
     css: await fetch('/tailwind-source.css').then((response) => response.text()),
@@ -169,11 +169,11 @@ const graph = await browserTailwindHTMLToSceneGraph(
 Use `loadStylesheet` when the supplied Tailwind CSS contains imports and the host app owns import resolution:
 
 ```ts
-import { browserTailwindHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
+import { browserTailwindHTMLToSceneGraph } from '@lawha/dom-css/browser'
 
 const classes = ['flex', 'w-80', 'rounded-xl', 'bg-white', 'p-6']
 const graph = await browserTailwindHTMLToSceneGraph(
-  `<article class="${classes.join(' ')}">OpenPencil</article>`,
+  `<article class="${classes.join(' ')}">Lawha</article>`,
   classes,
   {
     css: '@import "tailwindcss";',
@@ -191,11 +191,11 @@ const graph = await browserTailwindHTMLToSceneGraph(
 In Bun or Node, the package can load Tailwind's default stylesheet through filesystem-backed module resolution. Without a DOM, this uses the headless CSS runtime; pass a browser runtime only when the process has a real `document` available, such as Playwright or a browser extension page:
 
 ```ts
-import { tailwindHTMLToSceneGraph } from '@open-pencil/dom-css'
+import { tailwindHTMLToSceneGraph } from '@lawha/dom-css'
 
 const classes = ['flex', 'w-80', 'p-6', 'rounded-xl', 'bg-white']
 const graph = await tailwindHTMLToSceneGraph(
-  `<article class="${classes.join(' ')}">OpenPencil</article>`,
+  `<article class="${classes.join(' ')}">Lawha</article>`,
   classes
 )
 ```
@@ -215,6 +215,6 @@ const graph = await tailwindHTMLToSceneGraph(
 ## Roadmap
 
 - Expand reusable fixtures: inputs, badges, nav/menu rows, dialog shells, and richer cards
-- Map more computed CSS properties to scene graph fields through browser-native computed style or dependency-backed parsers: richer shadows, typography details, position constraints, borders, gradients, and grid once OpenPencil's grid support matures
+- Map more computed CSS properties to scene graph fields through browser-native computed style or dependency-backed parsers: richer shadows, typography details, position constraints, borders, gradients, and grid once Lawha's grid support matures
 - Improve SceneGraph → CSS export so generated HTML/CSS is useful for JSX, Tailwind, and web export
-- Keep `@open-pencil/dom-css` stable before splitting lower-level file-format packages such as future `@open-pencil/kiwi` and `@open-pencil/fig`
+- Keep `@lawha/dom-css` stable before splitting lower-level file-format packages such as future `@lawha/kiwi` and `@lawha/fig`

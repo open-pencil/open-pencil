@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { OPEN_PENCIL_PLUGIN_DATA, pluginDataEntry } from '@open-pencil/scene-graph/plugin-data'
+import { SceneGraph } from '@lawha/scene-graph'
+import { LAWHA_PLUGIN_DATA, pluginDataEntry } from '@lawha/scene-graph/plugin-data'
 import {
   createShaderPaint,
   isShaderFrameCurrent,
@@ -10,7 +10,7 @@ import {
   shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
-} from '@open-pencil/scene-graph/shaders'
+} from '@lawha/scene-graph/shaders'
 
 const AURORA: ShaderPreset = {
   components: [{ type: 'Aurora', props: { colorA: '#7c3aed' } }]
@@ -72,7 +72,7 @@ describe('shader paints', () => {
   })
 
   test('ignores an entry that is not a shader', () => {
-    const entry = pluginDataEntry(OPEN_PENCIL_PLUGIN_DATA.shader, {
+    const entry = pluginDataEntry(LAWHA_PLUGIN_DATA.shader, {
       image: 'abc',
       preset: AURORA
     })

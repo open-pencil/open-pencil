@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import type { Path } from 'canvaskit-wasm'
 
-import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type Stroke } from '@lawha/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
 import { createPathCache, NodePathCaches } from '#core/canvas/paths/cache'

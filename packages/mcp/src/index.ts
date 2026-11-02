@@ -11,8 +11,8 @@ if (process.argv.includes('--version')) {
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
-    `openpencil-mcp-http\n\n` +
-      `Start the OpenPencil MCP server.\n\n` +
+    `lawha-mcp-http\n\n` +
+      `Start the Lawha MCP server.\n\n` +
       `On macOS/Linux, the server listens on a Unix domain socket by default\n` +
       `with optional TCP for browser clients. On Windows, only TCP is available.\n\n` +
       `Options:\n` +
@@ -20,28 +20,28 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  --version     Print the version\n\n` +
       `Environment variables:\n` +
       `  PORT                         TCP port (default: 7600, set to 0 to disable TCP)\n` +
-      `  OPENPENCIL_MCP_SOCKET        Override Unix socket path (recorded in the discovery file)\n` +
-      `  OPENPENCIL_MCP_DISCOVERY_PATH Override discovery file (mcp.json) location; defaults to the\n` +
+      `  LAWHA_MCP_SOCKET        Override Unix socket path (recorded in the discovery file)\n` +
+      `  LAWHA_MCP_DISCOVERY_PATH Override discovery file (mcp.json) location; defaults to the\n` +
       `                               platform path. Parent dir created 0o700. Mainly for test isolation.\n` +
-      `  OPENPENCIL_MCP_TCP           Deprecated — TCP is controlled by PORT (>0 = on, 0 = off)\n` +
-      `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for MCP and RPC auth\n` +
-      `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: home directory on Windows, current working directory elsewhere)\n` +
-      `  OPENPENCIL_MCP_EVAL           Set to 1 to enable the eval tool\n` +
-      `  OPENPENCIL_MCP_SESSION_IDLE_TIMEOUT_MS\n` +
+      `  LAWHA_MCP_TCP           Deprecated — TCP is controlled by PORT (>0 = on, 0 = off)\n` +
+      `  LAWHA_MCP_AUTH_TOKEN    Bearer token for MCP and RPC auth\n` +
+      `  LAWHA_MCP_ROOT          Allowed directory for file-scoped tools (default: home directory on Windows, current working directory elsewhere)\n` +
+      `  LAWHA_MCP_EVAL           Set to 1 to enable the eval tool\n` +
+      `  LAWHA_MCP_SESSION_IDLE_TIMEOUT_MS\n` +
       `                               Close sessions idle this long, in ms (default: 900000;\n` +
       `                               0 disables). An open GET/SSE stream is not activity.\n` +
-      `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit\n` +
-      `  OPENPENCIL_MCP_SCOPE         "selection" to let clients read only the selected layers\n` +
+      `  LAWHA_MCP_DISABLED_TOOLS Comma-separated tool names to omit\n` +
+      `  LAWHA_MCP_SCOPE         "selection" to let clients read only the selected layers\n` +
       `                               (default: "document")\n` +
-      `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origins, comma-separated.\n` +
+      `  LAWHA_MCP_CORS_ORIGIN   Allowed CORS origins, comma-separated.\n` +
       `                               Defaults to the desktop app origin, since the app\n` +
       `                               webview is the only view that calls this server.\n` +
-      `  OPENPENCIL_MCP_APP_TIMEOUT_MS  If set, close the server and remove its discovery\n` +
+      `  LAWHA_MCP_APP_TIMEOUT_MS  If set, close the server and remove its discovery\n` +
       `                               file after no app is attached for this many ms. The\n` +
       `                               grace period starts at startup and after disconnects.\n` +
       `                               Unset/0 disables it (default) — do not set this for\n` +
       `                               manual/CLI use, since nothing may ever register.\n` +
-      `  OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE  Set to 1 to shut down when stdin closes, so a\n` +
+      `  LAWHA_MCP_EXIT_ON_STDIN_CLOSE  Set to 1 to shut down when stdin closes, so a\n` +
       `                               parent that starts the server through a shell wrapper\n` +
       `                               can stop it by closing the pipe. Unset for manual/CLI use.\n`
   )
@@ -62,7 +62,7 @@ if (rawPort < 0 || rawPort > 65535) {
   process.exit(1)
 }
 const port = rawPort
-// OPENPENCIL_MCP_TCP is accepted for backward compat but has no effect —
+// LAWHA_MCP_TCP is accepted for backward compat but has no effect —
 // the PORT value alone determines whether TCP is enabled (PORT=0 is the kill switch).
 const withTcp = port > 0
 
@@ -82,47 +82,47 @@ function readTimeoutEnv(name: string): number | undefined {
   return timeoutMs
 }
 
-const appAttachTimeoutMs = readTimeoutEnv('OPENPENCIL_MCP_APP_TIMEOUT_MS')
-const sessionIdleTimeoutMs = readTimeoutEnv('OPENPENCIL_MCP_SESSION_IDLE_TIMEOUT_MS')
+const appAttachTimeoutMs = readTimeoutEnv('LAWHA_MCP_APP_TIMEOUT_MS')
+const sessionIdleTimeoutMs = readTimeoutEnv('LAWHA_MCP_SESSION_IDLE_TIMEOUT_MS')
 
 const toolPolicy = readToolPolicyFromEnv()
 
 const handle = await startServer({
   httpPort: withTcp ? port : 0,
   withTcp,
-  socketPath: process.env.OPENPENCIL_MCP_SOCKET?.trim() || null,
+  socketPath: process.env.LAWHA_MCP_SOCKET?.trim() || null,
   enableEval: toolPolicy.allowEval,
   disabledTools: toolPolicy.disabledTools,
   scope: toolPolicy.scope,
-  mcpRoot: resolveMCPRoot(process.env.OPENPENCIL_MCP_ROOT),
+  mcpRoot: resolveMCPRoot(process.env.LAWHA_MCP_ROOT),
   // Auth token: undefined → auto-generate, empty string → disable auth,
   // non-empty → use trimmed value. Whitespace-only is rejected to prevent a
   // silent fallback to an auto-generated token when the operator intended to
   // set an explicit one.
   authToken: (() => {
-    const raw = process.env.OPENPENCIL_MCP_AUTH_TOKEN
+    const raw = process.env.LAWHA_MCP_AUTH_TOKEN
     if (raw === undefined) return undefined
     if (raw === '') return null
     const trimmed = raw.trim()
     if (!trimmed) {
       process.stderr.write(
-        'Error: OPENPENCIL_MCP_AUTH_TOKEN is whitespace-only. Set a real token, or use an empty string to disable auth.\n'
+        'Error: LAWHA_MCP_AUTH_TOKEN is whitespace-only. Set a real token, or use an empty string to disable auth.\n'
       )
       process.exit(1)
     }
     return trimmed
   })(),
-  corsOrigin: resolveCORSOrigins(process.env.OPENPENCIL_MCP_CORS_ORIGIN),
+  corsOrigin: resolveCORSOrigins(process.env.LAWHA_MCP_CORS_ORIGIN),
   appAttachTimeoutMs,
   sessionIdleTimeoutMs
 })
 
-const readyMarker = process.env.OPENPENCIL_MCP_READY_MARKER
-if (readyMarker && /^open-pencil-ready:[a-f0-9-]{36}$/.test(readyMarker)) {
+const readyMarker = process.env.LAWHA_MCP_READY_MARKER
+if (readyMarker && /^lawha-ready:[a-f0-9-]{36}$/.test(readyMarker)) {
   process.stderr.write(`${readyMarker}\n`)
 }
 
-process.stderr.write(`OpenPencil MCP server\n`)
+process.stderr.write(`Lawha MCP server\n`)
 if (handle.socketPath) process.stderr.write(`  Socket: ${handle.socketPath}\n`)
 if (handle.httpPort) process.stderr.write(`  HTTP:   http://127.0.0.1:${handle.httpPort}\n`)
 
@@ -139,7 +139,7 @@ process.on('SIGTERM', () => void shutdown().catch(() => process.exit(1)))
 // A parent that started this server through a shell wrapper cannot always kill it directly
 // (on Windows, ending `cmd /c` leaves the process it started running), but its end of the
 // stdin pipe closes with it.
-if (process.env.OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE === '1') {
+if (process.env.LAWHA_MCP_EXIT_ON_STDIN_CLOSE === '1') {
   let stdinClosed = false
   const onStdinClosed = () => {
     if (stdinClosed) return

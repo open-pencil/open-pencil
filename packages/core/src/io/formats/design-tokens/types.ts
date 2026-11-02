@@ -1,9 +1,9 @@
 /**
- * W3C Design Tokens (DTCG 2025.10) as OpenPencil reads and writes them: one token file per
+ * W3C Design Tokens (DTCG 2025.10) as Lawha reads and writes them: one token file per
  * collection mode, a resolver document tying them together, and a file of composite style tokens.
  */
 
-/** The `$type` values OpenPencil writes, plus `string`, which Figma reads and writes. */
+/** The `$type` values Lawha writes, plus `string`, which Figma reads and writes. */
 export type DesignTokenType =
   | 'color'
   | 'dimension'
@@ -53,8 +53,8 @@ export function designTokenIssueMessage(issue: DesignTokenIssue): string {
   return `${issue.style}: an effect style with no visible shadow has no token`
 }
 
-/** The key OpenPencil's own token data is kept under in `$extensions`. */
-export const OPENPENCIL_EXTENSION = 'dev.openpencil'
+/** The key Lawha's own token data is kept under in `$extensions`. */
+export const LAWHA_EXTENSION = 'dev.lawha'
 
 /** The resolver document version DTCG 2025.10 requires. */
 export const RESOLVER_VERSION = '2025-11-01'

@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { computed, createApp, effectScope, ref, shallowReactive } from 'vue'
 
-import { createDefaultEditorState, createEditor } from '@open-pencil/core'
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
-import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { createDefaultEditorState, createEditor } from '@lawha/core'
+import { SceneGraph, type Fill } from '@lawha/scene-graph'
+import { getSharedStyles } from '@lawha/scene-graph/shared-styles'
 
 import { EDITOR_KEY } from '#vue/editor/context'
 import { createSelectedNodeState, useSelectedNodeState } from '#vue/editor/selection-state/nodes'

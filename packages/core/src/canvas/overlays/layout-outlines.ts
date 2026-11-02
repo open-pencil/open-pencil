@@ -1,6 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { LAYOUT_OUTLINE_DASH, LAYOUT_OUTLINE_GAP } from '#core/constants'

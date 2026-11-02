@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { SelectRoot, SelectTrigger } from 'reka-ui'
 
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
-import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
+import { useLayoutControlsContext } from '@lawha/vue/primitives/LayoutControls'
 
 import type { SizeLimitFieldProps } from '@/components/properties/layout/size/types'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'

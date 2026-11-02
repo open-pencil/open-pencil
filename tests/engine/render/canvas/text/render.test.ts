@@ -2,11 +2,11 @@
 
 import { describe, test, expect, mock, spyOn } from 'bun:test'
 
-import { SkiaRenderer as SkiaRendererClass } from '@open-pencil/core/canvas'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
-import { pixelLength } from '@open-pencil/scene-graph/text'
-import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { SkiaRenderer as SkiaRendererClass } from '@lawha/core/canvas'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
+import { pixelLength } from '@lawha/scene-graph/text'
+import { detectTextDirection, resolveTextDirection } from '@lawha/scene-graph/text/direction'
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'

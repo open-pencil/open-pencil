@@ -6,9 +6,9 @@ import { join } from 'node:path'
 import { BLUE_500, card, designSystem } from '#dom-css-tests/export/token-fixtures'
 import { exportStorybook } from '#dom-css/index'
 
-import { es } from '@open-pencil/emit'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { emptyBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { es } from '@lawha/emit'
+import { SceneGraph } from '@lawha/scene-graph'
+import { emptyBehaviour, withBehaviour } from '@lawha/scene-graph/behaviours'
 
 function buttonGraph() {
   const graph = new SceneGraph()
@@ -71,7 +71,7 @@ function importSources(content: string): string[] {
 }
 
 async function importStory(content: string): Promise<StoryModule> {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-'))
+  const dir = await mkdtemp(join(tmpdir(), 'lawha-storybook-'))
   const path = join(dir, 'story.ts')
   await writeFile(path, content)
   return import(path)
@@ -84,9 +84,9 @@ describe('exportStorybook', () => {
 
     expect(files.map((file) => file.path)).toEqual(['Button.stories.ts'])
     const content = String(files[0]?.content)
-    expect(content).toContain('openpencil://open?file=design%2Fui%20kit.fig&node=Button')
+    expect(content).toContain('lawha://open?file=design%2Fui%20kit.fig&node=Button')
     // Variant layers named `Size=Small` are unique here, so each story links to its own.
-    expect(content).toContain('openpencil://open?file=design%2Fui%20kit.fig&node=Size%3DLarge')
+    expect(content).toContain('lawha://open?file=design%2Fui%20kit.fig&node=Size%3DLarge')
 
     const story = await importStory(content)
     expect(story.default.title).toBe('Library/Button')
@@ -109,7 +109,7 @@ describe('exportStorybook', () => {
     const { graph } = buttonGraph()
     const [file] = await exportStorybook(graph, { framework: 'html' })
     const story = await importStory(String(file?.content))
-    expect(story.default.tags).toEqual(['openpencil', 'page:library'])
+    expect(story.default.tags).toEqual(['lawha', 'page:library'])
     // The variant the design shows at rest is the Default story; each other one is a variant.
     expect(storyExport(story, 'Default')).toMatchObject({
       name: 'Default',
@@ -164,12 +164,12 @@ describe('exportStorybook', () => {
     const badge = graph.createNode('COMPONENT', page.id, { name: 'Badge' })
     card(graph, badge.id, BLUE_500)
     const files = await exportStorybook(graph, { framework: 'html', document: 'Kit' })
-    const tokens = String(files.find((file) => file.path === 'openpencil/kit/tokens.css')?.content)
+    const tokens = String(files.find((file) => file.path === 'lawha/kit/tokens.css')?.content)
     // The story refers to the variable; the tokens define it.
     const story = String(files.find((file) => file.path === 'Badge.stories.ts')?.content)
     expect(story).toContain('var(--color-primary)')
     expect(tokens).toContain('--color-primary:')
-    expect(importSources(story)).toContain('./openpencil/kit/tokens.css')
+    expect(importSources(story)).toContain('./lawha/kit/tokens.css')
   })
 
   it("ships the fonts its text uses in the document's folder, loaded before text draws", async () => {
@@ -192,17 +192,17 @@ describe('exportStorybook', () => {
       }
     })
     expect(requested.map((font) => font.family)).toEqual(['Inter'])
-    const css = String(files.find((file) => file.path === 'openpencil/kit/fonts.css')?.content)
-    expect(files.map((file) => file.path)).toContain('openpencil/kit/fonts/inter-400.woff2')
+    const css = String(files.find((file) => file.path === 'lawha/kit/fonts.css')?.content)
+    expect(files.map((file) => file.path)).toContain('lawha/kit/fonts/inter-400.woff2')
     expect(css).toContain('url("fonts/inter-400.woff2")')
     expect(css).toContain('font-display: block')
     const story = String(files.find((file) => file.path === 'Button.stories.ts')?.content)
-    expect(importSources(story)).toContain('./openpencil/kit/fonts.css')
+    expect(importSources(story)).toContain('./lawha/kit/fonts.css')
 
     // A caller exporting several documents into one place names each one's folder.
     const named = await exportStorybook(graph, {
       framework: 'html',
-      folder: 'openpencil/kit-design',
+      folder: 'lawha/kit-design',
       fonts: (fonts, folder) =>
         Promise.resolve(
           fonts.map((font) => ({
@@ -214,7 +214,7 @@ describe('exportStorybook', () => {
           }))
         )
     })
-    expect(named.map((file) => file.path)).toContain('openpencil/kit-design/fonts.css')
+    expect(named.map((file) => file.path)).toContain('lawha/kit-design/fonts.css')
 
     // With no font files found, nothing is written and stories import nothing.
     const without = await exportStorybook(graph, {
@@ -222,7 +222,7 @@ describe('exportStorybook', () => {
       fonts: () => Promise.resolve([])
     })
     expect(without.map((file) => file.path)).toEqual(['Button.stories.ts'])
-    expect(importSources(String(without[0]?.content))).not.toContain('./openpencil/kit/fonts.css')
+    expect(importSources(String(without[0]?.content))).not.toContain('./lawha/kit/fonts.css')
   })
 
   it('gives a component with a behaviour its own props instead of variant selects', async () => {
@@ -379,7 +379,7 @@ describe('exportStorybook', () => {
 
     expect(react).toContain("from '@storybook/react-vite'")
     expect(react).toContain('dangerouslySetInnerHTML')
-    expect(react).not.toContain('openpencil://')
+    expect(react).not.toContain('lawha://')
     expect(vue).toContain("from '@storybook/vue3-vite'")
     expect(vue).toContain("h('div', { innerHTML: variantHTML(args) })")
   })
@@ -461,7 +461,7 @@ describe('exportStorybook', () => {
       ['Star.stories.ts', 'Icons']
     ])
     expect(String(files[0]?.content).split('\n', 1)).toEqual([
-      '// Generated by OpenPencil. Re-export to update; edits are overwritten.'
+      '// Generated by Lawha. Re-export to update; edits are overwritten.'
     ])
   })
 

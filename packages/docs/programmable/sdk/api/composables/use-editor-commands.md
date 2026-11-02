@@ -18,7 +18,7 @@ It is useful when building:
 ## Usage
 
 ```ts
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
 
 const { commands, menuItem, runCommand, moveSelectionToPage, otherPages } = useEditorCommands()
 ```

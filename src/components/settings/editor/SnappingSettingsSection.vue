@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { DEFAULT_SNAPPING_PREFERENCES } from '@open-pencil/core'
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { DEFAULT_SNAPPING_PREFERENCES } from '@lawha/core'
+import { useSettingsMessages } from '@lawha/vue/i18n'
 
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'

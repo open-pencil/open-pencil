@@ -4,11 +4,11 @@ import {
   designMode,
   type DesignMode,
   type DesignVariable
-} from '@open-pencil/design-jsx'
+} from '@lawha/design-jsx'
 
 /**
  * The tour's colors live in two collections, each with a Dark and a Light mode: Theme, for the
- * tour's own design, and App chrome, for the pieces of OpenPencil's interface the tips draw.
+ * tour's own design, and App chrome, for the pieces of Lawha's interface the tips draw.
  * The app picks the mode that matches its own theme when it opens the tour, by these
  * collection and mode names, and paints the page in the Theme's Page color
  * (`src/app/demo/theme.ts`).
@@ -41,7 +41,7 @@ const THEME_NUMBERS = [
   ['cornerRadius', 'Radius/Control', 12, 10]
 ] as const satisfies readonly Entry[]
 
-/** OpenPencil's own interface colors, from `src/app.css`, dark and light. */
+/** Lawha's own interface colors, from `src/app.css`, dark and light. */
 const CHROME_COLORS = [
   ['panel', 'Panel', '#2A2A2A', '#FFFFFF'],
   ['header', 'Header', '#1E1E1E', '#F3F4F6'],

@@ -1,5 +1,5 @@
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { parseVariantName } from '@lawha/scene-graph/variant-name'
 
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 import { applyVariantProperties, variantSetProps } from '#core/editor/components/variant-set'

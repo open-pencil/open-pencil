@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
-import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import type { ShapedText, ShapedTextGlyph } from '@lawha/fig/node-change'
+import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@lawha/scene-graph'
 
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'

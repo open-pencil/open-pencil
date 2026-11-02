@@ -1,6 +1,6 @@
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { compileScript } from '@open-pencil/core/tools'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { compileScript } from '@lawha/core/tools'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /** What `code` gives back when run as a script: its result, or the message it stopped with. */
 export function scriptResult(code: string, figma = new FigmaAPI(new SceneGraph())): Promise<unknown> {

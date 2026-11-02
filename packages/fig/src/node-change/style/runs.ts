@@ -1,14 +1,14 @@
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import type { GUID } from '@open-pencil/kiwi/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
+import type { GUID } from '@lawha/kiwi/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { guidToString, isUnsetGuid } from '@lawha/kiwi/fig/guid'
 import type {
   CharacterStyleOverride,
   HyperlinkTarget,
   StyleRun,
   TextCase
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 
 import { convertFontFeatures } from '../font/features'
 import { savedFace } from '../font/style'

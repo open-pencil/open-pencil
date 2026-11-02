@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue'
 
-import { createEditor } from '@open-pencil/core'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import { createEditor } from '@lawha/core'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import CanvasRoot from '#vue/canvas/CanvasRoot.vue'
 import CanvasSurface from '#vue/canvas/CanvasSurface.vue'

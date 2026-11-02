@@ -4,7 +4,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 
 /** Opens the editor already in Arabic, as a returning Arabic user would. */
 async function openInArabic(page: Page, query = '/?test') {
-  await page.addInitScript(() => localStorage.setItem('open-pencil-locale', 'ar'))
+  await page.addInitScript(() => localStorage.setItem('lawha-locale', 'ar'))
   await page.goto(query)
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
@@ -13,8 +13,8 @@ async function openInArabic(page: Page, query = '/?test') {
 
 async function pageNodes(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const current = store.graph.getNode(store.state.currentPageId)
     return (current?.childIds ?? []).map((id: string) => {
       const node = store.graph.getNode(id)

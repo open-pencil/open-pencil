@@ -1,7 +1,7 @@
-import type { Fill, Variable } from '@open-pencil/scene-graph'
-import { colorToHexRaw } from '@open-pencil/scene-graph/color'
-import type { ShaderPaint } from '@open-pencil/scene-graph/shaders'
-import { shaderEffectLabel } from '@open-pencil/vue/controls/shader'
+import type { Fill, Variable } from '@lawha/scene-graph'
+import { colorToHexRaw } from '@lawha/scene-graph/color'
+import type { ShaderPaint } from '@lawha/scene-graph/shaders'
+import { shaderEffectLabel } from '@lawha/vue/controls/shader'
 
 export function fillLabel(
   fill: Fill,

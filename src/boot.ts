@@ -1,8 +1,8 @@
 import { createHead } from '@unhead/vue/client'
 import { createApp, nextTick } from 'vue'
 
-import { ReadOnlyDocumentError } from '@open-pencil/core'
-import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
+import { ReadOnlyDocumentError } from '@lawha/core'
+import { createRetainedScopePlugin } from '@lawha/vue/lifecycle/retention'
 
 import './app.css'
 import { recordRuntimeError } from '@/app/diagnostics'

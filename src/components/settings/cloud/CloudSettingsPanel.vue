@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@lawha/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'

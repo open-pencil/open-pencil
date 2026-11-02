@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { clipBoundsToPolygon, clipPolygon } from '@open-pencil/scene-graph/clipping'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { clipBoundsToPolygon, clipPolygon } from '@lawha/scene-graph/clipping'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 describe('clipPolygon', () => {
   test('returns the subject unchanged when the clip has fewer than 3 corners', () => {

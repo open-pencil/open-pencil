@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import {

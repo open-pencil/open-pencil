@@ -14,13 +14,13 @@ import {
 
 import { uniq } from 'es-toolkit'
 
-import { BUILTIN_IO_FORMATS, IORegistry, vectorElement } from '@open-pencil/core/io'
+import { BUILTIN_IO_FORMATS, IORegistry, vectorElement } from '@lawha/core/io'
 import {
   exportStorybook,
   STORYBOOK_FRAMEWORKS,
   type StorybookFile,
   type StorybookFramework
-} from '@open-pencil/dom-css'
+} from '@lawha/dom-css'
 
 import { requireFile } from '#cli/app/client'
 import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
@@ -61,7 +61,7 @@ function toPosix(path: string): string {
   return path.split(sep).join(posix.sep)
 }
 
-/** Repository-relative path for `openpencil://` links, when the file sits under the cwd. */
+/** Repository-relative path for `lawha://` links, when the file sits under the cwd. */
 function linkPath(file: string): string | undefined {
   const path = toPosix(relative(process.cwd(), resolve(file)))
   return path.startsWith('../') || isAbsolute(path) ? undefined : path
@@ -195,7 +195,7 @@ async function writeStories(
   await mkdir(outputDir, { recursive: true })
   // Staged next to the output so a failed write leaves the previous export in place,
   // and in a dot folder, which Storybook's story globs skip.
-  const staging = await mkdtemp(join(outputDir, '.openpencil-export-'))
+  const staging = await mkdtemp(join(outputDir, '.lawha-export-'))
   try {
     for (const story of files) {
       await mkdir(dirname(join(staging, story.path)), { recursive: true })

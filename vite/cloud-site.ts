@@ -10,7 +10,7 @@ import type { Plugin, ResolvedConfig } from 'vite'
 export function cloudSitePlugin(): Plugin {
   let config: ResolvedConfig | undefined
   return {
-    name: 'open-pencil-cloud-site',
+    name: 'lawha-cloud-site',
     apply: 'build',
     configResolved(resolved) {
       config = resolved

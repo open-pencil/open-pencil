@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { createEditor } from '@lawha/core'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import { tryStartResize } from '#vue/shared/input/resize/start'

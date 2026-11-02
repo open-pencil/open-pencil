@@ -5,7 +5,7 @@ description: Acciones del portapapeles, orden, grupos, componentes, visibilidad 
 
 # Menú contextual
 
-Haz clic con el botón derecho en el lienzo. Si el puntero está sobre un objeto, OpenPencil lo selecciona primero; en una zona vacía, cancela la selección.
+Haz clic con el botón derecho en el lienzo. Si el puntero está sobre un objeto, Lawha lo selecciona primero; en una zona vacía, cancela la selección.
 
 ## Portapapeles
 

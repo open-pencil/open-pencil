@@ -8,9 +8,9 @@ import type {
   VariableModeMap,
   VariableType,
   VariableValue
-} from '@open-pencil/scene-graph'
-import { tryParseColor } from '@open-pencil/scene-graph/color'
-import { getNodeVariableModeId, resolveVariableInModes } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph'
+import { tryParseColor } from '@lawha/scene-graph/color'
+import { getNodeVariableModeId, resolveVariableInModes } from '@lawha/scene-graph/variables'
 
 import { isTreeNode, type TreeNode } from '../tree'
 import {

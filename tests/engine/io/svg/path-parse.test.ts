@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
+import { vectorNetworkToSVGPaths } from '@lawha/scene-graph/vector-network'
 
 describe('parseSVGPath', () => {
   test('simple rectangle M L L L Z', () => {

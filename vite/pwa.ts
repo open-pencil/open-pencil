@@ -3,7 +3,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 /**
  * Pages that are not the editor's: OAuth callbacks, which relay a redirect, and, where a Cloud
  * server serves the editor, its API and its own pages, `CLOUD_PORTAL_PAGE_ROOTS` in
- * `@open-pencil/cloud/contract`, which loads only once packages are built. Workbox matches the
+ * `@lawha/cloud/contract`, which loads only once packages are built. Workbox matches the
  * path with its query, so a page root may be followed by `?` as well as `/`.
  */
 export const NOT_EDITOR_PAGES = [
@@ -13,7 +13,7 @@ export const NOT_EDITOR_PAGES = [
   /^\/(?:welcome|auth|account|admin)(?:[/?]|$)/
 ]
 
-export function openPencilPwaPlugin() {
+export function lawhaPwaPlugin() {
   return VitePWA({
     registerType: 'autoUpdate',
     devOptions: { enabled: false },
@@ -24,8 +24,8 @@ export function openPencilPwaPlugin() {
       navigateFallbackDenylist: NOT_EDITOR_PAGES
     },
     manifest: {
-      name: 'OpenPencil',
-      short_name: 'OpenPencil',
+      name: 'Lawha',
+      short_name: 'Lawha',
       description: 'Open-source design editor',
       display: 'standalone',
       orientation: 'any',

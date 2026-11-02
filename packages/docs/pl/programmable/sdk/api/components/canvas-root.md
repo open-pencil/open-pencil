@@ -1,6 +1,6 @@
 ---
 title: CanvasRoot
-description: Komponent bez narzuconego wyglądu definiujący kontekst obszaru roboczego OpenPencil.
+description: Komponent bez narzuconego wyglądu definiujący kontekst obszaru roboczego Lawha.
 ---
 
 # CanvasRoot

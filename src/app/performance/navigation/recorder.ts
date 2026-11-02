@@ -1,5 +1,5 @@
-import type { NavigationTraceEvent, RecordedWheelSample } from '@open-pencil/core/profiler'
-import { subscribeNavigationTrace } from '@open-pencil/core/profiler'
+import type { NavigationTraceEvent, RecordedWheelSample } from '@lawha/core/profiler'
+import { subscribeNavigationTrace } from '@lawha/core/profiler'
 
 export interface NavigationRecording {
   schemaVersion: 1

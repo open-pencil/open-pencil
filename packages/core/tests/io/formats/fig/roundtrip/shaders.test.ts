@@ -3,17 +3,17 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { collectAllNodes } from '#core-tests/helpers/fig/traversal'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { computeImageHash } from '@lawha/scene-graph/images'
 import {
   createShaderPaint,
   shaderOfPaint,
   shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
-} from '@open-pencil/scene-graph/shaders'
+} from '@lawha/scene-graph/shaders'
 
 setDefaultTimeout(60_000)
 
@@ -21,7 +21,7 @@ const PRESET: ShaderPreset = { components: [{ type: 'Aurora', props: { colorA: '
 
 /**
  * A shader paint is an image paint of its frame with the preset in plugin data, so a `.fig`
- * archive keeps both: Figma draws the frame, and OpenPencil reads the shader back. Figma reads
+ * archive keeps both: Figma draws the frame, and Lawha reads the shader back. Figma reads
  * the frame only under the SHA-1 of its bytes, so the archive names it that, in the paint and in
  * the plugin data alike.
  */

@@ -9,18 +9,18 @@ import {
   variableAlias,
   variableMetadataNodeChange,
   safeColor
-} from '@open-pencil/fig/node-change'
-import type { GUID } from '@open-pencil/kiwi/fig'
-import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
-import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+} from '@lawha/fig/node-change'
+import type { GUID } from '@lawha/kiwi/fig'
+import type { NodeChange, VariableDataEntry } from '@lawha/kiwi/fig/codec'
+import { guidToString, stringToGuid } from '@lawha/kiwi/fig/guid'
 import type {
   SceneGraph,
   SceneNode,
   VariableFormulaNode,
   VariableCollectionMode,
   VariableValue
-} from '@open-pencil/scene-graph'
-import { fractionalPosition, orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
+} from '@lawha/scene-graph'
+import { fractionalPosition, orderKeyBetween } from '@lawha/scene-graph/order-keys'
 import {
   modesDefaultFirst,
   isUnsupportedVariableValue,
@@ -29,7 +29,7 @@ import {
   inferFormulaType,
   variableFormulaSchema,
   variableColorExpressionSchema
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 /**
  * Identity allocation shared by the two writers. The document exporter and the clipboard
@@ -96,7 +96,7 @@ export function assignVariableGuids(
 
 /**
  * Where Figma lists each mode: where the file saved it, and a new mode after the rest. A
- * collection made in OpenPencil lists its modes in their order.
+ * collection made in Lawha lists its modes in their order.
  */
 function modeSortPositions(modes: readonly VariableCollectionMode[]) {
   if (modes.every((mode) => !mode.sortPosition))

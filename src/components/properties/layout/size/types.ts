@@ -1,4 +1,4 @@
-import type { LayoutAxis, SizeLimitProp } from '@open-pencil/vue/controls/layout'
+import type { LayoutAxis, SizeLimitProp } from '@lawha/vue/controls/layout'
 
 export interface SizeAxisFieldProps {
   axis: LayoutAxis

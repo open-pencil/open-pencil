@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** Probes and drivers for layers on the current page. */
 export function layerDriver(page: () => Page) {
@@ -8,8 +8,8 @@ export function layerDriver(page: () => Page) {
     /** Where the centre of the named layer shows on the canvas, in canvas-element pixels. */
     screenCenter(name: string): Promise<Vector> {
       return page().evaluate((layerName) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const layer = store.graph
           .getChildren(store.state.currentPageId)
           .find((node) => node.name === layerName)
@@ -33,8 +33,8 @@ export function layerDriver(page: () => Page) {
     ): Promise<{ frame: string; items: string[] }> {
       return page().evaluate(
         ({ frameName, mode, names }) => {
-          const store = window.openPencil?.getStore?.()
-          if (!store) throw new Error('OpenPencil store not initialized')
+          const store = window.lawha?.getStore?.()
+          if (!store) throw new Error('Lawha store not initialized')
           const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
             name: frameName,
             layoutMode: mode,
@@ -61,8 +61,8 @@ export function layerDriver(page: () => Page) {
     frameWithChildren(name: string, count: number): Promise<{ frame: string; children: string[] }> {
       return page().evaluate(
         ({ frameName, childCount }) => {
-          const store = window.openPencil?.getStore?.()
-          if (!store) throw new Error('OpenPencil store not initialized')
+          const store = window.lawha?.getStore?.()
+          if (!store) throw new Error('Lawha store not initialized')
           const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
             name: frameName,
             width: 400,
@@ -84,8 +84,8 @@ export function layerDriver(page: () => Page) {
     /** Driver: selects layers by id, as a click on the canvas does, revealing them in the panel. */
     select(ids: readonly string[]): Promise<void> {
       return page().evaluate((layerIds) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         store.select([...layerIds])
       }, ids)
     },
@@ -93,8 +93,8 @@ export function layerDriver(page: () => Page) {
     /** Driver: clears the selection, so a screenshot shows no handles. */
     clearSelection(): Promise<void> {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         store.clearSelection()
       })
     }

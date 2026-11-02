@@ -3,7 +3,7 @@ import { isEqual } from 'es-toolkit'
 import { computed, reactive, ref, toRaw, watch } from 'vue'
 import type { Ref } from 'vue'
 
-import type { AIProviderID } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@lawha/core/constants'
 
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
 import {

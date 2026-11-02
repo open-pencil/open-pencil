@@ -10,7 +10,7 @@ import {
   type VariableScope,
   type VariableType,
   type VariableValue
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 
 import {
   decodeVariableToken,
@@ -298,7 +298,7 @@ function plannedVariable(
 }
 
 /**
- * A variable's unit, scopes, and code syntax. OpenPencil's tokens state them, so theirs replace
+ * A variable's unit, scopes, and code syntax. Lawha's tokens state them, so theirs replace
  * the variable's; other tools' tokens leave an updated variable's own where they say nothing.
  */
 function tokenFields(fields: DecodedVariable | undefined, existing: Variable | undefined) {

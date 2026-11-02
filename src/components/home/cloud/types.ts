@@ -1,4 +1,4 @@
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 /** A place the home tab lists documents from. */
 export type HomeLocation =
@@ -12,7 +12,7 @@ export type HomeCloudAccount = {
   name: string
   email: string
   image?: string | null
-  /** The Cloud server's host, such as `cloud.openpencil.dev`. */
+  /** The Cloud server's host, such as `cloud.lawha.invalid`. */
   host: string
 }
 

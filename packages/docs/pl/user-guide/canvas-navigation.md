@@ -1,6 +1,6 @@
 ---
 title: Nawigacja po obszarze roboczym
-description: Przesuwaj widok, zmieniaj powiększenie i korzystaj z narzędzia Rączka w OpenPencil.
+description: Przesuwaj widok, zmieniaj powiększenie i korzystaj z narzędzia Rączka w Lawha.
 ---
 
 # Nawigacja po obszarze roboczym

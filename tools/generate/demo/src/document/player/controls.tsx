@@ -1,9 +1,9 @@
-/** @jsxImportSource @open-pencil/design-jsx */
+/** @jsxImportSource @lawha/design-jsx */
 /**
  * The player's controls, written with Reka UI's element names: each is a main component or a
  * component set with a behaviour, so preview runs it as the real control.
  */
-import { Button, Component, Slider, Toggle, type TreeNode } from '@open-pencil/design-jsx'
+import { Button, Component, Slider, Toggle, type TreeNode } from '@lawha/design-jsx'
 
 import { Icon } from '../elements'
 import type { Theme } from '../theme'

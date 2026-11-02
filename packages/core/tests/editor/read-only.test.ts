@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { createEditor, executeAtomicTool, ReadOnlyDocumentError } from '@open-pencil/core'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { createEditor, executeAtomicTool, ReadOnlyDocumentError } from '@lawha/core'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { ALL_TOOLS } from '@lawha/core/tools'
 
 import { READ_ONLY_ACTIONS } from '#core/editor/read-only/actions'
 

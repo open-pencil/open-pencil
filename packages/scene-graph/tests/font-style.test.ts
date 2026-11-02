@@ -7,7 +7,7 @@ import {
   normalizeFontFamily,
   standardStyleName,
   styleToWeight
-} from '@open-pencil/scene-graph/font-style'
+} from '@lawha/scene-graph/font-style'
 
 describe('styleToWeight', () => {
   test('maps common style names', () => {

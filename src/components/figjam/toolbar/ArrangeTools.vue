@@ -7,9 +7,9 @@ import IconAlignEndVertical from '~icons/lucide/align-end-vertical'
 import IconAlignStartHorizontal from '~icons/lucide/align-start-horizontal'
 import IconAlignStartVertical from '~icons/lucide/align-start-vertical'
 
-import { usePosition } from '@open-pencil/vue/controls/position'
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { usePosition } from '@lawha/vue/controls/position'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { toolIcons } from '@/components/icons'
 import IconButton from '@/components/ui/button/IconButton.vue'

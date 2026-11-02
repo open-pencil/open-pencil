@@ -16,7 +16,7 @@
   "region": "リージョン",
   "accessKeyID": "アクセスキー ID",
   "secretAccessKey": "シークレットアクセスキー",
-  "cloudTitle": "OpenPencil Cloud",
+  "cloudTitle": "Lawha Cloud",
   "cloudDescription": "チームのワークスペースをホスティングで。ライブ同期、共有リンク、チームライブラリ、ホスト型 AI を、バケットの設定なしで使えます。ウェイトリストに登録すると、公開時にメールでお知らせします。",
   "waitlistEmail": "メールアドレス",
   "waitlistPlaceholder": "you@example.com",
@@ -24,10 +24,10 @@
   "waitlistConfirmHuman": "人間であることを確認してください",
   "waitlistInvalid": "有効なメールアドレスを入力してください。",
   "waitlistJoined": "受信トレイを確認してください",
-  "waitlistJoinedDetail": "送信したリンクを開いてアドレスを確認してください。OpenPencil Cloud に関するメールのみお送りします。",
+  "waitlistJoinedDetail": "送信したリンクを開いてアドレスを確認してください。Lawha Cloud に関するメールのみお送りします。",
   "waitlistRefused": "ボットでないことを確認できませんでした。もう一度お試しください。",
   "waitlistLimited": "試行回数が多すぎます。1 分後にもう一度お試しください。",
   "waitlistFailed": "ウェイトリストに接続できませんでした。接続を確認して、もう一度お試しください。",
-  "waitlistUnavailable": "ここからは登録できません。openpencil.dev で登録してください。",
-  "waitlistOpenWebsite": "openpencil.dev で登録"
+  "waitlistUnavailable": "ここからは登録できません。lawha.invalid で登録してください。",
+  "waitlistOpenWebsite": "lawha.invalid で登録"
 }

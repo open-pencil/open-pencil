@@ -25,7 +25,7 @@ async function derivedRoomKey(authSecret: string, documentId: string, roomEpoch:
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: new TextEncoder().encode(`openpencil-cloud:${documentId}`),
+      salt: new TextEncoder().encode(`lawha-cloud:${documentId}`),
       info: new TextEncoder().encode(`collaboration-room:${roomEpoch}`)
     },
     key,

@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit/array'
 
-import type { FontVariation } from '@open-pencil/scene-graph'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import type { FontVariation } from '@lawha/scene-graph'
+import { faceLoadKey } from '@lawha/scene-graph/font-style'
 
 import { ResourceCache } from '#core/cache/resource'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'

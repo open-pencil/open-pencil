@@ -59,7 +59,7 @@ heavy('eval CLI', () => {
         const child = figma.createRectangle();
         child.resize(5, 5);
         frame.appendChild(child);
-        openpencil.bindVariable(frame, 'paddingLeft', variable);
+        lawha.bindVariable(frame, 'paddingLeft', variable);
         variable.setValueForMode(collection.defaultModeId, 20);
         return { padding: frame.paddingLeft, width: frame.width, childX: child.x };
       `

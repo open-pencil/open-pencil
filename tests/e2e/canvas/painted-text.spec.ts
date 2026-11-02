@@ -10,7 +10,7 @@ test('changing only the text paint preserves native glyph pixels', async ({ page
   await canvas.waitForInit()
   await canvas.clearCanvas()
   const id = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const black = { r: 0, g: 0, b: 0, a: 1 }
     const node = store.graph.createNode('TEXT', store.state.currentPageId, {
@@ -50,7 +50,7 @@ test('changing only the text paint preserves native glyph pixels', async ({ page
   expect(pixels.some(([r, g, b, a]) => r < 32 && g < 32 && b < 32 && a === 255)).toBe(true)
   const gradient = await canvas.screenshotCanvasRegion()
   await page.evaluate((id) => {
-    window.openPencil?.getStore?.().updateNode(id, {
+    window.lawha?.getStore?.().updateNode(id, {
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
   }, id)

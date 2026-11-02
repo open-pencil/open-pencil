@@ -1,4 +1,4 @@
-import type { SceneNode, TextPathData } from '@open-pencil/scene-graph'
+import type { SceneNode, TextPathData } from '@lawha/scene-graph'
 
 export * from './caret'
 export * from './fitting'

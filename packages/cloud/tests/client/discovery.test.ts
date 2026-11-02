@@ -6,8 +6,8 @@ import { CLOUD_PROTOCOL_VERSION } from '#cloud/contract'
 const discovery = {
   protocolVersion: CLOUD_PROTOCOL_VERSION,
   deployment: 'official' as const,
-  apiURL: 'https://cloud.openpencil.dev/api',
-  authURL: 'https://cloud.openpencil.dev/api/auth',
+  apiURL: 'https://cloud.lawha.invalid/api',
+  authURL: 'https://cloud.lawha.invalid/api/auth',
   localEditor: true,
   authentication: {
     socialProviders: ['apple' as const, 'google' as const],
@@ -33,19 +33,19 @@ const discovery = {
 describe('discoverCloud', () => {
   test('loads and validates discovery from the well-known path', async () => {
     let requestedURL = ''
-    const result = await discoverCloud('https://cloud.openpencil.dev/custom?ignored=yes', {
+    const result = await discoverCloud('https://cloud.lawha.invalid/custom?ignored=yes', {
       fetch: async (input) => {
         requestedURL = String(input)
         return Response.json(discovery)
       }
     })
 
-    expect(requestedURL).toBe('https://cloud.openpencil.dev/.well-known/openpencil')
+    expect(requestedURL).toBe('https://cloud.lawha.invalid/.well-known/lawha')
     expect(result).toEqual(discovery)
   })
 
   test('reports non-successful discovery responses', async () => {
-    const request = discoverCloud('https://cloud.openpencil.dev', {
+    const request = discoverCloud('https://cloud.lawha.invalid', {
       fetch: async () => new Response(null, { status: 404 })
     })
 
@@ -53,7 +53,7 @@ describe('discoverCloud', () => {
   })
 
   test('rejects non-HTTP server URLs before fetching', async () => {
-    const request = discoverCloud('file:///tmp/openpencil', {
+    const request = discoverCloud('file:///tmp/lawha', {
       fetch: async () => Response.json(discovery)
     })
 

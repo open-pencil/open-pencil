@@ -1,6 +1,6 @@
 import { createSharedComposable, useNow } from '@vueuse/core'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 /** How each kind of date in the interface reads, shown here in English. */
 const DATE_FORMATS = {

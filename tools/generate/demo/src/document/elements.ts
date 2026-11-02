@@ -1,4 +1,4 @@
-import { node, type DesignVariable, type TreeNode } from '@open-pencil/design-jsx'
+import { node, type DesignVariable, type TreeNode } from '@lawha/design-jsx'
 
 export interface IconProps {
   /** An Iconify name the demo bundles, such as `lucide:play`. */

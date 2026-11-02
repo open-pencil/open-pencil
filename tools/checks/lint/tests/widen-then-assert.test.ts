@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'no-widen-then-assert'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 
 describe('no-widen-then-assert', () => {
   test.each([

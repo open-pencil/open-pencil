@@ -1,10 +1,10 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import { textLinesOverflow } from '@open-pencil/scene-graph/text'
+import { type SceneNode, type SceneGraph, type Fill } from '@lawha/scene-graph'
+import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import { isLayerContainer } from '@lawha/scene-graph/node-defaults'
+import { textLinesOverflow } from '@lawha/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'

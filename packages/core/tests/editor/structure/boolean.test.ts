@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { TRANSPARENT } from '@open-pencil/core/constants'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
+import { createEditor } from '@lawha/core'
+import { TRANSPARENT } from '@lawha/core/constants'
+import { getAxisAlignedWorldBounds } from '@lawha/scene-graph/coordinate'
 
 describe('booleanOperationSelected', () => {
   test('wraps selected nodes in a boolean operation container', () => {

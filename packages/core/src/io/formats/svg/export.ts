@@ -1,4 +1,4 @@
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { RenderColorSpace } from '@lawha/scene-graph/color'
 
 import { normalizeDashPattern } from '#core/canvas/strokes'
 import { lineStrokePath } from '#core/canvas/strokes/line'
@@ -29,12 +29,12 @@ import {
 
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
-import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@lawha/scene-graph'
 import {
   hasRegionFills,
   looseSegments,
   regionSVGPaths
-} from '@open-pencil/scene-graph/vector-network'
+} from '@lawha/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias } from './defs'

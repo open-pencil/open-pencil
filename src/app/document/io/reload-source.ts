@@ -1,6 +1,6 @@
 import { readFile as tauriRead } from '@tauri-apps/plugin-fs'
 
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
+import { readFigFile } from '@lawha/core/io/formats/fig'
 
 import { isTauri } from '@/app/tauri/env'
 

@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   figJamLayerColorFields,
   figJamLineColorFields,
@@ -7,7 +7,7 @@ import {
   figJamSectionColorName,
   type FigJamColorName,
   type FigJamLineStyle
-} from '@open-pencil/scene-graph/figjam'
+} from '@lawha/scene-graph/figjam'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import { figJamColoredLayers } from '#core/editor/figjam/toolbar'

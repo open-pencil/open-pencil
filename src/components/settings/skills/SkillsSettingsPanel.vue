@@ -3,8 +3,8 @@ import { useFileDialog } from '@vueuse/core'
 import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
-import { useAIMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
+import { IS_TAURI } from '@lawha/core/constants'
+import { useAIMessages, useCommonMessages, useSettingsMessages } from '@lawha/vue/i18n'
 
 import { skillPreferenceKey } from '@/app/ai/skills/preferences'
 import { useSkillsSettings, type SkillSourceGroup } from '@/app/ai/skills/settings/use'
@@ -65,7 +65,7 @@ fileDialog.onChange((files) => {
 })
 
 const SOURCE_TITLES: Record<SkillSourceID, () => string> = {
-  openpencil: () => ai.value.skillsUploadedSource,
+  lawha: () => ai.value.skillsUploadedSource,
   project: () => ai.value.skillsProjectSource,
   agents: () => ai.value.skillsAgentsSource,
   claude: () => ai.value.skillsClaudeSource

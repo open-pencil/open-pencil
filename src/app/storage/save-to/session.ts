@@ -34,7 +34,7 @@ const QUIET_SAVE_MS = 1000
 export const saveToSession = shallowRef<SaveToSession | null>(null)
 
 /** The destination saved to last, chosen first next time. */
-const lastDestination = IS_BROWSER ? useLocalStorage('open-pencil:save-destination', '') : ref('')
+const lastDestination = IS_BROWSER ? useLocalStorage('lawha:save-destination', '') : ref('')
 const online = useOnline()
 
 function fail(session: SaveToSession, failure: SaveFailure): void {

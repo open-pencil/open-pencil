@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { propertyBinding } from '#fig-tests/helpers/component-props'
 
-import { materializeDocument } from '@open-pencil/fig'
-import type { SymbolData } from '@open-pencil/fig/instance-overrides'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { materializeDocument } from '@lawha/fig'
+import type { SymbolData } from '@lawha/fig/instance-overrides'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 const documentGuid = { sessionID: 0, localID: 0 }
 const pageGuid = { sessionID: 0, localID: 1 }

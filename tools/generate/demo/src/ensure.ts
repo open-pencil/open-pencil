@@ -7,7 +7,7 @@ import { promisify } from 'node:util'
 
 import { lock } from 'proper-lockfile'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/workspace'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools/workspace'
 
 /** Where the app serves the demo from, relative to the repository root. */
 const DEMO_OUTPUT = 'public/demo.fig'

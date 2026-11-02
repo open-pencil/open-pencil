@@ -1,8 +1,8 @@
-import { COMMANDS } from '@open-pencil/cli/commands'
-import { ALL_TOOLS, isToolExposed } from '@open-pencil/core/tools'
+import { COMMANDS } from '@lawha/cli/commands'
+import { ALL_TOOLS, isToolExposed } from '@lawha/core/tools'
 
 export interface LandingStats {
-  /** Top-level `openpencil` commands, in alphabetical order. */
+  /** Top-level `lawha` commands, in alphabetical order. */
   cliCommands: string[]
   /** Tools the MCP server exposes. */
   mcpTools: number

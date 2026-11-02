@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
 import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import type { ACPAgentDef } from '@lawha/core/constants'
 
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { agentTurnUsage, buildCrashChunks, formatConnectionError } from '@/app/ai/transports/acp'
@@ -84,7 +84,7 @@ describe('an ACP turn in the chat', () => {
     const parts = await transcript([
       text('I’ll inspect '),
       text('the page.'),
-      codexCall('open-pencil', 'get_page_tree', {}),
+      codexCall('lawha', 'get_page_tree', {}),
       codexDone(mcpText({ children: [] })),
       text('Done.')
     ])
@@ -100,9 +100,9 @@ describe('an ACP turn in the chat', () => {
     expect(parts[0]).toMatchObject({ text: 'Plan the grid' })
   })
 
-  test('OpenPencil’s own tools show as the built-in chat’s, with their arguments and result', async () => {
+  test('Lawha’s own tools show as the built-in chat’s, with their arguments and result', async () => {
     const [call] = await transcript([
-      codexCall('open-pencil', 'render', { jsx: '<Frame name="Calendar" />' }),
+      codexCall('lawha', 'render', { jsx: '<Frame name="Calendar" />' }),
       codexDone(mcpText({ id: '1:2', name: 'Calendar' }))
     ])
     expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
@@ -115,7 +115,7 @@ describe('an ACP turn in the chat', () => {
 
   test('an exported image is passed on as the built-in chat holds it', async () => {
     const [call] = await transcript([
-      codexCall('open-pencil', 'export_image', { ids: ['1:2'] }),
+      codexCall('lawha', 'export_image', { ids: ['1:2'] }),
       codexDone({ content: [{ type: 'image', data: 'iVBORw0KGgo=', mimeType: 'image/png' }] })
     ])
     expect(shown(expectDefined(call, 'tool part'))?.output).toEqual({
@@ -126,9 +126,9 @@ describe('an ACP turn in the chat', () => {
 
   test('a tool error shows as a failed call with the tool’s message', async () => {
     const parts = await transcript([
-      codexCall('open-pencil', 'describe', { id: '9:9' }, 'a'),
+      codexCall('lawha', 'describe', { id: '9:9' }, 'a'),
       codexDone(mcpText({ error: 'Node 9:9 not found' }, true), null, 'a'),
-      codexCall('open-pencil', 'describe', { id: '9:9' }, 'b'),
+      codexCall('lawha', 'describe', { id: '9:9' }, 'b'),
       codexDone(null, { message: 'tool call timed out' }, 'b')
     ])
     expect(parts.map((part) => shown(part))).toMatchObject([
@@ -151,8 +151,8 @@ describe('an ACP turn in the chat', () => {
     })
   })
 
-  test('Claude’s calls to OpenPencil’s tools show the same way, input arriving later', async () => {
-    const meta = { claudeCode: { toolName: 'mcp__open-pencil__render' } }
+  test('Claude’s calls to Lawha’s tools show the same way, input arriving later', async () => {
+    const meta = { claudeCode: { toolName: 'mcp__lawha__render' } }
     const [call] = await transcript([
       {
         sessionUpdate: 'tool_call',
@@ -213,8 +213,8 @@ describe('an ACP turn in the chat', () => {
     const [call] = await transcript([
       {
         sessionUpdate: 'tool_call',
-        toolCallId: 'mcp_startup.open-pencil',
-        title: 'mcp__open-pencil__startup',
+        toolCallId: 'mcp_startup.lawha',
+        title: 'mcp__lawha__startup',
         kind: 'other',
         status: 'failed',
         content: [{ type: 'content', content: { type: 'text', text: 'failed to start' } }]

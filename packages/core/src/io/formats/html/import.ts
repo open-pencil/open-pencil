@@ -3,8 +3,8 @@ import {
   htmlToDesignDocument,
   tailwindHTMLToDesignDocument,
   type DesignDocument
-} from '@open-pencil/dom-css'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/dom-css'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import type { IOFormatAdapter } from '#core/io/types'
 

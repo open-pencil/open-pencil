@@ -6,8 +6,8 @@ import { nativeOSFacts } from '#tests/helpers/tauri/os'
 describe('native support facts', () => {
   it('boots through the support gate into the editor', async () => {
     await browser.waitUntil(
-      async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
-      { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
+      async () => browser.execute(() => Boolean(window.lawha?.getStore?.())),
+      { timeout: 30_000, timeoutMsg: 'Lawha editor did not initialize' }
     )
     const notice = await browser.execute(() => Boolean(document.querySelector('#boot-notice')))
     assert.equal(notice, false)

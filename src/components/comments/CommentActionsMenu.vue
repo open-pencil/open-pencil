@@ -8,8 +8,8 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { CommentThread } from '@open-pencil/scene-graph'
-import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import type { CommentThread } from '@lawha/scene-graph'
+import { useCommentMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'

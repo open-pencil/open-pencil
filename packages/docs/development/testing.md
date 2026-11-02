@@ -26,7 +26,7 @@ Discovery already covers the destinations: `tools/dev/unit-tests/src/shards.ts` 
 
 `test:unit:quick` runs files in Bun worker processes (`--parallel`), which is the fastest local loop. CI shards still run each group in one process; `test:unit:isolated` (`--isolate`, also run nightly) gives every file a fresh global object and is the check to run when a suite passes alone but fails in a shard. Shards share one Bun process, so module-level state (a `fake-indexeddb/auto` import, an IndexedDB connection left open by `createEditorStore()`, a patched global) leaks into later files in the same shard. A package-local run (`bun test tests` inside the package) is a fresh process and will not reproduce that leak. Close what a test opens and restore what it patches.
 
-Run `bun --filter @open-pencil/core build` before unit tests. Files under `tests/` and under `packages/core/tests` resolve `@open-pencil/core` and its subpaths to `packages/core/src` through the root and Core tsconfig path mappings, but other package sources (`packages/dom-css/src`, `packages/mcp/src`, …) use their own tsconfig, where `@open-pencil/core/<subpath>` falls back to the package `exports` and therefore to `dist`. One process can hold both copies; only `packages/vue` maps Core to `src`. Aligning the other package tsconfigs is a packaging change (it affects `tsdown` declaration output), not a test change.
+Run `bun --filter @lawha/core build` before unit tests. Files under `tests/` and under `packages/core/tests` resolve `@lawha/core` and its subpaths to `packages/core/src` through the root and Core tsconfig path mappings, but other package sources (`packages/dom-css/src`, `packages/mcp/src`, …) use their own tsconfig, where `@lawha/core/<subpath>` falls back to the package `exports` and therefore to `dist`. One process can hold both copies; only `packages/vue` maps Core to `src`. Aligning the other package tsconfigs is a packaging change (it affects `tsdown` declaration output), not a test change.
 
 ## Test purpose
 
@@ -60,7 +60,7 @@ Prefer test-runner-owned fixtures, such as Playwright `test.extend`, over implic
 
 ## Browser and native boundaries
 
-Specs should read as fixture setup, user action, observation and assertion. Do not scatter `window.openPencil`, store/renderer traversal, internal module URLs or resource-timing module discovery through specs.
+Specs should read as fixture setup, user action, observation and assertion. Do not scatter `window.lawha`, store/renderer traversal, internal module URLs or resource-timing module discovery through specs.
 
 Keep unavoidable transport access in a small guarded adapter with named domain operations. Separate:
 
@@ -95,7 +95,7 @@ Visual changes require inspection and committed coverage. Update only a justifie
 
 Two environment faults look exactly like a code regression, and both have cost real debugging time.
 
-Browser suites resolve `@open-pencil/*` through each package's built `dist`, which Vite then pre-bundles. Rebuilding a package does not invalidate that cache, so a Playwright run can execute code from before your change — including throwing on a field you just added. If a browser run contradicts the source you are reading, delete `node_modules/.vite` and run again before believing it.
+Browser suites resolve `@lawha/*` through each package's built `dist`, which Vite then pre-bundles. Rebuilding a package does not invalidate that cache, so a Playwright run can execute code from before your change — including throwing on a field you just added. If a browser run contradicts the source you are reading, delete `node_modules/.vite` and run again before believing it.
 
 Heavy tests, the ones that parse the large fixtures or a populated `gold-preview.fig` more than once, run only with `BUN_HEAVY_TESTS=true`. The unit test runner sets it and gives each heavy file its own Bun process, because one such graph takes gigabytes and a process keeps every graph a test module holds until it exits: a bare `bun test` over `packages/core/tests/io/formats/fig` with heavy tests enabled has reached 37 GB. A bare `bun test` and `test:unit:quick` therefore skip them; `bun run test:unit` runs them, and `bun run test:unit:heavy` or `bun tools/dev/unit-tests/src/run.ts <group> --heavy-only` runs the heavy files alone.
 
@@ -103,16 +103,16 @@ Heavier `.fig` suites are sensitive to machine load. A full run alongside other 
 
 ## Server ownership and worktrees
 
-The canonical `playwright.config.ts` owns app, Figma and Storybook projects. The `test`, `test:update`, `test:real-llm` and `test:figma` scripts select only the app server; `test:storybook` selects Storybook on port `6017`. Direct Playwright commands start both servers by default. Set `OPENPENCIL_TEST_SERVER=app`, `storybook` or `all`; `--project` selects tests, not servers.
+The canonical `playwright.config.ts` owns app, Figma and Storybook projects. The `test`, `test:update`, `test:real-llm` and `test:figma` scripts select only the app server; `test:storybook` selects Storybook on port `6017`. Direct Playwright commands start both servers by default. Set `LAWHA_TEST_SERVER=app`, `storybook` or `all`; `--project` selects tests, not servers.
 
 App tests start Vite from the current checkout and wait for its HTTP URL. Vite owns its MCP companion. Reuse is off by default and always off in CI. Default ports are app `1420` and MCP `7600`; concurrent worktrees need distinct free pairs:
 
 ```sh
-OPENPENCIL_TEST_SERVER=app OPENPENCIL_TEST_PORT=1482 OPENPENCIL_TEST_MCP_PORT=7682 \
-  bunx playwright test tests/e2e/properties/effect-panel.spec.ts --project=openpencil
+LAWHA_TEST_SERVER=app LAWHA_TEST_PORT=1482 LAWHA_TEST_MCP_PORT=7682 \
+  bunx playwright test tests/e2e/properties/effect-panel.spec.ts --project=lawha
 ```
 
-Use the configured base URL and same-origin paths, never hard-coded ports in specs or adapters. For intentional debugging against a verified matching server, set `OPENPENCIL_TEST_REUSE_SERVER=1`. HTTP readiness alone does not prove checkout identity, so do not reuse servers for baseline comparisons. Portless remains the preferred interactive preview workflow, separate from managed fixed-port tests.
+Use the configured base URL and same-origin paths, never hard-coded ports in specs or adapters. For intentional debugging against a verified matching server, set `LAWHA_TEST_REUSE_SERVER=1`. HTTP readiness alone does not prove checkout identity, so do not reuse servers for baseline comparisons. Portless remains the preferred interactive preview workflow, separate from managed fixed-port tests.
 
 ## External-system acceptance
 

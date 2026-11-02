@@ -4,7 +4,7 @@ import {
   normalizeFontFamily,
   type FontFamilyStyle,
   parseFontStyle
-} from '@open-pencil/scene-graph/font-style'
+} from '@lawha/scene-graph/font-style'
 
 const FONT_WEIGHTS = Object.keys(FONT_WEIGHT_NAMES)
   .map(Number)

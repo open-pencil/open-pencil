@@ -1,6 +1,6 @@
 import { uniq, uniqBy } from 'es-toolkit/array'
 
-import { faceStyleKey, namesWeight, styleSpelling } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey, namesWeight, styleSpelling } from '@lawha/scene-graph/font-style'
 
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
 import type { FamilyFace } from '#core/text/font/faces'

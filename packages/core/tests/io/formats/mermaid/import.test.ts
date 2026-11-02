@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
+import { connectorSublayers } from '@lawha/scene-graph/connectors'
+import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
+import { shapeWithTextLabel } from '@lawha/scene-graph/generated'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 

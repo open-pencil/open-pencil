@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { corePackagePath, FIXTURES } from '#core-tests/helpers/paths'
 
-import { fontManager } from '@open-pencil/core/text'
+import { fontManager } from '@lawha/core/text'
 
 import {
   getGlyphOutlineMetricsSync,

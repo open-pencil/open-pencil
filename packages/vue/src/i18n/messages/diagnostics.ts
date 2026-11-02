@@ -61,7 +61,7 @@ export const diagnosticsMessageDefaults = {
   retentionRange: params('Enter a whole number from {min} to {max}.'),
   retentionDescription: 'Keep up to this many recent events locally.',
   description:
-    'Store technical events locally to help troubleshoot OpenPencil. Prompts, design content, credentials, and API keys are excluded.',
+    'Store technical events locally to help troubleshoot Lawha. Prompts, design content, credentials, and API keys are excluded.',
   localDiagnostics: 'Local diagnostics',
   localDiagnosticsDescription: 'Keep recent technical events on this device.',
   usageHistory: 'Usage history',
@@ -74,9 +74,9 @@ export const diagnosticsMessageDefaults = {
   cleared: 'Diagnostics cleared.',
   copyFailed: 'Could not copy diagnostics to the clipboard.',
   saveFailed: 'Could not save diagnostics.',
-  sharingTitle: 'Sharing with OpenPencil',
+  sharingTitle: 'Sharing with Lawha',
   sharingDescription:
-    'What this app sends to the OpenPencil team. Your designs, file names, prompts, and keys are never sent.',
+    'What this app sends to the Lawha team. Your designs, file names, prompts, and keys are never sent.',
   sharingPing: 'Daily anonymous ping',
   sharingPingDescription:
     'Once a day: the app version, operating system, and whether it runs on desktop or the web. No ID.',
@@ -85,12 +85,12 @@ export const diagnosticsMessageDefaults = {
     'Which features and file formats are used, under a random ID that names no person. Off unless you agree.',
   sharingDetails: 'What is sent',
   sharingUnofficialBuild:
-    'This build sends nothing. Only official OpenPencil releases send pings or usage stats.',
+    'This build sends nothing. Only official Lawha releases send pings or usage stats.',
   sharingDisabledByEnvironment:
-    'Turned off by OPENPENCIL_TELEMETRY or DO_NOT_TRACK in your environment.',
-  sharingQuestionTitle: 'Help improve OpenPencil?',
+    'Turned off by LAWHA_TELEMETRY or DO_NOT_TRACK in your environment.',
+  sharingQuestionTitle: 'Help improve Lawha?',
   sharingQuestionDescription:
-    'Share anonymous usage stats: app launches, file formats, and features used. Never your designs, file names, or prompts. They show us what to build next and that OpenPencil is used, which keeps it funded.',
+    'Share anonymous usage stats: app launches, file formats, and features used. Never your designs, file names, or prompts. They show us what to build next and that Lawha is used, which keeps it funded.',
   sharingQuestionDecline: 'No thanks',
   sharingQuestionAccept: 'Share stats',
   sharingQuestionAccepted: 'Thank you. You can change this in Privacy settings.',

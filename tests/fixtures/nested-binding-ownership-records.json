@@ -86,7 +86,7 @@
       "stackPaddingBottom": 4,
       "pluginData": [
         {
-          "pluginID": "open-pencil",
+          "pluginID": "lawha",
           "value": "AUTO",
           "key": "layoutDirection"
         }
@@ -172,7 +172,7 @@
       ],
       "pluginData": [
         {
-          "pluginID": "open-pencil",
+          "pluginID": "lawha",
           "value": "AUTO",
           "key": "layoutDirection"
         }
@@ -239,7 +239,7 @@
       "stackPaddingRight": 20,
       "pluginData": [
         {
-          "pluginID": "open-pencil",
+          "pluginID": "lawha",
           "value": "AUTO",
           "key": "layoutDirection"
         }
@@ -335,7 +335,7 @@
       "stackPaddingBottom": 2,
       "pluginData": [
         {
-          "pluginID": "open-pencil",
+          "pluginID": "lawha",
           "value": "AUTO",
           "key": "layoutDirection"
         }
@@ -516,7 +516,7 @@
       "stackPaddingRight": 10,
       "pluginData": [
         {
-          "pluginID": "open-pencil",
+          "pluginID": "lawha",
           "value": "AUTO",
           "key": "layoutDirection"
         }
@@ -822,7 +822,7 @@
       "stackPaddingRight": 10,
       "pluginData": [
         {
-          "pluginID": "open-pencil",
+          "pluginID": "lawha",
           "value": "AUTO",
           "key": "layoutDirection"
         }

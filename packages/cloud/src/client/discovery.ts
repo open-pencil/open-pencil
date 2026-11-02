@@ -17,7 +17,7 @@ export type DiscoverCloudOptions = {
 
 /**
  * Why a server could not be used: the address is not a web address, nothing answered, something
- * answered but not as OpenPencil Cloud, or it speaks another protocol version.
+ * answered but not as Lawha Cloud, or it speaks another protocol version.
  */
 export type CloudDiscoveryFailure = 'invalid-address' | 'unreachable' | 'not-cloud' | 'outdated'
 
@@ -40,11 +40,11 @@ function discoveryURL(serverURL: string): URL {
   try {
     url = new URL(serverURL)
   } catch (error) {
-    throw new CloudClientError('OpenPencil server URL is invalid', error, 'invalid-address')
+    throw new CloudClientError('Lawha server URL is invalid', error, 'invalid-address')
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new CloudClientError(
-      'OpenPencil server URL must use HTTP or HTTPS',
+      'Lawha server URL must use HTTP or HTTPS',
       undefined,
       'invalid-address'
     )
@@ -58,7 +58,7 @@ function discoveryURL(serverURL: string): URL {
 function parseDiscoveryBody(text: string): CloudDiscovery {
   const body = v.safeParse(discoveryBodySchema, text)
   if (!body.success) {
-    throw new CloudClientError('OpenPencil server discovery is not JSON', body.issues, 'not-cloud')
+    throw new CloudClientError('Lawha server discovery is not JSON', body.issues, 'not-cloud')
   }
   const discovery = v.safeParse(cloudDiscoverySchema, body.output)
   if (discovery.success) return discovery.output
@@ -66,8 +66,8 @@ function parseDiscoveryBody(text: string): CloudDiscovery {
   const outdated = protocol.success && protocol.output.protocolVersion !== CLOUD_PROTOCOL_VERSION
   throw new CloudClientError(
     outdated
-      ? `OpenPencil server speaks protocol ${protocol.output.protocolVersion}`
-      : 'OpenPencil server discovery is invalid',
+      ? `Lawha server speaks protocol ${protocol.output.protocolVersion}`
+      : 'Lawha server discovery is invalid',
     discovery.issues,
     outdated ? 'outdated' : 'not-cloud'
   )
@@ -89,7 +89,7 @@ export async function discoverCloud(
     })
     if (!response.ok) {
       throw new CloudClientError(
-        `OpenPencil server discovery failed with HTTP ${response.status}`,
+        `Lawha server discovery failed with HTTP ${response.status}`,
         undefined,
         response.status >= 500 ? 'unreachable' : 'not-cloud'
       )
@@ -98,8 +98,8 @@ export async function discoverCloud(
   } catch (error) {
     if (error instanceof CloudClientError) throw error
     if (signal.aborted) {
-      throw new CloudClientError('OpenPencil server discovery was cancelled or timed out', error)
+      throw new CloudClientError('Lawha server discovery was cancelled or timed out', error)
     }
-    throw new CloudClientError('OpenPencil server discovery failed', error)
+    throw new CloudClientError('Lawha server discovery failed', error)
   }
 }

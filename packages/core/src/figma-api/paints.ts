@@ -1,12 +1,12 @@
 import * as v from 'valibot'
 
-import type { BlendMode, Fill, GradientTransform, ImageScaleMode } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
+import type { BlendMode, Fill, GradientTransform, ImageScaleMode } from '@lawha/scene-graph'
+import { BLACK } from '@lawha/scene-graph/constants'
 import {
   gradientTransformRows,
   IDENTITY_GRADIENT_TRANSFORM
-} from '@open-pencil/scene-graph/gradient'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/gradient'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { invalid, received } from './accessors/text/messages'
 import { BLEND_MODES, issuePath } from './effects'
@@ -25,7 +25,7 @@ const PAINT_TYPES = [
   'VIDEO'
 ] as const
 
-/** Paint types Figma's plugin API takes that OpenPencil does not model yet. */
+/** Paint types Figma's plugin API takes that Lawha does not model yet. */
 const UNSUPPORTED_PAINT_TYPES = new Set(['SHADER'])
 
 const GRADIENT_TYPES = [
@@ -42,7 +42,7 @@ type ImageFilters = Record<
   number
 >
 
-/** OpenPencil keeps no image filters; Figma reads every slider at 0 until one moves. */
+/** Lawha keeps no image filters; Figma reads every slider at 0 until one moves. */
 const NO_FILTERS: ImageFilters = {
   exposure: 0,
   contrast: 0,
@@ -151,8 +151,8 @@ type MediaFields = PaintBase & {
   readonly filters?: Partial<ImageFilters>
 }
 
-/** A paint OpenPencil models that Figma's plugin API has no type for, read as the model holds it. */
-export type OpenPencilPaint = Omit<Fill, 'type' | 'gradientTransform' | 'imageTransform'> & {
+/** A paint Lawha models that Figma's plugin API has no type for, read as the model holds it. */
+export type LawhaPaint = Omit<Fill, 'type' | 'gradientTransform' | 'imageTransform'> & {
   readonly type: 'NOISE' | 'CUSTOM'
   readonly gradientTransform?: FigmaTransform
   readonly imageTransform?: FigmaTransform
@@ -162,7 +162,7 @@ export type OpenPencilPaint = Omit<Fill, 'type' | 'gradientTransform' | 'imageTr
  * A paint as Figma's plugin API gives and takes it (`Paint` in `@figma/plugin-typings`): a solid
  * colour is RGB with its alpha in the opacity, transforms are two rows of three, and an image or
  * video names its scale mode, rotation, and tile scaling as Figma does. Like Figma, the setters
- * refuse a pattern; OpenPencil's own paints read as {@link OpenPencilPaint}.
+ * refuse a pattern; Lawha's own paints read as {@link LawhaPaint}.
  */
 export type FigmaPaint =
   | (PaintBase &
@@ -195,7 +195,7 @@ export type FigmaPaint =
       readonly spacing: Vector
       readonly horizontalAlignment: NonNullable<Fill['horizontalAlignment']>
     })
-  | OpenPencilPaint
+  | LawhaPaint
 
 type ReadBase = Required<PaintBase>
 
@@ -242,7 +242,7 @@ function issueProblem(issue: v.BaseIssue<unknown>): string {
   return `Expected ${expected}, received ${received(issue.input)}${where(path)}`
 }
 
-/** Figma's complaint about a paint type it does not take, or OpenPencil does not model. */
+/** Figma's complaint about a paint type it does not take, or Lawha does not model. */
 function typeProblem(value: readonly unknown[]): string | null {
   for (const [index, paint] of value.entries()) {
     if (!v.is(v.object({ type: v.unknown() }), paint)) continue
@@ -401,7 +401,7 @@ function figmaPatternPaint(paint: Fill, base: ReadBase): FigmaPaint {
   }
 }
 
-function openPencilPaint(paint: Fill, type: OpenPencilPaint['type']): OpenPencilPaint {
+function lawhaPaint(paint: Fill, type: LawhaPaint['type']): LawhaPaint {
   const { gradientTransform, imageTransform, ...rest } = paint
   return {
     ...structuredClone(rest),
@@ -430,7 +430,7 @@ export function toFigmaPaint(paint: Fill, variableId?: string): FigmaPaint {
   }
   if (type === 'IMAGE' || type === 'VIDEO') return figmaMediaPaint(paint, type, base)
   if (type === 'PATTERN') return figmaPatternPaint(paint, base)
-  if (type === 'NOISE' || type === 'CUSTOM') return openPencilPaint(paint, type)
+  if (type === 'NOISE' || type === 'CUSTOM') return lawhaPaint(paint, type)
   return {
     type,
     ...base,

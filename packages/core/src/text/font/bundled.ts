@@ -13,20 +13,20 @@ const INTER_WEIGHTS = [
   'Black'
 ]
 
-/** The font files bundled in `@open-pencil/core/assets`, by family and style key. */
+/** The font files bundled in `@lawha/core/assets`, by family and style key. */
 const BUNDLED_FONTS: Record<string, string> = {
   ...Object.fromEntries(INTER_WEIGHTS.map((weight) => [`Inter|${weight}`, '/InterVariable.ttf'])),
   ...Object.fromEntries(
     INTER_WEIGHTS.map((weight) => [`Inter|${weight} Italic`, '/InterVariable-Italic.ttf'])
   ),
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf',
-  'OpenPencil Emoji Metrics|Regular': '/OpenPencilEmojiMetrics-Regular.ttf'
+  'Lawha Emoji Metrics|Regular': '/LawhaEmojiMetrics-Regular.ttf'
 }
 
 /**
  * Maps a bundled font's file name (`InterVariable.ttf`) to the URL a browser fetches it from.
  * Mirrors CanvasKit's `locateFile`; the default expects the host to serve
- * `@open-pencil/core/assets` at the site root.
+ * `@lawha/core/assets` at the site root.
  */
 export type BundledFontLocator = (file: string) => string
 
@@ -37,7 +37,7 @@ export class BundledFonts {
   private locate: BundledFontLocator = defaultBundledFontLocator
   private readonly requests = new Map<string, Promise<ArrayBuffer | null>>()
 
-  /** Lets a host that bundles `@open-pencil/core/assets` itself say where each file ended up. */
+  /** Lets a host that bundles `@lawha/core/assets` itself say where each file ended up. */
   setLocator(locate: BundledFontLocator | null): void {
     this.locate = locate ?? defaultBundledFontLocator
   }
@@ -73,7 +73,7 @@ export class BundledFonts {
       return response.ok ? response.arrayBuffer() : null
     }
     const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
-    const packageJSONURL = import.meta.resolve('@open-pencil/core/package.json')
+    const packageJSONURL = import.meta.resolve('@lawha/core/package.json')
     const buf = await readFile(new URL(`assets${url}`, packageJSONURL))
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
   }

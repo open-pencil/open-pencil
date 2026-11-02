@@ -7,7 +7,7 @@ import { configurableAITools, isAIToolEnabled } from './catalog'
 const overridesSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.boolean()))
 
 export const aiToolOverrides = useLocalStorage<Record<string, boolean>>(
-  'open-pencil:ai:tool-access',
+  'lawha:ai:tool-access',
   {},
   {
     serializer: {

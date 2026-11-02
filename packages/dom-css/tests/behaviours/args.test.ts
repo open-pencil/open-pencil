@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { behaviourArgs } from '#dom-css/behaviours/args'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { emptyBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { SceneGraph } from '@lawha/scene-graph'
+import { emptyBehaviour, withBehaviour } from '@lawha/scene-graph/behaviours'
 
 function toggleSet(options: string[]) {
   const graph = new SceneGraph()

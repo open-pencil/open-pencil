@@ -1,10 +1,10 @@
 import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
-import type { Effect, SceneGraph, SceneNode, TextLength } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
-import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
+import type { Effect, SceneGraph, SceneNode, TextLength } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { getSharedStyles } from '@lawha/scene-graph/shared-styles'
+import { percentLength, pixelLength, textLengthSchema } from '@lawha/scene-graph/text'
 
 import { tryParseFigmaEffects } from '#core/figma-api/effects'
 import {
@@ -16,7 +16,7 @@ import {
 } from '#core/io/formats/design-tokens/decode'
 import type { DesignTokenBundle, ReadToken } from '#core/io/formats/design-tokens/read'
 import { isShadow, shadowTokenValue, typographyValue } from '#core/io/formats/design-tokens/styles'
-import { OPENPENCIL_EXTENSION } from '#core/io/formats/design-tokens/types'
+import { LAWHA_EXTENSION } from '#core/io/formats/design-tokens/types'
 
 import type { AliasTarget, ImportSkip, ResolvedReference } from './'
 
@@ -80,18 +80,18 @@ const pixels = (value: unknown) =>
   typeof value === 'number' ? value : (decodeDimension(value)?.value ?? null)
 
 /**
- * OpenPencil's own fields for a style token, while its `$value` still says what they would write.
+ * Lawha's own fields for a style token, while its `$value` still says what they would write.
  * Other tools keep extensions they do not read, so a `$value` edited there no longer matches, and
  * the edit wins over the exact fields.
  */
 function ownText(token: ReadToken) {
-  const own = v.safeParse(ownTextSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(ownTextSchema, token.extensions[LAWHA_EXTENSION])
   if (!own.success) return null
   const { text, bindings = {} } = own.output
   return { ...own.output, current: isEqual(token.value, typographyValue(text, bindings)) }
 }
 
-/** A typography token as text style fields, preferring the exact fields OpenPencil wrote. */
+/** A typography token as text style fields, preferring the exact fields Lawha wrote. */
 function textFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
   const own = ownText(token)
   if (own?.current) return { ...own.text }
@@ -126,7 +126,7 @@ function decodedTextFields(token: ReadToken, resolve: Resolve): Partial<SceneNod
   }
 }
 
-/** Text style fields bound to variables: OpenPencil's recorded bindings, or the token's references. */
+/** Text style fields bound to variables: Lawha's recorded bindings, or the token's references. */
 function textBindings(token: ReadToken, alias: Alias): PlannedStyle['bindings'] {
   const own = ownText(token)
   let references: Record<string, unknown> = {}
@@ -179,7 +179,7 @@ function shadowList(value: unknown, resolve: Resolve, depth = 0): Effect[] | nul
 }
 
 /**
- * Shadows edited in another tool, in place of the visible shadows OpenPencil wrote. Effects
+ * Shadows edited in another tool, in place of the visible shadows Lawha wrote. Effects
  * `$value` cannot hold, such as blurs and hidden shadows, keep their places; extra shadows go last.
  */
 function replaceShadows(exact: readonly Effect[], shadows: readonly Effect[]): Effect[] {
@@ -192,9 +192,9 @@ function replaceShadows(exact: readonly Effect[], shadows: readonly Effect[]): E
   return [...effects, ...queue]
 }
 
-/** A shadow token as effects, preferring the exact effects OpenPencil wrote. */
+/** A shadow token as effects, preferring the exact effects Lawha wrote. */
 function effectFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
-  const own = v.safeParse(ownEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(ownEffectsSchema, token.extensions[LAWHA_EXTENSION])
   // Extension effects that do not read fall back to the token's own shadows.
   const exact = own.success ? tryParseFigmaEffects(own.output.effects) : null
   if (exact && isEqual(token.value, shadowTokenValue(exact))) return { effects: exact }

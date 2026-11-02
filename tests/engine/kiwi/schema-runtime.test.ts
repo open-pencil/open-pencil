@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { figmaSchema as figSchema } from '@open-pencil/kiwi/fig'
+import { figmaSchema as figSchema } from '@lawha/kiwi/fig'
 import {
   expectEnumValue,
   expectFieldNumber,
   validateSchema
-} from '@open-pencil/kiwi/schema-runtime'
+} from '@lawha/kiwi/schema-runtime'
 
 describe('Kiwi schema runtime', () => {
   test('validates the static Figma schema', () => {

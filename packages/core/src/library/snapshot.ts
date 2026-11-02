@@ -1,8 +1,8 @@
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
-import { standardStyleName } from '@open-pencil/scene-graph/font-style'
-import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
-import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { cloneNodeProps } from '@lawha/scene-graph/copy'
+import { standardStyleName } from '@lawha/scene-graph/font-style'
+import { contentPluginData } from '@lawha/scene-graph/plugin-data'
+import { remapCopiedReferences } from '@lawha/scene-graph/transfer'
 
 import { existingAssetKey } from './asset-keys'
 import { contentHash } from './hash'

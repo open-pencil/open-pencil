@@ -1,6 +1,6 @@
 ---
 title: Seleccionar y transformar
-description: Seleccionar, mover, redimensionar, rotar, duplicar y ordenar objetos en OpenPencil.
+description: Seleccionar, mover, redimensionar, rotar, duplicar y ordenar objetos en Lawha.
 ---
 
 # Seleccionar y transformar

@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { encode } from 'js-base64'
 
-import { encodeFigmaClipboard, parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { encodeFigmaClipboard, parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { initCodec } from '@lawha/kiwi/fig/codec'
 
 test('Fig clipboard codec preserves prepared node changes and binary blobs', async () => {
   await initCodec()
@@ -21,7 +21,7 @@ test('Fig clipboard codec preserves prepared node changes and binary blobs', asy
     123
   )
   const parsed = await parseFigmaClipboard(html)
-  expect(parsed?.meta).toEqual({ fileKey: 'openpencil', pasteID: 123, dataType: 'scene' })
+  expect(parsed?.meta).toEqual({ fileKey: 'lawha', pasteID: 123, dataType: 'scene' })
   expect(parsed?.nodes[0]).toMatchObject({ name: 'Prepared rectangle', size: { x: 100, y: 80 } })
   expect(parsed?.blobs[0]).toEqual(bytes)
   expect(parsed?.blobs[0]).toBeInstanceOf(Uint8Array)

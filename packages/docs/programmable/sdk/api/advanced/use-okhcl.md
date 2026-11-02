@@ -11,12 +11,12 @@ field format for each fill or stroke.
 
 Use [`useColorModel()`](../composables/use-color-model) for framework-agnostic conversion, channel
 editing, and slider presentation. Use `useOkHCL()` only where those edits need to be persisted to an
-OpenPencil editor.
+Lawha editor.
 
 ## Usage
 
 ```ts
-import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
+import { useOkHCL } from '@lawha/vue/controls/okhcl'
 
 const okhcl = useOkHCL()
 

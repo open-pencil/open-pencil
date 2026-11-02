@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 import { computed, ref, type Ref } from 'vue'
 
-import type { FeedbackClient } from '@open-pencil/feedback/client'
-import { waitlistSignupSchema, type WaitlistSignup } from '@open-pencil/feedback/contract'
+import type { FeedbackClient } from '@lawha/feedback/client'
+import { waitlistSignupSchema, type WaitlistSignup } from '@lawha/feedback/contract'
 
 import { feedback } from '@/app/feedback/client'
 
@@ -12,7 +12,7 @@ import { useTurnstile } from './turnstile'
 export type WaitlistOutcome = 'joined' | 'invalid' | 'refused' | 'limited' | 'failed'
 
 /**
- * Sends a sign-up to the OpenPencil Cloud waitlist. The service answers every accepted sign-up
+ * Sends a sign-up to the Lawha Cloud waitlist. The service answers every accepted sign-up
  * alike and emails a link to confirm it, so `joined` means "check your inbox", whether or not
  * the address was already on the list.
  */

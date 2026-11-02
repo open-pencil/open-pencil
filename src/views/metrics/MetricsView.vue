@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
+import type { MetricsSnapshot } from '@lawha/feedback/contract'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
 import { useMetricsSnapshot } from '@/app/metrics/load'

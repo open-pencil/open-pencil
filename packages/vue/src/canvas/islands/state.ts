@@ -1,8 +1,8 @@
 import { reactive } from 'vue'
 
-import type { InstanceState } from '@open-pencil/core'
-import { booleanOf, type ControlModel } from '@open-pencil/dom-css/export'
-import { numberSettings, type InteractionState } from '@open-pencil/scene-graph/behaviours'
+import type { InstanceState } from '@lawha/core'
+import { booleanOf, type ControlModel } from '@lawha/dom-css/export'
+import { numberSettings, type InteractionState } from '@lawha/scene-graph/behaviours'
 
 /** What one control of an island holds while it runs. */
 export interface ControlState {

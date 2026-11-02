@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: AI i automatyzacja
-description: Czat AI, CLI, JSX, serwer MCP i inne narzędzia automatyzacji oparte na silniku OpenPencil.
+description: Czat AI, CLI, JSX, serwer MCP i inne narzędzia automatyzacji oparte na silniku Lawha.
 ---
 
 # AI i automatyzacja
 
-OpenPencil pozwala traktować pliki projektowe jak dane. Wszystkie operacje edytora — tworzenie figur, ustawianie zalewów, zarządzanie automatycznym układem i eksport zasobów — są dostępne także z terminala, dla agentów AI i z kodu.
+Lawha pozwala traktować pliki projektowe jak dane. Wszystkie operacje edytora — tworzenie figur, ustawianie zalewów, zarządzanie automatycznym układem i eksport zasobów — są dostępne także z terminala, dla agentów AI i z kodu.
 
 Interfejs edytora i narzędzia automatyzacji korzystają z tego samego silnika. Każde działanie dostępne w interfejsie można również wykonać ze skryptu.
 
@@ -24,7 +24,7 @@ Dokument jest synchronizowany bezpośrednio między uczestnikami przez WebRTC. C
 
 ## Vue SDK
 
-Twórz edytory oparte na OpenPencil za pomocą tego samego Vue SDK, którego używa aplikacja. SDK udostępnia kontekst edytora, podłączenie obszaru roboczego, stan zaznaczenia, modele poleceń, composables dla paneli właściwości i komponenty bez narzuconego wyglądu.
+Twórz edytory oparte na Lawha za pomocą tego samego Vue SDK, którego używa aplikacja. SDK udostępnia kontekst edytora, podłączenie obszaru roboczego, stan zaznaczenia, modele poleceń, composables dla paneli właściwości i komponenty bez narzuconego wyglądu.
 
 [Vue SDK →](./sdk/)
 
@@ -32,7 +32,7 @@ Twórz edytory oparte na OpenPencil za pomocą tego samego Vue SDK, którego uż
 
 Opisuj interfejs za pomocą JSX. Jedno wywołanie może utworzyć drzewo komponentów zawierające ramki, tekst, automatyczny układ, zalewy i obwiednie.
 
-W drugą stronę OpenPencil eksportuje zaznaczenie jako JSX albo HTML z klasami Tailwind. Wynik może służyć jako podstawa implementacji, przeglądu kodu lub kolejnego kroku z AI.
+W drugą stronę Lawha eksportuje zaznaczenie jako JSX albo HTML z klasami Tailwind. Wynik może służyć jako podstawa implementacji, przeglądu kodu lub kolejnego kroku z AI.
 
 [JSX →](./jsx-renderer)
 
@@ -52,10 +52,10 @@ Claude Code, Cursor, Windsurf i inni klienci MCP mogą korzystać z tych samych 
 
 ## Schemat URL {#url-scheme}
 
-Aplikacja na komputer rejestruje `openpencil://`, dzięki czemu opublikowana strona — historyjka Storybook, przegląd projektu, README — może prowadzić prosto do warstwy:
+Aplikacja na komputer rejestruje `lawha://`, dzięki czemu opublikowana strona — historyjka Storybook, przegląd projektu, README — może prowadzić prosto do warstwy:
 
 ```
-openpencil://open?file=web/design/hikyo.pen&node=Button/Large/Default
+lawha://open?file=web/design/hikyo.pen&node=Button/Large/Default
 ```
 
 `file` to ścieżka względem repozytorium, kończąca się na `.pen` lub `.fig`; ścieżki bezwzględne oraz segmenty `.` i `..` są odrzucane. `node` jest opcjonalny. Obie wartości są kodowane jako URL — separatory ścieżki mogą pozostać dosłowne, ale dosłowny `+` trzeba wysłać jako `%2B` — a powtórzony klucz przyjmuje ostatnią wartość.
@@ -67,7 +67,7 @@ Przy podanej nazwie obiektu aplikacja zaznacza wszystkie warstwy o dokładnie te
 Wersja internetowa przyjmuje taki sam odnośnik z własnego paska adresu:
 
 ```
-https://app.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
+https://app.lawha.invalid/?file=https://raw.githubusercontent.com/lawha/lawha/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
 ```
 
 Tutaj `file` to bezwzględny adres `https:` kończący się na `.pen` lub `.fig` — wersja internetowa nie ma systemu plików, więc ścieżka względna, adres `http:` lub inne rozszerzenie są odrzucane z ostrzeżeniem w konsoli i niczym więcej. Rozszerzenie jest odczytywane ze ścieżki adresu, więc zapytanie w adresie pliku niczego nie zmienia. Fragment jest odcinany przed pobraniem: nigdy nie trafia na serwer, więc `…/hikyo.pen#a` i `…/hikyo.pen#b` otwierają jedną kartę, nie dwie. `node` działa dokładnie jak wyżej: to samo zaznaczanie po dokładnej nazwie i przybliżenie, to samo powiadomienie, gdy żadna warstwa nie ma takiej nazwy. Obie wartości są kodowane jako URL, dosłowny `+` trzeba wysłać jako `%2B`, a powtórzony klucz przyjmuje ostatnią wartość, tak jak na komputerze. Odnośnik jest obsługiwany na każdej trasie, więc `/share/<room>?file=…` i `/demo?file=…` działają jak `/?file=…`.
@@ -78,4 +78,4 @@ W macOS schemat należy do zainstalowanego pakietu aplikacji, więc odnośniki t
 
 ## Otwarta platforma
 
-OpenPencil jest udostępniany na licencji MIT, przechowuje dokumenty lokalnie i zapewnia programowy dostęp do operacji. Pliki `.fig` można sprawdzać, przekształcać, przetwarzać w CI i przekazywać modelowi językowemu bez zależności od konkretnego dostawcy hostingu.
+Lawha jest udostępniany na licencji MIT, przechowuje dokumenty lokalnie i zapewnia programowy dostęp do operacji. Pliki `.fig` można sprawdzać, przekształcać, przetwarzać w CI i przekazywać modelowi językowemu bez zależności od konkretnego dostawcy hostingu.

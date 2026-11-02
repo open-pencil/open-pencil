@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
-import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
-import { pixelLength } from '@open-pencil/scene-graph/text'
-import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
+import { createEditor } from '@lawha/core'
+import { SceneGraph, type Variable } from '@lawha/scene-graph'
+import { getSharedStyles } from '@lawha/scene-graph/shared-styles'
+import { pixelLength } from '@lawha/scene-graph/text'
+import { parseVariableFormula } from '@lawha/scene-graph/variables'
 
 import {
   defaultTokenImportOptions,
@@ -183,7 +183,7 @@ describe('design token import', () => {
       fontSize: 32,
       textStyleId: style.id
     })
-    // Edited in another tool, which keeps OpenPencil's extension as it was.
+    // Edited in another tool, which keeps Lawha's extension as it was.
     const files = exported(designSystem()).map((file) =>
       file.path === 'styles.tokens.json'
         ? {
@@ -201,7 +201,7 @@ describe('design token import', () => {
     expect(graph.getNode(layer.id)).toMatchObject({ fontSize: 40, textStyleId: style.id })
   })
 
-  test('a style token as OpenPencil wrote it keeps the exact fields its value cannot hold', () => {
+  test('a style token as Lawha wrote it keeps the exact fields its value cannot hold', () => {
     const graph = new SceneGraph()
     const source = designSystem()
     const [heading] = getSharedStyles(source, 'text')

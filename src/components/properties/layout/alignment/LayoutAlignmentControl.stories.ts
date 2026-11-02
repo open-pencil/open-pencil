@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { computed, ref } from 'vue'
 
-import type { LayoutAlign, LayoutCounterAlign } from '@open-pencil/scene-graph'
+import type { LayoutAlign, LayoutCounterAlign } from '@lawha/scene-graph'
 
 import LayoutAlignmentControl from './LayoutAlignmentControl.vue'
 

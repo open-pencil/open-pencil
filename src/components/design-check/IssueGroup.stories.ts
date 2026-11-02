@@ -4,7 +4,7 @@ import IconFrame from '~icons/lucide/frame'
 import IconSquare from '~icons/lucide/square'
 import IconType from '~icons/lucide/type'
 
-import type { LintFix } from '@open-pencil/core/lint'
+import type { LintFix } from '@lawha/core/lint'
 
 import type { IssueAction } from '@/app/editor/design-check/format'
 import type { DesignIssue } from '@/app/editor/design-check/issues'

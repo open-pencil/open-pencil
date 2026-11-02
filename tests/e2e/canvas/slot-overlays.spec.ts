@@ -11,8 +11,8 @@ async function expectCanvas(name: string) {
 /** A card with a filled Body slot and an empty Footer slot; returns its instance. */
 async function createSlottedCard(): Promise<string> {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const graph = store.graph
     const pageId = store.state.currentPageId
     const white = [
@@ -72,8 +72,8 @@ test('selected instance outlines its slots and tints empty ones', async () => {
 test('selected slot frame and its hovered content render in slot pink', async () => {
   const instanceId = await createSlottedCard()
   await editor.page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const [body] = store.graph.getChildren(id)
     store.select([body.id])
     store.state.hoveredNodeId = store.graph.getChildren(body.id)[0]?.id ?? null

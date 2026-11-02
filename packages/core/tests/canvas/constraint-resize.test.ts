@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 import { resolve } from 'node:path'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { materializeDocument } from '@open-pencil/fig'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { initCanvasKit, renderNodesToImage } from '@lawha/core/io/formats/raster'
+import { materializeDocument } from '@lawha/fig'
 
 import { expectDefined } from '../helpers/assert'
 import { absoluteConstraintRecords } from '../helpers/fig/absolute-constraints'

@@ -1,8 +1,8 @@
 // The app's tour, prebuilt from `tools/generate/demo`; the docs config ensures it exists.
 import demoFigURL from '#app-public/demo.fig?url'
 
-import { CHAPTERS, sectionName, type TourChapter } from '@open-pencil/demo-tools/chapters'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { CHAPTERS, sectionName, type TourChapter } from '@lawha/demo-tools/chapters'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { followAppTheme } from '@/app/demo/theme'
 import type { EditorStore } from '@/app/editor/active-store'

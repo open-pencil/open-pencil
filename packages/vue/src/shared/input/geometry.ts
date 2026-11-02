@@ -1,5 +1,5 @@
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import { HANDLE_HIT_RADIUS, LAYER_HIT_PAD } from '@open-pencil/core/constants'
+import { resolveEditorProfile, type Editor } from '@lawha/core'
+import { HANDLE_HIT_RADIUS, LAYER_HIT_PAD } from '@lawha/core/constants'
 import {
   createSceneGeometry,
   isLineLike,
@@ -12,9 +12,9 @@ import {
   type SceneGeometry,
   type RotationPreview,
   type TransformZone
-} from '@open-pencil/core/geometry'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/core/geometry'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import moveCursorSVG from '#vue/shared/assets/cursors/move.svg?raw'
 import resizeCursorSVG from '#vue/shared/assets/cursors/resize.svg?raw'

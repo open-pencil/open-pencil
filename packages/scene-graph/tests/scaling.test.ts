@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
-import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
+import { SceneGraph, type Fill } from '@lawha/scene-graph'
+import { scaleNodeChanges } from '@lawha/scene-graph/scaling'
 
 const pattern: Fill = {
   type: 'PATTERN',

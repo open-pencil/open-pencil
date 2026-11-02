@@ -16,7 +16,7 @@ export function toPostHogBatch(batch: UsageBatch, apiKey: string) {
       properties: {
         ...omit(event, ['name', 'timestamp']),
         ...build,
-        $lib: 'openpencil',
+        $lib: 'lawha',
         $process_person_profile: false,
         $geoip_disable: true
       }

@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit/array'
 
-import type { TokenStylesheetFormat, TokenStylesheetIssue } from '@open-pencil/dom-css/export'
+import type { TokenStylesheetFormat, TokenStylesheetIssue } from '@lawha/dom-css/export'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { copyPendingText } from '@/app/editor/clipboard/text'

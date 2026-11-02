@@ -17,7 +17,7 @@ const exportInputs = {
     v.pipe(
       v.string(),
       v.description(
-        'Write exported data to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)'
+        'Write exported data to this path instead of returning it (requires LAWHA_MCP_ROOT)'
       )
     )
   )

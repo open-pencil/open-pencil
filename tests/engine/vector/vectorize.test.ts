@@ -4,7 +4,7 @@ import {
   preprocessForVectorize,
   resolveVectorFramePlacement,
   svgToVectorPaths
-} from '@open-pencil/core/vector'
+} from '@lawha/core/vector'
 
 import { initCanvasKit } from '#cli/headless'
 

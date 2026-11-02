@@ -1,6 +1,6 @@
 import type * as HarfBuzzModule from 'harfbuzzjs'
 
-import type { FontVariation } from '@open-pencil/scene-graph'
+import type { FontVariation } from '@lawha/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
 import { IS_BROWSER } from '#core/constants'

@@ -1,9 +1,9 @@
 import { pick } from 'es-toolkit'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
-import { generatedFrameKind } from '@open-pencil/scene-graph/generated'
-import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
+import type { SceneNode } from '@lawha/scene-graph'
+import { TRANSFORM_FIELDS } from '@lawha/scene-graph/fields'
+import { generatedFrameKind } from '@lawha/scene-graph/generated'
+import { createsComponentCycle } from '@lawha/scene-graph/instances'
 
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'

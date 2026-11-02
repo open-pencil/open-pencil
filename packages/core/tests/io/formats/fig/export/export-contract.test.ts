@@ -2,9 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { toUint8Array } from 'js-base64'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { materializeDocument, parseFigBuffer } from '@lawha/fig'
+import { initCodec, type NodeChange } from '@lawha/kiwi/fig/codec'
 
 import fixture from './export-contract.json'
 

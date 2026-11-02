@@ -5,8 +5,8 @@ export type NavigationScenario = 'light' | 'large-flat' | 'raster-stress' | 'cur
 export async function setupScenario(page: Page, scenario: NavigationScenario): Promise<void> {
   if (scenario === 'current-document') return
   await page.evaluate((selectedScenario) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not available')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not available')
     const pageId = store.state.currentPageId
     const existing = store.graph.getNode(pageId)?.childIds ?? []
     for (const id of existing) store.graph.deleteNode(id)

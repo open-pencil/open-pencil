@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
 
-import { type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { type FigmaNodeProxy } from '@lawha/core/figma-api'
+import { encodePathCommandsBlob } from '@lawha/fig/node-change'
+import type { SceneNode } from '@lawha/scene-graph'
 
 const CURVED_PATH = 'M10 20 C20 0 40 40 50 20 Z'
 

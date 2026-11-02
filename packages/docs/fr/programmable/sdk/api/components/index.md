@@ -1,11 +1,11 @@
 ---
 title: Composants
-description: Référence des composants sans styles de @open-pencil/vue.
+description: Référence des composants sans styles de @lawha/vue.
 ---
 
 # Composants
 
-`@open-pencil/vue` fournit des composants sans styles pour la zone de travail, la navigation, les panneaux de propriétés et les champs spécialisés.
+`@lawha/vue` fournit des composants sans styles pour la zone de travail, la navigation, les panneaux de propriétés et les champs spécialisés.
 
 ## Zone de travail
 

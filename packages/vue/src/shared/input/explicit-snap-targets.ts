@@ -1,9 +1,9 @@
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { layoutGuideLines } from '@open-pencil/scene-graph/layout'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import { layoutGuideLines } from '@lawha/scene-graph/layout'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { ExplicitSnapTarget } from '#vue/shared/input/snap'
 

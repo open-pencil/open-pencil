@@ -6,7 +6,7 @@ import { classifyAsset, latestReleases, type Release, type Releases } from './re
 declare const data: Releases
 export { data }
 
-const RELEASES_URL = 'https://api.github.com/repos/open-pencil/open-pencil/releases?per_page=30'
+const RELEASES_URL = 'https://api.github.com/repos/lawha/lawha/releases?per_page=30'
 
 const ReleaseSchema = v.object({
   tag_name: v.string(),

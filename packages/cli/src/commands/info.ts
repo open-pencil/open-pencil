@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { InfoResult } from '@open-pencil/core/rpc'
+import type { InfoResult } from '@lawha/core/rpc'
 
 import { appTargetOptions } from '#cli/app/target'
 import { bold, fmtHistogram, fmtSummary, kv } from '#cli/format'

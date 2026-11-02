@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import {
   discoverPublicPackages,
   type PackageDiagnostic
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 
 /**
  * Build output a package must not ship: another workspace package's source, which copies that

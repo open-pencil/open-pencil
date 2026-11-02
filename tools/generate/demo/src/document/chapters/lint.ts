@@ -1,4 +1,4 @@
-import { Frame, Text } from '@open-pencil/design-jsx'
+import { Frame, Text } from '@lawha/design-jsx'
 
 import { panelTabs } from '../chrome'
 import { layoutChapter, type Chapter, type ChapterContext } from './chapter'

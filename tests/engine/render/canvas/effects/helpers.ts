@@ -2,8 +2,8 @@ import { mock } from 'bun:test'
 
 import type { InputRect, Paint } from 'canvaskit-wasm'
 
-import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderEffects } from '#core/canvas/shadows'

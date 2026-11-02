@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit'
 
-import { SceneGraph, type DocumentKind, type EnabledLibraryBinding } from '@open-pencil/scene-graph'
+import { SceneGraph, type DocumentKind, type EnabledLibraryBinding } from '@lawha/scene-graph'
 
 import { BOARD_PAGE_BACKGROUND, type InterfaceTheme } from '#core/constants'
 import { offeredTool } from '#core/editor/views'

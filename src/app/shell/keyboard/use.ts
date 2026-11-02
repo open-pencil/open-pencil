@@ -1,8 +1,8 @@
 import { useActiveElement } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'

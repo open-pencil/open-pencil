@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { CloudAPIError } from '@open-pencil/cloud/client'
+import { CloudAPIError } from '@lawha/cloud/client'
 
 import { onceOnServer, shareRoomUploads, uploadStoredDocument } from '@/app/cloud/rooms/upload'
 import type { CollabAction, CollabActionReceiver } from '@/app/collab/transport/types'

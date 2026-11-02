@@ -22,7 +22,7 @@ Im Vektorbearbeitungsmodus wird die Geometrie eines Pfads verändert: Position d
 - <kbd>Option</kbd>/<kbd>Alt</kbd> verändert einen Griff unabhängig.
 - <kbd>Shift</kbd> behält die Richtung bei und verändert nur die Länge.
 
-Beim Ziehen eines Ankerpunkts mit <kbd>Cmd</kbd>/<kbd>Strg</kbd> bestimmt OpenPencil den Zielgriff anhand der Richtung des verbundenen Segments. Das funktioniert auch bei verzweigten Vektornetzen.
+Beim Ziehen eines Ankerpunkts mit <kbd>Cmd</kbd>/<kbd>Strg</kbd> bestimmt Lawha den Zielgriff anhand der Richtung des verbundenen Segments. Das funktioniert auch bei verzweigten Vektornetzen.
 
 ## Zeichenstift im Bearbeitungsmodus
 

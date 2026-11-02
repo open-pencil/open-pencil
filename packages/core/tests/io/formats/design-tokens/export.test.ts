@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import { exportDesignTokens, RESOLVER_FILE, STYLES_FILE } from '#core/io/formats/design-tokens'
 
@@ -96,7 +96,7 @@ describe('design token export', () => {
       $root: {
         $type: 'dimension',
         $value: { value: 24, unit: 'px' },
-        $extensions: { 'dev.openpencil': { unit: 'rem' } }
+        $extensions: { 'dev.lawha': { unit: 'rem' } }
       },
       Small: { $type: 'dimension', $value: { value: 8, unit: 'px' } }
     })
@@ -104,7 +104,7 @@ describe('design token export', () => {
       Fast: {
         $type: 'duration',
         $value: { value: 0.15, unit: 's' },
-        $extensions: { 'dev.openpencil': { unit: 'ms' } }
+        $extensions: { 'dev.lawha': { unit: 'ms' } }
       }
     })
     expect(light.Flags).toEqual({
@@ -114,7 +114,7 @@ describe('design token export', () => {
       Body: {
         $type: 'fontFamily',
         $value: 'Inter',
-        $extensions: { 'dev.openpencil': { scopes: ['FONT_FAMILY'] } }
+        $extensions: { 'dev.lawha': { scopes: ['FONT_FAMILY'] } }
       }
     })
   })
@@ -125,13 +125,13 @@ describe('design token export', () => {
     expect(dark['Ratio 1-5']).toEqual({
       $type: 'dimension',
       $value: { value: 1.5, unit: 'px' },
-      $extensions: { 'dev.openpencil': { name: 'Ratio 1.5' } }
+      $extensions: { 'dev.lawha': { name: 'Ratio 1.5' } }
     })
     expect(dark.Accent).toMatchObject({
       $value: { colorSpace: 'srgb', components: [1, 1, 1], alpha: 1, hex: '#ffffff' }
     })
     expect(dark.$extensions).toEqual({
-      'dev.openpencil': { collection: 'Theme', mode: 'Dark', default: false }
+      'dev.lawha': { collection: 'Theme', mode: 'Dark', default: false }
     })
   })
 

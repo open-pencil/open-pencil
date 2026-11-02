@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { createInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+import { SceneGraph } from '@lawha/scene-graph'
+import { createInstanceOverrideState } from '@lawha/scene-graph/instances/overrides'
 
 import { collectSubtrees } from '#core/editor/history/subtree'
 

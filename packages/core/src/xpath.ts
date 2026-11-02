@@ -1,7 +1,7 @@
 import type * as FontoxpathModule from 'fontoxpath'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { lineHeightPixels, textLengthPixels } from '@lawha/scene-graph/text'
 
 const NODE_TYPES = {
   ELEMENT_NODE: 1,

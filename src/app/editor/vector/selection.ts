@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core'
-import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '@open-pencil/core/vector'
+import type { Editor } from '@lawha/core'
+import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '@lawha/core/vector'
 
 import { pushNodeEditHistory } from './history'
 import { getLiveNetwork, setNodeEditNetwork } from './network'

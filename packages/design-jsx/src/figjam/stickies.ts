@@ -1,13 +1,13 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
 import {
   createSticky,
   isWideSticky,
   STICKY_COLORS,
   stickyScale,
   stickySublayers
-} from '@open-pencil/scene-graph/generated'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/generated'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { readElementProps, stickyPropsSchema } from '../schema'
 import { textContentText } from '../text-content'

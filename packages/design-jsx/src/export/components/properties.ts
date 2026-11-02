@@ -3,8 +3,8 @@ import type {
   ComponentPropertyReference,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { readBehaviour } from '@open-pencil/scene-graph/behaviours'
+} from '@lawha/scene-graph'
+import { readBehaviour } from '@lawha/scene-graph/behaviours'
 
 import { helperCall, type JSXProp, type JSXValue } from '../value'
 import type { ComponentReference } from './references'

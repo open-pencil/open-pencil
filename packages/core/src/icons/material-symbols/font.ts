@@ -1,5 +1,5 @@
-import type { IconOptions } from '@open-pencil/scene-graph/icons'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { IconOptions } from '@lawha/scene-graph/icons'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 
 import type { IconOption, IconPath } from '#core/icons/types'
 import {

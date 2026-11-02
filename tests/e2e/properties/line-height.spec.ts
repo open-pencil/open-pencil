@@ -7,7 +7,7 @@ test('automatic line height survives focus and can be restored with undo', async
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   const id = await page.evaluate(() => {
-    const e = window.openPencil?.getStore?.()
+    const e = window.lawha?.getStore?.()
     if (!e) throw new Error('No editor')
     const id = e.createShape('TEXT', 100, 100, 240, 80)
     e.updateNode(id, { text: 'Line height', fontSize: 24, lineHeight: null })
@@ -17,14 +17,14 @@ test('automatic line height survives focus and can be restored with undo', async
   const field = page.locator('[data-property="lineHeight"]')
   await expect(field).toContainText('Auto')
 
-  await page.evaluate((id) => window.openPencil?.getStore?.().updateNode(id, { fontSize: 30 }), id)
+  await page.evaluate((id) => window.lawha?.getStore?.().updateNode(id, { fontSize: 30 }), id)
   const input = page.getByRole('spinbutton', { name: 'Line height', exact: true })
   await input.focus()
   await expect(input).toHaveValue('36')
   await input.press('Escape')
   await expect
     .poll(() =>
-      page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.lineHeight, id)
+      page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id)
     )
     .toBeNull()
   await input.focus()
@@ -32,7 +32,7 @@ test('automatic line height survives focus and can be restored with undo', async
   await input.press('Enter')
   await expect
     .poll(() =>
-      page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.lineHeight, id)
+      page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id)
     )
     .toEqual({ value: 32, unit: 'PIXELS' })
   await page.getByRole('combobox', { name: 'Line height mode' }).click()
@@ -42,7 +42,7 @@ test('automatic line height survives focus and can be restored with undo', async
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
   await expect
     .poll(() =>
-      page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.lineHeight, id)
+      page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id)
     )
     .toEqual({ value: 32, unit: 'PIXELS' })
   await field.getByRole('button', { name: 'Apply variable' }).click()
@@ -65,7 +65,7 @@ test('a typed % or px switches the unit of line height and letter spacing', asyn
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   const id = await page.evaluate(() => {
-    const e = window.openPencil?.getStore?.()
+    const e = window.lawha?.getStore?.()
     if (!e) throw new Error('No editor')
     const id = e.createShape('TEXT', 100, 100, 240, 80)
     e.updateNode(id, {
@@ -78,7 +78,7 @@ test('a typed % or px switches the unit of line height and letter spacing', asyn
     return id
   })
   const read = (field: 'lineHeight' | 'letterSpacing') =>
-    page.evaluate(({ id, field }) => window.openPencil?.getStore?.().graph.getNode(id)?.[field], {
+    page.evaluate(({ id, field }) => window.lawha?.getStore?.().graph.getNode(id)?.[field], {
       id,
       field
     })

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 function pageId(editor: ReturnType<typeof createEditor>): string {
   return editor.graph.getPages()[0].id

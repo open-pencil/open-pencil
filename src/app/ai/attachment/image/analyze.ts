@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 
-import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
+import { computeContentBounds } from '@lawha/core/io/formats/raster'
 
 import { IMAGE_ATTACHMENT_MAX_EDGE } from '@/app/ai/attachment/image/prepare'
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'

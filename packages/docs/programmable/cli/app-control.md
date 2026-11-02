@@ -12,19 +12,19 @@ While the desktop app is running, the CLI drives it over the same automation bri
 Each open tab is a document with a stable ID. List them, then pass `--document-id` (and `--page-id`) to aim a command at a background tab without switching to it:
 
 ```sh
-openpencil documents list --json
-openpencil tree --document-id tab-123 --page-id 0:1
+lawha documents list --json
+lawha tree --document-id tab-123 --page-id 0:1
 ```
 
 Open, create, save, and close documents:
 
 ```sh
-openpencil documents open designs/landing.fig      # opens in a new tab
-openpencil documents new --path designs/draft.fig  # empty document, saved to the path
-openpencil documents save --document-id tab-123
-openpencil documents save --document-id tab-123 --path designs/copy.fig
-openpencil documents close --document-id tab-123
-openpencil documents close --document-id tab-123 --save      # or --discard
+lawha documents open designs/landing.fig      # opens in a new tab
+lawha documents new --path designs/draft.fig  # empty document, saved to the path
+lawha documents save --document-id tab-123
+lawha documents save --document-id tab-123 --path designs/copy.fig
+lawha documents close --document-id tab-123
+lawha documents close --document-id tab-123 --save      # or --discard
 ```
 
 Relative paths resolve against the shell's working directory. These commands never open a dialog in the app, because nobody may be there to answer it. Closing a document with unsaved changes fails unless you pass `--save` or `--discard`, and saving a document that has never been saved needs `--path`. Each command prints the document and page it acted on; with `--json` it prints `{ "result", "target" }`, so a script can read the new document's ID from `target.documentId`.
@@ -32,7 +32,7 @@ Relative paths resolve against the shell's working directory. These commands nev
 To bring a tab to the front, optionally on a specific page:
 
 ```sh
-openpencil documents activate tab-123 --page-id 0:4
+lawha documents activate tab-123 --page-id 0:4
 ```
 
 ## Undo and redo
@@ -40,8 +40,8 @@ openpencil documents activate tab-123 --page-id 0:4
 Step back through changes made through the CLI and MCP, like **Edit → Undo** and **Edit → Redo**:
 
 ```sh
-openpencil undo --document-id tab-123
-openpencil redo --document-id tab-123 --json
+lawha undo --document-id tab-123
+lawha redo --document-id tab-123 --json
 ```
 
 ```json
@@ -62,11 +62,11 @@ Each CLI or MCP command that edits the document is one undo step. An `eval` scri
 Read and change editor settings by dotted key:
 
 ```sh
-openpencil settings get
-openpencil settings get appearance.theme
-openpencil settings set appearance.theme light
-openpencil settings set editing.snapping.pixelGrid false
-openpencil settings set chat.maxAgentSteps 100
+lawha settings get
+lawha settings get appearance.theme
+lawha settings set appearance.theme light
+lawha settings set editing.snapping.pixelGrid false
+lawha settings set chat.maxAgentSteps 100
 ```
 
 Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain strings otherwise. Invalid keys and values are rejected without changing anything.
@@ -86,7 +86,7 @@ Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain 
 | `chat.changePreviewSize` | `off`, `small`, `medium`, `large` |
 | `designCheck.showOnCanvas` | `true`, `false` |
 | `designCheck.preset` | `recommended`, `strict`, `accessibility` |
-| `designCheck.disabledRules` | JSON array of rule IDs, e.g. `["no-default-names"]`; see `openpencil lint --list-rules` |
+| `designCheck.disabledRules` | JSON array of rule IDs, e.g. `["no-default-names"]`; see `lawha lint --list-rules` |
 
 Credentials, AI models, MCP connections, storage, and tool access are deliberately not available here: an automation client can't read secrets or grant itself access.
 
@@ -95,18 +95,18 @@ Credentials, AI models, MCP connections, storage, and tool access are deliberate
 Every editor tool the MCP server exposes is also available from the CLI. List them, inspect a tool's arguments as JSON Schema, and call it with a JSON object:
 
 ```sh
-openpencil tool list
-openpencil tool describe set_fill
-openpencil tool call set_fill --args '{"id":"0:5","color":"#2563eb"}'
-openpencil tool call set_fill --document-id tab-123 --args-file fill.json
-echo '{"name":"Icons"}' | openpencil tool call create_page --args-file -
+lawha tool list
+lawha tool describe set_fill
+lawha tool call set_fill --args '{"id":"0:5","color":"#2563eb"}'
+lawha tool call set_fill --document-id tab-123 --args-file fill.json
+echo '{"name":"Icons"}' | lawha tool call create_page --args-file -
 ```
 
 Pass a file to run a tool headlessly instead. Changes to a file are kept only with `--write` (back to the input) or `--output`:
 
 ```sh
-openpencil tool call create_page design.fig --args '{"name":"Icons"}' --write
-openpencil tool call get_page_tree design.fig --json
+lawha tool call create_page design.fig --args '{"name":"Icons"}' --write
+lawha tool call get_page_tree design.fig --json
 ```
 
 For multi-step edits, [`eval`](./scripting) runs a whole script against the same Figma-compatible API.

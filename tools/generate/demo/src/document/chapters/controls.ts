@@ -1,5 +1,5 @@
-import { Frame } from '@open-pencil/design-jsx'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { Frame } from '@lawha/design-jsx'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { previewPill } from '../chrome'
 import type { PlayerParts } from '../player/card'

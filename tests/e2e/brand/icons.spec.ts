@@ -9,7 +9,7 @@ for (const deviceScaleFactor of [1, 2]) {
       await page.goto('/?test')
       await new CanvasHelper(page).waitForInit()
       const logo = page.getByTestId('app-logo')
-      await expect(logo).toHaveAttribute('alt', 'OpenPencil')
+      await expect(logo).toHaveAttribute('alt', 'Lawha')
       for (const appearance of ['light', 'dark'] as const) {
         await page.evaluate(async (appearance) => {
           const path = '/src/app/shell/theme.ts'
@@ -35,8 +35,8 @@ for (const deviceScaleFactor of [1, 2]) {
       baseURL
     }) => {
       const src = new URL('/brand/favicon.svg', baseURL).href
-      await page.setContent(`<img src="${src}" alt="OpenPencil favicon" width="16" height="16">`)
-      const icon = page.getByRole('img', { name: 'OpenPencil favicon' })
+      await page.setContent(`<img src="${src}" alt="Lawha favicon" width="16" height="16">`)
+      const icon = page.getByRole('img', { name: 'Lawha favicon' })
       await icon.evaluate((image: HTMLImageElement) => image.decode())
       for (const colorScheme of ['light', 'dark'] as const) {
         await page.emulateMedia({ colorScheme })

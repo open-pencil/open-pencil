@@ -1,6 +1,6 @@
 import { CONSTRAINT, MASK_TYPE } from '#design-jsx/enums'
 
-import type { ConstraintType, SceneNode } from '@open-pencil/scene-graph'
+import type { ConstraintType, SceneNode } from '@lawha/scene-graph'
 
 function constraintValue(value: unknown): ConstraintType | undefined {
   return CONSTRAINT.parse(value)

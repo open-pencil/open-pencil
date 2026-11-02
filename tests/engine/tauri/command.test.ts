@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@lawha/core/constants'
 
 import { signInScope } from '@/app/ai/agents/acp/auth/terminal'
 import { HARNESS_PACKAGE } from '@/app/ai/agents/pi/companion'
@@ -41,8 +41,8 @@ describe('resolvePlatformCommand', () => {
   })
 
   test('defaults args to an empty array', () => {
-    expect(resolvePlatformCommand('openpencil-mcp-http', undefined, MAC_UA)).toEqual({
-      command: 'openpencil-mcp-http',
+    expect(resolvePlatformCommand('lawha-mcp-http', undefined, MAC_UA)).toEqual({
+      command: 'lawha-mcp-http',
       args: []
     })
   })
@@ -59,8 +59,8 @@ describe('resolvePlatformCommand', () => {
   })
 
   test('passes through when the user agent is unavailable (headless/non-browser)', () => {
-    expect(resolvePlatformCommand('openpencil-mcp-http', ['--stdio'], '')).toEqual({
-      command: 'openpencil-mcp-http',
+    expect(resolvePlatformCommand('lawha-mcp-http', ['--stdio'], '')).toEqual({
+      command: 'lawha-mcp-http',
       args: ['--stdio']
     })
   })
@@ -127,8 +127,8 @@ describe('shell scope', () => {
   )
   const spawns: [string, string[]][] = [
     ...ACP_AGENTS.map((agent): [string, string[]] => [agent.command, agent.args]),
-    ['openpencil-mcp-http', []],
-    ['openpencil-harness', []],
+    ['lawha-mcp-http', []],
+    ['lawha-harness', []],
     ...installs.map((target): [string, string[]] => ['npm', npmInstallArgs(target)]),
     // Bun updates the companions it installed; agent adapters always come from npm.
     ...[
@@ -182,10 +182,10 @@ describe('shell scope', () => {
       const pattern = new RegExp(v.parse(v.object({ validator: v.string() }), validator).validator)
       for (const target of [
         'left-pad',
-        '@open-pencil/mcp@0.15.1 & calc',
-        '@open-pencil/mcp@0.16.0-beta.1 & calc',
-        '@open-pencil/mcp@0.16.0-rc.1',
-        '@open-pencil/mcp'
+        '@lawha/mcp@0.15.1 & calc',
+        '@lawha/mcp@0.16.0-beta.1 & calc',
+        '@lawha/mcp@0.16.0-rc.1',
+        '@lawha/mcp'
       ]) {
         expect(pattern.test(target)).toBe(false)
       }
@@ -193,7 +193,7 @@ describe('shell scope', () => {
   })
 
   test('lets npm install companions pinned to a stable or beta app version', () => {
-    for (const target of ['@open-pencil/harness@0.16.0', '@open-pencil/mcp@0.16.0-beta.1']) {
+    for (const target of ['@lawha/harness@0.16.0', '@lawha/mcp@0.16.0-beta.1']) {
       for (const userAgent of [WINDOWS_UA, MAC_UA]) {
         const resolved = resolvePlatformCommand('npm', npmInstallArgs(target), userAgent)
         const entry = spawnScope().find((candidate) => candidate.name === resolved.command)
@@ -202,11 +202,11 @@ describe('shell scope', () => {
     }
   })
 
-  test('lets Bun install only the OpenPencil companions', () => {
+  test('lets Bun install only the Lawha companions', () => {
     for (const userAgent of [WINDOWS_UA, MAC_UA]) {
       const allowed = resolvePlatformCommand(
         'bun',
-        bunInstallArgs('@open-pencil/mcp@0.16.0-beta.1'),
+        bunInstallArgs('@lawha/mcp@0.16.0-beta.1'),
         userAgent
       )
       const entry = spawnScope().find((candidate) => candidate.name === allowed.command)

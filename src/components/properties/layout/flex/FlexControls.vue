@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { LayoutDirection } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
+import type { LayoutDirection } from '@lawha/scene-graph'
+import { useI18n } from '@lawha/vue/i18n'
+import { useLayoutControlsContext } from '@lawha/vue/primitives/LayoutControls'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 

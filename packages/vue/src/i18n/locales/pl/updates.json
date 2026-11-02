@@ -1,8 +1,8 @@
 {
-  "upToDate": "OpenPencil jest aktualny",
+  "upToDate": "Lawha jest aktualny",
   "windowTitle": "Uaktualnienie oprogramowania",
   "checking": "Sprawdzanie aktualizacji…",
-  "available": "Dostępny jest OpenPencil {version}",
+  "available": "Dostępny jest Lawha {version}",
   "currentVersion": "Masz wersję {version}.",
   "whatsNew": "Co nowego",
   "noNotes": "To wydanie nie ma informacji o wydaniu.",
@@ -14,12 +14,12 @@
   "downloadProgress": "{percent}% · {downloaded} z {total}",
   "downloadProgressUnknown": "Pobrano {downloaded}",
   "installing": "Instalowanie…",
-  "installed": "Zainstalowano OpenPencil {version}",
-  "restartToFinish": "Uruchom ponownie OpenPencil, aby korzystać z nowej wersji.",
+  "installed": "Zainstalowano Lawha {version}",
+  "restartToFinish": "Uruchom ponownie Lawha, aby korzystać z nowej wersji.",
   "restartNow": "Uruchom ponownie teraz",
   "downloadFailed": "Nie udało się pobrać aktualizacji: {error}",
   "installFailed": "Nie udało się zainstalować aktualizacji: {error}",
-  "restartFailed": "Nie udało się ponownie uruchomić OpenPencil: {error}",
+  "restartFailed": "Nie udało się ponownie uruchomić Lawha: {error}",
   "unavailable": "Aktualizacje nie są jeszcze dostępne. Najpierw opublikuj podpisane wydanie z latest.json.",
   "checkFailed": "Nie udało się sprawdzić aktualizacji: {error}"
 }

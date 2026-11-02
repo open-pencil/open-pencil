@@ -1,7 +1,7 @@
 import { omit } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, StyleRun, TextDecoration } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, StyleRun, TextDecoration } from '@lawha/scene-graph'
 
 export function getStyleAt(runs: StyleRun[], index: number): CharacterStyleOverride {
   for (const run of runs) {

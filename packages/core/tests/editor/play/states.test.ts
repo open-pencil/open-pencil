@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, playIslandRoots, resolvePlayState } from '@open-pencil/core'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { emptyBehaviour, findLayerByPath, layerPath } from '@open-pencil/scene-graph/behaviours'
-import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+import { createEditor, playIslandRoots, resolvePlayState } from '@lawha/core'
+import { SceneGraph } from '@lawha/scene-graph'
+import { emptyBehaviour, findLayerByPath, layerPath } from '@lawha/scene-graph/behaviours'
+import { instanceMainComponent } from '@lawha/scene-graph/instances'
 
 /** A Switch set (State × Interaction) and a card frame holding an Off instance with a label. */
 function switchCard() {

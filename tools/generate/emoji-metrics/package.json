@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/emoji-metrics-tools",
+  "name": "@lawha/emoji-metrics-tools",
   "private": true,
   "type": "module",
   "imports": {
@@ -12,7 +12,7 @@
     "harfbuzzjs": "1.6.4"
   },
   "devDependencies": {
-    "@open-pencil/core": "workspace:*",
-    "@open-pencil/package-artifacts-tools": "workspace:*"
+    "@lawha/core": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*"
   }
 }

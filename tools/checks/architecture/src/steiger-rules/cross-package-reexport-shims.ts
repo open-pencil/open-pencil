@@ -11,12 +11,12 @@ export function isCrossPackageReexportShim(sourceRel: string, content: string): 
       ts.isExportDeclaration(statement) &&
       statement.moduleSpecifier !== undefined &&
       ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text.startsWith('@open-pencil/')
+      statement.moduleSpecifier.text.startsWith('@lawha/')
   )
 }
 
 export const noCrossPackageReexportShims: Rule = createTextRule(
-  'open-pencil/no-cross-package-reexport-shims',
+  'lawha/no-cross-package-reexport-shims',
   (sourceRel, content) =>
     isCrossPackageReexportShim(sourceRel, content)
       ? [

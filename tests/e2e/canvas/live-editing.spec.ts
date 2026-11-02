@@ -11,7 +11,7 @@ test.use({ viewport: { width: 1700, height: 1100 }, deviceScaleFactor: 2 })
 
 async function createSelectedFrame(page: Page) {
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const id = store.createShape('FRAME', 100, 100, 320, 120)
     store.select([id])
@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
 
 test('settled HiDPI content is as sharp as the live drag rendering', async ({ page }) => {
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const id = [...store.state.selectedIds][0]
     if (!id) throw new Error('Expected selected frame')
@@ -84,7 +84,7 @@ for (const imported of [false, true]) {
         })
       )
       await page.evaluate(async () => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         if (!store) throw new Error('Editor unavailable')
         const response = await fetch('/__fixtures/gold-preview.fig')
         await store.openFigFile(new File([await response.arrayBuffer()], 'gold-preview.fig'))
@@ -94,7 +94,7 @@ for (const imported of [false, true]) {
       await createSelectedFrame(page)
     }
     // Recreate the surface in sRGB for platform-independent pixel expectations.
-    await page.evaluate(() => window.openPencil?.getStore?.().setDocumentColorSpace('srgb'))
+    await page.evaluate(() => window.lawha?.getStore?.().setDocumentColorSpace('srgb'))
     await page.setViewportSize({ width: 1700, height: 1101 })
     const canvas = new CanvasHelper(page)
     await page.getByRole('button', { name: 'Fill', exact: true }).click()
@@ -105,7 +105,7 @@ for (const imported of [false, true]) {
     await canvas.waitForRender()
 
     const trace = await page.evaluateHandle(() => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       const renderer = [...store.canvasRenderers].find((r) => r.tracksSceneSettlement)
       if (!renderer) throw new Error('Scene renderer unavailable')

@@ -1,5 +1,5 @@
-import { imageMimeType } from '@open-pencil/scene-graph/images'
-import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
+import { imageMimeType } from '@lawha/scene-graph/images'
+import type { ShaderPreset } from '@lawha/scene-graph/shaders'
 
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
 

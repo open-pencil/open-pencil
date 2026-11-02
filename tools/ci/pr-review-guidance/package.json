@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/pr-review-guidance-tools",
+  "name": "@lawha/pr-review-guidance-tools",
   "private": true,
   "type": "module",
   "scripts": {

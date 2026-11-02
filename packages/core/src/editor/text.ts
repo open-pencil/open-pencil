@@ -1,11 +1,11 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
-import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+import type { SceneNode } from '@lawha/scene-graph'
+import { copyDerivedGlyphs, copyGeometryPaths } from '@lawha/scene-graph/copy'
+import { faceStyleKey } from '@lawha/scene-graph/font-style'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride,
   type InstanceOverrideState
-} from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/instances/overrides'
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import type { TextEditorState } from '#core/text/editor'

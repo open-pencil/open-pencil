@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts, estimateTextSize } from '@open-pencil/core/layout'
-import { fontManager } from '@open-pencil/core/text'
+import { computeAllLayouts, estimateTextSize } from '@lawha/core/layout'
+import { fontManager } from '@lawha/core/text'
 
 import { expectDefined, expectFills, getNodeOrThrow } from '#tests/helpers/assert'
 import { registerTestFont } from '#tests/helpers/fonts/bundled'

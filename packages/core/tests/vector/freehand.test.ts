@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { freehandNetwork, simplifyFreehand } from '#core/vector/freehand'
 

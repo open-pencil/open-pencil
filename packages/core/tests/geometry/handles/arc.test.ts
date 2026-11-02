@@ -7,7 +7,7 @@ import {
   shapeHandleLayout,
   shapeHandleValue
 } from '#core/geometry'
-import { SceneGraph, type ArcData, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type ArcData, type SceneNode } from '@lawha/scene-graph'
 
 // Values measured on ellipses in Figma desktop, 2026-10-21.
 

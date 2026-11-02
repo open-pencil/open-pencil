@@ -7,14 +7,14 @@ import { cors } from 'hono/cors'
  * This guards nothing secret: anyone can call these routes without a browser.
  */
 export const ALLOWED_ORIGINS = [
-  'https://app.openpencil.dev',
-  'https://openpencil.dev',
+  'https://app.lawha.invalid',
+  'https://github.com/aliaaldihnayn-lab/design#readme',
   'tauri://localhost',
   'http://tauri.localhost',
   'http://localhost:1420'
 ]
 
-export const allowOpenPencilOrigins = cors({
+export const allowLawhaOrigins = cors({
   origin: ALLOWED_ORIGINS,
   allowMethods: ['POST'],
   allowHeaders: ['Content-Type'],

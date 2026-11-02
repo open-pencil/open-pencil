@@ -1,4 +1,4 @@
-import type { VectorRegion, VectorSegment } from '@open-pencil/scene-graph'
+import type { VectorRegion, VectorSegment } from '@lawha/scene-graph'
 
 /**
  * Region loops renumbered after segments were removed or merged. A loop that lost a segment is

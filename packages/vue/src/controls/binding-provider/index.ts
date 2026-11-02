@@ -8,9 +8,9 @@ export {
   useBindingProvider
 } from '#vue/controls/binding-provider/context'
 export {
-  useOpenPencilBindingProvider,
-  type OpenPencilBindingProviderOptions
-} from '#vue/controls/binding-provider/open-pencil'
+  useLawhaBindingProvider,
+  type LawhaBindingProviderOptions
+} from '#vue/controls/binding-provider/lawha'
 export {
   createAndBindNumberVariable,
   useNumberBindingProvider

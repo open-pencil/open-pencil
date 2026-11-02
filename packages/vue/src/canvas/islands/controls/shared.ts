@@ -1,6 +1,6 @@
 import type { VNode } from 'vue'
 
-import type { ControlModel, ControlRole, DesignElement } from '@open-pencil/dom-css/export'
+import type { ControlModel, ControlRole, DesignElement } from '@lawha/dom-css/export'
 
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
 import { isDisabled, type ControlState } from '#vue/canvas/islands/state'

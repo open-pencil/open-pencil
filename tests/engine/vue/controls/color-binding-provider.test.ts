@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import type { Fill } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { createEditor } from '@lawha/core'
+import type { Fill } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { createAndBindColorVariable } from '#vue/controls/binding-provider/color'
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'

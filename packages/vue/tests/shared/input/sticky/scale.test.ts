@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import type { HandlePosition } from '@open-pencil/core/geometry'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { createEditor } from '@lawha/core'
+import type { HandlePosition } from '@lawha/core/geometry'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import { applyStickyScale, tryStartStickyScale } from '#vue/shared/input/sticky/scale'
 

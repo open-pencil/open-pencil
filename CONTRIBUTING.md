@@ -1,25 +1,25 @@
 # Contributing
 
-Questions and ideas go to [GitHub Discussions](https://github.com/open-pencil/open-pencil/discussions) or [Discord](https://discord.gg/4wXc9fuZfm); open an issue for a reproducible bug. Report security problems through a [private advisory](https://github.com/open-pencil/open-pencil/security/advisories/new), not a public issue or PR.
+Questions and ideas go to [GitHub Discussions](https://github.com/aliaaldihnayn-lab/design/discussions) or [Discord](https://discord.gg/4wXc9fuZfm); open an issue for a reproducible bug. Report security problems through a [private advisory](https://github.com/aliaaldihnayn-lab/design/security/advisories/new), not a public issue or PR.
 
 ## Where the rules live
 
 - `CONTRIBUTING.md` (this file): setup, pull requests, validation, commits.
 - [`AGENTS.md`](./AGENTS.md): repository map, cross-cutting conventions, and a `Guide` column pointing to the `AGENTS.md` inside each package or app domain. Read the root file and every guide on the path to the folder you change; coding agents pick them up the same way.
-- [`packages/docs/development/`](packages/docs/development/): public explanations such as [architecture](https://openpencil.dev/development/architecture), [testing](packages/docs/development/testing.md), and the [roadmap](packages/docs/development/roadmap.md).
+- [`packages/docs/development/`](packages/docs/development/): public explanations such as [architecture](https://github.com/aliaaldihnayn-lab/design#readme), [testing](packages/docs/development/testing.md), and the [roadmap](packages/docs/development/roadmap.md).
 
 ## Setup
 
 ```sh
-git clone https://github.com/open-pencil/open-pencil.git
-cd open-pencil
+git clone https://github.com/aliaaldihnayn-lab/design.git
+cd lawha
 bun install
-bun run dev:portless  # Web editor at https://open-pencil.localhost
+bun run dev:portless  # Web editor at https://lawha.localhost
 bun run dev           # Fixed http://localhost:1420 for Playwright, Tauri, and Dev Containers
 bun run tauri dev     # Desktop app (requires Rust)
 ```
 
-The first Portless run creates and trusts a local HTTPS certificate. Linked Git worktrees receive branch-prefixed URLs such as `https://fix-ui.open-pencil.localhost` and matching `https://fix-ui.mcp.open-pencil.localhost` MCP bridges with isolated ports and socket files, so concurrent servers do not compete for port 1420. Run `bunx portless doctor` if routing or certificate trust fails.
+The first Portless run creates and trusts a local HTTPS certificate. Linked Git worktrees receive branch-prefixed URLs such as `https://fix-ui.lawha.localhost` and matching `https://fix-ui.mcp.lawha.localhost` MCP bridges with isolated ports and socket files, so concurrent servers do not compete for port 1420. Run `bunx portless doctor` if routing or certificate trust fails.
 
 The repository also works in any [Dev Container](https://containers.dev/)-compatible tool: the container pins Bun, installs dependencies, and forwards port 1420; start with `bun run dev`. It covers the web editor, packages, CLI, and automated checks. Native Tauri development needs [Rust](https://rustup.rs/) and the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) on the host.
 
@@ -82,7 +82,7 @@ CodeRabbit may flag PR description or readability issues for maintainers to revi
 
 ## Licensing
 
-A contribution is licensed under the license of the files it changes, as [`REUSE.toml`](./REUSE.toml) maps them: MIT for most of the repository, and Apache-2.0 for OpenPencil Cloud's server, relay, administration, and the pages it serves (section 5 of the Apache License). New files under those paths take the same license.
+A contribution is licensed under the license of the files it changes, as [`REUSE.toml`](./REUSE.toml) maps them: MIT for most of the repository, and Apache-2.0 for Lawha Cloud's server, relay, administration, and the pages it serves (section 5 of the Apache License). New files under those paths take the same license.
 
 ## Commits
 

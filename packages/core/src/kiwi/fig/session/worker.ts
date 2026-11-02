@@ -1,4 +1,4 @@
-import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
+import { loadFigDataDecompressor } from '@lawha/kiwi/fig/container'
 
 import { serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import { createFigArchiveOperations } from '#core/kiwi/fig/session/archive/access'

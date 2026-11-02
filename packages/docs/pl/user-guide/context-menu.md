@@ -5,7 +5,7 @@ description: Schowek, kolejność nakładania, grupy, komponenty i inne działan
 
 # Menu kontekstowe
 
-Kliknij obszar roboczy prawym przyciskiem myszy. Jeśli wskaźnik znajduje się nad obiektem, OpenPencil najpierw go zaznaczy. Kliknięcie pustego obszaru prawym przyciskiem usuwa bieżące zaznaczenie.
+Kliknij obszar roboczy prawym przyciskiem myszy. Jeśli wskaźnik znajduje się nad obiektem, Lawha najpierw go zaznaczy. Kliknięcie pustego obszaru prawym przyciskiem usuwa bieżące zaznaczenie.
 
 ## Kopiuj jako
 

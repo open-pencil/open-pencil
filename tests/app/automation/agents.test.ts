@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import {
   MCP_AGENT_GONE_MS,
@@ -157,7 +157,7 @@ describe("the app's own ACP and Pi chats", () => {
   })
 })
 
-describe("a chat's agent reaching OpenPencil's tools", () => {
+describe("a chat's agent reaching Lawha's tools", () => {
   test('the chat goes on once the server says its own agent opened a session', async () => {
     const watch = watchChatAgent('0123456789abcdef')
     let connected = false

@@ -1,8 +1,8 @@
 import { sortBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import { REASONING_EFFORTS } from '@open-pencil/core/constants'
-import type { ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
+import { REASONING_EFFORTS } from '@lawha/core/constants'
+import type { ModelOption, ReasoningEffort } from '@lawha/core/constants'
 
 import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'

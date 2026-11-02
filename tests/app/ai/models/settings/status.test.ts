@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { AgentDetection } from '@/app/ai/agents/setup/detection'
 import { modelConnectionState, type ModelConnectionInput } from '@/app/ai/models/settings/status'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 
 function state(overrides: Partial<ModelConnectionInput>) {
   return modelConnectionState({
@@ -36,7 +36,7 @@ describe('model connection state', () => {
   })
 
   test("reads Cloud's AI service from the Home server, not a saved key", () => {
-    const cloud = { providerID: OPENPENCIL_AI_PROVIDER }
+    const cloud = { providerID: LAWHA_AI_PROVIDER }
     expect(state({ ...cloud, cloudAI: true })).toBe('connected')
     expect(state({ ...cloud, cloudAI: false, credential: 'configured' })).toBe('unavailable')
   })

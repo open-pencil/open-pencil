@@ -3,8 +3,8 @@ import type { McpServer } from '@agentclientprotocol/sdk'
 import {
   MCP_AGENT_HEADER,
   MCP_CHAT_HEADER,
-  OPEN_PENCIL_MCP_SERVER
-} from '@open-pencil/core/constants'
+  LAWHA_MCP_SERVER
+} from '@lawha/core/constants'
 
 import { getMCPServerURL } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordMCPConnectionFailure } from '@/app/diagnostics'
@@ -22,7 +22,7 @@ export type BuiltInMCPServerOptions = {
 export function builtInMCPServer(options: BuiltInMCPServerOptions): McpServer {
   return {
     type: 'http',
-    name: OPEN_PENCIL_MCP_SERVER,
+    name: LAWHA_MCP_SERVER,
     url: getMCPServerURL(),
     // An ACP chat's tool calls show as an ACP agent rather than an outside MCP client.
     headers: [

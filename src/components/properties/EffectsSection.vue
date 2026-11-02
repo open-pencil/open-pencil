@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Effect, Fill } from '@open-pencil/scene-graph'
-import { useEffectsControls } from '@open-pencil/vue/controls/effects'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { Effect, Fill } from '@lawha/scene-graph'
+import { useEffectsControls } from '@lawha/vue/controls/effects'
+import { useI18n } from '@lawha/vue/i18n'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import NumberField from '@/components/inputs/NumberField.vue'

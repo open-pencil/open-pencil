@@ -8,7 +8,7 @@
   "tokensLeftOut": "لم تُضمَّن في ورقة الأنماط: {names}.",
   "designTokensLeftOut": "لم تُضمَّن في رموز التصميم: {names}.",
   "designTokensImported": "رموز التصميم المستوردة: {count}.",
-  "unsupportedVariableExpressions": "لا يستطيع OpenPencil حساب هذه المتغيّرات بعد، لذا تحتفظ الطبقات بالقيم المحفوظة في الملف: {names}.",
+  "unsupportedVariableExpressions": "لا يستطيع Lawha حساب هذه المتغيّرات بعد، لذا تحتفظ الطبقات بالقيم المحفوظة في الملف: {names}.",
   "nodeID": "معرّف العقدة",
   "nodeIDs": "معرّفات العقد",
   "xPath": "XPath",
@@ -32,5 +32,5 @@
   "deepLinkPickerDismissed": "أُلغي الرابط: لم يُختر أي ملف.",
   "deepLinkCancelled": "أُلغي الرابط: كان المتوقع ملفًا ينتهي بـ «{file}».",
   "deepLinkNodeNotFound": "لم يُعثر على العقدة «{node}» في «{file}».",
-  "openQueuedFilesFailed": "تعذّر فتح الملفات المُسلَّمة إلى OpenPencil: {error}"
+  "openQueuedFilesFailed": "تعذّر فتح الملفات المُسلَّمة إلى Lawha: {error}"
 }

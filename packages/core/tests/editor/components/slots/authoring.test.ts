@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { instanceSlotFrames, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { createEditor } from '@lawha/core'
+import { instanceSlotFrames, slotPropertyId } from '@lawha/scene-graph/slots'
 
 /** A Card component with a Body frame holding Default, and an instance of it. */
 function setup() {

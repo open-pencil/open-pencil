@@ -4,8 +4,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 async function showMeasurement(targetId: string) {
   await editor.page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.hoveredNodeId = id
     store.setMeasurementMode('shallow')
     store.requestRepaint()
@@ -15,8 +15,8 @@ async function showMeasurement(targetId: string) {
 
 test('renders containment, multi-selection, rotation, and overlap edge cases', async () => {
   const targets = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0
@@ -110,8 +110,8 @@ test('renders containment, multi-selection, rotation, and overlap edge cases', a
   ).toMatchSnapshot('distance-containment.png')
 
   await editor.page.evaluate(({ first, second }) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.select([first, second])
   }, targets)
   await showMeasurement(targets.rotated)
@@ -120,7 +120,7 @@ test('renders containment, multi-selection, rotation, and overlap edge cases', a
   ).toMatchSnapshot('distance-multi-rotation.png')
 
   await editor.page.evaluate(
-    (id) => window.openPencil?.getStore?.().select([id]),
+    (id) => window.lawha?.getStore?.().select([id]),
     targets.overlapSelected
   )
   await showMeasurement(targets.overlapTarget)

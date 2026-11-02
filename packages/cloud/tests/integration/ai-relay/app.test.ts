@@ -98,7 +98,7 @@ async function relay(
       },
       {
         DATABASE_URL: 'postgresql://unused',
-        OPENPENCIL_AI_RELAY_UPSTREAM_KEY: 'upstream-key'
+        LAWHA_AI_RELAY_UPSTREAM_KEY: 'upstream-key'
       }
     ),
     database: options.chargeGate ? database.withPlugin(holdInserts(options.chargeGate)) : database,

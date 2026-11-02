@@ -13,7 +13,7 @@ body:
     attributes:
       label: Closed PR
       description: Link to the PR that was closed.
-      placeholder: https://github.com/open-pencil/open-pencil/pull/123
+      placeholder: https://github.com/aliaaldihnayn-lab/design/pull/123
     validations:
       required: true
 

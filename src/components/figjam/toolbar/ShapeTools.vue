@@ -2,10 +2,10 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { figJamColor } from '@open-pencil/scene-graph/figjam'
-import { useShapeWithText } from '@open-pencil/vue/controls/shape-with-text'
-import { useFigJamMessages, useShapeMessages } from '@open-pencil/vue/i18n'
+import { colorToHex } from '@lawha/scene-graph/color'
+import { figJamColor } from '@lawha/scene-graph/figjam'
+import { useShapeWithText } from '@lawha/vue/controls/shape-with-text'
+import { useFigJamMessages, useShapeMessages } from '@lawha/vue/i18n'
 
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'

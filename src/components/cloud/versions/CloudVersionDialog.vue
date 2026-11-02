@@ -4,8 +4,8 @@ import { computed, ref, watch } from 'vue'
 import {
   DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH,
   DOCUMENT_VERSION_NAME_MAX_LENGTH
-} from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+} from '@lawha/cloud/contract'
+import { useCloudMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import { editVersion, saveVersion } from '@/app/cloud/versions/actions'
 import { versionDialog, versionsChanged } from '@/app/cloud/versions/history'

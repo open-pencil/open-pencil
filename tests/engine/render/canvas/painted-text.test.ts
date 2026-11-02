@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill } from '@lawha/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas/renderer'

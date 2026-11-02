@@ -1,7 +1,7 @@
 import { useLocalStorage, watchDebounced } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
-import { getStockPhotoProvider, type StockPhotoResult } from '@open-pencil/core/tools'
+import { getStockPhotoProvider, type StockPhotoResult } from '@lawha/core/tools'
 
 import { pexelsKeyStatus, unsplashKeyStatus } from '@/app/settings/credentials/media'
 
@@ -18,7 +18,7 @@ export const PHOTO_SERVICES: readonly {
     id: 'unsplash',
     name: 'Unsplash',
     keyURL: 'https://unsplash.com/oauth/applications',
-    siteURL: 'https://unsplash.com/?utm_source=openpencil&utm_medium=referral'
+    siteURL: 'https://unsplash.com/?utm_source=lawha&utm_medium=referral'
   },
   {
     id: 'pexels',
@@ -28,7 +28,7 @@ export const PHOTO_SERVICES: readonly {
   }
 ]
 
-const PHOTO_SERVICE_STORAGE_KEY = 'open-pencil:photo-service'
+const PHOTO_SERVICE_STORAGE_KEY = 'lawha:photo-service'
 /** Results a page; a multiple of the picker's three columns. */
 const PHOTOS_PER_PAGE = 24
 /** The width a placed photo is downloaded at; the services' regular size. */

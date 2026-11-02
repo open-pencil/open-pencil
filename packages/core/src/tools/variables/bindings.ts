@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { OpenPencilAPI } from '#core/openpencil-api'
+import { LawhaAPI } from '#core/lawha-api'
 import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
 export const bindVariable = defineTool({
@@ -33,7 +33,7 @@ export const bindVariable = defineTool({
     const variable = figma.variables.getVariableById(args.variable_id)
     if (!variable) return { error: `Variable "${args.variable_id}" not found` }
     try {
-      new OpenPencilAPI(figma).bindVariable(args.node_id, args.field, variable)
+      new LawhaAPI(figma).bindVariable(args.node_id, args.field, variable)
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) }
     }

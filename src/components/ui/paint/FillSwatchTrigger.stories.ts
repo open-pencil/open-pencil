@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'reka-ui'
 
-import type { Fill } from '@open-pencil/scene-graph'
+import type { Fill } from '@lawha/scene-graph'
 
 import FillSwatchTrigger from './FillSwatchTrigger.vue'
 

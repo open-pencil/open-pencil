@@ -4,13 +4,13 @@ import type { StateElement } from '#dom-css/behaviours/states/types'
 import { omit, pick } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import { es } from '@open-pencil/emit'
-import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
+import { es } from '@lawha/emit'
+import type { ComponentPropertyDefinition } from '@lawha/scene-graph'
 import {
   DEFAULT_NUMBER_SETTINGS,
   numberSettings,
   type Behaviour
-} from '@open-pencil/scene-graph/behaviours'
+} from '@lawha/scene-graph/behaviours'
 
 import type { GeneratedKind, RangeModel, TextModel } from './model'
 

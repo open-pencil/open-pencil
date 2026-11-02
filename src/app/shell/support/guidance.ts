@@ -18,9 +18,9 @@ export interface SupportLink {
   readonly url: string
 }
 
-export const SYSTEM_REQUIREMENTS_URL = 'https://openpencil.dev/getting-started#system-requirements'
+export const SYSTEM_REQUIREMENTS_URL = 'https://github.com/aliaaldihnayn-lab/design#readme'
 export const WEBVIEW2_DOWNLOAD_URL = 'https://developer.microsoft.com/microsoft-edge/webview2/'
-const ISSUE_URL = 'https://github.com/open-pencil/open-pencil/issues/new'
+const ISSUE_URL = 'https://github.com/aliaaldihnayn-lab/design/issues/new'
 
 export const MINIMUM_MACOS_VERSION = 13
 export const MINIMUM_WEBKITGTK_VERSION = '2.40'
@@ -36,7 +36,7 @@ const BROWSER_LABELS = {
 
 export function requirementsSentence(): string {
   const { chrome, edge, firefox, safari } = BROWSER_BASELINE
-  return `OpenPencil needs Chrome ${chrome}, Edge ${edge}, Firefox ${firefox}, or Safari ${safari} or later.`
+  return `Lawha needs Chrome ${chrome}, Edge ${edge}, Firefox ${firefox}, or Safari ${safari} or later.`
 }
 
 function majorVersion(version: string | undefined): number | undefined {
@@ -68,7 +68,7 @@ const DESKTOP_ISSUE_PLATFORMS: Partial<Record<SupportEnvironment['os'], string>>
 }
 
 function issuePlatform(env: SupportEnvironment): string {
-  if (env.host === 'browser') return 'Web (app.openpencil.dev)'
+  if (env.host === 'browser') return 'Web (app.lawha.invalid)'
   return DESKTOP_ISSUE_PLATFORMS[env.os] ?? 'Not sure'
 }
 
@@ -82,7 +82,7 @@ function issueLink(
     title,
     platform: issuePlatform(env),
     'affected-area': 'App UI',
-    version: typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '',
+    version: typeof __LAWHA_APP_VERSION__ === 'string' ? __LAWHA_APP_VERSION__ : '',
     browser: env.userAgent,
     logs: details.join('\n')
   })
@@ -106,42 +106,42 @@ function desktopAdvice(env: SupportEnvironment): Advice {
       const running = env.osVersion ? `This Mac is running macOS ${env.osVersion}. ` : ''
       if (major !== undefined && major < MINIMUM_MACOS_VERSION) {
         return {
-          heading: `OpenPencil needs macOS ${MINIMUM_MACOS_VERSION} or later`,
+          heading: `Lawha needs macOS ${MINIMUM_MACOS_VERSION} or later`,
           paragraphs: [
-            `${running}OpenPencil renders with the WebKit engine that ships with macOS, and this version is too old to run it. Upgrade to macOS ${MINIMUM_MACOS_VERSION} or later to use OpenPencil.`
+            `${running}Lawha renders with the WebKit engine that ships with macOS, and this version is too old to run it. Upgrade to macOS ${MINIMUM_MACOS_VERSION} or later to use Lawha.`
           ]
         }
       }
       return {
-        heading: 'Update macOS to run OpenPencil',
+        heading: 'Update macOS to run Lawha',
         paragraphs: [
-          `${running}OpenPencil renders with the WebKit engine that ships with macOS, and this Mac's copy is older than Safari ${BROWSER_BASELINE.safari}.`,
-          'Open System Settings → General → Software Update, install the available macOS and Safari updates, then reopen OpenPencil.'
+          `${running}Lawha renders with the WebKit engine that ships with macOS, and this Mac's copy is older than Safari ${BROWSER_BASELINE.safari}.`,
+          'Open System Settings → General → Software Update, install the available macOS and Safari updates, then reopen Lawha.'
         ]
       }
     }
     case 'linux':
       return {
-        heading: 'Update WebKitGTK to run OpenPencil',
+        heading: 'Update WebKitGTK to run Lawha',
         paragraphs: [
-          `OpenPencil renders with WebKitGTK${env.webviewVersion ? ` ${env.webviewVersion}` : ''}, which is too old.`,
-          `Update the webkit2gtk-4.1 package to ${MINIMUM_WEBKITGTK_VERSION} or later with your distribution's package manager, then reopen OpenPencil.`
+          `Lawha renders with WebKitGTK${env.webviewVersion ? ` ${env.webviewVersion}` : ''}, which is too old.`,
+          `Update the webkit2gtk-4.1 package to ${MINIMUM_WEBKITGTK_VERSION} or later with your distribution's package manager, then reopen Lawha.`
         ]
       }
     case 'windows':
       return {
-        heading: 'Update WebView2 to run OpenPencil',
+        heading: 'Update WebView2 to run Lawha',
         paragraphs: [
-          `OpenPencil renders with the Microsoft Edge WebView2 Runtime${env.webviewVersion ? ` ${env.webviewVersion}` : ''}, which is too old.`,
-          'Install the latest Evergreen runtime from Microsoft, then reopen OpenPencil.'
+          `Lawha renders with the Microsoft Edge WebView2 Runtime${env.webviewVersion ? ` ${env.webviewVersion}` : ''}, which is too old.`,
+          'Install the latest Evergreen runtime from Microsoft, then reopen Lawha.'
         ],
         extraLinks: [{ label: 'Download WebView2', url: WEBVIEW2_DOWNLOAD_URL }]
       }
     default:
       return {
-        heading: 'OpenPencil needs a newer WebView',
+        heading: 'Lawha needs a newer WebView',
         paragraphs: [
-          'The system WebView engine is too old to run OpenPencil. Install your operating system updates, then reopen OpenPencil.'
+          'The system WebView engine is too old to run Lawha. Install your operating system updates, then reopen Lawha.'
         ]
       }
   }
@@ -158,7 +158,7 @@ function browserUpdateSteps(env: SupportEnvironment): string {
     case 'firefox':
       return 'Open the Firefox menu → Help → About Firefox to install the update.'
     case 'safari':
-      return 'Update it through System Settings → General → Software Update, or open OpenPencil in a current Chrome, Edge, or Firefox.'
+      return 'Update it through System Settings → General → Software Update, or open Lawha in a current Chrome, Edge, or Firefox.'
     default:
       return requirementsSentence()
   }
@@ -167,16 +167,16 @@ function browserUpdateSteps(env: SupportEnvironment): string {
 function browserAdvice(env: SupportEnvironment): Advice {
   if (env.os === 'ios') {
     return {
-      heading: 'Update iOS to run OpenPencil',
+      heading: 'Update iOS to run Lawha',
       paragraphs: [
-        `OpenPencil needs iOS ${BROWSER_BASELINE.ios} or later. Every browser on iPhone and iPad uses the system WebKit engine, so update in Settings → General → Software Update.`
+        `Lawha needs iOS ${BROWSER_BASELINE.ios} or later. Every browser on iPhone and iPad uses the system WebKit engine, so update in Settings → General → Software Update.`
       ]
     }
   }
   const baseline = baselineBrowserFor(env)
   if (baseline === undefined) {
     return {
-      heading: "OpenPencil can't run in this browser",
+      heading: "Lawha can't run in this browser",
       paragraphs: [requirementsSentence()]
     }
   }
@@ -188,10 +188,10 @@ function browserAdvice(env: SupportEnvironment): Advice {
       : `${label} ${versionLabel(env.browserVersion)} detected. `
   const needs =
     env.browser === 'opera'
-      ? `OpenPencil needs Opera built on Chrome ${minimum} or later.`
-      : `OpenPencil needs ${label} ${minimum} or later.`
+      ? `Lawha needs Opera built on Chrome ${minimum} or later.`
+      : `Lawha needs ${label} ${minimum} or later.`
   return {
-    heading: `Update ${label} to run OpenPencil`,
+    heading: `Update ${label} to run Lawha`,
     paragraphs: [`${detected}${needs}`, browserUpdateSteps(env)]
   }
 }
@@ -218,7 +218,7 @@ export function unsupportedNotice(
     return {
       heading: 'A required browser feature is unavailable',
       paragraphs: [
-        `Your browser reports ${BROWSER_LABELS[env.browser]} ${versionLabel(env.browserVersion ?? 0)}, which should run OpenPencil, but it is missing ${missing.join(', ')}.`,
+        `Your browser reports ${BROWSER_LABELS[env.browser]} ${versionLabel(env.browserVersion ?? 0)}, which should run Lawha, but it is missing ${missing.join(', ')}.`,
         'A browser policy, an extension, or a preview build may have disabled it. Try a current release of Chrome, Edge, Firefox, or Safari.'
       ],
       details,
@@ -249,16 +249,16 @@ function errorDetails(error: unknown): string[] {
 function bootFailureHint(env: SupportEnvironment): string {
   if (env.host === 'browser') return requirementsSentence()
   if (env.os === 'macos') {
-    return 'OpenPencil renders with the WebKit engine that ships with macOS. If this Mac has pending macOS or Safari updates, install them first.'
+    return 'Lawha renders with the WebKit engine that ships with macOS. If this Mac has pending macOS or Safari updates, install them first.'
   }
-  return 'OpenPencil renders with the system WebView engine. If your operating system has pending updates, install them first.'
+  return 'Lawha renders with the system WebView engine. If your operating system has pending updates, install them first.'
 }
 
 /** Notice for an app that failed while loading and left the window blank. */
 export function bootFailureNotice(env: SupportEnvironment, error: unknown): SupportNotice {
   const details = [...errorDetails(error), ...environmentDetails(env)]
   return {
-    heading: "OpenPencil couldn't start",
+    heading: "Lawha couldn't start",
     paragraphs: [
       'Something failed while the app was loading, so nothing could be shown.',
       bootFailureHint(env),

@@ -15,7 +15,7 @@ import {
 } from 'reka-ui'
 import { nextTick, useTemplateRef, watch } from 'vue'
 
-import type { FontFamilyOption } from '@open-pencil/core/text'
+import type { FontFamilyOption } from '@lawha/core/text'
 
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import type { FontPickerUI } from '#vue/primitives/FontPicker/types'

@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { isNodeFontLoaded } from '#core/canvas/text'

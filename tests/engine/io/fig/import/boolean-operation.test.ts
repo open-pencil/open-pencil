@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { materializeDocument } from '@open-pencil/fig'
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { materializeDocument } from '@lawha/fig'
+import { nodeChangeToProps } from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 describe('Figma boolean operation import', () => {
   test('preserves boolean operation nodes', () => {

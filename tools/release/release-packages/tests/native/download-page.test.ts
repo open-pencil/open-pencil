@@ -39,7 +39,7 @@ test('the download page leaves out updater payloads and signatures', () => {
   expect(classifyAsset(asset('latest.json'))).toBeNull()
 })
 
-test('the download page leaves out OpenPencil Chromium', () => {
+test('the download page leaves out Lawha Chromium', () => {
   const chromium = chromiumTargets.flatMap((target) => chromiumAssets(target, VERSION))
   for (const file of chromium) expect(classifyAsset(asset(file.name))).toBeNull()
   expect(classifyAsset(asset('latest-chromium.json'))).toBeNull()

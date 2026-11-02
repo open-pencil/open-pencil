@@ -3,7 +3,7 @@ import { beforeAll, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import type { TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { withTextShaper } from '#core/io/shaping'

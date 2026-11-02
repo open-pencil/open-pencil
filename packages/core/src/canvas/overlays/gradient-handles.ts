@@ -1,7 +1,7 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph } from '@lawha/scene-graph'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { getCachedMaskBlur } from '#core/canvas/effects'
 import type { SkiaRenderer } from '#core/canvas/renderer'

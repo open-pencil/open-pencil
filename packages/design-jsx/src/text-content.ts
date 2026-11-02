@@ -6,14 +6,14 @@ import type {
   SceneNode,
   StyleRun,
   TextParagraphStyle
-} from '@open-pencil/scene-graph'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+} from '@lawha/scene-graph'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 import {
   MAX_LIST_INDENTATION,
   paragraphCount,
   PLAIN_PARAGRAPH,
   trimParagraphStyles
-} from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/text'
 
 import { parseScriptInput } from './schema'
 import type { MarkdownService } from './services'

@@ -1,5 +1,5 @@
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { removeComponentProperty } from '@open-pencil/scene-graph/components'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { removeComponentProperty } from '@lawha/scene-graph/components'
 
 import { CONNECTOR_ELEMENT, resolveConnectorEnds } from '../figjam/connectors'
 import { LayerRefs } from '../refs'

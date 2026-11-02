@@ -1,10 +1,10 @@
-# @open-pencil/fig
+# @lawha/fig
 
-`.fig` file-format package for OpenPencil.
+`.fig` file-format package for Lawha.
 
 The package owns the outer `.fig` archive boundary and is the staged home for Figma-specific
 SceneGraph conversion policy. Production SceneGraph read/write remains available through
-`@open-pencil/core/io` while conversion modules move behind this package's public API.
+`@lawha/core/io` while conversion modules move behind this package's public API.
 
 Current ownership:
 
@@ -13,8 +13,8 @@ Current ownership:
 - Canvas payload and image resource handling
 - `readFigContainer()` / `writeFigContainer()` helpers for raw `fig-kiwi` payloads
 - `.fig` source and archive result types
-- NodeChange-to-SceneGraph property conversion, including styles, plugin metadata, text, paint, vector, and font policy, through `@open-pencil/fig/node-change`
-- Component-property, symbol-override, derived-symbol-data, and instance synchronization policy through `@open-pencil/fig/instance-overrides`
+- NodeChange-to-SceneGraph property conversion, including styles, plugin metadata, text, paint, vector, and font policy, through `@lawha/fig/node-change`
+- Component-property, symbol-override, derived-symbol-data, and instance synchronization policy through `@lawha/fig/instance-overrides`
 - Effective raw-metadata precedence and invalidation over SceneGraph's format-neutral edited-field tracking
 - SceneGraph-to-`NodeChange` export conversion with an explicit text-shaping runtime service for saved glyphs
 - Package-local archive, conversion, instance, export, and dist smoke tests
@@ -30,12 +30,12 @@ Planned ownership:
 
 Non-goals:
 
-- Generic Kiwi schema/runtime internals — use `@open-pencil/kiwi`
+- Generic Kiwi schema/runtime internals — use `@lawha/kiwi`
 - Format-neutral IO registration, export targeting, CanvasKit thumbnails, or browser workers — use
-  `@open-pencil/core/io`
+  `@lawha/core/io`
 - Editor actions, renderer behavior, Vue/app UI, CLI formatting, or MCP transport
 
-This follows the existing `@open-pencil/pen` pattern: a format package owns its source model/parser
+This follows the existing `@lawha/pen` pattern: a format package owns its source model/parser
 and SceneGraph policy, while core registers it in the shared IO system.
 
 ## Checks

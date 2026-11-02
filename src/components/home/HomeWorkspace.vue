@@ -2,9 +2,9 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed, ref, shallowRef } from 'vue'
 
-import type { DocumentKind } from '@open-pencil/scene-graph'
-import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { DocumentKind } from '@lawha/scene-graph'
+import { useDocumentWorkspace } from '@lawha/vue/document/workspace'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { CLOUD_INCLUDED, CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/integration'
 import { useHomeLocations } from '@/app/home/locations'
@@ -42,9 +42,9 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 
 const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 const { locale, storage, files, common, settings, credentials } = useI18n()
-const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
+const view = useLocalStorage<'grid' | 'list'>('lawha:home-files-view', 'grid')
 /** Which kind of file Home lists, as Figma's file filter picks; a file of unknown kind shows in all. */
-const kindFilter = useLocalStorage<DocumentKindFilter>('open-pencil:home-files-kind', 'all')
+const kindFilter = useLocalStorage<DocumentKindFilter>('lawha:home-files-kind', 'all')
 const query = ref('')
 const openError = ref<string | null>(null)
 const storageConfigured = ref(storagePreferencesComplete(activeStorageProviderID.value))

@@ -1,5 +1,5 @@
 import { writeReferences } from '#authoring-reference/artifacts'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 await writeReferences(await resolveWorkspaceRoot(process.cwd()))

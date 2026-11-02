@@ -2,7 +2,7 @@ import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclie
 import type { InitializeResponse, SessionUpdate } from '@agentclientprotocol/sdk'
 import { promiseTimeout } from '@vueuse/core'
 
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import type { ACPAgentDef } from '@lawha/core/constants'
 
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import type { OwnToolsLink, OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
@@ -31,7 +31,7 @@ export interface AuthSessionOptions {
   statusTimeoutMs?: number
   /** How long an agent may take to answer `initialize` before it counts as stuck. */
   initializeTimeoutMs?: number
-  /** Also checks, for a signed-in agent, that a session reaches OpenPencil's tools. */
+  /** Also checks, for a signed-in agent, that a session reaches Lawha's tools. */
   tools?: ToolsProbe
 }
 
@@ -52,7 +52,7 @@ export interface AgentAuthCheck {
   methods: AgentAuthMethod[]
   /** The ACP program that answered, to tell a supported adapter from another with its name. */
   adapter: { name: string; version: string } | null
-  /** Whether a session reached OpenPencil's tools; null when not checked or not signed in. */
+  /** Whether a session reached Lawha's tools; null when not checked or not signed in. */
   tools: OwnToolsOutcome | null
 }
 

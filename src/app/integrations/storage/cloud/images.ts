@@ -1,8 +1,8 @@
 import { limitAsync } from 'es-toolkit'
 import { unzipSync, zipSync, type Zippable } from 'fflate'
 
-import type { CloudAPIClient } from '@open-pencil/cloud/client'
-import { CLOUD_IMAGE_NAME_PATTERN, type ObjectUploadTarget } from '@open-pencil/cloud/contract'
+import type { CloudAPIClient } from '@lawha/cloud/client'
+import { CLOUD_IMAGE_NAME_PATTERN, type ObjectUploadTarget } from '@lawha/cloud/contract'
 
 import { putCloudObject, type CloudObjectTransfer } from './upload'
 

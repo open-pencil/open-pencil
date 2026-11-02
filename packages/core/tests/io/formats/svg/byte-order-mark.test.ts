@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createSVGNodes } from '@open-pencil/core/io/formats/svg'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createSVGNodes } from '@lawha/core/io/formats/svg'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const BOM = '\uFEFF'
 

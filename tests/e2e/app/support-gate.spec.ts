@@ -18,14 +18,14 @@ test.describe('browser support gate', () => {
     await expect(notice).toContainText('String.prototype.isWellFormed')
     await expect(notice.getByRole('link', { name: 'System requirements' })).toHaveAttribute(
       'href',
-      'https://openpencil.dev/getting-started#system-requirements'
+      'https://github.com/aliaaldihnayn-lab/design#readme'
     )
 
     const report = notice.getByRole('link', { name: 'Report a problem' })
     const href = new URL((await report.getAttribute('href')) ?? '')
-    expect(href.pathname).toBe('/open-pencil/open-pencil/issues/new')
+    expect(href.pathname).toBe('/lawha/lawha/issues/new')
     expect(href.searchParams.get('template')).toBe('bug_report.yml')
-    expect(href.searchParams.get('platform')).toBe('Web (app.openpencil.dev)')
+    expect(href.searchParams.get('platform')).toBe('Web (app.lawha.invalid)')
     expect(href.searchParams.get('logs')).toContain('Missing: String.prototype.isWellFormed')
 
     await notice.getByText('Details', { exact: true }).click()
@@ -49,7 +49,7 @@ test.describe('browser support gate', () => {
     await page.goto('/')
 
     const notice = page.getByRole('alert')
-    await expect(notice.getByRole('heading', { level: 1 })).toHaveText("OpenPencil couldn't start")
+    await expect(notice.getByRole('heading', { level: 1 })).toHaveText("Lawha couldn't start")
     await expect(notice).toContainText('Chrome 111')
     await notice.getByText('Details', { exact: true }).click()
     await expect(notice.locator('pre')).toContainText('history is unavailable')
@@ -69,7 +69,7 @@ test.describe('browser support gate', () => {
     await page.goto('/')
 
     const notice = page.getByRole('alert')
-    await expect(notice.getByRole('heading', { level: 1 })).toHaveText("OpenPencil couldn't start")
+    await expect(notice.getByRole('heading', { level: 1 })).toHaveText("Lawha couldn't start")
     await notice.getByText('Details', { exact: true }).click()
     await expect(notice.locator('pre')).toContainText('getRandomValues is unavailable')
   })

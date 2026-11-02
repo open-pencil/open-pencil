@@ -1,6 +1,6 @@
 import { createCloudflareCloud } from '#cloud/runtime/cloudflare'
 
-import config from './openpencil-cloud.toml'
+import config from './lawha-cloud.toml'
 
 const cloud = createCloudflareCloud(config)
 

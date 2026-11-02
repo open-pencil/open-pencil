@@ -5,9 +5,9 @@ import { uniq } from 'es-toolkit/array'
 import { basename } from 'pathe'
 import { decode } from 'ufo'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 
-import { setOpenPencilOpenFileHandler } from '@/app/browser-bridge'
+import { setLawhaOpenFileHandler } from '@/app/browser-bridge'
 import {
   resolveBrowserFileURL,
   MAX_REMOTE_DOCUMENT_BYTES,
@@ -47,7 +47,7 @@ fileDialog.onChange((files) => {
 })
 
 /**
- * Opens a picked or dropped document in a new tab, rejecting formats OpenPencil cannot read.
+ * Opens a picked or dropped document in a new tab, rejecting formats Lawha cannot read.
  * A file system handle, when the browser provides one, lets the tab save back to the file.
  */
 export async function openDesignFile(file: File, handle?: FileSystemFileHandle): Promise<void> {
@@ -56,7 +56,7 @@ export async function openDesignFile(file: File, handle?: FileSystemFileHandle):
 }
 
 if (IS_BROWSER && 'window' in globalThis) {
-  setOpenPencilOpenFileHandler(async (path: string) => {
+  setLawhaOpenFileHandler(async (path: string) => {
     await openBrowserFileFromURL(resolveBrowserFileURL(path))
   })
 }

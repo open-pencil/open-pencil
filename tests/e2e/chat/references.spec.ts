@@ -10,7 +10,7 @@ test('@ inserts a layer as a chip that the reply shows and that selects the laye
 }) => {
   const { page } = chat
   const heroId = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('No store')
     const node = store.graph.createNode('FRAME', store.state.currentPageId, {
       name: 'Hero',
@@ -37,13 +37,13 @@ test('@ inserts a layer as a chip that the reply shows and that selects the laye
   const sent = chat.userMessage().locator('[data-slot="chat-reference"]')
   await expect(sent).toHaveText('Hero')
   const request = await page.evaluate(() => document.documentElement.dataset.lastChatRequest)
-  expect(request).toContain(`(openpencil://node/${encodeURIComponent(heroId)})`)
+  expect(request).toContain(`(lawha://node/${encodeURIComponent(heroId)})`)
 
   // The mock reply repeats the request, so it carries the reference too.
   const replied = chat.assistantMessage().getByRole('button', { name: /Hero/ })
   await replied.click()
   await expect
-    .poll(() => page.evaluate(() => [...(window.openPencil?.getStore?.().state.selectedIds ?? [])]))
+    .poll(() => page.evaluate(() => [...(window.lawha?.getStore?.().state.selectedIds ?? [])]))
     .toEqual([heroId])
 })
 
@@ -75,7 +75,7 @@ test('editing a sent message keeps its chips and Escape cancels', async ({
 }) => {
   const { page } = chat
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('No store')
     store.graph.createNode('FRAME', store.state.currentPageId, { name: 'Hero' })
   })

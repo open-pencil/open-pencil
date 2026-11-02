@@ -1,7 +1,7 @@
 import { useIntersectionObserver, useResizeObserver, useScriptTag } from '@vueuse/core'
 import { onScopeDispose, ref, type Ref } from 'vue'
 
-import { TURNSTILE_SITE_KEY, WAITLIST_TURNSTILE_ACTION } from '@open-pencil/feedback/contract'
+import { TURNSTILE_SITE_KEY, WAITLIST_TURNSTILE_ACTION } from '@lawha/feedback/contract'
 
 /** The part of Cloudflare Turnstile's explicit-render API the waitlist form uses. */
 export interface TurnstileAPI {

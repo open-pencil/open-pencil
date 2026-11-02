@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useDesignCheckMessages } from '@lawha/vue/i18n'
 
 import type { LayerIssueMark } from '@/app/editor/design-check/layers'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditor, gridNudge } from '@open-pencil/core'
+import { createEditor, gridNudge } from '@lawha/core'
 
 import { getNodeOrThrow } from '../helpers/assert'
 

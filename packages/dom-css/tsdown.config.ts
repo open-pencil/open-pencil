@@ -20,7 +20,7 @@ export default defineConfig({
     moduleSideEffects: false
   },
   deps: {
-    neverBundle: ['@open-pencil/scene-graph', /^@open-pencil\/scene-graph\//, 'node:fs/promises'],
+    neverBundle: ['@lawha/scene-graph', /^@lawha\/scene-graph\//, 'node:fs/promises'],
     onlyBundle: false
   },
   outputOptions: {

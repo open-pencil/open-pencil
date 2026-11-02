@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { nodeChangeToProps, sceneNodeToKiwi } from '#fig/node-change/index'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 // Figma desktop, 2026-10-10: a copied polygon or star carries its point count and a star its inner
 // scale, and no geometry; Figma draws it from those fields.

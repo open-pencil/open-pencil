@@ -1,6 +1,6 @@
 ---
 title: Keyboard Shortcuts
-description: Figma-compatible keyboard shortcut reference for OpenPencil tools, editing commands, view controls, and layer actions.
+description: Figma-compatible keyboard shortcut reference for Lawha tools, editing commands, view controls, and layer actions.
 ---
 
 # Keyboard Shortcuts

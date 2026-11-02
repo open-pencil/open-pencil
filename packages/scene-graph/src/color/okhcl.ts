@@ -2,7 +2,7 @@ import { converter, toGamut } from 'culori'
 
 import { copyFill, copyStroke } from '../copy'
 import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
-import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
+import { LAWHA_PLUGIN_DATA } from '../plugin-data/fields'
 import type { Color } from '../primitives'
 import type { PluginDataEntry, SceneNode } from '../types'
 import { normalizeColor } from './normalize'
@@ -94,11 +94,11 @@ export function rgbaToOkHCL(color: Color, colorSpace: OkHCLColorSpace = 'srgb'):
 }
 
 export function serializeOkHCLPayload(payload: OkHCLPayload): string {
-  return OPEN_PENCIL_PLUGIN_DATA.okhcl.encode(payload)
+  return LAWHA_PLUGIN_DATA.okhcl.encode(payload)
 }
 
 export function parseOkHCLPayload(value: string): OkHCLPayload | null {
-  return OPEN_PENCIL_PLUGIN_DATA.okhcl.decode(value) ?? null
+  return LAWHA_PLUGIN_DATA.okhcl.decode(value) ?? null
 }
 
 function createOkHCLPayload(
@@ -125,7 +125,7 @@ function withOkHCLPayload(
     (payload) => payload.kind !== kind || payload.index !== index
   )
   if (color) payloads.push(createOkHCLPayload(kind, index, color))
-  return withAllPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.okhcl, payloads)
+  return withAllPluginData(node.pluginData, LAWHA_PLUGIN_DATA.okhcl, payloads)
 }
 
 export function setNodeFillOkHCL(
@@ -181,7 +181,7 @@ export function clearNodeStrokeOkHCL(node: SceneNode, index: number): Partial<Sc
 }
 
 export function getNodeOkHCLPayloads(node: SceneNode): OkHCLPayload[] {
-  return readAllPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.okhcl)
+  return readAllPluginData(node.pluginData, LAWHA_PLUGIN_DATA.okhcl)
 }
 
 export function getFillOkHCL(node: SceneNode, index: number): OkHCLPayload | null {

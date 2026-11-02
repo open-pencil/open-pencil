@@ -61,14 +61,14 @@ function failingPostgresDialect(): Dialect {
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   publicURL: 'https://pencil.example.com',
-  databaseURL: 'postgresql://openpencil:secret@database/openpencil',
+  databaseURL: 'postgresql://lawha:secret@database/lawha',
   authSecret: 'a-secure-auth-secret-with-at-least-32-characters',
   googleClientId: 'google-client',
   googleClientSecret: 'google-secret',
   trustedOrigins: ['https://app.example.com'],
   s3Endpoint: 'https://objects.example.com',
   s3Region: 'us-east-1',
-  s3Bucket: 'openpencil',
+  s3Bucket: 'lawha',
   s3AccessKeyId: 'access-key',
   s3SecretAccessKey: 'secret-key'
 })
@@ -302,7 +302,7 @@ describe('createCloudApp', () => {
     }
   })
 
-  test('keeps Better Auth routes outside the OpenPencil rate limiter', async () => {
+  test('keeps Better Auth routes outside the Lawha rate limiter', async () => {
     const runtime = await createCloudTestDatabase()
     let authCalls = 0
     try {
@@ -362,7 +362,7 @@ describe('createCloudApp', () => {
   })
 
   test('derives discovery from validated server capabilities', async () => {
-    const response = await createCloudApp(services()).request('/.well-known/openpencil')
+    const response = await createCloudApp(services()).request('/.well-known/lawha')
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -386,7 +386,7 @@ describe('createCloudApp', () => {
 
   test('allows credentialed CORS for trusted origins only', async () => {
     const cloud = createCloudApp(services())
-    const trustedDiscovery = await cloud.request('/.well-known/openpencil', {
+    const trustedDiscovery = await cloud.request('/.well-known/lawha', {
       headers: { Origin: 'https://app.example.com' }
     })
     expect(trustedDiscovery.headers.get('access-control-allow-origin')).toBe(

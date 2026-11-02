@@ -107,8 +107,8 @@ describe('native MCP server lifecycle', () => {
 
   it('uses the server it resolves, or reports why it cannot', async () => {
     await browser.waitUntil(
-      async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
-      { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
+      async () => browser.execute(() => Boolean(window.lawha?.getStore?.())),
+      { timeout: 30_000, timeoutMsg: 'Lawha editor did not initialize' }
     )
     await openMCPSettings()
 
@@ -129,14 +129,14 @@ describe('native MCP server lifecycle', () => {
       const detail = await mcpFailureDetail()
       assert.match(
         detail ?? '',
-        /requires @open-pencil\/mcp|major\.minor compatibility/,
+        /requires @lawha\/mcp|major\.minor compatibility/,
         `resolved ${lookup.path} but failed without a version explanation: ${detail}`
       )
       return
     }
 
     await waitForStatus('Running')
-    const discoveryPath = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+    const discoveryPath = process.env.LAWHA_MCP_DISCOVERY_PATH
     assert.ok(discoveryPath, 'discovery path missing from the wdio configuration')
     const discovery = v.parse(discoveryFileSchema, readFileSync(discoveryPath, 'utf8'))
     assert.ok(discovery.authToken, 'discovery file omitted the auth token')

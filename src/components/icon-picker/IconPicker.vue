@@ -2,9 +2,9 @@
 import { compact } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
-import { iconNames } from '@open-pencil/scene-graph/icons'
-import { useIconSearch } from '@open-pencil/vue/controls/icon'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { iconNames } from '@lawha/scene-graph/icons'
+import { useIconSearch } from '@lawha/vue/controls/icon'
+import { useCommonMessages, usePanelMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icons/history'

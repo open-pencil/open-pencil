@@ -1,6 +1,6 @@
 import { isEqual, uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@lawha/scene-graph'
 
 import { writeRecord } from '#core/editor/history/document-change'
 import type { EditorContext } from '#core/editor/types'

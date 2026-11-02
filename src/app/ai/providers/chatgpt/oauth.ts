@@ -17,7 +17,7 @@ export const CHATGPT_CALLBACK_PORT = 1455
 export const CHATGPT_CALLBACK_PATH = '/auth/callback'
 export const CHATGPT_REDIRECT_URI = `http://localhost:${CHATGPT_CALLBACK_PORT}${CHATGPT_CALLBACK_PATH}`
 /** Names this app to the backend in its `originator` header and on the consent screen. */
-export const CHATGPT_ORIGINATOR = 'open-pencil'
+export const CHATGPT_ORIGINATOR = 'lawha'
 const SCOPE = 'openid profile email offline_access'
 /** The custom claim OpenAI puts its account details in. */
 const AUTH_CLAIM = 'https://api.openai.com/auth'

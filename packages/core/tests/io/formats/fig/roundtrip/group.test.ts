@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { collectAllNodes } from '#core-tests/helpers/fig/traversal'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 setDefaultTimeout(60_000)
 

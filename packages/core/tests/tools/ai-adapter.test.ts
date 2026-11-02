@@ -3,14 +3,14 @@ import { describe, expect, test } from 'bun:test'
 import { toolModelMessageSchema } from 'ai'
 import * as v from 'valibot'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI } from '@lawha/core/figma-api'
 import {
   defineTool,
   toolsToAI,
   type AIAdapterOptions,
   type ToolLogEntry
-} from '@open-pencil/core/tools'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/tools'
+import { SceneGraph } from '@lawha/scene-graph'
 
 type ToolFactory = Parameters<typeof toolsToAI>[2]['tool']
 

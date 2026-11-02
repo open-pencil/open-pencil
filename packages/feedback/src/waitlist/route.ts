@@ -33,7 +33,7 @@ async function formToken(c: Context<FeedbackEnv>): Promise<string | null> {
 }
 
 const invalidLink = () =>
-  page('Link expired', 'This link is no longer valid. Sign up again on openpencil.dev.')
+  page('Link expired', 'This link is no longer valid. Sign up again on lawha.invalid.')
 
 export function waitlistRoutes(services: FeedbackServices) {
   return (
@@ -55,7 +55,7 @@ export function waitlistRoutes(services: FeedbackServices) {
           const token = await signUp(createFeedbackDatabase(c.env.DB), signup, services.now())
           if (token) {
             await c.env.EMAIL.send({
-              from: { name: 'OpenPencil', email: c.env.EMAIL_FROM },
+              from: { name: 'Lawha', email: c.env.EMAIL_FROM },
               to: signup.email,
               ...(await confirmationEmail({
                 confirmURL: linkTo(c, CONFIRM_PATH, token),
@@ -72,7 +72,7 @@ export function waitlistRoutes(services: FeedbackServices) {
         return c.html(
           actionPage({
             title: 'Join the waitlist',
-            message: 'Confirm your email to join the OpenPencil Cloud waitlist.',
+            message: 'Confirm your email to join the Lawha Cloud waitlist.',
             action: 'Confirm',
             token
           })
@@ -85,7 +85,7 @@ export function waitlistRoutes(services: FeedbackServices) {
           return c.html(invalidLink(), 404)
         }
         return c.html(
-          page("You're on the list", 'We will write when OpenPencil Cloud is ready for you.')
+          page("You're on the list", 'We will write when Lawha Cloud is ready for you.')
         )
       })
       .get(LEAVE_PATH, (c) => {
@@ -94,7 +94,7 @@ export function waitlistRoutes(services: FeedbackServices) {
         return c.html(
           actionPage({
             title: 'Leave the waitlist',
-            message: 'Remove your email from the OpenPencil Cloud waitlist.',
+            message: 'Remove your email from the Lawha Cloud waitlist.',
             action: 'Remove my email',
             token
           })

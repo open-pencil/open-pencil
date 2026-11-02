@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 
-import type { LintFixRequest } from '@open-pencil/core/lint'
+import type { LintFixRequest } from '@lawha/core/lint'
 
 import type { IssueAction, IssueSwatch } from '@/app/editor/design-check/format'
 import type { DesignIssue, DesignIssueSeverity } from '@/app/editor/design-check/issues'

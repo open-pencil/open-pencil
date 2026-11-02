@@ -6,7 +6,7 @@ import { AIRelayConfigError, parseAIRelayTOML } from '#cloud/ai-relay'
 
 const environment = {
   DATABASE_URL: 'postgresql://relay:secret@database/relay',
-  OPENPENCIL_AI_RELAY_UPSTREAM_KEY: 'upstream-key'
+  LAWHA_AI_RELAY_UPSTREAM_KEY: 'upstream-key'
 }
 
 const source = `schema_version = 1
@@ -59,13 +59,13 @@ describe('AI relay configuration', () => {
   })
 
   test('the example file parses', async () => {
-    const example = await readFile(cloudDeployPath('openpencil-ai-relay.example.toml'), 'utf8')
+    const example = await readFile(cloudDeployPath('lawha-ai-relay.example.toml'), 'utf8')
     expect(parseAIRelayTOML(example, environment).catalog.models).not.toBeEmpty()
   })
 
   test('requires the upstream key and a default model from the catalog', () => {
     expect(() => parseAIRelayTOML(source, { DATABASE_URL: environment.DATABASE_URL })).toThrow(
-      'OPENPENCIL_AI_RELAY_UPSTREAM_KEY'
+      'LAWHA_AI_RELAY_UPSTREAM_KEY'
     )
     expect(() =>
       parseAIRelayTOML(

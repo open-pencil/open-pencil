@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { GUID } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { GUID } from '@lawha/scene-graph/primitives'
 
 import type { KiwiSymbolOverridePayload } from './context'
 

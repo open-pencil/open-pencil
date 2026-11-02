@@ -5,13 +5,13 @@ const editor = useEditorSetupWithClear('/?test&no-rulers&navigation-benchmark')
 
 test('dense text keeps exact pixels without reshaping unchanged labels during previews', async () => {
   const interaction = await editor.page.evaluateHandle(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     return store.beginInteractiveEdit()
   })
   try {
     const previewId = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       const page = store.state.currentPageId
       const group = store.graph.createNode('FRAME', page, {
@@ -46,9 +46,9 @@ test('dense text keeps exact pixels without reshaping unchanged labels during pr
       store.requestRender()
       return marker.id
     })
-    await editor.page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+    await editor.page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
     await editor.page.evaluate((id) => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store?.renderer) throw new Error('Renderer unavailable')
       store.renderer.textPreparationCache.clear()
       store.graph.updateNodePreview(id, { x: -10004 })
@@ -61,7 +61,7 @@ test('dense text keeps exact pixels without reshaping unchanged labels during pr
     // One additional pass lets drawing paragraphs occupy the cache after coverage
     // observations have been memoized. Subsequent preview frames must not shape text.
     await editor.page.evaluate((id) => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       store?.graph.updateNodePreview(id, { x: -10003 })
       store?.requestRepaint()
     }, previewId)
@@ -71,7 +71,7 @@ test('dense text keeps exact pixels without reshaping unchanged labels during pr
       for (const x of [-10002, -10001, -10000]) {
         await editor.page.evaluate(
           ({ id, x }) => {
-            const store = window.openPencil?.getStore?.()
+            const store = window.lawha?.getStore?.()
             store?.graph.updateNodePreview(id, { x })
             store?.requestRepaint()
           },

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { ConstraintType } from '@open-pencil/scene-graph'
-import { constrainedChildRect, scaledGeometryChanges } from '@open-pencil/scene-graph/resize'
+import type { ConstraintType } from '@lawha/scene-graph'
+import { constrainedChildRect, scaledGeometryChanges } from '@lawha/scene-graph/resize'
 
 // Live Figma, 2026-10-10: a locked 100×50 rectangle at 50,50 in a 200×200 frame.
 const child = { x: 50, y: 50, width: 100, height: 50 }

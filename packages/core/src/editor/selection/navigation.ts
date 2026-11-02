@@ -1,4 +1,4 @@
-import { generatedFrameOwner, isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { generatedFrameOwner, isGeneratedFrame } from '@lawha/scene-graph/generated'
 
 import type { EditorContext } from '#core/editor/types'
 

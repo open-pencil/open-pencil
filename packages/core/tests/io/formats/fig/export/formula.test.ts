@@ -2,12 +2,12 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { parseFigBuffer } from '@lawha/fig'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { parseVariableFormula } from '@lawha/scene-graph/variables'
 
 test('numeric, Boolean and comparison formulas survive fresh and patched .fig saves', async () => {
   await initCodec()

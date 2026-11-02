@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Fill, Stroke } from '@open-pencil/scene-graph'
-import { applyStrokePaint } from '@open-pencil/vue/controls/color-model'
+import type { Fill, Stroke } from '@lawha/scene-graph'
+import { applyStrokePaint } from '@lawha/vue/controls/color-model'
 
 const GRADIENT: Fill = {
   type: 'GRADIENT_LINEAR',

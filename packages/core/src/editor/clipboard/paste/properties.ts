@@ -1,18 +1,18 @@
 import { omitBy, pick } from 'es-toolkit/object'
 
-import { materializeFigFragment } from '@open-pencil/fig'
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import type { SceneGraph, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import { materializeFigFragment } from '@lawha/fig'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import type { SceneGraph, SceneNode, StyleRun } from '@lawha/scene-graph'
 import {
   AUTO_LAYOUT_FIELDS,
   CORNER_FIELDS,
   PAINT_FIELDS,
   STROKE_FIELDS,
   TEXT_STYLE_FIELDS
-} from '@open-pencil/scene-graph/fields'
-import { STYLE_LINK_FIELDS, sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
+} from '@lawha/scene-graph/fields'
+import { STYLE_LINK_FIELDS, sharedStyleRefKey } from '@lawha/scene-graph/shared-styles'
 
-import { parseOpenPencilClipboard } from '#core/clipboard'
+import { parseLawhaClipboard } from '#core/clipboard'
 import { importClipboardDependenciesWithUndo } from '#core/editor/clipboard/dependencies'
 import type { ClipboardSnapshot } from '#core/editor/clipboard/snapshot'
 import type { EditorContext } from '#core/editor/types'
@@ -147,9 +147,9 @@ interface PastedSource {
 
 /** The one layer a clipboard payload from another app or tab holds, or null. */
 async function sourceFromHTML(html: string): Promise<PastedSource | null> {
-  const openPencil = parseOpenPencilClipboard(html)
-  if (openPencil) {
-    const { nodes, images } = openPencil
+  const lawha = parseLawhaClipboard(html)
+  if (lawha) {
+    const { nodes, images } = lawha
     return nodes.length === 1 ? { node: nodes[0], images } : null
   }
   const figma = await parseFigmaClipboard(html)

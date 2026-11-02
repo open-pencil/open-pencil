@@ -4,7 +4,7 @@ import { setImmediate } from 'node:timers/promises'
 import { verifyPublicImports } from '#package-quality/smoke/runtime'
 import { measurePhase } from '#package-quality/timing'
 
-import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
+import type { CommandRequest } from '@lawha/package-artifacts-tools'
 
 test('public imports retain separate bounded Node and Bun invocations and the stdio exclusion', async () => {
   const requests: CommandRequest[] = []
@@ -17,7 +17,7 @@ test('public imports retain separate bounded Node and Bun invocations and the st
         exports: { '.': './index.js', './extra': './extra.js' }
       },
       {
-        name: '@open-pencil/mcp',
+        name: '@lawha/mcp',
         version: '1.0.0',
         exports: { '.': './index.js', './stdio': './stdio.js' }
       }
@@ -43,7 +43,7 @@ test('public imports retain separate bounded Node and Bun invocations and the st
     expect(calls.map(({ args }) => args?.at(-1))).toEqual([
       'await import("@fixture/library")',
       'await import("@fixture/library/extra")',
-      'await import("@open-pencil/mcp")'
+      'await import("@lawha/mcp")'
     ])
     for (const request of calls) {
       expect(request.cwd).toBe('/fixture')

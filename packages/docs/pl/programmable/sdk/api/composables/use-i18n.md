@@ -1,6 +1,6 @@
 ---
 title: useI18n
-description: Lokalizowane etykiety OpenPencil i zmiana aktywnego locale SDK.
+description: Lokalizowane etykiety Lawha i zmiana aktywnego locale SDK.
 ---
 
 # useI18n
@@ -12,7 +12,7 @@ Użyj go, aby pobierać etykiety menu, commands, panels, pages i dialogs dostarc
 ## Użycie
 
 ```ts
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 const { menu, commands, panels, locale, availableLocales, localeLabels, setLocale } = useI18n()
 ```
@@ -34,7 +34,7 @@ const { menu, commands, panels, locale, availableLocales, localeLabels, setLocal
 
 ```vue
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
 </script>

@@ -7,7 +7,7 @@ import {
   tokenNumberToCSS,
   variableCSSNames,
   variableUnit
-} from '@open-pencil/dom-css/export'
+} from '@lawha/dom-css/export'
 import type {
   SceneGraph,
   Variable,
@@ -16,16 +16,16 @@ import type {
   VariableValue,
   VariableFormula,
   VariableLiteral
-} from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
 import {
   tokenNumberFromUnit,
   tokenNumberInUnit,
   variableValueReferences,
   printFormula
-} from '@open-pencil/scene-graph/variables'
-import { fuzzyFilter } from '@open-pencil/vue/shared/search'
+} from '@lawha/scene-graph/variables'
+import { fuzzyFilter } from '@lawha/vue/shared/search'
 
 /** One mode's value as the stylesheet writes it, with what the panel previews beside it. */
 export interface TokenModeValue {
@@ -40,7 +40,7 @@ export interface TokenModeValue {
   result?: string
   /** A CSS expression written instead of the stored number, such as `clamp(…)`. */
   expression?: string
-  /** A function from the file OpenPencil cannot evaluate, such as `VAR_MODE_LOOKUP`. */
+  /** A function from the file Lawha cannot evaluate, such as `VAR_MODE_LOOKUP`. */
   unsupported?: string
 }
 

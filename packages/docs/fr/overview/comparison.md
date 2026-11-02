@@ -1,6 +1,6 @@
-# OpenPencil et Penpot : architecture et performances
+# Lawha et Penpot : architecture et performances
 
-OpenPencil et Penpot sont des outils de design open source aux objectifs et architectures différents.
+Lawha et Penpot sont des outils de design open source aux objectifs et architectures différents.
 
 ::: info Moteur WASM de Penpot
 Penpot 2.x inclut le moteur Rust/Skia WASM `render-wasm/v1`, activé par des options serveur ou `?wasm=true`. Le moteur SVG reste utilisé par défaut. Cette comparaison tient compte des deux options.
@@ -8,7 +8,7 @@ Penpot 2.x inclut le moteur Rust/Skia WASM `render-wasm/v1`, activé par des opt
 
 ## 1. Taille du code source
 
-| Mesure | OpenPencil | Penpot |
+| Mesure | Lawha | Penpot |
 |--------|------------|--------|
 | Lines of code | **environ 26 000** | **environ 299 000** |
 | Fichiers source | environ 143 | environ 2 900 |
@@ -18,11 +18,11 @@ Penpot 2.x inclut le moteur Rust/Skia WASM `render-wasm/v1`, activé par des opt
 | Serveur | Aucun, architecture locale | 32 600 lignes et 151 fichiers SQL |
 | Rapport | **1×** | **environ 11×** |
 
-OpenPencil est environ onze fois plus petit. Cette différence vient surtout de l’architecture, pas uniquement du nombre de fonctionnalités.
+Lawha est environ onze fois plus petit. Cette différence vient surtout de l’architecture, pas uniquement du nombre de fonctionnalités.
 
 ## 2. Architecture
 
-### OpenPencil : un seul processus client
+### Lawha : un seul processus client
 
 ```text
 ┌─────────────────────────────────┐
@@ -51,11 +51,11 @@ L’éditeur, SceneGraph, le codec de fichiers et le moteur de rendu s’exécut
 
 Un déploiement complet de Penpot comprend une interface, un serveur JVM, PostgreSQL, Valkey, MinIO et un exportateur basé sur Chromium sans interface. L’environnement de développement nécessite Docker Compose, JVM, Node et les outils Rust.
 
-OpenPencil évite latence réseau, sérialisation entre services, orchestration de conteneurs et requêtes de base de données pour les opérations courantes. Penpot vise une plateforme multiutilisateur hébergée ; OpenPencil privilégie l’édition locale à faible latence.
+Lawha évite latence réseau, sérialisation entre services, orchestration de conteneurs et requêtes de base de données pour les opérations courantes. Penpot vise une plateforme multiutilisateur hébergée ; Lawha privilégie l’édition locale à faible latence.
 
 ## 3. Chaîne de rendu
 
-### OpenPencil : TypeScript → CanvasKit WASM
+### Lawha : TypeScript → CanvasKit WASM
 
 ```typescript
 renderSceneToCanvas(canvas, graph, pageId) {
@@ -84,9 +84,9 @@ Sans WASM, chaque Shape devient un SVG DOM element rendu par React/Reagent.
 
 En mode WASM, chaque UUID est divisée en quatre `u32`, chaque transformation en six `f32`, remplissages et contours sont encodés en binaire et les propriétés de base d’une forme occupent une structure de 104 octets. Le moteur utilise un cache de tuiles, des zones d’intérêt, onze surfaces de rendu et un état global mutable via `unsafe { STATE.as_mut() }`.
 
-Le Tile system prépare les zones proches du Viewport et conserve jusqu’à 1 024 Textures. OpenPencil rend de nouveau toute la zone visible.
+Le Tile system prépare les zones proches du Viewport et conserve jusqu’à 1 024 Textures. Lawha rend de nouveau toute la zone visible.
 
-| Aspect | OpenPencil | Penpot |
+| Aspect | Lawha | Penpot |
 |--------|------------|--------|
 | JavaScript → WASM | Calls directs avec objets TypeScript | Structures encodées en Binary |
 | Modèle | Rendu complet du Viewport visible | Tile cache |
@@ -103,7 +103,7 @@ Le Path CanvasKit direct demande moins de traitement intermédiaire pour les doc
 nodes: Map<string, SceneNode>
 ```
 
-OpenPencil fournit :
+Lawha fournit :
 
 - une recherche par identifiant en O(1) ;
 - 29 types d’objet issus du schéma Kiwi de Figma ;
@@ -113,11 +113,11 @@ OpenPencil fournit :
 
 Penpot maintient ses propres définitions de types en Clojure/ClojureScript et Rust. Des modules distincts gèrent couleurs, composants, conteneurs, remplissages, Grid, modificateurs, pages et tracés. Malli valide les schémas à l’exécution et les données de rendu franchissent la limite CLJS → Rust.
 
-OpenPencil utilise directement le schéma Kiwi. Penpot doit synchroniser son modèle entre plusieurs langages.
+Lawha utilise directement le schéma Kiwi. Penpot doit synchroniser son modèle entre plusieurs langages.
 
 ## 5. Moteur de disposition
 
-OpenPencil utilise Yoga WASM de manière synchrone :
+Lawha utilise Yoga WASM de manière synchrone :
 
 ```typescript
 import Yoga from 'yoga-layout'
@@ -129,11 +129,11 @@ applyYogaLayout(graph, frame, yogaRoot)
 
 Penpot maintient ses propres Implementations de Flex et Grid en ClojureScript et Rust WASM. Les deux Engines doivent produire le même résultat.
 
-OpenPencil utilise Yoga, avec une variante prenant Grid en charge. Penpot maintient plusieurs milliers de lignes de code de disposition dans deux langages.
+Lawha utilise Yoga, avec une variante prenant Grid en charge. Penpot maintient plusieurs milliers de lignes de code de disposition dans deux langages.
 
 ## 6. Formats et Figma
 
-### OpenPencil
+### Lawha
 
 - Format Binary Kiwi natif de Figma.
 - Import direct de `.fig`.
@@ -147,19 +147,19 @@ OpenPencil utilise Yoga, avec une variante prenant Grid en charge. Penpot mainti
 - Aucun Import `.fig` natif.
 - Plusieurs Generations de format avec Migration system.
 
-OpenPencil lit `.fig` et Figma Clipboard directement. Penpot nécessite une voie Import ou Export distincte.
+Lawha lit `.fig` et Figma Clipboard directement. Penpot nécessite une voie Import ou Export distincte.
 
 ## 7. État et annulation
 
-OpenPencil utilise des commandes inverses. Les fonctions d’avancement et de retour conservent seulement l’état nécessaire ; des lots regroupent plusieurs opérations.
+Lawha utilise des commandes inverses. Les fonctions d’avancement et de retour conservent seulement l’état nécessaire ; des lots regroupent plusieurs opérations.
 
 Penpot utilise Potok. `UpdateEvent` modifie l’état et `WatchEvent` exécute les effets de bord avec RxJS. L’annulation stocke des vecteurs de changements inverses, limite l’historique à 50 entrées et regroupe les changements rapides en transactions.
 
-Les changements sérialisables conviennent à la collaboration via serveur, mais augmentent la complexité. L’approche OpenPencil est plus directe pour un éditeur à processus unique.
+Les changements sérialisables conviennent à la collaboration via serveur, mais augmentent la complexité. L’approche Lawha est plus directe pour un éditeur à processus unique.
 
 ## 8. Développement
 
-| Mesure | OpenPencil | Penpot |
+| Mesure | Lawha | Penpot |
 |--------|------------|--------|
 | Setup | `bun install && bun dev` | Docker Compose, JVM, Node et Rust |
 | HMR | Vite | shadow-cljs |
@@ -169,7 +169,7 @@ Les changements sérialisables conviennent à la collaboration via serveur, mais
 
 ## 9. Performances
 
-| Scénario | OpenPencil | Penpot |
+| Scénario | Lawha | Penpot |
 |----------|------------|--------|
 | Démarrage à froid | moins de 2 s avec WASM | plus de 10 s pour serveur, client et WASM |
 | Opération courante | Dans un seul processus | Aller-retour réseau possible |
@@ -183,7 +183,7 @@ Les changements sérialisables conviennent à la collaboration via serveur, mais
 1. **Collaboration via serveur :** comptes, contrôle d’accès et stockage central avec WebSockets.
 2. **Système de plugins :** exécution isolée et API de plugins.
 3. **Variables de design :** prise en charge intégrée.
-4. **CSS Grid :** implémentation propre ; OpenPencil utilise une variante de Yoga avec Grid.
+4. **CSS Grid :** implémentation propre ; Lawha utilise une variante de Yoga avec Grid.
 5. **Auto-hébergement :** déploiement d’une plateforme d’équipe avec Docker.
 6. **Maturité :** plusieurs années d’utilisation en production.
 
@@ -197,15 +197,15 @@ Penpot propose des plugins isolés, mais pas d’API équivalente pour les scrip
 
 | Domaine | Avantage | Motif |
 |---------|----------|-------|
-| Simplicité | OpenPencil | Un processus au lieu de plusieurs services |
-| Rendu | OpenPencil | Accès direct à CanvasKit |
-| Code source | OpenPencil | Environ 26 000 contre 299 000 lignes |
-| Compatibilité Figma | OpenPencil | Kiwi et `.fig` natifs |
-| Développement | OpenPencil | TypeScript et Vue plutôt que Clojure, Rust et Docker |
-| Application de bureau | OpenPencil | Tauri natif |
-| Disposition | OpenPencil | Yoga plutôt que deux implémentations propres |
-| Collaboration | Forces différentes | Penpot : serveur et contrôle d’accès ; OpenPencil : P2P sans hébergement |
+| Simplicité | Lawha | Un processus au lieu de plusieurs services |
+| Rendu | Lawha | Accès direct à CanvasKit |
+| Code source | Lawha | Environ 26 000 contre 299 000 lignes |
+| Compatibilité Figma | Lawha | Kiwi et `.fig` natifs |
+| Développement | Lawha | TypeScript et Vue plutôt que Clojure, Rust et Docker |
+| Application de bureau | Lawha | Tauri natif |
+| Disposition | Lawha | Yoga plutôt que deux implémentations propres |
+| Collaboration | Forces différentes | Penpot : serveur et contrôle d’accès ; Lawha : P2P sans hébergement |
 | Auto-hébergement | Penpot | Déploiement Docker |
 | Maturité de l’écosystème | Penpot | Plusieurs années en production |
 
-OpenPencil est un éditeur compact à processus unique avec moteur CanvasKit et prise en charge native de `.fig`. Penpot est une plateforme client-serveur complète utilisant Clojure, ClojureScript, Rust, des bases de données et des services Docker. Les deux offrent la collaboration selon des modèles différents. Penpot propose un écosystème de plugins ; OpenPencil fournit des scripts sans interface compatibles Figma, 90 outils AI/MCP, l’export SVG et PDF, et une application de bureau.
+Lawha est un éditeur compact à processus unique avec moteur CanvasKit et prise en charge native de `.fig`. Penpot est une plateforme client-serveur complète utilisant Clojure, ClojureScript, Rust, des bases de données et des services Docker. Les deux offrent la collaboration selon des modèles différents. Penpot propose un écosystème de plugins ; Lawha fournit des scripts sans interface compatibles Figma, 90 outils AI/MCP, l’export SVG et PDF, et une application de bureau.

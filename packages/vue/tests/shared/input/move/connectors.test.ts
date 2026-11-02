@@ -4,7 +4,7 @@ import {
   boundEndpoint,
   buildConnectorSublayers,
   freeEndpoint
-} from '@open-pencil/scene-graph/connectors'
+} from '@lawha/scene-graph/connectors'
 
 import { createMoveHarness, type MoveHarness } from './harness'
 

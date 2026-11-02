@@ -9,12 +9,12 @@ import type {
   TextHeightBehavior
 } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
-import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import type { SceneNode } from '@lawha/scene-graph'
+import { resolveRGBAForPreview } from '@lawha/scene-graph/color'
+import { faceStyleKey, type NamedFace } from '@lawha/scene-graph/font-style'
+import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
+import { lineHeightPixels, textLengthPixels } from '@lawha/scene-graph/text'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
 
 import {
   pushParagraphStyle,

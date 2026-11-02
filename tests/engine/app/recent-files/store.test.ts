@@ -50,7 +50,7 @@ describe('recent documents', () => {
 
   test('keeps documents of different server profiles apart', () => {
     const document = {
-      providerId: 'openpencil-cloud',
+      providerId: 'lawha-cloud',
       containerId: 'workspace-1',
       documentId: 'doc-1'
     }
@@ -58,8 +58,8 @@ describe('recent documents', () => {
     rememberRecentStorageDocument({ ...document, profileId: 'server-b' }, 'On B', 'design')
 
     expect(recentFiles.value.map(({ id, name }) => ({ id, name }))).toEqual([
-      { id: 'storage:openpencil-cloud:server-b:doc-1', name: 'On B' },
-      { id: 'storage:openpencil-cloud:server-a:doc-1', name: 'On A' }
+      { id: 'storage:lawha-cloud:server-b:doc-1', name: 'On B' },
+      { id: 'storage:lawha-cloud:server-a:doc-1', name: 'On A' }
     ])
     expect(recentFiles.value[0]).toMatchObject({
       profileId: 'server-b',

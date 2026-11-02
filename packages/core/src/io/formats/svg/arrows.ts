@@ -1,4 +1,4 @@
-import type { SceneNode, StrokeCap, VectorNetwork } from '@open-pencil/scene-graph'
+import type { SceneNode, StrokeCap, VectorNetwork } from '@lawha/scene-graph'
 import {
   arrowLinesSegments,
   circleCapRadius,
@@ -9,8 +9,8 @@ import {
   trimArrowShafts,
   triangleCapPoints,
   type ArrowEndpoint
-} from '@open-pencil/scene-graph/arrow-caps'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/arrow-caps'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 

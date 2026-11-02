@@ -1,18 +1,18 @@
 import { isEmptyObject, isEqual, omitBy, pick } from 'es-toolkit'
 
-import { jsx, type SyntaxNode } from '@open-pencil/emit'
+import { jsx, type SyntaxNode } from '@lawha/emit'
 import type {
   SceneNode,
   TextParagraphSpacingField,
   TextParagraphStyle
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   hasParagraphSpacing,
   MAX_LIST_INDENTATION,
   paragraphStyleAt,
   textParagraphRanges,
   withParagraphSpacing
-} from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph/text'
 
 import { TEXT_CASE, TEXT_DECORATION } from '../enums'
 import { AUTO, textLengthJSX } from '../overrides/text'

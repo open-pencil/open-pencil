@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { canvasToLocalPoint, getPointerCoords, hitTestLayerAt } from '#vue/shared/input/geometry'
 import type { HitTestFns } from '#vue/shared/input/select'

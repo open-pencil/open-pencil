@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 
 // An open outer square around a closed inner square, as filled icon sets often draw a ring.
 const RING = 'M0 0h24v24H0M6 6v12h12V6z'

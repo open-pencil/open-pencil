@@ -2,7 +2,7 @@
 import { isEqual } from 'es-toolkit'
 import { computed } from 'vue'
 
-import { type Locale, useI18n } from '@open-pencil/vue/i18n'
+import { type Locale, useI18n } from '@lawha/vue/i18n'
 
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
 import { DEFAULT_RECENT_FILES_LIMIT } from '@/app/recent-files/limit'

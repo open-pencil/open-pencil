@@ -2,10 +2,10 @@ import { describe, test, expect, beforeEach } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
-import { importSVG } from '@open-pencil/core/tools'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { renderNodesToSVG } from '@lawha/core/io/formats/svg'
+import { importSVG } from '@lawha/core/tools'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 

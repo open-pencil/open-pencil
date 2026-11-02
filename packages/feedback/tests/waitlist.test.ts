@@ -45,7 +45,7 @@ beforeEach(async () => {
   await createFeedbackDatabase(service.db).deleteFrom('waitlist').execute()
   service.sentEmails.length = 0
   service.setNow(START)
-  turnstile({ success: true, hostname: 'openpencil.dev', action: 'waitlist' })
+  turnstile({ success: true, hostname: 'lawha.invalid', action: 'waitlist' })
 })
 
 afterAll(async () => {
@@ -61,7 +61,7 @@ describe('waitlist', () => {
     expect(service.sentEmails).toHaveLength(1)
     const [email] = service.sentEmails
     expect(email.to).toBe('Ada@Example.com')
-    expect(email.from).toEqual({ name: 'OpenPencil', email: 'hello@openpencil.dev' })
+    expect(email.from).toEqual({ name: 'Lawha', email: 'hello@lawha.invalid' })
 
     const confirm = linkFrom(email.text, '/waitlist/confirm')
     // Opening the link only asks; a mail scanner following it confirms nothing.
@@ -109,7 +109,7 @@ describe('waitlist', () => {
   })
 
   test('refuses a Turnstile pass issued for another form', async () => {
-    turnstile({ success: true, hostname: 'openpencil.dev', action: 'newsletter' })
+    turnstile({ success: true, hostname: 'lawha.invalid', action: 'newsletter' })
 
     expect((await service.postJSON('/waitlist', SIGNUP)).status).toBe(403)
   })
@@ -124,7 +124,7 @@ describe('waitlist', () => {
   })
 
   test('accepts a Turnstile pass issued on the web app', async () => {
-    turnstile({ success: true, hostname: 'app.openpencil.dev', action: 'waitlist' })
+    turnstile({ success: true, hostname: 'app.lawha.invalid', action: 'waitlist' })
 
     expect((await service.postJSON('/waitlist', SIGNUP)).status).toBe(202)
   })
@@ -149,7 +149,7 @@ describe('waitlist', () => {
 
   test('shows an expired link for an unknown token', async () => {
     const response = await postForm(
-      new URL(`https://feedback.openpencil.dev/waitlist/confirm?token=${'0'.repeat(64)}`)
+      new URL(`https://feedback.lawha.invalid/waitlist/confirm?token=${'0'.repeat(64)}`)
     )
 
     expect(response.status).toBe(404)

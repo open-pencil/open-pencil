@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
+import { SceneGraph } from '@lawha/scene-graph'
+import { LAWHA_PLUGIN_DATA, withPluginData } from '@lawha/scene-graph/plugin-data'
 import {
   findStatusState,
   readStatusWorkflow,
   STATUS_WORKFLOW_PRESETS,
   writeStatusWorkflow
-} from '@open-pencil/scene-graph/statuses'
+} from '@lawha/scene-graph/statuses'
 
 describe('status workflow', () => {
   test("a document without one has Figma's Ready for dev and Completed", () => {
@@ -26,7 +26,7 @@ describe('status workflow', () => {
     if (!root) throw new Error('missing root')
     const [state] = STATUS_WORKFLOW_PRESETS.simple.states
     graph.updateNode(root.id, {
-      pluginData: withPluginData(root.pluginData, OPEN_PENCIL_PLUGIN_DATA.statuses, {
+      pluginData: withPluginData(root.pluginData, LAWHA_PLUGIN_DATA.statuses, {
         states: [state, state]
       })
     })

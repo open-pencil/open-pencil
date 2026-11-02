@@ -41,18 +41,18 @@ Instance result          "Updated"               "Badge"
 ## Package documentation
 
 The canonical implementation documentation lives alongside the package in
-[`packages/fig/docs`](https://github.com/open-pencil/open-pencil/tree/master/packages/fig/docs).
+[`packages/fig/docs`](https://github.com/aliaaldihnayn-lab/design/tree/master/packages/fig/docs).
 This page is the development-site entry point, not a second copy of those contracts.
 
 Read in order:
 
-1. [Architecture and ownership](https://github.com/open-pencil/open-pencil/blob/master/packages/fig/docs/architecture.md)
-2. [Source model and identities](https://github.com/open-pencil/open-pencil/blob/master/packages/fig/docs/source-model.md)
-3. [Instance evaluation and precedence](https://github.com/open-pencil/open-pencil/blob/master/packages/fig/docs/instance-evaluation.md)
-4. [SceneGraph materialization](https://github.com/open-pencil/open-pencil/blob/master/packages/fig/docs/materialization.md)
-5. [Document sessions, rollback, and recovery](https://github.com/open-pencil/open-pencil/blob/master/packages/fig/docs/document-sessions.md)
-6. [Export contracts](https://github.com/open-pencil/open-pencil/blob/master/packages/fig/docs/export.md)
-7. [Validation and oracle methodology](https://github.com/open-pencil/open-pencil/blob/master/packages/fig/docs/validation.md)
+1. [Architecture and ownership](https://github.com/aliaaldihnayn-lab/design/blob/master/packages/fig/docs/architecture.md)
+2. [Source model and identities](https://github.com/aliaaldihnayn-lab/design/blob/master/packages/fig/docs/source-model.md)
+3. [Instance evaluation and precedence](https://github.com/aliaaldihnayn-lab/design/blob/master/packages/fig/docs/instance-evaluation.md)
+4. [SceneGraph materialization](https://github.com/aliaaldihnayn-lab/design/blob/master/packages/fig/docs/materialization.md)
+5. [Document sessions, rollback, and recovery](https://github.com/aliaaldihnayn-lab/design/blob/master/packages/fig/docs/document-sessions.md)
+6. [Export contracts](https://github.com/aliaaldihnayn-lab/design/blob/master/packages/fig/docs/export.md)
+7. [Validation and oracle methodology](https://github.com/aliaaldihnayn-lab/design/blob/master/packages/fig/docs/validation.md)
 
 See also [system architecture](./architecture), [testing](./testing), and the
 [development roadmap](./roadmap). Fixture provenance belongs next to fixtures; individual

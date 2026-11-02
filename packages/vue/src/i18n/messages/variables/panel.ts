@@ -142,7 +142,7 @@ export const variablesMessageDefaults = {
   formulaIf: 'condition, then, otherwise',
   formulaText: 'number as text',
   formulaTruthy: 'value as true or false',
-  unsupportedExpression: params('OpenPencil can’t evaluate {name} yet. Saving keeps it as it is.')
+  unsupportedExpression: params('Lawha can’t evaluate {name} yet. Saving keeps it as it is.')
 } as const
 
 export const variablesMessages = i18n('variables', variablesMessageDefaults)

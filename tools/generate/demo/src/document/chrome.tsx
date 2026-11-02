@@ -1,6 +1,6 @@
-/** @jsxImportSource @open-pencil/design-jsx */
+/** @jsxImportSource @lawha/design-jsx */
 /**
- * Pieces of OpenPencil's own chrome, drawn at the app's sizes in its colors, so a tip can show
+ * Pieces of Lawha's own chrome, drawn at the app's sizes in its colors, so a tip can show
  * where to click rather than describe it. A ring in the tour's accent marks the target. Colors
  * come from the App chrome collection, which follows the app's dark or light theme; sizes were
  * measured from 2× screenshots of the header, menu bar, and panel.
@@ -11,7 +11,7 @@ import {
   type BaseProps,
   type DesignVariable,
   type TreeNode
-} from '@open-pencil/design-jsx'
+} from '@lawha/design-jsx'
 
 import { Icon, type IconProps } from './elements'
 import type { Theme } from './theme'

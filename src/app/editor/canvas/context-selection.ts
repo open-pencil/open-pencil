@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import { hitTestGuides } from '@open-pencil/core/canvas'
+import { hitTestGuides } from '@lawha/core/canvas'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

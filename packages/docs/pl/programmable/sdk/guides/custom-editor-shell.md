@@ -5,15 +5,15 @@ description: Tworzenie własnego interfejsu edytora za pomocą provideEditor, Ca
 
 # Własny interfejs edytora
 
-Typowa aplikacja OpenPencil oparta na Vue składa się z trzech warstw:
+Typowa aplikacja Lawha oparta na Vue składa się z trzech warstw:
 
-1. `@open-pencil/core` tworzy edytor;
-2. `@open-pencil/vue` łączy go z composables i komponentami Vue bez narzuconego wyglądu;
+1. `@lawha/core` tworzy edytor;
+2. `@lawha/vue` łączy go z composables i komponentami Vue bez narzuconego wyglądu;
 3. aplikacja określa układ, wygląd i zachowanie właściwe dla produktu.
 
 ## Dlaczego warto rozdzielić te warstwy
 
-Gotowa aplikacja OpenPencil jest tylko jednym z możliwych interfejsów.
+Gotowa aplikacja Lawha jest tylko jednym z możliwych interfejsów.
 
 Na podstawie SDK można utworzyć edytor osadzony w innym produkcie, wewnętrzne narzędzie do pracy z zasobami, edytor szablonów, interfejs do adnotacji albo wyspecjalizowany edytor z obsługą AI.
 
@@ -31,12 +31,12 @@ Wygodny interfejs zwykle:
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core'
-import { provideEditor } from '@open-pencil/vue'
-import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
-import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
-import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
-import { LayerTreeRoot } from '@open-pencil/vue/primitives/LayerTree'
+import { createEditor } from '@lawha/core'
+import { provideEditor } from '@lawha/vue'
+import { CanvasRoot, CanvasSurface } from '@lawha/vue/canvas'
+import { ToolbarRoot } from '@lawha/vue/primitives/Toolbar'
+import { PageListRoot } from '@lawha/vue/primitives/PageList'
+import { LayerTreeRoot } from '@lawha/vue/primitives/LayerTree'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)

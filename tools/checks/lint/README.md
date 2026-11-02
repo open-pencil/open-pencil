@@ -1,4 +1,4 @@
-# OpenPencil lint rules
+# Lawha lint rules
 
 `src/plugin.ts` registers locally owned rules; the workspace `oxlint.json` selects policy. Run `bun run --cwd tools/checks/lint test` for rule tests and `bun run lint` for repository enforcement.
 

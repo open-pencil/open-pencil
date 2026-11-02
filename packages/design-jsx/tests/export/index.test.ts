@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodeAttributes, sceneNodeToJSX, selectionToJSX } from '#design-jsx/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function makeGraph() {
   const graph = new SceneGraph()

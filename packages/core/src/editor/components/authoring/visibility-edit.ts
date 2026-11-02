@@ -1,12 +1,12 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
   findComponentPropertyTargets
-} from '@open-pencil/scene-graph/components'
-import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/components'
+import { cloneInstanceOverrideState } from '@lawha/scene-graph/instances/overrides'
 
 import { refitGroupsAroundLayers } from '#core/editor/structure/group/bounds'
 import type { EditorContext } from '#core/editor/types'

@@ -2,10 +2,10 @@ import { expect, test } from 'bun:test'
 
 import { isEqual } from 'es-toolkit/predicate'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { parseFigFileViaWorker } from '#core/io/formats/fig/read'
 import {

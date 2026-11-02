@@ -33,7 +33,7 @@ const meta = {
         <div class="flex w-64 items-center gap-1 border-b border-border bg-panel px-2 py-2">
           <span class="flex size-6 items-center justify-center rounded bg-accent text-[11px] font-bold text-on-accent">P</span>
           <span class="min-w-0 flex-1 truncate px-1 text-xs text-surface">Homepage redesign</span>
-          <CloudDocumentStatus :state="args.state" :view-only="args.viewOnly" :not-live="args.notLive" :can-rejoin="args.canRejoin" :saved-ago="args.savedAgo" workspace="Design team" host="cloud.openpencil.dev" />
+          <CloudDocumentStatus :state="args.state" :view-only="args.viewOnly" :not-live="args.notLive" :can-rejoin="args.canRejoin" :saved-ago="args.savedAgo" workspace="Design team" host="cloud.lawha.invalid" />
           <IconButton label="Settings"><IconSettings class="size-3.5" /></IconButton>
         </div>
       </div>`

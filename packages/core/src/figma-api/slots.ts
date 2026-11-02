@@ -1,8 +1,8 @@
-import type { ComponentPropertyType, SceneGraph, SlotSettings } from '@open-pencil/scene-graph'
+import type { ComponentPropertyType, SceneGraph, SlotSettings } from '@lawha/scene-graph'
 import {
   createComponentPropertyId,
   componentPropertyDefinitions
-} from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph/components'
 import {
   DEFAULT_SLOT_SETTINGS,
   claimSlotContent,
@@ -12,7 +12,7 @@ import {
   slotPropertyId,
   slotScope,
   type SlotLimitViolation
-} from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph/slots'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { assertProxyEditable, graph, nodeId, raw } from './accessor-utils'

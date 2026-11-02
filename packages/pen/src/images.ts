@@ -1,7 +1,7 @@
-import type { Fill, ImageScaleMode, SceneGraph } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import { coverImageTransform, computeImageHash, imageSize } from '@open-pencil/scene-graph/images'
-import type { Matrix, Size } from '@open-pencil/scene-graph/primitives'
+import type { Fill, ImageScaleMode, SceneGraph } from '@lawha/scene-graph'
+import { BLACK } from '@lawha/scene-graph/constants'
+import { coverImageTransform, computeImageHash, imageSize } from '@lawha/scene-graph/images'
+import type { Matrix, Size } from '@lawha/scene-graph/primitives'
 
 import type { PenImagePaint } from './schema'
 

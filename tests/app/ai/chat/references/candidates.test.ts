@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { commandCandidates, referenceCandidates } from '@/app/ai/chat/references/candidates'
 import { resolveReference } from '@/app/ai/chat/references/resolve'

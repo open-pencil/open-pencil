@@ -8,7 +8,7 @@ import {
   PropertyListVisibility,
   type PropertyListItemSlotProps,
   type PropertyListKey
-} from '@open-pencil/vue/primitives/PropertyList'
+} from '@lawha/vue/primitives/PropertyList'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'

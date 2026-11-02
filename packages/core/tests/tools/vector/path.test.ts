@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { ALL_TOOLS } from '@lawha/core/tools'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const pathSet = ALL_TOOLS.find((tool) => tool.name === 'path_set')
 if (!pathSet) throw new Error('path_set tool missing')

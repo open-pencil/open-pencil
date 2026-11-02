@@ -54,7 +54,7 @@ claims and export serializes them from the same table.
 A descendant `size` claim has no effect in Figma, which does not allow resizing a layer inside
 an instance: no size claim in `gold-preview.fig`, `material3.fig` or `nuxtui.fig` targets a
 descendant that is not an instance, and the ones that target a nested instance restate that
-instance's own size. OpenPencil permits the edit, so the writer records it and the reader
+instance's own size. Lawha permits the edit, so the writer records it and the reader
 restores it; Figma keeps the layer at its component's size on open.
 
 A paint colour alias lives inside the paint, not in the node's parameter map. A `fills` or
@@ -96,7 +96,7 @@ writes them for `.fig` export and the Figma clipboard alike:
 - Glyphs a layer already has (from Figma, or placed along a path) are kept, with their lines
   recovered from their baselines.
 - Other text is shaped by the export runtime's `shapeText`, which Core implements with the
-  renderer's paragraph: lines, alignment, and baselines match what OpenPencil draws, and each
+  renderer's paragraph: lines, alignment, and baselines match what Lawha draws, and each
   outline belongs to the glyph ID the shaper chose, so ligatures and contextual forms survive.
 - When the shaper cannot tell which font drew a run (a missing, variable, or fallback font), the
   layout is written without outlines and readers lay the text out themselves. A partial set of

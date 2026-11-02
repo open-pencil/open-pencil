@@ -1,6 +1,6 @@
 ---
 title: CanvasRoot
-description: Компонент без встроенного оформления для управления холстом OpenPencil.
+description: Компонент без встроенного оформления для управления холстом Lawha.
 ---
 
 # CanvasRoot

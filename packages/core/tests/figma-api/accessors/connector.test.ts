@@ -4,9 +4,9 @@ import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { registerTestFont } from '#core-tests/helpers/figma-api'
 import { pick } from 'es-toolkit'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
+import { connectorSublayers } from '@lawha/scene-graph/connectors'
 
 beforeAll(async () => {
   await registerTestFont()

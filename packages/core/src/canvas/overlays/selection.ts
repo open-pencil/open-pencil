@@ -1,10 +1,10 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { layerRotates } from '@open-pencil/scene-graph/generated'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { layerRotates } from '@lawha/scene-graph/generated'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import Matrix from '@lawha/scene-graph/matrix'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'

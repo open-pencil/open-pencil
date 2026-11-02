@@ -1,4 +1,4 @@
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 import type { SupportNotice } from './guidance'
 

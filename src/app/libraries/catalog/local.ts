@@ -6,12 +6,12 @@ import type {
   LibrarySummary,
   PublishLibraryInput,
   SerializedComponentLibraryRevision
-} from '@open-pencil/core/library'
+} from '@lawha/core/library'
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
   serializeLibraryRevision
-} from '@open-pencil/core/library'
+} from '@lawha/core/library'
 
 import {
   APP_DATABASE_NAMES,

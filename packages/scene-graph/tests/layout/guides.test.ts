@@ -4,7 +4,7 @@ import {
   AUTO_LAYOUT_GRID_COUNT,
   layoutGuideLines,
   layoutGuideSections
-} from '@open-pencil/scene-graph/layout'
+} from '@lawha/scene-graph/layout'
 
 describe('layout guide geometry bounds', () => {
   test('normalizes fractional section counts', () => {

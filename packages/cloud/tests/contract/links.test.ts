@@ -54,7 +54,7 @@ test('link paths name their kind and decoded ID', () => {
 
 test('desktop links carry the web link under the app scheme, with the secret in the fragment', () => {
   const url = new URL(cloudDesktopLinkURL('invitations', 'invitation-id', server, 'secret'))
-  expect(url.protocol).toBe('openpencil:')
+  expect(url.protocol).toBe('lawha:')
   expect(url.host).toBe('cloud')
   expect(url.searchParams.get('url')).toBe('https://company.example/invitations/invitation-id')
   expect(url.hash).toBe('#secret')

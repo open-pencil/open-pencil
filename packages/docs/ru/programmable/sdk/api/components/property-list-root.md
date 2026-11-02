@@ -22,8 +22,8 @@ PropertyList — управляемый компонент без встроен
 ```vue twoslash
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Fill } from '@open-pencil/scene-graph'
-import { PropertyListItem, PropertyListRemove, PropertyListRoot } from '@open-pencil/vue/primitives/PropertyList'
+import type { Fill } from '@lawha/scene-graph'
+import { PropertyListItem, PropertyListRemove, PropertyListRoot } from '@lawha/vue/primitives/PropertyList'
 
 const fills = ref<Fill[]>([])
 </script>
@@ -53,7 +53,7 @@ const fills = ref<Fill[]>([])
 
 ## Адаптер редактора
 
-Панели OpenPencil используют `useEditorPropertyList(propKey)`, чтобы связать управляемые события с выделением, изменением нескольких объектов, группировкой истории отмены и изменением порядка. Пользователи SDK могут предоставить собственный адаптер состояния без контекста редактора OpenPencil.
+Панели Lawha используют `useEditorPropertyList(propKey)`, чтобы связать управляемые события с выделением, изменением нескольких объектов, группировкой истории отмены и изменением порядка. Пользователи SDK могут предоставить собственный адаптер состояния без контекста редактора Lawha.
 
 ## Сгенерированный справочник API
 

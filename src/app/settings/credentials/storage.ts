@@ -1,8 +1,8 @@
-const BROWSER_PERSISTENCE_KEY = 'open-pencil:credential-persistence'
+const BROWSER_PERSISTENCE_KEY = 'lawha:credential-persistence'
 const LEGACY_CREDENTIAL_KEYS = [
-  'open-pencil:openrouter-api-key',
-  'open-pencil:pexels-api-key',
-  'open-pencil:unsplash-access-key'
+  'lawha:openrouter-api-key',
+  'lawha:pexels-api-key',
+  'lawha:unsplash-access-key'
 ]
 
 export function browserCredentialStorage(): Storage | null {
@@ -14,7 +14,7 @@ export function hasLegacyCredentialStorage(): boolean {
   if (!storage) return false
   if (LEGACY_CREDENTIAL_KEYS.some((key) => Boolean(storage.getItem(key)))) return true
   for (let index = 0; index < storage.length; index++) {
-    if (storage.key(index)?.startsWith('open-pencil:ai-key:')) return true
+    if (storage.key(index)?.startsWith('lawha:ai-key:')) return true
   }
   return false
 }

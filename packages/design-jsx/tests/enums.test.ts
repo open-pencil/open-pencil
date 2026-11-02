@@ -19,7 +19,7 @@ import {
 } from '#design-jsx/enums'
 import { createDesignJSXRenderer, sceneNodeToJSX } from '#design-jsx/index'
 
-import { SceneGraph, type StrokeCap } from '@open-pencil/scene-graph'
+import { SceneGraph, type StrokeCap } from '@lawha/scene-graph'
 
 const renderer = createDesignJSXRenderer<never>({
   icon: () => Promise.resolve(null),

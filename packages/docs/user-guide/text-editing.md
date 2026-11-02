@@ -1,6 +1,6 @@
 ---
 title: Text Editing
-description: Creating and editing text with rich formatting, fonts, and inline editing in OpenPencil.
+description: Creating and editing text with rich formatting, fonts, and inline editing in Lawha.
 ---
 
 # Text Editing
@@ -85,14 +85,14 @@ When the text's font is variable, such as Inter, the Typography section lists it
 
 - **Default font** — Inter is loaded automatically
 - **Desktop app** — system fonts plus enabled Google Fonts, Fontsource, Bunny Fonts, and Fontshare catalogs
-- **Browser** — system fonts are available in Chrome and Edge with local-font permission. Enabled Fontsource, Bunny Fonts, and Fontshare providers can load online fonts, subject to network access and browser CORS rules; Google Fonts is disabled in the OpenPencil browser app
+- **Browser** — system fonts are available in Chrome and Edge with local-font permission. Enabled Fontsource, Bunny Fonts, and Fontshare providers can load online fonts, subject to network access and browser CORS rules; Google Fonts is disabled in the Lawha browser app
 - **Downloaded fonts** — the desktop app caches downloaded faces for reuse on the same machine
 
 Allow system font access and choose online providers in **Settings › Fonts**, which the gear next to the font family opens; in the desktop app it also manages downloaded fonts and fallback packs.
 
 ## Missing Fonts and Substitutions
 
-When a requested family or style cannot be loaded, OpenPencil displays a warning above the editor instead of silently treating fallback rendering as faithful typography.
+When a requested family or style cannot be loaded, Lawha displays a warning above the editor instead of silently treating fallback rendering as faithful typography.
 
 Expand the warning to see every affected face and its active substitute. Use **Select layers** to locate all affected text nodes or **Retry fonts** after changing network access, local-font permission, or provider settings. A style may be synthesized from another loaded face in the same family; a missing family falls back to Inter when available.
 

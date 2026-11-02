@@ -22,7 +22,7 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
   await expect(secret).toHaveAttribute('placeholder', /Key saved/)
   expect(
     await page.evaluate(() => {
-      // oxlint-disable-next-line open-pencil/no-direct-storage-access -- Inspect persisted bytes to detect plaintext credential leaks.
+      // oxlint-disable-next-line lawha/no-direct-storage-access -- Inspect persisted bytes to detect plaintext credential leaks.
       return Object.values(localStorage).some((value) => value.includes('storage-secret'))
     })
   ).toBe(false)

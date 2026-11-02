@@ -38,7 +38,7 @@ jobs:
           context: tools/ci/images/native-contracts
           push: true
           tags: |
-            ghcr.io/open-pencil/native-contracts-ci:ubuntu-24.04
-            ghcr.io/open-pencil/native-contracts-ci:${{ github.sha }}
+            ghcr.io/lawha/native-contracts-ci:ubuntu-24.04
+            ghcr.io/lawha/native-contracts-ci:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

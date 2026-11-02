@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { DEFAULT_STICKY_COLOR, STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph/generated'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { renderJSX } from '@lawha/core/design-jsx'
+import { sceneNodeToJSX } from '@lawha/design-jsx'
+import { DEFAULT_STICKY_COLOR, STICKY_COLORS, stickySublayers } from '@lawha/scene-graph/generated'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const BOARD = `
   <Frame name="Board" w={900} h={400}>

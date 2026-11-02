@@ -1,4 +1,4 @@
-import type { FigmaSourcePayload, SceneNode } from '@open-pencil/scene-graph'
+import type { FigmaSourcePayload, SceneNode } from '@lawha/scene-graph'
 
 interface FigmaSourceCarrier {
   source: Omit<SceneNode['source'], 'editedFields'> &

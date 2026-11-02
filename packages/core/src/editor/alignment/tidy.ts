@@ -1,6 +1,6 @@
 import { sum } from 'es-toolkit'
 
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 /** A layer's box on the page, by its id. */
 export interface PlacedBox extends Rect {

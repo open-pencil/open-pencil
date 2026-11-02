@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderTree, renderJSX } from '@open-pencil/core/design-jsx'
+import { renderTree, renderJSX } from '@lawha/core/design-jsx'
 import {
   Frame,
   Text,
@@ -19,7 +19,7 @@ import {
   layerBlur,
   linearGradient,
   solid
-} from '@open-pencil/design-jsx'
+} from '@lawha/design-jsx'
 
 import { expectDefined, getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { addTestColorVariable, makeSceneGraph } from '#tests/helpers/scene'

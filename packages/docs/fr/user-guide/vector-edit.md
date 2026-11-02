@@ -29,7 +29,7 @@ Appuyez sur <kbd>Delete</kbd> ou <kbd>Backspace</kbd> pour supprimer les points 
 
 ## Segments
 
-Cliquez sur un segment pour le sélectionner. Faites-le glisser pour le courber ; OpenPencil crée les poignées nécessaires. Double-cliquez pour ajouter un point.
+Cliquez sur un segment pour le sélectionner. Faites-le glisser pour le courber ; Lawha crée les poignées nécessaires. Double-cliquez pour ajouter un point.
 
 ## Continuer un tracé ouvert
 

@@ -1,8 +1,8 @@
-import { clipPolygon } from '@open-pencil/scene-graph/clipping'
-import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import { degToRad, rotatedCorners, rotatePoint } from '@open-pencil/scene-graph/geometry'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { clipPolygon } from '@lawha/scene-graph/clipping'
+import { colorToHex, compositeOver, contrastRatio } from '@lawha/scene-graph/color'
+import { BLACK } from '@lawha/scene-graph/constants'
+import { degToRad, rotatedCorners, rotatePoint } from '@lawha/scene-graph/geometry'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { defineRule } from '#core/lint/rule'
 import type { LintNode, RuleContext } from '#core/lint/types'

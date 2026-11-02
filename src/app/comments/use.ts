@@ -10,8 +10,8 @@ import {
   deleteCommentThread,
   replyToCommentThread,
   resolveCommentThread
-} from '@open-pencil/scene-graph/comments'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/comments'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { useCollabIdentity } from '@/app/collab/identity'
 import { roomForStore } from '@/app/collab/rooms'

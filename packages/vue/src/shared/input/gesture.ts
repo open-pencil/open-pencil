@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { computed, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 import { PINCH_SCALE_EXPONENT } from '#vue/shared/input/wheel'

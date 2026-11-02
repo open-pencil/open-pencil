@@ -177,6 +177,6 @@ describe('figma.util', () => {
   test('normalizeMarkdown, which has no rich-text editor to normalize for, is refused by name', async () => {
     expect(
       await withColors([], "return attempt(() => figma.util.normalizeMarkdown('# Title'))")
-    ).toEqual(expect.stringContaining('in normalizeMarkdown: OpenPencil does not support'))
+    ).toEqual(expect.stringContaining('in normalizeMarkdown: Lawha does not support'))
   })
 })

@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import { ALL_TOOLS, CORE_TOOLS, isToolExposed } from '@open-pencil/core/tools'
+import { ALL_TOOLS, CORE_TOOLS, isToolExposed } from '@lawha/core/tools'
 
 import { configurableAITools, enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
 import { aiToolOverrides, disabledAITools } from '@/app/ai/tools/preferences'

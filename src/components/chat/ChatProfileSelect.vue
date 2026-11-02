@@ -14,8 +14,8 @@ import {
 } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { AI_PROVIDERS } from '@lawha/core/constants'
+import { useI18n } from '@lawha/vue/i18n'
 
 import {
   aiModelSettings,

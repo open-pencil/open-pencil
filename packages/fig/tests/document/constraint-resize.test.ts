@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { materializeDocument } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { materializeDocument } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 for (const autoLayout of [false, true]) {
   for (const horizontalConstraint of ['MAX', 'STRETCH'] as const) {

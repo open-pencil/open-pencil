@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { FIXTURES } from '#core-tests/helpers/paths'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'
 import { fontManager } from '#core/text/font/manager'

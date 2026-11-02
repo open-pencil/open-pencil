@@ -24,7 +24,7 @@ export function isSelectionScopeTool(name: string): boolean {
 export function parseToolScope(value: string | undefined): MCPToolScope {
   const scope = value?.trim() || 'document'
   if (scope === 'document' || scope === 'selection') return scope
-  throw new Error('OPENPENCIL_MCP_SCOPE must be "document" or "selection"')
+  throw new Error('LAWHA_MCP_SCOPE must be "document" or "selection"')
 }
 
 /** The narrower of the scopes, so a client never offers more than the server it talks to. */
@@ -34,7 +34,7 @@ export function narrowestScope(...scopes: MCPToolScope[]): MCPToolScope {
 
 /** Why a selection-scoped call cannot write files, such as an export with a `path`. */
 export const SELECTION_SCOPE_FILE_OUTPUT_ERROR =
-  'Writing files is unavailable while OpenPencil shares only the selection; omit path'
+  'Writing files is unavailable while Lawha shares only the selection; omit path'
 
 /** Commands the app may receive in selection scope besides calls of the tools above. */
 const SELECTION_SCOPE_COMMANDS: ReadonlySet<string> = new Set(['agent_session_closed'])
@@ -62,7 +62,7 @@ export function scopeRPC(send: RPCSend, scope: MCPToolScope): RPCSend {
     if (!name || !isSelectionScopeTool(name)) {
       return {
         ok: false,
-        error: `${name ?? command} is unavailable while OpenPencil shares only the selection with MCP clients`
+        error: `${name ?? command} is unavailable while Lawha shares only the selection with MCP clients`
       }
     }
     const args = msg.args as RPCJSONObject

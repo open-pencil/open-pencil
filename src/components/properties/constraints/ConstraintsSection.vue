@@ -2,10 +2,10 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import type { ConstraintType } from '@open-pencil/scene-graph'
-import { MIXED } from '@open-pencil/vue/controls/node-props'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { ConstraintsControlRoot } from '@open-pencil/vue/primitives/ConstraintsControl'
+import type { ConstraintType } from '@lawha/scene-graph'
+import { MIXED } from '@lawha/vue/controls/node-props'
+import { useI18n } from '@lawha/vue/i18n'
+import { ConstraintsControlRoot } from '@lawha/vue/primitives/ConstraintsControl'
 
 import ConstraintsPinControl from '@/components/properties/constraints/ConstraintsPinControl.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'

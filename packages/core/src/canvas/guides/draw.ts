@@ -1,7 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { guideOwnersOnPage } from '@open-pencil/scene-graph/guides'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { guideOwnersOnPage } from '@lawha/scene-graph/guides'
 
 import { dashEffect } from '#core/canvas/overlays/outline'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'

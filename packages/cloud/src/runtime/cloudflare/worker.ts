@@ -91,7 +91,7 @@ function cloudServices(
 }
 
 /**
- * OpenPencil Cloud on Cloudflare Workers, configured by a deployment TOML. The Worker serves the
+ * Lawha Cloud on Cloudflare Workers, configured by a deployment TOML. The Worker serves the
  * API, the editor, and the portal per request, a Durable Object per document runs its collaboration rooms, and a
  * Cron Trigger runs cleanup and retries email.
  */

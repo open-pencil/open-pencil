@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { fontManager, probeGlyphOutlineCommands } from '@open-pencil/core/text'
+import { fontManager, probeGlyphOutlineCommands } from '@lawha/core/text'
 
 describe('clipboard text outline probe', () => {
   test('loads HarfBuzz and extracts glyph commands from a loaded font', async () => {

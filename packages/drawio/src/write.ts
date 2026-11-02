@@ -4,7 +4,7 @@ import type { DrawIOCell, DrawIOFile, DrawIOGeometry, DrawIOPage, DrawIOPoint } 
 import { formatStyle } from './style'
 
 /** What the writer puts on `<mxfile>`, so draw.io knows who wrote it. */
-const HOST = 'OpenPencil'
+const HOST = 'Lawha'
 
 function setNumber(element: Element, name: string, value: number) {
   if (value !== 0) element.setAttribute(name, String(value))

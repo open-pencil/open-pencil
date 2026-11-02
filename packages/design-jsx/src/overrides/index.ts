@@ -1,15 +1,15 @@
-import type { Fill, SceneNode, ArcData, NodeType } from '@open-pencil/scene-graph'
-import { colorToFill } from '@open-pencil/scene-graph/color'
-import { parseCSSGridTracks, parseCSSNumber } from '@open-pencil/scene-graph/css'
+import type { Fill, SceneNode, ArcData, NodeType } from '@lawha/scene-graph'
+import { colorToFill } from '@lawha/scene-graph/color'
+import { parseCSSGridTracks, parseCSSNumber } from '@lawha/scene-graph/css'
 import {
   autoLayoutSizingFields,
   fillSizingFields,
   parseAutoLayoutDirection,
   parseCounterAxisAlign,
   parsePrimaryAxisAlign
-} from '@open-pencil/scene-graph/layout'
-import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
-import { withShaderPaints, type ShaderPaint } from '@open-pencil/scene-graph/shaders'
+} from '@lawha/scene-graph/layout'
+import type { Color, JSONObject } from '@lawha/scene-graph/primitives'
+import { withShaderPaints, type ShaderPaint } from '@lawha/scene-graph/shaders'
 
 import { DESIGN_JSX_STYLE_KEYS, designJSXProp } from '../definitions'
 import {

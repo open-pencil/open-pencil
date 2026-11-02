@@ -1,4 +1,4 @@
-import type { VariableScope, VariableType } from '@open-pencil/scene-graph'
+import type { VariableScope, VariableType } from '@lawha/scene-graph'
 
 /** The scopes Figma offers for each variable type; scopes also pick a token's Tailwind namespace. */
 export const SCOPES_BY_TYPE: Record<VariableType, readonly VariableScope[]> = {

@@ -6,8 +6,8 @@ const editor = useEditorSetup('/?test&no-rulers')
 
 function buildScene(page: Page): Promise<void> {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const card = store.graph.createNode('FRAME', pageId, {
       name: 'Card',
@@ -47,7 +47,7 @@ function codeLine(page: Page, text: string) {
 /** The layer under the pointer on the canvas, which is separate from the code's layer. */
 function hoveredLayer(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const id = store?.state.hoveredNodeId
     return id ? (store.graph.getNode(id)?.name ?? null) : null
   })
@@ -55,7 +55,7 @@ function hoveredLayer(page: Page) {
 
 function focusedLayer(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const id = store?.state.codeFocusNodeId
     return id ? (store.graph.getNode(id)?.name ?? null) : null
   })
@@ -82,7 +82,7 @@ async function leaveCode(page: Page) {
 
 function cardSize(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
     return card ? `${card.width}x${card.height}` : null
   })
@@ -168,7 +168,7 @@ test('links follow the code after a live edit', async () => {
 function editLayer(page: Page, name: string, changes: Record<string, unknown>) {
   return page.evaluate(
     ({ name, changes }) => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       const node = [...(store?.graph.getAllNodes() ?? [])].find((n) => n.name === name)
       if (!store || !node) throw new Error(`${name} not found`)
       store.updateNodeWithUndo(node.id, changes, 'Edit')
@@ -179,7 +179,7 @@ function editLayer(page: Page, name: string, changes: Record<string, unknown>) {
 
 function layerId(page: Page, name: string) {
   return page.evaluate((name) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === name)?.id ?? null
   }, name)
 }
@@ -210,7 +210,7 @@ test('code edits update the layers in place', async () => {
   await expect
     .poll(() =>
       editor.page.evaluate(
-        (id) => (id ? window.openPencil?.getStore?.().graph.getNode(id)?.width : null),
+        (id) => (id ? window.lawha?.getStore?.().graph.getNode(id)?.width : null),
         swatchId
       )
     )
@@ -238,7 +238,7 @@ test('canvas edits patch code a person wrote and keep the rest as written', asyn
 
 function richText(page: Page, name: string) {
   return page.evaluate((name) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const node = [...(store?.graph.getAllNodes() ?? [])].find((n) => n.name === name)
     return node ? { styleRuns: node.styleRuns, textParagraphs: node.textParagraphs } : null
   }, name)
@@ -275,7 +275,7 @@ test('layers added or deleted on the canvas are written into the code', async ()
   await personalizeCode(editor.page)
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
     const note = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Fine print')
     if (!store || !card || !note) throw new Error('scene not found')
@@ -308,9 +308,9 @@ test('undo reverts a code edit on the canvas and in the code', async () => {
   await editLayer(editor.page, 'Card', { height: 200 })
   await expect(codeLine(editor.page, 'name="Card"')).toContainText('h={200}')
 
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await editor.page.evaluate(() => window.lawha?.getStore?.().undoAction())
   await expect(codeLine(editor.page, 'name="Card"')).toContainText('h={160}')
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await editor.page.evaluate(() => window.lawha?.getStore?.().undoAction())
   await expect.poll(() => cardSize(editor.page)).toBe('320x160')
   await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={320}')
 })
@@ -337,7 +337,7 @@ test('reordering layers on the canvas moves their elements and keeps them linked
   await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const swatch = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Swatch')
     if (!store || !swatch?.parentId) throw new Error('Swatch not found')
     store.graph.insertChildAt(swatch.id, swatch.parentId, 0)
@@ -392,7 +392,7 @@ test('a reorder that cannot move the code still writes layers added with it', as
   await expect.poll(() => cardSize(editor.page)).toBe('320x170')
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const swatch = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Swatch')
     if (!store || !swatch?.parentId) throw new Error('Swatch not found')
     store.graph.insertChildAt(swatch.id, swatch.parentId, 0)
@@ -421,7 +421,7 @@ test('a canvas edit right after replacing all the code survives its preview', as
   await expect(codeLine(editor.page, 'name="Card"')).toContainText('h={170}')
 
   // The edit applied again belongs to the code's undo step, which leaves the canvas edit.
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await editor.page.evaluate(() => window.lawha?.getStore?.().undoAction())
   await expect.poll(() => cardSize(editor.page)).toBe('400x160')
 })
 
@@ -430,7 +430,7 @@ test('code follows a value while it is dragged and goes back when the drag is ca
   await openCode(editor.page)
 
   const [during, after] = await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
     if (!store || !card) throw new Error('Card not found')
     const frames = async (count: number) => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { commentPreview } from '@/app/comments/format'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'

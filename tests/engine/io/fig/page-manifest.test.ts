@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import { parseFigBuffer } from '@open-pencil/fig'
-import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
+import { parseFigBuffer } from '@lawha/fig'
+import type { FigPageManifestEntry } from '@lawha/kiwi/fig'
 
 import { testPath } from '#tests/helpers/paths'
 

@@ -13,7 +13,7 @@ const MOCK_SVG = readFileSync(
 async function rightClickSelected(): Promise<void> {
   const box = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
   const point = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store || store.state.selectedIds.size !== 1) return null
     const node = store.graph.getNode([...store.state.selectedIds][0])
     if (!node) return null
@@ -30,8 +30,8 @@ async function rightClickSelected(): Promise<void> {
 
 async function createImageNode(): Promise<string> {
   return editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
 
     const imageCanvas = document.createElement('canvas')
     imageCanvas.width = 120
@@ -116,7 +116,7 @@ test('missing key opens Media settings and saves through the credential manager'
   await expect(editor.page.getByTestId('app-settings-dialog')).toHaveCount(0)
   expect(
     await editor.page.evaluate(
-      (id) => window.openPencil?.getStore?.().graph.getNode(id)?.type,
+      (id) => window.lawha?.getStore?.().graph.getNode(id)?.type,
       nodeId
     )
   ).toBe('RECTANGLE')
@@ -131,14 +131,14 @@ test('vectorize replaces an image with editable vectors and undo restores it', a
   await expect
     .poll(() =>
       editor.page.evaluate(
-        (id) => window.openPencil?.getStore?.().graph.getNode(id)?.type ?? null,
+        (id) => window.lawha?.getStore?.().graph.getNode(id)?.type ?? null,
         nodeId
       )
     )
     .toBeNull()
 
   const replacement = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store || store.state.selectedIds.size !== 1) return null
     const frameId = [...store.state.selectedIds][0]
     const frame = store.graph.getNode(frameId)
@@ -156,7 +156,7 @@ test('vectorize replaces an image with editable vectors and undo restores it', a
   await editor.canvas.waitForRender()
   expect(
     await editor.page.evaluate(
-      (id) => window.openPencil?.getStore?.().graph.getNode(id)?.type,
+      (id) => window.lawha?.getStore?.().graph.getNode(id)?.type,
       nodeId
     )
   ).toBe('RECTANGLE')

@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { fontManager } from '@open-pencil/core/text'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import { fontManager } from '@lawha/core/text'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
 

@@ -13,9 +13,9 @@ const CLOSE_SCRIPT = `</${'script'}>`
 /** The smallest working canvas: the same shape as `packages/vue/src/canvas/examples`. */
 const SNIPPET = dedent`
   <script setup lang="ts">
-  import { createEditor } from '@open-pencil/core'
-  import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
-  import { provideEditor } from '@open-pencil/vue'
+  import { createEditor } from '@lawha/core'
+  import { CanvasRoot, CanvasSurface } from '@lawha/vue/canvas'
+  import { provideEditor } from '@lawha/vue'
 
   const editor = createEditor()
   provideEditor(editor)
@@ -29,7 +29,7 @@ const SNIPPET = dedent`
 `
 
 /** What the snippet needs installed, shown on two lines and copied as one command. */
-const INSTALL_PACKAGES = ['@open-pencil/core', '@open-pencil/vue', 'canvaskit-wasm'] as const
+const INSTALL_PACKAGES = ['@lawha/core', '@lawha/vue', 'canvaskit-wasm'] as const
 const INSTALL = `bun add ${INSTALL_PACKAGES.join(' ')}`
 const FILE_NAME = 'Canvas.vue'
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { boundEndpoint, createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+import { createEditor } from '@lawha/core'
+import { boundEndpoint, createConnector, freeEndpoint } from '@lawha/scene-graph/connectors'
 
 import { connectorAttachment, magnetAt } from '#core/editor/connectors/attach'
 

@@ -8,11 +8,11 @@ import {
   parseNpmPack,
   runCommand,
   type WorkspacePackage
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 import {
   inspectTarball,
   type TarballInspection
-} from '@open-pencil/package-artifacts-tools/tarball'
+} from '@lawha/package-artifacts-tools/tarball'
 
 export interface PackedPackageSet {
   inspections: TarballInspection[]

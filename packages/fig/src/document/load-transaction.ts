@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import type { SceneDependencyClosure } from './dependency-closure'
 import type { AssemblyState } from './materialize'

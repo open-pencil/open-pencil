@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 
-import { gridNudge, resolveEditorProfile } from '@open-pencil/core'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { gridNudge, resolveEditorProfile } from '@lawha/core'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isEditing } from '@/app/shell/keyboard/focus'

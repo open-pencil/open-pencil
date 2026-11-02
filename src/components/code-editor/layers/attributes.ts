@@ -5,7 +5,7 @@ import {
   DESIGN_JSX_STYLE_KEYS,
   designJSXPropertyNames,
   type DesignJSXElement
-} from '@open-pencil/design-jsx'
+} from '@lawha/design-jsx'
 
 import type { PatchContext } from './context'
 import { attributeName, indentAt, isLiteralAttribute, reindent, type SyntaxNode } from './syntax'

@@ -73,7 +73,7 @@ describe('ingest', () => {
           arch: 'x64',
           app: 'desktop',
           browser: 'unknown',
-          $lib: 'openpencil',
+          $lib: 'lawha',
           $process_person_profile: false,
           $geoip_disable: true
         }
@@ -89,7 +89,7 @@ describe('ingest', () => {
           arch: 'x64',
           app: 'desktop',
           browser: 'unknown',
-          $lib: 'openpencil',
+          $lib: 'lawha',
           $process_person_profile: false,
           $geoip_disable: true
         }

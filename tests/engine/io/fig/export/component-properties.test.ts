@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { parseFigBuffer, materializeDocument } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 
@@ -12,7 +12,7 @@ describe('Figma component property roundtrip', () => {
     await initCodec()
   })
 
-  test('retains OpenPencil library bindings and materialized identity', async () => {
+  test('retains Lawha library bindings and materialized identity', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     graph.enabledLibraries.set('design-system', {

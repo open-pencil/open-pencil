@@ -1,6 +1,6 @@
 import { compact } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import type { AgentCommand } from '@/app/ai/agents/acp/commands'
 import { runnableSkills } from '@/app/ai/skills/invoke'

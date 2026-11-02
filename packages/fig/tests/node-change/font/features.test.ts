@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { applyFontFeaturesToKiwi, convertFontFeatures } from '#fig/node-change/font/features'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 function apply(features: { tag: string; enabled: boolean }[]) {
   const nc: NodeChange = { type: 'TEXT' }

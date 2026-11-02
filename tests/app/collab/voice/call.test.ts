@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { effectScope } from 'vue'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { openRoomSession } from '@/app/collab/session'
 import { createVoiceCall } from '@/app/collab/voice/call'

@@ -7,7 +7,7 @@ import type { Client } from '@modelcontextprotocol/client'
 import type { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import * as v from 'valibot'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 
@@ -21,7 +21,7 @@ import {
 const AUTH_TOKEN = 'test-stdio-token'
 const NO_DOCUMENT_AUTH_TOKEN = 'test-stdio-no-document-token'
 const isUnix = process.platform !== 'win32'
-const SOCKET_DIR = join(tmpdir(), `openpencil-test-stdio-${process.pid}`)
+const SOCKET_DIR = join(tmpdir(), `lawha-test-stdio-${process.pid}`)
 const SOCKET_PATH = isUnix ? join(SOCKET_DIR, 'mcp.sock') : null
 
 async function createStdioClient(socketPath: string, authToken: string | null) {
@@ -29,22 +29,22 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
   const { StdioClientTransport } = await import('@modelcontextprotocol/client/stdio')
   const env: Record<string, string> = {}
   for (const [key, value] of Object.entries(process.env)) {
-    if (!key.startsWith('OPENPENCIL_MCP_') && value !== undefined) {
+    if (!key.startsWith('LAWHA_MCP_') && value !== undefined) {
       env[key] = value
     }
   }
-  if (process.env.OPENPENCIL_MCP_DISCOVERY_PATH) {
-    env.OPENPENCIL_MCP_DISCOVERY_PATH = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+  if (process.env.LAWHA_MCP_DISCOVERY_PATH) {
+    env.LAWHA_MCP_DISCOVERY_PATH = process.env.LAWHA_MCP_DISCOVERY_PATH
   }
   env.PATH = process.env.PATH ?? ''
-  // Only set OPENPENCIL_MCP_SOCKET when a socket path exists.
+  // Only set LAWHA_MCP_SOCKET when a socket path exists.
   // An empty string on Windows would break the stdio bridge's transport
   // discovery (it would try to connect to an empty socket path).
   if (socketPath) {
-    env.OPENPENCIL_MCP_SOCKET = socketPath
+    env.LAWHA_MCP_SOCKET = socketPath
   }
   if (authToken) {
-    env.OPENPENCIL_MCP_AUTH_TOKEN = authToken
+    env.LAWHA_MCP_AUTH_TOKEN = authToken
   }
   const transport = new StdioClientTransport({
     command: process.execPath,
@@ -76,7 +76,7 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
         // Buffer stderr so the readiness marker is not missed if it
         // straddles a chunk boundary.
         stderrBuffer += chunk.toString()
-        if (stderrBuffer.includes('Connected to OpenPencil')) {
+        if (stderrBuffer.includes('Connected to Lawha')) {
           clearTimeout(timer)
           resolve()
         }
@@ -352,7 +352,7 @@ describe('MCP stdio readiness without an open document', () => {
       const result = await client.callTool({ name: 'get_current_page', arguments: {} })
       expect(result.isError).toBe(true)
       const message = textContent(result.content)
-      expect(message).toContain('OpenPencil app is not connected')
+      expect(message).toContain('Lawha app is not connected')
       expect(message).toContain('no document is open')
     } finally {
       await client?.close().catch(() => undefined)

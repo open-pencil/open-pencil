@@ -4,10 +4,10 @@ import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 import { findByName, PROPERTY_CASES } from '#core-tests/helpers/property-cases'
 import { pick } from 'es-toolkit'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
+import { renderJSX } from '@lawha/core/design-jsx'
+import { sceneNodeToJSX } from '@lawha/design-jsx'
+import { SceneGraph } from '@lawha/scene-graph'
+import { shaderOfPaint } from '@lawha/scene-graph/shaders'
 
 describe('attribute string round-trip', () => {
   it.each([

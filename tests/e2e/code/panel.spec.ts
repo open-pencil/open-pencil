@@ -49,8 +49,8 @@ async function selectSource(label: string) {
 
 test('inactive Code tab defers JSX generation for large selections', async () => {
   const selectionDuration = await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const ids: string[] = []
     for (let frameIndex = 0; frameIndex < 50; frameIndex++) {
       const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
@@ -107,8 +107,8 @@ test('live previews Design JSX and keeps one undo transaction', async () => {
 
 test('previews several roots in one render, each where its layer was', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const page = store.state.currentPageId
     const size = { width: 80, height: 40 }
     const left = store.graph.createNode('RECTANGLE', page, { x: 100, y: 80, ...size })

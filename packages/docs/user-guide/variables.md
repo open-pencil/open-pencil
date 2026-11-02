@@ -1,6 +1,6 @@
 ---
 title: Variables
-description: Design variables, collections, modes, and fill bindings in OpenPencil.
+description: Design variables, collections, modes, and fill bindings in Lawha.
 ---
 
 # Variables
@@ -88,7 +88,7 @@ The bottom of the dialog shows the active collection as CSS custom properties. T
 
 ## Importing and Exporting Design Tokens
 
-Variables and styles move between OpenPencil, Figma, and code as [W3C design tokens](https://www.designtokens.org/):
+Variables and styles move between Lawha, Figma, and code as [W3C design tokens](https://www.designtokens.org/):
 
 - **Export:** in the stylesheet's copy menu, choose **Export as design tokens**. The zip holds one file per collection mode, which Figma imports as a mode; text and effect styles as typography and shadow tokens; and a resolver that combines them for tools such as Style Dictionary
 - **Import:** click **Import design tokens** in the toolbar and pick token files or a zip. Files from Figma, a resolver with the files it names, and Tokens Studio themes all work

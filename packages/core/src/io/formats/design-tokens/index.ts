@@ -1,7 +1,7 @@
 export { exportDesignTokens, RESOLVER_FILE, STYLES_FILE, type DesignTokenExport } from './export'
 export {
   designTokenIssueMessage,
-  OPENPENCIL_EXTENSION,
+  LAWHA_EXTENSION,
   RESOLVER_VERSION,
   type DesignToken,
   type DesignTokenFile,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
 
 // Recorded with the same script in Figma desktop 126: stroke weight and alignment belong to the
 // node, so they last without strokes and a stroke added later takes them.

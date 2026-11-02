@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { requestSkillSettings } from '@/app/ai/skills/settings/request'
 import type { EditorStore } from '@/app/editor/active-store'

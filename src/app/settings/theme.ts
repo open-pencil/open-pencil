@@ -6,7 +6,7 @@
 export const APP_THEMES = ['dark', 'light', 'auto'] as const
 export type AppTheme = (typeof APP_THEMES)[number]
 
-export const THEME_STORAGE_KEY = 'open-pencil:theme'
+export const THEME_STORAGE_KEY = 'lawha:theme'
 export const DEFAULT_THEME: AppTheme = 'dark'
 
 /** The theme in effect; a stored value that is not a theme reads as the default dark. */

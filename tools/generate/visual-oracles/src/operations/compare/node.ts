@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Visual comparison pipeline: Figma vs OpenPencil renderer.
+ * Visual comparison pipeline: Figma vs Lawha renderer.
  *
  * Copy an element in Figma, then run:
  *   bun tools/generate/visual-oracles/src/cli.ts compare node [--scale 2] [--output /tmp/visual-compare]
@@ -10,7 +10,7 @@
  *
  * Outputs:
  *   figma.png  — exported from real Figma
- *   ours.png   — rendered by OpenPencil headless SkiaRenderer
+ *   ours.png   — rendered by Lawha headless SkiaRenderer
  *   diff.png   — visual diff (red = changed pixels)
  */
 
@@ -19,13 +19,13 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { importClipboardNodes } from '@open-pencil/core/clipboard'
-import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { fontManager } from '@open-pencil/core/text'
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { importClipboardNodes } from '@lawha/core/clipboard'
+import { renderNodesToImage, initCanvasKit } from '@lawha/core/io/formats/raster'
+import { computeAllLayouts } from '@lawha/core/layout'
+import { fontManager } from '@lawha/core/text'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { SceneGraph } from '@lawha/scene-graph'
 
 const { values: opts } = parseArgs({
   options: {
@@ -69,7 +69,7 @@ async function runWithClipboard() {
   if (!parsed) bail('Clipboard has no Figma data. Copy an element in Figma first.')
   console.log(`   ${parsed.nodes.length} node changes, ${parsed.blobs.length} blobs`)
 
-  console.log('🖼️  Rendering with OpenPencil…')
+  console.log('🖼️  Rendering with Lawha…')
   await renderOurs(html)
 
   console.log('🎨 Pasting into Figma & exporting…')
@@ -103,7 +103,7 @@ async function runWithNodeId(nodeId: string) {
   const parsed = await parseFigmaClipboard(html)
   if (!parsed) bail('Clipboard has no Figma data after copy')
 
-  console.log('🖼️  Rendering with OpenPencil…')
+  console.log('🖼️  Rendering with Lawha…')
   await renderOurs(html)
 
   await diff()
@@ -220,8 +220,8 @@ async function diff() {
   const alphaMetrics = opts['alpha-diff'] ? await diffAlpha(compareOursPath, total) : null
   const metrics = {
     figmaSize,
-    openPencilSize: oursSize,
-    comparedOpenPencilPath: compareOursPath,
+    lawhaSize: oursSize,
+    comparedLawhaPath: compareOursPath,
     resized: Boolean(opts.resize && figmaSize !== oursSize),
     normalized: figmaSize !== oursSize,
     differentPixels: diffPixels,

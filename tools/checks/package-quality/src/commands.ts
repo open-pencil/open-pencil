@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import { checkTypes } from './checks/attw'
 import { validatePackageContents } from './checks/contents'

@@ -61,7 +61,7 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
   await expectCustomized()
 
   await canvas.pressKey('p')
-  expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('PEN')
+  expect(await page.evaluate(() => window.lawha?.getStore?.().state.activeTool)).toBe('PEN')
 
   await page.getByTestId('toolbar').click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Customize toolbar…' }).click()

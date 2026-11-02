@@ -3,7 +3,7 @@ import { access } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 import { getDiscoveryPath } from '#mcp/transport/paths'
@@ -19,7 +19,7 @@ let testCounter = 0
 
 function testSocketPath(): string | null {
   if (process.platform === 'win32') return null
-  return join(tmpdir(), `openpencil-test-watchdog-${process.pid}-${++testCounter}.sock`)
+  return join(tmpdir(), `lawha-test-watchdog-${process.pid}-${++testCounter}.sock`)
 }
 
 async function fileExists(path: string): Promise<boolean> {

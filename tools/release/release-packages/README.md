@@ -23,15 +23,15 @@ The workflow leaves the GitHub Release **draft**. After successful verification,
 
 ## Artifact policy and provenance
 
-`native/catalog.ts` is OpenPencil's required asset/naming policy, not a replacement for Tauri artifact discovery. Collection consumes `tauri-action`'s `artifactPaths` output and refuses missing, duplicate, unexpected, empty, or escaping files. The macOS `.app` directory is ignored in favor of its required signed archive. Stable architecture-qualified macOS archive names are preserved.
+`native/catalog.ts` is Lawha's required asset/naming policy, not a replacement for Tauri artifact discovery. Collection consumes `tauri-action`'s `artifactPaths` output and refuses missing, duplicate, unexpected, empty, or escaping files. The macOS `.app` directory is ignored in favor of its required signed archive. Stable architecture-qualified macOS archive names are preserved.
 
 GitHub's default provenance identifies the **workflow execution revision**, which can differ from the tagged application source in a manual rebuild. The independently attested `release-manifest.json` records both commits, the workflow run/attempt, shared frontend digest, target file digests, and npm tarball digests. Do not describe the default workflow provenance alone as proof of the application's checked-out source. npm also emits its own provenance from the same workflow execution; the signed manifest binds its exact tarballs to the application source.
 
 Verify downloaded release files with:
 
 ```sh
-gh attestation verify release-manifest.json --repo open-pencil/open-pencil \
-  --signer-workflow open-pencil/open-pencil/.github/workflows/build.yml \
+gh attestation verify release-manifest.json --repo lawha/lawha \
+  --signer-workflow lawha/lawha/.github/workflows/build.yml \
   --deny-self-hosted-runners
 sha256sum --check SHA256SUMS
 ```
@@ -40,13 +40,13 @@ Each release asset, including `SHA256SUMS`, also has its own attestation. For a 
 
 ## Homebrew distribution
 
-The macOS app is distributed through the [official `openpencil` cask](https://formulae.brew.sh/cask/openpencil): `brew install --cask openpencil`. This installs the desktop app, not the separately published npm CLI.
+The macOS app is distributed through the [official `lawha` cask](https://formulae.brew.sh/cask/lawha): `brew install --cask lawha`. This installs the desktop app, not the separately published npm CLI.
 
-Homebrew's BrewTestBot automatically proposes version bumps for this cask (its tooling currently reports a roughly three-hour cadence). Homebrew owns review and merge timing; publishing our GitHub release does not immediately update the cask. Do not add parallel bump-PR automation or push to the archived `open-pencil/homebrew-tap` repository.
+Homebrew's BrewTestBot automatically proposes version bumps for this cask (its tooling currently reports a roughly three-hour cadence). Homebrew owns review and merge timing; publishing our GitHub release does not immediately update the cask. Do not add parallel bump-PR automation or push to the archived `lawha/homebrew-tap` repository.
 
 After each release:
 
-1. Check the official cask version and search `Homebrew/homebrew-cask` for an existing `openpencil` bump PR.
+1. Check the official cask version and search `Homebrew/homebrew-cask` for an existing `lawha` bump PR.
 2. Check that both architecture hashes match the attested release manifest. Follow the bot's PR through upstream review; do not report the cask as updated until it merges.
 3. If an update is delayed or fails, investigate the upstream bot/PR and follow Homebrew's current contribution policy rather than bypassing autobump restrictions. Direct GitHub downloads and the app updater remain available in the meantime.
 

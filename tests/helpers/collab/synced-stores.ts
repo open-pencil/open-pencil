@@ -2,7 +2,7 @@ import { expect } from 'bun:test'
 
 import * as Y from 'yjs'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import {
   bindCollabGraphEvents,

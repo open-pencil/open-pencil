@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "identifier": "net.dannote.open-pencil.native-test",
+  "identifier": "app.lawha.desktop.native-test",
   "build": {
     "beforeBuildCommand": "bun run generate:tauri-menu && vite build --mode native-test"
   },
@@ -9,7 +9,7 @@
     "windows": [
       {
         "incognito": true,
-        "title": "OpenPencil Native Test",
+        "title": "Lawha Native Test",
         "width": 1280,
         "height": 800,
         "dragDropEnabled": false,

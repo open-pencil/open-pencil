@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { cloudAIDiscoverySchema, cloudBillingDiscoverySchema } from './ai'
 
 export const CLOUD_PROTOCOL_VERSION = '1' as const
-export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
+export const CLOUD_DISCOVERY_PATH = '/.well-known/lawha' as const
 
 export const cloudDeploymentSchema = v.picklist(['official', 'self-hosted'])
 export type CloudDeployment = v.InferOutput<typeof cloudDeploymentSchema>

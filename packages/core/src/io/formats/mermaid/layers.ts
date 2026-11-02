@@ -5,16 +5,16 @@ import type {
   FlowNode,
   FlowSubgraph,
   Flowchart
-} from '@open-pencil/mermaid'
-import type { Fill, SceneGraph, SceneNode, Stroke, StrokeCap } from '@open-pencil/scene-graph'
+} from '@lawha/mermaid'
+import type { Fill, SceneGraph, SceneNode, Stroke, StrokeCap } from '@lawha/scene-graph'
 import {
   connectorSublayers,
   createConnector,
   freeEndpoint
-} from '@open-pencil/scene-graph/connectors'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/connectors'
+import { BLACK } from '@lawha/scene-graph/constants'
+import { createShapeWithText, shapeWithTextLabel } from '@lawha/scene-graph/generated'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { layoutAuthoredNodes } from '#core/layout'

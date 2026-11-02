@@ -7,7 +7,7 @@ test.beforeAll(async () => {
   await editor.page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
 })
 
-test('browser menu copy writes rich and plain OpenPencil clipboard formats', async () => {
+test('browser menu copy writes rich and plain Lawha clipboard formats', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(100, 100, 120, 80)
   await editor.canvas.waitForRender()
@@ -42,8 +42,8 @@ test('browser menu copy writes rich and plain OpenPencil clipboard formats', asy
   expect(clipboard.plainText).not.toBe('')
 
   const before = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.graph.getChildren(store.state.currentPageId).length
   })
   const pasteMenu = await openAppMenu(editor.page, 'Edit')
@@ -51,8 +51,8 @@ test('browser menu copy writes rich and plain OpenPencil clipboard formats', asy
   await expect
     .poll(() =>
       editor.page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         return store.graph.getChildren(store.state.currentPageId).length
       })
     )

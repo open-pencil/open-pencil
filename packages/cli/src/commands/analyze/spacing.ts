@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { AnalyzeSpacingResult } from '@open-pencil/core/rpc'
+import type { AnalyzeSpacingResult } from '@lawha/core/rpc'
 
 import { appTargetOptions } from '#cli/app/target'
 import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'

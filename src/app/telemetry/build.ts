@@ -1,6 +1,6 @@
 import { platform, arch } from '@tauri-apps/plugin-os'
 
-import type { Architecture, Build } from '@open-pencil/feedback/contract'
+import type { Architecture, Build } from '@lawha/feedback/contract'
 
 import { APP_VERSION } from '@/app/runtime/version'
 import { describeEnvironment } from '@/app/shell/support/detect'

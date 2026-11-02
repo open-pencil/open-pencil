@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createRect, firstPageId } from '#core-tests/helpers/scene'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('flip', () => {
   test('flipX defaults to false', () => {
@@ -41,9 +41,9 @@ describe('flip', () => {
 
 describe('flip roundtrip via kiwi', () => {
   async function roundtrip(graph: SceneGraph) {
-    const { initCodec } = await import('@open-pencil/kiwi/fig/codec')
-    const { parseFigFile } = await import('@open-pencil/core/io/formats/fig')
-    const { exportFigFile } = await import('@open-pencil/core/io/formats/fig')
+    const { initCodec } = await import('@lawha/kiwi/fig/codec')
+    const { parseFigFile } = await import('@lawha/core/io/formats/fig')
+    const { exportFigFile } = await import('@lawha/core/io/formats/fig')
     await initCodec()
     const buf = await exportFigFile(graph)
     return parseFigFile(buf.slice().buffer)

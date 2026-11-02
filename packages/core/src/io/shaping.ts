@@ -1,7 +1,7 @@
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import type { ShapedText } from '@open-pencil/fig/node-change'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { ShapedText } from '@lawha/fig/node-change'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { shapeText } from '#core/canvas/text/shape'
 import { fontManager } from '#core/text/font/manager'

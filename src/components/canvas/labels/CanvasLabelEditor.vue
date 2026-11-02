@@ -8,9 +8,9 @@ import {
   COMPONENT_LABEL_GAP,
   LABEL_FONT_SIZE,
   LABEL_OFFSET_Y
-} from '@open-pencil/core/constants'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
-import type { CanvasLabelEdit } from '@open-pencil/vue/canvas/labels'
+} from '@lawha/core/constants'
+import { colorToCSS } from '@lawha/scene-graph/color'
+import type { CanvasLabelEdit } from '@lawha/vue/canvas/labels'
 
 import type { CanvasLabelPresentation } from '@/components/canvas/labels/presentation'
 import InlineLabelEditor from '@/components/ui/input/InlineLabelEditor.vue'

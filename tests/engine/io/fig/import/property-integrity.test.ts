@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode } from '@lawha/scene-graph'
 
 import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 

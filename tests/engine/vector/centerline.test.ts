@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
-import { fitCircleArc, isClosedThinCrescent } from '@open-pencil/core/vector'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { fitCircleArc, isClosedThinCrescent } from '@lawha/core/vector'
+import type { VectorNetwork } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { expectDefined } from '#tests/helpers/assert'
 

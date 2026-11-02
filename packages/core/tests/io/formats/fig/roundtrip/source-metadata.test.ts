@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { guidToString } from '@lawha/kiwi/fig/guid'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** The codec types only the fields it writes; raw passthrough metadata is read through these. */
 interface RawLayoutGrid {
@@ -521,7 +521,7 @@ describe('fig roundtrip source metadata', () => {
     vector.source.id = '4:465'
     vector.source.fig.rawNodeFields.vectorData = {
       normalizedSize: { x: 0, y: 0 },
-      vectorNetworkBlob: { __openPencilFigmaBlob: rawVectorBlob }
+      vectorNetworkBlob: { __lawhaFigmaBlob: rawVectorBlob }
     }
 
     const decoded = decodeExport(await exportFigFile(graph))

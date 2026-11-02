@@ -26,7 +26,7 @@ describe('runCommand', () => {
   test('reports missing executables', async () => {
     await expect(
       runCommand({
-        command: '/nonexistent/open-pencil-command',
+        command: '/nonexistent/lawha-command',
         cwd: process.cwd(),
         timeoutMs: 1000
       })

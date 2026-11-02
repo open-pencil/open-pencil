@@ -305,7 +305,7 @@ describe('node variable bindings', () => {
     expect(text.boundVariables).toEqual({ fontSize: [{ type: 'VARIABLE_ALIAS', id: size.id }] })
     expect(text.fontSize).toBe(4.5)
     expect(() => api.createText().setBoundVariable('fontWeight', size)).toThrow(
-      'in setBoundVariable: OpenPencil binds fontWeight only on text that has characters'
+      'in setBoundVariable: Lawha binds fontWeight only on text that has characters'
     )
   })
 

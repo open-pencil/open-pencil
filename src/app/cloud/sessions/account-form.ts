@@ -2,8 +2,8 @@ import * as v from 'valibot'
 import { useForm } from 'vee-validate'
 import { computed, type Ref } from 'vue'
 
-import type { CloudAuthFailure } from '@open-pencil/cloud/client'
-import type { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { CloudAuthFailure } from '@lawha/cloud/client'
+import type { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { validateAfterFirstError } from '@/app/settings/validation/use'
 

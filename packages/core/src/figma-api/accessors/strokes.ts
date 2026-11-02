@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { newStrokeGeometry } from '@lawha/scene-graph/node-defaults'
 
 import {
   nodeId,

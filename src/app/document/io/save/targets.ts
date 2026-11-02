@@ -1,7 +1,7 @@
 import { save } from '@tauri-apps/plugin-dialog'
 
-import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import { DOCUMENT_EXTENSIONS } from '@lawha/core/io'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 import { pickBrowserSaveFile } from '@/app/document/io/capability'
 import { documentFileName } from '@/app/document/io/names'

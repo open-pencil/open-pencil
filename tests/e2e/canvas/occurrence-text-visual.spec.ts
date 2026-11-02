@@ -1,6 +1,6 @@
-import { interpretInstance } from '@open-pencil/fig/instance-overrides'
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { interpretInstance } from '@lawha/fig/instance-overrides'
+import { nodeChangeToProps } from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import fixture from '#tests/fixtures/styled-saved-glyphs.json' with { type: 'json' }
@@ -46,7 +46,7 @@ test('occurrence override renders new text rather than inherited source glyphs',
   )
   expect(props.derivedTextGlyphs).toHaveLength(0)
   await editor.page.evaluate((props) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const { nodeType, ...values } = props
     if (nodeType !== 'TEXT') throw new Error('Expected text')

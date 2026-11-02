@@ -1,6 +1,6 @@
 import { sceneNodesToTailwindJSX } from '#dom-css/export/tailwind-jsx'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 export function makeGraph() {
   const graph = new SceneGraph()

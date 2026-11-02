@@ -2,8 +2,8 @@
 import { tinykeys } from 'tinykeys'
 import { onScopeDispose } from 'vue'
 
-import { resolveEditorProfile } from '@open-pencil/core'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { resolveEditorProfile } from '@lawha/core'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { getActiveEditorStoreOrNull, useEditorStore } from '@/app/editor/active-store'
 import { appMenuShortcutLabel, appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'

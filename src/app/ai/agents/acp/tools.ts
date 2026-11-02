@@ -1,6 +1,6 @@
 import type { McpServer, SessionUpdate } from '@agentclientprotocol/sdk'
 
-import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
+import { LAWHA_MCP_SERVER } from '@lawha/core/constants'
 
 import { buildACPMCPServers } from '@/app/integrations/mcp'
 import { linkChatAgent } from '@/app/integrations/mcp/link'
@@ -8,21 +8,21 @@ import { linkChatAgent } from '@/app/integrations/mcp/link'
 import { textFromContent } from './events'
 
 /**
- * Lets the agent use OpenPencil's own tools without asking each time: their edits are undoable
+ * Lets the agent use Lawha's own tools without asking each time: their edits are undoable
  * and stay in the document the chat works on. Claude's adapter passes these options to the
  * Claude Agent SDK, where a bare server name allows every tool on it; other agents ignore it.
  */
 export const OWN_TOOLS_ALLOWED = {
-  claudeCode: { options: { allowedTools: [`mcp__${OPEN_PENCIL_MCP_SERVER}`] } }
+  claudeCode: { options: { allowedTools: [`mcp__${LAWHA_MCP_SERVER}`] } }
 }
 
-/** Whether an agent's session reached OpenPencil's tools; null when the server cannot tell. */
+/** Whether an agent's session reached Lawha's tools; null when the server cannot tell. */
 export type OwnToolsOutcome =
   | { connected: true }
   | { connected: false; reason: string | null }
   | { connected: null }
 
-/** What an ACP agent's new session needs to reach OpenPencil's tools, and how to tell it did. */
+/** What an ACP agent's new session needs to reach Lawha's tools, and how to tell it did. */
 export interface OwnToolsLink {
   /** The id the agent's MCP session and tool calls carry, which ties them to this chat. */
   chat: string
@@ -36,7 +36,7 @@ export interface OwnToolsLink {
 }
 
 /**
- * Links a new ACP session to OpenPencil's MCP server. Codex reports a server it could not start
+ * Links a new ACP session to Lawha's MCP server. Codex reports a server it could not start
  * as a failed tool call before any prompt, which gives the reason when the agent never connects.
  */
 export async function linkOwnTools(authorizationToken: string | null): Promise<OwnToolsLink> {
@@ -49,7 +49,7 @@ export async function linkOwnTools(authorizationToken: string | null): Promise<O
     noteUpdate(update) {
       if (update.sessionUpdate !== 'tool_call' || update.status !== 'failed') return
       const text = textFromContent(update.content ?? undefined)
-      if (text?.includes(OPEN_PENCIL_MCP_SERVER)) failures.push(text)
+      if (text?.includes(LAWHA_MCP_SERVER)) failures.push(text)
     },
     async outcome() {
       const connected = await link.connected()

@@ -1,4 +1,4 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { diffLibraryManifests } from './diff'
 import { copyLibraryTree, libraryDependencyRoots } from './materialize'

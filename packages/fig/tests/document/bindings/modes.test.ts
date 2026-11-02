@@ -4,8 +4,8 @@ import { guid } from '#fig-tests/helpers/guid'
 import { applyDocumentLayoutBindings } from '#fig/document/bindings/layout'
 import { materializeDocument } from '#fig/document/materialize'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 test('saved occurrence dimensions win over unscaled bindings without blocking spacing', () => {
   const graph = new SceneGraph()

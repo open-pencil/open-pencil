@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 
 setDefaultTimeout(60_000)
 
@@ -20,7 +20,7 @@ async function cli(args: string[]) {
 
 describe('import CLI', () => {
   test('saves an imported flex column with its layout applied', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-import-'))
     const htmlPath = join(dir, 'column.html')
     const figPath = join(dir, 'column.fig')
     await writeFile(
@@ -48,7 +48,7 @@ describe('import CLI', () => {
   })
 
   test('saves a thumbnail of the imported layers', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-import-'))
     const htmlPath = join(dir, 'tall.html')
     const figPath = join(dir, 'tall.fig')
     await writeFile(htmlPath, '<div style="width:100px;height:400px;background:#000"></div>')

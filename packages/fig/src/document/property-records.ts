@@ -1,4 +1,4 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 import type { ComponentPropAssignment, ComponentPropRef } from '../instance-overrides/types'
 

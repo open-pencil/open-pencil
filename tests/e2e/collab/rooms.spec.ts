@@ -16,8 +16,8 @@ import {
 /** Adds a named rectangle to the active tab's first page and returns its ID. */
 function addRectangle(page: Page, name: string) {
   return page.evaluate((layerName) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.graph.getPages()[0]?.id
     if (!pageId) throw new Error('No page')
     return store.graph.createNode('RECTANGLE', pageId, { name: layerName, width: 80, height: 60 })
@@ -26,7 +26,7 @@ function addRectangle(page: Page, name: string) {
 }
 
 function layerName(page: Page, id: string) {
-  return page.evaluate((nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.name, id)
+  return page.evaluate((nodeId) => window.lawha?.getStore?.().graph.getNode(nodeId)?.name, id)
 }
 
 async function closeAll(peers: (Peer | null)[], relay: { close: () => Promise<void> }) {
@@ -53,11 +53,11 @@ test('a share link opens the room in its own tab, waiting until someone with it 
     // A browser on a computer can hand the room to the desktop app, or point to its download.
     await expect(guest.page.getByRole('link', { name: 'Open in desktop app' })).toHaveAttribute(
       'href',
-      `openpencil://join?room=${ROOM_ID}`
+      `lawha://join?room=${ROOM_ID}`
     )
     await expect(guest.page.getByRole('link', { name: 'Download' })).toHaveAttribute(
       'href',
-      'https://github.com/open-pencil/open-pencil/releases/latest'
+      'https://github.com/aliaaldihnayn-lab/design/releases/latest'
     )
 
     host = await createPeer(browser, 'Host', relay.url)
@@ -100,7 +100,7 @@ test('joining from a document opens a new tab and leaves that document alone', a
     expect(await roomStatus(guest)).toBeNull()
     await expect(guest.page).not.toHaveURL(/\/rooms\//)
     await expect
-      .poll(() => host?.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+      .poll(() => host?.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(1)
     expect(await layerName(host.page, ownNode)).toBeUndefined()
   } finally {
@@ -147,11 +147,11 @@ test('reloading a room tab rejoins it, and leaving keeps an unsaved copy', async
     expect(await roomStatus(guest)).toBeNull()
     expect(await layerName(guest.page, nodeId)).toBe('Kept card')
     expect(
-      await guest.page.evaluate(() => window.openPencil?.getStore?.().hasUnsavedChanges())
+      await guest.page.evaluate(() => window.lawha?.getStore?.().hasUnsavedChanges())
     ).toBe(true)
     await expect(guest.page).not.toHaveURL(/\/rooms\//)
     await expect
-      .poll(() => host?.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+      .poll(() => host?.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(0)
   } finally {
     await closeAll([guest, host], relay)
@@ -181,7 +181,7 @@ test('two room tabs stay live at once, each syncing with its own room', async ({
     expect(await layerName(hostB.page, inRoomA)).toBeUndefined()
     for (const host of [hostA, hostB]) {
       await expect
-        .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+        .poll(() => host.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
         .toBe(1)
     }
   } finally {

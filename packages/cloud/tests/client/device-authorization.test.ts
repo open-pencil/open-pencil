@@ -38,7 +38,7 @@ describe('Cloud device authorization client', () => {
       fetch: request
     })
     expect(result.device_code).toBe('device-code')
-    expect(requestBody).toMatchObject({ client_id: 'openpencil-desktop:connection-id' })
+    expect(requestBody).toMatchObject({ client_id: 'lawha-desktop:connection-id' })
   })
 
   test('polls pending authorization until a bearer token is available', async () => {

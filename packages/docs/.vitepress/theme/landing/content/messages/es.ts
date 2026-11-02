@@ -13,7 +13,7 @@ export const es: LandingMessages = {
     figma: {
       title: 'Abre lo que ya tienes',
       detail:
-        'OpenPencil lee archivos .fig directamente: páginas, componentes, instancias, variables y auto layout llegan como capas editables, y puedes volver a guardar en .fig. Pega SVG o abre HTML y CSS, y también se convierten en capas, dispuestas como las dispone un navegador.',
+        'Lawha lee archivos .fig directamente: páginas, componentes, instancias, variables y auto layout llegan como capas editables, y puedes volver a guardar en .fig. Pega SVG o abre HTML y CSS, y también se convierten en capas, dispuestas como las dispone un navegador.',
       hint: 'Este es el propio tour de la app, un archivo .fig real. Abre un capítulo en las capas y explora.'
     },
     design: {
@@ -43,7 +43,7 @@ export const es: LandingMessages = {
     linting: {
       title: 'Linting',
       detail:
-        'OpenPencil revisa el diseño mientras trabajas: contraste, texto demasiado pequeño, nombres por defecto, capas ocultas y vacías, grupos sobrantes. Los problemas se marcan en el lienzo, muchos se corrigen con un clic, y las mismas reglas funcionan en la CLI y para los agentes.',
+        'Lawha revisa el diseño mientras trabajas: contraste, texto demasiado pequeño, nombres por defecto, capas ocultas y vacías, grupos sobrantes. Los problemas se marcan en el lienzo, muchos se corrigen con un clic, y las mismas reglas funcionan en la CLI y para los agentes.',
       hint: 'Haz clic en una marca del lienzo o aplica una corrección de la lista.'
     },
     ai: {
@@ -67,13 +67,13 @@ export const es: LandingMessages = {
     script: {
       title: 'Automatízalo todo',
       detail:
-        'La CLI openpencil trabaja sobre un archivo sin que la aplicación esté abierta, o controla la aplicación que tienes en marcha. Inspecciona un documento, consúltalo con XPath, revísalo con el linter, expórtalo o ejecuta código de plugins de Figma con eval. El servidor MCP da a los agentes el mismo alcance por stdio o HTTP.',
+        'La CLI lawha trabaja sobre un archivo sin que la aplicación esté abierta, o controla la aplicación que tienes en marcha. Inspecciona un documento, consúltalo con XPath, revísalo con el linter, expórtalo o ejecuta código de plugins de Figma con eval. El servidor MCP da a los agentes el mismo alcance por stdio o HTTP.',
       hint: 'Ejecuta un comando y observa el lienzo.'
     },
     sdk: {
       title: 'Intégralo en tu propio producto',
       detail:
-        'OpenPencil es tanto un conjunto de herramientas como una aplicación: un motor independiente del framework, un SDK de Vue sin interfaz y paquetes separados para el grafo de escena y los formatos de archivo. Incrusta un lienzo en tu producto, renderiza y revisa diseños en CI o crea otro editor sobre el mismo motor. Cada lienzo de esta página es ese SDK funcionando dentro de un sitio de documentación.',
+        'Lawha es tanto un conjunto de herramientas como una aplicación: un motor independiente del framework, un SDK de Vue sin interfaz y paquetes separados para el grafo de escena y los formatos de archivo. Incrusta un lienzo en tu producto, renderiza y revisa diseños en CI o crea otro editor sobre el mismo motor. Cada lienzo de esta página es ese SDK funcionando dentro de un sitio de documentación.',
       hint: 'El código junto al lienzo es todo lo que hace falta para montar uno.'
     }
   },
@@ -147,7 +147,7 @@ export const es: LandingMessages = {
     next: {
       label: 'Después',
       lead: {
-        title: 'OpenPencil autoalojado',
+        title: 'Lawha autoalojado',
         detail:
           'Todo el espacio de trabajo dentro de tu propia red: sincronización, uso compartido, comentarios y bibliotecas de equipo sin enviar un archivo a nadie más.',
         features: [
@@ -176,7 +176,7 @@ export const es: LandingMessages = {
         }
       ],
       cloud: {
-        title: 'OpenPencil Cloud',
+        title: 'Lawha Cloud',
         detail:
           'El espacio alojado para equipos: sincronización en directo, uso compartido, bibliotecas e IA, sin nada que mantener.'
       }
@@ -197,7 +197,7 @@ export const es: LandingMessages = {
   },
   cloud: {
     badge: 'Acceso anticipado',
-    title: 'OpenPencil Cloud',
+    title: 'Lawha Cloud',
     lede: 'El espacio de diseño de tu equipo, alojado por nosotros. Todos editan los mismos archivos en directo, los comparten con un enlace y diseñan con IA, sin nada que instalar ni mantener. Tus archivos siguen abiertos: expórtalos como .fig cuando quieras.',
     features: [
       {
@@ -232,14 +232,14 @@ export const es: LandingMessages = {
     joinedDetail: 'Abre el enlace que te enviamos para confirmar tu dirección.',
     failed:
       'No se pudo contactar con la lista de espera. Comprueba tu conexión e inténtalo de nuevo.',
-    privacy: 'Solo te escribiremos sobre OpenPencil Cloud.',
+    privacy: 'Solo te escribiremos sobre Lawha Cloud.',
     refused: 'No pudimos confirmar que no eres un bot. Inténtalo de nuevo.',
     limited: 'Demasiados intentos. Inténtalo de nuevo en un minuto.',
-    unavailable: 'No puedes unirte desde aquí. Únete en openpencil.dev.'
+    unavailable: 'No puedes unirte desde aquí. Únete en lawha.invalid.'
   },
   closing: {
     title: 'Llévate tus diseños contigo.',
-    download: 'Descargar OpenPencil',
+    download: 'Descargar Lawha',
     docs: 'Leer la documentación',
     cloud: 'Unirme a la lista de Cloud'
   },
@@ -277,7 +277,7 @@ export const es: LandingMessages = {
     }
   },
   download: {
-    title: 'Descargar OpenPencil',
+    title: 'Descargar Lawha',
     lede: 'La app de escritorio para macOS, Windows y Linux. Gratuita y de código abierto, sin registro.',
     version: 'Versión {version}, publicada el {date}',
     forPlatform: 'Descargar para {platform}',
@@ -313,7 +313,7 @@ export const es: LandingMessages = {
       },
       web: {
         title: 'En el navegador',
-        detail: 'El mismo editor en app.openpencil.dev, sin instalar nada.',
+        detail: 'El mismo editor en app.lawha.invalid, sin instalar nada.',
         action: 'Abrir la app web'
       },
       cli: {

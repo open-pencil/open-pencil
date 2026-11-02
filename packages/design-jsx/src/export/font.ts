@@ -1,4 +1,4 @@
-import type { CharacterStyleOverride } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride } from '@lawha/scene-graph'
 
 import type { JSXProp } from './value'
 

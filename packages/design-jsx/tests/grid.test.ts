@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { jsxNodeFields, parseJSXAttributes } from '#design-jsx/index'
 
-import { SceneGraph, type GridTrack } from '@open-pencil/scene-graph'
+import { SceneGraph, type GridTrack } from '@lawha/scene-graph'
 
 function columns(value: string) {
   const graph = new SceneGraph()

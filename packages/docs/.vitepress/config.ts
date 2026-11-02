@@ -7,10 +7,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
-import { ensureBrandAssets } from '@open-pencil/brand-tools'
-import { ensureDemoDocument } from '@open-pencil/demo-tools'
-import { landingPosterFingerprint } from '@open-pencil/landing-posters-tools/fingerprint'
-import { appSourceConfig } from '@open-pencil/vite-config/app-source'
+import { ensureBrandAssets } from '@lawha/brand-tools'
+import { ensureDemoDocument } from '@lawha/demo-tools'
+import { landingPosterFingerprint } from '@lawha/landing-posters-tools/fingerprint'
+import { appSourceConfig } from '@lawha/vite-config/app-source'
 
 import { landingPreloads } from './landing-head.ts'
 import { docsLocales } from './locales.ts'
@@ -25,11 +25,11 @@ const packagesRoot = dirname(docsRoot)
 const repoRoot = dirname(packagesRoot)
 // The landing page mounts the app's own components, compiled from source.
 const appSource = appSourceConfig()
-const fastBuild = process.env.OPENPENCIL_DOCS_FAST_BUILD === '1'
+const fastBuild = process.env.LAWHA_DOCS_FAST_BUILD === '1'
 // Production builds show stills of the landing's stages until they are live. The build names
 // the stills by this fingerprint, and `tools/generate/landing-posters` captures them afterwards.
 const posterFingerprint =
-  process.env.OPENPENCIL_LANDING_POSTERS === '1' ? await landingPosterFingerprint(repoRoot) : null
+  process.env.LAWHA_LANDING_POSTERS === '1' ? await landingPosterFingerprint(repoRoot) : null
 
 const llmsPlugin = llmstxt({
   domain: BASE,
@@ -39,16 +39,16 @@ const llmsPlugin = llmstxt({
   generateLLMFriendlyDocsForEachPage: !fastBuild,
   injectLLMHint: false,
   customTemplateVariables: {
-    title: 'OpenPencil',
+    title: 'Lawha',
     description:
       'Open-source, AI-native design editor and toolkit. Opens Figma .fig files, provides a programmable scene graph, CLI, MCP server, and Vue SDK for custom editor shells.',
     details:
-      'Use this file as the compact map for agents. For complete Markdown content, fetch https://openpencil.dev/llms-full.txt.'
+      'Use this file as the compact map for agents. For complete Markdown content, fetch https://github.com/aliaaldihnayn-lab/design#readme'
   }
 })
 
 export default defineConfig({
-  title: 'OpenPencil',
+  title: 'Lawha',
   description:
     'Open-source, AI-native design editor. Figma alternative built from scratch with full .fig file compatibility.',
   cleanUrls: true,
@@ -80,11 +80,11 @@ export default defineConfig({
           compilerOptions: {
             baseUrl: repoRoot,
             paths: {
-              '@open-pencil/vue': ['packages/vue/src/index.ts'],
-              '@open-pencil/vue/*': ['packages/vue/src/*'],
+              '@lawha/vue': ['packages/vue/src/index.ts'],
+              '@lawha/vue/*': ['packages/vue/src/*'],
               '#vue/*': ['packages/vue/src/*'],
-              '@open-pencil/scene-graph': ['packages/scene-graph/src/index.ts'],
-              '@open-pencil/scene-graph/*': ['packages/scene-graph/src/*'],
+              '@lawha/scene-graph': ['packages/scene-graph/src/index.ts'],
+              '@lawha/scene-graph/*': ['packages/scene-graph/src/*'],
               '#scene-graph/*': ['packages/scene-graph/src/*']
             }
           }

@@ -3,8 +3,8 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { SceneGraph, type SceneNode, type StyleRun } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph, type SceneNode, type StyleRun } from '@lawha/scene-graph'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import { buildParagraph } from '#core/canvas/text/layout/build'

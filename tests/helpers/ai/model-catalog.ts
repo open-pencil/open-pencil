@@ -1,4 +1,4 @@
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS } from '@lawha/core/constants'
 
 /** The catalog's default model, so onboarding tests follow catalog updates. */
 export function defaultModel(providerID: string): string {

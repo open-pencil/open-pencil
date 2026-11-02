@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { isCloudPortalPage } from '@open-pencil/cloud/contract'
+import { isCloudPortalPage } from '@lawha/cloud/contract'
 
 import type { PortalContext } from '@/app/cloud-portal/context'
 import { PORTAL_HOME, portalDestination } from '@/app/cloud-portal/navigation'

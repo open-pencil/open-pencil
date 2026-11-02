@@ -25,8 +25,8 @@ test.afterAll(async () => {
 async function showSections(shade: number) {
   await canvas.clearCanvas()
   await page.evaluate((shade) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.setPageColor({ r: shade / 255, g: shade / 255, b: shade / 255, a: 1 })
     const pageId = store.state.currentPageId
     const solid = (v: number) => [
@@ -125,8 +125,8 @@ test('frame names on a light page read on white and dark sections', async () => 
 test('a name above a section sits on the page, and a hidden fill does not count', async () => {
   await canvas.clearCanvas()
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.setPageColor({ r: 30 / 255, g: 30 / 255, b: 30 / 255, a: 1 })
     const pageId = store.state.currentPageId
     const solid = (v: number, visible = true) => ({

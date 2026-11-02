@@ -6,7 +6,7 @@ import {
   useAutomationMessages,
   useCommonMessages,
   useSettingsMessages
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import { mcpConnectionSettings } from '@/app/integrations/mcp'
 import { useMCPConnectionForm } from '@/app/integrations/mcp/settings/form'

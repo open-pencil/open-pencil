@@ -22,7 +22,7 @@ La selezione nell’albero e nell’area di lavoro resta sincronizzata. <kbd>Shi
 
 L’elenco consente di creare, aprire, rinominare ed eliminare pagine. Ogni pagina conserva posizione e livello di zoom della vista.
 
-Il menu contestuale sposta la selezione in un’altra pagina. Al cambio di pagina OpenPencil ripristina vista e selezione.
+Il menu contestuale sposta la selezione in un’altra pagina. Al cambio di pagina Lawha ripristina vista e selezione.
 
 ## Proprietà
 

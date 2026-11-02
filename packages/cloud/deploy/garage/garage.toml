@@ -17,5 +17,5 @@ root_domain = ".s3.garage.localhost"
 
 [admin]
 api_bind_addr = "[::]:3903"
-admin_token = "openpencil-garage-admin-development-token"
-metrics_token = "openpencil-garage-metrics-development-token"
+admin_token = "lawha-garage-admin-development-token"
+metrics_token = "lawha-garage-metrics-development-token"

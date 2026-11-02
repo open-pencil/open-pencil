@@ -1,8 +1,8 @@
 {
-  "upToDate": "OpenPencil обновлён до последней версии",
+  "upToDate": "Lawha обновлён до последней версии",
   "windowTitle": "Обновление ПО",
   "checking": "Проверка обновлений…",
-  "available": "Доступен OpenPencil {version}",
+  "available": "Доступен Lawha {version}",
   "currentVersion": "У вас версия {version}.",
   "whatsNew": "Что нового",
   "noNotes": "У этого выпуска нет примечаний.",
@@ -14,12 +14,12 @@
   "downloadProgress": "{percent}% · {downloaded} из {total}",
   "downloadProgressUnknown": "Загружено {downloaded}",
   "installing": "Установка…",
-  "installed": "OpenPencil {version} установлен",
-  "restartToFinish": "Перезапустите OpenPencil, чтобы начать пользоваться новой версией.",
+  "installed": "Lawha {version} установлен",
+  "restartToFinish": "Перезапустите Lawha, чтобы начать пользоваться новой версией.",
   "restartNow": "Перезапустить",
   "downloadFailed": "Не удалось загрузить обновление: {error}",
   "installFailed": "Не удалось установить обновление: {error}",
-  "restartFailed": "Не удалось перезапустить OpenPencil: {error}",
+  "restartFailed": "Не удалось перезапустить Lawha: {error}",
   "unavailable": "Обновления пока недоступны. Сначала опубликуйте подписанный релиз с latest.json.",
   "checkFailed": "Не удалось проверить обновления: {error}"
 }

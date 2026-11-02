@@ -1,11 +1,11 @@
-import { AI_PROVIDERS, type AIProviderID } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, type AIProviderID } from '@lawha/core/constants'
 
 import { appCredentialStore } from '@/app/settings/credentials/app'
 import { credentialKey, credentialRef } from '@/app/settings/credentials/reference'
 import { browserCredentialStorage } from '@/app/settings/credentials/storage'
 import type { CredentialRef, CredentialStore } from '@/app/settings/credentials/types'
 
-const STORAGE_PREFIX = 'open-pencil:'
+const STORAGE_PREFIX = 'lawha:'
 const MIGRATION_VERSION_KEY = `${STORAGE_PREFIX}credential-migration`
 const MIGRATION_VERSION = '1'
 const LEGACY_OPENROUTER_KEY = `${STORAGE_PREFIX}openrouter-api-key`

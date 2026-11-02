@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 
 import * as v from 'valibot'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const diagnosticSchema = v.object({
   code: v.optional(v.string()),
@@ -33,7 +33,7 @@ export async function lintFiles(
   rules: Record<string, string | readonly unknown[]>
 ): Promise<Diagnostic[]> {
   const root = await resolveWorkspaceRoot(import.meta.dir)
-  const directory = await mkdtemp(join(tmpdir(), 'open-pencil-lint-'))
+  const directory = await mkdtemp(join(tmpdir(), 'lawha-lint-'))
   try {
     const sourcePaths = await Promise.all(
       Object.entries(sources).map(async ([relativePath, source]) => {
@@ -83,5 +83,5 @@ export async function lintFiles(
 }
 
 export function ruleDiagnostics(diagnostics: Diagnostic[], rule: string): Diagnostic[] {
-  return diagnostics.filter((diagnostic) => diagnostic.code === `open-pencil(${rule})`)
+  return diagnostics.filter((diagnostic) => diagnostic.code === `lawha(${rule})`)
 }

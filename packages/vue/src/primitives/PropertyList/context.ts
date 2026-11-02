@@ -12,7 +12,7 @@ export function providePropertyList<K extends PropertyListKey>(context: Property
 export function usePropertyList<K extends PropertyListKey>(): PropertyListContext<K> {
   const context = inject(PROPERTY_LIST_KEY)
   if (!context)
-    throw new Error('[open-pencil] PropertyList part must be used inside PropertyListRoot')
+    throw new Error('[lawha] PropertyList part must be used inside PropertyListRoot')
   return context as PropertyListContext<K>
 }
 
@@ -20,7 +20,7 @@ export function usePropertyListPart<K extends PropertyListKey>(propKey: K): Prop
   const context = usePropertyList<K>()
   if (context.propKey !== propKey) {
     throw new Error(
-      `[open-pencil] PropertyList part propKey must match PropertyListRoot (${propKey})`
+      `[lawha] PropertyList part propKey must match PropertyListRoot (${propKey})`
     )
   }
   return context

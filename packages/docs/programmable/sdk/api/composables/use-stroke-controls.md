@@ -20,7 +20,7 @@ It provides:
 ## Usage
 
 ```ts
-import { useStrokeControls } from '@open-pencil/vue/controls/stroke'
+import { useStrokeControls } from '@lawha/vue/controls/stroke'
 
 const strokes = useStrokeControls()
 ```

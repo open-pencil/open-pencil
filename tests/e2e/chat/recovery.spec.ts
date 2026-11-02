@@ -5,7 +5,7 @@ test('recovering an unsaved document restores its selected conversation automati
   page
 }) => {
   await page.evaluate(async () => {
-    const editor = window.openPencil?.getStore?.()
+    const editor = window.lawha?.getStore?.()
     if (!editor) throw new Error('Missing editor')
     editor.createShape('RECTANGLE', 100, 100, 200, 100)
     await editor.persistRecoveryNow()

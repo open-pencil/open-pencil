@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
-import { STATUS_NODE_TYPES } from '@open-pencil/scene-graph/statuses'
+import { STATUS_NODE_TYPES } from '@lawha/scene-graph/statuses'
 
-import { OpenPencilAPI } from '#core/openpencil-api'
+import { LawhaAPI } from '#core/lawha-api'
 import { defineTool, toolFailure } from '#core/tools/schema'
 
 export const getStatuses = defineTool({
@@ -16,7 +16,7 @@ export const getStatuses = defineTool({
     status: v.optional(v.pipe(v.string(), v.description('Only layers with this status name')))
   }),
   execute: (figma, { status }) => {
-    const api = new OpenPencilAPI(figma)
+    const api = new LawhaAPI(figma)
     const { graph } = figma
     const layers = [...graph.getAllNodes()].flatMap((node) => {
       if (!STATUS_NODE_TYPES.has(node.type) || !node.status) return []
@@ -45,7 +45,7 @@ export const setStatus = defineTool({
   }),
   execute: (figma, { node, status }) => {
     try {
-      const api = new OpenPencilAPI(figma)
+      const api = new LawhaAPI(figma)
       api.setStatus(node, status)
       return { node, status: api.getStatus(node) }
     } catch (error) {

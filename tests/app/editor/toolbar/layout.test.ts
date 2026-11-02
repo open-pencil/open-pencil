@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@open-pencil/core'
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@lawha/core'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 import {
   combineToolbarEntry,

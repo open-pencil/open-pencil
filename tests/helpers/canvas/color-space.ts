@@ -40,7 +40,7 @@ export async function focusPaintEffects(page: Page) {
     )
   })
   await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const paintPage = store.graph.getPages().find((candidate) => candidate.name.startsWith('03'))
     if (!paintPage) throw new Error('Demo paint page unavailable')
@@ -48,7 +48,7 @@ export async function focusPaintEffects(page: Page) {
     if (store.state.currentPageId !== paintPage.id) await store.switchPage(paintPage.id)
   })
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const subject = store.graph.getChildren(store.state.currentPageId)[0]
     if (!subject) throw new Error('Demo paint page is empty')
@@ -60,7 +60,7 @@ export async function focusPaintEffects(page: Page) {
 
 export async function waitForSettledScene(page: Page) {
   await page.waitForFunction(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const renderer = store?.canvasRenderers.find((r) => r.tracksSceneSettlement)
     return (
       store?.state.navigation.phase === 'idle' &&
@@ -80,7 +80,7 @@ export async function sceneBufferState(page: Page) {
     if (!gl) throw new Error('Scene WebGL context unavailable')
     return {
       colorSpace: gl.drawingBufferColorSpace,
-      documentColorSpace: window.openPencil?.getStore?.().graph.documentColorSpace,
+      documentColorSpace: window.lawha?.getStore?.().graph.documentColorSpace,
       error: gl.getError()
     }
   })

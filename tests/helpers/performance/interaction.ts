@@ -7,8 +7,8 @@ export async function measureInteraction(
   selectedId?: string
 ) {
   const probe = await page.evaluateHandle((selectedId) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const update = store.updateNode
     const graphUpdate = store.graph.updateNode
     const counts = { storeUpdateCount: 0, graphUpdateCount: 0, repaintCount: 0 }

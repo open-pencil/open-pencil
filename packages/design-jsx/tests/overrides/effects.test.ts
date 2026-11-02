@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { jsxNodeFields, parseJSXAttributes } from '#design-jsx/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function effects(attributes: string) {
   const graph = new SceneGraph()

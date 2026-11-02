@@ -6,8 +6,8 @@ import {
   PRINT_PRODUCT_IDS,
   type PrintProductId,
   type ToolDef
-} from '@open-pencil/core/tools'
-import { usePrintMessages } from '@open-pencil/vue/i18n'
+} from '@lawha/core/tools'
+import { usePrintMessages } from '@lawha/vue/i18n'
 
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'

@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { compact } from 'es-toolkit'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createEditor, type Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 // Each case repeats a Figma desktop 126 script: the instance mirrors the component's new
 // structure, and a moved layer keeps its copy and the copy's overrides.

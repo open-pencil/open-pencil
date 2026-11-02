@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { guideOwnersOnPage } from '@open-pencil/scene-graph/guides'
+import { SceneGraph } from '@lawha/scene-graph'
+import { guideOwnersOnPage } from '@lawha/scene-graph/guides'
 
 const guide = (id: string) => ({ id, axis: 'x' as const, position: 10 })
 const names = (graph: SceneGraph, pageId: string) =>

@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { diffDocuments } from '@open-pencil/core/tools'
+import { diffDocuments } from '@lawha/core/tools'
 
 import { bold, dim, ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument } from '#cli/headless'

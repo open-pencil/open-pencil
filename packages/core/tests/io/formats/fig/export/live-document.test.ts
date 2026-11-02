@@ -2,11 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { emptyBehaviour, readBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { createEditor } from '@lawha/core'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { emptyBehaviour, readBehaviour } from '@lawha/scene-graph/behaviours'
 
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/font/digests'
 import { fontManager } from '#core/text/font/manager'

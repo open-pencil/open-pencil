@@ -14,7 +14,7 @@ const homeOn: SkillPreferences = { ...none, sources: { agents: true, claude: tru
 
 describe('enabledSkillsFrom', () => {
   test('offers uploads at once, and coding agents’ skills only once their folder is on', () => {
-    const upload = skillFixture({ name: 'brand', source: 'openpencil' })
+    const upload = skillFixture({ name: 'brand', source: 'lawha' })
     const skills = [upload, skillFixture(), skillFixture({ name: 'type-scale', source: 'claude' })]
     expect(enabledSkillsFrom(skills, none)).toEqual([upload])
     expect(enabledSkillsFrom(skills, homeOn)).toEqual(skills)
@@ -43,7 +43,7 @@ describe('enabledSkillsFrom', () => {
   test('offers a skill from a folder near the document only once the folder is trusted', () => {
     const folder = '/work/site/.agents/skills'
     const project = skillFixture({ source: 'project', skillsFolder: folder })
-    const shared = skillFixture({ name: 'type-scale', source: 'openpencil' })
+    const shared = skillFixture({ name: 'type-scale', source: 'lawha' })
     expect(enabledSkillsFrom([project, shared], none)).toEqual([shared])
     const trusted = { ...none, trustedFolders: { [folder]: true } }
     expect(enabledSkillsFrom([project, shared], trusted)).toEqual([project, shared])

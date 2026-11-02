@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { compact } from 'es-toolkit/array'
 import { computed, ref } from 'vue'
 
-import { createEditor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 import {

@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { exportFigFile, parseFigFile } from '#core/io/formats/fig'
 import { planPDFPages } from '#core/io/formats/pdf/plan'
 import { readPDFPages } from '#core/io/formats/pdf/prepare'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { initCodec } from '@lawha/kiwi/fig/codec'
 
 /** A `.fig` opened as the editor opens one: only its first page read. */
 async function openedFig() {

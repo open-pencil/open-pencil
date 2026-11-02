@@ -5,7 +5,7 @@ description: Eksport obrazów, SVG i wybranych obiektów do .fig oraz otwieranie
 
 # Eksport i pliki
 
-OpenPencil eksportuje pojedyncze obiekty jako obrazy, SVG albo osobne dokumenty `.fig`. Edytor otwiera pełne dokumenty `.fig` i `.pen`.
+Lawha eksportuje pojedyncze obiekty jako obrazy, SVG albo osobne dokumenty `.fig`. Edytor otwiera pełne dokumenty `.fig` i `.pen`.
 
 ## Eksport obrazów
 
@@ -43,7 +43,7 @@ Tekst jest kopiowany z widocznej zawartości, SVG jako znaczniki, PNG w skali 2�
 
 ## Dokumenty .fig i .pen
 
-OpenPencil używa binarnego formatu `.fig` Figmy i otwiera również dokumenty `.pen`.
+Lawha używa binarnego formatu `.fig` Figmy i otwiera również dokumenty `.pen`.
 
 ### Otwieranie
 
@@ -58,7 +58,7 @@ OpenPencil używa binarnego formatu `.fig` Figmy i otwiera również dokumenty `
 | Zapisz | <kbd>⌘</kbd><kbd>S</kbd> | <kbd>Ctrl</kbd> + <kbd>S</kbd> |
 | Zapisz jako | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>S</kbd> |
 
-**Zapisz** nadpisuje bieżący plik, jeśli OpenPencil nadal ma uprawnienia do zapisu. **Zapisz jako** pozwala wybrać nową ścieżkę.
+**Zapisz** nadpisuje bieżący plik, jeśli Lawha nadal ma uprawnienia do zapisu. **Zapisz jako** pozwala wybrać nową ścieżkę.
 
 W Chrome i Edge przeglądarka korzysta z File System Access API. Inne przeglądarki, w tym Safari, pobierają plik.
 
@@ -66,7 +66,7 @@ Zapisany plik jest skompresowany i zawiera miniaturę widoczną w menedżerze pl
 
 ### Zgodność z Figmą
 
-Pliki wyeksportowane z OpenPencil można otworzyć w Figmie, a dokumenty Figmy — w OpenPencil. Format `.fig` zachowuje typy obiektów, właściwości, zalewy, obwiednie, efekty, dane wektorowe i parametry układu.
+Pliki wyeksportowane z Lawha można otworzyć w Figmie, a dokumenty Figmy — w Lawha. Format `.fig` zachowuje typy obiektów, właściwości, zalewy, obwiednie, efekty, dane wektorowe i parametry układu.
 
 ## Wskazówki
 

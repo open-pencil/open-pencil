@@ -17,7 +17,7 @@ description: Управление настройками экспорта — м
 ## Использование
 
 ```ts
-import { useExport } from '@open-pencil/vue/document/export'
+import { useExport } from '@lawha/vue/document/export'
 
 const exportState = useExport()
 ```

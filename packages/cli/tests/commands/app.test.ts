@@ -50,7 +50,7 @@ beforeAll(async () => {
   await new Promise<void>((done) => {
     server.listen(0, '127.0.0.1', done)
   })
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-cli-app-'))
+  const dir = await mkdtemp(join(tmpdir(), 'lawha-cli-app-'))
   discoveryPath = join(dir, 'discovery.json')
   await writeFile(
     discoveryPath,
@@ -79,7 +79,7 @@ async function cli(args: string[]) {
   const proc = Bun.spawn([process.execPath, CLI_ENTRY, ...args], {
     stdout: 'pipe',
     stderr: 'pipe',
-    env: { ...process.env, OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath }
+    env: { ...process.env, LAWHA_MCP_DISCOVERY_PATH: discoveryPath }
   })
   const [stdout, stderr] = await Promise.all([
     new Response(proc.stdout).text(),

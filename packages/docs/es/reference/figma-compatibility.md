@@ -1,6 +1,6 @@
 # Compatibilidad con Figma
 
-Comparación entre las funciones de Figma Design y el estado actual de OpenPencil.
+Comparación entre las funciones de Figma Design y el estado actual de Lawha.
 
 ::: tip Estado
 ✅ Compatible — funciona de principio a fin · 🟡 Parcial — existe el comportamiento principal, pero faltan algunas funciones · 🔲 No implementado
@@ -184,7 +184,7 @@ Conexiones, activadores, acciones, animaciones, transiciones, superposiciones, d
 | Copiar a Figma | ✅ | Genera binario Kiwi legible por Figma |
 | Importar Sketch | 🔲 | No hay analizador `.sketch` |
 | Exportar imagen/SVG/PDF | ✅ | PNG, JPG, WEBP, SVG, PDF con las fuentes incrustadas cuando sus archivos lo permiten, PPTX y draw.io |
-| Historial de versiones | 🟡 | Documentos de OpenPencil Cloud (en vista previa): guardar versiones con nombre, consultarlas, previsualizarlas, restaurarlas y duplicarlas; no disponible para archivos locales |
+| Historial de versiones | 🟡 | Documentos de Lawha Cloud (en vista previa): guardar versiones con nombre, consultarlas, previsualizarlas, restaurarlas y duplicarlas; no disponible para archivos locales |
 | Recursos entre herramientas | ✅ | Portapapeles de Figma y copiar como texto/SVG/PNG/JSX |
 
 ## API de plugins y scripting
@@ -206,7 +206,7 @@ Conexiones, activadores, acciones, animaciones, transiciones, superposiciones, d
 | Fragmentos de código | 🟡 | Design JSX, HTML, Vue y React con CSS o Tailwind y valores basados en tokens; sin Swift, Kotlin ni Compose |
 | Tailwind CSS v4 | ✅ | HTML con clases de utilidad desde el panel Código, CLI o API |
 | Figma para VS Code | 🔲 | Sin integración con extensión del editor |
-| Servidor MCP | ✅ | `@open-pencil/mcp` con stdio y HTTP; 125 herramientas principales más herramientas de documento, historial y ajustes |
+| Servidor MCP | ✅ | `@lawha/mcp` con stdio y HTTP; 125 herramientas principales más herramientas de documento, historial y ajustes |
 | CLI | ✅ | 24 comandos, entre ellos `info`, `tree`, `find`, `query`, `node`, `pages`, `variables`, `tokens`, `fonts`, `lint`, `analyze`, `export`, `import`, `convert`, `diff`, `eval` y `tool` |
 
 ## Figma Draw

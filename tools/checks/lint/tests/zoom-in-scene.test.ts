@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'no-zoom-in-scene-drawing'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 const SCENE = 'packages/core/src/canvas/scene.ts'
 
 describe('no-zoom-in-scene-drawing', () => {

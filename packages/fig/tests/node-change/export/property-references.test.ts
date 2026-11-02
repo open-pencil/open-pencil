@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /** The fields a record's parameter map binds, in order. */
 function parameterFields(record: { parameterConsumptionMap?: unknown }): string[] {

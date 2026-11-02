@@ -1,4 +1,4 @@
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 export function collectAllNodes(graph: SceneGraph): SceneNode[] {
   const all: SceneNode[] = []

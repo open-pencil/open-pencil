@@ -1,4 +1,4 @@
-import type { Fill, StyleRun } from '@open-pencil/scene-graph'
+import type { Fill, StyleRun } from '@lawha/scene-graph'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import styledGlyphs from '#tests/fixtures/styled-saved-glyphs.json' with { type: 'json' }
@@ -7,7 +7,7 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('saved glyphs remain authoritative with an available font and invalidate on edit', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const bytes = new Uint8Array(37)
     const view = new DataView(bytes.buffer)
@@ -71,7 +71,7 @@ test('saved glyphs remain authoritative with an available font and invalidate on
     store.requestRender()
   })
   await editor.page.evaluate((fixture) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     store.graph.createNode('TEXT', store.state.currentPageId, {
       ...fixture,
@@ -87,7 +87,7 @@ test('saved glyphs remain authoritative with an available font and invalidate on
     store.requestRender()
   }, styledGlyphs)
   await editor.page.waitForFunction(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return (
       store?.graph.getChildren(store.state.currentPageId).filter((node) => node.type === 'TEXT')
         .length === 6
@@ -111,7 +111,7 @@ test('saved glyphs remain authoritative with an available font and invalidate on
  */
 test('saved emoji glyphs draw the emoji, not their placeholder, in their own colours', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const outline = (points: [number, number, number][]) => {
       const bytes = new Uint8Array(points.length * 9 + 1)
@@ -231,13 +231,13 @@ test('saved emoji glyphs draw the emoji, not their placeholder, in their own col
 })
 
 /**
- * Emoji typed in OpenPencil have no saved glyphs: the layout gives each Figma's 1 em square
+ * Emoji typed in Lawha have no saved glyphs: the layout gives each Figma's 1 em square
  * through the emoji metrics font, and the emoji's image is drawn there in its own colours.
  * A character a text font has, such as ©, stays text.
  */
 test('typed emoji take a 1 em square and draw their image', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     store.graph.createNode('TEXT', store.state.currentPageId, {
       x: 40,
@@ -251,7 +251,7 @@ test('typed emoji take a 1 em square and draw their image', async () => {
     })
     store.requestRender()
   })
-  await editor.page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await editor.page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
   // Without the settlement hook the wait above returns at once: give the render its frames.
   await editor.page.evaluate(
     () =>
@@ -272,7 +272,7 @@ test('typed emoji take a 1 em square and draw their image', async () => {
  */
 test('typed keycaps draw their character in a keycap frame', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     store.graph.createNode('TEXT', store.state.currentPageId, {
       x: 40,

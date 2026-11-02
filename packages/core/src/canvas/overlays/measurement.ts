@@ -1,9 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getAxisAlignedWorldBounds } from '@lawha/scene-graph/coordinate'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'

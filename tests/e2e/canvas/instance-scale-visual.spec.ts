@@ -2,18 +2,18 @@ import { pick } from 'es-toolkit/object'
 import { deflateSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
-import { computeAllLayouts, computeLayout } from '@open-pencil/core/layout'
-import { materializeDocument, writeFigArchive } from '@open-pencil/fig'
+import { computeAllLayouts, computeLayout } from '@lawha/core/layout'
+import { materializeDocument, writeFigArchive } from '@lawha/fig'
 import {
   createNodeChangesMessage,
   encodeMessage,
   getSchemaBytes,
   initCodec,
   type NodeChange
-} from '@open-pencil/kiwi/fig/codec'
-import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
-import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
-import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
+} from '@lawha/kiwi/fig/codec'
+import { type SceneNode, SceneGraph } from '@lawha/scene-graph'
+import { rescaleNodeTree } from '@lawha/scene-graph/scaling'
+import { reconcileVariableBindings } from '@lawha/scene-graph/variables'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import bindingFixture from '#tests/fixtures/nested-binding-ownership-records.json' with { type: 'json' }
@@ -66,7 +66,7 @@ function renderTree(graph: SceneGraph, rootId: string): RenderNode {
 
 async function renderTrees(trees: RenderNode[]) {
   await editor.page.evaluate((trees) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const visit = (tree: RenderNode, parentId: string) => {
       const { type, ...props } = tree.props
@@ -291,7 +291,7 @@ test('a bound root swap renders its replacement paint rather than its old cache'
   })
   const workerPaint = await editor.page.evaluate(
     async (saved) => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       if (!store) throw new Error('Editor unavailable')
       await store.openFigFile(new File([new Uint8Array(saved)], 'Bound-swap.fig'))
       const root = store.graph
@@ -307,7 +307,7 @@ test('a bound root swap renders its replacement paint rather than its old cache'
   )
   expect(workerPaint.g).toBe(1)
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     store.pan(-store.state.panX, -store.state.panY)
     store.setZoomAroundPoint(1, 0, 0)
@@ -321,7 +321,7 @@ test('absolute constraints survive occurrence resizing', async () => {
   const child = graph.getChildren(id)[0]
   expect([child.x, child.y, child.width, child.height]).toEqual([180, 10, 10, 100])
   await renderTrees([renderTree(graph, id)])
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().setZoomAroundPoint(2, 0, 0))
+  await editor.page.evaluate(() => window.lawha?.getStore?.().setZoomAroundPoint(2, 0, 0))
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
     'absolute-constraint-resize.png'
   )

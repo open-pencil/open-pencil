@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { Fill } from '@lawha/scene-graph'
+import { colorToCSS } from '@lawha/scene-graph/color'
+import { useI18n } from '@lawha/vue/i18n'
 import {
   GradientEditorRoot,
   GradientEditorBar,
   GradientEditorStop
-} from '@open-pencil/vue/primitives/GradientEditor'
-import { inputValue } from '@open-pencil/vue/shared/dom-events'
+} from '@lawha/vue/primitives/GradientEditor'
+import { inputValue } from '@lawha/vue/shared/dom-events'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import NumberField from '@/components/inputs/NumberField.vue'

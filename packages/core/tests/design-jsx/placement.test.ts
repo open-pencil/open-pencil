@@ -5,11 +5,11 @@ import {
   renderTree,
   stageJSXPreview,
   type RenderPlacementInput
-} from '@open-pencil/core/design-jsx'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { createStreamingJSXParser } from '@open-pencil/design-jsx'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/core/design-jsx'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { ALL_TOOLS } from '@lawha/core/tools'
+import { createStreamingJSXParser } from '@lawha/design-jsx'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 

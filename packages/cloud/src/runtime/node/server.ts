@@ -30,12 +30,12 @@ export type NodeCloudServerOptions = {
 function siteFiles(
   environment: Readonly<Record<string, string | undefined>>
 ): SiteFiles | undefined {
-  const developmentSite = environment.OPENPENCIL_CLOUD_DEV_SITE_URL
+  const developmentSite = environment.LAWHA_CLOUD_DEV_SITE_URL
   if (developmentSite) return developmentSiteFiles(developmentSite)
-  const siteDirectory = environment.OPENPENCIL_CLOUD_SITE_DIR
+  const siteDirectory = environment.LAWHA_CLOUD_SITE_DIR
   if (siteDirectory) return nodeSiteFiles(siteDirectory)
   console.warn(
-    '[Cloud] OPENPENCIL_CLOUD_SITE_DIR is not set; the editor and sign-in pages are off.'
+    '[Cloud] LAWHA_CLOUD_SITE_DIR is not set; the editor and sign-in pages are off.'
   )
   return undefined
 }

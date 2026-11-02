@@ -8,7 +8,7 @@ import {
   saveModelProfileDraft
 } from '@/app/ai/models/store'
 import type { AIModelSettings } from '@/app/ai/models/types'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 
 const WORKSPACE_A = '11111111-1111-4111-8111-111111111111'
 const WORKSPACE_B = '22222222-2222-4222-8222-222222222222'
@@ -21,7 +21,7 @@ function settingsFixture(): AIModelSettings {
     connections: [
       {
         id: 'connection-cloud',
-        providerID: OPENPENCIL_AI_PROVIDER,
+        providerID: LAWHA_AI_PROVIDER,
         customBaseURL: '',
         customAPIType: 'completions',
         credentialProfileId: 'connection-cloud',
@@ -53,7 +53,7 @@ afterEach(() => {
   replaceAIModelSettings(original)
 })
 
-describe('OpenPencil Cloud model connections', () => {
+describe('Lawha Cloud model connections', () => {
   test('keep the workspace that pays for them through a save and a reload', () => {
     expect(parseAIModelSettings(settingsFixture())?.connections[0]?.cloudWorkspaceId).toBe(
       WORKSPACE_A
@@ -78,6 +78,6 @@ describe('OpenPencil Cloud model connections', () => {
     expect(saved.connectionId).not.toBe('connection-cloud')
     expect(
       modelSettingsSnapshot().connections.find((connection) => connection.id === saved.connectionId)
-    ).toMatchObject({ providerID: OPENPENCIL_AI_PROVIDER, cloudWorkspaceId: WORKSPACE_B })
+    ).toMatchObject({ providerID: LAWHA_AI_PROVIDER, cloudWorkspaceId: WORKSPACE_B })
   })
 })

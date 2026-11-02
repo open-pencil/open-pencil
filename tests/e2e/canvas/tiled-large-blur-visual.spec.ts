@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import type { RecordedWheelSample } from '@open-pencil/core/profiler'
+import type { RecordedWheelSample } from '@lawha/core/profiler'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
@@ -31,13 +31,13 @@ const reversal = v.parse(
 )
 
 async function waitForTiledSettlement() {
-  await editor.page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await editor.page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
 }
 
 async function setLargeBlurRadius(radius: number) {
   await editor.page.evaluate((nextRadius) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const node = [...store.graph.getAllNodes()].find(
       (candidate) =>
         candidate.name === 'Group' &&
@@ -85,10 +85,10 @@ async function replayReversal() {
 test('large blur remains seamless after tiled mutation and zoom reversal', async () => {
   test.setTimeout(120_000)
   await editor.page.evaluate(() =>
-    window.openPencil?.openFile?.('/tests/fixtures/gold-preview.fig')
+    window.lawha?.openFile?.('/tests/fixtures/gold-preview.fig')
   )
   await editor.page.waitForFunction(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return (
       store != null &&
       store.state.preparation === null &&
@@ -102,8 +102,8 @@ test('large blur remains seamless after tiled mutation and zoom reversal', async
     )
   })
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.zoomToFit()
   })
   await waitForTiledSettlement()

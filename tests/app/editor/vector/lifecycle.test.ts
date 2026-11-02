@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import { SceneGraph, type VectorNetwork } from '@lawha/scene-graph'
 
 import { createVectorEditLifecycle } from '@/app/editor/vector/lifecycle'
 import type { VectorEditState } from '@/app/editor/vector/types'

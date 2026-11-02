@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
+import { SceneGraph } from '@lawha/scene-graph'
+import { styleDetachmentChanges } from '@lawha/scene-graph/shared-styles'
 
 function styledText() {
   const graph = new SceneGraph()

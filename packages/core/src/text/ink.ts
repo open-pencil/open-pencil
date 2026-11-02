@@ -1,4 +1,4 @@
-import { geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
+import { geometryCommandCoordCount } from '@lawha/scene-graph/geometry'
 
 import type { OutlineCommand } from '#core/text/font/glyphs'
 

@@ -1,11 +1,11 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { CharacterStyleOverride, SceneNode } from '@lawha/scene-graph'
 import {
   normalizeFontFamily,
   parseFontStyle,
   standardStyleName
-} from '@open-pencil/scene-graph/font-style'
-import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+} from '@lawha/scene-graph/font-style'
+import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
 
 /** The name a family's font gives its face at a weight and slant. */
 export type StyleNamer = (family: string, weight: number, italic: boolean) => string

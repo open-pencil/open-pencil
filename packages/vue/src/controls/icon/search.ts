@@ -1,7 +1,7 @@
 import { tryOnScopeDispose, watchDebounced } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
-import type { IconCollection } from '@open-pencil/core/icons'
+import type { IconCollection } from '@lawha/core/icons'
 
 import { useEditor } from '#vue/editor/context'
 

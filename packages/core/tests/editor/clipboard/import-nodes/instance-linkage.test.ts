@@ -2,10 +2,10 @@ import { describe, expect, it } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { importClipboardNodes } from '@open-pencil/core/clipboard'
-import { linkImportedInstanceChildren } from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { importClipboardNodes } from '@lawha/core/clipboard'
+import { linkImportedInstanceChildren } from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('importClipboardNodes: instance child linkage', () => {
   it('links serialized instance children so a later component sync does not duplicate them', () => {

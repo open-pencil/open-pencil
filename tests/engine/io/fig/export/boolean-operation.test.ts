@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
-import { createNodeChangesMessage, encodeMessage, initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { sceneNodeToKiwi } from '@lawha/fig/node-change'
+import { createNodeChangesMessage, encodeMessage, initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('Figma boolean operation export', () => {
   test('exports boolean operation node type and operation', () => {

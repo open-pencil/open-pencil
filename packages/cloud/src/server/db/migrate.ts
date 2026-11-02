@@ -171,7 +171,7 @@ export async function migrateCloudDatabase(
 ): Promise<void> {
   await migrateToLatest(
     new Migrator({ db: database, provider: new CloudMigrationProvider() }),
-    'OpenPencil Cloud database migration failed'
+    'Lawha Cloud database migration failed'
   )
   if (authMigration) await migrateAuthSchema(database, authMigration)
 }

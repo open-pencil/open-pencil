@@ -1,4 +1,4 @@
-import type { SceneNode, NodeType } from '@open-pencil/scene-graph'
+import type { SceneNode, NodeType } from '@lawha/scene-graph'
 
 import type { createSelectionActions } from '#core/editor/selection'
 import type { EditorContext } from '#core/editor/types'

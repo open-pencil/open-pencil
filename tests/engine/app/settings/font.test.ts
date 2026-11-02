@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { DEFAULT_WEB_FONT_PROVIDER_SETTINGS } from '@open-pencil/core/text'
+import { DEFAULT_WEB_FONT_PROVIDER_SETTINGS } from '@lawha/core/text'
 
 import { useFontSettings, type FontSettingsActions } from '@/app/settings/fonts/use'
 

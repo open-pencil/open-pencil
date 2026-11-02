@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { ALL_TOOLS, isAtomicTool, isToolExposed, type ToolDef } from '@open-pencil/core/tools'
+import { ALL_TOOLS, isAtomicTool, isToolExposed, type ToolDef } from '@lawha/core/tools'
 
 import { webmcpModeSchema, type WebMCPMode } from './schema'
 

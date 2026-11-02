@@ -1,6 +1,6 @@
 import { useEventListener } from '@vueuse/core'
 
-import { filterCanvasFiles } from '@open-pencil/vue/canvas/drop'
+import { filterCanvasFiles } from '@lawha/vue/canvas/drop'
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import { isDesignTokenFileName } from '@/app/editor/tokens/design-tokens'

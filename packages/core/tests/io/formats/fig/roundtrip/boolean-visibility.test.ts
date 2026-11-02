@@ -8,8 +8,8 @@ import { exportFigFile, parseFigFile } from '#core/io/formats/fig'
 import { populateFigPage, readerDiagnostics } from '#core/kiwi/fig/session/document-state'
 import { getComponents } from '#core/tools/read/components'
 
-import { parseFigBuffer } from '@open-pencil/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { parseFigBuffer } from '@lawha/fig'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /**
  * A component whose icon shows by a boolean variable and whose badge shows by a text variable,

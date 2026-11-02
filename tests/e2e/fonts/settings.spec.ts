@@ -10,8 +10,8 @@ test('the font settings gear opens Settings › Fonts without desktop-only cache
   await canvas.waitForInit()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = store.createShape('TEXT', 120, 120, 240, 40)
     store.updateNode(id, {
       text: 'Font settings smoke',
@@ -34,7 +34,7 @@ test('the font settings gear opens Settings › Fonts without desktop-only cache
   await page.getByTestId('font-status-select').click()
   await expect(page.getByTestId('font-status-banner')).toBeVisible()
   const selected = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return store ? [...store.state.selectedIds] : []
   })
   expect(selected).toHaveLength(1)

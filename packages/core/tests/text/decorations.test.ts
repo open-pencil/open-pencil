@@ -6,8 +6,8 @@ import { FIXTURES } from '#core-tests/helpers/paths'
 import { toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { savedDecoratedGlyphs, textDecorationRects } from '#core/text/decorations'
 

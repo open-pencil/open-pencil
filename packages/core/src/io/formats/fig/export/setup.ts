@@ -2,7 +2,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
-import { figArchiveMetaJSON } from '@open-pencil/fig'
+import { figArchiveMetaJSON } from '@lawha/fig'
 import {
   buildComponentPropIndex,
   exportCanvasGuides,
@@ -12,19 +12,19 @@ import {
   type FigNodeChangeExportRuntime,
   makeCanvasNodeChange,
   makeDocumentNodeChange
-} from '@open-pencil/fig/node-change'
-import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
-import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/fig/node-change'
+import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@lawha/kiwi/fig/codec'
+import { stringToGuid } from '@lawha/kiwi/fig/guid'
+import { decodeBinarySchema, compileSchema, ByteBuffer } from '@lawha/kiwi/schema-runtime'
+import type { PluginDataEntry, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   readBehaviour,
   renameBehaviourProperties,
   withBehaviour
-} from '@open-pencil/scene-graph/behaviours'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
-import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph/behaviours'
+import { fractionalPosition } from '@lawha/scene-graph/order-keys'
+import type { GUID, Rect, Size } from '@lawha/scene-graph/primitives'
+import { ownsSlotContent } from '@lawha/scene-graph/slots'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'

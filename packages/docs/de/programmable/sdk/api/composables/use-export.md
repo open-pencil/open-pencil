@@ -15,7 +15,7 @@ description: Scale und Format für den Export der aktuellen Selection verwalten.
 ## Verwendung
 
 ```ts
-import { useExport } from '@open-pencil/vue/document/export'
+import { useExport } from '@lawha/vue/document/export'
 
 const exportState = useExport()
 ```

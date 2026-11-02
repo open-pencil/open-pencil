@@ -18,8 +18,8 @@ async function drawRects() {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(SOURCE.x, SOURCE.y, SOURCE.width, SOURCE.height)
   const sourceId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const [id] = store.state.selectedIds
     if (!id) throw new Error('The drawn rectangle was not selected')
     store.updateNode(id, { cornerRadius: 12, opacity: 0.5 })
@@ -38,8 +38,8 @@ async function selectAt(rect: typeof SOURCE) {
 
 function selectedLook() {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const [id] = store.state.selectedIds
     const node = id ? store.graph.getNode(id) : undefined
     return node ? { id, cornerRadius: node.cornerRadius, opacity: node.opacity } : null
@@ -48,8 +48,8 @@ function selectedLook() {
 
 function layerCount() {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     return store.graph.getChildren(store.state.currentPageId).length
   })
 }

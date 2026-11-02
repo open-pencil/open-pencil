@@ -7,7 +7,7 @@
  */
 import { describe, test, expect } from 'bun:test'
 
-import TransformMatrix from '@open-pencil/scene-graph/matrix'
+import TransformMatrix from '@lawha/scene-graph/matrix'
 
 import { expectDefined } from '#tests/helpers/assert'
 

@@ -1,4 +1,4 @@
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** How long a cursor takes to glide to where its owner last moved it. */
 export const CURSOR_GLIDE_MS = 180

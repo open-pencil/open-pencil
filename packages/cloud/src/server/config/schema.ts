@@ -89,7 +89,7 @@ const rawCloudServerConfigSchema = v.object({
   passkeysEnabled: v.optional(v.boolean(), false),
   recoveryCodesEnabled: v.optional(v.boolean(), false),
   mfaTrustedDeviceDays: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14),
-  passkeyRPName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)), 'OpenPencil Cloud'),
+  passkeyRPName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)), 'Lawha Cloud'),
   captchaProvider: v.optional(v.literal('cloudflare-turnstile')),
   captchaSiteKey: optionalTextSchema,
   captchaSecretKey: optionalTextSchema,
@@ -272,11 +272,11 @@ const DEFAULT_SECRET_NAMES = {
   s3AccessKeyId: 'S3_ACCESS_KEY_ID',
   s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
   s3SessionToken: 'S3_SESSION_TOKEN',
-  smtpUser: 'OPENPENCIL_CLOUD_SMTP_USER',
-  smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
+  smtpUser: 'LAWHA_CLOUD_SMTP_USER',
+  smtpPassword: 'LAWHA_CLOUD_SMTP_PASSWORD',
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
-  aiSigningKey: 'OPENPENCIL_CLOUD_AI_SIGNING_KEY',
-  internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN'
+  aiSigningKey: 'LAWHA_CLOUD_AI_SIGNING_KEY',
+  internalServiceToken: 'LAWHA_CLOUD_SERVICE_TOKEN'
 } as const
 
 const urlSchema = v.pipe(v.string(), v.url())
@@ -403,9 +403,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     passkeys: v.optional(
       v.strictObject({
         enabled: v.optional(v.boolean(), false),
-        rp_name: v.optional(textSchema, 'OpenPencil Cloud')
+        rp_name: v.optional(textSchema, 'Lawha Cloud')
       }),
-      { enabled: false, rp_name: 'OpenPencil Cloud' }
+      { enabled: false, rp_name: 'Lawha Cloud' }
     ),
     captcha: v.optional(
       v.strictObject({

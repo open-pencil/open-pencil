@@ -11,10 +11,10 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
-import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import type { TokenStylesheetFormat } from '@lawha/dom-css/export'
+import { useEditor } from '@lawha/vue'
+import { useI18n } from '@lawha/vue/i18n'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import { variablesStylesheet } from '@/app/editor/tokens/stylesheet'
 import CodeViewer from '@/components/code-editor/CodeViewer.vue'

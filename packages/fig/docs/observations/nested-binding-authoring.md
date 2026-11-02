@@ -4,7 +4,7 @@ The source is `nested-binding-ownership-records.json`. Its placed outer occurren
 instance both have a newly declared `paddingRight` binding to the direct token (value 12).
 
 Independent Figma Plugin API assignment gives paddingRight 6 on both nodes, nested width 17,
-and outer width 33. An OpenPencil Figma API export reopened in Figma retains those values and
+and outer width 33. An Lawha Figma API export reopened in Figma retains those values and
 both aliases. Geometry and bound-variable captures are in `nested-binding-authoring.json`.
 
 `tests/fixtures/nested-binding-authoring-figma.png` is an independent Figma export of the native assignment,
@@ -20,7 +20,7 @@ passes the independently captured value 2, preserves the bindings, and covers un
 `tests/fixtures/nested-component-scale-figma.png` is the independent 264×64 Figma raster at 8×; headless pixels
 match exactly. A browser snapshot also covers the before/after geometry projection.
 
-An OpenPencil export after the component edit reopens in Figma with root size 33×8, nested
+An Lawha export after the component edit reopens in Figma with root size 33×8, nested
 paddingTop 2, paddingRight 6, and both aliases intact. This establishes this component-edit
 contract, not complete typography, rescale/export, reparenting, or structural lifecycle acceptance.
 

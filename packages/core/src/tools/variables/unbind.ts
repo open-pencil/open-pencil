@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { OpenPencilAPI } from '#core/openpencil-api'
+import { LawhaAPI } from '#core/lawha-api'
 import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
 export const unbindVariable = defineTool({
@@ -32,7 +32,7 @@ export const unbindVariable = defineTool({
     if (!boundValue) {
       return { error: `No binding found for field "${args.field}" on node "${args.node_id}"` }
     }
-    new OpenPencilAPI(figma).unbindVariable(args.node_id, args.field)
+    new LawhaAPI(figma).unbindVariable(args.node_id, args.field)
     return { unbound: true, node_id: args.node_id, field: args.field }
   }
 })

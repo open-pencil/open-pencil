@@ -1,5 +1,5 @@
-import { Frame, Text } from '@open-pencil/design-jsx'
-import type { TreeNode } from '@open-pencil/design-jsx'
+import { Frame, Text } from '@lawha/design-jsx'
+import type { TreeNode } from '@lawha/design-jsx'
 
 import { menuBar } from '../chrome'
 import { Icon, type IconProps } from '../elements'
@@ -34,7 +34,7 @@ const WAYS: { icon: IconProps['name']; title: string; body: string }[] = [
   {
     icon: 'lucide:terminal',
     title: 'Script it',
-    body: 'npx @open-pencil/cli inspects, lints, exports, and edits documents from a terminal, a CI job, or an agent. The MCP server gives agents the same tools.'
+    body: 'npx @lawha/cli inspects, lints, exports, and edits documents from a terminal, a CI job, or an agent. The MCP server gives agents the same tools.'
   }
 ]
 

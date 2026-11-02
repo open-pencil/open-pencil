@@ -1,4 +1,4 @@
-import type { HyperlinkTarget, NodeType, SceneGraph } from '@open-pencil/scene-graph'
+import type { HyperlinkTarget, NodeType, SceneGraph } from '@lawha/scene-graph'
 
 import { invalid, received } from './messages'
 

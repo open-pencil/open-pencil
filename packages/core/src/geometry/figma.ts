@@ -1,8 +1,8 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import { FITTED_CONTAINER_TYPES } from '@lawha/scene-graph/node-defaults'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /**
  * Figma's rotation of a transform: counterclockwise degrees in (-180, 180]. The plugin API and the

@@ -1,13 +1,13 @@
 /**
- * Live Google Fonts checks. They reach the network, so they run only with OPENPENCIL_LIVE_FONTS=1:
- *   OPENPENCIL_LIVE_FONTS=1 bun test packages/core/tests/text/web-font/google-live.test.ts
+ * Live Google Fonts checks. They reach the network, so they run only with LAWHA_LIVE_FONTS=1:
+ *   LAWHA_LIVE_FONTS=1 bun test packages/core/tests/text/web-font/google-live.test.ts
  */
 import { describe, expect, test } from 'bun:test'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { WebFontResolver } from '#core/text/web-font/resolver'
 
-const live = process.env.OPENPENCIL_LIVE_FONTS === '1'
+const live = process.env.LAWHA_LIVE_FONTS === '1'
 const suite = live ? describe : describe.skip
 
 const ARABIC_FAMILIES = [

@@ -8,7 +8,7 @@ export interface CLICommandResult {
   exitCode: number
 }
 
-export async function runOpenPencilCLI(args: string[]): Promise<CLICommandResult> {
+export async function runLawhaCLI(args: string[]): Promise<CLICommandResult> {
   // Run the CLI with the Bun that runs the tests, not whatever `bun` PATH
   // resolves to in the child's cwd (version shims can differ or fail there).
   const proc = Bun.spawn([process.execPath, CLI, ...args], {

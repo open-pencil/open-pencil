@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { TypographyControlsRoot } from '@open-pencil/vue/primitives/TypographyControls'
+import { MIXED, type MixedValue } from '@lawha/vue/controls/node-props'
+import { useI18n } from '@lawha/vue/i18n'
+import { TypographyControlsRoot } from '@lawha/vue/primitives/TypographyControls'
 
 import { loadFont } from '@/app/editor/fonts'
 import { openSettingsDialog } from '@/app/settings/dialog'

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import { figJamColor, figJamColorName, figJamLayerColorFields, figJamLayerColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamOutlineColorName, figJamSectionColorFields, figJamSectionTitleColors, figJamSectionColorName, figJamShapePaint } from '@open-pencil/scene-graph/figjam'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import { createShapeWithText, shapeWithTextLabel } from '@lawha/scene-graph/generated'
+import { figJamColor, figJamColorName, figJamLayerColorFields, figJamLayerColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamOutlineColorName, figJamSectionColorFields, figJamSectionTitleColors, figJamSectionColorName, figJamShapePaint } from '@lawha/scene-graph/figjam'
+import { SceneGraph } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
 
 /** A shape as FigJam's tool places it: white, with its #757575 outline and a dark label. */
 function placedShape() {

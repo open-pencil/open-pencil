@@ -5,7 +5,7 @@ import { FIXTURES } from '#core-tests/helpers/paths'
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { FontManager, facesFromStyles } from '@open-pencil/core/text'
+import { FontManager, facesFromStyles } from '@lawha/core/text'
 
 /** A font manager that asks no web provider, so a family's faces come from its catalog. */
 function offlineManager() {

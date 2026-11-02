@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createEditor, type Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
 import { updateHoverCursor } from '#vue/shared/input/select/hover'

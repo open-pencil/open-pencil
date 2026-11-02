@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { PenNode } from '@open-pencil/pen'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { withIconTint } from '@open-pencil/scene-graph/icons'
+import type { PenNode } from '@lawha/pen'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { withIconTint } from '@lawha/scene-graph/icons'
 import {
   hasInstanceOverride,
   instanceMainComponent,
   syncInstance
-} from '@open-pencil/scene-graph/instances'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/instances'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'

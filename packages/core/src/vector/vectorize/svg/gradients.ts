@@ -9,13 +9,13 @@
  * normalize into each node's bounding box and build the transform in Figma's convention
  * (see geometry/gradient).
  */
-import type { Fill, GradientStop } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import type { Fill, GradientStop } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
 import {
   ellipticalGradientTransform,
   linearGradientTransformFromAxes
-} from '@open-pencil/scene-graph/gradient'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/gradient'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import { parseSVGDocument } from '#core/io/formats/svg/document'
 

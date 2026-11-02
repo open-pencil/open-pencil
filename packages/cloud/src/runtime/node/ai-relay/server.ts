@@ -22,9 +22,9 @@ export type NodeAIRelayOptions = {
 
 export async function startNodeAIRelay(options: NodeAIRelayOptions = {}) {
   const environment = options.environment ?? process.env
-  const path = environment.OPENPENCIL_AI_RELAY_CONFIG
+  const path = environment.LAWHA_AI_RELAY_CONFIG
   if (!path) {
-    throw new AIRelayConfigError('OPENPENCIL_AI_RELAY_CONFIG must name a relay TOML file')
+    throw new AIRelayConfigError('LAWHA_AI_RELAY_CONFIG must name a relay TOML file')
   }
   const config = parseAIRelayTOML(await readFile(path, 'utf8'), environment)
   const database = createAIRelayDatabase(

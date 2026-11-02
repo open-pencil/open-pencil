@@ -9,8 +9,8 @@ import {
   type VariableScope,
   type VariableType,
   type VariableValue
-} from '@open-pencil/scene-graph'
-import { updateTokenExpression } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph'
+import { updateTokenExpression } from '@lawha/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
@@ -31,7 +31,7 @@ function figmaScope(scope: VariableScope): FigmaVariableScope[] {
 function documentScope(scope: FigmaVariableScope): VariableScope {
   if (scope === 'STROKE_COLOR') return 'STROKE'
   if (!(VARIABLE_SCOPES as readonly string[]).includes(scope)) {
-    throw new Error(`in set_scopes: OpenPencil does not support the ${scope as string} scope`)
+    throw new Error(`in set_scopes: Lawha does not support the ${scope as string} scope`)
   }
   return scope
 }

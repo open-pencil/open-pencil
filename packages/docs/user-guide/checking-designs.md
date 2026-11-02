@@ -5,7 +5,7 @@ description: Find accessibility, consistency, and structure issues with the Lint
 
 # Checking Designs
 
-OpenPencil checks the current page as you work and points out layers that break common design rules: text that is hard to read, controls that are too small to tap, colors that should use a variable, and spacing off the scale.
+Lawha checks the current page as you work and points out layers that break common design rules: text that is hard to read, controls that are too small to tap, colors that should use a variable, and spacing off the scale.
 
 ## Lint Panel
 
@@ -59,4 +59,4 @@ The settings menu in the Lint panel switches between rule presets:
 
 Turn off a single rule from its group's menu. **Turn on turned-off rules** in the settings menu brings them back. Presets and turned-off rules are saved between sessions.
 
-The same rules run from the command line with `openpencil lint`; see [Inspecting Files](/programmable/cli/inspecting).
+The same rules run from the command line with `lawha lint`; see [Inspecting Files](/programmable/cli/inspecting).

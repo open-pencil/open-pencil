@@ -1,4 +1,4 @@
-import { type ACPAgentDef } from '@open-pencil/core/constants'
+import { type ACPAgentDef } from '@lawha/core/constants'
 
 import { isSignedIn } from '@/app/ai/agents/acp/auth/status'
 import { MCP_INSTALL_COMMAND } from '@/app/automation/mcp/failure'
@@ -15,7 +15,7 @@ export interface AgentSetupState {
   checked: boolean
   scanning: boolean
   detected: DetectedAgent | null
-  /** OpenPencil's MCP server, through which agents reach the canvas. */
+  /** Lawha's MCP server, through which agents reach the canvas. */
   bridge: boolean
   /** The installed MCP server does not match this app's version. */
   bridgeOutdated: boolean
@@ -43,7 +43,7 @@ export interface PiSetupState {
   supported: boolean
   checked: boolean
   scanning: boolean
-  /** The `openpencil-harness` companion that runs Pi. */
+  /** The `lawha-harness` companion that runs Pi. */
   companion: boolean
   companionOutdated: boolean
   companionCommand: string
@@ -59,14 +59,14 @@ export interface PiSetupState {
   bridgeInstallable?: boolean
   installingCompanion: boolean
   installingBridge: boolean
-  /** The default model set in Pi, used unless OpenPencil names another. */
+  /** The default model set in Pi, used unless Lawha names another. */
   defaultModel: string | null
   /** Pi keeps sign-ins; null until read or where they cannot be read. */
   signedIn?: boolean | null
   error: DiscoveryError | null
 }
 
-/** What setup knows about OpenPencil's MCP server on its own, for Settings → MCP. */
+/** What setup knows about Lawha's MCP server on its own, for Settings → MCP. */
 export type MCPServerSetupState = Pick<
   AgentSetupState,
   | 'supported'
@@ -81,7 +81,7 @@ export type MCPServerSetupState = Pick<
   | 'error'
 >
 
-/** An OpenPencil companion as setup presents it, with the one-click fix that applies. */
+/** An Lawha companion as setup presents it, with the one-click fix that applies. */
 export interface CompanionCheck {
   /** Installed and matching this app. */
   ready: boolean
@@ -166,7 +166,7 @@ export interface AgentAccountView {
   acceptsCode: boolean
   error: AgentAccount['error']
   /**
-   * Whether a signed-in agent's session reached OpenPencil's tools, with the agent's reason when
+   * Whether a signed-in agent's session reached Lawha's tools, with the agent's reason when
    * it did not; null when signed out or when the MCP server cannot report it.
    */
   tools: { state: 'checking' | 'connected' | 'unreachable'; reason: string | null } | null

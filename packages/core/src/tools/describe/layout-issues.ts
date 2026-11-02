@@ -1,8 +1,8 @@
 import { sumBy } from 'es-toolkit/math'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { colorToHex, compositeOver, contrastRatio } from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { DescribeIssue } from './issues'
 import { CONTAINER_TYPES, findAncestorBackground } from './shared'

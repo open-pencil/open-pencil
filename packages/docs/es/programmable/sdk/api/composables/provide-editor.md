@@ -9,7 +9,7 @@ description: Proporcionar una instancia de Editor a los componentes descendiente
 
 Llámelo una vez en el componente raíz de la interfaz y use `useEditor()` en sus descendientes.
 
-El SDK público actual usa directamente `provideEditor()` y `useEditor()`. `OpenPencilProvider`, mencionado en ejemplos antiguos, no forma parte de la API actual.
+El SDK público actual usa directamente `provideEditor()` y `useEditor()`. `LawhaProvider`, mencionado en ejemplos antiguos, no forma parte de la API actual.
 
 ## Véase también
 

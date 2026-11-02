@@ -2,14 +2,14 @@ import { useSessionStorage } from '@vueuse/core'
 import { withoutFragment } from 'ufo'
 import { ref } from 'vue'
 
-import { cloudSignInURL, type CloudSocialProvider } from '@open-pencil/cloud/client'
-import { cloudServerOrigin, type CloudDiscovery } from '@open-pencil/cloud/contract'
+import { cloudSignInURL, type CloudSocialProvider } from '@lawha/cloud/client'
+import { cloudServerOrigin, type CloudDiscovery } from '@lawha/cloud/contract'
 
 import { IS_BROWSER, IS_TAURI } from '@/constants'
 
 /** The server this tab left to sign in to; per tab, so another tab's return is not taken. */
 const pendingSignIn = IS_BROWSER
-  ? useSessionStorage<string | null>('open-pencil:cloud-sign-in', null)
+  ? useSessionStorage<string | null>('lawha:cloud-sign-in', null)
   : ref<string | null>(null)
 
 /**

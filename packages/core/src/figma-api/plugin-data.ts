@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import {
   assertProxyEditable,
@@ -8,12 +8,12 @@ import {
   type ProxyThis
 } from './accessor-utils'
 
-export const OPEN_PENCIL_PLUGIN_DATA_NAMESPACE = 'open-pencil'
+export const LAWHA_PLUGIN_DATA_NAMESPACE = 'lawha'
 
 type PluginDataEntry = SceneNode['pluginData'][number]
 
-export function isOpenPencilPluginData(entry: PluginDataEntry): boolean {
-  return entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE
+export function isLawhaPluginData(entry: PluginDataEntry): boolean {
+  return entry.pluginId === LAWHA_PLUGIN_DATA_NAMESPACE
 }
 
 function encodedSharedKey(entry: PluginDataEntry, namespace: string): string | null {
@@ -29,20 +29,20 @@ function isEncodedSharedPluginData(entry: PluginDataEntry): boolean {
 function matchesSharedPluginData(entry: PluginDataEntry, namespace: string, key: string): boolean {
   const encodedKey = encodedSharedKey(entry, namespace)
   if (encodedKey !== null) return encodedKey === key
-  if (isOpenPencilPluginData(entry)) return false
+  if (isLawhaPluginData(entry)) return false
   return entry.pluginId === namespace && entry.key === key
 }
 
 function sharedPluginDataKey(entry: PluginDataEntry, namespace: string): string | null {
   const encodedKey = encodedSharedKey(entry, namespace)
   if (encodedKey !== null) return encodedKey
-  if (isOpenPencilPluginData(entry)) return null
+  if (isLawhaPluginData(entry)) return null
   return entry.pluginId === namespace ? entry.key : null
 }
 
 export function getPluginData(node: SceneNode, key: string): string {
   return (
-    node.pluginData.find((entry) => isOpenPencilPluginData(entry) && entry.key === key)?.value ?? ''
+    node.pluginData.find((entry) => isLawhaPluginData(entry) && entry.key === key)?.value ?? ''
   )
 }
 
@@ -53,17 +53,17 @@ export function setPluginData(
   value: string
 ): void {
   const pluginData = node.pluginData.filter(
-    (entry) => !(isOpenPencilPluginData(entry) && entry.key === key)
+    (entry) => !(isLawhaPluginData(entry) && entry.key === key)
   )
   if (value !== '') {
-    pluginData.push({ pluginId: OPEN_PENCIL_PLUGIN_DATA_NAMESPACE, key, value })
+    pluginData.push({ pluginId: LAWHA_PLUGIN_DATA_NAMESPACE, key, value })
   }
   graph.updateNode(node.id, { pluginData })
 }
 
 export function getPluginDataKeys(node: SceneNode): string[] {
   return node.pluginData
-    .filter((entry) => isOpenPencilPluginData(entry) && !isEncodedSharedPluginData(entry))
+    .filter((entry) => isLawhaPluginData(entry) && !isEncodedSharedPluginData(entry))
     .map((entry) => entry.key)
 }
 

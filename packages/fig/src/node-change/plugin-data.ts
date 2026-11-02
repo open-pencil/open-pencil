@@ -1,24 +1,24 @@
 import { omit } from 'es-toolkit/object'
 
-import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import type { NodeChange, PluginData, PluginRelaunchData } from '@lawha/kiwi/fig/codec'
+import { guidToString } from '@lawha/kiwi/fig/guid'
 import type {
   ExportSetting,
   PluginDataEntry,
   PluginRelaunchDataEntry,
   SceneNode
-} from '@open-pencil/scene-graph'
-import type { ExportFormatId } from '@open-pencil/scene-graph/export-format'
-import { clampExportScale } from '@open-pencil/scene-graph/export-scale'
+} from '@lawha/scene-graph'
+import type { ExportFormatId } from '@lawha/scene-graph/export-format'
+import { clampExportScale } from '@lawha/scene-graph/export-scale'
 import {
   hasPluginData,
-  OPEN_PENCIL_PLUGIN_DATA,
-  OPEN_PENCIL_PLUGIN_ID,
+  LAWHA_PLUGIN_DATA,
+  LAWHA_PLUGIN_ID,
   withPluginData,
   type PluginDataField
-} from '@open-pencil/scene-graph/plugin-data'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/plugin-data'
+import type { Rect } from '@lawha/scene-graph/primitives'
+import { paintBindingTarget } from '@lawha/scene-graph/variables'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import {
@@ -28,7 +28,7 @@ import {
   referencesVariable
 } from './variable/bindings'
 
-const { boundVariables, exportSettings, librarySource, textPathBox } = OPEN_PENCIL_PLUGIN_DATA
+const { boundVariables, exportSettings, librarySource, textPathBox } = LAWHA_PLUGIN_DATA
 
 const NATIVE_EXPORT_FORMATS: Record<string, ExportFormatId> = {
   PNG: 'png',
@@ -37,14 +37,14 @@ const NATIVE_EXPORT_FORMATS: Record<string, ExportFormatId> = {
   PDF: 'pdf'
 }
 
-/** An OpenPencil plugin-data value on a record read from a `.fig` file. */
+/** An Lawha plugin-data value on a record read from a `.fig` file. */
 export function readNodeChangePluginData<T>(
   nc: Pick<NodeChange, 'pluginData'>,
   field: PluginDataField<T>
 ): T | undefined {
   return field.decode(
     nc.pluginData?.find(
-      (entry) => entry.pluginID === OPEN_PENCIL_PLUGIN_ID && entry.key === field.key
+      (entry) => entry.pluginID === LAWHA_PLUGIN_ID && entry.key === field.key
     )?.value
   )
 }
@@ -63,7 +63,7 @@ export function applyExportSettingsPluginData(
 }
 
 /**
- * textPathBox is OpenPencil-only state (the node-local rect the TEXT_PATH
+ * textPathBox is Lawha-only state (the node-local rect the TEXT_PATH
  * layout path maps onto, after import-time box expansion and resize scaling).
  * The Kiwi schema has no home for it, and reconstructing it from an expanded,
  * resized node is ambiguous — persist it as plugin data so save/reopen keeps

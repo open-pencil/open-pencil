@@ -8,9 +8,9 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { VariableType } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { variablesAddTestId, vTestId } from '@open-pencil/vue/testing'
+import type { VariableType } from '@lawha/scene-graph'
+import { useI18n } from '@lawha/vue/i18n'
+import { variablesAddTestId, vTestId } from '@lawha/vue/testing'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'

@@ -1,4 +1,4 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 import { LAYOUT_DISTANCE_FIELDS } from '../fields'
 import { occurrences } from '../occurrence/path'

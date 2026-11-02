@@ -1,4 +1,4 @@
-import type { Fill, SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph } from '@lawha/scene-graph'
 
 const WHITE: Fill[] = [
   { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }

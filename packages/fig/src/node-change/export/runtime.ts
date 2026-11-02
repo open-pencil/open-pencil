@@ -1,4 +1,4 @@
-import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph, SceneNode } from '@lawha/scene-graph'
 
 import type { ShapedText } from '../derived-text/build'
 import { standardStyleNamer, type StyleNamer } from '../font/style'

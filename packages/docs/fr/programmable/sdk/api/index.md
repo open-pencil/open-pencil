@@ -1,6 +1,6 @@
 ---
 title: Référence de l’API
-description: Composants, composables et API avancées de @open-pencil/vue.
+description: Composants, composables et API avancées de @lawha/vue.
 ---
 
 # Référence de l’API

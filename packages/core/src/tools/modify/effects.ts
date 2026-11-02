@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { parseColor } from '@open-pencil/scene-graph/color'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import { DEFAULT_SHADOW_COLOR } from '#core/constants'
 import type { FigmaEffect } from '#core/figma-api/effects'

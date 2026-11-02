@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { UNIT_TEST_GROUPS } from '@open-pencil/unit-tests-tools/shards'
+import { UNIT_TEST_GROUPS } from '@lawha/unit-tests-tools/shards'
 
 export const ENGINE_TESTS_ROOT = 'tests/engine'
 export const ENGINE_BASELINE_PATH = 'tools/checks/test-homes/engine-baseline.txt'

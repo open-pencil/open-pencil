@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { renderJSX } from '@lawha/core/design-jsx'
+import { sceneNodeToJSX, selectionToJSX } from '@lawha/design-jsx'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 const BUTTON = `<Frame name="Library">
   <Component name="Star" w={4} h={4} />

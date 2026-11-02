@@ -1,6 +1,6 @@
 import type { Image, Surface } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { createImageCache } from './cache'
 import { ImagePreviewCache } from './previews'

@@ -15,7 +15,7 @@ export type AppTargetCLIArgs = {
 export const appTargetOptions = {
   'document-id': {
     type: 'string',
-    description: 'Target OpenPencil document/tab ID when connected to the running app',
+    description: 'Target Lawha document/tab ID when connected to the running app',
     required: false
   },
   'page-id': {

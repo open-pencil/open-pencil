@@ -1,6 +1,6 @@
-import type { DesignDocument } from '@open-pencil/dom-css'
-import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { DesignDocument } from '@lawha/dom-css'
+import { designDocumentToSceneGraph } from '@lawha/dom-css/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { layoutAuthoredNodes } from '#core/layout'
 

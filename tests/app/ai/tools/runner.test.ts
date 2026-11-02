@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 
-import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { ALL_TOOLS } from '@lawha/core/tools'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'

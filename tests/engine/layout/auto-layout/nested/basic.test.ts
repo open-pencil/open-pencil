@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts, computeLayout } from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { computeAllLayouts, computeLayout } from '@lawha/core/layout'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, pageId, rect } from '#tests/helpers/layout'

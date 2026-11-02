@@ -3,7 +3,7 @@ import { sha256 } from '@noble/hashes/sha2.js'
 import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils.js'
 import { compactDecrypt, CompactEncrypt } from 'jose'
 
-const CONTINUATION_SALT = utf8ToBytes('openpencil-cloud-invitation-continuation')
+const CONTINUATION_SALT = utf8ToBytes('lawha-cloud-invitation-continuation')
 const CONTINUATION_HEADER = { alg: 'dir', enc: 'A256GCM' } as const
 
 export function hashCapability(value: string): string {

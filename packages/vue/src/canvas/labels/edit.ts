@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 export type CanvasLabelKind = 'section-title' | 'frame-title' | 'component-label'
 

@@ -3,7 +3,7 @@ import { test } from 'bun:test'
 import { expectPathError } from '#fig-tests/helpers/errors'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 const guid = (localID: number) => ({ sessionID: 1, localID })
 for (const similarity of ['equal-values', 'equal-fields', 'matching-suffix'] as const) {

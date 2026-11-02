@@ -4,8 +4,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('mixed vector regions keep open stroke segments', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.graph.createNode('VECTOR', store.state.currentPageId, {
       name: 'Mixed region and open segment',
       x: 160,
@@ -60,8 +60,8 @@ test('mixed vector regions keep open stroke segments', async () => {
 
 test('even-odd vector geometry preserves holes', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const bytes: number[] = []
     const pushFloat = (value: number) => {
       const buffer = new ArrayBuffer(4)

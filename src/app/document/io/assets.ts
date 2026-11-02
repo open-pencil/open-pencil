@@ -1,8 +1,8 @@
 import { dirname, join, resolve, sep } from '@tauri-apps/api/path'
 import { lstat, readFile } from '@tauri-apps/plugin-fs'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
-import type { ReadDocumentInput } from '@open-pencil/core/io'
+import { IS_TAURI } from '@lawha/core/constants'
+import type { ReadDocumentInput } from '@lawha/core/io'
 
 /**
  * Reads the files a document opened from `path` names relative to itself, such as a `.pen`

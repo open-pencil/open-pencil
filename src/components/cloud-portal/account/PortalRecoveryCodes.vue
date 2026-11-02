@@ -2,7 +2,7 @@
 import { useClipboard } from '@vueuse/core'
 import { ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -30,7 +30,7 @@ async function copyCodes() {
 function downloadCodes() {
   downloadBlob(
     new TextEncoder().encode(`${codes.join('\n')}\n`),
-    'openpencil-recovery-codes.txt',
+    'lawha-recovery-codes.txt',
     'text/plain'
   )
   saved.value = true

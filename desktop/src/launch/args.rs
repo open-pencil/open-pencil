@@ -41,7 +41,7 @@ pub fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
-/// `openpencil://` URLs among a second launch's arguments: Windows and Linux start a new
+/// `lawha://` URLs among a second launch's arguments: Windows and Linux start a new
 /// process for a link, and the single-instance plugin hands its arguments to this one.
 #[cfg(all(
     any(target_os = "macos", windows, target_os = "linux"),
@@ -49,7 +49,7 @@ pub fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
 ))]
 pub fn deep_links_from_args(args: &[String]) -> Vec<url::Url> {
     args.iter()
-        .filter(|arg| arg.starts_with("openpencil://"))
+        .filter(|arg| arg.starts_with("lawha://"))
         .filter_map(|arg| url::Url::parse(arg).ok())
         .collect()
 }

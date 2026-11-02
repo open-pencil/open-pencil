@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { geometryBlobToSVGPath } from '@open-pencil/core/io/formats/svg'
+import { geometryBlobToSVGPath } from '@lawha/core/io/formats/svg'
 
 // --- geometryBlobToSVGPath tests ---
 

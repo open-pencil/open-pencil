@@ -19,7 +19,7 @@ function git(cwd: string, ...args: string[]): string {
 }
 
 test('classifier reads real Git deletions and renames without losing the original path', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'open-pencil-ci-'))
+  const root = await mkdtemp(join(tmpdir(), 'lawha-ci-'))
   roots.push(root)
   git(root, 'init')
   await writeFile(join(root, 'runtime.ts'), 'export const version = 1\n')
@@ -48,7 +48,7 @@ test('classifier reads real Git deletions and renames without losing the origina
 })
 
 test('a pull request is measured from the base its merge commit merges into', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'open-pencil-ci-'))
+  const root = await mkdtemp(join(tmpdir(), 'lawha-ci-'))
   roots.push(root)
   git(root, 'init', '-b', 'main')
   await writeFile(join(root, 'runtime.ts'), 'export const version = 1\n')

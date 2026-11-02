@@ -1,6 +1,6 @@
-import type { ConnectorEndpoint } from '@open-pencil/scene-graph'
-import { createConnector, layoutConnector } from '@open-pencil/scene-graph/connectors'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { ConnectorEndpoint } from '@lawha/scene-graph'
+import { createConnector, layoutConnector } from '@lawha/scene-graph/connectors'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import {
   connectorAttachment,

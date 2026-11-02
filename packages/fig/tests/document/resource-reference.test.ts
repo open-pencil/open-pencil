@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { createResourceResolver } from '#fig/document/resource-reference'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('an explicit unversioned record wins regardless of source ordering', () => {
   const entries: NodeChange[] = [

@@ -1,6 +1,6 @@
 {
   "about": {
-    "label": "About OpenPencil"
+    "label": "About Lawha"
   },
   "check-updates": {
     "label": "Check for Updates…"
@@ -10,7 +10,7 @@
     "accelerator": "CmdOrCtrl+,"
   },
   "quit": {
-    "label": "Quit OpenPencil",
+    "label": "Quit Lawha",
     "accelerator": "CmdOrCtrl+Q"
   }
 }

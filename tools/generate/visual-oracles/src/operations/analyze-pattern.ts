@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
 
 import type { PixelImage } from '../image/pixel-image'
 
@@ -35,11 +35,11 @@ const { values: opts } = parseArgs({
   options: {
     figma: {
       type: 'string',
-      default: '/tmp/open-pencil-oracles/pattern-visible-source-tuned/figma.png'
+      default: '/tmp/lawha-oracles/pattern-visible-source-tuned/figma.png'
     },
     ours: {
       type: 'string',
-      default: '/tmp/open-pencil-oracles/pattern-visible-source-tuned/ours.png'
+      default: '/tmp/lawha-oracles/pattern-visible-source-tuned/ours.png'
     },
     threshold: { type: 'string', default: '10' },
     regions: { type: 'string' }
@@ -52,7 +52,7 @@ const minComponentPixels = Number(opts.threshold)
 const regions = parseRegions(opts.regions)
 
 if (!existsSync(figmaPath)) throw new Error(`Missing Figma image: ${figmaPath}`)
-if (!existsSync(oursPath)) throw new Error(`Missing OpenPencil image: ${oursPath}`)
+if (!existsSync(oursPath)) throw new Error(`Missing Lawha image: ${oursPath}`)
 
 const figma = await loadImage(figmaPath)
 const ours = await loadImage(oursPath)
@@ -278,7 +278,7 @@ function nearestRowDeltas(figmaRows: RowSummary[], oursRows: RowSummary[]) {
 function rowDeltaSummary(
   rows: ReturnType<typeof pairedRowDeltas>,
   figmaRowCount: number,
-  openPencilRowCount: number
+  lawhaRowCount: number
 ) {
   const valid = rows.filter((row) => row.deltaY !== null && row.deltaFirstX !== null)
   if (valid.length === 0) return null
@@ -288,7 +288,7 @@ function rowDeltaSummary(
     pairedRowCount: valid.length,
     avgDeltaY: Number(avgDeltaY.toFixed(2)),
     avgDeltaFirstX: Number(avgDeltaFirstX.toFixed(2)),
-    missingOpenPencilRows: Math.max(0, figmaRowCount - openPencilRowCount),
-    extraOpenPencilRows: Math.max(0, openPencilRowCount - figmaRowCount)
+    missingLawhaRows: Math.max(0, figmaRowCount - lawhaRowCount),
+    extraLawhaRows: Math.max(0, lawhaRowCount - figmaRowCount)
   }
 }

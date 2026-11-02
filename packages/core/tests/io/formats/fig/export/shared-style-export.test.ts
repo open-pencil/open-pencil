@@ -1,10 +1,10 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { getSharedStyles } from '@lawha/scene-graph/shared-styles'
 
 beforeAll(async () => {
   await initCodec()
@@ -100,7 +100,7 @@ test('names local styles by the records it writes for them, whatever their ids',
   }
 })
 
-test('reopen layers and ranges with the styles made in OpenPencil they use', async () => {
+test('reopen layers and ranges with the styles made in Lawha they use', async () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   const fill = graph.createNode('RECTANGLE', page.id, {
@@ -131,7 +131,7 @@ test('reopen layers and ranges with the styles made in OpenPencil they use', asy
   expect(named('text', styled?.styleRuns[0]?.style.textStyleId)).toBe('Heading')
 })
 
-test('reopen a vector region with the paint style made in OpenPencil it uses', async () => {
+test('reopen a vector region with the paint style made in Lawha it uses', async () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   const red = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }

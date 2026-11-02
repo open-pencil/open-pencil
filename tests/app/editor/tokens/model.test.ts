@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Variable, type VariableValue } from '@open-pencil/scene-graph'
+import { SceneGraph, type Variable, type VariableValue } from '@lawha/scene-graph'
 
 import {
   aliasCandidates,

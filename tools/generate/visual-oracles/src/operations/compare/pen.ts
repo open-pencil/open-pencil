@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * pen.dev oracle: exports the frames listed in the fixtures' manifest.json from the document open
- * in pen.dev, renders the same frames with OpenPencil, and records what the comparison in CI needs
+ * in pen.dev, renders the same frames with Lawha, and records what the comparison in CI needs
  * to run offline.
  *
  * Open the probe document in pen.dev, then run:
@@ -13,7 +13,7 @@
  *   iconify/<prefix>.json        — the Iconify icons the document draws, as Iconify sets
  *   google/                      — Google's answers for its Material Symbols, by URL in index.json
  *   fonts/<family>--<style>.font — the font faces its text is drawn with
- * keeping manifest.json, and writes pen.png, openpencil.png, diff.png, and metrics.json per frame
+ * keeping manifest.json, and writes pen.png, lawha.png, diff.png, and metrics.json per frame
  * to --output.
  */
 
@@ -33,23 +33,23 @@ import {
   createMaterialSymbolsProvider,
   MATERIAL_SYMBOLS_PREFIXES,
   parseIconName
-} from '@open-pencil/core/icons'
-import { IORegistry, penFormat } from '@open-pencil/core/io'
+} from '@lawha/core/icons'
+import { IORegistry, penFormat } from '@lawha/core/io'
 import {
   comparePNGs,
   createCanvasKitRasterCodec,
   headlessRenderNodes,
   initCanvasKit
-} from '@open-pencil/core/io/formats/raster'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { fontManager, prepareGraphFonts } from '@open-pencil/core/text'
+} from '@lawha/core/io/formats/raster'
+import { computeAllLayouts } from '@lawha/core/layout'
+import { fontManager, prepareGraphFonts } from '@lawha/core/text'
 import {
   isDocumentAssetPath,
   parsePenDocument,
   penAssets,
   type PenNode,
   type PenOverride
-} from '@open-pencil/pen'
+} from '@lawha/pen'
 
 const PEN_MCP_SERVER =
   '/Applications/Pen.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64'
@@ -83,7 +83,7 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     fixtures: { type: 'string', default: 'tests/fixtures/pen-oracles' },
-    output: { type: 'string', short: 'o', default: '/tmp/open-pencil-pen-oracle' },
+    output: { type: 'string', short: 'o', default: '/tmp/lawha-pen-oracle' },
     server: { type: 'string', default: PEN_MCP_SERVER }
   }
 })
@@ -208,10 +208,10 @@ for (const frame of frames) {
   writeFileSync(join(dir, 'pen.png'), pen)
   const ours = await headlessRenderNodes(graph, pageId, [frame.id])
   if (!ours) {
-    console.log(`${name} (${frame.id}): OpenPencil rendered nothing`)
+    console.log(`${name} (${frame.id}): Lawha rendered nothing`)
     continue
   }
-  writeFileSync(join(dir, 'openpencil.png'), ours)
+  writeFileSync(join(dir, 'lawha.png'), ours)
   const comparison = comparePNGs(codec, pen, ours)
   const differentPercent = comparison
     ? (100 * comparison.changedPixels) / comparison.totalPixels
@@ -272,7 +272,7 @@ function withComponents(nodes: readonly PenNode[], ids: ReadonlySet<string>): Se
 
 /** Exports frames from the document open in pen.dev, through pen.dev's MCP server. */
 async function exportFromPen(document: string, frameIds: string[], directory: string) {
-  const client = new Client({ name: 'open-pencil-pen-oracle', version: '0.0.0' })
+  const client = new Client({ name: 'lawha-pen-oracle', version: '0.0.0' })
   await client.connect(
     new StdioClientTransport({ command: values.server, args: ['--app', 'desktop'] })
   )

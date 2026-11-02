@@ -10,7 +10,7 @@ import {
   DESIGN_JSX_HELPERS,
   DESIGN_JSX_PROPERTIES,
   elementPropsByName
-} from '@open-pencil/design-jsx'
+} from '@lawha/design-jsx'
 
 const ELEMENTS = DESIGN_JSX_ELEMENTS.map(({ name }) => name)
 const PROPS = DESIGN_JSX_PROPERTIES.map(({ name }) => name)
@@ -102,7 +102,7 @@ function semanticDiagnostics(view: EditorView): Diagnostic[] {
           from: node.from,
           to: node.to,
           severity: 'warning',
-          message: `Unknown OpenPencil property “${name}”.`
+          message: `Unknown Lawha property “${name}”.`
         })
         return
       }
@@ -117,7 +117,7 @@ function semanticDiagnostics(view: EditorView): Diagnostic[] {
           from: node.from,
           to: node.to,
           severity: 'warning',
-          message: `Unknown OpenPencil element <${name}>.`
+          message: `Unknown Lawha element <${name}>.`
         })
       }
     }

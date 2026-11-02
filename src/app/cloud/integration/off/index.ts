@@ -1,15 +1,15 @@
 import { noop } from 'es-toolkit'
 import { computed } from 'vue'
 
-import type { CloudAIClient } from '@open-pencil/cloud/client'
-import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
+import type { CloudAIClient } from '@lawha/cloud/client'
+import type { WorkspaceSummary } from '@lawha/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 import type { CloudAccount } from '@/app/cloud/servers/store'
 import type { SaveDestination, SaveFailure } from '@/app/storage/save-to/model'
 
 /**
- * What a build without Cloud (`VITE_OPENPENCIL_CLOUD=off`) resolves `@/app/cloud/integration`
+ * What a build without Cloud (`VITE_LAWHA_CLOUD=off`) resolves `@/app/cloud/integration`
  * to: the same names, offering nothing. Only types come from Cloud's modules, so none of its code
  * is bundled.
  */

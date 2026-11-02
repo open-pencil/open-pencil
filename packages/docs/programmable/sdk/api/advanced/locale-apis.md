@@ -1,6 +1,6 @@
 ---
 title: Locale APIs
-description: Lower-level locale stores and metadata exported by @open-pencil/vue.
+description: Lower-level locale stores and metadata exported by @lawha/vue.
 ---
 
 # Locale APIs
@@ -18,7 +18,7 @@ Use these when you want direct store access, need to integrate locale state with
 ## Usage
 
 ```ts
-import { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '@open-pencil/vue/i18n'
+import { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '@lawha/vue/i18n'
 ```
 
 ## Notes

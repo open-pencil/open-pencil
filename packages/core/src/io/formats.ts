@@ -1,8 +1,8 @@
 import { groupBy } from 'es-toolkit'
 import { filename } from 'pathe/utils'
 
-import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
-import { isDrawIOExportFileName } from '@open-pencil/drawio'
+import { sceneNodeToJSX, selectionToJSX } from '@lawha/design-jsx'
+import { isDrawIOExportFileName } from '@lawha/drawio'
 import {
   buildPenGraph,
   isDataURL,
@@ -10,8 +10,8 @@ import {
   penAssets,
   type PenIconRequest,
   type PenIconSource
-} from '@open-pencil/pen'
-import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/pen'
+import type { DocumentKind, SceneGraph } from '@lawha/scene-graph'
 
 import { defaultIcons, drawIcon, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
@@ -174,7 +174,7 @@ export const DOCUMENT_EXTENSIONS: Readonly<Record<DocumentKind, 'fig' | 'jam'>> 
 
 export const figFormat: IOFormatAdapter<'fig'> = {
   id: 'fig',
-  label: 'OpenPencil Document',
+  label: 'Lawha Document',
   role: 'native-document',
   category: 'document',
   extensions: ['fig', 'jam'],
@@ -362,7 +362,7 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
     )
   },
   async readDocument(input) {
-    const { readDrawIOBytes } = await import('@open-pencil/drawio')
+    const { readDrawIOBytes } = await import('@lawha/drawio')
     const { drawioToSceneGraph } = await import('./formats/drawio')
     const file = readDrawIOBytes(input.data)
     if (!file) throw new Error('This file holds no draw.io diagram')
@@ -409,7 +409,7 @@ export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
     return ext === 'mmd' || ext === 'mermaid' || mimeType === 'text/vnd.mermaid'
   },
   async readDocument(input) {
-    const { detectMermaidDiagram } = await import('@open-pencil/mermaid')
+    const { detectMermaidDiagram } = await import('@lawha/mermaid')
     const text = new TextDecoder().decode(input.data)
     if (!detectMermaidDiagram(text)) throw new Error('This file holds no Mermaid flowchart')
     // Mermaid stores a diagram's structure, which reading lays out with its text measured.
@@ -420,7 +420,7 @@ export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
 
 /** Pages or layers as a draw.io file, loading the writer only when one is saved. */
 async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promise<ExportResult> {
-  const { writeDrawIOFile } = await import('@open-pencil/drawio')
+  const { writeDrawIOFile } = await import('@lawha/drawio')
   const { sceneGraphToDrawIO } = await import('./formats/drawio')
   return {
     format: 'drawio',
@@ -603,7 +603,7 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    const { sceneNodesToTailwindJSX } = await import('@open-pencil/dom-css/export')
+    const { sceneNodesToTailwindJSX } = await import('@lawha/dom-css/export')
     const { vectorElement } = await import('#core/io/formats/html/vectors')
     const data = sceneNodesToTailwindJSX(request.graph, target.nodeIds, { vectorElement })
     if (!data) throw new Error('Nothing to export')

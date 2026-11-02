@@ -5,15 +5,15 @@ description: Создание собственного интерфейса ре
 
 # Собственный интерфейс редактора
 
-Типичное приложение OpenPencil на Vue состоит из трёх уровней:
+Типичное приложение Lawha на Vue состоит из трёх уровней:
 
-1. `@open-pencil/core` создаёт редактор;
-2. `@open-pencil/vue` связывает его с composables и компонентами Vue без встроенного оформления;
+1. `@lawha/core` создаёт редактор;
+2. `@lawha/vue` связывает его с composables и компонентами Vue без встроенного оформления;
 3. приложение определяет компоновку, оформление и характерное для продукта поведение.
 
 ## Зачем разделять эти уровни
 
-Готовое приложение OpenPencil — лишь один из возможных интерфейсов.
+Готовое приложение Lawha — лишь один из возможных интерфейсов.
 
 На основе SDK можно создать встроенный редактор для другого продукта, внутренний инструмент для работы с ресурсами, редактор шаблонов, интерфейс аннотирования или специализированный редактор с поддержкой ИИ.
 
@@ -31,12 +31,12 @@ description: Создание собственного интерфейса ре
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core'
-import { provideEditor } from '@open-pencil/vue'
-import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
-import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
-import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
-import { LayerTreeRoot } from '@open-pencil/vue/primitives/LayerTree'
+import { createEditor } from '@lawha/core'
+import { provideEditor } from '@lawha/vue'
+import { CanvasRoot, CanvasSurface } from '@lawha/vue/canvas'
+import { ToolbarRoot } from '@lawha/vue/primitives/Toolbar'
+import { PageListRoot } from '@lawha/vue/primitives/PageList'
+import { LayerTreeRoot } from '@lawha/vue/primitives/LayerTree'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)

@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createLibraryRevision, materializeLibraryAsset } from '@open-pencil/core/library'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createLibraryRevision, materializeLibraryAsset } from '@lawha/core/library'
+import { SceneGraph } from '@lawha/scene-graph'
 import {
   emptyBehaviour,
   readBehaviour,
   withBehaviour,
   type Behaviour
-} from '@open-pencil/scene-graph/behaviours'
-import { OPEN_PENCIL_PLUGIN_DATA, pluginDataEntry } from '@open-pencil/scene-graph/plugin-data'
+} from '@lawha/scene-graph/behaviours'
+import { LAWHA_PLUGIN_DATA, pluginDataEntry } from '@lawha/scene-graph/plugin-data'
 
 const OTHER_PLUGIN = { pluginId: 'tokens-studio', key: 'theme', value: 'dark' }
 
@@ -35,7 +35,7 @@ function switchLibrary(behaviour: Behaviour) {
       componentKey: `switch-${value}`,
       componentPropertyValues: { State: value }
     })
-  const stale = pluginDataEntry(OPEN_PENCIL_PLUGIN_DATA.librarySource, {
+  const stale = pluginDataEntry(LAWHA_PLUGIN_DATA.librarySource, {
     identity: { libraryId: 'elsewhere', assetKey: 'switch', revisionId: 'old' },
     sourceNodeId: null,
     readOnly: true
@@ -66,7 +66,7 @@ describe('plugin content in libraries', () => {
     expect(readBehaviour(set)).toEqual(SWITCH)
     expect(set.pluginData).toContainEqual(OTHER_PLUGIN)
     expect(set.pluginData.map((entry) => entry.key)).not.toContain(
-      OPEN_PENCIL_PLUGIN_DATA.librarySource.key
+      LAWHA_PLUGIN_DATA.librarySource.key
     )
   })
 

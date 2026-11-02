@@ -1,6 +1,6 @@
-import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
-import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { FigPageManifestEntry } from '@lawha/kiwi/fig'
+import { loadFigDataDecompressor } from '@lawha/kiwi/fig/container'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { IS_BROWSER } from '#core/constants'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'

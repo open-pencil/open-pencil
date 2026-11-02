@@ -133,5 +133,5 @@
   "formulaIf": "condizione, allora, altrimenti",
   "formulaText": "numero come testo",
   "formulaTruthy": "valore come vero o falso",
-  "unsupportedExpression": "OpenPencil non sa ancora valutare {name}. Il salvataggio lo mantiene invariato."
+  "unsupportedExpression": "Lawha non sa ancora valutare {name}. Il salvataggio lo mantiene invariato."
 }

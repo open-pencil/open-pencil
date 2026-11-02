@@ -51,5 +51,5 @@ await appendFile(
 )
 
 console.log(
-  `OpenPencil Chromium ${config.version} from ${source}${tag ? `, for ${tag}` : ', build only'}`
+  `Lawha Chromium ${config.version} from ${source}${tag ? `, for ${tag}` : ', build only'}`
 )

@@ -1,8 +1,8 @@
-import type { Editor } from '@open-pencil/core'
-import { isSVGMarkup } from '@open-pencil/core/io/formats/svg'
-import { detectMermaidDiagram } from '@open-pencil/mermaid'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { filesMessages } from '@open-pencil/vue/i18n'
+import type { Editor } from '@lawha/core'
+import { isSVGMarkup } from '@lawha/core/io/formats/svg'
+import { detectMermaidDiagram } from '@lawha/mermaid'
+import type { Vector } from '@lawha/scene-graph/primitives'
+import { filesMessages } from '@lawha/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
 

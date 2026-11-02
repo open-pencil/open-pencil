@@ -1,6 +1,6 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { GeometryPath, VectorNetwork } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { GeometryPath, VectorNetwork } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { decodeVectorNetworkBlob, type StyleOverride } from './network'
 

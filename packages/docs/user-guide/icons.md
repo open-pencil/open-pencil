@@ -1,11 +1,11 @@
 ---
 title: Icons
-description: Search open-source icon sets, insert icons, and swap or recolor them in OpenPencil.
+description: Search open-source icon sets, insert icons, and swap or recolor them in Lawha.
 ---
 
 # Icons
 
-OpenPencil searches the open-source icon sets published through [Iconify](https://iconify.design), such as Lucide, Material Symbols, Tabler, and Phosphor. A placed icon remembers which icon it is, so you can swap it for another or change its color later, and exports write it as that icon.
+Lawha searches the open-source icon sets published through [Iconify](https://iconify.design), such as Lucide, Material Symbols, Tabler, and Phosphor. A placed icon remembers which icon it is, so you can swap it for another or change its color later, and exports write it as that icon.
 
 Searching and placing icons needs a network connection to the Iconify API.
 

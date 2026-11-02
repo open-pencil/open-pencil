@@ -10,8 +10,8 @@ test('large layer trees stay virtualized and scrollable', async ({ page }) => {
   await canvas.waitForInit()
 
   const replaceStartedAt = await page.evaluate((count: number) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
 
     const activeGraph = store.graph
     const Graph = activeGraph.constructor as new () => typeof activeGraph
@@ -52,8 +52,8 @@ test('large layer trees stay virtualized and scrollable', async ({ page }) => {
     .toBeLessThan(5000)
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageNode = store.graph.getNode(store.state.currentPageId)
     const lastId = pageNode?.childIds[0]
     if (!lastId) throw new Error('Last layer not found')
@@ -65,8 +65,8 @@ test('large layer trees stay virtualized and scrollable', async ({ page }) => {
   const scrollBefore = await scroller.evaluate((el) => el.scrollTop)
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
 
     const pageNode = store.graph.getNode(store.state.currentPageId)
     const firstId = pageNode?.childIds.at(-1)
@@ -84,8 +84,8 @@ test('large layer trees stay virtualized and scrollable', async ({ page }) => {
   await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBe(scrollBefore)
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
 
     const pageNode = store.graph.getNode(store.state.currentPageId)
     const lastId = pageNode?.childIds[0]
@@ -100,8 +100,8 @@ test('large layer trees stay virtualized and scrollable', async ({ page }) => {
   await expect(renameInput).toBeFocused()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const firstId = store.graph.getNode(store.state.currentPageId)?.childIds.at(-1)
     if (!firstId) throw new Error('First layer not found')
     store.updateNodeWithUndo(firstId, { y: 48 }, 'Move front layer again')
@@ -116,8 +116,8 @@ test('layer tree supports range and additive selection', async ({ page }) => {
   await canvas.waitForInit()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const activeGraph = store.graph
     const Graph = activeGraph.constructor as new () => typeof activeGraph
     const graph = new Graph()

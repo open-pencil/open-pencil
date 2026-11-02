@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 describe('setting a frame’s child order', () => {
   test('moves the children in one undo step, past a read-only library layer that stays', () => {

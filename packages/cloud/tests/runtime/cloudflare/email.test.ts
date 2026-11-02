@@ -8,12 +8,12 @@ import { TransactionalEmailTransportError } from '#cloud/server'
 
 const envelope = {
   deliveryId: 'delivery-id',
-  from: 'notifications@openpencil.dev',
+  from: 'notifications@lawha.invalid',
   to: 'person@example.com',
   subject: 'Welcome',
   html: '<p>Welcome</p>',
   text: 'Welcome',
-  headers: { 'X-OpenPencil-Delivery-ID': 'delivery-id' }
+  headers: { 'X-Lawha-Delivery-ID': 'delivery-id' }
 }
 
 function failingWith(code?: string): CloudflareEmailBinding {

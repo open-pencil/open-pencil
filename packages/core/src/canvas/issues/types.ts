@@ -1,4 +1,4 @@
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 export type DesignIssueSeverity = 'error' | 'warning' | 'info'
 

@@ -1,7 +1,7 @@
 import { type Node, parse } from 'acorn'
 
 import type { FigmaAPI } from '#core/figma-api'
-import { OpenPencilAPI } from '#core/openpencil-api'
+import { LawhaAPI } from '#core/lawha-api'
 
 /**
  * Wrap eval code so the last bare expression is returned (REPL-style).
@@ -43,11 +43,11 @@ type AsyncFunctionConstructor = new (...args: string[]) => (...args: unknown[]) 
 
 /**
  * Compile a script for a document: it sees the `figma` global, the Figma Plugin API, and the
- * `openpencil` global, what OpenPencil adds to it, both over the same document.
+ * `lawha` global, what Lawha adds to it, both over the same document.
  */
 export function compileScript(code: string): (figma: FigmaAPI) => Promise<unknown> {
   const AsyncFunction = Object.getPrototypeOf(async () => undefined)
     .constructor as AsyncFunctionConstructor
-  const run = new AsyncFunction('figma', 'openpencil', wrapEvalCode(code))
-  return (figma) => run(figma, new OpenPencilAPI(figma))
+  const run = new AsyncFunction('figma', 'lawha', wrapEvalCode(code))
+  return (figma) => run(figma, new LawhaAPI(figma))
 }

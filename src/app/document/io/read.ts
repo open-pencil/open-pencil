@@ -1,6 +1,6 @@
 import { filename } from 'pathe/utils'
 
-import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor, type EditorState } from '@lawha/core'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'

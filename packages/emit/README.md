@@ -1,9 +1,9 @@
-# @open-pencil/emit
+# @lawha/emit
 
-How OpenPencil's exporters emit source code. Build JavaScript, TypeScript, and JSX as ESTree nodes and print them with [esrap](https://github.com/sveltejs/esrap), instead of concatenating strings.
+How Lawha's exporters emit source code. Build JavaScript, TypeScript, and JSX as ESTree nodes and print them with [esrap](https://github.com/sveltejs/esrap), instead of concatenating strings.
 
 ```ts
-import { jsx } from '@open-pencil/emit'
+import { jsx } from '@lawha/emit'
 
 const card = jsx.element(
   'Card',
@@ -20,7 +20,7 @@ jsx.printJSX(card) // <Card title={"Fish & chips"}>Hello</Card>
 `es` parses TypeScript templates, fills `$name` placeholders, and prints modules:
 
 ```ts
-import { es } from '@open-pencil/emit'
+import { es } from '@lawha/emit'
 
 const module = es.fill(es.parseModule("export const title = '$title'"), {
   $title: es.string('Checkout')
@@ -31,7 +31,7 @@ es.printModule(module) // export const title = 'Checkout';
 `vue` builds templates and single-file components. Text and attribute values are escaped as HTML with `entities`, and text also writes `{` as an entity, since Vue reads `{{` as an interpolation before it decodes entities:
 
 ```ts
-import { es, vue } from '@open-pencil/emit'
+import { es, vue } from '@lawha/emit'
 
 const template = vue.element('SwitchRoot', [
   vue.attribute('class', 'switch'),

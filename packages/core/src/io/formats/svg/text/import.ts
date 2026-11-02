@@ -5,11 +5,11 @@ import type {
   SceneGraph,
   SceneNode,
   StyleRun
-} from '@open-pencil/scene-graph'
-import { localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+} from '@lawha/scene-graph'
+import { localTransformFromWorld } from '@lawha/scene-graph/coordinate'
+import { faceLoadKey } from '@lawha/scene-graph/font-style'
+import Matrix from '@lawha/scene-graph/matrix'
+import { pixelLength } from '@lawha/scene-graph/text'
 
 import type { SVGElementLayer } from '#core/icons/types'
 import { measureTextForLayout } from '#core/layout/text-measurement'

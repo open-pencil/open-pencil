@@ -1,4 +1,4 @@
-import type { ConstraintType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ConstraintType, SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import type { MIXED } from '#vue/controls/node-props/use'
 

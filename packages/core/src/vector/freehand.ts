@@ -1,5 +1,5 @@
-import type { VectorNetwork, VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { VectorNetwork, VectorSegment, VectorVertex } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 const ZERO: Vector = { x: 0, y: 0 }
 

@@ -112,7 +112,7 @@ async function serveOpenRouter(context: BrowserContext) {
       keyChecks.push(request.headers().authorization)
       await route.fulfill({
         headers: CORS_HEADERS,
-        json: { data: { label: 'OpenPencil', is_free_tier: false } }
+        json: { data: { label: 'Lawha', is_free_tier: false } }
       })
       return
     }

@@ -2,10 +2,10 @@
 import { useFileDialog } from '@vueuse/core'
 import { computed, useTemplateRef } from 'vue'
 
-import type { StockPhotoResult } from '@open-pencil/core/tools'
-import type { Fill, ImageScaleMode } from '@open-pencil/scene-graph'
-import { coverImageTransform } from '@open-pencil/scene-graph/images'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { StockPhotoResult } from '@lawha/core/tools'
+import type { Fill, ImageScaleMode } from '@lawha/scene-graph'
+import { coverImageTransform } from '@lawha/scene-graph/images'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { downloadPhoto } from '@/app/editor/photos/download'

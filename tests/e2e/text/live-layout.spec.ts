@@ -23,7 +23,7 @@ test.afterAll(async () => {
 
 function sizes() {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const text = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.type === 'TEXT')
     const frame = text?.parentId ? store?.graph.getNode(text.parentId) : undefined
     return { id: text?.id ?? '', text: text?.width ?? 0, frame: frame?.width ?? 0 }
@@ -44,7 +44,7 @@ test('a Hug frame grows with its label while it is typed', async () => {
   expect(wrapped.frame).toBe(wrapped.text)
 
   await page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     store?.select([id])
     store?.startTextEditing(id)
   }, wrapped.id)

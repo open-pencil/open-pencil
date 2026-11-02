@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 import type {
   GridTrack,
   LayoutAlign,
@@ -10,7 +10,7 @@ import type {
   NumericNodeProperty,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   aspectRatioLockEditable,
   enforcedAspectRatio,
@@ -20,7 +20,7 @@ import {
   lockedAspectRatioTarget,
   sizeKeepingAspectRatio,
   type LayoutSizingAxis
-} from '@open-pencil/scene-graph/layout'
+} from '@lawha/scene-graph/layout'
 
 import { useNodePreview } from '#vue/controls/node-preview/use'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'

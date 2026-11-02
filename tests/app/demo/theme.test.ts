@@ -2,7 +2,7 @@ import { describe, expect, spyOn, test } from 'bun:test'
 
 import { nextTick, ref } from 'vue'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { applyTourTheme, followAppTheme } from '@/app/demo/theme'
 import { createEditorStore } from '@/app/editor/session'

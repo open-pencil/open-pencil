@@ -3,9 +3,9 @@ and their array-method and scope helpers, adapt code from dmmulroy/anti-slop:
 https://github.com/dmmulroy/anti-slop
 Commit: c44ef22ca116d0ba62a3ff663a0bd13a3f3fa40b
 
-These files are maintained locally for OpenPencil. Adaptations include Bun
+These files are maintained locally for Lawha. Adaptations include Bun
 module-mocking aliases, bounded-slice exclusions, shared scope lookup, and
-integration with OpenPencil's Oxlint plugin. The upstream notice follows.
+integration with Lawha's Oxlint plugin. The upstream notice follows.
 
 MIT License
 

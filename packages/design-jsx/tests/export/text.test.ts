@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { designJSXElement, sceneNodeToJSX } from '#design-jsx/index'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { colorToFill } from '@open-pencil/scene-graph/color'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { colorToFill } from '@lawha/scene-graph/color'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 function exportText(fields: Partial<SceneNode>): string {
   const graph = new SceneGraph()
@@ -24,12 +24,12 @@ describe('rich text export', () => {
         {
           start: 5,
           length: 4,
-          style: { textCase: 'UPPER', hyperlink: { type: 'URL', value: 'https://openpencil.dev' } }
+          style: { textCase: 'UPPER', hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
         },
         { start: 0, length: 4, style: { hyperlink: { type: 'NODE', value: '1:2' } } }
       ]
     })
-    expect(code).toContain('Read <Span textCase="upper" href="https://openpencil.dev">docs</Span>')
+    expect(code).toContain('Read <Span textCase="upper" href="https://github.com/aliaaldihnayn-lab/design#readme">docs</Span>')
   })
 
   test('writes styled characters as spans with only what differs', () => {

@@ -6,8 +6,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 // cursor is blue, and a cursor within 4 pixels of a vertex's y snaps to it with a guide.
 test('the pen previews a continued path and lines the next point up with its vertices', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const straight = { tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
     const vector = store.graph.createNode('VECTOR', store.state.currentPageId, {
       name: 'Open path',
@@ -50,7 +50,7 @@ test('the pen previews a continued path and lines the next point up with its ver
   await editor.canvas.waitForRender()
 
   const state = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     return {
       cursor: [store?.state.penCursorX, store?.state.penCursorY],
       guides: store?.state.snapGuides

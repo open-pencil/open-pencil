@@ -160,6 +160,6 @@
   "formulaText": "رقم كنص",
   "formulaTruthy": "قيمة كصواب أو خطأ",
   "unsupportedExpression": {
-    "input": "لا يستطيع OpenPencil تقييم {name} بعد. يحتفظ الحفظ به كما هو."
+    "input": "لا يستطيع Lawha تقييم {name} بعد. يحتفظ الحفظ به كما هو."
   }
 }

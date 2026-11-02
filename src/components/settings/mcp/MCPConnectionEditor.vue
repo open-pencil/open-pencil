@@ -6,7 +6,7 @@ import {
   useCommonMessages,
   useCredentialMessages,
   useSettingsMessages
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import type { MCPConnectionDraft } from '@/app/integrations/mcp'
 import type { MCPConnectionFieldErrors } from '@/app/integrations/mcp/settings/form'

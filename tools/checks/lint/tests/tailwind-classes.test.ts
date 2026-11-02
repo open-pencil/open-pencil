@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'no-unknown-tailwind-classes'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 const SCRIPT = '<script setup lang="ts">\nconst ok = true\n</script>\n'
 
 /** One fixture per case, each in a theme module, so one Oxlint run checks them all. */

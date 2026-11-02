@@ -7,7 +7,7 @@ import type {
   FigmaInstanceNode,
   FigmaSlotNode
 } from './node-types'
-import type { OpenPencilPaint } from './paints'
+import type { LawhaPaint } from './paints'
 import type { FigmaNodeProxy } from './proxy'
 import type {
   FIGMA_API_HOST_MEMBERS,
@@ -122,14 +122,14 @@ type SlotSurfaceMatch = Expect<
 >
 const _slotSurfaceMatch: SlotSurfaceMatch = true
 
-// `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it.
+// `Effect` here is Figma's plugin-typings union; Lawha reads and writes a subset of it.
 type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>
 const _effectShapeMatch: EffectShapeMatch = true
 
 // `Paint` here is Figma's plugin-typings union. `fills`, `strokes`, and `backgrounds` share one
 // paint type: every paint they read is one of Figma's, apart from the noise and custom paints
-// OpenPencil models and Figma has no type for, and they take every paint Figma's types allow.
-type ReadPaint = Exclude<Exclude<FigmaNodeProxy['fills'], symbol>[number], OpenPencilPaint>
+// Lawha models and Figma has no type for, and they take every paint Figma's types allow.
+type ReadPaint = Exclude<Exclude<FigmaNodeProxy['fills'], symbol>[number], LawhaPaint>
 type PaintShapeMatch = Expect<Extends<ReadPaint, Paint>>
 const _paintShapeMatch: PaintShapeMatch = true
 type PaintArgumentMatch = Expect<
@@ -165,7 +165,7 @@ type TextListSurfaceMatch = Expect<
 const _textListSurfaceMatch: TextListSurfaceMatch = true
 
 // Figma's mixed values are its own `figma.mixed` unique symbol; ours are a plain symbol. Fills
-// and decoration colours can read OpenPencil's noise and custom paints, as `fills` can, and Figma
+// and decoration colours can read Lawha's noise and custom paints, as `fills` can, and Figma
 // types OpenType features as every feature while it returns only those set, so they stay out.
 type WithoutMixed<T> = T extends (...args: infer A) => infer R
   ? (...args: A) => Exclude<R, symbol>
@@ -277,7 +277,7 @@ const _nodeBindingMatch: NodeBindingMatch = true
 
 // --- Surface: nothing beyond Figma's Plugin API except what `surface.ts` lists ---
 // Each check is a `Record` of the offending names, so a failure names them: "Property 'x' is
-// missing". Add a Figma member as Figma types it; put an OpenPencil feature on `openpencil`.
+// missing". Add a Figma member as Figma types it; put an Lawha feature on `lawha`.
 
 type HostMembers = (typeof FIGMA_API_HOST_MEMBERS)[number]
 type IncompleteMembers = (typeof FIGMA_API_INCOMPLETE_MEMBERS)[number]

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { markdownText } from '@open-pencil/core/text'
-import type { CharacterStyleOverride } from '@open-pencil/scene-graph'
+import { markdownText } from '@lawha/core/text'
+import type { CharacterStyleOverride } from '@lawha/scene-graph'
 
 const BASE = { fontSize: 24, fontWeight: 500 }
 

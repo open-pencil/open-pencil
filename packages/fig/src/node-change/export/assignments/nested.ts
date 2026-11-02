@@ -1,10 +1,10 @@
 import { compact, isEqual, isPlainObject } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
-import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
-import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
-import { instanceSlotFrames, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { findInstanceAncestor } from '@lawha/scene-graph/instances'
+import { copiedComponentLayerId } from '@lawha/scene-graph/instances/overrides'
+import { scaleNodeChanges } from '@lawha/scene-graph/scaling'
+import { instanceSlotFrames, slotPropertyId } from '@lawha/scene-graph/slots'
 
 import type { SceneNodeToKiwiContext } from '../context'
 import { componentPropAssignment } from './values'

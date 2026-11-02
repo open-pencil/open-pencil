@@ -6,7 +6,7 @@ import { capturePosters } from '#landing-posters/capture'
 import { landingPosterFingerprint } from '#landing-posters/fingerprint'
 import { parseShard, posterFiles, posterTargets, shardTargets } from '#landing-posters/targets'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/workspace'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools/workspace'
 
 const DIST = 'packages/docs/.vitepress/dist'
 /** Captures are kept per fingerprint, so a rebuild with unchanged stages reuses them. */
@@ -41,7 +41,7 @@ async function main(): Promise<void> {
   if (!landing.includes(fingerprint)) {
     throw new Error(
       `The docs build in ${DIST} does not reference landing posters ${fingerprint}. ` +
-        'Build it with OPENPENCIL_LANDING_POSTERS=1 (docs build:production) from the same sources.'
+        'Build it with LAWHA_LANDING_POSTERS=1 (docs build:production) from the same sources.'
     )
   }
 

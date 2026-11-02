@@ -3,7 +3,7 @@ import { rmSync, writeFileSync } from 'node:fs'
 
 import { readVisualOracleManifest } from '#visual/manifest'
 
-const path = '/tmp/open-pencil-visual-oracle-manifest-test.json'
+const path = '/tmp/lawha-visual-oracle-manifest-test.json'
 
 afterEach(() => rmSync(path, { force: true }))
 

@@ -19,7 +19,7 @@ description: Чтение страниц и управление переклю�
 ## Использование
 
 ```ts
-import { usePageList } from '@open-pencil/vue/primitives/PageList'
+import { usePageList } from '@lawha/vue/primitives/PageList'
 
 const pageList = usePageList()
 ```

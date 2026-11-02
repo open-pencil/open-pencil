@@ -3,13 +3,13 @@ import type {
   BindingProvider,
   BindingTarget,
   BoundEditPolicy
-} from '@open-pencil/vue/controls/binding-provider'
-import { BindableValueRoot } from '@open-pencil/vue/primitives/BindableValue'
+} from '@lawha/vue/controls/binding-provider'
+import { BindableValueRoot } from '@lawha/vue/primitives/BindableValue'
 import {
   NumberFieldInput,
   NumberFieldRoot,
   NumberFieldValue
-} from '@open-pencil/vue/primitives/NumberField'
+} from '@lawha/vue/primitives/NumberField'
 
 import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
 import { BindingPill } from '@/components/ui/binding'

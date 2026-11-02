@@ -1,7 +1,7 @@
 import { usePermission } from '@vueuse/core'
 import { readonly, shallowRef, watch } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 /** Whether this browser lets the page show notifications; `unsupported` where it has none. */
 export type BrowserNotificationPermission = NotificationPermission | 'unsupported'

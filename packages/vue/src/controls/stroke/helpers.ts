@@ -1,10 +1,10 @@
 import { compact } from 'es-toolkit/array'
 import { computed, type ComputedRef, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import { BLACK } from '@open-pencil/core/constants'
-import type { SceneNode, Stroke, StrokeCap, StrokeJoin } from '@open-pencil/scene-graph'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
+import type { Editor } from '@lawha/core'
+import { BLACK } from '@lawha/core/constants'
+import type { SceneNode, Stroke, StrokeCap, StrokeJoin } from '@lawha/scene-graph'
+import { cloneVectorNetwork } from '@lawha/scene-graph/copy'
 
 import { MIXED } from '#vue/controls/node-props/use'
 import type { MixedValue } from '#vue/controls/node-props/use'

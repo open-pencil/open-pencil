@@ -1,10 +1,10 @@
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   behaviourProperties,
   readBehaviour,
   type BehaviourKind
-} from '@open-pencil/scene-graph/behaviours'
-import { variantDefaultValue } from '@open-pencil/scene-graph/components'
+} from '@lawha/scene-graph/behaviours'
+import { variantDefaultValue } from '@lawha/scene-graph/components'
 
 import { behaviourArgs, type BehaviourArgs, type BooleanArg } from '../args'
 import type { StateCondition } from './types'

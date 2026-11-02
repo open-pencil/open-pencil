@@ -1,6 +1,6 @@
 ---
 title: Narzędzie Pióro
-description: Tworzenie ścieżek wektorowych i krzywych Béziera w OpenPencil.
+description: Tworzenie ścieżek wektorowych i krzywych Béziera w Lawha.
 ---
 
 # Narzędzie Pióro
@@ -29,7 +29,7 @@ Naciśnij <kbd>Escape</kbd>, aby zakończyć ścieżkę bez zamykania. Otwarta �
 
 ## Sieci wektorowe
 
-Zamiast prostej sekwencji punktów OpenPencil używa sieci wektorowej. Model ten obsługuje rozgałęzienia i złożoną topologię. Figma stosuje ten sam model, dlatego ścieżki są zachowywane podczas importu i eksportu `.fig`.
+Zamiast prostej sekwencji punktów Lawha używa sieci wektorowej. Model ten obsługuje rozgałęzienia i złożoną topologię. Figma stosuje ten sam model, dlatego ścieżki są zachowywane podczas importu i eksportu `.fig`.
 
 ## Edycja istniejącej ścieżki
 

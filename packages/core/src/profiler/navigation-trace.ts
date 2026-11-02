@@ -48,7 +48,7 @@ export function emitNavigationTrace(
   if (listeners.size === 0) return
   const event = { name, timestamp: timestamp(), detail }
   if (typeof performance !== 'undefined') {
-    performance.mark(`openpencil:${name}`, { detail })
+    performance.mark(`lawha:${name}`, { detail })
   }
   for (const listener of listeners) listener(event)
 }

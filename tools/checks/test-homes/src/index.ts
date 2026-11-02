@@ -9,7 +9,7 @@
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import { ENGINE_BASELINE_PATH, checkTestHomes, formatBaseline, listEngineTests } from './homes'
 

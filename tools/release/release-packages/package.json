@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/release-packages-tools",
+  "name": "@lawha/release-packages-tools",
   "private": true,
   "type": "module",
   "imports": {
@@ -14,8 +14,8 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@open-pencil/package-artifacts-tools": "workspace:*",
-    "@open-pencil/package-quality-tools": "workspace:*",
+    "@lawha/package-artifacts-tools": "workspace:*",
+    "@lawha/package-quality-tools": "workspace:*",
     "@sigstore/bundle": "^5.0.0",
     "citty": "^0.1.6",
     "es-toolkit": "^1.52.0",

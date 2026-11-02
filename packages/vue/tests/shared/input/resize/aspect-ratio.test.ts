@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import { tryStartResize } from '#vue/shared/input/resize/start'

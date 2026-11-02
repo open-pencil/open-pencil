@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseFigBuffer } from '@open-pencil/fig'
+import { parseFigBuffer } from '@lawha/fig'
 import {
   convertFigmaDerivedTextGlyphs,
   nodeChangeToProps,
   encodeVectorNetworkBlob
-} from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { importClipboardNodes } from '#core/clipboard'
 import { exportFigFile } from '#core/io/formats/fig/export'
@@ -239,7 +239,7 @@ describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
     })
     node.source.fig.rawNodeFields = {
       vectorData: {
-        vectorNetworkBlob: { __openPencilFigmaBlob: networkBlob },
+        vectorNetworkBlob: { __lawhaFigmaBlob: networkBlob },
         normalizedSize: { x: 100, y: 100 }
       },
       textPathStart: { tValue: 0.3, forward: false }

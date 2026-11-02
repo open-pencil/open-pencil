@@ -11,10 +11,10 @@ import {
 } from 'reka-ui'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { SceneNode } from '@lawha/scene-graph'
+import { cycleSafeParent } from '@lawha/scene-graph/instances'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useLibraryService } from '@/app/libraries'
@@ -314,7 +314,7 @@ async function insertAsset(asset: LocalAsset) {
 
 function onDragStart(event: DragEvent, asset: LocalAsset) {
   if (!event.dataTransfer || !asset.componentId) return
-  event.dataTransfer.setData('application/x-openpencil-component', asset.componentId)
+  event.dataTransfer.setData('application/x-lawha-component', asset.componentId)
   event.dataTransfer.effectAllowed = 'copy'
 }
 

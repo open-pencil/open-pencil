@@ -11,7 +11,7 @@ import {
   formulaTokens,
   readFormulaToken,
   type FormulaTokenKind
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 import { nodeText, tokenBefore, type SyntaxNode } from './syntax'
 import type { ExpressionDialect, ReferenceCompletion } from './types'

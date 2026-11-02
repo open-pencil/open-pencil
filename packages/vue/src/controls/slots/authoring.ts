@@ -1,10 +1,10 @@
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneNode } from '@lawha/scene-graph'
 import {
   canCreateSlot,
   slotOwner,
   slotPropertyId,
   type SlotPropertyPatch
-} from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph/slots'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

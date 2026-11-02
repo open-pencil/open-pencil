@@ -1,7 +1,7 @@
 import type { Canvas, CanvasKit, Path, PathBuilder } from 'canvaskit-wasm'
 
-import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneNode, Stroke } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from '#core/canvas/shapes'

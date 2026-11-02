@@ -1,7 +1,7 @@
 import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
 
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { Fill, SceneNode } from '@lawha/scene-graph'
+import { resolveRGBAForPreview } from '@lawha/scene-graph/color'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import { styleRunColor } from '#core/canvas/text/paragraph'

@@ -30,8 +30,8 @@ export function boundFieldDriver(page: () => Page) {
   return {
     async build() {
       scene = await page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const graph = store.graph
         const pageId = store.state.currentPageId
         // The page is cleared between tests; the variables an earlier test made are not.
@@ -86,14 +86,14 @@ export function boundFieldDriver(page: () => Page) {
     },
 
     select(layer: 'componentLayer' | 'componentText' | 'plain' | 'plainText') {
-      return page().evaluate((id) => window.openPencil?.getStore?.().select([id]), built()[layer])
+      return page().evaluate((id) => window.lawha?.getStore?.().select([id]), built()[layer])
     },
 
     setText(text: string) {
       const { state, mode } = built()
       return page().evaluate(
         (args) =>
-          window.openPencil?.getStore?.().updateVariableValue(args.state, args.mode, args.text),
+          window.lawha?.getStore?.().updateVariableValue(args.state, args.mode, args.text),
         { state, mode, text }
       )
     },
@@ -102,7 +102,7 @@ export function boundFieldDriver(page: () => Page) {
       const { size: id, mode } = built()
       return page().evaluate(
         (args) =>
-          window.openPencil?.getStore?.().updateVariableValue(args.id, args.mode, args.size),
+          window.lawha?.getStore?.().updateVariableValue(args.id, args.mode, args.size),
         { id, mode, size }
       )
     },
@@ -111,7 +111,7 @@ export function boundFieldDriver(page: () => Page) {
     layer(id: string, field: LayerField = 'VISIBLE') {
       return page().evaluate(
         ({ nodeId, field, path }) => {
-          const node = window.openPencil?.getStore?.().graph.getNode(nodeId)
+          const node = window.lawha?.getStore?.().graph.getNode(nodeId)
           return {
             visible: node?.visible,
             text: node?.text,

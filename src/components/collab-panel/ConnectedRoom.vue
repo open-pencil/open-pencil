@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { selectTarget } from '@open-pencil/vue/shared/dom-events'
+import { selectTarget } from '@lawha/vue/shared/dom-events'
 
 import { useCollabPanelContext } from '@/components/collab-panel/context'
 import { roomStatusText } from '@/components/collab-room/statusText'

@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 import * as v from 'valibot'
 
-import { FileSystemLibraryCatalog } from '@open-pencil/cli/library'
+import { FileSystemLibraryCatalog } from '@lawha/cli/library'
 
 setDefaultTimeout(60_000)
 
@@ -23,7 +23,7 @@ const librarySchema = v.object({ latestRevisionId: v.string() })
 
 describe('libraries CLI', () => {
   test('publishes components that have no asset key yet, saving the keys it gives only with --write', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-cli-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-libraries-cli-'))
     const authored = join(dir, 'library.pen')
     const source = join(dir, 'library.fig')
     const catalog = join(dir, 'catalog')

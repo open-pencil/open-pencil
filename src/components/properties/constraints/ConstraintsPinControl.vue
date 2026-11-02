@@ -7,9 +7,9 @@ import {
   type ConstraintAxis,
   type ConstraintEdge,
   type ConstraintValue
-} from '@open-pencil/vue/controls/constraints'
-import { useI18n } from '@open-pencil/vue/i18n'
-import type { ConstraintsControlActions } from '@open-pencil/vue/primitives/ConstraintsControl'
+} from '@lawha/vue/controls/constraints'
+import { useI18n } from '@lawha/vue/i18n'
+import type { ConstraintsControlActions } from '@lawha/vue/primitives/ConstraintsControl'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import constraintsTheme from '@/theme/constraints'

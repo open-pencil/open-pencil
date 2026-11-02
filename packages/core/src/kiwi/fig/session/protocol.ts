@@ -3,8 +3,8 @@ import type {
   FigPatchedArchiveInput,
   FigRecordPatch,
   FigSessionCheckpoint
-} from '@open-pencil/fig'
-import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
+} from '@lawha/fig'
+import type { FigPageManifestEntry } from '@lawha/kiwi/fig'
 
 import type { ParseFigFileOptions } from '#core/io/formats/fig/read'
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'

@@ -10,7 +10,7 @@ import { useLandingMessages } from '../content/messages'
 import ActionButton from '../ui/ActionButton.vue'
 
 /**
- * The OpenPencil Cloud waitlist: one email field, sized and styled like the page's actions. It
+ * The Lawha Cloud waitlist: one email field, sized and styled like the page's actions. It
  * signs up through the app's own waitlist flow, the one Settings uses.
  */
 const messages = useLandingMessages()

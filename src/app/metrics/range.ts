@@ -1,6 +1,6 @@
 import { parseDate } from '@internationalized/date'
 
-import { MAX_METRICS_RANGE_DAYS } from '@open-pencil/feedback/contract'
+import { MAX_METRICS_RANGE_DAYS } from '@lawha/feedback/contract'
 
 import { formatDay } from './format'
 

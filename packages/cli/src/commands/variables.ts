@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { VariablesResult } from '@open-pencil/core/rpc'
+import type { VariablesResult } from '@lawha/core/rpc'
 
 import { appTargetOptions } from '#cli/app/target'
 import { bold, entity, fmtList, fmtSummary } from '#cli/format'

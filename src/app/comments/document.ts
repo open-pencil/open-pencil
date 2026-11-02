@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from 'vue'
 
-import type { CommentThread } from '@open-pencil/scene-graph'
+import type { CommentThread } from '@lawha/scene-graph'
 import {
   commentPosition,
   commentTimestamp as now,
@@ -9,8 +9,8 @@ import {
   mergeCommentThreads,
   readComments,
   writeComments
-} from '@open-pencil/scene-graph/comments'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/comments'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

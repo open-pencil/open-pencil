@@ -20,7 +20,7 @@ export type SkillPreferences = v.InferOutput<typeof skillPreferencesSchema>
 const storedPreferencesSchema = v.pipe(v.string(), v.parseJson(), skillPreferencesSchema)
 
 export const skillPreferences = useLocalStorage<SkillPreferences>(
-  'open-pencil:ai:skills',
+  'lawha:ai:skills',
   { sources: {}, skills: {}, trustedFolders: {}, pickedSources: {} },
   {
     serializer: {
@@ -52,7 +52,7 @@ export function isSkillsFolderTrusted(path: string, preferences: SkillPreference
  * share hold their own workflows, such as releases or email, so they start off until picked.
  */
 const SOURCES_ON_BY_DEFAULT: Record<SkillSourceID, boolean> = {
-  openpencil: true,
+  lawha: true,
   project: true,
   agents: false,
   claude: false

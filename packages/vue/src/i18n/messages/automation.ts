@@ -12,17 +12,17 @@ export const automationMessageDefaults = {
     'Changes apply to your next message. Tool switches are not a sandbox: enabled script tools can still perform other design operations.',
   mcpFailureNotInstalled: 'MCP server is not installed',
   mcpFailureNotInstalledHint:
-    'To keep the OpenPencil download small, the MCP server is installed separately.',
-  mcpFailureOutdated: 'MCP server does not match this version of OpenPencil',
+    'To keep the Lawha download small, the MCP server is installed separately.',
+  mcpFailureOutdated: 'MCP server does not match this version of Lawha',
   mcpFailureOutdatedHint: params(
-    'The installed MCP server is {running}, and this version of OpenPencil needs {version}. The server is installed separately to keep the download small, so it does not update with the app.'
+    'The installed MCP server is {running}, and this version of Lawha needs {version}. The server is installed separately to keep the download small, so it does not update with the app.'
   ),
   mcpInstallByHand: 'Install it from a terminal, or copy a prompt that asks your agent to do it.',
   mcpCopyAgentPrompt: 'Copy prompt for your agent',
   mcpUpdating: 'Updating…',
-  mcpFailurePermission: 'OpenPencil cannot start the MCP server',
+  mcpFailurePermission: 'Lawha cannot start the MCP server',
   mcpFailurePermissionHint:
-    'The system denied the command. Reinstall OpenPencil with its shell permissions, or start the server manually.',
+    'The system denied the command. Reinstall Lawha with its shell permissions, or start the server manually.',
   mcpFailureExited: 'MCP server stopped during startup',
   mcpFailureExitedHint: 'The process exited before it became ready.',
   mcpFailureTimeout: 'MCP server did not respond in time',
@@ -42,7 +42,7 @@ export const automationMessageDefaults = {
   mcpFailureCopy: 'Copy details',
   localServer: 'Local server',
   localServerDesktopOnly:
-    'The local MCP server runs with the OpenPencil desktop app. In the browser, use WebMCP below.',
+    'The local MCP server runs with the Lawha desktop app. In the browser, use WebMCP below.',
   webmcpDescription:
     'Let browser agents use this document directly, without a local MCP server or bearer token. Local server settings do not apply here.',
   browserAccess: 'Browser agent access',
@@ -63,8 +63,8 @@ export const automationMessageDefaults = {
   addServerConnection: 'Add MCP connection',
   editConnection: 'Edit MCP connection',
   connectionName: 'Connection name',
-  connectionNameHint: 'Use a unique name, up to 80 characters. The name open-pencil is reserved.',
-  connectionNameInvalid: 'Choose a unique name of at most 80 characters, other than open-pencil.',
+  connectionNameHint: 'Use a unique name, up to 80 characters. The name lawha is reserved.',
+  connectionNameInvalid: 'Choose a unique name of at most 80 characters, other than lawha.',
   serverURLHint:
     'The server must support Streamable HTTP. Use HTTPS. HTTP is allowed only for localhost or a loopback address. Do not include credentials in the URL.',
   serverURL: 'MCP server URL',

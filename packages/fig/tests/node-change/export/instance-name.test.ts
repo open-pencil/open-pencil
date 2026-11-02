@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import type { GUID } from '@lawha/scene-graph/primitives'
 
 interface Override {
   guidPath?: { guids?: GUID[] }

@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor, figJamColoredLayers } from '@open-pencil/core'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { createSticky } from '@open-pencil/scene-graph/generated'
+import { createEditor, figJamColoredLayers } from '@lawha/core'
+import { colorToHex } from '@lawha/scene-graph/color'
+import { createSticky } from '@lawha/scene-graph/generated'
 
 function setup() {
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })

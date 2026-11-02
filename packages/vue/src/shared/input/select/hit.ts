@@ -1,10 +1,10 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 import {
   createSceneGeometry,
   pressesTinyLayer,
   selectionHandleRect
-} from '@open-pencil/core/geometry'
-import type { SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/core/geometry'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import type { HitTestFns } from '#vue/shared/input/select'
 

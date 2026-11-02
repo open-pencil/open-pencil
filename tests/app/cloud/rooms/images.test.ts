@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
-import type { DocumentImageLink } from '@open-pencil/cloud/contract'
+import type { DocumentImageLink } from '@lawha/cloud/contract'
 
 import { cloudRoomImages } from '@/app/cloud/rooms/images'
 import { cloudChecksum } from '@/app/integrations/storage/cloud/download'

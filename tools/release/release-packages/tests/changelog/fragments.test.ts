@@ -13,14 +13,14 @@ import { validateChangelog } from '#release/changelog/validate'
 describe('changelog fragments', () => {
   test('read bullets as written, with continuation lines and formatting', () => {
     const { bullets, errors } = parseFragmentBullets(
-      '- Add **rich** notes,\n  wrapped over two lines.\n- Keep links like [docs](https://openpencil.dev).\n',
+      '- Add **rich** notes,\n  wrapped over two lines.\n- Keep links like [docs](https://github.com/aliaaldihnayn-lab/design#readme).\n',
       'changes/12/added.md'
     )
 
     expect(errors).toEqual([])
     expect(bullets).toEqual([
       '- Add **rich** notes,\n  wrapped over two lines.',
-      '- Keep links like [docs](https://openpencil.dev).'
+      '- Keep links like [docs](https://github.com/aliaaldihnayn-lab/design#readme).'
     ])
   })
 

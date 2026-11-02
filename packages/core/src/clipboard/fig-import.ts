@@ -1,12 +1,12 @@
-import { materializeFigFragment } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { materializeFigFragment } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph } from '@lawha/scene-graph'
 import {
   captureTransferredState,
   removeGraphTransfer,
   applyGraphTransfer,
   prepareGraphTransfer
-} from '@open-pencil/scene-graph/transfer'
+} from '@lawha/scene-graph/transfer'
 
 /** Interpret in isolation before any destination mutation. */
 export function prepareClipboardImport(

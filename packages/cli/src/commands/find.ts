@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { FindNodeResult } from '@open-pencil/core/rpc'
+import type { FindNodeResult } from '@lawha/core/rpc'
 
 import { appTargetOptions } from '#cli/app/target'
 import { printNodeResults } from '#cli/format'

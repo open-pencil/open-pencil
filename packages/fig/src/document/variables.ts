@@ -1,20 +1,20 @@
 import { sortBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import type { NodeChange, VariableDataEntry } from '@lawha/kiwi/fig/codec'
+import { guidToString } from '@lawha/kiwi/fig/guid'
 import type {
   SceneGraph,
   VariableFormulaNode,
   VariableValue,
   VariableColorExpression
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   variableFormulaSchema,
   variableColorExpressionSchema,
   inferFormulaType,
   MAX_FORMULA_DEPTH
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 import { extractPluginData } from '../node-change/plugin-data'
 import { formulaOperatorOfFigmaFunction } from '../node-change/variable/formula'

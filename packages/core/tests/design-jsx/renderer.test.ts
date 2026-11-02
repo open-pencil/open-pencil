@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderRoots, renderTree } from '@open-pencil/core/design-jsx'
-import type { TreeNode } from '@open-pencil/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { renderRoots, renderTree } from '@lawha/core/design-jsx'
+import type { TreeNode } from '@lawha/design-jsx'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('renderTree onNode', () => {
   test('reports every element with the layer rendered from it', async () => {

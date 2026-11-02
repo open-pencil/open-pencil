@@ -1,10 +1,10 @@
 import type { Canvas, Image, Paint, Shader } from 'canvaskit-wasm'
 
-import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
-import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
+import type { SceneNode, SceneGraph, Fill } from '@lawha/scene-graph'
+import { invertGradientTransform } from '@lawha/scene-graph/gradient'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import { fillGeometryMatchesRegions, hasRegionFills } from '@lawha/scene-graph/vector-network'
 
 import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'

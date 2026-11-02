@@ -14,8 +14,8 @@ export function pasteFigmaClipboard(
 ): Promise<void> {
   return page.evaluate(
     async ({ markup, margin, region }) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       await store.pasteFromHTML(markup)
       store.clearSelection()
       const layers = store.graph.getChildren(store.state.currentPageId)

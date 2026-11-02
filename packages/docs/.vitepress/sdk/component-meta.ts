@@ -61,7 +61,7 @@ function findWorkspaceRoot(start: string): string {
 const repoRoot = findWorkspaceRoot(fileURLToPath(new URL('.', import.meta.url)))
 
 type ComponentMetaChecker = ReturnType<typeof createChecker>
-const SHARED_CHECKER: unique symbol = Symbol.for('open-pencil.docs.component-meta-checker')
+const SHARED_CHECKER: unique symbol = Symbol.for('lawha.docs.component-meta-checker')
 
 /**
  * One checker for the whole docs build. VitePress evaluates each data loader's imports on their

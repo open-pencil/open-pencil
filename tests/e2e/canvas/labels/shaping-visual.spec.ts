@@ -10,8 +10,8 @@ async function expectCanvas(name: string): Promise<void> {
 
 test('canvas labels use shaped Inter text, ellipsis, and fixed-size zoom presentation', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     store.graph.createNode('FRAME', pageId, {
       name: 'AVATAR To',
@@ -72,8 +72,8 @@ test('canvas labels use shaped Inter text, ellipsis, and fixed-size zoom present
   await expectCanvas('shaped-labels-zoom-125')
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     store.state.zoom = 2
     store.state.panX = -90
     store.state.panY = -180

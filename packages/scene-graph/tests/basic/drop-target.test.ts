@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type NodeType, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type NodeType, type SceneNode } from '@lawha/scene-graph'
 
 import { pageId, rect } from './helpers'
 

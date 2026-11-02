@@ -1,13 +1,13 @@
 import type { Path } from 'canvaskit-wasm'
 import { isEqual } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import { mergeVectorNetworks } from '@open-pencil/scene-graph/vector-network'
+import type { SceneGraph, SceneNode, VectorNetwork } from '@lawha/scene-graph'
+import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import { copyFills, copyStrokes } from '@lawha/scene-graph/copy'
+import Matrix from '@lawha/scene-graph/matrix'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+import { mergeVectorNetworks } from '@lawha/scene-graph/vector-network'
 
 import {
   canContainFlattenableChildren,

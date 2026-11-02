@@ -5,7 +5,7 @@ description: Build property panels with control composables and headless list pr
 
 # Property Panels
 
-Property panels in `@open-pencil/vue` are intentionally composable-first.
+Property panels in `@lawha/vue` are intentionally composable-first.
 
 If a panel mostly needs selection-derived values and update actions, prefer composables.
 If a panel needs reusable array/list structure, use a headless primitive like `PropertyListRoot`.
@@ -40,7 +40,7 @@ non-destructive:
 - Put explicit detach actions in the picker rather than on a destructive one-click field icon.
 - Keep binding replacement, detach-on-edit, and multi-target changes in one provider batch.
 
-OpenPencil's app skin uses a violet variable-name pill at rest and reveals the resolved numeric
+Lawha's app skin uses a violet variable-name pill at rest and reveals the resolved numeric
 value when NumberField enters editing mode. Custom editor shells can present the same headless
 state differently.
 
@@ -48,7 +48,7 @@ state differently.
 
 ```vue
 <script setup lang="ts">
-import { usePosition } from '@open-pencil/vue/controls/position'
+import { usePosition } from '@lawha/vue/controls/position'
 
 const { x, y, width, height, updateProp, commitProp } = usePosition()
 </script>
@@ -67,9 +67,9 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot } from '@open-pencil/vue/primitives/PropertyList'
-import { useEditorPropertyList } from '@open-pencil/vue/controls/property-list'
-import { useFillControls } from '@open-pencil/vue/controls/fill'
+import { PropertyListRoot } from '@lawha/vue/primitives/PropertyList'
+import { useEditorPropertyList } from '@lawha/vue/controls/property-list'
+import { useFillControls } from '@lawha/vue/controls/fill'
 
 const fillControls = useFillControls()
 const fills = useEditorPropertyList('fills')

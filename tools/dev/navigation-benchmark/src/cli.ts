@@ -114,49 +114,49 @@ try {
   }
   await page.locator('[data-test-id="canvas-element"][data-ready="1"]').waitFor({ timeout: 30_000 })
   if (documentPath) {
-    await page.evaluate((path) => window.openPencil?.openFile?.(path), documentURLPath)
+    await page.evaluate((path) => window.lawha?.openFile?.(path), documentURLPath)
     await page.waitForFunction(
       () => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return store != null && store.graph.getChildren(store.state.currentPageId).length > 0
       },
       undefined,
       { timeout: 90_000 }
     )
     await page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not available after opening benchmark document')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not available after opening benchmark document')
       store.zoomToFit()
     })
   } else {
     await setupScenario(page, scenario)
   }
-  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
   if (!documentPath) {
     await page.evaluate((viewport) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not available')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not available')
       store.state.panX = viewport.panX
       store.state.panY = viewport.panY
       store.state.zoom = viewport.zoom
       store.requestRepaint()
     }, input.initialViewport)
   }
-  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
   await page.evaluate(
-    (name) => window.openPencil?.test?.navigation?.startRecording(name),
+    (name) => window.lawha?.test?.navigation?.startRecording(name),
     input.name
   )
 
   const trace = traceEnabled ? await startChromiumTrace(page, { cpuProfile }) : null
   if (mutationNodeId && mutationOpacity !== null) {
     const previousSceneVersion = await page.evaluate(
-      () => window.openPencil?.getStore?.().state.sceneVersion ?? -1
+      () => window.lawha?.getStore?.().state.sceneVersion ?? -1
     )
     await page.evaluate(
       ({ nodeId, opacity }) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not available for benchmark mutation')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not available for benchmark mutation')
         if (!store.graph.getNode(nodeId))
           throw new Error(`Benchmark mutation node not found: ${nodeId}`)
         store.graph.updateNode(nodeId, { opacity })
@@ -165,7 +165,7 @@ try {
     )
     if (replayAfterMutation) {
       await page.waitForFunction((sceneVersion) => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return (
           store != null &&
           store.state.sceneVersion > sceneVersion &&
@@ -179,11 +179,11 @@ try {
   } else {
     await replay(page, input, mode)
   }
-  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
   await trace?.stop(resolve(output, 'trace.json.gz'))
 
   const recording = await page.evaluate(
-    () => window.openPencil?.test?.navigation?.stopRecording() as NavigationRecordingFile
+    () => window.lawha?.test?.navigation?.stopRecording() as NavigationRecordingFile
   )
   const metrics = computeNavigationMetrics(recording)
   const environment = {

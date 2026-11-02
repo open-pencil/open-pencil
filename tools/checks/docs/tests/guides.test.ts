@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { checkGuideMap, listedGuides } from '../src/guides'
 
 async function repo(rootGuide: string, guides: string[] = []) {
-  const repoRoot = await mkdtemp(join(tmpdir(), 'open-pencil-guides-'))
+  const repoRoot = await mkdtemp(join(tmpdir(), 'lawha-guides-'))
   await writeFile(join(repoRoot, 'AGENTS.md'), rootGuide, 'utf8')
   for (const guide of guides) {
     await mkdir(join(repoRoot, guide, '..'), { recursive: true })
@@ -58,7 +58,7 @@ describe('checkGuideMap', () => {
   })
 
   test('fails without a root guide', async () => {
-    const repoRoot = await mkdtemp(join(tmpdir(), 'open-pencil-guides-empty-'))
+    const repoRoot = await mkdtemp(join(tmpdir(), 'lawha-guides-empty-'))
 
     expect(checkGuideMap({ repoRoot }).errors).toEqual(['Missing root AGENTS.md'])
   })

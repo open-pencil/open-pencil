@@ -1,6 +1,6 @@
 import type { LanguageModel } from 'ai'
 
-import type { AIProviderID } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@lawha/core/constants'
 
 import type { FetchFunction } from '@/app/http/types'
 

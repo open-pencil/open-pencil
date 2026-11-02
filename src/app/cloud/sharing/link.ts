@@ -1,8 +1,8 @@
 import { useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { CloudAPIError, createCloudAPIClient } from '@lawha/cloud/client'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { useCollabIdentity } from '@/app/collab/identity'
 import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
@@ -23,7 +23,7 @@ import { cloudFetch, cloudServerFetch, discoverCloudServer } from '../sessions/c
 
 /** Who this browser is to rooms it joins from links, kept so a guest stays the same person. */
 const guestId = IS_BROWSER
-  ? useLocalStorage('open-pencil:cloud-guest-id', randomHex(16))
+  ? useLocalStorage('lawha:cloud-guest-id', randomHex(16))
   : ref(randomHex(16))
 
 export type CloudShareLink = { shareId: string; server: string; secret: string }

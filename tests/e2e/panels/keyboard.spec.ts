@@ -5,8 +5,8 @@ const editor = useEditorSetupWithClear()
 
 test('property fields follow keyboard tab order', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
       x: 120,
       y: 140,
@@ -30,8 +30,8 @@ test('property fields follow keyboard tab order', async () => {
 
 test('select and switch controls work from the keyboard', async () => {
   const textId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const node = store.graph.createNode('TEXT', store.state.currentPageId, {
       text: 'Keyboard typography',
       x: 120,
@@ -61,7 +61,7 @@ test('select and switch controls work from the keyboard', async () => {
   await editor.canvas.waitForRender()
 
   const state = await editor.page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const node = store?.graph.getNode(id)
     return node ? { textCase: node.textCase, fontFeatures: node.fontFeatures } : null
   }, textId)

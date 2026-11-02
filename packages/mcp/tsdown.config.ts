@@ -20,8 +20,8 @@ export default defineConfig({
     neverBundle: [
       '@hono/node-server',
       '@modelcontextprotocol/server',
-      '@open-pencil/core',
-      /^@open-pencil\/core\//,
+      '@lawha/core',
+      /^@lawha\/core\//,
       'hono',
       /^hono\//,
       'package-manager-detector',

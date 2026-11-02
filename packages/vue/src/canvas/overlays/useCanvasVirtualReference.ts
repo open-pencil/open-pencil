@@ -1,7 +1,7 @@
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter, type Ref } from 'vue'
 
-import type { ViewportTransform } from '@open-pencil/core/geometry'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { ViewportTransform } from '@lawha/core/geometry'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 type CanvasVirtualReference = {
   getBoundingClientRect: () => DOMRect

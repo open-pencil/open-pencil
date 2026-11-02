@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 import {
   designCustomAPIType,
@@ -15,7 +15,7 @@ import {
   modelConnectionCredentialRef,
   modelCredentialRevision
 } from '@/app/ai/models'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import { enabledSkills } from '@/app/ai/skills/library'
 import { cloudAIAvailable } from '@/app/cloud/integration'
 import { appCredentialServices, browserCredentialsRemembered } from '@/app/settings/credentials/app'
@@ -49,7 +49,7 @@ export const isConfigured = computed(() => {
   // Pi can use the CLI's own sign-in, so a key is optional.
   if (isHarnessProvider.value) return IS_TAURI
   // Cloud's AI service needs no key: the Home server's sign-in and a workspace stand in for one.
-  if (providerID.value === OPENPENCIL_AI_PROVIDER) {
+  if (providerID.value === LAWHA_AI_PROVIDER) {
     return cloudAIAvailable.value && Boolean(designModelConnection.value?.cloudWorkspaceId)
   }
   if (apiKeyStatus.value !== 'configured') return false

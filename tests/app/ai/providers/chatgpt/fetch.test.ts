@@ -116,7 +116,7 @@ describe('Codex fetch', () => {
     const headers = server.sent[0]?.headers
     expect(headers?.get('authorization')).toBe('Bearer access-1')
     expect(headers?.get('chatgpt-account-id')).toBe('acct-1')
-    expect(headers?.get('originator')).toBe('open-pencil')
+    expect(headers?.get('originator')).toBe('lawha')
     expect(headers?.get('openai-beta')).toBe('responses=experimental')
     expect(headers?.get('x-openai-internal-codex-responses-lite')).toBe('true')
     expect(server.refreshes).toEqual([])

@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/vite-config",
+  "name": "@lawha/vite-config",
   "private": true,
   "type": "module",
   "exports": {
@@ -7,7 +7,7 @@
     "./pwa": "./pwa.ts"
   },
   "dependencies": {
-    "@open-pencil/core": "workspace:*",
+    "@lawha/core": "workspace:*",
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^31.1.0",
     "vite": "8.1.4",

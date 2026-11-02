@@ -4,7 +4,7 @@ import {
   Container,
   Head,
   Heading,
-  // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+  // eslint-disable-next-line lawha/no-mixed-case-acronym-identifiers -- Upstream export spelling.
   Html as HTML,
   Img,
   Link,
@@ -15,8 +15,8 @@ import {
 import { h, type VNode } from 'vue'
 
 /** The ivory app-icon tile, served as PNG because mail clients do not draw SVG. */
-const LOGO_URL = 'https://openpencil.dev/brand/app-icon-1024.png'
-const SITE_URL = 'https://openpencil.dev'
+const LOGO_URL = 'https://github.com/aliaaldihnayn-lab/design#readme'
+const SITE_URL = 'https://github.com/aliaaldihnayn-lab/design#readme'
 
 const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 const INK = '#171717'
@@ -80,7 +80,7 @@ function noteContent(note: NonNullable<EmailLayoutProps['note']>) {
   return [`${note.text} `, h(Link, { href: url, style: styles.link }, () => label), '.']
 }
 
-/** The branded email every OpenPencil service sends: the waitlist and Cloud alike. */
+/** The branded email every Lawha service sends: the waitlist and Cloud alike. */
 export function emailLayout(props: EmailLayoutProps): VNode {
   const { note } = props
   return h(HTML, { lang: 'en' }, () => [
@@ -88,7 +88,7 @@ export function emailLayout(props: EmailLayoutProps): VNode {
     h(Preview, () => props.preview),
     h(Body, { style: styles.body }, () => [
       h(Container, { style: styles.card }, () => [
-        h(Img, { src: LOGO_URL, width: 44, height: 44, alt: 'OpenPencil', style: styles.logo }),
+        h(Img, { src: LOGO_URL, width: 44, height: 44, alt: 'Lawha', style: styles.logo }),
         h(Heading, { as: 'h1', style: styles.heading }, () => props.heading),
         h(Text, { style: styles.text }, () => props.message),
         h(Section, () =>
@@ -97,8 +97,8 @@ export function emailLayout(props: EmailLayoutProps): VNode {
         note ? h(Text, { style: styles.note }, () => noteContent(note)) : null
       ]),
       h(Text, { style: styles.footer }, () => [
-        'OpenPencil, the open-source design editor · ',
-        h(Link, { href: SITE_URL, style: { color: MUTED } }, () => 'openpencil.dev')
+        'Lawha, the open-source design editor · ',
+        h(Link, { href: SITE_URL, style: { color: MUTED } }, () => 'lawha.invalid')
       ])
     ])
   ])

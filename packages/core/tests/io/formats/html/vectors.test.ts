@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import { SceneGraph, type Fill } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import { placeIcon } from '#core/icons/render'
 import { buildIconData } from '#core/icons/svg'

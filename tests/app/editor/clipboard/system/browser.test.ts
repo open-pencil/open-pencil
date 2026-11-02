@@ -20,7 +20,7 @@ describe('browser clipboard paste', () => {
     expect(store.graph.getChildren(frame?.id ?? '').map((node) => node.name)).toEqual(['square'])
   })
 
-  test('prefers copied OpenPencil layers over SVG text', async () => {
+  test('prefers copied Lawha layers over SVG text', async () => {
     const store = createEditorStore()
     const paste = mock(async () => undefined)
     store.pasteFromHTML = paste
@@ -28,7 +28,7 @@ describe('browser clipboard paste', () => {
       write: async () => true,
       read: async () => ({
         available: true,
-        html: '<!--(openpencil)layers(/openpencil)-->',
+        html: '<!--(lawha)layers(/lawha)-->',
         text: SVG
       })
     })

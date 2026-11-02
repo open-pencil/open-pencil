@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneNode } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import { fitEnclosingGroupsWithUndo } from './structure/group/bounds'

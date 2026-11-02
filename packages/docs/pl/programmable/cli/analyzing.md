@@ -10,7 +10,7 @@ Polecenia `analyze` sprawdzają dokument z terminala: znajdują niespójne warto
 ## Kolory
 
 ```sh
-openpencil analyze colors design.fig
+lawha analyze colors design.fig
 ```
 
 Polecenie znajduje wszystkie kolory, liczy ich użycia i buduje histogram.
@@ -18,7 +18,7 @@ Polecenie znajduje wszystkie kolory, liczy ich użycia i buduje histogram.
 ## Typografia
 
 ```sh
-openpencil analyze typography design.fig
+lawha analyze typography design.fig
 ```
 
 Wynik zawiera kombinacje rodziny, rozmiaru i odmiany czcionki oraz liczbę użyć każdej z nich. Pozwala to znaleźć przypadkowe style tekstu, które warto ujednolicić.
@@ -26,7 +26,7 @@ Wynik zawiera kombinacje rodziny, rozmiaru i odmiany czcionki oraz liczbę uży�
 ## Odstępy
 
 ```sh
-openpencil analyze spacing design.fig
+lawha analyze spacing design.fig
 ```
 
 Polecenie sprawdza odstępy i wypełnienie w ramkach z automatycznym układem. Pomaga na przykład zauważyć przypadkowy odstęp `13px` pośród wartości skali `8/16/24`.
@@ -34,7 +34,7 @@ Polecenie sprawdza odstępy i wypełnienie w ramkach z automatycznym układem. P
 ## Powtarzające się struktury
 
 ```sh
-openpencil analyze clusters design.fig
+lawha analyze clusters design.fig
 ```
 
 Polecenie znajduje powtarzające się struktury obiektów, które mogą stać się komponentami.

@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { applyDocumentPaintBindings } from '#fig/document/bindings/paint'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function setup(alpha: number, opacity: number) {
   const graph = new SceneGraph()

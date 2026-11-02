@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { parseIconName, type IconProvider } from '@open-pencil/core/icons'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { isIconModified, readIcon } from '@open-pencil/scene-graph/icons'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { createEditor } from '@lawha/core'
+import { parseIconName, type IconProvider } from '@lawha/core/icons'
+import { SceneGraph } from '@lawha/scene-graph'
+import { isIconModified, readIcon } from '@lawha/scene-graph/icons'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { buildIconData } from '#core/icons/svg'
 

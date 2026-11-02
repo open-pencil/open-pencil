@@ -1,16 +1,16 @@
-import { compressFigDataSync, renameFigArchive } from '@open-pencil/fig'
+import { compressFigDataSync, renameFigArchive } from '@lawha/fig'
 import {
   nameImagesForFigma,
   placeSlotContent,
   type FigNodeChangeExportRuntime,
   sceneNodeToKiwi
-} from '@open-pencil/fig/node-change'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { loadFigDataCompressor, type FigFileKind } from '@open-pencil/kiwi/fig/container'
-import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-import type { GUID } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/fig/node-change'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { loadFigDataCompressor, type FigFileKind } from '@lawha/kiwi/fig/container'
+import type { DocumentKind, SceneGraph } from '@lawha/scene-graph'
+import { fractionalPosition } from '@lawha/scene-graph/order-keys'
+import type { GUID } from '@lawha/scene-graph/primitives'
 
 import { IS_BROWSER } from '#core/constants'
 import { figCompressionLevel } from '#core/io/formats/fig/compression'

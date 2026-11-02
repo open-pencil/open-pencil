@@ -2,7 +2,7 @@ import { appCredentialServices } from '@/app/settings/credentials/app'
 import { credentialRef } from '@/app/settings/credentials/reference'
 
 /** Cloud servers are storage profiles of this provider; their sessions are its credential. */
-export const CLOUD_STORAGE_PROVIDER_ID = 'openpencil-cloud'
+export const CLOUD_STORAGE_PROVIDER_ID = 'lawha-cloud'
 export const CLOUD_SESSION_FIELD = 'session'
 
 const sessionRef = (serverId: string) =>

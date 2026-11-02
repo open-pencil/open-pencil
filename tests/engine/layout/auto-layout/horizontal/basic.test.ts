@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { computeAllLayouts, computeLayout } from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createEditor } from '@lawha/core'
+import { computeAllLayouts, computeLayout } from '@lawha/core/layout'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { autoFrame, pageId, rect } from '#tests/helpers/layout'
 

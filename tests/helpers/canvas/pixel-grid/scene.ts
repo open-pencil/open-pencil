@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 /** A blue rectangle at the page origin, for pixel grid specs, built in the browser. */
 export function createPixelGridScene(graph: SceneGraph, pageId: string) {

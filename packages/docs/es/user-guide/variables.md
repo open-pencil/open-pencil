@@ -73,7 +73,7 @@ La parte inferior del diálogo muestra la colección activa como propiedades per
 
 ## Importar y exportar design tokens
 
-Las variables y los estilos pasan entre OpenPencil, Figma y el código como [design tokens del W3C](https://www.designtokens.org/):
+Las variables y los estilos pasan entre Lawha, Figma y el código como [design tokens del W3C](https://www.designtokens.org/):
 
 - **Exportar:** en el menú de copia de la hoja de estilos, elige **Exportar como design tokens**. El zip contiene un archivo por cada modo de colección, que Figma importa como modo; los estilos de texto y de efecto como tokens de tipografía y de sombra; y un resolver que lo combina todo para herramientas como Style Dictionary
 - **Importar:** haz clic en **Importar design tokens** en la barra de herramientas y elige archivos de tokens o un zip. Funcionan los archivos de Figma, un resolver con los archivos que nombra y los temas de Tokens Studio

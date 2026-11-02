@@ -7,7 +7,7 @@ test('rulers follow the active theme', async () => {
 
   const readState = () =>
     page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
+      const store = window.lawha?.getStore?.()
       const style = getComputedStyle(document.documentElement)
       return {
         cssTheme: document.documentElement.dataset.theme ?? 'dark',

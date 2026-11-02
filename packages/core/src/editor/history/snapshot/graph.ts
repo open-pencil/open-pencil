@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit/array'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { applyDocumentChange, type DocumentChange } from '#core/editor/history/document-change'
 import { extractPageContext } from '#core/io/subgraph'

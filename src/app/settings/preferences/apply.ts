@@ -1,4 +1,4 @@
-import type { SnappingPreferences } from '@open-pencil/core'
+import type { SnappingPreferences } from '@lawha/core'
 
 import { getTabsSnapshot } from '@/app/tabs'
 

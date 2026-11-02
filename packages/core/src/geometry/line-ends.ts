@@ -1,12 +1,12 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   getParentWorldMatrix,
   getWorldMatrix,
   localTransformFromWorld
-} from '@open-pencil/scene-graph/coordinate'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { scaleVectorNetworkForResize } from '@open-pencil/scene-graph/resize'
+} from '@lawha/scene-graph/coordinate'
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import type { Vector } from '@lawha/scene-graph/primitives'
+import { scaleVectorNetworkForResize } from '@lawha/scene-graph/resize'
 
 /** Which end of a line a handle drags: its origin or the far end along its length. */
 export type LineEnd = 'start' | 'end'

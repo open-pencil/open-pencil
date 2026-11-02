@@ -23,6 +23,6 @@ export function provideChannelSlider(context: ChannelSliderContext) {
 export function useChannelSlider(): ChannelSliderContext {
   const context = inject(CHANNEL_SLIDER_KEY)
   if (!context)
-    throw new Error('[open-pencil] ChannelSlider part must be used inside ChannelSliderRoot')
+    throw new Error('[lawha] ChannelSlider part must be used inside ChannelSliderRoot')
   return context
 }

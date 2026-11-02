@@ -1,9 +1,9 @@
 import { camelCase, compact } from 'es-toolkit'
 
-import { es } from '@open-pencil/emit'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { es } from '@lawha/emit'
+import type { SceneNode } from '@lawha/scene-graph'
 
-const REF_SYMBOL = Symbol.for('open-pencil.layer-ref')
+const REF_SYMBOL = Symbol.for('lawha.layer-ref')
 
 /**
  * A handle on one layer of the JSX: `ref={card}` marks the layer, and an element that refers to

@@ -5,8 +5,8 @@
     "paths": {
       "#feedback/*": ["./src/*"],
       "#feedback-tests/*": ["./tests/*"],
-      "@open-pencil/scene-graph/random": ["../scene-graph/src/random.ts"],
-      "@open-pencil/cloud/email": ["../cloud/src/email/index.ts"],
+      "@lawha/scene-graph/random": ["../scene-graph/src/random.ts"],
+      "@lawha/cloud/email": ["../cloud/src/email/index.ts"],
       "#cloud/*": ["../cloud/src/*"]
     }
   },

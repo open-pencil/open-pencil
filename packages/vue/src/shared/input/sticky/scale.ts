@@ -1,14 +1,14 @@
 import { toRaw } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
 import {
   isWideSticky,
   stickyScale,
   stickySublayers,
   stickyWidth
-} from '@open-pencil/scene-graph/generated'
-import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
+} from '@lawha/scene-graph/generated'
+import { scaleNodeChanges } from '@lawha/scene-graph/scaling'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import { constrainToAspectRatio } from '#vue/shared/input/resize/rect'

@@ -10,9 +10,9 @@ import {
   parseFigFile,
   populateFigPage,
   populateAllFigPages
-} from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { hasReaderSession } from '#core/kiwi/fig/session/document-state'

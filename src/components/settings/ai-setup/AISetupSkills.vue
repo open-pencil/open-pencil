@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useAIMessages } from '@lawha/vue/i18n'
 
 import { foundSkills, refreshSkills } from '@/app/ai/skills/library'
 import {

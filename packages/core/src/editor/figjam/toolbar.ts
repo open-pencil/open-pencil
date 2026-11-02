@@ -1,5 +1,5 @@
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { isGeneratedFrame } from '@lawha/scene-graph/generated'
 
 /**
  * Which of FigJam's selection toolbars a selection gets: one per kind of layer, a text toolbar for

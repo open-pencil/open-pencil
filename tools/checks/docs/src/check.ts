@@ -27,7 +27,7 @@ import {
   userGuideSidebar
 } from '#docs-config/sidebars'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 import { checkGuideMap } from './guides'
 import { checkDocsIntegrity } from './integrity'

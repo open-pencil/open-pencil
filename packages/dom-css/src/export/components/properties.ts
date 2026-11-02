@@ -6,8 +6,8 @@ import type {
   ComponentPropertyReferenceField,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { behaviourProperties, findLayerByPath } from '@open-pencil/scene-graph/behaviours'
+} from '@lawha/scene-graph'
+import { behaviourProperties, findLayerByPath } from '@lawha/scene-graph/behaviours'
 
 import { claimName, identifierName } from '../storybook/names'
 

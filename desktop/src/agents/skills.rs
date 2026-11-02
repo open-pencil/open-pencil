@@ -224,7 +224,7 @@ mod tests {
         fn new() -> Self {
             let id = NEXT.fetch_add(1, Ordering::Relaxed);
             let base =
-                std::env::temp_dir().join(format!("openpencil-skills-{}-{id}", std::process::id()));
+                std::env::temp_dir().join(format!("lawha-skills-{}-{id}", std::process::id()));
             let _ = fs::remove_dir_all(&base);
             let dir = base.join(".agents").join("skills");
             fs::create_dir_all(&dir).unwrap();

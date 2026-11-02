@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'valibot-schema-conventions'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 const valibot = "import * as v from 'valibot'\n"
 
 describe(rule, () => {
@@ -51,7 +51,7 @@ describe(rule, () => {
   })
 
   test('checks names only when placement is off', async () => {
-    const off = { [`open-pencil/${rule}`]: ['error', { placement: false }] }
+    const off = { [`lawha/${rule}`]: ['error', { placement: false }] }
     const exported = `${valibot}export const pointSchema = v.object({})`
     const misnamed = `${valibot}export const Point = v.object({})`
     expect(ruleDiagnostics(await lint(exported, off, 'tools/point.ts'), rule)).toHaveLength(0)

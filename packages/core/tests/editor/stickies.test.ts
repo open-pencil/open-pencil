@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { setTextMeasurer } from '@open-pencil/core/layout'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph/generated'
-import { lineHeightPixels, percentLength } from '@open-pencil/scene-graph/text'
+import { createEditor } from '@lawha/core'
+import { setTextMeasurer } from '@lawha/core/layout'
+import type { SceneNode } from '@lawha/scene-graph'
+import { STICKY_COLORS, stickySublayers } from '@lawha/scene-graph/generated'
+import { lineHeightPixels, percentLength } from '@lawha/scene-graph/text'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
 

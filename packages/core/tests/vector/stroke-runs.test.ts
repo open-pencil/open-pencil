@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
+import type { VectorSegment, VectorVertex } from '@lawha/scene-graph'
 
 import { addStrokeRunToPath, strokeRuns, type PathSink } from '#core/vector/path-helpers'
 

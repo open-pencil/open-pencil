@@ -3,9 +3,9 @@ import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { figJamToolbarKind } from '@open-pencil/core'
-import type { ViewportTransform } from '@open-pencil/core/geometry'
-import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
+import { figJamToolbarKind } from '@lawha/core'
+import type { ViewportTransform } from '@lawha/core/geometry'
+import { useCanvasVirtualReference } from '@lawha/vue/canvas/overlays'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import theme from '@/theme/figjam/toolbar'

@@ -1,11 +1,11 @@
 ---
 title: useEditor
-description: Доступ к экземпляру редактора OpenPencil, переданному через provideEditor.
+description: Доступ к экземпляру редактора Lawha, переданному через provideEditor.
 ---
 
 # useEditor
 
-`useEditor()` возвращает экземпляр редактора OpenPencil, переданный ближайшим вызовом `provideEditor()`.
+`useEditor()` возвращает экземпляр редактора Lawha, переданный ближайшим вызовом `provideEditor()`.
 
 Это основная точка входа для composables и компонентов без встроенного оформления, которым нужен редактор.
 
@@ -14,7 +14,7 @@ description: Доступ к экземпляру редактора OpenPencil,
 `useEditor()` должен вызываться внутри поддерева, где уже был вызван `provideEditor(editor)`.
 
 ```ts
-import { useEditor } from '@open-pencil/vue'
+import { useEditor } from '@lawha/vue'
 
 const editor = useEditor()
 ```
@@ -25,7 +25,7 @@ const editor = useEditor()
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useEditor } from '@open-pencil/vue'
+import { useEditor } from '@lawha/vue'
 
 const editor = useEditor()
 const pageId = computed(() => editor.state.currentPageId)

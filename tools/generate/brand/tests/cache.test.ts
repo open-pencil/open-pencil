@@ -9,7 +9,7 @@ import { ensureBrandAssets } from '#brand/generate'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'open-pencil-brand-test-'))
+  root = await mkdtemp(join(tmpdir(), 'lawha-brand-test-'))
   for (const path of [
     'assets/brand',
     'tools/generate/brand/src',

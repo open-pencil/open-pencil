@@ -1,6 +1,6 @@
 name: Chromium build
 
-# OpenPencil Chromium: the desktop app on Tauri v3 with the CEF runtime, a
+# Lawha Chromium: the desktop app on Tauri v3 with the CEF runtime, a
 # flavor of each release built by hand from a branch that carries it
 # (desktop/tauri.chromium.conf.json). Given a release tag, it adds the macOS
 # bundles and latest-chromium.json, the flavor's update feed, to that release

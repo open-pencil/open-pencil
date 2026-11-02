@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
@@ -8,8 +8,8 @@ import {
   findComponentPropertyTarget,
   removeComponentProperty,
   resolveComponentPropertyValue
-} from '@open-pencil/scene-graph/components'
-import { forEachInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+} from '@lawha/scene-graph/components'
+import { forEachInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 function component(
   graph: SceneGraph,

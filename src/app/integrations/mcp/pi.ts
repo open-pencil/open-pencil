@@ -1,4 +1,4 @@
-import { MCP_AGENT_HEADER, OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER, LAWHA_MCP_SERVER } from '@lawha/core/constants'
 
 import { getAutomationAuthToken, getMCPServerURL } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordMCPConnectionFailure } from '@/app/diagnostics'
@@ -47,7 +47,7 @@ export async function buildPiMCPServers(options?: {
   )
   return {
     ...Object.fromEntries(entries),
-    [OPEN_PENCIL_MCP_SERVER]: {
+    [LAWHA_MCP_SERVER]: {
       url: getMCPServerURL(),
       // The Pi harness chat's tool calls show as its agent rather than an outside MCP client.
       headers: {

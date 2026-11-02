@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
-import { Frame, Text, Rectangle, designMode, designVar } from '@open-pencil/design-jsx'
+import { renderJSX, renderTree } from '@lawha/core/design-jsx'
+import { Frame, Text, Rectangle, designMode, designVar } from '@lawha/design-jsx'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { addTestColorVariable, makeSceneGraph } from '#tests/helpers/scene'

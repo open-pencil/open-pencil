@@ -9,7 +9,7 @@ async function setup(page: Page) {
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     for (let i = 0; i < 80; i++) {
       store.graph.createNode('TEXT', store.state.currentPageId, {
@@ -26,7 +26,7 @@ async function setup(page: Page) {
     store.clearSelection()
     store.requestRender()
   })
-  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
   const element = page.getByTestId('canvas-element')
   const box = expectDefined(await element.boundingBox(), 'canvas bounds')
   return {
@@ -40,7 +40,7 @@ async function setup(page: Page) {
 
 async function probeCreation(page: Page) {
   return page.evaluateHandle(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const element = document.querySelector('[data-test-id="canvas-element"]')
     if (!store || !element) throw new Error('Editor unavailable')
     const renderer = store.canvasRenderers.find((r) => r.tracksSceneSettlement)
@@ -108,21 +108,21 @@ test('Frame-tool creation previews without rebuilding the tiles', async ({ page 
     }
     expect((await page.screenshot({ clip })).equals(before)).toBe(false)
     await page.mouse.up()
-    await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+    await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
     const finished = await probe.evaluate((p) => p.sample())
     expect(finished.interactive).toBe(false)
     expect(finished.batching).toBe(false)
-    await page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+    await page.evaluate(() => window.lawha?.getStore?.().undoAction())
     expect(
       await page.evaluate(
-        (id) => window.openPencil?.getStore?.().graph.getNode(id ?? '') === undefined,
+        (id) => window.lawha?.getStore?.().graph.getNode(id ?? '') === undefined,
         started.id
       )
     ).toBe(true)
-    expect(await page.evaluate(() => window.openPencil?.getStore?.().undo.canUndo)).toBe(false)
-    await page.evaluate(() => window.openPencil?.getStore?.().redoAction())
+    expect(await page.evaluate(() => window.lawha?.getStore?.().undo.canUndo)).toBe(false)
+    await page.evaluate(() => window.lawha?.getStore?.().redoAction())
     const restored = await page.evaluate((id) => {
-      const node = window.openPencil?.getStore?.().graph.getNode(id ?? '')
+      const node = window.lawha?.getStore?.().graph.getNode(id ?? '')
       return { width: node?.width, height: node?.height }
     }, started.id)
     expect(restored).toEqual({ width: finished.width, height: finished.height })
@@ -150,10 +150,10 @@ test('Escape and pointer cancellation discard creation without leaking a batch',
       if (cancellation === 'escape') await page.keyboard.press('Escape')
       else await probe.evaluate((p) => p.cancelPointer())
       await page.mouse.up()
-      await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+      await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
       expect(
         await page.evaluate(
-          (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId ?? '') === undefined,
+          (nodeId) => window.lawha?.getStore?.().graph.getNode(nodeId ?? '') === undefined,
           id
         )
       ).toBe(true)

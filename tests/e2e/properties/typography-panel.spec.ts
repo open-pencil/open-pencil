@@ -11,7 +11,7 @@ for (const theme of ['light', 'dark']) {
       const path = '/src/app/shell/theme.ts'
       const module = await import(path)
       module.useAppTheme().setTheme(mode)
-      const editor = window.openPencil?.getStore?.()
+      const editor = window.lawha?.getStore?.()
       if (!editor) throw new Error('Editor unavailable')
       const id = editor.createShape('TEXT', 100, 100, 240, 80)
       editor.updateNode(id, { text: 'Typography review', fontSize: 24 })
@@ -27,7 +27,7 @@ for (const theme of ['light', 'dark']) {
     await expect
       .poll(() =>
         page.evaluate(
-          (id) => window.openPencil?.getStore?.().graph.getNode(id)?.textAlignHorizontal,
+          (id) => window.lawha?.getStore?.().graph.getNode(id)?.textAlignHorizontal,
           id
         )
       )
@@ -37,7 +37,7 @@ for (const theme of ['light', 'dark']) {
       .poll(() =>
         page.evaluate(
           (id) =>
-            window.openPencil
+            window.lawha
               ?.getStore?.()
               .graph.getNode(id)
               ?.fontFeatures.find((feature) => feature.tag === 'LIGA')?.enabled,

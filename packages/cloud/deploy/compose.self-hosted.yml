@@ -1,32 +1,32 @@
-# OpenPencil Cloud on one machine, from the published image, to try it out:
+# Lawha Cloud on one machine, from the published image, to try it out:
 #   BETTER_AUTH_SECRET=$(openssl rand -hex 32) docker compose -f compose.self-hosted.yml up
 # Open http://localhost:8787 and sign up; sign-up mail lands at http://localhost:8025.
 # Browsers upload straight to object storage, at the same address the server uses, so SeaweedFS
 # shares the server's network and both reach it at localhost:8333. For a server others use, see
-# https://openpencil.dev/reference/self-hosting-cloud.
-name: openpencil-cloud
+# https://github.com/aliaaldihnayn-lab/design#readme
+name: lawha-cloud
 
 services:
-  openpencil:
-    image: ghcr.io/open-pencil/cloud:${OPENPENCIL_CLOUD_VERSION:-latest}
+  lawha:
+    image: ghcr.io/lawha/cloud:${LAWHA_CLOUD_VERSION:-latest}
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      OPENPENCIL_CLOUD_CONFIG: /etc/openpencil/openpencil-cloud.toml
-      DATABASE_URL: postgresql://openpencil:${POSTGRES_PASSWORD:-openpencil}@postgres:5432/openpencil
+      LAWHA_CLOUD_CONFIG: /etc/lawha/lawha-cloud.toml
+      DATABASE_URL: postgresql://lawha:${POSTGRES_PASSWORD:-lawha}@postgres:5432/lawha
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET to at least 32 random characters}
-      S3_ACCESS_KEY_ID: openpencil
-      S3_SECRET_ACCESS_KEY: openpencil-development-secret
+      S3_ACCESS_KEY_ID: lawha
+      S3_SECRET_ACCESS_KEY: lawha-development-secret
     ports:
       - '127.0.0.1:8787:8787'
       - '127.0.0.1:8333:8333'
     volumes:
-      - ./self-hosted/openpencil-cloud.toml:/etc/openpencil/openpencil-cloud.toml:ro
+      - ./self-hosted/lawha-cloud.toml:/etc/lawha/lawha-cloud.toml:ro
 
   seaweedfs:
     image: chrislusf/seaweedfs:4.41
-    network_mode: service:openpencil
+    network_mode: service:lawha
     command:
       - server
       - -dir=/data
@@ -44,28 +44,28 @@ services:
 
   bucket:
     image: amazon/aws-cli:2.27.49
-    network_mode: service:openpencil
+    network_mode: service:lawha
     depends_on:
       seaweedfs:
         condition: service_healthy
     environment:
-      AWS_ACCESS_KEY_ID: openpencil
-      AWS_SECRET_ACCESS_KEY: openpencil-development-secret
+      AWS_ACCESS_KEY_ID: lawha
+      AWS_SECRET_ACCESS_KEY: lawha-development-secret
       AWS_DEFAULT_REGION: us-east-1
     entrypoint: ['/bin/sh', '-c']
     command:
       - >-
-        aws --endpoint-url http://127.0.0.1:8333 s3api head-bucket --bucket openpencil
-        || aws --endpoint-url http://127.0.0.1:8333 s3api create-bucket --bucket openpencil
+        aws --endpoint-url http://127.0.0.1:8333 s3api head-bucket --bucket lawha
+        || aws --endpoint-url http://127.0.0.1:8333 s3api create-bucket --bucket lawha
 
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: openpencil
-      POSTGRES_USER: openpencil
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openpencil}
+      POSTGRES_DB: lawha
+      POSTGRES_USER: lawha
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lawha}
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U openpencil -d openpencil']
+      test: ['CMD-SHELL', 'pg_isready -U lawha -d lawha']
       interval: 2s
       timeout: 3s
       retries: 30

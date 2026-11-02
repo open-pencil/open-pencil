@@ -1,6 +1,6 @@
 ---
 title: Components
-description: Creating reusable components, instances, component sets, overrides, and live sync in OpenPencil.
+description: Creating reusable components, instances, component sets, overrides, and live sync in Lawha.
 ---
 
 # Components
@@ -25,7 +25,7 @@ Components display a purple label with a diamond icon above them.
 
 Select two or more components and press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd>) to combine them into a component set — a container with a dashed purple border and 20 px padding around its children, as in Figma. Sets made by scripts with `figma.combineAsVariants()` wrap their components exactly, as Figma's plugin API does.
 
-Each component in a set can define values across multiple variant dimensions, such as `Size=Small`, `State=Hover`, and `Theme=Dark`. OpenPencil supports sparse combinations, so a set does not need every possible combination. The top-left variant is the default and is used as the fallback when an update no longer contains an exact combination.
+Each component in a set can define values across multiple variant dimensions, such as `Size=Small`, `State=Hover`, and `Theme=Dark`. Lawha supports sparse combinations, so a set does not need every possible combination. The top-left variant is the default and is used as the fallback when an update no longer contains an exact combination.
 
 Select a component and press **Add variant** in the panel header to turn it into a component set, as Figma does: the component becomes `Property 1=Default` and a copy named `Property 1=Variant2` appears below it. On a set, **Add variant** copies its last variant with the next value. The set's variant properties are rows of its **Properties** list; click one to rename it or to add, rename, drag to reorder, or remove its values. Removing a value variants still use moves them to another value first, and variants that share every value are named in a notice that selects them.
 
@@ -90,7 +90,7 @@ Open **Manage libraries → Updates** to discover newer revisions. Discovery doe
 - Instances on the current page
 - Instances across all pages
 
-OpenPencil preserves compatible text, visibility, and instance-swap assignments. If an exact variant no longer exists, the review identifies the top-left fallback before you accept it. Applying an update creates an undo entry.
+Lawha preserves compatible text, visibility, and instance-swap assignments. If an exact variant no longer exists, the review identifies the top-left fallback before you accept it. Applying an update creates an undo entry.
 
 ### Local, Storage, and Offline Use
 

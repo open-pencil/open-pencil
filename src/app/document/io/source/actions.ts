@@ -1,7 +1,7 @@
 import { createEventHook } from '@vueuse/core'
 
-import type { Editor, EditorState } from '@open-pencil/core'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import type { Editor, EditorState } from '@lawha/core'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import { createDocumentChanges } from '@/app/document/io/changes'

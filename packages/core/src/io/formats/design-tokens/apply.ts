@@ -12,10 +12,10 @@ import type {
   VariableCollection,
   VariableScope,
   VariableValue
-} from '@open-pencil/scene-graph'
-import { copyEffects } from '@open-pencil/scene-graph/copy'
-import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
-import { randomHex } from '@open-pencil/scene-graph/random'
+} from '@lawha/scene-graph'
+import { copyEffects } from '@lawha/scene-graph/copy'
+import { findInstanceAncestor } from '@lawha/scene-graph/instances'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 

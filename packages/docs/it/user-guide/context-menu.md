@@ -5,7 +5,7 @@ description: Azioni per appunti, ordine, gruppi, componenti, visibilità e pagin
 
 # Menu contestuale
 
-Fai clic con il pulsante destro nell’area di lavoro. Se il puntatore è su un oggetto, OpenPencil lo seleziona prima; in un’area libera annulla la selezione.
+Fai clic con il pulsante destro nell’area di lavoro. Se il puntatore è su un oggetto, Lawha lo seleziona prima; in un’area libera annulla la selezione.
 
 ## Appunti
 

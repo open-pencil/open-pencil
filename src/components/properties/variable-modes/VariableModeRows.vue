@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { MIXED } from '@open-pencil/vue/controls/node-props'
-import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { MIXED } from '@lawha/vue/controls/node-props'
+import type { VariableModeChoice } from '@lawha/vue/controls/variable-modes'
+import { usePanelMessages } from '@lawha/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'

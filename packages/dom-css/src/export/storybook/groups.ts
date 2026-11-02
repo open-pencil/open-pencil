@@ -1,9 +1,9 @@
 import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { restingVariant } from '@open-pencil/scene-graph/components'
-import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { restingVariant } from '@lawha/scene-graph/components'
+import { deriveSlashVariantProperties } from '@lawha/scene-graph/variant-properties'
 
 import type { StoryProp } from './module'
 import { claimName } from './names'

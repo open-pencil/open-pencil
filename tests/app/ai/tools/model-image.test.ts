@@ -2,8 +2,8 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import { fromUint8Array, toUint8Array } from 'js-base64'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@lawha/core/canvaskit'
+import { createCanvasKitRasterCodec } from '@lawha/core/io/formats/raster'
 
 import { encodeWebPModelImage } from '@/app/ai/tools/model-image'
 

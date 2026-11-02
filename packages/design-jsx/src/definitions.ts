@@ -275,5 +275,5 @@ export function designJSXProp(props: Readonly<Record<string, unknown>>, name: st
 export const DESIGN_JSX_PROPERTIES: DesignJSXPropertyDefinition[] =
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES.map((name) => ({
     name,
-    description: `OpenPencil ${name} property.`
+    description: `Lawha ${name} property.`
   }))

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createLibraryRevision, materializeLibraryAsset } from '@open-pencil/core/library'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createLibraryRevision, materializeLibraryAsset } from '@lawha/core/library'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function sourceLibrary() {
   const graph = new SceneGraph()

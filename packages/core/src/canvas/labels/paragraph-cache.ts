@@ -1,8 +1,8 @@
 import type { Canvas, CanvasKit, Font, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
-import type { Size } from '@open-pencil/scene-graph/primitives'
-import { detectTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { faceLoadKey } from '@lawha/scene-graph/font-style'
+import type { Size } from '@lawha/scene-graph/primitives'
+import { detectTextDirection } from '@lawha/scene-graph/text/direction'
 
 import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'

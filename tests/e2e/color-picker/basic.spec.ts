@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { parseOkHCLPayload } from '@open-pencil/scene-graph/color'
+import { parseOkHCLPayload } from '@lawha/scene-graph/color'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -22,8 +22,8 @@ test.afterAll(async () => {
 
 async function getSelectedFill() {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
     const node = store.graph.getNode(id)
@@ -33,13 +33,13 @@ async function getSelectedFill() {
 
 async function getSelectedFillOkHCL() {
   const value = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
     const node = store.graph.getNode(id)
     const entry = node?.pluginData.find(
-      (value) => value.pluginId === 'open-pencil' && value.key === 'okhcl'
+      (value) => value.pluginId === 'lawha' && value.key === 'okhcl'
     )
     return entry?.value ?? null
   })

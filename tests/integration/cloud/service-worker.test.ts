@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CLOUD_PORTAL_PAGE_ROOTS } from '@open-pencil/cloud/contract'
-import { NOT_EDITOR_PAGES } from '@open-pencil/vite-config/pwa'
+import { CLOUD_PORTAL_PAGE_ROOTS } from '@lawha/cloud/contract'
+import { NOT_EDITOR_PAGES } from '@lawha/vite-config/pwa'
 
 const servedByEditor = (path: string) => !NOT_EDITOR_PAGES.some((pattern) => pattern.test(path))
 
@@ -14,7 +14,7 @@ describe('editor service worker on a Cloud server', () => {
       expect(servedByEditor(`${root}?confirmed`)).toBe(false)
     }
     expect(servedByEditor('/api/account/status')).toBe(false)
-    expect(servedByEditor('/.well-known/openpencil')).toBe(false)
+    expect(servedByEditor('/.well-known/lawha')).toBe(false)
   })
 
   test('serves the editor’s own pages offline', () => {

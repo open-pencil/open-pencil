@@ -20,7 +20,7 @@ function workspace(
 ): SaveDestination {
   return {
     key: `${server.id}/${id}`,
-    location: { providerId: 'openpencil-cloud', profileId: server.id, containerId: id },
+    location: { providerId: 'lawha-cloud', profileId: server.id, containerId: id },
     label,
     kind: 'workspace',
     place: server,
@@ -28,7 +28,7 @@ function workspace(
   }
 }
 
-const officialServer = { id: 'official', label: 'cloud.openpencil.dev' }
+const officialServer = { id: 'official', label: 'cloud.lawha.invalid' }
 const official = [
   workspace(officialServer, 'design', 'Design team', 'editor'),
   workspace(officialServer, 'personal', 'Personal', 'admin'),

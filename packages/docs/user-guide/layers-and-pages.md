@@ -1,6 +1,6 @@
 ---
 title: Layers & Pages
-description: Managing layers, pages, and the properties panel in OpenPencil.
+description: Managing layers, pages, and the properties panel in Lawha.
 ---
 
 # Layers & Pages
@@ -45,7 +45,7 @@ Each page has its own canvas and viewport state.
 
 The Home workspace lists recent local documents and documents from configured storage providers. Use grid or list view, or open multiple selected files into separate editor tabs.
 
-In **Settings → General → Recovery**, **Automatically preserve unsaved work** controls local recovery copies. With recovery enabled, unsaved documents without a file path remain recoverable even after their tabs close. When OpenPencil offers **Recover unsaved work**, choose **Restore** to reopen a document or **Discard** to remove its recovery copy.
+In **Settings → General → Recovery**, **Automatically preserve unsaved work** controls local recovery copies. With recovery enabled, unsaved documents without a file path remain recoverable even after their tabs close. When Lawha offers **Recover unsaved work**, choose **Restore** to reopen a document or **Discard** to remove its recovery copy.
 
 Disabling recovery stops automatic preservation and removes recovery copies owned by currently open documents. It does not bulk-delete snapshots from previously closed documents. Recovery is local to this installation/browser profile; it is not a replacement for saving a file, cloud synchronization, or a backup.
 
@@ -71,7 +71,7 @@ When no nodes are selected, the Design tab shows page-level properties including
 
 Displays the selected node as code with syntax highlighting, line numbers, and a copy button. A format toggle lets you switch between two output modes:
 
-- **OpenPencil JSX** — custom component tree compatible with `renderJSX()` for programmatic round-trip
+- **Lawha JSX** — custom component tree compatible with `renderJSX()` for programmatic round-trip
 - **Tailwind CSS v4** — HTML with utility classes (`<div className="flex gap-4 p-3">`) ready to paste into React/Vue projects
 
 ### AI Tab

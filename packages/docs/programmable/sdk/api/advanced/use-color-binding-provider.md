@@ -1,11 +1,11 @@
 ---
 title: useColorBindingProvider
-description: OpenPencil COLOR variable provider for BindableValue fields.
+description: Lawha COLOR variable provider for BindableValue fields.
 ---
 
 # useColorBindingProvider
 
-`useColorBindingProvider()` adapts OpenPencil COLOR variables to the generic `BindingProvider<Color>`
+`useColorBindingProvider()` adapts Lawha COLOR variables to the generic `BindingProvider<Color>`
 contract. It resolves current-mode colors, binds indexed paint paths, creates variables in a Colors
 collection, updates all collection modes when requested, and exposes editor undo transactions.
 
@@ -14,8 +14,8 @@ Use it with `BindableValueRoot` and explicit targets such as `fills/0/color` or
 actual color mutation begins and commits.
 
 ```ts twoslash
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { type BindingTarget, useColorBindingProvider } from '@open-pencil/vue/controls/binding-provider'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { type BindingTarget, useColorBindingProvider } from '@lawha/vue/controls/binding-provider'
 
 const provider = useColorBindingProvider()
 const targets: BindingTarget[] = [

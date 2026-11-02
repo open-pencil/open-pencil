@@ -1,6 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode } from '@lawha/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { textVerticalOffset, withTextParagraph } from '#core/canvas/text'

@@ -14,7 +14,7 @@ export async function measurePhase<T>(
       report(
         `[package-quality] ${name}: ${outcome} in ${((performance.now() - started) / 1000).toFixed(2)}s`
       )
-      // oxlint-disable-next-line open-pencil/no-silent-catch -- Reporting must not change the phase outcome.
+      // oxlint-disable-next-line lawha/no-silent-catch -- Reporting must not change the phase outcome.
     } catch {}
   }
 }

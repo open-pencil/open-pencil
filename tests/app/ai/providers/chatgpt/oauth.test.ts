@@ -25,7 +25,7 @@ describe('ChatGPT OAuth', () => {
       state: 's',
       id_token_add_organizations: 'true',
       codex_cli_simplified_flow: 'true',
-      originator: 'open-pencil'
+      originator: 'lawha'
     })
   })
 

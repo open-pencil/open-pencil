@@ -1,8 +1,8 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
+import { SceneGraph, type VectorNetwork } from '@lawha/scene-graph'
 
 import { makeBooleanOperationPath, makeBooleanSourcePath } from '#core/canvas/boolean'
 import { NodePathCaches } from '#core/canvas/paths/cache'

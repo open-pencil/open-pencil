@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Stroke, type VectorNetwork } from '@open-pencil/scene-graph'
-import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
+import { SceneGraph, type Stroke, type VectorNetwork } from '@lawha/scene-graph'
+import type { ArrowEndpoint } from '@lawha/scene-graph/arrow-caps'
 import {
   arrowCapOverflow,
   arrowLinesSegments,
@@ -12,9 +12,9 @@ import {
   isArrowCap,
   triangleCapPoints,
   trimArrowShafts
-} from '@open-pencil/scene-graph/arrow-caps'
-import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/arrow-caps'
+import { strokeOverflow } from '@lawha/scene-graph/geometry'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 const SQRT3 = Math.sqrt(3)
 

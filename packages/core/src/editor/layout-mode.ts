@@ -1,4 +1,4 @@
-import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+import type { LayoutMode, SceneNode } from '@lawha/scene-graph'
 
 import type { NodePreview } from './node-preview'
 import type { EditorContext } from './types'

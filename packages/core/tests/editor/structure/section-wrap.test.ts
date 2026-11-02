@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 // Measured in FigJam: Wrap in new section leaves 48 units around the layers and numbers the section.
 describe('wrapping layers in a new section', () => {

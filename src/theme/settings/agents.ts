@@ -1,6 +1,6 @@
 import { motionStyles } from '@/theme/motion/styles'
 
-/** Setup of a coding agent or Pi and the OpenPencil companions it needs on this computer. */
+/** Setup of a coding agent or Pi and the Lawha companions it needs on this computer. */
 export default {
   slots: {
     help: 'text-xs leading-relaxed text-muted',

@@ -17,7 +17,7 @@ function subject(context: EvaluationContext): EntitlementSubject {
 }
 
 export class EntitlementOpenFeatureProvider implements Provider {
-  readonly metadata: ProviderMetadata = { name: 'openpencil-entitlements' }
+  readonly metadata: ProviderMetadata = { name: 'lawha-entitlements' }
   readonly runsOn = 'server' as const
 
   constructor(private readonly source: EntitlementSource) {}

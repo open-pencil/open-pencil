@@ -3,9 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 import { importStyleRuns } from '#fig/node-change/style/runs'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
-import { SceneGraph, type StyleRun } from '@open-pencil/scene-graph'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { UNSET_GUID } from '@lawha/kiwi/fig/guid'
+import { SceneGraph, type StyleRun } from '@lawha/scene-graph'
 
 // Field names and shapes from the Kiwi schema (`packages/kiwi/src/fig/schema/fig.kiwi`): a style
 // override is a NodeChange, which holds `textCase`, `hyperlink`, `styleIdForText`,
@@ -36,7 +36,7 @@ describe('character ranges in .fig style overrides', () => {
           {
             styleID: 1,
             textCase: 'UPPER',
-            hyperlink: { url: 'https://openpencil.dev' },
+            hyperlink: { url: 'https://github.com/aliaaldihnayn-lab/design#readme' },
             styleIdForText: { guid: { sessionID: 1, localID: 20 } },
             parameterConsumptionMap: { entries: [SIZE_ALIAS] }
           },
@@ -57,7 +57,7 @@ describe('character ranges in .fig style overrides', () => {
         length: 5,
         style: {
           textCase: 'UPPER',
-          hyperlink: { type: 'URL', value: 'https://openpencil.dev' },
+          hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' },
           textStyleId: '1:20',
           boundVariables: { fontSize: '7:1' }
         }
@@ -91,7 +91,7 @@ describe('character ranges in .fig style overrides', () => {
         length: 5,
         style: {
           textCase: 'TITLE',
-          hyperlink: { type: 'URL', value: 'https://openpencil.dev' },
+          hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' },
           textStyleId: '1:20',
           fillStyleId: null,
           boundVariables: { fontSize: size.id }
@@ -119,7 +119,7 @@ describe('character ranges in .fig style overrides', () => {
     expect(override).toMatchObject({
       styleID: 1,
       textCase: 'TITLE',
-      hyperlink: { url: 'https://openpencil.dev' },
+      hyperlink: { url: 'https://github.com/aliaaldihnayn-lab/design#readme' },
       styleIdForText: { guid: { sessionID: 1, localID: 20 } },
       styleIdForFill: { guid: UNSET_GUID },
       parameterConsumptionMap: {

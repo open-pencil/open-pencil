@@ -15,7 +15,7 @@ async function cli(args: string[]) {
 
 describe('lint CLI', () => {
   test('--fix --output saves a thumbnail of the fixed layers', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-lint-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-lint-'))
     const htmlPath = join(dir, 'tall.html')
     const figPath = join(dir, 'tall.fig')
     const fixedPath = join(dir, 'fixed.fig')

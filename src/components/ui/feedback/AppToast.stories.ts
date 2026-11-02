@@ -92,7 +92,7 @@ export const RepeatedMessage: Story = {
 
 export const DownloadProgress: Story = {
   args: {
-    message: 'Downloading OpenPencil 0.15.2',
+    message: 'Downloading Lawha 0.15.2',
     progress: { value: 10_100_000, max: 24_000_000 },
     progressLabel: '42% · 9.6 MiB of 22.9 MiB'
   }
@@ -100,7 +100,7 @@ export const DownloadProgress: Story = {
 
 export const DownloadProgressUnknownTotal: Story = {
   args: {
-    message: 'Downloading OpenPencil 0.15.2',
+    message: 'Downloading Lawha 0.15.2',
     progress: { value: 4_400_000 },
     progressLabel: '4.2 MiB downloaded'
   }
@@ -163,7 +163,7 @@ export const ProgressLifecycle: Story = {
         <AppButton @click="stopReporting">Clear progress</AppButton>
       </div>
       <AppToast
-        message="Downloading OpenPencil 0.15.2"
+        message="Downloading Lawha 0.15.2"
         :progress="progress"
         :progress-label="progressLabel"
         :duration="duration"

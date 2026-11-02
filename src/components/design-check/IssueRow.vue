@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useDesignCheckMessages } from '@lawha/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 

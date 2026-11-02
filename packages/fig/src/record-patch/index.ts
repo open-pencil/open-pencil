@@ -1,9 +1,9 @@
 import { inflateSync } from 'fflate'
 
-import type { GUID } from '@open-pencil/kiwi/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { FigDataCompressor, FigFileKind } from '@open-pencil/kiwi/fig/container'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import type { GUID } from '@lawha/kiwi/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { FigDataCompressor, FigFileKind } from '@lawha/kiwi/fig/container'
+import { guidToString } from '@lawha/kiwi/fig/guid'
 import {
   ByteBuffer,
   compileSchema,
@@ -11,8 +11,8 @@ import {
   type CompiledDefinition,
   type RuntimeCodec,
   type RuntimeMessage
-} from '@open-pencil/kiwi/schema-runtime'
-import { orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
+} from '@lawha/kiwi/schema-runtime'
+import { orderKeyBetween } from '@lawha/scene-graph/order-keys'
 
 import { readFigArchiveParts, writeFigArchive, type FigImageEntry } from '../archive'
 import { symbolDataOf, symbolOverridesOf } from '../instance-overrides/types'

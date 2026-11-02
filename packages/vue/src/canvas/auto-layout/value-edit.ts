@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import type { Editor, NodePreview } from '@open-pencil/core'
+import type { Editor, NodePreview } from '@lawha/core'
 
 import {
   autoLayoutValueField,

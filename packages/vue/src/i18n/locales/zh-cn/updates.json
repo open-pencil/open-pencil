@@ -1,8 +1,8 @@
 {
-  "upToDate": "OpenPencil 已是最新版本",
+  "upToDate": "Lawha 已是最新版本",
   "windowTitle": "软件更新",
   "checking": "正在检查更新…",
-  "available": "OpenPencil {version} 现已推出",
+  "available": "Lawha {version} 现已推出",
   "currentVersion": "你当前的版本是 {version}。",
   "whatsNew": "新功能",
   "noNotes": "此版本没有发行说明。",
@@ -14,12 +14,12 @@
   "downloadProgress": "{percent}% · {downloaded} / {total}",
   "downloadProgressUnknown": "已下载 {downloaded}",
   "installing": "正在安装…",
-  "installed": "OpenPencil {version} 已安装",
-  "restartToFinish": "重新启动 OpenPencil 以开始使用新版本。",
+  "installed": "Lawha {version} 已安装",
+  "restartToFinish": "重新启动 Lawha 以开始使用新版本。",
   "restartNow": "立即重新启动",
   "downloadFailed": "无法下载更新：{error}",
   "installFailed": "无法安装更新：{error}",
-  "restartFailed": "无法重新启动 OpenPencil：{error}",
+  "restartFailed": "无法重新启动 Lawha：{error}",
   "unavailable": "更新暂不可用。请先发布包含 latest.json 的已签名版本。",
   "checkFailed": "无法检查更新：{error}"
 }

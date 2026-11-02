@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
+import { createEditor } from '@lawha/core'
+import { SceneGraph } from '@lawha/scene-graph'
+import { parseVariableFormula } from '@lawha/scene-graph/variables'
 
 import {
   captureClipboardVariables,

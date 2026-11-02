@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import * as v from 'valibot'
 import type { HeadConfig } from 'vitepress'
 
-export const BASE = 'https://openpencil.dev'
+export const BASE = 'https://github.com/aliaaldihnayn-lab/design#readme'
 
 const docsRoot = fileURLToPath(new URL('..', import.meta.url))
 
@@ -22,11 +22,11 @@ const { version } = v.parse(
 const SOFTWARE_APPLICATION = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'OpenPencil',
+  name: 'Lawha',
   applicationCategory: 'DesignApplication',
   operatingSystem: 'Windows, macOS, Linux, Web',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  url: 'https://app.openpencil.dev',
+  url: 'https://app.lawha.invalid',
   description:
     'Open-source design editor that opens Figma .fig files, runs locally, and is programmable by you or your AI agent.',
   softwareVersion: version,
@@ -67,13 +67,13 @@ export const siteHead: [string, Record<string, string>][] = [
     { rel: 'alternate', type: 'text/plain', title: 'llms-full.txt', href: '/llms-full.txt' }
   ],
   ['meta', { property: 'og:type', content: 'website' }],
-  ['meta', { property: 'og:site_name', content: 'OpenPencil' }],
+  ['meta', { property: 'og:site_name', content: 'Lawha' }],
   ['meta', { property: 'og:image', content: `${BASE}/social.png` }],
   ['meta', { property: 'og:image:width', content: '2400' }],
   ['meta', { property: 'og:image:height', content: '1260' }],
-  ['meta', { property: 'og:image:alt', content: 'OpenPencil — Open-Source Design Editor' }],
+  ['meta', { property: 'og:image:alt', content: 'Lawha — Open-Source Design Editor' }],
   ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-  ['meta', { name: 'twitter:site', content: '@openpencildev' }],
+  ['meta', { name: 'twitter:site', content: '@lawhadev' }],
   ['meta', { name: 'twitter:image', content: `${BASE}/social.png` }]
 ]
 
@@ -174,7 +174,7 @@ export function applyPageSeo(pageData: PageDataLike): void {
   head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: enSlug }])
 
   if (pageData.title) {
-    const ogTitle = `${pageData.title} — OpenPencil`
+    const ogTitle = `${pageData.title} — Lawha`
     head.push(['meta', { property: 'og:title', content: ogTitle }])
     head.push(['meta', { name: 'twitter:title', content: ogTitle }])
   }

@@ -5,19 +5,19 @@ import { startNodeAIRelay } from './server'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(dedent`
-    Usage: openpencil-ai-relay
+    Usage: lawha-ai-relay
 
-    Runs the reference AI service for a self-hosted OpenPencil Cloud. Settings come from the
+    Runs the reference AI service for a self-hosted Lawha Cloud. Settings come from the
     environment:
-      OPENPENCIL_AI_RELAY_CONFIG  the relay TOML file (required)
+      LAWHA_AI_RELAY_CONFIG  the relay TOML file (required)
       PORT, HOST                  where to listen (default 8788 on 0.0.0.0)
-    plus the secrets the TOML names. See https://openpencil.dev/reference/self-hosting-cloud
+    plus the secrets the TOML names. See https://github.com/aliaaldihnayn-lab/design#readme
   `)
   process.exit(0)
 }
 
 const relay = await startNodeAIRelay()
-console.log(`OpenPencil AI relay listening on ${relay.url}`)
+console.log(`Lawha AI relay listening on ${relay.url}`)
 
 let stopping: Promise<void> | undefined
 

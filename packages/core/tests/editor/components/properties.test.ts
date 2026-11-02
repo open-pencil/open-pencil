@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 function childByName(editor: ReturnType<typeof createEditor>, parentId: string, name: string) {
   return editor.graph.getChildren(parentId).find((node) => node.name === name)

@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import type { Font } from 'canvaskit-wasm'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { LabelCache } from '#core/canvas/labels/cache'
 import { hitTestSectionTitle, hitTestFrameTitle } from '#core/canvas/labels/hit-test'

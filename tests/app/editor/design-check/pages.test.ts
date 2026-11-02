@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import type { DesignIssue } from '@/app/editor/design-check/issues'
 import { createPageChecks, pageOf } from '@/app/editor/design-check/pages'

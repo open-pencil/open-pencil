@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { IORegistry } from '@open-pencil/core/io'
+import { IORegistry } from '@lawha/core/io'
 
 import { bold, fmtList, kv } from '#cli/format'
 import { CLI_IO_FORMATS } from '#cli/headless'

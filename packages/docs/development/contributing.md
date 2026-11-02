@@ -1,6 +1,6 @@
 # Contributing
 
-The root [`CONTRIBUTING.md`](https://github.com/open-pencil/open-pencil/blob/master/CONTRIBUTING.md) is the source of truth for setup, pull-request requirements, validation, and commit expectations. The root [`AGENTS.md`](https://github.com/open-pencil/open-pencil/blob/master/AGENTS.md) holds the repository map and cross-cutting conventions, and links the `AGENTS.md` guide inside each package or app domain. Read the root file and every guide on the path to the folder you change; coding agents pick them up the same way.
+The root [`CONTRIBUTING.md`](https://github.com/aliaaldihnayn-lab/design/blob/master/CONTRIBUTING.md) is the source of truth for setup, pull-request requirements, validation, and commit expectations. The root [`AGENTS.md`](https://github.com/aliaaldihnayn-lab/design/blob/master/AGENTS.md) holds the repository map and cross-cutting conventions, and links the `AGENTS.md` guide inside each package or app domain. Read the root file and every guide on the path to the folder you change; coding agents pick them up the same way.
 
 See [Architecture](/development/architecture) for the system overview and [Testing](/development/testing) for test ownership, fixtures, and commands. Use the root `AGENTS.md` map when exact package ownership or paths matter; do not infer ownership from an older copied tree.
 
@@ -8,7 +8,7 @@ See [Architecture](/development/architecture) for the system overview and [Testi
 
 ```sh
 bun install
-bun run dev:portless # Editor at https://open-pencil.localhost
+bun run dev:portless # Editor at https://lawha.localhost
 bun run docs:dev     # Docs at localhost:5173
 ```
 

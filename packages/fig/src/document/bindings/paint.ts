@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { resolvedPaintBindings } from '@lawha/scene-graph/variables'
 
 /** Resolve bound paint colors only after occurrence hierarchy and modes are available. */
 export function applyDocumentPaintBindings(

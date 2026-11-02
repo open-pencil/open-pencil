@@ -27,7 +27,7 @@ async function openFixture(page: Page, fixture: string) {
 
 async function waitForPreparation(page: Page) {
   await expect
-    .poll(() => page.evaluate(() => window.openPencil?.getStore?.()?.state.preparation ?? null))
+    .poll(() => page.evaluate(() => window.lawha?.getStore?.()?.state.preparation ?? null))
     .toBeNull()
 }
 
@@ -50,7 +50,7 @@ test('showing another page of an opened .fig file keeps it saved', async ({ page
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return store ? store.graph.getChildren(store.state.currentPageId).length : 0
       })
     )

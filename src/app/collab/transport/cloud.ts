@@ -6,7 +6,7 @@ import {
   RELAY_FORWARDING_BYTES,
   relayClientMessages,
   type RelayClientFrame
-} from '@open-pencil/cloud/contract'
+} from '@lawha/cloud/contract'
 
 import { createActionRegistry } from './actions'
 import type { CollabRoomTransport, JoinCollabRoom } from './types'
@@ -55,7 +55,7 @@ function defaultReconnectDelay(attempt: number): number {
 }
 
 /**
- * Joins rooms through an OpenPencil Cloud relay. The relay is a peer too: it holds the room's
+ * Joins rooms through an Lawha Cloud relay. The relay is a peer too: it holds the room's
  * document, so a newcomer gets it without anyone else online, and it drops writes from viewers.
  */
 export function createCloudRelayJoin(options: CloudRelayOptions): JoinCollabRoom {

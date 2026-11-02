@@ -1,7 +1,7 @@
 import { isPlainObject } from 'es-toolkit'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { UNSET_GUID } from '@lawha/kiwi/fig/guid'
 
 import type { STYLE_REFERENCE_FIELDS } from '../document/style-dependencies'
 import { OVERRIDE_FIELDS } from './fields'

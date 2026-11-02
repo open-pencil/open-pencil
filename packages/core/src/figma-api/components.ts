@@ -6,7 +6,7 @@ import type {
   ComponentPropertyType,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions as sharedComponentPropertyDefinitions,
@@ -15,8 +15,8 @@ import {
   exposedInstances,
   instanceExposureIssue,
   resolveComponentPropertyValue
-} from '@open-pencil/scene-graph/components'
-import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+} from '@lawha/scene-graph/components'
+import { cloneNodeProps } from '@lawha/scene-graph/copy'
 
 import { becomesComponent, componentWrapProps } from '#core/editor/components/create'
 import { measurePropertyText } from '#core/editor/components/properties'

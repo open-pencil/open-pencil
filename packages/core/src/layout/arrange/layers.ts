@@ -1,8 +1,8 @@
 import { uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { connectorsAffectedBy, layoutConnector } from '@open-pencil/scene-graph/connectors'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { connectorsAffectedBy, layoutConnector } from '@lawha/scene-graph/connectors'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { applyArrangement } from './apply'
 import {

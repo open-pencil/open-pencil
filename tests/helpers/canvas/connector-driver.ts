@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 
-import type { ConnectorEndpoint } from '@open-pencil/scene-graph'
+import type { ConnectorEndpoint } from '@lawha/scene-graph'
 
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 
@@ -20,8 +20,8 @@ export function connectorDriver(page: () => Page) {
     /** Setup: shows the page's origin at a known canvas point. */
     showOrigin() {
       return page().evaluate((origin) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         store.state.zoom = 1
         store.state.panX = origin
         store.state.panY = origin
@@ -32,8 +32,8 @@ export function connectorDriver(page: () => Page) {
     /** Setup: named rectangles at page boxes; returns their ids by name. */
     addBoxes(boxes: { name: string; x: number; y: number; width: number; height: number }[]) {
       return page().evaluate((specs) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const ids: Record<string, string> = {}
         for (const spec of specs) {
           const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
@@ -58,8 +58,8 @@ export function connectorDriver(page: () => Page) {
     /** Probe: the page's connectors, the last drawn last. */
     connectors(): Promise<ConnectorState[]> {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         return store.graph
           .getChildren(store.state.currentPageId)
           .filter((node) => node.type === 'CONNECTOR')
@@ -75,8 +75,8 @@ export function connectorDriver(page: () => Page) {
     /** Probe: the active tool, the selection, the text being typed into, and the attach target. */
     focus() {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         return {
           tool: store.state.activeTool,
           selected: [...store.state.selectedIds],
@@ -89,8 +89,8 @@ export function connectorDriver(page: () => Page) {
     /** A point on a connector's line, midway along its first piece, in page coordinates. */
     linePoint(id: string) {
       return page().evaluate((connectorId) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const connector = store.graph.getNode(connectorId)
         const line = connector && store.graph.getChildren(connector.id)[0]
         const [a, b] = line?.vectorNetwork?.vertices ?? []
@@ -108,8 +108,8 @@ export function connectorDriver(page: () => Page) {
      */
     showCapsAndHandles() {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const page = store.state.currentPageId
         const box = (x: number, y: number) =>
           store.graph.createNode('RECTANGLE', page, {
@@ -164,8 +164,8 @@ export function connectorDriver(page: () => Page) {
      */
     showLineStyles() {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const page = store.state.currentPageId
         const box = (x: number, y: number) =>
           store.graph.createNode('RECTANGLE', page, {
@@ -216,8 +216,8 @@ export function connectorDriver(page: () => Page) {
      */
     showPinnedEnds() {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const page = store.state.currentPageId
         const fills = [
           {
@@ -251,8 +251,8 @@ export function connectorDriver(page: () => Page) {
     /** Driver: selects one connector, as clicking its line would. */
     select(id: string) {
       return page().evaluate((connectorId) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         store.select([connectorId])
       }, id)
     },
@@ -260,8 +260,8 @@ export function connectorDriver(page: () => Page) {
     /** A connector's line type and end caps, as the Connector section sets them. */
     style(id: string) {
       return page().evaluate((connectorId) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const node = store.graph.getNode(connectorId)
         if (!node) throw new Error(`No connector ${connectorId}`)
         return {
@@ -275,8 +275,8 @@ export function connectorDriver(page: () => Page) {
     /** Probe: how a connector's line is stroked: its colour as `#rrggbb`, weight and dash. */
     lineStroke(id: string) {
       return page().evaluate((connectorId) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const [line] = store.graph.getChildren(connectorId)
         const stroke = line?.strokes[0]
         if (!stroke) throw new Error(`No line stroke on ${connectorId}`)

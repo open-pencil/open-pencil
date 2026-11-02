@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { applyComponentPropertyValue } from '@open-pencil/scene-graph/components'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { applyComponentPropertyValue } from '@lawha/scene-graph/components'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function graphWithAssignedLabel() {
   const graph = new SceneGraph()

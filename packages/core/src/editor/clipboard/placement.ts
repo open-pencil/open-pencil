@@ -1,7 +1,7 @@
 import { groupBy } from 'es-toolkit'
 import { isNotNil } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   getAxisAlignedBoundsInParent,
   getAxisAlignedWorldBounds,
@@ -9,10 +9,10 @@ import {
   getParentWorldMatrix,
   getWorldMatrix,
   localTransformFromWorld
-} from '@open-pencil/scene-graph/coordinate'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/coordinate'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import { DUPLICATE_FRAME_GAP } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'

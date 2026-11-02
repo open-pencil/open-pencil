@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import ChatPanel from '@/components/chat/ChatPanel.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'

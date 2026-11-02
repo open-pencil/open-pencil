@@ -1,4 +1,4 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 export function createClipboardGraph(): { graph: SceneGraph; pageId: string } {
   const graph = new SceneGraph()

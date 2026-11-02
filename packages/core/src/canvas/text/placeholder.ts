@@ -1,7 +1,7 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { labelledConnector } from '@open-pencil/scene-graph/connectors'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import { generatedFrameOwner, stickySublayers } from '@open-pencil/scene-graph/generated'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { labelledConnector } from '@lawha/scene-graph/connectors'
+import { BLACK } from '@lawha/scene-graph/constants'
+import { generatedFrameOwner, stickySublayers } from '@lawha/scene-graph/generated'
 
 /** An empty text drawn as `placeholder`, black at 30%, as FigJam draws its placeholders. */
 function withPlaceholder(node: SceneNode, placeholder: string): SceneNode {

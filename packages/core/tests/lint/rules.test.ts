@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createLinter, type LintMessage } from '@open-pencil/core/lint'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { createLinter, type LintMessage } from '@lawha/core/lint'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 const WHITE = { r: 1, g: 1, b: 1, a: 1 }
 const BLUE = { r: 0.23, g: 0.51, b: 0.96, a: 1 }

@@ -6,7 +6,7 @@ import { materializeDocument } from '#fig/document/materialize'
 import { createDocumentReader } from '#fig/document/read'
 import { indexRecords } from '#fig/instance-overrides/source-index'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('reads pages independently through one index with cross-page component expansion', () => {
   const changes: NodeChange[] = [

@@ -5,18 +5,18 @@ import {
   jsxToDesignDocument,
   jsxToSceneGraph,
   tailwindJSXToSceneGraph
-} from '@open-pencil/dom-css'
-import { jsx } from '@open-pencil/dom-css/browser'
+} from '@lawha/dom-css'
+import { jsx } from '@lawha/dom-css/browser'
 
 import { tailwindCardClasses } from '#tests/helpers/dom-css'
 
-describe('@open-pencil/dom-css JSX authoring', () => {
+describe('@lawha/dom-css JSX authoring', () => {
   it('converts JSX runtime output into DesignDOM', async () => {
     const document = await jsxToDesignDocument(
       jsx('article', {
         class: 'card',
         style: { width: '320px', backgroundColor: 'white' },
-        children: jsx('h1', { children: 'OpenPencil' })
+        children: jsx('h1', { children: 'Lawha' })
       })
     )
     const card = document.children[0]
@@ -33,7 +33,7 @@ describe('@open-pencil/dom-css JSX authoring', () => {
     const graph = await jsxToSceneGraph(
       jsx('article', {
         class: 'card',
-        children: jsx('h1', { class: 'title', children: 'OpenPencil' })
+        children: jsx('h1', { class: 'title', children: 'Lawha' })
       }),
       {
         runtime: createHeadlessCSSRuntime(),
@@ -58,7 +58,7 @@ describe('@open-pencil/dom-css JSX authoring', () => {
     const graph = await tailwindJSXToSceneGraph(
       jsx('article', {
         class: classes.join(' '),
-        children: jsx('h1', { children: 'OpenPencil' })
+        children: jsx('h1', { children: 'Lawha' })
       }),
       classes,
       { runtime: createHeadlessCSSRuntime() }

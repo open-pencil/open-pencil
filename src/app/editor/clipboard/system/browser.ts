@@ -1,7 +1,7 @@
 import copy from 'copy-to-clipboard'
 
-import type { CopyOptions } from '@open-pencil/core'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { CopyOptions } from '@lawha/core'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'

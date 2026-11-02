@@ -133,5 +133,5 @@
   "formulaIf": "条件、为真时、为假时",
   "formulaText": "数字转为文本",
   "formulaTruthy": "值转为真或假",
-  "unsupportedExpression": "OpenPencil 暂不能计算 {name}。保存时会原样保留。"
+  "unsupportedExpression": "Lawha 暂不能计算 {name}。保存时会原样保留。"
 }

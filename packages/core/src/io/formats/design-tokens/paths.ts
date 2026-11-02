@@ -3,7 +3,7 @@ import { isPlainObject } from 'es-toolkit/predicate'
 
 /**
  * A name segment as a DTCG token name, which cannot hold `{`, `}`, or `.`, nor start with `$`:
- * those characters become `-`. A name that changed keeps its original in OpenPencil's extension.
+ * those characters become `-`. A name that changed keeps its original in Lawha's extension.
  */
 function tokenSegment(segment: string): string {
   return segment.replaceAll(/[{}.]/g, '-').replace(/^\$+/, '') || 'token'

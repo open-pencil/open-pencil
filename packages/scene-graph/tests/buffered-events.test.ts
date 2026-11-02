@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 test('nested event buffers publish in order only after the outer action commits', () => {
   const graph = new SceneGraph()

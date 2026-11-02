@@ -5,7 +5,7 @@ description: Crear diseños desde JSX y exportar selecciones como JSX con Tailwi
 
 # Renderizador JSX
 
-OpenPencil puede convertir JSX declarativo en un árbol de diseño. El mismo sistema está disponible en el chat con AI, MCP y `eval`.
+Lawha puede convertir JSX declarativo en un árbol de diseño. El mismo sistema está disponible en el chat con AI, MCP y `eval`.
 
 ```jsx
 <Frame flex="col" gap={16} p={24} w={320} bg="#ffffff" radius={16}>
@@ -57,7 +57,7 @@ Las propiedades desconocidas se conservan cuando el tipo de objeto las admite. L
 
 ## Importar en código
 
-En código de aplicación o de biblioteca sin interfaz, importa `Frame`, `Text` y el resto de exportaciones de autoría desde `@open-pencil/design-jsx` y crea los nodos con `renderTree` o `renderJSX` de `@open-pencil/core/design-jsx`, que añaden iconos, conversión de SVG y disposición. Para escribir los árboles como TSX, define `"jsxImportSource": "@open-pencil/design-jsx"` con `"jsx": "react-jsx"` en `tsconfig.json`, o añade al archivo el comentario `/** @jsxImportSource @open-pencil/design-jsx */`. El entorno de scripting determina qué API se exponen a `eval`; las exportaciones de los paquetes no son globales automáticamente.
+En código de aplicación o de biblioteca sin interfaz, importa `Frame`, `Text` y el resto de exportaciones de autoría desde `@lawha/design-jsx` y crea los nodos con `renderTree` o `renderJSX` de `@lawha/core/design-jsx`, que añaden iconos, conversión de SVG y disposición. Para escribir los árboles como TSX, define `"jsxImportSource": "@lawha/design-jsx"` con `"jsx": "react-jsx"` en `tsconfig.json`, o añade al archivo el comentario `/** @jsxImportSource @lawha/design-jsx */`. El entorno de scripting determina qué API se exponen a `eval`; las exportaciones de los paquetes no son globales automáticamente.
 
 ## Exportar a JSX
 

@@ -29,7 +29,7 @@ Se admiten texto, visibilidad booleana, intercambio de instancia y variantes. La
 
 ## Conjuntos y variantes
 
-Combina componentes con <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> o <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>K</kbd>. Cada dimensión de variante —por ejemplo, estado o tamaño— puede tener varios valores. OpenPencil admite combinaciones dispersas, impide duplicados y usa como predeterminada la variante situada arriba a la izquierda.
+Combina componentes con <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> o <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>K</kbd>. Cada dimensión de variante —por ejemplo, estado o tamaño— puede tener varios valores. Lawha admite combinaciones dispersas, impide duplicados y usa como predeterminada la variante situada arriba a la izquierda.
 
 ## Sincronización
 

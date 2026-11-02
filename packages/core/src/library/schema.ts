@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import type { SceneNode, Variable, VariableCollection } from '@lawha/scene-graph'
 
 import { decodeStoredLibraryValue } from './serialization'
 import type { SerializedComponentLibraryRevision } from './serialization'

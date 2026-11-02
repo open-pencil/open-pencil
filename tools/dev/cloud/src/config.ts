@@ -1,6 +1,6 @@
 import { stringify } from 'smol-toml'
 
-import type { CloudDeploymentInput } from '@open-pencil/cloud/server'
+import type { CloudDeploymentInput } from '@lawha/cloud/server'
 
 export type LocalCloudEndpoints = {
   cloudURL: string
@@ -37,13 +37,13 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
         recovery_codes: true,
         trusted_device_lifetime_days: 14
       },
-      passkeys: { enabled: true, rp_name: 'OpenPencil Cloud' },
+      passkeys: { enabled: true, rp_name: 'Lawha Cloud' },
       trusted_proxies: { headers: [], addresses: [] }
     },
     object_storage: {
       endpoint: endpoints.objectStorageURL,
       region: 'us-east-1',
-      bucket: 'openpencil',
+      bucket: 'lawha',
       force_path_style: true,
       checksum_verification: 'metadata',
       maximum_upload_bytes: 1_073_741_824
@@ -52,7 +52,7 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
     documents: { retention_days: 30 },
     email: {
       transport: 'smtp',
-      from: 'OpenPencil Cloud <cloud@openpencil.localhost>',
+      from: 'Lawha Cloud <cloud@lawha.localhost>',
       smtp: { host: '127.0.0.1', port: endpoints.smtpPort, secure: false }
     },
     workers: {
@@ -88,5 +88,5 @@ export function composeProjectName(branch: string): string {
     .toLowerCase()
     .replaceAll(/[^a-z0-9_-]+/g, '-')
     .replaceAll(/^-+|-+$/g, '')
-  return `openpencil-cloud-${normalized || 'development'}`
+  return `lawha-cloud-${normalized || 'development'}`
 }

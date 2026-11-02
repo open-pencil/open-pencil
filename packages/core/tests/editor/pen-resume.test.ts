@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createEditor, type Editor } from '@lawha/core'
 
 let editor: Editor
 

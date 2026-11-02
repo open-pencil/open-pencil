@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import {
   collectGraphFontRequirements,
   fontFallbackScriptForCharacter
-} from '@open-pencil/core/text'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/text'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('fallback scripts', () => {
   test('cover every character of the scripts they draw', () => {

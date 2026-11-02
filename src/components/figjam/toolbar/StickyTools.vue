@@ -2,9 +2,9 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
-import { useStickyNote } from '@open-pencil/vue/controls/sticky'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { STICKY_COLORS } from '@lawha/scene-graph/generated'
+import { useStickyNote } from '@lawha/vue/controls/sticky'
+import { useFigJamMessages, useI18n } from '@lawha/vue/i18n'
 
 import FigJamSwatches from '@/components/figjam/FigJamSwatches.vue'
 import { useStickySwatches } from '@/components/figjam/sticky/swatches'

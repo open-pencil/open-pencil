@@ -8,9 +8,9 @@ import {
   type TextBindableField,
   type Variable,
   type VariableType
-} from '@open-pencil/scene-graph'
-import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
-import { independentCornerChanges, paintBindingTarget } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph'
+import { recordInstanceOverride } from '@lawha/scene-graph/instances'
+import { independentCornerChanges, paintBindingTarget } from '@lawha/scene-graph/variables'
 
 import type { FigmaPaint } from '#core/figma-api/paints'
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -180,7 +180,7 @@ const LAYER_TEXT_FIELDS: ReadonlySet<TextBindableField> = new Set([
 
 /**
  * Binds a text style field of text with no characters on the layer, as Figma keeps it for the
- * characters typed later. OpenPencil keeps only some of those fields on a layer.
+ * characters typed later. Lawha keeps only some of those fields on a layer.
  */
 export function setEmptyTextBinding(
   graph: SceneGraph,
@@ -190,7 +190,7 @@ export function setEmptyTextBinding(
 ): void {
   if (!LAYER_TEXT_FIELDS.has(field)) {
     throw new Error(
-      `in setBoundVariable: OpenPencil binds ${field} only on text that has characters`
+      `in setBoundVariable: Lawha binds ${field} only on text that has characters`
     )
   }
   if (variable) graph.bindVariable(node.id, field, variable.id)

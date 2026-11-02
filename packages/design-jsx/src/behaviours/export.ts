@@ -1,14 +1,14 @@
 import { findKey } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   behaviourToSpec,
   readBehaviour,
   textBinding,
   type BehaviourKind
-} from '@open-pencil/scene-graph/behaviours'
-import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph/behaviours'
+import { instanceMainComponent } from '@lawha/scene-graph/instances'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { REKA_ELEMENTS, rekaRole } from '.'
 import { itemProps } from '../export/components/instances'

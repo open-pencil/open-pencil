@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { renderJSX } from '@lawha/core/design-jsx'
+import { sceneNodeToJSX } from '@lawha/design-jsx'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 import { getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'

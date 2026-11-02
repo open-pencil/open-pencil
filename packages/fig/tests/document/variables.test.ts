@@ -5,9 +5,9 @@ import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument } from '#fig/document/materialize'
 import { materializeVariableResources } from '#fig/document/variables'
 
-import { parseFigBuffer } from '@open-pencil/fig'
-import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { parseFigBuffer } from '@lawha/fig'
+import type { NodeChange, VariableDataEntry } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function resources(operand: VariableDataEntry): NodeChange[] {
   return [

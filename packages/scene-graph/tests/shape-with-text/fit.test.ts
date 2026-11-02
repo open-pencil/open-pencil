@@ -5,7 +5,7 @@ import {
   fitShapeWithTextHeight,
   shapeWithTextGrows,
   shapeWithTextLabelBox
-} from '@open-pencil/scene-graph/shape-with-text'
+} from '@lawha/scene-graph/shape-with-text'
 
 describe('shape-with-text label boxes and fit', () => {
   for (const type of SHAPE_WITH_TEXT_TYPES) {

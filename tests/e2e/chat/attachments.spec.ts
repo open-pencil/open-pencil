@@ -9,7 +9,7 @@ test('the selection button mentions the selected layers, which history shows', a
   configuredChat: chat
 }) => {
   const nodeId = await chat.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Store not available')
     const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
       name: 'Pinned hero'
@@ -63,7 +63,7 @@ test('sent images and text appear immediately in history', async ({ configuredCh
 
 test('a mentioned layer sends with an image', async ({ configuredChat: chat }) => {
   await chat.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Store not available')
     const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, { name: 'Card' })
     store.select([node.id])

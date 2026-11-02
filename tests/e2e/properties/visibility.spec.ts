@@ -92,8 +92,8 @@ test('multi-selection list add is one undo step', async () => {
 
   const strokeCounts = () =>
     editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       return [...store.state.selectedIds].map((id) => store.getNode(id)?.strokes.length ?? -1)
     })
 

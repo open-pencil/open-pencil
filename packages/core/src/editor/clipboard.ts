@@ -1,13 +1,13 @@
 import { uniq } from 'es-toolkit'
 
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { CommittedGraphEventError, type SceneNode } from '@open-pencil/scene-graph'
-import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { CommittedGraphEventError, type SceneNode } from '@lawha/scene-graph'
+import { attachedConnectors } from '@lawha/scene-graph/connectors'
+import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
+import { cycleSafeParent } from '@lawha/scene-graph/instances'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
-import { parseOpenPencilClipboard } from '#core/clipboard'
+import { parseLawhaClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
 
@@ -164,7 +164,7 @@ export function createClipboardActions(ctx: EditorContext) {
     let created: string[] = []
     ctx.undo.runBatch('Paste', () => {
       const dependencies = importClipboardDependenciesWithUndo(ctx, snapshot)
-      created = pasteOpenPencilNodes(
+      created = pasteLawhaNodes(
         dependencies.nodes,
         snapshot.placement,
         snapshot.images,
@@ -177,14 +177,14 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   async function pasteFromHTML(html: string, cursorPos?: Vector, options: PasteOptions = {}) {
-    const openPencil = parseOpenPencilClipboard(html)
-    if (openPencil) {
+    const lawha = parseLawhaClipboard(html)
+    if (lawha) {
       // One undo step for the paste and any slot it claims.
       const created = ctx.undo.runBatch('Paste', () =>
-        pasteOpenPencilNodes(
-          openPencil.nodes,
-          clipboardPlacement(ctx.graph, openPencil.nodes),
-          openPencil.images,
+        pasteLawhaNodes(
+          lawha.nodes,
+          clipboardPlacement(ctx.graph, lawha.nodes),
+          lawha.images,
           [],
           cursorPos,
           options
@@ -236,7 +236,7 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
-  function pasteOpenPencilNodes(
+  function pasteLawhaNodes(
     nodes: Array<SceneNode & { children?: SceneNode[] }>,
     placement: ClipboardPlacement,
     images: Map<string, Uint8Array>,

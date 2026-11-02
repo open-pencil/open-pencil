@@ -11,7 +11,7 @@ const RPC_TIMEOUT = 20_000
 const APP_WAIT_TIMEOUT = 10_000
 
 const APP_NOT_CONNECTED_MESSAGE =
-  'OpenPencil app is not connected. STOP and tell the user: "The OpenPencil desktop app is not running, no document is open, or the desktop app is connected to a different MCP server. Please start OpenPencil, open a document, and try again." Do NOT attempt to start the app yourself or retry automatically.'
+  'Lawha app is not connected. STOP and tell the user: "The Lawha desktop app is not running, no document is open, or the desktop app is connected to a different MCP server. Please start Lawha, open a document, and try again." Do NOT attempt to start the app yourself or retry automatically.'
 
 type BrowserRPCBridgeOptions = {
   authToken: string | null

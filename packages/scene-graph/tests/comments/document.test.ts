@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type CommentThread } from '@open-pencil/scene-graph'
+import { SceneGraph, type CommentThread } from '@lawha/scene-graph'
 import {
   commentAnchor,
   commentPosition,
   readComments,
   writeComments
-} from '@open-pencil/scene-graph/comments'
+} from '@lawha/scene-graph/comments'
 
 function thread(id: string, patch: Partial<CommentThread> = {}): CommentThread {
   return {
@@ -31,7 +31,7 @@ describe('document comments', () => {
     if (!root) throw new Error('Root missing')
     const store = (value: string) =>
       graph.updateNode(root.id, {
-        pluginData: [{ pluginId: 'open-pencil', key: 'comments', value }]
+        pluginData: [{ pluginId: 'lawha', key: 'comments', value }]
       })
 
     store('not json')

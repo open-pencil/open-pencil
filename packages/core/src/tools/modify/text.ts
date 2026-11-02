@@ -1,12 +1,12 @@
 import * as v from 'valibot'
 
-import { parseColor } from '@open-pencil/scene-graph/color'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontName, FigmaFontNameInput } from '#core/figma-api/fonts/names'
 import type { FigmaVariationSettings } from '#core/figma-api/fonts/variations'
-import { OpenPencilAPI } from '#core/openpencil-api'
-import { textMarkdownChanges } from '#core/openpencil-api/nodes'
+import { LawhaAPI } from '#core/lawha-api'
+import { textMarkdownChanges } from '#core/lawha-api/nodes'
 import { collectNodeFontFaces } from '#core/text/requirements/collect'
 import {
   toolNumber,
@@ -42,7 +42,7 @@ export const setText = defineTool({
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
     try {
-      if (markdown) new OpenPencilAPI(figma).setTextMarkdown(node, text)
+      if (markdown) new LawhaAPI(figma).setTextMarkdown(node, text)
       else node.characters = text
     } catch (error) {
       return toolFailure(error)
@@ -265,7 +265,7 @@ export const setTextProperties = defineTool({
       updated.push('textAutoResize')
     }
     if (args.direction !== undefined) {
-      new OpenPencilAPI(figma).setTextDirection(node, args.direction)
+      new LawhaAPI(figma).setTextDirection(node, args.direction)
       updated.push('textDirection')
     }
     if (args.text_decoration !== undefined) {

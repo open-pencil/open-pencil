@@ -1,7 +1,7 @@
-import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+import type { SceneGraph, SceneNode, VectorNetwork } from '@lawha/scene-graph'
+import { getNodeLocalMatrix, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { computeAccurateBounds } from './curve-math'
 import { regenerateFillGeometry } from './fill-geometry'

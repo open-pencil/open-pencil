@@ -1,9 +1,9 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import type { Effect, SceneNode } from '@open-pencil/scene-graph'
-import { copyEffects } from '@open-pencil/scene-graph/copy'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Editor } from '@lawha/core'
+import type { Effect, SceneNode } from '@lawha/scene-graph'
+import { copyEffects } from '@lawha/scene-graph/copy'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { useI18n } from '#vue/i18n/useI18n.js'
 

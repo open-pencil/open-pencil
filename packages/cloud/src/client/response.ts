@@ -34,7 +34,7 @@ export async function responseBody(
     onDiagnostic?.('Cloud API error response was not JSON', error)
   }
   throw new CloudAPIError(
-    `OpenPencil Cloud request failed with HTTP ${response.status}`,
+    `Lawha Cloud request failed with HTTP ${response.status}`,
     response.status,
     code
   )

@@ -1,7 +1,7 @@
 import { hasInjectionContext, inject, provide, shallowRef, triggerRef, watch } from 'vue'
 import type { InjectionKey } from 'vue'
 
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@lawha/vue'
 
 import type { EditorStore } from '@/app/editor/session'
 
@@ -33,7 +33,7 @@ const storeProxy = new Proxy({} as EditorStore, {
   }
 })
 
-const TAB_STORE_KEY: InjectionKey<EditorStore> = Symbol('open-pencil-tab-store')
+const TAB_STORE_KEY: InjectionKey<EditorStore> = Symbol('lawha-tab-store')
 
 /**
  * Binds a tab's components to that tab's own store, for `useEditorStore` and the SDK's

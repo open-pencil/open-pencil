@@ -9,19 +9,19 @@ import {
   parseFigFile,
   populateAllFigPages,
   populateFigPage
-} from '@open-pencil/core/io/formats/fig'
-import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
+} from '@lawha/core/io/formats/fig'
+import { compressFigDataSync, parseFigBuffer } from '@lawha/fig'
 import {
   initCodec,
   getCompiledSchema,
   getSchemaBytes,
   type NodeChange
-} from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
-import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+} from '@lawha/kiwi/fig/codec'
+import { guidToString } from '@lawha/kiwi/fig/guid'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { cloneNodeProps } from '@lawha/scene-graph/copy'
+import { computeImageHash } from '@lawha/scene-graph/images'
+import { getSharedStyles } from '@lawha/scene-graph/shared-styles'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import {
@@ -76,7 +76,7 @@ test('styles added to an opened file are written on the internal canvas, not as 
   const internal = records.find((record) => record.type === 'CANVAS' && record.internalOnly)
   const definition = records.find((record) => record.name === 'Brand')
   expect(definition?.parentIndex?.guid).toEqual(expectDefined(internal?.guid))
-  // A style made in OpenPencil is saved under its own ID, as a new layer is.
+  // A style made in Lawha is saved under its own ID, as a new layer is.
   expect(guidToString(expectDefined(definition?.guid))).toBe(style.id)
   // The page's layers keep their records: the style takes no place among them.
   const before = recordsOf(bytes)

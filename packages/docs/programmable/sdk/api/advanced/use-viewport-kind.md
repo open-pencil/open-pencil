@@ -5,14 +5,14 @@ description: Read coarse mobile and desktop viewport flags for responsive editor
 
 # useViewportKind
 
-`useViewportKind()` returns simple responsive flags used by OpenPencil editor UI.
+`useViewportKind()` returns simple responsive flags used by Lawha editor UI.
 
 Use it when your shell needs a light abstraction over breakpoints instead of wiring `useBreakpoints()` directly.
 
 ## Usage
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
 
 const { isMobile, isDesktop } = useViewportKind()
 ```

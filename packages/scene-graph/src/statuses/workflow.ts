@@ -1,12 +1,12 @@
 import { parseColor } from '../color'
 import type { SceneGraph } from '../graph'
 import { readPluginData, withPluginData } from '../plugin-data/field'
-import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
+import { LAWHA_PLUGIN_DATA } from '../plugin-data/fields'
 import type { SceneNode } from '../types'
 import { effectiveStatus } from './node'
 import type { FigmaDevStatus, StatusState, StatusWorkflow } from './schema'
 
-const { statuses } = OPEN_PENCIL_PLUGIN_DATA
+const { statuses } = LAWHA_PLUGIN_DATA
 
 /**
  * The states Figma shows, by fixed id. Teams rename them as they like, but a `.fig` file's

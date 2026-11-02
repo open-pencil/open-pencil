@@ -41,9 +41,9 @@ is a file of library instances and addresses every segment by key, while `materi
 GUID for 51,332 of its segments), `overrideLevel` on descendant claims, and
 `derivedSymbolDataLayoutVersion`.
 
-OpenPencil does allow resizing a layer inside an instance, so it can hold a document Figma
+Lawha does allow resizing a layer inside an instance, so it can hold a document Figma
 cannot represent. The writer still records those claims — the reader restores them, so the edit
-survives in OpenPencil — and Figma ignores them on open, keeping the layer at its component's
+survives in Lawha — and Figma ignores them on open, keeping the layer at its component's
 size.
 
 Three findings came from this file and are fixed: applied shared styles (`fillStyleId`,
@@ -71,5 +71,5 @@ App bar `Configuration=Small, Elevation=Flat` 0 of 25 nodes, gold-preview Input 
 The Panel instance has 14 geometry-only differences: four from the unapplied `size` claims, and
 the positions of its auto-layout children, which the fixture saved at the instance origin
 without a layout pass and Figma laid out. The gold-preview Input has
-91 geometry-only differences: its hug layout was snapshotted from OpenPencil's layout
+91 geometry-only differences: its hug layout was snapshotted from Lawha's layout
 (356.34 wide) and Figma recomputed it (376.34). No pixel comparison was made.

@@ -3,21 +3,21 @@ import { isAbsolute, join, posix } from 'node:path'
 
 import * as v from 'valibot'
 
-import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { writeFileAtomic } from '@lawha/core/node/fs'
 
 /**
  * Records which document and page generated each file in a Storybook output folder, so a
  * re-export replaces its own stories and leaves every other file alone.
  */
-export const MANIFEST_FILE = '.openpencil-stories.json'
+export const MANIFEST_FILE = '.lawha-stories.json'
 
 /** Files the export writes directly in the output folder: stories and generated components. */
 const OWN_FILE = /^[^/]+\.(stories\.ts|vue|tsx|module\.css)$/
 /** A variant's design image, in its story's `<Name>.design/` folder. */
 const DESIGN_IMAGE = /^[^/]+\.design\/[^/]+\.png$/
-/** A document's shared files in `openpencil/<document>/`: its fonts and design tokens. */
+/** A document's shared files in `lawha/<document>/`: its fonts and design tokens. */
 const SHARED_FILE =
-  /^openpencil\/[^/]+\/(fonts\.css|tokens\.css|fonts\/[^/]+\.(woff2|woff|otf|ttf))$/
+  /^lawha\/[^/]+\/(fonts\.css|tokens\.css|fonts\/[^/]+\.(woff2|woff|otf|ttf))$/
 
 /**
  * A file the export writes: a story, a generated component and its stylesheet, a design image,
@@ -55,7 +55,7 @@ export async function readManifest(outputDir: string): Promise<StoryManifest> {
   const result = v.safeParse(v.pipe(v.string(), v.parseJson(), manifestSchema), text)
   if (!result.success)
     throw new Error(
-      `${path} is not a valid OpenPencil stories manifest; remove it together with the stories it listed, then export again.`
+      `${path} is not a valid Lawha stories manifest; remove it together with the stories it listed, then export again.`
     )
   return result.output
 }

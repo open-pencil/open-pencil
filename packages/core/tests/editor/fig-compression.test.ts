@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import { hasPluginData, OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
+import { createEditor, type Editor } from '@lawha/core'
+import { hasPluginData, LAWHA_PLUGIN_DATA } from '@lawha/scene-graph/plugin-data'
 
 let editor: Editor
 
@@ -24,8 +24,8 @@ describe('file compression in the editor', () => {
   test('the default leaves no entry on the document', () => {
     editor = createEditor()
     editor.setFigCompression('smaller')
-    expect(hasPluginData(rootPluginData(), OPEN_PENCIL_PLUGIN_DATA.figCompression)).toBe(true)
+    expect(hasPluginData(rootPluginData(), LAWHA_PLUGIN_DATA.figCompression)).toBe(true)
     editor.setFigCompression('fast')
-    expect(hasPluginData(rootPluginData(), OPEN_PENCIL_PLUGIN_DATA.figCompression)).toBe(false)
+    expect(hasPluginData(rootPluginData(), LAWHA_PLUGIN_DATA.figCompression)).toBe(false)
   })
 })

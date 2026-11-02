@@ -5,8 +5,8 @@ import type {
   LayoutSizing,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
-import { parseAutoLayoutDirection } from '@open-pencil/scene-graph/layout'
+} from '@lawha/scene-graph'
+import { parseAutoLayoutDirection } from '@lawha/scene-graph/layout'
 
 import type { PenNode, PenNumber } from './schema'
 import { bindIfVar, isVarRef, resolveNumber, type VarContext } from './variables'

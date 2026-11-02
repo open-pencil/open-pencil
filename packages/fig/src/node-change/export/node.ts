@@ -2,24 +2,24 @@ import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
 import { compact } from 'es-toolkit/array'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { stringToGuid } from '@lawha/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
   LayoutGrid,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
   DEFAULT_STROKE_WEIGHT
-} from '@open-pencil/scene-graph/constants'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
-import { layoutGridCount } from '@open-pencil/scene-graph/layout'
-import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
-import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
-import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/constants'
+import { isGeneratedFrame } from '@lawha/scene-graph/generated'
+import { layoutGridCount } from '@lawha/scene-graph/layout'
+import { siblingOrderKeys } from '@lawha/scene-graph/order-keys'
+import { LAWHA_PLUGIN_DATA, withPluginData } from '@lawha/scene-graph/plugin-data'
+import type { GUID, Matrix, Vector } from '@lawha/scene-graph/primitives'
 
 /* eslint-disable max-lines */
 import { bytesToHex } from '../bytes'
@@ -227,11 +227,11 @@ interface MaterializeFigmaPayloadOptions {
 }
 
 function materializeFigmaBlob(
-  value: { __openPencilFigmaBlob?: Uint8Array | Record<string, number> },
+  value: { __lawhaFigmaBlob?: Uint8Array | Record<string, number> },
   blobs: Uint8Array[],
   options: MaterializeFigmaPayloadOptions
 ): number {
-  const blob = value.__openPencilFigmaBlob
+  const blob = value.__lawhaFigmaBlob
   const bytes = blob instanceof Uint8Array ? blob : new Uint8Array(Object.values(blob ?? {}))
   const key = bytesToHex(bytes)
   const existing = options.blobIndexByHex?.get(key)
@@ -265,9 +265,9 @@ function materializeFigmaPayload(
   if (Array.isArray(value))
     return value.map((item) => materializeFigmaPayload(item, blobs, options))
   if (!value || typeof value !== 'object') return value
-  if ('__openPencilFigmaBlob' in value) {
+  if ('__lawhaFigmaBlob' in value) {
     return materializeFigmaBlob(
-      value as { __openPencilFigmaBlob?: Uint8Array | Record<string, number> },
+      value as { __lawhaFigmaBlob?: Uint8Array | Record<string, number> },
       blobs,
       options
     )
@@ -998,7 +998,7 @@ export function sceneNodeToKiwiWithContext(
   applyComponentMetadata(context, node, nc, localIdCounter)
   applyInstancePayload(context, node, nc, localIdCounter)
   if (node.type === 'COMPONENT_SET')
-    node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.nodeType, node.type)
+    node.pluginData = withPluginData(node.pluginData, LAWHA_PLUGIN_DATA.nodeType, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
     nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)

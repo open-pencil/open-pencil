@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 
-import type { SnappingPreferences } from '@open-pencil/core'
+import type { SnappingPreferences } from '@lawha/core'
 
 import { isTauri } from '@/app/tauri/env'
 

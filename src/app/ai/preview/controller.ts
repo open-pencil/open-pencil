@@ -1,6 +1,6 @@
 import { noop, useDebounceFn, useEventListener } from '@vueuse/core'
 
-import { createStreamingJSXParser, type JSXPreviewNode } from '@open-pencil/design-jsx'
+import { createStreamingJSXParser, type JSXPreviewNode } from '@lawha/design-jsx'
 
 import { readPreviewInput, type RenderPreviewInput } from './input'
 

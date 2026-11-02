@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { connectorSublayers } from '@lawha/scene-graph/connectors'
+import { shapeWithTextLabel } from '@lawha/scene-graph/generated'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 

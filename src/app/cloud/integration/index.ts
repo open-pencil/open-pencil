@@ -1,5 +1,5 @@
 /**
- * Everything the rest of the app uses from Cloud. A build with `VITE_OPENPENCIL_CLOUD=off`
+ * Everything the rest of the app uses from Cloud. A build with `VITE_LAWHA_CLOUD=off`
  * resolves this module to `./off`, which offers the same names and does nothing, so Cloud's code
  * stays out of that build; app code outside Cloud's folders imports Cloud only from here.
  */

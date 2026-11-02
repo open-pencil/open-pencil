@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
-import { behaviourSpecSchema } from '@open-pencil/scene-graph/behaviours'
+import { behaviourSpecSchema } from '@lawha/scene-graph/behaviours'
 
-import { OpenPencilAPI } from '#core/openpencil-api'
+import { LawhaAPI } from '#core/lawha-api'
 import { defineTool, toolFailure } from '#core/tools/schema'
 
 export const setBehaviour = defineTool({
@@ -27,9 +27,9 @@ export const setBehaviour = defineTool({
   }),
   execute: (figma, { id, behaviour }) => {
     try {
-      const openpencil = new OpenPencilAPI(figma)
-      if (behaviour) return openpencil.setBehaviour(id, behaviour).toJSON()
-      openpencil.getBehaviour(id)?.remove()
+      const lawha = new LawhaAPI(figma)
+      if (behaviour) return lawha.setBehaviour(id, behaviour).toJSON()
+      lawha.getBehaviour(id)?.remove()
       return { ok: true }
     } catch (error) {
       return toolFailure(error)
@@ -48,7 +48,7 @@ export const createSlot = defineTool({
   }),
   execute: (figma, { id }) => {
     try {
-      return { slot: new OpenPencilAPI(figma).createSlot(id) }
+      return { slot: new LawhaAPI(figma).createSlot(id) }
     } catch (error) {
       return toolFailure(error)
     }
@@ -66,10 +66,10 @@ export const getBehaviour = defineTool({
     id: v.optional(v.pipe(v.string(), v.description('Component, set, or variant ID')))
   }),
   execute: (figma, { id }) => {
-    const openpencil = new OpenPencilAPI(figma)
-    if (!id) return { kinds: openpencil.behaviourKinds }
+    const lawha = new LawhaAPI(figma)
+    if (!id) return { kinds: lawha.behaviourKinds }
     try {
-      return openpencil.getBehaviour(id)?.toJSON() ?? { behaviour: null }
+      return lawha.getBehaviour(id)?.toJSON() ?? { behaviour: null }
     } catch (error) {
       return toolFailure(error)
     }

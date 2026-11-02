@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
 import { cloudShareTarget } from '@/app/cloud/sharing/document'

@@ -3,7 +3,7 @@ import type { Locator, Page } from '@playwright/test'
 /** A number and Boolean token bound to ordinary frame geometry and visibility. */
 export async function seedFormulaScene(page: Page) {
   return page.evaluate(() => {
-    const editor = window.openPencil?.getStore?.()
+    const editor = window.lawha?.getStore?.()
     if (!editor) throw new Error('Editor unavailable')
     const graph = editor.graph
     const collection = graph.createCollection('Formula tokens')
@@ -36,7 +36,7 @@ export async function formulaSceneState(
   ids: Awaited<ReturnType<typeof seedFormulaScene>>
 ) {
   return page.evaluate(({ node, width, visible, mode }) => {
-    const editor = window.openPencil?.getStore?.()
+    const editor = window.lawha?.getStore?.()
     if (!editor) throw new Error('Editor unavailable')
     return {
       width: editor.graph.getNode(node)?.width,
@@ -55,7 +55,7 @@ export async function updateFormulaNumber(
 ) {
   await page.evaluate(
     ({ width, mode, value }) => {
-      const editor = window.openPencil?.getStore?.()
+      const editor = window.lawha?.getStore?.()
       if (!editor) throw new Error('Editor unavailable')
       editor.updateVariableValue(width, mode, value)
     },

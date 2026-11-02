@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
+import { SceneGraph, type VectorNetwork } from '@lawha/scene-graph'
 import {
   boundEndpoint,
   buildConnectorSublayers,
   freeEndpoint
-} from '@open-pencil/scene-graph/connectors'
-import { applyGraphTransfer, prepareGraphTransfer } from '@open-pencil/scene-graph/transfer'
+} from '@lawha/scene-graph/connectors'
+import { applyGraphTransfer, prepareGraphTransfer } from '@lawha/scene-graph/transfer'
 
 const straight = { tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
 

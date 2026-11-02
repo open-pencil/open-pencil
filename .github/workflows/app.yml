@@ -30,10 +30,10 @@ jobs:
       - run: bun run build
         env:
           # Official releases only: lets the app send its daily ping and, with consent, usage stats.
-          VITE_OPENPENCIL_FEEDBACK: "on"
+          VITE_LAWHA_FEEDBACK: "on"
 
       - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=openpencil-app --branch=master
+          command: pages deploy dist --project-name=lawha-app --branch=master

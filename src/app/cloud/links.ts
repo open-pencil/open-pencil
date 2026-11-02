@@ -6,9 +6,9 @@ import {
   cloudDesktopLinkURL,
   parseCloudLinkPath,
   type CloudLinkKind
-} from '@open-pencil/cloud/contract'
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { cloudMessages } from '@open-pencil/vue/i18n'
+} from '@lawha/cloud/contract'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
+import { cloudMessages } from '@lawha/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
@@ -24,11 +24,11 @@ import { openCloudShareLink } from './sharing/link'
 /**
  * An invitation, `/invitations/:id#token`, or a document shared by link, `/share/:id#secret`, on
  * the server they belong to. The desktop app gets the same link as
- * `openpencil://cloud?url=<link>#secret`.
+ * `lawha://cloud?url=<link>#secret`.
  */
 export type CloudLink = { kind: CloudLinkKind; id: string; server: string; secret: string }
 
-/** Desktop events and commands for `openpencil://cloud` links (`desktop/src/launch/mod.rs`). */
+/** Desktop events and commands for `lawha://cloud` links (`desktop/src/launch/mod.rs`). */
 const CLOUD_LINKS_EVENT = 'open-cloud-links'
 const TAKE_PENDING_CLOUD_LINKS = 'take_pending_cloud_links'
 
@@ -62,7 +62,7 @@ export function canOfferDesktopApp(): boolean {
  * the server's sign-in pages, as an invitation is.
  */
 const signingIn = IS_BROWSER
-  ? useSessionStorage<string | null>('open-pencil:cloud-share-link', null)
+  ? useSessionStorage<string | null>('lawha:cloud-share-link', null)
   : ref<string | null>(null)
 
 /** Drops a shared link kept while signing in, as when the tab opens with another link. */

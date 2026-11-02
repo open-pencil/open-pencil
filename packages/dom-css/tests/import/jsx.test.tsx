@@ -1,4 +1,4 @@
-/** @jsxImportSource @open-pencil/dom-css */
+/** @jsxImportSource @lawha/dom-css */
 import { describe, expect, it } from 'bun:test'
 
 import { serializeHTML } from '#dom-css/export/index'
@@ -15,11 +15,11 @@ function CardTitle(props: { children?: string }) {
   return <h1 class="title">{props.children}</h1>
 }
 
-describe('@open-pencil/dom-css JSX', () => {
+describe('@lawha/dom-css JSX', () => {
   it('converts JSX elements into DesignDOM documents', async () => {
     const document = await jsxToDesignDocument(
       <article class="card" data-id="card-1" style={{ width: '320px', backgroundColor: 'white' }}>
-        <CardTitle>OpenPencil</CardTitle>
+        <CardTitle>Lawha</CardTitle>
         <p style="font-size: 14px; line-height: 20px">Design with JSX-shaped DOM.</p>
       </article>
     )
@@ -38,7 +38,7 @@ describe('@open-pencil/dom-css JSX', () => {
   it('runs JSX through CSS runtime styles before scene graph conversion', async () => {
     const graph = await jsxToSceneGraph(
       <article class="card">
-        <h1 class="title">OpenPencil</h1>
+        <h1 class="title">Lawha</h1>
       </article>,
       {
         runtime: createHeadlessCSSRuntime(),
@@ -80,7 +80,7 @@ describe('@open-pencil/dom-css JSX', () => {
     const classes = [...tailwindCardClasses]
     const graph = await tailwindJSXToSceneGraph(
       <article class={classes.join(' ')}>
-        <h1>OpenPencil</h1>
+        <h1>Lawha</h1>
       </article>,
       classes,
       { runtime: createHeadlessCSSRuntime() }

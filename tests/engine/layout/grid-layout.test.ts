@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { computeLayout, computeAllLayouts } from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { computeLayout, computeAllLayouts } from '@lawha/core/layout'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#tests/helpers/layout'

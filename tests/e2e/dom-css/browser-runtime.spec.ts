@@ -1,6 +1,6 @@
-import { compileTailwindCSS, jsxToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
-import { jsx } from '@open-pencil/dom-css/browser'
-import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
+import { compileTailwindCSS, jsxToDesignDocument, type DesignDocument } from '@lawha/dom-css'
+import { jsx } from '@lawha/dom-css/browser'
+import { designDocumentToSceneGraph } from '@lawha/dom-css/scene-graph'
 
 import {
   DOM_CSS_COLORS,
@@ -23,13 +23,13 @@ import {
 
 import { expect, test } from '../fixtures'
 
-test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
+test.describe('@lawha/dom-css browser CSS runtime oracle', () => {
   test('resolves Tailwind card variables and calc values in a real browser', async ({ page }) => {
     const css = await compileTailwindCSS(tailwindCardClasses)
     await setStyledContent(
       page,
       css,
-      `<article class="${tailwindCardClasses.join(' ')}"><h1>OpenPencil</h1></article>`
+      `<article class="${tailwindCardClasses.join(' ')}"><h1>Lawha</h1></article>`
     )
 
     const styles = await computedStyleProperties(page, 'article', [
@@ -176,10 +176,10 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
       css,
       `
         <nav class="${navClasses.join(' ')}">
-          <span>OpenPencil</span>
+          <span>Lawha</span>
           <span class="${badgeClasses.join(' ')}">Beta</span>
         </nav>
-        <input class="${inputClasses.join(' ')}" value="https://openpencil.dev" />
+        <input class="${inputClasses.join(' ')}" value="https://github.com/aliaaldihnayn-lab/design#readme" />
       `
     )
 
@@ -317,7 +317,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
           white-space: nowrap;
         }
       `,
-      '<div class="ratio"></div><img class="media" alt="Preview" /><h1 class="title">OpenPencil</h1>'
+      '<div class="ratio"></div><img class="media" alt="Preview" /><h1 class="title">Lawha</h1>'
     )
 
     const ratio = await computedStyleProperties(page, '.ratio', ['aspect-ratio', 'height', 'width'])
@@ -340,7 +340,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
   }) => {
     const textNode = await publicBrowserTextNode(
       page,
-      '<h1 class="title">OpenPencil</h1>',
+      '<h1 class="title">Lawha</h1>',
       '.title { color: #111827; text-transform: uppercase; white-space: nowrap; }'
     )
 
@@ -427,7 +427,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
           type: 'element',
           tagName: 'article',
           attrs: { class: 'card' },
-          children: [{ type: 'text', text: 'OpenPencil' }]
+          children: [{ type: 'text', text: 'Lawha' }]
         }
       ]
     }
@@ -476,7 +476,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
     `
     const card = await publicBrowserHTMLSceneGraph(
       page,
-      '<article class="card"><h1>OpenPencil</h1></article>',
+      '<article class="card"><h1>Lawha</h1></article>',
       css
     )
 
@@ -530,7 +530,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
     const document = await jsxToDesignDocument(
       jsx('article', {
         class: classes.join(' '),
-        children: jsx('h1', { children: 'OpenPencil' })
+        children: jsx('h1', { children: 'Lawha' })
       })
     )
     const css = await compileTailwindCSS(classes)

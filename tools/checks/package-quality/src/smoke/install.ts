@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 
-import { runCommand } from '@open-pencil/package-artifacts-tools'
+import { runCommand } from '@lawha/package-artifacts-tools'
 
 const INIT_TIMEOUT_MS = 60_000
 const INSTALL_TIMEOUT_MS = 120_000

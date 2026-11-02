@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const ENTRY = Bun.resolveSync('#mcp/index', import.meta.dir)
-const READY = 'OpenPencil MCP server'
+const READY = 'Lawha MCP server'
 
 const cleanups: Array<() => void> = []
 
@@ -31,8 +31,8 @@ async function startServer(env: Record<string, string>) {
     env: {
       ...process.env,
       PORT: String(freePort()),
-      OPENPENCIL_MCP_SOCKET: join(directory, 'mcp.sock'),
-      OPENPENCIL_MCP_AUTH_TOKEN: '',
+      LAWHA_MCP_SOCKET: join(directory, 'mcp.sock'),
+      LAWHA_MCP_AUTH_TOKEN: '',
       ...env
     }
   })
@@ -54,7 +54,7 @@ async function startServer(env: Record<string, string>) {
 
 describe('closing the standard input of the HTTP server', () => {
   test('shuts it down when the parent asked for that', async () => {
-    const child = await startServer({ OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1' })
+    const child = await startServer({ LAWHA_MCP_EXIT_ON_STDIN_CLOSE: '1' })
     await child.stdin.end()
 
     expect(await child.exited).toBe(0)
@@ -62,7 +62,7 @@ describe('closing the standard input of the HTTP server', () => {
 
   test('leaves a server started by hand running', async () => {
     // Set off explicitly, so a value the test run inherits does not turn it on.
-    const child = await startServer({ OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '0' })
+    const child = await startServer({ LAWHA_MCP_EXIT_ON_STDIN_CLOSE: '0' })
     await child.stdin.end()
     const outcome = await Promise.race([child.exited, Bun.sleep(500).then(() => 'running')])
 

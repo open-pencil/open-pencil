@@ -3,9 +3,9 @@ import { describe, test, expect } from 'bun:test'
 import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 import { solidFill } from '#core-tests/helpers/figma-api'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
-import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { sceneNodeToKiwi } from '@lawha/fig/node-change'
+import { SceneGraph, type Stroke } from '@lawha/scene-graph'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

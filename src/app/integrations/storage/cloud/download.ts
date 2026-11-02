@@ -1,7 +1,7 @@
 import { limitAsync, sumBy } from 'es-toolkit'
 import { fromUint8Array } from 'js-base64'
 
-import type { DocumentDownload, DocumentImageLink } from '@open-pencil/cloud/contract'
+import type { DocumentDownload, DocumentImageLink } from '@lawha/cloud/contract'
 
 import type { StorageTransferProgress } from '../types'
 import { assembleCloudDocument } from './images'

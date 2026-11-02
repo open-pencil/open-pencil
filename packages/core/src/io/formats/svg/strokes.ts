@@ -1,4 +1,4 @@
-import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { SceneNode, Stroke } from '@lawha/scene-graph'
 
 import type { SVGExportContext } from './defs'
 import { nextDefId } from './defs'

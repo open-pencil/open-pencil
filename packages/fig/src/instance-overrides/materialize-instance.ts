@@ -1,13 +1,13 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { Paint } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
+import type { Paint } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { scaleGeometryPaths } from '@lawha/scene-graph/copy'
 import {
   bindingOverrideField,
   setInstanceOverride
-} from '@open-pencil/scene-graph/instances/overrides'
-import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+} from '@lawha/scene-graph/instances/overrides'
+import { createDefaultSourceMetadata } from '@lawha/scene-graph/node-defaults'
 
 import { nodeChangeToProps } from '../node-change'
 import { numericVariableBindingScales } from '../node-change/variable/bindings'

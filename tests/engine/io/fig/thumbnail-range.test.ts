@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 import { zipSync } from 'fflate'
 
-import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { extractFigThumbnailFromReader } from '@lawha/fig'
 
 function memoryReader(bytes: Uint8Array, ranges: Array<[number, number]>) {
   return {

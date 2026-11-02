@@ -5,7 +5,7 @@ import { captureDocumentOracle } from '#visual/capture/document'
 import { compareSceneOracle, sceneOracleNodeSchema } from '#visual/scene-oracle'
 import * as v from 'valibot'
 
-import { materializeFigArchive } from '@open-pencil/fig'
+import { materializeFigArchive } from '@lawha/fig'
 
 const { values } = parseArgs({
   options: {

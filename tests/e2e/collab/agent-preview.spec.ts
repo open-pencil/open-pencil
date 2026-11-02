@@ -33,7 +33,7 @@ test("collaborators see the AI chat's streamed JSX on their own canvas before it
     await share(host)
     await connect(guest)
     await expect
-      .poll(() => host?.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+      .poll(() => host?.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(1)
 
     await routeModelCatalog(host.page)

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 import { renderNodesToSVG, type SVGFontRequest, type SVGTextLine } from '#core/io/formats/svg'
 import { fontManager } from '#core/text/font/manager'

@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseDiscoveryInfo } from '@open-pencil/mcp/discovery'
+import { parseDiscoveryInfo } from '@lawha/mcp/discovery'
 
 const VALID = {
   pid: 4242,
-  socketPath: '/tmp/open-pencil.sock',
+  socketPath: '/tmp/lawha.sock',
   httpPort: 7600,
   authRequired: true,
   authToken: 'token',

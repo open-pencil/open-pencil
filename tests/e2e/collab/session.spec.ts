@@ -49,15 +49,15 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
     await share(host)
     await connect(guest)
     await expect
-      .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+      .poll(() => host.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(1)
     await expect
-      .poll(() => guest.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+      .poll(() => guest.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(1)
 
     const nodeId = await host.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
         name: 'Shared rectangle',
         x: 160,
@@ -71,36 +71,36 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
 
     await expect
       .poll(() =>
-        guest.page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.name, nodeId)
+        guest.page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.name, nodeId)
       )
       .toBe('Shared rectangle')
 
     await guest.page.evaluate((id) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       store.updateNode(id, { name: 'Edited by Guest', x: 320 })
       store.select([id])
-      window.openPencil?.test?.collab?.updateSelection([id])
+      window.lawha?.test?.collab?.updateSelection([id])
     }, nodeId)
 
     await expect
       .poll(() =>
-        host.page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.name, nodeId)
+        host.page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.name, nodeId)
       )
       .toBe('Edited by Guest')
     await expect
-      .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerSelections()[0]))
+      .poll(() => host.page.evaluate(() => window.lawha?.test?.collab?.peerSelections()[0]))
       .toEqual([nodeId])
 
     relay.pause()
     await guest.page.evaluate((id) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       store.updateNode(id, { y: 280 })
     }, nodeId)
     await host.page.evaluate((id) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
       store.updateNode(id, { name: 'Host partition edit' })
     }, nodeId)
     await expect.poll(() => relay.queuedCount()).toBeGreaterThan(0)
@@ -109,7 +109,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       await expect
         .poll(() =>
           peer.page.evaluate((id) => {
-            const node = window.openPencil?.getStore?.().graph.getNode(id)
+            const node = window.lawha?.getStore?.().graph.getNode(id)
             return node ? { name: node.name, y: node.y } : null
           }, nodeId)
         )
@@ -117,13 +117,13 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
     }
 
     await guest.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      window.openPencil?.test?.collab?.updateCursor(420, 260, store.state.currentPageId)
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
+      window.lawha?.test?.collab?.updateCursor(420, 260, store.state.currentPageId)
     })
     await expect
       .poll(() =>
-        host.page.evaluate(() => window.openPencil?.getStore?.().state.presenceCursors.length)
+        host.page.evaluate(() => window.lawha?.getStore?.().state.presenceCursors.length)
       )
       .toBe(1)
 
@@ -131,32 +131,32 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
     await guest.context.close()
     guestToClose = null
     await expect
-      .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+      .poll(() => host.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(0)
     await expect
       .poll(() =>
-        host.page.evaluate(() => window.openPencil?.getStore?.().state.presenceCursors.length)
+        host.page.evaluate(() => window.lawha?.getStore?.().state.presenceCursors.length)
       )
       .toBe(0)
 
     const reconnectingGuest = await createPeer(browser, 'Guest', relay.url)
     try {
       await host.page.evaluate((id) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         store.updateNode(id, { name: 'Edited while offline', y: 260 })
       }, nodeId)
       await connect(reconnectingGuest)
       await expect
         .poll(() =>
           reconnectingGuest.page.evaluate(
-            (id) => window.openPencil?.getStore?.().graph.getNode(id)?.name,
+            (id) => window.lawha?.getStore?.().graph.getNode(id)?.name,
             nodeId
           )
         )
         .toBe('Edited while offline')
       await expect
-        .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
+        .poll(() => host.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
         .toBe(1)
       expect(collaborationErrors(reconnectingGuest)).toEqual([])
     } finally {

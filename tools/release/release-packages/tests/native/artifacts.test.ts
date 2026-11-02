@@ -30,16 +30,16 @@ async function withArtifacts(run: (root: string, reported: string[]) => Promise<
 
 test('uses reported paths and retains the stable macOS archive name', () =>
   withArtifacts(async (root, reported) => {
-    const app = join(root, 'OpenPencil.app')
+    const app = join(root, 'Lawha.app')
     await mkdir(app)
     await writeFile(join(root, 'unrelated-file.dmg'), 'not reported')
 
     const assets = await resolveReportedAssets([...reported, app], expected, root)
 
     expect(assets.map((asset) => asset.name).sort()).toEqual([
-      'OpenPencil_0.15.0_aarch64.dmg',
-      'OpenPencil_aarch64.app.tar.gz',
-      'OpenPencil_aarch64.app.tar.gz.sig'
+      'Lawha_0.15.0_aarch64.dmg',
+      'Lawha_aarch64.app.tar.gz',
+      'Lawha_aarch64.app.tar.gz.sig'
     ])
   }))
 

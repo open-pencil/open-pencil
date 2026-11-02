@@ -1,6 +1,6 @@
-import { tryParseColor } from '@open-pencil/scene-graph/color'
-import { parseCSSNumber } from '@open-pencil/scene-graph/css'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { tryParseColor } from '@lawha/scene-graph/color'
+import { parseCSSNumber } from '@lawha/scene-graph/css'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 /** What Mermaid's CSS declarations set that a layer can show; `null` colours are `none`. */
 export interface FlowStyle {

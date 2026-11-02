@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit'
 import type { FontFaceData, RemoteFontSource, ResolveFontResult } from 'unifont'
 
-import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import { parseFontStyle } from '@lawha/scene-graph/font-style'
 
 import { IS_BROWSER } from '#core/constants'
 import {

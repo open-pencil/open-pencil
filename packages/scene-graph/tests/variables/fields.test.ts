@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
+import { paintBindingTarget } from '@lawha/scene-graph/variables'
 
 describe('paint binding fields', () => {
   test('name the fill or stroke whose colour they bind', () => {

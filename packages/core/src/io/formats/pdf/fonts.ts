@@ -1,6 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { FontVariation } from '@open-pencil/scene-graph'
+import type { FontVariation } from '@lawha/scene-graph'
 
 import type { SVGFontAlias, SVGFontRequest } from '#core/io/formats/svg'
 import { drawnFontVariations } from '#core/text/font/families'

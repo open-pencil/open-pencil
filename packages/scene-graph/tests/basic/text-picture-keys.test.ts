@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { GLYPH_AFFECTING_KEYS, TEXT_PICTURE_KEYS } from '@open-pencil/scene-graph/text/picture'
+import { GLYPH_AFFECTING_KEYS, TEXT_PICTURE_KEYS } from '@lawha/scene-graph/text/picture'
 
 describe('text rendering invalidation keys', () => {
   test('TEXT_PICTURE_KEYS contains rendered-picture properties', () => {

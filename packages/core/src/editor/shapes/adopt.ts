@@ -1,6 +1,6 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import type { EditorContext } from '#core/editor/types'
 

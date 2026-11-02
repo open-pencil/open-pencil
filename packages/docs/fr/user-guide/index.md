@@ -6,7 +6,7 @@ description: Naviguer, dessiner, modifier du texte, utiliser des composants et c
 
 # Guide d’utilisation
 
-OpenPencil est un éditeur de design local et open source, compatible avec Figma, doté d’une AI intégrée et d’API d’automatisation.
+Lawha est un éditeur de design local et open source, compatible avec Figma, doté d’une AI intégrée et d’API d’automatisation.
 
 ## Premiers pas
 

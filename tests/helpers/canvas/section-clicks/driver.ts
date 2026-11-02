@@ -10,8 +10,8 @@ export function sectionClicksDriver(page: () => Page) {
   return {
     build() {
       return page().evaluate(async (pan) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const fixtureURL = '/tests/helpers/canvas/section-clicks/scene.ts'
         const scene: typeof SectionScene = await import(fixtureURL)
         scene.createSectionClickScene(store.graph, store.state.currentPageId)
@@ -26,8 +26,8 @@ export function sectionClicksDriver(page: () => Page) {
     /** Builds the swatch rows and returns their ids. */
     buildSwatchRows() {
       return page().evaluate(async (pan) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const fixtureURL = '/tests/helpers/canvas/section-clicks/scene.ts'
         const scene: typeof SectionScene = await import(fixtureURL)
         const ids = scene.createSwatchRows(store.graph, store.state.currentPageId)
@@ -44,7 +44,7 @@ export function sectionClicksDriver(page: () => Page) {
     center(id: string) {
       return page().evaluate(
         ({ id, pan }) => {
-          const store = window.openPencil?.getStore?.()
+          const store = window.lawha?.getStore?.()
           const node = store?.graph.getNode(id)
           if (!store || !node) throw new Error('node not found')
           const abs = store.graph.getAbsolutePosition(id)
@@ -57,20 +57,20 @@ export function sectionClicksDriver(page: () => Page) {
     /** The entered container's name, or null on the page. */
     entered() {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         const id = store?.state.enteredContainerId
         return id ? (store?.graph.getNode(id)?.name ?? null) : null
       })
     },
 
     clearSelection() {
-      return page().evaluate(() => window.openPencil?.getStore?.().clearSelection())
+      return page().evaluate(() => window.lawha?.getStore?.().clearSelection())
     },
 
     /** The selected layers' names. */
     selection() {
       return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.lawha?.getStore?.()
         return [...(store?.state.selectedIds ?? [])].map((id) => store?.graph.getNode(id)?.name)
       })
     },

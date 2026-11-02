@@ -1,6 +1,6 @@
 import { uniqBy } from 'es-toolkit/array'
 
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, SceneNode } from '@lawha/scene-graph'
 
 import { fontManager } from '#core/text/font/manager'
 import { textFaceName } from '#core/text/font/names'

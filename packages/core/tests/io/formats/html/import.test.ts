@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
+import { readHTMLDocument } from '@lawha/core/io/formats/html/import'
 
 // The layout from #788: a phone-sized column with a title, a card, and a button.
 const DEMO = `<div style="width:390px;height:844px;background:#0b0f1a;display:flex;flex-direction:column;padding:24px;gap:16px">

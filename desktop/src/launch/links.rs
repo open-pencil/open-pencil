@@ -1,4 +1,4 @@
-//! Parsing `openpencil://` links into what the app should open, join, or hand to sign-in.
+//! Parsing `lawha://` links into what the app should open, join, or hand to sign-in.
 
 use url::Url;
 
@@ -8,14 +8,14 @@ pub struct DeepLinkOpen {
     pub node: Option<String>,
 }
 
-/// A collaboration room to open, from `openpencil://join?room=<id>`.
+/// A collaboration room to open, from `lawha://join?room=<id>`.
 #[derive(Debug, PartialEq, Eq)]
 pub struct DeepLinkJoin {
     pub room: String,
 }
 
-/// An OpenPencil Cloud invitation or a document shared by link, from
-/// `openpencil://cloud?url=<link>#<secret>`: the web link on its server, `/<invitations|share>/<id>`,
+/// An Lawha Cloud invitation or a document shared by link, from
+/// `lawha://cloud?url=<link>#<secret>`: the web link on its server, `/<invitations|share>/<id>`,
 /// with its secret in the deep link's fragment. The server is the web link's origin.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct CloudLink {
@@ -64,7 +64,7 @@ fn is_room_id(room: &str) -> bool {
 }
 
 pub fn parse_deep_link(url: &Url) -> Result<DeepLink, DeepLinkError> {
-    // openpencil://<action>?…  → host is the action.
+    // lawha://<action>?…  → host is the action.
     match url.host_str().unwrap_or("") {
         "open" => parse_open_url(url).map(DeepLink::Open),
         "join" => parse_join_url(url).map(DeepLink::Join),
@@ -141,7 +141,7 @@ fn is_secret(value: &str) -> bool {
     (32..=128).contains(&value.len()) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-/// An OAuth redirect relayed by the web app's callback page: `openpencil://oauth/<provider>?…`.
+/// An OAuth redirect relayed by the web app's callback page: `lawha://oauth/<provider>?…`.
 /// The query goes to the webview untouched; the attempt that started sign-in checks its state.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct OAuthCallback {
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     fn passes_an_oauth_redirect_through_with_its_provider() {
         assert_eq!(
-            oauth("openpencil://oauth/openrouter?code=abc&state=xyz"),
+            oauth("lawha://oauth/openrouter?code=abc&state=xyz"),
             Some(OAuthCallback {
                 provider: "openrouter".to_owned(),
                 query: "?code=abc&state=xyz".to_owned(),
@@ -223,9 +223,9 @@ mod tests {
 
     #[test]
     fn refuses_an_oauth_link_without_a_plain_provider() {
-        assert_eq!(oauth("openpencil://oauth?code=abc"), None);
-        assert_eq!(oauth("openpencil://oauth/open/router?code=abc"), None);
-        assert_eq!(oauth("openpencil://open?file=a.pen"), None);
+        assert_eq!(oauth("lawha://oauth?code=abc"), None);
+        assert_eq!(oauth("lawha://oauth/open/router?code=abc"), None);
+        assert_eq!(oauth("lawha://open?file=a.pen"), None);
     }
 
     const CLOUD_ID: &str = "0b6f4f9e-3c1a-4d7e-9a52-6f1c2d3e4f50";
@@ -239,7 +239,7 @@ mod tests {
     fn cloud_links_carry_kind_id_server_and_secret() {
         assert_eq!(
             cloud(&format!(
-                "openpencil://cloud?url=https%3A%2F%2Fcloud.example.com%2Finvitations%2F{CLOUD_ID}#{CLOUD_SECRET}"
+                "lawha://cloud?url=https%3A%2F%2Fcloud.example.com%2Finvitations%2F{CLOUD_ID}#{CLOUD_SECRET}"
             )),
             Ok(DeepLink::Cloud(CloudLink {
                 kind: CloudLinkKind::Invitations,
@@ -250,7 +250,7 @@ mod tests {
         );
         assert!(matches!(
             cloud(&format!(
-                "openpencil://cloud?url=http%3A%2F%2F192.168.1.20%3A3000%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"
+                "lawha://cloud?url=http%3A%2F%2F192.168.1.20%3A3000%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"
             )),
             Ok(DeepLink::Cloud(CloudLink { kind: CloudLinkKind::Share, ref server, .. }))
                 if server == "http://192.168.1.20:3000"
@@ -258,7 +258,7 @@ mod tests {
         // The editor builds links with ufo, which leaves `:` and `/` in a query value as they are.
         assert!(matches!(
             cloud(&format!(
-                "openpencil://cloud?url=https://cloud.example.com/share/{CLOUD_ID}#{CLOUD_SECRET}"
+                "lawha://cloud?url=https://cloud.example.com/share/{CLOUD_ID}#{CLOUD_SECRET}"
             )),
             Ok(DeepLink::Cloud(CloudLink { ref server, .. })) if server == "https://cloud.example.com"
         ));
@@ -268,19 +268,19 @@ mod tests {
     fn cloud_links_refuse_anything_else() {
         let site = "https%3A%2F%2Fcloud.example.com";
         for url in [
-            format!("openpencil://cloud?url={site}%2Fdocuments%2F{CLOUD_ID}#{CLOUD_SECRET}"),
-            format!("openpencil://cloud?url={site}%2Fshare%2Fnot-a-uuid#{CLOUD_SECRET}"),
-            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}%2Fextra#{CLOUD_SECRET}"),
-            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}"),
-            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}#short"),
-            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}#{}", "g".repeat(64)),
-            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}%3Fx%3D1#{CLOUD_SECRET}"),
-            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}%23{CLOUD_SECRET}"),
-            format!("openpencil://cloud/share/{CLOUD_ID}?url={site}%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"),
-            format!("openpencil://cloud#{CLOUD_SECRET}"),
-            format!("openpencil://cloud?url=file%3A%2F%2F%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"),
+            format!("lawha://cloud?url={site}%2Fdocuments%2F{CLOUD_ID}#{CLOUD_SECRET}"),
+            format!("lawha://cloud?url={site}%2Fshare%2Fnot-a-uuid#{CLOUD_SECRET}"),
+            format!("lawha://cloud?url={site}%2Fshare%2F{CLOUD_ID}%2Fextra#{CLOUD_SECRET}"),
+            format!("lawha://cloud?url={site}%2Fshare%2F{CLOUD_ID}"),
+            format!("lawha://cloud?url={site}%2Fshare%2F{CLOUD_ID}#short"),
+            format!("lawha://cloud?url={site}%2Fshare%2F{CLOUD_ID}#{}", "g".repeat(64)),
+            format!("lawha://cloud?url={site}%2Fshare%2F{CLOUD_ID}%3Fx%3D1#{CLOUD_SECRET}"),
+            format!("lawha://cloud?url={site}%2Fshare%2F{CLOUD_ID}%23{CLOUD_SECRET}"),
+            format!("lawha://cloud/share/{CLOUD_ID}?url={site}%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"),
+            format!("lawha://cloud#{CLOUD_SECRET}"),
+            format!("lawha://cloud?url=file%3A%2F%2F%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"),
             format!(
-                "openpencil://cloud?url=https%3A%2F%2Fa%3Ab%40cloud.example.com%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"
+                "lawha://cloud?url=https%3A%2F%2Fa%3Ab%40cloud.example.com%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"
             ),
         ] {
             assert_eq!(cloud(&url), Err(DeepLinkError::BadCloudLink), "{url}");
@@ -294,7 +294,7 @@ mod tests {
     #[test]
     fn open_with_file_and_node() {
         assert_eq!(
-            parse("openpencil://open?file=web%2Fdesign%2Fhikyo.pen&node=Button%2FPrimary"),
+            parse("lawha://open?file=web%2Fdesign%2Fhikyo.pen&node=Button%2FPrimary"),
             Ok(DeepLinkOpen {
                 file: "web/design/hikyo.pen".into(),
                 node: Some("Button/Primary".into())
@@ -304,7 +304,7 @@ mod tests {
 
     #[test]
     fn node_is_optional() {
-        assert_eq!(parse("openpencil://open?file=a.pen").unwrap().node, None);
+        assert_eq!(parse("lawha://open?file=a.pen").unwrap().node, None);
     }
 
     const ROOM: &str = "abcdefghijklmnopqrstuvwxyz012345";
@@ -312,7 +312,7 @@ mod tests {
     #[test]
     fn join_with_room() {
         assert_eq!(
-            parse_deep_link(&Url::parse(&format!("openpencil://join?room={ROOM}")).unwrap()),
+            parse_deep_link(&Url::parse(&format!("lawha://join?room={ROOM}")).unwrap()),
             Ok(DeepLink::Join(DeepLinkJoin { room: ROOM.into() }))
         );
     }
@@ -320,12 +320,12 @@ mod tests {
     #[test]
     fn join_refuses_a_room_that_is_not_a_room_id() {
         for url in [
-            "openpencil://join".to_string(),
-            "openpencil://join?room=".to_string(),
-            "openpencil://join?room=short".to_string(),
-            format!("openpencil://join?room={}", ROOM.to_uppercase()),
-            format!("openpencil://join?room={ROOM}x"),
-            format!("openpencil://join?room={}%2F", &ROOM[..31]),
+            "lawha://join".to_string(),
+            "lawha://join?room=".to_string(),
+            "lawha://join?room=short".to_string(),
+            format!("lawha://join?room={}", ROOM.to_uppercase()),
+            format!("lawha://join?room={ROOM}x"),
+            format!("lawha://join?room={}%2F", &ROOM[..31]),
         ] {
             assert_eq!(
                 parse_deep_link(&Url::parse(&url).unwrap()),
@@ -338,11 +338,11 @@ mod tests {
     #[test]
     fn deep_link_routes_open_and_refuses_other_actions() {
         assert!(matches!(
-            parse_deep_link(&Url::parse("openpencil://open?file=a.pen").unwrap()),
+            parse_deep_link(&Url::parse("lawha://open?file=a.pen").unwrap()),
             Ok(DeepLink::Open(_))
         ));
         assert_eq!(
-            parse_deep_link(&Url::parse("openpencil://export?file=a.pen").unwrap()),
+            parse_deep_link(&Url::parse("lawha://export?file=a.pen").unwrap()),
             Err(DeepLinkError::UnknownAction("export".into()))
         );
     }
@@ -350,14 +350,14 @@ mod tests {
     #[test]
     fn unknown_action() {
         assert_eq!(
-            parse("openpencil://export?file=a.pen"),
+            parse("lawha://export?file=a.pen"),
             Err(DeepLinkError::UnknownAction("export".into()))
         );
     }
 
     #[test]
     fn missing_file() {
-        assert_eq!(parse("openpencil://open"), Err(DeepLinkError::MissingFile));
+        assert_eq!(parse("lawha://open"), Err(DeepLinkError::MissingFile));
     }
 
     #[test]
@@ -365,7 +365,7 @@ mod tests {
         // The matcher refuses `.` too, so accepting it here would queue a link that can
         // never resolve against an open tab or a picked file.
         assert_eq!(
-            parse("openpencil://open?file=web%2F.%2Fdesign.pen"),
+            parse("lawha://open?file=web%2F.%2Fdesign.pen"),
             Err(DeepLinkError::ParentSegment)
         );
     }
@@ -373,11 +373,11 @@ mod tests {
     #[test]
     fn absolute_refused() {
         assert_eq!(
-            parse("openpencil://open?file=%2FUsers%2Fx%2Fa.pen"),
+            parse("lawha://open?file=%2FUsers%2Fx%2Fa.pen"),
             Err(DeepLinkError::AbsolutePath)
         );
         assert_eq!(
-            parse("openpencil://open?file=C%3A%5Cx%5Ca.pen"),
+            parse("lawha://open?file=C%3A%5Cx%5Ca.pen"),
             Err(DeepLinkError::AbsolutePath)
         );
     }
@@ -385,12 +385,12 @@ mod tests {
     #[test]
     fn parent_segment_refused() {
         assert_eq!(
-            parse("openpencil://open?file=..%2Fa.pen"),
+            parse("lawha://open?file=..%2Fa.pen"),
             Err(DeepLinkError::ParentSegment)
         );
         // The dots themselves percent-encoded: decoding happens before the check.
         assert_eq!(
-            parse("openpencil://open?file=%2E%2E%2Fa.pen"),
+            parse("lawha://open?file=%2E%2E%2Fa.pen"),
             Err(DeepLinkError::ParentSegment)
         );
     }
@@ -398,9 +398,9 @@ mod tests {
     #[test]
     fn extension_checked() {
         assert_eq!(
-            parse("openpencil://open?file=a.txt"),
+            parse("lawha://open?file=a.txt"),
             Err(DeepLinkError::BadExtension)
         );
-        assert!(parse("openpencil://open?file=a.fig").is_ok());
+        assert!(parse("lawha://open?file=a.fig").is_ok());
     }
 }

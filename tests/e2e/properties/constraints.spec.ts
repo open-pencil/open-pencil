@@ -11,8 +11,8 @@ test.beforeEach(async ({ page }) => {
 
 async function createConstrainedChildren(page: Parameters<typeof propertySection>[0]) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
       name: 'Constraint frame',
       x: 100,
@@ -45,7 +45,7 @@ test('shows constraints only for eligible frame children', async ({ page }) => {
   const section = propertySection(page, 'Constraints')
   await expect(section).toBeVisible()
 
-  await page.evaluate((frameId) => window.openPencil?.getStore?.()?.select([frameId]), ids.frameId)
+  await page.evaluate((frameId) => window.lawha?.getStore?.()?.select([frameId]), ids.frameId)
   await expect(section).toBeHidden()
 })
 
@@ -60,7 +60,7 @@ test('pin diagram and selects update constraint state', async ({ page }) => {
   await expect
     .poll(() =>
       page.evaluate(
-        (id) => window.openPencil?.getStore?.()?.graph.getNode(id)?.horizontalConstraint,
+        (id) => window.lawha?.getStore?.()?.graph.getNode(id)?.horizontalConstraint,
         ids.firstId
       )
     )
@@ -70,7 +70,7 @@ test('pin diagram and selects update constraint state', async ({ page }) => {
   await expect
     .poll(() =>
       page.evaluate(
-        (id) => window.openPencil?.getStore?.()?.graph.getNode(id)?.horizontalConstraint,
+        (id) => window.lawha?.getStore?.()?.graph.getNode(id)?.horizontalConstraint,
         ids.firstId
       )
     )
@@ -81,7 +81,7 @@ test('pin diagram and selects update constraint state', async ({ page }) => {
   await expect
     .poll(() =>
       page.evaluate(
-        (id) => window.openPencil?.getStore?.()?.graph.getNode(id)?.horizontalConstraint,
+        (id) => window.lawha?.getStore?.()?.graph.getNode(id)?.horizontalConstraint,
         ids.firstId
       )
     )
@@ -91,7 +91,7 @@ test('pin diagram and selects update constraint state', async ({ page }) => {
 test('multi-selection constraint changes undo in one step', async ({ page }) => {
   const ids = await createConstrainedChildren(page)
   await page.evaluate(
-    ({ firstId, secondId }) => window.openPencil?.getStore?.()?.select([firstId, secondId]),
+    ({ firstId, secondId }) => window.lawha?.getStore?.()?.select([firstId, secondId]),
     ids
   )
   const section = propertySection(page, 'Constraints')
@@ -103,7 +103,7 @@ test('multi-selection constraint changes undo in one step', async ({ page }) => 
   await expect
     .poll(() =>
       page.evaluate(({ firstId, secondId }) => {
-        const graph = window.openPencil?.getStore?.()?.graph
+        const graph = window.lawha?.getStore?.()?.graph
         return [
           graph?.getNode(firstId)?.horizontalConstraint,
           graph?.getNode(secondId)?.horizontalConstraint
@@ -116,7 +116,7 @@ test('multi-selection constraint changes undo in one step', async ({ page }) => 
   await expect
     .poll(() =>
       page.evaluate(({ firstId, secondId }) => {
-        const graph = window.openPencil?.getStore?.()?.graph
+        const graph = window.lawha?.getStore?.()?.graph
         return [
           graph?.getNode(firstId)?.horizontalConstraint,
           graph?.getNode(secondId)?.horizontalConstraint
@@ -128,12 +128,12 @@ test('multi-selection constraint changes undo in one step', async ({ page }) => 
 
 test('resizing a frame applies child constraints', async ({ page }) => {
   const ids = await createConstrainedChildren(page)
-  await page.evaluate((frameId) => window.openPencil?.getStore?.()?.select([frameId]), ids.frameId)
+  await page.evaluate((frameId) => window.lawha?.getStore?.()?.select([frameId]), ids.frameId)
   const canvas = new CanvasHelper(page)
   await canvas.waitForRender()
 
   const handle = await page.evaluate((frameId) => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const frame = store?.graph.getNode(frameId)
     if (!store || !frame) throw new Error('Frame not found')
     const position = store.graph.getAbsolutePosition(frameId)
@@ -153,7 +153,7 @@ test('resizing a frame applies child constraints', async ({ page }) => {
 
   await expect
     .poll(() =>
-      page.evaluate((id) => window.openPencil?.getStore?.()?.graph.getNode(id)?.x, ids.secondId)
+      page.evaluate((id) => window.lawha?.getStore?.()?.graph.getNode(id)?.x, ids.secondId)
     )
     .toBeGreaterThan(150)
 })

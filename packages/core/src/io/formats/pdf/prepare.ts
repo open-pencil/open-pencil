@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit'
 
-import type { ShapedTextGlyph } from '@open-pencil/fig/node-change'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ShapedTextGlyph } from '@lawha/fig/node-change'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { populateFigPage } from '#core/io/formats/fig'

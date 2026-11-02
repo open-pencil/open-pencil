@@ -1,10 +1,10 @@
-import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
-import { remapStyleRunReferences, styleRunReferences } from '@open-pencil/scene-graph/text'
+import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@lawha/scene-graph'
+import { remapStyleRunReferences, styleRunReferences } from '@lawha/scene-graph/text'
 import {
   isUnsupportedVariableValue,
   mapVariableValueReferences,
   variableValueReferences
-} from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph/variables'
 
 export interface ClipboardVariables {
   activeModes: Array<[string, string]>

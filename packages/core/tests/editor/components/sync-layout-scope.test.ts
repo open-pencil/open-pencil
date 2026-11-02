@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { computeAllLayouts } from '@lawha/core/layout'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { createComponentSyncScheduler } from '#core/editor/component-sync'
 

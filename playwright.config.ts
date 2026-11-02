@@ -1,7 +1,7 @@
 import { defineConfig, type PlaywrightTestConfig } from '@playwright/test'
 
-const appPort = process.env.OPENPENCIL_TEST_PORT ?? '1420'
-const mcpPort = process.env.OPENPENCIL_TEST_MCP_PORT ?? '7600'
+const appPort = process.env.LAWHA_TEST_PORT ?? '1420'
+const mcpPort = process.env.LAWHA_TEST_MCP_PORT ?? '7600'
 for (const port of [appPort, mcpPort]) {
   if (!/^\d+$/.test(port) || Number(port) < 1024 || Number(port) > 65535) {
     throw new Error('Browser test ports must be integers between 1024 and 65535')
@@ -9,14 +9,14 @@ for (const port of [appPort, mcpPort]) {
 }
 if (Number(appPort) === Number(mcpPort)) throw new Error('App and MCP test ports must differ')
 const origin = `http://localhost:${appPort}`
-const reuse = process.env.OPENPENCIL_TEST_REUSE_SERVER
+const reuse = process.env.LAWHA_TEST_REUSE_SERVER
 if (reuse !== undefined && reuse !== '0' && reuse !== '1') {
-  throw new Error('OPENPENCIL_TEST_REUSE_SERVER must be 0 or 1')
+  throw new Error('LAWHA_TEST_REUSE_SERVER must be 0 or 1')
 }
 
-const server = process.env.OPENPENCIL_TEST_SERVER ?? 'all'
+const server = process.env.LAWHA_TEST_SERVER ?? 'all'
 if (!['app', 'storybook', 'all'].includes(server)) {
-  throw new Error('OPENPENCIL_TEST_SERVER must be app, storybook, or all')
+  throw new Error('LAWHA_TEST_SERVER must be app, storybook, or all')
 }
 const storybookPort = 6017
 if (server === 'all' && [appPort, mcpPort].some((port) => Number(port) === storybookPort)) {
@@ -44,7 +44,7 @@ const appDefaults = {
           origin,
           localStorage: [
             {
-              name: 'open-pencil:preferences:v1',
+              name: 'lawha:preferences:v1',
               value: JSON.stringify({ version: 1, onboarding: { aiSetup: 'done' } })
             }
           ]
@@ -68,14 +68,14 @@ export default defineConfig({
   projects: [
     {
       ...appDefaults,
-      name: 'openpencil',
+      name: 'lawha',
       testDir: './tests/e2e',
       testIgnore: ['**/native/**', '**/storybook/**'],
       fullyParallel: false
     },
     {
       ...appDefaults,
-      name: 'openpencil-webkit',
+      name: 'lawha-webkit',
       testDir: './tests/e2e',
       testIgnore: ['**/native/**', '**/storybook/**'],
       testMatch: [
@@ -116,8 +116,8 @@ export default defineConfig({
             cwd: import.meta.dirname,
             url: origin,
             env: {
-              OPENPENCIL_DEV_ORIGIN: origin,
-              OPENPENCIL_DEV_MCP_PORT: mcpPort,
+              LAWHA_DEV_ORIGIN: origin,
+              LAWHA_DEV_MCP_PORT: mcpPort,
               PORTLESS_URL: ''
             },
             reuseExistingServer: !process.env.CI && reuse === '1'

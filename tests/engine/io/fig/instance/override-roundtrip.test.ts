@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 describe('instance descendant fill override round trip', () => {
   test('a recolored nested instance child keeps its color after a save/reload cycle', async () => {
@@ -27,7 +27,7 @@ describe('instance descendant fill override round trip', () => {
     graph.updateNode(instancePath.id, {
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
-    const { recordInstanceOverride } = await import('@open-pencil/scene-graph/instances')
+    const { recordInstanceOverride } = await import('@lawha/scene-graph/instances')
     recordInstanceOverride(graph, instancePath.id, ['fills'])
 
     const exported = await exportFigFile(graph)
@@ -77,7 +77,7 @@ describe('instance descendant fill override round trip', () => {
       fills: solid({ r: 0, g: 0, b: 0, a: 0 }, 0),
       boundVariables: {}
     })
-    const { recordInstanceOverride } = await import('@open-pencil/scene-graph/instances')
+    const { recordInstanceOverride } = await import('@lawha/scene-graph/instances')
     recordInstanceOverride(graph, copy.id, ['fills', 'boundVariables'])
 
     const reloaded = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
@@ -123,7 +123,7 @@ describe('instance descendant fill override round trip', () => {
     const card = graph.createNode('COMPONENT', page.id, { name: 'Card', x: 200 })
     const nested = graph.createInstance(button.id, card.id)
     if (!nested) throw new Error('failed to create the nested instance')
-    const { recordInstanceOverride } = await import('@open-pencil/scene-graph/instances')
+    const { recordInstanceOverride } = await import('@lawha/scene-graph/instances')
     // The card's button is red; the instance of the card binds that button to a token.
     graph.updateNode(nested.id, { fills: solid({ r: 0.9, g: 0.1, b: 0.1, a: 1 }) })
     recordInstanceOverride(graph, nested.id, ['fills'])

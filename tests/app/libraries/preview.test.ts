@@ -4,8 +4,8 @@ import {
   createLibraryRevision,
   createLibraryUpdatePreview,
   materializeLibraryAsset
-} from '@open-pencil/core/library'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/library'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function source(label: string) {
   const graph = new SceneGraph()

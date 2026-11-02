@@ -35,7 +35,7 @@ export function useMCPConnectionForm(
           v.check(
             (name) =>
               name.length <= MCP_CONNECTION_NAME_MAX_LENGTH &&
-              name.toLowerCase() !== 'open-pencil' &&
+              name.toLowerCase() !== 'lawha' &&
               !mcpConnectionSettings.value.connections.some(
                 (connection) =>
                   connection.id !== id.value && connection.name.toLowerCase() === name.toLowerCase()

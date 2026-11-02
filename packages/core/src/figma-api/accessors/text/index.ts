@@ -3,7 +3,7 @@ import type {
   SceneNode,
   TextCase,
   TextParagraphSpacingField
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 
 import {
   graph,

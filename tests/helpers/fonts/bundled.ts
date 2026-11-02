@@ -1,4 +1,4 @@
-import { fontManager } from '@open-pencil/core/text'
+import { fontManager } from '@lawha/core/text'
 
 import { expectDefined } from '#tests/helpers/assert'
 

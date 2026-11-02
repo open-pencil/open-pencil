@@ -1,12 +1,12 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import { readIcon } from '@open-pencil/scene-graph/icons'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
-import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
-import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { BLACK } from '@lawha/scene-graph/constants'
+import { readIcon } from '@lawha/scene-graph/icons'
+import { imageMimeType } from '@lawha/scene-graph/images'
+import { layoutSizingInParent } from '@lawha/scene-graph/layout'
+import { shaderOfPaint } from '@lawha/scene-graph/shaders'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -22,7 +22,7 @@ import {
 import { addGridContainer, addGridPlacement } from './grid'
 import { textCaseToCSS, textElementContent } from './text'
 
-const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
+const DOM_CSS_PLUGIN_ID = 'lawha-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
 
 /**
@@ -400,7 +400,7 @@ function attrsForNode(
   includeSourceIds: boolean
 ): Record<string, string> {
   const attrs: Record<string, string> = includeSourceIds
-    ? { 'data-open-pencil-node-id': node.id }
+    ? { 'data-lawha-node-id': node.id }
     : {}
   const sourceURL = imageSourceURL(node)
   if (sourceURL) attrs.src = sourceURL

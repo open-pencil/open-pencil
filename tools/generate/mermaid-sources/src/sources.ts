@@ -1,9 +1,9 @@
 /**
- * The Mermaid sources `@open-pencil/mermaid` runs, taken from one pinned Mermaid release and
+ * The Mermaid sources `@lawha/mermaid` runs, taken from one pinned Mermaid release and
  * committed under `packages/mermaid/src/upstream`, so building and testing never need the network.
  *
  * Mermaid parses flowcharts with a JISON grammar whose parser calls methods on a `yy` object;
- * Mermaid's `FlowDB` fills its renderer's state there, and `@open-pencil/mermaid` supplies its
+ * Mermaid's `FlowDB` fills its renderer's state there, and `@lawha/mermaid` supplies its
  * own object that builds a typed model instead. The grammar is not in Mermaid's npm package, so
  * it is downloaded from the release's commit and built as Mermaid's build builds it. The text
  * preparation Mermaid runs before a grammar sees the text (front matter, directives, comments,
@@ -12,7 +12,7 @@
  * When Mermaid switches flowcharts to its new parser: Mermaid is moving each diagram from JISON
  * and Langium to a Chevrotain lexer, parser, and visitor kept beside the diagram
  * (mermaid-js/mermaid#7855, pie charts first). Once flowcharts have one, copy those TypeScript
- * files here instead of `flow.jison`, add the `chevrotain` runtime to `@open-pencil/mermaid`,
+ * files here instead of `flow.jison`, add the `chevrotain` runtime to `@lawha/mermaid`,
  * and adapt `packages/mermaid/src/flowchart/builder.ts` to what the visitor produces; the model
  * and everything that reads it stay as they are.
  */
@@ -63,7 +63,7 @@ export const EXTRACTED_MODULE = {
 }
 
 /**
- * Mermaid sources `@open-pencil/mermaid` follows by hand rather than copies: what the grammar's
+ * Mermaid sources `@lawha/mermaid` follows by hand rather than copies: what the grammar's
  * calls mean (`FlowDB`) and the shape names. `--check` shows how a newer release changes them.
  */
 export const FOLLOWED_SOURCES = [

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import noHardcodedColors from '@open-pencil/core/lint/rules/no-hardcoded-colors'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import noHardcodedColors from '@lawha/core/lint/rules/no-hardcoded-colors'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 

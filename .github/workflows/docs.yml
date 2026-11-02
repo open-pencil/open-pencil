@@ -34,7 +34,7 @@ jobs:
       - name: Install Chromium for the demo document
         uses: ./.github/actions/setup-playwright
 
-      - run: bun run --filter @open-pencil/docs build:site
+      - run: bun run --filter @lawha/docs build:site
 
       - uses: actions/upload-artifact@v7
         with:
@@ -121,4 +121,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy packages/docs/.vitepress/dist --project-name=openpencil-docs --branch=master
+          command: pages deploy packages/docs/.vitepress/dist --project-name=lawha-docs --branch=master

@@ -8,8 +8,8 @@ import {
   gradientPoint,
   invertGradientTransform,
   linearGradientTransform
-} from '@open-pencil/scene-graph/gradient'
-import type { GradientTransform } from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph/gradient'
+import type { GradientTransform } from '@lawha/scene-graph'
 
 function values(t: GradientTransform) {
   return [t.m00, t.m01, t.m02, t.m10, t.m11, t.m12].map((v) => +v.toFixed(6) + 0)

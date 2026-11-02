@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import { FontManager, fontManager } from '@open-pencil/core/text'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FontManager, fontManager } from '@lawha/core/text'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { isTextPictureCurrent } from '#core/canvas/renderer/fonts'
 import { nodeFontReadiness } from '#core/canvas/text'

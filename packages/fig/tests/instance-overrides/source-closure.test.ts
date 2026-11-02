@@ -6,7 +6,7 @@ import type {
   InstancePathDiagnostic
 } from '#fig/instance-overrides/occurrence/types'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 import fixture from './fixtures/accordion-source-closure.json'
 

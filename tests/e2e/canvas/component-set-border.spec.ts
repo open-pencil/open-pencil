@@ -7,7 +7,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
  * as a settled frame is, through the pictures cached at earlier zooms.
  */
 function borderThickness({ setId, zoom }: { setId: string; zoom: number }) {
-  const store = window.openPencil?.getStore?.()
+  const store = window.lawha?.getStore?.()
   const renderer = store?.canvasRenderers.find((candidate) => candidate.tracksSceneSettlement)
   const source = document.querySelector<HTMLCanvasElement>('[data-test-id="scene-canvas-element"]')
   const set = store?.graph.getNode(setId)
@@ -56,7 +56,7 @@ test('a component set border stays one pixel wide on screen at every zoom', asyn
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   const setId = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const set = store.graph.createNode('COMPONENT_SET', store.state.currentPageId, {
       name: 'Button',

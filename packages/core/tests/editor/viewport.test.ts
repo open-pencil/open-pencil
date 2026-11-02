@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { createEditor } from '@lawha/core'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 const VIEWPORT = { width: 800, height: 600 }
 

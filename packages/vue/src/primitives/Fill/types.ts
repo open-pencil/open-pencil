@@ -1,7 +1,7 @@
 import type { PrimitiveProps } from 'reka-ui'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Fill } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { BindingState } from '#vue/controls/binding-provider/types'
 import type { BindableValueStateAttrs } from '#vue/primitives/BindableValue/types'

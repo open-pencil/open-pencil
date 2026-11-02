@@ -6,8 +6,8 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('people and agents show arrows in their color, agents with an outlined sparkle label', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const card = store.graph.createNode('RECTANGLE', pageId, {
       name: 'Card',

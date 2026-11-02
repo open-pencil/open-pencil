@@ -6,7 +6,7 @@ import {
   useAutomationMessages,
   useCommonMessages,
   useSettingsMessages
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import { useMCPServerSetup } from '@/app/ai/agents/setup/use'
 import { restartFixesMCPFailure } from '@/app/automation/mcp/failure'

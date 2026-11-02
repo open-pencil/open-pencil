@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
 import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'

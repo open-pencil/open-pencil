@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { openRoomSession, type RoomSession, type RoomSessionOptions } from '@/app/collab/session'
 import { claimRoot } from '@/app/collab/shared-tree/fields'

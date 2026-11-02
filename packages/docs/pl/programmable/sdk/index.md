@@ -1,15 +1,15 @@
 ---
 title: Vue SDK
-description: Twórz edytory oparte na OpenPencil za pomocą komponentów bez narzuconego wyglądu i composables dla Vue.
+description: Twórz edytory oparte na Lawha za pomocą komponentów bez narzuconego wyglądu i composables dla Vue.
 ---
 
 # Vue SDK
 
-Pakiet `@open-pencil/vue` pozwala korzystać z OpenPencil nie tylko jako z samodzielnej aplikacji do projektowania.
+Pakiet `@lawha/vue` pozwala korzystać z Lawha nie tylko jako z samodzielnej aplikacji do projektowania.
 
-OpenPencil można osadzić w innym produkcie, narzędziu wewnętrznym albo edytorze przeznaczonym do konkretnego zadania. Nie trzeba przy tym korzystać z domyślnego interfejsu aplikacji.
+Lawha można osadzić w innym produkcie, narzędziu wewnętrznym albo edytorze przeznaczonym do konkretnego zadania. Nie trzeba przy tym korzystać z domyślnego interfejsu aplikacji.
 
-Aplikacja OpenPencil jest tylko jednym z interfejsów zbudowanych za pomocą tego zestawu narzędzi. SDK umożliwia stworzenie własnego.
+Aplikacja Lawha jest tylko jednym z interfejsów zbudowanych za pomocą tego zestawu narzędzi. SDK umożliwia stworzenie własnego.
 
 SDK udostępnia:
 
@@ -39,7 +39,7 @@ Może to być pełny edytor graficzny, niewielki obszar roboczy osadzony w innej
 - **Bez narzuconego wyglądu:** SDK zapewnia logikę i strukturę, ale nie określa wyglądu aplikacji.
 - **Composable zamiast zbędnego wrappera:** jeśli nie trzeba koordynować struktury interfejsu, wystarczy composable.
 - **Przemyślane publiczne API:** stabilne funkcje są eksportowane z `packages/vue/src/index.ts`.
-- **Pełna integracja z Vue:** SDK łączy Vue z możliwościami `@open-pencil/core`.
+- **Pełna integracja z Vue:** SDK łączy Vue z możliwościami `@lawha/core`.
 
 ## Dwie warstwy API
 

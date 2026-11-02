@@ -1,10 +1,10 @@
 {
-  "name": "@open-pencil/core",
+  "name": "@lawha/core",
   "version": "0.17.0-beta.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/core"
   },
   "files": [
@@ -48,10 +48,10 @@
       "import": "./dist/vector/index.js",
       "default": "./dist/vector/index.js"
     },
-    "./openpencil-api": {
-      "types": "./dist/openpencil-api/index.d.ts",
-      "import": "./dist/openpencil-api/index.js",
-      "default": "./dist/openpencil-api/index.js"
+    "./lawha-api": {
+      "types": "./dist/lawha-api/index.d.ts",
+      "import": "./dist/lawha-api/index.js",
+      "default": "./dist/lawha-api/index.js"
     },
     "./figma-api": {
       "types": "./dist/figma-api/index.d.ts",
@@ -183,14 +183,14 @@
   },
   "dependencies": {
     "@iconify/utils": "^3.1.4",
-    "@open-pencil/design-jsx": "workspace:*",
-    "@open-pencil/dom-css": "workspace:*",
-    "@open-pencil/drawio": "workspace:*",
-    "@open-pencil/fig": "workspace:*",
-    "@open-pencil/kiwi": "workspace:*",
-    "@open-pencil/mermaid": "workspace:*",
-    "@open-pencil/pen": "workspace:*",
-    "@open-pencil/scene-graph": "workspace:*",
+    "@lawha/design-jsx": "workspace:*",
+    "@lawha/dom-css": "workspace:*",
+    "@lawha/drawio": "workspace:*",
+    "@lawha/fig": "workspace:*",
+    "@lawha/kiwi": "workspace:*",
+    "@lawha/mermaid": "workspace:*",
+    "@lawha/pen": "workspace:*",
+    "@lawha/scene-graph": "workspace:*",
     "@tauri-apps/api": "^2.12.1",
     "@valibot/to-json-schema": "^1.8.0",
     "@xmldom/xmldom": "^0.9.12",

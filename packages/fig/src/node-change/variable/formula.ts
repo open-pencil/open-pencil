@@ -1,6 +1,6 @@
 import { invert } from 'es-toolkit'
 
-import type { VariableFormulaOperator } from '@open-pencil/scene-graph'
+import type { VariableFormulaOperator } from '@lawha/scene-graph'
 
 /** The `ExpressionFunction` Figma saves for each formula operator. */
 const FIGMA_FORMULA_FUNCTIONS = {

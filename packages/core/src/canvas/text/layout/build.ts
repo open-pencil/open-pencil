@@ -1,7 +1,7 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
-import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
-import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+import type { CharacterStyleOverride, StyleRun } from '@lawha/scene-graph'
+import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -13,8 +13,8 @@ import {
   topLevelNumberDigits,
   type TextListItem,
   type TextParagraphRange
-} from '@open-pencil/scene-graph/text'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+} from '@lawha/scene-graph/text'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
 
 import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from '#core/canvas/text/layout'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'

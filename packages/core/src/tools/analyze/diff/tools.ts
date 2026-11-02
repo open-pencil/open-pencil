@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { parseJSXAttributes, sceneNodeAttributes, sceneNodeToJSX } from '@open-pencil/design-jsx'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { parseJSXAttributes, sceneNodeAttributes, sceneNodeToJSX } from '@lawha/design-jsx'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import {
   toolNumber,

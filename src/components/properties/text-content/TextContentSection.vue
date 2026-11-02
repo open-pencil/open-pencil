@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import VariableBoundRow from '@/components/properties/binding/VariableBoundRow.vue'
 import PropertyBoundField from '@/components/properties/component-properties/PropertyBoundField.vue'

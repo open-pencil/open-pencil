@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 
-import { WEB_FONT_PROVIDER_IDS, WEB_FONT_PROVIDER_LABELS } from '@open-pencil/core/text'
-import type { WebFontProviderId } from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { WEB_FONT_PROVIDER_IDS, WEB_FONT_PROVIDER_LABELS } from '@lawha/core/text'
+import type { WebFontProviderId } from '@lawha/core/text'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useFontSettings } from '@/app/settings/fonts/use'
 import { isTauri } from '@/app/tauri/env'

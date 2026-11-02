@@ -1,12 +1,12 @@
 import { computed } from 'vue'
 
-import type { ConnectorLineType, SceneNode, StrokeCap } from '@open-pencil/scene-graph'
+import type { ConnectorLineType, SceneNode, StrokeCap } from '@lawha/scene-graph'
 import {
   CONNECTOR_THICK_STROKE_WEIGHT,
   connectorLineStyle,
   connectorSublayers
-} from '@open-pencil/scene-graph/connectors'
-import { figJamColorName, type FigJamColorName } from '@open-pencil/scene-graph/figjam'
+} from '@lawha/scene-graph/connectors'
+import { figJamColorName, type FigJamColorName } from '@lawha/scene-graph/figjam'
 
 import { useEditor } from '#vue/editor/context'
 import { useSelectionState } from '#vue/editor/selection-state/use'

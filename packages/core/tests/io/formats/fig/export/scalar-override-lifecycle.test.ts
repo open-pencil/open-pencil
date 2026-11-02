@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { materializeDocument, parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
 
 const guid = (localID: number) => ({ sessionID: 1, localID })
 const records = () => [

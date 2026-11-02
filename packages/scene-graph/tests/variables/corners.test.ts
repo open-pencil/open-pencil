@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
+import { SceneGraph } from '@lawha/scene-graph'
+import { independentCornerChanges } from '@lawha/scene-graph/variables'
 
 function rectangle() {
   const graph = new SceneGraph()

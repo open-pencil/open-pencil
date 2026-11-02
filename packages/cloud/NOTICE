@@ -1,5 +1,6 @@
-OpenPencil Cloud
+Lawha Cloud
 Copyright 2026 Danila Poyarkov and OpenPencil contributors
+Modifications copyright 2026 Lawha contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE),
 except src/contract and src/client, the protocol the editor and other clients

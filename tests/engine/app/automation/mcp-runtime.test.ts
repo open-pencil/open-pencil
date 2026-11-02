@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { ToolDescriptor } from '@open-pencil/mcp/tools'
+import type { ToolDescriptor } from '@lawha/mcp/tools'
 
 import { createMCPRuntimeService, type MCPRuntimeDependencies } from '@/app/automation/mcp/runtime'
 
@@ -91,14 +91,14 @@ describe('MCP runtime service', () => {
     const { service } = setup({
       spawn: async () => null,
       readHealth: async () => null,
-      getStartupFailure: () => ({ code: 'not-installed', detail: '@open-pencil/mcp@0.15.0' })
+      getStartupFailure: () => ({ code: 'not-installed', detail: '@lawha/mcp@0.15.0' })
     })
 
     await service.start(getStore)
 
     expect(service.state.failure).toEqual({
       code: 'not-installed',
-      detail: '@open-pencil/mcp@0.15.0'
+      detail: '@lawha/mcp@0.15.0'
     })
   })
 

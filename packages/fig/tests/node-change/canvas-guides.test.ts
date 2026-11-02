@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportCanvasGuides, importCanvasGuides } from '@open-pencil/fig/node-change'
+import { exportCanvasGuides, importCanvasGuides } from '@lawha/fig/node-change'
 
 const guid = { sessionID: 123, localID: 456 }
 

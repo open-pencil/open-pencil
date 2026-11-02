@@ -4,7 +4,7 @@ import type {
   ComponentPropertyReferenceField,
   SceneGraph,
   SceneNode
-} from '@open-pencil/scene-graph'
+} from '@lawha/scene-graph'
 
 /** What a layer draws, which an instance can change without a property. */
 const DRAWN = [

@@ -12,13 +12,13 @@ export async function mockFontsource(page: Page, fixtures: readonly FontsourceFi
   const counts = { downloads: 0 }
   const entries = new Map(fixtures.map((fixture, index) => [String(index), fixture]))
   const pattern =
-    /^https:\/\/(api\.fontsource\.org\/v1\/fonts(?:\/|$)|cdn\.jsdelivr\.net\/fontsource\/fonts\/openpencil-fixture-)/
+    /^https:\/\/(api\.fontsource\.org\/v1\/fonts(?:\/|$)|cdn\.jsdelivr\.net\/fontsource\/fonts\/lawha-fixture-)/
   const headers = { 'access-control-allow-origin': '*' }
   async function handle(route: Route) {
     const url = new URL(route.request().url())
     if (url.hostname === 'cdn.jsdelivr.net') {
       const fixture = entries.get(
-        url.pathname.slice('/fontsource/fonts/openpencil-fixture-'.length, -4)
+        url.pathname.slice('/fontsource/fonts/lawha-fixture-'.length, -4)
       )
       if (!fixture) throw new Error('Unknown fixture font')
       counts.downloads++
@@ -54,7 +54,7 @@ export async function mockFontsource(page: Page, fixtures: readonly FontsourceFi
                 [fixture.subset]: {
                   url: {
                     [fixture.format ?? 'ttf']:
-                      `https://cdn.jsdelivr.net/fontsource/fonts/openpencil-fixture-${id}.${fixture.format ?? 'ttf'}`
+                      `https://cdn.jsdelivr.net/fontsource/fonts/lawha-fixture-${id}.${fixture.format ?? 'ttf'}`
                   }
                 }
               }

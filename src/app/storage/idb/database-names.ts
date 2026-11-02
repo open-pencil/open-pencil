@@ -1,13 +1,13 @@
 /** Stable names for the app's independent IndexedDB databases. */
 export const APP_DATABASE_NAMES = {
-  chats: 'open-pencil-chats',
-  credentials: 'open-pencil-credentials',
-  libraries: 'open-pencil-libraries',
-  localCanvas: 'open-pencil-cloud-local',
-  outbox: 'open-pencil-cloud-outbox',
-  recovery: 'open-pencil-recovery',
-  diagnostics: 'open-pencil-diagnostics',
-  skills: 'open-pencil-skills',
+  chats: 'lawha-chats',
+  credentials: 'lawha-credentials',
+  libraries: 'lawha-libraries',
+  localCanvas: 'lawha-cloud-local',
+  outbox: 'lawha-cloud-outbox',
+  recovery: 'lawha-recovery',
+  diagnostics: 'lawha-diagnostics',
+  skills: 'lawha-skills',
   /** Written and deleted once per page, to learn whether the engine stores Blobs. */
-  blobProbe: 'open-pencil-blob-probe'
+  blobProbe: 'lawha-blob-probe'
 } as const

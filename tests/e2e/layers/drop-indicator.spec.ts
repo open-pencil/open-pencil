@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -37,8 +37,8 @@ test('layer reorder exposes a visible drop indicator before dropping', async ({ 
   await canvas.clearCanvas()
 
   const ids = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const first = store.graph.createNode('RECTANGLE', pageId, { name: 'Layer A' })
     store.graph.createNode('RECTANGLE', pageId, { name: 'Layer B' })
@@ -65,8 +65,8 @@ test('layer child drop exposes a visible container highlight before dropping', a
   await canvas.clearCanvas()
 
   const ids = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
     const pageId = store.state.currentPageId
     const frame = store.graph.createNode('FRAME', pageId, {
       name: 'Drop Frame',

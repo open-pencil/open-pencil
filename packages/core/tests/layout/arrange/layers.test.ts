@@ -2,14 +2,14 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import {
   boundEndpoint,
   connectorRoute,
   connectorSublayers,
   createConnector
-} from '@open-pencil/scene-graph/connectors'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/connectors'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { arrangeLayers } from '#core/layout/arrange/layers'
 

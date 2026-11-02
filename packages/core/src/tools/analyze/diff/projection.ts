@@ -1,7 +1,7 @@
 import { create, type Delta } from 'jsondiffpatch'
 
-import { sceneNodeAttributes } from '@open-pencil/design-jsx'
-import type { NodeType, SceneGraph } from '@open-pencil/scene-graph'
+import { sceneNodeAttributes } from '@lawha/design-jsx'
+import type { NodeType, SceneGraph } from '@lawha/scene-graph'
 
 export const DEFAULT_DIFF_DEPTH = 10
 

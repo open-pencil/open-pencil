@@ -4,7 +4,7 @@ import type {
   HarnessSidecarMessage,
   HarnessTurnEvent,
   HarnessTurnUsage
-} from '@open-pencil/harness'
+} from '@lawha/harness'
 
 import { HarnessChatTransport } from '@/app/ai/transports/pi'
 
@@ -252,13 +252,13 @@ test('text after a tool call starts a new part, and a stopped turn closes its te
   companion.event(turn, {
     type: 'tool-call',
     toolCallId: 'call-1',
-    toolName: 'mcp_open-pencil_get_page_tree',
+    toolName: 'mcp_lawha_get_page_tree',
     input: {}
   })
   companion.event(turn, {
     type: 'tool-result',
     toolCallId: 'call-1',
-    toolName: 'mcp_open-pencil_get_page_tree',
+    toolName: 'mcp_lawha_get_page_tree',
     output: {}
   })
   companion.text(turn, 'Done')

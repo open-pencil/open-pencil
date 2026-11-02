@@ -1,4 +1,4 @@
-import type { IconOptions } from '@open-pencil/scene-graph/icons'
+import type { IconOptions } from '@lawha/scene-graph/icons'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type { IconCollection, IconData, IconSearchResult } from '#core/icons/types'

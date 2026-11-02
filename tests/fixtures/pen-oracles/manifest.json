@@ -40,7 +40,7 @@
       "node": "P Text",
       "penNodeId": "or6x9",
       "maximumDifferentPercent": 1.02,
-      "note": "pen.dev lets fixed-size text overflow its box; OpenPencil clips it."
+      "note": "pen.dev lets fixed-size text overflow its box; Lawha clips it."
     },
     {
       "node": "P Layout",

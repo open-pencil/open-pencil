@@ -1,7 +1,7 @@
 import { omit } from 'es-toolkit'
 
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
 
 import type { JSXAttributeSource } from './export'
 import * as React from './mini-react'

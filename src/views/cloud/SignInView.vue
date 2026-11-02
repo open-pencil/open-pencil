@@ -3,7 +3,7 @@ import { omit } from 'es-toolkit'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import type { CloudSocialProvider } from '@open-pencil/cloud/client'
+import type { CloudSocialProvider } from '@lawha/cloud/client'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'

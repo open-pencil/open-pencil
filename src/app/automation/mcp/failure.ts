@@ -6,13 +6,13 @@ import { APP_VERSION } from '@/app/runtime/version'
  * Kept here rather than in the spawner so Settings and setup can name them
  * without importing the spawning code.
  */
-export const MCP_PACKAGE_NAME = '@open-pencil/mcp'
-export const MCP_EXECUTABLE = 'openpencil-mcp-http'
+export const MCP_PACKAGE_NAME = '@lawha/mcp'
+export const MCP_EXECUTABLE = 'lawha-mcp-http'
 
 /** Exact package spec a user should install to match this app. */
 export const MCP_INSTALL_TARGET = `${MCP_PACKAGE_NAME}@${APP_VERSION}`
 
-/** Installs OpenPencil's MCP server at the version that matches the app. */
+/** Installs Lawha's MCP server at the version that matches the app. */
 export const MCP_INSTALL_COMMAND = `npm i -g ${MCP_INSTALL_TARGET}`
 
 /**

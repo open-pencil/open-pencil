@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import * as v from 'valibot'
 
-import { aiMessages } from '@open-pencil/vue/i18n'
+import { aiMessages } from '@lawha/vue/i18n'
 
 import { openExternalLink } from '@/app/shell/ui'
 import { tauriFetch } from '@/app/tauri/http'

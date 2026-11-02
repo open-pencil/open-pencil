@@ -1,7 +1,7 @@
 import type { LanguageModelCallOptions } from 'ai'
 
-import { REASONING_EFFORTS } from '@open-pencil/core/constants'
-import type { AIProviderID, ReasoningEffort } from '@open-pencil/core/constants'
+import { REASONING_EFFORTS } from '@lawha/core/constants'
+import type { AIProviderID, ReasoningEffort } from '@lawha/core/constants'
 
 import type { DirectAIModelRuntime } from '@/app/ai/models/runtime'
 import type { ThinkingLevel } from '@/app/ai/models/types'

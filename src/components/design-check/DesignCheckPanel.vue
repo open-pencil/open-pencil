@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useDesignCheckMessages } from '@lawha/vue/i18n'
 
 import { turnOffDesignCheckRule } from '@/app/settings/preferences/apply'
 import AppButton from '@/components/ui/button/AppButton.vue'

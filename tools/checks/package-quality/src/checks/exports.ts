@@ -7,7 +7,7 @@ import ts from 'typescript'
 import {
   discoverPublicPackages,
   type PackageDiagnostic
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 
 /** The JSX automatic runtime requires both entries to export the same factory functions. */
 const JSX_RUNTIME_ENTRIES = new Set(['./jsx-runtime', './jsx-dev-runtime'])

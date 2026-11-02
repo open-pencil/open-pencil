@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: User Guide
-description: Learn how to use OpenPencil — canvas navigation, drawing, text, components, auto-layout, and more.
+description: Learn how to use Lawha — canvas navigation, drawing, text, components, auto-layout, and more.
 ---
 
 # User Guide
 
-OpenPencil is an open-source, Figma-compatible design editor — fully local, AI-native, and programmable. This guide covers everything you need to know to use the editor effectively.
+Lawha is an open-source, Figma-compatible design editor — fully local, AI-native, and programmable. This guide covers everything you need to know to use the editor effectively.
 
 ::: tip Cross-platform shortcuts
 Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> on Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.
@@ -29,7 +29,7 @@ Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kb
 - [Layers & Pages](./layers-and-pages) — the layers panel, pages, and properties panel
 - [Context Menu](./context-menu) — right-click actions for clipboard, grouping, components, and more
 - [Exporting](./exporting) — image export and .fig file operations
-- [OpenPencil Cloud](./openpencil-cloud) — documents on OpenPencil Cloud or your team's server, shared and edited together
+- [Lawha Cloud](./lawha-cloud) — documents on Lawha Cloud or your team's server, shared and edited together
 - [Cloud Storage](./cloud-storage) — documents and libraries in your own S3-compatible bucket
 
 ## Advanced Features

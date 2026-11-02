@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
 const rule = 'no-deep-parent-relative-paths'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rules = { [`lawha/${rule}`]: 'error' }
 // A template that climbs one level and then names a folder, assembled so it stays source text.
 const oneLevelTemplate = ['join(import.meta.dir, `../', '$', "{folder}`, '..', 'assets')"].join('')
 

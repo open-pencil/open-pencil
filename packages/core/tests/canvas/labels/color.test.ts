@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { outlineColorInMode } from '@open-pencil/core/canvas'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { figJamColor, figJamSectionColorFields, figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
+import { outlineColorInMode } from '@lawha/core/canvas'
+import { SceneGraph } from '@lawha/scene-graph'
+import { figJamColor, figJamSectionColorFields, figJamSectionTitleColors } from '@lawha/scene-graph/figjam'
 
 describe('section title colours', () => {
   // A board titles a section in the outline it draws, which a variable sets per mode.

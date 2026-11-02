@@ -1,13 +1,13 @@
-/** @jsxImportSource @open-pencil/design-jsx */
+/** @jsxImportSource @lawha/design-jsx */
 /**
  * The tour's callout: one card per page with a step number, what to try, and the shortcut.
  * It is a component with text properties, so its instances are the first thing a visitor who
  * clicks one sees in the panel.
  */
-import { Component, Frame, Instance, Text, property, type TreeNode } from '@open-pencil/design-jsx'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
-import { createSlotProperty, updateSlotProperty } from '@open-pencil/scene-graph/slots'
+import { Component, Frame, Instance, Text, property, type TreeNode } from '@lawha/design-jsx'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { createComponentPropertyId } from '@lawha/scene-graph/components'
+import { createSlotProperty, updateSlotProperty } from '@lawha/scene-graph/slots'
 
 import { previewButton } from './chrome'
 import { renderTree } from './icons'

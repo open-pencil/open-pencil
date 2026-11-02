@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 // Not the format's barrel: the editor always loads this file, and the exporter is loaded on demand.
 import {

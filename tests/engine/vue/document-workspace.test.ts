@@ -6,7 +6,7 @@ import {
   useDocumentWorkspace,
   type DocumentWorkspaceItem,
   type DocumentWorkspaceSource
-} from '@open-pencil/vue/document/workspace'
+} from '@lawha/vue/document/workspace'
 
 import { createTestRenderer, hostNode } from '#tests/helpers/vue/renderer'
 

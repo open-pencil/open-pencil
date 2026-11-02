@@ -1,4 +1,4 @@
-import type { SceneNode, TextCase } from '@open-pencil/scene-graph'
+import type { SceneNode, TextCase } from '@lawha/scene-graph'
 
 type CasedText = Pick<SceneNode, 'text' | 'textCase' | 'styleRuns'>
 

@@ -2,9 +2,9 @@
 import { templateRef } from '@vueuse/core'
 import { nextTick, watch } from 'vue'
 
-import type { DocumentKind } from '@open-pencil/scene-graph'
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { DocumentKind } from '@lawha/scene-graph'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'

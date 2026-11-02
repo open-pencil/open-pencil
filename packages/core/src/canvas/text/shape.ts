@@ -1,7 +1,7 @@
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { ShapedText, ShapedTextGlyph } from '@lawha/fig/node-change'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
 import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
@@ -92,7 +92,7 @@ function savedOutline(
  * the glyph ID CanvasKit chose, so ligatures and contextual forms keep their shapes. An emoji the
  * layout gives the emoji metrics font is saved as Figma saves one: a placeholder square with its
  * code points. When a run's font cannot be told, no glyph gets an outline: the layout still
- * stands and OpenPencil lays the text out again on reading, but Figma draws it blank.
+ * stands and Lawha lays the text out again on reading, but Figma draws it blank.
  * Returns `null` for text saved glyphs cannot represent at all.
  */
 export function shapeText(

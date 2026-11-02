@@ -8,7 +8,7 @@ import {
   placeConnectorLabel,
   routeConnector,
   type ConnectorRouteEnd
-} from '@open-pencil/scene-graph/connectors'
+} from '@lawha/scene-graph/connectors'
 
 const MAGNETS = [
   'NONE',

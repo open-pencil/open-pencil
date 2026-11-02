@@ -60,7 +60,7 @@ export function localeDirection(code: Locale): 'ltr' | 'rtl' {
   return RTL_LOCALES.has(code) ? 'rtl' : 'ltr'
 }
 
-const LOCALE_STORAGE_KEY = 'open-pencil-locale'
+const LOCALE_STORAGE_KEY = 'lawha-locale'
 
 export const localeSetting = atom<Locale | undefined>(undefined)
 

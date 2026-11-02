@@ -1,4 +1,4 @@
-import type { Tool } from '@open-pencil/core'
+import type { Tool } from '@lawha/core'
 
 import commentCursorSVG from '#vue/shared/assets/cursors/comment.svg?raw'
 import handGrabCursorSVG from '#vue/shared/assets/cursors/hand-grab.svg?raw'

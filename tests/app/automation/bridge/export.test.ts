@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { toUint8Array } from 'js-base64'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { imageSize } from '@open-pencil/scene-graph/images'
+import { SkiaRenderer } from '@lawha/core/canvas'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
+import { parseFigFile } from '@lawha/core/io/formats/fig'
+import { initCanvasKit } from '@lawha/core/io/formats/raster'
+import { SceneGraph } from '@lawha/scene-graph'
+import { imageSize } from '@lawha/scene-graph/images'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'

@@ -7,7 +7,7 @@ import {
   sceneNodesToTailwindJSXWithLayers
 } from '#dom-css/export/tailwind-jsx'
 
-import { SceneGraph, type Fill, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill, type TextParagraphStyle } from '@lawha/scene-graph'
 
 const RED: Fill = {
   type: 'SOLID',
@@ -148,7 +148,7 @@ describe('text export', () => {
         {
           start: 9,
           length: 4,
-          style: { hyperlink: { type: 'URL', value: 'https://openpencil.dev/docs' } }
+          style: { hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
         },
         {
           start: 14,
@@ -158,12 +158,12 @@ describe('text export', () => {
       ]
     })
     expect(html).toContain(
-      'Read the <a href="https://openpencil.dev/docs" style="color: inherit; text-decoration-line: none">docs</a> now'
+      'Read the <a href="https://github.com/aliaaldihnayn-lab/design#readme" style="color: inherit; text-decoration-line: none">docs</a> now'
     )
     expect(html).not.toContain(SCRIPT_SCHEME)
     const jsx = sceneNodesToTailwindJSX(graph, [node.id])
     expect(jsx).toContain(
-      '<a href="https://openpencil.dev/docs" className="text-inherit no-underline">docs</a>'
+      '<a href="https://github.com/aliaaldihnayn-lab/design#readme" className="text-inherit no-underline">docs</a>'
     )
   })
 })

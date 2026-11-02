@@ -5,20 +5,20 @@ description: Wykonywanie JavaScript przez API zgodne z Figma Plugin API do wyszu
 
 # Skrypty
 
-`openpencil eval` wykonuje JavaScript dla dokumentu OpenPencil i udostępnia globalny obiekt `figma` zgodny z Figma Plugin API. Polecenie nadaje się do zmian zbiorczych, sprawdzania dokumentów, przygotowywania danych testowych i automatyzacji bez interfejsu edytora.
+`lawha eval` wykonuje JavaScript dla dokumentu Lawha i udostępnia globalny obiekt `figma` zgodny z Figma Plugin API. Polecenie nadaje się do zmian zbiorczych, sprawdzania dokumentów, przygotowywania danych testowych i automatyzacji bez interfejsu edytora.
 
 ## Pierwsze wywołanie
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.length"
+lawha eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-Opcja `-c` przyjmuje JavaScript. Jeśli kod nie zaczyna się od `return`, OpenPencil umieszcza go w funkcji asynchronicznej i zwraca jej wynik, jeśli istnieje.
+Opcja `-c` przyjmuje JavaScript. Jeśli kod nie zaczyna się od `return`, Lawha umieszcza go w funkcji asynchronicznej i zwraca jej wynik, jeśli istnieje.
 
 ## Wyszukiwanie obiektów
 
 ```sh
-openpencil eval design.fig -c "
+lawha eval design.fig -c "
   return figma.currentPage
     .findAll((node) => node.type === 'FRAME' && node.name.includes('Button'))
     .map((button) => ({ id: button.id, name: button.name }))
@@ -32,7 +32,7 @@ openpencil eval design.fig -c "
 ## Skrypt ze standardowego wejścia
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin --write
+cat transform.js | lawha eval design.fig --stdin --write
 ```
 
 ## Otwarta aplikacja
@@ -45,7 +45,7 @@ Po przekierowaniu wyjścia domyślnie używany jest JSON. Opcja `--json` włącz
 
 ## Dostępne API
 
-API jest celowo zbliżone do Figma Plugin API, ale pracuje z SceneGraph i formatami plików OpenPencil.
+API jest celowo zbliżone do Figma Plugin API, ale pracuje z SceneGraph i formatami plików Lawha.
 
 ### Dokument i strony
 
@@ -84,7 +84,7 @@ API jest celowo zbliżone do Figma Plugin API, ale pracuje z SceneGraph i format
 
 ### Komponenty i zmienne
 
-Nazwy metod, takie jak `component.createInstance()`, `figma.variables.getLocalVariables()` i `node.setBoundVariable()`, pozostają zgodne z Figma Plugin API. Tak jak panel warstwy zmienne wiąże się z polami przez `openpencil.bindVariable(node, field, variable)` i `openpencil.unbindVariable(node, field)`. Kierunek automatycznego układu i tekstu (`AUTO`, `LTR`, `RTL`) ustawiają `openpencil.setLayoutDirection(node, direction)` i `openpencil.setTextDirection(node, direction)`, kolor w OkHCL `openpencil.setFillOkHCL(node, color)` i `setStrokeOkHCL`, a `openpencil.exposeInstanceSwap` i `openpencil.getFontStatus()` udostępniają zamianę instancji i stan czcionek.
+Nazwy metod, takie jak `component.createInstance()`, `figma.variables.getLocalVariables()` i `node.setBoundVariable()`, pozostają zgodne z Figma Plugin API. Tak jak panel warstwy zmienne wiąże się z polami przez `lawha.bindVariable(node, field, variable)` i `lawha.unbindVariable(node, field)`. Kierunek automatycznego układu i tekstu (`AUTO`, `LTR`, `RTL`) ustawiają `lawha.setLayoutDirection(node, direction)` i `lawha.setTextDirection(node, direction)`, kolor w OkHCL `lawha.setFillOkHCL(node, color)` i `setStrokeOkHCL`, a `lawha.exposeInstanceSwap` i `lawha.getFontStatus()` udostępniają zamianę instancji i stan czcionek.
 
 ### Właściwości
 

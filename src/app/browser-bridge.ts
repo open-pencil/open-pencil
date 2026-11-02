@@ -8,7 +8,7 @@ import type { NavigationBenchmarkHooks } from '@/app/performance/navigation/hook
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { IS_BROWSER } from '@/constants'
 
-export interface OpenPencilTestHooks {
+export interface LawhaTestHooks {
   writeCount?: () => number
   mockHandle?: FileSystemFileHandle
   savedOpen?: Window['open']
@@ -29,25 +29,25 @@ export interface OpenPencilTestHooks {
   automation?: (command: string, args: unknown) => Promise<unknown>
 }
 
-export interface OpenPencilWindowAPI {
+export interface LawhaWindowAPI {
   getStore?: () => EditorStore
   setChatTransport?: (factory: () => ChatTransport<UIMessage>) => void
   openFile?: (path: string) => Promise<void>
-  test?: OpenPencilTestHooks
+  test?: LawhaTestHooks
 }
 
 let activeStore: EditorStore | null = null
 
-function windowAPI(): OpenPencilWindowAPI {
-  window.openPencil ??= {}
-  window.openPencil.getStore ??= () => {
-    if (!activeStore) throw new Error('OpenPencil store not initialized')
+function windowAPI(): LawhaWindowAPI {
+  window.lawha ??= {}
+  window.lawha.getStore ??= () => {
+    if (!activeStore) throw new Error('Lawha store not initialized')
     return activeStore
   }
-  return window.openPencil
+  return window.lawha
 }
 
-export function setOpenPencilStore(store: EditorStore) {
+export function setLawhaStore(store: EditorStore) {
   activeStore = store
   if (!IS_BROWSER) return
   const api = windowAPI()
@@ -88,7 +88,7 @@ export function exposeAutomationRequests(
   const testHooks = (windowAPI().test ??= {})
   testHooks.automation = async (command, args) => {
     const store = windowAPI().getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    if (!store) throw new Error('Lawha store not initialized')
     return handleRequest(store, command, args)
   }
 }
@@ -99,6 +99,6 @@ export function exposeChatTransportOverride(
   windowAPI().setChatTransport = setChatTransport
 }
 
-export function setOpenPencilOpenFileHandler(openFile: (path: string) => Promise<void>) {
+export function setLawhaOpenFileHandler(openFile: (path: string) => Promise<void>) {
   windowAPI().openFile = openFile
 }

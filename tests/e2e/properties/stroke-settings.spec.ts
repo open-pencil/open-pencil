@@ -10,7 +10,7 @@ for (const theme of ['light', 'dark']) {
       const path = '/src/app/shell/theme.ts'
       const module = await import(path)
       module.useAppTheme().setTheme(mode)
-      const editor = window.openPencil?.getStore?.()
+      const editor = window.lawha?.getStore?.()
       if (!editor) throw new Error('Editor unavailable')
       const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
       const line = editor.createShape('LINE', 100, 300, 180, 0)
@@ -43,7 +43,7 @@ for (const theme of ['light', 'dark']) {
     await expect
       .poll(() =>
         page.evaluate(
-          (id) => window.openPencil?.getStore?.().graph.getNode(id)?.strokes[0].dashPattern?.[0],
+          (id) => window.lawha?.getStore?.().graph.getNode(id)?.strokes[0].dashPattern?.[0],
           ids.id
         )
       )
@@ -53,19 +53,19 @@ for (const theme of ['light', 'dark']) {
     await expect(dialog).toHaveCount(0)
     await expect(trigger).toBeFocused()
     await trigger.click()
-    await page.evaluate((id) => window.openPencil?.getStore?.().select([id]), ids.line)
+    await page.evaluate((id) => window.lawha?.getStore?.().select([id]), ids.line)
     await dialog.getByRole('button', { name: 'Round cap', exact: true }).click()
     await expect
       .poll(() =>
         page.evaluate(
-          (id) => window.openPencil?.getStore?.().graph.getNode(id)?.strokeCap,
+          (id) => window.lawha?.getStore?.().graph.getNode(id)?.strokeCap,
           ids.line
         )
       )
       .toBe('ROUND')
     await expect
       .poll(() =>
-        page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.strokeCap, ids.id)
+        page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.strokeCap, ids.id)
       )
       .toBe('NONE')
     await expect(dialog).toHaveScreenshot(`stroke-line-${theme}.png`)

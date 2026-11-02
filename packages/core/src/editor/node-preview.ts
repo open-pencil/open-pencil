@@ -1,6 +1,6 @@
 import { isEqual, pick, uniq } from 'es-toolkit'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import { assertNodeEditable } from './capabilities'
 import type { EditorContext } from './types'

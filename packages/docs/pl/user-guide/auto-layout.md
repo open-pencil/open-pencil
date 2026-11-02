@@ -1,6 +1,6 @@
 ---
 title: Automatyczny układ
-description: "Flexbox i CSS Grid w OpenPencil: kierunek, odstępy, wypełnienie, wyrównanie i rozmiary elementów potomnych."
+description: "Flexbox i CSS Grid w Lawha: kierunek, odstępy, wypełnienie, wyrównanie i rozmiary elementów potomnych."
 ---
 
 # Automatyczny układ

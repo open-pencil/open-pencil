@@ -1,9 +1,9 @@
-import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@lawha/scene-graph'
 import {
   gradientTransformRows,
   isIdentityGradientTransform
-} from '@open-pencil/scene-graph/gradient'
-import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
+} from '@lawha/scene-graph/gradient'
+import { shaderOfPaint } from '@lawha/scene-graph/shaders'
 
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '../enums'
 import { formatColor, formatShadow } from './helpers'

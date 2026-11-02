@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import { createEditor, type Editor } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
 
 // Each case matches Cmd+D or Cmd+V observed in Figma desktop 126.
 

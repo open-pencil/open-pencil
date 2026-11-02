@@ -3,17 +3,17 @@ import { readFileSync } from 'node:fs'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { parseDrawIOFile } from '@open-pencil/drawio'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { parseDrawIOFile } from '@lawha/drawio'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import {
   boundEndpoint,
   connectorSublayers,
   createConnector,
   freeEndpoint
-} from '@open-pencil/scene-graph/connectors'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { createShapeWithText } from '@open-pencil/scene-graph/generated'
-import Matrix from '@open-pencil/scene-graph/matrix'
+} from '@lawha/scene-graph/connectors'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import { createShapeWithText } from '@lawha/scene-graph/generated'
+import Matrix from '@lawha/scene-graph/matrix'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import type { ExportTarget } from '#core/io'
@@ -96,7 +96,7 @@ describe('saving a draw.io file', () => {
   test('a diagram opened from draw.io saves to one that opens the same', async () => {
     const opened = await read(ORDER_FLOW)
     const saved = await write(opened)
-    expect(saved).toStartWith('<mxfile host="OpenPencil">')
+    expect(saved).toStartWith('<mxfile host="Lawha">')
     expect(summary(await read(saved))).toEqual(summary(opened))
   })
 

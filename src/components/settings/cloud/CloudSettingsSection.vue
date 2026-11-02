@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import { cloudOfficialListed } from '@/app/cloud/availability'
 import { openCloudConnect } from '@/app/cloud/connect/flow'

@@ -14,7 +14,7 @@ import {
 import { createTarGzip } from 'nanotar'
 import * as v from 'valibot'
 
-import { readTarball } from '@open-pencil/package-artifacts-tools/tarball'
+import { readTarball } from '@lawha/package-artifacts-tools/tarball'
 
 const FIXTURE_FILES = ['dist/index.js', 'dist/index.d.ts']
 
@@ -51,7 +51,7 @@ async function packInProcess(directory: string, destination: string): Promise<st
 }
 
 async function createWorkspace() {
-  const root = join(tmpdir(), `open-pencil-release-workflow-${crypto.randomUUID()}`)
+  const root = join(tmpdir(), `lawha-release-workflow-${crypto.randomUUID()}`)
   await mkdir(join(root, 'packages/library'), { recursive: true })
   await mkdir(join(root, 'packages/app'), { recursive: true })
   await writeFile(
@@ -122,7 +122,7 @@ describe('release workflow', () => {
   })
 
   test('packs and validates an unpublished release artifact', async () => {
-    const root = join(tmpdir(), `open-pencil-release-pack-${crypto.randomUUID()}`)
+    const root = join(tmpdir(), `lawha-release-pack-${crypto.randomUUID()}`)
     await mkdir(join(root, 'packages/example/dist'), { recursive: true })
     await writeFile(
       join(root, 'package.json'),

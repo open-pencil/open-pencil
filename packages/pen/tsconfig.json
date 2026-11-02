@@ -16,7 +16,7 @@
     "types": ["bun"],
     "paths": {
       "#pen/*": ["./src/*"],
-      "@open-pencil/pen": ["./src/index.ts"]
+      "@lawha/pen": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

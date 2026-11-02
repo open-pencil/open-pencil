@@ -5,10 +5,10 @@ import { pathToFileURL } from 'node:url'
 
 import { unzipSync } from 'fflate'
 
-import { parseFigFile, exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { compressFigDataSync } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { parseFigFile, exportFigFile } from '@lawha/core/io/formats/fig'
+import { compressFigDataSync } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { coreSourcePath, testPath } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'

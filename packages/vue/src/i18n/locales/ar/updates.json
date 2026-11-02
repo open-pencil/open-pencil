@@ -1,9 +1,9 @@
 {
-  "upToDate": "OpenPencil محدَّث",
+  "upToDate": "Lawha محدَّث",
   "windowTitle": "تحديث البرنامج",
   "checking": "جارٍ التحقق من وجود تحديثات…",
   "available": {
-    "input": "OpenPencil {version} متاح"
+    "input": "Lawha {version} متاح"
   },
   "currentVersion": {
     "input": "لديك الإصدار {version}."
@@ -23,9 +23,9 @@
   },
   "installing": "جارٍ التثبيت…",
   "installed": {
-    "input": "تم تثبيت OpenPencil {version}"
+    "input": "تم تثبيت Lawha {version}"
   },
-  "restartToFinish": "أعد تشغيل OpenPencil لبدء استخدام الإصدار الجديد.",
+  "restartToFinish": "أعد تشغيل Lawha لبدء استخدام الإصدار الجديد.",
   "restartNow": "إعادة التشغيل الآن",
   "downloadFailed": {
     "input": "تعذّر تنزيل التحديث: {error}"
@@ -34,7 +34,7 @@
     "input": "تعذّر تثبيت التحديث: {error}"
   },
   "restartFailed": {
-    "input": "تعذّرت إعادة تشغيل OpenPencil: {error}"
+    "input": "تعذّرت إعادة تشغيل Lawha: {error}"
   },
   "unavailable": "التحديثات غير متاحة بعد. انشر إصدارًا موقّعًا مع latest.json أولًا.",
   "checkFailed": {

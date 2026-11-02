@@ -8,9 +8,9 @@ description: Consultare pagine, oggetti, gerarchie, variabili e formati dei docu
 La CLI permette di capire la struttura di un file senza aprire l’editor.
 
 ```sh
-bun open-pencil info design.fig
-bun open-pencil pages design.fig
-bun open-pencil tree design.fig
+bun lawha info design.fig
+bun lawha pages design.fig
+bun lawha tree design.fig
 ```
 
 ## Riepilogo
@@ -38,21 +38,21 @@ bun open-pencil tree design.fig
 Con l’app desktop in esecuzione, ometti il file: la CLI si collega tramite RPC.
 
 ```sh
-openpencil documents list    # elenca gli ID di documenti e pagine aperti
-openpencil tree              # esamina il documento attivo
-openpencil tree --document-id tab-123 --page-id 0:1
-openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
+lawha documents list    # elenca gli ID di documenti e pagine aperti
+lawha tree              # esamina il documento attivo
+lawha tree --document-id tab-123 --page-id 0:1
+lawha eval --document-id tab-123 --page-id 0:1 -c "..."
 ```
 
-Nei flussi di lavoro con agenti usa `openpencil documents list --json`, poi passa esplicitamente `--document-id` e `--page-id` invece di affidarti alla scheda o pagina attiva. Per aprire, salvare, cambiare e chiudere documenti, annullare, modificare le impostazioni o chiamare qualsiasi strumento dell’editor, vedi [Controllare l’app](/programmable/cli/app-control).
+Nei flussi di lavoro con agenti usa `lawha documents list --json`, poi passa esplicitamente `--document-id` e `--page-id` invece di affidarti alla scheda o pagina attiva. Per aprire, salvare, cambiare e chiudere documenti, annullare, modificare le impostazioni o chiamare qualsiasi strumento dell’editor, vedi [Controllare l’app](/programmable/cli/app-control).
 
 ## Lint dei design
 
 ```sh
-openpencil lint design.fig --preset strict
-openpencil lint design.fig --rule color-contrast
-openpencil lint design.fig --list-rules
-openpencil lint design.fig --fix -o fixed.fig
+lawha lint design.fig --preset strict
+lawha lint design.fig --rule color-contrast
+lawha lint design.fig --list-rules
+lawha lint design.fig --fix -o fixed.fig
 ```
 
 Usa `--json` per un output leggibile dalle macchine; ogni messaggio include `fix` e `suggestions` come dati. `--fix` applica le correzioni sicure (collega i colori alla variabile di colore corrispondente e arrotonda la geometria a pixel interi) e scrive il risultato nel file `.fig` indicato con `-o`.
@@ -62,7 +62,7 @@ Usa `--json` per un output leggibile dalle macchine; ogni messaggio include `fix
 I comandi di consultazione supportano `--json`, adatto a `jq`, CI e programmi che richiedono un output stabile e leggibile dalle macchine.
 
 ```sh
-bun open-pencil pages design.fig --json | jq '.[].name'
+bun lawha pages design.fig --json | jq '.[].name'
 ```
 
-Usa `bun open-pencil --help` o aggiungi `--help` a un sottocomando per vedere tutte le opzioni.
+Usa `bun lawha --help` o aggiungi `--help` a un sottocomando per vedere tutte le opzioni.

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { createDefaultEditorState } from '@open-pencil/core'
+import { createDefaultEditorState } from '@lawha/core'
 
 import * as browserIO from '@/app/document/io/browser'
 import { createSaveActions } from '@/app/document/io/save/actions'

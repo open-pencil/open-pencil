@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import type { TauriCapabilities } from '@wdio/tauri-service'
 
 const root = dirname(fileURLToPath(import.meta.url))
-const binaryName = process.platform === 'win32' ? 'OpenPencil.exe' : 'OpenPencil'
+const binaryName = process.platform === 'win32' ? 'Lawha.exe' : 'Lawha'
 const appBinary = join(root, 'desktop', 'target', 'debug', binaryName)
 
 const capability: TauriCapabilities = {
@@ -16,9 +16,9 @@ const capability: TauriCapabilities = {
 // Keep the spawned MCP server's discovery file out of the user's application
 // support directory. It stays inside the home directory because the app only
 // accepts a server-reported path within it.
-process.env.OPENPENCIL_MCP_DISCOVERY_PATH = join(
+process.env.LAWHA_MCP_DISCOVERY_PATH = join(
   homedir(),
-  '.openpencil-native-test',
+  '.lawha-native-test',
   'mcp.json'
 )
 

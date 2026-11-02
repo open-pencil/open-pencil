@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { selectionToJSX, selectionToJSXWithLayers } from '#design-jsx/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 /** Names written on each opening tag, in the order the tags open. */
 function openingTagNames(code: string): string[] {

@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 import type { Awareness } from 'y-protocols/awareness'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { presenceOf, setOwnerColor } from '@/app/presence/registry'

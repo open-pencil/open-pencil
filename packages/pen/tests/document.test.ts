@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parsePenFile } from '@open-pencil/pen'
+import { parsePenFile } from '@lawha/pen'
 
 import { FIXTURES } from './helpers/paths'
 

@@ -88,7 +88,7 @@ test('mixed numeric edits cancel per-node values and commit zero in one undo ste
   await editor.canvas.selectAll()
   const values = () =>
     editor.page.evaluate(() =>
-      window.openPencil
+      window.lawha
         ?.getStore?.()
         .getSelectedNodes()
         .map((node) => node.x)
@@ -103,7 +103,7 @@ test('mixed numeric edits cancel per-node values and commit zero in one undo ste
   await input.fill('0')
   await input.press('Enter')
   expect(await values()).toEqual([0, 0])
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await editor.page.evaluate(() => window.lawha?.getStore?.().undoAction())
   expect(await values()).toEqual(original)
 })
 

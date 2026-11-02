@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas, InputRect, Paint } from 'canvaskit-wasm'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderNode } from '#core/canvas/scene'

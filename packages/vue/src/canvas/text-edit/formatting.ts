@@ -1,12 +1,12 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor } from '@lawha/core'
 import {
   fontManager,
   getStyleAt,
   toggleBoldInRange,
   toggleDecorationInRange,
   toggleItalicInRange
-} from '@open-pencil/core/text'
-import type { SceneNode } from '@open-pencil/scene-graph'
+} from '@lawha/core/text'
+import type { SceneNode } from '@lawha/scene-graph'
 
 export function createTextFormattingActions(store: Editor) {
   function applyFormatting(nodeId: string, changes: Partial<SceneNode>, label: string) {

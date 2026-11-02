@@ -1,12 +1,12 @@
 import { uniq } from 'es-toolkit'
 
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import { SNAP_THRESHOLD_SCREEN_PX } from '@open-pencil/core/constants'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import { computeSnap, type SnapGuide } from '@open-pencil/scene-graph/snap'
+import { resolveEditorProfile, type Editor } from '@lawha/core'
+import { SNAP_THRESHOLD_SCREEN_PX } from '@lawha/core/constants'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+import { computeSnap, type SnapGuide } from '@lawha/scene-graph/snap'
 
 export interface PixelSnapResult {
   delta: Vector

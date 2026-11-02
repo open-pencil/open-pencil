@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { packPositions, tidyPositions, type PlacedBox } from '#core/editor/alignment/tidy'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** 100×70 boxes at the given lefts and tops, as the Figma probes used. */
 function boxes(...at: [number, number, number?, number?][]): PlacedBox[] {

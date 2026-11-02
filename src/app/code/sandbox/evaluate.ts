@@ -1,12 +1,12 @@
 import * as v from 'valibot'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { IS_BROWSER } from '@lawha/core/constants'
 import {
   DESIGN_JSX_ELEMENTS,
   DESIGN_JSX_HELPERS,
   transformDesignJSXProgram,
   type DesignJSXProgram
-} from '@open-pencil/design-jsx'
+} from '@lawha/design-jsx'
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
 import frameScript from '@/app/code/sandbox/frame.ts?script'

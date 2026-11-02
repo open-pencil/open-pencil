@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { linkImportedInstanceChildren } from '@open-pencil/fig/node-change'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { linkImportedInstanceChildren } from '@lawha/fig/node-change'
+import { SceneGraph } from '@lawha/scene-graph'
+import { recordInstanceOverride } from '@lawha/scene-graph/instances'
 
 describe('instance synchronization child deduplication', () => {
   test('syncInstances on instance with imported children without componentId does not duplicate children', () => {

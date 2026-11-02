@@ -13,7 +13,7 @@ const nodeSupportsHook =
   ]).status === 0
 
 function importUnderNode(register: boolean) {
-  const root = mkdtempSync(join(tmpdir(), 'openpencil-harness-ts-'))
+  const root = mkdtempSync(join(tmpdir(), 'lawha-harness-ts-'))
   try {
     const dependency = join(root, 'node_modules', 'typed-dependency')
     mkdirSync(dependency, { recursive: true })

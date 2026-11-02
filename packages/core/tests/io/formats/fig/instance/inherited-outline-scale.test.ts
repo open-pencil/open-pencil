@@ -2,11 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { guid } from '#core-tests/helpers/fig/guid'
 
-import { interpretInstance, materializeInstance } from '@open-pencil/fig/instance-overrides'
-import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
+import { interpretInstance, materializeInstance } from '@lawha/fig/instance-overrides'
+import { encodePathCommandsBlob } from '@lawha/fig/node-change'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
+import { geometryBlobBounds } from '@lawha/scene-graph/geometry'
 
 // A 20 x 20 outline, as the component saved it (the encoder flips y).
 const OUTLINE = encodePathCommandsBlob([

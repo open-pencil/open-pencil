@@ -53,8 +53,8 @@ const paintOracleSchema = v.pipe(
           pairedRowCount: v.number(),
           avgDeltaY: v.number(),
           avgDeltaFirstX: v.number(),
-          missingOpenPencilRows: v.number(),
-          extraOpenPencilRows: v.number()
+          missingLawhaRows: v.number(),
+          extraLawhaRows: v.number()
         })
       )
     }),

@@ -4,8 +4,8 @@ import {
   sceneNodeToDesignDocument,
   type DesignElement,
   type DesignNode
-} from '@open-pencil/dom-css/export'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/dom-css/export'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function element(node: DesignNode | undefined): DesignElement {
   if (node?.type !== 'element') throw new Error('Expected an element')

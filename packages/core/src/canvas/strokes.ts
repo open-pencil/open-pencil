@@ -1,15 +1,15 @@
 import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
 
-import type { BlendMode, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
+import type { BlendMode, SceneGraph, SceneNode, Stroke } from '@lawha/scene-graph'
+import type { ArrowEndpoint, ArrowWing } from '@lawha/scene-graph/arrow-caps'
 import {
   arrowLinesSegments,
   circleCapRadius,
   diamondCapPoints,
   equilateralArrowPoints,
   triangleCapPoints
-} from '@open-pencil/scene-graph/arrow-caps'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/arrow-caps'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { setPaintBlendMode } from './blend'
 import { applyGradientFill, applyImageFill, clearFillShader, clearStrokeShader } from './fills'

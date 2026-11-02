@@ -1,20 +1,20 @@
 ---
 title: Native JavaScript APIs
-description: Find OpenPencil's public document, editor, layout, and design-authoring APIs.
+description: Find Lawha's public document, editor, layout, and design-authoring APIs.
 ---
 
 # Native JavaScript APIs
 
-OpenPencil's native APIs are the ordinary JavaScript libraries used by the editor itself. There is no separate RPC-style authoring language or parallel agent implementation.
+Lawha's native APIs are the ordinary JavaScript libraries used by the editor itself. There is no separate RPC-style authoring language or parallel agent implementation.
 
 | Responsibility | Public entry point | Start here |
 | --- | --- | --- |
-| Document nodes, hierarchy, variables, instances, geometry | `@open-pencil/scene-graph` | [Scene Graph](../reference/scene-graph) |
-| Editing actions, selection, undo, component properties, events | `@open-pencil/core` | `createEditor()` and its inferred `Editor` type; [custom editor shell](./sdk/guides/custom-editor-shell) |
-| Declarative scene construction | `@open-pencil/design-jsx` for elements, helpers, and JSX export; `@open-pencil/core/design-jsx` to render them | [JSX guide](./jsx-renderer) and [authoring reference](../reference/design-authoring) |
-| Layout computation | `@open-pencil/core/layout` | `computeLayout(graph, frameId)` and `computeAllLayouts(graph, scopeId)` |
-| Figma-compatible scripting | `@open-pencil/core/figma-api` | [Compatibility](../reference/figma-compatibility) |
-| Schema-backed agent operations | `@open-pencil/core/tools` | [MCP](./mcp-server) |
+| Document nodes, hierarchy, variables, instances, geometry | `@lawha/scene-graph` | [Scene Graph](../reference/scene-graph) |
+| Editing actions, selection, undo, component properties, events | `@lawha/core` | `createEditor()` and its inferred `Editor` type; [custom editor shell](./sdk/guides/custom-editor-shell) |
+| Declarative scene construction | `@lawha/design-jsx` for elements, helpers, and JSX export; `@lawha/core/design-jsx` to render them | [JSX guide](./jsx-renderer) and [authoring reference](../reference/design-authoring) |
+| Layout computation | `@lawha/core/layout` | `computeLayout(graph, frameId)` and `computeAllLayouts(graph, scopeId)` |
+| Figma-compatible scripting | `@lawha/core/figma-api` | [Compatibility](../reference/figma-compatibility) |
+| Schema-backed agent operations | `@lawha/core/tools` | [MCP](./mcp-server) |
 
 Use the owning package's public exports, not workspace source paths. Package declarations describe the current callable signatures; the table above identifies ownership rather than duplicating every method.
 

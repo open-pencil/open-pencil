@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { sceneNodeToJSX } from '@open-pencil/design-jsx'
+import { sceneNodeToJSX } from '@lawha/design-jsx'
 
 import { jsxPatch } from '#core/tools/analyze/diff/jsx'
 import { nodeIdInputSchema, nodeComparisonInputSchema, defineTool } from '#core/tools/schema'
@@ -18,7 +18,7 @@ export const getJSX = defineTool({
       v.pipe(
         v.string(),
         v.description(
-          'Write JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)'
+          'Write JSX to this path instead of returning it (requires LAWHA_MCP_ROOT)'
         )
       )
     )

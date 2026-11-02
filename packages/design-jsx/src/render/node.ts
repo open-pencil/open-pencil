@@ -1,7 +1,7 @@
 import { omitBy, range } from 'es-toolkit'
 
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import type { RekaScope } from '../behaviours'
 import { renderRekaNode } from '../behaviours/render'

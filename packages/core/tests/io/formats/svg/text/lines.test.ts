@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { percentLength, pixelLength } from '@lawha/scene-graph/text'
 
 import { renderNodesToSVG, type SVGTextLine } from '#core/io/formats/svg'
 

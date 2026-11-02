@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: Podręcznik użytkownika
-description: Nawigacja, rysowanie, tekst, komponenty, automatyczny układ i pozostałe funkcje OpenPencil.
+description: Nawigacja, rysowanie, tekst, komponenty, automatyczny układ i pozostałe funkcje Lawha.
 ---
 
 # Podręcznik użytkownika
 
-OpenPencil to lokalny edytor graficzny open source, zgodny z Figmą i przygotowany do automatyzacji oraz pracy z AI. Ten podręcznik opisuje najważniejsze funkcje edytora.
+Lawha to lokalny edytor graficzny open source, zgodny z Figmą i przygotowany do automatyzacji oraz pracy z AI. Ten podręcznik opisuje najważniejsze funkcje edytora.
 
 ::: tip Skróty w różnych systemach
 W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Command</kbd> i odpowiada <kbd>Ctrl</kbd> w Windows i Linuksie; <kbd>⌥</kbd> oznacza <kbd>Option</kbd> i odpowiada <kbd>Alt</kbd>; <kbd>⇧</kbd> oznacza <kbd>Shift</kbd>.

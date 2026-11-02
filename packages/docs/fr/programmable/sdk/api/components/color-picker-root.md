@@ -7,7 +7,7 @@ description: Composant sans styles pour créer un sélecteur de couleur.
 
 `ColorPickerRoot` coordonne couleur HSV, teinte, transparence et saisie hexadécimale. L’application fournit la présentation par ses emplacements.
 
-Utilisez-le lorsque vous avez besoin de toute la logique du sélecteur sans les styles de l’application OpenPencil.
+Utilisez-le lorsque vous avez besoin de toute la logique du sélecteur sans les styles de l’application Lawha.
 
 ## Voir aussi
 

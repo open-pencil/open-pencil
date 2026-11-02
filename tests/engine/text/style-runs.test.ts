@@ -10,8 +10,8 @@ import {
   toggleBoldInRange,
   toggleDecorationInRange,
   toggleItalicInRange
-} from '@open-pencil/core/text'
-import type { StyleRun } from '@open-pencil/scene-graph'
+} from '@lawha/core/text'
+import type { StyleRun } from '@lawha/scene-graph'
 
 describe('getStyleAt', () => {
   test('returns style within run', () => {

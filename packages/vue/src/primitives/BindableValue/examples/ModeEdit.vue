@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor } from '@lawha/core'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
-import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
+import { createLawhaBindingProvider } from '#vue/controls/binding-provider/lawha'
 import BindableValueRoot from '#vue/primitives/BindableValue/BindableValueRoot.vue'
 
 const editor = createEditor()
@@ -26,7 +26,7 @@ const other = editor.graph.createNode('FRAME', page.id, {
 for (const node of [first, second, other]) editor.bindVariable(node.id, 'width', variable.id)
 const revision = ref(0)
 const targets = ref([first, first, second].map((node) => ({ nodeId: node.id, path: 'width' })))
-const provider = createOpenPencilBindingProvider(
+const provider = createLawhaBindingProvider(
   editor,
   {
     types: ['FLOAT'],

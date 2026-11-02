@@ -1,6 +1,6 @@
 ---
 title: Dokumentacja API
-description: Komponenty, composables i niskopoziomowe API pakietu @open-pencil/vue.
+description: Komponenty, composables i niskopoziomowe API pakietu @lawha/vue.
 ---
 
 # Dokumentacja API

@@ -2,7 +2,7 @@ import { describe, expect, it, jest } from 'bun:test'
 
 import { noop } from '@vueuse/core'
 
-import type { JSXPreviewNode } from '@open-pencil/design-jsx'
+import type { JSXPreviewNode } from '@lawha/design-jsx'
 
 import { createJSXPreviewController, type PreviewArtifact } from '@/app/ai/preview/controller'
 import { readPreviewInput, type RenderPreviewInput } from '@/app/ai/preview/input'

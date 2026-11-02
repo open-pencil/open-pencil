@@ -43,13 +43,13 @@
       "#mcp/*": [
         "./packages/mcp/src/*"
       ],
-      "@open-pencil/harness": [
+      "@lawha/harness": [
         "./packages/harness/src/index.ts"
       ],
       "#feedback/*": [
         "./packages/feedback/src/*"
       ],
-      "@open-pencil/cloud/*": [
+      "@lawha/cloud/*": [
         "./packages/cloud/src/*"
       ],
       "#cloud/*": [
@@ -70,73 +70,73 @@
       "tinykeys": [
         "./node_modules/tinykeys/dist/tinykeys.d.ts"
       ],
-      "@open-pencil/cli/library": [
+      "@lawha/cli/library": [
         "./packages/cli/src/library/index.ts"
       ],
-      "@open-pencil/vue": [
+      "@lawha/vue": [
         "./packages/vue/src/index.ts"
       ],
-      "@open-pencil/vue/*": [
+      "@lawha/vue/*": [
         "./packages/vue/src/*"
       ],
-      "@open-pencil/core": [
+      "@lawha/core": [
         "./packages/core/src/index.ts"
       ],
-      "@open-pencil/core/*": [
+      "@lawha/core/*": [
         "./packages/core/src/*"
       ],
-      "@open-pencil/dom-css": [
+      "@lawha/dom-css": [
         "./packages/dom-css/src/index.ts"
       ],
-      "@open-pencil/dom-css/scene-graph": [
+      "@lawha/dom-css/scene-graph": [
         "./packages/dom-css/src/import/scene-graph.ts"
       ],
-      "@open-pencil/dom-css/export": [
+      "@lawha/dom-css/export": [
         "./packages/dom-css/src/export/index.ts"
       ],
-      "@open-pencil/dom-css/*": [
+      "@lawha/dom-css/*": [
         "./packages/dom-css/src/*"
       ],
       "#scene-graph/*": [
         "./packages/scene-graph/src/*"
       ],
-      "@open-pencil/scene-graph": [
+      "@lawha/scene-graph": [
         "./packages/scene-graph/src/index.ts"
       ],
-      "@open-pencil/scene-graph/*": [
+      "@lawha/scene-graph/*": [
         "./packages/scene-graph/src/*"
       ],
       "#drawio/*": [
         "./packages/drawio/src/*"
       ],
-      "@open-pencil/drawio": [
+      "@lawha/drawio": [
         "./packages/drawio/src/index.ts"
       ],
       "#mermaid/*": [
         "./packages/mermaid/src/*"
       ],
-      "@open-pencil/mermaid": [
+      "@lawha/mermaid": [
         "./packages/mermaid/src/index.ts"
       ],
       "#emit/*": [
         "./packages/emit/src/*"
       ],
-      "@open-pencil/emit": [
+      "@lawha/emit": [
         "./packages/emit/src/index.ts"
       ],
       "#design-jsx/*": [
         "./packages/design-jsx/src/*"
       ],
-      "@open-pencil/design-jsx": [
+      "@lawha/design-jsx": [
         "./packages/design-jsx/src/index.ts"
       ],
       "#pen/*": [
         "./packages/pen/src/*"
       ],
-      "@open-pencil/pen": [
+      "@lawha/pen": [
         "./packages/pen/src/index.ts"
       ],
-      "@open-pencil/pen/*": [
+      "@lawha/pen/*": [
         "./packages/pen/src/*"
       ]
     }

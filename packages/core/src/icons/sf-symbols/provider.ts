@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import type { IconOptions } from '@open-pencil/scene-graph/icons'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { IconOptions } from '@lawha/scene-graph/icons'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type {

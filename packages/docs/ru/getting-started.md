@@ -2,9 +2,9 @@
 
 ## Веб-версия
 
-OpenPencil работает прямо в браузере и не требует установки. Чтобы начать работу, откройте [app.openpencil.dev](https://app.openpencil.dev).
+Lawha работает прямо в браузере и не требует установки. Чтобы начать работу, откройте [app.lawha.invalid](https://app.lawha.invalid).
 
-Если вы хотите создать на основе OpenPencil собственный продукт, а не только пользоваться готовым приложением, перейдите в раздел [Программирование и автоматизация](/programmable/) или прочитайте документацию [Vue SDK](/programmable/sdk/).
+Если вы хотите создать на основе Lawha собственный продукт, а не только пользоваться готовым приложением, перейдите в раздел [Программирование и автоматизация](/programmable/) или прочитайте документацию [Vue SDK](/programmable/sdk/).
 
 ## Приложение для компьютера
 
@@ -20,7 +20,7 @@ OpenPencil работает прямо в браузере и не требуе�
 
 ## Системные требования {#system-requirements}
 
-OpenPencil отрисовывает графику через CanvasKit на WebGL и использует современные возможности веб-платформы, поэтому нужен свежий движок браузера. Веб-версия работает в Chrome 111, Edge 111, Firefox 128 и Safari 16.4 или новее; браузеры на основе Chromium, например Brave и Opera, ориентируются на версию своего Chrome. Приложение для компьютера отрисовывает интерфейс в системном WebView, поэтому нижняя граница определяется движком операционной системы:
+Lawha отрисовывает графику через CanvasKit на WebGL и использует современные возможности веб-платформы, поэтому нужен свежий движок браузера. Веб-версия работает в Chrome 111, Edge 111, Firefox 128 и Safari 16.4 или новее; браузеры на основе Chromium, например Brave и Opera, ориентируются на версию своего Chrome. Приложение для компьютера отрисовывает интерфейс в системном WebView, поэтому нижняя граница определяется движком операционной системы:
 
 | Платформа | Требование |
 | --------- | ---------- |
@@ -28,21 +28,21 @@ OpenPencil отрисовывает графику через CanvasKit на Web
 | Windows | Windows 10 или новее со средой Microsoft Edge WebView2 Evergreen, которая обновляется сама. |
 | Linux | WebKitGTK 2.40 или новее (`webkit2gtk-4.1`). |
 
-Если движок слишком старый, OpenPencil вместо пустого окна показывает, что нужно обновить. Если вы видите такое уведомление в системе, которая подходит под требования, воспользуйтесь ссылкой «Report a problem»: в ней уже указаны сведения о браузере и движке.
+Если движок слишком старый, Lawha вместо пустого окна показывает, что нужно обновить. Если вы видите такое уведомление в системе, которая подходит под требования, воспользуйтесь ссылкой «Report a problem»: в ней уже указаны сведения о браузере и движке.
 
 ## Установка в macOS через Homebrew
 
 ```sh
-brew install --cask openpencil
+brew install --cask lawha
 ```
 
-Команда устанавливает подписанное приложение для Mac с Apple Silicon или Intel из [официального каталога Homebrew](https://formulae.brew.sh/cask/openpencil). Обновления проходят проверку в Homebrew и могут появляться позже релизов на GitHub. До обновления каталога используйте [прямую загрузку](https://github.com/open-pencil/open-pencil/releases/latest). CLI устанавливается отдельно: `npm install -g @open-pencil/cli`.
+Команда устанавливает подписанное приложение для Mac с Apple Silicon или Intel из [официального каталога Homebrew](https://formulae.brew.sh/cask/lawha). Обновления проходят проверку в Homebrew и могут появляться позже релизов на GitHub. До обновления каталога используйте [прямую загрузку](https://github.com/aliaaldihnayn-lab/design/releases/latest). CLI устанавливается отдельно: `npm install -g @lawha/cli`.
 
 Если вы использовали архивный собственный tap, перейдите так:
 
 ```sh
-brew uninstall open-pencil/tap/open-pencil
-brew install --cask openpencil
+brew uninstall lawha/tap/lawha
+brew install --cask lawha
 ```
 
 ## Сборка из исходного кода {#building-from-source}
@@ -55,8 +55,8 @@ brew install --cask openpencil
 ### Установка
 
 ```sh
-git clone https://github.com/open-pencil/open-pencil.git
-cd open-pencil
+git clone https://github.com/aliaaldihnayn-lab/design.git
+cd lawha
 bun install
 ```
 

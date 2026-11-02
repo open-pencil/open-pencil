@@ -5,7 +5,7 @@ import { fileText } from '#dom-css-tests/helpers'
 import { layerComponents, layerMarkup } from '#dom-css/export'
 import { compileTailwindCSS } from '#dom-css/import/tailwind'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function card(graph: SceneGraph, name: string) {
   const frame = graph.createNode('FRAME', graph.getPages()[0].id, {

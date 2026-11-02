@@ -23,7 +23,7 @@ const EVENT_DESCRIPTIONS: {
   }
 } = {
   app_opened: {
-    description: 'OpenPencil started.',
+    description: 'Lawha started.',
     properties: { locale: 'The interface language.' }
   },
   document_opened: {
@@ -57,7 +57,7 @@ const BUILD_FIELDS = [
 ] as const satisfies readonly PingField[]
 
 const PING_DESCRIPTIONS: Record<PingField, string> = {
-  version: 'The OpenPencil version, such as 0.16.0.',
+  version: 'The Lawha version, such as 0.16.0.',
   platform: 'The operating system family.',
   arch: 'The processor architecture, known on desktop only.',
   app: 'The desktop app or the web app.',

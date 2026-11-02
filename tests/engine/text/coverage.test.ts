@@ -4,8 +4,8 @@ import {
   collectGraphFontRequirements,
   fontManager,
   textNeededFallbackScripts
-} from '@open-pencil/core/text'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/text'
+import { SceneGraph } from '@lawha/scene-graph'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id

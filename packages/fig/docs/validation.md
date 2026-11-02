@@ -22,7 +22,7 @@ Figma-authored archive
 | Check | Proves | Does not prove |
 | --- | --- | --- |
 | Encoded-field assertions | Requested records were emitted | Figma interprets them correctly |
-| OpenPencil round trip | Reader and writer agree on tested behavior | Independent format correctness |
+| Lawha round trip | Reader and writer agree on tested behavior | Independent format correctness |
 | Figma property comparison | Tested effective properties match | Actual pixels or untested metadata |
 | Direct render comparison | New-reader graph renders similarly | Export/reopen fidelity |
 | Figma reopen and interaction | External interpretation and tested editing work | All documents/features work |
@@ -51,7 +51,7 @@ provenance next to the fixture, not transient cloud-file IDs in architecture doc
 Run from the repository root, with the matching Figma document open:
 
 ```sh
-bun open-pencil-visual-oracles compare interpreted-document \
+bun lawha-visual-oracles compare interpreted-document \
   --file tests/fixtures/gold-preview.fig --node 1:3461 \
   --figma-key NmoHzskYNiSKOaRX14bMdw --output /tmp/gold-oracle
 ```
@@ -67,7 +67,7 @@ export against the reader's. Captures target the active document, so bring the i
 file's tab to the front first:
 
 ```sh
-bun open-pencil-visual-oracles activate-tab --title gold-preview-edited
+bun lawha-visual-oracles activate-tab --title gold-preview-edited
 ```
 
 Property and structural differences are export defects. Geometry differences on hug and fill
@@ -103,7 +103,7 @@ and timings from individual runs belong in result artifacts or the integration P
 `--figma-key`, exports the same node from the open Figma document for comparison:
 
 ```sh
-bun open-pencil-visual-oracles interpret-instance \
+bun lawha-visual-oracles interpret-instance \
   --file tests/fixtures/gold-preview.fig --node 1:3503 \
   --scale 2 --output /tmp/gold-input-comparison
 ```

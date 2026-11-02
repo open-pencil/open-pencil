@@ -16,8 +16,8 @@
     "rootDir": "src",
     "paths": {
       "#core/*": ["./src/*"],
-      "@open-pencil/core": ["./src/index.ts"],
-      "@open-pencil/core/*": ["./src/*"]
+      "@lawha/core": ["./src/index.ts"],
+      "@lawha/core/*": ["./src/*"]
     }
   },
   "include": ["src"]

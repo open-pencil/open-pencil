@@ -12,12 +12,12 @@ import {
   readPackageManifest,
   runCommand,
   type WorkspacePackage
-} from '@open-pencil/package-artifacts-tools'
+} from '@lawha/package-artifacts-tools'
 import {
   inspectTarball,
   validatePackedTarballs
-} from '@open-pencil/package-artifacts-tools/tarball'
-import { verifyArtifactConsumers } from '@open-pencil/package-quality-tools/consumer'
+} from '@lawha/package-artifacts-tools/tarball'
+import { verifyArtifactConsumers } from '@lawha/package-quality-tools/consumer'
 
 import { NPM_RELEASE_POLICY } from './policy'
 import {

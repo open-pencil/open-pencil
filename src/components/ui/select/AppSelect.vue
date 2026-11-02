@@ -10,7 +10,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, ref, useSlots, watch } from 'vue'
 
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'

@@ -4,7 +4,7 @@ import { propertyBinding } from '#fig-tests/helpers/component-props'
 import { guid } from '#fig-tests/helpers/guid'
 import { createDocumentReader } from '#fig/document/read'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 const SHOW_ICON = guid(10)
 

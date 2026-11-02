@@ -6,7 +6,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function observeScenePixels(page: Page) {
   return page.evaluateHandle(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     const renderer = store?.canvasRenderers.find((r) => r.tracksSceneSettlement)
     const node = store?.getSelectedNodes()[0]
     const scene = document.querySelector<HTMLCanvasElement>('[data-test-id="scene-canvas-element"]')
@@ -52,7 +52,7 @@ test('zoom fallback does not resurrect a picture from before creation', async ({
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.lawha?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
       x: 300,
@@ -64,7 +64,7 @@ test('zoom fallback does not resurrect a picture from before creation', async ({
     store.select([node.id])
     store.requestRender()
   })
-  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
   const box = expectDefined(await canvas.canvas.boundingBox(), 'canvas bounds')
   const x = box.x + 300
   const y = box.y + 250
@@ -78,11 +78,11 @@ test('zoom fallback does not resurrect a picture from before creation', async ({
   } finally {
     await page.keyboard.up('Control')
   }
-  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
   // The zoom went over the tiles and came back to a covered level.
   expect(
     await page.evaluate(() =>
-      window.openPencil
+      window.lawha
         ?.getStore?.()
         .canvasRenderers.some((r) => r.tracksSceneSettlement && r.tiledSceneCovered)
     )
@@ -102,7 +102,7 @@ test('zoom fallback does not resurrect a picture from before creation', async ({
       await canvas.waitForRender()
     }
     await page.keyboard.up('Control')
-    await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+    await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
     const samples = await probe.evaluate((p) => p.samples())
     expect(samples.length).toBeGreaterThan(4)
     expect(samples.some((sample) => sample.zoom < 0.3)).toBe(true)

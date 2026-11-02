@@ -4,10 +4,10 @@ import {
   type FigArchiveRecordInfo,
   type FigPatchedArchiveInput,
   type FigRecordPatch
-} from '@open-pencil/fig'
-import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { randomHex } from '@open-pencil/scene-graph/random'
+} from '@lawha/fig'
+import { loadFigDataCompressor } from '@lawha/kiwi/fig/container'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 

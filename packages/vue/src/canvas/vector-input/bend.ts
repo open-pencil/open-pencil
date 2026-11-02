@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core'
-import type { VectorSegment } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Editor } from '@lawha/core'
+import type { VectorSegment } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { DragState } from '#vue/shared/input/types'
 

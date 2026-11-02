@@ -1,7 +1,7 @@
 import { computed, watch } from 'vue'
 
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
-import { exposedInstances, findComponentPropertyTargets } from '@open-pencil/scene-graph/components'
+import type { ComponentPropertyDefinition, SceneNode } from '@lawha/scene-graph'
+import { exposedInstances, findComponentPropertyTargets } from '@lawha/scene-graph/components'
 
 import {
   compatibleComponentPropertyDefinitions,

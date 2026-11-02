@@ -2,9 +2,9 @@ import { expect, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { materializeFigFragment } from '@open-pencil/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { prepareGraphTransfer, applyGraphTransfer } from '@open-pencil/scene-graph/transfer'
+import { materializeFigFragment } from '@lawha/fig'
+import { SceneGraph } from '@lawha/scene-graph'
+import { prepareGraphTransfer, applyGraphTransfer } from '@lawha/scene-graph/transfer'
 
 import { readFixtureObject } from '#tests/helpers/fig/fixtures'
 

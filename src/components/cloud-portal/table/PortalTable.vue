@@ -2,7 +2,7 @@
 import type { RowData } from '@tanstack/vue-table'
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import type { PortalList } from '@/app/cloud-portal/list'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'

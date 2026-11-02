@@ -1,6 +1,6 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
-import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
+import { parseFigBuffer, materializeDocument } from '@lawha/fig'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { readFixtureArrayBuffer } from '#tests/helpers/fig/fixtures'

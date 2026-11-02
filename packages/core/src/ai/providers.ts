@@ -70,7 +70,7 @@ export type AIProviderID =
   | 'zai'
   | 'minimax'
   | 'anthropic-compatible'
-  | 'openpencil'
+  | 'lawha'
   | 'harness:pi'
   | `acp:${ACPAgentID}`
 
@@ -368,8 +368,8 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     supportsCustomModel: true
   },
   {
-    id: 'openpencil',
-    name: 'OpenPencil Cloud',
+    id: 'lawha',
+    name: 'Lawha Cloud',
     keyPlaceholder: '',
     keyURL: '',
     defaultModel: '',

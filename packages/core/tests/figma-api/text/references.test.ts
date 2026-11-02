@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { SceneGraph } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import { registerTestFont } from '#core-tests/helpers/figma-api'
 
@@ -21,7 +21,7 @@ function styledText(characters = 'Hello world') {
 }
 
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
-const LINK = { type: 'URL' as const, value: 'https://openpencil.dev' }
+const LINK = { type: 'URL' as const, value: 'https://github.com/aliaaldihnayn-lab/design#readme' }
 
 function textStyle(api: FigmaAPI, id: string, fields: Record<string, unknown>) {
   const page = api.graph.getPages()[0]
@@ -65,13 +65,13 @@ describe('text case ranges', () => {
     expect(text.getRangeTextCase(0, 5)).toBe('LOWER')
   })
 
-  test('reject what Figma rejects, and small caps OpenPencil cannot draw', () => {
+  test('reject what Figma rejects, and small caps Lawha cannot draw', () => {
     const { text } = styledText()
     expect(() => text.setRangeTextCase(0, 5, 'SHOUT' as 'UPPER')).toThrow(
       `in setRangeTextCase: Property "value" failed validation: Invalid enum value. Expected 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE' | 'SMALL_CAPS' | 'SMALL_CAPS_FORCED', received 'SHOUT'`
     )
     expect(() => text.setRangeTextCase(0, 5, 'SMALL_CAPS' as 'UPPER')).toThrow(
-      'in setRangeTextCase: OpenPencil does not support the SMALL_CAPS text case'
+      'in setRangeTextCase: Lawha does not support the SMALL_CAPS text case'
     )
     expect(() => text.setRangeTextCase(3, 3, 'UPPER')).toThrow(
       "in setRangeTextCase: Empty range selected. 'end' must be greater than 'start'"

@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { ShaderPreset } from '@lawha/scene-graph/shaders'
 
 import type { DesignTokens } from './tokens/references'
 

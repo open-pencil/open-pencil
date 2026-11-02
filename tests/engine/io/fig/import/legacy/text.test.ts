@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { materializeDocument } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import { materializeDocument } from '@lawha/fig'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { lineHeightPixels } from '@lawha/scene-graph/text'
 
 import { canvas, doc, node } from './helpers'
 

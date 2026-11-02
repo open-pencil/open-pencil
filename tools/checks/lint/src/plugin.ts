@@ -23,7 +23,7 @@ import { normalizedFilename } from '#lint/support/context.ts'
 import type { PluginRule, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 const noInlineNamedTypes = {
   meta: {
@@ -84,7 +84,7 @@ const noInlineNamedTypes = {
         if (namedType) {
           context.report({
             node,
-            message: `Use '${namedType}' instead of inline type literal. Import from '@open-pencil/core'.`
+            message: `Use '${namedType}' instead of inline type literal. Import from '@lawha/core'.`
           })
         }
       }
@@ -122,7 +122,7 @@ const noStructuredCloneSceneArrays = {
           if (props.has(arg.property.name)) {
             context.report({
               node,
-              message: `Use the typed copy helper instead of structuredClone for '${arg.property.name}'. Import from '@open-pencil/core'.`
+              message: `Use the typed copy helper instead of structuredClone for '${arg.property.name}'. Import from '@lawha/core'.`
             })
           }
         }
@@ -419,8 +419,8 @@ import {
   noComponentRootSiblingFolder,
   noUselessPassThroughWrappers,
   noFunctionAliasImports,
-  noDirectOpenPencilBrowserStore,
-  noDirectOpenPencilWindowInternals,
+  noDirectLawhaBrowserStore,
+  noDirectLawhaWindowInternals,
   noBunGlobalsInCli,
   noTopLevelPrefixedTestFiles,
   noSiblingDomainPrefixedFiles
@@ -433,7 +433,7 @@ import {
 } from '#lint/rules/typescript.ts'
 
 const plugin = {
-  meta: { name: 'open-pencil' },
+  meta: { name: 'lawha' },
   rules: {
     'no-inline-named-types': noInlineNamedTypes,
     'no-import-type-annotations': noImportTypeAnnotations,
@@ -486,8 +486,8 @@ const plugin = {
     'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-zoom-in-scene-drawing': noZoomInSceneDrawing,
-    'no-direct-open-pencil-window-internals': noDirectOpenPencilWindowInternals,
-    'no-direct-open-pencil-browser-store': noDirectOpenPencilBrowserStore,
+    'no-direct-lawha-window-internals': noDirectLawhaWindowInternals,
+    'no-direct-lawha-browser-store': noDirectLawhaBrowserStore,
     'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
     'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,
     'no-composable-state-wrappers': noComposableStateWrappers,

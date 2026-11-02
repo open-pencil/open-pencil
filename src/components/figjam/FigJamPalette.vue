@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import { colorToHex } from '@lawha/scene-graph/color'
 import {
   FIGJAM_COLOR_NAMES,
   figJamColor,
   type FigJamColorName
-} from '@open-pencil/scene-graph/figjam'
-import { useFigJamMessages } from '@open-pencil/vue/i18n'
+} from '@lawha/scene-graph/figjam'
+import { useFigJamMessages } from '@lawha/vue/i18n'
 
 import FigJamSwatches from './FigJamSwatches.vue'
 

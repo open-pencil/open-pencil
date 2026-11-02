@@ -5,7 +5,7 @@ import { materializeDocument, type DocumentAssemblyOptions } from '#fig/document
 import { unsupportedExpressionData } from '#fig/node-change/variable/unsupported'
 import { noop } from 'es-toolkit/function'
 
-import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange, VariableDataEntry } from '@lawha/kiwi/fig/codec'
 
 const COLLECTION = '1:1'
 const DEFAULT_MODE = '1:2'
@@ -62,7 +62,7 @@ function expression(
   }
 }
 
-/** A function OpenPencil does not evaluate, over one alias it has and one it does not. */
+/** A function Lawha does not evaluate, over one alias it has and one it does not. */
 const keyframe = expression('KEYFRAME', [
   { dataType: 'ALIAS', value: { alias: { guid: guid(4) } } },
   { dataType: 'FLOAT', value: { floatValue: 8 } },
@@ -149,7 +149,7 @@ test.each([
   expect(value).toMatchObject({ expression: 'UNSUPPORTED', function: 'TERNARY' })
 })
 
-test('formulas OpenPencil evaluates are not kept opaque', () => {
+test('formulas Lawha evaluates are not kept opaque', () => {
   const sum = expression('ADDITION', [
     { dataType: 'FLOAT', value: { floatValue: 2 } },
     { dataType: 'FLOAT', value: { floatValue: 3 } }

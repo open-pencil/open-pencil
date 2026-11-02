@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import { loadPageTransaction } from '#fig/document/load-transaction'
 import type { AssemblyState } from '#fig/document/materialize'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 test('failed page mutation restores changed existing instance indexes and object identity', () => {
   const graph = new SceneGraph()

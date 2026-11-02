@@ -1,4 +1,4 @@
-import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
+import type { MetricsSnapshot } from '@lawha/feedback/contract'
 
 /** The rows the dashboard's charts and lists take, named after the API's own shape. */
 export type DailyActiveDay = MetricsSnapshot['dailyActive'][number]

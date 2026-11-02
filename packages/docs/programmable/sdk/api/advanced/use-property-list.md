@@ -9,7 +9,7 @@ description: Primitive context helper for PropertyListRoot descendants.
 
 Use it inside descendants that need controlled items, mixed-state information, or row-level handlers for fills, strokes, or effects. It does not access an editor.
 
-OpenPencil editor panels can use `useEditorPropertyList(propKey)` in an adapter component to connect the controlled primitive to selection, undo batching, and multi-node mutations.
+Lawha editor panels can use `useEditorPropertyList(propKey)` in an adapter component to connect the controlled primitive to selection, undo batching, and multi-node mutations.
 
 ## Related APIs
 

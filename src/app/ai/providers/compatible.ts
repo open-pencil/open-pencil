@@ -2,7 +2,7 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { wrapLanguageModel } from 'ai'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 import { toolImagesInUserMessage } from '@/app/ai/providers/tool-images'
 import type { ModelConfig, ModelProviderAdapter } from '@/app/ai/providers/types'

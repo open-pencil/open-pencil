@@ -1,11 +1,11 @@
 import { groupBy, limitAsync } from 'es-toolkit'
 
-import type { CloudAPIClient } from '@open-pencil/cloud/client'
+import type { CloudAPIClient } from '@lawha/cloud/client'
 import {
   isCloudChecksum,
   type DocumentImageLink,
   type ResolveDocumentShareInput
-} from '@open-pencil/cloud/contract'
+} from '@lawha/cloud/contract'
 
 import type { RoomImageStore } from '@/app/collab/images'
 import { cloudChecksum, downloadCloudImage } from '@/app/integrations/storage/cloud/download'

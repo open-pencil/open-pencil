@@ -21,8 +21,8 @@ export interface VoiceCallOptions {
 /** A voice call controller; the app uses the one `useVoiceCall()` holds for the window. */
 export function createVoiceCall({ navigator }: VoiceCallOptions = {}) {
   // Device IDs are per browser and origin, so the choice is a per-device convenience.
-  const inputId = useLocalStorage('open-pencil:voice:input', SYSTEM_DEVICE)
-  const outputId = useLocalStorage('open-pencil:voice:output', SYSTEM_DEVICE)
+  const inputId = useLocalStorage('lawha:voice:input', SYSTEM_DEVICE)
+  const outputId = useLocalStorage('lawha:voice:output', SYSTEM_DEVICE)
   const devices = useDevicesList({ navigator, constraints: { audio: true, video: false } })
   // A saved microphone that is unplugged falls back to the system's.
   const inputDevice = computed(() =>

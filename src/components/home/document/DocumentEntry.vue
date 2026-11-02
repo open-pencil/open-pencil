@@ -14,8 +14,8 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 
-import type { DocumentKind } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { DocumentKind } from '@lawha/scene-graph'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
 import { useMenuUI } from '@/components/ui/menu/menu'

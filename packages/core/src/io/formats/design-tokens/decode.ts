@@ -8,14 +8,14 @@ import {
   type TokenUnit,
   type VariableScope,
   type VariableType
-} from '@open-pencil/scene-graph'
-import { parseDisplayableColor } from '@open-pencil/scene-graph/color'
-import { parseCSSNumber } from '@open-pencil/scene-graph/css'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { ROOT_FONT_SIZE_PX } from '@open-pencil/scene-graph/variables'
+} from '@lawha/scene-graph'
+import { parseDisplayableColor } from '@lawha/scene-graph/color'
+import { parseCSSNumber } from '@lawha/scene-graph/css'
+import type { Color } from '@lawha/scene-graph/primitives'
+import { ROOT_FONT_SIZE_PX } from '@lawha/scene-graph/variables'
 
 import type { ReadToken } from './read'
-import { OPENPENCIL_EXTENSION } from './types'
+import { LAWHA_EXTENSION } from './types'
 
 /** A `{group.token}` reference, as its path segments. */
 export function referencePath(value: unknown): string[] | null {
@@ -149,7 +149,7 @@ export interface DecodedVariable {
   hiddenFromPublishing?: boolean
   description?: string
   /**
-   * Whether the token carries OpenPencil's own fields. Its unit, scopes, and code syntax then
+   * Whether the token carries Lawha's own fields. Its unit, scopes, and code syntax then
    * replace a variable's, missing ones included; other tools' tokens leave them as they are.
    */
   own: boolean
@@ -249,11 +249,11 @@ function impliedScopes(token: ReadToken): VariableScope[] | undefined {
   return undefined
 }
 
-/** A token as a variable value and OpenPencil's own token fields. */
+/** A token as a variable value and Lawha's own token fields. */
 export function decodeVariableToken(token: ReadToken): DecodedVariable | DecodeFailure {
   const type = variableTypeOf(token)
   if (type === 'unsupported-type' || type === 'invalid-value') return type
-  const own = v.safeParse(ownFieldsSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(ownFieldsSchema, token.extensions[LAWHA_EXTENSION])
   const fields = own.success ? own.output : {}
   const reference = referencePath(token.value)
   let value: DecodedValue

@@ -2,7 +2,7 @@ import {
   isSelectionScopeTool,
   SELECTION_SCOPE_FILE_OUTPUT_ERROR,
   SELECTION_SCOPE_TOOLS
-} from '@open-pencil/mcp/tools'
+} from '@lawha/mcp/tools'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -26,20 +26,20 @@ export function limitToSelection(
   toolArgs: Record<string, unknown>
 ): Record<string, unknown> {
   if (!isSelectionScopeTool(toolName)) {
-    throw new Error(`${toolName} is unavailable while OpenPencil shares only the selection`)
+    throw new Error(`${toolName} is unavailable while Lawha shares only the selection`)
   }
   // The MCP side writes a `path` to disk, which the selection does not extend to.
   if (toolArgs.path !== undefined) throw new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR)
   const fields = SELECTION_SCOPE_TOOLS[toolName]
   const selected = [...store.state.selectedIds]
   if (selected.length === 0) {
-    throw new Error('Nothing is selected in OpenPencil. Ask the user to select the layers to use.')
+    throw new Error('Nothing is selected in Lawha. Ask the user to select the layers to use.')
   }
 
   const ids = fields.flatMap((field) => namedIds(toolArgs[field]))
   for (const id of ids) {
     if (!selected.some((root) => store.graph.isDescendant(id, root))) {
-      throw new Error(`${id} is outside the selection OpenPencil shares; use get_selection`)
+      throw new Error(`${id} is outside the selection Lawha shares; use get_selection`)
     }
   }
   if (ids.length > 0 || fields.length === 0) return toolArgs

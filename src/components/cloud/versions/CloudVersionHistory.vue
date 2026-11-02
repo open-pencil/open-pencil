@@ -14,8 +14,8 @@ import {
 } from 'reka-ui'
 import { computed, onMounted, useTemplateRef } from 'vue'
 
-import type { DocumentVersion } from '@open-pencil/cloud/contract'
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import type { DocumentVersion } from '@lawha/cloud/contract'
+import { useCloudMessages } from '@lawha/vue/i18n'
 
 import { canLinkToVersions, cloudVersionLinkURL } from '@/app/cloud/documents/link'
 import { duplicateVersion, editVersion, restoreVersion } from '@/app/cloud/versions/actions'

@@ -5,15 +5,15 @@ description: Build your own editor shell with provideEditor, CanvasRoot, menus, 
 
 # Custom Editor Shell
 
-A typical OpenPencil Vue app has three layers:
+A typical Lawha Vue app has three layers:
 
-1. `@open-pencil/core` creates the editor
-2. `@open-pencil/vue` adapts it into Vue composables and headless primitives
+1. `@lawha/core` creates the editor
+2. `@lawha/vue` adapts it into Vue composables and headless primitives
 3. your app renders the shell, styling, and product UX
 
 ## Why this matters
 
-The built-in OpenPencil app is only one possible shell.
+The built-in Lawha app is only one possible shell.
 
 You can build a very different one for a focused workflow: an embedded editor inside another product, an internal asset tool, a template editor, an annotation UI, or an AI-assisted editing surface with custom controls.
 
@@ -34,12 +34,12 @@ A practical shell often looks like this:
 ```vue
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { createDefaultEditorState, createEditor } from '@open-pencil/core'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { provideEditor } from '@open-pencil/vue'
-import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
-import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
-import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
+import { createDefaultEditorState, createEditor } from '@lawha/core'
+import { SceneGraph } from '@lawha/scene-graph'
+import { provideEditor } from '@lawha/vue'
+import { CanvasRoot, CanvasSurface } from '@lawha/vue/canvas'
+import { ToolbarRoot } from '@lawha/vue/primitives/Toolbar'
+import { PageListRoot } from '@lawha/vue/primitives/PageList'
 
 const graph = new SceneGraph()
 const page = graph.getPages()[0]

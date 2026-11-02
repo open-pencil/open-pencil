@@ -4,7 +4,7 @@ import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
 describe('no-inline-tauri-imports', () => {
   const rule = 'no-inline-tauri-imports'
-  const rules = { [`open-pencil/${rule}`]: 'error' }
+  const rules = { [`lawha/${rule}`]: 'error' }
 
   test('rejects an inline Tauri import in app code, and allows it only in the support gate files', async () => {
     const source =
@@ -44,7 +44,7 @@ describe('import boundary rules', () => {
           'packages/core/src/io/export.ts':
             "export const load = () => import('@tauri-apps/api/core')"
         },
-        { [`open-pencil/${rule}`]: 'error' }
+        { [`lawha/${rule}`]: 'error' }
       ),
       rule
     )

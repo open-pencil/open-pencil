@@ -1,14 +1,14 @@
 import type { LanguageModel } from 'ai'
 import { ref } from 'vue'
 
-import type { ReasoningEffort } from '@open-pencil/core/constants'
+import type { ReasoningEffort } from '@lawha/core/constants'
 
 import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
-import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudModelConfig } from '@/app/ai/providers/lawha/model'
+import { LAWHA_AI_PROVIDER } from '@/app/ai/providers/lawha/provider'
 import type { ModelCredentialStore } from '@/app/ai/providers/types'
 import { cloudAIClient } from '@/app/cloud/integration'
 import { appCredentialServices } from '@/app/settings/credentials/app'
@@ -90,11 +90,11 @@ export class CloudAIUnavailableError extends Error {
   override readonly name = 'CloudAIUnavailableError'
 
   constructor() {
-    super('OpenPencil Cloud AI is unavailable')
+    super('Lawha Cloud AI is unavailable')
   }
 }
 
-function openPencilLanguageModel(resolved: ResolvedAIModelRole): LanguageModel {
+function lawhaLanguageModel(resolved: ResolvedAIModelRole): LanguageModel {
   const client = cloudAIClient(resolved.connection.cloudWorkspaceId ?? '')
   if (!client) throw new CloudAIUnavailableError()
   const { config, runtime } = cloudModelConfig(client, resolved.profile.modelID)
@@ -123,8 +123,8 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
     return { kind: 'acp', role: resolved }
   }
 
-  if (resolved.connection.providerID === OPENPENCIL_AI_PROVIDER) {
-    return { kind: 'direct', role: resolved, model: openPencilLanguageModel(resolved) }
+  if (resolved.connection.providerID === LAWHA_AI_PROVIDER) {
+    return { kind: 'direct', role: resolved, model: lawhaLanguageModel(resolved) }
   }
 
   const apiKey = await resolveModelConnectionAPIKey(resolved.connection.id)

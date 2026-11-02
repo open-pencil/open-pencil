@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import type { WebSocket } from 'ws'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
@@ -27,7 +27,7 @@ import {
 } from '#tests/helpers/mcp/server'
 
 const isUnix = process.platform !== 'win32'
-const SOCKET_DIR = join(tmpdir(), `openpencil-test-server-${process.pid}`)
+const SOCKET_DIR = join(tmpdir(), `lawha-test-server-${process.pid}`)
 const SOCKET_PATH = isUnix ? join(SOCKET_DIR, 'mcp.sock') : null
 const TEST_AUTH_TOKEN = 'test-auth-token'
 let testCounter = 0
@@ -370,7 +370,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-no-app')
       expect(response.ok).toBe(false)
-      expect(response.error).toContain('OpenPencil app is not connected')
+      expect(response.error).toContain('Lawha app is not connected')
     } finally {
       clientWs?.close()
       await handle.close()

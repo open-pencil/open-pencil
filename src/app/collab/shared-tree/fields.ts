@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import * as Y from 'yjs'
 
-import { randomIndex } from '@open-pencil/scene-graph/random'
+import { randomIndex } from '@lawha/scene-graph/random'
 
 /**
  * How a shared document records the layer tree. Each layer's map holds `parents`, a nested map

@@ -1,11 +1,11 @@
 {
-  "name": "@open-pencil/emit",
+  "name": "@lawha/emit",
   "version": "0.17.0-beta.1",
-  "description": "How OpenPencil exporters emit source: JavaScript, TypeScript, and JSX built as ESTree and printed with esrap.",
+  "description": "How Lawha exporters emit source: JavaScript, TypeScript, and JSX built as ESTree and printed with esrap.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/emit"
   },
   "files": [

@@ -1,4 +1,4 @@
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 import type { CredentialResolver } from '@/app/settings/credentials/types'
 

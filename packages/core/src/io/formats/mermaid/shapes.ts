@@ -1,5 +1,5 @@
-import type { FlowShape } from '@open-pencil/mermaid'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import type { FlowShape } from '@lawha/mermaid'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
 
 /** How a FigJam shape stands for a Mermaid one: its kind, and whether it is drawn upside down. */
 export interface FigJamShape {

@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { REASONING_EFFORTS } from '@open-pencil/core/constants'
-import type { ModelOption } from '@open-pencil/core/constants'
+import { REASONING_EFFORTS } from '@lawha/core/constants'
+import type { ModelOption } from '@lawha/core/constants'
 
 /** A model list as the app caches it after normalizing a provider's own catalog. */
 export const modelOptionsSchema = v.array(

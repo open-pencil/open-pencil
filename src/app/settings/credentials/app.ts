@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { IS_TAURI } from '@lawha/core/constants'
 
 import { BrowserCredentialStore } from '@/app/settings/credentials/browser'
 import { MemoryCredentialStore } from '@/app/settings/credentials/memory'

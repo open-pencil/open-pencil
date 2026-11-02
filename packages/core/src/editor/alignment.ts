@@ -1,10 +1,10 @@
 import { sumBy } from 'es-toolkit'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAbsolutePositionFull, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneNode } from '@lawha/scene-graph'
+import { getAbsolutePositionFull, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import { computeAbsoluteBounds } from '@lawha/scene-graph/geometry'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { createArrangeActions } from '#core/editor/alignment/arrange'
 import { createFlipRotateActions } from '#core/editor/alignment/flip-rotate'

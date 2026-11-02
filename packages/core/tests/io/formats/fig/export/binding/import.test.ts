@@ -2,10 +2,10 @@ import { expect, test } from 'bun:test'
 
 import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-import { createEditor } from '@open-pencil/core'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { createEditor } from '@lawha/core'
+import { exportFigFile } from '@lawha/core/io/formats/fig'
+import { materializeDocument, parseFigBuffer } from '@lawha/fig'
+import { initCodec } from '@lawha/kiwi/fig/codec'
 
 const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)
 

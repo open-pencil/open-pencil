@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { fontManager, textNeededFallbackScripts } from '@open-pencil/core/text'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { fontManager, textNeededFallbackScripts } from '@lawha/core/text'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { repoPath } from '#tests/helpers/paths'
 

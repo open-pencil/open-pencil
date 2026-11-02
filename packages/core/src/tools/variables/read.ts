@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { VariableType } from '@open-pencil/scene-graph'
+import type { VariableType } from '@lawha/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
 import { defineTool } from '#core/tools/schema'

@@ -5,7 +5,7 @@ import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import { symbolDataOf } from '#fig/instance-overrides/types'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 
 test('a root swap takes the replacement paint but keeps explicit root paint claims', () => {
   const paint = (r: number, g: number): NonNullable<NodeChange['fillPaints']> => [

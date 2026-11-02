@@ -7,7 +7,7 @@ import {
   type TransactionSpec
 } from '@codemirror/state'
 
-import type { DesignJSXElement } from '@open-pencil/design-jsx'
+import type { DesignJSXElement } from '@lawha/design-jsx'
 
 import { patchAttributes, patchText } from './attributes'
 import { patchChildren } from './children'

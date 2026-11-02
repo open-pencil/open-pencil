@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
 
-import { variableText } from '@open-pencil/scene-graph/variables'
-import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useBindableValue } from '@open-pencil/vue/primitives/BindableValue'
+import { variableText } from '@lawha/scene-graph/variables'
+import { useEditor } from '@lawha/vue'
+import { useI18n } from '@lawha/vue/i18n'
+import { useBindableValue } from '@lawha/vue/primitives/BindableValue'
 
 import PropertyTypeIcon from '@/components/properties/component-properties/PropertyTypeIcon.vue'
 import { usePropertyBinding } from '@/components/properties/component-properties/usePropertyBinding'

@@ -1,4 +1,4 @@
-// openpencil://open?file=<relative>&node=<name>. The file is resolved against the
+// lawha://open?file=<relative>&node=<name>. The file is resolved against the
 // paths of the open tabs by whole trailing segments, so a one-segment file takes
 // the first open tab whose path ends with it. The segment comparison is the
 // filesystem's, not JavaScript's: the desktop build asks Rust, which folds ASCII

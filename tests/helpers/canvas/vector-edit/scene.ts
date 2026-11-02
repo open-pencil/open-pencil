@@ -1,4 +1,4 @@
-import type { SceneGraph, VectorNetwork } from '@open-pencil/scene-graph'
+import type { SceneGraph, VectorNetwork } from '@lawha/scene-graph'
 
 // The browser loads this module itself, so it imports types only.
 const STRAIGHT = { x: 0, y: 0 }

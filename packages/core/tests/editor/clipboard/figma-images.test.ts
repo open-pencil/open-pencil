@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor, type ClipboardImageResolution } from '@open-pencil/core'
-import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { createEditor, type ClipboardImageResolution } from '@lawha/core'
+import { buildFigmaClipboardHTML } from '@lawha/core/clipboard'
+import { initCodec } from '@lawha/kiwi/fig/codec'
 
 const IMAGE_HASH_A = '1111111111111111111111111111111111111111'
 const IMAGE_HASH_B = '2222222222222222222222222222222222222222'
@@ -87,7 +87,7 @@ describe('Figma clipboard images', () => {
 
     await editor.pasteFromHTML(html)
 
-    expect(calls).toEqual([{ fileKey: 'openpencil', hashes: [IMAGE_HASH_A] }])
+    expect(calls).toEqual([{ fileKey: 'lawha', hashes: [IMAGE_HASH_A] }])
     expect(editor.graph.images.get(IMAGE_HASH_A)).toEqual(imageBytes)
     expect(resolutions).toEqual([])
   })

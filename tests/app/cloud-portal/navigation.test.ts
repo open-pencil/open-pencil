@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { LocationQuery, RouteMeta } from 'vue-router'
 
-import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
+import type { CloudAccountStatus } from '@lawha/cloud/contract'
 
 import { portalDestination, type PortalRouteTarget } from '@/app/cloud-portal/navigation'
 

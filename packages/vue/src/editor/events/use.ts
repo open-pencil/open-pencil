@@ -1,6 +1,6 @@
 import { onScopeDispose } from 'vue'
 
-import type { EditorEventName, EditorEvents } from '@open-pencil/core'
+import type { EditorEventName, EditorEvents } from '@lawha/core'
 
 import { useEditor } from '#vue/editor/context'
 

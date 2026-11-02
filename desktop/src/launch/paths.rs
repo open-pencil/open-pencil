@@ -124,7 +124,7 @@ mod tests {
                 .duration_since(std::time::UNIX_EPOCH)
                 .expect("clock before the epoch")
                 .as_nanos();
-            let root = std::env::temp_dir().join(format!("openpencil-{tag}-{unique}"));
+            let root = std::env::temp_dir().join(format!("lawha-{tag}-{unique}"));
             std::fs::create_dir_all(&root).expect("create the temp tree");
             Self(root)
         }

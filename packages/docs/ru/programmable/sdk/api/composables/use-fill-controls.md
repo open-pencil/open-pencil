@@ -10,7 +10,7 @@ description: Значение по умолчанию для новых зали
 ## Использование
 
 ```ts
-import { useFillControls } from '@open-pencil/vue/controls/fill'
+import { useFillControls } from '@lawha/vue/controls/fill'
 
 const fills = useFillControls()
 ```

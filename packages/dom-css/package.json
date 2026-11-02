@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/dom-css",
+  "name": "@lawha/dom-css",
   "version": "0.17.0-beta.1",
   "license": "MIT",
   "type": "module",
@@ -66,7 +66,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/dom-css"
   },
   "publishConfig": {
@@ -74,7 +74,7 @@
     "provenance": true
   },
   "peerDependencies": {
-    "@open-pencil/scene-graph": "workspace:*"
+    "@lawha/scene-graph": "workspace:*"
   },
   "devDependencies": {
     "@iconify/react": "^6.0.2",
@@ -96,7 +96,7 @@
   },
   "dependencies": {
     "@acemir/cssom": "^0.9.31",
-    "@open-pencil/emit": "workspace:*",
+    "@lawha/emit": "workspace:*",
     "css-tree": "^3.2.1",
     "cssesc": "^3.0.0",
     "dedent": "^1.7.2",

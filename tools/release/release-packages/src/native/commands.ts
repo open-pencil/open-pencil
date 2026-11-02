@@ -1,4 +1,4 @@
-import { runCommand } from '@open-pencil/package-artifacts-tools'
+import { runCommand } from '@lawha/package-artifacts-tools'
 
 const METADATA_TIMEOUT_MS = 60_000
 export const ARTIFACT_TRANSFER_TIMEOUT_MS = 15 * 60_000

@@ -4,9 +4,9 @@ import { join } from 'node:path'
 import { asTextNode, registerTestFont } from '#core-tests/helpers/figma-api'
 import { FIXTURES } from '#core-tests/helpers/paths'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { fontManager } from '@open-pencil/core/text'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@lawha/core/figma-api'
+import { fontManager } from '@lawha/core/text'
+import { SceneGraph } from '@lawha/scene-graph'
 
 beforeAll(() => registerTestFont('Load Test'))
 

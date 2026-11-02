@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@lawha/core/constants'
 
 import type { AgentAccount } from '@/app/ai/agents/setup/accounts'
 import { codingAgentDetection, piDetection } from '@/app/ai/agents/setup/detection'

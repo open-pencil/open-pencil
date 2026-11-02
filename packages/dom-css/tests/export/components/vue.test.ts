@@ -31,7 +31,7 @@ import { renderToString } from 'vue/server-renderer'
 /** The packages generated code imports, linked so it resolves them as an app would. */
 const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook', 'shaders']
 
-const output = await mkdtemp(join(tmpdir(), 'open-pencil-vue-'))
+const output = await mkdtemp(join(tmpdir(), 'lawha-vue-'))
 await mkdir(join(output, 'node_modules'))
 await mkdir(join(output, 'node_modules', '@iconify'))
 for (const name of APP_PACKAGES)
@@ -378,7 +378,7 @@ describe('generated Vue stories', () => {
   test('tag every state after Default, so Storybook can show one story per component', async () => {
     const { stories } = await generate(switchSet())
     const tags = (name: string) => (stories[name] as { tags?: string[] } | undefined)?.tags
-    expect((stories.default as { tags: string[] }).tags).toContain('openpencil')
+    expect((stories.default as { tags: string[] }).tags).toContain('lawha')
     expect(tags('Default')).toBeUndefined()
     expect(tags('Checked')).toEqual(['variant'])
     expect(tags('Disabled')).toEqual(['variant'])

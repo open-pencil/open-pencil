@@ -1,4 +1,4 @@
-import type { ArcData, SceneNode } from '@open-pencil/scene-graph'
+import type { ArcData, SceneNode } from '@lawha/scene-graph'
 
 import {
   raw,

@@ -1,6 +1,6 @@
 ---
 title: Komponenty
-description: Komponenty, egzemplarze, zestawy wariantów, nadpisania, synchronizacja i biblioteki w OpenPencil.
+description: Komponenty, egzemplarze, zestawy wariantów, nadpisania, synchronizacja i biblioteki w Lawha.
 ---
 
 # Komponenty
@@ -15,11 +15,11 @@ Zasób można dodać do obszaru roboczego kliknięciem, klawiszem <kbd>Enter</kb
 
 ## Tworzenie komponentu
 
-Zaznacz ramkę lub grupę i naciśnij <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>. Jeśli zaznaczono kilka obiektów, OpenPencil umieszcza je w nowym komponencie o granicach zgodnych ze wspólną ramką ograniczającą.
+Zaznacz ramkę lub grupę i naciśnij <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>. Jeśli zaznaczono kilka obiektów, Lawha umieszcza je w nowym komponencie o granicach zgodnych ze wspólną ramką ograniczającą.
 
 ## Zestawy komponentów i warianty
 
-Zaznacz co najmniej dwa komponenty i naciśnij <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>. OpenPencil połączy je w zestaw z fioletową przerywaną ramką.
+Zaznacz co najmniej dwa komponenty i naciśnij <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>. Lawha połączy je w zestaw z fioletową przerywaną ramką.
 
 Każdy komponent w zestawie może określać kilka wymiarów wariantu, na przykład `Size=Small`, `State=Hover` i `Theme=Dark`. Nie trzeba tworzyć wszystkich kombinacji. Wariant w lewym górnym rogu jest domyślny i służy jako zamiennik, gdy dokładna kombinacja nie istnieje.
 
@@ -45,7 +45,7 @@ Włącz bibliotekę w **Manage libraries**. Jej komponenty pojawią się obok lo
 
 W **Manage libraries → Updates** można porównać bieżący i nowy egzemplarz, a następnie zaktualizować jeden egzemplarz, wszystkie egzemplarze zasobu, bieżącą stronę albo wszystkie strony.
 
-OpenPencil zachowuje zgodne ustawienia tekstu, widoczności i zamiany egzemplarza. Jeśli dokładny wariant zniknął, przed potwierdzeniem pojawi się wariant zastępczy. Aktualizację można cofnąć.
+Lawha zachowuje zgodne ustawienia tekstu, widoczności i zamiany egzemplarza. Jeśli dokładny wariant zniknął, przed potwierdzeniem pojawi się wariant zastępczy. Aktualizację można cofnąć.
 
 ### Praca bez sieci
 

@@ -5,7 +5,7 @@ description: Modifica P2P in tempo reale tramite WebRTC e Yjs, senza server cent
 
 # Collaborazione
 
-OpenPencil permette a più persone di modificare un documento in tempo reale. Le modifiche passano direttamente tra i partecipanti tramite WebRTC.
+Lawha permette a più persone di modificare un documento in tempo reale. Le modifiche passano direttamente tra i partecipanti tramite WebRTC.
 
 ## Avviare una sessione
 
@@ -37,7 +37,7 @@ Non servono account o infrastruttura propria. La qualità dipende dalla rete e d
 
 ## Privacy
 
-Il contenuto non viene archiviato su un server OpenPencil. Ogni partecipante conserva una copia locale. Condividi il link solo con persone fidate.
+Il contenuto non viene archiviato su un server Lawha. Ogni partecipante conserva una copia locale. Condividi il link solo con persone fidate.
 
 ## Terminare
 
