@@ -67,6 +67,11 @@ function requiredFacesReadiness(r: FontReadinessRenderer, node: SceneNode): Node
   let exhausted = false
   for (const { family, style } of requiredNodeFaces(node)) {
     if (fontManager.isStyleLoaded(family, style)) continue
+    // A face a load found nowhere draws in another face of the family, or the substitute.
+    if (fontManager.isFaceMissing(family, style)) {
+      if (!fontManager.isLoaded(family)) exhausted = true
+      continue
+    }
     const demand = fontFaceDemand(family, style, node.text)
     const state = fontResolver.state(demand).state
     demandFace(r, node, family, style)

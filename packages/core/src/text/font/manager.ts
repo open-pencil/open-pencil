@@ -49,6 +49,8 @@ export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
+  /** Faces a load looked for everywhere and found nowhere, until one of them loads after all. */
+  private missingFaces = new Set<string>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
   /** The name each file of a family loaded from several files is registered under. */
   private fileFamilies = new Map<ArrayBuffer, string>()
@@ -401,12 +403,21 @@ export class FontManager {
     const shared = this.sharedVariableFace(family, style)
     if (shared) return this.withRemoteCoverage(family, style, shared, characters, signal)
 
-    return (
+    const found =
       (await this.loadBundledFont(family, style)) ??
       (await this.loadCachedFont(family, style, characters)) ??
       (await this.loadRemoteFont(family, style, characters, signal)) ??
       (await this.loadStandIn(family, style))
-    )
+    if (!found) this.missingFaces.add(`${family}|${style}`)
+    return found
+  }
+
+  /**
+   * Whether a load looked for this face and found it nowhere, so text in it draws in another face,
+   * as Figma draws a missing font, rather than waiting for it.
+   */
+  isFaceMissing(family: string, style: string): boolean {
+    return this.missingFaces.has(`${family}|${style}`)
   }
 
   /**
@@ -809,6 +820,7 @@ export class FontManager {
     source?: FontLoadedSource
   ): ArrayBuffer | null {
     const key = `${family}|${style}`
+    this.missingFaces.delete(key)
     const existing = this.loadedFamilies.get(key)
     if (existing && sameFontFile(existing, buffer)) {
       if (source) this.loadedFamilySources.set(key, source)
