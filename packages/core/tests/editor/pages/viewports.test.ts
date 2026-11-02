@@ -59,4 +59,22 @@ describe('page viewports', () => {
     await editor.switchPage(second)
     expect(editor.state.zoom).toBeCloseTo(730 / 300, 6)
   })
+
+  test("keeps a measured page's view when the canvas has no size as it is left", async () => {
+    let size = VIEWPORT
+    const editor = createEditor({ getViewportSize: () => size })
+    const first = editor.state.currentPageId
+    const second = editor.graph.addPage('Second').id
+    await editor.switchPage(second)
+    editor.state.panX = -120
+    editor.state.zoom = 0.5
+
+    size = { width: 0, height: 0 }
+    await editor.switchPage(first)
+    size = VIEWPORT
+    await editor.switchPage(second)
+
+    expect(editor.state).toMatchObject({ panX: -120, zoom: 0.5 })
+  })
+
 })

@@ -120,6 +120,22 @@ describe('zoomToFit', () => {
 })
 
 describe('zoomToSelection', () => {
+  test('fits into the whole canvas when it is smaller than the insets', () => {
+    const editor = createEditor({ getViewportSize: () => ({ width: 90, height: 150 }) })
+    const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: 0,
+      y: 0,
+      width: 30,
+      height: 30
+    })
+    editor.select([node.id])
+
+    editor.zoomToSelection()
+
+    expect(editor.state.zoom).toBeCloseTo(3, 6)
+    expect(editor.state).toMatchObject({ panX: 0, panY: 30 })
+  })
+
   test('fits a rotated layer by the box it draws in', () => {
     const { editor, node } = withRect({ x: 0, y: 0, width: 400, height: 40 })
     editor.graph.updateNode(node.id, { rotation: 90 })

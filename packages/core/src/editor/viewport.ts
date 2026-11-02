@@ -56,14 +56,17 @@ export function fitViewport(
   size: { width: number; height: number },
   insets: ViewportInsets
 ): ViewportTransform {
-  const areaWidth = size.width - insets.left - insets.right
-  const areaHeight = size.height - insets.top - insets.bottom
+  // A canvas too small for the insets fits into all of itself rather than a negative area.
+  const fitted = size.width > insets.left + insets.right && size.height > insets.top + insets.bottom
+  const { left, top } = fitted ? insets : { left: 0, top: 0 }
+  const areaWidth = fitted ? size.width - insets.left - insets.right : size.width
+  const areaHeight = fitted ? size.height - insets.top - insets.bottom : size.height
   const fit = Math.min(areaWidth / bounds.width, areaHeight / bounds.height)
   const zoom = clampZoom(Number.isNaN(fit) ? 1 : fit)
   return {
     zoom,
-    panX: insets.left + areaWidth / 2 - (bounds.x + bounds.width / 2) * zoom,
-    panY: insets.top + areaHeight / 2 - (bounds.y + bounds.height / 2) * zoom
+    panX: left + areaWidth / 2 - (bounds.x + bounds.width / 2) * zoom,
+    panY: top + areaHeight / 2 - (bounds.y + bounds.height / 2) * zoom
   }
 }
 
