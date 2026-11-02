@@ -170,6 +170,26 @@ describe('applySampledColor', () => {
     expect(changes.fills?.[0].color).toEqual(RED)
   })
 
+  test('redo brings back the colour, and undo the binding it dropped', () => {
+    const { editor, rect } = setup({ boundVariables: { 'fills/0/color': 'VariableID:1:2' } })
+    applySampledColor(editor, RED)
+    editor.undoAction()
+    expect(getNodeOrThrow(editor.graph, rect.id).boundVariables['fills/0/color']).toBe(
+      'VariableID:1:2'
+    )
+    editor.redoAction()
+    const node = getNodeOrThrow(editor.graph, rect.id)
+    expect(node.fills[0].color).toEqual(RED)
+    expect(node.boundVariables['fills/0/color']).toBeUndefined()
+  })
+
+  test('a colour the layer already has records no undo step', () => {
+    const { editor } = setup()
+    const before = editor.undo.peekUndo()
+    expect(applySampledColor(editor, BLUE)).toBe(0)
+    expect(editor.undo.peekUndo()).toBe(before)
+  })
+
   test('does nothing without a selection', () => {
     const { editor } = setup()
     editor.clearSelection()

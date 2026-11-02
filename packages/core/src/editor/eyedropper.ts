@@ -1,4 +1,5 @@
 import type { CanvasKit } from 'canvaskit-wasm'
+import { isEqual } from 'es-toolkit'
 
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -123,8 +124,16 @@ interface EyedropperEditor {
   updateNodeWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
 }
 
+/** Whether the changes would leave the layer as it is, as when it already has the colour. */
+function changesNothing(node: SceneNode, changes: Partial<SceneNode>): boolean {
+  return Object.entries(changes).every(([key, value]) =>
+    isEqual(node[key as keyof SceneNode], value)
+  )
+}
+
 /**
  * Applies a sampled colour to every selected layer that can take a paint, as one undo step.
+ * Layers that already show it are left alone, so a sample that changes nothing records nothing.
  * Returns how many layers changed.
  */
 export function applySampledColor(
@@ -136,11 +145,14 @@ export function applySampledColor(
     .map((id) => editor.graph.getNode(id))
     .filter((node): node is SceneNode => node !== undefined && !node.locked)
     .filter((node) => node.type !== 'GROUP')
-  if (nodes.length === 0) return 0
+  const edits = nodes
+    .map((node) => ({ node, changes: eyedropperChanges(node, color, target) }))
+    .filter(({ node, changes }) => !changesNothing(node, changes))
+  if (edits.length === 0) return 0
   editor.undo.runBatch('Eyedropper', () => {
-    for (const node of nodes) {
-      editor.updateNodeWithUndo(node.id, eyedropperChanges(node, color, target), 'Eyedropper')
+    for (const { node, changes } of edits) {
+      editor.updateNodeWithUndo(node.id, changes, 'Eyedropper')
     }
   })
-  return nodes.length
+  return edits.length
 }
