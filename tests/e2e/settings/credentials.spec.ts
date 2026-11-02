@@ -149,7 +149,7 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await page.getByTestId('settings-mcp-tool-access').click()
   await expect(createShape).toHaveAttribute('data-state', 'unchecked')
 
-  await page.getByRole('button', { name: 'Restore defaults' }).click()
+  await page.getByRole('button', { name: 'Reset to default' }).click()
   await expect(createShape).toHaveAttribute('data-state', 'checked')
 })
 

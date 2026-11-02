@@ -5,7 +5,9 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { changePreviewSize, maxAgentSteps, reasoningDisplay } from '@/app/ai/chat/preferences'
 import { AGENT_STEP_LIMIT_MIN, AGENT_STEP_LIMIT_MAX } from '@/app/ai/reply/schema'
+import { resolveAgentStepLimit } from '@/app/ai/reply/step-limit'
 import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
+import { DEFAULT_APP_PREFERENCES } from '@/app/settings/preferences/store'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -15,6 +17,8 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { ai, automation, settings } = useI18n()
 const stepPresets = [25, 50, 100, 200]
+const defaults = DEFAULT_APP_PREFERENCES.chat
+const defaultSteps = resolveAgentStepLimit(defaults.maxAgentSteps)
 const limitMessage = computed(() =>
   ai.value.maxAgentStepsRange({ min: AGENT_STEP_LIMIT_MIN, max: AGENT_STEP_LIMIT_MAX })
 )
@@ -35,7 +39,12 @@ const previewOptions = computed(() => [
   <SettingsSection>
     <template #title>{{ ai.chatSettings }}</template>
     <SettingsGroup>
-      <SettingsRow :label="ai.reasoningDisplay" class="max-sm:flex-col max-sm:items-stretch">
+      <SettingsRow
+        :label="ai.reasoningDisplay"
+        :modified="reasoningDisplay !== defaults.reasoningDisplay"
+        class="max-sm:flex-col max-sm:items-stretch"
+        @reset="reasoningDisplay = defaults.reasoningDisplay"
+      >
         <AppSelect
           v-model="reasoningDisplay"
           :label="ai.reasoningDisplay"
@@ -46,7 +55,9 @@ const previewOptions = computed(() => [
       <SettingsRow
         :label="ai.changePreview"
         :description="ai.changePreviewHint"
+        :modified="changePreviewSize !== defaults.changePreviewSize"
         class="max-sm:flex-col max-sm:items-stretch"
+        @reset="changePreviewSize = defaults.changePreviewSize"
       >
         <AppSelect
           v-model="changePreviewSize"
@@ -58,7 +69,9 @@ const previewOptions = computed(() => [
       <SettingsRow
         :label="ai.maxAgentSteps"
         :description="ai.maxAgentStepsHint"
+        :modified="maxAgentSteps !== defaultSteps"
         class="max-sm:flex-col max-sm:items-stretch"
+        @reset="maxAgentSteps = defaultSteps"
       >
         <PresetNumberField
           v-model:number="maxAgentSteps"
