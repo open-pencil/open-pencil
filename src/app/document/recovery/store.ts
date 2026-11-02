@@ -64,11 +64,17 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
     })
   }
 
-  /** Hands the durable copy over too: a memory-only claim would leave other windows listing it. */
+  /**
+   * Claims the durable copy, so other windows stop listing it. A failed claim fails the restore
+   * rather than falling back, but once IndexedDB has failed the durable claim is only attempted.
+   */
   function claimInAll(id: string, sessionId: string): Promise<void> {
     return serialized(async () => {
-      await primary.claim(id, sessionId)
-      if (current !== primary) await current.claim(id, sessionId)
+      if (current === primary) return primary.claim(id, sessionId)
+      await current.claim(id, sessionId)
+      await primary.claim(id, sessionId).catch((error: unknown) => {
+        console.warn('[Recovery] Failed to claim the IndexedDB snapshot:', error)
+      })
     })
   }
 
