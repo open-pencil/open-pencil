@@ -119,4 +119,19 @@ describe('Figma’s validation messages', () => {
         '  Invalid input: expected "AUTO"'
     )
   })
+
+  test('a choice inside the value names where it sits', () => {
+    const constraint = v.union([
+      v.strictObject({ type: v.literal('SCALE'), value: finiteNumberSchema }),
+      v.strictObject({ type: v.picklist(['WIDTH', 'HEIGHT']), value: finiteNumberSchema })
+    ])
+    const settings = v.array(v.object({ constraint: v.optional(constraint) }))
+    expect(refusal(settings, [{ constraint: { type: 'SCALE' } }])).toBe(
+      'Expected [0].constraint to be one of the following, but none matched:\n' +
+        '  Required value missing at [0].constraint.value\n' +
+        '  Multiple issues at [0].constraint:\n' +
+        '    Invalid option: expected one of "WIDTH"|"HEIGHT" at [0].constraint.type\n' +
+        '    Required value missing at [0].constraint.value'
+    )
+  })
 })

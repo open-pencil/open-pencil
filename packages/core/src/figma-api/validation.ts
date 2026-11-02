@@ -36,8 +36,11 @@ function tooBig(maximum: number, at = ''): string {
 }
 
 /** A choice between shapes that none of them matches, each listing its own problem. */
-function noneMatched(problems: readonly string[]): string {
-  return `Expected one of the following, but none matched:\n${problems.map((problem) => `  ${problem}`).join('\n')}`
+function noneMatched(problems: readonly string[], at = ''): string {
+  const expected = at
+    ? `Expected ${at} to be one of the following`
+    : 'Expected one of the following'
+  return `${expected}, but none matched:\n${problems.map((problem) => `  ${problem}`).join('\n')}`
 }
 
 // --- Reading a schema at an issue's path ---
@@ -264,7 +267,8 @@ function figmaProblems(schema: Schema, value: unknown, prefix: readonly PathItem
               ? (lines[0] ?? '')
               : `Multiple issues${where(prefix)}:\n${lines.map((text) => `    ${text}`).join('\n')}`
           )
-        )
+        ),
+        pathText(prefix)
       )
     ]
   }
