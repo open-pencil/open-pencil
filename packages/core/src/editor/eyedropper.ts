@@ -2,6 +2,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { isEqual } from 'es-toolkit'
 
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -108,7 +109,10 @@ function solidPaint(color: Color): Fill {
   return { type: 'SOLID', color: { ...color, a: 1 }, opacity: 1, visible: true }
 }
 
-/** Replaces the top solid paint's colour, keeping its opacity, or adds a solid paint. */
+/**
+ * Replaces the top solid paint's colour, keeping its opacity, or adds an opaque solid paint. A
+ * solid paint's alpha is its opacity, as the colour picker writes them, so the alpha stays too.
+ */
 function withSampledPaint<T extends Fill>(
   paints: readonly T[],
   color: Color,
@@ -117,7 +121,7 @@ function withSampledPaint<T extends Fill>(
   const next = paints.map((paint) => ({ ...paint }))
   for (let index = next.length - 1; index >= 0; index--) {
     if (next[index].type !== 'SOLID') continue
-    next[index] = { ...next[index], color: { ...color, a: 1 } }
+    next[index] = { ...next[index], color: { ...color, a: next[index].color.a } }
     return { paints: next, index }
   }
   next.push(create(solidPaint(color)))
@@ -131,10 +135,10 @@ export function eyedropperChanges(
 ): Partial<SceneNode> {
   const boundVariables = { ...node.boundVariables }
   if (target === 'stroke') {
+    // A first stroke takes the weight and alignment the node keeps for its strokes.
     const { paints, index } = withSampledPaint<Stroke>(node.strokes, color, (paint) => ({
       ...paint,
-      weight: 1,
-      align: 'INSIDE'
+      ...newStrokeGeometry(node)
     }))
     delete boundVariables[`strokes/${index}/color`]
     return { strokes: paints, boundVariables }

@@ -160,14 +160,14 @@ describe('applySampledColor', () => {
     expect(getNodeOrThrow(editor.graph, rect.id).fills[0].color).toEqual(BLUE)
   })
 
-  test('keeps the fill opacity and drops a colour variable binding', () => {
+  test('keeps the fill opacity and its alpha, and drops a colour variable binding', () => {
     const { editor, rect } = setup({
-      fills: [{ ...solid(BLUE), opacity: 0.4 }],
+      fills: [{ ...solid({ ...BLUE, a: 0.4 }), opacity: 0.4 }],
       boundVariables: { 'fills/0/color': 'VariableID:1:2' }
     })
     applySampledColor(editor, RED)
     const node = getNodeOrThrow(editor.graph, rect.id)
-    expect(node.fills[0].opacity).toBe(0.4)
+    expect(node.fills[0]).toMatchObject({ color: { ...RED, a: 0.4 }, opacity: 0.4 })
     expect(node.boundVariables['fills/0/color']).toBeUndefined()
   })
 
@@ -181,12 +181,17 @@ describe('applySampledColor', () => {
     expect(fills[1]).toMatchObject({ type: 'SOLID', color: GREEN })
   })
 
-  test('Alt target paints the stroke, adding one when there is none', () => {
-    const { editor, rect } = setup()
+  test('Alt target paints the stroke, adding one with the weight and alignment the node keeps', () => {
+    const { editor, rect } = setup({ strokeWeight: 3, strokeAlign: 'OUTSIDE' })
     applySampledColor(editor, RED, 'stroke')
     const node = getNodeOrThrow(editor.graph, rect.id)
     expect(node.strokes).toHaveLength(1)
-    expect(node.strokes[0]).toMatchObject({ type: 'SOLID', color: RED, weight: 1 })
+    expect(node.strokes[0]).toMatchObject({
+      type: 'SOLID',
+      color: RED,
+      weight: 3,
+      align: 'OUTSIDE'
+    })
     expect(node.fills[0].color).toEqual(BLUE)
   })
 
