@@ -134,4 +134,32 @@ describe('Figma’s validation messages', () => {
         '    Required value missing at [0].constraint.value'
     )
   })
+
+  test('a choice inside a shape of a choice keeps its depth', () => {
+    const inner = v.union([v.literal('A'), v.literal('B')])
+    const choice = v.union([v.strictObject({ mode: inner }), v.literal('NONE')])
+    expect(refusal(choice, { mode: 'C' })).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Expected .mode to be one of the following, but none matched:\n' +
+        '    Invalid input: expected "A" at .mode\n' +
+        '    Invalid input: expected "B" at .mode\n' +
+        '  Invalid input: expected "NONE"'
+    )
+  })
+
+  test('a shape refused on a second, different read names its options', () => {
+    const choice = v.union([v.strictObject({ axis: v.picklist(['X', 'Y']) }), v.literal('NONE')])
+    let reads = 0
+    const value = {
+      get axis() {
+        reads += 1
+        return reads === 1 ? 'Z' : 'X'
+      }
+    }
+    expect(refusal(choice, value)).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Invalid option: expected one of "X"|"Y" at .axis\n' +
+        '  Invalid input: expected "NONE"'
+    )
+  })
 })

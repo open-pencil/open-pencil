@@ -40,7 +40,12 @@ function noneMatched(problems: readonly string[], at = ''): string {
   const expected = at
     ? `Expected ${at} to be one of the following`
     : 'Expected one of the following'
-  return `${expected}, but none matched:\n${problems.map((problem) => `  ${problem}`).join('\n')}`
+  return `${expected}, but none matched:\n${problems.map((problem) => indent(problem)).join('\n')}`
+}
+
+/** `text` two spaces in, every line of it, so a choice inside a choice keeps its depth. */
+function indent(text: string): string {
+  return text.replaceAll(/^/gm, '  ')
 }
 
 // --- Reading a schema at an issue's path ---
@@ -265,7 +270,7 @@ function figmaProblems(schema: Schema, value: unknown, prefix: readonly PathItem
           branches.map((lines) =>
             lines.length === 1
               ? (lines[0] ?? '')
-              : `Multiple issues${where(prefix)}:\n${lines.map((text) => `    ${text}`).join('\n')}`
+              : `Multiple issues${where(prefix)}:\n${lines.map((text) => indent(text)).join('\n')}`
           )
         ),
         pathText(prefix)
@@ -290,7 +295,23 @@ function figmaProblems(schema: Schema, value: unknown, prefix: readonly PathItem
 /** A line from an issue alone, a choice listing what each of its shapes found. */
 function fallback(issue: v.BaseIssue<unknown>, root: Schema): string {
   if (issue.type !== 'union' || !issue.issues) return line(issue, root, [])
-  return noneMatched(uniq(issue.issues.map((nested) => line(nested, root, []))))
+  return noneMatched(uniq(issue.issues.map((nested) => branchLine(nested, root))))
+}
+
+/**
+ * A line for an issue of a choice's shape, which Valibot reports without the shape it came from:
+ * what the issue itself says stands in for what the schema would.
+ */
+function branchLine(issue: v.BaseIssue<unknown>, root: Schema): string {
+  const path = issue.path ?? []
+  const last = path.at(-1)
+  if (last?.origin === 'key' && issue.expected === 'never') {
+    return `Unrecognized key: "${String(last.key)}"${where(path.slice(0, -1))}`
+  }
+  if (issue.type === 'picklist' && issue.expected) {
+    return `Invalid option: expected one of ${issue.expected.replace(/^\((.*)\)$/, '$1').replaceAll(' | ', '|')}${where(path)}`
+  }
+  return line(issue, root, [])
 }
 
 /**
