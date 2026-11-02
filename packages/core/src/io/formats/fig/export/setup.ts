@@ -194,14 +194,33 @@ export function collectComponentPropertyIds(graph: SceneGraph): string[] {
   return [...ids]
 }
 
+/** A GUID as Figma writes one in a file, where a part may use all 32 bits. */
+function fileGuid(id: string): GUID | null {
+  if (!/^\d+:\d+$/.test(id)) return null
+  const guid = stringToGuid(id)
+  return guid.sessionID <= 0xffffffff && guid.localID <= 0xffffffff ? guid : null
+}
+
+/**
+ * Writing into an archive, a property keeps the GUID it was read with, however large: the
+ * records left as they were name it by that GUID. Otherwise a GUID past 31 bits, which Figma
+ * drops from a paste, is replaced.
+ */
 function assignComponentPropertyGuids(
   propertyIds: readonly string[],
   localIdCounter: { value: number },
   propertyIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
+  nodeSourceGuidValues: Set<string>,
+  intoArchive: boolean
 ): void {
   for (const propertyId of propertyIds) {
+    const kept = intoArchive ? fileGuid(propertyId) : null
+    if (kept && !assignedGuidValues.has(propertyId) && !nodeSourceGuidValues.has(propertyId)) {
+      assignedGuidValues.add(propertyId)
+      propertyIdToGuid.set(propertyId, kept)
+      continue
+    }
     const guid = assignVariableGuid(
       propertyId,
       localIdCounter,
@@ -477,7 +496,8 @@ export async function prepareFigExport(
     localIdCounter,
     propertyIdToGuid,
     assignedGuidValues,
-    nodeSourceGuidValues
+    nodeSourceGuidValues,
+    archived !== undefined
   )
   const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid)
   assignOwnLayerGuids(graph, sourceOwners, nodeIdToGuid, assignedGuidValues)
