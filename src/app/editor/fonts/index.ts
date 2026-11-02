@@ -5,9 +5,8 @@ import { watch } from 'vue'
 import {
   DEFAULT_WEB_FONT_PROVIDER_SETTINGS,
   WEB_FONT_PROVIDER_IDS,
-  collectGraphFontRequirements,
   fontManager,
-  missingGraphFontScripts,
+  prepareGraphFonts,
   type FontFamilyOption,
   type HostFontFamily,
   type LocalFontAccessState,
@@ -32,7 +31,9 @@ if (typeof navigator !== 'undefined') {
 
 export type FontProviderSettings = Record<WebFontProviderId, boolean>
 
-export const onlineFontsEnabled = useLocalStorage('op-online-fonts-enabled', true)
+/** Online fonts are on until turned off in Settings. */
+export const DEFAULT_ONLINE_FONTS = true
+export const onlineFontsEnabled = useLocalStorage('op-online-fonts-enabled', DEFAULT_ONLINE_FONTS)
 export const fontProviderSettings = useLocalStorage<FontProviderSettings>(
   'op-font-providers',
   DEFAULT_WEB_FONT_PROVIDER_SETTINGS
@@ -156,44 +157,25 @@ interface FontRenderInvalidator {
   invalidateNodesForFonts(graph: SceneGraph, nodeIds: readonly string[]): void
 }
 
+/**
+ * Prepares the fonts of `nodeIds` with the app's loader, keeping them off the canvas meanwhile;
+ * resolves to whether that changed any face their text draws with.
+ */
 export async function ensureGraphFonts(
   graph: SceneGraph,
   nodeIds: string[],
   renderer?: FontRenderInvalidator | null
 ): Promise<boolean> {
-  fontManager.blockNodesUntilFontsResolve(nodeIds)
   try {
-    const generationBefore = fontManager.generation()
-    const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
-    const requirements = collectGraphFontRequirements(graph, nodeIds)
-    const { characters } = requirements
-    await Promise.all(fontKeys.map(([family, style]) => loadFont(family, style, characters)))
-    const fallbackScripts = missingGraphFontScripts(requirements, {
+    const prepared = await prepareGraphFonts(graph, nodeIds, {
+      loadFont,
+      hide: true,
       treatUnknownCoverageAsMissing: IS_TAURI
     })
-    if (fallbackScripts.length > 0) {
-      const fallbacks = await fontManager.ensureFallbackPack(fallbackScripts, characters)
-      if (Object.values(fallbacks).some((families) => families.length > 0)) {
-        clearTextPictures(graph, nodeIds)
-      }
-    } else if (fontManager.generation() !== generationBefore) {
-      clearTextPictures(graph, nodeIds)
-    }
-    return fontManager.generation() !== generationBefore || fallbackScripts.length > 0
+    return prepared.changed
   } finally {
-    fontManager.unblockNodes(nodeIds)
     renderer?.invalidateNodesForFonts(graph, nodeIds)
   }
-}
-
-function clearTextPictures(graph: SceneGraph, nodeIds: string[]): void {
-  const clear = (id: string) => {
-    const node = graph.getNode(id)
-    if (!node) return
-    if (node.type === 'TEXT') node.textPicture = null
-    for (const childId of node.childIds) clear(childId)
-  }
-  for (const id of nodeIds) clear(id)
 }
 
 type NativeFontLoadError = { code?: 'not-found' | 'unsupported-format' | 'failed' }

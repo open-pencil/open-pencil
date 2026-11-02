@@ -33,7 +33,7 @@ const panels = usePanelMessages()
           />
           <component :is="sceneNodeIcon(group.node)" class="size-3.5 shrink-0" aria-hidden="true" />
           <span class="min-w-0 truncate">{{ group.name }}</span>
-          <span class="ml-auto text-[10px] text-muted">{{
+          <span class="ml-auto text-3xs text-muted">{{
             group.bindings.length === totalVariants
               ? panels.allVariants
               : panels.usedInVariants({ count: group.bindings.length, total: totalVariants })

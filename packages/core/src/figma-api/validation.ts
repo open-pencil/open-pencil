@@ -173,11 +173,10 @@ function unrecognized(
 ): string {
   // A variant's keys are those of the option the input's discriminator picks.
   const object = schema && base(schema).type === 'variant' ? variantOption(schema, input) : schema
-  const keys = object
-    ? Object.keys(input && typeof input === 'object' ? input : {}).filter(
-        (key) => !Object.hasOwn(entries(object), key)
-      )
-    : [String(first)]
+  const known = object ? entries(object) : {}
+  // Valibot reads keys with `for...in`, inherited ones too; any it reports is named.
+  const own = Object.keys(input && typeof input === 'object' ? input : {})
+  const keys = uniq([...own, String(first)]).filter((key) => !Object.hasOwn(known, key))
   const names = keys.map((key) => `"${key}"`).join(', ')
   return `${keys.length === 1 ? 'Unrecognized key' : 'Unrecognized keys'}: ${names}${at}`
 }
@@ -296,6 +295,14 @@ function fallback(issue: v.BaseIssue<unknown>, root: Schema): string {
   return noneMatched(uniq(issue.issues.map((nested) => line(nested, root, []))))
 }
 
+function rereadProblems(schema: Schema, value: unknown): string[] {
+  try {
+    return figmaProblems(schema, value)
+  } catch {
+    return []
+  }
+}
+
 /**
  * `value` as `schema` reads it, each field read once, or Figma's refusal of it from `method` for
  * `property`.
@@ -308,9 +315,9 @@ export function parseFigma<const S extends Schema>(
 ): v.InferOutput<S> {
   const result = v.safeParse(schema, value)
   if (result.success) return result.output
-  // Wording a choice reads the value again; a value that reads differently the second time still
-  // reports what the first read found.
-  const problems = figmaProblems(schema, value)
+  // Wording a choice reads the value again; a value that reads differently the second time, or
+  // throws, still reports what the first read found.
+  const problems = rereadProblems(schema, value)
   const lines =
     problems.length > 0 ? problems : result.issues.map((issue) => fallback(issue, schema))
   throw invalid(method, lines.join('\n'), property)

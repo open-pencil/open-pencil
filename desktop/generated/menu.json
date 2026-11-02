@@ -35,16 +35,19 @@
       {
         "id": "save",
         "label": "Save",
-        "accelerator": "CmdOrCtrl+S"
+        "accelerator": "CmdOrCtrl+S",
+        "feature": "document"
       },
       {
         "id": "save-as",
         "label": "Save As…",
-        "accelerator": "CmdOrCtrl+Shift+S"
+        "accelerator": "CmdOrCtrl+Shift+S",
+        "feature": "document"
       },
       {
         "id": "save-to",
-        "label": "Save To…"
+        "label": "Save To…",
+        "feature": "document"
       },
       {
         "id": "save-version",
@@ -64,6 +67,7 @@
         "id": "export-selection",
         "label": "Export Selection",
         "accelerator": "CmdOrCtrl+Shift+E",
+        "feature": "document",
         "sub": [
           {
             "id": "export-png",
@@ -99,7 +103,8 @@
       {
         "id": "close",
         "label": "Close Tab",
-        "accelerator": "CmdOrCtrl+W"
+        "accelerator": "CmdOrCtrl+W",
+        "feature": "document"
       },
       {
         "id": "previous-tab",
@@ -127,12 +132,14 @@
       {
         "id": "edit.undo",
         "label": "Undo",
-        "accelerator": "CmdOrCtrl+Z"
+        "accelerator": "CmdOrCtrl+Z",
+        "feature": "document"
       },
       {
         "id": "edit.redo",
         "label": "Redo",
-        "accelerator": "CmdOrCtrl+Shift+Z"
+        "accelerator": "CmdOrCtrl+Shift+Z",
+        "feature": "document"
       },
       {
         "type": "separator"
@@ -155,22 +162,26 @@
       {
         "id": "paste-to-replace",
         "label": "Paste to replace",
-        "accelerator": "CmdOrCtrl+Shift+R"
+        "accelerator": "CmdOrCtrl+Shift+R",
+        "feature": "document"
       },
       {
         "id": "selection.duplicate",
         "label": "Duplicate",
-        "accelerator": "CmdOrCtrl+D"
+        "accelerator": "CmdOrCtrl+D",
+        "feature": "document"
       },
       {
         "id": "selection.delete",
         "label": "Delete",
-        "accelerator": "Backspace"
+        "accelerator": "Backspace",
+        "feature": "document"
       },
       {
         "id": "selection.rename",
         "label": "Rename Selection…",
-        "accelerator": "CmdOrCtrl+R"
+        "accelerator": "CmdOrCtrl+R",
+        "feature": "document"
       },
       {
         "type": "separator"
@@ -178,12 +189,14 @@
       {
         "id": "selection.selectAll",
         "label": "Select All",
-        "accelerator": "CmdOrCtrl+A"
+        "accelerator": "CmdOrCtrl+A",
+        "feature": "document"
       },
       {
         "id": "selection.selectInverse",
         "label": "Select Inverse",
-        "accelerator": "CmdOrCtrl+Shift+A"
+        "accelerator": "CmdOrCtrl+Shift+A",
+        "feature": "document"
       }
     ]
   },
@@ -193,27 +206,32 @@
       {
         "id": "view.zoom100",
         "label": "Zoom to 100%",
-        "accelerator": "CmdOrCtrl+0"
+        "accelerator": "CmdOrCtrl+0",
+        "feature": "document"
       },
       {
         "id": "view.zoomFit",
         "label": "Zoom to Fit",
-        "accelerator": "Shift+1"
+        "accelerator": "Shift+1",
+        "feature": "document"
       },
       {
         "id": "view.zoomSelection",
         "label": "Zoom to Selection",
-        "accelerator": "Shift+2"
+        "accelerator": "Shift+2",
+        "feature": "document"
       },
       {
         "id": "zoom-in",
         "label": "Zoom In",
-        "accelerator": "CmdOrCtrl+="
+        "accelerator": "CmdOrCtrl+=",
+        "feature": "document"
       },
       {
         "id": "zoom-out",
         "label": "Zoom Out",
-        "accelerator": "CmdOrCtrl+-"
+        "accelerator": "CmdOrCtrl+-",
+        "feature": "document"
       },
       {
         "type": "separator"
@@ -221,40 +239,47 @@
       {
         "id": "view.zoomPreviousFrame",
         "label": "Zoom to Previous Frame",
-        "accelerator": "Shift+N"
+        "accelerator": "Shift+N",
+        "feature": "document"
       },
       {
         "id": "view.zoomNextFrame",
         "label": "Zoom to Next Frame",
-        "accelerator": "N"
+        "accelerator": "N",
+        "feature": "document"
       },
       {
         "id": "view.previousPage",
         "label": "Previous Page",
-        "accelerator": "PageUp"
+        "accelerator": "PageUp",
+        "feature": "document"
       },
       {
         "id": "view.nextPage",
         "label": "Next Page",
-        "accelerator": "PageDown"
+        "accelerator": "PageDown",
+        "feature": "document"
       },
       {
         "type": "separator"
       },
       {
         "id": "view-split-right",
-        "label": "Split Right"
+        "label": "Split Right",
+        "feature": "document"
       },
       {
         "id": "view-split-down",
-        "label": "Split Down"
+        "label": "Split Down",
+        "feature": "document"
       },
       {
         "type": "separator"
       },
       {
         "id": "variables",
-        "label": "Variables…"
+        "label": "Variables…",
+        "feature": "document"
       },
       {
         "type": "separator"
@@ -263,30 +288,35 @@
         "id": "view-rulers",
         "label": "Rulers",
         "accelerator": "Shift+R",
-        "checkbox": true
+        "checkbox": true,
+        "feature": "document"
       },
       {
         "id": "view-pixel-grid",
         "label": "Pixel Grid",
         "accelerator": "Shift+'",
-        "checkbox": true
+        "checkbox": true,
+        "feature": "document"
       },
       {
         "id": "view-multiplayer-cursors",
         "label": "Multiplayer Cursors",
         "accelerator": "Alt+CmdOrCtrl+\\",
-        "checkbox": true
+        "checkbox": true,
+        "feature": "document"
       },
       {
         "id": "view-design-issues",
         "label": "Design Issues",
-        "checkbox": true
+        "checkbox": true,
+        "feature": "document"
       },
       {
         "id": "view-comments",
         "label": "Comments",
         "accelerator": "Shift+C",
-        "checkbox": true
+        "checkbox": true,
+        "feature": "document"
       },
       {
         "type": "separator"
@@ -343,12 +373,14 @@
       {
         "id": "toggle-ui",
         "label": "Toggle UI",
-        "accelerator": "CmdOrCtrl+\\"
+        "accelerator": "CmdOrCtrl+\\",
+        "feature": "document"
       },
       {
         "id": "toggle-preview",
         "label": "Preview",
-        "accelerator": "CmdOrCtrl+Alt+Enter"
+        "accelerator": "CmdOrCtrl+Alt+Enter",
+        "feature": "document"
       },
       {
         "type": "separator"
@@ -362,6 +394,7 @@
   },
   {
     "label": "Object",
+    "feature": "document",
     "items": [
       {
         "id": "selection.group",
@@ -513,6 +546,7 @@
   },
   {
     "label": "Text",
+    "feature": "document",
     "items": [
       {
         "id": "text.bold",
@@ -533,6 +567,7 @@
   },
   {
     "label": "Arrange",
+    "feature": "document",
     "items": [
       {
         "id": "selection.wrapInAutoLayout",

@@ -3,7 +3,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
 import { motion } from 'motion-v'
 import type { PanInfo } from 'motion-v'
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -86,6 +86,10 @@ function snapHeight(s: Snap): number {
 }
 
 const targetHeight = ref(snapHeight(snap.value))
+
+watch(headerH, () => {
+  if (snap.value === 'closed') targetHeight.value = snapHeight('closed')
+})
 
 function onPan(_e: PointerEvent, info: PanInfo) {
   const maxHeight = snapHeight('full')
@@ -179,7 +183,7 @@ const drawerTransition = useMotionTransition({
           <div data-test-id="mobile-drawer-layers" class="flex h-full flex-col">
             <PagesPanel />
             <div class="border-t border-border" />
-            <header class="shrink-0 px-3 py-2 text-[11px] font-semibold text-muted">Layers</header>
+            <header class="shrink-0 px-3 py-2 text-2xs font-semibold text-muted">Layers</header>
             <LayerTree class="min-h-0 flex-1" />
           </div>
         </TabsContent>

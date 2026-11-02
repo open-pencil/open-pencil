@@ -80,3 +80,48 @@ export function createNestedBoard(graph: SceneGraph, pageId: string) {
   })
   return { grid: grid.id, cell: cell.id, label: label.id }
 }
+
+/**
+ * A top-level component holding a group with an unfilled curve drawn by a 2-unit stroke, as the
+ * shadcn kit's line chart is built; the curve runs from (0, 80) to (300, 80) bowing up to y 0.
+ */
+export function createComponentChart(graph: SceneGraph, pageId: string) {
+  const component = graph.createNode('COMPONENT', pageId, {
+    name: 'Chart',
+    x: 100,
+    y: 100,
+    width: 340,
+    height: 200,
+    fills: fill(1, 1, 1)
+  })
+  const group = graph.createNode('GROUP', component.id, {
+    name: 'Plot',
+    x: 20,
+    y: 60,
+    width: 300,
+    height: 80
+  })
+  const curve = graph.createNode('VECTOR', group.id, {
+    name: 'Curve',
+    width: 300,
+    height: 80,
+    fills: [],
+    strokes: [{ ...fill(0, 0, 0)[0], weight: 2, align: 'CENTER' }],
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 80 },
+        { x: 300, y: 80 }
+      ],
+      segments: [
+        {
+          start: 0,
+          end: 1,
+          tangentStart: { x: 100, y: -107 },
+          tangentEnd: { x: -100, y: -107 }
+        }
+      ],
+      regions: []
+    }
+  })
+  return { component: component.id, group: group.id, curve: curve.id }
+}

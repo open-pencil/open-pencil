@@ -8,7 +8,7 @@ export default {
     header: 'flex items-center justify-between gap-2',
     heading: 'text-xs font-semibold',
     grid: 'w-full border-collapse select-none',
-    headCell: 'h-7 w-8 text-center text-[10px] font-medium text-muted',
+    headCell: 'h-7 w-8 text-center text-3xs font-medium text-muted',
     cell: 'p-0 text-center',
     day: [
       'mx-auto flex size-8 cursor-pointer items-center justify-center rounded-md tabular-nums outline-none',

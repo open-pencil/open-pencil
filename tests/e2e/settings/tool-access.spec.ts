@@ -41,15 +41,18 @@ for (const width of [1280, 390]) {
     await openSection(page, 'Tool access', phone)
     await search.fill('create_component')
     await expect(create).toHaveAttribute('data-state', 'checked')
-    await page.getByRole('button', { name: 'Restore defaults' }).click()
+    await page.getByRole('button', { name: 'Reset to default' }).click()
     await expect(create).toHaveAttribute('data-state', 'unchecked')
+    // Back at the defaults, there is nothing left to reset.
+    await expect(page.getByRole('button', { name: 'Reset to default' })).toHaveCount(0)
     await page.keyboard.press('Escape')
 
     await openSection(page, 'MCP', phone)
     await page.getByTestId('settings-mcp-tool-access').click()
     await search.fill('create_component')
     await expect(create).toHaveAttribute('data-state', 'unchecked')
-    await page.getByRole('button', { name: 'Restore defaults' }).click()
+    await page.getByRole('button', { name: 'Reset to default' }).click()
     await expect(create).toHaveAttribute('data-state', 'checked')
+    await expect(page.getByRole('button', { name: 'Reset to default' })).toHaveCount(0)
   })
 }

@@ -99,7 +99,7 @@ const styles = computed(() =>
         v-for="name in modeNames"
         :key="name"
         data-slot="variable-mode"
-        class="shrink-0 rounded-full border border-current/40 px-1.5 text-[10px] leading-3.5"
+        class="shrink-0 rounded-full border border-current/40 px-1.5 text-3xs leading-3.5"
       >
         {{ name }}
       </span>

@@ -1,9 +1,10 @@
-import { evalCubic, isLineSegment, segmentToAbsolute, splitCubicAt } from './curve-math'
+import { cubicPoint } from '@open-pencil/scene-graph/geometry'
+
+import { isLineSegment, segmentToAbsolute, splitCubicAt } from './curve-math'
 import { reindexRegionLoops, remapRegions } from './regions'
 export {
   computeAccurateBounds,
   cubicExtrema,
-  evalCubic,
   isLineSegment,
   nearestPointOnCubic,
   nearestPointOnNetwork,
@@ -165,15 +166,11 @@ function buildMergedSegmentForRemovedVertex(
   const scaledTS: Vector = { x: dirA.x * scaleA, y: dirA.y * scaleA }
   const scaledTE: Vector = { x: dirB.x * scaleB, y: dirB.y * scaleB }
 
-  const ptScaled = evalCubic(
-    vA.x,
-    vA.y,
-    vA.x + scaledTS.x,
-    vA.y + scaledTS.y,
-    vB.x + scaledTE.x,
-    vB.y + scaledTE.y,
-    vB.x,
-    vB.y,
+  const ptScaled = cubicPoint(
+    vA,
+    { x: vA.x + scaledTS.x, y: vA.y + scaledTS.y },
+    { x: vB.x + scaledTE.x, y: vB.y + scaledTE.y },
+    vB,
     t
   )
   const scaledDev = Math.hypot(ptScaled.x - vR.x, ptScaled.y - vR.y)

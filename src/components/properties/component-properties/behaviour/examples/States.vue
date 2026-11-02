@@ -98,7 +98,7 @@ const record = (entry: string) => {
     <div
       v-for="(state, index) in [null, textareaBare, switchComplete, sliderIncomplete]"
       :key="index"
-      class="w-[240px] overflow-hidden rounded-lg border border-border bg-panel"
+      class="w-60 overflow-hidden rounded-lg border border-border bg-panel"
     >
       <BehaviourSection
         :behaviour="state"

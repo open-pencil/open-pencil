@@ -59,7 +59,10 @@ export function useUndoRecords(options: UndoRecordOptions) {
     updateMessage(chat, reply, (message) => withUndo(message, undo))
   }
 
-  /** `text` with a note about the undone edits `history` has not reported, and those reports. */
+  /**
+   * `text` with a note about the undone edits `history` has not reported, and those reports. An
+   * edit undone after a compaction is noted too, since the summary still describes it as made.
+   */
   function note(text: string, history: readonly UIMessage[]) {
     const reports = undoToReport(history)
     const calls = {
