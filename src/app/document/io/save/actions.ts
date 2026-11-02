@@ -6,7 +6,7 @@ import { isFileWriteRefused } from '@/app/document/io/capability'
 import { documentFileName, documentNameFromFigPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save/targets'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
-import { createDocumentWriter } from '@/app/document/io/write'
+import { androidDocumentName, createDocumentWriter } from '@/app/document/io/write'
 import { IS_TAURI } from '@/constants'
 
 type SaveDocumentState = EditorState & { documentName: string }
@@ -82,14 +82,50 @@ export function createSaveActions({
     if (IS_TAURI) {
       const path = await chooseTauriFigSavePath(state.documentKind)
       if (!path) return false
+      // Android's picker returns a document URI rather than a path: there is no path to
+      // watch, and the name comes from the provider instead of from the string.
+      const isDocumentURI = path.startsWith('content://')
+      const previous = {
+        filePath: getFilePath(),
+        fileHandle: getFileHandle(),
+        storageBinding: getStorageBinding(),
+        downloadName: getDownloadName(),
+        documentName: state.documentName
+      }
+      // The target is stored before the write is attempted. A write that fails would leave
+      // the document pointing at a file it never wrote, and the next plain Save would keep
+      // writing there, so the target is put back the way it was.
+      const restore = () => {
+        setStorageBinding(previous.storageBinding)
+        setFileHandle(previous.fileHandle)
+        setFilePath(previous.filePath)
+        setDownloadName(previous.downloadName)
+        state.documentName = previous.documentName
+      }
       setStorageBinding(null)
       setFilePath(path)
       setFileHandle(null)
-      state.documentName = documentNameFromFigPath(path)
-      const wrote = await writeFile(data, version)
-      if (wrote) setSourceIdentity({ handle: null, path })
-      startWatchingFile()
-      return wrote
+      if (isDocumentURI) {
+        // The save sheet lets the person rename the file, so the editor takes the name the
+        // provider now holds instead of keeping the one the document had before.
+        const picked = await androidDocumentName(path)
+        if (picked) state.documentName = documentNameFromFigPath(picked)
+      } else {
+        state.documentName = documentNameFromFigPath(path)
+      }
+      try {
+        const wrote = await writeFile(data, version)
+        if (!wrote) {
+          restore()
+          return false
+        }
+        setSourceIdentity({ handle: null, path })
+        if (!isDocumentURI) startWatchingFile()
+        return true
+      } catch (error) {
+        restore()
+        throw error
+      }
     }
 
     // The picker helper returns null when the browser has no File System Access API.

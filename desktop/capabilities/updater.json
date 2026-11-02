@@ -3,6 +3,7 @@
   "identifier": "updater",
   "description": "Capability for the Software Update window: check, install, restart, close, and open release notes",
   "windows": ["updater"],
+  "platforms": ["macOS", "windows", "linux"],
   "permissions": [
     "core:default",
     "core:window:allow-close",

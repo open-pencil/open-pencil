@@ -11,6 +11,7 @@
   "openTour": "Ouvrir la visite",
   "diagnostics": "Diagnostics…",
   "save": "Enregistrer",
+  "saveFailedHeading": "Impossible d’enregistrer le document",
   "saveAs": "Enregistrer sous…",
   "exportSelection": "Exporter la sélection…",
   "autosave": "Enregistrement automatique",

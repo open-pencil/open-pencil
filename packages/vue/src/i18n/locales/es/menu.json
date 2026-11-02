@@ -11,6 +11,7 @@
   "openTour": "Abrir el recorrido",
   "diagnostics": "Diagnóstico…",
   "save": "Guardar",
+  "saveFailedHeading": "No se pudo guardar el documento",
   "saveAs": "Guardar como…",
   "exportSelection": "Exportar selección…",
   "autosave": "Guardado automático en archivo",

@@ -14,7 +14,7 @@ import {
   MenubarSubTrigger,
   MenubarTrigger
 } from 'reka-ui'
-import { useTemplateRef, watch } from 'vue'
+import { ref, useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -39,9 +39,11 @@ import {
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
+import { isAndroid } from '@/app/tauri/env'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import { CloudDocumentStatusHost } from '@/components/cloud/integration'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -57,7 +59,34 @@ watch(nameInput, (input) => {
   if (input) void rename.focusInput(input)
 })
 
-const { menu: t, settings } = useI18n()
+const { menu: t, settings, common } = useI18n()
+
+/**
+ * Android has neither the desktop native menu nor the browser menubar below, and the floating
+ * HUD that carries Save at phone widths is not rendered in the wide layout. Without this
+ * button the only way to save is a hardware keyboard's Ctrl+S.
+ */
+const showSaveButton = isAndroid()
+
+/**
+ * One save at a time, and a failure stays on screen until it is dismissed: a failed write
+ * leaves the document unsaved, which a toast that fades would hide.
+ */
+const saving = ref(false)
+const saveError = ref<string | null>(null)
+
+async function saveFromButton(): Promise<void> {
+  if (saving.value) return
+  saving.value = true
+  saveError.value = null
+  try {
+    await store.saveFigFile()
+  } catch (error) {
+    saveError.value = error instanceof Error ? error.message : String(error)
+  } finally {
+    saving.value = false
+  }
+}
 
 const { topMenus } = useAppMenu()
 const menuCls = useMenuUI()
@@ -98,6 +127,15 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
       >
       <CloudDocumentStatusHost />
       <IconButton
+        v-if="showSaveButton"
+        :label="t.save"
+        :disabled="saving"
+        data-test-id="app-save-button"
+        @click="saveFromButton"
+      >
+        <icon-lucide-save class="size-3.5" />
+      </IconButton>
+      <IconButton
         :label="settings.title"
         data-test-id="app-settings-trigger"
         @click="openSettingsDialog()"
@@ -112,6 +150,20 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
         <icon-lucide-sidebar class="size-3.5" />
       </IconButton>
     </div>
+    <AppAlert
+      v-if="saveError"
+      class="mx-2 mb-1.5"
+      tone="error"
+      :heading="t.saveFailedHeading"
+      :description="saveError"
+      data-test-id="app-save-error"
+    >
+      <template #actions>
+        <IconButton :label="common.dismiss" @click="saveError = null">
+          <icon-lucide-x class="size-3.5" />
+        </IconButton>
+      </template>
+    </AppAlert>
     <div v-if="!IS_TAURI" class="flex items-center px-1 pb-1">
       <div
         ref="menubar"

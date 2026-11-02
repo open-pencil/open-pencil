@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- fullBackupContent: legacy backup (API < 31). Credentials stored by the app's
+     file backend under files/credentials/ must never leave the device. -->
+<full-backup-content>
+    <exclude domain="file" path="credentials" />
+    <exclude domain="file" path="credentials.json.tmp" />
+</full-backup-content>

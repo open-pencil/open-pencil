@@ -43,8 +43,6 @@ semver = "1"
 fontique = "0.11"
 # The same read-fonts fontique uses, to read each face's style names and named instances.
 read-fonts = "0.41"
-fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch = "dev" }
-tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 tauri-plugin-os = "2"
 tauri-plugin-clipboard-manager = "2"
@@ -65,4 +63,8 @@ objc2-core-text = { version = "0.3.2", default-features = false, features = ["st
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+# Desktop-only: forks a login shell to rebuild $PATH (no /bin/sh on Android).
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch = "dev" }
+# Desktop-only: self-update has no meaning on mobile and reads updater config at init.
+tauri-plugin-updater = "2"
 

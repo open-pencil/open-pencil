@@ -3,6 +3,7 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": ["main"],
+  "platforms": ["macOS", "windows", "linux"],
   "permissions": [
     "core:default",
     "core:window:allow-destroy",
