@@ -51,20 +51,20 @@ export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ell
   return opts
 }
 
-function getParagraphTextAlign(
-  ck: CanvasKit,
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-) {
-  const direction = resolveNodeTextDirection(node)
+/**
+ * `textAlignHorizontal` is visual, as the panel's icons and Figma treat it: RIGHT sits against the
+ * right edge in RTL text too. Direction only orders the glyphs.
+ */
+function getParagraphTextAlign(ck: CanvasKit, node: Pick<SceneNode, 'textAlignHorizontal'>) {
   switch (node.textAlignHorizontal) {
     case 'CENTER':
       return ck.TextAlign.Center
     case 'RIGHT':
-      return direction === 'RTL' ? ck.TextAlign.Left : ck.TextAlign.Right
+      return ck.TextAlign.Right
     case 'JUSTIFIED':
       return ck.TextAlign.Justify
     default:
-      return direction === 'RTL' ? ck.TextAlign.Right : ck.TextAlign.Left
+      return ck.TextAlign.Left
   }
 }
 

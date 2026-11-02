@@ -166,7 +166,7 @@ describe('renderNodesToSVG()', () => {
     expect(result).toContain('>Hello World</text>')
   })
 
-  test('rtl text node exports direction and logical anchor', () => {
+  test('rtl text node aligned left anchors its left edge at 0', () => {
     const graph = makeGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
       width: 180,
@@ -180,6 +180,23 @@ describe('renderNodesToSVG()', () => {
     const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('direction="rtl"')
     expect(result).toContain('text-anchor="end"')
+    expect(result).toContain('x="0"')
+  })
+
+  test('rtl text node aligned right anchors its start at the right edge', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      width: 180,
+      height: 24,
+      text: 'مرحبا',
+      fontSize: 18,
+      textDirection: 'RTL',
+      textAlignHorizontal: 'RIGHT',
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const result = exportSVGOrThrow(graph, [node.id])
+    expect(result).toContain('direction="rtl"')
+    expect(result).not.toContain('text-anchor')
     expect(result).toContain('x="180"')
   })
 

@@ -108,12 +108,23 @@ import {
   viewportGet,
   viewportSet
 } from '#core/tools/vector'
+import {
+  createDeviceMockup,
+  createSocialPost,
+  listMockupPresets,
+  resizeForPlatforms
+} from '#core/tools/mockup'
 
 /**
  * Extended tools not in CORE_TOOLS — variables, vector ops, analysis,
  * codegen, advanced structure, path manipulation, etc.
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
+  // Mockups & social posts
+  listMockupPresets,
+  createSocialPost,
+  resizeForPlatforms,
+  createDeviceMockup,
   // Read (advanced)
   getPageTree,
   getCurrentPage,

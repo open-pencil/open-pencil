@@ -358,7 +358,8 @@ function styleFromTextNode(
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
-  if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
+  const rtl = resolveNodeTextDirection(node) === 'RTL'
+  if (rtl) style.direction = 'rtl'
   const color = fillToCSS(node.fills.at(0))
   style.color = color ? css('fills/0/color', color) : cssColor(BLACK)
   style['font-family'] = node.fontFamily
@@ -371,7 +372,8 @@ function styleFromTextNode(
   if (node.letterSpacing.value !== 0) {
     style['letter-spacing'] = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
   }
-  if (node.textAlignHorizontal !== 'LEFT')
+  // Alignment is visual; RTL text would otherwise start at the right edge when LEFT is left implicit.
+  if (node.textAlignHorizontal !== 'LEFT' || rtl)
     style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   const shadow = dropShadowToCSS(node.effects[0])

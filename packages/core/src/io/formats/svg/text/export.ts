@@ -122,26 +122,22 @@ function fontRequest(
   }
 }
 
-function isLogicalTextEnd(node: SceneNode, direction: 'LTR' | 'RTL'): boolean {
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'RIGHT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'LEFT')
-  )
-}
-
+/**
+ * Alignment is visual (RIGHT hugs the right edge in RTL too). In RTL text SVG's `start` is the right
+ * edge and `end` the left, so the anchor flips with direction while `x` does not.
+ */
 function textAnchorForNode(
   node: SceneNode,
   direction: 'LTR' | 'RTL'
 ): 'middle' | 'end' | undefined {
   if (node.textAlignHorizontal === 'CENTER') return 'middle'
-  if (isLogicalTextEnd(node, direction)) return 'end'
-  return undefined
+  const right = node.textAlignHorizontal === 'RIGHT'
+  return right === (direction === 'LTR') ? 'end' : undefined
 }
 
-function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
+function textXForNode(node: SceneNode, _direction: 'LTR' | 'RTL'): number {
   if (node.textAlignHorizontal === 'CENTER') return round(node.width / 2)
-  if (isLogicalTextEnd(node, direction)) return round(node.width)
-  return 0
+  return node.textAlignHorizontal === 'RIGHT' ? round(node.width) : 0
 }
 
 /** Text with no measured layout: explicit newlines on their own baselines, otherwise one line. */

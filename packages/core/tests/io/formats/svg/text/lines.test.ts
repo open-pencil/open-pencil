@@ -319,7 +319,7 @@ describe('SVG text lines without a measured layout', () => {
     expect(right).toContain('<tspan x="100" y="40">Second line</tspan>')
   })
 
-  test('a right-to-left paragraph keeps the logical anchor on every line', () => {
+  test('a right-to-left paragraph aligned left anchors every line at the left edge', () => {
     const svg = exportText({
       text: 'أول\nثان',
       fontSize: 16,
@@ -328,8 +328,24 @@ describe('SVG text lines without a measured layout', () => {
       textDirection: 'RTL',
       textAlignHorizontal: 'LEFT'
     })
+    // In RTL, SVG's `end` is the left edge.
     expect(svg).toContain('direction="rtl"')
     expect(svg).toContain('text-anchor="end"')
+    expect(svg).toContain('<tspan x="0" y="16">أول</tspan>')
+    expect(svg).toContain('<tspan x="0" y="40">ثان</tspan>')
+  })
+
+  test('a right-to-left paragraph aligned right anchors every line at the right edge', () => {
+    const svg = exportText({
+      text: 'أول\nثان',
+      fontSize: 16,
+      lineHeight: pixelLength(24),
+      width: 180,
+      textDirection: 'RTL',
+      textAlignHorizontal: 'RIGHT'
+    })
+    expect(svg).toContain('direction="rtl"')
+    expect(svg).not.toContain('text-anchor')
     expect(svg).toContain('<tspan x="180" y="16">أول</tspan>')
     expect(svg).toContain('<tspan x="180" y="40">ثان</tspan>')
   })
