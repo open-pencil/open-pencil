@@ -189,6 +189,7 @@ describe('updateNode', () => {
     const graph = new SceneGraph()
     const text = graph.createNode('TEXT', pageId(graph), { width: 100, height: 20 })
     text.textPicture = new Uint8Array([1, 2, 3])
+    text.derivedLayout = { width: 100, height: 20 }
     graph.updateNode(text.id, { leadingTrim: 'CAP_HEIGHT' })
     const updated = expectDefined(graph.getNode(text.id), 'updated node')
     expect([updated.textPicture, updated.derivedLayout]).toEqual([null, null])
