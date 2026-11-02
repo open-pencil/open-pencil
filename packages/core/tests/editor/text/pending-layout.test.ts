@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from 'bun:test'
+import { afterEach, expect, spyOn, test } from 'bun:test'
 import { noop } from 'es-toolkit'
 
 import { createEditor } from '@open-pencil/core'
@@ -72,6 +72,8 @@ function setup({
   let preparing = true
   /** Holds each preparation until the test lets it finish, when set. */
   let gate: Promise<void> | null = null
+  /** Whether the next preparation fails, as a font that cannot be fetched does. */
+  let failing = false
   /** Whether each layout the pending text ran was the document's own. */
   const relayouts: boolean[] = []
   let currentGraph = graph
@@ -81,6 +83,10 @@ function setup({
     prepareFonts: async (texts) => {
       prepared.push(texts.map((node) => node.id))
       await (gate ?? Promise.resolve())
+      if (failing) {
+        failing = false
+        throw new Error('font unavailable')
+      }
       if (preparing) loaded = true
     },
     runLayoutForNode: (id) => {
@@ -103,6 +109,7 @@ function setup({
     canvasLoaded: () => canvasLoaded(),
     stopPreparing: () => (preparing = false),
     loadElsewhere: () => (loaded = true),
+    failNextPreparation: () => (failing = true),
     replaceDocument: () => {
       pending.clear()
       currentGraph = createEditor().graph
@@ -310,4 +317,24 @@ test('the editor lays out text its fonts could not measure once font resolution 
     fontResolver.reset('pending-layout-test')
     editor.removeCanvasRenderer(renderer as SkiaRenderer)
   }
+})
+
+test('text whose fonts fail to load shows at its size, and is laid out once fonts settle', async () => {
+  const { graph, text, pending, runLayoutForNode, renders, failNextPreparation } = setup()
+  failNextPreparation()
+  const warn = spyOn(console, 'warn').mockImplementation(noop)
+  try {
+    runLayoutForNode(text.id)
+    await settle()
+    expect(warn).toHaveBeenCalledTimes(1)
+  } finally {
+    warn.mockRestore()
+  }
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
+  expect([text.width, text.height]).toEqual([100, 20])
+  expect(renders()).toBe(0)
+
+  pending.retryStalled()
+  await settle()
+  expect([text.width, text.height]).toEqual([234, 29])
 })

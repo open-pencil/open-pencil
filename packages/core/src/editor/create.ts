@@ -103,9 +103,11 @@ export function createEditor(options?: EditorOptions) {
     if (event === 'settled') pendingTextLayout.retryStalled()
     events.emit('font:resolution-changed', event, snapshot)
   })
-  const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
+  const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) => {
+    // A face loaded outside the resolver can be the one stalled text was missing.
+    pendingTextLayout.retryStalled()
     events.emit('font:loaded', family, style)
-  )
+  })
 
   void prefetchFigmaSchema()
 

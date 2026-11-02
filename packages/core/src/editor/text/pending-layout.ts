@@ -80,16 +80,25 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     const opened = documents
     const ids = [...batch.keys()]
     const held = ids.filter((id) => hidden.delete(id))
+    let prepared = false
     try {
       const renderer = ctx.getRenderer()
       if (renderer && !renderer.fontsLoaded) await renderer.whenFontsLoaded()
       await ctx.prepareFonts(compact(ids.map((id) => graph.getNode(id))))
+      prepared = true
+    } catch (error) {
+      console.warn('Text fonts could not be prepared:', error)
     } finally {
       // Text queued again meanwhile holds a block of its own until it is prepared in turn.
       fontManager.unblockNodes(graph, held)
     }
     if (opened !== documents || ctx.getGraph() !== graph) return
-    layOut(graph, batch)
+    if (prepared) {
+      layOut(graph, batch)
+      return
+    }
+    // Fonts that failed to load leave the text showing at its size, tried again once fonts settle.
+    for (const [id, derived] of batch) note(stalled, id, derived)
   }
 
   function layOut(graph: SceneGraph, batch: ReadonlyMap<string, boolean>) {

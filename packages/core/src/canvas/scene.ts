@@ -155,6 +155,8 @@ function renderMaskNodeContent(
   absY: number,
   frame: Mat3 | null
 ): void {
+  // A mask whose fonts are still prepared masks nothing in yet, so what it masks stays hidden too.
+  if (fontManager.isNodeBlocked(graph, node.id)) return
   canvas.save()
   canvas.translate(node.x, node.y)
   // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
