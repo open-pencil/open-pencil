@@ -1,0 +1,2 @@
+- Component sets from files that save no variant values, such as the shadcn/ui community kit, take their values and defaults from their variants, so behaviours bind to them and scripts read them as Figma does (#1699).
+- `appendChild` in scripts moves a layer that is already a child to the end, as Figma does (#1699).
