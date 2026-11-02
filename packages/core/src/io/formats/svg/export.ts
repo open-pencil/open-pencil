@@ -382,7 +382,24 @@ function exportedFill(
 
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (!node.visible) return null
+  if (!ctx.layerIds) return drawNode(node, ctx)
+  // Parents take their names before their children, so a repeated name counts in layer order.
+  const id = layerId(node.name, ctx.layerIds)
+  const drawn = drawNode(node, ctx)
+  if (!drawn) return null
+  // A layer drawn as its only child's element keeps that child's id and gets its own group.
+  if ('id' in drawn.attrs) return svg('g', { id }, drawn)
+  return { ...drawn, attrs: { id, ...drawn.attrs } }
+}
 
+/** A layer's name as an element id, numbered from `_2` when an earlier layer has it, as Figma does. */
+function layerId(name: string, used: Map<string, number>): string {
+  const count = (used.get(name) ?? 0) + 1
+  used.set(name, count)
+  return count === 1 ? name : `${name}_${count}`
+}
+
+function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
@@ -467,6 +484,8 @@ export interface SVGExportOptions {
    * file under. Text in an aliased face is written in that family at normal weight and style.
    */
   fontAlias?: SVGFontAlias
+  /** Each layer's name as its element's `id`, as Figma's "Include id attribute" writes it. */
+  layerIds?: boolean
 }
 
 export function renderNodesToSVG(
@@ -488,7 +507,8 @@ export function renderNodesToSVG(
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
     textLayout: options.textLayout,
-    fontAlias: options.fontAlias
+    fontAlias: options.fontAlias,
+    layerIds: options.layerIds ? new Map() : undefined
   }
 
   const contentNodes: SVGNode[] = []

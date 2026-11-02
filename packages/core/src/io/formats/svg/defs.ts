@@ -48,6 +48,8 @@ export interface SVGExportContext {
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
   fontAlias?: SVGFontAlias
+  /** How many layers have taken each name as their id, when layers are written with ids. */
+  layerIds?: Map<string, number>
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {

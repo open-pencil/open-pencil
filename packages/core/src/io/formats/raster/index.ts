@@ -1,5 +1,6 @@
 export {
   computeContentBounds,
+  exportBounds,
   renderNodesToImage,
   renderThumbnail,
   thumbnailFrame,

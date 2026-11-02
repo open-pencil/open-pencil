@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit/predicate'
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
@@ -87,7 +88,7 @@ export function createExportTargetState(editor: Editor, selectedIds: ComputedRef
     const first = editor.graph.getNode(firstId)?.exportSettings ?? []
     return otherIds.some((id) => {
       const settings = editor.graph.getNode(id)?.exportSettings ?? []
-      return !exportSettingsEqual(first, settings)
+      return !isEqual(first, settings)
     })
   })
 
@@ -101,14 +102,6 @@ export function createExportTargetState(editor: Editor, selectedIds: ComputedRef
     activeSettings,
     mixed
   }
-}
-
-function exportSettingsEqual(a: ExportSetting[], b: ExportSetting[]) {
-  if (a.length !== b.length) return false
-  return a.every((setting, index) => {
-    const other = b[index]
-    return setting.scale === other.scale && setting.format === other.format
-  })
 }
 
 function nextExportSetting(settings: ExportSetting[]): ExportSetting {

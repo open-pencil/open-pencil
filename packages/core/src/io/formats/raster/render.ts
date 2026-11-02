@@ -2,8 +2,12 @@ import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import {
+  computeDescendantVisualBounds,
+  unionVisualBounds,
+  type VisualBounds
+} from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -21,6 +25,8 @@ interface RenderOptions {
   quality?: number
   colorSpace?: RenderColorSpace
   trimTransparent?: boolean
+  /** Crop to the layers' boxes rather than to everything they draw, as Figma can for text. */
+  useAbsoluteBounds?: boolean
 }
 
 function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {
@@ -33,6 +39,26 @@ export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
     (id) => graph.getNode(id),
     (id) => graph.getAbsolutePosition(id)
   )
+}
+
+/**
+ * What an export of `nodeIds` covers: everything they draw, or with `useAbsoluteBounds` their
+ * boxes alone; null when nothing is visible.
+ */
+export function exportBounds(
+  graph: SceneGraph,
+  nodeIds: string[],
+  useAbsoluteBounds = false
+): VisualBounds | null {
+  if (!useAbsoluteBounds) return computeContentBounds(graph, nodeIds)
+  let bounds: VisualBounds | null = null
+  for (const id of nodeIds) {
+    const node = graph.getNode(id)
+    if (!node?.visible) continue
+    const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
+    bounds = unionVisualBounds(bounds, { minX: x, minY: y, maxX: x + width, maxY: y + height })
+  }
+  return bounds
 }
 
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {
@@ -254,7 +280,7 @@ export function renderNodesToImage(
     throw new Error('Raster export selection must stay on a single page')
   }
 
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = exportBounds(graph, nodeIds, options.useAbsoluteBounds)
   if (!bounds) return null
 
   const contentW = bounds.maxX - bounds.minX

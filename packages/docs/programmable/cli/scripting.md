@@ -247,6 +247,11 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `style.name`, `description`, `key`, `paints`, `effects`, `layoutGrids`, a text style's font, size, spacing, case, and decoration, `getStyleConsumersAsync()`, and `remove()`; a change to a style reaches every layer and text range that uses it, and removing it leaves them its values
 - `fillStyleId`, `strokeStyleId`, `effectStyleId`, `gridStyleId`, and `textStyleId` with their `set…StyleIdAsync` setters, on the layers Figma has them on; setting one gives the layer the style's values, an empty ID takes the style off, and a style the document does not hold is refused
 
+### Export
+
+- `node.exportAsync(settings?)` on layers and pages writes `PNG` and `JPG` (sized by a `SCALE`, `WIDTH`, or `HEIGHT` constraint, cropped to the layer's box with `useAbsoluteBounds`), `SVG` as bytes, `SVG_STRING` as a string (with layer names as element ids when `svgIdAttribute` is set), and `PDF`. PNG and JPG need a renderer: the desktop app, the browser app, and `open-pencil eval` have one. SVG text stays `<text>` whatever `svgOutlineText` says, colour profiles are not applied, and `contentsOnly: false` exports the layer alone. `JSON_REST_V1` and video formats are refused
+- `node.exportSettings` reads and sets the exports a layer keeps, with Figma's options and defaults; exports in formats Figma has no setting for, such as WebP or PowerPoint, are left out
+
 ### Properties
 
 Common node properties are readable/writable through the proxy, including:
@@ -288,10 +293,8 @@ Common node properties are readable/writable through the proxy, including:
 
 These Figma APIs are not exposed as compatible helpers yet:
 
-- `node.exportAsync()`
 - `figma.util.normalizeMarkdown()`, which fails because OpenPencil has no rich-text descriptions or annotations to normalize for
 - Library variables, extended collections, and variable bindings on effects and layout grids
-- Figma style APIs such as `figma.createPaintStyle()` / `figma.createTextStyle()`
 - Full vector boolean operation parity
 
 Use OpenPencil CLI export commands, core tools, or direct scene-graph helpers where available.

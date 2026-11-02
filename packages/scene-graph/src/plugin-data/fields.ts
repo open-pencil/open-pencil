@@ -60,10 +60,23 @@ const exportSettingsSchema: v.GenericSchema<unknown, ExportSetting[]> = v.array(
   v.pipe(
     v.object({
       scale: v.pipe(v.number(), v.finite()),
-      format: v.custom<ExportFormatId>(isExportFormatId)
+      format: v.custom<ExportFormatId>(isExportFormatId),
+      suffix: v.optional(v.string()),
+      size: v.optional(
+        v.object({
+          type: v.picklist(['WIDTH', 'HEIGHT']),
+          value: v.pipe(v.number(), v.finite())
+        })
+      ),
+      contentsOnly: v.optional(v.boolean()),
+      useAbsoluteBounds: v.optional(v.boolean()),
+      colorProfile: v.optional(v.picklist(['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'])),
+      svgOutlineText: v.optional(v.boolean()),
+      svgIdAttribute: v.optional(v.boolean()),
+      svgSimplifyStroke: v.optional(v.boolean())
     }),
     // Clamp at the file boundary: imported plugin data may carry a scale the UI never produces.
-    v.transform(({ scale, format }) => ({ scale: clampExportScale(scale), format }))
+    v.transform((setting) => ({ ...setting, scale: clampExportScale(setting.scale) }))
   )
 )
 
