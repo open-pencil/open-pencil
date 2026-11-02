@@ -1,10 +1,30 @@
 import type { LanguageModel, LanguageModelUsage, ModelMessage, UIMessage } from 'ai'
 
 import { compactAutomatically } from '@/app/ai/chat/preferences'
+import { createDeferred } from '@/app/runtime/deferred'
 
 import { autoCompactAt, designContextLimits, summaryBudget, type ContextLimits } from './limits'
-import { compactionOf, summaryText, type Compaction } from './marker'
+import { compactionOf, summaryText, type StepCompaction } from './marker'
 import { summarizeModelMessages } from './summarize'
+
+/** The model's limits, or null when they cannot be read or the reply is stopped first. */
+async function readLimits(
+  contextLimits: () => Promise<ContextLimits | null>,
+  signal: AbortSignal | undefined
+): Promise<ContextLimits | null> {
+  const lookup = contextLimits().catch(() => null)
+  if (!signal) return lookup
+  if (signal.aborted) return null
+  // A stalled catalog fetch must not hold a stopped reply open.
+  const stopped = createDeferred<null>()
+  const stop = () => stopped.resolve(null)
+  signal.addEventListener('abort', stop, { once: true })
+  try {
+    return await Promise.race([lookup, stopped.promise])
+  } finally {
+    signal.removeEventListener('abort', stop)
+  }
+}
 
 interface StepState {
   stepNumber: number
@@ -25,16 +45,19 @@ export function createStepCompaction(
   let limits: ContextLimits | null = null
   let abortSignal: AbortSignal | undefined
   let summaryFirst = false
-  /** A compaction the reply has not recorded yet; it goes with the next step's start. */
-  let unrecorded: Compaction | null = null
+  /** The reply's compactions so far; the metadata carries the whole list, which replaces the last. */
+  let compactions: StepCompaction[] = []
+  /** Whether the reply has yet to record the latest; it goes with the next step's start. */
+  let unrecorded = false
 
   /** Before a reply: whether it may compact, read once, and what its request starts with. */
   async function begin(sent: readonly UIMessage[], signal: AbortSignal | undefined) {
-    limits = compactAutomatically.value ? await contextLimits().catch(() => null) : null
+    limits = compactAutomatically.value ? await readLimits(contextLimits, signal) : null
     abortSignal = signal
     const first = sent.at(0)
     summaryFirst = first !== undefined && compactionOf(first) !== null
-    unrecorded = null
+    compactions = []
+    unrecorded = false
   }
 
   /** The step's messages, compacted when the last step's request passed the threshold. */
@@ -58,7 +81,11 @@ export function createStepCompaction(
       return undefined
     }
     summaryFirst = true
-    unrecorded = { summary, trigger: 'auto', tokensBefore: held, step: stepNumber - 1 }
+    compactions = [
+      ...compactions,
+      { summary, trigger: 'auto', tokensBefore: held, step: stepNumber - 1 }
+    ]
+    unrecorded = true
     return {
       messages: [
         // Shaped as the summary message converts, so a saved trace rebuilds this request.
@@ -74,9 +101,8 @@ export function createStepCompaction(
   /** The reply's metadata at a step's start, carrying a compaction made before it. */
   function metadataFor(part: { type: string }) {
     if (part.type !== 'start-step' || !unrecorded) return undefined
-    const compaction = unrecorded
-    unrecorded = null
-    return { compaction }
+    unrecorded = false
+    return { compactions }
   }
 
   return { begin, prepareStep, metadataFor }

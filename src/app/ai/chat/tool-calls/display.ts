@@ -130,22 +130,24 @@ export function toolHasInput(part: ToolCallPart): boolean {
 export type MessagePartGroup =
   | { kind: 'part'; part: ChatMessagePart; index: number }
   | { kind: 'tools'; parts: { part: ToolCallPart; index: number }[] }
-  | { kind: 'compaction'; index: number }
+  | { kind: 'compaction'; index: number; compaction: number }
 
 /**
- * Consecutive tool calls form one group, so a long run can collapse into a single row. A
- * compaction within the reply, before its `compactedStep`th step, sits between groups.
+ * Consecutive tool calls form one group, so a long run can collapse into a single row. Each
+ * compaction within the reply, before a step in `compactedSteps`, sits between groups and names
+ * its place in that list.
  */
 export function groupMessageParts(
   parts: readonly ChatMessagePart[],
-  compactedStep?: number
+  compactedSteps: readonly number[] = []
 ): MessagePartGroup[] {
   const groups: MessagePartGroup[] = []
   let step = 0
   parts.forEach((part, index) => {
     // Step boundaries are not rendered, so they must not split a run of calls.
     if (part.type === 'step-start') {
-      if (step++ === compactedStep) groups.push({ kind: 'compaction', index })
+      const compaction = compactedSteps.indexOf(step++)
+      if (compaction !== -1) groups.push({ kind: 'compaction', index, compaction })
       return
     }
     if (!isToolUIPart(part)) {

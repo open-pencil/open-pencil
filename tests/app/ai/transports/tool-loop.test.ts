@@ -12,11 +12,13 @@ import { compactionMessage } from '@/app/ai/chat/compaction/marker'
 import { createRunRecorder } from '@/app/ai/chat/trace/recorder'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { modelProviderAdapter } from '@/app/ai/providers/registry'
+import { currentRun } from '@/app/ai/reply/run'
 import type { Skill } from '@/app/ai/skills/types'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
+import { createDeferred } from '@/app/runtime/deferred'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { skillFixture } from '#tests/helpers/chat/skills'
@@ -392,6 +394,37 @@ test('a compacted conversation reaches the model as its summary and what followe
         }
       })
     )
+  } finally {
+    store.dispose()
+  }
+})
+
+test('Stop ends a reply whose context-limit lookup has not answered', async () => {
+  const store = createEditorStore()
+  try {
+    const transport = createToolLoopTransport({
+      store,
+      providerID: 'openai',
+      model: replyModel(),
+      effectiveModelID: 'test',
+      maxOutputTokens: 100,
+      thinkingLevel: () => 'default',
+      // The model catalog never answers.
+      contextLimits: () => createDeferred<null>().promise
+    })
+    const controller = new AbortController()
+    const sent = transport.sendMessages({
+      trigger: 'submit-message',
+      chatId: 'stalled',
+      messageId: undefined,
+      abortSignal: controller.signal,
+      messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }]
+    })
+    await Promise.resolve()
+    expect(currentRun(store).active).toBe(true)
+    controller.abort()
+    await sent
+    expect(currentRun(store).active).toBe(false)
   } finally {
     store.dispose()
   }

@@ -4,7 +4,7 @@ import type { ModelMessage, ToolSet, UIMessage } from 'ai'
 import {
   compactionMessage,
   messagesSinceCompaction,
-  replyCompaction,
+  replyCompactions,
   replySteps
 } from '@/app/ai/chat/compaction/marker'
 import { requestMessages } from '@/app/ai/chat/history/continuation'
@@ -15,7 +15,7 @@ import type { RunTrace } from './types'
 /**
  * The messages a run's `step` sent to the model, rebuilt from the conversation: what the run
  * sent, as `requestMessages` and compaction prepared it, then the reply's earlier steps. After
- * a compaction within the reply, the request starts again from its summary.
+ * a compaction within the reply, the request starts again from the latest summary before it.
  */
 export async function rebuildStepMessages(
   conversation: UIMessage[],
@@ -27,8 +27,7 @@ export async function rebuildStepMessages(
   const sent = messagesSinceCompaction(requestMessages(conversation.slice(0, through + 1)))
   const reply = conversation.at(through + 1)
   if (reply?.role !== 'assistant' || step === 0) return convertToModelMessages(sent, { tools })
-  const compaction = replyCompaction(reply)
-  const resumed = compaction && compaction.step < step ? compaction : null
+  const resumed = replyCompactions(reply).findLast((compaction) => compaction.step < step)
   const earlier = { ...reply, parts: replySteps(reply, resumed?.step ?? 0, step) }
   const before = resumed ? [compactionMessage(resumed, `${reply.id}-summary`)] : sent
   return convertToModelMessages(earlier.parts.length > 0 ? [...before, earlier] : before, {

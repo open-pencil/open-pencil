@@ -162,7 +162,32 @@ describe('compaction', () => {
     ).toEqual(['s', 'c', 'd'])
     // Without a summary first, what is kept starts with a request.
     expect(labels(summarySource(turns, { budget: 3300 }))).toEqual(['c', 'd'])
-    expect(labels(summarySource(turns, { budget: 10 }))).toEqual(['d'])
+    // The newest message stays past the budget, cut shorter to fit.
+    const [newest] = summarySource([say('user', 'n'.repeat(20_000))], { budget: 2000 })
+    expect(JSON.stringify(newest).length).toBeLessThanOrEqual(2000)
+    expect(String(newest?.content)).toEndWith('more characters left out)')
+  })
+
+  test('a summary request too long for its model is tried again with a quarter of the budget', async () => {
+    const sizes: number[] = []
+    const model = new MockLanguageModelV4({
+      doGenerate: async (options) => {
+        sizes.push(JSON.stringify(options.prompt).length)
+        if (sizes.length === 1) throw new Error('context_length_exceeded')
+        return {
+          content: [{ type: 'text', text: 'Summary' }],
+          finishReason: { unified: 'stop', raw: undefined },
+          usage: MOCK_USAGE,
+          warnings: []
+        }
+      }
+    })
+    const turns = Array.from({ length: 8 }, (_, index) =>
+      text(`${index}`, index % 2 ? 'assistant' : 'user', 'w'.repeat(1000))
+    )
+    expect(await summarizeConversation(turns, { model, budget: 8000 })).toBe('Summary')
+    expect(sizes).toHaveLength(2)
+    expect(sizes[1]).toBeLessThan(sizes[0] / 2)
   })
 
   test('the conversation’s model writes the summary, following the instructions it is given', async () => {

@@ -9,7 +9,7 @@ import { vTestId } from '@open-pencil/vue/testing'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
-import { compactionOf } from '@/app/ai/chat/compaction/marker'
+import { replyCompactions } from '@/app/ai/chat/compaction/marker'
 import { undoOf, usageOf, wasStopped } from '@/app/ai/chat/metadata'
 import {
   reasoningDisplay as preferredReasoningDisplay,
@@ -114,12 +114,12 @@ const reverted = computed(
 const stopped = computed(() => wasStopped(message))
 // A request that failed once its reply had started leaves the reply without content.
 const empty = computed(() => message.parts.every((part) => part.type === 'step-start'))
-/** A compaction between the reply's steps, which the reply draws where it ran. */
-const compaction = computed(() => (message.role === 'assistant' ? compactionOf(message) : null))
+/** Compactions between the reply's steps, which the reply draws where they ran. */
+const compactions = computed(() => replyCompactions(message))
 const groups = computed(() =>
   groupMessageParts(
     message.parts.map((part) => ({ ...part })),
-    compaction.value?.step
+    compactions.value.map((compaction) => compaction.step)
   )
 )
 
@@ -150,10 +150,15 @@ function groupKey(group: MessagePartGroup): string {
           >
             <template v-for="group in groups" :key="groupKey(group)">
               <template v-if="group.kind === 'compaction'">
+                <!-- Only the latest compaction's request is the one the reply's usage ends on. -->
                 <ChatCompactionDivider
-                  v-if="compaction"
-                  :compaction="compaction"
-                  :tokens-after="streaming ? null : (usage?.contextTokens ?? null)"
+                  v-if="compactions[group.compaction]"
+                  :compaction="compactions[group.compaction]"
+                  :tokens-after="
+                    streaming || group.compaction < compactions.length - 1
+                      ? null
+                      : (usage?.contextTokens ?? null)
+                  "
                 />
               </template>
               <ChatToolCallGroup

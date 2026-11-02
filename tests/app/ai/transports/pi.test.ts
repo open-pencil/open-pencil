@@ -8,7 +8,7 @@ import type {
   HarnessTurnUsage
 } from '@open-pencil/harness'
 
-import { compactionOf, messagesSinceCompaction } from '@/app/ai/chat/compaction/marker'
+import { messagesSinceCompaction, replyCompactions } from '@/app/ai/chat/compaction/marker'
 import { HarnessChatTransport } from '@/app/ai/transports/pi'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -304,21 +304,27 @@ test('compacting asks Pi to, and the next turn draws the summary Pi reports', as
     tokensBefore: 1200
   })
   companion.text(turn, 'Hello again')
+  // A long turn can compact again; the reply keeps both.
+  companion.event(turn, {
+    type: 'compaction',
+    trigger: 'auto',
+    summary: 'Greeted twice.',
+    tokensBefore: 3400
+  })
+  companion.text(turn, 'And again')
   companion.complete(turn)
   let reply: UIMessage | undefined
   for await (const message of readUIMessageStream({ stream })) reply = message
   const message = expectDefined(reply)
-  expect(compactionOf(message)).toEqual({
-    summary: 'Greeted.',
-    trigger: 'manual',
-    tokensBefore: 1200,
-    step: 1
-  })
-  // The summary stands before the step that followed it.
-  expect(messagesSinceCompaction([message]).map((entry) => entry.role)).toEqual([
-    'user',
-    'assistant'
+  expect(replyCompactions(message)).toEqual([
+    { summary: 'Greeted.', trigger: 'manual', tokensBefore: 1200, step: 1 },
+    { summary: 'Greeted twice.', trigger: 'auto', tokensBefore: 3400, step: 2 }
   ])
-  expect(JSON.stringify(messagesSinceCompaction([message])[1])).toContain('Hello again')
+  // The latest summary stands before the step that followed it.
+  const next = messagesSinceCompaction([message])
+  expect(next.map((entry) => entry.role)).toEqual(['user', 'assistant'])
+  expect(JSON.stringify(next[0])).toContain('Greeted twice.')
+  expect(JSON.stringify(next[1])).toContain('And again')
+  expect(JSON.stringify(next[1])).not.toContain('Hello again')
   await transport.destroy()
 })

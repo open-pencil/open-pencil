@@ -8,7 +8,7 @@ import type {
 } from '@open-pencil/harness'
 
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
-import type { Compaction } from '@/app/ai/chat/compaction/marker'
+import type { StepCompaction } from '@/app/ai/chat/compaction/marker'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'
 
 interface PendingRequest {
@@ -18,6 +18,8 @@ interface PendingRequest {
   stream: ReplyStream
   /** The reply's steps so far; a compaction starts the next one. */
   steps: number
+  /** The reply's compactions so far; its metadata carries the whole list. */
+  compactions: StepCompaction[]
 }
 
 function requestID(): string {
@@ -55,17 +57,20 @@ function mapEvent(event: HarnessTurnEvent, pending: PendingRequest): UIMessageCh
   switch (event.type) {
     case 'compaction': {
       // The reply draws the compaction where it ran, as the built-in chat's between steps.
-      const compaction: Compaction = {
-        summary: event.summary,
-        trigger: event.trigger,
-        tokensBefore: event.tokensBefore,
-        step: pending.steps++
-      }
+      pending.compactions = [
+        ...pending.compactions,
+        {
+          summary: event.summary,
+          trigger: event.trigger,
+          tokensBefore: event.tokensBefore,
+          step: pending.steps++
+        }
+      ]
       return [
         ...stream.end(),
         { type: 'finish-step' },
         { type: 'start-step' },
-        { type: 'message-metadata', messageMetadata: { compaction } }
+        { type: 'message-metadata', messageMetadata: { compactions: pending.compactions } }
       ]
     }
     case 'text-delta':
@@ -226,7 +231,8 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
       resolve: () => undefined,
       reject: () => undefined,
       stream: createReplyStream(`turn-${id}`),
-      steps: 1
+      steps: 1,
+      compactions: []
     }
   }
 
@@ -241,7 +247,8 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
         resolve,
         reject,
         stream: createReplyStream(`turn-${id}`),
-        steps: 1
+        steps: 1,
+        compactions: []
       })
       void process.send({ id, ...request }).catch(reject)
     })

@@ -5,17 +5,23 @@ import { messageMetadata } from '@/app/ai/chat/metadata'
 
 /**
  * A compaction: the summary that stands for the conversation before it, whether the person or
- * the context filling up asked for it, and what the conversation held when it ran. One that ran
- * between a reply's steps is kept on the reply, with the step its kept part starts from.
+ * the context filling up asked for it, and what the conversation held when it ran.
  */
 const compactionSchema = v.object({
   summary: v.string(),
   trigger: v.picklist(['manual', 'auto']),
-  tokensBefore: v.nullable(v.number()),
-  step: v.optional(v.number())
+  tokensBefore: v.nullable(v.number())
 })
 
 export type Compaction = v.InferOutput<typeof compactionSchema>
+
+/**
+ * Compactions that ran between a reply's steps, kept on the reply in the order they ran, each
+ * with the step its kept part starts from. A long reply can compact more than once.
+ */
+const stepCompactionsSchema = v.array(v.object({ ...compactionSchema.entries, step: v.number() }))
+
+export type StepCompaction = v.InferOutput<typeof stepCompactionsSchema>[number]
 
 export function compactionOf(message: UIMessage): Compaction | null {
   const parsed = v.safeParse(compactionSchema, messageMetadata(message).compaction)
@@ -56,22 +62,25 @@ export function replySteps(reply: UIMessage, from: number, to?: number): UIMessa
   )
 }
 
-/** A compaction that ran between the reply's steps, and the step its kept part starts from. */
-export function replyCompaction(message: UIMessage): (Compaction & { step: number }) | null {
-  const compaction = message.role === 'assistant' ? compactionOf(message) : null
-  return compaction?.step === undefined ? null : { ...compaction, step: compaction.step }
+/** The compactions that ran between the reply's steps, oldest first. */
+export function replyCompactions(message: UIMessage): StepCompaction[] {
+  if (message.role !== 'assistant') return []
+  const parsed = v.safeParse(stepCompactionsSchema, messageMetadata(message).compactions)
+  return parsed.success ? parsed.output : []
 }
 
 /**
  * The messages a model reads: from the latest compaction on, its summary standing for everything
- * before it, and for one that ran within a reply, the reply's steps after it. The person still
+ * before it, and for one that ran within a reply, the reply's steps after its latest. The person still
  * sees the whole conversation.
  */
 export function messagesSinceCompaction(messages: readonly UIMessage[]): UIMessage[] {
-  const at = messages.findLastIndex((message) => compactionOf(message) !== null)
+  const at = messages.findLastIndex(
+    (message) => compactionOf(message) !== null || replyCompactions(message).length > 0
+  )
   if (at === -1) return [...messages]
   const message = messages[at]
-  const compaction = replyCompaction(message)
+  const compaction = replyCompactions(message).at(-1)
   if (!compaction) return messages.slice(at)
   return [
     compactionMessage(compaction, `${message.id}-summary`),
