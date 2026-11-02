@@ -250,7 +250,11 @@ describe('exportAsync', () => {
       box.resize(10, 10)
       frame.appendChild(box)
     }
+    const unnamed = figma.createRectangle()
+    unnamed.name = ''
+    frame.appendChild(unnamed)
     const svg = await frame.exportAsync({ format: 'SVG_STRING', svgIdAttribute: true })
+    expect(svg).not.toContain('id=""')
     const ids = [...svg.matchAll(/ id="([^"]+)"/g)].map((match) => match[1])
     expect(new Set(ids).size).toBe(ids.length)
     expect(ids).toEqual(expect.arrayContaining(['clip0', 'Box', 'Box_2', 'Box_3']))
@@ -273,8 +277,7 @@ describe('exportAsync', () => {
     figma.exportImage = () => Promise.resolve(new Uint8Array([1]))
     const rect = figma.createRectangle()
     rect.resize(1, 1)
-    const limit =
-      "in exportAsync: An image must be exported at more than 0 and at most 1024 times the layer's size"
+    const limit = "in exportAsync: An image must be exported at 0.01 to 1024 times the layer's size"
     await expect(
       rect.exportAsync({ format: 'PNG', constraint: { type: 'WIDTH', value: 2000 } })
     ).rejects.toThrow(limit)

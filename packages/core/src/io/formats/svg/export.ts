@@ -382,7 +382,8 @@ function exportedFill(
 
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (!node.visible) return null
-  if (!ctx.layerIds) return drawNode(node, ctx)
+  // A layer without a name has nothing to be found by.
+  if (!ctx.layerIds || !node.name) return drawNode(node, ctx)
   // Parents take their names before their children, so a repeated name counts in layer order.
   const id = layerId(node.name, ctx.layerIds)
   const drawn = drawNode(node, ctx)

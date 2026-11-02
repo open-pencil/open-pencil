@@ -1,5 +1,9 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { isValidExportScale, MAX_EXPORT_SCALE } from '@open-pencil/scene-graph/export-scale'
+import {
+  isValidExportScale,
+  MAX_EXPORT_SCALE,
+  MIN_EXPORT_SCALE
+} from '@open-pencil/scene-graph/export-scale'
 
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { ExportImageOptions } from '#core/figma-api/types'
@@ -76,7 +80,7 @@ async function exportImage(
   if (constraint?.type === 'HEIGHT') scale = constraint.value / (bounds.maxY - bounds.minY)
   if (!isValidExportScale(scale)) {
     throw new Error(
-      `in exportAsync: An image must be exported at more than 0 and at most ${MAX_EXPORT_SCALE} times the layer's size`
+      `in exportAsync: An image must be exported at ${MIN_EXPORT_SCALE} to ${MAX_EXPORT_SCALE} times the layer's size`
     )
   }
   const data = await host.exportImage(ids, {
