@@ -233,6 +233,10 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     )
     prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'appendChild')
     this._reparentAndFit(child[INTERNAL_ID])
+    // A child already here moves to the end, as Figma does; reparenting leaves it in place.
+    const last = this._raw().childIds.length - 1
+    if (this._raw().childIds[last] !== child[INTERNAL_ID])
+      this[INTERNAL_GRAPH].insertChildAt(child[INTERNAL_ID], this[INTERNAL_ID], last)
   }
 
   /**
