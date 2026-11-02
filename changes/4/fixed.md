@@ -1,1 +1,0 @@
-- The Linux desktop app starts on Wayland with the proprietary NVIDIA driver instead of exiting on the explicit-sync protocol error (#2).
