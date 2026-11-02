@@ -113,7 +113,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Add images & videos | 🟡 | Drop or paste PNG, JPEG, GIF, WebP, AVIF, and SVG onto the canvas; no video |
 | Image property adjustment | 🔲 | Exposure, contrast, saturation, etc. |
 | Crop an image | 🟡 | The Crop mode in the image fill picker keeps a crop; no on-canvas crop handles |
-| Eyedropper tool | ✅ | <kbd>I</kbd> or the color picker button; samples the rendered canvas, <kbd>Alt</kbd> targets the stroke |
+| Eyedropper tool | ✅ | <kbd>I</kbd> or the color picker button; samples the rendered canvas with a loupe of the pixels under the pointer, <kbd>Alt</kbd> targets the stroke |
 | Mixed selection color editing | ✅ | Selection colors changes a color everywhere across a multi-selection |
 | Color models (RGB, HSL, HSB, Hex) | ✅ | Hex, RGB, HSL, HSB, and OkHCL fields with gamut warnings |
 

@@ -11,3 +11,8 @@ export function pressCanvasTool(pointer: CanvasToolPointer, context: CanvasToolC
 export function hoverCanvasTool(pointer: CanvasToolPointer, context: CanvasToolContext) {
   CANVAS_TOOLS[context.editor.state.activeTool].hover?.(pointer, context)
 }
+
+/** Lets the active tool drop what it showed for the pointer once the pointer leaves the canvas. */
+export function leaveCanvasTool(context: CanvasToolContext) {
+  CANVAS_TOOLS[context.editor.state.activeTool].leave?.(context)
+}

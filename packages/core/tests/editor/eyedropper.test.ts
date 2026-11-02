@@ -8,7 +8,13 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { createEditor } from '#core/editor/create'
-import { applySampledColor, eyedropperChanges, sampleSceneColor } from '#core/editor/eyedropper'
+import {
+  applySampledColor,
+  eyedropperChanges,
+  sampleSceneColor,
+  sampleScenePixels,
+  scenePixelColor
+} from '#core/editor/eyedropper'
 import { TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { initCanvasKit } from '#core/io/formats/raster/headless'
@@ -102,6 +108,33 @@ describe('sampleSceneColor', () => {
     const { graph, pageId } = scene()
     expect(sampleSceneColor(ck, renderer, graph, pageId, Number.NaN, 0)).toBeNull()
     expect(sampleSceneColor(ck, renderer, graph, 'missing', 0, 0)).toBeNull()
+  })
+
+  test('a square of pixels has the sampled one at its centre and its neighbours around it', () => {
+    const { graph, pageId } = scene()
+    const background = bytes({ ...getPageColor(getNodeOrThrow(graph, pageId)), a: 1 })
+    const pixels = expectDefined(sampleScenePixels(ck, renderer, graph, pageId, 0.5, 0.5, 3))
+    const at = (column: number, row: number) => bytes(scenePixelColor(pixels, column, row))
+    expect(at(1, 1)).toEqual([255, 0, 0, 255])
+    expect(at(2, 1)).toEqual([0, 255, 0, 255])
+    expect(at(1, 2)).toEqual([0, 0, 255, 255])
+    expect(at(2, 2)).toEqual([255, 255, 255, 255])
+    expect(at(0, 0)).toEqual(background)
+  })
+
+  test('at a zoom each pixel spans that fraction of a world unit, as the screen shows it', () => {
+    const { graph, pageId } = scene()
+    const background = bytes({ ...getPageColor(getNodeOrThrow(graph, pageId)), a: 1 })
+    const pixels = expectDefined(sampleScenePixels(ck, renderer, graph, pageId, 0.25, 0.25, 3, 2))
+    const row = [0, 1, 2].map((column) => bytes(scenePixelColor(pixels, column, 1)))
+    expect(row).toEqual([background, [255, 0, 0, 255], [255, 0, 0, 255]])
+  })
+
+  test('rejects even and empty squares', () => {
+    const { graph, pageId } = scene()
+    expect(sampleScenePixels(ck, renderer, graph, pageId, 0.5, 0.5, 2)).toBeNull()
+    expect(sampleScenePixels(ck, renderer, graph, pageId, 0.5, 0.5, 0)).toBeNull()
+    expect(sampleScenePixels(ck, renderer, graph, pageId, 0.5, 0.5, 3, 0)).toBeNull()
   })
 })
 

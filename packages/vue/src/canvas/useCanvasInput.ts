@@ -11,7 +11,7 @@ import { handlePenDragMove } from '#vue/canvas/pen/input'
 import { finishPencilDrag, handlePencilDragMove } from '#vue/canvas/pencil/input'
 import { createCanvasPointer } from '#vue/canvas/pointer/use'
 import { createTextEditInput } from '#vue/canvas/text-edit/input'
-import { hoverCanvasTool, pressCanvasTool } from '#vue/canvas/tools/input'
+import { hoverCanvasTool, leaveCanvasTool, pressCanvasTool } from '#vue/canvas/tools/input'
 import type { CanvasToolContext, CanvasToolPointer } from '#vue/canvas/tools/registry'
 import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { finishMarquee } from '#vue/canvas/transform/marquee'
@@ -560,6 +560,7 @@ export function useCanvasInput(
     pointerInside.value = false
     if (!isEnabled()) return
     editor.setMeasurementMode('off')
+    leaveCanvasTool(toolContext)
     if (!drag.value) {
       editor.setHoveredNode(null)
       editor.setHoveredGuide(null)

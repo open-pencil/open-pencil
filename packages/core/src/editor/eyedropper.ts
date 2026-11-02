@@ -16,26 +16,37 @@ type SampleRenderer = Pick<
   'worldViewport' | 'viewportImageRendering' | 'presentationColorSpace' | 'renderNode'
 >
 
+/** A square of the document's pixels: RGBA rows, `size` pixels a side, the centre one sampled. */
+export interface ScenePixels {
+  size: number
+  data: Uint8Array
+}
+
 /**
- * The colour the document shows at a world point, composited over the page background.
+ * The document's pixels in a square of `size` (odd) pixels centred on a world point, each
+ * `1 / scale` world units wide, composited over the page background, so at the view's zoom they
+ * are the pixels the screen shows there.
  *
- * Renders only what intersects the sampled pixel into a 1x1 raster surface, so selection
- * chrome, rulers and the screen's colour profile never leak into the result, unlike
- * `window.EyeDropper`, which samples the screen. Components come back in the document's
- * own colour space: the renderer presents in that space and the surface is not converted.
+ * Renders only what intersects the square into a raster surface, so selection chrome, rulers and
+ * the screen's colour profile never leak into the result, unlike `window.EyeDropper`, which
+ * samples the screen. Components come back in the document's own colour space: the renderer
+ * presents in that space and the surface is not converted.
  */
-export function sampleSceneColor(
+export function sampleScenePixels(
   ck: CanvasKit,
   renderer: SampleRenderer,
   graph: SceneGraph,
   pageId: string,
   x: number,
-  y: number
-): Color | null {
+  y: number,
+  size = 1,
+  scale = 1
+): ScenePixels | null {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  if (!Number.isInteger(size) || size < 1 || size % 2 === 0 || !(scale > 0)) return null
   const page = graph.getNode(pageId)
   if (!page) return null
-  const surface = ck.MakeSurface(1, 1)
+  const surface = ck.MakeSurface(size, size)
   if (!surface) return null
   const previousViewport = renderer.worldViewport
   const previousImageRendering = renderer.viewportImageRendering
@@ -44,28 +55,53 @@ export function sampleSceneColor(
     const canvas = surface.getCanvas()
     const background = getPageColor(page)
     canvas.clear(ck.Color4f(background.r, background.g, background.b, 1))
-    // Pixel (0, 0) covers [0, 1); put the sampled point at its centre.
-    canvas.translate(0.5 - x, 0.5 - y)
-    renderer.worldViewport = { x: x - 1, y: y - 1, w: 2, h: 2 }
+    // Pixel (i, j) covers [i, i + 1); put the sampled point at the centre pixel's centre.
+    const half = (size - 1) / 2
+    canvas.translate(half + 0.5, half + 0.5)
+    canvas.scale(scale, scale)
+    canvas.translate(-x, -y)
+    const reach = (half + 1) / scale
+    renderer.worldViewport = { x: x - reach, y: y - reach, w: reach * 2, h: reach * 2 }
     renderer.viewportImageRendering = false
     renderer.presentationColorSpace = graph.documentColorSpace
     for (const childId of page.childIds) renderer.renderNode(canvas, graph, childId, {})
     surface.flush()
-    const pixels = canvas.readPixels(0, 0, {
-      width: 1,
-      height: 1,
+    const data = canvas.readPixels(0, 0, {
+      width: size,
+      height: size,
       alphaType: ck.AlphaType.Unpremul,
       colorType: ck.ColorType.RGBA_8888,
       colorSpace: ck.ColorSpace.SRGB
     })
-    if (!pixels || pixels.length < 4) return null
-    return { r: pixels[0] / 255, g: pixels[1] / 255, b: pixels[2] / 255, a: 1 }
+    if (!(data instanceof Uint8Array) || data.length < size * size * 4) return null
+    return { size, data }
   } finally {
     renderer.worldViewport = previousViewport
     renderer.viewportImageRendering = previousImageRendering
     renderer.presentationColorSpace = previousColorSpace
     surface.delete()
   }
+}
+
+/** The opaque colour of one pixel of a sample, by column and row. */
+export function scenePixelColor(pixels: ScenePixels, column: number, row: number): Color {
+  const at = (row * pixels.size + column) * 4
+  const { data } = pixels
+  return { r: data[at] / 255, g: data[at + 1] / 255, b: data[at + 2] / 255, a: 1 }
+}
+
+/** The colour the document shows at a world point, one `1 / scale`-wide pixel of it. */
+export function sampleSceneColor(
+  ck: CanvasKit,
+  renderer: SampleRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  x: number,
+  y: number,
+  scale = 1
+): Color | null {
+  const pixels = sampleScenePixels(ck, renderer, graph, pageId, x, y, 1, scale)
+  return pixels ? scenePixelColor(pixels, 0, 0) : null
 }
 
 function solidPaint(color: Color): Fill {

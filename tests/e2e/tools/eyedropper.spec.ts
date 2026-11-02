@@ -36,6 +36,24 @@ test('I then a click paints the selection with the sampled color in one undo ste
   await expect.poll(() => eyedropper.topPaint(target, 'fills')).toEqual({ color: TARGET })
 })
 
+test('hovering shows the loupe with the color a click picks, until the pointer leaves', async () => {
+  const { page, canvas } = editor
+  await sourceAndTarget()
+  const loupe = page.getByTestId('eyedropper-loupe')
+
+  await canvas.pressKey('i')
+  await canvas.hover(150, 170)
+  await expect(loupe).toBeVisible()
+  await expect(page.getByTestId('eyedropper-loupe-value')).toHaveText('FF0000')
+
+  await page.mouse.move(0, 0)
+  await expect(loupe).toBeHidden()
+  await canvas.hover(150, 170)
+  await expect(loupe).toBeVisible()
+  await canvas.pressKey('Escape')
+  await expect(loupe).toBeHidden()
+})
+
 test('Alt-click samples into the stroke and keeps the fill', async () => {
   const { page, canvas } = editor
   const target = await sourceAndTarget()
@@ -79,6 +97,8 @@ test('the color picker button samples the canvas and the picker stays open', asy
   const pick = page.getByTestId('color-eyedropper')
   await pick.click()
   await expect(pick).toHaveAttribute('aria-pressed', 'true')
+  await canvas.hover(150, 170)
+  await expect(page.getByTestId('eyedropper-loupe')).toBeVisible()
   await canvas.click(150, 170)
 
   await expect.poll(() => eyedropper.topPaint(target, 'fills')).toEqual({ color: SOURCE })
