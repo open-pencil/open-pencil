@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
+import { refAutoReset, useClipboard } from '@vueuse/core'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -43,13 +43,17 @@ defineSlots<{
   icon?(): unknown
 }>()
 
-const { copy, copied } = useClipboard({ copiedDuring: COPIED_DURING, legacy: true })
+const { copy } = useClipboard({ legacy: true })
+/** Set once a copy succeeds; a later one that fails clears it, since the clipboard kept the earlier text. */
+const copied = refAutoReset(false, COPIED_DURING)
 
 async function copyValue(): Promise<void> {
   try {
     await copy(value)
+    copied.value = true
     emit('copied')
   } catch (error) {
+    copied.value = false
     emit('failed', error)
   }
 }

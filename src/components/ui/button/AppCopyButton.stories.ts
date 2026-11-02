@@ -53,15 +53,32 @@ export const BuiltWhenClicked: Story = {
   args: { value: async () => 'A report read when copied', label: 'Copy report' }
 }
 
-/** A failure to build the text is the owner's to report; the button stays as it was. */
+/**
+ * A failure to build the text is the owner's to report, and the button does not say it copied,
+ * even right after an earlier copy that did.
+ */
 export const Failed: Story = {
-  args: {
-    value: () => Promise.reject(new Error('Export failed')),
-    label: 'Copy report'
-  },
+  args: { label: 'Copy report' },
+  render: (args) => ({
+    components: { AppCopyButton },
+    setup: () => {
+      // The report can be read until it has been copied once; after that, reading it fails.
+      let read = false
+      const value = () =>
+        read ? Promise.reject(new Error('Export failed')) : Promise.resolve('A report')
+      const copied = () => {
+        read = true
+        args.onCopied()
+      }
+      return { args, value, copied }
+    },
+    template:
+      '<div class="flex items-center gap-3 p-6"><AppCopyButton v-bind="args" :value="value" @copied="copied" /></div>'
+  }),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Copy report' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'Copied' }))
     await waitFor(() => expect(args.onFailed).toHaveBeenCalledOnce())
     await expect(canvas.getByRole('button', { name: 'Copy report' })).toBeVisible()
   }
