@@ -365,10 +365,11 @@ export function createEditor(options?: EditorOptions) {
     _renderers.add(renderer)
     _textEditor ??= new TextEditor(ck)
     uninstallTextMeasurer?.()
+    // Measures with the editor's current renderer, which removing this one falls back from.
     uninstallTextMeasurer =
       typeof renderer.measureTextNode === 'function'
         ? installTextMeasurer((node, maxWidth) =>
-            pendingTextLayout.measure(renderer, node, maxWidth)
+            _renderer ? pendingTextLayout.measure(_renderer, node, maxWidth) : null
           )
         : null
   }
@@ -389,10 +390,10 @@ export function createEditor(options?: EditorOptions) {
   function replaceGraph(newGraph: SceneGraph) {
     nodes.cancelNodePreviews()
     undo.discardBatches()
+    pendingTextLayout.clear()
     _graph = newGraph
     state.documentKind = _graph.documentKind
     setActiveTool(offeredTool(state, state.activeTool))
-    pendingTextLayout.clear()
     subscribeToGraph()
     const previousPageId = state.currentPageId
     state.currentPageId = _graph.getPages()[0]?.id ?? _graph.rootId

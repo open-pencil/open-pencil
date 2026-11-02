@@ -2,7 +2,8 @@ import { afterEach, expect, test } from 'bun:test'
 import { noop } from 'es-toolkit'
 
 import { createEditor } from '@open-pencil/core'
-import { setTextMeasurer } from '@open-pencil/core/layout'
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { setTextMeasurer, sizeAutoResizingText } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import {
@@ -12,6 +13,7 @@ import {
 import { createLayoutRunner } from '#core/layout/mutations'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { fontManager } from '#core/text/font/manager'
+import { fontResolver } from '#core/text/resolver'
 
 afterEach(() => {
   setTextMeasurer(null)
@@ -68,6 +70,8 @@ function setup({
   const prepared: string[][] = []
   /** Whether a preparation makes the fonts measure the text. */
   let preparing = true
+  /** Holds each preparation until the test lets it finish, when set. */
+  let gate: Promise<void> | null = null
   /** Whether each layout the pending text ran was the document's own. */
   const relayouts: boolean[] = []
   let currentGraph = graph
@@ -76,7 +80,7 @@ function setup({
     getRenderer: () => renderer,
     prepareFonts: async (texts) => {
       prepared.push(texts.map((node) => node.id))
-      await Promise.resolve()
+      await (gate ?? Promise.resolve())
       if (preparing) loaded = true
     },
     runLayoutForNode: (id) => {
@@ -100,21 +104,33 @@ function setup({
     stopPreparing: () => (preparing = false),
     loadElsewhere: () => (loaded = true),
     replaceDocument: () => {
-      currentGraph = createEditor().graph
       pending.clear()
+      currentGraph = createEditor().graph
+    },
+    /** Holds preparations until the returned function lets them finish. */
+    holdPreparation: () => {
+      let release: () => void = noop
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      gate = held
+      return () => {
+        if (gate === held) gate = null
+        release()
+      }
     }
   }
 }
 
 test('text laid out before its fonts are prepared stays hidden at its size, then takes its own', async () => {
-  const { editor, frame, text, prepared, runLayoutForNode, relayouts, renders } = setup()
+  const { editor, graph, frame, text, prepared, runLayoutForNode, relayouts, renders } = setup()
   runLayoutForNode(text.id)
   expect([text.width, text.height]).toEqual([100, 20])
-  expect(fontManager.isNodeBlocked(text.id)).toBe(true)
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(true)
 
   await settle()
   expect(prepared).toEqual([[text.id]])
-  expect(fontManager.isNodeBlocked(text.id)).toBe(false)
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
   expect([text.width, text.height]).toEqual([234, 29])
   expect([frame.width, frame.height]).toEqual([266, 53])
   expect(renders()).toBe(1)
@@ -154,11 +170,13 @@ test('wrapping text takes its height once its fonts are in', async () => {
 })
 
 test('text waits for the canvas’s own fonts before its fonts are prepared', async () => {
-  const { text, prepared, runLayoutForNode, canvasLoaded } = setup({ canvasFontsLoaded: false })
+  const { graph, text, prepared, runLayoutForNode, canvasLoaded } = setup({
+    canvasFontsLoaded: false
+  })
   runLayoutForNode(text.id)
   await settle()
   expect(prepared).toEqual([])
-  expect(fontManager.isNodeBlocked(text.id)).toBe(true)
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(true)
 
   canvasLoaded()
   await settle()
@@ -166,23 +184,59 @@ test('text waits for the canvas’s own fonts before its fonts are prepared', as
   expect(text.width).toBe(234)
 })
 
-test('a document replaced while fonts are prepared keeps its text as it is', async () => {
-  const { text, runLayoutForNode, replaceDocument, renders } = setup()
+test('a document replaced before its text is prepared keeps its text as it is', async () => {
+  const { graph, text, runLayoutForNode, replaceDocument, renders } = setup()
   runLayoutForNode(text.id)
   replaceDocument()
   await settle()
-  expect(fontManager.isNodeBlocked(text.id)).toBe(false)
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
   expect(text.width).toBe(100)
   expect(renders()).toBe(0)
 })
 
+test('a document replaced while its text is prepared keeps its text as it is', async () => {
+  const { graph, text, prepared, runLayoutForNode, replaceDocument, renders, holdPreparation } =
+    setup()
+  const release = holdPreparation()
+  runLayoutForNode(text.id)
+  await settle()
+  expect(prepared).toEqual([[text.id]])
+  replaceDocument()
+  release()
+  await settle()
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
+  expect(text.width).toBe(100)
+  expect(renders()).toBe(0)
+})
+
+test('text an edit queues again while it is prepared stays hidden until it is prepared again', async () => {
+  const { graph, text, prepared, runLayoutForNode, holdPreparation, stopPreparing } = setup()
+  stopPreparing()
+  const releaseFirst = holdPreparation()
+  runLayoutForNode(text.id)
+  await settle()
+  const releaseSecond = holdPreparation()
+  edit(graph, text, { text: 'Heavier label' })
+  await settle()
+  expect(prepared).toEqual([[text.id], [text.id]])
+
+  releaseFirst()
+  await settle()
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(true)
+
+  releaseSecond()
+  await settle()
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
+})
+
 test('text its prepared fonts still cannot measure shows, and is laid out once fonts settle', async () => {
-  const { text, prepared, pending, runLayoutForNode, stopPreparing, loadElsewhere } = setup()
+  const { graph, text, prepared, pending, runLayoutForNode, stopPreparing, loadElsewhere } =
+    setup()
   stopPreparing()
   runLayoutForNode(text.id)
   await settle()
   expect(prepared).toEqual([[text.id]])
-  expect(fontManager.isNodeBlocked(text.id)).toBe(false)
+  expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
   expect(text.width).toBe(100)
 
   loadElsewhere()
@@ -206,4 +260,54 @@ test('text that keeps the glyphs its file saved keeps the size the file gave it'
   graph.applyDerivedLayoutDuring(() => textAutoResizeChanges(text, { text: text.text }))
   await settle()
   expect([text.width, text.height]).toEqual([120, 20])
+})
+
+test('the editor lays out text its fonts could not measure once font resolution settles', async () => {
+  let loaded = false
+  const editor = createEditor({ loadFont: () => Promise.resolve(null) })
+  // Only what the editor's graph events and text layout reach; the rest of the renderer stays absent.
+  const tiledScene: Partial<SkiaRenderer['tiledScene']> = {
+    invalidateNode: noop,
+    invalidateStructure: noop
+  }
+  const renderer: Partial<SkiaRenderer> = {
+    tiledScene: tiledScene as SkiaRenderer['tiledScene'],
+    forgetNode: noop,
+    invalidateVectorPath: noop,
+    fontsLoaded: true,
+    measureTextNode: () => (loaded ? { width: 234, height: 29 } : null),
+    whenFontsLoaded: () => Promise.resolve(),
+    syncFontGeneration: noop,
+    invalidateNodePicture: noop
+  }
+  editor.setCanvasKit({} as Parameters<typeof editor.setCanvasKit>[0], renderer as SkiaRenderer)
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Weighted label',
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    width: 100,
+    height: 20
+  })
+  /** Settles when the pending text layout next asks for a render, once it has laid text out. */
+  const laidOut = () =>
+    new Promise<void>((resolve) => {
+      const stop = editor.onEditorEvent('render:requested', () => {
+        stop()
+        resolve()
+      })
+    })
+  try {
+    const first = laidOut()
+    sizeAutoResizingText(editor.graph, text.id)
+    await first
+    expect(text.width).toBe(100)
+
+    loaded = true
+    const second = laidOut()
+    await fontResolver.demand({ key: 'pending-layout-test', candidates: [] })
+    await second
+    expect([text.width, text.height]).toEqual([234, 29])
+  } finally {
+    fontResolver.reset('pending-layout-test')
+    editor.removeCanvasRenderer(renderer as SkiaRenderer)
+  }
 })

@@ -265,7 +265,7 @@ export function renderNodeSelf(
     node.internalOnly ||
     !node.visible ||
     node.isMask ||
-    fontManager.isNodeBlocked(nodeId)
+    fontManager.isNodeBlocked(graph, nodeId)
   ) {
     return
   }
@@ -317,8 +317,13 @@ function nodeIsolationLayerBounds(
  * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
  * node-edit mode, or left to a live island while the canvas previews.
  */
-function drawsNode(node: SceneNode, overlays: RenderOverlays): boolean {
-  if (node.internalOnly || !node.visible || node.isMask || fontManager.isNodeBlocked(node.id))
+function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays): boolean {
+  if (
+    node.internalOnly ||
+    !node.visible ||
+    node.isMask ||
+    fontManager.isNodeBlocked(graph, node.id)
+  )
     return false
   return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
 }
@@ -339,7 +344,7 @@ export function renderNode(
   frame: Mat3 | null = null
 ): void {
   const found = graph.getNode(nodeId)
-  if (!found || !drawsNode(found, overlays)) return
+  if (!found || !drawsNode(graph, found, overlays)) return
   const node = stickyPlaceholderNode(graph, found, r.stickyPlaceholder) ?? found
 
   r.drawCounts.nodes++

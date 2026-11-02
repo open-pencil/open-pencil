@@ -167,11 +167,11 @@ export async function prepareGraphFonts(
   options: PrepareGraphFontsOptions = {}
 ): Promise<PreparedGraphFonts> {
   const { nodes } = collectGraphFontRequirements(graph, nodeIds)
-  if (options.hide) fontManager.blockNodesUntilFontsResolve([...nodeIds])
+  if (options.hide) fontManager.blockNodesUntilFontsResolve(graph, nodeIds)
   try {
     const changed = await prepareTextFonts(nodes, options)
     return { ...documentFontStatus(graph, nodeIds), changed }
   } finally {
-    if (options.hide) fontManager.unblockNodes([...nodeIds])
+    if (options.hide) fontManager.unblockNodes(graph, nodeIds)
   }
 }

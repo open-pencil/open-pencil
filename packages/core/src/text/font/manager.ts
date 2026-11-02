@@ -72,7 +72,8 @@ export class FontManager {
     ArrayBuffer,
     { axes: FontAxis[]; instances: NamedInstance[] } | null
   >()
-  private blockedNodeIds = new Set<string>()
+  /** Layers kept off the canvas while their fonts are prepared, by graph, with how many hold each. */
+  private blockedNodes = new WeakMap<SceneGraph, Map<string, number>>()
   private fontProvider: TypefaceFontProvider | null = null
   private fontProviders = new Set<TypefaceFontProvider>()
   private providerCanvasKits = new WeakMap<TypefaceFontProvider, CanvasKit>()
@@ -137,16 +138,31 @@ export class FontManager {
     return this.registrationGeneration
   }
 
-  blockNodesUntilFontsResolve(nodeIds: readonly string[]): void {
-    for (const nodeId of nodeIds) this.blockedNodeIds.add(nodeId)
+  /**
+   * Keeps `nodeIds` of `graph` off the canvas until each is unblocked as many times as it was
+   * blocked, so one preparation that ends does not show text another still prepares.
+   */
+  blockNodesUntilFontsResolve(graph: SceneGraph, nodeIds: readonly string[]): void {
+    let blocked = this.blockedNodes.get(graph)
+    if (!blocked) {
+      blocked = new Map()
+      this.blockedNodes.set(graph, blocked)
+    }
+    for (const nodeId of nodeIds) blocked.set(nodeId, (blocked.get(nodeId) ?? 0) + 1)
   }
 
-  unblockNodes(nodeIds: readonly string[]): void {
-    for (const nodeId of nodeIds) this.blockedNodeIds.delete(nodeId)
+  unblockNodes(graph: SceneGraph, nodeIds: readonly string[]): void {
+    const blocked = this.blockedNodes.get(graph)
+    if (!blocked) return
+    for (const nodeId of nodeIds) {
+      const holds = blocked.get(nodeId) ?? 0
+      if (holds > 1) blocked.set(nodeId, holds - 1)
+      else blocked.delete(nodeId)
+    }
   }
 
-  isNodeBlocked(nodeId: string): boolean {
-    return this.blockedNodeIds.has(nodeId)
+  isNodeBlocked(graph: SceneGraph, nodeId: string): boolean {
+    return this.blockedNodes.get(graph)?.has(nodeId) ?? false
   }
 
   localAccessState(): LocalFontAccessState {

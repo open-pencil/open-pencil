@@ -35,6 +35,8 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   const stalled = new Map<string, boolean>()
   /** The text being laid out after its fonts were prepared, which measuring does not queue again. */
   let layingOut: ReadonlySet<string> = new Set()
+  /** Queued text kept off the canvas, each holding one block its preparation releases. */
+  const hidden = new Set<string>()
   let scheduled = false
   /** Counts replaced documents, whose text a preparation still running no longer lays out. */
   let documents = 0
@@ -55,8 +57,11 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
       note(stalled, id, derived)
       return
     }
+    if (!hidden.has(id)) {
+      fontManager.blockNodesUntilFontsResolve(ctx.getGraph(), [id])
+      hidden.add(id)
+    }
     note(queued, id, derived)
-    fontManager.blockNodesUntilFontsResolve([id])
     schedule()
   }
 
@@ -74,13 +79,14 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     const graph = ctx.getGraph()
     const opened = documents
     const ids = [...batch.keys()]
+    const held = ids.filter((id) => hidden.delete(id))
     try {
       const renderer = ctx.getRenderer()
       if (renderer && !renderer.fontsLoaded) await renderer.whenFontsLoaded()
       await ctx.prepareFonts(compact(ids.map((id) => graph.getNode(id))))
     } finally {
-      // Text queued again meanwhile stays hidden until its own preparation.
-      fontManager.unblockNodes(ids.filter((id) => !queued.has(id)))
+      // Text queued again meanwhile holds a block of its own until it is prepared in turn.
+      fontManager.unblockNodes(graph, held)
     }
     if (opened !== documents || ctx.getGraph() !== graph) return
     layOut(graph, batch)
@@ -117,13 +123,16 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   /** Tries the text again that its prepared fonts could not measure, once fonts have settled. */
   function retryStalled() {
     if (stalled.size === 0) return
+    // It shows already, in the faces it has, and keeps showing while it is tried again.
     for (const [id, derived] of stalled) note(queued, id, derived)
     stalled.clear()
     schedule()
   }
 
+  /** Drops the text of the document about to be replaced, before the editor replaces it. */
   function clear() {
-    fontManager.unblockNodes([...queued.keys()])
+    fontManager.unblockNodes(ctx.getGraph(), [...hidden])
+    hidden.clear()
     queued.clear()
     stalled.clear()
     documents++
