@@ -133,6 +133,22 @@ export function remapInstanceOverrideState(
   return { self: fields(state.self), descendants }
 }
 
+/**
+ * Moves the records of copies onto the copies' clones, by `ids` (original copy id to clone id),
+ * as cloning a layer gives every copy inside a new id; copies not in `ids` keep theirs. The
+ * records still name the component layers they did, as a clone's `componentId` does.
+ */
+export function rekeyInstanceOverrideDescendants(
+  state: InstanceOverrideState,
+  ids: ReadonlyMap<string, string>
+): InstanceOverrideState {
+  if (state.descendants.size === 0) return state
+  return {
+    self: state.self,
+    descendants: new Map([...state.descendants].map(([id, fields]) => [ids.get(id) ?? id, fields]))
+  }
+}
+
 export function getInstanceOverride(
   state: InstanceOverrideState,
   instanceId: string,

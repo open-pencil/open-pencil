@@ -19,6 +19,7 @@ import { withGeneratedFrameSize } from './generated'
 import * as HitTest from './hit-test'
 import { generateId } from './ids'
 import * as Instances from './instances'
+import { rekeyInstanceOverrideDescendants } from './instances/overrides'
 import { LayoutWrites } from './layout/writes'
 import Matrix from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
@@ -743,6 +744,25 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
+    const ids = new Map<string, string>()
+    const clone = this.cloneSubtree(sourceId, parentId, overrides, ids)
+    // An instance records its copies by id, and every copy inside has a new one now.
+    for (const id of ids.values()) {
+      const node = this.nodes.get(id)
+      if (!node?.instanceOverrides.descendants.size) continue
+      this.updateNode(id, {
+        instanceOverrides: rekeyInstanceOverrideDescendants(node.instanceOverrides, ids)
+      })
+    }
+    return clone
+  }
+
+  private cloneSubtree(
+    sourceId: string,
+    parentId: string,
+    overrides: Partial<SceneNode>,
+    ids: Map<string, string>
+  ): SceneNode | null {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
@@ -753,9 +773,10 @@ export class SceneGraph {
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
     if (src.status) markSourceFieldsEdited(clone, ['status'])
+    ids.set(src.id, clone.id)
 
     for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
+      this.cloneSubtree(childId, clone.id, {}, ids)
     }
 
     return clone
