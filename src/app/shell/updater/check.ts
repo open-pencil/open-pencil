@@ -18,8 +18,14 @@ interface UpdateCheckOptions {
 let startupCheckStarted = false
 let updateCheckInFlight: Promise<void> | null = null
 
+/**
+ * Off until this product publishes its own signed releases: the updater must never fetch or
+ * install another product's build. Turn on together with a new signing key in tauri.conf.json.
+ */
+export const UPDATES_ENABLED = false
+
 export async function checkForAppUpdate(options: UpdateCheckOptions) {
-  if (!isTauri()) return
+  if (!UPDATES_ENABLED || !isTauri()) return
   if (updateCheckInFlight) return updateCheckInFlight
 
   const { silent = false, messages } = options
@@ -30,7 +36,7 @@ export async function checkForAppUpdate(options: UpdateCheckOptions) {
 }
 
 export function scheduleStartupUpdateCheck(messages: Ref<UpdaterMessages>) {
-  if (startupCheckStarted || !isTauri()) return
+  if (!UPDATES_ENABLED || startupCheckStarted || !isTauri()) return
   startupCheckStarted = true
   void promiseTimeout(STARTUP_UPDATE_CHECK_DELAY_MS).then(() =>
     checkForAppUpdate({ silent: true, messages })
