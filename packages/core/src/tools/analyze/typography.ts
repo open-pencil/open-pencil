@@ -1,9 +1,11 @@
 import { orderBy, sortBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
+import { formatTextLength } from '@open-pencil/scene-graph/text'
+
 import { defineTool } from '#core/tools/schema'
 
-import { analysisLimitInput } from './input'
+import { analysisLimitInputSchema } from './schema'
 
 export const analyzeTypography = defineTool({
   name: 'analyze_typography',
@@ -11,7 +13,7 @@ export const analyzeTypography = defineTool({
     'Analyze typography usage across the current page. Shows font families, sizes, weights, and their frequencies.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
-    limit: analysisLimitInput,
+    limit: analysisLimitInputSchema,
     group_by: v.optional(
       v.pipe(v.picklist(['family', 'size', 'weight']), v.description('Group results by a property'))
     )
@@ -30,7 +32,7 @@ export const analyzeTypography = defineTool({
       totalTextNodes++
       const raw = figma.graph.getNode(node.id)
       if (!raw) return false
-      const lh = raw.lineHeight === null ? 'auto' : `${raw.lineHeight}`
+      const lh = raw.lineHeight === null ? 'auto' : formatTextLength(raw.lineHeight)
       const key = `${raw.fontFamily}|${raw.fontSize}|${raw.fontWeight}|${lh}`
       const entry = styleMap.get(key)
       if (entry) {

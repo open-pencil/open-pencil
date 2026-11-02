@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit/array'
 
-import type { SceneGraph } from './index'
+import type { SceneGraph } from './graph'
 
 export interface SceneMutationImpact {
   changedNodeIds: Set<string>

@@ -1,17 +1,21 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
-import { prefetchFigmaSchema } from '@open-pencil/core/kiwi'
+import type { Editor, EditorState } from '@open-pencil/core'
+import { prefetchFigmaSchema } from '@open-pencil/core/clipboard'
 
 import { createDocumentViewportActions, downloadBlob } from '@/app/document/io/browser'
 import { createDOMOpenActions } from '@/app/document/io/dom'
 import { createOpenActions, createReloadActions } from '@/app/document/io/read'
-import { createDocumentSourceActions, createDocumentSourceState } from '@/app/document/io/source'
+import {
+  createDocumentSourceActions,
+  createDocumentSourceState
+} from '@/app/document/io/source/actions'
 import type { ViewportSize } from '@/app/document/io/types'
-import { createFileWatcher } from '@/app/document/io/watch'
+import { createFileWatcher } from '@/app/document/io/watch/watcher'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 
 type DocumentIOState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  showUI: boolean
 }
 
 export function createDocumentIOActions(
@@ -66,6 +70,8 @@ export function createDocumentIOActions(
   })
 
   return {
+    renameDocument: sourceActions.renameDocument,
+    onDocumentRenamed: sourceActions.onDocumentRenamed,
     downloadBlob,
     setViewportSize,
     getViewportSize,
@@ -73,11 +79,7 @@ export function createDocumentIOActions(
     getDocumentFilePath: sourceState.getFilePath,
     getSourceIdentity: sourceState.getSourceIdentity,
     getStorageBinding: sourceState.getStorageBinding,
-    /** Whether saving writes in place rather than asking for a location. */
-    hasWritableSource: () =>
-      !!sourceState.getFilePath() ||
-      !!sourceState.getFileHandle() ||
-      !!sourceState.getStorageBinding(),
+    hasWritableSource: sourceState.hasWritableSource,
     getRecoveryId: sourceActions.getRecoveryId,
     adoptRecoverySnapshot: sourceActions.adoptRecoverySnapshot,
     persistRecoveryNow: sourceActions.persistRecoveryNow,
@@ -86,6 +88,7 @@ export function createDocumentIOActions(
     setStorageDocumentSource: sourceActions.setStorageDocumentSource,
     setPlannedFilePath: sourceActions.setPlannedFilePath,
     saveFigFileToPath: sourceActions.saveFigFileToPath,
+    saveFigFileCopy: sourceActions.saveFigFileCopy,
     saveFigFileToStorage: sourceActions.saveFigFileToStorage,
     startWatchingCurrentFile: sourceActions.startWatchingCurrentFile,
     disposeDocumentIO: sourceActions.disposeDocumentIO,
@@ -94,6 +97,8 @@ export function createDocumentIOActions(
     importDOMText,
     hasUnsavedChanges: sourceActions.hasUnsavedChanges,
     markDocumentSaved: () => sourceActions.markDocumentSaved(),
+    markDocumentChanged: sourceActions.markDocumentChanged,
+    adoptChanges: sourceActions.adoptChanges,
     saveFigFile: sourceActions.saveFigFile,
     saveFigFileAs: sourceActions.saveFigFileAs
   }

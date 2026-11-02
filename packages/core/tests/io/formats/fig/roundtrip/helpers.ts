@@ -1,8 +1,8 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/core'
-import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import { verifyComponentPropDefs, verifyDerivedTextData } from './raw-verifiers/helpers'
 
@@ -375,7 +375,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
       const g1raw = ctx.b as JSONObject | undefined
       const node = ctx.aNodes.get(ctx.path)
       if (!node || node.fontSize == null) return true
-      const expected = node.letterSpacing
+      const expected = textLengthPixels(node.letterSpacing, node.fontSize)
       const value = g1raw?.value
       let actual = typeof value === 'number' ? value : undefined
       if (actual !== undefined && g1raw?.units === 'PERCENT') {

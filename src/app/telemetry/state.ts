@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 
@@ -11,7 +12,7 @@ export interface SharingState {
   lastPingDay: string | null
 }
 
-const SharingStateSchema = v.object({
+const sharingStateSchema = v.object({
   installId: v.fallback(v.nullable(v.pipe(v.string(), v.regex(/^[0-9a-f]{32}$/))), null),
   lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null)
 })
@@ -22,7 +23,7 @@ export const sharingState = useLocalStorage<SharingState>(
   {
     mergeDefaults: (stored) =>
       v.parse(
-        v.fallback(SharingStateSchema, () => v.parse(SharingStateSchema, {})),
+        v.fallback(sharingStateSchema, () => v.parse(sharingStateSchema, {})),
         stored
       )
   }
@@ -34,7 +35,6 @@ const ENVIRONMENT_CHECK_TIMEOUT_MS = 2_000
 let disabledByEnvironment: Promise<boolean> | null = null
 
 async function readDesktopEnvironment(): Promise<boolean> {
-  const { invoke } = await import('@tauri-apps/api/core')
   const timeout = new Promise<boolean>((resolve) => {
     setTimeout(() => resolve(true), ENVIRONMENT_CHECK_TIMEOUT_MS)
   })

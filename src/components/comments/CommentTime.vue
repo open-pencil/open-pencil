@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
-
-import { formatCommentTime, useCommentClock } from '@/app/comments/time'
+import { useDateFormat } from '@/app/i18n/date'
 
 const { at } = defineProps<{ at: string }>()
 
-const now = useCommentClock()
-const { locale } = useI18n()
-const label = computed(() => formatCommentTime(at, now.value.getTime(), locale.value))
+const dates = useDateFormat()
+const label = computed(() => dates.relative(at))
 </script>
 
 <template>

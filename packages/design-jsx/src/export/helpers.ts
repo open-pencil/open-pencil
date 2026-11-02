@@ -1,5 +1,6 @@
-import type { SceneGraph, SceneNode, Effect, Color, GridTrack } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Effect, GridTrack } from '@open-pencil/scene-graph'
 import { colorToHex8 } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export function formatColor(color: Color, opacity = 1): string {
   return colorToHex8(color, opacity)

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { serializeSceneGraph, deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'

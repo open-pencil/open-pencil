@@ -13,6 +13,37 @@ export interface ClipboardDependencyImport {
   revertVariables?: () => void
 }
 
+/** Imports a snapshot's styles and variables as undo steps of the running batch. */
+export function importClipboardDependenciesWithUndo(
+  ctx: EditorContext,
+  snapshot: ClipboardSnapshot
+): ClipboardDependencyImport {
+  const dependencies = importClipboardDependencies(ctx, snapshot)
+  if (dependencies.styleSnapshots.length > 0) {
+    ctx.undo.push({
+      label: 'Import clipboard styles',
+      forward: () => {
+        for (const style of dependencies.styleSnapshots) {
+          ctx.graph.preserveSourceMetadataDuring(() =>
+            ctx.graph.createNode(style.type, ctx.state.currentPageId, style)
+          )
+        }
+      },
+      inverse: () => {
+        for (const style of dependencies.styleSnapshots) ctx.graph.deleteNode(style.id)
+      }
+    })
+  }
+  if (dependencies.applyVariables && dependencies.revertVariables) {
+    ctx.undo.push({
+      label: 'Import clipboard variables',
+      forward: dependencies.applyVariables,
+      inverse: dependencies.revertVariables
+    })
+  }
+  return dependencies
+}
+
 export function importClipboardDependencies(
   ctx: EditorContext,
   snapshot: ClipboardSnapshot

@@ -1,7 +1,8 @@
 import { Direction, Display, Gutter, Edge, type Node as YogaNode } from 'yoga-layout'
 
-import { layoutSizing, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { configureAbsoluteChild, createYogaNode, mapGridTrack } from './yoga-helpers'
 

@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit'
+
 import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@open-pencil/core/constants'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
@@ -14,6 +16,8 @@ export const ONBOARDING_AGENTS = [
   'acp:gemini-cli',
   'harness:pi'
 ] as const
+/** Subscriptions OpenPencil's own agent signs in to; the sign-in needs the desktop app. */
+export const ONBOARDING_SUBSCRIPTIONS = ['chatgpt'] as const
 /** API accounts, in the order onboarding prefers them when several are available. */
 export const ONBOARDING_API_PROVIDERS = ['anthropic', 'openai', 'google', 'openrouter'] as const
 /** Further API accounts the catalog supports, offered behind "More providers". */
@@ -25,12 +29,14 @@ export const ONBOARDING_METERED_PROVIDER = 'openrouter'
 
 export type OnboardingAccess =
   | (typeof ONBOARDING_AGENTS)[number]
+  | (typeof ONBOARDING_SUBSCRIPTIONS)[number]
   | (typeof ONBOARDING_API_PROVIDERS)[number]
   | (typeof ONBOARDING_MORE_API_PROVIDERS)[number]
   | typeof ONBOARDING_SERVER_PROVIDER
 
 const ONBOARDING_ACCESS = new Set<string>([
   ...ONBOARDING_AGENTS,
+  ...ONBOARDING_SUBSCRIPTIONS,
   ...ONBOARDING_API_PROVIDERS,
   ...ONBOARDING_MORE_API_PROVIDERS,
   ONBOARDING_SERVER_PROVIDER
@@ -85,7 +91,10 @@ export interface CurrentOnboardingModels {
 }
 
 export interface PlanOptions {
-  /** Agents run as local processes, so only the desktop app can use them. */
+  /**
+   * Agents run as local processes and subscription sign-in returns to a local port, so only the
+   * desktop app can use them.
+   */
   agentsAvailable: boolean
   current?: CurrentOnboardingModels
 }
@@ -101,6 +110,14 @@ const NO_CURRENT: CurrentOnboardingModels = {
 /** ACP agents and Pi, which run on this computer and choose their own model. */
 export function isOnboardingAgent(providerID: string): boolean {
   return providerID.startsWith('acp:') || providerID === 'harness:pi'
+}
+
+/** Access that only the desktop app can use. */
+export function needsDesktop(providerID: string): boolean {
+  return (
+    isOnboardingAgent(providerID) ||
+    (ONBOARDING_SUBSCRIPTIONS as readonly string[]).includes(providerID)
+  )
 }
 
 function isAgentModel(model: PlannedModel | null): boolean {
@@ -152,7 +169,7 @@ function hasVision(model: PlannedModel): boolean {
 }
 
 function availableAccess(answers: OnboardingAnswers, options: PlanOptions): OnboardingAccess[] {
-  return answers.access.filter((access) => options.agentsAvailable || !isOnboardingAgent(access))
+  return answers.access.filter((access) => options.agentsAvailable || !needsDesktop(access))
 }
 
 /** A configured model stays while its access is still selected or onboarding cannot offer it. */
@@ -175,6 +192,7 @@ function planDesign(
   if (keepable(current, access)) return current
   const preferred: OnboardingAccess[] = [
     ...ONBOARDING_AGENTS,
+    ...ONBOARDING_SUBSCRIPTIONS,
     ...ONBOARDING_API_PROVIDERS,
     ...ONBOARDING_MORE_API_PROVIDERS,
     ONBOARDING_SERVER_PROVIDER
@@ -192,9 +210,11 @@ function planVision(
 ): PlannedRole {
   if (current !== null && current !== 'design' && keepable(current, access)) return current
   if (canFollowDesign('vision', design)) return 'design'
-  // A local server that reads images is preferred over a paid account.
+  // A local server that reads images is preferred over a paid account, and a subscription
+  // already paid for over one billed by use.
   const candidates: OnboardingAccess[] = [
     ONBOARDING_SERVER_PROVIDER,
+    ...ONBOARDING_SUBSCRIPTIONS,
     ...ONBOARDING_API_PROVIDERS,
     ...ONBOARDING_MORE_API_PROVIDERS
   ]
@@ -277,7 +297,19 @@ export function planOnboarding(answers: OnboardingAnswers, options: PlanOptions)
     review: planReview(design, vision, current),
     fast: planFast(design, vision, current)
   }
-  return { ...roles, connections: planConnections(roles) }
+  // Everything selected is connected, after what the planned models need: the person said they
+  // have it, its card is where they sign in or enter a key, and once connected its models can
+  // take any role in review. An account a configured model already uses is not asked for again;
+  // an agent is still shown, as only its card tells whether it is installed and signed in.
+  const configured = new Set(
+    roleModels(current)
+      .filter((model) => model.profileId)
+      .map((model) => model.providerID)
+  )
+  const selected = access.filter(
+    (providerID) => isOnboardingAgent(providerID) || !configured.has(providerID)
+  )
+  return { ...roles, connections: uniq([...planConnections(roles), ...selected]) }
 }
 
 /** Providers the planned models need connected, skipping models that are already configured. */
@@ -286,7 +318,7 @@ export function planConnections(roles: Omit<OnboardingPlan, 'connections'>): Onb
     .filter((model) => !model.profileId)
     .map((model) => model.providerID)
     .filter(isOnboardingAccess)
-  return [...new Set(providers)]
+  return uniq(providers)
 }
 
 /** Whether every role the person asked about has a model. */

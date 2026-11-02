@@ -1,5 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { pluginChildren } from './accessors/sticky'
 import type { FigmaNodeProxy, NodeProxyHost } from './proxy'
 
 export function findAll(
@@ -10,7 +11,7 @@ export function findAll(
 ): FigmaNodeProxy[] {
   const results: FigmaNodeProxy[] = []
   const walk = (id: string) => {
-    for (const child of graph.getChildren(id)) {
+    for (const child of pluginChildren(graph, id)) {
       const proxy = api.wrapNode(child.id)
       if (!callback || callback(proxy)) results.push(proxy)
       walk(child.id)
@@ -27,7 +28,7 @@ export function findOne(
   callback: (node: FigmaNodeProxy) => boolean
 ): FigmaNodeProxy | null {
   const walk = (id: string): FigmaNodeProxy | null => {
-    for (const child of graph.getChildren(id)) {
+    for (const child of pluginChildren(graph, id)) {
       const proxy = api.wrapNode(child.id)
       if (callback(proxy)) return proxy
       const found = walk(child.id)
@@ -44,7 +45,7 @@ export function findChild(
   rootId: string,
   callback: (node: FigmaNodeProxy) => boolean
 ): FigmaNodeProxy | null {
-  for (const child of graph.getChildren(rootId)) {
+  for (const child of pluginChildren(graph, rootId)) {
     const proxy = api.wrapNode(child.id)
     if (callback(proxy)) return proxy
   }
@@ -57,8 +58,7 @@ export function findChildren(
   rootId: string,
   callback?: (node: FigmaNodeProxy) => boolean
 ): FigmaNodeProxy[] {
-  return graph
-    .getChildren(rootId)
+  return pluginChildren(graph, rootId)
     .map((child) => api.wrapNode(child.id))
     .filter((proxy) => !callback || callback(proxy))
 }

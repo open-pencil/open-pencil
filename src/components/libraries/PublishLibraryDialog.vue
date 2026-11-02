@@ -7,7 +7,7 @@ import {
   publishableLibraryRoots,
   readSourceLibraryPublication
 } from '@open-pencil/core/library'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'

@@ -1,3 +1,4 @@
+import { open } from '@tauri-apps/plugin-dialog'
 import { onMounted } from 'vue'
 
 import { mcpRootDirectory } from '@/app/automation/mcp/preferences'
@@ -16,7 +17,6 @@ export function useMCPSettings() {
   async function chooseRootDirectory(): Promise<void> {
     if (!isTauri()) return
 
-    const { open } = await import('@tauri-apps/plugin-dialog')
     const directory = await open({ directory: true, multiple: false })
     if (typeof directory === 'string') mcpRootDirectory.value = directory
   }

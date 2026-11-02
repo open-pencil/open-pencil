@@ -1,5 +1,6 @@
 import { getToolName, isToolUIPart } from 'ai'
 import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
+import { isEmptyObject } from 'es-toolkit'
 import { isValid } from 'js-base64'
 
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
@@ -123,7 +124,7 @@ export function toolSource(
 
 /** Whether a call has input worth showing: source, or at least one argument. */
 export function toolHasInput(part: ToolCallPart): boolean {
-  return toolSource(part) !== null || (isRecord(part.input) && Object.keys(part.input).length > 0)
+  return toolSource(part) !== null || (isRecord(part.input) && !isEmptyObject(part.input))
 }
 
 export type MessagePartGroup =

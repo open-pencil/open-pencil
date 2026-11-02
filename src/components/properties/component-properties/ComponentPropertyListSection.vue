@@ -14,7 +14,9 @@ import {
 import { computed, ref, type ComponentPublicInstance } from 'vue'
 
 import type { ComponentPropertyType } from '@open-pencil/scene-graph'
-import { useComponentPropertyAuthoring, useFlatReorderDrag, useI18n } from '@open-pencil/vue'
+import { useComponentPropertyAuthoring } from '@open-pencil/vue/controls/component-props'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'

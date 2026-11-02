@@ -14,11 +14,8 @@ function locate(source: string): Located[] {
   const h = (type: unknown, props: Record<string, unknown> | null, ...children: unknown[]) => {
     if (typeof type === 'function')
       return (type as (props: unknown) => unknown)({ ...props, children })
-    const origin = props?.__source as { fileName: 'statements' | 'expression'; lineNumber: number }
-    located.push({
-      type: String(type),
-      line: program.lineOffsets[origin.fileName] + origin.lineNumber
-    })
+    const origin = props?.__source as { lineNumber: number }
+    located.push({ type: String(type), line: program.lineOffset + origin.lineNumber })
     return null
   }
   // eslint-disable-next-line typescript-eslint/no-implied-eval -- evaluates the transformed test fixture
@@ -32,7 +29,7 @@ describe('transformDesignJSXProgram', () => {
     expect(locate(source).map(({ type, line }) => `${type}@${line}`)).toEqual(['text@4', 'frame@3'])
   })
 
-  test('reports lines in both declarations and the final expression of a program', () => {
+  test('reports lines in both the statements and the JSX a program returns', () => {
     const source = [
       '',
       'const Card = () => (',
@@ -41,7 +38,7 @@ describe('transformDesignJSXProgram', () => {
       '  </Frame>',
       ')',
       '',
-      '<Frame name="Root">',
+      'return <Frame name="Root">',
       '  <Card />',
       '</Frame>'
     ].join('\n')

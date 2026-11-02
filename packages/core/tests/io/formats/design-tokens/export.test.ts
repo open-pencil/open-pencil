@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { exportDesignTokens, RESOLVER_FILE, STYLES_FILE } from '#core/io/formats/design-tokens'
 
@@ -34,8 +35,8 @@ function designSystem() {
     fontFamily: 'Inter',
     fontWeight: 700,
     fontSize: 32,
-    lineHeight: 40,
-    letterSpacing: -0.5,
+    lineHeight: pixelLength(40),
+    letterSpacing: pixelLength(-0.5),
     sharedStyleType: 'TEXT',
     internalOnly: true,
     boundVariables: { fontFamily: family.id }

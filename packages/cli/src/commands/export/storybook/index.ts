@@ -12,6 +12,8 @@ import {
   sep
 } from 'node:path'
 
+import { uniq } from 'es-toolkit'
+
 import { BUILTIN_IO_FORMATS, IORegistry, vectorElement } from '@open-pencil/core/io'
 import {
   exportStorybook,
@@ -263,7 +265,7 @@ async function resolveDocuments(args: StorybookArgs): Promise<string[]> {
     if (matches.length === 0) throw new Error(`No documents match ${pattern}.`)
     documents.push(...matches.sort())
   }
-  return [...new Set(documents)]
+  return uniq(documents)
 }
 
 function outputFor(args: StorybookArgs, file: string): string {

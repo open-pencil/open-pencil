@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderNodesToPPTX, type Effect, type PPTXExportStats } from '@open-pencil/core'
-import { TransformMatrix } from '@open-pencil/scene-graph'
+import { renderNodesToPPTX, type PPTXExportStats } from '@open-pencil/core/io'
+import type { Effect } from '@open-pencil/scene-graph'
+import TransformMatrix from '@open-pencil/scene-graph/matrix'
 
 import { hasUnsupportedTransform, nodeBox } from '#core/io/formats/pptx/geometry'
 

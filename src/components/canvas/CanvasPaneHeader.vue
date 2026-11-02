@@ -9,7 +9,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'

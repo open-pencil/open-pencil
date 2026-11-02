@@ -1,3 +1,5 @@
+import { filename } from 'pathe/utils'
+
 import {
   exportHTMLBundle,
   sceneNodeToDesignDocument,
@@ -22,10 +24,7 @@ function designDocument(graph: SceneGraph, nodeIds: string[]): DesignDocument {
 
 /** `card.html` keeps its external files in `card.assets/` next to it, whatever the path style. */
 function assetBasePath(fileName: string | undefined): string {
-  const name = fileName
-    ?.split(/[\\/]/)
-    .pop()
-    ?.replace(/\.[^.]*$/, '')
+  const name = fileName && filename(fileName)
   return `${name || 'export'}.assets`
 }
 

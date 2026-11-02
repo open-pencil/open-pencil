@@ -46,6 +46,20 @@ export const DEFAULT_GRADIENT_TRANSFORM: GradientTransform = {
   m12: 1
 }
 
+/**
+ * A paint transform as Figma's plugin API gives and takes it, and as authors write it: two rows of
+ * three, `[[m00, m01, m02], [m10, m11, m12]]`.
+ */
+export type GradientTransformRows = [[number, number, number], [number, number, number]]
+
+/** `t` as Figma's plugin API gives a paint transform: two rows of three. */
+export function gradientTransformRows(t: GradientTransform): GradientTransformRows {
+  return [
+    [t.m00, t.m01, t.m02],
+    [t.m10, t.m11, t.m12]
+  ]
+}
+
 /** How dark a new gradient's second stop is next to the fill colour, as in Figma. */
 const DEFAULT_GRADIENT_SHADE = 0.6
 

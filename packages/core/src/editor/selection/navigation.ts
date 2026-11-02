@@ -1,3 +1,5 @@
+import { generatedFrameOwner, isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+
 import type { EditorContext } from '#core/editor/types'
 
 type Select = (ids: string[]) => void
@@ -11,9 +13,14 @@ export function createSelectionNavigationActions(ctx: EditorContext, select: Sel
     })
   }
 
-  /** Selects the children of every selected layer that has any; a selection without any stays. */
+  /**
+   * Selects the children of every selected layer that has any; a selection without any stays.
+   * A generated frame, such as a sticky note, has none to offer: its template owns its layers.
+   */
   function selectChildren() {
-    const children = selectedNodes().flatMap((node) => node.childIds)
+    const children = selectedNodes().flatMap((node) =>
+      isGeneratedFrame(node) ? [] : node.childIds
+    )
     if (children.length > 0) select(children)
   }
 
@@ -36,6 +43,7 @@ export function createSelectionNavigationActions(ctx: EditorContext, select: Sel
     if (nodes.length === 0) return
     select(
       nodes.map((node) => {
+        if (generatedFrameOwner(ctx.graph, node)) return node.id
         const siblings = node.parentId ? (ctx.graph.getNode(node.parentId)?.childIds ?? []) : []
         const index = siblings.indexOf(node.id)
         if (index === -1) return node.id

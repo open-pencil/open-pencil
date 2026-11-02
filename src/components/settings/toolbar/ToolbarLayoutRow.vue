@@ -10,7 +10,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watchPostEffect, type Component } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'

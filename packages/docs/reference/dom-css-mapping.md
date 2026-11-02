@@ -42,8 +42,8 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `font-size` | `fontSize` | Pixel/rem-ish numeric values. |
 | `font-weight` | `fontWeight` | Numeric values. |
 | `font-style: italic` | `italic` | Other styles ignored. |
-| `line-height` | `lineHeight` | Numeric computed values. |
-| `letter-spacing` | `letterSpacing` | Numeric computed values. |
+| `line-height` | `lineHeight` | Pixels stay pixels; a unitless multiple or a percent becomes a percent of the font size, which export writes back as a unitless multiple. |
+| `letter-spacing` | `letterSpacing` | Pixels stay pixels; `em` becomes a percent of the font size, which export writes back in `em`. |
 | `text-align` | horizontal text alignment | Supports center, right, justified; defaults left. |
 | `text-decoration-line` | underline / strikethrough | Decoration style/thickness are not mapped yet. |
 | `text-transform` | `textCase` | Uppercase, lowercase, and capitalize map to SceneGraph text case. |

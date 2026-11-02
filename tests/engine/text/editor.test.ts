@@ -2,7 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from 'canvaskit-wasm'
 
-import { TextEditor, type SceneNode } from '@open-pencil/core'
+import { TextEditor } from '@open-pencil/core/text'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { TextLayout } from '#core/canvas/text/layout'
@@ -59,6 +60,7 @@ function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical']
           },
           getHeight: () => 20,
           getLineMetrics: () => [asDouble(lineMetrics)],
+          getGlyphInfoAt: () => null,
           getLineNumberAt: () => 0,
           getRectsForRange: () => rects
         },
@@ -279,6 +281,82 @@ describe('TextEditor', () => {
     const { editor } = createEditor()
     editor.moveLeft()
     expect(editor.state?.cursor).toBe(10)
+  })
+
+  /** An emoji is one character to the caret, whether a surrogate pair or a joined sequence. */
+  test('moves over, and deletes, an emoji whole', () => {
+    const family = '👨‍👩‍👧'
+    const { editor, node } = createEditor(`a😀${family}b`)
+    const state = editorState(editor)
+    state.cursor = 1
+    editor.moveRight()
+    expect(state.cursor).toBe(3)
+    editor.moveRight()
+    expect(state.cursor).toBe(3 + family.length)
+    editor.moveLeft()
+    expect(state.cursor).toBe(3)
+    editor.backspace(node)
+    expect(state.text).toBe(`a${family}b`)
+    expect(state.cursor).toBe(1)
+    editor.delete(node)
+    expect(state.text).toBe('ab')
+  })
+
+  /** CanvasKit gives no box for half a character, so the caret beside one takes its cluster's. */
+  test('places the caret beside an emoji at the edge of its whole cluster', () => {
+    const ranges: Array<[number, number]> = []
+    const layout = layoutOf(
+      {
+        getGlyphInfoAt: (index: number) =>
+          index >= 1 && index < 3
+            ? asDouble({ graphemeClusterTextRange: { start: 1, end: 3 } })
+            : null,
+        getHeight: () => 12,
+        getLineMetrics: () => [
+          asDouble<LineMetrics>({ baseline: 10, ascent: 8, height: 12, left: 0 })
+        ],
+        getRectsForRange: (start: number, end: number) => {
+          ranges.push([start, end])
+          return start === 1 && end === 3
+            ? [asDouble<RectWithDirection>({ rect: [10, 0, 34, 12] })]
+            : []
+        }
+      },
+      4
+    )
+    expect(layout.getCaretRect(1, false)?.x).toBe(10)
+    expect(ranges).toEqual([[1, 3]])
+  })
+
+  // Skia lays out an empty line below a closing line break; typing starts there, so does the caret.
+  test('places the caret after a closing line break at the start of the empty line below', () => {
+    const lines = (closing: boolean) => [
+      asDouble<LineMetrics>({
+        baseline: 13,
+        ascent: 13,
+        height: 17,
+        left: 0,
+        isHardBreak: true,
+        endIncludingNewline: 4
+      }),
+      asDouble<LineMetrics>({
+        baseline: 30,
+        ascent: 13,
+        height: 17,
+        left: 0,
+        isHardBreak: true,
+        endIndex: closing ? 4 : 7
+      })
+    ]
+    const native = (closing: boolean) => ({
+      getHeight: () => 34,
+      getGlyphInfoAt: () => null,
+      getLineMetrics: () => lines(closing),
+      getRectsForRange: () => [asDouble<RectWithDirection>({ rect: [24, 17, 30, 34] })]
+    })
+    expect(layoutOf(native(true), 4).getCaretRect(4, false)).toEqual({ x: 0, top: 17, bottom: 34 })
+    // After text on the last line, the caret follows that text.
+    expect(layoutOf(native(false), 7).getCaretRect(7, false)?.x).toBe(30)
   })
 
   test('moveRight at end stays', () => {

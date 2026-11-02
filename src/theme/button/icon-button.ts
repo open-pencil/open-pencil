@@ -4,7 +4,8 @@ export default {
     size: {
       xs: 'size-6 rounded border border-transparent text-sm leading-none',
       sm: 'size-7 rounded-md border border-transparent text-sm leading-none',
-      md: 'size-8 rounded-md border border-transparent text-base leading-none'
+      md: 'size-8 rounded-md border border-transparent text-base leading-none',
+      lg: 'size-9 rounded-md border border-transparent text-base leading-none'
     },
     active: {
       true: 'border-accent text-primary'

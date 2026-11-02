@@ -17,6 +17,7 @@ import {
   summary as fmtSummary
 } from 'agentfmt'
 import type { TreeNode, ListItem, NodeData } from 'agentfmt'
+import { isEmptyObject } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -209,7 +210,7 @@ export function nodeToListItem(node: SceneNode): ListItem {
   const details = nodeDetails(node)
   return {
     header: entity(formatType(node.type), node.name, node.id),
-    details: Object.keys(details).length > 0 ? details : undefined
+    details: isEmptyObject(details) ? undefined : details
   }
 }
 

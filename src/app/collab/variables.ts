@@ -1,18 +1,16 @@
 import { isEqual } from 'es-toolkit/predicate'
-import * as Y from 'yjs'
+import * as v from 'valibot'
+import type * as Y from 'yjs'
 
 import type { Variable, VariableCollection } from '@open-pencil/scene-graph'
+import { variableCollectionSchema, variableSchema } from '@open-pencil/scene-graph/variables'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
-/**
- * Variables and collections in a room, by id. Each record is a map of its fields, so peers
- * changing different fields both keep theirs; a variable's values are a nested map by mode, so
- * two people editing a color in different modes do too.
- */
-export type YRecords = Y.Map<Y.Map<unknown>>
+import { changedIds, writeChanges, type YRecords } from './records'
 
-const VALUES_BY_MODE = 'valuesByMode'
+/** A variable's values are a map of their own by mode. */
+const BY_MODE = new Set(['valuesByMode'])
 
 type VariableSyncOptions = {
   store: EditorStore
@@ -21,68 +19,12 @@ type VariableSyncOptions = {
   ycollections: YRecords
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
 function isVariable(value: unknown): value is Variable {
-  return (
-    isRecord(value) &&
-    typeof value.id === 'string' &&
-    typeof value.name === 'string' &&
-    typeof value.type === 'string' &&
-    typeof value.collectionId === 'string' &&
-    isRecord(value.valuesByMode)
-  )
+  return v.is(variableSchema, value)
 }
 
 function isCollection(value: unknown): value is VariableCollection {
-  return (
-    isRecord(value) &&
-    typeof value.id === 'string' &&
-    typeof value.name === 'string' &&
-    typeof value.defaultModeId === 'string' &&
-    Array.isArray(value.modes) &&
-    Array.isArray(value.variableIds)
-  )
-}
-
-/** Writes the fields of `record` that differ from what the room holds, and drops the others. */
-function writeRecord(target: Y.Map<unknown>, record: object): void {
-  const fields = new Map<string, unknown>(Object.entries(record))
-  // Collected first: deleting from a Yjs map while iterating its keys skips some.
-  for (const key of Array.from(target.keys())) if (!fields.has(key)) target.delete(key)
-  for (const [key, value] of fields) {
-    if (key === VALUES_BY_MODE && isRecord(value)) {
-      let modes = target.get(key)
-      if (!(modes instanceof Y.Map)) {
-        modes = new Y.Map<unknown>()
-        target.set(key, modes)
-      }
-      writeRecord(modes as Y.Map<unknown>, value)
-      continue
-    }
-    if (value === undefined) target.delete(key)
-    else if (!isEqual(target.get(key), value)) target.set(key, structuredClone(value))
-  }
-}
-
-/** Writes `records` that differ from `sent` into the room, and removes those gone since. */
-function writeChanges<T extends { id: string }>(
-  target: YRecords,
-  records: Map<string, T>,
-  sent: Map<string, T>
-): void {
-  for (const id of sent.keys()) if (!records.has(id)) target.delete(id)
-  for (const [id, record] of records) {
-    if (isEqual(sent.get(id), record)) continue
-    let ymap = target.get(id)
-    if (!ymap) {
-      ymap = new Y.Map<unknown>()
-      target.set(id, ymap)
-    }
-    writeRecord(ymap, record)
-  }
+  return v.is(variableCollectionSchema, value)
 }
 
 /** Sets a record in place where it exists, as views may hold it, as undo does. */
@@ -96,20 +38,6 @@ function applyRecord<T extends object>(target: Map<string, T>, id: string, value
     if (!Object.hasOwn(value, key)) Reflect.deleteProperty(existing, key)
   }
   Object.assign(existing, value)
-}
-
-/** The ids of records an event batch on `records` added, changed, or removed. */
-function changedIds(records: YRecords, events: Y.YEvent<Y.Map<unknown>>[]): Set<string> {
-  const ids = new Set<string>()
-  for (const event of events) {
-    if (event.target === records) {
-      for (const key of event.changes.keys.keys()) ids.add(key)
-      continue
-    }
-    const [id] = event.path
-    if (typeof id === 'string') ids.add(id)
-  }
-  return ids
 }
 
 /**
@@ -129,7 +57,7 @@ export function bindVariableSync({ store, ydoc, yvariables, ycollections }: Vari
     if (isEqual(sentVariables, variables) && isEqual(sentCollections, variableCollections)) return
     ydoc.transact(() => {
       writeChanges(ycollections, variableCollections, sentCollections)
-      writeChanges(yvariables, variables, sentVariables)
+      writeChanges(yvariables, variables, sentVariables, { nested: BY_MODE })
     })
     sentVariables = structuredClone(variables)
     sentCollections = structuredClone(variableCollections)

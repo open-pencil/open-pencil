@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FontManager } from '@open-pencil/core'
+import { FontManager } from '@open-pencil/core/text'
 
 import { isVariableFont, namedInstanceVariations } from '#core/text/font/variation'
 
@@ -186,9 +186,9 @@ describe('namedInstanceVariations with malformed fonts', () => {
 })
 
 describe('FontManager.namedInstanceVariations', () => {
-  test('resolves variations from the face loaded for a style', () => {
+  test('resolves variations from the face loaded for a style', async () => {
     const manager = new FontManager()
-    manager.markLoaded('SF Pro', 'Medium', SF_PRO_LIKE)
+    await manager.markLoaded('SF Pro', 'Medium', SF_PRO_LIKE)
     expect(manager.namedInstanceVariations('SF Pro', 'Medium')).toEqual([
       { axis: 'wdth', value: 100 },
       { axis: 'wght', value: 510 }

@@ -1,11 +1,8 @@
 import { ByteBuffer } from './bb'
-import { nativeTypes } from './parser'
-import type { Definition, Field, Schema } from './schema'
-import { createSchemaSkipper, type SchemaSkipper } from './skip'
+import type { Definition, DefinitionKind, Field, Schema } from './schema'
 import { error, quote } from './util'
 
-type RuntimeEnum = { [name: string]: string | number }
-type RuntimeValue =
+export type RuntimeValue =
   | boolean
   | number
   | string
@@ -14,10 +11,12 @@ type RuntimeValue =
   | RuntimeMessage
   | RuntimeValue[]
 export type RuntimeMessage = { [name: string]: RuntimeValue }
+type RuntimeEnum = { [name: string]: string | number }
 type DecodeFunction = (bb: ByteBuffer | Uint8Array) => RuntimeMessage
 type EncodeFunction = (message: RuntimeMessage, bb?: ByteBuffer) => Uint8Array | undefined
 type RuntimeEntry =
   | typeof ByteBuffer
+  | CompiledSchema
   | RuntimeEnum
   | RuntimeValue
   | DecodeFunction
@@ -25,13 +24,14 @@ type RuntimeEntry =
   | undefined
 export type RuntimeCodec = {
   ByteBuffer: typeof ByteBuffer
+  /** The tables the codec reads with, for scanners that pick single fields out of a message. */
+  schema: CompiledSchema
   encodeMessage?: EncodeFunction
   decodeMessage?: DecodeFunction
   encodePaint?: EncodeFunction
   encodeNodeChange?: EncodeFunction
   [name: string]: RuntimeEntry
 }
-type Definitions = { [name: string]: Definition }
 
 /**
  * Message types decoded as headers: only the named fields are read, and the rest stay in the
@@ -39,6 +39,86 @@ type Definitions = { [name: string]: Definition }
  * messages then holds a little of each rather than every value of every one.
  */
 export type HeaderFields = Readonly<Record<string, readonly string[]>>
+
+/** What a field holds: a native type, or an enum, struct, or message of the schema. */
+export const TYPE = {
+  BOOL: 0,
+  BYTE: 1,
+  INT: 2,
+  UINT: 3,
+  FLOAT: 4,
+  STRING: 5,
+  INT64: 6,
+  UINT64: 7,
+  ENUM: 8,
+  STRUCT: 9,
+  MESSAGE: 10
+} as const
+export type TypeCode = (typeof TYPE)[keyof typeof TYPE]
+
+const NATIVE_TYPES: ReadonlyMap<string, TypeCode> = new Map([
+  ['bool', TYPE.BOOL],
+  ['byte', TYPE.BYTE],
+  ['int', TYPE.INT],
+  ['uint', TYPE.UINT],
+  ['float', TYPE.FLOAT],
+  ['string', TYPE.STRING],
+  ['int64', TYPE.INT64],
+  ['uint64', TYPE.UINT64]
+])
+
+const KIND_TYPES: Readonly<Record<DefinitionKind, TypeCode>> = {
+  ENUM: TYPE.ENUM,
+  STRUCT: TYPE.STRUCT,
+  MESSAGE: TYPE.MESSAGE
+}
+
+/** A field resolved once: its type as a number, and the definition behind it. */
+export interface CompiledField {
+  readonly name: string
+  readonly id: number
+  readonly isArray: boolean
+  readonly isDeprecated: boolean
+  readonly type: TypeCode
+  /** The definition an enum, struct, or message field holds; null for a native type. */
+  readonly definition: CompiledDefinition | null
+  /** Whether a header of the owning message keeps this field. */
+  readonly kept: boolean
+}
+
+export interface CompiledDefinition {
+  readonly name: string
+  readonly kind: DefinitionKind
+  readonly fields: readonly CompiledField[]
+  /** A message's fields by ID, with a hole at every ID the definition does not use. */
+  readonly byId: ReadonlyArray<CompiledField | undefined>
+  /** An enum's member names by value. */
+  readonly names: ReadonlyArray<string | undefined>
+  /** An enum's values by member name. */
+  readonly values: ReadonlyMap<string, number>
+  /** Whether messages of this definition decode as headers. */
+  readonly header: boolean
+}
+
+/**
+ * A schema's definitions resolved into tables, and the one reader, skipper, and writer that
+ * every codec and scanner shares; nothing is looked up by name while a message is read.
+ */
+export interface CompiledSchema {
+  readonly definitions: readonly CompiledDefinition[]
+  /** A definition by name; throws for one the schema lacks. */
+  definition(name: string): CompiledDefinition
+  /** One field's value, its array included; its shape follows the schema at run time. */
+  read(field: CompiledField, bb: ByteBuffer): unknown
+  /** Past one field's value, its array included. */
+  skip(field: CompiledField, bb: ByteBuffer): void
+  /** One field's value, its array included; a message field writes its own end marker. */
+  write(field: CompiledField, value: RuntimeValue, bb: ByteBuffer): void
+  /** A struct or message read in full, or as a header where the definition is one. */
+  decode(definition: CompiledDefinition, bb: ByteBuffer): RuntimeMessage
+  /** A struct or message written in full. */
+  encode(definition: CompiledDefinition, message: RuntimeMessage, bb: ByteBuffer): void
+}
 
 /**
  * What a header needs to be read whole: the bytes it came from, where it starts in them, and
@@ -48,12 +128,6 @@ export type HeaderFields = Readonly<Record<string, readonly string[]>>
 const HEADER_BYTES = Symbol('header bytes')
 const HEADER_START = Symbol('header start')
 const HEADER_WHOLE = Symbol('header whole decoder')
-
-/**
- * How many whole decodes are running. A message type can nest itself, as instance overrides
- * are records too, and a message read whole is read whole all the way down.
- */
-let wholeDepth = 0
 
 /**
  * A header read again in full from the bytes it came from, as a new message the caller owns,
@@ -74,330 +148,318 @@ function hide(message: RuntimeMessage, key: symbol, value: unknown): void {
   Reflect.defineProperty(message, key, { value, enumerable: false })
 }
 
-interface HeaderDecoding {
-  keep: ReadonlySet<string>
-  skipper: SchemaSkipper
-  /** Reads the message in full, for `decodeWhole`. */
-  whole: (bb: ByteBuffer) => RuntimeMessage
+function invalidMessage(): never {
+  throw new Error('Attempted to parse invalid message')
 }
 
-function wholeDecoder(
-  decode: (bb: ByteBuffer) => RuntimeMessage
-): (bb: ByteBuffer) => RuntimeMessage {
-  return (bb) => {
-    wholeDepth++
-    try {
-      return decode(bb)
-    } finally {
-      wholeDepth--
-    }
-  }
-}
-
-function asDecodeFunction(value: unknown): DecodeFunction {
-  return value as DecodeFunction
-}
-function asEncodeFunction(value: unknown): EncodeFunction {
-  return value as EncodeFunction
-}
-function asRuntimeEnum(value: unknown): RuntimeEnum {
-  return value as RuntimeEnum
-}
-
-function hasDefinition(definitions: Definitions, name: string): boolean {
-  return Object.hasOwn(definitions, name)
-}
-
-function validateFieldTypes(definitions: Definitions): void {
-  let definitionList = Object.values(definitions)
-  for (let i = 0; i < definitionList.length; i++) {
-    let definition = definitionList[i]
-    if (definition.kind === 'ENUM') continue
-    for (let j = 0; j < definition.fields.length; j++) {
-      let field = definition.fields[j]
-      let type = field.type
-      if (type === null) {
-        error('Invalid type null for field ' + quote(field.name), field.line, field.column)
+function compileDefinitions(schema: Schema, headers?: HeaderFields): CompiledDefinition[] {
+  const byName = new Map<string, Definition>()
+  for (const definition of schema.definitions) byName.set(definition.name, definition)
+  const compiled = new Map<string, CompiledDefinition>()
+  const definitions = schema.definitions.map((definition): CompiledDefinition => {
+    const fields: CompiledField[] = []
+    const byId: (CompiledField | undefined)[] = []
+    const names: (string | undefined)[] = []
+    const values = new Map<string, number>()
+    if (definition.kind === 'ENUM')
+      for (const field of definition.fields) {
+        names[field.value] = field.name
+        values.set(field.name, field.value)
       }
-      if (!nativeTypes.includes(type) && !hasDefinition(definitions, type)) {
-        error(
-          'Invalid type ' + quote(type) + ' for field ' + quote(field.name),
-          field.line,
-          field.column
-        )
+    const kept = headers?.[definition.name]
+    const result: CompiledDefinition = {
+      name: definition.name,
+      kind: definition.kind,
+      fields,
+      byId,
+      names,
+      values,
+      header: definition.kind === 'MESSAGE' && kept !== undefined
+    }
+    compiled.set(definition.name, result)
+    return result
+  })
+  schema.definitions.forEach((definition, index) => {
+    if (definition.kind === 'ENUM') return
+    const target = definitions[index]
+    const fields = target.fields as CompiledField[]
+    const byId = target.byId as (CompiledField | undefined)[]
+    const kept = headers?.[definition.name]
+    for (const field of definition.fields) {
+      const compiledField = compileField(field, kept, byName, compiled)
+      fields.push(compiledField)
+      byId[field.value] = compiledField
+    }
+  })
+  return definitions
+}
+
+function compileField(
+  field: Field,
+  kept: readonly string[] | undefined,
+  byName: ReadonlyMap<string, Definition>,
+  compiled: ReadonlyMap<string, CompiledDefinition>
+): CompiledField {
+  const type = field.type
+  if (type === null)
+    error('Invalid type null for field ' + quote(field.name), field.line, field.column)
+  const native = NATIVE_TYPES.get(type)
+  const definition = native === undefined ? byName.get(type) : undefined
+  if (native === undefined && !definition)
+    error(
+      'Invalid type ' + quote(type) + ' for field ' + quote(field.name),
+      field.line,
+      field.column
+    )
+  return {
+    name: field.name,
+    id: field.value,
+    isArray: field.isArray,
+    isDeprecated: field.isDeprecated,
+    type: native ?? KIND_TYPES[(definition as Definition).kind],
+    definition: definition ? (compiled.get(definition.name) ?? null) : null,
+    kept: kept === undefined || kept.includes(field.name)
+  }
+}
+
+export function compileSchemaTables(schema: Schema, headers?: HeaderFields): CompiledSchema {
+  const definitions = compileDefinitions(schema, headers)
+  const byName = new Map(definitions.map((definition) => [definition.name, definition]))
+  /**
+   * How many whole decodes are running. A message type can nest itself, as instance overrides
+   * are records too, and a message read whole is read whole all the way down.
+   */
+  let wholeDepth = 0
+  const wholeDecoders = new WeakMap<CompiledDefinition, (bb: ByteBuffer) => RuntimeMessage>()
+
+  const definition = (name: string): CompiledDefinition => {
+    const found = byName.get(name)
+    if (!found) error('Invalid type ' + quote(name), 0, 0)
+    return found
+  }
+
+  const readValue = (field: CompiledField, bb: ByteBuffer): RuntimeValue => {
+    switch (field.type) {
+      case TYPE.BOOL:
+        return !!bb.readByte()
+      case TYPE.BYTE:
+        return bb.readByte()
+      case TYPE.INT:
+        return bb.readVarInt()
+      case TYPE.UINT:
+        return bb.readVarUint()
+      case TYPE.FLOAT:
+        return bb.readVarFloat()
+      case TYPE.STRING:
+        return bb.readString()
+      case TYPE.INT64:
+        return bb.readVarInt64()
+      case TYPE.UINT64:
+        return bb.readVarUint64()
+      case TYPE.ENUM:
+        return (field.definition as CompiledDefinition).names[bb.readVarUint()] as RuntimeValue
+      default:
+        return decode(field.definition as CompiledDefinition, bb)
+    }
+  }
+
+  const read = (field: CompiledField, bb: ByteBuffer): RuntimeValue => {
+    if (!field.isArray) return readValue(field, bb)
+    if (field.type === TYPE.BYTE) return bb.readByteArray()
+    const length = bb.readVarUint()
+    const values: RuntimeValue[] = Array.from({ length })
+    for (let i = 0; i < length; i++) values[i] = readValue(field, bb)
+    return values
+  }
+
+  const skipValue = (field: CompiledField, bb: ByteBuffer): void => {
+    switch (field.type) {
+      case TYPE.BOOL:
+      case TYPE.BYTE:
+        bb.readByte()
+        return
+      case TYPE.INT:
+      case TYPE.UINT:
+      case TYPE.ENUM:
+        bb.readVarUint()
+        return
+      case TYPE.FLOAT:
+        bb.readVarFloat()
+        return
+      case TYPE.STRING:
+        bb.skipString()
+        return
+      case TYPE.INT64:
+      case TYPE.UINT64:
+        bb.readVarUint64()
+        return
+      case TYPE.STRUCT:
+        for (const inner of (field.definition as CompiledDefinition).fields) skip(inner, bb)
+        return
+      default: {
+        const byId = (field.definition as CompiledDefinition).byId
+        for (let id = bb.readVarUint(); id !== 0; id = bb.readVarUint())
+          skip(byId[id] ?? invalidMessage(), bb)
       }
     }
   }
-}
 
-// Interprets a schema field-by-field instead of generating and `eval`-ing a
-// per-schema decoder/encoder (as `compileSchemaJS` + `new Function` do). A
-// `new Function(...)`-built codec is indistinguishable from `eval` to a CSP:
-// embedders that run under `script-src` without `unsafe-eval` (e.g. a
-// sandboxed plugin host) cannot call `compileSchema` at all otherwise. This
-// walk produces byte-identical output to the generated code — same field
-// order, same tag/no-tag rules for MESSAGE vs STRUCT, same deprecated-field
-// skip behavior — so it is a drop-in replacement, not a new format.
-function readField(
-  self: RuntimeCodec,
-  definitions: Definitions,
-  type: string,
-  bb: ByteBuffer
-): RuntimeValue {
-  switch (type) {
-    case 'bool':
-      return !!bb.readByte()
-    case 'byte':
-      return bb.readByte()
-    case 'int':
-      return bb.readVarInt()
-    case 'uint':
-      return bb.readVarUint()
-    case 'float':
-      return bb.readVarFloat()
-    case 'string':
-      return bb.readString()
-    case 'int64':
-      return bb.readVarInt64()
-    case 'uint64':
-      return bb.readVarUint64()
-    default: {
-      let definition = definitions[type]
-      if (!definition) error('Invalid type ' + quote(type), 0, 0)
-      if (definition.kind === 'ENUM') return asRuntimeEnum(self[definition.name])[bb.readVarUint()]
-      return asDecodeFunction(self['decode' + definition.name])(bb)
+  const skip = (field: CompiledField, bb: ByteBuffer): void => {
+    if (!field.isArray) {
+      skipValue(field, bb)
+      return
     }
+    if (field.type === TYPE.BYTE) {
+      bb.skipByteArray()
+      return
+    }
+    for (let length = bb.readVarUint(); length > 0; length--) skipValue(field, bb)
   }
-}
 
-function writeField(
-  self: RuntimeCodec,
-  definitions: Definitions,
-  type: string,
-  value: RuntimeValue,
-  bb: ByteBuffer
-): void {
-  switch (type) {
-    case 'bool':
-    case 'byte':
-      bb.writeByte(value as number)
-      return
-    case 'int':
-      bb.writeVarInt(value as number)
-      return
-    case 'uint':
-      bb.writeVarUint(value as number)
-      return
-    case 'float':
-      bb.writeVarFloat(value as number)
-      return
-    case 'string':
-      bb.writeString(value as string)
-      return
-    case 'int64':
-      bb.writeVarInt64(value as bigint | string)
-      return
-    case 'uint64':
-      bb.writeVarUint64(value as bigint | string)
-      return
-    default: {
-      let definition = definitions[type]
-      if (!definition) error('Invalid type ' + quote(type), 0, 0)
-      if (definition.kind === 'ENUM') {
-        let encoded = asRuntimeEnum(self[definition.name])[value as string]
-        if (encoded === undefined) {
-          throw new Error(
-            'Invalid value ' + JSON.stringify(value) + ' for enum ' + quote(definition.name)
-          )
+  const readInto = (field: CompiledField, bb: ByteBuffer, result: RuntimeMessage): void => {
+    if (field.isDeprecated) skip(field, bb)
+    else result[field.name] = read(field, bb)
+  }
+
+  const decode = (target: CompiledDefinition, bb: ByteBuffer): RuntimeMessage => {
+    const result: RuntimeMessage = {}
+    if (target.kind === 'STRUCT') {
+      for (const field of target.fields) readInto(field, bb, result)
+      return result
+    }
+    const asHeader = target.header && wholeDepth === 0
+    if (asHeader) {
+      hide(result, HEADER_BYTES, bb.bytes)
+      hide(result, HEADER_START, bb.offset)
+      hide(result, HEADER_WHOLE, wholeDecoder(target))
+    }
+    const byId = target.byId
+    for (let id = bb.readVarUint(); id !== 0; id = bb.readVarUint()) {
+      const field = byId[id] ?? invalidMessage()
+      if (asHeader && !field.kept) skip(field, bb)
+      else readInto(field, bb, result)
+    }
+    return result
+  }
+
+  const wholeDecoder = (target: CompiledDefinition): ((bb: ByteBuffer) => RuntimeMessage) => {
+    let whole = wholeDecoders.get(target)
+    if (!whole) {
+      whole = (bb) => {
+        wholeDepth++
+        try {
+          return decode(target, bb)
+        } finally {
+          wholeDepth--
         }
-        bb.writeVarUint(encoded as number)
-      } else {
-        asEncodeFunction(self['encode' + definition.name])(value as RuntimeMessage, bb)
       }
+      wholeDecoders.set(target, whole)
+    }
+    return whole
+  }
+
+  const writeValue = (field: CompiledField, value: RuntimeValue, bb: ByteBuffer): void => {
+    switch (field.type) {
+      case TYPE.BOOL:
+      case TYPE.BYTE:
+        bb.writeByte(value as number)
+        return
+      case TYPE.INT:
+        bb.writeVarInt(value as number)
+        return
+      case TYPE.UINT:
+        bb.writeVarUint(value as number)
+        return
+      case TYPE.FLOAT:
+        bb.writeVarFloat(value as number)
+        return
+      case TYPE.STRING:
+        bb.writeString(value as string)
+        return
+      case TYPE.INT64:
+        bb.writeVarInt64(value as bigint | string)
+        return
+      case TYPE.UINT64:
+        bb.writeVarUint64(value as bigint | string)
+        return
+      case TYPE.ENUM: {
+        const target = field.definition as CompiledDefinition
+        const encoded = target.values.get(value as string)
+        if (encoded === undefined)
+          throw new Error(
+            'Invalid value ' + JSON.stringify(value) + ' for enum ' + quote(target.name)
+          )
+        bb.writeVarUint(encoded)
+        return
+      }
+      default:
+        encode(field.definition as CompiledDefinition, value as RuntimeMessage, bb)
     }
   }
-}
 
-function readInto(
-  self: RuntimeCodec,
-  definitions: Definitions,
-  field: Field,
-  bb: ByteBuffer,
-  result: RuntimeMessage
-): void {
-  let type = field.type
-  if (type === null)
-    error('Invalid type null for field ' + quote(field.name), field.line, field.column)
-
-  if (field.isArray) {
-    if (field.isDeprecated) {
-      if (type === 'byte') bb.readByteArray()
-      else {
-        let length = bb.readVarUint()
-        while (length-- > 0) readField(self, definitions, type, bb)
-      }
+  const write = (field: CompiledField, value: RuntimeValue, bb: ByteBuffer): void => {
+    if (!field.isArray) {
+      writeValue(field, value, bb)
       return
     }
-    if (type === 'byte') {
-      result[field.name] = bb.readByteArray()
-      return
-    }
-    let length = bb.readVarUint()
-    let values: RuntimeValue[] = Array.from({ length })
-    result[field.name] = values
-    for (let i = 0; i < length; i++) values[i] = readField(self, definitions, type, bb)
-    return
-  }
-
-  if (field.isDeprecated) {
-    readField(self, definitions, type, bb)
-    return
-  }
-
-  result[field.name] = readField(self, definitions, type, bb)
-}
-
-function writeFrom(
-  self: RuntimeCodec,
-  definitions: Definitions,
-  field: Field,
-  value: RuntimeValue,
-  bb: ByteBuffer
-): void {
-  let type = field.type
-  if (type === null)
-    error('Invalid type null for field ' + quote(field.name), field.line, field.column)
-
-  if (field.isArray) {
-    if (type === 'byte') {
+    if (field.type === TYPE.BYTE) {
       bb.writeByteArray(value as Uint8Array)
       return
     }
-    let values = value as RuntimeValue[]
+    const values = value as RuntimeValue[]
     bb.writeVarUint(values.length)
-    for (let i = 0; i < values.length; i++) writeField(self, definitions, type, values[i], bb)
-    return
+    for (const item of values) writeValue(field, item, bb)
   }
 
-  writeField(self, definitions, type, value, bb)
-}
-
-function interpretDecode(
-  self: RuntimeCodec,
-  definitions: Definitions,
-  definition: Definition,
-  header?: HeaderDecoding
-) {
-  let fieldsById = new Map<number, Field>()
-  for (let i = 0; i < definition.fields.length; i++)
-    fieldsById.set(definition.fields[i].value, definition.fields[i])
-  return function (bb: ByteBuffer | Uint8Array): RuntimeMessage {
-    let buffer = bb instanceof self.ByteBuffer ? bb : new self.ByteBuffer(bb)
-    let result: RuntimeMessage = {}
-
-    if (definition.kind === 'MESSAGE') {
-      const asHeader = header && wholeDepth === 0 ? header : undefined
-      if (asHeader) {
-        hide(result, HEADER_BYTES, buffer.bytes)
-        hide(result, HEADER_START, buffer.offset)
-        hide(result, HEADER_WHOLE, asHeader.whole)
-      }
-      while (true) {
-        const id = buffer.readVarUint()
-        if (id === 0) return result
-        const field = fieldsById.get(id)
-        if (!field) throw new Error('Attempted to parse invalid message')
-        if (asHeader && !asHeader.keep.has(field.name)) asHeader.skipper.skipField(field, buffer)
-        else readInto(self, definitions, field, buffer, result)
-      }
-    } else {
-      for (let i = 0; i < definition.fields.length; i++) {
-        readInto(self, definitions, definition.fields[i], buffer, result)
-      }
-      return result
-    }
-  }
-}
-
-function interpretEncode(self: RuntimeCodec, definitions: Definitions, definition: Definition) {
-  return function (message: RuntimeMessage, bb?: ByteBuffer): Uint8Array | undefined {
-    let isTopLevel = !bb
-    let buffer = bb || new self.ByteBuffer()
-
-    for (let i = 0; i < definition.fields.length; i++) {
-      let field = definition.fields[i]
+  const encode = (target: CompiledDefinition, message: RuntimeMessage, bb: ByteBuffer): void => {
+    const isMessage = target.kind === 'MESSAGE'
+    for (const field of target.fields) {
       if (field.isDeprecated) continue
-      let value = message[field.name]
+      const value = message[field.name]
       if (value != null) {
-        if (definition.kind === 'MESSAGE') buffer.writeVarUint(field.value)
-        writeFrom(self, definitions, field, value, buffer)
-      } else if (definition.kind === 'STRUCT') {
+        if (isMessage) bb.writeVarUint(field.id)
+        write(field, value, bb)
+      } else if (!isMessage) {
         throw new Error('Missing required field ' + quote(field.name))
       }
     }
-
-    if (definition.kind === 'MESSAGE') buffer.writeVarUint(0)
-    if (isTopLevel) return buffer.toUint8Array()
-    return undefined
+    if (isMessage) bb.writeVarUint(0)
   }
+
+  return { definitions, definition, read, skip, write, decode, encode }
 }
 
+/**
+ * Interprets a schema through its compiled tables instead of generating and `eval`-ing a
+ * per-schema decoder/encoder (as `compileSchemaJS` + `new Function` do). A `new Function(...)`-
+ * built codec is indistinguishable from `eval` to a CSP: embedders that run under `script-src`
+ * without `unsafe-eval` (e.g. a sandboxed plugin host) cannot call `compileSchema` at all
+ * otherwise. The tables produce byte-identical output to the generated code: same field order,
+ * same tag/no-tag rules for MESSAGE vs STRUCT, same deprecated-field skip behavior.
+ */
 export function compileSchemaRuntime(schema: Schema, headers?: HeaderFields): RuntimeCodec {
-  let definitions: Definitions = Object.create(null) as Definitions
-  for (let i = 0; i < schema.definitions.length; i++) {
-    definitions[schema.definitions[i].name] = schema.definitions[i]
-  }
-
-  validateFieldTypes(definitions)
-
-  let result: RuntimeCodec = {
-    ByteBuffer: ByteBuffer
-  }
-  let skipper: SchemaSkipper | undefined
-
-  for (let i = 0; i < schema.definitions.length; i++) {
-    let definition = schema.definitions[i]
-
-    switch (definition.kind) {
-      case 'ENUM': {
-        let value: RuntimeEnum = {}
-        for (let j = 0; j < definition.fields.length; j++) {
-          let field = definition.fields[j]
-          value[field.name] = field.value
-          value[field.value] = field.name
-        }
-        result[definition.name] = value
-        break
+  const compiled = compileSchemaTables(schema, headers)
+  const codec: RuntimeCodec = { ByteBuffer, schema: compiled }
+  for (const definition of compiled.definitions) {
+    if (definition.kind === 'ENUM') {
+      const value: RuntimeEnum = {}
+      for (const [name, member] of definition.values) {
+        value[name] = member
+        value[member] = name
       }
-
-      case 'STRUCT':
-      case 'MESSAGE': {
-        const keep = definition.kind === 'MESSAGE' ? headers?.[definition.name] : undefined
-        const header: HeaderDecoding | undefined = keep && {
-          keep: new Set(keep),
-          skipper: (skipper ??= createSchemaSkipper(schema)),
-          whole: wholeDecoder(interpretDecode(result, definitions, definition))
-        }
-        result['decode' + definition.name] = interpretDecode(
-          result,
-          definitions,
-          definition,
-          header
-        )
-        result['encode' + definition.name] = interpretEncode(result, definitions, definition)
-        break
-      }
-
-      default: {
-        error(
-          'Invalid definition kind ' + quote(definition.kind),
-          definition.line,
-          definition.column
-        )
-        break
-      }
+      codec[definition.name] = value
+      continue
+    }
+    codec['decode' + definition.name] = (bb: ByteBuffer | Uint8Array): RuntimeMessage =>
+      compiled.decode(definition, bb instanceof codec.ByteBuffer ? bb : new codec.ByteBuffer(bb))
+    codec['encode' + definition.name] = (
+      message: RuntimeMessage,
+      bb?: ByteBuffer
+    ): Uint8Array | undefined => {
+      const buffer = bb ?? new codec.ByteBuffer()
+      compiled.encode(definition, message, buffer)
+      return bb ? undefined : buffer.toUint8Array()
     }
   }
-
-  return result
+  return codec
 }

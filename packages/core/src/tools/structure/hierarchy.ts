@@ -63,8 +63,9 @@ export const flattenNodes = defineTool({
     ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Node IDs to flatten'))
   }),
   execute: (figma, { ids }) => {
-    const result = figma.flattenNode(ids)
-    return nodeSummary(result)
+    const nodes = requireNodes(figma, ids)
+    if (!nodes) return { error: 'One or more node IDs were not found' }
+    return nodeSummary(figma.flatten(nodes, nodes[0].parent ?? figma.currentPage))
   }
 })
 

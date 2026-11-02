@@ -32,11 +32,14 @@
   "noResults": "Sin resultados",
   "save": "Guardar",
   "done": "Hecho",
+  "task": "Tarea",
   "back": "Atrás",
   "supported": "Compatible",
   "unsupported": "No compatible",
   "tokens": "tokens",
   "clear": "Limpiar",
   "dismiss": "Descartar",
-  "browserSupport": "Consultar compatibilidad"
+  "browserSupport": "Consultar compatibilidad",
+  "showPassword": "Mostrar contraseña",
+  "hidePassword": "Ocultar contraseña"
 }

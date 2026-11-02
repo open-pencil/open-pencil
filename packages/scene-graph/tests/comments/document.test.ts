@@ -1,13 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph, type CommentThread } from '@open-pencil/scene-graph'
 import {
   commentAnchor,
   commentPosition,
   readComments,
-  SceneGraph,
-  writeComments,
-  type CommentThread
-} from '@open-pencil/scene-graph'
+  writeComments
+} from '@open-pencil/scene-graph/comments'
 
 function thread(id: string, patch: Partial<CommentThread> = {}): CommentThread {
   return {
@@ -75,4 +74,3 @@ describe('document comments', () => {
     expect(commentAnchor(graph, page.id, { x: 115, y: 115 }).nodeId).toBe(frame.id)
   })
 })
-

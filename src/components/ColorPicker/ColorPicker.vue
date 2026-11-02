@@ -2,8 +2,11 @@
 import type { VNode } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { ColorPickerRoot, holdsPickerOpen, useEditor, useI18n } from '@open-pencil/vue'
-import type { OkHCLControls } from '@open-pencil/vue'
+import type { OkHCLControls } from '@open-pencil/vue/controls/color-model'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { ColorPickerRoot } from '@open-pencil/vue/primitives/ColorPicker'
+import { holdsPickerOpen } from '@open-pencil/vue/canvas/eyedropper'
+import { useEditor } from '@open-pencil/vue'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'

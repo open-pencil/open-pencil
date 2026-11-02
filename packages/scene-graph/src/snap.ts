@@ -1,6 +1,6 @@
-import type { SceneNode } from './'
 import { rotatedBBox } from './geometry'
 import type { Rect } from './primitives'
+import type { SceneNode } from './types'
 
 const DEFAULT_SNAP_THRESHOLD = 5
 
@@ -9,6 +9,8 @@ export interface SnapGuide {
   position: number
   from: number
   to: number
+  /** Points along the guide that lined up, marked with a cross: a guide through path vertices. */
+  marks?: number[]
 }
 
 export interface SnapResult {

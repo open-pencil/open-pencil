@@ -34,15 +34,12 @@ A practical shell often looks like this:
 ```vue
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
+import { createDefaultEditorState, createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import {
-  provideEditor,
-  CanvasRoot,
-  CanvasSurface,
-  ToolbarRoot,
-  PageListRoot,
-} from '@open-pencil/vue'
+import { provideEditor } from '@open-pencil/vue'
+import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
+import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
+import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
 
 const graph = new SceneGraph()
 const page = graph.getPages()[0]

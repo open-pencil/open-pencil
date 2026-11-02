@@ -8,6 +8,33 @@ interface Resource {
 }
 
 describe('ResourceCache', () => {
+  test('deleteWhere disposes the selected entries as deletes and keeps the rest', () => {
+    const removed: Array<[string, CacheRemovalReason]> = []
+    const cache = new ResourceCache<string, Resource>({
+      maxEntries: 4,
+      dispose: (_, key, reason) => removed.push([key, reason])
+    })
+    for (const [id, key] of ['a|1', 'a|2', 'b|1'].entries()) cache.set(key, { id, units: 1 })
+    cache.deleteWhere((_, key) => key.startsWith('a|'))
+    expect([...cache].map(([key]) => key)).toEqual(['b|1'])
+    expect(removed).toEqual([
+      ['a|1', 'delete'],
+      ['a|2', 'delete']
+    ])
+  })
+
+  test('deleteWhere removes every selected entry even when a disposal throws', () => {
+    const cache = new ResourceCache<string, Resource>({
+      maxEntries: 4,
+      dispose: (value) => {
+        if (value.id === 0) throw new Error('dispose failed')
+      }
+    })
+    for (const [id, key] of ['a|1', 'a|2', 'b|1'].entries()) cache.set(key, { id, units: 1 })
+    expect(() => cache.deleteWhere((_, key) => key.startsWith('a|'))).toThrow(AggregateError)
+    expect([...cache].map(([key]) => key)).toEqual(['b|1'])
+  })
+
   test('touches hits but not peeks or iteration, and disposes every removal', () => {
     const removed: Array<[number, CacheRemovalReason]> = []
     const cache = new ResourceCache<string, Resource>({
@@ -132,6 +159,31 @@ describe('ResourceCache', () => {
     expect(cache.weight).toBe(4)
     expect(cache.size).toBe(2)
     expect(cache.peek('next')).toBe(2)
+  })
+
+  test('resize evicts the least recently used entries past a smaller budget and admits larger ones', () => {
+    const removed: Array<[string, CacheRemovalReason]> = []
+    const cache = new ResourceCache<string, Resource>({
+      maxWeight: 6,
+      weight: (value) => value.units,
+      dispose: (_, key, reason) => removed.push([key, reason])
+    })
+    for (const [id, key] of ['a', 'b', 'c'].entries()) cache.set(key, { id, units: 2 })
+    cache.get('a')
+    expect(cache.set('d', { id: 3, units: 8 })).toBe(false)
+    cache.resize(10)
+    expect(cache.capacity).toBe(10)
+    expect(cache.set('d', { id: 3, units: 4 })).toBe(true)
+    expect(removed).toEqual([])
+    cache.resize(4)
+    expect([...cache].map(([key]) => key)).toEqual(['d'])
+    expect(removed).toEqual([
+      ['b', 'evict'],
+      ['c', 'evict'],
+      ['a', 'evict']
+    ])
+    expect(() => cache.resize(-1)).toThrow(RangeError)
+    expect(() => cache.resize(Infinity)).toThrow(RangeError)
   })
 
   test('validates budgets and leaves zero-capacity resources with the caller', () => {

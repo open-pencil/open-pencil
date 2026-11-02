@@ -4,7 +4,7 @@ import {
   cjkLocalFallbackFamilies,
   fontFallbackEntry,
   fontFallbackManifest
-} from '@open-pencil/core'
+} from '@open-pencil/core/text'
 
 describe('font fallback manifest', () => {
   test('selects platform CJK local candidates', () => {

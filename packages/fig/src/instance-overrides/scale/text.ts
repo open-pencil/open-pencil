@@ -1,5 +1,5 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { Vector } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 const scaledVector = (value: Vector, factor: number): Vector => ({
   x: value.x * factor,

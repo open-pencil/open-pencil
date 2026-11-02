@@ -1,4 +1,4 @@
-import { UsageBatchSchema } from '#feedback/contract'
+import { usageBatchSchema } from '#feedback/contract'
 import type { FeedbackEnv, FeedbackServices } from '#feedback/env'
 import { rateLimited, validatedJSON } from '#feedback/http/request'
 import { Hono } from 'hono'
@@ -10,7 +10,7 @@ export function ingestRoutes(services: FeedbackServices) {
   return new Hono<FeedbackEnv>().post(
     '/ingest',
     rateLimited((env) => env.INGEST_LIMITER),
-    validatedJSON(UsageBatchSchema),
+    validatedJSON(usageBatchSchema),
     async (c) => {
       const response = await services
         .fetch(`${c.env.POSTHOG_HOST}/batch/`, {

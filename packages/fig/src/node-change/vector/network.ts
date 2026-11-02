@@ -1,4 +1,4 @@
-import type { Paint } from '@open-pencil/kiwi/fig/codec'
+import type { Paint, StyleReference } from '@open-pencil/kiwi/fig/codec'
 import type {
   HandleMirroring,
   VectorNetwork,
@@ -8,6 +8,9 @@ import type {
   WindingRule
 } from '@open-pencil/scene-graph'
 
+import { convertFills, fillToKiwiPaint } from '../paint'
+import { styleRefId } from '../style/refs'
+
 export interface StyleOverride {
   styleID: number
   handleMirroring?: string
@@ -15,12 +18,33 @@ export interface StyleOverride {
   strokeJoin?: string
   cornerRadius?: number
   fillPaints?: Paint[]
+  /** The shared fill style a region's paints come from. */
+  styleIdForFill?: StyleReference
 }
 
 export function decodeVectorNetworkBlob(
   data: Uint8Array,
   styleOverrideTable?: StyleOverride[]
 ): VectorNetwork {
+  return readVectorNetworkBlob(data, styleOverrideTable).network
+}
+
+/**
+ * A region's own paints, and the shared style they come from, from its style table entry. An
+ * entry with an empty list is a region filled with nothing, not one that takes the layer's.
+ */
+function regionFill(style: StyleOverride | undefined): Pick<VectorRegion, 'fills' | 'fillStyleId'> {
+  if (!style?.fillPaints) return {}
+  const fills = convertFills(style.fillPaints)
+  const fillStyleId = styleRefId(style.styleIdForFill)
+  return fillStyleId ? { fills, fillStyleId } : { fills }
+}
+
+/** The network a blob holds, with each segment's style word, which the network itself drops. */
+function readVectorNetworkBlob(
+  data: Uint8Array,
+  styleOverrideTable?: StyleOverride[]
+): { network: VectorNetwork; segmentStyles: number[] } {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
   let offset = 0
 
@@ -55,7 +79,9 @@ export function decodeVectorNetworkBlob(
   }
 
   const segments: VectorSegment[] = []
+  const segmentStyles: number[] = []
   for (let index = 0; index < segmentCount; index++) {
+    segmentStyles.push(view.getUint32(offset, true))
     offset += 4
     const start = view.getUint32(offset, true)
     offset += 4
@@ -80,8 +106,9 @@ export function decodeVectorNetworkBlob(
   const regions: VectorRegion[] = []
   for (let index = 0; index < regionCount; index++) {
     // The low bit is the winding rule; the rest is the region's style ID, which names its fill.
-    const windingRule: WindingRule =
-      (view.getUint32(offset, true) & 1) === 1 ? 'NONZERO' : 'EVENODD'
+    const word = view.getUint32(offset, true)
+    const windingRule: WindingRule = (word & 1) === 1 ? 'NONZERO' : 'EVENODD'
+    const style = styles.get(word >>> 1)
     offset += 4
     const loopCount = view.getUint32(offset, true)
     offset += 4
@@ -96,10 +123,10 @@ export function decodeVectorNetworkBlob(
       }
       loops.push(loop)
     }
-    regions.push({ windingRule, loops })
+    regions.push({ windingRule, loops, ...regionFill(style) })
   }
 
-  return { vertices, segments, regions }
+  return { network: { vertices, segments, regions }, segmentStyles }
 }
 
 function vertexStyleKey(vertex: VectorVertex): string {
@@ -111,9 +138,18 @@ function vertexStyleKey(vertex: VectorVertex): string {
   ].join('|')
 }
 
-export function buildStyleOverrideTable(network: VectorNetwork): {
+/**
+ * The style overrides a network's vertices and regions name: vertex entries are shared by equal
+ * styles, and each region with paints of its own gets an entry, as Figma writes them, naming the
+ * shared style they come from through `styleReference`.
+ */
+export function buildStyleOverrideTable(
+  network: VectorNetwork,
+  styleReference?: (id: string) => StyleReference
+): {
   table: StyleOverride[]
   styleToId: Map<string, number>
+  regionStyleIds: number[]
 } {
   const styleToId = new Map<string, number>()
   const table: StyleOverride[] = []
@@ -138,12 +174,25 @@ export function buildStyleOverrideTable(network: VectorNetwork): {
     table.push(entry)
     nextId++
   }
-  return { table, styleToId }
+  const regionStyleIds = network.regions.map((region) => {
+    if (!region.fills) return 0
+    const entry: StyleOverride = { styleID: nextId, fillPaints: region.fills.map(fillToKiwiPaint) }
+    if (region.fillStyleId && styleReference)
+      entry.styleIdForFill = styleReference(region.fillStyleId)
+    table.push(entry)
+    return nextId++
+  })
+  return { table, styleToId, regionStyleIds }
 }
 
+/**
+ * Encodes a network as Figma's vector network blob. `regionStyleIds[i]` names the style override
+ * that fills region `i`; Figma rebuilds a region's fill from it when the vector is edited.
+ */
 export function encodeVectorNetworkBlob(
   network: VectorNetwork,
-  styleToId?: Map<string, number>
+  styleToId?: Map<string, number>,
+  regionStyleIds?: readonly number[]
 ): Uint8Array {
   let regionBytes = 0
   for (const region of network.regions) {
@@ -189,8 +238,10 @@ export function encodeVectorNetworkBlob(
     offset += 4
   }
 
-  for (const region of network.regions) {
-    view.setUint32(offset, region.windingRule === 'EVENODD' ? 0 : 1, true)
+  for (const [index, region] of network.regions.entries()) {
+    // The low bit is the winding rule; the rest is the region's style ID.
+    const styleID = regionStyleIds?.[index] ?? 0
+    view.setUint32(offset, (styleID << 1) | (region.windingRule === 'EVENODD' ? 0 : 1), true)
     offset += 4
     view.setUint32(offset, region.loops.length, true)
     offset += 4
@@ -205,4 +256,20 @@ export function encodeVectorNetworkBlob(
   }
 
   return new Uint8Array(buffer)
+}
+
+/** The style word Figma writes on the one segment a text path starts on. */
+const TEXT_PATH_START_SEGMENT = 0x1ffffff
+
+/**
+ * The segment a text path starts on: Figma marks it by writing {@link TEXT_PATH_START_SEGMENT}
+ * as its style word, and `textPathStart.tValue` is the position within it. Segment 0 when none is
+ * marked, as in Figma.
+ */
+export function textPathStartSegment(blob: Uint8Array): number {
+  const { segmentStyles } = readVectorNetworkBlob(blob)
+  const index = segmentStyles.findIndex(
+    (word) => (word & TEXT_PATH_START_SEGMENT) === TEXT_PATH_START_SEGMENT
+  )
+  return Math.max(index, 0)
 }

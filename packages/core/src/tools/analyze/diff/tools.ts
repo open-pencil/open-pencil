@@ -3,8 +3,12 @@ import * as v from 'valibot'
 import { parseJSXAttributes, sceneNodeAttributes, sceneNodeToJSX } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { toolNumber, nodeIdInput, nodeComparisonInput } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import {
+  toolNumber,
+  nodeIdInputSchema,
+  nodeComparisonInputSchema,
+  defineTool
+} from '#core/tools/schema'
 
 import { applyOperations, planOperations, type ApplyStatus } from './apply'
 import { formatOperations, parseOperations } from './format'
@@ -44,7 +48,7 @@ export const diffCreate = defineTool({
     'Patch that turns one node tree into another, as JSX attribute changes per node plus moved, added, and removed children. Children are matched by name. Apply it to the first tree with diff_apply.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
-    ...nodeComparisonInput.entries,
+    ...nodeComparisonInputSchema.entries,
     depth: v.optional(
       toolNumber(
         v.pipe(
@@ -75,7 +79,7 @@ export const diffShow = defineTool({
     'Preview setting JSX attributes on a node, without changing it. Returns the patch, which diff_apply applies.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     attributes: v.pipe(
       v.string(),
       v.description(

@@ -35,7 +35,9 @@ import { computed, nextTick, normalizeClass, ref, useId, useTemplateRef, watch }
 
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { presetNumber, presetNumberSizes } from '@/theme/input/preset-number'
+import { presetNumberSizes } from '@/theme/input/preset-number'
+
+import { presetNumber } from './preset-number'
 
 const {
   presets,
@@ -123,6 +125,7 @@ function commitDraft(): void {
         ref="field"
         v-model="draft"
         type="number"
+        size="xs"
         :min="min"
         :max="max"
         :step="1"

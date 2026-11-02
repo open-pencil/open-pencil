@@ -12,20 +12,22 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { toolCursor, useCommentMessages } from '@open-pencil/vue'
+import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
+import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-import { COMMENT_PIN_SIZE, comments as commentsTheme } from '@/theme/comments'
+import { COMMENT_PIN_SIZE } from '@/theme/comments'
 
 import { useCommentAuthor } from './author'
 import CommentActionsMenu from './CommentActionsMenu.vue'
 import CommentComposer from './CommentComposer.vue'
 import CommentPin from './CommentPin.vue'
 import CommentThreadCard from './CommentThreadCard.vue'
+import { comments as commentsTheme } from './ui'
 import { usePinDrag } from './usePinDrag'
 
 const { canvasEl, drawn = null } = defineProps<{

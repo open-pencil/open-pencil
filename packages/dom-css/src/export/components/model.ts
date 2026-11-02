@@ -7,18 +7,17 @@ import type { StateElement, StateStyles } from '#dom-css/behaviours/states/types
 import { uniq } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   behaviourContract,
   behaviourProperties,
   layerPath,
   readBehaviour,
-  slotPropertyId,
   textBinding,
-  variantDefaultValue,
-  type Behaviour,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type Behaviour
+} from '@open-pencil/scene-graph/behaviours'
+import { variantDefaultValue } from '@open-pencil/scene-graph/components'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import type { SceneGraphToDesignOptions } from '../projection'
 import { claimName, identifierName } from '../storybook/names'

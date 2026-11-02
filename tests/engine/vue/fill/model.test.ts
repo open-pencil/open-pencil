@@ -7,9 +7,9 @@ import {
   fillCategory,
   fillIsTransparent,
   fillSwatchBackground,
-  useFill,
-  useGradientStops
-} from '@open-pencil/vue'
+  useFill
+} from '@open-pencil/vue/primitives/Fill'
+import { useGradientStops } from '@open-pencil/vue/primitives/GradientEditor'
 
 const solid: Fill = {
   type: 'SOLID',

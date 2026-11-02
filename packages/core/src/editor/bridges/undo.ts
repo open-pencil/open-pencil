@@ -31,7 +31,8 @@ export function createUndoBridge(
     },
     snapshotPage: undoActions.snapshotPage,
     restorePageFromSnapshot: undoActions.restorePageFromSnapshot,
-    captureDocumentChange: undoActions.captureDocumentChange,
+    recordEdit: undoActions.recordEdit,
+    recordEditAsync: undoActions.recordEditAsync,
     restoreDocumentChange: undoActions.restoreDocumentChange,
     pushUndoEntry: undoActions.pushUndoEntry,
     pushUndoStep: undoActions.pushUndoStep

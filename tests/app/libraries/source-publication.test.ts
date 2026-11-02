@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import {
   readSourceLibraryPublication,
   writeSourceLibraryPublication
 } from '@open-pencil/core/library'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('source library publication identity', () => {

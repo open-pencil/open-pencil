@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogDescription,
-  AlertDialogTitle
-} from 'reka-ui'
+import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'reka-ui'
 import { computed } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -33,6 +28,14 @@ const {
 
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>('open', { default: false })
+/**
+ * Confirms, then closes. Reka's action closes first, so a caller that forgets its pending action
+ * when the dialog closes would lose it before the confirmation arrived.
+ */
+function confirm() {
+  emit('confirm')
+  open.value = false
+}
 const confirmColor = computed(() => {
   if (tone === 'danger') return 'error'
   if (tone === 'neutral') return 'neutral'
@@ -45,8 +48,12 @@ const confirmColor = computed(() => {
     <div class="border-b border-border px-4 py-3">
       <AlertDialogTitle class="text-sm font-semibold text-surface">{{ heading }}</AlertDialogTitle>
     </div>
-    <AppDialogBody v-if="description">
-      <AlertDialogDescription class="text-xs text-muted">{{ description }}</AlertDialogDescription>
+    <AppDialogBody v-if="description || $slots.default">
+      <AlertDialogDescription v-if="description" class="text-xs text-muted">{{
+        description
+      }}</AlertDialogDescription>
+      <!-- What the person must do before confirming, such as typing a name. -->
+      <slot />
     </AppDialogBody>
     <AppDialogFooter>
       <AlertDialogCancel as-child>
@@ -54,16 +61,14 @@ const confirmColor = computed(() => {
           cancelLabel
         }}</AppButton>
       </AlertDialogCancel>
-      <AlertDialogAction as-child>
-        <AppButton
-          :color="confirmColor"
-          variant="solid"
-          :disabled="confirmDisabled"
-          :loading="confirmLoading"
-          @click="emit('confirm')"
-          >{{ confirmLabel }}</AppButton
-        >
-      </AlertDialogAction>
+      <AppButton
+        :color="confirmColor"
+        variant="solid"
+        :disabled="confirmDisabled"
+        :loading="confirmLoading"
+        @click="confirm"
+        >{{ confirmLabel }}</AppButton
+      >
     </AppDialogFooter>
   </AppAlertDialogRoot>
 </template>

@@ -1,8 +1,8 @@
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
-import { fontManager } from '#core/text/fonts'
-import { collectGraphFontRequirements } from '#core/text/requirements'
-import { missingGraphFontScripts } from '#core/text/resolved-requirements'
+import { fontManager } from '#core/text/font/manager'
+import { collectGraphFontRequirements } from '#core/text/requirements/collect'
+import { missingGraphFontScripts } from '#core/text/requirements/resolved'
 
 export function createClipboardFontActions(ctx: EditorContext) {
   async function loadFontsForNodes(nodeIds: string[]) {

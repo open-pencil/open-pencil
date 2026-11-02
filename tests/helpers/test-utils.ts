@@ -1,11 +1,11 @@
 import { describe } from 'bun:test'
 
-// Tests that don't run are not useful, but it may be desirable to run only a short subset of tests.
-// Set BUN_HEAVY_TESTS to false to skip tests marked as heavy, and set it to true to run them.
-// By default, all tests are run.
-export const runsHeavyTests = process.env.BUN_HEAVY_TESTS
-  ? ['1', 't', 'true'].includes(process.env.BUN_HEAVY_TESTS.trim().toLowerCase())
-  : true
+// Heavy tests parse the large fixtures, gigabytes each, and run only when BUN_HEAVY_TESTS is
+// true, which the unit test runner sets while giving each heavy file its own process. A bare
+// `bun test` over a directory skips them, so it cannot hold several such graphs in one process.
+export const runsHeavyTests = ['1', 't', 'true'].includes(
+  (process.env.BUN_HEAVY_TESTS ?? '').trim().toLowerCase()
+)
 
 export const heavy = describe.if(runsHeavyTests)
 

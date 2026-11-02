@@ -1,5 +1,6 @@
-import type { SceneGraph } from '../index'
-import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
+import { isGeneratedFrame } from '../generated'
+import type { SceneGraph } from '../graph'
+import { getInstanceOverride, setInstanceOverride } from '../instances/overrides'
 import { cloneChildrenWithMapping } from '../instances/sync'
 import type { SceneNode } from '../types'
 import { ownsSlotContent, slotPropertyId } from './frames'
@@ -8,12 +9,13 @@ import { ownsSlotContent, slotPropertyId } from './frames'
  * Where layers may be added, moved, or removed under a parent:
  * - `free`: outside any instance, or inside a component definition;
  * - `slot`: inside a slot of an instance, whose content the instance owns or can claim;
- * - `locked`: anywhere else inside an instance, whose layers come from its component.
+ * - `locked`: anywhere else inside an instance, whose layers come from its component, or inside a
+ *   generated frame such as a sticky note, whose layers come from its template.
  */
 export type SlotScope =
   | { kind: 'free' }
   | { kind: 'slot'; frame: SceneNode; instance: SceneNode; propertyId: string }
-  | { kind: 'locked'; instance: SceneNode }
+  | { kind: 'locked'; owner: SceneNode }
 
 function parentOf(graph: SceneGraph, node: SceneNode): SceneNode | undefined {
   return node.parentId ? graph.nodes.get(node.parentId) : undefined
@@ -33,7 +35,8 @@ export function slotScope(graph: SceneGraph, parentId: string): SlotScope {
       const instance = nearestInstance(graph, current)
       return instance ? { kind: 'slot', frame: current, instance, propertyId } : { kind: 'free' }
     }
-    if (current.type === 'INSTANCE') return { kind: 'locked', instance: current }
+    if (current.type === 'INSTANCE' || isGeneratedFrame(current))
+      return { kind: 'locked', owner: current }
     current = parentOf(graph, current)
   }
   return { kind: 'free' }

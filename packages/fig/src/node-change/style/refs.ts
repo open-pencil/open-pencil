@@ -1,4 +1,5 @@
-import type { GUID, NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 
 const TEXT_STYLE_FIELDS = [

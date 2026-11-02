@@ -1,11 +1,11 @@
 import { computed } from 'vue'
 
+import { readIcon } from '@open-pencil/scene-graph/icons'
 import {
   canCreateSlot as canBecomeSlot,
-  readIcon,
   slotOwner,
   slotPropertyId
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/slots'
 
 import { useEditor } from '#vue/editor/context'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
@@ -54,6 +54,9 @@ export function useSelectionState() {
     return !!slotOwner(editor.graph, first)
   })
 
+  /** Whether the selection holds layers the Auto Arrange layouts take. */
+  const canAutoArrange = useSceneComputed(() => editor.canAutoArrangeNodes([...selectedIds.value]))
+
   return {
     editor,
     selectedIds,
@@ -66,6 +69,7 @@ export function useSelectionState() {
     isComponent,
     isGroup,
     canCreateComponentSet,
-    canCreateSlot
+    canCreateSlot,
+    canAutoArrange
   }
 }

@@ -28,6 +28,8 @@ export interface VoiceMembership {
 export interface CollabState {
   /** Whether the active tab is in a room. */
   inRoom: boolean
+  /** Whether the person may leave it, which a stored document's room never offers. */
+  canLeave: boolean
   roomId: string | null
   status: RoomStatus | null
   peers: RemotePeer[]
@@ -39,6 +41,7 @@ export interface CollabState {
 
 export const DEFAULT_COLLAB_STATE: CollabState = {
   inRoom: false,
+  canLeave: false,
   roomId: null,
   status: null,
   peers: [],

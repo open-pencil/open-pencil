@@ -2,6 +2,13 @@ import type { GenericSchema } from 'valibot'
 import { useForm } from 'vee-validate'
 import { watch, type Ref } from 'vue'
 
+/** A field is checked when the person leaves it, then on every change until it is right. */
+export const validateAfterFirstError = (state: { errors: string[] }) => ({
+  validateOnModelUpdate: state.errors.length > 0,
+  validateOnChange: false,
+  validateOnInput: false
+})
+
 /** Validate a non-secret projection without moving persistence into the form layer. */
 export function useSettingsValidation(
   values: Readonly<Ref<Record<string, string | boolean>>>,
@@ -16,11 +23,7 @@ export function useSettingsValidation(
     for (const field of Object.keys(values.value)) {
       if (registered.has(field)) continue
       registered.add(field)
-      form.defineField(field, (state) => ({
-        validateOnModelUpdate: state.errors.length > 0,
-        validateOnChange: false,
-        validateOnInput: false
-      }))
+      form.defineField(field, validateAfterFirstError)
     }
   }
   registerFields()

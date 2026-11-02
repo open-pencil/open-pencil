@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { FRAME_PRESET_CATEGORIES, type FramePreset } from '@/app/editor/frame-presets'

@@ -29,6 +29,8 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>P</kbd> | Pen | ✅ |
 | <kbd>⇧</kbd><kbd>P</kbd> | Pencil | ✅ |
 | <kbd>T</kbd> | Text | ✅ |
+| — | Sticky note (FigJam) | ✅ (toolbar, hidden by default) |
+| — | Connector (FigJam) | ✅ (toolbar, hidden by default) |
 | <kbd>C</kbd> | Comment | ✅ |
 | <kbd>I</kbd> | Eyedropper | ✅ |
 
@@ -59,8 +61,8 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>⌘</kbd><kbd>A</kbd> | Select All | ✅ |
 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>A</kbd> | Select Inverse | ✅ |
 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy as PNG | ✅ |
-| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy Properties | 🔲 |
-| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>V</kbd> | Paste Properties | 🔲 |
+| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy Properties | ✅ |
+| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>V</kbd> | Paste Properties | ✅ |
 
 ## View
 

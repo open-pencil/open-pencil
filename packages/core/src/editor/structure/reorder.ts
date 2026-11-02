@@ -1,6 +1,7 @@
 import { pick } from 'es-toolkit'
 
-import { createsComponentCycle, TRANSFORM_FIELDS } from '@open-pencil/scene-graph'
+import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
+import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { prepareSlotEdits } from '#core/editor/components/slots'
@@ -20,7 +21,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
       ctx.graph.updateNode(nodeId, { x: absPos.x - parentAbs.x, y: absPos.y - parentAbs.y })
     }
 
-    ctx.graph.reorderChild(nodeId, parentId, insertIndex)
+    ctx.graph.insertChildAt(nodeId, parentId, insertIndex)
     computeLayout(ctx.graph, parentId)
     ctx.runLayoutForNode(parentId)
   }
@@ -45,7 +46,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
         doReorderChild(nodeId, parentId, insertIndex)
       },
       inverse: () => {
-        ctx.graph.reorderChild(nodeId, origParentId, origIndex >= 0 ? origIndex : 0)
+        ctx.graph.insertChildAt(nodeId, origParentId, origIndex >= 0 ? origIndex : 0)
         ctx.graph.updateNode(nodeId, { x: origX, y: origY })
         computeLayout(ctx.graph, origParentId)
         ctx.runLayoutForNode(origParentId)
@@ -76,7 +77,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
 
     const place = () => {
       if (reparents) ctx.graph.reparentNode(nodeId, newParentId)
-      ctx.graph.reorderChild(nodeId, newParentId, insertIndex)
+      ctx.graph.insertChildAt(nodeId, newParentId, insertIndex)
       ctx.runLayoutForNode(newParentId)
       if (reparents) ctx.runLayoutForNode(origParentId)
     }
@@ -86,7 +87,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
       label: 'Reorder',
       forward: place,
       inverse: () => {
-        ctx.graph.reorderChild(nodeId, origParentId, origIndex)
+        ctx.graph.insertChildAt(nodeId, origParentId, origIndex)
         ctx.graph.updateNode(nodeId, origPlace)
         ctx.runLayoutForNode(origParentId)
         if (reparents) ctx.runLayoutForNode(newParentId)

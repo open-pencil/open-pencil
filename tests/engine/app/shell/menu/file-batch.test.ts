@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
-import { localeSetting } from '@open-pencil/vue'
+import { localeSetting } from '@open-pencil/vue/i18n'
 
 import { openDesignFileBatch } from '@/app/shell/menu/files'
 import { toast } from '@/app/shell/ui'

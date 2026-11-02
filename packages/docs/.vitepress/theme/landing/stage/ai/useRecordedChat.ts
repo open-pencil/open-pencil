@@ -5,7 +5,7 @@ import { computed, onScopeDispose, shallowRef } from 'vue'
 
 import { CHAPTERS } from '@open-pencil/demo-tools/chapters'
 
-import { createToolLoopTransport } from '@/app/ai/chat/transports'
+import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import type { EditorStore } from '@/app/editor/active-store'
 import { getTabForStore, switchTab } from '@/app/tabs'
 

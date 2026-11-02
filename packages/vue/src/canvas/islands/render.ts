@@ -7,7 +7,9 @@ import {
   type DesignElement,
   type DesignNode
 } from '@open-pencil/dom-css/export'
-import { layerPath, shaderOfPaint, type SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { layerPath } from '@open-pencil/scene-graph/behaviours'
+import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import { wrapRole } from './controls'
 import IslandShader from './IslandShader.vue'

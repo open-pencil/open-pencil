@@ -9,25 +9,28 @@ import { drillInTransition } from '@/theme/motion/styles'
 import drillInTheme from '@/theme/panel/drill-in'
 
 /**
- * A list with a detail view that slides in over it. The back control names the view it returns
- * to, like "‹ Models". Focus moves into the detail as it opens, to the back control unless
- * `open-auto-focus` is prevented to focus a field instead, and back to what opened it.
+ * A list with a detail view that slides in over it. Given a `parent`, a bar above the detail
+ * holds the back control, which names the view it returns to, like "‹ Models"; without one the
+ * way back is drawn elsewhere, such as a window's breadcrumb. Focus moves into the detail as it
+ * opens, to the back control unless `open-auto-focus` is prevented to focus a field instead, and
+ * back to what opened it. `closed` fires once the detail has slid away, for state that would
+ * show changing if it were reset while the detail was still on screen.
  */
 const { open, back, parent, ui } = defineProps<{
   open: boolean
   /** The accessible verb, "Back". */
-  back: string
+  back?: string
   /** What Back returns to, shown on the control: "Models". */
-  parent: string
+  parent?: string
   ui?: ComponentUI<typeof drillInTheme>
 }>()
-const emit = defineEmits<{ back: []; openAutoFocus: [event: Event] }>()
+const emit = defineEmits<{ back: []; closed: []; openAutoFocus: [event: Event] }>()
 
 const styles = tv(drillInTheme)()
 /**
- * The list shows under the detail while it slides, then hides once covered. It is inert from the
- * moment the detail opens, and a closing detail is inert while it slides away, so the two never
- * share the tab order.
+ * The list stays under the detail's background while its content slides in, then hides. It is
+ * inert from the moment the detail opens, and a closing detail is inert while it slides away, so
+ * the two never share the tab order.
  */
 const covered = ref(false)
 
@@ -39,14 +42,19 @@ function uncover(element: Element) {
 
 <template>
   <div :class="styles.root({ class: ui?.root })">
-    <Transition v-bind="drillInTransition" @after-enter="covered = true" @before-leave="uncover">
+    <Transition
+      v-bind="drillInTransition"
+      @after-enter="covered = true"
+      @before-leave="uncover"
+      @after-leave="emit('closed')"
+    >
       <FocusScope
         v-if="open"
         data-slot="detail"
         :class="styles.detail({ class: ui?.detail })"
         @mount-auto-focus="emit('openAutoFocus', $event)"
       >
-        <div data-slot="header" :class="styles.header({ class: ui?.header })">
+        <div v-if="parent" data-slot="header" :class="styles.header({ class: ui?.header })">
           <AppButton variant="ghost" size="sm" data-slot="back" @click="emit('back')">
             <template #leading><icon-lucide-chevron-left class="size-4" /></template>
             <span class="sr-only">{{ back }}:</span>

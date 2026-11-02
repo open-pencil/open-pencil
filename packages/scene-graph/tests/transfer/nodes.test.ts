@@ -1,10 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import {
-  prepareNodeTransfer,
-  SceneGraph,
-  type NodeTransferReferences
-} from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { prepareNodeTransfer, type NodeTransferReferences } from '@open-pencil/scene-graph/transfer'
 
 const references = (): NodeTransferReferences => ({
   nodes: new Map([['component', 'new-component']]),

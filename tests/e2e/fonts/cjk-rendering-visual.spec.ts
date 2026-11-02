@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import type { Page } from '@playwright/test'
 
-import type { FontManager } from '#core/text/fonts'
+import type { FontManager } from '#core/text/font/manager'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -59,7 +59,7 @@ test('international text is correct on its first visible paint', async ({ page }
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
@@ -142,8 +142,8 @@ test('international text is correct on its first visible paint', async ({ page }
         response.arrayBuffer()
       )
     ])
-    fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
-    fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
+    await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
+    await fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
     fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
     fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
 
@@ -258,7 +258,7 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
@@ -290,7 +290,7 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
@@ -306,7 +306,7 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
@@ -319,8 +319,8 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
         response.arrayBuffer()
       )
     ])
-    fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
-    fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
+    await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk)
+    await fontManager.markLoaded('Noto Naskh Arabic', 'Regular', arabic)
     fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
     fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
     store.commitTextEdit()
@@ -371,7 +371,7 @@ test('substituted fonts still request fallbacks for CJK text', async ({ page }) 
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
@@ -383,7 +383,7 @@ test('substituted fonts still request fallbacks for CJK text', async ({ page }) 
     const requestedScripts: string[] = []
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
       requestedScripts.push(...scripts)
-      fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk, 'fallback')
+      await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk, 'fallback')
       fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
       return { cjk: ['Noto Sans CJK SC'] }
     }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -93,16 +93,19 @@ describe('hitTest — nested groups', () => {
 
   test('click from page scope returns GroupA', () => {
     const { graph, page } = setup()
-    const hit = graph.hitTest(100, 100, page)
+    // On the rectangle: a group has no area of its own, so its empty corner takes no click.
+    const hit = graph.hitTest(175, 175, page)
     expect(hit).not.toBeNull()
     expect(expectDefined(hit, 'hit node').name).toBe('GroupA')
+    expect(graph.hitTest(100, 100, page)).toBeNull()
   })
 
   test('click with scope=GroupA returns GroupB', () => {
     const { graph, groupA } = setup()
-    const hit = graph.hitTest(150, 150, groupA.id)
+    const hit = graph.hitTest(175, 175, groupA.id)
     expect(hit).not.toBeNull()
     expect(expectDefined(hit, 'hit node').name).toBe('GroupB')
+    expect(graph.hitTest(150, 150, groupA.id)).toBeNull()
   })
 
   test('click with scope=GroupB returns DeepRect', () => {
@@ -308,11 +311,11 @@ describe('hitTest — frame with children', () => {
 
     graph.updateNode(left.id, { flipX: false })
     expect(graph.getAbsolutePosition(child.id)).toEqual({ x: 120, y: 120 })
-    graph.reorderChild(child.id, right.id, 0)
+    graph.insertChildAt(child.id, right.id, 0)
     expect(graph.getAbsolutePosition(child.id)).toEqual({ x: 420, y: 120 })
     expect(graph.hitTest(430, 130, right.id)?.id).toBe(child.id)
 
-    graph.reorderChild(right.id, child.id, 0)
+    graph.insertChildAt(right.id, child.id, 0)
     expect(right.parentId).toBe(page)
     expect(child.parentId).toBe(right.id)
   })

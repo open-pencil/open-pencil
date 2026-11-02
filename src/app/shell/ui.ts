@@ -1,5 +1,8 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
+
+import { ReadOnlyDocumentError } from '@open-pencil/core'
 
 import { recordRuntimeError } from '@/app/diagnostics'
 import { isTauri } from '@/app/tauri/env'
@@ -82,7 +85,8 @@ function trim() {
 /** Toast-driven work keeps its toast open until progress clears or the work ends. */
 export function toastDuration(entry: Toast): number {
   if (entry.progress) return 0
-  return entry.variant === 'error' ? ERROR_TOAST_DURATION : TOAST_DURATION
+  // A toast that offers an action stays long enough to reach it.
+  return entry.variant === 'error' || entry.action ? ERROR_TOAST_DURATION : TOAST_DURATION
 }
 
 function startProgress(
@@ -115,8 +119,8 @@ function startProgress(
   }
 }
 
-function info(message: string) {
-  push(message, 'default')
+function info(message: string, action?: ToastAction) {
+  push(message, 'default', action)
 }
 
 function warning(message: string) {
@@ -135,11 +139,20 @@ function setupGlobalErrorHandler() {
   if (errorHandlersInitialized) return
   errorHandlersInitialized = true
 
+  // An edit to a read-only document does nothing, as in Figma, wherever it came from.
   useEventListener(window, 'error', (e) => {
+    if (e.error instanceof ReadOnlyDocumentError) {
+      e.preventDefault()
+      return
+    }
     recordRuntimeError(e.error ?? e.message, 'window')
     error(e.message || 'An unexpected error occurred')
   })
   useEventListener(window, 'unhandledrejection', (e) => {
+    if (e.reason instanceof ReadOnlyDocumentError) {
+      e.preventDefault()
+      return
+    }
     recordRuntimeError(e.reason, 'rejection')
     const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
     error(msg || 'An unexpected error occurred')
@@ -160,21 +173,11 @@ export const toast = {
 
 export async function openExternalLink(url: string) {
   if (isTauri()) {
-    const { openUrl } = await import('@tauri-apps/plugin-opener')
-    await openUrl(url)
+    // An app command, so native tests can read the address instead of opening a browser.
+    await invoke('open_external_url', { url })
   } else {
     window.open(url, '_blank')
   }
-}
-export function initials(name: string): string {
-  return (
-    name
-      .split(' ')
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || '?'
-  )
 }
 export function decodeTauriStderr(raw: Uint8Array | number[] | string): string {
   if (typeof raw === 'string') return raw

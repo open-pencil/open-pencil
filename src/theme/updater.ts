@@ -1,6 +1,4 @@
-import { tv } from 'tailwind-variants'
-
-export const updatePromptTheme = tv({
+export default {
   slots: {
     root: 'flex h-full flex-col bg-panel text-surface select-none',
     main: 'flex min-h-0 flex-1 gap-4 px-5 pt-5 pb-4',
@@ -19,7 +17,7 @@ export const updatePromptTheme = tv({
     progress: 'flex-1',
     actions: 'ms-auto flex items-center gap-2'
   }
-})
+} as const
 
 /** AppPlaceholder overrides for the states without a release: a large app icon over the title. */
 export const updateStatusUI = {

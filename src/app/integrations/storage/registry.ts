@@ -40,7 +40,9 @@ export class StorageProviderRegistry {
           return Promise.reject(new Error(`Unknown credential field for ${id}: ${field}`))
         }
         return context.credentials.resolve(credentialRef(id, field, profileId))
-      }
+      },
+      profileId,
+      containerId: context.containerId
     })
   }
 }

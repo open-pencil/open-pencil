@@ -2,8 +2,7 @@ import { orderBy, sortBy } from 'es-toolkit/array'
 import { meanBy } from 'es-toolkit/math'
 import * as v from 'valibot'
 
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 interface SizedItem {
   width: number

@@ -17,7 +17,8 @@ import {
 import { useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import { vTestId, useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -36,10 +37,12 @@ import {
   updateMenuChecked
 } from '@/app/shell/menu/entry'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
-import { useScrollOverflow } from '@/components/shell/useScrollOverflow'
+import { CloudDocumentStatusHost } from '@/components/cloud/integration'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -63,7 +66,9 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 
 // A narrow panel clips the menubar; fade the clipped side and offer a chevron so it reads as scrollable.
 const menubar = useTemplateRef<HTMLElement>('menubar')
-const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar)
+const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar, {
+  smooth: animationsEnabled
+})
 </script>
 
 <template>
@@ -91,6 +96,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
         @dblclick="startRename"
         >{{ store.state.documentName }}</span
       >
+      <CloudDocumentStatusHost />
       <IconButton
         :label="settings.title"
         data-test-id="app-settings-trigger"

@@ -45,6 +45,38 @@ describe('planOnboarding', () => {
     expect(plan.design).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
   })
 
+  test('prefers a ChatGPT plan over an API account for every role', () => {
+    const plan = planOnboarding(
+      answers({ goals: ['design', 'vision'], access: ['openai', 'chatgpt'] }),
+      desktop
+    )
+    expect(plan.design).toMatchObject({ providerID: 'chatgpt', modelID: defaultModel('chatgpt') })
+    expect(plan.vision).toBe('design')
+    expect(plan.connections).toEqual(['chatgpt', 'openai'])
+  })
+
+  test('takes visual review from a ChatGPT plan when design runs on an agent', () => {
+    const plan = planOnboarding(
+      answers({ goals: ['design', 'vision'], access: ['acp:claude-code', 'chatgpt', 'openai'] }),
+      desktop
+    )
+    expect(plan.vision).toMatchObject({ providerID: 'chatgpt' })
+  })
+
+  test('connects a selected ChatGPT plan that no planned model needs', () => {
+    const plan = planOnboarding(answers({ access: ['acp:claude-code', 'chatgpt'] }), desktop)
+    expect(plan.design).toMatchObject({ providerID: 'acp:claude-code' })
+    expect(plan.connections).toEqual(['acp:claude-code', 'chatgpt'])
+    expect(roleOptions('design', plan, []).map(roleChoiceKey)).toContain(
+      `chatgpt::${defaultModel('chatgpt')}`
+    )
+  })
+
+  test('ignores ChatGPT sign-in outside the desktop app', () => {
+    const plan = planOnboarding(answers({ access: ['chatgpt', 'openai'] }), browser)
+    expect(plan.design).toMatchObject({ providerID: 'openai' })
+  })
+
   test('reuses a vision-capable design model for visual review', () => {
     const plan = planOnboarding(
       answers({ goals: ['design', 'vision'], access: ['anthropic'] }),
@@ -135,6 +167,16 @@ describe('planOnboarding with configured models', () => {
     expect(plan.connections).toEqual([])
   })
 
+  test('connects a selected agent beside a configured design model it does not replace', () => {
+    const plan = planOnboarding(answers({ access: ['anthropic', 'acp:claude-code'] }), {
+      ...desktop,
+      current: { configured: true, design: opus, vision: null, review: null, fast: null }
+    })
+    expect(plan.design).toBe(opus)
+    expect(plan.connections).toEqual(['acp:claude-code'])
+    expect(roleOptions('design', plan, [opus]).map(roleChoiceKey)).toContain('acp:claude-code::')
+  })
+
   test('replaces a configured design model whose access was deselected', () => {
     const plan = planOnboarding(answers({ access: ['openai'] }), {
       ...desktop,
@@ -181,7 +223,7 @@ describe('planOnboarding for review and fast work', () => {
   })
 
   test('follows the design model when its provider has no separate fast model', () => {
-    expect(planOnboarding(answers({ access: ['anthropic'] }), desktop).fast).toBe('design')
+    expect(planOnboarding(answers({ access: ['google'] }), desktop).fast).toBe('design')
   })
 
   test('uses the API vision model for review and fast work behind an agent', () => {

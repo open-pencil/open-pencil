@@ -1,5 +1,4 @@
 import { maxBy } from 'es-toolkit'
-import * as v from 'valibot'
 
 import type { SelectionTheme } from '@open-pencil/core/canvas'
 import { SELECTION_COLOR } from '@open-pencil/core/constants'
@@ -13,27 +12,7 @@ import {
 import { WHITE } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-export const ACCENT_PRESETS = [
-  'blue',
-  'purple',
-  'pink',
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'graphite'
-] as const
-export type AccentPreset = (typeof ACCENT_PRESETS)[number]
-
-/** A named accent, or any color the user picked, stored as `#RRGGBB`. */
-export const accentPreferenceSchema = v.variant('kind', [
-  v.object({ kind: v.literal('preset'), preset: v.picklist(ACCENT_PRESETS) }),
-  v.object({
-    kind: v.literal('custom'),
-    color: v.pipe(v.string(), v.hexColor(), v.length(7), v.toUpperCase())
-  })
-])
-export type AccentPreference = v.InferOutput<typeof accentPreferenceSchema>
+import type { AccentPreference, AccentPreset } from './schema'
 
 export const DEFAULT_ACCENT: Readonly<AccentPreference> = { kind: 'preset', preset: 'blue' }
 

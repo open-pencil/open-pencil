@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { SlotDefinitionControl, SlotInstanceOption } from '@open-pencil/vue'
+import type { SlotDefinitionControl, SlotInstanceOption } from '@open-pencil/vue/controls/slots'
 
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 

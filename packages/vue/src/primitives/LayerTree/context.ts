@@ -1,6 +1,31 @@
 import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+
+/** What a shape layer's row draws as its icon: its outline in its box, turned and reflected. */
+export const LAYER_OUTLINE_FIELDS = [
+  'type',
+  'width',
+  'height',
+  'rotation',
+  'flipX',
+  'flipY',
+  'cornerRadius',
+  'independentCorners',
+  'topLeftRadius',
+  'topRightRadius',
+  'bottomRightRadius',
+  'bottomLeftRadius',
+  'cornerSmoothing',
+  'arcData',
+  'pointCount',
+  'starInnerRadius',
+  'vectorNetwork'
+] as const satisfies readonly (keyof SceneNode)[]
+
+export type LayerOutline = Pick<SceneNode, (typeof LAYER_OUTLINE_FIELDS)[number]>
 
 export interface LayerNode {
   id: string
@@ -11,6 +36,14 @@ export interface LayerNode {
   slot?: boolean
   /** Whether the layer is an icon from a set, which keeps its name to be swapped or exported. */
   icon?: boolean
+  /** A shape with text's kind, which its row draws. */
+  shapeWithTextType?: ShapeWithTextType
+  /** A shape layer's own outline, which its row draws as its icon. */
+  outline?: LayerOutline
+  /** Whether the layer shows an image, which its row marks in place of the outline. */
+  image?: boolean
+  /** Whether the layer masks the layers above it. */
+  mask?: boolean
   visible: boolean
   locked: boolean
   /** The variable modes set on the layer itself, which Figma tags its row with. */

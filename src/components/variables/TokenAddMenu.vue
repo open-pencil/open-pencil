@@ -9,7 +9,8 @@ import {
 import { computed } from 'vue'
 
 import type { VariableType } from '@open-pencil/scene-graph'
-import { useI18n, variablesAddTestId, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { variablesAddTestId, vTestId } from '@open-pencil/vue/testing'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'

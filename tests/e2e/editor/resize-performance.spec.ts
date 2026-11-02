@@ -4,7 +4,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 import { measureInteraction } from '#tests/helpers/performance/interaction'
 
 test('resizing uses repaint-only previews until mouseup', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

@@ -1,3 +1,4 @@
+import type { CommentThread, SceneGraph } from '@open-pencil/scene-graph'
 import {
   byCreatedAt,
   commentPosition,
@@ -13,10 +14,8 @@ import {
   resolveCommentThread,
   takesPartInThread,
   writeComments,
-  type CommentAuthor,
-  type CommentThread,
-  type SceneGraph
-} from '@open-pencil/scene-graph'
+  type CommentAuthor
+} from '@open-pencil/scene-graph/comments'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { nodeOf, type NodeRef } from './behaviours'

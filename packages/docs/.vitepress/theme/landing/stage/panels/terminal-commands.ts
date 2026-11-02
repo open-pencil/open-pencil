@@ -102,11 +102,11 @@ async function printTailwind(store: EditorStore): Promise<string> {
 }
 
 // The players' colors are Theme variables, so one value changes every player in both modes.
-const RECOLOR = `const theme = figma.getLocalVariableCollections().find(c => c.name === 'Theme')
-const accent = figma.getLocalVariables('COLOR')
-  .find(v => v.name === 'Accent' && v.collectionId === theme.id)
+const RECOLOR = `const theme = figma.variables.getLocalVariableCollections().find(c => c.name === 'Theme')
+const accent = figma.variables.getLocalVariables('COLOR')
+  .find(v => v.name === 'Accent' && v.variableCollectionId === theme.id)
 const coral = { r: 0.96, g: 0.33, b: 0.24, a: 1 }
-for (const mode of theme.modes) figma.setVariableValue(accent.id, mode.modeId, coral)
+for (const mode of theme.modes) accent.setValueForMode(mode.modeId, coral)
 return 'Accent is coral in ' + theme.modes.map(m => m.name).join(' and ')`
 
 const ADD_PLAYER = `const player = figma.currentPage.findOne(n => n.type === 'COMPONENT' && n.name === 'Player')

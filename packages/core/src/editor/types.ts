@@ -2,14 +2,17 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import type {
   DocumentColorSpace,
+  DocumentKind,
   SceneGraph,
   SceneGraphEvents,
   SceneNode,
+  VectorNetwork,
   VectorSegment,
   VectorVertex
 } from '@open-pencil/scene-graph'
 import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -23,9 +26,10 @@ import type {
   SelectionTheme
 } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
-import type { PlayState } from '#core/editor/play/actions'
+import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
+import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
 import type { TextEditor } from '#core/text/editor'
@@ -41,6 +45,9 @@ export type Tool =
   | 'POLYGON'
   | 'STAR'
   | 'TEXT'
+  | 'STICKY'
+  | 'SHAPE_WITH_TEXT'
+  | 'CONNECTOR'
   | 'PEN'
   | 'PENCIL'
   | 'HAND'
@@ -71,6 +78,15 @@ export interface ShapeHandleHover {
 
 export interface EditorSharedState {
   activeTool: Tool
+  /** The kind the shape-with-text tool places: the one picked last, as in FigJam. */
+  shapeWithTextKind: ShapeWithTextType
+  /**
+   * What the host takes away from every canvas, such as editing for a viewer or an earlier version;
+   * read through `resolveEditorProfile`, set with `setReadOnly`.
+   */
+  /** What the open document is for, as its graph records it; set with `setDocumentKind`. */
+  documentKind: DocumentKind
+  hostRestrictions: EditorRestrictions
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
   showPixelGrid?: boolean
@@ -94,6 +110,18 @@ export interface EditorSharedState {
    * name or CSS name, bump only `sceneVersion`, so the canvas keeps its recorded pictures.
    */
   canvasVersion: number
+}
+
+/**
+ * The path a pen continues, in page coordinates, and where the pen's chain sits in it. The pen
+ * walks one chain out of the network; committing writes the chain back and keeps the rest.
+ */
+export interface ResumedPath {
+  network: VectorNetwork
+  /** Each chain vertex's index in `network`. */
+  vertices: number[]
+  /** Each chain segment's index in `network`, and whether the chain runs it from end to start. */
+  segments: Array<{ index: number; reversed: boolean }>
 }
 
 export interface PencilState {
@@ -125,6 +153,8 @@ export interface EditorViewState {
   transforming: boolean
   measurementMode: MeasurementMode
   editingTextId: string | null
+  /** The layer whose name a field over the canvas renames; the canvas leaves its title to the field. */
+  renamingLabelId: string | null
   penState: {
     vertices: VectorVertex[]
     segments: VectorSegment[]
@@ -133,6 +163,7 @@ export interface EditorViewState {
     pendingClose?: boolean
     closingToFirst: boolean
     resumingNodeId?: string
+    resumedPath?: ResumedPath
     resumedFills?: SceneNode['fills']
     resumedStrokes?: SceneNode['strokes']
   } | null
@@ -147,6 +178,8 @@ export interface EditorViewState {
     side?: 'top' | 'right' | 'bottom' | 'left'
   } | null
   shapeHandleHover: ShapeHandleHover | null
+  /** The layer a connector end being drawn or dragged would attach to, and by which magnet. */
+  connectorTarget: ConnectorTarget | null
   panX: number
   pageColor: Color
   panY: number
@@ -159,8 +192,8 @@ export interface EditorViewState {
   nodeEditState?: RenderOverlays['nodeEditState'] | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
-  /** This canvas's preview, or null while it edits. */
-  play: PlayState | null
+  /** What this canvas shows: the design being edited, or running as a preview. */
+  canvasView: CanvasView
 }
 
 export type NavigationPhase = 'idle' | 'pan' | 'zoom' | 'momentum' | 'settling'
@@ -189,6 +222,9 @@ export interface EditorEvents extends SceneGraphEvents {
   'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
   'graph:replaced': (graph: SceneGraph) => void
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
+  'document:libraries-changed': () => void
+  'document:read-only-changed': (readOnly: boolean) => void
+  'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void
@@ -197,6 +233,8 @@ export interface EditorEvents extends SceneGraphEvents {
   'guides:changed': (ownerId: string, guides: readonly CanvasGuide[]) => void
   'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
   'font:resolution-changed': (event: FontResolutionEvent, snapshot: FontResolutionSnapshot) => void
+  /** A font face finished loading, however it was asked for. */
+  'font:loaded': (family: string, style: string) => void
   'viewport:changed': (
     viewport: { panX: number; panY: number; zoom: number },
     previous: { panX: number; panY: number; zoom: number }
@@ -217,6 +255,8 @@ export interface EditorOptions {
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages?: FigmaClipboardImageResolver
   getViewportSize?: () => { width: number; height: number }
+  /** The name of whoever is editing, which a sticky note they place is signed with. */
+  getUserName?: () => string
   /** Where icons are searched and fetched; defaults to Iconify. */
   icons?: IconProvider
   /** What draws shader frames, which needs a GPU; without one, saved frames stay. */
@@ -237,6 +277,7 @@ export interface EditorContext {
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages: FigmaClipboardImageResolver | null
   getViewportSize: () => { width: number; height: number }
+  getUserName: () => string
   icons: IconProvider
   getCk: () => CanvasKit | null
   getRenderer: () => SkiaRenderer | null

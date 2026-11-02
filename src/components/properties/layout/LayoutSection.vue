@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { LAYOUT_CONTAINER_TYPES, LayoutControlsRoot, useI18n } from '@open-pencil/vue'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { LAYOUT_CONTAINER_TYPES } from '@open-pencil/vue/controls/selection-layout'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { LayoutControlsRoot } from '@open-pencil/vue/primitives/LayoutControls'
 
 import ClipContentControl from '@/components/properties/layout/ClipContentControl.vue'
 import FlexControls from '@/components/properties/layout/flex/FlexControls.vue'
@@ -18,7 +21,14 @@ const { panels } = useI18n()
 <template>
   <LayoutControlsRoot v-slot="ctx">
     <template v-if="ctx.node">
-      <PanelSection :label="ctx.node.layoutMode === 'NONE' ? panels.layout : panels.autoLayout">
+      <!-- A generated frame, such as a shape with text, lays out its own sublayers; its auto layout is not offered. -->
+      <PanelSection
+        :label="
+          ctx.node.layoutMode === 'NONE' || isGeneratedFrame(ctx.node)
+            ? panels.layout
+            : panels.autoLayout
+        "
+      >
         <template v-if="LAYOUT_CONTAINER_TYPES.has(ctx.node.type)" #actions>
           <IconButton
             :label="ctx.node.layoutMode === 'NONE' ? panels.addAutoLayout : panels.removeAutoLayout"

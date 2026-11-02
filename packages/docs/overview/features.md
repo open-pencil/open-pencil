@@ -69,7 +69,7 @@ CLI: `openpencil export design.fig -f jsx --style tailwind`
 
 ## AI Chat
 
-Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. 90+ tools that can create shapes, set styles, manage layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Connect Anthropic, OpenAI, Google AI, OpenRouter, or any compatible endpoint.
+Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. 90+ tools that can create shapes, set styles, manage layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Connect Anthropic, OpenAI, Google AI, OpenRouter, any compatible endpoint, or the AI your [OpenPencil Cloud](/user-guide/openpencil-cloud#ai-on-cloud) plan includes.
 
 Tool calls display as collapsible timeline entries. Visual verification — the assistant renders its work and checks it against your request. Full undo support for all AI mutations.
 

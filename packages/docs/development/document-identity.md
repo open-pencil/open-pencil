@@ -13,11 +13,13 @@ Every process picks a random session at startup, outside sessions 0 and 1, which
 
 ## Imported layers
 
-Reading a `.fig` file gives its layers handles from a counter of their own, `0:1`, `0:2`, and so on, in the order the reader builds them. The same file gets the same handles on every run, which is what lets `openpencil tree` print an ID that a later `openpencil node` or `diff apply` finds. Pages loaded later continue the counter, and a resumed session carries it in its checkpoint. A handle is not the layer's identity: the GUID the file saved it under is its `source.id`.
+Reading a `.fig` file creates each layer under the GUID its record was saved with, and the document root under the ID OpenPencil saved it with, so a layer has the same ID in every process that opens the file and after every save and reopen. `openpencil tree` prints an ID that a later `openpencil node` or `diff apply` finds, and a Cloud room matches the layers of a tab that reopened the stored file. The saved GUID is also the layer's `source.id`.
+
+Layers inside instances have no records of their own and get IDs from a counter, `0:1`, `0:2`, and so on, in the order the reader builds them. The counter skips every GUID in the archive, including records on pages not loaded yet, so a page loaded later still finds its GUIDs free. The same file gets the same counter IDs on every run; pages loaded later continue the counter, and a resumed session carries it in its checkpoint. A record whose GUID another layer already has, such as a repeated record, takes a counter ID too.
 
 ## Saving
 
-A layer read from the file keeps its saved GUID. A new layer is saved under its own ID when that ID has the GUID shape and no record in the archive, including records on pages never opened, already uses it. Otherwise it takes a counter GUID past every GUID in the file. Reopening the file makes the saved GUID the layer's `source.id`, so later saves keep it.
+Figma saves the root as the document record, always `0:0`, so OpenPencil keeps the root's ID in the document record's plugin data; a file saved elsewhere opens with `0:0` as its root. A layer read from the file keeps its saved GUID, which is its ID, even when something such as a Cloud room's copy of it has no `source.id`. A new layer is saved under its own ID when that ID has the GUID shape and no other layer keeps it as its `source.id`; a new variable also stays clear of every record in the archive, including records on pages never opened. Otherwise it takes a counter GUID past every GUID in the file. Reopening the file creates the layer under that GUID, so later saves keep it.
 
 ## Limits
 

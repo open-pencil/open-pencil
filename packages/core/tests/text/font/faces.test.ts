@@ -14,24 +14,24 @@ const lora = facesFromStyles([
   'Bold Italic'
 ])
 
-test('reads faces from style names, once each', () => {
-  expect(facesFromStyles(['Bold', 'Bold', 'Light Italic', 'ExtraLight'])).toEqual([
-    { weight: 700, italic: false },
-    { weight: 300, italic: true },
-    { weight: 200, italic: false }
+test('reads faces from style names, once each, keeping each name', () => {
+  expect(facesFromStyles(['Bold', 'Bold', 'Light Italic', 'Extra Light'])).toEqual([
+    { weight: 700, italic: false, style: 'Bold' },
+    { weight: 300, italic: true, style: 'Light Italic' },
+    { weight: 200, italic: false, style: 'Extra Light' }
   ])
 })
 
 test('the nearest face keeps the slant, as Figma picks one on a family switch', () => {
-  expect(nearestFamilyFace(lora, 100, false)).toEqual({ weight: 400, italic: false })
-  expect(nearestFamilyFace(lora, 900, false)).toEqual({ weight: 700, italic: false })
-  expect(nearestFamilyFace(lora, 500, true)).toEqual({ weight: 500, italic: true })
-  expect(nearestFamilyFace(lora, 900, true)).toEqual({ weight: 700, italic: true })
+  expect(nearestFamilyFace(lora, 100, false)).toMatchObject({ weight: 400, italic: false })
+  expect(nearestFamilyFace(lora, 900, false)).toMatchObject({ weight: 700, italic: false })
+  expect(nearestFamilyFace(lora, 500, true)).toMatchObject({ weight: 500, italic: true })
+  expect(nearestFamilyFace(lora, 900, true)).toMatchObject({ style: 'Bold Italic' })
 })
 
 test('a family without the slant gives the nearest weight, and a tie takes the lighter', () => {
   const upright = facesFromStyles(['Regular', 'SemiBold'])
-  expect(nearestFamilyFace(upright, 700, true)).toEqual({ weight: 600, italic: false })
-  expect(nearestFamilyFace(upright, 500, false)).toEqual({ weight: 400, italic: false })
+  expect(nearestFamilyFace(upright, 700, true)).toMatchObject({ weight: 600, italic: false })
+  expect(nearestFamilyFace(upright, 500, false)).toMatchObject({ weight: 400, italic: false })
   expect(nearestFamilyFace([], 400, false)).toBeNull()
 })

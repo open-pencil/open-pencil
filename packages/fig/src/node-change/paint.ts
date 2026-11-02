@@ -2,7 +2,6 @@ import type { Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   Fill,
-  FillType,
   Stroke,
   Effect,
   BlendMode,
@@ -36,8 +35,10 @@ export function fillToKiwiPaint(fill: Fill): Paint {
   }
   if (fill.gradientTransform) paint.transform = fill.gradientTransform
   if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
-  if (fill.imageScaleMode) paint.imageScaleMode = fill.imageScaleMode
+  if (fill.imageScaleMode)
+    paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
   if (fill.imageTransform) paint.transform = fill.imageTransform
+  if (fill.imageRotation) paint.rotation = fill.imageRotation
   if (fill.sourceNodeId) paint.sourceNodeId = stringToGuid(fill.sourceNodeId)
   if (fill.scale) paint.scale = fill.scale
   if (fill.spacing) paint.spacing = fill.spacing
@@ -97,7 +98,7 @@ function resolvedPaintColor(paint: Paint): { color: Color; opacity: number } {
 function convertBaseFill(p: Paint): Fill {
   const { color, opacity } = resolvedPaintColor(p)
   return {
-    type: p.type as FillType,
+    type: p.type,
     color,
     opacity,
     visible: p.visible ?? true,
@@ -124,8 +125,14 @@ function applyImagePaintFields(fill: Fill, p: Paint): void {
       fill.imageHash = img.hash
     }
   }
-  fill.imageScaleMode = (p.imageScaleMode ?? 'FILL') as ImageScaleMode
-  if (p.transform) fill.imageTransform = convertGradientTransform(p.transform)
+  fill.imageScaleMode = (
+    p.imageScaleMode === 'STRETCH' ? 'CROP' : (p.imageScaleMode ?? 'FILL')
+  ) as ImageScaleMode
+  // Figma writes an identity transform for Fill, Fit and Tile, and ignores what a Tile keeps from
+  // an earlier crop; only a crop places the image by it.
+  if (p.transform && fill.imageScaleMode === 'CROP')
+    fill.imageTransform = convertGradientTransform(p.transform)
+  if (p.rotation) fill.imageRotation = p.rotation
 }
 
 function applySchemaPaintFields(fill: Fill, p: Paint): void {

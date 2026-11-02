@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import { createSVGNodesFromImport, prepareSVGImport, svgImportFonts } from '#core/io/formats/svg'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const importSVG = defineTool({
   name: 'import_svg',

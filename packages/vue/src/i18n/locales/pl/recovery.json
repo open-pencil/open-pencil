@@ -1,11 +1,12 @@
 {
   "preserveUnsavedWork": "Automatycznie zachowuj niezapisaną pracę",
   "preserveUnsavedWorkDescription": "Przechowuj lokalne kopie, aby odtworzyć dokumenty po nieoczekiwanym zamknięciu.",
-  "dialogTitle": "Odzyskaj niezapisaną pracę",
-  "dialogDescription": "OpenPencil znalazł dokumenty z poprzedniej sesji.",
+  "sectionTitle": "Niezapisana praca",
+  "sectionDescription": "Niezapisane zmiany z dokumentów zamkniętych bez zapisywania lub otwartych w chwili zamknięcia OpenPencil. Otwórz jeden, aby kontynuować pracę.",
+  "crashNote": "Zachowano po awarii",
   "restoreFailed": "Nie udało się przywrócić tego dokumentu.",
+  "discardFailed": "Nie udało się odrzucić tej kopii.",
   "settingsTitle": "Odzyskiwanie",
   "settingsDescription": "Zarządzaj lokalnymi kopiami odzyskiwania niezapisanych dokumentów.",
-  "restore": "Przywróć",
   "discard": "Odrzuć"
 }

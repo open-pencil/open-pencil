@@ -19,13 +19,13 @@ const TARGET = {
   pageName: 'Page 1'
 }
 
-const RequestJSON = v.pipe(
+const requestSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({ command: v.string(), args: v.record(v.string(), v.unknown()) })
 )
 
-type Request = v.InferOutput<typeof RequestJSON>
+type Request = v.InferOutput<typeof requestSchema>
 
 const requests: Request[] = []
 const responses = new Map<string, unknown>()
@@ -39,7 +39,7 @@ beforeAll(async () => {
       body += chunk.toString()
     })
     request.on('end', () => {
-      const parsed = v.parse(RequestJSON, body)
+      const parsed = v.parse(requestSchema, body)
       requests.push(parsed)
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(

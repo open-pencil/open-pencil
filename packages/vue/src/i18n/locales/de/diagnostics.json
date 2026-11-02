@@ -4,6 +4,8 @@
   "usageCompleted": "Abgeschlossen",
   "usageInputTokens": "Eingabe-Tokens",
   "usageOutputTokens": "Ausgabe-Tokens",
+  "usageCachedInputTokens": "Zwischengespeicherte Eingabe-Tokens",
+  "usageCacheWriteTokens": "In den Cache geschriebene Tokens",
   "usageByModel": "Nach Modell",
   "usageNoData": "Keine Nutzungsdaten aufgezeichnet.",
   "usageNotReported": "Nicht gemeldet",

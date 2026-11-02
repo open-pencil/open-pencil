@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { VectorSegment } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 

@@ -19,7 +19,7 @@ Each action changes only the layers it applies to, in one undo step.
 ## Usage
 
 ```ts
-import { useSelectionLayout } from '@open-pencil/vue'
+import { useSelectionLayout } from '@open-pencil/vue/controls/selection-layout'
 
 const layout = useSelectionLayout()
 

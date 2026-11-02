@@ -1,6 +1,6 @@
 import { markRaw, shallowRef } from 'vue'
 
-import { reapplyInstanceComponentProperties } from '@open-pencil/core/editor'
+import { reapplyInstanceComponentProperties } from '@open-pencil/core'
 import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
@@ -12,16 +12,14 @@ import {
   createSelectiveLibraryRevision,
   discoverPublishableLibraryChanges,
   readSourceLibraryPublication,
-  writeSourceLibraryPublication
-} from '@open-pencil/core/library'
-import type {
-  ComponentLibraryRevision,
-  LibraryCatalog,
-  LibrarySummary,
-  LibraryUpdateImpact,
-  LibraryUpdateSummary,
-  PublishLibraryInput,
-  LibraryAssetChange
+  writeSourceLibraryPublication,
+  type ComponentLibraryRevision,
+  type LibraryCatalog,
+  type LibrarySummary,
+  type LibraryUpdateImpact,
+  type LibraryUpdateSummary,
+  type PublishLibraryInput,
+  type LibraryAssetChange
 } from '@open-pencil/core/library'
 import type {
   ComponentCatalog,
@@ -222,7 +220,7 @@ export class LibraryService implements ComponentCatalog {
     let createdRootIds: string[] = []
     const applyRevision = () => {
       const existingNodeIds = new Set(editor.graph.nodes.keys())
-      for (const asset of updatable) materializeLibraryAsset(editor.graph, latest, asset.key)
+      for (const asset of updatable) this.#materializeAsset(editor, latest, asset.key)
       createdRootIds = [...editor.graph.getAllNodes()]
         .filter((node) => {
           if (existingNodeIds.has(node.id)) return false
@@ -241,11 +239,9 @@ export class LibraryService implements ComponentCatalog {
         editor.graph.swapInstanceComponent(plan.instanceId, plan.componentId)
         reapplyInstanceComponentProperties(editor, plan.instanceId)
       }
-      editor.graph.enabledLibraries.set(libraryId, {
-        libraryId,
-        revisionId: update.latestRevisionId,
-        enabled: true
-      })
+      editor.updateEnabledLibraries((bindings) =>
+        bindings.set(libraryId, { libraryId, revisionId: update.latestRevisionId, enabled: true })
+      )
       editor.requestRender()
     }
     const restorePrevious = () => {
@@ -256,8 +252,10 @@ export class LibraryService implements ComponentCatalog {
       for (const rootId of createdRootIds) {
         if (editor.graph.getNode(rootId)) editor.graph.deleteNode(rootId)
       }
-      if (previousBinding) editor.graph.enabledLibraries.set(libraryId, previousBinding)
-      else editor.graph.enabledLibraries.delete(libraryId)
+      editor.updateEnabledLibraries((bindings) => {
+        if (previousBinding) bindings.set(libraryId, previousBinding)
+        else bindings.delete(libraryId)
+      })
       editor.requestRender()
     }
 
@@ -281,7 +279,7 @@ export class LibraryService implements ComponentCatalog {
     const summary = this.#summaries.value.find((item) => item.libraryId === identity.libraryId)
     if (!summary || summary.latestRevisionId === identity.revisionId) return
     const latest = await this.#getRevision(identity.libraryId, summary.latestRevisionId)
-    materializeLibraryAsset(editor.graph, latest, identity.assetKey)
+    this.#materializeAsset(editor, latest, identity.assetKey)
     const plans = planOutdatedLibraryInstances(
       editor.graph,
       latest,
@@ -349,7 +347,7 @@ export class LibraryService implements ComponentCatalog {
     const plans: ReturnType<typeof planOutdatedLibraryInstances> = []
     for (const group of groups) {
       const latest = await this.#getRevision(group.libraryId)
-      materializeLibraryAsset(editor.graph, latest, group.assetKey)
+      this.#materializeAsset(editor, latest, group.assetKey)
       plans.push(
         ...planOutdatedLibraryInstances(
           editor.graph,
@@ -389,7 +387,7 @@ export class LibraryService implements ComponentCatalog {
     label = 'Update library instances'
   ): Promise<void> {
     const latest = await this.#getRevision(libraryId)
-    materializeLibraryAsset(editor.graph, latest, assetKey)
+    this.#materializeAsset(editor, latest, assetKey)
     const plans = planOutdatedLibraryInstances(
       editor.graph,
       latest,
@@ -405,7 +403,7 @@ export class LibraryService implements ComponentCatalog {
     const summary = this.#summaries.value.find((item) => item.libraryId === libraryId)
     if (!summary) return
     const latest = await this.#getRevision(libraryId, summary.latestRevisionId)
-    materializeLibraryAsset(editor.graph, latest, assetKey)
+    this.#materializeAsset(editor, latest, assetKey)
     const plans = planOutdatedLibraryInstances(editor.graph, latest, new Set([assetKey]))
     if (plans.length === 0) return
     this.#applyPlans(editor, plans, 'Update library asset')
@@ -517,25 +515,40 @@ export class LibraryService implements ComponentCatalog {
 
   async enable(editor: EditorStore, libraryId: string, revisionId?: string): Promise<void> {
     const revision = await this.#getRevision(libraryId, revisionId)
-    editor.graph.enabledLibraries.set(libraryId, {
-      libraryId,
-      revisionId: revision.manifest.revisionId,
-      enabled: true
-    })
+    editor.updateEnabledLibraries((bindings) =>
+      bindings.set(libraryId, {
+        libraryId,
+        revisionId: revision.manifest.revisionId,
+        enabled: true
+      })
+    )
     await this.refresh(editor)
   }
 
   async disable(editor: EditorStore, libraryId: string): Promise<void> {
-    const binding = editor.graph.enabledLibraries.get(libraryId)
-    if (binding) editor.graph.enabledLibraries.set(libraryId, { ...binding, enabled: false })
+    editor.updateEnabledLibraries((bindings) => {
+      const binding = bindings.get(libraryId)
+      if (binding) bindings.set(libraryId, { ...binding, enabled: false })
+    })
     await this.refresh(editor)
   }
 
   async materialize(editor: EditorStore, libraryId: string, revisionId: string, assetKey: string) {
     const revision = await this.#getRevision(libraryId, revisionId)
-    const result = materializeLibraryAsset(editor.graph, revision, assetKey)
+    const result = this.#materializeAsset(editor, revision, assetKey)
     editor.requestRender()
     return result
+  }
+
+  /** Copies a library asset into the document, which enables its library, and announces that. */
+  #materializeAsset(
+    editor: EditorStore,
+    revision: Parameters<typeof materializeLibraryAsset>[1],
+    assetKey: string
+  ) {
+    return editor.updateEnabledLibraries(() =>
+      materializeLibraryAsset(editor.graph, revision, assetKey)
+    )
   }
 
   #revisionCacheKey(libraryId: string, revisionId: string): string {

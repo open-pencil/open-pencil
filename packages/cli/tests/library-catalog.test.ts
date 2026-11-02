@@ -3,9 +3,9 @@ import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-
 import { FileSystemLibraryCatalog } from '@open-pencil/cli/library'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 describe('filesystem library catalog', () => {
   test('publishes and restores revisions under a bounded root', async () => {
@@ -63,6 +63,39 @@ describe('filesystem library catalog', () => {
     await catalog.publishRevision({ libraryId: 'design-system', name: 'Design system', graph })
     const restored = await catalog.getRevision('design-system')
     expect(restored.graph.images.get('image-hash')).toEqual(new Uint8Array([1, 2, 3]))
+  })
+
+  test('restores vector geometry and instance overrides from stored revisions', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const icon = graph.createNode('COMPONENT', page.id, { name: 'Icon', componentKey: 'icon' })
+    const commandsBlob = new Uint8Array([1, 0, 0, 0, 0, 0, 0, 0, 0])
+    graph.createNode('VECTOR', icon.id, {
+      name: 'Glyph',
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob }]
+    })
+    const button = graph.createNode('COMPONENT', page.id, {
+      name: 'Button',
+      componentKey: 'button'
+    })
+    const nested = graph.createInstance(icon.id, button.id)
+    const glyph = nested ? graph.getChildren(nested.id)[0] : undefined
+    if (!nested || !glyph) throw new Error('Expected the nested icon')
+    graph.updateNode(glyph.id, { opacity: 0.5 })
+    recordInstanceOverride(graph, glyph.id, ['opacity'])
+
+    const catalog = new FileSystemLibraryCatalog(root)
+    await catalog.publishRevision({ libraryId: 'design-system', name: 'Design system', graph })
+    const restored = (await catalog.getRevision('design-system')).graph
+    const glyphs = [...restored.getAllNodes()].filter((node) => node.name === 'Glyph')
+    const instance = [...restored.getAllNodes()].find((node) => node.type === 'INSTANCE')
+
+    expect(glyphs.map((node) => node.fillGeometry[0]?.commandsBlob)).toEqual([
+      commandsBlob,
+      commandsBlob
+    ])
+    expect(instance?.instanceOverrides.descendants.size).toBe(1)
   })
 
   test('rejects revisions that are malformed or fail integrity validation', async () => {

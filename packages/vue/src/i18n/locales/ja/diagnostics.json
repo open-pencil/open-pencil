@@ -4,6 +4,8 @@
   "usageCompleted": "完了",
   "usageInputTokens": "入力トークン",
   "usageOutputTokens": "出力トークン",
+  "usageCachedInputTokens": "キャッシュ済み入力トークン",
+  "usageCacheWriteTokens": "キャッシュ書き込みトークン",
   "usageByModel": "モデル別",
   "usageNoData": "使用状況データはありません。",
   "usageNotReported": "未報告",

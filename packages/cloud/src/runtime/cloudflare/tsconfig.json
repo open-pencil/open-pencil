@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
+    "noFallthroughCasesInSwitch": true,
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["@cloudflare/workers-types"],
+    "paths": {
+      "#cloud/*": ["../../*"]
+    }
+  },
+  "include": ["./**/*.ts", "../../../deploy/**/*.ts"],
+  "exclude": ["../../../deploy/generated"]
+}

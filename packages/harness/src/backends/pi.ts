@@ -51,7 +51,19 @@ function mapPart(part: TextStreamPart<ToolSet>): BackendEvent | undefined {
       output: asJSONValue(part.output)
     }
   }
-  if (part.type === 'finish') return { type: 'finish', finishReason: part.finishReason }
+  if (part.type === 'finish') {
+    const usage = part.totalUsage
+    return {
+      type: 'finish',
+      finishReason: part.finishReason,
+      usage: {
+        inputTokens: usage.inputTokens ?? null,
+        outputTokens: usage.outputTokens ?? null,
+        cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? null,
+        cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? null
+      }
+    }
+  }
   if (part.type === 'error') {
     return {
       type: 'error',
@@ -135,6 +147,7 @@ export class PiHarnessBackend implements HarnessBackend {
       sandbox: createJustBashSandbox({ cwd: '/workspace' }),
       sandboxConfig: { workDir: 'workspace' },
       instructions: configuration.instructions ?? this.defaults.instructions,
+      skills: configuration.skills ?? [],
       permissionMode: permissionMode ?? this.defaults.permissionMode ?? 'allow-edits'
     })
     const sessionOptions: {

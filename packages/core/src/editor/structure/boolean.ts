@@ -1,12 +1,11 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { copyFills } from '@open-pencil/scene-graph/copy'
 import {
   fitEnclosingGroups,
   undoGroupFit,
   type GroupFit,
-  type GroupFitOptions,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
+  type GroupFitOptions
+} from '@open-pencil/scene-graph/group-bounds'
 
 import { canMakeBooleanSourceNode, groupFitOptions } from '#core/canvas/boolean'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'

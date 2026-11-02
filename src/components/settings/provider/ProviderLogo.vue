@@ -22,6 +22,7 @@ const { provider } = defineProps<{ provider: string }>()
 const LOGOS: Record<string, Component> = {
   anthropic: IconAnthropic,
   openai: IconOpenAI,
+  chatgpt: IconOpenAI,
   google: IconGemini,
   openrouter: IconOpenRouter,
   deepseek: IconDeepSeek,

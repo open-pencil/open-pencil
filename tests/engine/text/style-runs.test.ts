@@ -9,9 +9,9 @@ import {
   selectionHasStyle,
   toggleBoldInRange,
   toggleDecorationInRange,
-  toggleItalicInRange,
-  type StyleRun
-} from '@open-pencil/core'
+  toggleItalicInRange
+} from '@open-pencil/core/text'
+import type { StyleRun } from '@open-pencil/scene-graph'
 
 describe('getStyleAt', () => {
   test('returns style within run', () => {

@@ -2,7 +2,9 @@
 import { ref } from 'vue'
 import IconPipette from '~icons/lucide/pipette'
 
-import { requestEyedropperSample, useEditor, useI18n } from '@open-pencil/vue'
+import { useEditor } from '@open-pencil/vue'
+import { requestEyedropperSample } from '@open-pencil/vue/canvas/eyedropper'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import IconButton from '@/components/ui/button/IconButton.vue'

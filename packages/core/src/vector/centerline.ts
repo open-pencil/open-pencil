@@ -186,7 +186,15 @@ function buildCenterlineFromCrescent(
   return path.detachAndDelete()
 }
 
-export function vectorNetworkToCenterlinePath(ck: CanvasKit, network: VectorNetwork): Path {
+/**
+ * The path a dashed stroke runs along: a thin crescent's centre line, or the open segments with
+ * their corners rounded by `cornerRadius`, as the solid stroke draws them.
+ */
+export function vectorNetworkToCenterlinePath(
+  ck: CanvasKit,
+  network: VectorNetwork,
+  cornerRadius = 0
+): Path {
   const { vertices, segments } = network
 
   const crescent = isClosedThinCrescent(network)
@@ -196,6 +204,6 @@ export function vectorNetworkToCenterlinePath(ck: CanvasKit, network: VectorNetw
   }
 
   const path = new ck.PathBuilder()
-  addOpenSegmentsToPath(path, segments, vertices)
+  addOpenSegmentsToPath(path, segments, vertices, cornerRadius)
   return path.detachAndDelete()
 }

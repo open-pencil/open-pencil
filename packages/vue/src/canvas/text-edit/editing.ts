@@ -1,9 +1,10 @@
 import { useIntervalFn } from '@vueuse/core'
 import type { ShallowRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
-import { paragraphStylesAfterTextChange, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { paragraphStylesAfterTextChange } from '@open-pencil/scene-graph/text'
 
 const CARET_BLINK_MS = 530
 
@@ -99,11 +100,7 @@ export function createTextCompositionHandlers({
 
     const text = el.value || event.data || ''
     if (!text) return
-    if (
-      skipCommittedInput &&
-      text === skipCommittedInput.text &&
-      Date.now() <= skipCommittedInput.until
-    ) {
+    if (text === skipCommittedInput?.text && Date.now() <= skipCommittedInput.until) {
       el.value = ''
       skipCommittedInput = null
       return

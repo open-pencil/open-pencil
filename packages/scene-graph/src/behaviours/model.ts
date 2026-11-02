@@ -1,4 +1,6 @@
-import type { SceneGraph } from '../index'
+import { mapValues } from 'es-toolkit'
+
+import type { SceneGraph } from '../graph'
 import { readPluginData, withPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
@@ -14,14 +16,6 @@ import type {
   BehaviourInteractionStates,
   BehaviourNumberSettings
 } from './schema'
-
-export type {
-  Behaviour,
-  BehaviourBooleanBinding,
-  BehaviourInteractionStates,
-  BehaviourNumberSettings
-} from './schema'
-export { isNumberRange } from './schema'
 
 export const DEFAULT_NUMBER_SETTINGS: BehaviourNumberSettings = {
   min: 0,
@@ -175,8 +169,6 @@ export function renameBehaviourProperties(
   behaviour: Behaviour,
   rename: (propertyId: string) => string
 ): Behaviour {
-  const mapValues = <T>(record: Record<string, T>, change: (value: T) => T) =>
-    Object.fromEntries(Object.entries(record).map(([key, value]) => [key, change(value)]))
   return {
     ...behaviour,
     booleans: mapValues(behaviour.booleans, (binding) => ({

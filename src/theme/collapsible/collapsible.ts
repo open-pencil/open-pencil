@@ -1,5 +1,3 @@
-import { tv } from 'tailwind-variants'
-
 /**
  * Shared content treatment for every collapsible, including the call sites that
  * keep their own header shape and drive Reka directly.
@@ -7,7 +5,7 @@ import { tv } from 'tailwind-variants'
 export const collapsibleContentMotion =
   'overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up duration-180 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none'
 
-export const collapsibleTheme = {
+const collapsibleTheme = {
   slots: {
     root: '',
     header: 'flex items-center gap-3',
@@ -21,8 +19,6 @@ export const collapsibleTheme = {
     content: collapsibleContentMotion
   }
 } as const
-
-export const collapsible = tv(collapsibleTheme)
 
 export type CollapsibleTheme = typeof collapsibleTheme
 

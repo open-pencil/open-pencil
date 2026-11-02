@@ -1,6 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue'
+import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { activeRoom } from '@/app/collab/rooms'
 import { CAN_CHOOSE_SPEAKERS, SYSTEM_DEVICE, useVoiceCall } from '@/app/collab/voice/call'

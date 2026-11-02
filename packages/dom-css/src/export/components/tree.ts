@@ -1,6 +1,6 @@
 import type { StateElement } from '#dom-css/behaviours/states/types'
 
-import type { ShaderPreset } from '@open-pencil/scene-graph'
+import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 import type { InputLayers } from './fields'
 import type { ComponentBinding, ComponentElement, ComponentNode } from './model'

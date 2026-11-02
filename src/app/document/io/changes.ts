@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { UndoEntry } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 /** Stands for the history of a save whose state was not captured, which history never returns to. */
 const UNKNOWN_HISTORY: UndoEntry = { label: '', forward: () => undefined, inverse: () => undefined }
@@ -28,6 +28,8 @@ export function createDocumentChanges(editor: Editor) {
   let savedHistory: UndoEntry | undefined = editor.undo.peekUndo()
   /** The history at each captured revision, for a save that finishes after later edits. */
   const capturedHistory = new Map<number, UndoEntry | undefined>()
+  /** How many changes the document already had elsewhere are being applied. */
+  let adopting = 0
 
   const dirty = computed(() => {
     if (revision.value === savedRevision.value) return false
@@ -42,12 +44,12 @@ export function createDocumentChanges(editor: Editor) {
     outsideRevision = revision.value
   }
   const contentChanged = () => {
-    if (editor.graph.isApplyingImportedState) return
+    if (editor.graph.isApplyingImportedState || adopting > 0) return
     revision.value++
     contentRevision = revision.value
     const at = contentRevision
-    // Text editing and coalesced edits record their step when they end, not with each change.
-    if (editor.state.editingTextId !== null || editor.undo.isBatching) return
+    // Text editing, coalesced edits, and edits that await record their step when they end.
+    if (editor.state.editingTextId !== null || editor.undo.isRecording) return
     queueMicrotask(() => {
       if (historyRevision < at) outsideRevision = Math.max(outsideRevision, at)
     })
@@ -88,6 +90,15 @@ export function createDocumentChanges(editor: Editor) {
       savedRevision.value = version
     },
     markChanged: changed,
+    /** Applies changes the document already has elsewhere, such as its room's, as no edit. */
+    adopt: <T>(apply: () => T): T => {
+      adopting++
+      try {
+        return apply()
+      } finally {
+        adopting--
+      }
+    },
     dispose: () => {
       for (const unsubscribe of unsubscribers) unsubscribe()
     }

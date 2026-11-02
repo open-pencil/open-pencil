@@ -1,7 +1,13 @@
 import * as v from 'valibot'
 
-import { toolNumber, nodeIdInput, nodeInput } from '#core/tools/input'
-import { defineTool, nodeNotFound, nodeSummary } from '#core/tools/schema'
+import {
+  toolNumber,
+  nodeIdInputSchema,
+  nodeInputSchema,
+  defineTool,
+  nodeNotFound,
+  nodeSummary
+} from '#core/tools/schema'
 
 export const deleteNode = defineTool({
   name: 'delete_node',
@@ -41,7 +47,7 @@ export const renameNode = defineTool({
   description: 'Rename a node in the layers panel.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     name: v.pipe(v.string(), v.description('New name'))
   }),
   execute: (figma, { id, name }) => {
@@ -57,7 +63,7 @@ export const nodeBounds = defineTool({
   description: 'Get absolute bounding box of a node.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: nodeInput,
+  input: nodeInputSchema,
   execute: (figma, { id }) => {
     const node = figma.getNodeById(id)
     return node ? { id, bounds: node.absoluteBoundingBox } : nodeNotFound(id)
@@ -70,7 +76,7 @@ export const nodeMove = defineTool({
   description: 'Move a node to new coordinates.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     x: toolNumber(v.pipe(v.number(), v.description('X position'))),
     y: toolNumber(v.pipe(v.number(), v.description('Y position')))
   }),
@@ -89,7 +95,7 @@ export const nodeResize = defineTool({
   description: 'Resize a node.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width'))),
     height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height')))
   }),

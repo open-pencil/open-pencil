@@ -5,7 +5,7 @@
  */
 import { createRendererFromJSON } from 'shaders/core'
 
-import { shaderFrameEncoding, type ShaderPreset } from '@open-pencil/scene-graph'
+import { shaderFrameEncoding, type ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 export interface ShaderStillPage {
   renderStill(preset: ShaderPreset, width: number, height: number): Promise<string>

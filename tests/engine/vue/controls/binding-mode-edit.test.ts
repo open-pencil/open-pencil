@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
@@ -48,7 +48,7 @@ test('prepared edits retain modes after targets change and undo atomically', () 
     variableModes: { [collection.id]: 'alternate' }
   })
   const provider = createOpenPencilBindingProvider(editor, {
-    type: 'FLOAT',
+    types: ['FLOAT'],
     resolve: (e, id, target) =>
       target
         ? e.graph.resolveNumberVariableForNode(target.nodeId, id)

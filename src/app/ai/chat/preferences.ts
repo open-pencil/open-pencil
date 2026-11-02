@@ -1,12 +1,11 @@
 import { computed } from 'vue'
 
+import { resolveAgentStepLimit } from '@/app/ai/reply/step-limit'
 import {
   appPreferences,
   type ChangePreviewSize,
   type ReasoningDisplay
 } from '@/app/settings/preferences/store'
-
-import { resolveAgentStepLimit } from './step-limit'
 
 export const maxAgentSteps = computed({
   get: () => resolveAgentStepLimit(appPreferences.value.chat.maxAgentSteps),

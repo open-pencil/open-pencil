@@ -1,15 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
   claimSlotContent,
   clearSlotContent,
   ownsSlotContent,
   resetSlotContent,
-  SceneGraph,
   slotPropertyId,
-  slotScope,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  slotScope
+} from '@open-pencil/scene-graph/slots'
 
 /** A component set with a Small and a Large variant, each with a `Content` slot. */
 function panel(graph: SceneGraph, page: SceneNode) {

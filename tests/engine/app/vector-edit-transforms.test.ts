@@ -1,10 +1,9 @@
 import { describe, test, expect } from 'bun:test'
 
+import { createEditor, type Editor } from '@open-pencil/core'
 import { computeHandleVisibleVertices } from '@open-pencil/core/canvas/overlays'
-import { createEditor, type Editor } from '@open-pencil/core/editor'
 import { regenerateFillGeometry } from '@open-pencil/core/vector'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode, type VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
@@ -115,19 +114,7 @@ describe('vector edit graph ownership', () => {
     const editor = createEditor()
     const page = expectDefined(editor.graph.getPages()[0])
     const fillGeometry = regenerateFillGeometry(NETWORK, [
-      {
-        windingRule: 'NONZERO',
-        commandsBlob: new Uint8Array(),
-        fills: [
-          {
-            type: 'SOLID',
-            color: { r: 1, g: 0.4, b: 0, a: 1 },
-            visible: true,
-            opacity: 1,
-            blendMode: 'NORMAL'
-          }
-        ]
-      }
+      { windingRule: 'NONZERO', commandsBlob: new Uint8Array() }
     ])
     const vector = editor.graph.createNode('VECTOR', page.id, {
       width: 100,

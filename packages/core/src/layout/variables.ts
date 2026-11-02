@@ -1,8 +1,5 @@
-import {
-  reconcileVariableBindings,
-  type BindingScope,
-  type SceneGraph
-} from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { reconcileVariableBindings, type BindingScope } from '@open-pencil/scene-graph/variables'
 
 import { computeLayout } from '#core/layout'
 

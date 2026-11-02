@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
-import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph/behaviours'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 /** Translated names of behaviour kinds, values, parts, and interaction states. */
 export function useBehaviourLabels() {

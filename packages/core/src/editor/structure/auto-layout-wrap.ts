@@ -77,7 +77,7 @@ export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[])
     inverse: () => {
       for (const id of sortedIds) ctx.graph.reparentNode(id, parentId)
       ctx.graph.deleteNode(frameId)
-      order.forEach((id, index) => ctx.graph.reorderChild(id, parentId, index))
+      order.forEach((id, index) => ctx.graph.insertChildAt(id, parentId, index))
       for (const [id, rect] of geometry) ctx.graph.updateNode(id, rect)
       ctx.runLayoutForNode(parentId)
       ctx.setSelectedIds(prevSelection)

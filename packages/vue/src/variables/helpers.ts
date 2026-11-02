@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 
+import type { Editor } from '@open-pencil/core'
 import { BLACK } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import type { VariableCollection, VariableType, VariableValue } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 

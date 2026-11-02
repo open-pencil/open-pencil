@@ -26,11 +26,11 @@ All of them write the same model.
 | Behaviour section | `src/components/properties/component-properties/behaviour/`, `useBehaviour` in `packages/vue` | Binds by id; Core's editor actions (`setBehaviour`, `addBehaviourText`, `addBehaviourVariant`, `addBehaviourPart`) create what is missing in one undo step. |
 | `openpencil` scripting API | `packages/core/src/openpencil-api/` | The `openpencil` global next to `figma` in every script runner, through `compileScript`. |
 | Tools | `packages/core/src/tools/create/behaviours.ts` | `set_behaviour`, `get_behaviour`, `create_slot`, built on the `openpencil` API. |
-| Design JSX | `packages/design-jsx/src/behaviours/`, `export/behaviours.ts` | Reka-named elements (`Switch.Root`, `Switch.Thumb`) render and export components with behaviours. |
+| Design JSX | `packages/design-jsx/src/behaviours/` | Reka-named elements (`Switch.Root`, `Switch.Thumb`) render and export components with behaviours. |
 
 ## Preview islands
 
-Preview is a per-pane mode (`EditorViewState.play`). It runs controls as real components; it never simulates them on the canvas.
+Preview is a per-pane canvas view (`EditorViewState.canvasView`, `{ id: 'play', revision }`). It runs controls as real components; it never simulates them on the canvas. How the editor behaves in a view comes from its profile (`resolveEditorProfile` in `packages/core/src/editor/views/`): the pointer only pans, only shortcuts that switch or leave the view run, the canvas draws no editing chrome, a lone previewing pane hides the panels, and Escape returns to editing. Front ends read those values rather than the view's id.
 
 1. **Islands.** `playIslandRoots` (Core) picks the top-level layers of the page that hold an instance with a behaviour. The renderer skips them while the pane previews, and `PlayIslands` (`packages/vue/src/canvas/islands/`) mounts one island per root, laid over the canvas at the pan and zoom of the canvas's last drawn frame, so the islands never run ahead of a canvas still catching up while panning and zooming.
 2. **Shadow DOM.** Each island renders into its own shadow root: app CSS does not reach in, island CSS does not leak out, fonts already loaded by the app apply, and the island moves with the canvas in the same frame. Wheel gestures over an island are passed to the canvas.
@@ -56,6 +56,6 @@ Export reads the same model as preview. `behaviourArgs` gives a component set it
 
 1. Add the kind to `BEHAVIOUR_KINDS` and its contract to `BEHAVIOUR_CONTRACTS` in scene-graph; part ids follow Reka's part names.
 2. Map it in preview: its root and parts in `packages/vue/src/canvas/islands/controls/`, with the Reka primitives it uses.
-3. Name its elements in design JSX: `REKA_ELEMENTS` in `packages/design-jsx/src/behaviours/index.ts` and the export's root table in `export/behaviours.ts`.
+3. Name its elements in design JSX: `REKA_ELEMENTS` in `packages/design-jsx/src/behaviours/index.ts` and the export's root table in `behaviours/export.ts`.
 4. Label it in the Behaviour section (`labels.ts`) and translate the strings.
 5. Cover the model and spec in scene-graph tests, preview in `tests/e2e/components/behaviours.spec.ts`, and JSX in `packages/core/tests/design-jsx/behaviours.test.ts`.

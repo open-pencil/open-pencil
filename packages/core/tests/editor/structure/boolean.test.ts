@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createEditor } from '@open-pencil/core'
 import { TRANSPARENT } from '@open-pencil/core/constants'
-import { createEditor } from '@open-pencil/core/editor'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 describe('booleanOperationSelected', () => {

@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 for (const mode of ['NONE', 'HEIGHT', 'WIDTH_AND_HEIGHT'] as const) {

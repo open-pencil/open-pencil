@@ -1,7 +1,7 @@
 import type { SyntaxNode } from '@lezer/common'
 import { decodeHTML } from 'entities'
 
-import { DESIGN_JSX_ELEMENTS } from '../schema'
+import { DESIGN_JSX_ELEMENTS } from '../elements'
 import { FRAGMENT, type TreeNode } from '../tree'
 import { readLiteral } from './literals'
 

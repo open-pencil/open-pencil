@@ -3,11 +3,6 @@ import { params } from '@nanostores/i18n'
 import { i18n } from '#vue/i18n/create'
 
 export const automationMessageDefaults = {
-  toolAccessDescription:
-    'Configure design tools independently for built-in AI and the local MCP server.',
-  toolAccessTarget: 'Configure tool access for',
-  builtInAI: 'Built-in AI',
-  localMCP: 'Local MCP',
   restoreToolDefaults: 'Restore defaults',
   aiToolAccessDescription:
     'Choose tools for direct AI model connections. ACP and Pi agents use MCP access instead.',
@@ -67,12 +62,11 @@ export const automationMessageDefaults = {
   addConnection: 'Add connection',
   addServerConnection: 'Add MCP connection',
   editConnection: 'Edit MCP connection',
-  connectionEditorDescription: 'Configure a Streamable HTTP server and optional authentication.',
   connectionName: 'Connection name',
   connectionNameHint: 'Use a unique name, up to 80 characters. The name open-pencil is reserved.',
   connectionNameInvalid: 'Choose a unique name of at most 80 characters, other than open-pencil.',
   serverURLHint:
-    'Use HTTPS. HTTP is allowed only for localhost or a loopback address. Do not include credentials in the URL.',
+    'The server must support Streamable HTTP. Use HTTPS. HTTP is allowed only for localhost or a loopback address. Do not include credentials in the URL.',
   serverURL: 'MCP server URL',
   enableConnection: 'Enable for ACP agents',
   bearerAuthentication: 'Use bearer authentication',

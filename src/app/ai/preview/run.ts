@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 
 import { createCanvasJSXPreview } from '@/app/ai/preview/canvas'
-import { markRunPreview, runAgentId, runPageId } from '@/app/ai/tools/run'
+import { markRunPreview, runAgentId, runPageId } from '@/app/ai/reply/run'
 import type { EditorStore } from '@/app/editor/active-store'
 import { publishAgentPreview } from '@/app/presence/preview-stream'
 

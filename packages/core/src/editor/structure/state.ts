@@ -1,19 +1,20 @@
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import {
   cloneInstanceOverrideState,
-  findInstanceAncestor,
   setInstanceOverride
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
   applyBoundVisibilityEdit,
   bindsVisibility
 } from '#core/editor/components/authoring/visibility-edit'
+import { refitGroupsAroundLayers } from '#core/editor/structure/group/bounds'
 import type { EditorContext } from '#core/editor/types'
 
 export function createStructureStateActions(ctx: EditorContext) {
   /** Shows or hides a layer; one a boolean property drives sets the property, as in Figma. */
-  function setNodeVisibility(id: string, visible: boolean) {
+  function applyNodeVisibility(id: string, visible: boolean) {
     const node = ctx.graph.getNode(id)
     if (!node) return
     const owner = findInstanceAncestor(ctx.graph, id)
@@ -24,7 +25,9 @@ export function createStructureStateActions(ctx: EditorContext) {
     const show = (shown: boolean) => {
       ctx.graph.updateNode(id, { visible: shown })
       const parentId = ctx.graph.getNode(id)?.parentId
-      if (parentId) ctx.runLayoutForNode(parentId)
+      if (!parentId) return
+      ctx.runLayoutForNode(parentId)
+      refitGroupsAroundLayers(ctx, [id])
     }
     const forward = () => {
       const instance = findInstanceAncestor(ctx.graph, id)
@@ -46,10 +49,15 @@ export function createStructureStateActions(ctx: EditorContext) {
     })
   }
 
+  function setNodeVisibility(id: string, visible: boolean) {
+    assertNodeEditable(ctx.graph, id)
+    applyNodeVisibility(id, visible)
+  }
+
   function toggleNodeVisibility(id: string) {
     assertNodeEditable(ctx.graph, id)
     const node = ctx.graph.getNode(id)
-    if (node) setNodeVisibility(id, !node.visible)
+    if (node) applyNodeVisibility(id, !node.visible)
   }
 
   function toggleNodeLock(id: string) {
@@ -74,7 +82,7 @@ export function createStructureStateActions(ctx: EditorContext) {
       return node ? [[id, !node.visible] as const] : []
     })
     ctx.undo.runBatch('Toggle visibility', () => {
-      for (const [id, visible] of targets) setNodeVisibility(id, visible)
+      for (const [id, visible] of targets) applyNodeVisibility(id, visible)
     })
   }
 
@@ -85,5 +93,5 @@ export function createStructureStateActions(ctx: EditorContext) {
     })
   }
 
-  return { toggleNodeVisibility, toggleNodeLock, toggleVisibility, toggleLock }
+  return { setNodeVisibility, toggleNodeVisibility, toggleNodeLock, toggleVisibility, toggleLock }
 }

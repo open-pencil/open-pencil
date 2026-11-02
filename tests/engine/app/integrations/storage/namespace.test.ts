@@ -6,8 +6,7 @@ import {
   STORAGE_NAMESPACE_MARKER,
   documentFigKey,
   documentIdFromFigKey,
-  documentMetaKey,
-  documentThumbnailKey
+  documentMetaKey
 } from '@/app/integrations/storage/namespace'
 
 describe('storage namespace', () => {
@@ -21,7 +20,6 @@ describe('storage namespace', () => {
     const id = 'abc-123'
     expect(documentFigKey(id)).toBe('open_pencil_storage/canvases/abc-123.fig')
     expect(documentMetaKey(id)).toBe('open_pencil_storage/canvases/abc-123.meta.json')
-    expect(documentThumbnailKey(id)).toBe('open_pencil_storage/canvases/abc-123.thumb.jpg')
   })
 
   test('parses document IDs from fig keys and ignores foreign keys', () => {

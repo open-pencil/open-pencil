@@ -3,7 +3,7 @@ import { tv, type VariantProps } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
-import theme from '@/theme/input/input-group'
+import theme from '@/theme/input/group'
 
 const inputGroup = tv(theme)
 type InputGroupVariants = VariantProps<typeof inputGroup>

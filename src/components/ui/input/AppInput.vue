@@ -40,7 +40,7 @@ const {
   max,
   step,
   tone = 'default',
-  size = 'md',
+  size = 'sm',
   state = 'idle'
 } = defineProps<AppInputProps>()
 

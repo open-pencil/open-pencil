@@ -1,0 +1,56 @@
+# Which license covers which files, in the REUSE format (https://reuse.software). Later
+# annotations override earlier ones for the paths they match.
+version = 1
+
+# The editor, its packages, and the repository tooling.
+[[annotations]]
+path = "**"
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"
+SPDX-License-Identifier = "MIT"
+
+# OpenPencil Cloud's server, relay, and administration, and the pages it serves for signing in,
+# account security, and administration.
+[[annotations]]
+path = [
+  "packages/cloud/**",
+  "cloud.html",
+  "src/cloud/**",
+  "src/app/cloud-portal/**",
+  "src/components/cloud-portal/**",
+  "src/theme/cloud-portal/**",
+  "src/views/cloud/**",
+  "tests/app/cloud-portal/**",
+  "vite/cloud-site.ts",
+  "vite/metrics.ts",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+# The protocol editors and other clients speak to a Cloud server stays MIT.
+[[annotations]]
+path = [
+  "packages/cloud/src/contract/**",
+  "packages/cloud/src/client/**",
+  "packages/cloud/tests/contract/**",
+  "packages/cloud/tests/client/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"
+SPDX-License-Identifier = "MIT"
+
+# Mermaid's flowchart grammar, the parser generated from it, and Mermaid's text preparation,
+# copied from a pinned Mermaid release by tools/generate/mermaid-sources.
+[[annotations]]
+path = [
+  "packages/mermaid/src/upstream/comments.ts",
+  "packages/mermaid/src/upstream/flow.jison",
+  "packages/mermaid/src/upstream/flow.js",
+  "packages/mermaid/src/upstream/MERMAID-LICENSE.txt",
+  "packages/mermaid/src/upstream/preprocess.ts",
+  "packages/mermaid/src/upstream/regexes.ts",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2014 - 2022 Knut Sveidqvist"
+SPDX-License-Identifier = "MIT"

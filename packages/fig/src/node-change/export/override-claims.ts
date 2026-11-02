@@ -5,17 +5,19 @@ import {
 } from '#fig/instance-overrides/fields'
 import { compact } from 'es-toolkit'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   forEachInstanceOverride,
-  ownsSlotContent,
-  scaleNodeChanges,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  overriddenBindingField
+} from '@open-pencil/scene-graph/instances/overrides'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
+import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
+import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
+import { nestedPropertyAssignments } from './assignments/nested'
 import {
   createFillPaints,
   createStrokePaints,
@@ -167,19 +169,17 @@ function paintBindingOverride(
   target: SceneNode,
   bindingField: string
 ): Partial<Pick<KiwiSymbolOverridePayload, 'fillPaints' | 'strokePaints'>> | undefined {
-  if (/^fills\/\d+\/color$/.test(bindingField))
-    return { fillPaints: createFillPaints(context, target) }
-  if (/^strokes\/\d+\/color$/.test(bindingField))
-    return { strokePaints: createStrokePaints(context, target) }
+  const paint = paintBindingTarget(bindingField)
+  if (paint?.list === 'fills') return { fillPaints: createFillPaints(context, target) }
+  if (paint?.list === 'strokes') return { strokePaints: createStrokePaints(context, target) }
   return undefined
 }
 
 /** A binding override is a paint claim for paint colours and a consumption entry otherwise. */
 function bindingClaim(
   { context, instance, target }: ClaimInput,
-  field: string
+  bindingField: string
 ): Omit<KiwiSymbolOverridePayload, 'guidPath'> | undefined {
-  const bindingField = field.slice('boundVariables/'.length)
   const paints = paintBindingOverride(context, target, bindingField)
   if (paints) return paints
   const entry = overrideVariableBindingEntry(
@@ -213,9 +213,9 @@ function overrideClaim(
   const input: ClaimInput = { ...claimed, target, nodeFields }
   if (field === 'componentId')
     return exportedSwapOverride(input.context, input.target, path, counter)
-  const claim = field.startsWith('boundVariables/')
-    ? bindingClaim(input, field)
-    : registryClaim(field as keyof SceneNode, input)
+  const binding = overriddenBindingField(field)
+  const claim =
+    binding === null ? registryClaim(field as keyof SceneNode, input) : bindingClaim(input, binding)
   return claim && { guidPath: { guids: path }, ...claim }
 }
 
@@ -257,6 +257,14 @@ export function serializeRuntimePropertyOverrides(
         )
         if (claim) result.push(claim)
       })
+    if (node.type === 'INSTANCE' && node.id !== instance.id) {
+      const resolved = resolveTarget(node, node.id)
+      const assignments = resolved
+        ? nestedPropertyAssignments(context, instance, node, localIdCounter)
+        : []
+      if (resolved && assignments.length > 0)
+        result.push({ guidPath: { guids: resolved.path }, componentPropAssignments: assignments })
+    }
     // Slot content the instance owns carries its own values; it has no component address.
     if (ownsSlotContent(context.graph, node)) return
     for (const child of context.graph.getChildren(node.id)) visit(child)

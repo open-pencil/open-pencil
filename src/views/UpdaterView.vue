@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useHead } from '@unhead/vue'
 import { computed, onMounted, onScopeDispose } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { APP_VERSION } from '@/app/runtime/version'
 import { animationsEnabled } from '@/app/shell/motion'
@@ -28,7 +29,6 @@ let stopCloseGuard: (() => void) | undefined
 let disposed = false
 onMounted(async () => {
   void session.check()
-  const { getCurrentWindow } = await import('@tauri-apps/api/window')
   // Closing mid-install would leave the app half replaced.
   const stop = await getCurrentWindow().onCloseRequested((event) => {
     if (session.state.value.status === 'installing') event.preventDefault()

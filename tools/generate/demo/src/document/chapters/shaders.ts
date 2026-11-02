@@ -1,6 +1,5 @@
-import { Frame, Rectangle, Text, shader } from '@open-pencil/design-jsx'
-import type { TreeNode } from '@open-pencil/design-jsx'
-import type { ShaderPreset } from '@open-pencil/scene-graph'
+import { Frame, Rectangle, Text, shader, type TreeNode } from '@open-pencil/design-jsx'
+import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 import { fillRow } from '../chrome'
 import { COVER_PRESET } from '../player/card'

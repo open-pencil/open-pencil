@@ -1,13 +1,14 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   applyComponentPropertyValue,
-  cloneInstanceOverrideState,
   componentPropertyDefinitions,
   findComponentPropertyTargets
-} from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/components'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
+import { refitGroupsAroundLayers } from '#core/editor/structure/group/bounds'
 import type { EditorContext } from '#core/editor/types'
 
 /** Whether a boolean property drives the layer's visibility. */
@@ -57,12 +58,14 @@ export function applyBoundVisibilityEdit(
   const after = snapshot()
   // The property already had the value, as when another layer it drives was just shown.
   if (isEqual(before, after)) return true
+  refitGroupsAroundLayers(ctx, layers)
   const apply = (values: typeof before) => {
     ctx.graph.updateNode(instance.id, {
       componentPropertyAssignments: { ...values.componentPropertyAssignments },
       instanceOverrides: cloneInstanceOverrideState(values.instanceOverrides)
     })
     for (const [id, shown] of values.layers) ctx.graph.updateNode(id, { visible: shown })
+    refitGroupsAroundLayers(ctx, layers)
     ctx.runLayoutForNode(instance.id)
     ctx.requestRender()
   }

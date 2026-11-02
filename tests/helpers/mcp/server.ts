@@ -3,27 +3,27 @@ import { type RequestOptions, request as httpRequest } from 'node:http'
 import * as v from 'valibot'
 import { WebSocket } from 'ws'
 
-import {
-  type SceneGraph,
-  ALL_TOOLS,
-  FigmaAPI,
-  computeAllLayouts,
-  executeRPCCommand
-} from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { computeAllLayouts } from '@open-pencil/core/layout'
+import { executeRPCCommand } from '@open-pencil/core/rpc'
+import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
-const ToolDescriptorShape = v.looseObject({ name: v.string(), enabled: v.boolean() })
+const toolDescriptorSchema = v.looseObject({ name: v.string(), enabled: v.boolean() })
 
-export const HealthResponseSchema = v.object({
+export const healthResponseSchema = v.object({
   status: v.string(),
   version: v.string(),
   authRequired: v.boolean(),
-  tools: v.optional(v.array(v.custom<ToolDescriptor>((value) => v.is(ToolDescriptorShape, value)))),
+  tools: v.optional(
+    v.array(v.custom<ToolDescriptor>((value) => v.is(toolDescriptorSchema, value)))
+  ),
   discoveryPath: v.optional(v.string())
 })
 
-export type HealthResponse = v.InferOutput<typeof HealthResponseSchema>
+export type HealthResponse = v.InferOutput<typeof healthResponseSchema>
 
 /** Read a JSON response body or file, checked against `schema`. */
 export async function readJSON<T>(
@@ -34,7 +34,7 @@ export async function readJSON<T>(
 }
 
 export function readHealth(response: Response): Promise<HealthResponse> {
-  return readJSON(response, HealthResponseSchema)
+  return readJSON(response, healthResponseSchema)
 }
 
 export interface MockBrowserRequest {
@@ -46,17 +46,19 @@ export interface MockBrowser {
   ws: WebSocket
   graph: SceneGraph
   requests: MockBrowserRequest[]
+  /** Results a test sets for app commands, sent instead of the mock's own. */
+  results: Map<string, unknown>
   close: () => void
 }
 
 /** A `register` broadcast: the browser bridge announcing its token. */
-export const RegisterMessage = v.object({
+export const registerMessageSchema = v.object({
   type: v.string(),
   token: v.optional(v.nullable(v.string()))
 })
 
 /** A tool response relayed through the browser bridge. */
-export const ResponseMessage = v.object({
+export const responseMessageSchema = v.object({
   type: v.string(),
   id: v.string(),
   ok: v.optional(v.boolean()),
@@ -272,6 +274,7 @@ export function connectMockBrowser(
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`ws://127.0.0.1:${port}`)
     const requests: MockBrowserRequest[] = []
+    const results = new Map<string, unknown>()
     const token = authToken ?? 'test-token-' + randomHex(8)
 
     let settled = false
@@ -292,7 +295,9 @@ export function connectMockBrowser(
 
         try {
           requests.push({ command: msg.command, args: msg.args })
-          const result = await handleMockCommand(graph, msg.command, msg.args)
+          const result = results.has(msg.command)
+            ? results.get(msg.command)
+            : await handleMockCommand(graph, msg.command, msg.args)
           ws.send(JSON.stringify({ type: 'response', id: msg.id, ok: true, result }))
         } catch (e) {
           ws.send(
@@ -313,7 +318,7 @@ export function connectMockBrowser(
         // the browser as connected, causing race conditions.
         void waitForBrowserRegistration(port).then(
           () => {
-            resolve({ ws, graph, requests, close: () => ws.close() })
+            resolve({ ws, graph, requests, results, close: () => ws.close() })
             return undefined
           },
           (err) => {

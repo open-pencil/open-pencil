@@ -8,6 +8,7 @@ import type {
   VariableCollection,
   VariableCollectionMode
 } from '@open-pencil/scene-graph'
+import { printFormula, variableValueReferences } from '@open-pencil/scene-graph/variables'
 
 import { fileSegment, placeTokens, tokenPath, tokenReference, tokenTree } from './paths'
 import { styleTokens, withOriginalName, type TokenReferences } from './styles'
@@ -57,11 +58,12 @@ interface ExportContext {
 }
 
 /** OpenPencil's own token fields, which DTCG has no place for. */
-function openPencilFields(variable: Variable, modeId: string) {
+function openPencilFields(variable: Variable, modeId: string, formula?: string) {
   const fields = omitBy(
     {
       unit: variable.unit,
       expression: variable.expressions?.[modeId]?.css,
+      formula,
       scopes: variable.scopes,
       codeSyntax: variable.codeSyntax,
       hiddenFromPublishing: variable.hiddenFromPublishing || undefined
@@ -89,7 +91,23 @@ function variableToken(
   const value = variable.valuesByMode[mode.modeId]
   const figma: Record<string, unknown> = {}
   let $value: unknown
-  if (typeof value === 'object' && 'aliasId' in value) {
+  let formula: string | undefined
+  if (typeof value === 'object' && 'expression' in value && value.expression === 'FORMULA') {
+    // DTCG has no formulas: the token holds this mode's result and keeps the formula beside it.
+    const resolved = context.graph.resolveVariable(variable.id, mode.modeId)
+    const missing = variableValueReferences(value).some((id) => !context.references.has(id))
+    if (missing || resolved === undefined) {
+      context.issues.push({ kind: 'missing-alias', ...where })
+      return undefined
+    }
+    formula = printFormula(value.value, (id) => tokenReference(context.references.get(id) ?? []), {
+      type: (id) => context.graph.variables.get(id)?.type
+    })
+    $value = literalTokenValue(variable, resolved)
+  } else if (typeof value === 'object' && 'expression' in value) {
+    context.issues.push({ kind: 'unsupported-expression', ...where })
+    return undefined
+  } else if (typeof value === 'object' && 'aliasId' in value) {
     const path = context.references.get(value.aliasId)
     const target = context.graph.variables.get(value.aliasId)
     const targetCollection = context.collectionOf.get(value.aliasId)
@@ -107,7 +125,7 @@ function variableToken(
     $value = literalTokenValue(variable, value)
   }
   if (variable.type === 'BOOLEAN') figma['com.figma.type'] = 'boolean'
-  const $extensions = { ...figma, ...openPencilFields(variable, mode.modeId) }
+  const $extensions = { ...figma, ...openPencilFields(variable, mode.modeId, formula) }
   const token: DesignToken = { $type: variableTokenType(variable), $value }
   if (variable.description) token.$description = variable.description
   if (!isEmptyObject($extensions)) token.$extensions = $extensions

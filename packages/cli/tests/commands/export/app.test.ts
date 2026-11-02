@@ -11,15 +11,15 @@ import * as v from 'valibot'
 import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
 import { removeDiscoveryFile, writeDiscoveryFile } from '@open-pencil/mcp/discovery'
 
-import exportCommand from '#cli/commands/export'
+import exportCommand from '#cli/commands/export/index'
 
-const RPCRequestJSON = v.pipe(
+const rpcRequestSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({ command: v.string(), args: v.record(v.string(), v.unknown()) })
 )
 
-type RPCRequest = v.InferOutput<typeof RPCRequestJSON>
+type RPCRequest = v.InferOutput<typeof rpcRequestSchema>
 
 const DOCUMENT: AutomationDocumentSummary = {
   id: 'tab-1',
@@ -53,7 +53,7 @@ beforeAll(async () => {
     const chunks: Buffer[] = []
     request.on('data', (chunk: Buffer) => chunks.push(chunk))
     request.on('end', () => {
-      const body = v.parse(RPCRequestJSON, Buffer.concat(chunks).toString('utf-8'))
+      const body = v.parse(rpcRequestSchema, Buffer.concat(chunks).toString('utf-8'))
       requests.push(body)
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ ok: true, result: reply(body.command) }))

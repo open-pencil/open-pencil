@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineComponent, KeepAlive, toRef } from 'vue'
 
-import { provideRetainedActivity } from '@open-pencil/vue'
+import { provideRetainedActivity } from '@open-pencil/vue/lifecycle/retention'
 
 const { active } = defineProps<{ active: boolean }>()
 provideRetainedActivity(toRef(() => active))

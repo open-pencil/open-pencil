@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { readReloadSource } from '@/app/document/io/reload-source'
-import { chooseTauriFigSavePath } from '@/app/document/io/save-targets'
+import { chooseTauriFigSavePath } from '@/app/document/io/save/targets'
 import { createDocumentWriter } from '@/app/document/io/write'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
@@ -85,6 +85,21 @@ describe('Tauri document IO helpers', () => {
       return '/tmp/Untitled.fig'
     })
 
-    await expect(chooseTauriFigSavePath()).resolves.toBe('/tmp/Untitled.fig')
+    await expect(chooseTauriFigSavePath('design')).resolves.toBe('/tmp/Untitled.fig')
+  })
+
+  test('saves a board as a FigJam .jam', async () => {
+    await mockTauriIPC((cmd, args) => {
+      expect(cmd).toBe('plugin:dialog|save')
+      expect(args).toEqual({
+        options: {
+          defaultPath: 'Untitled.jam',
+          filters: [{ name: 'FigJam board', extensions: ['jam'] }]
+        }
+      })
+      return '/tmp/Untitled.jam'
+    })
+
+    await expect(chooseTauriFigSavePath('board')).resolves.toBe('/tmp/Untitled.jam')
   })
 })

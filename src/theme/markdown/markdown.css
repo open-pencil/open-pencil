@@ -48,6 +48,11 @@
   background-color: var(--color-input);
 }
 
+/* A code block's language and copy bar stays on the block; pinned, it covered the lines above. */
+.markdown-root [data-stream-markdown='code-block-header'].sticky {
+  position: static;
+}
+
 .markdown-content {
   --shiki-dark-bg: var(--color-input);
 

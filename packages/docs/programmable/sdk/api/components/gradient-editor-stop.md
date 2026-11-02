@@ -23,7 +23,7 @@ exposes slot actions and `data-selected`/`data-dragging`, but does not enter the
 ```vue twoslash
 <script setup lang="ts">
 import type { GradientStop } from '@open-pencil/scene-graph'
-import { GradientEditorStop } from '@open-pencil/vue'
+import { GradientEditorStop } from '@open-pencil/vue/primitives/GradientEditor'
 
 const stop: GradientStop = {
   color: { r: 0.4, g: 0.2, b: 0.9, a: 1 },

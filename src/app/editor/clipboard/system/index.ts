@@ -6,7 +6,7 @@ import { tauriSystemClipboard } from '@/app/editor/clipboard/system/tauri'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
 import { isTauri } from '@/app/tauri/env'
 
-function resolveSystemClipboard(): SystemClipboard {
+export function resolveSystemClipboard(): SystemClipboard {
   return isTauri() ? tauriSystemClipboard : browserSystemClipboard
 }
 

@@ -1,3 +1,5 @@
+import { isUndefined, mapValues, omitBy } from 'es-toolkit'
+
 import { es, jsx, type SyntaxNode } from '@open-pencil/emit'
 
 /** A paint, effect, or variable helper call inside a prop value, such as `solid("#FF0000")`. */
@@ -8,6 +10,17 @@ export class HelperCall {
   ) {}
 }
 
+/**
+ * A name the export declares before the JSX, such as the `card1` of `ref={card1}`, or one of its
+ * members, such as the `theme.Page` of a variable `defineVars` declared.
+ */
+export class Reference {
+  constructor(
+    readonly name: string,
+    readonly member?: string
+  ) {}
+}
+
 /** A prop value: plain data, possibly holding helper calls. Undefined object fields are left out. */
 export type JSXValue =
   | string
@@ -15,6 +28,7 @@ export type JSXValue =
   | boolean
   | null
   | HelperCall
+  | Reference
   | JSXValue[]
   | { [key: string]: JSXValue | undefined }
 
@@ -39,15 +53,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * cannot write back, such as binary data.
  */
 export function plainValue(value: unknown): JSXValue {
+  if (value instanceof Reference) return value
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return value
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (Array.isArray(value)) return value.map(plainValue)
   if (isRecord(value)) {
-    return Object.fromEntries(
-      Object.entries(value).flatMap(([key, item]) =>
-        item === undefined ? [] : [[key, plainValue(item)]]
-      )
-    )
+    return mapValues(omitBy(value, isUndefined), (item) => plainValue(item))
   }
   throw new TypeError(`Cannot write a ${typeof value} value as JSX`)
 }
@@ -56,6 +67,10 @@ export function plainValue(value: unknown): JSXValue {
 export function valueSyntax(value: JSXValue): SyntaxNode {
   if (value === null) return { type: 'Literal', value: null }
   if (value instanceof HelperCall) return es.call(value.helper, value.args.map(valueSyntax))
+  if (value instanceof Reference)
+    return value.member === undefined
+      ? es.identifier(value.name)
+      : es.member(es.identifier(value.name), value.member)
   if (Array.isArray(value)) return es.array(value.map(valueSyntax))
   if (typeof value === 'object') {
     return es.object(

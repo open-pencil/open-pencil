@@ -16,7 +16,7 @@ import type { DesignElement, DesignNode } from '#dom-css/types'
 import { sortBy } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
-import { emptyBehaviour } from '@open-pencil/scene-graph'
+import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 import {
   buttonSet,

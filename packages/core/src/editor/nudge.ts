@@ -4,10 +4,31 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { collectNodePositions, pushPositionUndo } from './history/position'
-import { fitEnclosingGroupsWithUndo } from './structure/group-bounds'
+import { fitEnclosingGroupsWithUndo } from './structure/group/bounds'
 import type { EditorContext } from './types'
 
 const NUDGE_COMMIT_DELAY = 300
+
+/** The step from `position` to the next multiple of `grid` in `direction` (1 or -1). */
+function toNextGridLine(position: number, direction: number, grid: number): number {
+  if (direction === 0) return 0
+  const next =
+    direction > 0
+      ? (Math.floor(position / grid + 1e-9) + 1) * grid
+      : (Math.ceil(position / grid - 1e-9) - 1) * grid
+  return next - position
+}
+
+/**
+ * How far Shift+arrow moves a selection on a board: its top-left corner to the next line of the
+ * board grid that way, as FigJam does, rather than Figma Design's 10 units.
+ */
+export function gridNudge(origin: Vector, direction: Vector, grid: number): Vector {
+  return {
+    x: toNextGridLine(origin.x, direction.x, grid),
+    y: toNextGridLine(origin.y, direction.y, grid)
+  }
+}
 
 /** The flow an arrow key moves a layer along: its row or column, or none. */
 function flowParent(ctx: EditorContext, node: SceneNode): SceneNode | null {
@@ -54,7 +75,7 @@ export function createNudgeActions(ctx: EditorContext) {
   let nudgeCommitTimer: ReturnType<typeof setTimeout> | null = null
 
   function applyOrder(parentId: string, order: readonly string[]) {
-    order.forEach((id, index) => ctx.graph.reorderChild(id, parentId, index))
+    order.forEach((id, index) => ctx.graph.insertChildAt(id, parentId, index))
     ctx.runLayoutForNode(parentId)
   }
 

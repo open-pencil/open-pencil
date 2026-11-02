@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { useMenuMessages } from '@open-pencil/vue'
+import { useMenuMessages } from '@open-pencil/vue/i18n'
 
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'

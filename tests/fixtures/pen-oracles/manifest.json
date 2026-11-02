@@ -1,0 +1,112 @@
+{
+  "document": "probes.pen",
+  "targets": [
+    {
+      "node": "Frame",
+      "penNodeId": "bi8Au",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "Stroke Probe",
+      "penNodeId": "XwyoV",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "Align Probe",
+      "penNodeId": "ZqgQn",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Fills",
+      "penNodeId": "VuLq8",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Effects",
+      "penNodeId": "AMkAG",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Shapes",
+      "penNodeId": "G1aH4g",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Transforms",
+      "penNodeId": "ptfGa",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Text",
+      "penNodeId": "or6x9",
+      "maximumDifferentPercent": 1.02,
+      "note": "pen.dev lets fixed-size text overflow its box; OpenPencil clips it."
+    },
+    {
+      "node": "P Layout",
+      "penNodeId": "MBeS5",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Vars",
+      "penNodeId": "o2znWP",
+      "maximumDifferentPercent": 0.13
+    },
+    {
+      "node": "P Components",
+      "penNodeId": "w0MCR",
+      "maximumDifferentPercent": 0.25
+    },
+    {
+      "node": "P Images",
+      "penNodeId": "ayqm5",
+      "maximumDifferentPercent": 0.07
+    },
+    {
+      "node": "P Icons",
+      "penNodeId": "rMpIj",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Strokes",
+      "penNodeId": "sqoEc",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Other types",
+      "penNodeId": "c6sX3L",
+      "maximumDifferentPercent": 9.45,
+      "note": "Note, context, and prompt layers are pen.dev's own and are not read."
+    },
+    {
+      "node": "M Gradients",
+      "penNodeId": "cDh6W",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "M Transforms",
+      "penNodeId": "apjeC",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "M Themes",
+      "penNodeId": "HD4Cf",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Icon weights",
+      "penNodeId": "MOmt0",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Icon variables",
+      "penNodeId": "alRyT",
+      "maximumDifferentPercent": 0.05
+    },
+    {
+      "node": "P Sized paths",
+      "penNodeId": "dqtl8",
+      "maximumDifferentPercent": 0.05
+    }
+  ]
+}

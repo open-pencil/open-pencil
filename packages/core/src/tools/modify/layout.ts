@@ -1,9 +1,7 @@
 import * as v from 'valibot'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-
-import { toolNumber, nodeIdInput } from '#core/tools/input'
-import { defineTool, nodeNotFound } from '#core/tools/schema'
+import { OpenPencilAPI } from '#core/openpencil-api'
+import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setLayout = defineTool({
   name: 'set_layout',
@@ -82,7 +80,7 @@ export const setLayout = defineTool({
     if (args.align !== undefined) node.primaryAxisAlignItems = args.align
     if (args.counter_align !== undefined) node.counterAxisAlignItems = args.counter_align
     if (args.flow_direction !== undefined)
-      node.layoutDirection = args.flow_direction as SceneNode['layoutDirection']
+      new OpenPencilAPI(figma).setLayoutDirection(node, args.flow_direction)
 
     if (args.padding !== undefined) {
       node.paddingTop = args.padding
@@ -109,7 +107,7 @@ export const setConstraints = defineTool({
   description: 'Set resize constraints for a node within its parent.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     horizontal: v.optional(
       v.pipe(
         v.picklist(['MIN', 'CENTER', 'MAX', 'STRETCH', 'SCALE']),

@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   createShaderPaint,
-  SceneGraph,
   shaderOfPaint,
   shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/shaders'
 
 const AURORA: ShaderPreset = { components: [{ type: 'Aurora' }] }
 const SWIRL: ShaderPreset = { components: [{ type: 'Swirl' }] }

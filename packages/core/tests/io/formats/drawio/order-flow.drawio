@@ -1,0 +1,14 @@
+<mxfile host="app.diagrams.net"><diagram id="flow" name="Order flow"><mxGraphModel dx="1000" dy="600" grid="1"><root>
+<mxCell id="0"/><mxCell id="1" parent="0"/>
+<mxCell id="start" value="Order placed" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="40" y="40" width="140" height="70" as="geometry"/></mxCell>
+<mxCell id="check" value="In stock?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="260" y="25" width="120" height="100" as="geometry"/></mxCell>
+<mxCell id="ship" value="&lt;b&gt;Ship&lt;/b&gt; order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="460" y="45" width="140" height="60" as="geometry"/></mxCell>
+<mxCell id="db" value="Inventory" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="280" y="220" width="80" height="100" as="geometry"/></mxCell>
+<mxCell id="back" value="Back-order" style="shape=document;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="460" y="220" width="140" height="80" as="geometry"/></mxCell>
+<mxCell id="note" value="Checked nightly" style="text;html=1;align=left;fontStyle=2;fontColor=#666666;" vertex="1" parent="1"><mxGeometry x="40" y="250" width="160" height="30" as="geometry"/></mxCell>
+<mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="start" target="check"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e2" value="yes" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="check" target="ship"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e3" value="no" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="check" target="back"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="160"/><mxPoint x="530" y="160"/></Array></mxGeometry></mxCell>
+<mxCell id="e4" style="endArrow=none;dashed=1;html=1;" edge="1" parent="1" source="check" target="db"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e5" style="curved=1;endArrow=open;html=1;strokeColor=#b85450;" edge="1" parent="1" source="back" target="ship"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="680" y="170"/></Array></mxGeometry></mxCell>
+</root></mxGraphModel></diagram></mxfile>

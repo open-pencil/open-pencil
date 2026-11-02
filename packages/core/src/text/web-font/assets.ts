@@ -11,7 +11,7 @@ import {
   WEB_FONT_PROVIDER_IDS,
   type WebFontFetch,
   type WebFontProviderId
-} from '#core/text/web-fonts'
+} from '#core/text/web-font/resolver'
 
 export interface ExportWebFontFaceAssetsOptions {
   fonts: WebFontFaceRequest[]

@@ -1,9 +1,5 @@
-import {
-  type Color,
-  type SceneGraph,
-  type SceneNode,
-  type Variable
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Variable } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { collectionVariables, variableCSSNames, variableNamespace } from './names'
 import { modeAttribute } from './stylesheet'

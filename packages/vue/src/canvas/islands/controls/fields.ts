@@ -12,7 +12,7 @@ import {
   type ControlModel,
   type ControlRole
 } from '@open-pencil/dom-css/export'
-import { numberSettings } from '@open-pencil/scene-graph'
+import { numberSettings } from '@open-pencil/scene-graph/behaviours'
 
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
 

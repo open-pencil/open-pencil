@@ -1,7 +1,9 @@
-import { canCreateInstance, cloneInstanceOverrideState } from '@open-pencil/scene-graph'
-import type { SceneNode, Vector } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { canCreateInstance } from '@open-pencil/scene-graph/instances'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'

@@ -1,3 +1,4 @@
+import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { DownloadedFontCache } from '@open-pencil/core/text'
@@ -24,7 +25,7 @@ type FontCacheManifest = {
   entries: Partial<Record<string, FontCacheEntry>>
 }
 
-const CachedFontManifest = v.object({
+const cachedFontManifestSchema = v.object({
   version: v.literal(1),
   entries: v.record(
     v.string(),
@@ -70,7 +71,7 @@ function hexDigest(data: ArrayBuffer) {
 }
 
 async function readManifest(): Promise<FontCacheManifest> {
-  return (await readCacheJSON(MANIFEST_PATH, CachedFontManifest)) ?? EMPTY_MANIFEST
+  return (await readCacheJSON(MANIFEST_PATH, cachedFontManifestSchema)) ?? EMPTY_MANIFEST
 }
 
 async function writeManifest(manifest: FontCacheManifest) {
@@ -84,7 +85,7 @@ export async function downloadedFontCacheSummary(): Promise<DownloadedFontCacheS
   )
   return {
     count: entries.length,
-    byteLength: entries.reduce((sum, entry) => sum + entry.byteLength, 0),
+    byteLength: sumBy(entries, (entry) => entry.byteLength),
     updatedAt: entries.length > 0 ? Math.max(...entries.map((entry) => entry.updatedAt)) : null
   }
 }

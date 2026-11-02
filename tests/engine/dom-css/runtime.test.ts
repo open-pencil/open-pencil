@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import {
-  createCSSRuntime,
-  createHeadlessCSSRuntime,
-  exportHTMLBundle,
-  serializeHTML
-} from '@open-pencil/dom-css'
+import { createCSSRuntime, createHeadlessCSSRuntime } from '@open-pencil/dom-css'
+import { exportHTMLBundle, serializeHTML } from '@open-pencil/dom-css/export'
 
 import { DOM_CSS_COLORS, simpleCardDocument } from '#tests/helpers/dom-css'
 

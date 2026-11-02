@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 
 let editor: Editor
 

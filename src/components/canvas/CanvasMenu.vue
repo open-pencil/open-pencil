@@ -12,15 +12,15 @@ import { computed } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import {
-  vTestId,
   useEditorCommands,
-  useI18n,
-  useMenuModel,
-  useSelectionState,
   editorCommandMetadata,
-  formatShortcut
-} from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+  formatShortcut,
+  type EditorCommandId
+} from '@open-pencil/vue/editor/commands'
+import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
@@ -148,19 +148,19 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
             <ContextMenuPortal>
               <ContextMenuSubContent :class="cls.submenu">
                 <MenuScrollArea>
-                  <ContextMenuItem
-                    v-for="(sub, j) in item.sub"
-                    :key="j"
-                    :class="cls.item"
-                    v-test-id="sub.separator ? undefined : sub.testId"
-                    :disabled="sub.separator ? true : sub.disabled"
-                    @select="!sub.separator && sub.action?.()"
-                  >
-                    <template v-if="!sub.separator">
+                  <template v-for="(sub, j) in item.sub" :key="j">
+                    <ContextMenuSeparator v-if="sub.separator" :class="cls.sep" />
+                    <ContextMenuItem
+                      v-else
+                      :class="cls.item"
+                      v-test-id="sub.testId"
+                      :disabled="sub.disabled"
+                      @select="sub.action?.()"
+                    >
                       <span class="min-w-0 flex-1 truncate">{{ sub.label }}</span>
                       <AppShortcutText v-if="sub.shortcut">{{ sub.shortcut }}</AppShortcutText>
-                    </template>
-                  </ContextMenuItem>
+                    </ContextMenuItem>
+                  </template>
                 </MenuScrollArea>
               </ContextMenuSubContent>
             </ContextMenuPortal>

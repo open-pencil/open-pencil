@@ -32,12 +32,13 @@ Options:
 
 ## Font Substitution Policy
 
-For file-backed PNG, JPG, WEBP, and PDF exports, choose how missing or substituted fonts are handled:
+For file-backed PNG, JPG, WEBP, and PDF exports, and for `openpencil convert`, choose how missing or substituted fonts are handled:
 
 ```sh
 openpencil export design.fig -f pdf --font-policy strict
 openpencil export design.fig -f png --font-policy warn
 openpencil export design.fig -f webp --font-policy allow
+openpencil convert design.pen --font-policy strict
 ```
 
 - `warn` (default) — report substitutions and continue exporting.
@@ -46,7 +47,9 @@ openpencil export design.fig -f webp --font-policy allow
 
 Run [`openpencil fonts`](./inspecting#font-diagnostics) first to inspect affected faces. Export preparation may use configured font providers, so its result can differ from the offline file diagnostic.
 
-This policy does not apply to exports from the running app, or to SVG, PowerPoint, JSX, HTML, and `.fig` output. It checks font resolution, not complete visual equivalence with Figma.
+`convert` loads fonts for `.pen`, draw.io, and Mermaid files, which store layout intent rather than sizes: it lays them out again with their text measured in their own fonts before writing, so `strict` stops it before anything is written. A Mermaid flowchart (`.mmd` or `.mermaid`) is laid out as it is read, its text measured in the fonts it is drawn in.
+
+This policy does not apply to exports from the running app, or to SVG, PowerPoint, JSX, HTML, and `.fig` exports. It checks font resolution, not complete visual equivalence with Figma.
 
 ## JSX Export
 
@@ -108,12 +111,12 @@ Each collection's default mode goes in `:root`. Every other mode overrides the v
 
 ```css
 :root {
-  --color-blue-500: #3B82F5;
+  --color-blue-500: #3b82f5;
   --color-primary: var(--color-blue-500);
 }
 
 /* Theme: Dark */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --color-primary: var(--color-blue-300);
 }
 ```

@@ -4,6 +4,8 @@
   "usageCompleted": "Terminées",
   "usageInputTokens": "Tokens d’entrée",
   "usageOutputTokens": "Tokens de sortie",
+  "usageCachedInputTokens": "Tokens d’entrée en cache",
+  "usageCacheWriteTokens": "Tokens écrits en cache",
   "usageByModel": "Par modèle",
   "usageNoData": "Aucune donnée d’utilisation enregistrée.",
   "usageNotReported": "Non communiqué",

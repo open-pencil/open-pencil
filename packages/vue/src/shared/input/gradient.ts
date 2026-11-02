@@ -1,4 +1,4 @@
-import { editedGradient, editedGradientLayout, type Editor } from '@open-pencil/core/editor'
+import { editedGradient, editedGradientLayout, type Editor } from '@open-pencil/core'
 import {
   createSceneGeometry,
   gradientStopPosition,

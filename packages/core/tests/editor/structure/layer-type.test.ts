@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, layerTypeOptions } from '@open-pencil/core/editor'
+import { createEditor, layerTypeOptions } from '@open-pencil/core'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 // Each case repeats the layer type menu in Figma desktop 126's properties panel.

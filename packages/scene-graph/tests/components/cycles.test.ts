@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   canCreateInstance,
   createsComponentCycle,
-  cycleSafeParent,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+  cycleSafeParent
+} from '@open-pencil/scene-graph/instances'
 
 /** Card holds a Footer with an Action instance of Button, which holds an instance of Icon. */
 function setup() {

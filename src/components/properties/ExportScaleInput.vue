@@ -8,7 +8,7 @@ import {
 } from 'reka-ui'
 import { onDeactivated, ref, watch } from 'vue'
 
-import { useRetainedPopup } from '@open-pencil/vue'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useInputUI } from '@/components/ui/input/input'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'

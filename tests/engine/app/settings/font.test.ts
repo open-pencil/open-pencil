@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { DEFAULT_WEB_FONT_PROVIDER_SETTINGS } from '@open-pencil/core/text'
 
-import { useFontSettings, type FontSettingsActions } from '@/components/font-settings/use'
+import { useFontSettings, type FontSettingsActions } from '@/app/settings/fonts/use'
 
 function actions(overrides: Partial<FontSettingsActions> = {}): FontSettingsActions {
   let accessState: ReturnType<FontSettingsActions['localFontAccessState']> = 'prompt'

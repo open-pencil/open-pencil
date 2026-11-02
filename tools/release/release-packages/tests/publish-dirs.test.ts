@@ -1,15 +1,20 @@
 import { describe, expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import {
   discoverPublishPackages,
+  npmPackFileList,
   preparePublishDirectories,
   publishPackageJSON
 } from '#release/publish-dirs'
 
-async function fixtureRoot({ rootLicense = true } = {}) {
+async function fixtureRoot({
+  rootLicense = true,
+  license
+}: { rootLicense?: boolean; license?: string } = {}) {
   const root = join(tmpdir(), `open-pencil-release-packages-${crypto.randomUUID()}`)
   await mkdir(join(root, 'packages/example/dist'), { recursive: true })
   await writeFile(join(root, 'packages/example/dist/index.js'), 'export {}\n')
@@ -22,6 +27,7 @@ async function fixtureRoot({ rootLicense = true } = {}) {
       {
         name: '@open-pencil/example',
         version: '1.0.0',
+        ...(license ? { license } : {}),
         files: ['dist', 'README.md'],
         scripts: { build: 'tsdown' },
         dependencies: { '@open-pencil/core': 'workspace:*', zod: '^4.0.0' },
@@ -126,6 +132,45 @@ describe('preparePublishDirectories', () => {
       main: './dist/index.js',
       types: './dist/index.d.ts'
     })
+  }, 30_000)
+
+  test.each(['Apache-2.0 AND MIT', '(mit AND Apache-2.0)', 'Apache-2.0 OR MIT+'])(
+    'ships the repository’s MIT text beside a package’s own license when it is MIT in part: %s',
+    async (license) => {
+      const root = await fixtureRoot({ license })
+      await writeFile(join(root, 'packages/example/LICENSE'), 'apache license\n')
+      const outRoot = join(root, '.publish')
+
+      await preparePublishDirectories({
+        coreVersion: '0.13.2',
+        outRoot,
+        packages: await discoverPublishPackages(root),
+        root
+      })
+
+      expect(await readFile(join(outRoot, 'example/LICENSE'), 'utf8')).toBe('apache license\n')
+      expect(await readFile(join(outRoot, 'example/LICENSE-MIT'), 'utf8')).toBe('root license\n')
+      // Packed from the prepared directory, as releases are, both license texts ship.
+      expect(await npmPackFileList(join(outRoot, 'example'))).toEqual(
+        expect.arrayContaining(['LICENSE', 'LICENSE-MIT'])
+      )
+    },
+    30_000
+  )
+
+  test('ships no MIT text beside a license that only resembles it, such as MIT-0', async () => {
+    const root = await fixtureRoot({ license: 'MIT-0' })
+    await writeFile(join(root, 'packages/example/LICENSE'), 'mit-0 license\n')
+    const outRoot = join(root, '.publish')
+
+    await preparePublishDirectories({
+      coreVersion: '0.13.2',
+      outRoot,
+      packages: await discoverPublishPackages(root),
+      root
+    })
+
+    expect(existsSync(join(outRoot, 'example/LICENSE-MIT'))).toBe(false)
   }, 30_000)
 
   test('refuses to prepare a package without any license text before packing', async () => {

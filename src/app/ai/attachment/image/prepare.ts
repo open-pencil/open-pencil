@@ -1,9 +1,13 @@
+import { filename } from 'pathe/utils'
+
+import { isSVGFile } from '@open-pencil/scene-graph/images'
+
 import type {
   ImageAttachmentMediaType,
   PreparedImageAttachment
 } from '@/app/ai/attachment/image/types'
 import { IMAGE_ATTACHMENT_MEDIA_TYPES } from '@/app/ai/attachment/image/types'
-import { boundedImageScale } from '@/app/ai/tools/vision'
+import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
 
 const MAX_IMAGE_FILE_BYTES = 20 * 1024 * 1024
 const MAX_IMAGE_PIXELS = 40_000_000
@@ -58,13 +62,6 @@ function canvasToBlob(
   })
 }
 
-/** Whether a file is an SVG image, which some systems report without a media type. */
-export function isSVGFile(file: File): boolean {
-  return (
-    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
-  )
-}
-
 /** Whether a file can be attached as an image, as it is or after drawing an SVG as PNG. */
 export function isAttachableImageFile(file: File): boolean {
   return file.type.startsWith('image/') || isSVGFile(file)
@@ -95,7 +92,7 @@ export async function rasterizeSVGAttachment(
     if (!context) throw new Error('Could not prepare the image.')
     context.drawImage(image, 0, 0, canvas.width, canvas.height)
     const blob = await canvasToBlob(canvas, 'image/png')
-    const name = file.name.replace(/\.svg$/i, '') + '.png'
+    const name = `${filename(file.name) ?? file.name}.png`
     return new File([blob], name, { type: 'image/png' })
   } finally {
     revokeImagePreviewURL(sourceURL)
@@ -138,8 +135,9 @@ export async function prepareImageAttachment(
     if (!isImageAttachmentMediaType(file.type)) {
       throw new Error('Choose a PNG, JPEG, or WebP image.')
     }
-    const mediaType = file.type
-    const blob = await canvasToBlob(canvas, mediaType, mediaType === 'image/png' ? undefined : 0.88)
+    const blob = await canvasToBlob(canvas, file.type, file.type === 'image/png' ? undefined : 0.88)
+    // A browser that cannot encode the type asked for, such as WebKit with WebP, returns a PNG.
+    const mediaType = isImageAttachmentMediaType(blob.type) ? blob.type : 'image/png'
 
     return {
       data: new Uint8Array(await blob.arrayBuffer()),

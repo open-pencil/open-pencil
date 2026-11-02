@@ -1,22 +1,27 @@
 import { pick } from 'es-toolkit'
 
-import { createsComponentCycle, TRANSFORM_FIELDS, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
+import { generatedFrameKind } from '@open-pencil/scene-graph/generated'
+import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
 
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
-import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group-bounds'
+import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
 
+import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import {
   booleanOperationSelected as booleanOperationSelectedImpl,
   type BooleanOperation
 } from './structure/boolean'
-import { wrapSelectionInContainer as wrapSelectionInContainerImpl } from './structure/container-wrap'
 import {
-  flattenSelected as flattenSelectedImpl,
-  outlineStrokeSelected as outlineStrokeSelectedImpl
-} from './structure/flatten'
-import { ungroupSelected as ungroupImpl } from './structure/group'
+  sharedParentId,
+  wrapSelectionInContainer as wrapSelectionInContainerImpl
+} from './structure/container-wrap'
+import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
+import { ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
+import { outlineStrokeSelected as outlineStrokeSelectedImpl } from './structure/outline-stroke'
 import {
   defaultNodeName,
   previewRenamedNodes,
@@ -82,6 +87,30 @@ export function createStructureActions(ctx: EditorContext) {
     return wrapSelectionInContainer('FRAME', selectedNodes)
   }
 
+  /**
+   * Whether layers can go in a new section: siblings on a page or in a section, where sections
+   * live. Toolbars ask while they draw, so it reads the parent without claiming anything.
+   */
+  function canWrapInSection(selectedNodes: SceneNode[]) {
+    const parentId = sharedParentId(ctx, selectedNodes)
+    const parent = parentId ? ctx.graph.getNode(parentId) : undefined
+    return parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+  }
+
+  /**
+   * Wraps layers in a new section with room around them, as FigJam's selection toolbar does,
+   * painted as a drawn section is.
+   */
+  function wrapInSection(selectedNodes: SceneNode[]) {
+    if (!canWrapInSection(selectedNodes)) return null
+    return wrapSelectionInContainerImpl(
+      ctx,
+      'SECTION',
+      selectedNodes,
+      newLayerDefaults('SECTION', layerTheme(ctx.state))
+    )
+  }
+
   function booleanOperationSelected(selectedNodes: SceneNode[], operation: BooleanOperation) {
     return booleanOperationSelectedImpl(ctx, selectedNodes, operation)
   }
@@ -131,7 +160,7 @@ export function createStructureActions(ctx: EditorContext) {
       forward: move,
       inverse: () => {
         for (const { id, parentId, index, place } of origins) {
-          ctx.graph.reorderChild(id, parentId, index)
+          ctx.graph.insertChildAt(id, parentId, index)
           ctx.graph.updateNode(id, place)
         }
         for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
@@ -170,14 +199,17 @@ export function createStructureActions(ctx: EditorContext) {
   function renameNode(id: string, name: string) {
     const node = ctx.graph.getNode(id)
     if (!node) return
-    const previous = node.name
+    const previous = { name: node.name, autoRename: node.autoRename }
     const next = name.trim() || defaultNodeName(node.type)
-    if (next === previous) return
-    ctx.graph.updateNode(id, { name: next })
+    if (next === previous.name) return
+    // A layer named by its text, as a sticky note is, keeps the name it is given, as in FigJam.
+    const namedByText = generatedFrameKind(node)?.namedByText ?? false
+    const renamed = { name: next, autoRename: namedByText ? false : node.autoRename }
+    ctx.graph.updateNode(id, renamed)
     ctx.undo.push({
       label: 'Rename',
-      forward: () => ctx.graph.updateNode(id, { name: next }),
-      inverse: () => ctx.graph.updateNode(id, { name: previous })
+      forward: () => ctx.graph.updateNode(id, renamed),
+      inverse: () => ctx.graph.updateNode(id, previous)
     })
   }
 
@@ -192,6 +224,8 @@ export function createStructureActions(ctx: EditorContext) {
     wrapInAutoLayout,
     groupSelected,
     frameSelection,
+    canWrapInSection,
+    wrapInSection,
     ...layerTypeActions,
     booleanOperationSelected,
     ungroupSelected,

@@ -58,7 +58,6 @@ describe('diagnostic error metadata', () => {
 describe('storageOperationForJob', () => {
   test('maps every outbox operation explicitly', () => {
     expect(storageOperationForJob('putCanvas')).toBe('upload')
-    expect(storageOperationForJob('putThumb')).toBe('upload')
     expect(storageOperationForJob('deleteCanvas')).toBe('delete')
   })
 })

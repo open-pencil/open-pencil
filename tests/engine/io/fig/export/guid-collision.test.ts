@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 /**
  * Regression test: two distinct nodes sharing the same source.id

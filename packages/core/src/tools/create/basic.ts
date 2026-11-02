@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import type { FigmaNodeProxy } from '#core/figma-api'
-import { toolNumber, positionInputs } from '#core/tools/input'
-import { defineTool, nodeSummary } from '#core/tools/schema'
+import { toolNumber, positionInputs, defineTool, nodeSummary } from '#core/tools/schema'
 
 export const createShape = defineTool({
   name: 'create_shape',

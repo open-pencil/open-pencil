@@ -2,7 +2,7 @@ import * as v from 'valibot'
 import { computed, ref, type Ref } from 'vue'
 
 import type { FeedbackClient } from '@open-pencil/feedback/client'
-import { WaitlistSignupSchema, type WaitlistSignup } from '@open-pencil/feedback/contract'
+import { waitlistSignupSchema, type WaitlistSignup } from '@open-pencil/feedback/contract'
 
 import { feedback } from '@/app/feedback/client'
 
@@ -35,7 +35,7 @@ export async function joinWaitlist(
 export type WaitlistStatus = WaitlistOutcome | 'idle' | 'submitting' | 'unavailable'
 
 /** The address checked as the service checks it, so the form refuses what the service would. */
-const EmailSchema = WaitlistSignupSchema.entries.email
+const emailSchema = waitlistSignupSchema.entries.email
 
 /**
  * One waitlist form: its address, Turnstile in `turnstileContainer`, and the outcome of the last
@@ -57,7 +57,7 @@ export function useWaitlistSignup(turnstileContainer: Readonly<Ref<HTMLElement |
 
   async function submit(): Promise<void> {
     if (submitting.value) return
-    const parsed = v.safeParse(EmailSchema, email.value)
+    const parsed = v.safeParse(emailSchema, email.value)
     if (!parsed.success) {
       status.value = 'invalid'
       return

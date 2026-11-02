@@ -1,6 +1,6 @@
 import { motionStyles } from '../motion/styles'
 import { floatingSurface } from '../overlay'
-import { panelFieldBase } from '../panel/field'
+import { panelFieldBase } from '../panel/field/base'
 
 /**
  * Every select list shares one row anatomy: a fixed check gutter, so labels never shift between

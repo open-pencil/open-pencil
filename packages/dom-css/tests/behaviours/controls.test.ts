@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { behaviourControls, booleanOf } from '#dom-css/behaviours/controls'
 import { controlRoles } from '#dom-css/behaviours/roles'
 
-import { emptyBehaviour, SceneGraph, withBehaviour } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { emptyBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 /** A Switch set (State) and a card frame holding an On instance named Wifi. */
 function switchCard() {

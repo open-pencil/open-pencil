@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { startAgent } from '#tests/helpers/collab/agent'
+import { startAgent } from '#tests/helpers/collab/agent/page'
 import {
   collaborationErrors,
   connect,

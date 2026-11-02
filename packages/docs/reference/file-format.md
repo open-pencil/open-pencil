@@ -36,14 +36,14 @@ A `.fig` file is a ZIP archive containing a Kiwi-encoded binary message:
 ## Export Pipeline
 
 ```
-SceneGraph → NodeChange[] → Kiwi encode → compress (Zstd/deflate)
+SceneGraph → NodeChange[] → Kiwi encode → compress (Zstd)
   → build ZIP (header + schema + message + thumbnail.png)
   → write .fig file
 ```
 
-Export uses <kbd>⌘</kbd><kbd>S</kbd> (Save) and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> (Save As) with native OS dialogs on the desktop app. The exported file includes a `thumbnail.png` required by Figma for file preview. OpenPencil uses the first page named exactly `Cover` (case-insensitive), then the first page whose name contains `Cover`. The desktop app also caches this Cover after opening a file so Recent Files can prefer the generated preview without modifying the source `.fig`.
+Export uses <kbd>⌘</kbd><kbd>S</kbd> (Save) and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> (Save As) with native OS dialogs on the desktop app. The exported file includes a `thumbnail.png` required by Figma for file preview. OpenPencil draws it from the first page named exactly `Cover` (case-insensitive), then the first page whose name contains `Cover`, then the first page, and writes a 1×1 placeholder when that page has nothing to draw. The CLI draws it too whenever it saves a `.fig`: `export --format fig`, `convert`, `import`, `lint --fix`, and `eval`, `tool call`, or `diff apply` with `--write` or `--output`. The desktop app also caches this Cover after opening a file so Recent Files can prefer the generated preview without modifying the source `.fig`.
 
-Compression uses Zstd via Tauri Rust command on desktop, with deflate fallback in the browser.
+Compression uses Zstd at the level the document asks for (see [Compression](#compression)): through a Tauri Rust command on desktop, Bun's own Zstd in the CLI, and a WebAssembly build in the browser.
 
 ## Kiwi Binary Codec
 
@@ -62,7 +62,9 @@ Figma's schema uses non-contiguous field IDs (e.g. 1, 2, 5, 10 with gaps). The k
 
 ### Compression
 
-`.fig` files use Zstd compression for both the schema and message payloads. Decompression uses the `fzstd` library. For export, Zstd compression is offloaded to a Tauri Rust command on the desktop app (better performance, correct frame headers). In the browser, deflate via `fflate` is used as a fallback.
+The schema chunk is deflated and the message chunk is Zstd-compressed; Figma also reads a deflated message chunk, as older files have. Decompression uses the same Zstd as export: Bun's own under Bun, the WebAssembly build elsewhere.
+
+Export writes the message chunk with Zstd at a level set per document, stored as `figCompression` in the document node's `open-pencil` plugin data: `fast` (level 3, as Figma saves), `smaller` (9), or `smallest` (19). Figma opens every Zstd level, but only frames that declare their decompressed size, which all three encoders write. Reading costs the same at every level; on a 45 MB message, level 9 takes about five times and level 19 about 150 times as long to write as level 3.
 
 ## Supported Formats
 

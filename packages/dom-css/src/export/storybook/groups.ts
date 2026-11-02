@@ -1,7 +1,8 @@
 import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
-import { restingVariant, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { restingVariant } from '@open-pencil/scene-graph/components'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 import type { StoryProp } from './module'

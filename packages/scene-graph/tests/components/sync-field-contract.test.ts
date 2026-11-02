@@ -1,6 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, setInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined } from '../helpers/assert'
 
@@ -322,11 +324,99 @@ test('a copy that sizes itself to its own content keeps that size through a comp
   graph.updateNode(instance.id, { width: 24 })
   setInstanceOverride(instance.instanceOverrides, instance.id, copyText.id, 'text', true)
 
-  graph.updateNode(text.id, { width: 64, letterSpacing: 1 })
+  graph.updateNode(text.id, { width: 64, letterSpacing: pixelLength(1) })
   graph.updateNode(label.id, { width: 64 })
   graph.syncInstances(badge.id)
   expect([copyText.text, copyText.width, copyLabel.width, instance.width]).toEqual(['2', 8, 8, 24])
-  expect(copyText.letterSpacing).toBe(1)
+  expect(copyText.letterSpacing).toEqual(pixelLength(1))
+})
+
+test('content-sized copies retain their constraint anchor through live component edits', () => {
+  for (const constraint of ['MIN', 'CENTER', 'MAX'] as const) {
+    const graph = new SceneGraph()
+    const component = graph.createNode('COMPONENT', graph.getPages()[0].id, {
+      width: 100,
+      height: 80
+    })
+    const source = graph.createNode('FRAME', component.id, {
+      x: 40,
+      y: 35,
+      width: 20,
+      height: 10,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      horizontalConstraint: constraint,
+      verticalConstraint: constraint
+    })
+    const instance = expectDefined(graph.createInstance(component.id, graph.getPages()[0].id))
+    graph.updateNode(instance.id, { width: 300, height: 160 })
+    setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'width', true)
+    setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'height', true)
+    const copy = graph.getChildren(instance.id)[0]
+    graph.updateNode(copy.id, { width: 10, height: 6 })
+    graph.updateNode(source.id, { opacity: 0.5 })
+    graph.syncInstances(component.id)
+    const expected = { MIN: [40, 35], CENTER: [145, 77], MAX: [250, 119] }[constraint]
+    expect([copy.x, copy.y, copy.width, copy.height]).toEqual([...expected, 10, 6])
+    expect(copy.opacity).toBe(0.5)
+    graph.updateNode(source.id, { x: 45, width: 40 })
+    graph.syncInstances(component.id)
+    const edited = { MIN: [45, 35], CENTER: [160, 77], MAX: [275, 119] }[constraint]
+    expect([copy.x, copy.y]).toEqual(edited)
+    graph.updateNode(instance.id, { width: 400 })
+    graph.syncInstances(component.id)
+    expect(copy.x).toBe(edited[0] + { MIN: 0, CENTER: 50, MAX: 100 }[constraint])
+  }
+})
+
+test('anchor correction respects equal parent sizes, bound positions and auto-layout placement', () => {
+  for (const mode of ['equal', 'protected', 'flow', 'fixed', 'scaled'] as const) {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const component = graph.createNode('COMPONENT', page, {
+      width: 100,
+      height: 80,
+      layoutMode: mode === 'flow' ? 'HORIZONTAL' : 'NONE'
+    })
+    const source = graph.createNode('FRAME', component.id, {
+      x: 40,
+      y: 35,
+      width: 20,
+      height: 10,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: mode === 'fixed' ? 'FIXED' : 'HUG',
+      counterAxisSizing: mode === 'fixed' ? 'FIXED' : 'HUG',
+      horizontalConstraint: 'CENTER',
+      verticalConstraint: 'CENTER'
+    })
+    const instance = expectDefined(graph.createInstance(component.id, page))
+    const copy = graph.getChildren(instance.id)[0]
+    graph.updateNode(copy.id, { x: 40, y: 35, width: 10, height: 6 })
+    if (mode === 'protected') {
+      graph.updateNode(copy.id, { boundVariables: { x: 'local-x', y: 'local-y' } })
+      setInstanceOverride(instance.instanceOverrides, instance.id, copy.id, 'boundVariables', true)
+    }
+    if (mode === 'scaled') {
+      graph.updateNode(instance.id, { componentScale: 2 })
+      graph.updateNode(copy.id, { x: 80, y: 70, componentScale: 2 })
+    }
+    graph.updateNode(source.id, { opacity: 0.5 })
+    graph.syncInstances(component.id)
+    const expected = {
+      fixed: [40, 35, 20, 10],
+      scaled: [95, 77, 10, 6],
+      equal: [45, 37, 10, 6],
+      protected: [40, 35, 10, 6],
+      flow: [40, 35, 10, 6]
+    }[mode]
+    expect([copy.x, copy.y, copy.width, copy.height]).toEqual(expected)
+    if (mode === 'equal') {
+      graph.updateNode(source.id, { horizontalConstraint: 'MAX', verticalConstraint: 'MIN' })
+      graph.syncInstances(component.id)
+      expect([copy.x, copy.y]).toEqual([50, 35])
+    }
+  }
 })
 
 test('a copy takes the component’s size once the component stops hugging its layers', () => {

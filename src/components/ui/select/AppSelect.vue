@@ -8,9 +8,9 @@ import {
   SelectValue
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, useSlots } from 'vue'
+import { computed, ref, useSlots, watch } from 'vue'
 
-import { useRetainedPopup } from '@open-pencil/vue'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
@@ -20,6 +20,7 @@ import type {
   SelectPlacement
 } from '@/components/ui/select/select'
 import type { ComponentUI } from '@/components/ui/types'
+import type { ControlSize } from '@/theme/control'
 import theme from '@/theme/select/app'
 import type { AppSelectTheme } from '@/theme/select/app'
 
@@ -37,12 +38,14 @@ interface AppSelectProps<TValue extends string | number> {
    * `trigger` slot or a value outside the options: there is no row to line up with the trigger.
    */
   placement?: SelectPlacement
+  /** The height on the control scale; the design panel's dense `xs` unless a form asks. */
+  size?: ControlSize
   ui?: ComponentUI<AppSelectTheme>
 }
 
 defineOptions({ inheritAttrs: false })
 
-const { options, groups, label, placeholder, displayLabel, placement, ui } =
+const { options, groups, label, placeholder, displayLabel, placement, size, ui } =
   defineProps<AppSelectProps<T>>()
 const modelValue = defineModel<T>({ required: true })
 const slots = useSlots()
@@ -56,8 +59,20 @@ const selectedLabel = computed(
       .flatMap((group) => group.options)
       .find((option) => option.value === modelValue.value)?.label
 )
-const contentPlacement = computed(
+const livePlacement = computed(
   () => placement ?? (slots.trigger || selectedLabel.value === undefined ? 'below' : 'over')
+)
+/**
+ * The menu keeps the placement it opened with: choosing the first option on a placeholder would
+ * switch it while the menu closes, and Reka then skips restoring what it hid from assistive tech.
+ */
+const contentPlacement = ref(livePlacement.value)
+watch(
+  popupOpen,
+  (open) => {
+    if (open) contentPlacement.value = livePlacement.value
+  },
+  { flush: 'sync' }
 )
 const contentUI = computed(() => ({
   content: ui?.content,
@@ -76,8 +91,10 @@ const itemUI = computed(() => ({ item: ui?.item, indicator: ui?.indicator }))
       v-else
       :aria-label="label"
       v-bind="$attrs"
-      :class="styles.trigger({ class: ui?.trigger })"
+      :class="styles.trigger({ size, class: ui?.trigger })"
     >
+      <!-- An icon before the chosen option, such as the glyph its menu row shows. -->
+      <slot name="leading" />
       <SelectValue :placeholder="placeholder" :class="styles.value({ class: ui?.value })">
         {{ displayLabel ?? selectedLabel ?? placeholder }}
       </SelectValue>
@@ -97,7 +114,7 @@ const itemUI = computed(() => ({ item: ui?.item, indicator: ui?.indicator }))
             :disabled="option.disabled"
             :ui="itemUI"
           >
-            {{ option.label }}
+            <slot name="option" :option="option">{{ option.label }}</slot>
             <template #end><slot name="option-end" :option="option" /></template>
           </AppSelectItem>
         </SelectGroup>

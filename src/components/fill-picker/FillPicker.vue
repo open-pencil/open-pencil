@@ -2,18 +2,17 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
-import type { Fill, ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph'
-import {
-  applySolidFillColor,
-  DEFAULT_SHADER_PRESET,
-  FillRoot,
-  holdsPickerOpen,
-  useEditor,
-  useI18n,
-  useRetainedPopup
-} from '@open-pencil/vue'
-import type { OkHCLControls } from '@open-pencil/vue'
+import type { Fill } from '@open-pencil/scene-graph'
+import type { ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph/shaders'
+import { applySolidFillColor, type OkHCLControls } from '@open-pencil/vue/controls/color-model'
+import { DEFAULT_SHADER_PRESET } from '@open-pencil/vue/controls/shader'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { FillRoot } from '@open-pencil/vue/primitives/Fill'
+import { holdsPickerOpen } from '@open-pencil/vue/canvas/eyedropper'
+import { useEditor } from '@open-pencil/vue'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
@@ -23,6 +22,8 @@ import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import fillPickerTheme from '@/theme/fill-picker'
+
+import { useImageFill } from './useImageFill'
 
 const fillPicker = tv(fillPickerTheme)
 
@@ -35,7 +36,8 @@ const {
   okhcl = null,
   swatchBackground,
   keepOpen,
-  shader = null
+  shader = null,
+  layerSize = null
 } = defineProps<{
   fill: Fill
   /** The shader the paint draws, when it is a shader's frame; the picker then edits the shader. */
@@ -46,7 +48,14 @@ const {
   label?: string
   /** Whether a press outside the picker should leave it open, such as on a gradient handle. */
   keepOpen?: (event: PointerEvent) => boolean
+  /** The one layer the paint is on, which an image crop starts by covering. */
+  layerSize?: { width: number; height: number } | null
 }>()
+/** An image fill's swatch shows its image, covering the swatch as Fill would. */
+const image = useImageFill(() => (fill.type === 'IMAGE' ? fill.imageHash : undefined))
+const imageBackground = computed(() =>
+  image.url.value ? `center / cover no-repeat url("${image.url.value}")` : undefined
+)
 const activeStop = defineModel<number>('activeStop')
 const emit = defineEmits<{
   update: [fill: Fill]
@@ -99,7 +108,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           <FillSwatch :fill="fill" class="size-full" v-slot="swatch">
             <span
               class="pointer-events-none absolute inset-0"
-              :style="{ background: swatchBackground ?? swatch.background }"
+              :style="{ background: swatchBackground ?? imageBackground ?? swatch.background }"
             />
           </FillSwatch>
         </button>
@@ -186,6 +195,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           <ImageFillPicker
             v-else-if="root.category === 'IMAGE'"
             :fill="root.fill"
+            :layer-size="layerSize"
             @update="emit('update', $event)"
           />
         </PopoverContent>

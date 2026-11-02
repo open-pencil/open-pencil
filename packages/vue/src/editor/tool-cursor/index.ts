@@ -1,4 +1,4 @@
-import type { Tool } from '@open-pencil/core/editor'
+import type { Tool } from '@open-pencil/core'
 
 import commentCursorSVG from '#vue/shared/assets/cursors/comment.svg?raw'
 import eyedropperCursorSVG from '#vue/shared/assets/cursors/eyedropper.svg?raw'
@@ -34,6 +34,9 @@ const TOOL_CURSORS: Record<Tool, string> = {
   POLYGON: 'crosshair',
   STAR: 'crosshair',
   TEXT: 'text',
+  STICKY: 'crosshair',
+  SHAPE_WITH_TEXT: 'crosshair',
+  CONNECTOR: 'crosshair',
   PEN: PEN_CURSOR,
   PENCIL: PENCIL_CURSOR,
   HAND: HAND_CURSOR,
@@ -43,5 +46,5 @@ const TOOL_CURSORS: Record<Tool, string> = {
 
 export function toolCursor(tool: Tool, override?: string | null): string {
   if (override) return override
-  return TOOL_CURSORS[tool] ?? 'default'
+  return TOOL_CURSORS[tool]
 }

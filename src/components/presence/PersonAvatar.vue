@@ -3,13 +3,12 @@ import { computed } from 'vue'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useCollaborationMessages } from '@open-pencil/vue'
+import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
-import { initials } from '@/app/shell/ui'
-import { avatar } from '@/theme/collaboration/avatar'
-import { avatarStack } from '@/theme/collaboration/avatar-stack'
+import { initials } from '@/app/presence/initials'
 
 import type { PresenceVoice } from './rows'
+import { avatar, avatarStack } from './ui'
 
 /** A person's initials on their color, with how many agents they run and how they are in the call. */
 const {
@@ -24,7 +23,7 @@ const {
   name: string
   color: Color
   agentCount?: number
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
   following?: boolean
   interactive?: boolean
   voice?: PresenceVoice

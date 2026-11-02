@@ -1,8 +1,11 @@
-import { expect, test } from 'bun:test'
+import { expect, jest, spyOn, test } from 'bun:test'
 
 import { createS3StorageAdapter } from '@/app/integrations/storage/s3/adapter'
 import { readDownloadStream } from '@/app/integrations/storage/s3/client'
-import { storageFetch } from '@/app/integrations/storage/s3/fetch'
+import { createStorageFetch, storageFetch } from '@/app/integrations/storage/s3/fetch'
+
+import { expectDefined } from '#tests/helpers/assert'
+import { fetchStub } from '#tests/helpers/fetch'
 
 test('mid-stream cancellation discards partial bytes and stops progress', async () => {
   const abort = new AbortController()
@@ -57,6 +60,7 @@ test('external storage cancellation remains an AbortError rather than a timeout'
 test('pre-aborted storage downloads do not resolve credentials or start network work', async () => {
   let credentialResolutions = 0
   const adapter = createS3StorageAdapter({
+    profileId: 'default',
     preferences: {
       endpoint: 'https://storage.example.com',
       bucket: 'designs',
@@ -75,4 +79,61 @@ test('pre-aborted storage downloads do not resolve credentials or start network 
     'AbortError'
   )
   expect(credentialResolutions).toBe(0)
+})
+
+/** A download whose body sends one byte each time `send` is called, then ends on `end`. */
+function trickle() {
+  let stream: ReadableStreamDefaultController<Uint8Array> | undefined
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      stream = controller
+    }
+  })
+  return {
+    response: new Response(body),
+    send: () => stream?.enqueue(new Uint8Array([1])),
+    end: () => stream?.close()
+  }
+}
+
+async function withFetch(response: Response, run: () => Promise<void>) {
+  const stub = spyOn(globalThis, 'fetch').mockImplementation(
+    fetchStub(() => Promise.resolve(response))
+  )
+  try {
+    await run()
+  } finally {
+    stub.mockRestore()
+  }
+}
+
+test('a slow download that keeps arriving finishes however long it takes', async () => {
+  jest.useFakeTimers()
+  try {
+    const download = trickle()
+    await withFetch(download.response, async () => {
+      const response = await createStorageFetch(100)('https://storage.example.com/document.fig')
+      const reader = expectDefined(response.body, 'download body').getReader()
+      // Five times the stall time in all, with most of it passing before each next byte.
+      for (let sent = 0; sent < 5; sent++) {
+        download.send()
+        expect((await reader.read()).value).toEqual(new Uint8Array([1]))
+        jest.advanceTimersByTime(90)
+      }
+      download.end()
+      expect((await reader.read()).done).toBe(true)
+    })
+  } finally {
+    jest.useRealTimers()
+  }
+})
+
+test('a download that stops arriving fails as timed out', async () => {
+  const download = trickle()
+  await withFetch(download.response, async () => {
+    const response = await createStorageFetch(20)('https://storage.example.com/document.fig')
+    const reading = response.arrayBuffer()
+    download.send()
+    await expect(reading).rejects.toThrow('Storage request timed out')
+  })
 })

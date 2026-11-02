@@ -23,11 +23,7 @@ PropertyList — управляемый компонент без встроен
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Fill } from '@open-pencil/scene-graph'
-import {
-  PropertyListItem,
-  PropertyListRemove,
-  PropertyListRoot
-} from '@open-pencil/vue'
+import { PropertyListItem, PropertyListRemove, PropertyListRoot } from '@open-pencil/vue/primitives/PropertyList'
 
 const fills = ref<Fill[]>([])
 </script>

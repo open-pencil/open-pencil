@@ -1,3 +1,4 @@
+import { uniq } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { computeImageHash } from '@open-pencil/scene-graph/images'
@@ -37,7 +38,7 @@ export async function resolveFigmaClipboardImages(
   fetcher: ClipboardImageFetch = tauriFetch,
   timeoutMs = IMAGE_FETCH_TIMEOUT_MS
 ): Promise<ReadonlyMap<string, Uint8Array>> {
-  const uniqueHashes = [...new Set(hashes)]
+  const uniqueHashes = uniq(hashes)
   if (uniqueHashes.length === 0) return new Map()
 
   const batchResponse = await fetcher(

@@ -1,21 +1,17 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
-import { endAgentSession } from '@/app/automation/agents'
+import { agentSessionOpened, endAgentSession } from '@/app/automation/agents'
 import {
   handleActivateDocument,
   handleGetSettings,
+  handleListRecentFiles,
   handleRedo,
   handleUndo,
   handleUpdateSettings
 } from '@/app/automation/bridge/app-handlers'
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJSX } from '@/app/automation/bridge/export-handlers'
-import {
-  handleCloseFile,
-  handleNewDocument,
-  handleOpenFile,
-  handleSaveFile
-} from '@/app/automation/bridge/file-handlers'
+import { createFileHandlers, type AutomationFiles } from '@/app/automation/bridge/file-handlers'
 import { handleRPCFallback } from '@/app/automation/bridge/rpc-handler'
 import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import {
@@ -34,9 +30,11 @@ type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
 
 type CommandHandler = (target: AutomationTarget, args: unknown) => Promise<unknown>
 
-export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
+export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?: AutomationFiles) {
   const handleEval = createAutomationEvalHandler(makeFigma)
   const handleTool = createAutomationToolHandler(makeFigma)
+  const { handleSaveFile, handleCloseFile, handleNewDocument, handleOpenFile } =
+    createFileHandlers(files)
 
   const commandHandlers: Partial<Record<string, CommandHandler>> = {
     eval: handleEval,
@@ -76,6 +74,11 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
   ): Promise<unknown> {
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
+    }
+    if (command === 'list_recent_files') return handleListRecentFiles()
+    if (command === 'agent_session_opened') {
+      agentSessionOpened(args)
+      return { ok: true, result: null }
     }
     if (command === 'agent_session_closed') {
       const session = isUnknownRecord(args) ? args.session : undefined

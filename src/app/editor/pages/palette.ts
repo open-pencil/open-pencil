@@ -4,12 +4,12 @@ import IconFile from '~icons/lucide/file'
 import IconFiles from '~icons/lucide/files'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import {
-  isPageDivider,
-  usePageMessages,
-  type CommandPaletteGroup,
-  type CommandPaletteItem
-} from '@open-pencil/vue'
+import { usePageMessages } from '@open-pencil/vue/i18n'
+import type {
+  CommandPaletteGroup,
+  CommandPaletteItem
+} from '@open-pencil/vue/primitives/CommandPalette'
+import { isPageDivider } from '@open-pencil/vue/primitives/PageList'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { presenceByPage, type PagePresenceEntry } from '@/app/presence/registry'
@@ -45,7 +45,7 @@ export function usePagePaletteGroup() {
 
   return computed<CommandPaletteGroup | null>(() => {
     const tab = activeTab.value
-    if (!tab || tab.kind === 'home') return null
+    if (tab?.kind !== 'document') return null
     const store = tab.store
     // Pages and their names change with the scene.
     void store.state.sceneVersion

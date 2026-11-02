@@ -1,21 +1,19 @@
-import { beforeAll, afterAll, describe, expect, test, spyOn, setDefaultTimeout } from 'bun:test'
+import { beforeAll, afterAll, expect, test, spyOn, setDefaultTimeout } from 'bun:test'
 
 import {
   expectSaveLoadedOnlyInternalPages,
   snapshotNodes
 } from '#core-tests/helpers/fig/save-contract'
+import { heavy } from '#core-tests/helpers/test-utils'
 import { unzipSync } from 'fflate'
 
-import {
-  exportFigFile,
-  initCodec,
-  isZstdCompressed,
-  parseFigFile,
-  parseFigKiwiChunks,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { isZstdCompressed } from '@open-pencil/kiwi/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { imageSize } from '@open-pencil/scene-graph/images'
 
 import {
   type Mismatch,
@@ -60,11 +58,6 @@ const SPECS: FixtureSpec[] = [
   }
 ]
 
-function pngDimensions(png: Uint8Array): { w: number; h: number } {
-  const dv = new DataView(png.buffer, png.byteOffset, png.byteLength)
-  return { w: dv.getUint32(16), h: dv.getUint32(20) }
-}
-
 function buildPathMap(graph: SceneGraph): Map<string, SceneNode> {
   const map = new Map<string, SceneNode>()
   function walk(parentId: string, parentPath: string) {
@@ -84,7 +77,7 @@ function buildPathMap(graph: SceneGraph): Map<string, SceneNode> {
 /** `SceneNode` has no index signature; the generic comparison reads its fields by name. */
 const nodeFields = (node: SceneNode): Map<string, unknown> => new Map(Object.entries(node))
 
-// oxlint-disable-next-line eslint(complexity)
+// oxlint-disable-next-line complexity
 function deepCompare(
   a: unknown,
   b: unknown,
@@ -291,7 +284,7 @@ function compareRawNodeFields(
   if (errors.length > 0) throw new Error(`${label} rawNodeFields:\n${summarize(errors)}`)
 }
 
-// oxlint-disable-next-line eslint(complexity)
+// oxlint-disable-next-line complexity
 function deepCompareRaw(
   a: unknown,
   b: unknown,
@@ -410,7 +403,7 @@ function deepCompareRaw(
 function verifyFixture(spec: FixtureSpec): void {
   const name = (spec.file.split('/').pop() ?? '').replace('.fig', '')
 
-  describe(`roundtrip: ${name}`, () => {
+  heavy(`roundtrip: ${name}`, () => {
     let g0!: Map<string, SceneNode>
     let g0Graph!: SceneGraph
     let g0Bytes!: ArrayBuffer
@@ -479,9 +472,7 @@ function verifyFixture(spec: FixtureSpec): void {
       await g0Ready
       const thumb = g0Zip['thumbnail.png']
       expect(thumb.byteLength).toBe(spec.thumbnailSize)
-      const { w, h } = pngDimensions(thumb)
-      expect(w).toBe(spec.thumbnailWidth)
-      expect(h).toBe(spec.thumbnailHeight)
+      expect(imageSize(thumb)).toEqual({ width: spec.thumbnailWidth, height: spec.thumbnailHeight })
     })
 
     test('original fig-kiwi container', async () => {

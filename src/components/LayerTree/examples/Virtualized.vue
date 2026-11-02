@@ -2,8 +2,8 @@
 import { TreeItem, TreeRoot, TreeVirtualizer } from 'reka-ui'
 import { reactive, ref } from 'vue'
 
-import { useInlineRename } from '@open-pencil/vue'
-import type { LayerNode } from '@open-pencil/vue'
+import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
+import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { LAYER_TREE_ROW_HEIGHT } from '@/components/LayerTree/geometry'
 import LayerTreeNodeRow from '@/components/LayerTree/LayerTreeNodeRow.vue'

@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@open-pencil/core'
+import type { DocumentKind } from '@open-pencil/scene-graph'
+
 import {
   combineToolbarEntry,
   DEFAULT_TOOLBAR_LAYOUT,
@@ -11,6 +14,7 @@ import {
   setToolbarEntryHidden,
   toolbarDropOperations,
   toolbarItems,
+  toolbarLayoutFor,
   toolbarRows,
   type ToolbarEntry,
   type ToolbarLayout
@@ -18,7 +22,7 @@ import {
 import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
 
 const SHAPES: ToolbarEntry[] = ['RECTANGLE', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR']
-const SHORTCUTS = toolShortcutLabels('mac')
+const SHORTCUTS = toolShortcutLabels(TOOL_SHORTCUTS, 'mac')
 const LABELS = { ...SHORTCUTS }
 
 function layout(groups: ToolbarEntry[][], hidden: ToolbarEntry[] = []): ToolbarLayout {
@@ -27,14 +31,17 @@ function layout(groups: ToolbarEntry[][], hidden: ToolbarEntry[] = []): ToolbarL
 
 describe('normalizeToolbarLayout', () => {
   test('keeps the default layout as it is', () => {
-    expect(layout(DEFAULT_TOOLBAR_LAYOUT.groups)).toEqual(DEFAULT_TOOLBAR_LAYOUT)
+    expect(layout(DEFAULT_TOOLBAR_LAYOUT.groups, DEFAULT_TOOLBAR_LAYOUT.hidden)).toEqual(
+      DEFAULT_TOOLBAR_LAYOUT
+    )
   })
 
   test('drops unknown entries, repeats and empty groups', () => {
     const groups = [['SELECT', 'LASSO', 'SELECT'], [], ['FRAME', 'SECTION', 'FRAME']]
     const result = normalizeToolbarLayout(groups, ['HAND', 'HAND', 'GHOST'])
     expect(result.groups.slice(0, 2)).toEqual([['SELECT'], ['FRAME', 'SECTION']])
-    expect(result.hidden).toEqual(['HAND'])
+    // The sticky, shape and connector tools are placed hidden, as the default layout keeps them.
+    expect(result.hidden).toEqual(['HAND', 'STICKY', 'SHAPE_WITH_TEXT', 'CONNECTOR'])
   })
 
   test('never hides Move', () => {
@@ -43,7 +50,14 @@ describe('normalizeToolbarLayout', () => {
 
   test('keeps commands out of flyouts', () => {
     const result = layout([['SELECT', 'insert-icon', 'HAND'], ['COMMENT']])
-    expect(result.groups.slice(-4)).toEqual([['TEXT'], ['insert-icon'], ['HAND'], ['COMMENT']])
+    expect(result.groups.slice(-6)).toEqual([
+      ['STICKY'],
+      ['SHAPE_WITH_TEXT'],
+      ['CONNECTOR'],
+      ['insert-icon'],
+      ['HAND'],
+      ['COMMENT']
+    ])
   })
 
   test('puts a tool the stored layout lacks into its default flyout', () => {
@@ -56,6 +70,9 @@ describe('normalizeToolbarLayout', () => {
     const stored: ToolbarEntry[][] = [['TEXT'], ['SELECT'], SHAPES, ['HAND']]
     expect(layout(stored).groups).toEqual([
       ['TEXT'],
+      ['STICKY'],
+      ['SHAPE_WITH_TEXT'],
+      ['CONNECTOR'],
       ['SELECT'],
       ['FRAME', 'SECTION'],
       SHAPES,
@@ -64,6 +81,16 @@ describe('normalizeToolbarLayout', () => {
       ['COMMENT'],
       ['insert-icon']
     ])
+  })
+})
+
+describe('tools hidden by default', () => {
+  test('a layout stored before the sticky tool gets it hidden, and a shown one stays shown', () => {
+    const before = DEFAULT_TOOLBAR_LAYOUT.groups.map((group) =>
+      group.filter((entry) => entry !== 'STICKY')
+    )
+    expect(layout(before).hidden).toEqual(['STICKY'])
+    expect(layout(DEFAULT_TOOLBAR_LAYOUT.groups, []).hidden).toEqual([])
   })
 })
 
@@ -213,5 +240,61 @@ describe('dragging', () => {
     ])
     expect(combineToolbarEntry(base, 'LINE', 'STAR')).toBe(base)
     expect(combineToolbarEntry(base, 'PEN', 'insert-icon')).toBe(base)
+  })
+})
+
+describe('toolbarLayoutFor', () => {
+  const profileTools = (readOnly: boolean, documentKind: DocumentKind = 'design') =>
+    resolveEditorProfile({
+      documentKind,
+      canvasView: { id: 'edit' },
+      hostRestrictions: { readOnly }
+    }).tools
+
+  test('keeps the whole layout when the profile offers every tool', () => {
+    const base = layout([['SELECT', 'HAND'], ['FRAME'], ['insert-icon']])
+    expect(toolbarLayoutFor(base, profileTools(false))).toBe(base)
+  })
+
+  test('keeps Move and Hand in a read-only document, as Figma does while a version is viewed', () => {
+    const keys = (groups: ToolbarEntry[][]) =>
+      toolbarItems(toolbarLayoutFor(layout(groups), profileTools(true)), LABELS, SHORTCUTS).map(
+        (item) =>
+          item.kind === 'tool' ? [item.tool.key, ...(item.tool.flyout ?? [])] : item.action
+      )
+    expect(keys([['SELECT', 'HAND'], ['FRAME'], ['insert-icon']])).toEqual([
+      ['SELECT', 'SELECT', 'HAND']
+    ])
+    expect(keys(DEFAULT_TOOLBAR_LAYOUT.groups)).toEqual([['SELECT'], ['HAND']])
+  })
+
+  test('shows every tool a board offers, even those the layout hides', () => {
+    const board = toolbarLayoutFor(DEFAULT_TOOLBAR_LAYOUT, profileTools(false, 'board'))
+    expect(
+      toolbarItems(board, LABELS, SHORTCUTS).map((item) => item.kind === 'tool' && item.tool.key)
+    ).toEqual([
+      'SELECT',
+      'SECTION',
+      'TEXT',
+      'STICKY',
+      'SHAPE_WITH_TEXT',
+      'CONNECTOR',
+      'HAND',
+      'COMMENT'
+    ])
+  })
+})
+
+describe('toolShortcutLabels', () => {
+  test('names each tool by the first key that picks it in the profile', () => {
+    const design = toolShortcutLabels(TOOL_SHORTCUTS, 'mac')
+    const board = toolShortcutLabels(BOARD_TOOL_SHORTCUTS, 'mac')
+    expect([
+      design.RECTANGLE,
+      design.STICKY,
+      board.RECTANGLE,
+      board.STICKY,
+      board.SHAPE_WITH_TEXT
+    ]).toEqual(['R', '', '', 'S', 'R'])
   })
 })

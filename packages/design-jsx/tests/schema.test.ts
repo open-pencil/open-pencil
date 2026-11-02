@@ -40,16 +40,16 @@ describe('Design JSX transform', () => {
     expect(code).toContain('__h(Text')
   })
 
-  test('transforms declarations followed by a final expression', () => {
+  test('transforms statements that return the JSX', () => {
     const code = transformDesignJSXExpression(
       `const Card = ({ title }) => <Text>{title}</Text>
-<Card title="Hello" />`
+return <Card title="Hello" />`
     )
     expect(code).toContain('const Card')
-    expect(code).toContain('return (__h(Card')
+    expect(code).toContain('return __h(Card')
   })
 
-  test('rejects declarations without a final expression', () => {
+  test('rejects statements that return nothing', () => {
     expect(() => transformDesignJSXExpression('const value = 1')).toThrow()
   })
 })

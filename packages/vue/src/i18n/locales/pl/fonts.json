@@ -5,6 +5,11 @@
   "localFonts": "Czcionki lokalne",
   "onlineFonts": "Czcionki online",
   "downloadedCache": "Pobrana pamięć podręczna",
+  "cachedFontCount": {
+    "one": "{count} czcionka",
+    "few": "{count} czcionki",
+    "many": "{count} czcionek"
+  },
   "systemFontAccess": "Dostęp do czcionek systemowych",
   "systemFontsAvailable": "Czcionki systemowe są dostępne.",
   "allowBrowserFontAccess": "Zezwól przeglądarce na dostęp do czcionek, gdy brakuje czcionek systemowych.",

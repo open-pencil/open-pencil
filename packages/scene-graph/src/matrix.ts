@@ -23,7 +23,7 @@ const multiply2 = (m1: Mat3, m2: Mat3): Mat3 => {
 
 const multiply = (...ms: Mat3[]): Mat3 => {
   if (ms.length === 0) return identity()
-  let out = ms[0].slice() as Mat3
+  let out = ms[0].slice()
   for (let i = 1; i < ms.length; i++) out = multiply2(out, ms[i])
   return out
 }

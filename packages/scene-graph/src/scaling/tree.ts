@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
 import type { SceneNode } from '../types'
 import { scaleVariableBindingUnits } from '../variables/units'
@@ -17,6 +17,7 @@ const RESCALABLE_NODE_TYPES = new Set<SceneNode['type']>([
   'POLYGON',
   'RECTANGLE',
   'STAR',
+  'STICKY',
   'TEXT',
   'VECTOR'
 ])

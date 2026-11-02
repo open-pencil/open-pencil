@@ -1,10 +1,8 @@
-import { tv } from 'tailwind-variants'
-
 /** A pin's bubble is this many pixels square: `p-1` around a 24px avatar, or `size-8`. */
 export const COMMENT_PIN_SIZE = 32
 
 /** Canvas comments: pins, the thread card beside a pin, and the list in the right sidebar. */
-export const comments = tv({
+export default {
   slots: {
     // Below the toolbar and other floating UI, above the canvas.
     layer: 'pointer-events-none absolute inset-0 z-0',
@@ -63,4 +61,4 @@ export const comments = tv({
       }
     }
   }
-})
+} as const

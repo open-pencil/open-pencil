@@ -2,7 +2,7 @@ import { useClipboard } from '@vueuse/core'
 import { computed, inject, provide, proxyRefs, ref, watch } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useJoinRoom } from '@/app/collab/join'
 import { activeRoom } from '@/app/collab/rooms'

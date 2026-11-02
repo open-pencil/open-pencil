@@ -1,9 +1,7 @@
-import { tv } from 'tailwind-variants'
-
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
-export const chatHistoryTheme = tv({
+export default {
   slots: {
     root: 'shrink-0 border-b border-border',
     header: 'flex min-w-0 items-center gap-1 px-2 py-1.5',
@@ -25,4 +23,4 @@ export const chatHistoryTheme = tv({
     form: 'space-y-2 border-t border-border p-2',
     actions: 'flex justify-end gap-1'
   }
-})
+} as const
