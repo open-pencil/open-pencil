@@ -1,5 +1,6 @@
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
+import { compact } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
@@ -12,19 +13,18 @@ import type {
 } from '@open-pencil/scene-graph'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
-  DEFAULT_STROKE_WEIGHT,
-  isGeneratedFrame,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData
-} from '@open-pencil/scene-graph'
+  DEFAULT_STROKE_WEIGHT
+} from '@open-pencil/scene-graph/constants'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { layoutGridCount } from '@open-pencil/scene-graph/layout'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /* eslint-disable max-lines */
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
-import { snapshotInstanceGeometry } from '../instance/geometry'
+import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
 import {
   applyExportSettingsPluginData,
   applyLibrarySourcePluginData,
@@ -32,6 +32,12 @@ import {
   mergePluginData,
   serializePluginRelaunchData
 } from '../plugin-data'
+import { serializeNodeStatus } from '../status'
+import {
+  componentPropAssignment,
+  componentPropertyValue,
+  componentPropertyVariableValue
+} from './assignments/values'
 import {
   applyColorVariableBinding,
   createFillPaints,
@@ -47,9 +53,10 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { generatedFrameRecord, writesGeneratedFrame } from './generated'
+import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
-import { slotContentAssignment, slotDefinitionFields } from './slots'
+import { slotDefinitionFields } from './slots'
 import { serializeText } from './text'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
@@ -118,46 +125,6 @@ function componentPropertyTypeForKiwi(type: string) {
   return type
 }
 
-function componentPropertyValue(
-  type: string,
-  value: string,
-  context: SceneNodeToKiwiContext,
-  localIdCounter: { value: number }
-) {
-  if (type === 'BOOLEAN') return { boolValue: value === 'true' }
-  if (type === 'INSTANCE_SWAP') {
-    const target = context.graph.getNode(value)
-    const guid = target
-      ? getOrCreateNodeGuid(context, target.id, localIdCounter)
-      : parseGuidOrNull(value)
-    return guid ? { guidValue: guid } : { textValue: { characters: value } }
-  }
-  return { textValue: { characters: value } }
-}
-
-function componentPropertyVariableValue(
-  type: string,
-  value: string,
-  context: SceneNodeToKiwiContext,
-  localIdCounter: { value: number }
-) {
-  const legacy = componentPropertyValue(type, value, context, localIdCounter)
-  if (type === 'BOOLEAN')
-    return {
-      value: { boolValue: value === 'true' },
-      dataType: 'BOOLEAN',
-      resolvedDataType: 'BOOLEAN'
-    }
-  if (type === 'INSTANCE_SWAP' && 'guidValue' in legacy) {
-    return {
-      value: { symbolIdValue: { guid: legacy.guidValue } },
-      dataType: 'SYMBOL_ID',
-      resolvedDataType: 'SYMBOL_ID'
-    }
-  }
-  return { value: { textValue: value }, dataType: 'STRING', resolvedDataType: 'STRING' }
-}
-
 function serializeVariableModes(
   node: SceneNode,
   variableIdToGuid?: Map<string, GUID>,
@@ -170,6 +137,15 @@ function serializeVariableModes(
     return [{ variableSetID: { guid: collectionGuid }, variableModeID: modeGuid }]
   })
   return entries.length > 0 ? { entries } : undefined
+}
+
+function applyVariableModes(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  record: KiwiNodeChange
+): void {
+  const modes = serializeVariableModes(node, context.varIdToGuid, context.modeIdToGuid)
+  if (modes) record.variableModeBySetMap = modes
 }
 
 const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([
@@ -506,6 +482,13 @@ function applyInstancePayload(
         overridableNodeFields(context, target)
       )
     )
+    const ownPath = instanceExportAddress(
+      context.graph,
+      node,
+      node,
+      instanceGuidResolver(context, localIdCounter)
+    )
+    if (ownPath) writeOwnInstanceName(context.graph, node, ownPath, symbolOverrides)
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (!Number.isFinite(node.componentScale) || node.componentScale <= 0)
       throw new Error('Invalid instance uniform scale')
@@ -612,9 +595,7 @@ interface ExportedParameterEntry {
   }
 }
 function mergeParameterBindings(nc: KiwiNodeChange): void {
-  const parameters = nc.parameterConsumptionMap as
-    | { entries?: Array<{ variableField?: string }> }
-    | undefined
+  const parameters = nc.parameterConsumptionMap
   const entries = parameters?.entries ?? []
   const fields = new Set(entries.map((entry) => entry.variableField))
   const variables = nc.variableConsumptionMap?.entries ?? []
@@ -712,25 +693,11 @@ function applyComponentMetadata(
   }
 
   applyParameterReferences(nc, parameterRefs)
-  const componentPropAssignments = Object.entries(node.componentPropertyAssignments)
-    .map(([propertyId, value]) => {
-      const definition = context.componentPropertyDefinitionsById.get(propertyId)
-      if (!definition) return null
-      if (definition.type === 'SLOT')
-        return slotContentAssignment(
-          context,
-          node,
-          propertyId,
-          getOrCreatePropertyGuid(context, propertyId, localIdCounter),
-          localIdCounter
-        )
-      return {
-        defID: getOrCreatePropertyGuid(context, propertyId, localIdCounter),
-        value: componentPropertyValue(definition.type, value, context, localIdCounter),
-        varValue: componentPropertyVariableValue(definition.type, value, context, localIdCounter)
-      }
-    })
-    .filter((assignment): assignment is NonNullable<typeof assignment> => assignment !== null)
+  const componentPropAssignments = compact(
+    Object.entries(node.componentPropertyAssignments).map(([propertyId, value]) =>
+      componentPropAssignment(context, node, propertyId, value, localIdCounter)
+    )
+  )
   if (
     shouldSerializeRawBackedField(
       node,
@@ -751,6 +718,12 @@ function applyComponentMetadata(
   }
 }
 
+/** Whether the node is still saved in the box Figma gave it, not in its own. */
+function savedInFigmaBox(node: SceneNode): boolean {
+  const payload = effectiveFigmaSourcePayload(node)
+  return !!payload.rawSize && !!payload.rawTransform
+}
+
 function exportNodeSize(node: SceneNode): Vector {
   // rawSize and rawTransform are a matched pair describing the ORIGINAL Figma
   // box. Once the transform no longer backs the node, exportNodeTransform
@@ -758,10 +731,8 @@ function exportNodeSize(node: SceneNode): Vector {
   // an un-expanded rawSize disagrees about the box (for rotation, a different
   // centre) and the node drifts on reimport. Use rawSize only while the
   // transform still backs it.
-  const payload = effectiveFigmaSourcePayload(node)
-  return payload.rawSize && payload.rawTransform
-    ? { ...payload.rawSize }
-    : { x: node.width, y: node.height }
+  const { rawSize } = effectiveFigmaSourcePayload(node)
+  return rawSize && savedInFigmaBox(node) ? { ...rawSize } : { x: node.width, y: node.height }
 }
 
 function exportNodeTransform(context: SceneNodeToKiwiContext, node: SceneNode): Matrix {
@@ -886,9 +857,9 @@ function applyNodeVisualProps(
   if (node.verticalConstraint !== 'MIN') nc.verticalConstraint = node.verticalConstraint
   if (node.strokeCap !== 'NONE') nc.strokeCap = node.strokeCap
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
-  if (node.strokeJoin !== 'MITER' || 'strokeJoin' in rawNodeFields) {
-    nc.strokeJoin = node.strokeJoin
-  }
+  // Figma writes the join on every layer, MITER too: a vector's points without a join of their own
+  // take it, and without it they have none, which Figma's own network writes reject.
+  nc.strokeJoin = node.strokeJoin
   if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
@@ -981,6 +952,7 @@ export function overridableNodeFields(
   applyNodeStateProps(node, nc)
   applyNodeVisualProps({ ...context, fontDigestMap: undefined }, node, nc)
   context.serializeLayoutProps(node, nc)
+  applyVariableModes(context, node, nc)
   return nc
 }
 
@@ -1033,20 +1005,18 @@ export function sceneNodeToKiwiWithContext(
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
-  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs)
+  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs, (id) =>
+    exportedStyleReference(context, id)
+  )
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   mergeParameterBindings(nc)
   applyRawFigmaNodeFields(context, node, nc)
-  const variableModeBySetMap = serializeVariableModes(
-    node,
-    context.varIdToGuid,
-    context.modeIdToGuid
-  )
-  if (variableModeBySetMap) nc.variableModeBySetMap = variableModeBySetMap
+  applyVariableModes(context, node, nc)
 
   applyExportSettingsPluginData(node)
   applyLibrarySourcePluginData(node)
-  applyTextPathBoxPluginData(node)
+  serializeNodeStatus(node, nc)
+  applyTextPathBoxPluginData(node, savedInFigmaBox(node))
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {

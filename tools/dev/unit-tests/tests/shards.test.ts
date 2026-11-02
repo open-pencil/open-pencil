@@ -13,7 +13,7 @@ import {
 
 const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
 // Packages whose tests run in their own CI job instead of the unit shards.
-const OWN_SUITES = ['packages/harness/', 'packages/feedback/']
+const OWN_SUITES = ['packages/harness/', 'packages/feedback/', 'packages/cloud/']
 
 async function discover(pattern: string): Promise<string[]> {
   return Array.fromAsync(new Bun.Glob(pattern).scan({ cwd: REPO_ROOT }))
@@ -21,10 +21,10 @@ async function discover(pattern: string): Promise<string[]> {
 
 test('every app, engine and package-local test belongs to exactly one shard', async () => {
   const discovered = [
-    ...(await discover('tests/app/**/*.test.ts')),
-    ...(await discover('tests/integration/**/*.test.ts')),
-    ...(await discover('tests/engine/**/*.test.ts')),
-    ...(await discover('packages/*/tests/**/*.test.ts'))
+    ...(await discover('tests/app/**/*.test.{ts,tsx}')),
+    ...(await discover('tests/integration/**/*.test.{ts,tsx}')),
+    ...(await discover('tests/engine/**/*.test.{ts,tsx}')),
+    ...(await discover('packages/*/tests/**/*.test.{ts,tsx}'))
   ].filter((file) => !OWN_SUITES.some((suite) => file.startsWith(suite)))
   const paths = pathsForUnitTestGroup('all')
   const invalidAssignments = discovered.flatMap((file) => {
@@ -50,6 +50,8 @@ test('canonical destinations are registered before they hold files', async () =>
     'dom-css',
     'design-jsx',
     'emit',
+    'drawio',
+    'mermaid',
     'pen',
     'cli',
     'mcp'

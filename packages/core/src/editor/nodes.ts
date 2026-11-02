@@ -1,12 +1,10 @@
 import { pick } from 'es-toolkit/object'
 
-import {
-  styleDetachmentChanges,
-  findInstanceAncestor,
-  cloneInstanceOverrideState,
-  recordInstanceOverride,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
+import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -15,6 +13,7 @@ import { applyBoundVisibilityEdit, bindsVisibility } from './components/authorin
 import { createLayoutModeActions } from './layout-mode'
 import { createNodePreviewActions } from './node-preview'
 import { createNudgeActions } from './nudge'
+import { refitContainers, refitGroupsAroundLayers } from './structure/group/bounds'
 import { pathTextEditChanges } from './text/path-edit'
 import type { EditorContext } from './types'
 import { createVariableBindingActions } from './variable-bindings'
@@ -38,6 +37,8 @@ export function createNodeActions(ctx: EditorContext) {
   function runChangedLayout(id: string, changes: Partial<SceneNode>) {
     // A layer's modes reach the layers inside it.
     if (changes.variableModes) reconcileVariableLayouts(ctx.graph, { subtrees: [id] })
+    if (changes.visible !== undefined) refitGroupsAroundLayers(ctx, [id])
+    if (changes.booleanOperation !== undefined) refitContainers(ctx, [id])
     ctx.runLayoutForNode(id)
   }
 
@@ -48,6 +49,7 @@ export function createNodeActions(ctx: EditorContext) {
     // (path text is textAutoResize NONE so they don't collide today).
     const nextChanges = styleDetachmentChanges(node, {
       ...changes,
+      ...regionFillChanges(node, changes),
       ...textAutoResizeChanges(node, changes),
       ...pathTextEditChanges(node, changes)
     })
@@ -77,6 +79,7 @@ export function createNodeActions(ctx: EditorContext) {
     // Same ordering rationale as updateNode: reflowed path-text glyphs win.
     const nextChanges = styleDetachmentChanges(node, {
       ...changes,
+      ...regionFillChanges(node, changes),
       ...textAutoResizeChanges(node, changes),
       ...pathTextEditChanges(node, changes)
     })
@@ -139,3 +142,6 @@ export function createNodeActions(ctx: EditorContext) {
     ...nudgeActions
   }
 }
+
+/** The editor's node writes; an edit made through them leaves the shared styles it changes. */
+export type NodeActions = ReturnType<typeof createNodeActions>

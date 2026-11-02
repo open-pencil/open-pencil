@@ -91,6 +91,8 @@ export type FigSessionResponse =
       checkpoint?: FigSessionCheckpoint
       delta: FigPopulationDelta
     }
+  /** A page load is still advancing; sent at most once a second while it runs. */
+  | { type: 'population-progress'; requestId: string }
   | { type: 'population-error'; requestId?: string; error: string }
   | { type: 'original-archive-result'; requestId: string; bytes: Uint8Array }
   | { type: 'archive-info-result'; requestId: string; info: FigArchiveRecordInfo }

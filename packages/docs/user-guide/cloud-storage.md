@@ -9,7 +9,7 @@ OpenPencil can keep documents in a bucket you own on any S3-compatible service: 
 
 ## Connect a Bucket
 
-Open **Settings → Cloud storage**, select **S3 storage**, and fill in:
+Open **Settings → Storage**, select **S3 storage**, and fill in:
 
 | Field                 | What to enter                                                                     |
 | --------------------- | --------------------------------------------------------------------------------- |
@@ -52,9 +52,9 @@ Set it in the AWS console under the bucket's **Permissions → Cross-origin reso
 
 ## Save a Document to Storage
 
-Open or create a document, then choose **File → Save to storage…**. The document is saved into the bucket and the tab stays bound to it: **Save** and auto-save now write to storage instead of a local file. A local `.fig` you had open keeps its last saved contents.
+Open or create a document, then choose **File → Save to…**. With no Cloud workspace to choose from, the document is saved straight into the bucket; otherwise pick the bucket from the list. The tab stays bound to it: **Save** and auto-save now write to storage instead of a local file. A local `.fig` you had open keeps its last saved contents.
 
-To open stored documents, choose **File → Open storage workspace…**. The workspace lists every document in the bucket with a preview read from the document itself, so listing a large file downloads only its embedded thumbnail.
+To open stored documents, select your bucket in Home's sidebar; **File → Browse files…** opens Home where you left it. **New design** with the bucket selected creates a document in it. Home lists every document in the bucket with a preview read from the document itself, so listing a large file downloads only its embedded thumbnail.
 
 ## How Saving Works
 

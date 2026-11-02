@@ -13,7 +13,7 @@ import { data } from './property-grid.data'
 
 ```vue twoslash
 <script setup lang="ts">
-import { PropertyGridRoot } from '@open-pencil/vue'
+import { PropertyGridRoot } from '@open-pencil/vue/primitives/PropertyGrid'
 </script>
 
 <template>

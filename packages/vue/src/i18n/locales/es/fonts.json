@@ -5,6 +5,10 @@
   "localFonts": "Fuentes locales",
   "onlineFonts": "Fuentes en línea",
   "downloadedCache": "Caché descargada",
+  "cachedFontCount": {
+    "one": "{count} fuente",
+    "many": "{count} fuentes"
+  },
   "systemFontAccess": "Acceso a fuentes del sistema",
   "systemFontsAvailable": "Las fuentes del sistema están disponibles.",
   "allowBrowserFontAccess": "Permite el acceso a fuentes del navegador cuando falten fuentes del sistema.",

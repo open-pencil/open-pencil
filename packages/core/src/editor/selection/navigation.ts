@@ -1,4 +1,4 @@
-import { generatedFrameOwner, isGeneratedFrame } from '@open-pencil/scene-graph'
+import { generatedFrameOwner, isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 
 import type { EditorContext } from '#core/editor/types'
 

@@ -8,7 +8,7 @@ import {
 } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -17,13 +17,10 @@ import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { designCheck } from '@/theme/design-check'
 
 import IssueRow from './IssueRow.vue'
 import type { IssueGroupView, IssueRowView } from './types'
-
-/** Rows rendered before a group asks to show the rest. */
-const ROW_PAGE_SIZE = 50
+import { designCheck } from './ui'
 
 const { group } = defineProps<{ group: IssueGroupView }>()
 const open = defineModel<boolean>('open', { default: true })
@@ -33,6 +30,7 @@ const emit = defineEmits<{
   fix: [row: IssueRowView]
   fixAll: []
   turnOff: []
+  showMore: []
 }>()
 
 const messages = useDesignCheckMessages()
@@ -40,10 +38,8 @@ const styles = designCheck()
 const menuCls = useMenuUI({ content: 'min-w-40' })
 const itemCls = menuItem({ justify: 'start' })
 const menuOpen = ref(false)
-const limit = ref(ROW_PAGE_SIZE)
 
-const visibleRows = computed(() => group.rows.slice(0, limit.value))
-const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
+const hiddenCount = computed(() => group.count - group.rows.length)
 </script>
 
 <template>
@@ -65,7 +61,7 @@ const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
       <Tip :label="group.help ?? undefined" side="left">
         <span :class="styles.groupTitle()">{{ group.title }}</span>
       </Tip>
-      <span :class="styles.groupCount()">{{ group.rows.length }}</span>
+      <span :class="styles.groupCount()">{{ group.count }}</span>
     </template>
     <template #actions>
       <AppButton v-if="group.fixes.length > 1" color="primary" size="xs" @click="emit('fixAll')">
@@ -96,7 +92,7 @@ const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
 
     <ul :class="styles.rows()">
       <IssueRow
-        v-for="row in visibleRows"
+        v-for="row in group.rows"
         :key="row.issue.id"
         :row="row"
         @open="emit('openRow', row)"
@@ -109,7 +105,7 @@ const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
       color="primary"
       size="xs"
       :class="styles.more()"
-      @click="limit += ROW_PAGE_SIZE * 4"
+      @click="emit('showMore')"
     >
       {{ messages.showMore({ count: hiddenCount }) }}
     </AppButton>

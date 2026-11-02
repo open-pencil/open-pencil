@@ -18,13 +18,7 @@ Użyj tych exports, gdy locale jest częścią szerszego application state albo 
 ## Użycie
 
 ```ts
-import {
-  locale,
-  localeSetting,
-  setLocale,
-  AVAILABLE_LOCALES,
-  LOCALE_LABELS,
-} from '@open-pencil/vue'
+import { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '@open-pencil/vue/i18n'
 ```
 
 ## Zachowanie

@@ -12,20 +12,20 @@ const { values } = parseArgs({
 })
 if (!values.title) throw new Error('Required: --title <tab title> [--port 9222]')
 
-const TargetsJSON = v.pipe(
+const targetsSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.array(v.looseObject({ type: v.string(), url: v.string(), webSocketDebuggerUrl: v.string() }))
 )
 const targets = v.parse(
-  TargetsJSON,
+  targetsSchema,
   await (await fetch(`http://localhost:${values.port}/json/list`)).text()
 )
 const shell = targets.find((t) => t.type === 'page' && t.url.endsWith('shell.html'))
 if (!shell)
   throw new Error('Figma desktop shell page not found; is Figma running with remote debugging?')
 
-const EvaluateResponseJSON = v.pipe(
+const evaluateResponseSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -54,7 +54,7 @@ socket.send(
 // A throw inside onmessage would leave this pending forever, so a bad frame rejects instead.
 const result = await new Promise<unknown>((resolve, reject) => {
   socket.onmessage = (message) => {
-    const parsed = v.safeParse(EvaluateResponseJSON, String(message.data))
+    const parsed = v.safeParse(evaluateResponseSchema, String(message.data))
     if (parsed.success) resolve(parsed.output.result?.result?.value)
     else reject(new v.ValiError(parsed.issues))
   }

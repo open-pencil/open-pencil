@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { collectSceneMutation, mutationLayoutScopeIds, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import {
+  collectSceneMutation,
+  mutationLayoutScopeIds
+} from '@open-pencil/scene-graph/mutation-impact'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -53,11 +57,11 @@ describe('scene mutation impact', () => {
     expect(impact.currentParentIds).toContain(right.id)
   })
 
-  test('retains old and new parents when reorderChild transfers a node', async () => {
+  test('retains old and new parents when insertChildAt transfers a node', async () => {
     const { graph, left, right, child } = transferSetup()
 
     const { impact } = await collectSceneMutation(graph, () =>
-      graph.reorderChild(child.id, right.id, 0)
+      graph.insertChildAt(child.id, right.id, 0)
     )
 
     expect(child.parentId).toBe(right.id)

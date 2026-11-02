@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeLayout, SceneGraph } from '@open-pencil/core'
+import { computeLayout } from '@open-pencil/core/layout'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { pageId, rect } from '#tests/helpers/layout'

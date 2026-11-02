@@ -1,4 +1,4 @@
-import { sceneNodesToTailwindJSX } from '#dom-css/index'
+import { sceneNodesToTailwindJSX } from '#dom-css/export/tailwind-jsx'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 

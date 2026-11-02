@@ -340,7 +340,7 @@ test('reordering layers on the canvas moves their elements and keeps them linked
     const store = window.openPencil?.getStore?.()
     const swatch = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Swatch')
     if (!store || !swatch?.parentId) throw new Error('Swatch not found')
-    store.graph.reorderChild(swatch.id, swatch.parentId, 0)
+    store.graph.insertChildAt(swatch.id, swatch.parentId, 0)
     store.requestRender()
   })
 
@@ -395,7 +395,7 @@ test('a reorder that cannot move the code still writes layers added with it', as
     const store = window.openPencil?.getStore?.()
     const swatch = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Swatch')
     if (!store || !swatch?.parentId) throw new Error('Swatch not found')
-    store.graph.reorderChild(swatch.id, swatch.parentId, 0)
+    store.graph.insertChildAt(swatch.id, swatch.parentId, 0)
     store.graph.createNode('ELLIPSE', swatch.parentId, { name: 'Dot', width: 24, height: 24 })
     store.requestRender()
   })

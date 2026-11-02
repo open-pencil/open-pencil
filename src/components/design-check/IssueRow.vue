@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { designCheck } from '@/theme/design-check'
 
 import type { IssueRowView } from './types'
+import { designCheck } from './ui'
 
 const { row } = defineProps<{ row: IssueRowView }>()
 const emit = defineEmits<{

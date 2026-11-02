@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 function themeEditor() {
   const editor = createEditor()
@@ -158,7 +158,7 @@ describe('variable token undo', () => {
     expect(Object.hasOwn(editor.graph.variables.get('gutter') ?? {}, 'unit')).toBe(false)
   })
 
-  test('an expression follows its number, goes with an alias, and undoes with the value', () => {
+  test('an expression follows its number, stays with an alias, and undoes with the value', () => {
     const editor = themeEditor()
     const gutter = () => editor.graph.variables.get('gutter')
     const clamp = 'clamp(1rem, 4vw, 1.5rem)'
@@ -168,7 +168,7 @@ describe('variable token undo', () => {
     expect(gutter()?.expressions).toEqual({ light: { css: clamp, resolved: 20 } })
 
     editor.updateVariableValue('gutter', 'light', { aliasId: 'other' })
-    expect(gutter()?.expressions).toBeUndefined()
+    expect(gutter()?.expressions).toEqual({ light: { css: clamp } })
 
     editor.undo.undo()
     expect(gutter()?.expressions).toEqual({ light: { css: clamp, resolved: 20 } })

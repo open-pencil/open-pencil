@@ -1,4 +1,5 @@
-import type { SceneGraph, SceneNode, Size } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { getTextMeasurer } from './text-measurement'
 

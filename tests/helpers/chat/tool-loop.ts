@@ -8,7 +8,7 @@ import type { Page } from '@playwright/test'
  */
 export async function injectToolLoopTransport(page: Page): Promise<void> {
   await page.evaluate(async () => {
-    const transportsPath = '/src/app/ai/chat/transports.ts'
+    const transportsPath = '/src/app/ai/transports/tool-loop.ts'
     const { createToolLoopTransport } = await import(transportsPath)
     const api = window.openPencil
     const store = api?.getStore?.()

@@ -8,7 +8,7 @@ import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
 import { SkiaRenderer } from '#core/canvas'
 import { createPathCache, NodePathCaches } from '#core/canvas/paths/cache'
 import { render, renderSceneToCanvas } from '#core/canvas/renderer/pipeline'
-import { initCanvasKit } from '#core/io'
+import { initCanvasKit } from '#core/io/formats/raster/headless'
 
 const ck = await initCanvasKit()
 

@@ -5,6 +5,18 @@ on:
     branches: [master]
     paths:
       - packages/feedback/**
+      # The waitlist's email layout, which Cloud's email module shares with the Worker.
+      - packages/cloud/src/email/**
+      - packages/cloud/src/contract/**
+      # The metrics dashboard page the Worker serves under /admin. Its bundle is built from the
+      # app's src/ (views, components, theme, styles, and the build target in
+      # src/app/shell/support) and this package, so any change there redeploys it.
+      - src/**
+      - metrics.html
+      - package.json
+      - bun.lock
+      - vite.config.ts
+      - vite/**
   workflow_dispatch:
 
 concurrency:
@@ -24,6 +36,10 @@ jobs:
 
       - name: Typecheck and test against a local D1
         run: bun run test:feedback
+
+      # Wrangler uploads dist-metrics/ as the Worker's static assets.
+      - name: Build the metrics dashboard page
+        run: bun run build:packages && bun run build:metrics
 
       # Migrations run before the new code, so it never queries a table that is not there yet.
       - uses: cloudflare/wrangler-action@v4

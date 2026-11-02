@@ -17,8 +17,8 @@ import {
   readHealth,
   readNextResponse,
   readWsJSON,
-  RegisterMessage,
-  ResponseMessage,
+  registerMessageSchema,
+  responseMessageSchema,
   socketRequest,
   tcpRequest,
   waitForBrowserRegistration,
@@ -158,6 +158,83 @@ describe('MCP server unified transport', () => {
 // ---------------------------------------------------------------------------
 
 describe('MCP Streamable HTTP transport', () => {
+  test('failed requests cannot exhaust sessions, while valid concurrent sessions retain the cap', async () => {
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      mcpRoot: null
+    })
+    const url = `http://127.0.0.1:${handle.httpPort}/mcp`
+    const headers = {
+      Authorization: `Bearer ${TEST_AUTH_TOKEN}`,
+      accept: 'application/json, text/event-stream',
+      'content-type': 'application/json'
+    }
+    const init = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2025-06-18',
+        capabilities: {},
+        clientInfo: { name: 'session-regression', version: '1' }
+      }
+    }
+    try {
+      for (let i = 0; i < 12; i++) {
+        for (const method of ['PUT', 'PATCH', 'HEAD']) {
+          const response = await fetch(url, { method, headers })
+          expect(response.status).toBe(405)
+          expect(response.headers.get('allow')).toBe('GET, POST, DELETE')
+          await response.text()
+        }
+        expect((await fetch(url, { headers })).status).toBe(400)
+        for (const body of [
+          '{invalid',
+          JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' }),
+          JSON.stringify({ ...init, params: { protocolVersion: 42 } })
+        ]) {
+          const response = await fetch(url, { method: 'POST', headers, body })
+          expect([200, 400]).toContain(response.status)
+          await response.text()
+        }
+      }
+      const responses = await Promise.all(
+        Array.from({ length: 12 }, () =>
+          fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(init)
+          })
+        )
+      )
+      expect(responses.filter((response) => response.status === 200)).toHaveLength(10)
+      const rejected = responses.filter((response) => response.status === 503)
+      expect(rejected).toHaveLength(2)
+      expect(rejected[0]?.headers.get('retry-after')).toBe('5')
+      // A probe without an ID still cannot allocate, even at capacity.
+      expect((await fetch(url, { headers })).status).toBe(400)
+      expect((await fetch(url, { method: 'PUT', headers })).status).toBe(405)
+      for (const response of responses) {
+        const sessionId = response.headers.get('mcp-session-id')
+        await response.text()
+        if (!sessionId) continue
+        const deleted = await fetch(url, {
+          method: 'DELETE',
+          headers: { ...headers, 'Mcp-Session-Id': sessionId }
+        })
+        expect(deleted.status).toBe(200)
+      }
+      const reconnected = await fetch(url, { method: 'POST', headers, body: JSON.stringify(init) })
+      expect(reconnected.status).toBe(200)
+      await reconnected.text()
+    } finally {
+      await handle.close()
+    }
+  })
+
   test('returns JSON responses for request/response calls', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
     const handle = await startServer({
@@ -232,7 +309,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       await waitForBrowserRegistration(httpPort)
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
 
-      const register = await readWsJSON(clientWs, RegisterMessage)
+      const register = await readWsJSON(clientWs, registerMessageSchema)
       expect(register.type).toBe('register')
       expect(register.token).toBeNull()
 
@@ -244,7 +321,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse(clientWs, ResponseMessage)
+      const response = await readNextResponse(clientWs, responseMessageSchema)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-1')
@@ -277,7 +354,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
 
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, 'bridge-test-token')
 
-      const register = await readWsJSON(clientWs, RegisterMessage)
+      const register = await readWsJSON(clientWs, registerMessageSchema)
       expect(register.type).toBe('register')
 
       clientWs.send(
@@ -288,7 +365,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse(clientWs, ResponseMessage, 15_000)
+      const response = await readNextResponse(clientWs, responseMessageSchema, 15_000)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-no-app')
@@ -321,11 +398,11 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const graph = new SceneGraph()
 
-      const initialRegister = await readWsJSON(clientWs, RegisterMessage)
+      const initialRegister = await readWsJSON(clientWs, registerMessageSchema)
       expect(initialRegister.type).toBe('register')
       expect(initialRegister.token).toBeNull()
 
-      const broadcastPromise = readWsJSON(clientWs, RegisterMessage, 3_000)
+      const broadcastPromise = readWsJSON(clientWs, registerMessageSchema, 3_000)
       browser = await connectMockBrowser(httpPort, graph, authToken)
       const broadcastRegister = await broadcastPromise
       expect(broadcastRegister.type).toBe('register')
@@ -358,7 +435,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJSON(ws, RegisterMessage)
+      const initReg = await readWsJSON(ws, registerMessageSchema)
       expect(initReg.type).toBe('register')
 
       const requestPromise = (async () => {
@@ -370,7 +447,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
             args: { name: 'get_current_page', args: {} }
           })
         )
-        return readNextResponse(ws, ResponseMessage, 15_000)
+        return readNextResponse(ws, responseMessageSchema, 15_000)
       })()
 
       await new Promise<void>((r) => {
@@ -445,7 +522,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJSON(ws, RegisterMessage)
+      const initReg = await readWsJSON(ws, registerMessageSchema)
       expect(initReg.type).toBe('register')
       expect(initReg.token).toBeNull()
 
@@ -457,7 +534,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse(ws, ResponseMessage)
+      const response = await readNextResponse(ws, responseMessageSchema)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-after-reconnect')

@@ -9,35 +9,30 @@ import {
   figImageEntries,
   importCanvasGuides,
   parseGuidOrNull,
-  stringToGuid,
-  type FigNodeChangeExportRuntime
+  type FigNodeChangeExportRuntime,
+  makeCanvasNodeChange,
+  makeDocumentNodeChange
 } from '@open-pencil/fig/node-change'
-import { getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
+import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
-  ownsSlotContent,
   readBehaviour,
   renameBehaviourProperties,
-  withBehaviour,
-  type PluginDataEntry,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  withBehaviour
+} from '@open-pencil/scene-graph/behaviours'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
+import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
-import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'
-import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
+import { applyDocumentPluginData } from '#core/io/formats/fig/document-metadata'
+import { figThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
-import {
-  makeCanvasNodeChange,
-  makeDocumentNodeChange,
-  settleFontDigestMap
-} from '#core/kiwi/fig/node-change/serialize'
+import { settleFontDigestMap } from '#core/kiwi/fig/node-change/serialize'
 
 import { assignVariableGuid, assignVariableGuids } from './variables'
 
@@ -110,19 +105,22 @@ async function renderFigThumbnail(
 }
 
 /**
- * The GUID a layer that was never opened from a file is saved under: its graph ID, which has
- * Figma's `sessionID:localID` shape and never changes, so later saves keep it. Saved GUIDs of
- * opened layers and GUIDs already written win over it.
+ * The GUID a layer without a `source.id` is saved under: its graph ID, which has Figma's
+ * `sessionID:localID` shape and never changes, so later saves keep it. A layer opened from a
+ * file has its record's GUID as its ID, so it keeps that record even when something, such as a
+ * room's copy of it, cleared its `source.id`. Another layer that keeps the GUID as its
+ * `source.id`, and GUIDs already written, win over it.
  */
 function ownGuid(
   id: string,
-  sourceGuidValues: ReadonlySet<string>,
+  sourceOwners: ReadonlyMap<string, string>,
   assignedGuidValues: ReadonlySet<string>
 ): GUID | null {
-  if (!/^\d+:\d+$/.test(id)) return null
-  const guid = stringToGuid(id)
+  const guid = parseGuidOrNull(id)
+  if (!guid) return null
   const key = `${guid.sessionID}:${guid.localID}`
-  return sourceGuidValues.has(key) || assignedGuidValues.has(key) ? null : guid
+  const owner = sourceOwners.get(key)
+  return (owner !== undefined && owner !== id) || assignedGuidValues.has(key) ? null : guid
 }
 
 /**
@@ -136,13 +134,13 @@ function savedFromFile(node: SceneNode): boolean {
 
 function assignOwnLayerGuids(
   graph: SceneGraph,
-  sourceGuidValues: ReadonlySet<string>,
+  sourceOwners: ReadonlyMap<string, string>,
   nodeIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>
 ): void {
   for (const node of graph.nodes.values()) {
     if (savedFromFile(node) || node.id === graph.rootId || nodeIdToGuid.has(node.id)) continue
-    const guid = ownGuid(node.id, sourceGuidValues, assignedGuidValues)
+    const guid = ownGuid(node.id, sourceOwners, assignedGuidValues)
     if (!guid) continue
     nodeIdToGuid.set(node.id, guid)
     assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
@@ -163,11 +161,17 @@ export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly s
   }
   let last = 0
   for (const id of ids) {
-    if (!/^\d+:\d+$/.test(id)) continue
-    const guid = stringToGuid(id)
-    if (guid.sessionID <= 1) last = Math.max(last, guid.localID)
+    const guid = parseGuidOrNull(id)
+    if (guid && guid.sessionID <= 1) last = Math.max(last, guid.localID)
   }
   return last + 1
+}
+
+/** The layer that keeps each GUID as its `source.id`, by GUID. */
+function layerSourceOwners(graph: SceneGraph): Map<string, string> {
+  const owners = new Map<string, string>()
+  for (const node of graph.nodes.values()) if (node.source.id) owners.set(node.source.id, node.id)
+  return owners
 }
 
 /** The GUIDs layers keep from the file they were read from, which variables must not take. */
@@ -261,7 +265,7 @@ function buildCanvasEntries(
   localIdCounter: { value: number },
   nodeIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>,
-  sourceGuidValues: ReadonlySet<string>,
+  sourceOwners: ReadonlyMap<string, string>,
   ownGuids = true
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
@@ -271,7 +275,7 @@ function buildCanvasEntries(
     const canvasGuid = (() => {
       if (!page.source.id) {
         return (
-          (ownGuids ? ownGuid(page.id, sourceGuidValues, assignedGuidValues) : null) ?? {
+          (ownGuids ? ownGuid(page.id, sourceOwners, assignedGuidValues) : null) ?? {
             sessionID: 0,
             localID: localIdCounter.value++
           }
@@ -379,7 +383,7 @@ export interface FigExportSetup {
 }
 
 export interface FigExportSetupOptions {
-  /** Saved identities on pages that may not be loaded; new layer IDs must not claim them. */
+  /** Saved identities on pages that may not be loaded; new variable IDs must not claim them. */
   archiveRecordIds?: readonly string[]
   /** The first local ID a new GUID may take, above every GUID the target archive holds. */
   nextLocalId?: number
@@ -411,7 +415,7 @@ export async function prepareFigExport(
   const documentNc = makeDocumentNodeChange(docGuid, graph.documentColorSpace)
   const rootNode = graph.getNode(graph.rootId)
   if (rootNode) Object.assign(documentNc, rootNode.source.fig.rawNodeFields)
-  applyEnabledLibrariesPluginData(documentNc, graph)
+  applyDocumentPluginData(documentNc, graph)
 
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
@@ -424,7 +428,8 @@ export async function prepareFigExport(
   const propertyIdToGuid = new Map<string, GUID>()
 
   const nodeSourceGuidValues = layerSourceGuids(graph)
-  const reservedLayerGuids = new Set([...nodeSourceGuidValues, ...(options.archiveRecordIds ?? [])])
+  const sourceOwners = layerSourceOwners(graph)
+  const archiveRecordIds = new Set(options.archiveRecordIds)
   const propertyIds = collectComponentPropertyIds(graph)
   // Before any canvas, variable or layer takes a counter GUID, so none collides.
   localIdCounter.value = Math.max(
@@ -440,7 +445,7 @@ export async function prepareFigExport(
     localIdCounter,
     nodeIdToGuid,
     assignedGuidValues,
-    reservedLayerGuids,
+    sourceOwners,
     true
   )
   // Archive records keep their GUIDs: claim them before any copy that kept one can.
@@ -461,7 +466,9 @@ export async function prepareFigExport(
     assignedGuidValues,
     nodeSourceGuidValues,
     archived
-      ? (id) => archived.has(id) || ownGuid(id, reservedLayerGuids, assignedGuidValues) !== null
+      ? (id) =>
+          archived.has(id) ||
+          (!archiveRecordIds.has(id) && ownGuid(id, sourceOwners, assignedGuidValues) !== null)
       : undefined
   )
 
@@ -473,7 +480,7 @@ export async function prepareFigExport(
     nodeSourceGuidValues
   )
   const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid)
-  assignOwnLayerGuids(graph, reservedLayerGuids, nodeIdToGuid, assignedGuidValues)
+  assignOwnLayerGuids(graph, sourceOwners, nodeIdToGuid, assignedGuidValues)
 
   return {
     graph,
@@ -542,7 +549,8 @@ export async function figFileExtras(
   imageNames: ReadonlyMap<string, string>,
   options: FigFileExtrasOptions
 ): Promise<FigFileExtras> {
-  const thumbnailPageId = options.pageId ?? findFigThumbnailPageId(graph.getPages(true))
+  // Internal pages hold library data, not anything a person drew, so the thumbnail skips them.
+  const thumbnailPageId = options.pageId ?? figThumbnailPageId(graph.getPages())
   const thumbnail = await renderFigThumbnail(graph, thumbnailPageId, options)
   const metaJSON = figArchiveMetaJSON({
     fileName: options.documentName || UNTITLED_FILE_NAME,

@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { pluginChildren } from './accessors/sticky'
+import { figmaFills, figmaStrokes } from './accessors/visual'
 import type { NodeProxyHost } from './proxy'
 
 function resolveBindings(graph: SceneGraph, node: SceneNode): Record<string, unknown> | undefined {
@@ -28,10 +29,23 @@ function appendTextProps(obj: Record<string, unknown>, n: SceneNode): void {
   obj.textAutoResize = n.textAutoResize
   obj.textDirection = n.textDirection
   if (n.lineHeight != null) obj.lineHeight = n.lineHeight
-  if (n.letterSpacing !== 0) obj.letterSpacing = n.letterSpacing
+  if (n.letterSpacing.value !== 0) obj.letterSpacing = n.letterSpacing
   if (n.textCase !== 'ORIGINAL') obj.textCase = n.textCase
   if (n.textDecoration !== 'NONE') obj.textDecoration = n.textDecoration
   if (n.maxLines != null) obj.maxLines = n.maxLines
+}
+
+function appendComponentProperties(obj: Record<string, unknown>, n: SceneNode): void {
+  if (
+    (n.type === 'COMPONENT' || n.type === 'COMPONENT_SET') &&
+    n.componentPropertyDefinitions.length > 0
+  ) {
+    obj.componentPropertyDefinitions = n.componentPropertyDefinitions
+  }
+  if (n.componentPropertyReferences.length > 0)
+    obj.componentPropertyReferences = n.componentPropertyReferences
+  if (n.type === 'INSTANCE' && Object.keys(n.componentPropertyAssignments).length > 0)
+    obj.componentPropertyAssignments = n.componentPropertyAssignments
 }
 
 export function nodeProxyToJSON(
@@ -53,13 +67,14 @@ export function nodeProxyToJSON(
     width: n.width,
     height: n.height
   }
-  if (n.fills.length > 0) obj.fills = n.fills
-  if (n.strokes.length > 0) obj.strokes = n.strokes
+  if (n.fills.length > 0) obj.fills = figmaFills(graph, n)
+  if (n.strokes.length > 0) obj.strokes = figmaStrokes(graph, n)
   if (n.effects.length > 0) obj.effects = n.effects
   if (n.opacity !== 1) obj.opacity = n.opacity
   if (n.cornerRadius > 0) obj.cornerRadius = n.cornerRadius
   if (!n.visible) obj.visible = false
   if (n.text) obj.characters = n.text
+  appendComponentProperties(obj, n)
   if (n.type === 'TEXT') {
     appendTextProps(obj, n)
   }

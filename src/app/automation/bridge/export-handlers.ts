@@ -1,6 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { RasterExportFormat } from '@open-pencil/core/io'
+import type { RasterExportFormat } from '@open-pencil/core/io/formats/raster'
 import { selectionToJSX } from '@open-pencil/design-jsx'
 import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/export'
 

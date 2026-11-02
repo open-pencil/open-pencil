@@ -1,22 +1,21 @@
-import { beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import {
   buildFigmaClipboardHTML,
   buildOpenPencilClipboardHTML,
   importClipboardNodes,
-  parseFigmaClipboard,
-  parseOpenPencilClipboard,
-  readFigFile,
-  initCodec,
-  type SceneNode,
-  SceneGraph
-} from '@open-pencil/core'
+  parseOpenPencilClipboard
+} from '@open-pencil/core/clipboard'
+import { readFigFile } from '@open-pencil/core/io/formats/fig'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
-describe('gold-preview.fig clipboard roundtrip', () => {
+heavy('gold-preview.fig clipboard roundtrip', () => {
   let graph: SceneGraph
   let pageId: string
   let topLevelNodes: SceneNode[]

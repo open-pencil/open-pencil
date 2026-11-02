@@ -4,7 +4,8 @@ import {
   DEFAULT_STROKE_MITER_LIMIT,
   DEFAULT_STROKE_WEIGHT
 } from './constants'
-import { createInstanceOverrideState } from './instance-overrides'
+import { createInstanceOverrideState } from './instances/overrides'
+import { NO_LETTER_SPACING } from './text/lengths'
 import type { NodeType, SceneNode, SourceMetadata } from './types'
 
 export function createDefaultSourceMetadata(): SourceMetadata {
@@ -97,12 +98,13 @@ export function createDefaultNode(
     fontFamily: DEFAULT_FONT_FAMILY,
     fontWeight: 400,
     italic: false,
+    fontStyle: null,
     textAlignHorizontal: 'LEFT',
     textDirection: 'AUTO',
     textLanguage: null,
     leadingTrim: 'NONE',
     lineHeight: null,
-    letterSpacing: 0,
+    letterSpacing: NO_LETTER_SPACING,
     layoutMode: 'NONE',
     layoutDirection: 'AUTO',
     layoutWrap: 'NO_WRAP',
@@ -142,6 +144,7 @@ export function createDefaultNode(
     hangingList: false,
     styleRuns: [],
     fontVariations: [],
+    opticalSizeFromFontSize: true,
     fontFeatures: [],
     horizontalConstraint: 'MIN',
     verticalConstraint: 'MIN',
@@ -161,6 +164,14 @@ export function createDefaultNode(
     minHeight: null,
     maxHeight: null,
     targetAspectRatio: null,
+    connectorStart: null,
+    connectorEnd: null,
+    connectorLineType: 'ELBOWED',
+    connectorStartCap: 'ROUND',
+    connectorEndCap: 'ARROW_LINES',
+    connectorControlPoints: [],
+    connectorCurveHandles: null,
+    connectorLabelPosition: null,
     isMask: false,
     maskType: 'ALPHA',
     maskIsOutline: false,
@@ -177,6 +188,9 @@ export function createDefaultNode(
     autoRename: true,
     pointCount: 5,
     starInnerRadius: 0.38,
+    shapeWithTextType: 'SQUARE',
+    shapeUserHeight: 0,
+    shapeTruncates: false,
     componentId: null,
     instanceOverrides: createInstanceOverrideState(),
     componentPropertyDefinitions: [],
@@ -202,6 +216,7 @@ export function createDefaultNode(
     componentScale: 1,
     variableModes: {},
     exportSettings: [],
+    status: null,
     pluginData: [],
     pluginRelaunchData: [],
     internalOnly: false,
@@ -209,6 +224,7 @@ export function createDefaultNode(
     flipY: false,
     textPicture: null,
     derivedTextGlyphs: null,
+    derivedTextHeight: null,
     textPathData: null,
     textPathBox: null,
     booleanOperation: undefined,
@@ -221,6 +237,29 @@ export const FITTED_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'GROUP',
   'BOOLEAN_OPERATION'
 ])
+
+/** Layers whose stroke can take a weight per side, as Figma's `strokeTopWeight` and its siblings. */
+export const SIDE_STROKE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'RECTANGLE',
+  'FRAME',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/** The kinds that hold layers of their own on the canvas: what a shadow or a clip encloses. */
+export const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+export function isLayerContainer(node: Pick<SceneNode, 'type'>): boolean {
+  return LAYER_CONTAINER_TYPES.has(node.type)
+}
 
 export const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',

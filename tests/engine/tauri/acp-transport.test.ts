@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { createACPTransport } from '@/app/ai/chat/transports'
+import { createACPTransport } from '@/app/ai/chat/session'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
@@ -16,15 +16,15 @@ function cwdOf(transport: object): string | null {
 }
 
 describe('Tauri ACP transport', () => {
-  test('uses Tauri home directory for transport cwd', async () => {
-    await mockTauriIPC((cmd, args) => {
-      expect(cmd).toBe('plugin:path|resolve_directory')
-      expect(args).toEqual({ directory: 21 })
-      return '/Users/tester'
+  test('starts the agent in the folder the desktop shell sets aside for agents', async () => {
+    const workspace = '/Users/tester/Library/Application Support/OpenPencil/agent-workspace'
+    await mockTauriIPC((cmd) => {
+      expect(cmd).toBe('agent_workspace')
+      return workspace
     })
 
     const transport = await createACPTransport('acp:claude-code')
 
-    expect(cwdOf(transport)).toBe('/Users/tester')
+    expect(cwdOf(transport)).toBe(workspace)
   })
 })

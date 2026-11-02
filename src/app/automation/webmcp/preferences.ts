@@ -1,7 +1,8 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { resolveWebMCPMode, type WebMCPMode } from './policy'
+import { resolveWebMCPMode } from './policy'
+import { type WebMCPMode } from './schema'
 
 const storedMode = useLocalStorage('open-pencil:webmcp:mode', 'off')
 

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** Read freshly painted scene pixels in sRGB, before WebGL discards its drawing buffer. */
 export async function readScenePixels(page: Page, points: readonly Vector[]): Promise<number[][]> {

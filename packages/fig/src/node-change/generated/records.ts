@@ -1,4 +1,5 @@
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 /**
  * A generated frame's record carries its sublayers as partial records, addressed by paths of one
@@ -6,8 +7,6 @@ import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
  * user set on each, `derivedImmutableFrameData` the layout Figma computed from it.
  */
 export const GENERATED_SESSION_ID = 40_000_000
-
-export const STICKY_SLOTS = { background: 0, body: 1, author: 2 } as const
 
 export interface GeneratedEntry extends NodeChange {
   guidPath?: { guids?: GUID[] }

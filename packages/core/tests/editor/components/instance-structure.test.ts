@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+
 import { compact } from 'es-toolkit'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 // Each case repeats a Figma desktop 126 script: the instance mirrors the component's new

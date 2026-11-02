@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { Matrix } from '@open-pencil/scene-graph/primitives'
 
 export function mapToFigmaType(type: SceneNode['type']): string {
@@ -44,24 +45,8 @@ export function mapToFigmaType(type: SceneNode['type']): string {
   }
 }
 
+/** Figma's matrix for a layer is the Scene Graph's own placement, pivot and reflections included. */
 export function computeExportTransform(node: SceneNode): Matrix {
-  const sx = node.flipX ? -1 : 1
-  const cos = Math.cos((node.rotation * Math.PI) / 180)
-  const sin = Math.sin((node.rotation * Math.PI) / 180)
-
-  const m00 = cos * sx
-  const m01 = -sin * sx
-  const m10 = sin
-  const m11 = cos
-  const centerX = node.width / 2
-  const centerY = node.height / 2
-
-  return {
-    m00,
-    m01,
-    m02: node.x + centerX - m00 * centerX - m01 * centerY,
-    m10,
-    m11,
-    m12: node.y + centerY - m10 * centerX - m11 * centerY
-  }
+  const [m00, m01, m02, m10, m11, m12] = getNodeLocalMatrix(node)
+  return { m00, m01, m02, m10, m11, m12 }
 }

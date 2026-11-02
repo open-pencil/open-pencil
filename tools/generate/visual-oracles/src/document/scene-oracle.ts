@@ -17,7 +17,7 @@ export interface SceneOracleNode {
 }
 
 /** One node of a scene oracle, as captures and baseline files store it. */
-export const SceneOracleNodeSchema: v.GenericSchema<unknown, SceneOracleNode> = v.object({
+export const sceneOracleNodeSchema: v.GenericSchema<unknown, SceneOracleNode> = v.object({
   path: v.array(v.number()),
   type: v.string(),
   name: v.string(),

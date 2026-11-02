@@ -2,16 +2,17 @@
 import { uniqBy } from 'es-toolkit'
 import { computed } from 'vue'
 
-import { liveReplies, type CommentThread } from '@open-pencil/scene-graph'
-import { useCommentMessages } from '@open-pencil/vue'
+import type { CommentThread } from '@open-pencil/scene-graph'
+import { liveReplies } from '@open-pencil/scene-graph/comments'
+import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import { commentPreview } from '@/app/comments/format'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
 import type { PresencePersonRow } from '@/components/presence/rows'
-import { comments } from '@/theme/comments'
 
 import { useCommentAuthor } from './author'
 import CommentTime from './CommentTime.vue'
+import { comments } from './ui'
 
 /** A thread in the comments list: who took part, where it is, and how it starts. */
 const {

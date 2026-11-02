@@ -1,6 +1,6 @@
 import { isGeneratedFrame } from '../generated'
-import type { SceneGraph } from '../index'
-import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
+import type { SceneGraph } from '../graph'
+import { getInstanceOverride, setInstanceOverride } from '../instances/overrides'
 import { cloneChildrenWithMapping } from '../instances/sync'
 import type { SceneNode } from '../types'
 import { ownsSlotContent, slotPropertyId } from './frames'

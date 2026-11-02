@@ -24,7 +24,42 @@ describe('summarizeUsage', () => {
     expect(summary.inputTokens).toBe(100)
     expect(summary.outputTokens).toBe(20)
     expect(summary.cacheReadTokens).toBe(30)
-    expect(summary.models).toEqual([{ provider: 'openai', model: 'gpt-4o', requests: 1 }])
+    expect(summary.models).toEqual([
+      { provider: 'openai', model: 'gpt-4o', steps: 1, inputTokens: 100, outputTokens: 20 }
+    ])
+  })
+
+  test('sums tokens per model, an agent turn counting as one step', () => {
+    const step = (provider: string, model: string, inputTokens: number, outputTokens: number) =>
+      event('model.step.completed', {
+        provider,
+        model,
+        inputTokens,
+        outputTokens,
+        cacheReadTokens: null,
+        cacheWriteTokens: null
+      })
+    const summary = summarizeUsage([
+      step('openrouter', 'anthropic/claude-sonnet-5.5', 1000, 50),
+      step('openrouter', 'anthropic/claude-sonnet-5.5', 2000, 70),
+      step('acp:codex', 'gpt-6.1-sol[low]', 26102, 6)
+    ])
+    expect(summary.models).toEqual([
+      {
+        provider: 'acp:codex',
+        model: 'gpt-6.1-sol[low]',
+        steps: 1,
+        inputTokens: 26102,
+        outputTokens: 6
+      },
+      {
+        provider: 'openrouter',
+        model: 'anthropic/claude-sonnet-5.5',
+        steps: 2,
+        inputTokens: 3000,
+        outputTokens: 120
+      }
+    ])
   })
 
   test('preserves unavailable telemetry as null', () => {

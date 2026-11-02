@@ -1,14 +1,16 @@
+import { save } from '@tauri-apps/plugin-dialog'
+import { writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
 import { zipSync, type Zippable } from 'fflate'
+import { extname } from 'pathe'
 
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@open-pencil/core'
 import {
   findPageId,
   type ExportRequest,
   type IOFormatAdapter,
-  type IORegistry,
-  type RasterExportFormat
+  type IORegistry
 } from '@open-pencil/core/io'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { type RasterExportFormat, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { ExportOptions } from '@/app/document/export/types'
@@ -53,9 +55,8 @@ export function bundleExportFiles(files: ExportedFile[]): Uint8Array {
   for (const file of files) {
     let name = sanitizeZipEntryName(file.fileName)
     if (used.has(name)) {
-      const dot = name.lastIndexOf('.')
-      const stem = dot === -1 ? name : name.slice(0, dot)
-      const tail = dot === -1 ? '' : name.slice(dot)
+      const tail = extname(name)
+      const stem = name.slice(0, name.length - tail.length)
       let i = 2
       while (used.has(`${stem} (${i})${tail}`)) i++
       name = `${stem} (${i})${tail}`
@@ -107,7 +108,7 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     scale: number,
     format: RasterExportFormat,
     pageId = state.currentPageId
-  ): Promise<Uint8Array | null> {
+  ): Promise<Uint8Array<ArrayBuffer> | null> {
     const renderer = editor.renderer
     if (!renderer) return null
     const ids = nodeIds.length > 0 ? nodeIds : editor.graph.getChildren(pageId).map((n) => n.id)
@@ -133,7 +134,6 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
 }
 
 export async function chooseTauriExportPath(fileName: string, format: string, ext: string) {
-  const { save } = await import('@tauri-apps/plugin-dialog')
   return save({
     defaultPath: fileName,
     filters: [{ name: format, extensions: [ext.slice(1)] }]
@@ -141,7 +141,6 @@ export async function chooseTauriExportPath(fileName: string, format: string, ex
 }
 
 export async function writeTauriExportFile(path: string, data: Uint8Array) {
-  const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
   await tauriWrite(path, data)
 }
 

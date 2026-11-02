@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  createEditor,
-  resolvePasteTarget as publicResolvePasteTarget
-} from '@open-pencil/core/editor'
+import { createEditor, resolvePasteTarget as publicResolvePasteTarget } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { resolvePasteTarget } from '#core/editor/clipboard/paste/target'

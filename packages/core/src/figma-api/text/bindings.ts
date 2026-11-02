@@ -1,8 +1,6 @@
 import { mapValues, omit, pick } from 'es-toolkit/object'
 
 import {
-  getSharedStyles,
-  SHARED_TEXT_STYLE_FIELDS,
   TEXT_BINDABLE_FIELDS,
   type CharacterStyleOverride,
   type SceneGraph,
@@ -12,11 +10,13 @@ import {
   type Variable
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
+import { getSharedStyles, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
 
-import { styleNameToWeight } from '#core/figma-api/fonts'
+import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
 import { styleRunsWithPatch } from '#core/text/character-style'
+import { faceForStyle } from '#core/text/font/names'
 
-import { getStyledTextSegments, variableAlias, type FigmaVariableAlias } from './style'
+import { getStyledTextSegments } from './style'
 
 /** Fields a string variable binds; the rest take numbers. */
 const STRING_FIELDS: ReadonlySet<TextBindableField> = new Set(['fontFamily', 'fontStyle'])
@@ -88,8 +88,9 @@ function boundValue(
     const value = graph.resolveVariableForNode(node.id, variable.id)
     if (typeof value !== 'string') return {}
     if (field === 'fontFamily') return { fontFamily: value }
-    const { weight, italic } = styleNameToWeight(value)
-    return { fontWeight: weight, italic }
+    // A style variable names a face of the text's family, as its font names it.
+    const face = faceForStyle(node.fontFamily, value)
+    return { fontWeight: face.weight, italic: face.italic, fontStyle: face.style }
   }
   const value = graph.resolveNumberVariableForNode(node.id, variable.id)
   if (value === undefined || !Number.isFinite(value) || isParagraphField(field)) return {}

@@ -15,6 +15,7 @@ test('failed page mutation restores changed existing instance indexes and object
   const state: AssemblyState = {
     graph,
     nextImportedId: 10,
+    recordIds: new Set(),
     sources: new Map([['instance', instance.id]]),
     components: new Map(),
     componentIds: new Map(),

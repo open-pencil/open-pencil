@@ -2,8 +2,9 @@
 
 import type { ExportFormatId } from './export-format'
 import type { CanvasGuide } from './guides'
-import type { InstanceOverrideState } from './instance-overrides'
+import type { InstanceOverrideState } from './instances/overrides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
+import type { ShapeWithTextType } from './shape-with-text/kinds'
 
 export interface SceneGraphEvents {
   'node:created': (node: SceneNode) => void
@@ -42,6 +43,9 @@ export interface NodeChangeObserver {
 }
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'
+
+/** What a document is for, as Figma keeps design files and FigJam boards apart. */
+export type DocumentKind = 'design' | 'board'
 
 export interface FigmaSourcePayload {
   rawSize: Vector | null
@@ -85,6 +89,10 @@ export interface VectorSegment {
 export interface VectorRegion {
   windingRule: WindingRule
   loops: number[][]
+  /** The region's own paints. Without them it draws the layer's fills, as in Figma. */
+  fills?: Fill[]
+  /** The shared fill style the region's paints come from. */
+  fillStyleId?: string
 }
 
 export interface VectorNetwork {
@@ -96,10 +104,6 @@ export interface VectorNetwork {
 export interface GeometryPath {
   windingRule: WindingRule
   commandsBlob: Uint8Array
-  /** Resolved paints for geometry using a format-specific style override. */
-  fills?: Fill[]
-  /** Shared fill style attached to this geometry region, when available. */
-  fillStyleId?: string
 }
 
 export type NodeType =
@@ -138,9 +142,11 @@ export type BlendMode =
   | 'NORMAL'
   | 'DARKEN'
   | 'MULTIPLY'
+  | 'LINEAR_BURN'
   | 'COLOR_BURN'
   | 'LIGHTEN'
   | 'SCREEN'
+  | 'LINEAR_DODGE'
   | 'COLOR_DODGE'
   | 'OVERLAY'
   | 'SOFT_LIGHT'
@@ -174,7 +180,10 @@ export interface Fill {
   gradientTransform?: GradientTransform
   imageHash?: string
   imageScaleMode?: ImageScaleMode
+  /** A crop's image-space window; Fill, Fit and Tile ignore it. */
   imageTransform?: GradientTransform
+  /** Clockwise turn of a Fill, Fit or Tile image, in multiples of 90°; a crop holds its own. */
+  imageRotation?: number
   sourceNodeId?: string
   scale?: number
   spacing?: number
@@ -188,7 +197,15 @@ export interface Fill {
   customEffectId?: string
 }
 
-export type StrokeCap = 'NONE' | 'ROUND' | 'SQUARE' | 'ARROW_LINES' | 'ARROW_EQUILATERAL'
+export type StrokeCap =
+  | 'NONE'
+  | 'ROUND'
+  | 'SQUARE'
+  | 'ARROW_LINES'
+  | 'ARROW_EQUILATERAL'
+  | 'TRIANGLE_FILLED'
+  | 'DIAMOND_FILLED'
+  | 'CIRCLE_FILLED'
 export type StrokeJoin = 'MITER' | 'BEVEL' | 'ROUND'
 export type SharedStyleType = 'FILL' | 'TEXT' | 'EFFECT' | 'GRID'
 export type SharedStyleKind = 'fill' | 'stroke' | 'text' | 'effect' | 'grid'
@@ -239,6 +256,52 @@ export interface Effect {
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
 export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT' | 'TRUNCATE'
+
+/** Where a connector end attaches to a layer: a side, the side Figma picks, or a fixed point. */
+export type ConnectorMagnet =
+  | 'NONE'
+  | 'AUTO'
+  | 'AUTO_HORIZONTAL'
+  | 'TOP'
+  | 'RIGHT'
+  | 'BOTTOM'
+  | 'LEFT'
+  | 'CENTER'
+  | 'EDGE'
+  | 'ABSOLUTE'
+
+/**
+ * One end of a connector. Bound to a layer, it follows the layer by `magnet`, or by `position`
+ * in the layer's own axes when the magnet is `NONE`. Free, `nodeId` is null and `position` is in
+ * the connector's parent's axes.
+ */
+export interface ConnectorEndpoint {
+  nodeId: string | null
+  magnet: ConnectorMagnet
+  position: Vector
+}
+
+export type ConnectorLineType = 'ELBOWED' | 'STRAIGHT' | 'CURVED'
+
+/**
+ * A segment of an elbow connector that was dragged into place: the line it runs along, through
+ * `position`, in the connector's own axes. `position` lies midway along the segment as last drawn.
+ */
+export interface ConnectorControlPoint {
+  position: Vector
+  direction: 'HORIZONTAL' | 'VERTICAL'
+}
+
+/**
+ * Where a connector's label was dragged along its line: `offset` of the way from the middle of
+ * the line towards one end, by length, on the line or to one side of it. `ABOVE` is the side to
+ * the left of the line's direction.
+ */
+export interface ConnectorLabelPosition {
+  section: 'MIDDLE_TO_START' | 'MIDDLE_TO_END'
+  offset: number
+  offAxis: 'NONE' | 'ABOVE' | 'BELOW'
+}
 export type TextAlignVertical = 'TOP' | 'CENTER' | 'BOTTOM'
 export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH'
@@ -296,9 +359,20 @@ export type TextBindableField = (typeof TEXT_BINDABLE_FIELDS)[number]
 /** Variable IDs bound to text fields, by field. */
 export type TextBoundVariables = Partial<Record<TextBindableField, string>>
 
+/**
+ * A line height or letter spacing as Figma keeps it: pixels, or a percent of the font size that
+ * follows the size when it changes.
+ */
+export interface TextLength {
+  value: number
+  unit: 'PIXELS' | 'PERCENT'
+}
+
 export interface CharacterStyleOverride {
   fontWeight?: number
   italic?: boolean
+  /** The characters' face by its font's own name for it; `null` is the face their weight picks. */
+  fontStyle?: string | null
   textDecoration?: TextDecoration
   textDecorationStyle?: TextDecorationStyle
   textDecorationThickness?: number | null
@@ -307,10 +381,13 @@ export interface CharacterStyleOverride {
   textUnderlineOffset?: number | null
   fontSize?: number
   fontFamily?: string
-  letterSpacing?: number
-  lineHeight?: number | null
+  letterSpacing?: TextLength
+  /** `null` is automatic, from the font. */
+  lineHeight?: TextLength | null
   fills?: Fill[]
   fontVariations?: FontVariation[]
+  /** Whether the characters' optical size follows their font size, in place of the text's own. */
+  opticalSizeFromFontSize?: boolean
   fontFeatures?: FontFeature[]
   textLanguage?: string | null
   textCase?: TextCase
@@ -386,8 +463,11 @@ export interface PluginRelaunchDataEntry {
 export interface TextPathData {
   network: VectorNetwork
   normalizedSize: Vector
+  /** Where on the start segment the text starts, from 0 at its start to 1 at its end. */
   tValue: number
   forward: boolean
+  /** The segment the text starts on, which Figma marks in the network blob; 0 when unmarked. */
+  startSegment?: number
 }
 
 export interface DerivedTextGlyph {
@@ -412,6 +492,13 @@ export interface DerivedTextGlyph {
    */
   scaleX?: number
   scaleY?: number
+  /**
+   * The code points of the emoji this glyph stands for, sequence and all. Its outline is only a
+   * placeholder square a 1 em wide; the emoji's image is drawn there instead, as Figma does.
+   */
+  emojiCodePoints?: number[]
+  /** The image set Figma draws the emoji from, when the file names one other than Apple's. */
+  emojiImageSet?: 'NOTO'
 }
 
 export interface SymbolLink {
@@ -569,6 +656,11 @@ export interface SceneNode {
   fontFamily: string
   fontWeight: number
   italic: boolean
+  /**
+   * The face by the name its font gives it ("Semi Bold", "Book", "Condensed Bold"), which Figma
+   * finds a font's face by; `null` is the face the weight and slant pick in the family.
+   */
+  fontStyle: string | null
   textAlignHorizontal: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED'
   textDirection: TextDirection
   textLanguage: string | null
@@ -582,8 +674,9 @@ export interface SceneNode {
   textDecorationSkipInk: boolean
   textUnderlineOffset: number | null
   leadingTrim: LeadingTrim
-  lineHeight: number | null
-  letterSpacing: number
+  /** `null` is automatic, from the font. */
+  lineHeight: TextLength | null
+  letterSpacing: TextLength
   maxLines: number | null
   /**
    * One entry per paragraph of `text`, in order. Missing entries are plain paragraphs, so text
@@ -601,6 +694,11 @@ export interface SceneNode {
 
   styleRuns: StyleRun[]
   fontVariations: FontVariation[]
+  /**
+   * Whether a variable font's optical size follows the font size, as Figma's "Set optical size
+   * automatically" does by default; when it does not, the `opsz` in `fontVariations` applies.
+   */
+  opticalSizeFromFontSize: boolean
   fontFeatures: FontFeature[]
 
   horizontalConstraint: ConstraintType
@@ -662,6 +760,25 @@ export interface SceneNode {
    */
   targetAspectRatio: Vector | null
 
+  /** A connector's ends and the line between them; null on other layers. */
+  connectorStart: ConnectorEndpoint | null
+  connectorEnd: ConnectorEndpoint | null
+  connectorLineType: ConnectorLineType
+  connectorStartCap: StrokeCap
+  connectorEndCap: StrokeCap
+  /**
+   * An elbow connector's segments between its first and last, in order, once one was dragged;
+   * empty while it routes itself. Kept, unused, while the line is straight or curved.
+   */
+  connectorControlPoints: ConnectorControlPoint[]
+  /**
+   * A curved connector's two cubic control points, in the connector's own axes, once its curve
+   * was dragged; null while it curves by itself. Kept, unused, while the line is not curved.
+   */
+  connectorCurveHandles: [Vector, Vector] | null
+  /** Where a connector's label was dragged to; null while it sits midway along the line. */
+  connectorLabelPosition: ConnectorLabelPosition | null
+
   isMask: boolean
   maskType: MaskType
   maskIsOutline: boolean
@@ -682,6 +799,15 @@ export interface SceneNode {
 
   pointCount: number
   starInnerRadius: number
+  /** The FigJam kind a SHAPE_WITH_TEXT draws; its label is the node's own text. */
+  shapeWithTextType: ShapeWithTextType
+  /** The height a shape with text was given; it grows past it to fit its label. 0 is unset. */
+  shapeUserHeight: number
+  /**
+   * Whether a shape with text keeps its height and cuts its label off with "…" instead of growing,
+   * as FigJam does once the shape's height was set.
+   */
+  shapeTruncates: boolean
 
   componentId: string | null
   instanceOverrides: InstanceOverrideState
@@ -716,6 +842,12 @@ export interface SceneNode {
   componentScale: number
   variableModes: VariableModeMap
   exportSettings: ExportSetting[]
+  /**
+   * The id of the status a team gave the layer, a state of the document's workflow such as Ready
+   * for dev. It stays while the layer sits where it cannot show one; `effectiveStatus` tells
+   * whether it shows.
+   */
+  status: string | null
 
   pluginData: PluginDataEntry[]
   pluginRelaunchData: PluginRelaunchDataEntry[]
@@ -727,6 +859,12 @@ export interface SceneNode {
 
   textPicture: Uint8Array | null
   derivedTextGlyphs: DerivedTextGlyph[] | null
+  /**
+   * How far a text's lines reach down from its top: measured at its width when its text or width
+   * changes, or read from the lines a file saved, and never saved itself. A fixed-size box does not
+   * clip them, as in Figma, so its visual bounds reach this far. Null when not known.
+   */
+  derivedTextHeight: number | null
   /** Format-neutral layout path for text-on-path nodes. */
   textPathData: TextPathData | null
   /** Node-local box that maps textPathData into the node coordinate space. */
@@ -769,7 +907,69 @@ export interface ComponentPropertyDefinition {
 }
 
 export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
-export type VariableValue = Color | number | string | boolean | { aliasId: string }
+export interface VariableAlias {
+  aliasId: string
+}
+
+/** Figma's two-argument color expression; opacity is a percentage, not an alpha multiplier. */
+export interface VariableColorExpression {
+  expression: 'COMPOSE_COLOR'
+  color: Color | VariableAlias
+  opacity: number | VariableAlias
+}
+
+export type VariableLiteral = Color | number | string | boolean
+/** The arithmetic, comparison, logic and conversions a formula combines values with. */
+export const VARIABLE_FORMULA_OPERATORS = [
+  'add',
+  'subtract',
+  'multiply',
+  'divide',
+  'negate',
+  'equal',
+  'notEqual',
+  'less',
+  'lessOrEqual',
+  'greater',
+  'greaterOrEqual',
+  'and',
+  'or',
+  'not',
+  'text',
+  'truthy',
+  'if'
+] as const
+export type VariableFormulaOperator = (typeof VARIABLE_FORMULA_OPERATORS)[number]
+export interface VariableFormulaOperation {
+  operator: VariableFormulaOperator
+  operands: VariableFormulaNode[]
+}
+export type VariableFormulaNode = VariableLiteral | VariableAlias | VariableFormulaOperation
+export interface VariableFormula {
+  expression: 'FORMULA'
+  type: VariableType
+  value: VariableFormulaNode
+}
+/**
+ * An imported expression OpenPencil cannot evaluate, kept as the file wrote it so saving writes it
+ * back. `references` holds one entry per alias in `value`, in the order the format walks them, and
+ * `null` where the alias names a variable this document does not have. `modes` holds the mode id of
+ * each mode key in `value`, in the same walk order.
+ */
+export interface VariableUnsupportedExpression {
+  expression: 'UNSUPPORTED'
+  /** The function name the file gives, such as `VAR_MODE_LOOKUP`. */
+  function: string
+  value: Record<string, unknown>
+  references: (string | null)[]
+  modes: string[]
+}
+export type VariableValue =
+  | VariableLiteral
+  | VariableAlias
+  | VariableColorExpression
+  | VariableFormula
+  | VariableUnsupportedExpression
 export type VariableModeMap = Record<string, string>
 
 /** Property pickers a variable is offered in, as Figma names them. */
@@ -810,10 +1010,14 @@ export type CodeSyntaxPlatform = (typeof CODE_SYNTAX_PLATFORMS)[number]
 export const TOKEN_UNITS = ['none', 'px', 'rem', '%', 'ms', 's', 'deg'] as const
 export type TokenUnit = (typeof TOKEN_UNITS)[number]
 
-/** A mode value authored as raw CSS. `resolved` is the number the canvas drew for it. */
+/**
+ * CSS written in place of a number mode's value, such as `clamp(1rem, 4vw, 1.5rem)`. While the
+ * mode holds a plain number, `resolved` records it, so a number later edited elsewhere, Figma
+ * included, shows the CSS no longer describes it.
+ */
 export interface TokenExpression {
   css: string
-  resolved: number
+  resolved?: number
 }
 
 export interface Variable {

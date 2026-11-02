@@ -1,6 +1,10 @@
-import { cloneNodeProps, contentPluginData, SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
+import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
+import { existingAssetKey } from './asset-keys'
 import { contentHash } from './hash'
 import { assertLibraryAssetKey } from './identity'
 import type { LibraryAssetDescriptor, PortableLibrarySnapshot } from './types'
@@ -19,7 +23,7 @@ const VOLATILE_NODE_FIELDS = new Set([
 ])
 
 function assetKey(node: SceneNode): string {
-  const key = node.componentKey ?? node.sourceLibraryKey ?? node.publishId ?? node.source.id
+  const key = existingAssetKey(node)
   if (!key) throw new Error(`Component ${node.name} has no stable library asset key`)
   assertLibraryAssetKey(key)
   return key
@@ -59,18 +63,6 @@ function addSnapshotNode(
     addSnapshotNode(source, target, childId, created.id, mappedIds)
 }
 
-function remapSnapshotReferences(graph: SceneGraph, mappedIds: Map<string, string>): void {
-  for (const [sourceId, targetId] of mappedIds) {
-    const sourceTarget = graph.getNode(targetId)
-    if (!sourceTarget) continue
-    const componentId = sourceTarget.componentId
-    if (componentId && mappedIds.has(componentId)) {
-      graph.updateNode(targetId, { componentId: mappedIds.get(componentId) ?? null })
-    }
-    if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
-  }
-}
-
 export function extractLibrarySnapshot(
   source: SceneGraph,
   assetNodeIds?: string[]
@@ -90,21 +82,15 @@ export function extractLibrarySnapshot(
   page.name = 'Library definitions'
   page.internalOnly = true
   const mappedIds = new Map<string, string>()
-  const sourceComponentIds = new Map<string, string | null>()
   const closureRoots = [...closure]
     .map((id) => source.getNode(id))
     .filter((node): node is SceneNode =>
       Boolean(node && (!node.parentId || !closure.has(node.parentId)))
     )
   for (const root of closureRoots) addSnapshotNode(source, snapshot, root.id, page.id, mappedIds)
-  for (const sourceId of mappedIds.keys()) {
-    sourceComponentIds.set(sourceId, source.getNode(sourceId)?.componentId ?? null)
-  }
-  for (const [sourceId, targetId] of mappedIds) {
-    const componentId = sourceComponentIds.get(sourceId)
-    if (componentId) snapshot.updateNode(targetId, { componentId })
-  }
-  remapSnapshotReferences(snapshot, mappedIds)
+  for (const [sourceId, targetId] of mappedIds)
+    if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
+  remapCopiedReferences(snapshot, mappedIds)
 
   for (const imageHash of new Set(
     [...closure].flatMap((id) => {
@@ -127,6 +113,24 @@ export function extractLibrarySnapshot(
       return mapped ? [mapped] : []
     })
   }
+}
+
+/** A field as an asset's content compares it. */
+function libraryField(node: SceneNode, key: string, value: unknown): unknown {
+  // Plugin content such as a behaviour is part of the asset; its bookkeeping is not.
+  if (key === 'pluginData') return contentPluginData(node.pluginData)
+  if (key === 'fontStyle') return libraryStyleName(node)
+  return normalizedLibraryField(key, value)
+}
+
+/**
+ * The face a text's name names, compared as a name: a file writes the name the text left to its
+ * weight and slant, and spells some as Figma's fonts do ("Semi Bold" for "SemiBold").
+ */
+function libraryStyleName(node: SceneNode): string {
+  return (node.fontStyle ?? standardStyleName(node.fontWeight, node.italic))
+    .toLowerCase()
+    .replace(/\s+/gu, '')
 }
 
 function normalizedLibraryField(key: string, value: unknown): unknown {
@@ -171,13 +175,7 @@ export function canonicalLibraryNode(
           key !== 'name' &&
           key !== 'symbolDescription'
       )
-      .map(([key, value]) => [
-        key,
-        // Plugin content such as a behaviour is part of the asset; its bookkeeping is not.
-        key === 'pluginData'
-          ? contentPluginData(node.pluginData)
-          : normalizedLibraryField(key, value)
-      ])
+      .map(([key, value]) => [key, libraryField(node, key, value)])
   )
   const component = node.componentId ? graph.getNode(node.componentId) : undefined
   const dependencyKey =

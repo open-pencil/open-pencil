@@ -13,6 +13,7 @@ paths = [
   '''^desktop/target/''',
   '''^packages/[^/]+/dist/''',
   '''^packages/docs/\.vitepress/cache/''',
+  '''^packages/cloud/dist-standalone/''',
   '''^test-results/''',
   '''^scratch/'''
 ]
@@ -34,6 +35,19 @@ description = "Documented dummy OpenRouter test key"
 regexTarget = "line"
 paths = ['''tests/e2e/chat/panel\.spec\.ts''']
 regexes = ['''sk-or-test-key-12345''']
+
+[[allowlists]]
+description = "The local Garage profile's fixed RPC secret"
+regexTarget = "line"
+paths = ['''packages/cloud/deploy/garage/garage\.toml''']
+regexes = [
+  '''rpc_secret\s*=\s*"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"'''
+]
+
+[[allowlists]]
+description = "Cloud test fixtures' made-up auth secrets"
+paths = ['''packages/cloud/tests/.*\.ts''']
+regexes = ['''^[a-z-]+-secret-at-least-32-characters(-long)?$''']
 
 [[allowlists]]
 description = "Figma fixture identifiers are public test metadata"

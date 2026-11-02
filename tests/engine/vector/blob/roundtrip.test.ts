@@ -4,8 +4,9 @@ import {
   buildStyleOverrideTable,
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
-  type VectorNetwork
-} from '@open-pencil/core'
+  textPathStartSegment
+} from '@open-pencil/fig/node-change'
+import type { VectorNetwork } from '@open-pencil/scene-graph'
 
 import {
   lineNetwork,
@@ -181,5 +182,23 @@ describe('region style words', () => {
     // is nonzero, so the even-odd case follows the bit layout rather than a Figma file.
     expect(decodeVectorNetworkBlob(regionBlob((3 << 1) | 0)).regions[0].windingRule).toBe('EVENODD')
     expect(decodeVectorNetworkBlob(regionBlob((3 << 1) | 1)).regions[0].windingRule).toBe('NONZERO')
+  })
+})
+
+describe('the text path start segment', () => {
+  test('is the segment Figma marks with style word 0x1ffffff, else the first', () => {
+    const network = vectorNetwork(
+      [vectorVertex(0, 0), vectorVertex(100, 0), vectorVertex(100, 100)],
+      [vectorSegment(0, 1), vectorSegment(1, 2)]
+    )
+    const blob = encodeVectorNetworkBlob(network)
+    expect(textPathStartSegment(blob)).toBe(0)
+    // Header 12 bytes and three 12-byte vertices come before the 28-byte segments.
+    new DataView(blob.buffer).setUint32(12 + 3 * 12 + 28, 0x1ffffff, true)
+    expect(textPathStartSegment(blob)).toBe(1)
+    // The marker is a style word, so the network itself decodes unchanged.
+    expect(decodeVectorNetworkBlob(blob)).toEqual(
+      decodeVectorNetworkBlob(encodeVectorNetworkBlob(network))
+    )
   })
 })

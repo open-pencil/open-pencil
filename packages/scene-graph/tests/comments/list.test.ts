@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { CommentThread } from '@open-pencil/scene-graph'
 import {
   commentThreadNumbers,
   listCommentThreads,
-  type CommentListOptions,
-  type CommentThread
-} from '@open-pencil/scene-graph'
-
+  type CommentListOptions
+} from '@open-pencil/scene-graph/comments'
 
 function thread(id: string, patch: Partial<CommentThread> = {}): CommentThread {
   return {
@@ -63,8 +62,14 @@ describe('comments list', () => {
       }),
       thread('theirs', { pageId: '0:2', author: 'Claude' })
     ]
-    expect(ids(listCommentThreads(threads, { ...base, onlyPage: true }))).toEqual(['mine', 'replied'])
-    expect(ids(listCommentThreads(threads, { ...base, onlyMine: true }))).toEqual(['mine', 'replied'])
+    expect(ids(listCommentThreads(threads, { ...base, onlyPage: true }))).toEqual([
+      'mine',
+      'replied'
+    ])
+    expect(ids(listCommentThreads(threads, { ...base, onlyMine: true }))).toEqual([
+      'mine',
+      'replied'
+    ])
   })
 
   test('sorts by when each thread was started', () => {

@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { VariableCollection } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { randomHex } from '@open-pencil/scene-graph/random'
@@ -61,7 +61,7 @@ function resolveColor(editor: Editor, id: string, target?: BindingTarget) {
 
 export function useColorBindingProvider() {
   return useOpenPencilBindingProvider<Color>({
-    type: 'COLOR',
+    types: ['COLOR'],
     resolve: resolveColor,
     prepareEdit: (editor, id, target) =>
       prepareModeEdit(editor, id, target, () => resolveColor(editor, id, target)),

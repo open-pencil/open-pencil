@@ -2,8 +2,7 @@ import * as v from 'valibot'
 
 import { ALL_TOOLS, isAtomicTool, isToolExposed, type ToolDef } from '@open-pencil/core/tools'
 
-export const webmcpModeSchema = v.picklist(['off', 'inspect', 'edit'])
-export type WebMCPMode = v.InferOutput<typeof webmcpModeSchema>
+import { webmcpModeSchema, type WebMCPMode } from './schema'
 
 export function resolveWebMCPMode(value: unknown): WebMCPMode {
   const result = v.safeParse(webmcpModeSchema, value)

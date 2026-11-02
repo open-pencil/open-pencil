@@ -151,12 +151,11 @@ Penpot korzysta z Potok. `UpdateEvent` zmienia stan, `WatchEvent` wykonuje skutk
 ## 10. Zalety Penpota
 
 1. **Współpraca przez serwer:** konta, kontrola dostępu i centralne przechowywanie.
-2. **Eksport PDF:** oddzielny eksporter Chromium.
-3. **System wtyczek:** wykonanie w izolacji i API wtyczek.
-4. **Tokeny projektu:** wbudowana obsługa.
-5. **CSS Grid:** własna implementacja; OpenPencil używa odmiany Yoga z Grid.
-6. **Samodzielne wdrożenie:** platforma zespołowa uruchamiana przez Docker.
-7. **Dojrzałość:** wiele lat użycia produkcyjnego.
+2. **System wtyczek:** wykonanie w izolacji i API wtyczek.
+3. **Tokeny projektu:** wbudowana obsługa.
+4. **CSS Grid:** własna implementacja; OpenPencil używa odmiany Yoga z Grid.
+5. **Samodzielne wdrożenie:** platforma zespołowa uruchamiana przez Docker.
+6. **Dojrzałość:** wiele lat użycia produkcyjnego.
 
 ## 11. Skrypty i rozszerzanie
 

@@ -32,11 +32,14 @@
   "noResults": "Aucun résultat",
   "save": "Enregistrer",
   "done": "Terminé",
+  "task": "Tâche",
   "back": "Retour",
   "supported": "Pris en charge",
   "unsupported": "Non pris en charge",
   "tokens": "jetons",
   "clear": "Effacer",
   "dismiss": "Ignorer",
-  "browserSupport": "Vérifier la compatibilité"
+  "browserSupport": "Vérifier la compatibilité",
+  "showPassword": "Afficher le mot de passe",
+  "hidePassword": "Masquer le mot de passe"
 }

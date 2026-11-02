@@ -15,6 +15,10 @@ Headless Vue 3 primitives and composables; the root app is one consumer. Primiti
 
 The app's `DesignPanel` retains at most one selection-property subtree through `RetainedPanel`. The app installs `createRetainedScopePlugin()`; opted-in descendants receive `provideRetainedActivity()`. Vue component scopes are detached, so pausing only a parent or bare `KeepAlive` does not suspend descendant work. Cancel drafts synchronously before DOM detachment can fire blur, close transient state and gate portals with `useRetainedPopup()`, and invalidate pending async results on deactivation or disposal. The plugin lets cleanup flush before pausing each component scope and resumes it on activation; it requires Vue's Options API. Unmounting the owning editor releases the retained subtree.
 
+## Canvas tools
+
+- What a tool does on the canvas lives in its entry in `CANVAS_TOOLS`: a press, and a hover while no drag is held. A new tool adds an entry, not a branch in `useCanvasInput`, and the editor profile's `tools` decides which are on offer; the `Record<Tool, CanvasTool>` type makes a missing entry a type error (`packages/vue/src/canvas/tools/registry.ts`).
+
 ## Preview islands
 
 - Preview runs controls as real components, never as canvas simulations: `packages/vue/src/canvas/islands/` renders each top-level layer that holds an instance with a behaviour as DOM in a shadow root over the canvas, projected through `@open-pencil/dom-css`, and mounts each behaviour's Reka UI primitives on its layers. Typing, focus, and keyboard handling belong to the browser and Reka.
@@ -28,7 +32,7 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 - Commands use `packages/vue/src/editor/commands/registry.ts` for shortcuts, bindings, and menu IDs. Store portable tokens (`MOD+D`) and format them at render time; labels and translations never contain shortcuts.
 - Canvas menu structure lives in `packages/vue/src/editor/menu-model/canvas.ts`; the app's `CanvasMenu.vue` renders it.
 - `useEditorEvent(event, handler)` in `packages/vue/src/editor/events/use.ts` wraps the editor event bus.
-- i18n uses narrow product-domain catalogs under `packages/vue/src/i18n/messages/` with matching locale files. Inspect existing domains instead of adding generic UI/component namespaces; prefer narrow `use*Messages()` composables over aggregate `useI18n()`. `bun run check:i18n` enforces structure, placeholder parity, and reviewed translation baselines; remove stale baseline identities when fixing existing debt.
+- i18n uses narrow product-domain catalogs under `packages/vue/src/i18n/messages/` with matching locale files; namespaces of one domain share a folder (`messages/cloud/editor.ts`, `locales/<locale>/cloud/editor.json`) mapped in `LOCALE_FILE_NAMES` (`tools/checks/i18n/src/check-locales.ts`). Inspect existing domains instead of adding generic UI/component namespaces; prefer narrow `use*Messages()` composables over aggregate `useI18n()`. `bun run check:i18n` enforces structure, placeholder parity, and reviewed translation baselines; remove stale baseline identities when fixing existing debt.
 
 ## Documentation
 

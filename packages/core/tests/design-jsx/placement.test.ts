@@ -170,6 +170,18 @@ describe('shared render/preview placement', () => {
     expect(page.childIds.map((id) => setup.graph.getNode(id)?.name)).toEqual(['A', 'B', 'Board'])
   })
 
+  it('stages an instance written before its component', async () => {
+    const setup = await fixture()
+    const staged = await compareToFinal(
+      setup,
+      '<><Instance name="Copy" of="Tile"/><Component name="Tile" w={40} h={40}/></>',
+      { insert_index: 0 }
+    )
+    const [copy, tile] = staged.renderedIds.map((id) => getNodeOrThrow(staged.graph, id))
+    expect(copy?.type).toBe('INSTANCE')
+    expect(copy?.componentId).toBe(tile?.id)
+  })
+
   it('rejects nonexistent targets before mutating the document', async () => {
     const setup = await fixture()
     const before = structuredClone([...setup.graph.nodes])

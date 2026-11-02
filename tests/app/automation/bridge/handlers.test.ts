@@ -1,13 +1,20 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
+import { toRaw } from 'vue'
+
 import * as layoutModule from '@open-pencil/core/layout'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
+import { automationFiles } from '@/app/automation/bridge/server'
+import { recentDocuments } from '@/app/recent-files'
+import { recentFilesLimit } from '@/app/recent-files/preferences'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { createTab, getActiveStore, getActiveTabId, getTabById, getTabsSnapshot } from '@/app/tabs'
 
 import { asDouble } from '#tests/helpers/doubles'
+import { testPath } from '#tests/helpers/paths'
 
 function setupGlobals() {
   globalThis.window = asDouble<Window & typeof globalThis>({
@@ -231,8 +238,8 @@ describe('undo and redo', () => {
         other.findOne((node) => node.name === 'Card').name = 'Renamed'
         other.name = 'Renamed page'
         figma.createPage().name = 'Added'
-        const colors = figma.createVariableCollection('Colors')
-        figma.createVariable('Brand', 'COLOR', colors.id)
+        const colors = figma.variables.createVariableCollection('Colors')
+        figma.variables.createVariable('Brand', colors, 'COLOR')
       `
     })
     expect(graph.getNode(card.id)?.name).toBe('Renamed')
@@ -362,5 +369,95 @@ describe('close_file and save_file never prompt', () => {
     expect(tab.store.state.documentName).toBe('Untitled')
     expect(tab.store.getDocumentFilePath()).toBeNull()
     expect(tab.store.hasWritableSource()).toBe(false)
+  })
+})
+
+describe('file paths in a browser go through the MCP server', () => {
+  const { handleRequest: handleThroughServer } = createAutomationCommandHandlers(
+    makeFigmaFromStore,
+    automationFiles('ws://mcp.test', 'token')
+  )
+  const requestThroughServer = (command: string, args: Record<string, unknown>) =>
+    handleThroughServer(getActiveStore(), command, args)
+
+  function dirtyTab() {
+    const tab = createTab()
+    tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
+    return tab
+  }
+
+  test('saving to a path hands the server a copy, saved as a download is', async () => {
+    const tab = dirtyTab()
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
+    await requestThroughServer('save_file', { document_id: tab.id, path: '/root/copy.fig' })
+
+    const [url, init] = fetch.mock.calls[0]
+    expect(String(url)).toBe('http://mcp.test/files//root/copy.fig')
+    expect(init?.method).toBe('PUT')
+    expect(new Headers(init?.headers).get('authorization')).toBe('Bearer token')
+    expect(tab.store.hasUnsavedChanges()).toBe(false)
+    // Where the document saves next does not change.
+    expect(tab.store.hasWritableSource()).toBe(false)
+  })
+
+  test('a copy the server refuses leaves the changes unsaved', async () => {
+    const tab = dirtyTab()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('outside', { status: 400 }))
+    await expect(
+      requestThroughServer('save_file', { document_id: tab.id, path: '/elsewhere/copy.fig' })
+    ).rejects.toThrow('Could not write /elsewhere/copy.fig: outside')
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
+  })
+
+  test('opening a path fetches it from the server with the token', async () => {
+    const bytes = new Uint8Array(await Bun.file(testPath('fixtures', 'slots.fig')).arrayBuffer())
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(bytes))
+    await settle(requestThroughServer('open_file', { path: '/root/my #1 slots.fig' }))
+
+    const [url, init] = fetch.mock.calls[0]
+    // A reserved character stays in the path rather than starting a fragment.
+    expect(String(url)).toBe('http://mcp.test/files//root/my%20%231%20slots.fig')
+    expect(new Headers(init?.headers).get('authorization')).toBe('Bearer token')
+    expect(getActiveStore().state.documentName).toBe('my #1 slots')
+  })
+})
+
+describe('list_recent_files', () => {
+  let previousPreferences: typeof appPreferences.value
+
+  beforeEach(() => {
+    previousPreferences = structuredClone(toRaw(appPreferences.value))
+  })
+
+  afterEach(() => {
+    recentDocuments.value = []
+    appPreferences.value = previousPreferences
+  })
+
+  test('lists local files newest first within the recent files limit', async () => {
+    const updatedAt = '2026-01-01T00:00:00.000Z'
+    recentDocuments.value = [
+      { id: 'local:/a.fig', kind: 'local', path: '/a.fig', name: 'a.fig', updatedAt },
+      {
+        id: 'storage:s3:doc',
+        kind: 'storage',
+        providerId: 's3',
+        documentId: 'doc',
+        name: 'Stored',
+        updatedAt
+      },
+      { id: 'local:/b.fig', kind: 'local', path: '/b.fig', name: 'b.fig', updatedAt },
+      { id: 'local:/c.fig', kind: 'local', path: '/c.fig', name: 'c.fig', updatedAt }
+    ]
+    recentFilesLimit.value = 3
+
+    const response = await request('list_recent_files')
+
+    expect(response.result).toEqual({
+      files: [
+        { path: '/a.fig', name: 'a.fig', updated_at: updatedAt },
+        { path: '/b.fig', name: 'b.fig', updated_at: updatedAt }
+      ]
+    })
   })
 })

@@ -23,7 +23,9 @@ const control = computed(() => ({
   'aria-describedby':
     compact([error && `${inputID.value}-error`, hint && `${inputID.value}-hint`]).join(' ') ||
     undefined,
-  state: error ? ('invalid' as const) : ('idle' as const)
+  state: error ? ('invalid' as const) : ('idle' as const),
+  // Inputs, selects, and comboboxes in a Settings form share one height.
+  size: 'sm' as const
 }))
 
 const emit = defineEmits<{ clear: []; blur: [] }>()

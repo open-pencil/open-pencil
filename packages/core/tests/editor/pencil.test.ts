@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 type Editor = ReturnType<typeof createEditor>
@@ -154,7 +154,9 @@ describe('pencil', () => {
     if (!first) throw new Error('nothing drawn')
     const red = { r: 1, g: 0, b: 0, a: 1 }
     editor.graph.updateNode(first, {
-      strokes: [{ type: 'SOLID', color: red, opacity: 1, visible: true, weight: 6, align: 'CENTER' }]
+      strokes: [
+        { type: 'SOLID', color: red, opacity: 1, visible: true, weight: 6, align: 'CENTER' }
+      ]
     })
     editor.graph.deleteNode(first)
 

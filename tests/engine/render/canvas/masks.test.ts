@@ -30,8 +30,7 @@ function createCanvas() {
 function createRenderer() {
   const rendered: string[] = []
   const renderer = {
-    _nodeCount: 0,
-    _culledCount: 0,
+    drawCounts: { nodes: 0, culled: 0 },
     worldViewport: { x: -100, y: -100, w: 1000, h: 1000 },
     ck: {
       BlendMode: { SrcOver: 'SrcOver', DstIn: 'DstIn' },

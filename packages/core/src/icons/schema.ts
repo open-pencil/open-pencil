@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 /** One icon set in the Iconify catalogue, keeping only what pickers show. */
-const CollectionInfo = v.object({
+const collectionInfoSchema = v.object({
   name: v.string(),
   total: v.number(),
   category: v.optional(v.string()),
@@ -13,14 +13,14 @@ const CollectionInfo = v.object({
 })
 
 /** `GET /collections`: every set by prefix. */
-export const CollectionsJSON = v.pipe(
+export const collectionsSchema = v.pipe(
   v.string(),
   v.parseJson(),
-  v.record(v.string(), CollectionInfo)
+  v.record(v.string(), collectionInfoSchema)
 )
 
 /** `GET /collection?prefix=…`: the names in one set, loose or by category. */
-export const CollectionListJSON = v.pipe(
+export const collectionListSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({

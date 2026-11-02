@@ -1,13 +1,12 @@
 import { pick } from 'es-toolkit'
 
+import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
   createShaderPaint,
   shaderOfPaint,
   withShaderPaints,
-  type SceneNode,
-  type ShaderPreset,
-  type Stroke
-} from '@open-pencil/scene-graph'
+  type ShaderPreset
+} from '@open-pencil/scene-graph/shaders'
 
 import type { EditorContext } from '#core/editor/types'
 

@@ -2,6 +2,7 @@ import { sumBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { ELLIPSIS } from '#core/text/ellipsis'
 import type { DocumentFontStatus } from '#core/text/font/status'
 import { prepareGraphFonts } from '#core/text/prepare'
 import { queryByXPath } from '#core/xpath'
@@ -337,7 +338,7 @@ export const nodeCommand: RPCCommand<NodeArgs, NodeResult | { error: string }> =
       textDirection: node.textDirection,
       text: (() => {
         if (!node.text.length) return null
-        if (node.text.length > 200) return node.text.slice(0, 200) + '…'
+        if (node.text.length > 200) return node.text.slice(0, 200) + ELLIPSIS
         return node.text
       })(),
       parent: parent ? { id: parent.id, name: parent.name, type: parent.type } : null,

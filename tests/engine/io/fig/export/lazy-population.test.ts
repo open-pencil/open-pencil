@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { cloneSceneGraphForFigExport } from '@open-pencil/core/kiwi/fig/parse/transfer'
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 function lazyExportGraph() {
   const graph = new SceneGraph()

@@ -1,9 +1,14 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { DEFAULT_FONT_FAMILY, FigmaAPI, fontManager } from '@open-pencil/core'
+import { DEFAULT_FONT_FAMILY } from '@open-pencil/core/constants'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { fontManager } from '@open-pencil/core/text'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { registerTestFont } from '#tests/helpers/fonts/bundled'
 import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'
+
+beforeAll(() => registerTestFont())
 
 /** The `list_pages` tool answers with the document's pages. */
 interface ListPagesResult extends ToolResult {
@@ -156,10 +161,11 @@ describe('query_nodes', () => {
 
 describe('get_font_status', () => {
   test('returns font fidelity diagnostics for agents', () => {
-    const { figma } = setupToolTest()
+    const { figma, graph } = setupToolTest()
     const text = figma.createText()
     text.name = 'Missing label'
-    text.fontName = { family: 'Unavailable Sans', style: 'Regular' }
+    // A document can name a font this machine lacks; a script cannot set one it did not load.
+    graph.updateNode(text.id, { fontFamily: 'Unavailable Sans' })
 
     const tool = getTool('get_font_status')
     const result = tool.execute(figma, {}) as {

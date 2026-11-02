@@ -32,11 +32,14 @@
   "noResults": "Brak wyników",
   "save": "Zapisz",
   "done": "Gotowe",
+  "task": "Zadanie",
   "back": "Wstecz",
   "supported": "Obsługiwane",
   "unsupported": "Nieobsługiwane",
   "tokens": "tokenów",
   "clear": "Wyczyść",
   "dismiss": "Zamknij",
-  "browserSupport": "Sprawdź obsługę w przeglądarkach"
+  "browserSupport": "Sprawdź obsługę w przeglądarkach",
+  "showPassword": "Pokaż hasło",
+  "hidePassword": "Ukryj hasło"
 }

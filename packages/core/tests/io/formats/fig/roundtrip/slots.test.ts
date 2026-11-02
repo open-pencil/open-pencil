@@ -1,19 +1,14 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
-
 import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
 
-import {
-  exportFigFile,
-  initCodec,
-  parseFigFile,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { slotPropertyId } from '@open-pencil/scene-graph'
+import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+
+import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 
 let original: SceneGraph
 let reopened: SceneGraph

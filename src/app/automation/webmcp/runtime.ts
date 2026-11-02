@@ -1,7 +1,7 @@
+import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { resolveAutomationTarget } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
-import { executeAtomicEditorTool } from '@/app/automation/execution/editor'
 import type { EditorStore } from '@/app/editor/active-store'
 import { getTabById } from '@/app/tabs'
 
@@ -28,17 +28,15 @@ export function startWebMCP(getStore: () => EditorStore): () => void {
           if (def.mutates) {
             return {
               ok: true,
-              result: await executeAtomicEditorTool(
-                target.store,
-                makeFigmaFromStore(target.store, target.pageId),
+              result: await runEditorTool({
+                store: target.store,
+                figma: makeFigmaFromStore(target.store, target.pageId),
                 def,
                 args,
-                {
-                  signal,
-                  label: 'WebMCP',
-                  isLive: () => getTabById(target.documentId)?.store === target.store
-                }
-              )
+                source: 'WebMCP',
+                signal,
+                isLive: () => getTabById(target.documentId)?.store === target.store
+              })
             }
           }
           return handleTool(target, { name: def.name, args })

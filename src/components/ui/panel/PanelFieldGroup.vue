@@ -3,7 +3,7 @@ import type { ClassValue } from 'tailwind-variants'
 import type { VNode } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
-import type { PanelFieldGroupTheme } from '@/theme/panel/field-group'
+import type { PanelFieldGroupTheme } from '@/theme/panel/field/group'
 
 export interface PanelFieldGroupProps {
   label?: string
@@ -20,7 +20,7 @@ export interface PanelFieldGroupSlots {
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import theme from '@/theme/panel/field-group'
+import theme from '@/theme/panel/field/group'
 
 const { label, for: labelFor, class: className, ui } = defineProps<PanelFieldGroupProps>()
 defineSlots<PanelFieldGroupSlots>()

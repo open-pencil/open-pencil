@@ -1,52 +1,32 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  figJamTextSizeFields,
+  figJamTypeface,
+  type FigJamTextSize
+} from '@open-pencil/scene-graph/figjam'
 import {
   createSticky,
   DEFAULT_STICKY_COLOR,
-  generatedFrameOwner,
-  rescaleNodeTree,
   stickyScale,
   stickyWidth,
   STICKY_SIZE,
-  stickyBodySizeFields,
   stickySublayers
-} from '@open-pencil/scene-graph'
-import type { SceneNode, StickyTextSize } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/generated'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
+import { textStyleChanges } from '#core/text/character-style'
 
-/** The name a note takes from its body while it was never renamed, as FigJam names it. */
-function stickyNameFor(text: string): string {
-  return text.trim() === '' ? 'Sticky' : text
-}
-
-/**
- * Typing in a note's body renames a note that was never renamed, as FigJam does. The caller
- * records the text edit; this records the rename beside it.
- */
-export function applyStickyNameEdit(
-  ctx: Pick<EditorContext, 'graph' | 'undo'>,
-  nodeId: string,
-  text: string
-): void {
-  const node = ctx.graph.getNode(nodeId)
-  const sticky = node && generatedFrameOwner(ctx.graph, node)
-  if (sticky?.type !== 'STICKY' || !sticky.autoRename) return
-  if (stickySublayers(ctx.graph, sticky)?.body.id !== nodeId) return
-  const before = sticky.name
-  const after = stickyNameFor(text)
-  if (before === after) return
-  const rename = (name: string) => () => ctx.graph.updateNode(sticky.id, { name })
-  rename(after)()
-  ctx.undo.push({ label: 'Rename sticky', forward: rename(after), inverse: rename(before) })
-}
+import type { NodeActions } from './nodes'
 
 /**
  * Sticky note commands. A note's colour sits on the note and its text on its sublayers, so each
  * change records the notes' whole subtrees as one step.
  */
-export function createStickyActions(ctx: EditorContext) {
+export function createStickyActions(ctx: EditorContext, nodes: NodeActions) {
   /** The colour the sticky tool places notes in: the one picked last, as in FigJam. */
   let stickyColor: Color = DEFAULT_STICKY_COLOR
 
@@ -98,15 +78,21 @@ export function createStickyActions(ctx: EditorContext) {
       const fills = fill
         ? [{ ...fill, type: 'SOLID' as const, color: { ...color } }, ...sticky.fills.slice(1)]
         : [{ type: 'SOLID' as const, color: { ...color }, opacity: 1, visible: true }]
-      ctx.graph.updateNode(sticky.id, { fills })
+      nodes.updateNode(sticky.id, { fills })
     })
   }
 
-  /** Sets the size of the notes' body text to one of FigJam's presets. */
-  function setStickyTextSize(ids: Iterable<string>, size: StickyTextSize) {
+  /** Sets the size of the notes' body text to one of FigJam's presets, in the body's typeface. */
+  function setStickyTextSize(ids: Iterable<string>, size: FigJamTextSize) {
     editStickies('Change sticky text size', ids, (sticky) => {
       const body = stickySublayers(ctx.graph, sticky)?.body
-      if (body) ctx.graph.updateNode(body.id, stickyBodySizeFields(size))
+      if (body) {
+        // Characters sized on their own take the size too, as text layers do.
+        nodes.updateNode(
+          body.id,
+          textStyleChanges(body, figJamTextSizeFields(size, figJamTypeface(body) ?? 'simple'))
+        )
+      }
     })
   }
 
@@ -114,7 +100,7 @@ export function createStickyActions(ctx: EditorContext) {
   function setStickyAuthorVisible(ids: Iterable<string>, visible: boolean) {
     editStickies(visible ? 'Show sticky author' : 'Hide sticky author', ids, (sticky) => {
       const author = stickySublayers(ctx.graph, sticky)?.author
-      if (author) ctx.graph.updateNode(author.id, { visible })
+      if (author) nodes.updateNode(author.id, { visible })
     })
   }
 

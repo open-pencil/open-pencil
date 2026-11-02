@@ -1,5 +1,9 @@
 import type { VectorRegion, VectorSegment } from '@open-pencil/scene-graph'
 
+/**
+ * Region loops renumbered after segments were removed or merged. A loop that lost a segment is
+ * no longer closed and is dropped, as in `deleteVectorParts`; merged segments collapse into one.
+ */
 export function remapRegions(
   regions: VectorRegion[],
   indexMap: Map<number, number | null>
@@ -9,12 +13,12 @@ export function remapRegions(
   for (const region of regions) {
     const newLoops: number[][] = []
     for (const loop of region.loops) {
+      const mapped = loop.map((idx) => indexMap.get(idx))
+      if (!mapped.every((idx): idx is number => idx != null)) continue
       const newLoop: number[] = []
-      for (const idx of loop) {
-        const mapped = indexMap.get(idx)
-        if (mapped == null) continue
-        if (newLoop.length > 0 && newLoop[newLoop.length - 1] === mapped) continue
-        newLoop.push(mapped)
+      for (const idx of mapped) {
+        if (newLoop.length > 0 && newLoop[newLoop.length - 1] === idx) continue
+        newLoop.push(idx)
       }
       if (newLoop.length > 1 && newLoop[0] === newLoop[newLoop.length - 1]) {
         newLoop.pop()

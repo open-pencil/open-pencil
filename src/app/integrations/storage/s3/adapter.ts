@@ -12,8 +12,7 @@ import {
   STORAGE_NAMESPACE_MARKER,
   documentFigKey,
   documentIdFromFigKey,
-  documentMetaKey,
-  documentThumbnailKey
+  documentMetaKey
 } from '../namespace'
 import type {
   StorageAdapter,
@@ -65,7 +64,7 @@ async function resolveConfig(runtime: StorageProviderRuntime): Promise<S3Compati
 }
 
 /** Each field falls back on its own; only a document with both fields is authoritative. */
-const DocumentMetadataJSON = v.pipe(
+const documentMetadataSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -87,7 +86,7 @@ function parseMetadata(
   fallback: StorageDocumentMetadata
 ): { metadata: StorageDocumentMetadata; authoritative: boolean } {
   if (!bytes) return { metadata: fallback, authoritative: false }
-  const parsed = v.safeParse(DocumentMetadataJSON, new TextDecoder().decode(bytes))
+  const parsed = v.safeParse(documentMetadataSchema, new TextDecoder().decode(bytes))
   if (!parsed.success) return { metadata: fallback, authoritative: false }
   const { name, updatedAt } = parsed.output
   return {
@@ -202,7 +201,8 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         signal
       )
       if (!bytes) throw new Error(`Document not found: ${id}`)
-      return bytes
+      // Buckets do not record which version a copy came from, so S3 documents are last-writer-wins.
+      return { bytes, revision: null }
     },
 
     async putDocument(id, bytes, metadata, onProgress) {
@@ -229,6 +229,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         }),
         'application/json'
       )
+      return { revision: null }
     },
 
     async getDocumentMetadata(id) {
@@ -246,8 +247,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       const config = await resolveConfig(runtime)
       const results = await Promise.allSettled([
         deleteObject(config, documentFigKey(id)),
-        deleteObject(config, documentMetaKey(id)),
-        deleteObject(config, documentThumbnailKey(id))
+        deleteObject(config, documentMetaKey(id))
       ])
       const failure = results.find(
         (result): result is PromiseRejectedResult => result.status === 'rejected'
@@ -263,11 +263,6 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         objectCount: objects.length,
         documentCount: objects.filter((object) => documentIdFromFigKey(object.key)).length
       }
-    },
-
-    async putThumbnail(id, bytes) {
-      const config = await resolveConfig(runtime)
-      await putObject(config, documentThumbnailKey(id), bytes, 'image/jpeg')
     },
 
     async getThumbnail(id) {

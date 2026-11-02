@@ -32,11 +32,14 @@
   "noResults": "Nessun risultato",
   "save": "Salva",
   "done": "Fatto",
+  "task": "Attività",
   "back": "Indietro",
   "supported": "Supportato",
   "unsupported": "Non supportato",
   "tokens": "token",
   "clear": "Cancella",
   "dismiss": "Chiudi",
-  "browserSupport": "Verifica il supporto"
+  "browserSupport": "Verifica il supporto",
+  "showPassword": "Mostra password",
+  "hidePassword": "Nascondi password"
 }

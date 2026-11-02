@@ -18,3 +18,20 @@ export function blurEffectsDriver(page: () => Page) {
     }
   }
 }
+
+/** Builds the shadow silhouette scene on the open page and leaves it unselected for a snapshot. */
+export function shadowSilhouetteDriver(page: () => Page) {
+  return {
+    show() {
+      return page().evaluate(async () => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const sceneURL = '/tests/helpers/canvas/effects/scene.ts'
+        const scenes: typeof EffectScenes = await import(sceneURL)
+        scenes.createShadowSilhouetteScene(store.graph, store.state.currentPageId)
+        store.clearSelection()
+        store.requestRender()
+      })
+    }
+  }
+}

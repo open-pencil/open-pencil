@@ -1,4 +1,5 @@
 import {
+  cloneVectorNetwork,
   copyDerivedGlyphs,
   copyGeometryPaths,
   copyStroke,
@@ -8,7 +9,6 @@ import {
 import { enforcedAspectRatio } from './layout/aspect-ratio'
 import type { Rect } from './primitives'
 import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
-import { cloneVectorNetwork } from './vector-network'
 
 /**
  * Drag-start state a live resize re-scales from. Path text needs more than the
@@ -18,6 +18,7 @@ import { cloneVectorNetwork } from './vector-network'
  */
 export type ResizeSnapshot = Pick<
   SceneNode,
+  | 'type'
   | 'x'
   | 'y'
   | 'width'
@@ -75,6 +76,18 @@ function resizedInPlace(
   if (constraint === 'MAX') return { position: placed.position + placed.size - size, size }
   if (constraint === 'CENTER') return { position: placed.position + (placed.size - size) / 2, size }
   return { position: placed.position, size }
+}
+
+/** Keep a placed box's constrained edges or center when its content determines its size. */
+export function resizedChildRect(
+  placed: Rect,
+  size: Pick<Rect, 'width' | 'height'>,
+  horizontal: ConstraintType,
+  vertical: ConstraintType
+): Rect {
+  const x = resizedInPlace({ position: placed.x, size: placed.width }, size.width, horizontal)
+  const y = resizedInPlace({ position: placed.y, size: placed.height }, size.height, vertical)
+  return { x: x.position, y: y.position, width: x.size, height: y.size }
 }
 
 /**
@@ -180,10 +193,11 @@ export function scaleVectorNetworkForResize(
   width: number,
   height: number
 ): VectorNetwork | null {
-  if (!vectorNetwork || originalWidth <= 0 || originalHeight <= 0) return null
+  if (!vectorNetwork || (originalWidth <= 0 && originalHeight <= 0)) return null
 
-  const scaleX = width / originalWidth
-  const scaleY = height / originalHeight
+  // A flat side, as a straight line's, has nothing to scale along it.
+  const scaleX = originalWidth > 0 ? width / originalWidth : 1
+  const scaleY = originalHeight > 0 ? height / originalHeight : 1
   if (scaleX === 1 && scaleY === 1) return null
 
   return {
@@ -210,6 +224,7 @@ export function scaleVectorNetworkForResize(
 /** Snapshot one node's resize-relevant state (rect + geometry that must scale with it). */
 export function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
   return {
+    type: node.type,
     x: node.x,
     y: node.y,
     width: node.width,
@@ -240,6 +255,10 @@ function scaleDerivedGlyphs(
   }))
 }
 
+function hasPath(orig: Pick<ResizeSnapshot, 'vectorNetwork'>): boolean {
+  return (orig.vectorNetwork?.segments.length ?? 0) > 0
+}
+
 function scaleStrokes(strokes: Stroke[], sx: number, sy: number): Stroke[] {
   if (strokes.length === 0) return strokes
   // Weight is a scalar; average scale is the usual 2D → 1D compromise.
@@ -256,6 +275,7 @@ function scaleStrokes(strokes: Stroke[], sx: number, sy: number): Stroke[] {
 export function scaledGeometryChanges(
   orig: Pick<
     ResizeSnapshot,
+    | 'type'
     | 'vectorNetwork'
     | 'fillGeometry'
     | 'strokeGeometry'
@@ -287,8 +307,12 @@ export function scaledGeometryChanges(
   if (orig.fillGeometry.length > 0) {
     changes.fillGeometry = scaleGeometryPaths(orig.fillGeometry, sx, sy)
   }
+  // A stroke keeps its weight through a resize, as in Figma, so a saved stroke outline goes where
+  // the stroke can be drawn again at its weight: from a path, or from a shape's own outline.
+  // Text and a vector with only its outline keep scaling the outline, which is all they have.
+  const outlineOnly = orig.type === 'TEXT' || (orig.type === 'VECTOR' && !hasPath(orig))
   if (orig.strokeGeometry.length > 0) {
-    changes.strokeGeometry = scaleGeometryPaths(orig.strokeGeometry, sx, sy)
+    changes.strokeGeometry = outlineOnly ? scaleGeometryPaths(orig.strokeGeometry, sx, sy) : []
   }
   // Path text scales with its path, including baked path text that kept only rotated glyphs;
   // other text reflows in the new box, so its glyphs are dropped.
@@ -309,7 +333,9 @@ export function scaledGeometryChanges(
       }
     }
   }
-  if (orig.strokes.length > 0) {
+  // Glyphs scaled as a picture take their strokes along; any other stroke keeps its weight, as
+  // Figma reports it, even where only a scaled outline can draw it.
+  if (orig.strokes.length > 0 && glyphs.length > 0 && pathText) {
     changes.strokes = scaleStrokes(orig.strokes, sx, sy)
   }
   return changes

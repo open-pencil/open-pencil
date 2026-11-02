@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile, SceneGraph, sceneNodeToKiwi } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { lineHeightPixels, pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -41,7 +44,7 @@ describe('Integration: auto-layout component with all fixes', () => {
       fontFamily: 'DM Sans 9pt',
       fontWeight: 600,
       fontSize: 14,
-      lineHeight: 20
+      lineHeight: pixelLength(20)
     })
 
     // Value text
@@ -55,7 +58,7 @@ describe('Integration: auto-layout component with all fixes', () => {
       fontFamily: 'Inter',
       fontWeight: 700,
       fontSize: 32,
-      lineHeight: 40
+      lineHeight: pixelLength(40)
     })
 
     // Verify kiwi output directly
@@ -119,6 +122,6 @@ describe('Integration: auto-layout component with all fixes', () => {
     expect(cardNode.layoutMode).toBe('VERTICAL')
     expect(cardNode.clipsContent).toBe(true)
     expect(titleNode.fontFamily).toBe('DM Sans')
-    expect(titleNode.lineHeight).toBe(20)
+    expect(lineHeightPixels(titleNode.lineHeight, titleNode.fontSize)).toBe(20)
   })
 })

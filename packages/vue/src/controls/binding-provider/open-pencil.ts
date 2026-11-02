@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 import { useFilter } from 'reka-ui'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { Variable, VariableType } from '@open-pencil/scene-graph'
 
 import type {
@@ -16,7 +16,8 @@ import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { resolveEffectiveBindingValue } from './resolution'
 
 export interface OpenPencilBindingProviderOptions<V> {
-  type: VariableType
+  /** The variable types the field binds to, which the picker lists. */
+  types: readonly VariableType[]
   resolve(editor: Editor, variableId: string, target?: BindingTarget): V | undefined
   create?(editor: Editor, target: BindingTarget, value: V, name: string): void
   prepareEdit?(
@@ -32,7 +33,8 @@ export function createOpenPencilBindingProvider<V>(
   revision?: BindingProvider<V>['revision']
 ): BindingProvider<V> {
   const { contains } = useFilter({ sensitivity: 'base' })
-  const variables = () => editor.getVariablesByType(options.type)
+  const variables = () =>
+    [...editor.graph.variables.values()].filter((variable) => options.types.includes(variable.type))
   const interactiveEdits: Array<{ end: () => void; stopSettling: () => void }> = []
 
   /**

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   analyzeOverlaps,
   computeOverlaps,
@@ -8,6 +8,7 @@ import {
   type OverlapScope,
   type OverlapSeverity
 } from '@open-pencil/core/tools/analyze/overlaps'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { frame, pageId, rect, text } from './helpers'
 

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
 import { canvas, doc, node } from './helpers'
 
@@ -103,7 +104,7 @@ describe('fig-import: text properties', () => {
       } as Partial<NodeChange>)
     ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
-    expect(n.lineHeight).toBe(16.94)
+    expect(lineHeightPixels(n.lineHeight, n.fontSize)).toBe(16.94)
   })
 
   test('keeps a pixel line height shorter than the font, which Figma saves lines taller than', () => {
@@ -130,7 +131,8 @@ describe('fig-import: text properties', () => {
         }
       } as Partial<NodeChange>)
     ]).graph
-    expect(graph.getChildren(graph.getPages()[0].id)[0]?.lineHeight).toBe(10)
+    const [text] = graph.getChildren(graph.getPages()[0].id)
+    expect(text && lineHeightPixels(text.lineHeight, text.fontSize)).toBe(10)
   })
 
   test('reads line heights as Figma writes them: auto as 100 percent, a percent as a multiplier', () => {
@@ -163,7 +165,7 @@ describe('fig-import: text properties', () => {
     ]).graph
     const [auto, raw] = graph.getChildren(graph.getPages()[0].id)
     expect(auto.lineHeight).toBeNull()
-    expect(raw.lineHeight).toBe(36)
+    expect(lineHeightPixels(raw.lineHeight, raw.fontSize)).toBe(36)
   })
 
   test('applies shared text style refs', () => {
@@ -191,7 +193,7 @@ describe('fig-import: text properties', () => {
     expect(styled?.fontSize).toBe(16)
     expect(styleNamed(graph, styled?.textStyleId)).toBe('Body style')
     expect(styled?.fontWeight).toBe(400)
-    expect(styled?.lineHeight).toBe(24)
+    expect(styled && lineHeightPixels(styled.lineHeight, styled.fontSize)).toBe(24)
     expect(styled?.textDecoration).toBe('NONE')
     const style = [...graph.getAllNodes()].find((node) => node.source.id === '1:20')
     expect(style).toMatchObject({ name: 'Body style', sharedStyleType: 'TEXT', internalOnly: true })

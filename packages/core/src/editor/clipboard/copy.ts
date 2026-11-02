@@ -7,6 +7,11 @@ import { captureClipboardSnapshot, type ClipboardSnapshot } from './snapshot'
 
 export type { ClipboardSnapshot } from './snapshot'
 
+export interface CopyOptions {
+  /** Copy properties: the same layers, marked so Paste skips them and Paste properties reads them. */
+  properties?: boolean
+}
+
 export interface ClipboardPayload {
   snapshot?: ClipboardSnapshot
   html: string
@@ -36,11 +41,19 @@ function graphForSnapshot(ctx: EditorContext, snapshot: ClipboardSnapshot): Scen
 }
 
 export function createClipboardCopyActions(ctx: EditorContext) {
-  async function prepareCopy(selectedNodes: SceneNode[]): Promise<ClipboardPayload> {
+  async function prepareCopy(
+    selectedNodes: SceneNode[],
+    options: CopyOptions = {}
+  ): Promise<ClipboardPayload> {
     if (selectedNodes.length === 0) return { html: '', plainText: '' }
     const snapshot = captureClipboardSnapshot(ctx.graph, selectedNodes)
+    if (options.properties) snapshot.properties = true
     const plainText = snapshot.nodes.map((node) => node.name).join('\n')
-    const html = await buildFigmaClipboardHTML(snapshot.nodes, graphForSnapshot(ctx, snapshot))
+    const html = await buildFigmaClipboardHTML(
+      snapshot.nodes,
+      graphForSnapshot(ctx, snapshot),
+      options.properties ? 'STYLE_PROPERTIES' : 'UNKNOWN'
+    )
     if (!html) throw new Error('Could not encode selection for the clipboard')
     return { html, plainText, snapshot }
   }

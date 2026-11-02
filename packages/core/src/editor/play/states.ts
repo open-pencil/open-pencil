@@ -1,11 +1,10 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { findLayerByPath } from '@open-pencil/scene-graph/behaviours'
 import {
   applyComponentPropertyValue,
-  componentPropertyDefinitions,
-  findLayerByPath,
-  resolvedPaintBindings,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  componentPropertyDefinitions
+} from '@open-pencil/scene-graph/components'
+import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 import { extractPageContext, findPageId } from '#core/io/subgraph'
 import { computeAllLayouts } from '#core/layout'

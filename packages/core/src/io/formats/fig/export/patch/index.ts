@@ -3,19 +3,21 @@ import {
   type FigArchiveRecordInfo,
   type FigRecordPatch
 } from '@open-pencil/fig'
-import { nameImagesForFigma, type FigNodeChangeExportRuntime } from '@open-pencil/fig/node-change'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import {
-  computeImageHash,
-  layersUsingVariables,
-  isGeneratedFrame,
-  ownsSlotContent,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  nameImagesForFigma,
+  type FigNodeChangeExportRuntime,
+  sceneNodeToKiwi
+} from '@open-pencil/fig/node-change'
+import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+import { layersUsingVariables } from '@open-pencil/scene-graph/variables'
 
+import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
   figExportRecordOptions,
   figFileExtras,
@@ -25,9 +27,8 @@ import {
   type KiwiNodeChange
 } from '#core/io/formats/fig/export/setup'
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
-import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
-import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive'
-import { archiveChanges, type ArchiveChangeSummary } from '#core/kiwi/fig/session/archive-changes'
+import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive/access'
+import { archiveChanges, type ArchiveChangeSummary } from '#core/kiwi/fig/session/archive/changes'
 import {
   isReaderPagePending,
   populateFigPage,
@@ -434,6 +435,8 @@ export async function writePatchedFigFile(
   return archive.patch(built.patch, {
     thumbnailPNG: extras.thumbnailPNG,
     metaJSON: extras.metaJSON,
-    images: extras.images.filter((image) => !archivedImages.has(image.name))
+    images: extras.images.filter((image) => !archivedImages.has(image.name)),
+    compressionLevel: figCompressionLevel(source),
+    kind: source.documentKind
   })
 }

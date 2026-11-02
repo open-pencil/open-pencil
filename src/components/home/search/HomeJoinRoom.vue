@@ -2,7 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { ref } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue'
+import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { useJoinRoom } from '@/app/collab/join'
 import AppButton from '@/components/ui/button/AppButton.vue'

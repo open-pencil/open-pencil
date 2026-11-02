@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { instanceMainComponent } from '../instances/main-component'
 import { walkInstanceSources } from '../instances/source-walk'
 import type { SceneNode } from '../types'

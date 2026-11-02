@@ -18,7 +18,7 @@ export {
   Rect,
   Page,
   INTRINSIC_ELEMENTS
-} from './components'
+} from './elements/functions'
 export {
   Accordion,
   Button,
@@ -41,6 +41,8 @@ export {
 export {
   type TreeNode,
   type BaseProps,
+  type EllipseProps,
+  type VectorProps,
   type ComponentProps,
   type InstanceProps,
   type TextProps,
@@ -53,7 +55,7 @@ export {
   resolveToTree
 } from './tree'
 
-export type { RenderResult } from './renderer'
+export type { RenderResult } from './render/roots'
 
 export {
   backgroundBlur,
@@ -64,7 +66,7 @@ export {
   type BlurEffectOptions,
   type EffectColor,
   type ShadowEffectOptions
-} from './effects'
+} from './helpers/effects'
 
 export {
   angularGradient,
@@ -79,18 +81,35 @@ export {
   type PaintStop,
   type ShaderFill,
   type SolidPaintOptions
-} from './paints'
+} from './helpers/paints'
 
-export { defineVars, designVar, isVariable, type DesignVariable, type VarDef } from './vars'
+export {
+  defineMode,
+  defineVars,
+  designMode,
+  designVar,
+  isMode,
+  isVariable,
+  isVariableInput,
+  type DesignMode,
+  type DesignVariable,
+  type VariableInput
+} from './variables'
+export { isComponentProperty, property, type ComponentProperty } from './components/properties'
+export { isLayerRef, ref, type LayerRef } from './refs'
 
 export { createElement } from './mini-react'
 
 export { buildComponent, createDesignJSXRenderer, type DesignJSXRenderer } from './render'
 export type { ArtworkPlacement, DesignJSXServices, SVGSource } from './services'
-export type { RenderOptions } from './types'
+export type { RenderOptions } from './render/types'
 export {
   DESIGN_JSX_ELEMENTS,
-  DESIGN_JSX_HELPERS,
+  elementPropsByName,
+  type DesignJSXElementDefinition
+} from './elements'
+export { DESIGN_JSX_HELPERS, designJSXHelpers, type DesignJSXHelperName } from './helpers'
+export {
   DESIGN_JSX_PROPERTIES,
   DESIGN_JSX_SUPPORTED_PROPERTIES,
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
@@ -102,14 +121,12 @@ export {
   type DesignJSXStyleKey,
   designJSXProp,
   designJSXPropertyNames,
-  type DesignJSXElementDefinition,
   type DesignJSXHelperDefinition,
   type DesignJSXPropertyDefinition
-} from './schema'
+} from './definitions'
 export {
   transformDesignJSXExpression,
   transformDesignJSXProgram,
-  type DesignJSXChunk,
   type DesignJSXProgram
 } from './transform'
 
@@ -121,11 +138,12 @@ export {
   selectionToJSXWithLayers,
   type DesignJSXElement,
   type DesignJSXWithLayers,
-  type JSXAttributeSource
+  type JSXAttributeSource,
+  type JSXExportOptions
 } from './export'
 export { parseJSXAttributes } from './attributes'
 export { jsxNodeFields, type JSXNodeFields } from './fields'
-export { reconcileRenderedLayers } from './reconcile'
+export { reconcileRenderedLayers } from './render/reconcile'
 export { JSX_REFERENCE, AUTHORING_EXAMPLES, type AuthoringExample } from './reference'
 export {
   createStreamingJSXParser,

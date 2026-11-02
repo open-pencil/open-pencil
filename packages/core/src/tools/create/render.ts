@@ -1,14 +1,13 @@
 import * as v from 'valibot'
 
 import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const render = defineTool({
   name: 'render',
 
   description:
-    'Render JSX to design nodes. Supports inline SVG paths, including open stroked paths: <svg viewBox="0 0 24 24" size={24}><path d="M2 12 L22 12" stroke="#000" fill="none" /></svg>. Use replace_id to replace a placeholder while preserving its position.',
+    'Render JSX to design nodes. Draw a shape of your own as one layer with <Vector d="M2 12 L22 12" stroke="#000" />, styled like any layer; inline <svg> is for artwork copied from elsewhere and draws its shapes, without its text. Use replace_id to replace a placeholder while preserving its position.',
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     replace_id: v.optional(

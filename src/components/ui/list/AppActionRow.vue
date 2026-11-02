@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, normalizeClass, useAttrs } from 'vue'
 
-import { actionRow } from '@/theme/list/action-row'
+import { actionRow } from './action-row'
 
 const { disabled, ui } = defineProps<{
   disabled?: boolean

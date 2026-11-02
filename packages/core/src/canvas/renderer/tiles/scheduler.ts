@@ -4,8 +4,12 @@ import type { TileKey } from './geometry'
 
 export type TileJobPriority = 'mandatory' | 'visible' | 'overscan'
 
+export type TileJobKind = 'render' | 'downsample'
+
 export interface TileJob {
   key: TileKey
+  /** Rendered from the scene, or downsampled from the four cached tiles twice as fine. */
+  kind?: TileJobKind
   navigationGeneration: number
   contentGeneration: number
   priority: TileJobPriority
@@ -16,6 +20,8 @@ export interface TileJob {
 export interface TileJobResult {
   renderMs: number
   overBudget: boolean
+  /** The job made progress but is not done; it stays first in the queue for the next frame. */
+  deferred?: boolean
   allocationMs?: number
   drawMs?: number
   flushMs?: number
@@ -33,6 +39,8 @@ export interface TileSchedulerMetrics {
   maximumJobRenderMs: number
   staleJobsDiscarded: number
   cancelledJobs: number
+  /** Frames ended on a job that recorded part of its work and will continue next frame. */
+  deferredJobs: number
   totalAllocationMs: number
   totalDrawMs: number
   totalFlushMs: number
@@ -57,6 +65,7 @@ export function emptyTileSchedulerMetrics(): TileSchedulerMetrics {
     maximumJobRenderMs: 0,
     staleJobsDiscarded: 0,
     cancelledJobs: 0,
+    deferredJobs: 0,
     totalAllocationMs: 0,
     totalDrawMs: 0,
     totalFlushMs: 0,
@@ -122,48 +131,89 @@ export class TileScheduler {
     this.jobs.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
   }
 
-  runFrame(execute: (job: TileJob) => TileJobResult): TileSchedulerMetrics {
+  /** Drops queued jobs matching `predicate` and returns how many it dropped. */
+  discard(predicate: (job: TileJob) => boolean): number {
+    const previousCount = this.jobs.length
+    this.jobs = this.jobs.filter((job) => !predicate(job))
+    return previousCount - this.jobs.length
+  }
+
+  /**
+   * Runs queued jobs until `budgetMs` is spent. A job estimated to overrun it is skipped when a
+   * fallback exists, except that the frame's first job may overrun up to `firstJobLimitMs`: an
+   * idle renderer sets no limit so it always makes progress, and a moving one sets a small one
+   * so an affordable tile still fills in while the expensive ones ahead of it wait for idle.
+   */
+  runFrame(
+    execute: (job: TileJob, remainingMs: number) => TileJobResult,
+    budgetMs: number = this.budgetMs,
+    firstJobLimitMs = Number.POSITIVE_INFINITY
+  ): TileSchedulerMetrics {
     const frameStart = this.now()
     const metrics = emptyTileSchedulerMetrics()
 
     let jobsExecuted = 0
+    const deferred: TileJob[] = []
     while (this.jobs.length > 0) {
       if (jobsExecuted >= this.maximumJobsPerFrame) break
       const job = this.jobs[0]
       const elapsed = this.now() - frameStart
       const mandatory = job.priority === 'mandatory' && !job.fallbackAvailable
-      if (jobsExecuted > 0 && elapsed >= this.budgetMs) break
+      if (jobsExecuted > 0 && elapsed >= budgetMs) break
       if (this.isStale(job)) {
         this.jobs.shift()
         metrics.staleJobsDiscarded++
         continue
       }
-      if (!mandatory && job.fallbackAvailable && elapsed + job.estimatedCost > this.budgetMs) {
-        if (jobsExecuted === 0) {
-          const result = execute(job)
-          this.jobs.shift()
-          metrics.interruptibleCompleted++
-          addJobMetrics(metrics, result)
-          if (result.overBudget || result.renderMs > this.budgetMs) metrics.overBudgetJobs++
-          const overrun = this.now() - frameStart - this.budgetMs
-          if (overrun > metrics.deadlineOverrunMs) metrics.deadlineOverrunMs = overrun
-        } else {
+      if (!mandatory && job.fallbackAvailable && elapsed + job.estimatedCost > budgetMs) {
+        if (jobsExecuted > 0) {
           metrics.skippedWithFallback++
+          break
         }
-        break
+        if (elapsed + job.estimatedCost <= firstJobLimitMs) {
+          this.runJob(job, execute, metrics, frameStart, budgetMs, mandatory)
+          break
+        }
+        // Too dear for this frame: leave it queued and look for an affordable one behind it.
+        this.jobs.shift()
+        deferred.push(job)
+        metrics.skippedWithFallback++
+        continue
       }
-      this.jobs.shift()
-      const result = execute(job)
+      if (!this.runJob(job, execute, metrics, frameStart, budgetMs, mandatory)) break
       jobsExecuted++
-      addJobMetrics(metrics, result)
-      if (result.overBudget || result.renderMs > this.budgetMs) metrics.overBudgetJobs++
-      if (mandatory) metrics.mandatoryCompleted++
-      else metrics.interruptibleCompleted++
-      const overrun = this.now() - frameStart - this.budgetMs
-      if (overrun > metrics.deadlineOverrunMs) metrics.deadlineOverrunMs = overrun
+    }
+    if (deferred.length > 0) {
+      this.jobs.unshift(...deferred)
+      this.jobs.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
     }
     metrics.remaining = this.jobs.length
     return metrics
+  }
+
+  /** Runs the first job; false when it deferred, which ends the frame with it still first. */
+  private runJob(
+    job: TileJob,
+    execute: (job: TileJob, remainingMs: number) => TileJobResult,
+    metrics: TileSchedulerMetrics,
+    frameStart: number,
+    budgetMs: number,
+    mandatory: boolean
+  ): boolean {
+    this.jobs.shift()
+    const result = execute(job, Math.max(0, budgetMs - (this.now() - frameStart)))
+    addJobMetrics(metrics, result)
+    const overrun = this.now() - frameStart - budgetMs
+    if (overrun > metrics.deadlineOverrunMs) metrics.deadlineOverrunMs = overrun
+    if (result.deferred) {
+      this.jobs.unshift(job)
+      metrics.deferredJobs++
+      return false
+    }
+    if (result.overBudget || result.renderMs > budgetMs) metrics.overBudgetJobs++
+    if (mandatory) metrics.mandatoryCompleted++
+    else metrics.interruptibleCompleted++
+    return true
   }
 
   clear(): number {

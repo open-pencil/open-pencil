@@ -1,18 +1,18 @@
+import type { ComponentPropertyType, SceneGraph, SlotSettings } from '@open-pencil/scene-graph'
 import {
   createComponentPropertyId,
+  componentPropertyDefinitions
+} from '@open-pencil/scene-graph/components'
+import {
   DEFAULT_SLOT_SETTINGS,
   claimSlotContent,
-  componentPropertyDefinitions,
   createSlotProperty,
   resetSlotContent,
   slotLimitViolations,
   slotPropertyId,
   slotScope,
-  type ComponentPropertyType,
-  type SceneGraph,
-  type SlotLimitViolation,
-  type SlotSettings
-} from '@open-pencil/scene-graph'
+  type SlotLimitViolation
+} from '@open-pencil/scene-graph/slots'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { assertProxyEditable, graph, nodeId, raw } from './accessor-utils'

@@ -2,10 +2,11 @@ import { beforeAll, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { fontManager } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/fig'
-import type { TextParagraphStyle } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph, type TextParagraphStyle } from '@open-pencil/scene-graph'
 
 const LIST: TextParagraphStyle[] = [
   { listType: 'NONE', indentation: 0, paragraphSpacing: 24, paragraphIndent: 30 },
@@ -17,10 +18,10 @@ const LIST: TextParagraphStyle[] = [
 beforeAll(async () => {
   await initCodec()
   const inter = expectDefined(
-    await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
-  fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
 })
 
 test('writes lists as Figma does and reads them back', async () => {
@@ -62,7 +63,9 @@ test('writes lists as Figma does and reads them back', async () => {
     written.hangingList
   ]).toEqual([6, 10, 12, true])
   // Figma draws pasted and opened text from these glyphs: each marker is one with no character.
-  const markers = written.derivedTextData?.glyphs?.filter((glyph) => glyph.firstCharacter === undefined)
+  const markers = written.derivedTextData?.glyphs?.filter(
+    (glyph) => glyph.firstCharacter === undefined
+  )
   expect(markers?.length).toBe(5)
 
   const reopened = await parseFigFile(bytes.slice().buffer)
@@ -71,7 +74,7 @@ test('writes lists as Figma does and reads them back', async () => {
     'reopened text'
   )
   expect(text.textParagraphs).toEqual(LIST)
-  expect([text.listSpacing, text.paragraphSpacing, text.paragraphIndent, text.hangingList]).toEqual([
-    6, 10, 12, true
-  ])
+  expect([text.listSpacing, text.paragraphSpacing, text.paragraphIndent, text.hangingList]).toEqual(
+    [6, 10, 12, true]
+  )
 })

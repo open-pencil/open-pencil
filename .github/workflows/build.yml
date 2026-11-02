@@ -61,7 +61,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - uses: ./.pipeline/.github/actions/setup-bun
         with:
           cache-scope: desktop
@@ -128,7 +128,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -211,7 +211,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
           registry-url: https://registry.npmjs.org/
       - uses: ./.pipeline/.github/actions/setup-bun
         with:
@@ -232,6 +232,8 @@ jobs:
           path: native-artifacts
       - name: Install signature verifier
         run: sudo apt-get update && sudo apt-get install -y minisign
+      - name: Resume npm versions this tag already published
+        run: bun .pipeline/tools/release/release-packages/src/cli.ts resume
       - name: Verify all targets, digests and updater signatures
         run: bun .pipeline/tools/release/release-packages/src/native/assemble.ts
       - name: Refuse published releases or moved tags

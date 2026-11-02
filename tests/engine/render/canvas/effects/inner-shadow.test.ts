@@ -1,21 +1,25 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas } from '../helpers'
-import { createMockCanvas, createMockRenderer } from './helpers'
+import {
+  createMockCanvas,
+  createMockRenderer,
+  effectNode,
+  OPAQUE_FILL,
+  TEST_GRAPH
+} from './helpers'
 
 describe('INNER_SHADOW bug proofs', () => {
   test('INNER_SHADOW solid mask via ColorFilter on DstOut layer', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'TEXT',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       childIds: [],
       effects: [
         {
@@ -27,12 +31,12 @@ describe('INNER_SHADOW bug proofs', () => {
           spread: 0
         }
       ]
-    }
+    })
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'front')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')
 
     // PROOF: ColorFilter.MakeBlend(black, SrcIn) on DstOut layer paint
-    // forces renderText output to solid black without mutating fillPaint.
+    // forces the silhouette to solid black without mutating fillPaint.
     // The DstOut saveLayer punches the solid mask from the blurred block.
     expect(canvas.saveLayer).toHaveBeenCalled()
     expect(canvas.drawRect).toHaveBeenCalled()

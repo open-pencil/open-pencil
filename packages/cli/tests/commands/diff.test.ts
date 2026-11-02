@@ -10,8 +10,8 @@ import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
 setDefaultTimeout(60_000)
 
 const FIXTURE = join(FIXTURES, 'gold-preview.fig')
-const LOGO = '0:10'
-const TITLE = '0:9'
+const LOGO = '1:3494'
+const TITLE = '1:3474'
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47]
 
 async function cli(args: string[]) {

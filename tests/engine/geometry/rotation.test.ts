@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { rotatePoint, rotatedBBox, rotatedCorners } from '@open-pencil/scene-graph'
+import { rotatePoint, rotatedBBox, rotatedCorners } from '@open-pencil/scene-graph/geometry'
 
 describe('rotatePoint', () => {
   test('no rotation returns same point', () => {

@@ -1,4 +1,4 @@
-import type { EditorCommandId } from '@open-pencil/vue'
+import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
 
 import type { runFocusedCommand } from '@/app/shell/commands/focused'
 

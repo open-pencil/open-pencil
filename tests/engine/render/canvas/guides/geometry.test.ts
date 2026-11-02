@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createDefaultNode, SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { distanceToGuideSegment, getGuideScreenSegment } from '#core/canvas/guides/geometry'
 import { hitTestGuides } from '#core/canvas/guides/hit-test'

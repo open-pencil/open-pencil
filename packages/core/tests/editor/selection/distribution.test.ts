@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import { getAbsolutePositionFull } from '@open-pencil/scene-graph/coordinate'
 
 function positions(editor: ReturnType<typeof createEditor>, ids: string[], axis: 'x' | 'y') {
@@ -123,7 +123,12 @@ describe('selection spacing', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const a = editor.graph.createNode('RECTANGLE', pageId, { x: 0, y: 180, width: 100, height: 80 })
-    const b = editor.graph.createNode('RECTANGLE', pageId, { x: 140, y: 180, width: 120, height: 80 })
+    const b = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 140,
+      y: 180,
+      width: 120,
+      height: 80
+    })
     const c = editor.graph.createNode('ELLIPSE', pageId, { x: 320, y: 180, width: 80, height: 80 })
     return { editor, ids: [c.id, a.id, b.id], a, b, c }
   }
@@ -144,7 +149,12 @@ describe('selection spacing', () => {
   test('reads a column when the layers overlap across it', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
-    const rect = editor.graph.createNode('RECTANGLE', pageId, { x: 0, y: 180, width: 100, height: 80 })
+    const rect = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 0,
+      y: 180,
+      width: 100,
+      height: 80
+    })
     const text = editor.graph.createNode('TEXT', pageId, { x: 0, y: 300, width: 39, height: 19 })
     expect(editor.selectionSpacing([text.id, rect.id])).toEqual({ axis: 'vertical', gaps: [40] })
   })
@@ -152,7 +162,12 @@ describe('selection spacing', () => {
   test('has no spacing for layers apart on both axes', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
-    const rect = editor.graph.createNode('RECTANGLE', pageId, { x: 110, y: 180, width: 120, height: 80 })
+    const rect = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 110,
+      y: 180,
+      width: 120,
+      height: 80
+    })
     const text = editor.graph.createNode('TEXT', pageId, { x: 0, y: 300, width: 39, height: 19 })
     expect(editor.selectionSpacing([text.id, rect.id])).toBeNull()
   })

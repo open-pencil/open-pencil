@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createRect, firstPageId } from '#core-tests/helpers/scene'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('multi-node property merging', () => {
   test('same values merge to single value', () => {

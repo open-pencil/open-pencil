@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, copyStyleRuns } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
 import { scaledGeometryChanges } from '@open-pencil/scene-graph/resize'
 
 const shapingEdits: Partial<SceneNode>[] = [

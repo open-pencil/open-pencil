@@ -1,6 +1,6 @@
 import { mapValues } from 'es-toolkit'
 
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { readPluginData, withPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
@@ -16,14 +16,6 @@ import type {
   BehaviourInteractionStates,
   BehaviourNumberSettings
 } from './schema'
-
-export type {
-  Behaviour,
-  BehaviourBooleanBinding,
-  BehaviourInteractionStates,
-  BehaviourNumberSettings
-} from './schema'
-export { isNumberRange } from './schema'
 
 export const DEFAULT_NUMBER_SETTINGS: BehaviourNumberSettings = {
   min: 0,

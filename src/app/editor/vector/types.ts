@@ -1,4 +1,4 @@
-import type { EditorState } from '@open-pencil/core/editor'
+import type { EditorState } from '@open-pencil/core'
 import type {
   VectorNetwork,
   VectorRegion,
@@ -22,6 +22,8 @@ export type NodeEditState = {
   /** Geometry at the last undo/redo restore; divergence invalidates `future` */
   futureBaseline?: VectorNetwork | null
   selectedVertexIndices: Set<number>
+  /** Segments selected as segments, apart from their endpoints, as in Figma */
+  selectedSegmentIndices: Set<number>
   draggedHandleInfo: {
     vertexIndex: number
     handleType: 'tangentStart' | 'tangentEnd'
@@ -32,6 +34,10 @@ export type NodeEditState = {
     segmentIndex: number
     tangentField: 'tangentStart' | 'tangentEnd'
   } | null
+  /** The region under the pointer, hatched as in Figma. */
+  hoveredRegion: number | null
+  /** Regions picked by clicking inside them; their points are selected with them. */
+  selectedRegions: Set<number>
 }
 
 export type VectorEditState = EditorState & { nodeEditState: NodeEditState | null }

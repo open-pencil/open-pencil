@@ -2,14 +2,16 @@
 import { tv } from 'tailwind-variants'
 import { ref, watch } from 'vue'
 
-import { iconLayerName } from '@open-pencil/scene-graph'
-import { useCommonMessages, useIcon, usePanelMessages } from '@open-pencil/vue'
+import { iconLayerName } from '@open-pencil/scene-graph/icons'
+import { useIcon } from '@open-pencil/vue/controls/icon'
+import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import IconPicker from '@/components/icon-picker/IconPicker.vue'
 import IconPreview from '@/components/icon-picker/IconPreview.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import theme from '@/theme/select/app'
@@ -33,6 +35,7 @@ const styles = tv(theme)()
 
 /** An icon picked to replace an edited one, waiting for the edits to be given up. */
 const pendingSwap = ref<string | null>(null)
+const swapShown = useHeldContent(pendingSwap)
 // The question is about the icon selected when it was asked; another selection drops it, so a
 // confirmation never swaps an icon it did not describe.
 watch(frameId, () => {
@@ -101,7 +104,7 @@ function confirmSwap() {
     <AppConfirmationDialog
       :open="pendingSwap !== null"
       :heading="panels.swapEditedIconHeading"
-      :description="panels.swapEditedIconDescription({ name: iconLayerName(pendingSwap ?? '') })"
+      :description="panels.swapEditedIconDescription({ name: iconLayerName(swapShown ?? '') })"
       :cancel-label="common.cancel"
       :confirm-label="panels.swapIcon"
       tone="warning"

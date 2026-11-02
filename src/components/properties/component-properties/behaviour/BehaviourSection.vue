@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph/behaviours'
 import type {
   BehaviourControl,
   BehaviourNumberControl,
   BehaviourPartControl,
   BehaviourValueControl
-} from '@open-pencil/vue'
+} from '@open-pencil/vue/controls/behaviour'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'

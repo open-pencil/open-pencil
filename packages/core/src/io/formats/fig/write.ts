@@ -1,6 +1,8 @@
 export {
   exportFigFile,
   compressFigData,
-  compressFigDataSync,
+  setFigArchiveAssembler,
+  type FigArchiveAssembler,
+  type FigArchiveParts,
   type FigFileExtrasOptions
 } from './export'

@@ -13,6 +13,8 @@ export const toolMessageDefaults = {
   pencil: 'Pencil',
   text: 'Text',
   sticky: 'Sticky note',
+  shape: 'Shape',
+  connector: 'Connector',
   hand: 'Hand',
   comment: 'Comment'
 } as const

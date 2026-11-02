@@ -1,11 +1,11 @@
 <script lang="ts">
 import type { VNode } from 'vue'
 
+import type { NumberExpressionError } from '@open-pencil/vue/controls/number-expression'
 import type {
-  NumberExpressionError,
   NumberFieldEditPolicy,
   NumberFieldSlotProps
-} from '@open-pencil/vue'
+} from '@open-pencil/vue/primitives/NumberField'
 
 import type { ComponentUI } from '@/components/ui/types'
 import type { NumberFieldTheme } from '@/theme/input/number-field'
@@ -26,6 +26,8 @@ export interface NumberFieldProps {
   inheritBinding?: boolean
   bound?: boolean
   editPolicy?: NumberFieldEditPolicy
+  /** Units a typed value may end with; the commit reports the one typed. */
+  units?: readonly string[]
   ui?: NumberFieldUI
 }
 
@@ -41,7 +43,12 @@ export interface NumberFieldSlots {
 import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, useAttrs } from 'vue'
 
-import { NumberFieldRoot, NumberFieldInput, NumberFieldValue, useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import {
+  NumberFieldRoot,
+  NumberFieldInput,
+  NumberFieldValue
+} from '@open-pencil/vue/primitives/NumberField'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import theme from '@/theme/input/number-field'
@@ -65,6 +72,7 @@ const {
   inheritBinding = true,
   bound,
   editPolicy,
+  units,
   ui
 } = defineProps<NumberFieldProps>()
 const accessibleLabel = computed(() => {
@@ -74,9 +82,9 @@ const accessibleLabel = computed(() => {
 const styles = computed(() => tv(theme)({ suffix: Boolean(slots.suffix) }))
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number]
+  'update:modelValue': [value: number, unit?: string]
   'editing-change': [editing: boolean]
-  commit: [value: number, previous: number]
+  commit: [value: number, previous: number, unit?: string]
   cancel: []
   invalid: [expression: string, reason: NumberExpressionError]
   'detach-request': [source: 'edit' | 'scrub' | 'step']
@@ -99,8 +107,9 @@ defineOptions({ inheritAttrs: false })
     :inherit-binding="inheritBinding"
     :bound="bound"
     :edit-policy="editPolicy"
-    @update:model-value="emit('update:modelValue', $event)"
-    @commit="(val: number, prev: number) => emit('commit', val, prev)"
+    :units="units"
+    @update:model-value="(value: number, unit?: string) => emit('update:modelValue', value, unit)"
+    @commit="(val: number, prev: number, unit?: string) => emit('commit', val, prev, unit)"
     @cancel="emit('cancel')"
     @invalid="
       (expression: string, reason: NumberExpressionError) => emit('invalid', expression, reason)

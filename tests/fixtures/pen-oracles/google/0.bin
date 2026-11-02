@@ -1,0 +1,22 @@
+@font-face {
+  font-family: 'Material Symbols Sharp';
+  font-style: normal;
+  font-weight: 100 700;
+  src: url(https://fonts.gstatic.com/l/font?kit=gNMVW2J8Roq16WD5tFNRaeLQk6-SHQ_R00k4aWHSSmlN49qeLYv7i46trSzyfg&skey=b2b11cf3b396438f&v=v377) format('woff2');
+}
+
+.material-symbols-sharp {
+  font-family: 'Material Symbols Sharp';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}

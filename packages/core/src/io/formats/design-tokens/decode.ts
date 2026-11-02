@@ -2,10 +2,8 @@ import * as v from 'valibot'
 
 import {
   CODE_SYNTAX_PLATFORMS,
-  ROOT_FONT_SIZE_PX,
   TOKEN_UNITS,
   VARIABLE_SCOPES,
-  type Color,
   type CodeSyntaxPlatform,
   type TokenUnit,
   type VariableScope,
@@ -13,6 +11,8 @@ import {
 } from '@open-pencil/scene-graph'
 import { parseDisplayableColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { ROOT_FONT_SIZE_PX } from '@open-pencil/scene-graph/variables'
 
 import type { ReadToken } from './read'
 import { OPENPENCIL_EXTENSION } from './types'
@@ -45,7 +45,7 @@ const FUNCTION_SPACES: Record<string, (components: string[]) => string> = {
   oklch: (components) => `oklch(${components.join(' ')}`
 }
 
-const ColorObjectSchema = v.object({
+const colorObjectSchema = v.object({
   colorSpace: v.string(),
   components: v.pipe(v.array(v.union([v.number(), v.literal('none')])), v.length(3)),
   alpha: v.optional(v.number()),
@@ -59,7 +59,7 @@ const ColorObjectSchema = v.object({
  */
 export function decodeColor(value: unknown): Color | null {
   if (typeof value === 'string') return parseDisplayableColor(value)
-  const parsed = v.safeParse(ColorObjectSchema, value)
+  const parsed = v.safeParse(colorObjectSchema, value)
   if (!parsed.success) return null
   const { colorSpace, components, alpha = 1, hex } = parsed.output
   const parts = components.map(String)
@@ -70,12 +70,12 @@ export function decodeColor(value: unknown): Color | null {
   return parseDisplayableColor(`${open} / ${alpha})`)
 }
 
-const DimensionSchema = v.object({ value: v.number(), unit: v.picklist(['px', 'rem']) })
-const DurationSchema = v.object({ value: v.number(), unit: v.picklist(['ms', 's']) })
+const dimensionSchema = v.object({ value: v.number(), unit: v.picklist(['px', 'rem']) })
+const durationSchema = v.object({ value: v.number(), unit: v.picklist(['ms', 's']) })
 
 /** A length in canvas pixels and the unit it was written in. */
 export function decodeDimension(value: unknown): { value: number; unit: TokenUnit } | null {
-  const parsed = v.safeParse(DimensionSchema, value)
+  const parsed = v.safeParse(dimensionSchema, value)
   if (parsed.success) {
     const { value: number, unit } = parsed.output
     return { value: unit === 'rem' ? number * ROOT_FONT_SIZE_PX : number, unit }
@@ -121,14 +121,14 @@ export function decodeFontFamily(value: unknown): string | null {
   return typeof first === 'string' && first.trim() ? first.trim() : null
 }
 
-const OwnFieldsSchema = v.object({
+const ownFieldsSchema = v.object({
   unit: v.optional(v.picklist(TOKEN_UNITS)),
   expression: v.optional(v.string()),
   scopes: v.optional(v.array(v.picklist(VARIABLE_SCOPES))),
   codeSyntax: v.optional(v.record(v.picklist(CODE_SYNTAX_PLATFORMS), v.string())),
   hiddenFromPublishing: v.optional(v.boolean())
 })
-const FigmaAliasSchema = v.object({
+const figmaAliasSchema = v.object({
   targetVariableName: v.optional(v.string()),
   targetVariableSetName: v.optional(v.string())
 })
@@ -220,7 +220,7 @@ function decodeLiteral(token: ReadToken): Literal | null {
     case 'dimension':
       return decodeDimension(value)
     case 'duration': {
-      const parsed = v.safeParse(DurationSchema, value)
+      const parsed = v.safeParse(durationSchema, value)
       return parsed.success ? parsed.output : null
     }
     case 'fontWeight': {
@@ -253,13 +253,13 @@ function impliedScopes(token: ReadToken): VariableScope[] | undefined {
 export function decodeVariableToken(token: ReadToken): DecodedVariable | DecodeFailure {
   const type = variableTypeOf(token)
   if (type === 'unsupported-type' || type === 'invalid-value') return type
-  const own = v.safeParse(OwnFieldsSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(ownFieldsSchema, token.extensions[OPENPENCIL_EXTENSION])
   const fields = own.success ? own.output : {}
   const reference = referencePath(token.value)
   let value: DecodedValue
   let unit = fields.unit
   if (reference) {
-    const figma = v.safeParse(FigmaAliasSchema, token.extensions['com.figma.aliasData'])
+    const figma = v.safeParse(figmaAliasSchema, token.extensions['com.figma.aliasData'])
     value = {
       kind: 'alias',
       path: reference,

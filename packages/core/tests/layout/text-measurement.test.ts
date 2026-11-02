@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import {
+  estimateTextSize,
   getTextMeasurer,
   installTextMeasurer,
+  measureTextForLayout,
   setTextMeasurer,
   type TextMeasurer
 } from '#core/layout/text-measurement'
@@ -36,5 +40,24 @@ describe('installTextMeasurer', () => {
     expect(getTextMeasurer()).toBe(second)
     uninstallSecond()
     expect(getTextMeasurer()).toBeNull()
+  })
+})
+
+describe('measureTextForLayout', () => {
+  afterEach(() => setTextMeasurer(null))
+
+  const graph = new SceneGraph()
+  const node = graph.createNode('TEXT', graph.getPages()[0].id, { text: 'Label', fontSize: 14 })
+
+  test('uses the installed measurer', () => {
+    setTextMeasurer(measurer(42))
+    expect(measureTextForLayout(node, 100)).toEqual({ width: 42, height: 10 })
+  })
+
+  test('estimates what the measurer cannot measure, or without one', () => {
+    const estimate = estimateTextSize(node, 100)
+    expect(measureTextForLayout(node, 100)).toEqual(estimate)
+    setTextMeasurer(() => null)
+    expect(measureTextForLayout(node, 100)).toEqual(estimate)
   })
 })

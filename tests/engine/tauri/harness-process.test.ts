@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { spawnHarnessProcess } from '@/app/ai/harness/process'
+import { spawnHarnessProcess } from '@/app/ai/agents/pi/process'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 

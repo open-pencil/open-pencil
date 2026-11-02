@@ -10,19 +10,19 @@ const MAX_ID_LENGTH = 64
 /** A model streams arguments in small pieces; the controller also caps a call's whole input. */
 export const MAX_PREVIEW_DELTA_LENGTH = 16_384
 
-const id = v.pipe(v.string(), v.minLength(1), v.maxLength(MAX_ID_LENGTH))
-const AgentPreviewEventSchema = v.variant('type', [
-  v.object({ type: v.literal('start'), agentId: id, callId: id, pageId: id }),
+const idSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(MAX_ID_LENGTH))
+const agentPreviewEventSchema = v.variant('type', [
+  v.object({ type: v.literal('start'), agentId: idSchema, callId: idSchema, pageId: idSchema }),
   v.object({
     type: v.literal('delta'),
-    agentId: id,
-    callId: id,
+    agentId: idSchema,
+    callId: idSchema,
     text: v.pipe(v.string(), v.maxLength(MAX_PREVIEW_DELTA_LENGTH))
   }),
-  v.object({ type: v.literal('finish'), agentId: id, callId: id }),
-  v.object({ type: v.literal('clear'), agentId: id })
+  v.object({ type: v.literal('finish'), agentId: idSchema, callId: idSchema }),
+  v.object({ type: v.literal('clear'), agentId: idSchema })
 ])
-const AgentPreviewMessageSchema = v.pipe(v.string(), v.parseJson(), AgentPreviewEventSchema)
+const agentPreviewMessageSchema = v.pipe(v.string(), v.parseJson(), agentPreviewEventSchema)
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -49,7 +49,7 @@ export function encodeAgentPreviewMessages(event: AgentPreviewEvent): Uint8Array
 
 /** The event a peer sent, or null when it is malformed or out of bounds. */
 export function decodeAgentPreview(data: Uint8Array): AgentPreviewEvent | null {
-  const result = v.safeParse(AgentPreviewMessageSchema, decoder.decode(data))
+  const result = v.safeParse(agentPreviewMessageSchema, decoder.decode(data))
   return result.success ? result.output : null
 }
 

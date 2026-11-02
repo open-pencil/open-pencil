@@ -1,11 +1,12 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
+  generatedFrameText,
   isGeneratedFrame,
   isWideSticky,
   stickyScale,
   stickySublayers,
   stickyWidth
-} from '@open-pencil/scene-graph'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/generated'
 
 import {
   graph,
@@ -34,16 +35,20 @@ function wrap(target: ProxyThis, internals: NodeProxyInternals, id: string): Fig
   return (target[internals.api] as NodeProxyHost).wrapNode(id)
 }
 
-/** `StickyNode`'s members: its body as `text`, its author line, and its wide shape. */
+/**
+ * `StickyNode`'s members: its author line and wide shape, and `text`, which every generated frame
+ * answers with the text it edits in place.
+ */
 export function installStickyNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals
 ): void {
   Object.defineProperties(prototype, {
+    // A sticky note's body and a connector's label are both what Figma calls `text`.
     text: {
       get(this: ProxyThis): FigmaNodeProxy | undefined {
-        const layers = sublayers(this, internals)
-        return layers ? wrap(this, internals, layers.body.id) : undefined
+        const text = generatedFrameText(graph(this, internals), raw(this, internals))
+        return text ? wrap(this, internals, text.id) : undefined
       }
     },
     authorName: {

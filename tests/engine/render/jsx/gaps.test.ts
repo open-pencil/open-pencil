@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderJSX } from '@open-pencil/core'
+import { renderJSX } from '@open-pencil/core/design-jsx'
 
 import { makeSceneGraph } from '#tests/helpers/scene'
 

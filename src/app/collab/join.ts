@@ -1,4 +1,4 @@
-import { useCollaborationMessages } from '@open-pencil/vue'
+import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { parseRoomInput } from '@/app/collab/room/id'
 import { joinRoom } from '@/app/collab/rooms'

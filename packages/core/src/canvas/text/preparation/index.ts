@@ -4,7 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import type { PreparedText, TextPreparationCache } from './cache'
 

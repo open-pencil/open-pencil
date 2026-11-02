@@ -1,20 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
-  htmlToDesignDocument,
-  sceneNodeToDesignDocument,
-  serializeHTML
-} from '#dom-css/index'
+import { serializeHTML } from '#dom-css/export/html'
+import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
+import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
+import { createHeadlessCSSRuntime, htmlToDesignDocument } from '#dom-css/index'
 
+import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
 import {
   paragraphSpacingAt,
-  SceneGraph,
-  textParagraphRanges,
-  type SceneNode,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+  percentLength,
+  pixelLength,
+  textParagraphRanges
+} from '@open-pencil/scene-graph/text'
 
 async function texts(html: string): Promise<SceneNode[]> {
   const document = await htmlToDesignDocument(html, { runtime: createHeadlessCSSRuntime() })
@@ -185,6 +182,14 @@ describe('rich text import', () => {
     expect(text?.styleRuns).toEqual([{ start: 5, length: 5, style: { textCase: 'ORIGINAL' } }])
   })
 
+  test('reads the first font family without its single or double quotes', async () => {
+    const [single, double] = await texts(
+      `<div style="display: flex"><span style="font-family: 'Noto Sans KR', sans-serif">a</span><span style='font-family: "Fira Code", monospace'>b</span></div>`
+    )
+    expect(single?.fontFamily).toBe('Noto Sans KR')
+    expect(double?.fontFamily).toBe('Fira Code')
+  })
+
   test('reads back the links and cases it writes', async () => {
     const styleRuns = [
       {
@@ -196,5 +201,34 @@ describe('rich text import', () => {
     ]
     const { back } = await roundTrip({ text: 'Home loud', styleRuns })
     expect(back?.styleRuns).toEqual(styleRuns)
+  })
+})
+
+// CSS keeps a line height relative as a unitless multiple and letter spacing in em, so a percent
+// of the font size survives the trip, as it does in Figma.
+describe('relative text lengths', () => {
+  test('a unitless or percent line height and an em letter spacing read as percents', async () => {
+    const [unitless, percent] = await texts(
+      '<p style="font-size:20px;line-height:1.5;letter-spacing:0.1em">One</p>' +
+        '<p style="font-size:20px;line-height:120%;letter-spacing:2px">Two</p>'
+    )
+    expect(unitless).toMatchObject({
+      lineHeight: percentLength(150),
+      letterSpacing: percentLength(10)
+    })
+    expect(percent).toMatchObject({ lineHeight: percentLength(120), letterSpacing: pixelLength(2) })
+  })
+
+  test('reads back the percents it writes, for the text and its runs', async () => {
+    const { back } = await roundTrip({
+      text: 'Hello world',
+      lineHeight: percentLength(150),
+      letterSpacing: percentLength(5),
+      styleRuns: [
+        { start: 6, length: 5, style: { fontWeight: 700, letterSpacing: pixelLength(1) } }
+      ]
+    })
+    expect(back).toMatchObject({ lineHeight: percentLength(150), letterSpacing: percentLength(5) })
+    expect(back.styleRuns.at(-1)?.style.letterSpacing).toEqual(pixelLength(1))
   })
 })

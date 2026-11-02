@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 const red = { r: 1, g: 0, b: 0, a: 1 }
@@ -35,6 +36,9 @@ test('a layer inside an instance holds its component layer’s unchanged values'
   expect(layer.effects).toBe(source.effects)
   expect(layer.source).not.toBe(source.source)
   expect(layer.instanceOverrides).not.toBe(source.instanceOverrides)
+  // The layout Figma saved is part of the layer's own source metadata, yet still the same.
+  expect(layer.source.fig.layout).not.toBeNull()
+  expect(layer.source.fig.layout).toBe(source.source.fig.layout)
 })
 
 test('changing a layer inside an instance leaves its component layer as it was', async () => {

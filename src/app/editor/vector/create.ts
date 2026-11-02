@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 import { createVectorEditHandleActions } from './handle-actions'
 import { createVectorEditHistoryActions } from './history'
@@ -15,7 +15,7 @@ export function createVectorEditActions(editor: Editor, state: VectorEditState) 
     nodeEditAlignVertices,
     nodeEditDeleteSelected,
     nodeEditBreakAtVertex
-  } = createVectorEditSelectionActions(editor, state)
+  } = createVectorEditSelectionActions(editor, state, exitNodeEditMode)
 
   const { nodeEditSetHandle, nodeEditBendHandle, nodeEditZeroVertexHandles } =
     createVectorEditHandleActions(editor, getNodeEditState)

@@ -1,20 +1,15 @@
-import type {
-  Canvas,
-  CanvasKit,
-  Font,
-  FontWeight,
-  Paragraph,
-  TypefaceFontProvider
-} from 'canvaskit-wasm'
+import type { Canvas, CanvasKit, Font, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import type { Size } from '@open-pencil/scene-graph'
-import { detectTextDirection } from '@open-pencil/scene-graph/text-direction'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import type { Size } from '@open-pencil/scene-graph/primitives'
+import { detectTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { ResourceCache } from '#core/cache/resource'
-import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import { DEFAULT_FONT_FAMILY, SECTION_TITLE_FONT_FAMILY } from '#core/constants'
 import { textHasFallbackScript } from '#core/text/coverage'
-import { weightToStyle } from '#core/text/fonts'
+import { ELLIPSIS } from '#core/text/ellipsis'
+import { resolveParagraphFontFamilies } from '#core/text/font/families'
 import { missingGlyphOccurrences, type MissingGlyphOccurrence } from '#core/text/resolver'
 
 export type LabelParagraphMetrics = Readonly<Size>
@@ -32,7 +27,11 @@ export interface LabelFontOptions {
 
 /** Semibold labels are section titles, drawn in their own face; the rest in Inter. */
 function labelFontFamilies(weight: number): string[] {
-  const families = resolveParagraphFontFamilies(DEFAULT_FONT_FAMILY, weightToStyle(weight))
+  const families = resolveParagraphFontFamilies(DEFAULT_FONT_FAMILY, {
+    weight,
+    italic: false,
+    style: faceLoadKey(weight)
+  })
   return weight >= 600 ? [SECTION_TITLE_FONT_FAMILY, ...families] : families
 }
 
@@ -54,6 +53,31 @@ export function measureGlyphWidth(font: Font, text: string): number {
   return width
 }
 
+const MAX_CACHED_WIDTHS_PER_FONT = 4096
+
+/**
+ * `text`'s advance in `font`, kept with the renderer: chrome measures the same few labels on
+ * every frame, and each measurement is two native calls. A font reloaded is a new object, so
+ * its widths start over.
+ */
+export function cachedGlyphWidth(
+  r: Pick<SkiaRenderer, 'glyphWidths'>,
+  font: Font,
+  text: string
+): number {
+  let widths = r.glyphWidths.get(font)
+  if (!widths) {
+    widths = new Map()
+    r.glyphWidths.set(font, widths)
+  }
+  const cached = widths.get(text)
+  if (cached !== undefined) return cached
+  if (widths.size >= MAX_CACHED_WIDTHS_PER_FONT) widths.clear()
+  const width = measureGlyphWidth(font, text)
+  widths.set(text, width)
+  return width
+}
+
 function retire(entry: LabelParagraphEntry): void {
   entry.retired = true
   if (entry.users === 0) entry.paragraph.delete()
@@ -71,7 +95,7 @@ function buildEntry(
 ): LabelParagraphEntry {
   const style = new ck.ParagraphStyle({
     maxLines: 1,
-    ellipsis: '…',
+    ellipsis: ELLIPSIS,
     textDirection:
       detectTextDirection(text) === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
     textAlign: ck.TextAlign.Left,
@@ -79,7 +103,7 @@ function buildEntry(
       color,
       fontFamilies: fonts.families?.(fontWeight) ?? labelFontFamilies(fontWeight),
       fontSize,
-      fontStyle: { weight: { value: fontWeight } as FontWeight }
+      fontStyle: { weight: { value: fontWeight } }
     }
   })
   const builder = ck.ParagraphBuilder.MakeFromFontProvider(style, provider)

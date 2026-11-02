@@ -6,7 +6,11 @@ import {
 import { linearVariableExpression } from '#fig/node-change/variable/expression'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { setInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  bindingOverrideField,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import type { InstanceOccurrence } from '../occurrence/types'
 import { uniformScaleOf } from '../types'
@@ -35,7 +39,7 @@ export function recordVariableBindingClaims(
       owner.instanceOverrides,
       owner.id,
       target.id,
-      `boundVariables/${field}`,
+      bindingOverrideField(field),
       target.boundVariables[field] ?? null
     )
     setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')

@@ -1,6 +1,4 @@
-import { tv } from 'tailwind-variants'
-
-export const chatToolTheme = tv({
+export default {
   slots: {
     // An undone call's text dims to the muted color, which still reads at 4.5:1.
     root: 'rounded-lg border border-border bg-canvas data-[undone=true]:**:text-muted',
@@ -41,4 +39,4 @@ export const chatToolTheme = tv({
     groupFailed: 'bg-error/15 text-error',
     groupItems: 'space-y-1.5 px-1.5 pb-1.5'
   }
-})
+} as const

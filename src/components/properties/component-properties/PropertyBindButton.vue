@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { usePanelMessages } from '@open-pencil/vue'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'

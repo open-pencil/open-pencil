@@ -1,6 +1,6 @@
 import { inflateSync } from 'fflate'
 
-import type { Size } from '@open-pencil/scene-graph/primitives'
+import { imageHeader } from '@open-pencil/scene-graph/images'
 
 export interface FigRangeReader {
   readonly size: number
@@ -29,7 +29,6 @@ const DEFAULT_MAX_TAIL = 4 * 1024 * 1024
 const DEFAULT_MAX_COMPRESSED = 8 * 1024 * 1024
 const DEFAULT_MAX_OUTPUT = 16 * 1024 * 1024
 const THUMBNAIL_NAME = 'thumbnail.png'
-const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 function view(bytes: Uint8Array): DataView {
   return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
@@ -47,20 +46,14 @@ function boundedLimit(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && value && value > 0 ? value : fallback
 }
 
-export function hasPNGSignature(bytes: Uint8Array): boolean {
-  return PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)
-}
-
-/** A PNG's size in pixels, read from its IHDR chunk; null for bytes that are not a PNG. */
-export function pngSize(bytes: Uint8Array): Size | null {
-  if (bytes.byteLength < 24 || !hasPNGSignature(bytes)) return null
-  const data = view(bytes)
-  return { width: data.getUint32(16), height: data.getUint32(20) }
+/** Whether `bytes` hold a PNG, as a `.fig` thumbnail does. */
+export function isPNG(bytes: Uint8Array): boolean {
+  return imageHeader(bytes)?.type === 'image/png'
 }
 
 function hasUsablePNGDimensions(bytes: Uint8Array): boolean {
-  const size = pngSize(bytes)
-  return size !== null && size.width > 1 && size.height > 1
+  const header = imageHeader(bytes)
+  return header?.type === 'image/png' && header.width > 1 && header.height > 1
 }
 
 function findThumbnailEntry(

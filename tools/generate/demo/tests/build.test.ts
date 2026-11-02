@@ -3,17 +3,11 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { buildDemoGraph, measuringRenderer } from '#demo/build'
 import { CHAPTERS, sectionName } from '#demo/document/chapters/names'
 
-import { exportFigFile, readFigFile } from '@open-pencil/core/io'
-import { populateAllFigPages } from '@open-pencil/core/io/formats/fig'
-import {
-  instanceSlotFrames,
-  missingBindings,
-  ownsSlotContent,
-  readBehaviour,
-  readShaderPaints,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import { exportFigFile, readFigFile, populateAllFigPages } from '@open-pencil/core/io/formats/fig'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { missingBindings, readBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { readShaderPaints } from '@open-pencil/scene-graph/shaders'
+import { instanceSlotFrames, ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
 let graph: SceneGraph
 
@@ -106,9 +100,9 @@ describe('the demo document', () => {
     )
     expect(light).toHaveLength(1)
     expect(collection?.modes.map((mode) => mode.name)).toEqual(['Dark', 'Light'])
-    expect(Object.values(light[0].variableModes)).toEqual([
-      collection?.modes.find((mode) => mode.name === 'Light')?.modeId
-    ])
+    const lightMode = collection?.modes.find((mode) => mode.name === 'Light')
+    if (!lightMode) throw new Error('Expected a Light mode')
+    expect(Object.values(light[0].variableModes)).toEqual([lightMode.modeId])
   })
 
   test('keeps a shader preset on every shader fill', () => {

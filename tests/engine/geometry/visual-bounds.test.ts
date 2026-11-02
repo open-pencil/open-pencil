@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { Vector } from '@open-pencil/scene-graph'
-import type { VisualBoundsNode } from '@open-pencil/scene-graph/geometry'
 import {
+  type VisualBoundsNode,
   computeDescendantVisualBounds,
   computeVisualBounds,
   strokeOverflow
 } from '@open-pencil/scene-graph/geometry'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 function commandsBlobFromPoints(points: Vector[]): Uint8Array {
   const blob = new Uint8Array(points.length * 9 + 1)
@@ -449,7 +449,9 @@ describe('computeVisualBounds', () => {
       (id) => nodes[id as keyof typeof nodes],
       () => ({ x: 0, y: 0 })
     )
-    expect(bounds?.minY).toBe(-18)
+    // A triangle head reaches furthest on a short line: from the end to its base corners. A
+    // line's head sits on its stroke's middle, half a weight off the line.
+    expect(bounds?.minY).toBeCloseTo(-4 * Math.hypot(5, 5 / Math.sqrt(3)) - 2, 5)
   })
 
   test('nested clipping stops descendants outside the ancestor clip', () => {

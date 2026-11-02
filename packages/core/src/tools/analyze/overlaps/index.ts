@@ -4,8 +4,7 @@ import * as v from 'valibot'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 import {
   buildParentOverflowResult,

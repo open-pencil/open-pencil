@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { isNodeFontLoaded } from '#core/canvas/text'
+import { sizeAutoResizingText } from '#core/layout/text-auto-resize'
 
 export type PendingLayoutRenderer = Pick<SkiaRenderer, 'measureTextNode' | 'fontsLoaded'> &
   Parameters<typeof isNodeFontLoaded>[0]
@@ -19,10 +20,10 @@ function facesLoaded(renderer: PendingLayoutRenderer, node: SceneNode): boolean 
 }
 
 /**
- * Text measured before its face loaded is laid out with an estimate. Remember those layers and
- * lay them out again once their faces settle, so auto-sized text and the Hug frames around it
- * take their real size without adding an undo step. Layout of the document's own state stays
- * derived.
+ * Text measured before its face loaded is laid out with an estimate. Remember those layers and,
+ * once their faces settle, measure them again and lay out the frames around them, so auto-sized
+ * text takes its real size wherever it sits, without adding an undo step. Layout of the
+ * document's own state stays derived.
  */
 export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   /** Layer id → whether it was measured while laying out the document's own state. */
@@ -50,11 +51,14 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
       if (node) (isDerived ? derived : edited).push(id)
     }
     if (edited.length === 0 && derived.length === 0) return
-    if (derived.length > 0)
-      graph.applyDerivedLayoutDuring(() => {
-        for (const id of derived) ctx.runLayoutForNode(id)
-      })
-    for (const id of edited) ctx.runLayoutForNode(id)
+    // Layout measures text only in auto layout; text that sizes itself is measured here,
+    // unless it keeps the glyphs its file saved, whose size is the file's.
+    const relayout = (id: string) => {
+      if (!graph.getNode(id)?.derivedTextGlyphs?.length) sizeAutoResizingText(graph, id)
+      ctx.runLayoutForNode(id)
+    }
+    if (derived.length > 0) graph.applyDerivedLayoutDuring(() => derived.forEach(relayout))
+    edited.forEach(relayout)
     ctx.requestRender()
   }
 

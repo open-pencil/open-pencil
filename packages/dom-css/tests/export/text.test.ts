@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { serializeHTML } from '#dom-css/export/html'
+import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
 import {
-  sceneNodeToDesignDocument,
   sceneNodesToTailwindJSX,
-  sceneNodesToTailwindJSXWithLayers,
-  serializeHTML
-} from '#dom-css/index'
+  sceneNodesToTailwindJSXWithLayers
+} from '#dom-css/export/tailwind-jsx'
 
 import { SceneGraph, type Fill, type TextParagraphStyle } from '@open-pencil/scene-graph'
 

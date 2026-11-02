@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { toUint8Array } from 'js-base64'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
-import { pngSize } from '@open-pencil/fig'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { imageSize } from '@open-pencil/scene-graph/images'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -89,7 +91,7 @@ describe('automation export of a page that is not on screen', () => {
       args: { ids: [frame.id] }
     })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 40, height: 30 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 40, height: 30 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -104,7 +106,7 @@ describe('automation export of a page that is not on screen', () => {
       args: {}
     })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 50, height: 20 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 50, height: 20 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -121,7 +123,7 @@ describe('automation export of a page that is not on screen', () => {
       format: 'png'
     })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 60, height: 25 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 60, height: 25 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -131,7 +133,7 @@ describe('automation export of a page that is not on screen', () => {
 
     const response = await handleTargetCommand(target(store, pageId), 'export', { scope: 'page' })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 70, height: 35 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 70, height: 35 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -163,7 +165,7 @@ describe('automation export of a page that is not on screen', () => {
 
     const response = await handleTargetCommand(target(store, other), 'export', { scope: 'page' })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 80, height: 20 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 80, height: 20 })
     expect(store.state.currentPageId).toBe(shown)
   })
 })

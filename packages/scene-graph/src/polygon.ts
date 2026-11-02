@@ -16,6 +16,23 @@ export type PolygonOutlineCommand =
   | { type: 'C'; x1: number; y1: number; x2: number; y2: number; x: number; y: number }
   | { type: 'Z' }
 
+/** Outline commands as SVG path data, with each coordinate passed through `round`. */
+export function outlineSVGPath(
+  commands: readonly PolygonOutlineCommand[],
+  round: (value: number) => number = (value) => Math.round(value * 100) / 100
+): string {
+  return commands
+    .map((command) => {
+      if (command.type === 'Z') return 'Z'
+      if (command.type === 'C') {
+        const points = [command.x1, command.y1, command.x2, command.y2, command.x, command.y]
+        return `C${points.map(round).join(' ')}`
+      }
+      return `${command.type}${round(command.x)} ${round(command.y)}`
+    })
+    .join('')
+}
+
 type PolygonNode = Pick<
   SceneNode,
   | 'type'

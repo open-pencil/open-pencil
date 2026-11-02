@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
 import { AI_MODEL_ROLES } from '@/app/ai/models/types'

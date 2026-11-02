@@ -4,17 +4,22 @@ export type AIChatFailureReason =
   | 'authentication'
   | 'forbidden'
   | 'insufficient-credit'
+  | 'cloud-credits-exhausted'
   | 'model-not-found'
   | 'network'
   | 'output-limit'
   | 'rate-limit'
   | 'request-failed'
+  | 'sign-in-expired'
+  | 'plan-forbidden'
 
 export type AIChatFailure = {
   reason: AIChatFailureReason
   detail?: string
   statusCode?: number
   retryable?: boolean
+  /** With `cloud-credits-exhausted`: when the workspace's allowance renews, if the service said. */
+  resetsAt?: string
 }
 
 export type ProviderErrorShape = {
@@ -108,9 +113,20 @@ export function classifyAIChatFinish(finishReason?: string): AIChatFailure | nul
   return finishReason === 'length' ? { reason: 'output-limit' } : null
 }
 
-export function classifyAIChatError(error: unknown): AIChatFailure {
+/** A provider signed in to has no key, so a refused credential is its sign-in or its plan. */
+function signInFailureReason(reason: AIChatFailureReason): AIChatFailureReason {
+  if (reason === 'authentication') return 'sign-in-expired'
+  if (reason === 'forbidden') return 'plan-forbidden'
+  return reason
+}
+
+export function classifyAIChatError(
+  error: unknown,
+  { signInOnly = false }: { signInOnly?: boolean } = {}
+): AIChatFailure {
+  const reason = failureReason(error)
   return {
-    reason: failureReason(error),
+    reason: signInOnly ? signInFailureReason(reason) : reason,
     detail: errorText(error),
     statusCode: providerErrorStatus(error) ?? undefined,
     // A provider error after the stream starts arrives as StreamProviderError, not APICallError.

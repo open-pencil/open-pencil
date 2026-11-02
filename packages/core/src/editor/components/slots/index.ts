@@ -5,7 +5,7 @@ import {
   resetSlotContent,
   slotScope,
   type SlotScope
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/slots'
 
 import type { EditorContext } from '#core/editor/types'
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
 import {

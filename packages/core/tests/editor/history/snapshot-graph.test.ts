@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor, graphFromPageSnapshot } from '@open-pencil/core/editor'
+import { createEditor, graphFromPageSnapshot } from '@open-pencil/core'
 import {
   comparePNGs,
   createCanvasKitRasterCodec,
@@ -28,6 +28,42 @@ describe('page snapshot graphs', () => {
     expect(past.getNode(label.id)?.text).toBe('Hello')
     past.updateNode(label.id, { text: 'Edited copy' })
     expect(editor.graph.getNode(label.id)?.text).toBe('Changed')
+  })
+
+  test('restores and rebuilds the variables the page had, keeping live records in place', () => {
+    const { editor, pageId } = setup()
+    const kept = editor.graph.createCollection('Kept')
+    const before = editor.snapshotPage(pageId)
+    const keptRecord = editor.graph.variableCollections.get(kept.id)
+    editor.graph.renameMode(kept.id, kept.defaultModeId, 'Renamed')
+    const added = editor.graph.createCollection('Added')
+    editor.graph.createVariable('Ink', 'COLOR', added.id)
+
+    const past = expectDefined(graphFromPageSnapshot(editor.graph, before), 'past graph')
+    expect([...past.variableCollections.values()].map((item) => item.name)).toEqual(['Kept'])
+
+    editor.restorePageFromSnapshot(before)
+    expect([...editor.graph.variableCollections.values()].map((item) => item.name)).toEqual([
+      'Kept'
+    ])
+    expect(editor.graph.variables.size).toBe(0)
+    expect(editor.graph.variableCollections.get(kept.id)).toBe(keptRecord)
+    expect(keptRecord?.modes[0].name).toBe('Mode 1')
+  })
+
+  test('gives layers on other pages the values of the variables it restores', () => {
+    const { editor, pageId } = setup()
+    const collection = editor.graph.createCollection('Shape')
+    const radius = editor.graph.createVariable('Radius', 'FLOAT', collection.id, 12)
+    const other = editor.graph.addPage('Other')
+    const tile = editor.graph.createNode('FRAME', other.id, { name: 'Tile', cornerRadius: 12 })
+    editor.graph.bindVariable(tile.id, 'cornerRadius', radius.id)
+    const before = editor.snapshotPage(pageId)
+    editor.updateVariableValue(radius.id, collection.defaultModeId, 16)
+    expect(editor.graph.getNode(tile.id)?.cornerRadius).toBe(16)
+
+    editor.restorePageFromSnapshot(before)
+    expect(editor.graph.getNode(tile.id)?.cornerRadius).toBe(12)
   })
 
   test('renders both states of a region at one size and finds the changed pixels', async () => {

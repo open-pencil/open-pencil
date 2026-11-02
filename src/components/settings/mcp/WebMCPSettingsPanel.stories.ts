@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref } from 'vue'
 
-import { getWebMCPTools, type WebMCPMode } from '@/app/automation/webmcp/policy'
+import { getWebMCPTools } from '@/app/automation/webmcp/policy'
+import { type WebMCPMode } from '@/app/automation/webmcp/schema'
 import type { WebMCPRuntimeState } from '@/app/automation/webmcp/service'
 
 import WebMCPSettingsPanel from './WebMCPSettingsPanel.vue'

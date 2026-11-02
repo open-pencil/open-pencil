@@ -26,10 +26,9 @@ bun run check
 Package scripts:
 
 - `bun run test` — package-local Bun tests for runtime, conversion, and Tailwind APIs
-- `bun run typecheck` — type-checks `src`, tests, and package scripts
+- `bun run typecheck` — type-checks `src` and tests
 - `bun run build` — builds the distributable `dist` entrypoint
-- `bun run smoke:dist` — imports the built `dist` bundle and exercises the public API
-- `bun run check` — runs typecheck, tests, build, and dist smoke in sequence
+- `bun run check` — runs typecheck, tests, and build in sequence
 
 The repository also keeps integration/oracle coverage under `tests/engine/dom-css` and `tests/e2e/dom-css`. The package-local suite focuses on the library's public API, while the repo-level E2E suite verifies browser `getComputedStyle()` parity through Playwright.
 

@@ -1,7 +1,15 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
-import type { Color } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+beforeAll(async () => {
+  await registerTestFont()
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Bold' })
+})
 
 // Shapes and messages follow `@figma/plugin-typings` and the Plugin API documentation for the
 // range methods; validation messages follow those Figma reports for the other range setters.
@@ -167,7 +175,7 @@ describe('style ranges', () => {
 
     await text.setRangeFillStyleIdAsync(0, 5, '1:30')
     expect(text.getRangeFillStyleId(0, 5)).toBe('1:30')
-    expect(text.getRangeFills(0, 5)).toMatchObject([{ type: 'SOLID', color: RED }])
+    expect(text.getRangeFills(0, 5)).toMatchObject([{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }])
     expect(typeof text.fillStyleId).toBe('symbol')
 
     text.setRangeFills(0, 5, [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 } }])
@@ -194,14 +202,16 @@ describe('style ranges', () => {
 describe('bound variable ranges', () => {
   function sized() {
     const { api, text } = styledText()
-    const collection = api.createVariableCollection('Type')
-    const size = api.createVariable('size/lg', 'FLOAT', collection.id, 28)
-    const family = api.createVariable('font/body', 'STRING', collection.id, 'Roboto')
+    const collection = api.variables.createVariableCollection('Type')
+    const size = api.variables.createVariable('size/lg', collection, 'FLOAT')
+    size.setValueForMode(collection.defaultModeId, 28)
+    const family = api.variables.createVariable('font/body', collection, 'STRING')
+    family.setValueForMode(collection.defaultModeId, 'Roboto')
     return { api, text, collection, size, family }
   }
 
   test('bind a range, show the variable value there, and follow it when it changes', () => {
-    const { api, text, collection, size } = sized()
+    const { text, collection, size } = sized()
     text.setRangeBoundVariable(0, 5, 'fontSize', size)
 
     expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toEqual({
@@ -220,7 +230,7 @@ describe('bound variable ranges', () => {
       }
     ])
 
-    api.setVariableValue(size.id, collection.defaultModeId, 40)
+    size.setValueForMode(collection.defaultModeId, 40)
     expect(text.getRangeFontSize(0, 5)).toBe(40)
 
     text.setRangeBoundVariable(0, 5, 'fontSize', null)
@@ -246,8 +256,9 @@ describe('bound variable ranges', () => {
 
   test('bind paragraph spacing for the paragraphs of the range', () => {
     const { api, text } = styledText('One\nTwo')
-    const collection = api.createVariableCollection('Space')
-    const gap = api.createVariable('gap', 'FLOAT', collection.id, 12)
+    const collection = api.variables.createVariableCollection('Space')
+    const gap = api.variables.createVariable('gap', collection, 'FLOAT')
+    gap.setValueForMode(collection.defaultModeId, 12)
     text.setRangeBoundVariable(0, 2, 'paragraphSpacing', gap)
     expect(text.getRangeParagraphSpacing(0, 2)).toBe(12)
     expect(text.getRangeParagraphSpacing(5, 6)).toBe(0)

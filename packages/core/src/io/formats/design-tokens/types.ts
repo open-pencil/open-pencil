@@ -34,6 +34,7 @@ export interface DesignTokenFile {
 
 /** Why a token, mode, or style was left out or changed; the names are as the document has them. */
 export type DesignTokenIssue =
+  | { kind: 'unsupported-expression'; collection: string; mode: string; token: string }
   | { kind: 'missing-value'; collection: string; mode: string; token: string }
   | { kind: 'missing-alias'; collection: string; mode: string; token: string }
   | { kind: 'duplicate-path'; collection: string; token: string }
@@ -41,6 +42,8 @@ export type DesignTokenIssue =
 
 /** An issue as one line of text, for the CLI and tool output. */
 export function designTokenIssueMessage(issue: DesignTokenIssue): string {
+  if (issue.kind === 'unsupported-expression')
+    return `${issue.collection} / ${issue.mode}: ${issue.token} uses an expression that token export does not support`
   if (issue.kind === 'missing-value')
     return `${issue.collection} / ${issue.mode}: ${issue.token} has no value in this mode`
   if (issue.kind === 'missing-alias')

@@ -1,9 +1,7 @@
-import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import {
   allRules,
@@ -16,7 +14,7 @@ import {
 } from '@open-pencil/core/lint'
 
 import { bold, dim, fail, fmtList, ok, printError } from '#cli/format'
-import { loadDocument, populateWholeDocument } from '#cli/headless'
+import { loadDocument, populateWholeDocument, writeFigDocument } from '#cli/headless'
 
 function formatSeverity(severity: LintMessage['severity']) {
   if (severity === 'error') return fail('error')
@@ -100,8 +98,7 @@ export default defineCommand({
       const applied = applyLintFixes(graphFixTarget(graph), safeFixes(result.messages))
       computeAllLayouts(graph)
       const output = resolve(args.output)
-      const written = await new IORegistry(BUILTIN_IO_FORMATS).writeDocument('fig', graph)
-      await writeFile(output, written.data as Uint8Array)
+      await writeFigDocument(graph, output)
       if (!args.json) console.log(ok(`Applied ${applied} fixes → ${output}`))
       result = linter.lintGraph(graph)
     }

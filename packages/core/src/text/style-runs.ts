@@ -116,6 +116,41 @@ export function adjustRunsForInsert(
   })
 }
 
+/**
+ * The runs after `length` characters are inserted at `pos`, the new characters all in `style`
+ * and every other character keeping its own. Works on the runs, not on each character, so a
+ * long insert costs no more than a short one.
+ */
+export function insertRunsWithStyle(
+  runs: StyleRun[],
+  pos: number,
+  length: number,
+  style: CharacterStyleOverride
+): StyleRun[] {
+  const moved: StyleRun[] = []
+  for (const run of runs) {
+    const end = run.start + run.length
+    if (end <= pos) moved.push(run)
+    else if (run.start >= pos) moved.push({ ...run, start: run.start + length })
+    else {
+      // The insert splits this run in two around the new characters.
+      moved.push({ ...run, length: pos - run.start })
+      moved.push({ ...run, start: pos + length, length: end - pos })
+    }
+  }
+  if (length > 0 && !isEmptyStyle(style)) moved.push({ start: pos, length, style: { ...style } })
+  moved.sort((first, second) => first.start - second.start)
+  // Runs that meet with the same style become one, as compactRuns leaves them.
+  const merged: StyleRun[] = []
+  for (const run of moved) {
+    const last = merged.at(-1)
+    if (last && last.start + last.length === run.start && isEqual(last.style, run.style)) {
+      merged[merged.length - 1] = { ...last, length: last.length + run.length }
+    } else merged.push(run)
+  }
+  return merged
+}
+
 export function adjustRunsForDelete(
   runs: StyleRun[],
   start: number,

@@ -1,13 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
 import { parseFigBuffer } from '@open-pencil/fig'
-import { convertFigmaDerivedTextGlyphs, nodeChangeToProps } from '@open-pencil/fig/node-change'
+import {
+  convertFigmaDerivedTextGlyphs,
+  nodeChangeToProps,
+  encodeVectorNetworkBlob
+} from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { importClipboardNodes } from '#core/clipboard'
 import { exportFigFile } from '#core/io/formats/fig/export'
-import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { loadFigFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
@@ -258,6 +262,67 @@ describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
     const textPathStart = rawExported.textPathStart as { tValue?: number; forward?: boolean }
     expect(textPathStart.tValue).toBeCloseTo(0.3, 6)
     expect(textPathStart.forward).toBe(false)
+  })
+})
+
+describe('TEXT_PATH save and reopen', () => {
+  // Figma places a 100 × 100 square path in the layer's own box and sets the baselines on it.
+  // The lettering sticks out above the box, so import grows the layer and moves the path down
+  // to keep it under the letters; saving and reopening must not move it a second time.
+  test('an untouched pasted layer keeps its path under the lettering', async () => {
+    const corner = (x: number, y: number) => ({ x, y })
+    const side = (start: number, end: number) => ({
+      start,
+      end,
+      tangentStart: corner(0, 0),
+      tangentEnd: corner(0, 0)
+    })
+    const networkBlob = encodeVectorNetworkBlob({
+      vertices: [corner(0, 0), corner(100, 0), corner(100, 100), corner(0, 100)],
+      segments: [side(0, 1), side(1, 2), side(2, 3), side(3, 0)],
+      regions: []
+    })
+    const glyph = (x: number, firstCharacter: number) => ({
+      position: { x, y: 0 },
+      fontSize: 18,
+      firstCharacter,
+      advance: 0.6,
+      rotation: 0,
+      commandsBlob: 1
+    })
+    const record: NodeChange = {
+      guid: { sessionID: 1, localID: 2 },
+      phase: 'CREATED',
+      type: 'TEXT_PATH',
+      name: 'Around the square',
+      fontSize: 18,
+      textData: { characters: 'AB' },
+      size: { x: 100, y: 100 },
+      transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+      vectorData: { vectorNetworkBlob: 0, normalizedSize: { x: 100, y: 100 } },
+      textPathStart: { tValue: 0.5, forward: true },
+      derivedTextData: { glyphs: [glyph(50, 0), glyph(61, 1)] }
+    }
+    const pasted = new SceneGraph()
+    const [id] = importClipboardNodes([record], pasted, pasted.getPages()[0].id, 0, 0, [
+      networkBlob,
+      unitSquareBlob()
+    ])
+    const box = expectDefined(pasted.getNode(id)?.textPathBox, 'pasted path box')
+    expect(box.y).toBeGreaterThan(0)
+
+    const reparsed = reparse(await exportFigFile(pasted))
+    const reopened = new SceneGraph()
+    const saved = reparsed.nodeChanges.filter((nc) => nc.type === 'TEXT_PATH')
+    const [reopenedId] = importClipboardNodes(
+      saved,
+      reopened,
+      reopened.getPages()[0].id,
+      0,
+      0,
+      reparsed.blobs
+    )
+    expect(reopened.getNode(reopenedId)?.textPathBox).toEqual(box)
   })
 })
 

@@ -8,11 +8,11 @@ export interface ShaderComponent {
   children?: ShaderComponent[]
 }
 
-const shaderComponent: v.GenericSchema<unknown, ShaderComponent> = v.object({
+const shaderComponentSchema: v.GenericSchema<unknown, ShaderComponent> = v.object({
   type: v.pipe(v.string(), v.nonEmpty(), v.maxLength(100)),
   id: v.optional(v.string()),
   props: v.optional(v.record(v.string(), v.unknown())),
-  children: v.optional(v.array(v.lazy(() => shaderComponent)))
+  children: v.optional(v.array(v.lazy(() => shaderComponentSchema)))
 })
 
 /**
@@ -20,7 +20,7 @@ const shaderComponent: v.GenericSchema<unknown, ShaderComponent> = v.object({
  * drawn first to last.
  */
 export const shaderPresetSchema = v.object({
-  components: v.pipe(v.array(shaderComponent), v.minLength(1)),
+  components: v.pipe(v.array(shaderComponentSchema), v.minLength(1)),
   structureVersion: v.optional(v.number())
 })
 

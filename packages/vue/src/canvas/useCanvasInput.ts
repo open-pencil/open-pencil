@@ -1,36 +1,43 @@
 import { useEventListener } from '@vueuse/core'
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { createAutoLayoutValueEdit } from '#vue/canvas/auto-layout/value-edit'
 import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
 import { createCanvasLabelEdit } from '#vue/canvas/labels/edit'
-import { handlePenDragMove, updatePenHover } from '#vue/canvas/pen/input'
+import { handlePenDragMove } from '#vue/canvas/pen/input'
 import { finishPencilDrag, handlePencilDragMove } from '#vue/canvas/pencil/input'
 import { createCanvasPointer } from '#vue/canvas/pointer/use'
 import { createTextEditInput } from '#vue/canvas/text-edit/input'
-import { handleToolMouseDown } from '#vue/canvas/tools/input'
+import { hoverCanvasTool, pressCanvasTool } from '#vue/canvas/tools/input'
+import type { CanvasToolContext, CanvasToolPointer } from '#vue/canvas/tools/registry'
 import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { finishMarquee } from '#vue/canvas/transform/marquee'
 import {
+  cancelNodeEditDrag,
   handleBendHandleMove,
   handleNodeEditPointerUp,
   updateNodeEditHover
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
+import {
+  attachModifiers,
+  handleConnectorDrawMove,
+  refreshConnectorDrag
+} from '#vue/shared/input/connector/draw'
 import { handleDrawMove } from '#vue/shared/input/draw'
-import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
-import { setupPanZoom } from '#vue/shared/input/pan-zoom'
+import { cancelMove, handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
+import { setupPanZoom } from '#vue/shared/input/pan/zoom'
 import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'
 import { updateHoverCursor } from '#vue/shared/input/select'
 import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
 import { applyStickyScale } from '#vue/shared/input/sticky/scale'
 import type { DragState } from '#vue/shared/input/types'
-import { handleNodeEditMove } from '#vue/shared/input/vector'
+import { handleNodeEditMarqueeMove, handleNodeEditMove } from '#vue/shared/input/vector'
 
 /**
  * Wires pointer and mouse interaction to an OpenPencil canvas.
@@ -39,6 +46,17 @@ import { handleNodeEditMove } from '#vue/shared/input/vector'
  * panning, drawing tools, scoped hit testing, and text-edit interaction.
  * It is primarily intended for editor shell components that own the canvas.
  */
+/** Drags Escape abandons, leaving the document as it was before the press. */
+const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type']>([
+  'draw',
+  'gradient',
+  'rotate',
+  'connector-draw',
+  'connector-end',
+  'connector-line',
+  'line-end'
+])
+
 export function useCanvasInput(
   canvasRef: Ref<HTMLCanvasElement | null>,
   editor: Editor,
@@ -47,9 +65,12 @@ export function useCanvasInput(
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
   onCursorMove?: (cx: number, cy: number) => void,
   onActivate?: () => void,
-  isEnabled: () => boolean = () => true
+  isEnabled: () => boolean = () => true,
+  /** How far wheel and pinch zoom move per event; 1 is the default rate. */
+  zoomSpeed: () => number = () => 1
 ) {
   const drag = ref<DragState | null>(null)
+  const profile = () => resolveEditorProfile(editor.state)
   // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
   // layers move, resize, or rotate.
   watch(
@@ -60,7 +81,6 @@ export function useCanvasInput(
   const cursorOverride = ref<string | null>(null)
   /** Whether the primary button is held on a preview control, such as a slider thumb. */
   const valueEdit = createAutoLayoutValueEdit(editor)
-  const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
   const lastPointer = ref<{ cx: number; cy: number; sx: number; sy: number } | null>(null)
   const pointerInside = ref(false)
   let altHeld = false
@@ -69,7 +89,7 @@ export function useCanvasInput(
   const spaceHeld = useSpaceHeld()
   const { recordClick, getClickCount } = createClickCounter()
 
-  const { getCoords, canvasToLocal, hitTestInScope, hitFns } = createCanvasPointer(
+  const { getCoords, canvasToLocal, hitTestLayer, hitFns } = createCanvasPointer(
     canvasRef,
     editor,
     hitTestSectionTitle,
@@ -107,10 +127,17 @@ export function useCanvasInput(
       hitFns,
       mode === 'deep' || hoverDeep()
     )
-    editor.setAutoLayoutHover(
-      mode === 'off' ? resolveAutoLayoutHover(pointer.cx, pointer.cy, editor) : null
-    )
-    editor.setShapeHandleHover(resolveShapeHandleHover(editor, pointer.sx, pointer.sy, altHeld))
+    editor.setAutoLayoutHover(autoLayoutHoverAt(pointer.cx, pointer.cy, mode))
+    editor.setShapeHandleHover(shapeHandleHoverAt(pointer.sx, pointer.sy, altHeld))
+  }
+
+  // Handles that edit, which a read-only document does not offer.
+  function autoLayoutHoverAt(cx: number, cy: number, mode: typeof editor.state.measurementMode) {
+    return mode === 'off' && profile().edits ? resolveAutoLayoutHover(cx, cy, editor) : null
+  }
+
+  function shapeHandleHoverAt(sx: number, sy: number, altKey: boolean) {
+    return profile().edits ? resolveShapeHandleHover(editor, sx, sy, altKey) : null
   }
 
   function updateModifier(code: string, held: boolean) {
@@ -145,15 +172,14 @@ export function useCanvasInput(
     }
   })
 
-  const { handleTextEditClick, onDblClick: onTextDblClick } = createTextEditInput({
+  const { handleTextEditClick, pressDeeper } = createTextEditInput({
     editor,
     getCoords,
-    hitTestInScope,
+    hitTestLayer,
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,
     getClickCount,
-    wasSelectedBeforeClickSequence: (id) => selectedIdsBeforeClickSequence.value.has(id),
     onEditCanvasLabel: canvasLabelEdit.start,
     setDrag
   })
@@ -166,57 +192,101 @@ export function useCanvasInput(
     handleMarqueeMove
   } = createCanvasTransformInput(editor, setDrag)
 
-  function onDblClick(e: MouseEvent) {
-    if (editor.state.play) return
+  /**
+   * Only a plain press of the select tool takes a double-click on its press: a drawing tool, a
+   * vector being edited, and a Shift-press that adds to the selection keep their own press.
+   */
+  function takesMultiClick(e: MouseEvent): boolean {
+    return (
+      e.button === 0 &&
+      !e.shiftKey &&
+      editor.state.activeTool === 'SELECT' &&
+      !editor.state.editingTextId &&
+      !editor.state.nodeEditState &&
+      profile().pointer !== 'pan'
+    )
+  }
+
+  /**
+   * The second click of a run and every one after it, on its press: one level deeper, or a value
+   * field, as in Figma. The press decides so that every click of a quick run counts; the browser
+   * fires its double-click event by its own count, which a click shortly before the run shifts.
+   */
+  function onMultiClickDown(e: MouseEvent, clickCount: number) {
     const { cx, cy } = getCoords(e)
-    if (valueEdit.start(cx, cy)) {
+    if (clickCount === 2 && profile().edits && valueEdit.start(cx, cy)) {
       e.preventDefault()
       e.stopPropagation()
       return
     }
-    onTextDblClick(e)
+    pressDeeper(e, clickCount > 2)
+  }
+
+  function onDblClick(e: MouseEvent) {
+    // Handled on the press; the event only must not start a browser text selection.
+    e.preventDefault()
+  }
+
+  function hoverLayers({ event, cx, cy, sx, sy }: CanvasToolPointer) {
+    const guideCursor = profile().edits ? guideInput.updateHover(sx, sy) : null
+    cursorOverride.value =
+      guideCursor ??
+      updateHoverCursor(
+        cx,
+        cy,
+        editor,
+        hitFns,
+        editor.state.measurementMode === 'deep' || hoverDeep(event)
+      )
+    editor.setAutoLayoutHover(autoLayoutHoverAt(cx, cy, editor.state.measurementMode))
+  }
+
+  const toolContext: CanvasToolContext = {
+    editor,
+    hitFns,
+    cursorOverride,
+    setDrag,
+    tryStartRotation,
+    handleTextEditClick,
+    hoverLayers
   }
 
   function onMouseDown(e: MouseEvent) {
     onActivate?.()
     if (!isEnabled()) return
-    // Preview: controls live in islands above the canvas; the canvas itself only pans.
-    if (editor.state.play && e.button === 0 && editor.state.activeTool !== 'HAND') {
+    // A canvas that only pans, as a preview's does, leaves its controls to the islands above it.
+    const panOnly = profile().pointer === 'pan'
+    if (panOnly && e.button === 0 && editor.state.activeTool !== 'HAND') {
       e.preventDefault()
       return
     }
+    // Safari treats an unprevented press as the start of a text selection drag and freezes the
+    // cursor until the pointer leaves the canvas; the canvas handles its own drags.
+    if (e.button === 0) e.preventDefault()
     editor.setMeasurementMode('off')
     const openValueEdit = valueEdit.edit.value
     if (openValueEdit) valueEdit.commit(openValueEdit.value)
     if (!editor.state.editingTextId) canvasRef.value?.focus()
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
-    if (e.button === 0 && guideInput.tryStartExisting(sx, sy, e.altKey)) {
+    // Guides belong to the document, so a read-only one neither moves nor gains them.
+    const guidesEditable = e.button === 0 && profile().edits
+    if (guidesEditable && guideInput.tryStartExisting(sx, sy, e.altKey)) {
       e.preventDefault()
       return
     }
-    if (e.button === 0 && guideInput.tryStartFromRuler(sx, sy, cx, cy)) {
+    if (guidesEditable && guideInput.tryStartFromRuler(sx, sy, cx, cy)) {
       e.preventDefault()
       return
     }
     editor.setSelectedGuide(null)
 
-    const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
-    const clickCount = recordClick(sx, sy)
-    if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
-    handleToolMouseDown({
-      event: e,
-      cx,
-      cy,
-      sx,
-      sy,
-      editor,
-      hitFns,
-      cursorOverride,
-      setDrag,
-      tryStartRotation,
-      handleTextEditClick
-    })
+    const clickCount = recordClick(sx, sy, e.detail)
+    if (clickCount >= 2 && takesMultiClick(e)) {
+      onMultiClickDown(e, clickCount)
+      return
+    }
+    pressCanvasTool({ event: e, cx, cy, sx, sy }, toolContext)
   }
 
   // Dispatching the full drag union is intentionally centralized here.
@@ -230,34 +300,13 @@ export function useCanvasInput(
       onCursorMove(coords.cx, coords.cy)
     }
 
-    if (editor.state.play && !drag.value) return
-
-    if (!drag.value) {
-      const { cx, cy } = coords
-      updatePenHover(cx, cy, editor)
-    }
+    if (profile().pointer === 'pan' && !drag.value) return
 
     if (!drag.value) {
       const { cx, cy, sx, sy } = coords
       updateNodeEditHover(editor, cx, cy)
-      editor.setShapeHandleHover(resolveShapeHandleHover(editor, sx, sy, e.altKey))
-    }
-
-    if (!drag.value && editor.state.activeTool === 'SELECT') {
-      const { sx, sy, cx, cy } = coords
-      const guideCursor = guideInput.updateHover(sx, sy)
-      cursorOverride.value =
-        guideCursor ??
-        updateHoverCursor(
-          cx,
-          cy,
-          editor,
-          hitFns,
-          editor.state.measurementMode === 'deep' || hoverDeep(e)
-        )
-      editor.setAutoLayoutHover(
-        editor.state.measurementMode === 'off' ? resolveAutoLayoutHover(cx, cy, editor) : null
-      )
+      editor.setShapeHandleHover(shapeHandleHoverAt(sx, sy, e.altKey))
+      hoverCanvasTool({ event: e, ...coords }, toolContext)
     }
 
     if (!drag.value) return
@@ -325,19 +374,43 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'edit-marquee') {
+      handleNodeEditMarqueeMove(d, cx, cy, editor)
+      return
+    }
+
     if (d.type === 'draw') {
       handleDrawMove(d, cx, cy, e.shiftKey)
       return
     }
 
-    if (d.type === 'place') {
-      d.x = cx
-      d.y = cy
+    if (d.type === 'sticky-draw') {
+      d.move(cx, cy)
+      return
+    }
+
+    if (d.type === 'connector-draw') {
+      handleConnectorDrawMove(d, cx, cy, sx, sy, editor, attachModifiers(e))
+      return
+    }
+
+    if (d.type === 'connector-end') {
+      editor.connectorEndpointDrag(cx, cy, attachModifiers(e))
+      return
+    }
+
+    if (d.type === 'connector-line') {
+      editor.connectorLineDrag(cx, cy)
+      return
+    }
+
+    if (d.type === 'line-end') {
+      editor.lineEndDrag(cx, cy, { shift: e.shiftKey, alt: e.altKey })
       return
     }
 
     if (d.type === 'sticky-scale') {
-      applyStickyScale(d, cx, cy, editor)
+      applyStickyScale(d, cx, cy, editor, e.ctrlKey)
       return
     }
 
@@ -358,11 +431,7 @@ export function useCanvasInput(
       return
     } else if (d.type === 'resize') commitResizePreview(d, editor)
     else if (d.type === 'pen-drag') {
-      const penState = editor.state.penState as
-        | (typeof editor.state.penState & {
-            pendingClose?: boolean
-          })
-        | null
+      const penState = editor.state.penState
       if (penState?.pendingClose) {
         editor.penCommit(true)
       }
@@ -392,40 +461,27 @@ export function useCanvasInput(
     guideInput.clearHoverAndPreview()
   }
 
-  /** Drops what a resize or pencil stroke showed without changing the document. */
+  /** Drops what a drag showed without changing the document. */
   function discardDrawnPreview(d: DragState) {
     if (d.type === 'resize') cancelResizePreview(d, editor)
-    else if (d.type === 'sticky-scale') d.cancel()
+    else if ('cancel' in d) d.cancel()
     else if (d.type === 'pencil-drag') editor.pencilCancel()
   }
 
+  /** Takes back what a drag in progress has previewed, by its kind. */
+  function discardDrag(d: DragState) {
+    discardDrawnPreview(d)
+    if (d.type === 'move') cancelMove(d, editor)
+    else if (d.type === 'rotate') {
+      if (editor.state.rotationPreview?.nodeId === d.nodeId) editor.setRotationPreview(null)
+    } else cancelNodeEditDrag(d, editor)
+  }
+
   function cancelPointerInteraction() {
-    if (drag.value) discardDrawnPreview(drag.value)
-    if (drag.value?.type === 'rotate') {
-      const rotation = drag.value
-      drag.value = null
-      if (editor.state.rotationPreview?.nodeId === rotation.nodeId) editor.setRotationPreview(null)
-    }
-    if (
-      drag.value?.type === 'draw' ||
-      drag.value?.type === 'gradient' ||
-      drag.value?.type === 'shape-handle'
-    ) {
-      const drawing = drag.value
-      drag.value = null
-      drawing.cancel()
-    }
-    if (
-      drag.value?.type === 'edit-node' ||
-      drag.value?.type === 'edit-handle' ||
-      drag.value?.type === 'bend-handle'
-    ) {
-      const methods = editor as Editor & {
-        nodeEditCancelDrag?: () => void
-      }
-      methods.nodeEditCancelDrag?.()
-    }
+    const d = drag.value
+    // Cleared first: ending a preview fires events whose listeners cancel again.
     drag.value = null
+    if (d) discardDrag(d)
     cursorOverride.value = null
     clearTransientInteractionFeedback()
   }
@@ -459,19 +515,26 @@ export function useCanvasInput(
   useEventListener(canvasRef, 'mousemove', onMouseMove)
   useEventListener(canvasRef, 'mouseup', onMouseUp)
   useEventListener(window, 'keydown', (event) => {
-    if (!guideInput.deleteSelected(event)) updateModifier(event.code, true)
+    if (guideInput.deleteSelected(event)) return
+    updateModifier(event.code, true)
+    refreshConnectorDrag(drag.value, lastPointer.value, event, editor)
   })
-  useEventListener(window, 'keyup', (event) => updateModifier(event.code, false))
+  useEventListener(window, 'keyup', (event) => {
+    updateModifier(event.code, false)
+    refreshConnectorDrag(drag.value, lastPointer.value, event, editor)
+  })
   useEventListener(
     window,
     'keydown',
     (event) => {
       if (event.code !== 'Escape' || event.isComposing || !isEnabled()) return
       const type = drag.value?.type
-      if (type !== 'draw' && type !== 'gradient' && type !== 'rotate') return
+      // A vector edit marquee carries on through Escape, as in Figma, and keeps the path open.
+      const swallowed = type === 'edit-marquee'
+      if (!type || (!ESCAPABLE_DRAGS.has(type) && !swallowed)) return
       event.preventDefault()
       event.stopImmediatePropagation()
-      cancelPointerInteraction()
+      if (!swallowed) cancelPointerInteraction()
     },
     { capture: true }
   )
@@ -521,12 +584,20 @@ export function useCanvasInput(
     editor.setMeasurementMode('off')
     cancelPointerInteraction()
   })
+  // A document that turns read-only mid-gesture drops the gesture and any open inline edit.
+  const stopReadOnlyListener = editor.onEditorEvent('document:read-only-changed', (readOnly) => {
+    if (!readOnly) return
+    valueEdit.cancel()
+    canvasLabelEdit.cancel()
+    cancelPointerInteraction()
+  })
   const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
     (event) =>
       editor.onEditorEvent(event, () => {
         const type = drag.value?.type
         if (
           type === 'draw' ||
+          type === 'sticky-draw' ||
           type === 'rotate' ||
           type === 'shape-handle' ||
           type === 'sticky-scale'
@@ -537,15 +608,19 @@ export function useCanvasInput(
   onScopeDispose(() => {
     stopRotationListener()
     stopToolListener()
+    stopReadOnlyListener()
     for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
+    // A canvas unmounted mid-rename keeps the name typed, as the field's blur does in Chromium.
+    canvasLabelEdit.commit()
   })
 
-  setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp)
+  setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp, zoomSpeed)
   return {
     drag,
     cursorOverride,
     canvasLabelEdit: canvasLabelEdit.edit,
+    startCanvasLabelEdit: canvasLabelEdit.start,
     updateCanvasLabelEdit: canvasLabelEdit.update,
     commitCanvasLabelEdit: canvasLabelEdit.commit,
     cancelCanvasLabelEdit: canvasLabelEdit.cancel,

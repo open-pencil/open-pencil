@@ -1,53 +1,10 @@
 import { omitBy } from 'es-toolkit/object'
-import * as v from 'valibot'
 
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
-import { BEHAVIOUR_KINDS, behaviourContract, type BehaviourKind } from './kinds'
-import {
-  behaviourProperties,
-  emptyBehaviour,
-  guessInteractionStates,
-  textBinding,
-  type Behaviour,
-  type BehaviourNumberSettings
-} from './model'
-import { interactionStateValues, isNumberRange } from './schema'
-
-/**
- * A behaviour as scripts, tools, and JSX write it: component properties and slots by name, not
- * by id. Values are boolean or text values by their contract id; numbers are a slider's or
- * number field's own range.
- */
-export const behaviourSpecSchema = v.object({
-  kind: v.picklist(BEHAVIOUR_KINDS),
-  values: v.optional(
-    v.record(
-      v.string(),
-      v.union([
-        v.string(),
-        v.object({ property: v.string(), on: v.optional(v.string()), off: v.optional(v.string()) })
-      ])
-    )
-  ),
-  numbers: v.optional(
-    v.record(
-      v.string(),
-      v.object({
-        min: v.optional(v.number()),
-        max: v.optional(v.number()),
-        step: v.optional(v.number()),
-        default: v.optional(v.number())
-      })
-    )
-  ),
-  parts: v.optional(v.record(v.string(), v.string())),
-  states: v.optional(
-    v.union([v.string(), v.object({ property: v.string(), ...interactionStateValues })])
-  )
-})
-
-export type BehaviourSpec = v.InferOutput<typeof behaviourSpecSchema>
+import { behaviourContract } from './kinds'
+import { behaviourProperties, emptyBehaviour, guessInteractionStates, textBinding } from './model'
+import { isNumberRange, type Behaviour, type BehaviourSpec } from './schema'
 
 /** Variant values that usually mean on, compared case-insensitively. */
 const ON_NAMES = ['on', 'true', 'yes', 'checked', 'pressed', 'open', 'selected', 'active']
@@ -219,5 +176,3 @@ export function behaviourToSpec(
     }
   return spec
 }
-
-export type { BehaviourKind, BehaviourNumberSettings }

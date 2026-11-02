@@ -1,13 +1,13 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  fitEnclosingGroups,
-  FITTED_CONTAINER_TYPES,
-  claimSlotContent,
-  recordInstanceOverride,
-  slotScope
-} from '@open-pencil/scene-graph'
-import type { GroupFitOptions, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
+import { fitEnclosingGroups, type GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
+import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
+import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
+import { claimSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
+import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
@@ -36,6 +36,20 @@ export function raw(target: ProxyThis, internals: NodeProxyInternals): SceneNode
   return node
 }
 
+/**
+ * The layer a node's strokes live on, as a proxy target: a connector keeps its stroke on its
+ * line, which Figma presents as the connector's own.
+ */
+export function strokeOwner(target: ProxyThis, internals: NodeProxyInternals): ProxyThis {
+  const node = raw(target, internals)
+  if (node.type !== 'CONNECTOR') return target
+  const line = connectorSublayers(graph(target, internals), node)?.line
+  if (!line) return target
+  const owner: ProxyThis = Object.create(target)
+  owner[internals.id] = line.id
+  return owner
+}
+
 export function assertProxyEditable(target: ProxyThis, internals: NodeProxyInternals): void {
   assertNodeEditable(graph(target, internals), nodeId(target, internals))
 }
@@ -59,6 +73,7 @@ export function prepareFollowedFieldEdit(
     | 'vector-data'
     | 'handle-mirroring'
     | 'stack-counter-align-content'
+    | 'shape-type'
 ): void {
   if (!node.parentId) return
   const scope = slotScope(scene, node.parentId)
@@ -69,8 +84,9 @@ export function prepareFollowedFieldEdit(
   if (scope.kind === 'slot') claimSlotContent(scene, scope)
 }
 
-/** Fields whose change can move a node's bounds, so the groups around it refit. */
+/** Fields whose change can move a node's bounds or drop it from its group's, so groups refit. */
 const GEOMETRY_FIELDS: ReadonlySet<string> = new Set([
+  'visible',
   'x',
   'y',
   'width',
@@ -111,16 +127,20 @@ export function updateNode(
       .map((key) => [key, Reflect.get(changes, key)])
   ) as Partial<SceneNode>
   if (Object.keys(applied).length === 0) return
-  // Auto-sizing text measures its new content, as the editor's updates do.
-  Object.assign(applied, textAutoResizeChanges(g.getNode(id), applied))
   const before = g.getNode(id)
+  // Auto-sizing text measures its new content, and a vector's regions take its new fills, as the
+  // editor's updates do.
+  Object.assign(applied, textAutoResizeChanges(before, applied))
+  if (before) Object.assign(applied, regionFillChanges(before, applied))
+  // An edit to a style's fields leaves that style, as the editor's updates do.
+  const edit = before ? styleDetachmentChanges(before, applied) : applied
   // Figma overrides only what an edit changes, so setting a layer's own value claims nothing.
-  const changed = Object.keys(applied).filter(
-    (key) => !before || !isEqual(Reflect.get(applied, key), Reflect.get(before, key))
+  const changed = Object.keys(edit).filter(
+    (key) => !before || !isEqual(Reflect.get(edit, key), Reflect.get(before, key))
   )
-  g.updateNode(id, applied)
+  g.updateNode(id, edit)
   recordInstanceOverride(g, id, changed)
-  if (Object.keys(applied).some((key) => GEOMETRY_FIELDS.has(key))) {
+  if (Object.keys(edit).some((key) => GEOMETRY_FIELDS.has(key))) {
     fitGroupsAround(g, g.getNode(id)?.parentId, hostFitOptions(target, internals))
   }
 }

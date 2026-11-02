@@ -1,7 +1,7 @@
-import type { SceneGraph } from '../index'
-import { setInstanceOverride } from '../instance-overrides'
+import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
 import { instanceMainComponent } from '../instances/main-component'
+import { setInstanceOverride } from '../instances/overrides'
 import { walkInstanceSources } from '../instances/source-walk'
 import { randomHex } from '../random'
 import type {

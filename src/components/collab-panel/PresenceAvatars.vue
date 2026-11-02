@@ -9,8 +9,9 @@ import {
   PopoverRoot,
   PopoverTrigger
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { FollowTarget } from '@/app/presence/types'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
@@ -18,7 +19,9 @@ import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 import PresenceList from '@/components/presence/PresenceList.vue'
 import { isFollowing, type PresencePersonRow } from '@/components/presence/rows'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { presenceAvatars } from '@/theme/collaboration/presence-avatars'
+import presenceAvatarsTheme from '@/theme/collaboration/presence-avatars'
+
+const presenceAvatars = tv(presenceAvatarsTheme)
 
 /** How many collaborators the stack shows besides you before "+N". */
 const MAX_PEERS = 3
@@ -27,15 +30,15 @@ const {
   rows,
   following,
   connected = false,
-  inRoom = false
+  canLeave = false
 } = defineProps<{
   /** Ourselves first, then everyone else in the room. */
   rows: PresencePersonRow[]
   following: FollowTarget | null
   /** Whether someone else in the room answered, so the room is live. */
   connected?: boolean
-  /** Whether we are in a room at all, so we can leave it. */
-  inRoom?: boolean
+  /** Whether the self menu offers leaving the room, which a stored document's room never does. */
+  canLeave?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -98,7 +101,7 @@ function toggleFollow(clientId: number) {
               @rename="(id, name) => emit('rename', id, name)"
             />
             <AppButton
-              v-if="inRoom"
+              v-if="canLeave"
               variant="outline"
               :class="ui.leave()"
               data-test-id="collab-leave-room"

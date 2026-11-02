@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { sceneNodesToTailwindJSX } from '#dom-css/index'
+import { sceneNodesToTailwindJSX } from '#dom-css/export/tailwind-jsx'
 
 import { makeGraph, pageId, tw } from './helpers'
 

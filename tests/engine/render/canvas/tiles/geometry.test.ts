@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  MAX_TILE_LEVEL,
+  MIN_TILE_LEVEL,
   TILE_DEVICE_SIZE,
-  TILE_LEVEL_STEP,
   tileKeyString,
   tileKeysForWorldBounds,
   tileLevel,
@@ -11,11 +12,26 @@ import {
 } from '#core/canvas/renderer/tiles'
 
 describe('tile geometry', () => {
-  test('quantizes scale upward and keeps fixed device-pixel targets', () => {
+  test('quantizes scale upward in geometric steps and keeps fixed device-pixel targets', () => {
     expect(tileLevel(1)).toBe(1)
-    expect(tileLevel(1.01)).toBe(1.25)
-    expect(tileLevel(1.26)).toBe(1.5)
+    expect(tileLevel(1.01)).toBeCloseTo(2 ** 0.25, 12)
+    expect(tileLevel(1.26)).toBeCloseTo(2 ** 0.5, 12)
+    expect(tileLevel(2)).toBe(2)
+    expect(tileLevel(400)).toBeCloseTo(2 ** 8.75, 9)
     expect(tileWorldSize(2)).toBe(TILE_DEVICE_SIZE / 2)
+  })
+
+  test('crosses few levels between 1 % and 20,000 %, each at most a step finer than its scale', () => {
+    const levels = new Set<number>()
+    for (let scale = 0.02; scale <= 400; scale *= 1.01) {
+      const level = tileLevel(scale)
+      expect(level).toBeGreaterThanOrEqual(scale)
+      expect(level / scale).toBeLessThan(2 ** 0.25 + 1e-9)
+      levels.add(level)
+    }
+    expect(levels.size).toBeLessThan(70)
+    expect(tileLevel(1e-9)).toBe(MIN_TILE_LEVEL)
+    expect(tileLevel(1e9)).toBe(MAX_TILE_LEVEL)
   })
 
   test('adds lower levels to bound visible tile counts at very low zoom', () => {
@@ -27,7 +43,7 @@ describe('tile geometry', () => {
       maxY: 1080 / 0.02
     })
 
-    expect(level).toBeLessThan(TILE_LEVEL_STEP)
+    expect(level).toBeLessThan(0.25)
     expect(keys.length).toBeLessThan(500)
   })
 
@@ -39,20 +55,15 @@ describe('tile geometry', () => {
       maxY: 130
     })
 
-    expect(keys).toHaveLength(12)
+    // Level 2 tiles span 256 world units.
+    expect(keys).toHaveLength(6)
     expect(keys.map(tileKeyString)).toEqual([
       'page:2:-1:-1',
       'page:2:0:-1',
       'page:2:1:-1',
-      'page:2:2:-1',
       'page:2:-1:0',
       'page:2:0:0',
-      'page:2:1:0',
-      'page:2:2:0',
-      'page:2:-1:1',
-      'page:2:0:1',
-      'page:2:1:1',
-      'page:2:2:1'
+      'page:2:1:0'
     ])
   })
 

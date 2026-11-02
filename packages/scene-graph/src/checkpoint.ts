@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit'
 
-import type { SceneGraph } from './index'
+import type { SceneGraph } from './graph'
 
 /** Capture rollback state without changing graph or surviving object identities. */
 export function captureGraphCheckpoint(graph: SceneGraph) {

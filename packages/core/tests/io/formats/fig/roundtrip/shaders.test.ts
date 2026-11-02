@@ -3,15 +3,17 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { collectAllNodes } from '#core-tests/helpers/fig/traversal'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 import {
-  computeImageHash,
   createShaderPaint,
   shaderOfPaint,
   shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/shaders'
 
 setDefaultTimeout(60_000)
 

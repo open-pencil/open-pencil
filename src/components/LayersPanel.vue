@@ -3,7 +3,8 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useI18n, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import AppMenu from '@/components/shell/AppMenu.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'

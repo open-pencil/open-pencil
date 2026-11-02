@@ -59,7 +59,7 @@ function buildJob(partial: OutboxEnqueueInput): OutboxJob {
 
 /**
  * Queue with the new job applied: putCanvas supersedes older revisions,
- * and only one putThumb/delete per canvas survives (latest wins).
+ * and only one delete per canvas survives (latest wins).
  */
 function withJobQueued(queue: OutboxJob[], job: OutboxJob): OutboxJob[] {
   let next = queue

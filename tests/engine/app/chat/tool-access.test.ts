@@ -4,8 +4,8 @@ import { expect, test } from 'bun:test'
 import { simulateReadableStream, type UIMessage } from 'ai'
 import { MockLanguageModelV4 } from 'ai/test'
 
-import { createToolLoopTransport } from '@/app/ai/chat/transports'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
+import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import { createEditorStore } from '@/app/editor/session/create'
 
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'

@@ -225,9 +225,9 @@ describe('collab concurrent edits', () => {
       },
       ({ hostStore, peerStore }, pageId) => {
         const host = hostStore.graph.createNode('RECTANGLE', pageId, { id: 'host:1' })
-        hostStore.graph.reorderChild(host.id, pageId, 1)
+        hostStore.graph.insertChildAt(host.id, pageId, 1)
         const peer = peerStore.graph.createNode('RECTANGLE', pageId, { id: 'peer:1' })
-        peerStore.graph.reorderChild(peer.id, pageId, 1)
+        peerStore.graph.insertChildAt(peer.id, pageId, 1)
       },
       (stores, pageId) => {
         expectSameLayerTree(stores, [pageId])
@@ -250,9 +250,9 @@ describe('collab concurrent edits', () => {
         }
       },
       ({ hostStore, peerStore }, pageId) => {
-        hostStore.graph.reorderChild('rect:4', pageId, 0)
-        peerStore.graph.reorderChild('rect:1', pageId, 3)
-        peerStore.graph.reorderChild('rect:4', pageId, 2)
+        hostStore.graph.insertChildAt('rect:4', pageId, 0)
+        peerStore.graph.insertChildAt('rect:1', pageId, 3)
+        peerStore.graph.insertChildAt('rect:4', pageId, 2)
       },
       (stores, pageId) => {
         const layers = expectSameLayerTree(stores, [pageId])

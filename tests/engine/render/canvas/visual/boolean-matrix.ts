@@ -6,8 +6,8 @@ import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 
-import { asPageNode, createAPI } from '#tests/engine/figma/api/helpers'
 import { expectDefined } from '#tests/helpers/assert'
+import { asPageNode, createAPI } from '#tests/helpers/plugin-api'
 
 const CELL_W = 180
 const CELL_H = 150

@@ -1,6 +1,6 @@
 import { useEventListener, useIntervalFn } from '@vueuse/core'
 
-import { locale } from '@open-pencil/vue'
+import { locale } from '@open-pencil/vue/i18n'
 
 import { resolveUsageStatsQuestion } from './consent'
 import { sharingClient } from './instance'

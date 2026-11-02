@@ -1,3 +1,4 @@
+import type { CopyOptions } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -7,7 +8,7 @@ import {
   getInMemoryClipboardHTML,
   setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
-import { pasteClipboardHTML, pasteSVGText } from '@/app/editor/clipboard/paste'
+import { pasteClipboardHTML, pasteLayerText } from '@/app/editor/clipboard/paste/content'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
 import {
   readTauriClipboardText,
@@ -16,10 +17,10 @@ import {
 } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
 
-async function copySelection(store: EditorStore): Promise<boolean> {
+async function copySelection(store: EditorStore, options?: CopyOptions): Promise<boolean> {
   if (!isTauri()) return false
   try {
-    const payload = await store.prepareCopy()
+    const payload = await store.prepareCopy(options)
     const { html, plainText } = payload
     if (!html && !plainText) return false
     if (html) {
@@ -44,7 +45,7 @@ async function pasteSelection(store: EditorStore, cursorPos?: Vector): Promise<b
       await pasteClipboardHTML(store, text, cursorPos)
       return true
     }
-    if (text && (await pasteSVGText(store, text, cursorPos))) return true
+    if (text && (await pasteLayerText(store, text, cursorPos))) return true
     const matchingMemoryHTML = getInMemoryClipboardHTML(text ?? '')
     if (matchingMemoryHTML && isDesignClipboardHTML(matchingMemoryHTML)) {
       await pasteClipboardHTML(store, matchingMemoryHTML, cursorPos)

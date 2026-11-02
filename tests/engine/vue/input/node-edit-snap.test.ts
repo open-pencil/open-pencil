@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { DEFAULT_SNAPPING_PREFERENCES, createEditor } from '@open-pencil/core/editor'
+import { DEFAULT_SNAPPING_PREFERENCES, createEditor } from '@open-pencil/core'
 
 import type { DragEditNode } from '#vue/shared/input/types'
 import { applyNodeEditSnap } from '#vue/shared/input/vector/snap'
@@ -39,7 +39,9 @@ describe('vector edit snapping', () => {
       nodeId: vector.id,
       vertices: [{ x: 10, y: 20 }],
       segments: [],
+      regions: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -79,7 +81,9 @@ describe('vector edit snapping', () => {
         { x: 80, y: 60 }
       ],
       segments: [],
+      regions: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -120,7 +124,9 @@ describe('vector edit snapping', () => {
         { x: 80, y: 60 }
       ],
       segments: [],
+      regions: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -157,7 +163,9 @@ describe('vector edit snapping', () => {
         { x: 80, y: 60 }
       ],
       segments: [],
+      regions: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -194,7 +202,9 @@ describe('vector edit snapping', () => {
       nodeId: vector.id,
       vertices: [{ x: 10.2, y: 20.4 }],
       segments: [],
+      regions: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }

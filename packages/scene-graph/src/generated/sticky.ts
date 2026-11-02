@@ -1,7 +1,9 @@
 import { BLACK } from '../constants'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { Color } from '../primitives'
+import { lineHeightPixels, percentLength, pixelLength } from '../text/lengths'
 import type { Effect, Fill, SceneNode } from '../types'
+import type { GeneratedFrameKind } from './kind'
 
 /**
  * A FigJam sticky note as Figma lays it out: a fixed-width card that grows to fit its body, with
@@ -33,33 +35,6 @@ export const STICKY_COLORS = {
 } as const satisfies Record<string, Color>
 
 export const DEFAULT_STICKY_COLOR: Color = STICKY_COLORS.blue
-
-/** FigJam's body text sizes, each with the tracking it sets, as a fraction of the size. */
-export const STICKY_TEXT_SIZES = {
-  small: { fontSize: 16, tracking: -0.011 },
-  medium: { fontSize: 24, tracking: -0.019 },
-  large: { fontSize: 40, tracking: -0.022 },
-  extraLarge: { fontSize: 64, tracking: -0.022 },
-  huge: { fontSize: 96, tracking: -0.023 }
-} as const
-
-export type StickyTextSize = keyof typeof STICKY_TEXT_SIZES
-
-/** A body's text at a size preset: its line stays one and a half times the size. */
-export function stickyBodySizeFields(size: StickyTextSize): Partial<SceneNode> {
-  const { fontSize, tracking } = STICKY_TEXT_SIZES[size]
-  return { fontSize, lineHeight: fontSize * 1.5, letterSpacing: fontSize * tracking }
-}
-
-/** The preset a body's text is closest to, as FigJam's size menu shows a rescaled note's. */
-export function stickyTextSize(body: Pick<SceneNode, 'fontSize'>): StickyTextSize {
-  const sizes = Object.entries(STICKY_TEXT_SIZES) as [StickyTextSize, { fontSize: number }][]
-  return sizes.reduce((best, entry) =>
-    Math.abs(entry[1].fontSize - body.fontSize) < Math.abs(best[1].fontSize - body.fontSize)
-      ? entry
-      : best
-  )[0]
-}
 
 function solid(color: Color, opacity = 1): Fill {
   return { type: 'SOLID', color: { ...color }, opacity, visible: true }
@@ -126,8 +101,9 @@ export function stickyTextFields(
     fontFamily: STICKY_FONT_FAMILY,
     fontWeight: STICKY_FONT_WEIGHT,
     fontSize,
-    lineHeight: role === 'body' ? fontSize * 1.5 : 16 * scale,
-    letterSpacing: fontSize * -0.011,
+    // As Figma writes a note: the body at 150% and the author at 16 px a scale, tracked -1.1%.
+    lineHeight: role === 'body' ? percentLength(150) : pixelLength(16 * scale),
+    letterSpacing: percentLength(-1.1),
     textAlignHorizontal: 'LEFT',
     textAlignVertical: 'TOP',
     ...STICKY_SUBLAYER_LAYOUT,
@@ -165,6 +141,15 @@ export function stickySublayers(graph: SceneGraph, sticky: SceneNode): StickySub
   return { body, author }
 }
 
+/** A sticky note scales as a whole from its own handles and stays upright, as in FigJam. */
+export const STICKY_KIND: GeneratedFrameKind = {
+  complete: (graph, frame) => stickySublayers(graph, frame) !== null,
+  text: (graph, frame) => stickySublayers(graph, frame)?.body,
+  rotates: false,
+  resizes: false,
+  namedByText: true
+}
+
 export interface StickyContent {
   text?: string
   author?: string
@@ -189,14 +174,15 @@ export function buildStickySublayers(
   const body = graph.createNode('TEXT', sticky.id, {
     ...bodyFields,
     width: inner,
-    height: bodyFields.lineHeight ?? undefined,
+    height: lineHeightPixels(bodyFields.lineHeight ?? null, bodyFields.fontSize ?? 0) ?? undefined,
     text: content.text ?? '',
     ...overrides.body
   })
   const author = graph.createNode('TEXT', sticky.id, {
     ...authorFields,
     width: inner,
-    height: authorFields.lineHeight ?? undefined,
+    height:
+      lineHeightPixels(authorFields.lineHeight ?? null, authorFields.fontSize ?? 0) ?? undefined,
     text: content.author ?? '',
     visible: content.authorVisible ?? true,
     ...overrides.author

@@ -9,8 +9,8 @@ import {
   initCanvasKit
 } from '@open-pencil/core/io/formats/raster'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { SceneGraph, type Color } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color, Rect } from '@open-pencil/scene-graph/primitives'
 
 type VisualDiff = {
   error?: string
@@ -73,9 +73,7 @@ describe('diff_visual', () => {
     const copy = card.clone()
     copy.x = 300
     const copiedSwatch = expectDefined(copy.children[0], 'copied swatch')
-    copiedSwatch.fills = [
-      { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
-    ]
+    copiedSwatch.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 }, opacity: 1, visible: true }]
 
     const result = await visualDiff(figma, { from: card.id, to: copy.id, scale: 2 })
     expect(result.width).toBe(200)

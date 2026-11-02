@@ -2,10 +2,11 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { summarizeDiagnosticEvent, type DiagnosticCategory } from '@/app/diagnostics'
 import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
+import { useDateFormat } from '@/app/i18n/date'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -14,6 +15,7 @@ import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 const { refreshStats } = defineProps<{ refreshStats: () => Promise<void> }>()
 const { diagnostics: messages } = useI18n()
+const dates = useDateFormat()
 
 const { visible, total, hasMore, showMore, level, category, categories } = useRecentDiagnostics(
   (event) => summarizeDiagnosticEvent(event, messages.value),
@@ -87,17 +89,15 @@ const categoryOptions = computed(() => [
             <icon-lucide-info v-else class="size-3.5 shrink-0 text-muted" />
             <span class="min-w-0">
               <span class="block truncate text-surface">{{ event.label }}</span>
-              <span v-if="event.detail" class="block truncate text-[10px] text-muted">{{
+              <span v-if="event.detail" class="block truncate text-[11px] text-muted">{{
                 event.detail
               }}</span>
             </span>
           </span>
-          <span class="shrink-0 text-muted">{{
-            new Date(event.timestamp).toLocaleTimeString()
-          }}</span>
+          <span class="shrink-0 text-muted">{{ dates.format(event.timestamp, 'clock') }}</span>
         </CollapsibleTrigger>
         <CollapsibleContent :class="collapsibleContentMotion">
-          <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-[10px] text-muted">
+          <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-[11px] text-muted">
             <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
               <template v-for="[name, value] in event.fields" :key="name">
                 <dt>{{ name }}</dt>

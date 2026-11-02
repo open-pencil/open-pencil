@@ -1,6 +1,14 @@
 // Design tokens as CSS custom properties: names, namespaces, units, and the stylesheet.
 export { featureConditionCSS, parseFeatureCondition, type FeatureCondition } from './conditions'
 export {
+  cssExpressionProblem,
+  cssTokenProperty,
+  cssValueTokens,
+  type CSSExpressionProblem,
+  type CSSValueToken,
+  type CSSValueTokenKind
+} from './expression'
+export {
   collectionVariables,
   cssNameCodeSyntax,
   deriveCSSName,
@@ -23,4 +31,4 @@ export {
   type TokenStylesheetOptions
 } from './stylesheet'
 export { createTokenValidator, type TokenValidator } from './validate'
-export { tokenNumberToCSS, variableUnit } from './values'
+export { TOKEN_UNIT_PROPERTY, tokenNumberToCSS, variableUnit } from './values'

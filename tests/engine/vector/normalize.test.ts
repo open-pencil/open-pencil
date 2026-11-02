@@ -1,12 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
-import {
-  decodeVectorNetworkBlob,
-  encodeVectorNetworkBlob,
-  normalizeVectorNetwork,
-  type VectorNetwork,
-  type VectorSegment
-} from '@open-pencil/core'
+import { decodeVectorNetworkBlob, encodeVectorNetworkBlob } from '@open-pencil/fig/node-change'
+import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
+import { normalizeVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 describe('normalizeVectorNetwork', () => {
   test('passes through segments that already have tangents', () => {

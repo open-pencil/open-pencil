@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { variableText } from '@open-pencil/scene-graph'
+import { variableText } from '@open-pencil/scene-graph/variables'
 
 // What Figma desktop 126 showed for text bound to each float32 variable value.
 const FIGMA_TEXT: Array<[number, string]> = [
@@ -29,7 +29,11 @@ const FIGMA_TEXT: Array<[number, string]> = [
   [16777216, '16777216'],
   [1.0000000200408773e21, '2147483647'],
   [-3000000000, '-2147483648'],
-  [-7.25, '-7.25']
+  [-7.25, '-7.25'],
+  // Measured on 2026-10-20: only values near zero round to a whole number.
+  [2.000000238418579, '2.00'],
+  [2.999999046325684, '3.00'],
+  [7.000004291534424, '7.00']
 ]
 
 test('a number bound to text reads as Figma writes it', () => {

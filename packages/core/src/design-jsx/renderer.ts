@@ -1,9 +1,11 @@
 import { createDesignJSXRenderer, type SVGSource } from '@open-pencil/design-jsx'
 
-import { iconify, placeIcon, type IconProvider } from '#core/icons'
+import { defaultIcons, placeIcon, type IconProvider } from '#core/icons'
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
 import { layoutAuthoredNodes } from '#core/layout'
+import { markdownText } from '#core/text/markdown'
+import { computeAccurateBounds } from '#core/vector/curve-math'
 
 function parseViewBox(viewBox: string | undefined): { w: number; h: number } {
   if (!viewBox) return { w: 0, h: 0 }
@@ -52,7 +54,9 @@ function createRenderer(icons: IconProvider) {
         // Inline SVG is artwork, not an icon from a set.
         identity: icon.prefix !== INLINE_SVG
       }),
-    layout: layoutAuthoredNodes
+    layout: layoutAuthoredNodes,
+    vectorBounds: computeAccurateBounds,
+    markdown: markdownText
   })
 }
 
@@ -62,7 +66,7 @@ const renderers = new WeakMap<IconProvider, ReturnType<typeof createRenderer>>()
  * Design JSX rendering with OpenPencil's SVG conversion and layout, drawing `<Icon>` from
  * `icons`, such as the `FigmaAPI`'s provider, so a host's own icons render too.
  */
-export function designJSXRenderer(icons: IconProvider = iconify) {
+export function designJSXRenderer(icons: IconProvider = defaultIcons) {
   let renderer = renderers.get(icons)
   if (!renderer) {
     renderer = createRenderer(icons)
@@ -72,4 +76,4 @@ export function designJSXRenderer(icons: IconProvider = iconify) {
 }
 
 /** Design JSX rendering with Iconify's icons. */
-export const { renderJSX, renderTree } = designJSXRenderer()
+export const { renderJSX, renderTree, renderRoots } = designJSXRenderer()

@@ -1,8 +1,9 @@
 import * as v from 'valibot'
 
+import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
+
 import { getComponentCatalog } from '#core/tools/component-catalog'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 interface DocumentComponentResult {
   id: string
@@ -10,6 +11,7 @@ interface DocumentComponentResult {
   type: string
   page: string
   source: 'document'
+  componentPropertyDefinitions?: ComponentPropertyDefinition[]
 }
 
 interface LibraryComponentResult {
@@ -60,12 +62,18 @@ export const getComponents = defineTool({
           if (documentComponents.length >= limit) return false
           if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
           if (nameFilter && !node.name.toLowerCase().includes(nameFilter)) return false
+          const componentPropertyDefinitions = figma.graph.getNode(
+            node.id
+          )?.componentPropertyDefinitions
           documentComponents.push({
             id: node.id,
             name: node.name,
             type: node.type,
             page: page.name,
-            source: 'document'
+            source: 'document',
+            ...(componentPropertyDefinitions && componentPropertyDefinitions.length > 0
+              ? { componentPropertyDefinitions }
+              : {})
           })
           return false
         })
