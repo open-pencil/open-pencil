@@ -8,7 +8,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 import { compactionOf } from '@/app/ai/chat/compaction/marker'
-import { contextTokensOf } from '@/app/ai/chat/metadata'
+import { usageOf } from '@/app/ai/chat/metadata'
 import type { QueuedMessage } from '@/app/ai/chat/queue'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
@@ -81,10 +81,18 @@ const lastMessage = computed(() => messages.at(-1))
 const entries = computed(() =>
   messages.map((message, index) => {
     const compaction = compactionOf(message)
-    const after = compaction ? contextTokensOf(messages.slice(index + 1, index + 3)) : null
-    return { message, compaction, tokensAfter: after }
+    return { message, compaction, tokensAfter: compaction ? tokensAfter(index) : null }
   })
 )
+/** What the first reply after the compaction at `index` reported, before the next one. */
+function tokensAfter(index: number): number | null {
+  for (const message of messages.slice(index + 1)) {
+    if (compactionOf(message)) return null
+    const usage = usageOf(message)
+    if (usage) return usage.contextTokens
+  }
+  return null
+}
 /**
  * The newest message the person wrote. A compaction's summary is not one, and a request before
  * it is no longer the model's to answer, so neither is edited or retried.

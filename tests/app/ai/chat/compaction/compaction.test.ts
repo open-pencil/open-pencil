@@ -127,6 +127,17 @@ describe('compaction', () => {
     expect(output).toBe(`${'y'.repeat(4000)}… (1000 more characters left out)`)
   })
 
+  test('past its budget the summary reads the latest summary and the newest messages', () => {
+    const marker = compactionMessage({ summary: 'Built the hero.', trigger: 'auto', tokensBefore: 1 })
+    const long = (id: string, role: UIMessage['role']) => text(id, role, 'w'.repeat(1000))
+    const ids = (messages: UIMessage[]) => messages.map((message) => message.id)
+    const turns = [long('a', 'user'), long('b', 'assistant'), long('c', 'user'), long('d', 'assistant')]
+    expect(ids(summarySource([marker, ...turns], 2500))).toEqual([marker.id, 'c', 'd'])
+    // Without a summary first, what is kept starts with a request.
+    expect(ids(summarySource(turns, 3300))).toEqual(['c', 'd'])
+    expect(ids(summarySource(turns, 10))).toEqual(['d'])
+  })
+
   test('the conversation’s model writes the summary, following the instructions it is given', async () => {
     let prompt: unknown
     const model = new MockLanguageModelV4({

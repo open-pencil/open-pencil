@@ -1,6 +1,6 @@
 import { convertToModelMessages, generateText, type LanguageModel, type UIMessage } from 'ai'
 
-import { messagesSinceCompaction } from './marker'
+import { compactionOf, messagesSinceCompaction } from './marker'
 import prompt from './prompt.md?raw'
 
 /** How much of one tool's input or result the summary request keeps. */
@@ -27,16 +27,34 @@ function boundedPart(part: Part): Part[] {
   return [{ ...part, ...input, ...output } as Part]
 }
 
+/** How much of the conversation the summary request keeps, with no window known to fit. */
+export const SUMMARY_BUDGET = 400_000
+
 /**
- * The conversation as the summary request reads it: no images or files, and long text, tool
- * inputs, and tool results cut short, so a conversation too long for its model, even one whose
- * last prompt alone was, can still be summarized by it.
+ * The conversation as the summary request reads it: no images or files, long text, tool inputs,
+ * and tool results cut short, and, past `budget` characters, the oldest messages left out but
+ * the summary they follow, so a conversation too long for its model can still be summarized.
  */
-export function summarySource(messages: readonly UIMessage[]): UIMessage[] {
-  return messagesSinceCompaction(messages).map((message) => ({
+export function summarySource(
+  messages: readonly UIMessage[],
+  budget = SUMMARY_BUDGET
+): UIMessage[] {
+  const bounded = messagesSinceCompaction(messages).map((message) => ({
     ...message,
     parts: message.parts.flatMap(boundedPart)
   }))
+  const first = bounded.at(0)
+  const earlier = first && compactionOf(first) ? [first] : []
+  let left = budget - earlier.reduce((size, message) => size + JSON.stringify(message).length, 0)
+  const kept: UIMessage[] = []
+  for (const message of bounded.slice(earlier.length).reverse()) {
+    left -= JSON.stringify(message).length
+    if (left < 0 && kept.length > 0) break
+    kept.unshift(message)
+  }
+  // With no summary before it, what is kept starts with a request, as providers expect.
+  while (earlier.length === 0 && kept.length > 1 && kept[0].role !== 'user') kept.shift()
+  return [...earlier, ...kept]
 }
 
 export interface SummaryOptions {
@@ -44,6 +62,8 @@ export interface SummaryOptions {
   messages: readonly UIMessage[]
   /** What the person asked the summary to keep or focus on. */
   instructions?: string
+  /** How many characters of the conversation the request may carry. */
+  budget?: number
   abortSignal?: AbortSignal
 }
 
@@ -52,9 +72,10 @@ export async function summarizeConversation({
   model,
   messages,
   instructions,
+  budget,
   abortSignal
 }: SummaryOptions): Promise<string> {
-  const request = await convertToModelMessages(summarySource(messages), {
+  const request = await convertToModelMessages(summarySource(messages, budget), {
     ignoreIncompleteToolCalls: true
   })
   const ask = instructions?.trim()

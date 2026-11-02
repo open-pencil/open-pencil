@@ -412,7 +412,7 @@ function handleStop() {
         :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
         @remove-queued="removeQueuedMessage"
         :nodes-live="!history.readOnly.value"
-        :interactive="chat !== null && !submission.busy.value"
+        :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
         @regenerate="submission.regenerate()"
         @revert="(messageId) => submission.revert(messageId)"
         @restore="(messageId) => submission.restore(messageId)"

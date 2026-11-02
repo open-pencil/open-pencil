@@ -72,8 +72,12 @@ export function commandCompletion(
     const typed = context.matchBefore(/^\/\S*$/)
     if (typed?.from !== 0) return null
     const section = sections().command
+    // A command chosen with the caret inside one already there replaces that whole command.
+    const rest = context.state.doc.sliceString(context.pos, context.state.doc.lineAt(context.pos).to)
+    const word = /^\S*\s?/.exec(rest)?.[0] ?? ''
     return {
       from: 0,
+      to: context.pos + word.length,
       validFor: /^\/\S*$/,
       options: candidates().map((command): ComposerCompletion => ({
         icon: command.kind === 'skill' ? IconBookOpen : IconSquareSlash,

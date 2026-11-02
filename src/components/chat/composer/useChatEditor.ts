@@ -160,12 +160,16 @@ export function useChatEditor(
     editor.focus()
   }
 
-  /** Starts a command: `/` at the start of the message, which opens the commands it offers. */
+  /**
+   * Starts a command: `/` at the start of the message, which opens the commands it offers. The
+   * one chosen replaces a command already there and comes before any text already typed.
+   */
   function startCommand() {
     const editor = view.value
     if (!editor) return
-    if (!editor.state.doc.toString().startsWith('/'))
-      editor.dispatch({ changes: { from: 0, insert: '/' } })
+    const current = editor.state.doc.toString()
+    if (!current.startsWith('/'))
+      editor.dispatch({ changes: { from: 0, insert: /^(\s|$)/.test(current) ? '/' : '/ ' } })
     editor.dispatch({ selection: EditorSelection.cursor(1) })
     editor.focus()
     startCompletion(editor)

@@ -29,7 +29,7 @@ interface SubmissionOptions extends SubmissionErrorOptions {
   flush?: () => Promise<void>
   clearFailure: () => void
   getEditor: () => EditorStore
-  prepare?: (chat: ChatInstance, text: string) => Promise<void> // e.g. compacting a full chat
+  prepare?: (chat: ChatInstance, text: string) => Promise<void> // e.g. compacting before `text`
 }
 
 export function useChatSubmission(options: SubmissionOptions) {
@@ -162,10 +162,10 @@ export function useChatSubmission(options: SubmissionOptions) {
         if (submission.images.length > 0) options.reportError(options.messages.value.requestFailed)
         return false
       }
-      await options.prepare?.(currentChat, submission.modelText)
-      if (version !== operationVersion) return false
       const note = undone.note(submission.modelText, currentChat.messages)
       const noted = { ...submission, modelText: appendSkillContext(note.text, skill) }
+      await options.prepare?.(currentChat, noted.modelText)
+      if (version !== operationVersion) return false
       const previousIds = new Set(currentChat.messages.map((message) => message.id))
       if (submission.images.length === 0 && submission.nodes.length === 0) {
         await sendText(currentChat, noted, dispatch)

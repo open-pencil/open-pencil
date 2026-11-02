@@ -1,3 +1,4 @@
+import type { UIMessage } from 'ai'
 import { ref, type Ref } from 'vue'
 
 import { compactAutomatically } from '@/app/ai/chat/preferences'
@@ -8,7 +9,8 @@ import {
   autoCompactAt,
   contextTokensSinceCompaction,
   designContextLimits,
-  estimatedTokens
+  estimatedTokens,
+  summaryBudget
 } from './limits'
 import { compactionMessage, type Compaction } from './marker'
 import { summarizeConversation } from './summarize'
@@ -30,6 +32,11 @@ interface CompactRequest {
 /** The chat is replying, so a summary now would cut its reply off from the next request. */
 function replying(chat: ChatInstance): boolean {
   return chat.status === 'streaming' || chat.status === 'submitted'
+}
+
+/** The chat still starts with `covered`, which no edit or regenerate replaced meanwhile. */
+function unchanged(chat: ChatInstance, covered: readonly UIMessage[]): boolean {
+  return covered.every((message, index) => chat.messages[index] === message)
 }
 
 /**
@@ -58,19 +65,23 @@ export function useChatCompaction(options: CompactionOptions) {
     failed.value = null
     abort = new AbortController()
     try {
+      const limits = await designContextLimits()
       const summary = await summarizeConversation({
         model: runtime.model,
         messages: covered,
         instructions: request.instructions,
+        budget: limits ? summaryBudget(limits) : undefined,
         abortSignal: abort.signal
       })
-      // A conversation switched meanwhile is no longer the one summarized.
-      if (!request.chat && options.chat.value !== target) return false
+      // A conversation switched, replying, or changed meanwhile is no longer the one summarized.
+      if (options.chat.value !== target || replying(target) || !unchanged(target, covered))
+        return false
       const marker = compactionMessage({
         summary,
         trigger: request.trigger,
         tokensBefore: contextTokensSinceCompaction(covered)
       })
+      // Messages added after the summarized ones meanwhile stay after the summary.
       target.messages = [...covered, marker, ...target.messages.slice(at)]
       await options.flush?.().catch(() => undefined)
       return true

@@ -49,6 +49,14 @@ export function autoCompactAt({ contextWindow, maxOutputTokens }: ContextLimits)
 /** About four characters to a token, for text no request has counted yet. */
 const CHARACTERS_PER_TOKEN = 4
 
+/**
+ * How many characters of the conversation a summary request may carry: what fits below the
+ * automatic threshold, which leaves the summary its reply allowance.
+ */
+export function summaryBudget(limits: ContextLimits): number {
+  return autoCompactAt(limits) * CHARACTERS_PER_TOKEN
+}
+
 /** An estimate of the tokens `text` takes, before a request has counted it. */
 export function estimatedTokens(text: string): number {
   return Math.ceil(text.length / CHARACTERS_PER_TOKEN)
