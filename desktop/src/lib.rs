@@ -28,6 +28,8 @@ use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Before anything starts GTK or EGL, which read the variable once: WebKitGTK before 2.54.2
+    // crashes on Wayland with NVIDIA otherwise (`explicit_sync`).
     #[cfg(target_os = "linux")]
     explicit_sync::disable_nvidia_explicit_sync();
 
