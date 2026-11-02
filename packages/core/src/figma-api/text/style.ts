@@ -1,3 +1,4 @@
+import type { TextDecorationOffset } from '@figma/plugin-typings/plugin-api-standalone'
 import { mapValues, pickBy } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
@@ -48,7 +49,8 @@ export const TEXT_SEGMENT_FIELDS = [
 export type TextSegmentField = (typeof TEXT_SEGMENT_FIELDS)[number]
 
 /** A size Figma reads as automatic or in pixels; the node keeps pixels. */
-export type FigmaTextLength = { unit: 'AUTO' } | { unit: 'PIXELS' | 'PERCENT'; value: number }
+/** Figma's lengths that may be automatic, such as `TextDecorationOffset`. */
+export type FigmaTextLength = TextDecorationOffset
 
 function pixels(value: number | null): FigmaTextLength {
   return value === null ? { unit: 'AUTO' } : { unit: 'PIXELS', value }

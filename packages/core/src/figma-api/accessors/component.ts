@@ -1,3 +1,5 @@
+import type { ComponentSetNode } from '@figma/plugin-typings/plugin-api-standalone'
+
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { defaultVariant } from '@open-pencil/scene-graph/components'
 
@@ -72,7 +74,7 @@ export function installComponentNodeAccessors(
     },
     // Figma's deprecated reading of the variant properties: each one's values, in order.
     variantGroupProperties: {
-      get(this: ProxyThis): Record<string, { values: string[] }> {
+      get(this: ProxyThis): ComponentSetNode['variantGroupProperties'] {
         return Object.fromEntries(
           raw(this, internals)
             .componentPropertyDefinitions.filter((definition) => definition.type === 'VARIANT')

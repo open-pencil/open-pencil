@@ -1,4 +1,16 @@
 import type {
+  BooleanOperationNode,
+  ComponentSetNode,
+  DocumentNode,
+  Guide,
+  LeadingTrim,
+  MinimalFillsMixin,
+  TextDecorationOffset,
+  TextDecorationStyle,
+  TextDecorationThickness
+} from '@figma/plugin-typings/plugin-api-standalone'
+
+import type {
   ArcData,
   HyperlinkTarget,
   LayoutGrid,
@@ -9,7 +21,6 @@ import type {
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
-import type { FigmaGuide } from './accessors/guides'
 import type { TextRangeMethods } from './accessors/text/ranges'
 import type { VariableNodeMembers } from './accessors/variables'
 import type { FigmaVectorNetwork, FigmaVectorPath } from './accessors/vector'
@@ -21,11 +32,11 @@ import type { FigmaPaint } from './paints'
 import type { PluginDataMethods } from './plugin-data'
 import type { FigmaNodeProxy } from './proxy'
 import type { FigmaLetterSpacing, FigmaLineHeight } from './text'
-import type { FigmaDecorationColor, FigmaTextLength } from './text/style'
+import type { FigmaDecorationColor } from './text/style'
 import type { FigmaTransform } from './types'
 
-/** What a style reference's async setter does: give the layer the style, or reject it. */
-type StyleIdSetter = (styleId: string) => Promise<void>
+/** A style reference's async setter, as Figma types it. */
+type StyleIdSetter = MinimalFillsMixin['setFillStyleIdAsync']
 
 /**
  * The members of Figma's node types that `FigmaNodeProxy` gives scripts. Accessors install them
@@ -79,7 +90,7 @@ export abstract class FigmaNodeMembers {
   declare paddingLeft: number
   declare horizontalPadding: number
   declare verticalPadding: number
-  declare guides: readonly FigmaGuide[]
+  declare guides: readonly Guide[]
   declare layoutWrap: string
   declare primaryAxisSizingMode: string
   declare counterAxisSizingMode: string
@@ -104,13 +115,13 @@ export abstract class FigmaNodeMembers {
   declare pointCount: number
   declare innerRadius: number
   declare arcData: Readonly<ArcData>
-  declare booleanOperation: NonNullable<SceneNode['booleanOperation']>
+  declare booleanOperation: BooleanOperationNode['booleanOperation']
   declare description: string
   declare readonly instances: FigmaNodeProxy[]
   declare getInstancesAsync: () => Promise<FigmaNodeProxy[]>
   declare readonly defaultVariant: FigmaNodeProxy | null
-  declare readonly variantGroupProperties: Record<string, { values: string[] }>
-  declare readonly documentColorProfile: 'SRGB' | 'DISPLAY_P3'
+  declare readonly variantGroupProperties: ComponentSetNode['variantGroupProperties']
+  declare readonly documentColorProfile: DocumentNode['documentColorProfile']
   declare getTopLevelFrame: () => FigmaNodeProxy | undefined
   declare setFillsAsync: (paints: readonly FigmaPaint[]) => Promise<void>
   declare setStrokesAsync: (paints: readonly FigmaPaint[]) => Promise<void>
@@ -167,12 +178,12 @@ export abstract class FigmaNodeMembers {
   declare textStyleId: string | symbol
   declare fillStyleId: string | symbol
   declare textDecoration: SceneNode['textDecoration'] | symbol
-  declare textDecorationStyle: SceneNode['textDecorationStyle'] | null | symbol
-  declare textDecorationOffset: FigmaTextLength | null | symbol
-  declare textDecorationThickness: FigmaTextLength | null | symbol
+  declare textDecorationStyle: TextDecorationStyle | null | symbol
+  declare textDecorationOffset: TextDecorationOffset | null | symbol
+  declare textDecorationThickness: TextDecorationThickness | null | symbol
   declare textDecorationColor: FigmaDecorationColor | null | symbol
   declare textDecorationSkipInk: boolean | null | symbol
-  declare leadingTrim: SceneNode['leadingTrim']
+  declare leadingTrim: LeadingTrim
   declare readonly openTypeFeatures: Readonly<Record<string, boolean>> | symbol
   declare maxLines: number | null
   declare listSpacing: number | symbol

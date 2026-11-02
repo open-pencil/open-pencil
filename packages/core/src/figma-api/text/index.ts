@@ -1,3 +1,8 @@
+import type {
+  LetterSpacing,
+  LineHeight,
+  TextListOptions
+} from '@figma/plugin-typings/plugin-api-standalone'
 import { compact } from 'es-toolkit/array'
 import { upperFirst } from 'es-toolkit/string'
 
@@ -38,13 +43,10 @@ import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text
 
 import { assertTextRange } from './style'
 
-/** Figma's plugin API line height: automatic, or a size in pixels or percent of the font size. */
-export type FigmaLineHeight = { unit: 'AUTO' } | { unit: 'PIXELS' | 'PERCENT'; value: number }
-/** Figma's plugin API letter spacing, in pixels or percent of the font size. */
-export interface FigmaLetterSpacing {
-  unit: 'PIXELS' | 'PERCENT'
-  value: number
-}
+/** Figma's `LineHeight`: automatic, or a size in pixels or percent of the font size. */
+export type FigmaLineHeight = LineHeight
+/** Figma's `LetterSpacing`, in pixels or percent of the font size. */
+export type FigmaLetterSpacing = LetterSpacing
 
 /** Figma's complaint about a length's `.value`, or null when it is a number. */
 function amountProblem(amount: unknown): string | null {

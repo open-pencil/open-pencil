@@ -1,3 +1,4 @@
+import type { TextListOptions } from '@figma/plugin-typings/plugin-api-standalone'
 import { uniqBy } from 'es-toolkit/array'
 
 import type {

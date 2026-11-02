@@ -1,3 +1,5 @@
+import type { InheritedStyleField } from '@figma/plugin-typings/plugin-api-standalone'
+
 import type {
   CharacterStyleOverride,
   SceneGraph,
@@ -61,7 +63,7 @@ export function styleChanges(
 /** A layer that uses a style itself, and the fields it uses it through, as Figma lists them. */
 export interface StyleConsumer {
   node: SceneNode
-  fields: string[]
+  fields: InheritedStyleField[]
 }
 
 function usesStyles(graph: SceneGraph, node: SceneNode): boolean {

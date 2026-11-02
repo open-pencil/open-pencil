@@ -1,3 +1,5 @@
+import type { Guide } from '@figma/plugin-typings/plugin-api-standalone'
+
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { newGuideId, type CanvasGuide } from '@open-pencil/scene-graph/guides'
 
@@ -8,12 +10,6 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { invalid, numberProblem, received } from '#core/figma-api/accessors/text/messages'
-
-/** A guide as Figma's plugin API reads and takes it: an axis and an offset along it. */
-export interface FigmaGuide {
-  readonly axis: 'X' | 'Y'
-  readonly offset: number
-}
 
 const METHOD = 'set_guides'
 
@@ -26,7 +22,7 @@ const GUIDE_OWNER_TYPES: ReadonlySet<SceneNode['type']> = new Set([
   'INSTANCE'
 ])
 
-function parseGuide(value: unknown, index: number): FigmaGuide {
+function parseGuide(value: unknown, index: number): Guide {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw invalid(
       METHOD,
@@ -54,7 +50,7 @@ export function installGuideAccessors(
 ): void {
   if (!GUIDE_OWNER_TYPES.has(type)) return
   Object.defineProperty(target, 'guides', {
-    get(this: ProxyThis): readonly FigmaGuide[] {
+    get(this: ProxyThis): readonly Guide[] {
       return Object.freeze(
         raw(this, internals).guides.map((guide) =>
           Object.freeze({ axis: guide.axis === 'x' ? 'X' : 'Y', offset: guide.position } as const)

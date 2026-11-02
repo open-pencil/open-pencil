@@ -278,6 +278,7 @@
       "name": "@open-pencil/core",
       "version": "0.16.0",
       "dependencies": {
+        "@figma/plugin-typings": "^1.140.0",
         "@iconify/utils": "^3.1.4",
         "@open-pencil/design-jsx": "workspace:*",
         "@open-pencil/dom-css": "workspace:*",

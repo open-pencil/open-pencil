@@ -1,3 +1,9 @@
+import type {
+  StyleConsumers,
+  StyleType,
+  TextStyle
+} from '@figma/plugin-typings/plugin-api-standalone'
+
 import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
 
 import { invalid, received } from '#core/figma-api/accessors/text/messages'
@@ -7,8 +13,8 @@ import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 
 import { releaseUsers, restyleUsers, styleConsumers, type LayerUpdate } from './apply'
 
-/** Figma's names for the kinds of style. */
-export type FigmaStyleType = 'PAINT' | 'TEXT' | 'EFFECT' | 'GRID'
+/** The kinds of style OpenPencil keeps: Figma's, apart from custom animations. */
+export type FigmaStyleType = Exclude<StyleType, 'CUSTOM_ANIMATION'>
 
 export const STYLE_TYPES: Record<FigmaStyleType, SharedStyleType> = {
   PAINT: 'FILL',
@@ -27,11 +33,8 @@ export interface StyleHost {
   forgetStyle(id: string): void
 }
 
-/** A layer that uses a style, and the fields it uses it through. */
-export interface FigmaStyleConsumer {
-  node: FigmaNodeProxy
-  fields: string[]
-}
+/** Figma's `StyleConsumers`, the layer read as a node proxy. */
+export type FigmaStyleConsumer = Omit<StyleConsumers, 'node'> & { node: FigmaNodeProxy }
 
 const KEY = /^S:([0-9a-f]{40}),/
 
@@ -195,22 +198,22 @@ type TextStyleProperty = (typeof TEXT_STYLE_PROPERTIES)[number]
 
 export class FigmaTextStyle extends FigmaBaseStyle {
   readonly type = 'TEXT'
-  declare fontName: FigmaNodeProxy['fontName']
-  declare fontSize: FigmaNodeProxy['fontSize']
-  declare lineHeight: FigmaNodeProxy['lineHeight']
-  declare letterSpacing: FigmaNodeProxy['letterSpacing']
-  declare textCase: FigmaNodeProxy['textCase']
-  declare textDecoration: FigmaNodeProxy['textDecoration']
+  declare fontName: TextStyle['fontName']
+  declare fontSize: TextStyle['fontSize']
+  declare lineHeight: TextStyle['lineHeight']
+  declare letterSpacing: TextStyle['letterSpacing']
+  declare textCase: TextStyle['textCase']
+  declare textDecoration: TextStyle['textDecoration']
   declare textDecorationStyle: FigmaNodeProxy['textDecorationStyle']
   declare textDecorationOffset: FigmaNodeProxy['textDecorationOffset']
   declare textDecorationThickness: FigmaNodeProxy['textDecorationThickness']
   declare textDecorationColor: FigmaNodeProxy['textDecorationColor']
   declare textDecorationSkipInk: FigmaNodeProxy['textDecorationSkipInk']
-  declare leadingTrim: FigmaNodeProxy['leadingTrim']
-  declare paragraphSpacing: FigmaNodeProxy['paragraphSpacing']
-  declare paragraphIndent: FigmaNodeProxy['paragraphIndent']
-  declare listSpacing: FigmaNodeProxy['listSpacing']
-  declare hangingList: FigmaNodeProxy['hangingList']
+  declare leadingTrim: TextStyle['leadingTrim']
+  declare paragraphSpacing: TextStyle['paragraphSpacing']
+  declare paragraphIndent: TextStyle['paragraphIndent']
+  declare listSpacing: TextStyle['listSpacing']
+  declare hangingList: TextStyle['hangingList']
 }
 
 // Each field is read from, and written to, the text that keeps the style, which checks it as a
