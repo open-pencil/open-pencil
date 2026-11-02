@@ -55,7 +55,11 @@ export function clickDepthDriver(page: () => Page) {
       return page().evaluate(() => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
-        return { selected: [...store.state.selectedIds], hovered: store.state.hoveredNodeId }
+        return {
+          selected: [...store.state.selectedIds],
+          hovered: store.state.hoveredNodeId,
+          entered: store.state.enteredContainerId
+        }
       })
     },
 
