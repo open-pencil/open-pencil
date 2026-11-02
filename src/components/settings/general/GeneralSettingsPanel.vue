@@ -21,7 +21,6 @@ import CredentialSettingsSection from '@/components/settings/credentials/Credent
 import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
 import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
-import SettingsResetButton from '@/components/settings/layout/SettingsResetButton.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
@@ -99,16 +98,14 @@ const preserveUnsavedWork = computed({
             :ui="selectUI"
           />
         </SettingsRow>
-        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5">
-          <span class="text-xs font-medium text-surface">{{ settings.accentColor }}</span>
-          <span class="flex items-center gap-1">
-            <SettingsResetButton
-              v-if="accentModified"
-              @reset="updateAccentPreference({ ...DEFAULT_ACCENT })"
-            />
-            <AccentColorPicker />
-          </span>
-        </div>
+        <SettingsRow
+          :label="settings.accentColor"
+          :modified="accentModified"
+          class="flex-wrap gap-y-2"
+          @reset="updateAccentPreference({ ...DEFAULT_ACCENT })"
+        >
+          <AccentColorPicker />
+        </SettingsRow>
         <SettingsRow
           as="label"
           :label="settings.animations"
