@@ -48,7 +48,7 @@ defineSlots<{
 <template>
   <div
     data-canvas-obstacle
-    class="interface-chrome absolute bottom-4 left-1/2 z-10 flex max-w-full -translate-x-1/2 items-center"
+    class="absolute bottom-4 left-1/2 z-10 flex max-w-full -translate-x-1/2 items-center"
   >
     <ToolbarRoot
       data-test-id="toolbar"

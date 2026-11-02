@@ -122,7 +122,7 @@ const drawerTransition = useMotionTransition({
 <template>
   <motion.div
     data-test-id="mobile-drawer"
-    class="interface-chrome fixed inset-x-0 bottom-0 z-30 flex touch-none flex-col rounded-t-3xl bg-panel pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.3)]"
+    class="fixed inset-x-0 bottom-0 z-30 flex touch-none flex-col rounded-t-3xl bg-panel pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.3)]"
     :animate="{ height: `${targetHeight}px` }"
     :transition="drawerTransition"
     @pan="onPan"
