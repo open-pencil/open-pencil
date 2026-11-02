@@ -1,5 +1,4 @@
 import { useFileDialog } from '@vueuse/core'
-import { uniq } from 'es-toolkit'
 import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
@@ -13,11 +12,9 @@ import {
   validateImageAttachmentFile
 } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS, type ImageAttachmentDraft } from '@/app/ai/attachment/image/types'
-import {
-  appendReferencedNodeContext,
-  MAX_REFERENCED_NODES,
-  resolveReferencedNodes
-} from '@/app/ai/chat/context'
+import { resolveReferencedNodes } from '@/app/ai/chat/context'
+import { referenceLink } from '@/app/ai/chat/references/link'
+import { mentionedNodes } from '@/app/ai/chat/references/nodes'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 
 interface AttachmentDraftOptions {
@@ -30,21 +27,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
   /** Advances when a message is sent or the draft is cleared, so late images skip it. */
   let draftGeneration = 0
   const images = ref<ImageAttachmentDraft[]>([])
-  const nodeIds = ref<string[]>([])
-  const nodes = computed(() => resolveReferencedNodes(options.editor.graph, nodeIds.value))
-  const selectedNodeIds = computed(() =>
-    [...options.selectedIds.value].filter((id) => nodeIds.value.includes(id))
-  )
-  const canToggleSelection = computed(
-    () =>
-      options.selectedIds.value.size > 0 &&
-      (selectedNodeIds.value.length > 0 || nodes.value.length < MAX_REFERENCED_NODES)
-  )
-  const selectionActive = computed(
-    () =>
-      options.selectedIds.value.size > 0 &&
-      selectedNodeIds.value.length === options.selectedIds.value.size
-  )
+  const canMentionSelection = computed(() => options.selectedIds.value.size > 0)
   const {
     open: openImageDialog,
     reset: resetImageDialog,
@@ -96,20 +79,11 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
     resetImageDialog()
   }
 
-  function removeNode(id: string): void {
-    nodeIds.value = nodeIds.value.filter((candidate) => candidate !== id)
-  }
-
-  function toggleSelection(): void {
-    if (selectedNodeIds.value.length > 0) {
-      const selected = new Set(options.selectedIds.value)
-      nodeIds.value = nodeIds.value.filter((id) => !selected.has(id))
-      return
-    }
-    nodeIds.value = resolveReferencedNodes(options.editor.graph, [
-      ...nodeIds.value,
-      ...options.selectedIds.value
-    ]).map((node) => node.id)
+  /** The selected layers as references, to insert into the message where the caret is. */
+  function selectionMentions(): string {
+    return resolveReferencedNodes(options.editor.graph, [...options.selectedIds.value])
+      .map((node) => `${referenceLink({ kind: 'node', id: node.id, label: node.name })} `)
+      .join('')
   }
 
   function handlePaste(event: ClipboardEvent): void {
@@ -120,32 +94,32 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
     void addFiles(pastedImages)
   }
 
+  /**
+   * The message as sent. The layers it mentions go along as attachments, whose previews the
+   * history shows; the references in the text already tell the model their IDs.
+   */
   function takeSubmission(text: string): ChatSubmission {
     draftGeneration++
     const submittedImages = images.value
-    const submittedNodes = nodes.value
     images.value = []
-    nodeIds.value = []
     resetImageDialog()
     return {
-      modelText: appendReferencedNodeContext(text, submittedNodes),
+      modelText: text,
       displayText: text,
       images: submittedImages,
-      nodes: submittedNodes
+      nodes: mentionedNodes(options.editor.graph, text)
     }
   }
 
   /** Takes back a submission that was not sent, ahead of anything attached since. */
   function restoreSubmission(submission: ChatSubmission): void {
     images.value = [...submission.images, ...images.value]
-    nodeIds.value = uniq([...submission.nodes.map((node) => node.id), ...nodeIds.value])
   }
 
   function clear(): void {
     draftGeneration++
     for (const image of images.value) revokeImagePreviewURL(image.previewURL)
     images.value = []
-    nodeIds.value = []
     resetImageDialog()
   }
 
@@ -156,14 +130,11 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
 
   return {
     images,
-    nodes,
-    canToggleSelection,
-    selectionActive,
+    canMentionSelection,
+    selectionMentions,
     openImageDialog,
     addFiles,
     removeImage,
-    removeNode,
-    toggleSelection,
     handlePaste,
     takeSubmission,
     restoreSubmission

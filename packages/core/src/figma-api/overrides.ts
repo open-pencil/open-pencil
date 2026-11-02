@@ -40,6 +40,7 @@ const FIGMA_OVERRIDE_FIELDS: Readonly<Partial<Record<string, readonly string[]>>
   fontFamily: ['fontName'],
   fontWeight: ['fontName'],
   italic: ['fontName'],
+  fontStyle: ['fontName'],
   letterSpacing: ['letterSpacing'],
   lineHeight: ['lineHeight'],
   textCase: ['textCase'],

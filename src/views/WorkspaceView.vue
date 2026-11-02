@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { useHead } from '@unhead/vue'
 import { useEventListener, whenever } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
@@ -25,7 +27,6 @@ import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
-import { recentFilesAvailable } from '@/app/recent-files/preferences'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
@@ -35,6 +36,7 @@ import {
   activeTab,
   createHomeTab,
   ensureHomeTab,
+  createDocumentTab,
   createTab,
   getActiveStore,
   getTabsSnapshot,
@@ -54,7 +56,7 @@ import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import LoadingScreen from '@/components/shell/LoadingScreen.vue'
 import TabBar from '@/components/TabBar.vue'
-import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
+import { IS_BROWSER } from '@/constants'
 
 const route = useRoute()
 /**
@@ -78,10 +80,10 @@ watch(
 )
 const router = useRouter()
 const createdInitialTab = tabCount() === 0
-// Home is pinned first everywhere but tests and the demo, and opens in front where it lists
-// something: recent files, or the workspaces of the Cloud server that serves the editor.
+// Home is pinned first everywhere but tests and the demo, and opens in front, as Figma's does:
+// it is where a design or a board is started, with or without recent files to list.
 const pinHome = !appRuntimeConfig.test && !route.meta.demo
-const showHomeFirst = route.path === '/' && pinHome && (recentFilesAvailable() || IS_CLOUD_SITE)
+const showHomeFirst = route.path === '/' && pinHome
 // The view stays mounted from /demo to /, so Home is pinned once a route that has it is reached.
 watch(
   () => !appRuntimeConfig.test && !route.meta.demo,
@@ -224,7 +226,6 @@ async function selectNodeByName(name: string): Promise<boolean> {
 }
 
 async function openPendingAssociatedFiles(): Promise<void> {
-  const { invoke } = await import('@tauri-apps/api/core')
   const files = await invoke<PendingOpenFile[]>('take_pending_open')
   await openPendingFiles(files, {
     openPaths: openDocumentPaths,
@@ -244,7 +245,6 @@ function drainPendingOpens(): Promise<void> {
 
 async function bindAssociatedFileOpen(): Promise<void> {
   if (!isTauri()) return
-  const { listen } = await import('@tauri-apps/api/event')
   fileAssociationCleanup.value = await listen('open-associated-files', () => {
     void drainPendingOpens()
   })
@@ -301,9 +301,16 @@ onUnmounted(() => {
     <RenameSelectionDialog />
     <CommandPalette />
     <TabBar />
-    <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createTab()" />
+    <HomeWorkspace
+      v-show="activeTab && activeTab.kind !== 'document'"
+      @new-document="createDocumentTab"
+    />
     <CloudVersionDialog />
-    <EditorWorkspace v-if="shown && shown.tab.kind !== 'home'" :key="shown.key" :tab="shown.tab" />
+    <EditorWorkspace
+      v-if="shown && shown.tab.kind === 'document'"
+      :key="shown.key"
+      :tab="shown.tab"
+    />
     <LoadingScreen v-if="openingCloudLink" />
   </div>
 </template>

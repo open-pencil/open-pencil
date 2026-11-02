@@ -239,6 +239,18 @@ function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): 
       { os: 'android', desktop: 0, web: 43 },
       { os: 'ios', desktop: 0, web: 28 }
     ],
+    // Networks are illustrative, shaped like a cloud network's automated installs.
+    networks: {
+      total: 2512,
+      top: [
+        { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 2089, web: 0 },
+        { asn: 7922, name: 'Comcast Cable Communications, LLC', desktop: 101, web: 88 },
+        { asn: 4134, name: 'Chinanet', desktop: 54, web: 61 },
+        { asn: 3320, name: 'Deutsche Telekom AG', desktop: 40, web: 33 },
+        { asn: 9299, name: 'Philippine Long Distance Telephone Company', desktop: 12, web: 9 },
+        { asn: 0, name: '', desktop: 3, web: 1 }
+      ]
+    },
     versions: { latest: '0.16.0', daily: inRange(versions) },
     releases: inRange([{ day: '2026-10-14', version: '0.16.0' }]),
     visits: inRange(visits),
@@ -336,7 +348,7 @@ export const Overview = story('h-[3950px]')
 export const WithoutUsage = story('h-[3550px]', false)
 
 /** Before the first nightly sync, issues and pull requests give way to a notice. */
-export const BeforeIssueSync = story('h-[3000px]', true, false)
+export const BeforeIssueSync = story('h-[3400px]', true, false)
 
 /** The dashboard in a phone-width window. */
-export const Narrow = story('h-[6100px] w-[390px]')
+export const Narrow = story('h-[6450px] w-[390px]')

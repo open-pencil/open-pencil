@@ -105,7 +105,7 @@ export const OVERRIDE_FIELDS = {
   stackPrimaryAlignItems: { scene: ['primaryAxisAlign'], kind: 'node' },
   stackCounterAlignItems: { scene: ['counterAxisAlign'], kind: 'node' },
   stackPositioning: { scene: ['layoutPositioning'], kind: 'node' },
-  fontName: { scene: ['fontFamily', 'fontWeight', 'italic'], kind: 'node' },
+  fontName: { scene: ['fontFamily', 'fontWeight', 'italic', 'fontStyle'], kind: 'node' },
   fontVariations: { scene: ['fontVariations'], kind: 'node', absent: [] },
   detachOpticalSizeFromFontSize: {
     scene: ['opticalSizeFromFontSize'],

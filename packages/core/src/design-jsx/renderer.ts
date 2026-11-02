@@ -4,6 +4,7 @@ import { defaultIcons, placeIcon, type IconProvider } from '#core/icons'
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
 import { layoutAuthoredNodes } from '#core/layout'
+import { markdownText } from '#core/text/markdown'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 function parseViewBox(viewBox: string | undefined): { w: number; h: number } {
@@ -54,7 +55,8 @@ function createRenderer(icons: IconProvider) {
         identity: icon.prefix !== INLINE_SVG
       }),
     layout: layoutAuthoredNodes,
-    vectorBounds: computeAccurateBounds
+    vectorBounds: computeAccurateBounds,
+    markdown: markdownText
   })
 }
 
@@ -74,4 +76,4 @@ export function designJSXRenderer(icons: IconProvider = defaultIcons) {
 }
 
 /** Design JSX rendering with Iconify's icons. */
-export const { renderJSX, renderTree } = designJSXRenderer()
+export const { renderJSX, renderTree, renderRoots } = designJSXRenderer()

@@ -147,6 +147,7 @@ export class PiHarnessBackend implements HarnessBackend {
       sandbox: createJustBashSandbox({ cwd: '/workspace' }),
       sandboxConfig: { workDir: 'workspace' },
       instructions: configuration.instructions ?? this.defaults.instructions,
+      skills: configuration.skills ?? [],
       permissionMode: permissionMode ?? this.defaults.permissionMode ?? 'allow-edits'
     })
     const sessionOptions: {

@@ -1,1 +1,0 @@
-- Dates in the recovery dialog, font settings and the diagnostics log follow the language the app is set to, not the browser's.

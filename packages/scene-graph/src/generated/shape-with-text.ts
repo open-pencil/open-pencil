@@ -80,7 +80,6 @@ export const SHAPE_WITH_TEXT_KIND: GeneratedFrameKind = {
   text: (graph, frame) => shapeWithTextLabel(graph, frame) ?? undefined,
   rotates: true,
   resizes: true,
-  strokesAndEffects: true,
   namedByText: true,
   sized: ({ height }, shape) =>
     height === undefined || height === shape.height

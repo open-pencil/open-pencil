@@ -141,6 +141,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'content',
   'value',
   'title',
+  'markdown',
   'textAlign',
   'textAlignHorizontal',
   'textHorizontalAlignment',
@@ -195,6 +196,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'properties',
   'of',
   'exposed',
+  'overrides',
   'mode',
   // A Reka UI root's behaviour, by its own property names
   'modelValue',

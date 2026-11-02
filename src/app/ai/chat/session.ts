@@ -6,8 +6,12 @@ import { ref } from 'vue'
 import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
+import { readPiAccount } from '@/app/ai/agents/pi/settings'
+import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
+import { notifyReplyEnded } from '@/app/ai/chat/notifications'
+import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
@@ -15,8 +19,10 @@ import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
+import { harnessSkills } from '@/app/ai/skills/harness'
 import { currentRun } from '@/app/ai/tools'
-import type { AgentTurnUsage } from '@/app/ai/transports/acp'
+import { ACPChatTransport, type AgentTurnUsage } from '@/app/ai/transports/acp'
+import { HarnessChatTransport } from '@/app/ai/transports/pi'
 import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import { restAgents } from '@/app/automation/agents'
 import { diagnosticErrorDetails } from '@/app/diagnostics'
@@ -28,6 +34,7 @@ import {
 } from '@/app/diagnostics/events'
 import type { AIDiagnosticContext } from '@/app/diagnostics/events/ai'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
+import { buildPiMCPServers } from '@/app/integrations/mcp'
 import { trackUsage } from '@/app/telemetry'
 
 import { createTraceStore } from './history/idb'
@@ -54,8 +61,6 @@ export async function createACPTransport(
   const agentDef = ACP_AGENTS.find((a) => a.id === agentId)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${agentId}`)
 
-  const { ACPChatTransport } = await import('@/app/ai/transports/acp')
-  const { agentWorkspace } = await import('@/app/ai/agents/setup/native')
   // A folder of its own, not the home folder, whose project settings the agent would read.
   return new ACPChatTransport({ agentDef, cwd: await agentWorkspace(), store, onUsage })
 }
@@ -75,6 +80,12 @@ async function settleEndedReply(
   updateMessage(chat, messageId, (message) =>
     settleMessage(message, { stopped, changed: (toolCallId) => run.changedCalls.has(toolCallId) })
   )
+}
+
+/** The agent or provider a chat runs on, as the composer names it. */
+function providerName(id: AIProviderID): string {
+  const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === id)
+  return agent?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
 }
 
 export function createChatSessionManager({
@@ -159,11 +170,6 @@ export function createChatSessionManager({
     const runtime = await createAIModelRuntime('design')
     if (runtime?.kind !== 'harness') throw new Error('The Design agent is not configured for Pi')
     await assertAgentReady('pi')
-    const [{ HarnessChatTransport }, { buildPiMCPServers }, { readPiAccount }] = await Promise.all([
-      import('@/app/ai/transports/pi'),
-      import('@/app/integrations/mcp'),
-      import('@/app/ai/agents/pi/settings')
-    ])
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
@@ -187,7 +193,8 @@ export function createChatSessionManager({
           permissionMode: runtime.role.profile.harnessPermissionMode ?? 'allow-edits'
         },
         instructions: SYSTEM_PROMPT,
-        mcpServers: await buildPiMCPServers()
+        mcpServers: await buildPiMCPServers(),
+        skills: await harnessSkills()
       },
       apiKey
         ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
@@ -222,7 +229,8 @@ export function createChatSessionManager({
       thinkingLevel: () => chatThinkingLevel.value,
       onError: captureProviderError,
       diagnosticContext,
-      recorder: runRecorder
+      recorder: runRecorder,
+      yieldWhen: hasSteeringMessage
     })
   }
 
@@ -290,6 +298,13 @@ export function createChatSessionManager({
           if (event.isAbort || event.isDisconnect || event.isError) {
             void settleEndedReply(created, store, event.message.id, event.isAbort)
           }
+          // A reply stopped by the person, or cut off with its connection, ends unannounced.
+          if (!event.isAbort && !event.isDisconnect)
+            void notifyReplyEnded(
+              store,
+              providerName(chatProviderID),
+              event.isError ? null : event.message
+            )
         }
       })
       chat = created

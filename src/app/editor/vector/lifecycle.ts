@@ -1,9 +1,9 @@
 import type { Editor } from '@open-pencil/core'
 import { vectorChangesFromPagePath } from '@open-pencil/core/vector'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import { slotScope } from '@open-pencil/scene-graph/slots'
 import {
-  cloneVectorNetwork,
   transformVectorNetwork,
   vectorNetworksEqual
 } from '@open-pencil/scene-graph/vector-network'

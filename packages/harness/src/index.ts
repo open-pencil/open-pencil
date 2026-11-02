@@ -15,6 +15,7 @@ export {
   type HarnessSandboxID,
   type HarnessSessionConfiguration,
   type HarnessSidecarMessage,
+  type HarnessSkill,
   type HarnessTurnEvent,
   type HarnessTurnUsage,
   type JSONValue

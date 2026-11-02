@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
   graph,
@@ -70,10 +71,17 @@ export function installVisualNodeProxyAccessors(
 ): void {
   Object.defineProperties(prototype, {
     fills: {
-      // Text reads mixed while its characters are filled differently, and setting it fills them all.
+      // Text reads mixed while its characters are filled differently, and a vector while its
+      // regions are; setting it fills them all.
       get(this: ProxyThis): readonly FigmaPaint[] | symbol {
         const node = raw(this, internals)
-        if (node.type !== 'TEXT') return Object.freeze(figmaFills(graph(this, internals), node))
+        const sceneGraph = graph(this, internals)
+        if (node.type === 'VECTOR') {
+          // A region without paints of its own draws the layer's, its bound colors resolved.
+          const layer = resolvedPaintBindings(sceneGraph, node).fills ?? node.fills
+          if (regionFillsDiffer(node.vectorNetwork, layer)) return mixed
+        }
+        if (node.type !== 'TEXT') return Object.freeze(figmaFills(sceneGraph, node))
         const fills = getTextStyle(node, 'fills', mixed)
         // Text styles read for scripts already give Figma's paints.
         return typeof fills === 'symbol' ? fills : Object.freeze(fills as FigmaPaint[])

@@ -1,4 +1,4 @@
-import type { Editor, EditorState } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
 import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 
@@ -12,6 +12,8 @@ import { toast } from '@/app/shell/ui'
 
 type OpenDOMDocumentState = EditorState & {
   documentName: string
+  /** Whether the side panels show, which a document opens with as its kind starts it. */
+  showUI: boolean
 }
 
 type OpenDOMFileOptions = {
@@ -70,6 +72,8 @@ export function createDOMOpenActions({
     const graph = sceneGraphFromStyledHTML(styled, { pageName })
     await yieldToUI()
     await applyImportedDocument(editor, graph, load)
+    // Into a reused tab too, the document opens with the panels its kind starts with.
+    state.showUI = resolveEditorProfile(editor.state).panelsOpen
     state.documentName = pageName
     await fitCurrentPageToViewport()
     editor.requestRender()

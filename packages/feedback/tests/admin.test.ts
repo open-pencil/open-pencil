@@ -16,6 +16,7 @@ const POSTHOG_QUERY = 'https://eu.posthog.com/api/projects/267806/query/'
 const NOW = new Date('2026-10-20T12:00:00.000Z')
 const TABLES = [
   'usagePings',
+  'pingNetworks',
   'waitlist',
   'githubStars',
   'releaseDownloads',
@@ -215,6 +216,66 @@ describe('metrics snapshot API', () => {
       { day: '2026-10-15', desktop: 400, web: 300 },
       { day: '2026-10-16', desktop: 0, web: 0 }
     ])
+  })
+
+  test('networks rank the range by pings under their commonest name', async () => {
+    const counts = [
+      ['2026-10-18', 9299, 'PLDT', 'desktop', 30],
+      // The commonest wording is split between apps and comes first, so neither the biggest row
+      // nor the latest day would pick it.
+      ['2026-10-18', 136907, 'Huawei Cloud Singapore Region', 'desktop', 200],
+      ['2026-10-18', 136907, 'Huawei Cloud Singapore Region', 'web', 150],
+      ['2026-10-19', 136907, 'Huawei-Cloud-SG', 'desktop', 300],
+      ['2026-10-19', 9299, 'PLDT', 'web', 20],
+      // Pings without an operator name outnumber the named ones but never name the network.
+      ['2026-10-19', 9299, '', 'desktop', 60],
+      ['2026-10-19', 0, '', 'desktop', 5]
+    ] as const
+    await database()
+      .insertInto('pingNetworks')
+      .values(
+        counts.map(([day, asn, name, app, count]) => ({
+          day,
+          asn,
+          name,
+          app,
+          platform: 'macos',
+          count
+        }))
+      )
+      .execute()
+
+    const { networks } = await snapshot()
+    expect(networks).toEqual({
+      total: 765,
+      top: [
+        { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 500, web: 150 },
+        { asn: 9299, name: 'PLDT', desktop: 90, web: 20 },
+        { asn: 0, name: '', desktop: 5, web: 0 }
+      ]
+    })
+  })
+
+  test('the network total counts the networks the ranking leaves out', async () => {
+    await database()
+      .insertInto('pingNetworks')
+      .values(
+        Array.from({ length: 12 }, (_, index) => ({
+          day: '2026-10-19',
+          asn: 64500 + index,
+          name: `Network ${index}`,
+          app: 'desktop',
+          platform: 'linux',
+          count: 12 - index
+        }))
+      )
+      .execute()
+
+    const { networks } = await snapshot()
+    expect(networks.top.map((network) => network.asn)).toEqual(
+      Array.from({ length: 10 }, (_, index) => 64500 + index)
+    )
+    expect(networks.total).toBe(78)
   })
 
   test('earliest is the first day with pings or backfilled visits', async () => {

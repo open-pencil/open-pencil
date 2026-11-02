@@ -14,7 +14,7 @@ import { registerKeyboardShortcuts } from '@/app/shell/keyboard/registry'
 import { openFileDialog } from '@/app/shell/menu/use'
 import {
   closeTab,
-  createHomeTab,
+  openNewFileTab,
   createTab,
   switchAdjacentTab,
   activeTab as activeTabRef
@@ -51,7 +51,7 @@ export function useKeyboard() {
       if (activeTabRef.value) void closeTab(activeTabRef.value.id)
     },
     createTab: () => createTab(),
-    showHome: () => createHomeTab(),
+    openNewFileTab: () => openNewFileTab(),
     switchAdjacentTab
   })
 }

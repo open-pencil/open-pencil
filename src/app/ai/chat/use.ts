@@ -1,8 +1,7 @@
-import { ref } from 'vue'
-
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
+import { propertiesTab } from '@/app/ai/chat/panel'
 import { createChatSessionManager } from '@/app/ai/chat/session'
 import {
   apiKeyStatus,
@@ -32,10 +31,6 @@ import {
   setUnsplashKey,
   setRememberCredentials
 } from '@/app/settings/credentials/media'
-
-export type PropertiesTab = 'design' | 'code' | 'ai' | 'lint'
-
-const activeTab = ref<PropertiesTab>('design')
 
 const chatSession = createChatSessionManager({
   isConfigured,
@@ -83,7 +78,7 @@ export function useAIChat() {
     setRememberCredentials,
     unsplashKeyStatus,
     setUnsplashKey,
-    activeTab,
+    activeTab: propertiesTab,
     isConfigured,
     history,
     ensureChat: history.ensureChat,

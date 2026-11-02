@@ -57,6 +57,17 @@ export const metricsWaitlistTheme = {
   }
 } as const
 
+/** The busiest networks as a compact table: AS number, operator, share, and pings. */
+export const metricsNetworksTheme = {
+  slots: {
+    table: 'w-full table-fixed text-xs',
+    row: 'h-9 border-b border-border last:border-b-0 [&>th]:h-7 [&>th]:text-[11px] [&>th]:font-normal [&>th]:text-muted',
+    asn: 'w-16 text-left text-muted tabular-nums',
+    name: 'truncate pr-3 text-left font-medium',
+    number: 'w-16 text-right tabular-nums'
+  }
+} as const
+
 /** Presets as rows beside a month calendar; the trigger shows the preset and its days. */
 export const metricsRangePickerTheme = {
   slots: {

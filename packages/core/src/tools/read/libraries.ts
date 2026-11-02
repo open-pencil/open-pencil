@@ -46,7 +46,7 @@ export const insertLibraryComponent = defineTool({
       if (entries.some(([, value]) => typeof value !== 'string')) {
         throw new TypeError('variant_values values must be strings')
       }
-      variantValues = Object.fromEntries(entries) as Record<string, string>
+      variantValues = Object.fromEntries(entries)
     }
     return catalog.insertComponent({
       libraryId: args.library_id,

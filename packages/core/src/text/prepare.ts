@@ -10,9 +10,9 @@ import {
   savedEmojiCharacters
 } from '#core/text/emoji'
 import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
-import { fontManager } from '#core/text/fonts'
-import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/requirements'
-import { missingGraphFontScripts } from '#core/text/resolved-requirements'
+import { fontManager } from '#core/text/font/manager'
+import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/requirements/collect'
+import { missingGraphFontScripts } from '#core/text/requirements/resolved'
 
 import { documentFontStatus, type DocumentFontStatus } from './font/status'
 

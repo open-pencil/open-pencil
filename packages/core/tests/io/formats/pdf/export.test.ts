@@ -6,7 +6,7 @@ import { FIXTURES } from '#core-tests/helpers/paths'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 /** A page with a red square and a gradient, drawn without a browser DOM, as the CLI exports. */
 function card() {

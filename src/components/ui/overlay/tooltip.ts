@@ -7,7 +7,8 @@ import { tooltipSurface } from '@/theme/overlay'
 
 const tooltipTheme = {
   slots: {
-    content: ['z-50 px-2 py-1 text-[11px]', tooltipSurface]
+    // Long text wraps rather than running across the window.
+    content: ['z-50 max-w-80 px-2 py-1 text-[11px] break-words', tooltipSurface]
   }
 } as const
 

@@ -29,6 +29,42 @@ describe('serialization', () => {
     expect(json.children?.length).toBe(1)
   })
 
+  test('toJSON includes component properties and their layer references', () => {
+    const api = createAPI()
+    const component = api.createComponent()
+    const definition = {
+      id: 'label',
+      name: 'Label',
+      type: 'TEXT' as const,
+      defaultValue: 'Hi'
+    }
+    api.graph.updateNode(component.id, { componentPropertyDefinitions: [definition] })
+    const text = api.createText()
+    component.appendChild(text)
+    api.graph.updateNode(text.id, {
+      text: 'Hi',
+      componentPropertyReferences: [{ propertyId: definition.id, field: 'TEXT' }]
+    })
+
+    const json = component.toJSON() as {
+      componentPropertyDefinitions?: unknown
+      children?: Array<{ componentPropertyReferences?: unknown }>
+    }
+    expect(json.componentPropertyDefinitions).toEqual([definition])
+    expect(json.children?.[0]?.componentPropertyReferences).toEqual([
+      { propertyId: definition.id, field: 'TEXT' }
+    ])
+
+    const instance = api.graph.createInstance(component.id, api.currentPageId)
+    if (!instance) throw new Error('Could not create a component instance')
+    api.graph.updateNode(instance.id, {
+      componentPropertyAssignments: { [definition.id]: 'Changed' }
+    })
+    expect(api.wrapNode(instance.id).toJSON()).toMatchObject({
+      componentPropertyAssignments: { [definition.id]: 'Changed' }
+    })
+  })
+
   test('toString returns readable string', () => {
     const api = createAPI()
     const frame = api.createFrame()

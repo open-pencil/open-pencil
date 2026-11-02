@@ -14,10 +14,11 @@ import { reasoningDisplay as preferredReasoningDisplay } from '@/app/ai/chat/pre
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
-import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
+import ChatAttachmentList from '@/components/chat/attachment/ChatAttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
-import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
-import ToolCallGroup from '@/components/chat/tool/ToolCallGroup.vue'
+import ChatReasoning from '@/components/chat/ChatReasoning.vue'
+import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
+import ChatToolCallGroup from '@/components/chat/tool/ChatToolCallGroup.vue'
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
 import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -123,14 +124,14 @@ function groupKey(group: MessagePartGroup): string {
           :data-reverted="reverted"
         >
           <template v-for="group in groups" :key="groupKey(group)">
-            <ToolCallGroup
+            <ChatToolCallGroup
               v-if="group.kind === 'tools'"
               :parts="group.parts.map(({ part }) => part)"
               :undone="undoneCalls"
             />
 
             <!-- Reasoning -->
-            <ReasoningBlock
+            <ChatReasoning
               v-else-if="isReasoningUIPart(group.part) && group.part.text"
               :text="group.part.text"
               :display="reasoningDisplay ?? preferredReasoningDisplay"
@@ -180,7 +181,7 @@ function groupKey(group: MessagePartGroup): string {
 
       <!-- User message -->
       <template v-else-if="message.role === 'user'">
-        <AttachmentList v-if="attachments.length" :attachments="attachments" />
+        <ChatAttachmentList v-if="attachments.length" :attachments="attachments" />
         <ChatMessageEditor
           v-if="editing"
           :text="userText"
@@ -192,7 +193,7 @@ function groupKey(group: MessagePartGroup): string {
             data-test-id="chat-text-bubble"
             class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
-            {{ userText }}
+            <ChatReferenceText :text="userText" />
           </div>
           <IconButton
             v-if="canEdit"

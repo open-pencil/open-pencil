@@ -128,19 +128,12 @@ const _effectShapeMatch: EffectShapeMatch = true
 
 // `Paint` here is Figma's plugin-typings union. `fills`, `strokes`, and `backgrounds` share one
 // paint type: every paint they read is one of Figma's, apart from the noise and custom paints
-// OpenPencil models and Figma has no type for, and they take every paint Figma's types allow but
-// for the linear burn and dodge blend modes, which OpenPencil does not model.
+// OpenPencil models and Figma has no type for, and they take every paint Figma's types allow.
 type ReadPaint = Exclude<Exclude<FigmaNodeProxy['fills'], symbol>[number], OpenPencilPaint>
-type WithoutLinearBlends<T> = T extends unknown
-  ? Omit<T, 'blendMode'> & { blendMode?: Exclude<BlendMode, 'LINEAR_BURN' | 'LINEAR_DODGE'> }
-  : never
 type PaintShapeMatch = Expect<Extends<ReadPaint, Paint>>
 const _paintShapeMatch: PaintShapeMatch = true
 type PaintArgumentMatch = Expect<
-  Extends<
-    WithoutLinearBlends<SolidPaint | GradientPaint | ImagePaint | VideoPaint | PatternPaint>,
-    ReadPaint
-  >
+  Extends<SolidPaint | GradientPaint | ImagePaint | VideoPaint | PatternPaint, ReadPaint>
 >
 const _paintArgumentMatch: PaintArgumentMatch = true
 

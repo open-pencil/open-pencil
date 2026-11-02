@@ -104,6 +104,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
     } as Editor
 
     const origChild: ResizeSnapshot = {
+      type: 'TEXT',
       x: text.x,
       y: text.y,
       width: text.width,
@@ -193,6 +194,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
     } as Editor
 
     const origChild: ResizeSnapshot = {
+      type: 'TEXT',
       x: text.x,
       y: text.y,
       width: text.width,

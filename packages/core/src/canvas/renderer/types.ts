@@ -53,6 +53,8 @@ export interface RenderOverlays {
   measurementMode?: MeasurementMode
   enteredContainerId?: string | null
   editingTextId?: string | null
+  /** The layer whose name a field over the canvas renames, whose title the canvas leaves out. */
+  renamingLabelId?: string | null
   textEditor?: TextEditor | null
   marquee?: Rect | null
   snapGuides?: SnapGuide[]

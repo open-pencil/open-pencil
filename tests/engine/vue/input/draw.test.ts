@@ -50,6 +50,31 @@ describe('draw creation previews', () => {
     }
   })
 
+  // FigJam: a drag-drawn shape's box lands on the board's 16-unit dot grid.
+  test('rounds both corners to the 16-unit grid on a board', () => {
+    const editor = createEditor()
+    try {
+      editor.setDocumentKind('board')
+      editor.setTool('SHAPE_WITH_TEXT')
+      const state: { drag: DragState | null } = { drag: null }
+      startShapeDraw(3.3, 50.4, editor, (drag) => {
+        state.drag = drag
+      })
+      const drag = state.drag
+      if (drag?.type !== 'draw') throw new Error('Expected drawing interaction')
+      handleDrawMove(drag, 30.7, 71.8, false)
+      drag.commit()
+      expect(editor.graph.getNode(drag.nodeId)).toMatchObject({
+        x: 0,
+        y: 48,
+        width: 32,
+        height: 16
+      })
+    } finally {
+      editor.dispose()
+    }
+  })
+
   test('graph replacement discards pending draw batches without replaying or deleting history', () => {
     const editor = createEditor()
     try {

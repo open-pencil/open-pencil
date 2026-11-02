@@ -1,6 +1,6 @@
 [package]
 name = "open_pencil"
-version = "0.16.0"
+version = "0.17.0-beta.1"
 description = "OpenPencil desktop app"
 authors = ["Danila Poyarkov"]
 edition = "2021"
@@ -39,11 +39,14 @@ tokio = { version = "1", features = ["sync"] }
 tauri-plugin-dialog = "3.0.0-alpha"
 tauri-plugin-fs = { version = "3.0.0-alpha", features = ["watch"] }
 tauri-plugin-shell = "3.0.0-alpha"
+tauri-plugin-notification = "3.0.0-alpha"
 zstd = "0.13"
 zip = { version = "2", default-features = false }
 which = "7.0.3"
 semver = "1"
 fontique = "0.11"
+# The same read-fonts fontique uses, to read each face's style names and named instances.
+read-fonts = "0.41"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch = "dev" }
 tauri-plugin-updater = "3.0.0-alpha"
 tauri-plugin-process = "3.0.0-alpha"
@@ -54,6 +57,9 @@ keyring = "4.1.5"
 url = "2"
 httparse = "1"
 tauri-plugin-automation = { version = "3.0.0-alpha.2", optional = true }
+
+[dev-dependencies]
+write-fonts = "=0.50.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "3"

@@ -152,7 +152,7 @@ describe('components', () => {
 })
 
 describe('instance child edits record overrides', () => {
-  test('renaming and resizing an instance child survives component sync and export', () => {
+  test('renaming an instance child survives component sync; resizing it does nothing, as in Figma', () => {
     const api = createAPI()
     const component = api.createComponent()
     const child = api.createRectangle()
@@ -164,12 +164,13 @@ describe('instance child edits record overrides', () => {
     instanceChild.resize(32, 32)
 
     expect(hasInstanceOverride(api.graph, instanceChild.id, 'name')).toBe(true)
-    expect(hasInstanceOverride(api.graph, instanceChild.id, 'width')).toBe(true)
+    expect(hasInstanceOverride(api.graph, instanceChild.id, 'width')).toBe(false)
+    expect(instanceChild.width).toBe(24)
     child.resize(40, 40)
     child.name = 'component child'
     api.graph.syncInstances(component.id)
     expect(instanceChild.name).toBe('renamed')
-    expect(instanceChild.width).toBe(32)
+    expect(instanceChild.width).toBe(40)
   })
 })
 

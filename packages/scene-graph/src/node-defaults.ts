@@ -98,6 +98,7 @@ export function createDefaultNode(
     fontFamily: DEFAULT_FONT_FAMILY,
     fontWeight: 400,
     italic: false,
+    fontStyle: null,
     textAlignHorizontal: 'LEFT',
     textDirection: 'AUTO',
     textLanguage: null,
@@ -223,6 +224,7 @@ export function createDefaultNode(
     flipY: false,
     textPicture: null,
     derivedTextGlyphs: null,
+    derivedTextHeight: null,
     textPathData: null,
     textPathBox: null,
     booleanOperation: undefined,
@@ -244,6 +246,20 @@ export const SIDE_STROKE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'COMPONENT_SET',
   'INSTANCE'
 ])
+
+/** The kinds that hold layers of their own on the canvas: what a shadow or a clip encloses. */
+export const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+export function isLayerContainer(node: Pick<SceneNode, 'type'>): boolean {
+  return LAYER_CONTAINER_TYPES.has(node.type)
+}
 
 export const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',

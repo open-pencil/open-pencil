@@ -135,8 +135,9 @@ export async function prepareImageAttachment(
     if (!isImageAttachmentMediaType(file.type)) {
       throw new Error('Choose a PNG, JPEG, or WebP image.')
     }
-    const mediaType = file.type
-    const blob = await canvasToBlob(canvas, mediaType, mediaType === 'image/png' ? undefined : 0.88)
+    const blob = await canvasToBlob(canvas, file.type, file.type === 'image/png' ? undefined : 0.88)
+    // A browser that cannot encode the type asked for, such as WebKit with WebP, returns a PNG.
+    const mediaType = isImageAttachmentMediaType(blob.type) ? blob.type : 'image/png'
 
     return {
       data: new Uint8Array(await blob.arrayBuffer()),

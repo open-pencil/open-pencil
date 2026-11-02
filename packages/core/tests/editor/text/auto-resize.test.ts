@@ -123,4 +123,102 @@ describe('editor text auto-resize updates', () => {
     expect(getNodeOrThrow(editor.graph, text.id).width).toBe(64)
     expect(getNodeOrThrow(editor.graph, text.id).height).toBe(32)
   })
+
+  test('auto-width text takes the width its case gives it', () => {
+    setTextMeasurer((node) => ({
+      width: (node.text?.length ?? 0) * (node.textCase === 'UPPER' ? 20 : 10),
+      height: 20
+    }))
+    const editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'ten chars!',
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      width: 100,
+      height: 20
+    })
+
+    editor.updateNode(text.id, { textCase: 'UPPER' })
+
+    expect(getNodeOrThrow(editor.graph, text.id).width).toBe(200)
+  })
+
+  test('auto-width text takes the width its direction gives it', () => {
+    setTextMeasurer((node) => ({
+      width: (node.text?.length ?? 0) * (node.textDirection === 'RTL' ? 20 : 10),
+      height: 20
+    }))
+    const editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'ten chars!',
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      width: 100,
+      height: 20
+    })
+
+    editor.updateNode(text.id, { textDirection: 'RTL' })
+
+    expect(getNodeOrThrow(editor.graph, text.id).width).toBe(200)
+  })
+})
+
+// Figma 126 draws a fixed-size text's lines past its box, so they are measured even though the
+// box keeps its size.
+describe('fixed-size text', () => {
+  test('keeps its box and measures how far its lines reach', () => {
+    setTextMeasurer((node, maxWidth) => {
+      const width = (node.text?.length ?? 0) * node.fontSize * 0.5
+      const lines = maxWidth ? Math.ceil(width / maxWidth) : 1
+      return { width: Math.min(width, maxWidth ?? width), height: lines * node.fontSize * 1.2 }
+    })
+    const editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'dssdds',
+      textAutoResize: 'NONE',
+      width: 110,
+      height: 40,
+      fontSize: 14
+    })
+
+    editor.updateNode(text.id, { fontSize: 64 })
+
+    const node = getNodeOrThrow(editor.graph, text.id)
+    expect([node.width, node.height]).toEqual([110, 40])
+    expect(node.derivedTextHeight).toBeCloseTo(2 * 64 * 1.2)
+  })
+
+  test('auto-sized text has no lines past its box', () => {
+    setTextMeasurer((node) => ({ width: 100, height: node.fontSize * 1.2 }))
+    const editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'Hello',
+      textAutoResize: 'NONE',
+      width: 50,
+      height: 10,
+      derivedTextHeight: 80
+    })
+
+    editor.updateNode(text.id, { textAutoResize: 'WIDTH_AND_HEIGHT' })
+
+    expect(getNodeOrThrow(editor.graph, text.id).derivedTextHeight).toBeNull()
+  })
+
+  test('measures its lines again when their case changes', () => {
+    // Upper case takes more room here, so the same text wraps onto more lines.
+    setTextMeasurer((node, maxWidth) => {
+      const width = (node.text?.length ?? 0) * (node.textCase === 'UPPER' ? 20 : 10)
+      const lines = maxWidth ? Math.ceil(width / maxWidth) : 1
+      return { width: Math.min(width, maxWidth ?? width), height: lines * 20 }
+    })
+    const editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'ten chars!',
+      textAutoResize: 'NONE',
+      width: 100,
+      height: 20
+    })
+
+    editor.updateNode(text.id, { textCase: 'UPPER' })
+
+    expect(getNodeOrThrow(editor.graph, text.id).derivedTextHeight).toBe(40)
+  })
 })

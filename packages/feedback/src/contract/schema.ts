@@ -239,6 +239,16 @@ export const metricsSnapshotSchema = v.object({
   dailyActive: v.array(v.object({ day: isoDaySchema, desktop: countSchema, web: countSchema })),
   /** Pings in the range by OS, desktop and web. */
   platforms: v.array(v.object({ os: v.string(), desktop: countSchema, web: countSchema })),
+  /**
+   * Pings by network since network counting began: every network's pings in the range, and the
+   * networks with the most; AS 0 holds pings with none reported.
+   */
+  networks: v.object({
+    total: countSchema,
+    top: v.array(
+      v.object({ asn: countSchema, name: v.string(), desktop: countSchema, web: countSchema })
+    )
+  }),
   /** Pings each day on the newest stable version and on everything else. */
   versions: v.object({
     latest: v.nullable(v.string()),

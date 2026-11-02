@@ -1,4 +1,4 @@
-import { importSource, normalizedFilename } from '#lint/support/context.ts'
+import { importSource, inlineImportSource, normalizedFilename } from '#lint/support/context.ts'
 import { createImportSourceRule } from '#lint/support/factories.ts'
 import type { RuleContext, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
@@ -228,6 +228,35 @@ const noCoreFrameworkImports = createImportSourceRule({
 })
 
 /**
+ * Tauri's modules reach the native side only when one of their functions is called, so shipped
+ * code imports them statically like any other module. Only the startup support gate loads them
+ * inline: it must parse on engines that cannot run the app, which `src/main.ts` keeps free of the
+ * app bundle. Tests and tooling, which load Tauri's mocks and CLI in a set order, are not shipped.
+ */
+const noInlineTauriImports: RuleDefinition = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Import Tauri modules statically, outside the startup support gate' },
+    schema: []
+  },
+  create(context: RuleContext) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/src/') || /\/(tools|tests)\//.test(file)) return {}
+    if (/\/src\/app\/shell\/support\/(gate|render)\.ts$/.test(file)) return {}
+    return {
+      ImportExpression(node) {
+        const source = inlineImportSource(node)
+        if (!source?.startsWith('@tauri-apps/')) return
+        context.report({
+          node,
+          message: `Import '${source}' statically; Tauri's modules reach the native side only when called.`
+        })
+      }
+    }
+  }
+}
+
+/**
  * An edit records what it changed through `recordEdit` or `recordEditAsync`, which push its undo
  * step when the document's unsaved state expects it; capturing a change by hand elsewhere is how
  * an edit's step came to land after an await and left undone documents unsaved.
@@ -273,5 +302,6 @@ export {
   noCoreSelfPackageImports,
   noInlinePromptConstants,
   noAppImportsInPackages,
-  noCoreFrameworkImports
+  noCoreFrameworkImports,
+  noInlineTauriImports
 }

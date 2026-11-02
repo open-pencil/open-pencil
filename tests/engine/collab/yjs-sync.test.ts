@@ -4,7 +4,7 @@ import { create as createPRNG } from 'lib0/prng'
 import * as Y from 'yjs'
 import { TestConnector, type TestYInstance } from 'yjs/testHelper'
 
-import type { Fill, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, GeometryPath, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
@@ -89,52 +89,63 @@ describe('collab yjs-sync', () => {
     doc.getMap<Y.Map<unknown>>('nodes').set('remote', ynode)
     ynode.set('source', { format: 'fig', fig: { rawNodeFields: 'invalid' } })
     ynode.set('fillGeometry', [
-      {
-        windingRule: 'EVENODD',
-        commandsBlob: new Uint8Array([0]),
-        fills: [
-          null,
-          'invalid',
-          {
-            type: 'GRADIENT_LINEAR',
-            color: { r: 0, g: 0, b: 0, a: 1 },
-            opacity: 1,
-            visible: true,
-            gradientStops: 'invalid'
-          },
-          {
-            type: 'NOISE',
-            color: { r: 0, g: 0, b: 0, a: 1 },
-            opacity: 1,
-            visible: true,
-            noiseSize: 'invalid'
-          },
-          {
-            type: 'GRADIENT_LINEAR',
-            color: { r: 0, g: 0, b: 0, a: 1 },
-            opacity: 0.8,
-            visible: true,
-            gradientStops: [
-              { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
-              { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
-            ],
-            gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-          },
-          {
-            type: 'SOLID',
-            color: { r: 1, g: 0, b: 0, a: 1 },
-            opacity: 1,
-            visible: true
-          }
-        ]
-      },
+      { windingRule: 'EVENODD', commandsBlob: new Uint8Array([0]) },
       { windingRule: 'NONZERO', commandsBlob: 'invalid' }
     ])
+    ynode.set('vectorNetwork', {
+      vertices: [],
+      segments: [],
+      regions: [
+        {
+          windingRule: 'EVENODD',
+          loops: [],
+          fills: [
+            null,
+            'invalid',
+            {
+              type: 'GRADIENT_LINEAR',
+              color: { r: 0, g: 0, b: 0, a: 1 },
+              opacity: 1,
+              visible: true,
+              gradientStops: 'invalid'
+            },
+            {
+              type: 'NOISE',
+              color: { r: 0, g: 0, b: 0, a: 1 },
+              opacity: 1,
+              visible: true,
+              noiseSize: 'invalid'
+            },
+            {
+              type: 'GRADIENT_LINEAR',
+              color: { r: 0, g: 0, b: 0, a: 1 },
+              opacity: 0.8,
+              visible: true,
+              gradientStops: [
+                { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+                { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+              ],
+              gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+            },
+            {
+              type: 'SOLID',
+              color: { r: 1, g: 0, b: 0, a: 1 },
+              opacity: 1,
+              visible: true
+            }
+          ]
+        },
+        // Paints that are not a list leave the region drawing the layer's fills.
+        { windingRule: 'NONZERO', loops: [], fills: null }
+      ]
+    })
     ynode.set('strokeGeometry', 'invalid')
 
     const props = decodeNodeFromYjs(ynode)
     const source = props.source as SceneNode['source']
     const fillGeometry = props.fillGeometry as GeometryPath[]
+    const regions = (props.vectorNetwork as VectorNetwork).regions
+    const fills = regions[0]?.fills
 
     expect(source).toEqual({
       ...createDefaultSourceMetadata(),
@@ -142,8 +153,8 @@ describe('collab yjs-sync', () => {
     })
     expect(fillGeometry).toHaveLength(1)
     expect(fillGeometry[0]?.commandsBlob).toBeInstanceOf(Uint8Array)
-    expect(fillGeometry[0]?.fills).toHaveLength(2)
-    expect(fillGeometry[0]?.fills?.[0]).toMatchObject({
+    expect(fills).toHaveLength(2)
+    expect(fills?.[0]).toMatchObject({
       type: 'GRADIENT_LINEAR',
       opacity: 0.8,
       gradientStops: [
@@ -152,7 +163,8 @@ describe('collab yjs-sync', () => {
       ],
       gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     })
-    expect(fillGeometry[0]?.fills?.[1]?.type).toBe('SOLID')
+    expect(fills?.[1]?.type).toBe('SOLID')
+    expect(regions[1]).not.toHaveProperty('fills')
     expect(props.strokeGeometry).toEqual([])
   })
 

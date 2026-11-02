@@ -10,6 +10,7 @@
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
     "opener:default",
+    "notification:default",
     "dialog:default",
     "dialog:allow-save",
     "dialog:allow-open",
@@ -58,6 +59,7 @@
       "identifier": "fs:allow-read-file",
       "allow": [
         { "path": "**" },
+        { "path": "$APPLOCALDATA/**" },
         { "path": "$HOME/.pi/agent/settings.json" },
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
         { "path": "$LOCALDATA/OpenPencil/mcp.json" },
@@ -88,7 +90,7 @@
     "fs:allow-read",
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "**" }],
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }],
       "deny": [
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
         { "path": "$LOCALDATA/OpenPencil/mcp.json" },
@@ -108,11 +110,11 @@
     },
     {
       "identifier": "fs:allow-mkdir",
-      "allow": [{ "path": "**" }]
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }]
     },
     {
       "identifier": "fs:allow-remove",
-      "allow": [{ "path": "**" }],
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }],
       "deny": [
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
         { "path": "$LOCALDATA/OpenPencil/mcp.json" },

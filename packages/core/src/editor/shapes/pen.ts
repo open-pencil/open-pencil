@@ -5,8 +5,8 @@ import type {
   VectorSegment,
   VectorVertex
 } from '@open-pencil/scene-graph'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { BLACK } from '#core/constants'
 import { createVectorFromNetwork, type CreateShape } from '#core/editor/shapes/vector'

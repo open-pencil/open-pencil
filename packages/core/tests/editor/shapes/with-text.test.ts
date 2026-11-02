@@ -100,4 +100,13 @@ describe('shapes with text in the editor', () => {
     editor.setShapesWithTextTextSize([id], 'small')
     expect(editor.graph.getNode(id)?.height).toBe(176)
   })
+
+  test('a palette colour leaves the fill and stroke styles it replaces', () => {
+    const { editor, pageId } = setup()
+    const id = editor.createShape('SHAPE_WITH_TEXT', 0, 0, 176, 176, pageId)
+    editor.graph.updateNode(id, { fillStyleId: 'fill-style', strokeStyleId: 'stroke-style' })
+    editor.setShapesWithTextColor([id], 'violet')
+    const shape = expectDefined(editor.graph.getNode(id))
+    expect([shape.fillStyleId, shape.strokeStyleId]).toEqual([null, null])
+  })
 })

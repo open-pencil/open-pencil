@@ -19,6 +19,7 @@ import type { DragResize } from '#vue/shared/input/types'
 import { createRect, firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 
 function original(node: {
+  type: ResizeSnapshot['type']
   x: number
   y: number
   width: number
@@ -26,6 +27,7 @@ function original(node: {
   vectorNetwork: ResizeSnapshot['vectorNetwork']
 }): ResizeSnapshot {
   return {
+    type: node.type,
     x: node.x,
     y: node.y,
     width: node.width,
@@ -69,6 +71,7 @@ describe('constraint control model', () => {
 
 describe('constraint resize geometry', () => {
   const child: ResizeSnapshot = {
+    type: 'RECTANGLE',
     x: 20,
     y: 30,
     width: 40,

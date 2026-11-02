@@ -9,6 +9,9 @@ interface SubPath {
 }
 
 export type VectorPathWindingRule = WindingRule | 'NONE'
+
+/** How far apart an end and its subpath's start can be from rounding alone. */
+const CLOSING_ROUNDING = 1e-6
 export type SVGPathParseResult = { ok: true; network: VectorNetwork } | { ok: false; error: string }
 
 interface ParseOptions {
@@ -76,6 +79,8 @@ function parsePath(
   let cy = 0
 
   const vertexMap = new Map<string, number>()
+  /** How many segment ends sit on each vertex. */
+  const uses: number[] = []
 
   function getOrCreateVertex(x: number, y: number): number {
     const key = `${x},${y}`
@@ -99,6 +104,8 @@ function parsePath(
   ): void {
     const startIdx = getOrCreateVertex(x1, y1)
     const endIdx = getOrCreateVertex(x2, y2)
+    uses[startIdx] = (uses[startIdx] ?? 0) + 1
+    uses[endIdx] = (uses[endIdx] ?? 0) + 1
     const segIdx = segments.length
     segments.push({
       start: startIdx,
@@ -126,6 +133,27 @@ function parsePath(
     y2: number
   ): void {
     addSegment(x1, y1, x2, y2, cp1x, cp1y, cp2x, cp2y)
+  }
+
+  /**
+   * A subpath that ends a hair off its start, as an arc turned into curves does, ends on the start
+   * vertex, as Figma merges them; the point it ended on goes when no other segment uses it.
+   */
+  function closeOnStart(subPath: SubPath): void {
+    const lastIndex = subPath.segmentIndices.at(-1)
+    if (lastIndex === undefined) return
+    const last = segments[lastIndex]
+    if (last.end === subPath.startVertexIndex) return
+    const stray = last.end
+    last.end = subPath.startVertexIndex
+    uses[subPath.startVertexIndex] += 1
+    uses[stray] -= 1
+    // Only the newest vertex can go without renumbering the others.
+    if (uses[stray] > 0 || stray !== vertices.length - 1) return
+    const point = vertices[stray]
+    vertices.pop()
+    uses.pop()
+    vertexMap.delete(`${point.x},${point.y}`)
   }
 
   const parsed = svgpath(d)
@@ -184,9 +212,13 @@ function parsePath(
     } else if (cmd === 'Z' || cmd === 'z') {
       if (currentSubPath) {
         const startVert = vertices[currentSubPath.startVertexIndex]
-        if (Math.abs(cx - startVert.x) > 0.001 || Math.abs(cy - startVert.y) > 0.001) {
-          addLine(cx, cy, startVert.x, startVert.y)
-        }
+        // Only rounding, such as an arc turned into curves leaves, merges an end into the start;
+        // a point the path drew, however close, keeps its own closing segment.
+        const rounding =
+          Math.abs(cx - startVert.x) <= CLOSING_ROUNDING &&
+          Math.abs(cy - startVert.y) <= CLOSING_ROUNDING
+        if (rounding) closeOnStart(currentSubPath)
+        else addLine(cx, cy, startVert.x, startVert.y)
         currentSubPath.closed = true
         cx = startVert.x
         cy = startVert.y

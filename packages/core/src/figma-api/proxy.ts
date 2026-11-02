@@ -38,7 +38,7 @@ import {
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
 import { installDevStatusAccessors, type FigmaDevStatusValue } from './dev-status'
-import type { FigmaFontName } from './fonts'
+import type { FigmaFontName } from './fonts/names'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors, type FigmaInstanceOverride } from './overrides'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
@@ -55,7 +55,7 @@ import type { FigmaTransform } from './types'
 
 const MIXED = Symbol('mixed')
 
-export { weightToStyleName, type FigmaFont, type FigmaFontName } from './fonts'
+export type { FigmaFont, FigmaFontName } from './fonts/names'
 
 export const INTERNAL_ID = Symbol('id')
 export const INTERNAL_GRAPH = Symbol('graph')

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { isNodeFontLoaded } from '#core/canvas/text'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 describe('canvas text font readiness', () => {
   test('requires the exact requested font weight before rendering text', async () => {

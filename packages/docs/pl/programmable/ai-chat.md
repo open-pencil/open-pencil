@@ -20,17 +20,17 @@ Możesz utworzyć kilka modeli i osobno przypisać je do projektowania, przeglą
 
 ### Dostawcy
 
-| Dostawca | Modele | Konfiguracja |
-|----------|--------|--------------|
-| **OpenRouter** | Claude, GPT, Gemini, DeepSeek, Qwen i inne | Klucz API z [openrouter.ai](https://openrouter.ai) |
-| **Anthropic** | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | Klucz API z [console.anthropic.com](https://console.anthropic.com) |
-| **OpenAI** | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna | Klucz API z [platform.openai.com](https://platform.openai.com) |
-| **Google AI** | Gemini 3.8 Flash, Gemini 4 Argon | Klucz API z [aistudio.google.dev](https://aistudio.google.dev) |
-| **DeepSeek** | DeepSeek Flash, DeepSeek V4 Pro | Klucz API z [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
-| **Z.ai** | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo | Klucz API zgodnie z [dokumentacją Z.ai](https://docs.z.ai/devpack/quick-start) |
-| **MiniMax** | MiniMax-M3.1-Flash, MiniMax-M3 | Klucz API z [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
-| **Zgodny z OpenAI** | Dowolny punkt końcowy w formacie OpenAI API | Własny adres bazowy i klucz; wybór Completions API lub Responses API |
-| **Zgodny z Anthropic** | Dowolny punkt końcowy w formacie Anthropic API | Własny adres bazowy i klucz |
+| Dostawca               | Modele                                                                 | Konfiguracja                                                                                               |
+| ---------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **OpenRouter**         | Claude, GPT, Gemini, DeepSeek, Qwen i inne                             | Klucz API z [openrouter.ai](https://openrouter.ai)                                                         |
+| **Anthropic**          | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | Klucz API z [console.anthropic.com](https://console.anthropic.com)                                         |
+| **OpenAI**             | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna                                   | Klucz API z [platform.openai.com](https://platform.openai.com)                                             |
+| **Google AI**          | Gemini 3.8 Flash, Gemini 4 Argon                                       | Klucz API z [aistudio.google.dev](https://aistudio.google.dev)                                             |
+| **DeepSeek**           | DeepSeek Flash, DeepSeek V4 Pro                                        | Klucz API z [platform.deepseek.com](https://platform.deepseek.com/api_keys)                                |
+| **Z.ai**               | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo                   | Klucz API zgodnie z [dokumentacją Z.ai](https://docs.z.ai/devpack/quick-start)                             |
+| **MiniMax**            | MiniMax-M3.1-Flash, MiniMax-M3                                         | Klucz API z [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **Zgodny z OpenAI**    | Dowolny punkt końcowy w formacie OpenAI API                            | Własny adres bazowy i klucz; wybór Completions API lub Responses API                                       |
+| **Zgodny z Anthropic** | Dowolny punkt końcowy w formacie Anthropic API                         | Własny adres bazowy i klucz                                                                                |
 
 OpenPencil nie wymaga osobnego serwera ani subskrypcji: żądania są wysyłane bezpośrednio do dostawcy. W przeglądarce podlegają jego zasadom CORS. Poszczególne wdrożenia modeli różnią się niezawodnością przesyłania wywołań narzędzi. Wyniki pomiarów znajdują się na stronie [Zgodność dostawców i modeli BYOK](/programmable/byok-provider-compatibility).
 
@@ -45,6 +45,12 @@ Zdalny serwer musi używać HTTPS. W lokalnym środowisku programistycznym dozwo
 ## Możliwości
 
 Asystent korzysta z ponad 90 narzędzi do tworzenia, stylizowania, układu, komponentów, zmiennych, wyszukiwania, inspekcji, analizy, eksportu i operacji wektorowych. Do inspekcji należą `get_jsx` (widok JSX w obie strony), `diff_create` i `diff_jsx` (różnice strukturalne), `diff_visual` (różnice pikseli) oraz `describe` (rola semantyczna i wykrywanie problemów projektowych).
+
+## Umiejętności
+
+Umiejętności to foldery z plikiem `SKILL.md` w formacie [Agent Skills](https://agentskills.io/specification): instrukcje do określonego rodzaju pracy z opcjonalnymi plikami pomocniczymi. Wbudowane AI widzi nazwę i opis każdej włączonej umiejętności i wczytuje jej instrukcje, gdy prośba pasuje; skrypty z umiejętności nie są uruchamiane.
+
+W **Ustawienia → Umiejętności** prześlij umiejętność jako ZIP jej folderu lub jako `SKILL.md`. W aplikacji desktopowej odczytywane są też `~/.agents/skills` i `~/.claude/skills` oraz foldery `.agents/skills` i `.claude/skills` obok otwartego dokumentu, używane dopiero po **Zaufaj folderowi**. Wpisz `/` na początku wiadomości, aby wybrać umiejętność, i `@`, aby wspomnieć warstwę, stronę lub umiejętność. Wzmianki pojawiają się jako chipy, także w odpowiedziach; kliknięcie pokazuje warstwę na płótnie.
 
 ## Kontrola wizualna
 

@@ -15,7 +15,6 @@ afterEach(() => {
   aiToolOverrides.value = originalAI
   disabledMCPTools.value = originalMCP
   configurableMCPTools.value = originalCatalog
-  useToolAccessSettings().selectTarget('ai')
 })
 
 test('AI catalog includes exposed extended tools while preserving compact defaults', () => {
@@ -61,30 +60,27 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
   )
 })
 
-test('target switching, bulk changes and reset preserve independent permissions', () => {
+test('each kind of agent keeps its own permissions through bulk changes and reset', () => {
   aiToolOverrides.value = {}
   disabledMCPTools.value = ['create_component']
-  const access = useToolAccessSettings()
-  access.selectTarget('ai')
-  expect(access.disabled.value).toContain('create_component')
-  access.disabled.value = access.disabled.value.filter((name) => name !== 'create_component')
+  const ai = useToolAccessSettings('ai')
+  const mcp = useToolAccessSettings('mcp')
+  expect(ai.disabled.value).toContain('create_component')
+  ai.disabled.value = ai.disabled.value.filter((name) => name !== 'create_component')
   expect(disabledAITools.value).not.toContain('create_component')
   expect(disabledMCPTools.value).toEqual(['create_component'])
-  access.selectTarget('mcp')
-  access.reset()
+  mcp.reset()
   expect(disabledMCPTools.value).toEqual([])
   expect(disabledAITools.value).not.toContain('create_component')
-  access.disabled.value = ['find_nodes']
-  access.selectTarget('ai')
-  access.reset()
+  mcp.disabled.value = ['find_nodes']
+  ai.reset()
   expect(aiToolOverrides.value).toEqual({})
   expect(disabledAITools.value).toContain('create_component')
   expect(disabledMCPTools.value).toEqual(['find_nodes'])
 })
 
 test('disabling all AI tools is preserved and does not change MCP access', () => {
-  const access = useToolAccessSettings()
-  access.selectTarget('ai')
+  const access = useToolAccessSettings('ai')
   access.disabled.value = configurableAITools.map((tool) => tool.name)
   expect(enabledAIToolDefinitions(aiToolOverrides.value)).toEqual([])
 })

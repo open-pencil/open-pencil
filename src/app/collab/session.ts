@@ -150,6 +150,7 @@ export function openRoomSession({
   const documentData = roomDocumentData(ydoc)
   const persistence = openSavedCopy(roomId, ydoc)
   const saves = trackRoomSaves(ydoc, [
+    meta,
     ynodes,
     yimages,
     yvariables,
@@ -224,14 +225,11 @@ export function openRoomSession({
       awareness.setLocalStateField('hasFile', hasDocument.value)
     }
     const name = readRoomName(meta)
-    if (hasDocument.value && name && origin === 'joined') store.state.documentName = name
+    if (hasDocument.value && name) store.state.documentName = name
   }
 
   function updatePeers() {
-    const next = buildRemotePeers(
-      awareness.getStates() as Map<number, Record<string, unknown>>,
-      awareness.clientID
-    )
+    const next = buildRemotePeers(awareness.getStates(), awareness.clientID)
     peers.value = next
     setPeers(store, next)
   }
@@ -256,6 +254,14 @@ export function openRoomSession({
     }
   })
   meta.observe(refreshDocument)
+  // A rename reaches the room once the tab shows the room's copy; before that the room's name
+  // wins, as the room's other document data does when the tab starts following it.
+  function publishName(name: string) {
+    if (disposed || store.state.hostRestrictions.readOnly || !hasDocument.value) return
+    if (readRoot(meta) !== store.graph.rootId || name === readRoomName(meta)) return
+    writeRoomName(meta, name)
+  }
+  const stopName = store.onDocumentRenamed(publishName).off
   awareness.on('change', updatePeers)
 
   const connection = connectCollabRoom({
@@ -329,12 +335,13 @@ export function openRoomSession({
     roomHasDocument: () => readRoot(meta) !== undefined,
     onSynced: (handler) => connection.onSynced(handler),
     onVersionsChanged: (handler) => connection.onVersionsChanged(handler),
-    presence: () => awareness.getStates() as Map<number, Record<string, unknown>>,
+    presence: () => awareness.getStates(),
     clientId: awareness.clientID,
     peerForClient: (clientId) => connection.peerForClient(clientId),
     upload: connection.upload,
     dispose() {
       if (disposed) return
+      stopName()
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
       unbindGraphEvents()
       variableSync.dispose()

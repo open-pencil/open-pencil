@@ -15,7 +15,6 @@ import {
   SHAPE_HANDLE,
   shapeHandleLayout,
   shapeHandleValue,
-  createSceneGeometry,
   type RotationPreview
 } from '#core/geometry'
 
@@ -36,7 +35,7 @@ export function drawShapeHandles(
   if (!hover || selectedIds.size !== 1 || !selectedIds.has(hover.nodeId)) return
   const node = graph.getNode(hover.nodeId)
   if (!node) return
-  const handles = shapeHandleLayout(node, createSceneGeometry(graph, preview), r)
+  const handles = shapeHandleLayout(node, r.sceneGeometry(graph, preview), r)
   if (!handles) return
   const color = r.outlineColor(node, graph)
   const fill = r.auxFill

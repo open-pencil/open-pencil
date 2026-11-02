@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { computed, watch } from 'vue'
 
 import { isCloudBinding } from '@/app/cloud/integration'
@@ -30,11 +31,9 @@ export function watchNativeMenuFeatures(): () => void {
     availableFeatures,
     (features) => {
       if (!isTauri()) return
-      void import('@tauri-apps/api/core')
-        .then(({ invoke }) => invoke('set_native_menu_features', { features }))
-        .catch((error: unknown) => {
-          console.warn('[Menu] Failed to update the native menu', error)
-        })
+      invoke('set_native_menu_features', { features }).catch((error: unknown) => {
+        console.warn('[Menu] Failed to update the native menu', error)
+      })
     },
     { immediate: true }
   )

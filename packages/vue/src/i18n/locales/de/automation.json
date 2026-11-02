@@ -1,8 +1,4 @@
 {
-  "toolAccessDescription": "Designwerkzeuge für die integrierte KI und den lokalen MCP-Server getrennt konfigurieren.",
-  "toolAccessTarget": "Werkzeugzugriff konfigurieren für",
-  "builtInAI": "Integrierte KI",
-  "localMCP": "Lokales MCP",
   "restoreToolDefaults": "Standard wiederherstellen",
   "aiToolAccessDescription": "Werkzeuge für direkte KI-Modellverbindungen auswählen. ACP- und Pi-Agenten verwenden stattdessen den MCP-Zugriff.",
   "mcpToolAccessDescription": "Werkzeuge auswählen, die der lokale Server verbundenen Agenten und Clients anbietet.",

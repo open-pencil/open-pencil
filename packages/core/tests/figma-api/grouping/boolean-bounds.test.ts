@@ -9,6 +9,8 @@ import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
+import { makeBooleanOperationPath } from '#core/canvas/boolean'
+
 // Recorded with the same script in Figma desktop 126: a boolean operation takes the box of its
 // result, and an empty result keeps its operands' box. Measuring needs a renderer.
 
@@ -88,6 +90,21 @@ describe('boolean operation bounds', () => {
       const booleanNode = editor.graph.getNode(booleanId ?? '')
       expect(booleanNode && box(booleanNode)).toEqual([20, 20, 30, 30])
       expect(editor.graph.getAbsolutePosition(b.id)).toEqual({ x: 20, y: 20 })
+
+      // The operation itself changing drops the renderer's kept result: the next reading is
+      // built from the new operation.
+      const resultSize = () => {
+        const node = editor.graph.getNode(booleanId ?? '')
+        const path = node && makeBooleanOperationPath(renderer, node, editor.graph)
+        const bounds = path?.getBounds()
+        path?.delete()
+        return bounds && [bounds[2] - bounds[0], bounds[3] - bounds[1]].map(Math.round)
+      }
+      expect(resultSize()).toEqual([30, 30])
+      editor.updateNode(booleanId ?? '', { booleanOperation: 'UNION' })
+      expect(resultSize()).toEqual([70, 70])
+      // And the boolean takes the box of that result, as it does when an operand moves.
+      expect(booleanNode && box(booleanNode)).toEqual([0, 0, 70, 70])
     } finally {
       editor.dispose()
     }

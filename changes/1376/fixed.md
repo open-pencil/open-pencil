@@ -1,2 +1,0 @@
-- An inside or outside stroke on a star, polygon, or arc follows its outline, as in Figma, instead of showing on both sides of a star or polygon and across an arc's flat edge.
-- Shadows on stars, polygons, and vectors ignore their spread, as in Figma.

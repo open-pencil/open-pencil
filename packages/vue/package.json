@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/vue",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.1",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -93,6 +93,11 @@
       "types": "./dist/controls/effects/index.d.ts",
       "import": "./dist/controls/effects/index.js",
       "default": "./dist/controls/effects/index.js"
+    },
+    "./controls/figjam-style": {
+      "types": "./dist/controls/figjam-style/index.d.ts",
+      "import": "./dist/controls/figjam-style/index.js",
+      "default": "./dist/controls/figjam-style/index.js"
     },
     "./controls/fill": {
       "types": "./dist/controls/fill/index.d.ts",

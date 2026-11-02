@@ -9,7 +9,7 @@ import { SceneGraph, type StyleRun, type DerivedTextGlyph } from '@open-pencil/s
 import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 

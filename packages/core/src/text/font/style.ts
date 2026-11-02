@@ -1,5 +1,6 @@
 import {
   FONT_WEIGHT_NAMES,
+  namesWeight,
   normalizeFontFamily,
   type FontFamilyStyle,
   parseFontStyle
@@ -44,6 +45,8 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
       ? fonts.find((font) => font.family === candidateFamily && font.style === style)
       : undefined
     if (exact) return exact
+    // A face named apart from its weight is that face or none, never another of its weight.
+    if (style && !namesWeight(style)) continue
 
     const candidates = fonts.filter((font) => font.family === candidateFamily)
     const sameStyle = candidates.find((font) => {

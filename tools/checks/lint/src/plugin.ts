@@ -4,6 +4,7 @@ import {
   noCloudSecretLoggingRule
 } from '#lint/rules/cloud.ts'
 import {
+  noEditorProfileInputs,
   noConditionalObjectSpreads,
   noFlatKiwiModules,
   noMixedCaseAcronymIdentifiers
@@ -392,7 +393,8 @@ import {
   noCoreSelfPackageImports,
   noInlinePromptConstants,
   noAppImportsInPackages,
-  noCoreFrameworkImports
+  noCoreFrameworkImports,
+  noInlineTauriImports
 } from '#lint/rules/imports.ts'
 import {
   noDirectStorageAccess,
@@ -472,6 +474,7 @@ const plugin = {
     'no-inline-prompt-constants': noInlinePromptConstants,
     'no-app-imports-in-packages': noAppImportsInPackages,
     'no-core-framework-imports': noCoreFrameworkImports,
+    'no-inline-tauri-imports': noInlineTauriImports,
     'no-direct-storage-access': noDirectStorageAccess,
     'no-broad-double-cast': noBroadDoubleCast,
     'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
@@ -501,6 +504,7 @@ const plugin = {
     'no-flat-kiwi-modules': noFlatKiwiModules,
     'no-bun-globals-in-cli': noBunGlobalsInCli,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
+    'no-editor-profile-inputs': noEditorProfileInputs,
     'no-conditional-object-spreads': noConditionalObjectSpreads,
     'no-hand-rolled-base64': noHandRolledBase64Rule,
     'no-raw-sql': noRawSQLRule,

@@ -391,3 +391,22 @@ describe('paint types', () => {
     ])
   })
 })
+
+describe('a layer with paint styles', () => {
+  const RED = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0 } }
+
+  test('leaves the fill style when a plugin sets its fills, and keeps the stroke style', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    rectangle.strokes = [RED]
+    graph.updateNode(rectangle.id, { fillStyleId: 'style:fill', strokeStyleId: 'style:stroke' })
+
+    // A stroke style holds paints only, so the weight is not one of its fields.
+    rectangle.strokeWeight = 3
+    rectangle.fills = [RED]
+    expect(graph.getNode(rectangle.id)).toMatchObject({
+      fillStyleId: null,
+      strokeStyleId: 'style:stroke'
+    })
+  })
+})

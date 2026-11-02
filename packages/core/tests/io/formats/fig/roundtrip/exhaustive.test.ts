@@ -77,7 +77,7 @@ function buildPathMap(graph: SceneGraph): Map<string, SceneNode> {
 /** `SceneNode` has no index signature; the generic comparison reads its fields by name. */
 const nodeFields = (node: SceneNode): Map<string, unknown> => new Map(Object.entries(node))
 
-// oxlint-disable-next-line eslint(complexity)
+// oxlint-disable-next-line complexity
 function deepCompare(
   a: unknown,
   b: unknown,
@@ -284,7 +284,7 @@ function compareRawNodeFields(
   if (errors.length > 0) throw new Error(`${label} rawNodeFields:\n${summarize(errors)}`)
 }
 
-// oxlint-disable-next-line eslint(complexity)
+// oxlint-disable-next-line complexity
 function deepCompareRaw(
   a: unknown,
   b: unknown,

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { multiWordComponentNames, uniqueComponentNames } from './component-names.ts'
 import { noCrossPackageReexportShims } from './cross-package-reexport-shims.ts'
 import {
   noDynamicTailwindStateClasses,
@@ -145,7 +146,7 @@ const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
   {
     from: 'tests/engine/fonts/',
     to: 'tests/engine/text/fonts/',
-    source: 'packages/core/src/text/fonts.ts'
+    source: 'packages/core/src/text/font/manager.ts'
   },
   {
     from: 'tests/engine/figma-api/',
@@ -550,6 +551,8 @@ export const openPencilArchitecturePlugin = {
     noNativeTitleAttributesInVue,
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
-    noUIImportsInCore
+    noUIImportsInCore,
+    uniqueComponentNames,
+    multiWordComponentNames
   ]
 }

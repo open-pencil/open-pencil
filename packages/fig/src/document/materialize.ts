@@ -16,6 +16,7 @@ import type {
 import {
   reconcileOccurrenceStructure,
   linkInstanceSourceChildren,
+  mapMaterializedComponentNodes,
   mapInstanceSourceChildren,
   type MaterializedComponentOccurrence
 } from '../instance-overrides/source-children'
@@ -155,6 +156,8 @@ export function createFigDocumentSession(
     ? restoreAssemblyState(resume, archive.reader, sessionOptions)
     : materializeReader(archive.reader, archive.blobs, sessionOptions)
   state.graph.figKiwiVersion = archive.figKiwiVersion
+  // A resumed session runs on the open graph, whose kind may have changed since it was read.
+  if (!resume) state.graph.documentKind = archive.kind
   state.graph.figSchemaDeflated = archive.figSchemaDeflated
   const loaded = new Set<string>(resume?.checkpoint.loadedPageIds)
   const edits = watchGraphEdits(state.graph, resume !== undefined)
@@ -446,20 +449,34 @@ function materializeReaderInto(
     const parentId = sources.get(item.parentSourceId)
     if (!parentId) throw new Error(`Unmaterialized component parent ${item.parentSourceId}`)
     const existingNodes = new Map<InstanceOccurrence, SceneNode>()
+    /** Definitions an earlier step built inside this one: they keep the layers they have. */
+    const nested: Array<[InstanceOccurrence, MaterializedComponentOccurrence]> = []
     const collectExisting = (node: InstanceOccurrence): void => {
       const id = sources.get(node.sourceId)
       const existing = id ? graph.getNode(id) : undefined
       if (existing) existingNodes.set(node, existing)
-      if (node.mainComponentId === null) node.children.forEach(collectExisting)
+      // A definition deleted since it was built is built again, like any missing layer.
+      const component =
+        existing && node.properties.type === 'SYMBOL' ? components.get(node.sourceId) : undefined
+      if (component) nested.push([node, component])
+      else if (node.mainComponentId === null) node.children.forEach(collectExisting)
     }
     collectExisting(item.occurrence)
-    const materialized = materializeInstance(graph, parentId, item.occurrence, componentIds, {
+    const built = materializeInstance(graph, parentId, item.occurrence, componentIds, {
       blobs,
       sourceChildren: mapInstanceSourceChildren(item.occurrence, components),
       existingNodes,
       recordId
     })
-    rememberDerivedSizes(materialized.nodes)
+    rememberDerivedSizes(built.nodes)
+    // Linking and checkpoints address a nested definition's layers through this tree too.
+    const nodes = new Map(built.nodes)
+    for (const [node, component] of nested) {
+      for (const [occurrence, layer] of mapMaterializedComponentNodes(node, component)) {
+        nodes.set(occurrence, layer)
+      }
+    }
+    const materialized = { root: built.root, nodes }
     linkInstanceSourceChildren(item.occurrence, materialized, components)
     components.set(item.sourceId, { occurrence: item.occurrence, materialized })
     componentIds.set(item.sourceId, materialized.root.id)
@@ -496,7 +513,8 @@ function materializeReaderInto(
         populateInstances(child)
       const id = sources.get(child.sourceId)
       if (!id) throw new Error(`Missing assembled child ${child.sourceId}`)
-      ordered.push(id)
+      // A layer moved live to another parent stays there; this only orders what the parent holds.
+      if (graph.getNode(id)?.parentId === parentId) ordered.push(id)
     }
     const parent = graph.getNode(parentId)
     if (parent)

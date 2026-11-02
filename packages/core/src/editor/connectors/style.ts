@@ -15,6 +15,7 @@ import {
 import { figJamColor, type FigJamColorName } from '@open-pencil/scene-graph/figjam'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
+import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
 
 /** A straight connector attaches by its layers' centres, as Figma moves its magnets. */
@@ -28,7 +29,7 @@ function straightEnd(endpoint: ConnectorEndpoint | null): ConnectorEndpoint | nu
  * dash, as FigJam's selection toolbar sets them. Each change records the
  * connectors' whole subtrees as one step, and the connectors route again.
  */
-export function createConnectorStyleActions(ctx: EditorContext) {
+export function createConnectorStyleActions(ctx: EditorContext, nodes: NodeActions) {
   function edit(label: string, ids: Iterable<string>, change: (connector: SceneNode) => void) {
     const connectors = [...ids].flatMap((id) => {
       const node = ctx.graph.getNode(id)
@@ -52,7 +53,7 @@ export function createConnectorStyleActions(ctx: EditorContext) {
 
   function setConnectorLineType(ids: Iterable<string>, lineType: ConnectorLineType) {
     edit('Change connector line', ids, (connector) =>
-      ctx.graph.updateNode(connector.id, {
+      nodes.updateNode(connector.id, {
         connectorLineType: lineType,
         ...(lineType === 'STRAIGHT' && {
           connectorStart: straightEnd(connector.connectorStart),
@@ -64,7 +65,7 @@ export function createConnectorStyleActions(ctx: EditorContext) {
 
   function setConnectorCap(ids: Iterable<string>, end: 'start' | 'end', cap: StrokeCap) {
     edit(end === 'start' ? 'Change start point' : 'Change end point', ids, (connector) =>
-      ctx.graph.updateNode(connector.id, {
+      nodes.updateNode(connector.id, {
         [end === 'start' ? 'connectorStartCap' : 'connectorEndCap']: cap
       })
     )
@@ -73,7 +74,7 @@ export function createConnectorStyleActions(ctx: EditorContext) {
   function restyleLine(label: string, ids: Iterable<string>, style: Partial<ConnectorLineStyle>) {
     edit(label, ids, (connector) => {
       const line = connectorSublayers(ctx.graph, connector)?.line
-      if (line) ctx.graph.updateNode(line.id, connectorLineStyleFields(line, style))
+      if (line) nodes.updateNode(line.id, connectorLineStyleFields(line, style))
     })
   }
 

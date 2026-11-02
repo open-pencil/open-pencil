@@ -120,6 +120,20 @@ describe('update_node', () => {
 
     expect(expectDefined(figma.getNodeById(rect.id), 'rectangle node').cornerRadius).toBe(12)
   })
+
+  test("a font size edit leaves the text's text style and keeps its fill style", () => {
+    const { figma } = setupToolTest()
+    const text = figma.createText()
+    figma.graph.updateNode(text.id, { textStyleId: 'style:text', fillStyleId: 'style:fill' })
+
+    getTool('update_node').execute(figma, { id: text.id, font_size: 20 })
+
+    expect(getNodeOrThrow(figma.graph, text.id)).toMatchObject({
+      fontSize: 20,
+      textStyleId: null,
+      fillStyleId: 'style:fill'
+    })
+  })
 })
 
 describe('set_layout', () => {
@@ -246,6 +260,31 @@ describe('set_font_range', () => {
       error: 'set_font_range needs at least one of family, size, style, variations, or color'
     })
     expect(getNodeOrThrow(graph, id).styleRuns).toEqual([])
+  })
+
+  test('sets text from Markdown, its headings and emphasis as ranges over the text’s style', async () => {
+    const { figma, graph } = setupToolTest()
+    const created = getTool('create_shape').execute(figma, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 20
+    }) as ToolResult
+    const id = expectDefined(created.id, 'created node id')
+    expect(
+      await runTool(figma, 'set_text', { id, text: '# Title\n- **one**', markdown: true })
+    ).toEqual({ id, text: 'Title\none' })
+    const node = getNodeOrThrow(graph, id)
+    expect(node.textParagraphs).toEqual([
+      { listType: 'NONE', indentation: 0 },
+      { listType: 'UNORDERED', indentation: 1 }
+    ])
+    // The heading carries its size too, so it and the bold item are ranges of their own.
+    expect(node.styleRuns.map((run) => [run.start, run.length, run.style.fontWeight])).toEqual([
+      [0, 6, 700],
+      [6, 3, 700]
+    ])
   })
 
   test('applies font style to text range and survives serialization', async () => {

@@ -31,12 +31,7 @@ test.each(['app-first', 'sdk-first'])(
       )
       const result = await execute(
         process.execPath,
-        [
-          join(root, 'node_modules/@typescript/native-preview/bin/tsgo'),
-          '--noEmit',
-          '--project',
-          project
-        ],
+        [join(root, 'node_modules/@typescript/native/bin/tsc'), '--noEmit', '--project', project],
         { cwd: root, timeout: 20_000, maxBuffer: 2 * 1024 * 1024 }
       )
       expect(result.stdout).toBe('')

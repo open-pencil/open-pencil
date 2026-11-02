@@ -18,7 +18,7 @@ import {
 import { localMCPAvailable, mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { needsMCPInstall } from '@/app/automation/mcp/setup-prompt'
-import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
+import { openToolAccessSettings, toolAccessCounts } from '@/app/automation/tool-access/settings/use'
 import { isTauri } from '@/app/tauri/env'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
@@ -55,13 +55,13 @@ const statusMessage = computed(
 const statusTone = computed(
   () =>
     (
-      ({
+      {
         idle: 'neutral',
         starting: 'pending',
         running: 'success',
         stopped: 'neutral',
         error: 'error'
-      }) as const
+      } as const
     )[mcpRuntime.status]
 )
 const { restart, chooseRootDirectory } = useMCPSettings()
@@ -96,25 +96,27 @@ const serverSetup = useMCPServerSetup(() =>
       </template>
     </AppAlert>
     <template v-else>
-      <SettingsGroup>
-        <SettingsRow :label="automation.status">
-          <AppStatus :tone="statusTone">{{ statusMessage }}</AppStatus>
-        </SettingsRow>
-        <SettingsRow :label="automation.address">
-          <!-- Below the label on one line, so a long address truncates instead of overflowing. -->
-          <template #description>
-            <AppCopyField
-              look="plain"
-              :value="mcpRuntime.endpoint"
-              :copy-label="common.copy"
-              :copied-label="common.copied"
-              :ui="{ root: 'mt-1', value: 'truncate' }"
-            />
+      <SettingsGroup data-slot="mcp-server-status">
+        <SettingsRow>
+          <template #label>
+            <AppStatus :tone="statusTone">{{ statusMessage }}</AppStatus>
+          </template>
+          <template v-if="mcpRuntime.version" #description>
+            <span class="mt-1 block text-[11px] text-muted"
+              >{{ automation.version }} <code>{{ mcpRuntime.version }}</code></span
+            >
           </template>
         </SettingsRow>
-        <SettingsRow v-if="mcpRuntime.version" :label="automation.version">
-          <code class="text-xs text-surface">{{ mcpRuntime.version }}</code>
-        </SettingsRow>
+        <div class="px-3 py-2.5">
+          <AppCopyField
+            :value="mcpRuntime.endpoint"
+            :copy-label="common.copy"
+            :copied-label="common.copied"
+            :ui="{ value: 'truncate' }"
+          />
+        </div>
+      </SettingsGroup>
+      <SettingsGroup>
         <SettingsRow
           :label="automation.authentication"
           :description="automation.authenticationDescription"
@@ -137,12 +139,12 @@ const serverSetup = useMCPServerSetup(() =>
         </SettingsRow>
         <SettingsRow :label="automation.rootDirectory">
           <template #description>
-            <p class="mt-1 font-mono text-xs break-all text-surface">
-              {{ mcpRootDirectory || automation.rootDirectoryDefault }}
-            </p>
-            <p class="mt-1 text-xs leading-relaxed text-muted">
-              {{ automation.rootDirectoryDescription }}
-            </p>
+            <code class="mt-1 block text-[11px] break-all text-surface">{{
+              mcpRootDirectory || automation.rootDirectoryDefault
+            }}</code>
+            <span class="mt-1 block text-[11px] leading-relaxed text-muted">{{
+              automation.rootDirectoryDescription
+            }}</span>
           </template>
           <div v-if="mcpRootDirectory || isTauri()" class="flex flex-wrap justify-end gap-2">
             <AppButton
@@ -162,11 +164,9 @@ const serverSetup = useMCPServerSetup(() =>
             >
           </div>
         </SettingsRow>
-      </SettingsGroup>
-      <SettingsGroup>
         <SettingsRow
           :label="settings.toolAccess"
-          :description="automation.mcpToolAccessDescription"
+          :description="automation.toolsEnabled(toolAccessCounts.mcp)"
         >
           <AppButton
             size="xs"

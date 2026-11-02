@@ -10,6 +10,8 @@ import { StorageRevisionConflictError } from '@/app/integrations/storage'
 import { createCloudStorageAdapter } from '@/app/integrations/storage/cloud/adapter'
 
 const WORKSPACE = '0b5a4e0a-2d1c-4d6e-9f1a-6b2c3d4e5f60'
+/** A document the signed-in person may not delete. */
+const FORBIDDEN = '5f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b'
 
 async function sha256(bytes: Uint8Array): Promise<string> {
   return fromUint8Array(
@@ -149,12 +151,23 @@ function cloudServer() {
         const revision = crypto.randomUUID()
         objects.set(revision, objects.get(uploadId) ?? new Uint8Array())
         Object.assign(doc, {
+          ...(typeof body.name === 'string' ? { name: body.name } : {}),
           revision,
           version: doc.version + 1,
           checksum: String(body.checksum),
           images: named
         })
         return json({ document: summary(upload.documentId, doc) })
+      }
+    ],
+    [
+      'DELETE',
+      /^\/documents\/([^/]+)$/,
+      ([, id = '']) => {
+        if (id === FORBIDDEN) return json({ error: { code: 'forbidden' } }, 403)
+        return documents.delete(id)
+          ? new Response(null, { status: 204 })
+          : json({ error: { code: 'not_found' } }, 404)
       }
     ],
     [
@@ -287,6 +300,49 @@ function adapter(server: ReturnType<typeof cloudServer>) {
 }
 
 describe('Cloud storage adapter', () => {
+  test('deletes a document, and counts one already gone as deleted', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    await storage.putDocument(id, new TextEncoder().encode('design'), {
+      name: 'Old',
+      updatedAt: ''
+    })
+    await storage.deleteDocument(id)
+    await storage.deleteDocument(id)
+    expect(await storage.listDocuments()).toEqual([])
+  })
+
+  test('reports a deletion Cloud refuses', async () => {
+    const storage = adapter(cloudServer())
+    await expect(storage.deleteDocument(FORBIDDEN)).rejects.toMatchObject({ code: 'forbidden' })
+  })
+
+  test('saves an edited title with an existing document revision', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    const bytes = new TextEncoder().encode('design')
+    const first = await storage.putDocument(id, bytes, { name: 'Untitled', updatedAt: '' })
+    await storage.putDocument(id, bytes, { name: 'Checkout', updatedAt: '' }, undefined, {
+      baseRevision: first.revision
+    })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: 'Checkout' })
+    expect(await storage.listDocuments()).toMatchObject([{ id, name: 'Checkout' }])
+  })
+
+  test('saves a name Cloud accepts, whatever the editor calls the document', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    const bytes = new TextEncoder().encode('design')
+    const first = await storage.putDocument(id, bytes, { name: '   ', updatedAt: '' })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: 'Untitled' })
+    // Cloud keeps 255 UTF-16 units; the emoji's second half would be the 256th, so it goes whole.
+    const kept = 'a'.repeat(254)
+    await storage.putDocument(id, bytes, { name: `${kept}😀 tail`, updatedAt: '' }, undefined, {
+      baseRevision: first.revision
+    })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: kept })
+  })
+
   test('creates the document on its first save and opens what it saved', async () => {
     const server = cloudServer()
     const storage = adapter(server)

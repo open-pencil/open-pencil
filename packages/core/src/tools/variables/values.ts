@@ -38,7 +38,7 @@ export const createVariable = defineTool({
     )
   }),
   execute: (figma, args) => {
-    const type = args.type as VariableType
+    const type = args.type
     // The value is checked first, so a value the variable cannot hold creates nothing.
     const value = args.value === undefined ? undefined : parseVariableValue(type, args.value)
     if (typeof value === 'number' && !Number.isFinite(value))

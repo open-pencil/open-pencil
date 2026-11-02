@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride,
@@ -36,7 +36,7 @@ import { createVariableBindingActions } from './variable-bindings'
  */
 function isPathTextEditable(node: SceneNode): boolean {
   if (!node.textPathData) return true
-  return hasGlyphOutlines(node.fontFamily, weightToStyle(node.fontWeight, node.italic))
+  return hasGlyphOutlines(node.fontFamily, faceStyleKey(node))
 }
 
 type PathTextEditSnapshot = Pick<
@@ -130,6 +130,11 @@ export function createTextActions(ctx: EditorContext) {
     if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
   }
 
+  /** A text draws from its live layout while edited, so it is drawn afresh as the edit starts and ends. */
+  function redrawText(nodeId: string) {
+    for (const renderer of ctx.getRenderers()) renderer.redrawNode(nodeId, ctx.graph)
+  }
+
   function startTextEditing(nodeId: string) {
     const te = ctx.getTextEditor()
     if (ctx.state.editingTextId) commitTextEdit()
@@ -139,6 +144,7 @@ export function createTextActions(ctx: EditorContext) {
     if (!isPathTextEditable(node)) return
     activeSession = createTextEditSession(node)
     ctx.state.editingTextId = nodeId
+    redrawText(nodeId)
     restoreEmptyLabel = fitEmptyLabelToPlaceholder(ctx, node)
     if (te) {
       te.setRenderer(ctx.getRenderer())
@@ -224,11 +230,16 @@ export function createTextActions(ctx: EditorContext) {
   function commitTextEdit() {
     const te = ctx.getTextEditor()
     const restore = restoreEmptyLabel
+    const edited = ctx.state.editingTextId
     restoreEmptyLabel = null
     if (!te?.isActive) {
       ctx.state.editingTextId = null
       activeSession = null
       restore?.()
+      if (edited) {
+        redrawText(edited)
+        ctx.requestRender()
+      }
       return
     }
     const textState = te.state
@@ -237,6 +248,7 @@ export function createTextActions(ctx: EditorContext) {
     ctx.state.editingTextId = null
     activeSession = null
     restore?.()
+    if (edited) redrawText(edited)
     ctx.requestRender()
   }
 

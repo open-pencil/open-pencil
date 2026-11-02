@@ -1,4 +1,4 @@
-export const VECTORIZE_PROVIDER_IDS = ['recraft', 'fal'] as const
+export const VECTORIZE_PROVIDER_IDS = ['recraft', 'fal', 'quiver'] as const
 
 export type VectorizeProviderID = (typeof VECTORIZE_PROVIDER_IDS)[number]
 

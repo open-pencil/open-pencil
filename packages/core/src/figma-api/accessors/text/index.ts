@@ -12,7 +12,8 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import type { FigmaFontNameInput } from '#core/figma-api/fonts'
+import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
+import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
 import {
   getParagraphSpacing,
   letterSpacingValue,
@@ -23,10 +24,8 @@ import {
   type FigmaLetterSpacing,
   type FigmaLineHeight
 } from '#core/figma-api/text'
-import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/text/loaded-fonts'
 import { getTextStyle, type TextSegmentField } from '#core/figma-api/text/style'
 import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
-import { textFontFace } from '#core/text/requirements'
 
 import { hyperlinkTarget } from './hyperlink'
 import { fontNameStyle } from './ranges'
@@ -91,7 +90,7 @@ function field<Field extends keyof SceneNode>(
     },
     set(this: ProxyThis, value: SceneNode[Field]) {
       if (needsFonts) assertTextFontsLoaded(`set_${name}`, raw(this, internals))
-      updateNode(this, internals, { [name]: value } as Partial<SceneNode>)
+      updateNode(this, internals, { [name]: value })
     }
   }
 }
@@ -120,7 +119,7 @@ export function installTextNodeProxyAccessors(
       mixed,
       (node, value) => {
         const style = fontNameStyle('set_fontName', node, 0, value)
-        assertFontLoaded('set_fontName', textFontFace(node, style))
+        assertFontLoaded('set_fontName', node, style)
         return style
       },
       false
@@ -137,8 +136,9 @@ export function installTextNodeProxyAccessors(
     ),
     // A weight is a face of its own, which has to be loaded as a new font does.
     fontWeight: characterStyle<number>(internals, 'fontWeight', mixed, (node, fontWeight) => {
-      assertFontLoaded('set_fontWeight', textFontFace(node, { fontWeight }))
-      return { fontWeight }
+      const style = { fontWeight, fontStyle: null }
+      assertFontLoaded('set_fontWeight', node, style)
+      return style
     }),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),

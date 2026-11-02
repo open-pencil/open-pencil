@@ -5,7 +5,7 @@ import { computed, effectScope, nextTick, shallowRef } from 'vue'
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { DEFAULT_WEB_FONT_PROVIDER_SETTINGS, fontManager } from '@open-pencil/core/text'
+import { facesFromStyles, fontManager, WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { createTypographyActions } from '#vue/controls/typography/actions'
@@ -26,9 +26,11 @@ const LORA = [
 ]
 const OSWALD = ['ExtraLight', 'Light', 'Regular', 'Medium', 'SemiBold', 'Bold']
 const CATALOG = [
-  { family: 'Lora', styles: LORA },
-  { family: 'Oswald', styles: OSWALD }
+  { family: 'Lora', faces: facesFromStyles(LORA) },
+  { family: 'Oswald', faces: facesFromStyles(OSWALD) }
 ]
+
+const providers = fontManager.enabledOnlineFontProviders()
 
 beforeAll(() => {
   fontManager.setOnlineFontProviders({})
@@ -37,7 +39,9 @@ beforeAll(() => {
 
 afterAll(() => {
   fontManager.setHostFontCatalog([])
-  fontManager.setOnlineFontProviders(DEFAULT_WEB_FONT_PROVIDER_SETTINGS)
+  fontManager.setOnlineFontProviders(
+    Object.fromEntries(WEB_FONT_PROVIDER_IDS.map((id) => [id, providers.includes(id)]))
+  )
 })
 
 /** Two text layers, the typography actions over a selection, and a font load that waits. */
@@ -117,17 +121,19 @@ test('a family chosen while loading skips layers deleted in the meantime', async
 })
 
 /** Text layers in Inter at these styles, with typography actions and face lists over them. */
-function styled(...faces: { fontWeight: number; italic?: boolean; fontFamily?: string }[]) {
+function styled(
+  ...styles: { fontWeight: number; italic?: boolean; fontFamily?: string; fontStyle?: string }[]
+) {
   const editor = createEditor()
   const page = editor.state.currentPageId
-  const texts = faces.map((face) =>
-    editor.graph.createNode('TEXT', page, { text: 'a', fontFamily: 'Inter', ...face })
+  const texts = styles.map((style) =>
+    editor.graph.createNode('TEXT', page, { text: 'a', fontFamily: 'Inter', ...style })
   )
   const nodes = computed(() => texts)
   const scope = effectScope()
   const lists = scope.run(() => useFamilyFaces(nodes))
   if (!lists) throw new Error('Expected family faces')
-  const { weights, supports } = lists
+  const { faces, supports } = lists
   const actions = createTypographyActions({
     editor,
     nodes,
@@ -135,7 +141,7 @@ function styled(...faces: { fontWeight: number; italic?: boolean; fontFamily?: s
     supports,
     options: {}
   })
-  return { texts, weights, actions, stop: () => scope.stop() }
+  return { texts, faces, actions, stop: () => scope.stop() }
 }
 
 test('a family switch keeps a face the family has, or takes the nearest weight, as in Figma', async () => {
@@ -154,11 +160,51 @@ test('a family switch keeps a face the family has, or takes the nearest weight, 
   ])
 })
 
-test('the weight list offers only the weights the family has', async () => {
-  const { weights } = styled({ fontWeight: 400, fontFamily: 'Oswald' })
+test('the style list offers only the faces the family has', async () => {
+  const { faces } = styled({ fontWeight: 400, fontFamily: 'Oswald' })
   await fontManager.familyFaces('Oswald')
   await nextTick()
-  expect(weights.value.map((weight) => weight.value)).toEqual([200, 300, 400, 500, 600, 700])
+  expect(faces.value.map((face) => face.value)).toEqual(OSWALD)
+})
+
+test('the style list names faces as the family does, and the text’s own face as the text does', async () => {
+  const { faces } = styled({ fontWeight: 600, fontStyle: 'Semi Bold' })
+  await fontManager.familyFaces('Inter')
+  await nextTick()
+  // A file from Figma spells Inter 3's name; our Inter 4 names its other faces its own way.
+  expect(faces.value.map((face) => face.label)).toEqual([
+    'Thin',
+    'ExtraLight',
+    'Light',
+    'Regular',
+    'Medium',
+    'Semi Bold',
+    'Bold',
+    'ExtraBold',
+    'Black'
+  ])
+})
+
+test('lists faces of one weight apart, and sets the one chosen by its name', async () => {
+  const avenir = [
+    { style: 'Light', weight: 300, italic: false },
+    { style: 'Roman', weight: 400, italic: false },
+    { style: 'Book', weight: 350, italic: false },
+    { style: 'Heavy', weight: 800, italic: false }
+  ]
+  fontManager.setHostFontCatalog([...CATALOG, { family: 'Avenir', faces: avenir }])
+  try {
+    const { texts, faces, actions } = styled({ fontWeight: 400, fontFamily: 'Avenir' })
+    await fontManager.familyFaces('Avenir')
+    await nextTick()
+    expect(faces.value.map((face) => face.value)).toEqual(['Light', 'Book', 'Roman', 'Heavy'])
+    await actions.setFace('Book')
+    expect(texts.map((text) => [text.fontWeight, text.italic, text.fontStyle])).toEqual([
+      [350, false, 'Book']
+    ])
+  } finally {
+    fontManager.setHostFontCatalog(CATALOG)
+  }
 })
 
 test('italic does nothing on a family without italics, and bold goes to Bold', async () => {
@@ -172,15 +218,45 @@ test('italic does nothing on a family without italics, and bold goes to Bold', a
   expect(texts[0].fontWeight).toBe(700)
 })
 
-test('the weight list follows a font catalog that arrives after the first lookup', async () => {
-  const { weights, stop } = styled({ fontWeight: 400, fontFamily: 'Late Sans' })
+test('offers a face only where every selected layer has it in its own slant', async () => {
+  const family = 'Slant Sans'
+  fontManager.setHostFontCatalog([
+    ...CATALOG,
+    {
+      family,
+      faces: [
+        { style: 'Regular', weight: 400, italic: false },
+        { style: 'Black', weight: 900, italic: false },
+        { style: 'Italic', weight: 400, italic: true }
+      ]
+    }
+  ])
+  try {
+    const { faces } = styled(
+      { fontWeight: 400, fontFamily: family },
+      { fontWeight: 400, italic: true, fontFamily: family }
+    )
+    await fontManager.familyFaces(family)
+    await nextTick()
+    // Black exists only upright, so choosing it would turn the italic layer upright.
+    expect(faces.value.map((face) => face.value)).not.toContain('Black')
+  } finally {
+    fontManager.setHostFontCatalog(CATALOG)
+  }
+})
+
+test('the style list follows a font catalog that arrives after the first lookup', async () => {
+  const { faces, stop } = styled({ fontWeight: 400, fontFamily: 'Late Sans' })
   await fontManager.familyFaces('Late Sans')
   await nextTick()
-  expect(weights.value).toHaveLength(9)
-  fontManager.setHostFontCatalog([...CATALOG, { family: 'Late Sans', styles: ['Regular', 'Bold'] }])
+  expect(faces.value).toHaveLength(9)
+  fontManager.setHostFontCatalog([
+    ...CATALOG,
+    { family: 'Late Sans', faces: facesFromStyles(['Regular', 'Bold']) }
+  ])
   await fontManager.familyFaces('Late Sans')
   await nextTick()
-  expect(weights.value.map((weight) => weight.value)).toEqual([400, 700])
+  expect(faces.value.map((face) => face.value)).toEqual(['Regular', 'Bold'])
   stop()
   fontManager.setHostFontCatalog(CATALOG)
 })
@@ -327,6 +403,157 @@ test('an axis set while text is edited styles the selected characters, and undoe
     editor.commitTextEdit()
     expect(editor.state.editingTextId).toBeNull()
     expect(node()?.styleRuns).toEqual([typed])
+  } finally {
+    scope.stop()
+    editor.dispose()
+    renderer.destroy()
+  }
+})
+
+/** "Hello" drawn at 40 by a range over all of it, over the layer's own 14, and its actions. */
+function rangeSized() {
+  const editor = createEditor()
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello',
+    fontSize: 14,
+    styleRuns: [{ start: 0, length: 5, style: { fontSize: 40 } }]
+  })
+  const actions = createTypographyActions({
+    editor,
+    nodes: computed(() => [text]),
+    activeFormatting: computed(() => []),
+    supports: () => true,
+    options: {}
+  })
+  const node = () => editor.graph.getNode(text.id)
+  return { editor, actions, node }
+}
+
+test('a size set on a layer a range sized draws every character at it, and undoes', () => {
+  const { editor, actions, node } = rangeSized()
+  actions.updateProp('fontSize', 30)
+  actions.commitProp('fontSize', 30, 40)
+  expect(node()?.fontSize).toBe(30)
+  expect(node()?.styleRuns).toEqual([])
+  editor.undoAction()
+  expect(node()?.fontSize).toBe(14)
+  expect(node()?.styleRuns).toEqual([{ start: 0, length: 5, style: { fontSize: 40 } }])
+})
+
+test('a cancelled size on a layer a range sized puts the range back', () => {
+  const { actions, node } = rangeSized()
+  actions.updateProp('fontSize', 30)
+  expect(node()?.styleRuns).toEqual([])
+  actions.cancelProp('fontSize')
+  expect(node()?.fontSize).toBe(14)
+  expect(node()?.styleRuns).toEqual([{ start: 0, length: 5, style: { fontSize: 40 } }])
+})
+
+test('a cancelled axis edit on selected characters puts back their own axes', async () => {
+  await fontManager.loadFont('Inter', 'Regular')
+  const ck = await initCanvasKit()
+  const surface = ck.MakeSurface(200, 200)
+  if (!surface) throw new Error('Expected a surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  const editor = createEditor()
+  editor.setCanvasKit(ck, renderer)
+  await renderer.loadFonts()
+  const range = { start: 6, length: 5, style: { fontVariations: [{ axis: 'wght', value: 700 }] } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello world',
+    fontFamily: 'Inter',
+    width: 200,
+    height: 20,
+    styleRuns: [range]
+  })
+  editor.startTextEditing(text.id)
+  const state = editor.textEditor?.state
+  if (!state) throw new Error('Expected a text editor')
+  state.selectionAnchor = 6
+  state.cursor = 11
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  try {
+    axes.previewAxis('wght', 500)
+    axes.cancelAxis()
+    expect(editor.graph.getNode(text.id)?.styleRuns).toEqual([range])
+  } finally {
+    scope.stop()
+    editor.dispose()
+    renderer.destroy()
+  }
+})
+
+test('an axis set on a whole text keeps the other axes a range sets', () => {
+  const editor = createEditor()
+  const width = { start: 0, length: 5, style: { fontVariations: [{ axis: 'wdth', value: 80 }] } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello',
+    styleRuns: [width]
+  })
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  const node = () => editor.graph.getNode(text.id)
+  try {
+    axes.setAxis('wght', 600)
+    expect(node()?.fontVariations).toEqual([{ axis: 'wght', value: 600 }])
+    expect(node()?.styleRuns).toEqual([
+      {
+        start: 0,
+        length: 5,
+        style: {
+          fontVariations: [
+            { axis: 'wdth', value: 80 },
+            { axis: 'wght', value: 600 }
+          ]
+        }
+      }
+    ])
+    editor.undoAction()
+    expect(node()?.fontVariations).toEqual([])
+    expect(node()?.styleRuns).toEqual([width])
+  } finally {
+    scope.stop()
+    editor.dispose()
+  }
+})
+
+test('a cancelled axis preview that outlived text editing puts back the layer and its ranges', async () => {
+  await fontManager.loadFont('Inter', 'Regular')
+  const ck = await initCanvasKit()
+  const surface = ck.MakeSurface(200, 200)
+  if (!surface) throw new Error('Expected a surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  const editor = createEditor()
+  editor.setCanvasKit(ck, renderer)
+  await renderer.loadFonts()
+  const range = { start: 6, length: 5, style: { fontSize: 30 } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello world',
+    fontFamily: 'Inter',
+    width: 200,
+    height: 20,
+    styleRuns: [range]
+  })
+  editor.startTextEditing(text.id)
+  const state = editor.textEditor?.state
+  if (!state) throw new Error('Expected a text editor')
+  state.selectionAnchor = 6
+  state.cursor = 11
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  const node = () => editor.graph.getNode(text.id)
+  try {
+    axes.previewAxis('wght', 500)
+    editor.commitTextEdit()
+    axes.previewAxis('wght', 600)
+    expect(node()?.fontVariations).toEqual([{ axis: 'wght', value: 600 }])
+    axes.cancelAxis()
+    expect(node()?.fontVariations).toEqual([])
+    expect(node()?.styleRuns).toEqual([range])
   } finally {
     scope.stop()
     editor.dispose()

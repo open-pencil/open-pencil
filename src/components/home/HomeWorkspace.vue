@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 
+import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -16,7 +17,7 @@ import {
   type StorageDocument,
   type StorageLocation
 } from '@/app/integrations/storage'
-import type { RecentDocument } from '@/app/recent-files'
+import { recentDocumentKind, type RecentDocument } from '@/app/recent-files'
 import {
   matchingRecentFiles,
   openRecentDocument,
@@ -25,10 +26,12 @@ import {
 import { useCredentialSettings } from '@/app/settings/credentials/preferences/use'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { createStoredDocument } from '@/app/storage/workspace/create'
-import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
+import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import { CloudSharedSection, CloudWorkspaceSection } from '@/components/cloud/integration'
+import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
+import { ofKind, type DocumentKindFilter } from '@/components/home/document/filter'
 import HomeLayout from '@/components/home/HomeLayout.vue'
 import RecentFilesSection from '@/components/home/recent/RecentFilesSection.vue'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
@@ -37,19 +40,21 @@ import HomeSidebar from '@/components/home/sidebar/HomeSidebar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
-const emit = defineEmits<{ 'new-document': [] }>()
+const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 const { locale, storage, files, common, settings, credentials } = useI18n()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
+/** Which kind of file Home lists, as Figma's file filter picks; a file of unknown kind shows in all. */
+const kindFilter = useLocalStorage<DocumentKindFilter>('open-pencil:home-files-kind', 'all')
 const query = ref('')
 const openError = ref<string | null>(null)
 const storageConfigured = ref(storagePreferencesComplete(activeStorageProviderID.value))
 const places = useHomeLocations()
 
-/** A new design lands in the place Home shows: a Cloud workspace, the bucket, or a local file. */
-function newDocument() {
+/** A new document lands in the place Home shows: a Cloud workspace, the bucket, or a local file. */
+function newDocument(kind: DocumentKind) {
   const target = newDesignTarget.value
-  if (target) void createStoredDocument(target.location)
-  else emit('new-document')
+  if (target) void createStoredDocument(target.location, kind)
+  else emit('new-document', kind)
 }
 
 const workspace = useRecentFilesWorkspace()
@@ -64,6 +69,14 @@ const storageWorkspace = useDocumentWorkspace<StorageDocument>({
   previewConcurrency: 6
 })
 const storageDocuments = storageWorkspace.documents
+const storageLocation = computed(() => activeStorageLocation())
+const deletingStorageDocument = shallowRef<StorageDocument | null>(null)
+function documentMenu(document: StorageDocument) {
+  return {
+    actions: files.value.documentActions({ name: document.name }),
+    delete: files.value.deleteDocument
+  }
+}
 const storageLoading = storageWorkspace.loading
 // Paused credential access has its own fix, so the card offers it instead of the raw native error.
 const credentialAccess = useCredentialSettings()
@@ -135,21 +148,32 @@ const newDesignTarget = computed<{ location: StorageLocation; label: string } | 
 const storagePreviewURL = storageWorkspace.previewURL
 const vStoragePreview = storageWorkspace.previewDirective
 const normalizedQuery = computed(() => query.value.trim().toLocaleLowerCase(locale.value))
-const filteredRecentFiles = computed(() =>
+const searchedRecentFiles = computed(() =>
   matchingRecentFiles(documents.value, normalizedQuery.value, locale.value)
 )
-const filteredStorageDocuments = computed(() => {
-  if (!normalizedQuery.value) return storageDocuments.value
-  return storageDocuments.value.filter((document) =>
-    document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
+const filteredRecentFiles = computed(() =>
+  searchedRecentFiles.value.filter((document) =>
+    ofKind(recentDocumentKind(document), kindFilter.value)
+  )
+)
+// Only Recent files offers the kind filter, so storage lists every kind.
+const filteredStorageDocuments = computed(() =>
+  storageDocuments.value.filter(
+    (document) =>
+      !normalizedQuery.value ||
+      document.name.toLocaleLowerCase(locale.value).includes(normalizedQuery.value)
+  )
+)
+// Recent files counts matches before its kind filter, so its kind control stays to switch kinds;
+// storage has none to count while its first listing loads.
+const noSearchMatches = computed(() => {
+  if (!normalizedQuery.value) return false
+  if (places.location.value.kind !== 'storage') return searchedRecentFiles.value.length === 0
+  return (
+    filteredStorageDocuments.value.length === 0 &&
+    !(storageLoading.value && storageDocuments.value.length === 0)
   )
 })
-const noSearchMatches = computed(
-  () =>
-    Boolean(normalizedQuery.value) &&
-    filteredRecentFiles.value.length === 0 &&
-    filteredStorageDocuments.value.length === 0
-)
 
 async function openRecent(document: RecentDocument): Promise<void> {
   openError.value = null
@@ -239,6 +263,7 @@ function formattedDate(updatedAt: string): string {
       <RecentFilesSection
         v-if="!noSearchMatches && places.location.value.kind === 'recent'"
         v-model:view="view"
+        v-model:kind="kindFilter"
         :workspace="workspace"
         :documents="filteredRecentFiles"
         :query="normalizedQuery"
@@ -321,9 +346,12 @@ function formattedDate(updatedAt: string): string {
             :key="document.id"
             v-storage-preview="document.id"
             :name="document.name"
+            :kind="document.kind"
             :metadata="formattedDate(document.updatedAt)"
             :previewURL="storagePreviewURL(document.id)"
+            :menu="documentMenu(document)"
             @open="openStorageDocument(document)"
+            @delete="deletingStorageDocument = document"
           />
         </div>
 
@@ -336,8 +364,11 @@ function formattedDate(updatedAt: string): string {
             :key="document.id"
             view="list"
             :name="document.name"
+            :kind="document.kind"
             :metadata="formattedDate(document.updatedAt)"
+            :menu="documentMenu(document)"
             @open="openStorageDocument(document)"
+            @delete="deletingStorageDocument = document"
           />
         </div>
 
@@ -357,6 +388,10 @@ function formattedDate(updatedAt: string): string {
         >
           {{ storage.emptyStorageWorkspace }}
         </div>
+        <DocumentDeleteDialog
+          v-model:document="deletingStorageDocument"
+          :location="storageLocation"
+        />
       </section>
     </template>
   </HomeLayout>

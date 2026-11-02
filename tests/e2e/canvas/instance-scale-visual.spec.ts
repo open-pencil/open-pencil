@@ -251,7 +251,18 @@ test('a bound root swap renders its replacement paint rather than its old cache'
       size: { x: 40, y: 40 },
       fillPaints: paint(1, 0),
       symbolData: { symbolID: guid(2) },
-      componentPropRefs: [{ defID: guid(90), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+      parameterConsumptionMap: {
+        entries: [
+          {
+            variableField: 'OVERRIDDEN_SYMBOL_ID',
+            variableData: {
+              value: { propRefValue: { defId: guid(90) } },
+              dataType: 'PROP_REF',
+              resolvedDataType: 'SYMBOL_ID'
+            }
+          }
+        ]
+      }
     },
     {
       guid: guid(6),
