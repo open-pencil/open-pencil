@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { refAutoReset, useClipboard } from '@vueuse/core'
+import { useClipboard } from '@vueuse/core'
 import { isReasoningUIPart, isTextUIPart } from 'ai'
 import type { UIMessage } from 'ai'
 import { computed, ref } from 'vue'
@@ -87,18 +87,11 @@ const firstAssistantTextPartIndex = computed(() =>
 const lastAssistantTextPartIndex = computed(() =>
   message.parts.findLastIndex((part) => isTextUIPart(part) && part.text.length > 0)
 )
+const { copy, copied, isSupported: clipboardSupported } = useClipboard({ copiedDuring: 1500 })
 /** The text the copy button sits on: the reply's first, when there is text to copy. */
 const copyPartIndex = computed(() =>
   assistantText.value && clipboardSupported.value ? firstAssistantTextPartIndex.value : -1
 )
-const copied = refAutoReset(false, 1500)
-const { copy, isSupported: clipboardSupported } = useClipboard()
-
-async function copyResponse(): Promise<void> {
-  if (!assistantText.value || !clipboardSupported.value) return
-  await copy(assistantText.value)
-  copied.value = true
-}
 
 // The AI SDK updates parts in place and replaces only the message, so copy each part for
 // the cards' computed state to see the new values.
@@ -190,34 +183,37 @@ function groupKey(group: MessagePartGroup): string {
               class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
+              <!-- With usage shown on hover, the last text ends in a row for it and the copy
+                   button; otherwise the button sits in the bubble's corner. -->
               <div
-                v-if="usageOnHover && group.index === lastAssistantTextPartIndex"
-                class="-mr-2 -mb-1 flex h-5 items-center justify-end gap-1 text-2xs text-muted opacity-0 group-focus-within/response:opacity-100 group-hover/response:opacity-100"
-                data-slot="chat-reply-usage"
+                v-if="
+                  (usageOnHover && group.index === lastAssistantTextPartIndex) ||
+                  group.index === copyPartIndex
+                "
+                :class="
+                  usageOnHover && group.index === lastAssistantTextPartIndex
+                    ? '-mr-2 -mb-1 flex h-5 items-center justify-end gap-1'
+                    : 'absolute right-1 bottom-1'
+                "
+                class="text-2xs text-muted opacity-0 group-focus-within/response:opacity-100 group-hover/response:opacity-100"
               >
-                {{ usageOnHover }}
+                <span
+                  v-if="usageOnHover && group.index === lastAssistantTextPartIndex"
+                  data-slot="chat-reply-usage"
+                >
+                  {{ usageOnHover }}
+                </span>
                 <IconButton
                   v-if="group.index === copyPartIndex"
                   :label="copied ? ai.responseCopied : ai.copyResponse"
                   size="xs"
                   data-slot="chat-copy-response"
-                  @click="copyResponse"
+                  @click="copy(assistantText)"
                 >
                   <icon-lucide-check v-if="copied" class="size-3 text-success" />
                   <icon-lucide-copy v-else class="size-3" />
                 </IconButton>
               </div>
-              <IconButton
-                v-else-if="group.index === copyPartIndex"
-                :label="copied ? ai.responseCopied : ai.copyResponse"
-                size="xs"
-                data-slot="chat-copy-response"
-                class="absolute right-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
-                @click="copyResponse"
-              >
-                <icon-lucide-check v-if="copied" class="size-3 text-success" />
-                <icon-lucide-copy v-else class="size-3" />
-              </IconButton>
             </div>
           </template>
         </div>
