@@ -30,7 +30,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 import { usageParts } from './turn/usage'
-import { chatContextTheme } from './ui'
+import { chatReplyTheme } from './ui'
 
 const {
   message,
@@ -89,7 +89,7 @@ const lastAssistantTextPartIndex = computed(() =>
   message.parts.findLastIndex((part) => isTextUIPart(part) && part.text.length > 0)
 )
 const { copy, copied, isSupported: clipboardSupported } = useClipboard({ copiedDuring: 1500 })
-const ui = chatContextTheme()
+const ui = chatReplyTheme()
 /** The text the copy button sits on: the reply's first, when there is text to copy. */
 const copyPartIndex = computed(() =>
   assistantText.value && clipboardSupported.value ? firstAssistantTextPartIndex.value : -1
@@ -194,7 +194,7 @@ function groupKey(group: MessagePartGroup): string {
                   group.index === copyPartIndex
                 "
                 :class="
-                  ui.replyCorner({
+                  ui.corner({
                     usage: !!usageOnHover && group.index === lastAssistantTextPartIndex
                   })
                 "

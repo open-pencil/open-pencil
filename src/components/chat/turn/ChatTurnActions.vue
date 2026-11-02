@@ -8,7 +8,7 @@ import { tokenUsageDisplay } from '@/app/ai/chat/preferences'
 import { turnEdits } from '@/app/ai/reply/turns'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
-import { chatContextTheme } from '../ui'
+import { chatReplyTheme } from '../ui'
 import { usageParts } from './usage'
 
 const {
@@ -42,7 +42,7 @@ const turn = computed(() => turnEdits(messageId))
 const revertable = computed(() => turn.value?.revertable === true)
 const restorable = computed(() => turn.value?.restorable === true)
 const partlyUndone = computed(() => undone > 0 && undone < edits)
-const ui = chatContextTheme()
+const ui = chatReplyTheme()
 /** On hover the usage sits beside the copy button, so a reply with nothing else here leaves no row. */
 const inlineUsage = computed(() =>
   usage && tokenUsageDisplay.value === 'always' ? usageParts(ai.value, usage) : null

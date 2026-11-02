@@ -1,9 +1,8 @@
-import { collapsibleContentMotion } from '../collapsible/collapsible'
 import { motionStyles } from '../motion/styles'
 
 /**
- * How full the conversation's context is: a ring in the chat's header with its popover, the bar
- * over the message field when it fills up, and the divider a compaction leaves in the transcript.
+ * How full the conversation's context is: a ring in the chat's header with its popover, and
+ * the bar over the message field when it fills up.
  */
 export default {
   slots: {
@@ -20,37 +19,6 @@ export default {
     credits: 'flex items-center justify-between gap-2 text-muted',
     warning:
       'mx-2.5 mb-1 flex items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-2.5 py-1.5 text-2xs text-warning',
-    warningLabel: 'min-w-0 flex-1 truncate',
-    // A rule across the transcript with its label in the middle; the label opens the summary.
-    // Its spacing sits inside the content, which cannot snap while its height animates.
-    divider: 'flex flex-col py-1',
-    dividerRule: 'flex items-center gap-2 text-2xs text-muted',
-    dividerLine: 'h-px min-w-3 flex-1 bg-border',
-    dividerToggle:
-      'inline-flex min-w-0 items-center gap-1.5 rounded px-1.5 py-0.5 outline-none hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent',
-    dividerIcon: 'size-3 shrink-0',
-    dividerTitle: 'truncate',
-    dividerChevron:
-      'size-3 shrink-0 transition-transform motion-reduce:transition-none [[data-state=open]>&]:rotate-180',
-    dividerContent: collapsibleContentMotion,
-    dividerNote: 'text-2xs leading-snug text-muted',
-    summary: 'mt-2 flex flex-col gap-1.5 rounded-md bg-hover px-2.5 py-2 text-xs leading-relaxed',
-    // Shown under the reply when the setting shows it always; on hover it sits beside the copy button.
-    usage: 'inline-flex items-center gap-2 px-2 text-2xs text-muted',
-    // The reply text's corner: the copy button, and with usage on hover the usage too, revealed
-    // when the text is hovered or focused.
-    replyCorner: [
-      'absolute right-1 bottom-1 text-2xs text-muted opacity-0 group-focus-within/response:opacity-100 group-hover/response:opacity-100',
-      motionStyles.reveal
-    ]
-  },
-  variants: {
-    // Over the bubble's own colour, fading out the end of a full last line beneath it.
-    usage: {
-      true: {
-        replyCorner:
-          'flex h-6 items-center gap-1 rounded-br-xl bg-[linear-gradient(to_right,transparent,var(--color-hover)_2rem)] pl-8'
-      }
-    }
+    warningLabel: 'min-w-0 flex-1 truncate'
   }
 } as const

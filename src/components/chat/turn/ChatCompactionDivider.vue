@@ -7,7 +7,7 @@ import type { Compaction } from '@/app/ai/chat/compaction/marker'
 import { formatCompactNumber } from '@/app/i18n/number'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 
-import { chatContextTheme } from '../ui'
+import { chatCompactionTheme } from '../ui'
 
 /**
  * Where a conversation was compacted: a rule across the transcript. The messages above it stay;
@@ -20,7 +20,7 @@ const { compaction, tokensAfter = null } = defineProps<{
   tokensAfter?: number | null
 }>()
 const { ai } = useI18n()
-const ui = chatContextTheme()
+const ui = chatCompactionTheme()
 </script>
 
 <template>
@@ -28,28 +28,25 @@ const ui = chatContextTheme()
        content motion, as the reasoning row does. -->
   <CollapsibleRoot
     as="section"
-    :class="ui.divider()"
+    :class="ui.root()"
     data-test-id="chat-compaction"
     :aria-label="ai.conversationCompacted"
   >
-    <div :class="ui.dividerRule()">
-      <span :class="ui.dividerLine()" aria-hidden="true" />
-      <CollapsibleTrigger :class="ui.dividerToggle()">
-        <icon-lucide-shrink :class="ui.dividerIcon()" aria-hidden="true" />
-        <span :class="ui.dividerTitle()">{{ ai.conversationCompacted }}</span>
-        <icon-lucide-chevron-down :class="ui.dividerChevron()" aria-hidden="true" />
+    <div :class="ui.rule()">
+      <span :class="ui.line()" aria-hidden="true" />
+      <CollapsibleTrigger :class="ui.toggle()">
+        <icon-lucide-shrink :class="ui.icon()" aria-hidden="true" />
+        <span :class="ui.title()">{{ ai.conversationCompacted }}</span>
+        <icon-lucide-chevron-down :class="ui.chevron()" aria-hidden="true" />
       </CollapsibleTrigger>
-      <span :class="ui.dividerLine()" aria-hidden="true" />
+      <span :class="ui.line()" aria-hidden="true" />
     </div>
-    <CollapsibleContent :class="ui.dividerContent()">
+    <CollapsibleContent :class="ui.content()">
       <div :class="ui.summary()">
-        <p :class="ui.dividerNote()">
+        <p :class="ui.note()">
           {{ compaction.agent ? ai.agentCompactionKeepsMessages : ai.compactionKeepsMessages }}
         </p>
-        <p
-          v-if="compaction.tokensBefore !== null && tokensAfter !== null"
-          :class="ui.dividerNote()"
-        >
+        <p v-if="compaction.tokensBefore !== null && tokensAfter !== null" :class="ui.note()">
           {{
             ai.compactionTokens({
               before: formatCompactNumber(compaction.tokensBefore),
