@@ -1,0 +1,1 @@
+- Picking a layer in the layers panel leaves canvas clicks as clicking it on the canvas would, and the canvas no longer outlines the container a layer was reached through, as in Figma (#1700).
