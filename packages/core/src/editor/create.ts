@@ -62,6 +62,7 @@ import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
+import { createTextFontGate } from './text/font-gate'
 import { createTextSelectionStyle } from './text/selection-style'
 import { createFigJamTextActions } from './text/typeface'
 import type {
@@ -246,6 +247,9 @@ export function createEditor(options?: EditorOptions) {
 
   // Build the shared context
   const ctx: EditorContext = {
+    get textFonts() {
+      return textFonts
+    },
     get graph() {
       return _graph
     },
@@ -278,6 +282,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   // Assemble domain modules
+  const textFonts = createTextFontGate(ctx)
   const viewport = createViewportActions(ctx)
   const selection = createSelectionActions(ctx)
   const shaderFrames = createShaderFrames(ctx, options)
@@ -290,7 +295,7 @@ export function createEditor(options?: EditorOptions) {
   const colorSpace = createColorSpaceActions(ctx)
   const documentSettings = createDocumentSettingsActions(ctx)
   const undoActions = createUndoActions(ctx)
-  const text = createTextActions(ctx, { textWriteSettled: (id) => nodes.textWriteSettled(id) })
+  const text = createTextActions(ctx)
   const nodes = createNodeActions(ctx)
   const shapes = createShapeActions(ctx, nodes.updateNodeWithUndo)
   const clipboardProperties = createClipboardPropertiesActions(

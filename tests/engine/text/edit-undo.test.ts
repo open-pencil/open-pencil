@@ -45,6 +45,7 @@ function setup() {
     },
     getTextEditor: () => textEditor,
     getRenderer: () => null,
+    textFonts: { write: (_ids, _texts, apply) => apply(), settled: () => null },
     getRenderers: () => [],
     runLayoutForNode: () => undefined,
     runMutationWithLayout: async (operation) => operation(),

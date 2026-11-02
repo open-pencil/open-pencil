@@ -109,15 +109,7 @@ function applyTextInstanceOverride(
   }
 }
 
-/** How text edits learn that a write to their text is waiting for its fonts. */
-interface TextWrites {
-  textWriteSettled: (id: string) => Promise<void> | null
-}
-
-/** Text actions used on their own have no writes waiting for fonts. */
-const NO_WAITING_WRITES: TextWrites = { textWriteSettled: () => null }
-
-export function createTextActions(ctx: EditorContext, writes: TextWrites = NO_WAITING_WRITES) {
+export function createTextActions(ctx: EditorContext) {
   let activeSession: TextEditSession | null = null
   /** Puts back the size an empty connector label had before its placeholder sized it. */
   let restoreEmptyLabel: (() => void) | null = null
@@ -172,7 +164,10 @@ export function createTextActions(ctx: EditorContext, writes: TextWrites = NO_WA
   }
 
   async function sizeInPreparedFonts(nodeId: string, node: SceneNode) {
+    const graph = ctx.graph
     await prepareTextFonts([node], { loadFont: ctx.loadFont })
+    // A replaced document has its own text, whatever its ids.
+    if (ctx.graph !== graph) return
     const te = ctx.getTextEditor()
     const current = ctx.graph.getNode(nodeId)
     if (!current) return
@@ -323,7 +318,7 @@ export function createTextActions(ctx: EditorContext, writes: TextWrites = NO_WA
     recordTextEdit(textState)
     change()
     // A change that waits for its text's fonts goes on from the text once it has landed.
-    const waiting = writes.textWriteSettled(textState.nodeId)
+    const waiting = ctx.textFonts.settled(textState.nodeId)
     if (waiting) void continueOnceWritten(waiting, te, textState.nodeId)
     else continueTextEdit(te, textState.nodeId)
   }
@@ -333,7 +328,10 @@ export function createTextActions(ctx: EditorContext, writes: TextWrites = NO_WA
     te: NonNullable<ReturnType<typeof ctx.getTextEditor>>,
     nodeId: string
   ) {
+    const graph = ctx.graph
     await waiting
+    // An edit that moved to another text, or a replaced document, goes on without this one.
+    if (ctx.graph !== graph || !te.isActive || te.nodeId !== nodeId) return
     continueTextEdit(te, nodeId)
   }
 

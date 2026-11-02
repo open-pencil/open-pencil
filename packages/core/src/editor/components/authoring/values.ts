@@ -57,7 +57,16 @@ export function createAuthoringValueActions(ctx: EditorContext, patch: Patch) {
         inverse: () => swap(previous)
       })
     } else if (field === 'TEXT') {
-      patch(node.id, componentPropertyTextChanges(node, value), 'Change property source')
+      // Sized in the value's fonts, once they are in.
+      ctx.textFonts.write(
+        [node.id],
+        () => [{ ...node, text: value }],
+        () => {
+          const live = ctx.graph.getNode(node.id)
+          if (live)
+            patch(node.id, componentPropertyTextChanges(live, value), 'Change property source')
+        }
+      )
     } else {
       patch(node.id, { visible: value === 'true' }, 'Change property source')
     }

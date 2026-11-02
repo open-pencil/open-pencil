@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, noop } from 'es-toolkit'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
@@ -374,6 +374,17 @@ export class SkiaRenderer {
 
   async loadFonts(onFallbackFontsLoaded?: () => void): Promise<void> {
     await RendererFonts.loadFonts(this, onFallbackFontsLoaded)
+    if (this.fontsLoaded) this.resolveFontsLoaded()
+  }
+
+  private resolveFontsLoaded: () => void = noop
+  private readonly fontsLoadedPromise = new Promise<void>((resolve) => {
+    this.resolveFontsLoaded = resolve
+  })
+
+  /** Settles once the canvas has the faces it draws and creates text with. */
+  whenFontsLoaded(): Promise<void> {
+    return this.fontsLoaded ? Promise.resolve() : this.fontsLoadedPromise
   }
 
   syncFontGeneration(): void {
