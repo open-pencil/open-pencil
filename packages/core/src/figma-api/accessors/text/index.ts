@@ -15,17 +15,18 @@ import {
 } from '#core/figma-api/accessor-utils'
 import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
+import { atLeast } from '#core/figma-api/schema'
 import {
   getParagraphSpacing,
   letterSpacingValue,
   lineHeightValue,
   paragraphStylesForCharacters,
   styleRunsForCharacters,
-  spacingProblem,
   type FigmaLetterSpacing,
   type FigmaLineHeight
 } from '#core/figma-api/text'
 import { getTextStyle, type TextSegmentField } from '#core/figma-api/text/style'
+import { parseFigma } from '#core/figma-api/validation'
 import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
 
 import { installTextDecorationAccessors } from './decoration'
@@ -45,10 +46,7 @@ function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField,
       return getParagraphSpacing(raw(this, internals), name, mixed)
     },
     set(this: ProxyThis, value: number) {
-      const invalid = spacingProblem(value)
-      if (invalid) {
-        throw new Error(`in set_${name}: Property "${name}" failed validation: ${invalid}`)
-      }
+      parseFigma(atLeast(0), value, `set_${name}`, name)
       assertTextFontsLoaded(`set_${name}`, raw(this, internals))
       updateNode(this, internals, { [name]: value })
     }

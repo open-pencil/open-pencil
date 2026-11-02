@@ -1,6 +1,7 @@
 import type { TextDecorationOffset } from '@figma/plugin-typings/plugin-api-standalone'
 import { mapValues, pickBy } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
+import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
@@ -9,9 +10,9 @@ import {
   paragraphStyleAt
 } from '@open-pencil/scene-graph/text'
 
-import { invalidOption, tooSmall } from '#core/figma-api/accessors/text/messages'
 import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import { parseFigma, tooSmall } from '#core/figma-api/validation'
 import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
 import { textStyleName } from '#core/text/font/names'
@@ -244,14 +245,7 @@ export function getStyledTextSegments(
   end?: number
 ): StyledTextSegment[] {
   const method = 'getStyledTextSegments'
-  for (const [index, field] of fields.entries()) {
-    if (!(TEXT_SEGMENT_FIELDS as readonly string[]).includes(field)) {
-      throw new Error(
-        `in ${method}: Property "${method}" failed validation: ` +
-          invalidOption(TEXT_SEGMENT_FIELDS, ` at index ${index}`)
-      )
-    }
-  }
+  parseFigma(v.array(v.picklist(TEXT_SEGMENT_FIELDS)), fields, method, method)
   if ((start === undefined) !== (end === undefined)) {
     throw new Error(`in ${method}: Invalid range. Must provide both 'start' and 'end'`)
   }

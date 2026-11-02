@@ -8,8 +8,9 @@ import {
 } from '@open-pencil/scene-graph/gradient'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { invalid, invalidOption, received } from './accessors/text/messages'
-import { BLEND_MODES, issuePath } from './effects'
+import { invalid, parseFigma } from '#core/figma-api/validation'
+
+import { BLEND_MODES } from './effects'
 import type { FigmaTransform } from './types'
 import { variableAlias, type FigmaVariableAlias } from './variables/values'
 
@@ -64,7 +65,7 @@ const colorBindingSchema = v.optional(v.strictObject({ color: v.optional(aliasSc
 const paintEntries = {
   visible: v.optional(v.boolean()),
   opacity: v.optional(unitSchema),
-  blendMode: v.optional(v.picklist(BLEND_MODES, invalidOption(BLEND_MODES)))
+  blendMode: v.optional(v.picklist(BLEND_MODES))
 }
 
 // Figma checks a transform's rows itself, after the paint's other fields.
@@ -74,7 +75,7 @@ const transformSchema = v.optional(v.unknown())
 const filterSchema = v.optional(v.pipe(v.number(), v.minValue(-1), v.maxValue(1)))
 
 const mediaEntries = {
-  scaleMode: v.picklist(SCALE_MODES, invalidOption(SCALE_MODES)),
+  scaleMode: v.picklist(SCALE_MODES),
   scalingFactor: v.optional(v.number()),
   rotation: v.optional(v.number()),
   filters: v.optional(
@@ -195,49 +196,6 @@ export type FigmaPaint =
 
 type ReadBase = Required<PaintBase>
 
-/** What Figma calls the value each Valibot schema expects. */
-const EXPECTED: Partial<Record<string, string>> = {
-  strict_object: 'object',
-  object: 'object',
-  variant: 'object',
-  array: 'array',
-  number: 'number',
-  string: 'string',
-  boolean: 'boolean'
-}
-
-/** Where Figma reports an issue: a paint itself by its index, a field by its path. */
-function where(path: readonly v.IssuePathItem[]): string {
-  if (path.length === 0) return ''
-  const [first] = path
-  if (path.length === 1 && typeof first.key === 'number') return ` at index ${first.key}`
-  return ` at ${issuePath(path)}`
-}
-
-/** One of Figma's lines for a Valibot issue, as its paint validation words it. */
-function issueProblem(issue: v.BaseIssue<unknown>): string {
-  const path = issue.path ?? []
-  const last = path.at(-1)
-  if (last?.origin === 'key') {
-    if (issue.expected === 'never') {
-      return `Unrecognized key: "${String(last.key)}"${where(path.slice(0, -1))}`
-    }
-    // Figma checks a missing field as undefined, which a choice refuses as an option.
-    const problem = last.key === 'scaleMode' ? invalidOption(SCALE_MODES) : 'Required value missing'
-    return `${problem}${where(path)}`
-  }
-  if (issue.type === 'picklist') return `${issue.message}${where(path)}`
-  if (issue.type === 'max_value') {
-    return `Too big: expected number to be <=${String(issue.requirement)}${where(path)}`
-  }
-  if (issue.type === 'min_value') {
-    return `Too small: expected number to be >=${String(issue.requirement)}${where(path)}`
-  }
-  if (issue.input === undefined) return `Required value missing${where(path)}`
-  const expected = EXPECTED[issue.type] ?? issue.expected ?? issue.type
-  return `Expected ${expected}, received ${received(issue.input)}${where(path)}`
-}
-
 /** Figma's complaint about a paint type it does not take, or OpenPencil does not model. */
 function typeProblem(value: readonly unknown[]): string | null {
   for (const [index, paint] of value.entries()) {
@@ -345,19 +303,15 @@ function sceneFill(paint: ParsedPaint, site: PaintSite): Fill {
  * message for `method` setting `property`, listing every problem on its own line.
  */
 export function parseFigmaPaints(value: unknown, method = 'set_fills', property = 'fills'): Fill[] {
-  if (!Array.isArray(value)) {
-    throw invalid(method, `Expected array, received ${received(value)}`, property)
-  }
-  const unsupported = typeProblem(value)
+  const unsupported = Array.isArray(value) ? typeProblem(value) : null
   if (unsupported) throw invalid(method, unsupported, property)
-  const result = v.safeParse(v.array(paintSchema), value)
-  if (!result.success) throw invalid(method, result.issues.map(issueProblem).join('\n'), property)
-  for (const paint of result.output) {
+  const paints = parseFigma(v.array(paintSchema), value, method, property)
+  for (const paint of paints) {
     if (paint.type === 'VIDEO' && paint.videoHash !== null && !SHA1_HASH.test(paint.videoHash)) {
       throw new Error(`in ${method}: Invalid SHA1 hash`)
     }
   }
-  return result.output.map((paint, index) => sceneFill(paint, { index, method, property }))
+  return paints.map((paint, index) => sceneFill(paint, { index, method, property }))
 }
 
 function rows(transform: GradientTransform | undefined): FigmaTransform {

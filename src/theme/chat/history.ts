@@ -5,8 +5,7 @@ export default {
   slots: {
     root: 'shrink-0 border-b border-border',
     header: 'flex min-w-0 items-center gap-1 px-2 py-1.5',
-    trigger:
-      'flex min-w-0 flex-1 items-center gap-1 rounded px-1.5 py-1 text-left text-xs text-surface hover:bg-hover disabled:opacity-50',
+    heading: 'min-w-0 flex-1 truncate px-1 text-xs text-surface',
     title: 'min-w-0 flex-1 truncate',
     icon: 'size-3.5 shrink-0',
     content: ['z-50 w-80 max-w-[calc(100vw-1rem)] p-2', floatingSurface, motionStyles.floating],

@@ -3,8 +3,13 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import type { ReplyUsage } from '@/app/ai/chat/metadata'
+import { tokenUsageDisplay } from '@/app/ai/chat/preferences'
 import { turnEdits } from '@/app/ai/reply/turns'
 import AppButton from '@/components/ui/button/AppButton.vue'
+
+import { chatReplyTheme } from '../ui'
+import { usageParts } from './usage'
 
 const {
   messageId,
@@ -13,7 +18,8 @@ const {
   reverted = false,
   stopped = false,
   undone = 0,
-  edits = 0
+  edits = 0,
+  usage = null
 } = defineProps<{
   messageId: string
   canRegenerate?: boolean
@@ -26,6 +32,8 @@ const {
   edits?: number
   /** The user stopped the reply before it finished. */
   stopped?: boolean
+  /** The tokens the reply used, when its backend reported them. */
+  usage?: ReplyUsage | null
 }>()
 const emit = defineEmits<{ regenerate: []; revert: []; restore: [] }>()
 const { ai } = useI18n()
@@ -34,11 +42,16 @@ const turn = computed(() => turnEdits(messageId))
 const revertable = computed(() => turn.value?.revertable === true)
 const restorable = computed(() => turn.value?.restorable === true)
 const partlyUndone = computed(() => undone > 0 && undone < edits)
+const ui = chatReplyTheme()
+/** On hover the usage sits beside the copy button, so a reply with nothing else here leaves no row. */
+const inlineUsage = computed(() =>
+  usage && tokenUsageDisplay.value === 'always' ? usageParts(ai.value, usage) : null
+)
 </script>
 
 <template>
   <div
-    v-if="stopped || partlyUndone || revertable || reverted || canRegenerate"
+    v-if="stopped || partlyUndone || revertable || reverted || canRegenerate || inlineUsage"
     class="flex flex-wrap items-center gap-1"
     data-slot="chat-turn-actions"
   >
@@ -97,5 +110,8 @@ const partlyUndone = computed(() => undone > 0 && undone < edits)
       <template #leading><icon-lucide-refresh-cw aria-hidden="true" /></template>
       {{ empty ? ai.retryRequest : revertable ? ai.revertAndRegenerate : ai.regenerate }}
     </AppButton>
+    <span v-if="inlineUsage" :class="ui.usage()" data-slot="chat-turn-usage">
+      <span v-for="part in inlineUsage" :key="part">{{ part }}</span>
+    </span>
   </div>
 </template>

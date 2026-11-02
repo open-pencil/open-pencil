@@ -16,7 +16,9 @@ export const toolMessageDefaults = {
   shape: 'Shape',
   connector: 'Connector',
   hand: 'Hand',
-  comment: 'Comment'
+  comment: 'Comment',
+  eyedropper: 'Eyedropper',
+  eyedropperSample: 'Pick a color from the canvas'
 } as const
 
 export const toolMessages = i18n('tools', toolMessageDefaults)

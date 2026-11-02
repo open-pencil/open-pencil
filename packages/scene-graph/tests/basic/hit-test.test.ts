@@ -100,7 +100,7 @@ describe('hitTest', () => {
     expect(graph.hitTest(150, 150, pageId(graph))).toBeNull()
   })
 
-  test('instance without fills is click-through in empty area', () => {
+  test('instance and component bodies take clicks whatever their fill', () => {
     const graph = new SceneGraph()
     const compId = graph.createNode('COMPONENT', pageId(graph), {
       name: 'Comp',
@@ -124,8 +124,12 @@ describe('hitTest', () => {
     ).id
     // Hit on instance's child area — returns instance (opaque container)
     expect(graph.hitTest(320, 20, pageId(graph))?.id).toBe(instId)
-    // Miss on instance's empty area (no fills)
-    expect(graph.hitTest(450, 150, pageId(graph))).toBeNull()
+    // A plain click takes its empty area too, with no fill, as in Figma.
+    expect(graph.hitTest(450, 150, pageId(graph))?.id).toBe(instId)
+    // Reaching past containers, its empty area shows no paint and is passed through.
+    expect(graph.hitTestDeep(450, 150, pageId(graph))).toBeNull()
+    // A main component's empty area always counts.
+    expect(graph.hitTestDeep(150, 150, pageId(graph))?.id).toBe(compId)
   })
 
   test('hidden node is not hittable', () => {
@@ -175,6 +179,29 @@ describe('hitTest', () => {
     // Zero opacity does NOT affect hit testing (opacity is a visual property, not a structural one)
     // The fill is "visible: true" which is what hasVisibleFillOrStroke checks
     expect(graph.hitTest(50, 50, page)?.id).toBe(rectId)
+  })
+})
+
+describe('reaching past containers', () => {
+  test('a nested frame whose fill is at 0% passes the click to its parent', () => {
+    const graph = new SceneGraph()
+    const top = graph.createNode('FRAME', pageId(graph), {
+      name: 'Top',
+      width: 300,
+      height: 300,
+      fills: [SOLID_FILL]
+    })
+    const nested = graph.createNode('FRAME', top.id, {
+      name: 'Nested',
+      x: 20,
+      y: 20,
+      width: 200,
+      height: 200,
+      fills: [{ ...SOLID_FILL, opacity: 0 }]
+    })
+    expect(graph.hitTestDeep(150, 150, pageId(graph))?.id).toBe(top.id)
+    graph.updateNode(nested.id, { fills: [{ ...SOLID_FILL, opacity: 0.01 }] })
+    expect(graph.hitTestDeep(150, 150, pageId(graph))?.id).toBe(nested.id)
   })
 })
 

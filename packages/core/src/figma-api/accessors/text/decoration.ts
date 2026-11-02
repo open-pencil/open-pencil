@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import {
@@ -8,9 +10,9 @@ import {
 } from '#core/figma-api/accessor-utils'
 import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import { getTextStyle, rangeHasUnderline } from '#core/figma-api/text/style'
+import { parseFigma } from '#core/figma-api/validation'
 import { textStyleChanges, type TextStylePatch } from '#core/text/character-style'
 
-import { invalid, received } from './messages'
 import { DECORATION_STYLES, decorationColorFills, enumValue, lengthOrAuto, sized } from './values'
 
 /** The text properties that style an underline, as Figma names them. */
@@ -51,9 +53,7 @@ const PATCHES: Record<
     textDecorationFills: decorationColorFills(method, value)
   }),
   textDecorationSkipInk: (method, value, property) => {
-    if (typeof value !== 'boolean')
-      throw invalid(method, `Expected boolean, received ${received(value)}`, property)
-    return { textDecorationSkipInk: value }
+    return { textDecorationSkipInk: parseFigma(v.boolean(), value, method, property) }
   }
 }
 

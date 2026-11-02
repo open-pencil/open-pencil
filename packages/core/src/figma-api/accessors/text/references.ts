@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import {
   graph,
   raw,
@@ -14,9 +16,8 @@ import {
   rangeSharedStylePatch
 } from '#core/figma-api/text/bindings'
 import { assertTextRange } from '#core/figma-api/text/style'
+import { parseFigma } from '#core/figma-api/validation'
 import { styleRunsWithPatch } from '#core/text/character-style'
-
-import { invalid, received } from './messages'
 
 /** Methods that give characters a text or fill style, deprecated and async alike. */
 const SHARED_STYLE_SETTERS = {
@@ -45,11 +46,9 @@ export function installTextReferenceMethods(
       async = false
     ) {
       const node = raw(this, internals)
-      if (typeof styleId !== 'string') {
-        throw invalid(method, `Expected string, received ${received(styleId)}`, 'styleId')
-      }
+      const id = parseFigma(v.string(), styleId, method, 'styleId')
       assertTextRange(method, node, start, end)
-      const patch = rangeSharedStylePatch(graph(this, internals), kind, styleId)
+      const patch = rangeSharedStylePatch(graph(this, internals), kind, id)
       if (!patch) throw new Error(async ? STYLE_NOT_FOUND : `in ${method}: ${STYLE_NOT_FOUND}`)
       updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
     }

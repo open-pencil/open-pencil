@@ -1,7 +1,6 @@
 {
   "interfaceScale": "Размер интерфейса",
   "interfaceScaleDescription": "Изменяет размер панелей, текста и элементов управления, не меняя масштаб холста.",
-  "interfaceScaleDefault": "{scale} (по умолчанию)",
   "recentFiles": "Недавние файлы",
   "recentFilesDescription": "Выберите, сколько файлов хранить в списке недавних файлов и меню их открытия.",
   "recentFilesLimit": "Количество недавних файлов",
@@ -67,7 +66,6 @@
   "toolbarMoveDown": "Переместить вниз",
   "toolbarGroupWith": "Объединить с: {tool}",
   "toolbarUngroup": "Разгруппировать",
-  "toolbarReset": "Сбросить по умолчанию",
   "resetToDefault": "Сбросить по умолчанию",
   "customizeToolbar": "Настроить панель инструментов…",
   "discardChanges": "Отменить изменения?",

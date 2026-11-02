@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 
 import type { Editor, Tool } from '@open-pencil/core'
 
+import { handleEyedropperDown } from '#vue/canvas/eyedropper'
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
@@ -76,6 +77,11 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
   HAND: pan,
   // Comments are placed by the app's comments layer above the canvas.
   COMMENT: { press: () => undefined },
+  EYEDROPPER: {
+    press: ({ event, cx, cy }, { editor }) => {
+      if (event.button === 0) handleEyedropperDown(editor, cx, cy, event.altKey)
+    }
+  },
   PEN: {
     press: ({ event, cx, cy }, { editor, setDrag, cursorOverride }) =>
       startPenInput(event, cx, cy, editor, setDrag, cursorOverride),

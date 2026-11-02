@@ -83,6 +83,7 @@ export function useAIChat() {
     history,
     ensureChat: history.ensureChat,
     resetChat: history.newChat,
+    compactAgent: chatSession.compactAgent,
     chatFailure: chatSession.failure,
     clearChatFailure: chatSession.clearFailure
   }

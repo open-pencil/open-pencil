@@ -1,5 +1,4 @@
 {
-  "restoreToolDefaults": "既定値に戻す",
   "aiToolAccessDescription": "AI モデルへの直接接続で使うツールを選択します。ACP と Pi エージェントは MCP アクセスを使用します。",
   "mcpToolAccessDescription": "ローカルサーバーが接続中のエージェントやクライアントに公開するツールを選択します。",
   "aiToolsNotice": "変更は次のメッセージから適用されます。ツールの切り替えはサンドボックスではありません。有効なスクリプトツールは他のデザイン操作も実行できます。",

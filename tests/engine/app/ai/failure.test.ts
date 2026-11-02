@@ -5,10 +5,29 @@ import { APICallError, StreamProviderError } from 'ai'
 import {
   classifyAIChatError,
   classifyAIChatFinish,
+  isContextLimitError,
   isInsufficientCreditError
 } from '@/app/ai/chat/failure'
 
 describe('AI chat failures', () => {
+  test('a request past the context window is its own failure, which compaction can fix', () => {
+    const openAI = new APICallError({
+      message: 'Bad Request',
+      url: 'https://api.openai.com/v1/responses',
+      requestBodyValues: {},
+      statusCode: 400,
+      responseBody:
+        '{"error":{"code":"context_length_exceeded","message":"Your input exceeds the context window"}}'
+    })
+    expect(isContextLimitError(openAI)).toBe(true)
+    expect(classifyAIChatError(openAI).reason).toBe('context-limit')
+    expect(
+      isContextLimitError(new Error('prompt is too long: 210000 tokens > 200000 maximum'))
+    ).toBe(true)
+    expect(isContextLimitError({ statusCode: 413 })).toBe(true)
+    expect(isContextLimitError(new Error('Rate limit exceeded'))).toBe(false)
+  })
+
   test('recognizes provider credit and quota failures', () => {
     expect(isInsufficientCreditError({ statusCode: 402 })).toBe(true)
     expect(isInsufficientCreditError(new Error('Insufficient balance. Please top up.'))).toBe(true)

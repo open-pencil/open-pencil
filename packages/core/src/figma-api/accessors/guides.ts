@@ -1,4 +1,5 @@
 import type { Guide } from '@figma/plugin-typings/plugin-api-standalone'
+import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { newGuideId, type CanvasGuide } from '@open-pencil/scene-graph/guides'
@@ -9,9 +10,8 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, numberProblem, received } from '#core/figma-api/accessors/text/messages'
-
-const METHOD = 'set_guides'
+import { finiteNumberSchema } from '#core/figma-api/schema'
+import { parseFigma } from '#core/figma-api/validation'
 
 /** The layers Figma keeps guides for; installed on their proxies alone, as Figma has them. */
 const GUIDE_OWNER_TYPES: ReadonlySet<SceneNode['type']> = new Set([
@@ -22,22 +22,10 @@ const GUIDE_OWNER_TYPES: ReadonlySet<SceneNode['type']> = new Set([
   'INSTANCE'
 ])
 
-function parseGuide(value: unknown, index: number): Guide {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw invalid(
-      METHOD,
-      `Expected object, received ${received(value)} at index ${index}`,
-      'guides'
-    )
-  }
-  const { axis, offset } = value as { axis?: unknown; offset?: unknown }
-  if (axis !== 'X' && axis !== 'Y') {
-    throw invalid(METHOD, `Invalid option: expected one of "X"|"Y" at [${index}].axis`, 'guides')
-  }
-  const problem = numberProblem(offset, ` at [${index}].offset`)
-  if (problem) throw invalid(METHOD, problem, 'guides')
-  return { axis, offset: offset as number }
-}
+/** Figma's `Guide`: an axis and an offset along it. */
+const guidesSchema = v.array(
+  v.strictObject({ axis: v.picklist(['X', 'Y']), offset: finiteNumberSchema })
+)
 
 /**
  * `guides` on pages and frames, as Figma keeps them for each (Figma desktop 126). A guide set at
@@ -58,10 +46,7 @@ export function installGuideAccessors(
       )
     },
     set(this: ProxyThis, value: unknown) {
-      if (!Array.isArray(value)) {
-        throw invalid(METHOD, `Expected array, received ${received(value)}`, 'guides')
-      }
-      const parsed = value.map(parseGuide)
+      const parsed = parseFigma(guidesSchema, value, 'set_guides', 'guides')
       const current = raw(this, internals).guides
       const guides = parsed.map(({ axis, offset }, index): CanvasGuide => {
         const { id, figGuid } = current.at(index) ?? { id: newGuideId() }
