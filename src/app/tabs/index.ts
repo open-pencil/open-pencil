@@ -37,6 +37,8 @@ import {
 import {
   cacheRecentFileCover,
   loadCachedRecentFileThumbnail,
+  rememberDocumentView,
+  rememberedDocumentView,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -241,6 +243,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   else await closingTab.store.persistRecoveryNow()
   if (!tabsRef.value.includes(closingTab)) return
   if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
+  rememberDocumentView(closingTab.store)
   removeTab(closingTab)
 }
 
@@ -347,12 +350,20 @@ async function showImportedGraph(
   load?.signal.throwIfAborted()
   await prepare?.()
   load?.signal.throwIfAborted()
-  const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  // A document opens where it was left; a new one on its first page, fitted.
+  const remembered = rememberedDocumentView(store)
+  const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  const pageId = remembered?.pageId ?? firstPageId
   load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
   await store.switchPage(pageId, { preparation: load })
   load?.signal.throwIfAborted()
   load?.update({ phase: 'preparing-render', detail: store.state.documentName })
-  await store.fitCurrentPageToViewport()
+  if (remembered) {
+    await yieldToUI()
+    store.centerOn(remembered.x, remembered.y, remembered.zoom)
+  } else {
+    await store.fitCurrentPageToViewport()
+  }
 }
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
@@ -682,13 +693,18 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
   }
 }
 
-export function prepareForClose(): Promise<boolean> {
-  return confirmAllDocuments(() =>
-    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
-  )
+function documentStores(): EditorStore[] {
+  return tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
+}
+
+export async function prepareForClose(): Promise<boolean> {
+  const closing = await confirmAllDocuments(documentStores)
+  if (closing) documentStores().forEach(rememberDocumentView)
+  return closing
 }
 
 export async function prepareForReload(): Promise<void> {
+  documentStores().forEach(rememberDocumentView)
   await Promise.all(tabsRef.value.map((tab) => tab.store.persistRecoveryNow()))
 }
 

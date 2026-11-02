@@ -18,6 +18,15 @@ import { clearRecentFileThumbnails } from './thumbnails'
 
 const RECENT_DOCUMENTS_STORAGE_KEY = 'open-pencil:recent-documents'
 
+/** The page and view a document was left at, which it opens on again, as in Figma. */
+export interface RecentDocumentView {
+  pageId: string
+  /** The world point at the centre of the canvas. */
+  x: number
+  y: number
+  zoom: number
+}
+
 export interface RecentLocalDocument {
   id: string
   kind: 'local'
@@ -26,6 +35,7 @@ export interface RecentLocalDocument {
   updatedAt: string
   /** A design or a board; entries recorded before this was kept have none. */
   documentKind?: DocumentKind
+  view?: RecentDocumentView
 }
 
 export interface RecentStorageDocument {
@@ -39,6 +49,7 @@ export interface RecentStorageDocument {
   updatedAt: string
   /** A design or a board; entries recorded before this was kept have none. */
   documentKind?: DocumentKind
+  view?: RecentDocumentView
 }
 
 export type RecentDocument = RecentLocalDocument | RecentStorageDocument
@@ -74,10 +85,39 @@ export const recentLocalFilePaths = computed<string[]>(() =>
 )
 
 function remember(document: RecentDocument): void {
-  recentDocuments.value = [
-    document,
-    ...normalizedRecentDocuments().filter((recent) => recent.id !== document.id)
-  ].slice(0, recentFilesLimit.value)
+  const others = normalizedRecentDocuments().filter((recent) => recent.id !== document.id)
+  const previous = recentDocuments.value.find((recent) => recent.id === document.id)
+  // Opening or saving a document again keeps the view it was left at.
+  const view = document.view ?? previous?.view
+  recentDocuments.value = [view ? { ...document, view } : document, ...others].slice(
+    0,
+    recentFilesLimit.value
+  )
+}
+
+/**
+ * The recent-files id of an open document: a stored one by its binding, a file by its path; none
+ * for a document that is neither, which recent files do not list.
+ */
+export function recentDocumentIdOf(
+  path: string | null,
+  binding: StorageDocumentBinding | null
+): string | null {
+  if (binding) return storageDocumentId(binding)
+  return path ? localDocumentId(path) : null
+}
+
+/** Keeps the view a listed document was left at, without moving it up the list. */
+export function rememberRecentDocumentView(id: string, view: RecentDocumentView): void {
+  if (!recentDocuments.value.some((document) => document.id === id)) return
+  recentDocuments.value = recentDocuments.value.map((document) =>
+    document.id === id ? { ...document, view } : document
+  )
+}
+
+/** The view a listed document was left at, if one was kept. */
+export function recentDocumentView(id: string): RecentDocumentView | null {
+  return recentDocuments.value.find((document) => document.id === id)?.view ?? null
 }
 
 /** What a file on this device is by its name: a FigJam `.jam` is a board, anything else a design. */
