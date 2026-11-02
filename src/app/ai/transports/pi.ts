@@ -8,6 +8,7 @@ import type {
 } from '@open-pencil/harness'
 
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
+import type { Compaction } from '@/app/ai/chat/compaction/marker'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'
 
 interface PendingRequest {
@@ -15,6 +16,8 @@ interface PendingRequest {
   resolve: (message: HarnessSidecarMessage) => void
   reject: (error: Error) => void
   stream: ReplyStream
+  /** The reply's steps so far; a compaction starts the next one. */
+  steps: number
 }
 
 function requestID(): string {
@@ -47,8 +50,24 @@ function close(pending: PendingRequest): void {
   controller?.close()
 }
 
-function mapEvent(event: HarnessTurnEvent, { stream }: PendingRequest): UIMessageChunk[] {
+function mapEvent(event: HarnessTurnEvent, pending: PendingRequest): UIMessageChunk[] {
+  const { stream } = pending
   switch (event.type) {
+    case 'compaction': {
+      // The reply draws the compaction where it ran, as the built-in chat's between steps.
+      const compaction: Compaction = {
+        summary: event.summary,
+        trigger: event.trigger,
+        tokensBefore: event.tokensBefore,
+        step: pending.steps++
+      }
+      return [
+        ...stream.end(),
+        { type: 'finish-step' },
+        { type: 'start-step' },
+        { type: 'message-metadata', messageMetadata: { compaction } }
+      ]
+    }
     case 'text-delta':
       return stream.text(event.text)
     case 'reasoning-delta':
@@ -149,6 +168,19 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
     })
   }
 
+  /**
+   * Asks Pi to compact its context, steered by `instructions`. Pi writes the summary itself and
+   * reports it on the next turn. False when no session has started, so there is nothing to compact.
+   */
+  async compact(instructions?: string): Promise<boolean> {
+    if (!this.sessionCreated || this.destroyed) return false
+    await this.request({
+      method: 'session.compact',
+      params: { sessionId: this.sessionId, ...(instructions && { instructions }) }
+    })
+    return true
+  }
+
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
     return null
   }
@@ -193,7 +225,8 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
     return {
       resolve: () => undefined,
       reject: () => undefined,
-      stream: createReplyStream(`turn-${id}`)
+      stream: createReplyStream(`turn-${id}`),
+      steps: 1
     }
   }
 
@@ -207,7 +240,8 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
       this.pending.set(id, {
         resolve,
         reject,
-        stream: createReplyStream(`turn-${id}`)
+        stream: createReplyStream(`turn-${id}`),
+        steps: 1
       })
       void process.send({ id, ...request }).catch(reject)
     })

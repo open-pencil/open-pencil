@@ -80,7 +80,8 @@ const lastMessage = computed(() => messages.at(-1))
  */
 const entries = computed(() =>
   messages.map((message, index) => {
-    const compaction = compactionOf(message)
+    // A compaction within a reply is drawn by the reply, at the step where it ran.
+    const compaction = message.role === 'user' ? compactionOf(message) : null
     return { message, compaction, tokensAfter: compaction ? tokensAfter(index) : null }
   })
 )

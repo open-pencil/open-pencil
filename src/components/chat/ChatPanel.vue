@@ -42,13 +42,21 @@ import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 
-const { isConfigured, ensureChat, history, chatFailure, clearChatFailure, providerID } = useAIChat()
+const {
+  isConfigured,
+  ensureChat,
+  compactAgent,
+  history,
+  chatFailure,
+  clearChatFailure,
+  providerID
+} = useAIChat()
 const { ai } = useI18n()
 const dates = useDateFormat()
 const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
-const compaction = useChatCompaction({ chat, ensureChat, flush: history.flush })
+const compaction = useChatCompaction({ chat, ensureChat, flush: history.flush, compactAgent })
 const submission = useChatSubmission({
   chat,
   ensureChat,
@@ -123,12 +131,11 @@ const contextPercent = computed(() =>
 const COMPACT_COMMAND = /^\/compact(?:\s+([\s\S]*))?$/
 
 /**
- * The command when `message` is `/compact` for a model the chat calls itself; an agent compacts
- * its own context, and its own `/compact` goes to it as written.
+ * The command when `message` is `/compact`: the chat summarizes a model it calls itself and
+ * asks Pi to compact its own context. An ACP agent's own `/compact` goes to it as written.
  */
 function compactCommand(message: ChatSubmission): RegExpExecArray | null {
-  const own = !providerID.value.startsWith('acp:') && providerID.value !== 'harness:pi'
-  if (!own || message.images.length > 0) return null
+  if (providerID.value.startsWith('acp:') || message.images.length > 0) return null
   return COMPACT_COMMAND.exec(message.displayText.trim())
 }
 

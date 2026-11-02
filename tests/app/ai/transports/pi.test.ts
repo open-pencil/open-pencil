@@ -1,12 +1,17 @@
 import { expect, test } from 'bun:test'
 
+import { readUIMessageStream, type UIMessage } from 'ai'
+
 import type {
   HarnessSidecarMessage,
   HarnessTurnEvent,
   HarnessTurnUsage
 } from '@open-pencil/harness'
 
+import { compactionOf, messagesSinceCompaction } from '@/app/ai/chat/compaction/marker'
 import { HarnessChatTransport } from '@/app/ai/transports/pi'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 test('failed session stop kills the process without deleting resume state', async () => {
   let output: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
@@ -271,5 +276,49 @@ test('text after a tool call starts a new part, and a stopped turn closes its te
   expect(types.filter((type) => type === 'text-start')).toHaveLength(2)
   expect(types.filter((type) => type === 'text-end')).toHaveLength(2)
   expect(types.at(-1)).toBe('finish')
+  await transport.destroy()
+})
+
+test('compacting asks Pi to, and the next turn draws the summary Pi reports', async () => {
+  const companion = fakeCompanion()
+  const transport = new HarnessChatTransport('compact-session', configuration, {}, companion.spawn)
+  // Before any turn there is no context to compact.
+  expect(await transport.compact()).toBe(false)
+
+  const first = (await send(transport)).getReader()
+  await Promise.resolve()
+  const firstTurn = companion.turns.at(-1) ?? ''
+  companion.text(firstTurn, 'Hi')
+  companion.complete(firstTurn)
+  while (!(await first.read()).done);
+  expect(await transport.compact('keep the colors')).toBe(true)
+  expect(companion.methods).toContain('session.compact')
+
+  const stream = await send(transport)
+  await Promise.resolve()
+  const turn = companion.turns.at(-1) ?? ''
+  companion.event(turn, {
+    type: 'compaction',
+    trigger: 'manual',
+    summary: 'Greeted.',
+    tokensBefore: 1200
+  })
+  companion.text(turn, 'Hello again')
+  companion.complete(turn)
+  let reply: UIMessage | undefined
+  for await (const message of readUIMessageStream({ stream })) reply = message
+  const message = expectDefined(reply)
+  expect(compactionOf(message)).toEqual({
+    summary: 'Greeted.',
+    trigger: 'manual',
+    tokensBefore: 1200,
+    step: 1
+  })
+  // The summary stands before the step that followed it.
+  expect(messagesSinceCompaction([message]).map((entry) => entry.role)).toEqual([
+    'user',
+    'assistant'
+  ])
+  expect(JSON.stringify(messagesSinceCompaction([message])[1])).toContain('Hello again')
   await transport.destroy()
 })

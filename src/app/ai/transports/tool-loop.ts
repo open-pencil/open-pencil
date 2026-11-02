@@ -5,7 +5,9 @@ import { toMerged } from 'es-toolkit'
 
 import type { AIProviderID, ReasoningEffort } from '@open-pencil/core/constants'
 
+import type { ContextLimits } from '@/app/ai/chat/compaction/limits'
 import { messagesSinceCompaction } from '@/app/ai/chat/compaction/marker'
+import { createStepCompaction } from '@/app/ai/chat/compaction/steps'
 import { resumableTransport } from '@/app/ai/chat/history/continuation'
 import type { ReplyUsage } from '@/app/ai/chat/metadata'
 import { maxAgentSteps } from '@/app/ai/chat/preferences'
@@ -55,6 +57,8 @@ export type ToolLoopTransportOptions = {
    * current step's tool calls finish, and the chat sends that message next.
    */
   yieldWhen?: () => boolean
+  /** The model's context limits, for compacting between steps; the Design model's by default. */
+  contextLimits?: () => Promise<ContextLimits | null>
 }
 
 function callSettings(
@@ -88,7 +92,8 @@ export function createToolLoopTransport({
   diagnosticContext = {},
   recorder,
   skills = appSkillLibrary,
-  yieldWhen = () => false
+  yieldWhen = () => false,
+  contextLimits
 }: ToolLoopTransportOptions) {
   const tools: AITools = {
     ...createAITools(
@@ -118,11 +123,13 @@ export function createToolLoopTransport({
   let recording: RunRecording | undefined
   // The last step's tokens: what the reply's final request held, which the next one starts from.
   let lastStep: { inputTokens: number; outputTokens: number } | null = null
+  const stepCompaction = createStepCompaction(model, contextLimits)
   const agent = new ToolLoopAgent({
     model,
     instructions: SYSTEM_PROMPT,
     tools,
     maxOutputTokens,
+    prepareStep: (step) => stepCompaction.prepareStep(step),
     // Kept only to fingerprint each step's request for its trace.
     include: { requestMessages: recorder !== undefined },
     prepareCall: (options) => {
@@ -184,6 +191,8 @@ export function createToolLoopTransport({
     onError: handleError,
     // The reply keeps its tokens, which the transcript shows and the context meter reads.
     messageMetadata: ({ part }) => {
+      const compacted = stepCompaction.metadataFor(part)
+      if (compacted) return compacted
       if (part.type !== 'finish' || !lastStep) return undefined
       const usage: ReplyUsage = {
         contextTokens: lastStep.inputTokens + lastStep.outputTokens,
@@ -203,6 +212,7 @@ export function createToolLoopTransport({
       const started = startRun(store, maxAgentSteps.value, effectiveModelID)
       run = started
       lastStep = null
+      await stepCompaction.begin(options.messages, options.abortSignal)
       await skills.refresh()
       offeredSkills = modelSkills()
       const catalog = skillCatalog(offeredSkills)

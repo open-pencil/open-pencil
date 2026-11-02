@@ -19,6 +19,8 @@ interface CompactionOptions {
   chat: Ref<ChatInstance | null>
   ensureChat: () => Promise<ChatInstance | null>
   flush?: () => Promise<void>
+  /** Asks an agent that keeps its own context, such as Pi, to compact it. */
+  compactAgent?: (instructions?: string) => Promise<boolean>
 }
 
 interface CompactRequest {
@@ -55,6 +57,7 @@ export function useChatCompaction(options: CompactionOptions) {
     const target = request.chat ?? options.chat.value ?? (await options.ensureChat())
     if (!target || target.messages.length === 0 || replying(target)) return false
     const runtime = await createAIModelRuntime('design')
+    if (runtime?.kind === 'harness' && request.trigger === 'manual') return compactAgent(request)
     if (runtime?.kind !== 'direct') return false
     const at = request.before
       ? target.messages.findIndex((message) => message.id === request.before)
@@ -66,9 +69,8 @@ export function useChatCompaction(options: CompactionOptions) {
     abort = new AbortController()
     try {
       const limits = await designContextLimits()
-      const summary = await summarizeConversation({
+      const summary = await summarizeConversation(covered, {
         model: runtime.model,
-        messages: covered,
         instructions: request.instructions,
         budget: limits ? summaryBudget(limits) : undefined,
         abortSignal: abort.signal
@@ -94,6 +96,22 @@ export function useChatCompaction(options: CompactionOptions) {
     } finally {
       compacting.value = false
       abort = null
+    }
+  }
+
+  /** An agent compacts its own context and reports the summary on its next turn. */
+  async function compactAgent(request: CompactRequest): Promise<boolean> {
+    if (!options.compactAgent) return false
+    compacting.value = true
+    failed.value = null
+    try {
+      return await options.compactAgent(request.instructions)
+    } catch {
+      const { chat: _chat, ...retry } = request
+      failed.value = retry
+      return false
+    } finally {
+      compacting.value = false
     }
   }
 

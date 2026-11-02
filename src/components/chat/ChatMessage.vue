@@ -9,6 +9,7 @@ import { vTestId } from '@open-pencil/vue/testing'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
+import { compactionOf } from '@/app/ai/chat/compaction/marker'
 import { undoOf, usageOf, wasStopped } from '@/app/ai/chat/metadata'
 import { reasoningDisplay as preferredReasoningDisplay } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
@@ -19,6 +20,7 @@ import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ChatReasoning from '@/components/chat/ChatReasoning.vue'
 import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
 import ChatToolCallGroup from '@/components/chat/tool/ChatToolCallGroup.vue'
+import ChatCompactionDivider from '@/components/chat/turn/ChatCompactionDivider.vue'
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
 import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -100,10 +102,18 @@ const reverted = computed(
 const stopped = computed(() => wasStopped(message))
 // A request that failed once its reply had started leaves the reply without content.
 const empty = computed(() => message.parts.every((part) => part.type === 'step-start'))
-const groups = computed(() => groupMessageParts(message.parts.map((part) => ({ ...part }))))
+/** A compaction between the reply's steps, which the reply draws where it ran. */
+const compaction = computed(() => (message.role === 'assistant' ? compactionOf(message) : null))
+const groups = computed(() =>
+  groupMessageParts(
+    message.parts.map((part) => ({ ...part })),
+    compaction.value?.step
+  )
+)
 
 function groupKey(group: MessagePartGroup): string {
-  return group.kind === 'tools' ? `tools-${group.parts[0]?.index}` : `part-${group.index}`
+  if (group.kind === 'tools') return `tools-${group.parts[0]?.index}`
+  return `${group.kind}-${group.index}`
 }
 </script>
 
@@ -126,8 +136,15 @@ function groupKey(group: MessagePartGroup): string {
           :data-reverted="reverted"
         >
           <template v-for="group in groups" :key="groupKey(group)">
+            <template v-if="group.kind === 'compaction'">
+              <ChatCompactionDivider
+                v-if="compaction"
+                :compaction="compaction"
+                :tokens-after="streaming ? null : (usage?.contextTokens ?? null)"
+              />
+            </template>
             <ChatToolCallGroup
-              v-if="group.kind === 'tools'"
+              v-else-if="group.kind === 'tools'"
               :parts="group.parts.map(({ part }) => part)"
               :undone="undoneCalls"
             />

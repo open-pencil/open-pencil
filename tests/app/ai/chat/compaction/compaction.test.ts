@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { UIMessage } from 'ai'
+import type { ModelMessage, UIMessage } from 'ai'
 import { MockLanguageModelV4 } from 'ai/test'
 
 import { autoCompactAt, contextTokensSinceCompaction } from '@/app/ai/chat/compaction/limits'
@@ -75,67 +75,70 @@ describe('compaction', () => {
     expect(autoCompactAt({ contextWindow: 32_000, maxOutputTokens: 30_000 })).toBe(14_400)
   })
 
-  test('the summary request leaves out images and cuts long tool results', () => {
-    const long = 'y'.repeat(5000)
-    const messages: UIMessage[] = [
+  test('the summary request leaves out images and cuts long text, tool inputs, and results', () => {
+    const messages: ModelMessage[] = [
       {
-        id: 'a',
         role: 'user',
-        parts: [
+        content: [
           { type: 'text', text: 'Match this' },
-          { type: 'file', mediaType: 'image/png', url: 'data:image/png;base64,AAAA' }
+          { type: 'image', image: 'AAAA', mediaType: 'image/png' }
         ]
       },
       {
-        id: 'b',
         role: 'assistant',
-        parts: [
+        content: [
           {
-            type: 'tool-export_image',
+            type: 'tool-call',
             toolCallId: 'call-1',
-            state: 'output-available',
-            input: {},
-            output: long
-          }
-        ]
-      }
-    ]
-    const [request, answer] = summarySource(messages)
-    expect(request?.parts).toEqual([{ type: 'text', text: 'Match this' }])
-    const [pasted] = summarySource([text('p', 'user', 'z'.repeat(20_000))])
-    expect(pasted?.parts[0]).toEqual({
-      type: 'text',
-      text: `${'z'.repeat(16_000)}… (4000 more characters left out)`
-    })
-    const [call] = summarySource([
-      {
-        id: 'c',
-        role: 'assistant',
-        parts: [
-          {
-            type: 'tool-render',
-            toolCallId: 'call-2',
-            state: 'input-available',
+            toolName: 'render',
             input: { jsx: 'x'.repeat(5000) }
           }
         ]
-      }
-    ])
-    const input = call?.parts[0] && 'input' in call.parts[0] ? call.parts[0].input : null
-    expect(typeof input === 'string' && input.endsWith('more characters left out)')).toBe(true)
-    const output = answer?.parts[0] && 'output' in answer.parts[0] ? answer.parts[0].output : null
-    expect(output).toBe(`${'y'.repeat(4000)}… (1000 more characters left out)`)
+      },
+      {
+        role: 'tool',
+        content: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call-1',
+            toolName: 'render',
+            output: {
+              type: 'content',
+              value: [
+                { type: 'text', text: 'y'.repeat(5000) },
+                { type: 'file-data', data: 'AAAA', mediaType: 'image/png' }
+              ]
+            }
+          }
+        ]
+      },
+      { role: 'user', content: 'z'.repeat(20_000) }
+    ]
+    const [request, call, result, pasted] = summarySource(messages)
+    expect(request?.content).toEqual([{ type: 'text', text: 'Match this' }])
+    const input = Array.isArray(call?.content) ? call.content[0] : null
+    expect(input && 'input' in input && String(input.input)).toEndWith('more characters left out)')
+    const output = Array.isArray(result?.content) ? result.content[0] : null
+    expect(output && 'output' in output && output.output.type).toBe('text')
+    expect(JSON.stringify(output)).not.toContain('AAAA')
+    expect(pasted?.content).toBe(`${'z'.repeat(16_000)}… (4000 more characters left out)`)
   })
 
   test('past its budget the summary reads the latest summary and the newest messages', () => {
-    const marker = compactionMessage({ summary: 'Built the hero.', trigger: 'auto', tokensBefore: 1 })
-    const long = (id: string, role: UIMessage['role']) => text(id, role, 'w'.repeat(1000))
-    const ids = (messages: UIMessage[]) => messages.map((message) => message.id)
-    const turns = [long('a', 'user'), long('b', 'assistant'), long('c', 'user'), long('d', 'assistant')]
-    expect(ids(summarySource([marker, ...turns], 2500))).toEqual([marker.id, 'c', 'd'])
+    const say = (role: 'user' | 'assistant', label: string): ModelMessage => ({
+      role,
+      content: `${label}${'w'.repeat(1000)}`
+    })
+    const labels = (messages: ModelMessage[]) =>
+      messages.map((message) => String(message.content).at(0))
+    const turns = [say('user', 'a'), say('assistant', 'b'), say('user', 'c'), say('assistant', 'd')]
+    const summary = say('user', 's')
+    expect(
+      labels(summarySource([summary, ...turns], { summaryFirst: true, budget: 3200 }))
+    ).toEqual(['s', 'c', 'd'])
     // Without a summary first, what is kept starts with a request.
-    expect(ids(summarySource(turns, 3300))).toEqual(['c', 'd'])
-    expect(ids(summarySource(turns, 10))).toEqual(['d'])
+    expect(labels(summarySource(turns, { budget: 3300 }))).toEqual(['c', 'd'])
+    expect(labels(summarySource(turns, { budget: 10 }))).toEqual(['d'])
   })
 
   test('the conversation’s model writes the summary, following the instructions it is given', async () => {
@@ -151,12 +154,20 @@ describe('compaction', () => {
         }
       }
     })
-    const summary = await summarizeConversation({
-      model,
-      messages: [text('a', 'user', 'Make a hero'), reply('b', 100)],
-      instructions: 'keep the colors'
-    })
+    const summary = await summarizeConversation(
+      [
+        text('a', 'user', 'Make a hero'),
+        {
+          id: 'p',
+          role: 'user',
+          parts: [{ type: 'file', mediaType: 'image/png', url: 'data:image/png;base64,QUFBQQ==' }]
+        },
+        reply('b', 100)
+      ],
+      { model, instructions: 'keep the colors' }
+    )
     expect(summary).toBe('## State\n- Hero built')
+    expect(JSON.stringify(prompt)).not.toContain('QUFBQQ')
     expect(JSON.stringify(prompt)).toContain(
       'Summarize the conversation above. Also follow these instructions for the summary: keep the colors'
     )
