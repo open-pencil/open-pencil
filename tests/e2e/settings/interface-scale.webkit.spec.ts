@@ -101,15 +101,22 @@ for (const side of ['left', 'right'] as const) {
   }
 }
 
+/** The root font size every rem size in the interface follows. */
+function rootFontSize(page: Page) {
+  return page.evaluate(() => getComputedStyle(document.documentElement).fontSize)
+}
+
 test('interface size applies immediately and survives reload', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await chooseScale(page, '125%')
   await expect(page.locator('html')).toHaveAttribute('data-interface-scale', '125')
+  await expect.poll(() => rootFontSize(page)).toBe('20px')
   await page.reload()
   await canvas.waitForInit()
   await expect(page.locator('html')).toHaveAttribute('data-interface-scale', '125')
+  await expect.poll(() => rootFontSize(page)).toBe('20px')
   await page.getByTestId('app-settings-trigger').click()
   await expect(page.getByRole('combobox', { name: 'Interface size', exact: true })).toHaveText(
     '125%'
@@ -126,6 +133,7 @@ test('interface size can return to the default', async ({ page }) => {
   await page.reload()
   await canvas.waitForInit()
   await expect(page.locator('html')).toHaveAttribute('data-interface-scale', '100')
+  await expect.poll(() => rootFontSize(page)).toBe('16px')
 })
 
 for (const scale of ['110%', '125%', '150%']) {
