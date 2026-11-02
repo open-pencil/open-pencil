@@ -30,6 +30,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 import { usageParts } from './turn/usage'
+import { chatContextTheme } from './ui'
 
 const {
   message,
@@ -88,6 +89,7 @@ const lastAssistantTextPartIndex = computed(() =>
   message.parts.findLastIndex((part) => isTextUIPart(part) && part.text.length > 0)
 )
 const { copy, copied, isSupported: clipboardSupported } = useClipboard({ copiedDuring: 1500 })
+const ui = chatContextTheme()
 /** The text the copy button sits on: the reply's first, when there is text to copy. */
 const copyPartIndex = computed(() =>
   assistantText.value && clipboardSupported.value ? firstAssistantTextPartIndex.value : -1
@@ -192,11 +194,10 @@ function groupKey(group: MessagePartGroup): string {
                   group.index === copyPartIndex
                 "
                 :class="
-                  usageOnHover && group.index === lastAssistantTextPartIndex
-                    ? 'absolute right-1 bottom-1 flex h-6 items-center gap-1 rounded-br-xl bg-[linear-gradient(to_right,transparent,var(--color-hover)_2rem)] pl-8'
-                    : 'absolute right-1 bottom-1'
+                  ui.replyCorner({
+                    usage: !!usageOnHover && group.index === lastAssistantTextPartIndex
+                  })
                 "
-                class="translate-x-1 text-2xs text-muted opacity-0 transition-[opacity,translate] duration-150 ease-out group-focus-within/response:translate-x-0 group-focus-within/response:opacity-100 group-hover/response:translate-x-0 group-hover/response:opacity-100 motion-reduce:translate-x-0 motion-reduce:transition-none"
               >
                 <span
                   v-if="usageOnHover && group.index === lastAssistantTextPartIndex"

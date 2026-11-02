@@ -32,6 +32,21 @@ export default {
     dividerNote: 'text-2xs leading-snug text-muted',
     summary: 'flex flex-col gap-1.5 rounded-md bg-hover px-2.5 py-2 text-xs leading-relaxed',
     // Shown under the reply when the setting shows it always; on hover it sits beside the copy button.
-    usage: 'inline-flex items-center gap-2 px-2 text-2xs text-muted'
+    usage: 'inline-flex items-center gap-2 px-2 text-2xs text-muted',
+    // The reply text's corner: the copy button, and with usage on hover the usage too, revealed
+    // when the text is hovered or focused.
+    replyCorner: [
+      'absolute right-1 bottom-1 text-2xs text-muted opacity-0 group-focus-within/response:opacity-100 group-hover/response:opacity-100',
+      motionStyles.reveal
+    ]
+  },
+  variants: {
+    // Over the bubble's own colour, fading out the end of a full last line beneath it.
+    usage: {
+      true: {
+        replyCorner:
+          'flex h-6 items-center gap-1 rounded-br-xl bg-[linear-gradient(to_right,transparent,var(--color-hover)_2rem)] pl-8'
+      }
+    }
   }
 } as const
