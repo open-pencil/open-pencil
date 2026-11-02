@@ -5,6 +5,7 @@ import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/ic
 import type { IconData } from '#core/icons/types'
 import { layoutAuthoredNodes } from '#core/layout'
 import { markdownText } from '#core/text/markdown'
+import { prepareGraphFonts } from '#core/text/prepare'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 function parseViewBox(viewBox: string | undefined): { w: number; h: number } {
@@ -54,6 +55,7 @@ function createRenderer(icons: IconProvider) {
         // Inline SVG is artwork, not an icon from a set.
         identity: icon.prefix !== INLINE_SVG
       }),
+    prepareFonts: prepareGraphFonts,
     layout: layoutAuthoredNodes,
     vectorBounds: computeAccurateBounds,
     markdown: markdownText
