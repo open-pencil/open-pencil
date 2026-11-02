@@ -3340,6 +3340,7 @@ dependencies = [
  "tauri-plugin-wdio-webdriver",
  "tokio",
  "url",
+ "webkit2gtk-sys",
  "which",
  "write-fonts",
  "zip 2.4.2",
