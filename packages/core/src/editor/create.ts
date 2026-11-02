@@ -99,15 +99,12 @@ export function createEditor(options?: EditorOptions) {
   const interactiveEdits = new Set<symbol>()
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
-  const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) => {
-    if (event === 'settled') pendingTextLayout.retryStalled()
+  const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) =>
     events.emit('font:resolution-changed', event, snapshot)
-  })
-  const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) => {
-    // A face loaded outside the resolver can be the one stalled text was missing.
-    pendingTextLayout.retryStalled()
+  )
+  const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
     events.emit('font:loaded', family, style)
-  })
+  )
 
   void prefetchFigmaSchema()
 
@@ -233,7 +230,8 @@ export function createEditor(options?: EditorOptions) {
     getRenderer: () => _renderer,
     prepareFonts: (texts) => prepareTextFonts(texts, { loadFont: _loadFont }),
     runLayoutForNode,
-    requestRender
+    requestRender,
+    onEditorEvent
   })
   const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
 

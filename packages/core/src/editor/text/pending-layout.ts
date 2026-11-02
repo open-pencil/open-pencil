@@ -4,6 +4,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { EditorContext } from '#core/editor/types'
 import { sizeAutoResizingText } from '#core/layout/text-auto-resize'
 import { fontManager } from '#core/text/font/manager'
 
@@ -19,6 +20,7 @@ interface PendingTextLayoutContext {
   prepareFonts: (texts: SceneNode[]) => Promise<unknown>
   runLayoutForNode: (id: string) => void
   requestRender: () => void
+  onEditorEvent: EditorContext['onEditorEvent']
 }
 
 /**
@@ -140,6 +142,12 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     stalled.clear()
     documents++
   }
+
+  ctx.onEditorEvent('font:resolution-changed', (event) => {
+    if (event === 'settled') retryStalled()
+  })
+  // A face loaded outside the resolver can be the one stalled text was missing.
+  ctx.onEditorEvent('font:loaded', retryStalled)
 
   return { measure, retryStalled, clear }
 }

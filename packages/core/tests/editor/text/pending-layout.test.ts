@@ -94,7 +94,8 @@ function setup({
       relayouts.push(graph.isApplyingDerivedLayout)
       runLayoutForNode(id)
     },
-    requestRender: () => renders++
+    requestRender: () => renders++,
+    onEditorEvent: editor.onEditorEvent
   })
   setTextMeasurer((node, maxWidth) => pending.measure(renderer, node, maxWidth))
   return {
