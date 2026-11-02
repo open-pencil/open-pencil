@@ -10,22 +10,23 @@ import { computed, useTemplateRef, watchEffect } from 'vue'
 import { colorToCSS, colorToHexRaw } from '@open-pencil/scene-graph/color'
 import type { EyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
 
+import { remToPx } from '@/app/shell/root-font-size'
 import theme from '@/theme/canvas-eyedropper-loupe'
 
 const loupeTheme = tv(theme)
 
-/** From the card's corner to the centre pixel's centre: 6 px padding and 4.5 pixels of 8 px. */
-const LOUPE_CENTRE_OFFSET = 6 + 4.5 * 8
+/** From the card's corner to the centre pixel's centre: 0.375rem padding and 4.5 pixels of 0.5rem. */
+const LOUPE_CENTRE_OFFSET_REM = 0.375 + 4.5 * 0.5
 
 const { loupe } = defineProps<{ loupe: EyedropperLoupe }>()
 
 const styles = loupeTheme()
 const pixelsCanvas = useTemplateRef<HTMLCanvasElement>('pixels')
 
-const transform = computed(
-  () =>
-    `translate(${loupe.clientX.value - LOUPE_CENTRE_OFFSET}px, ${loupe.clientY.value - LOUPE_CENTRE_OFFSET}px)`
-)
+const transform = computed(() => {
+  const offset = remToPx(LOUPE_CENTRE_OFFSET_REM)
+  return `translate(${loupe.clientX.value - offset}px, ${loupe.clientY.value - offset}px)`
+})
 
 watchEffect(() => {
   const target = pixelsCanvas.value
