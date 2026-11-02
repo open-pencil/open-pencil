@@ -21,7 +21,7 @@ export default {
       'mx-2.5 mb-1 flex items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-2.5 py-1.5 text-2xs text-warning',
     warningLabel: 'min-w-0 flex-1 truncate',
     // A rule across the transcript with its label in the middle; the label opens the summary.
-    divider: 'flex flex-col gap-2',
+    divider: 'flex flex-col gap-2 py-1',
     dividerRule: 'flex items-center gap-2 text-2xs text-muted',
     dividerLine: 'h-px min-w-3 flex-1 bg-border',
     dividerToggle:
@@ -31,7 +31,7 @@ export default {
     dividerChevron: 'size-3 shrink-0 transition-transform data-[open=true]:rotate-180',
     dividerNote: 'text-2xs leading-snug text-muted',
     summary: 'flex flex-col gap-1.5 rounded-md bg-hover px-2.5 py-2 text-xs leading-relaxed',
-    // Shown under the reply when the setting shows it always; on hover it is the reply's tooltip.
+    // Shown under the reply when the setting shows it always; on hover it sits beside the copy button.
     usage: 'inline-flex items-center gap-2 px-2 text-2xs text-muted'
   }
 } as const

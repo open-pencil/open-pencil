@@ -133,7 +133,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
 <template>
   <ScrollAreaRoot class="relative min-h-0 flex-1">
-    <ScrollAreaViewport ref="viewportComponent" class="h-full px-3 py-3 [&>div]:h-full">
+    <ScrollAreaViewport ref="viewportComponent" class="h-full px-3 pt-3 pb-5 [&>div]:h-full">
       <AppPlaceholder
         v-if="messages.length === 0 && sending === null && !compacting"
         data-test-id="chat-empty-state"

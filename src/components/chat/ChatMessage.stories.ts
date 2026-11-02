@@ -82,6 +82,7 @@ const partlyUndoneMessage: UIMessage = {
 type ChatMessageStoryArgs = {
   message: UIMessage
   streaming?: boolean
+  canRegenerate?: boolean
 }
 
 const meta = {
@@ -123,5 +124,29 @@ export const PartlyUndone: Story = {
       '[data-slot="chat-tool-call"][data-undone="true"]'
     )
     await expect(undone).toHaveLength(1)
+  }
+}
+
+/** A finished reply with the tokens it used, which the default setting shows on hover. */
+export const WithUsage: Story = {
+  args: {
+    message: {
+      ...assistantMessage,
+      id: 'usage-message',
+      metadata: {
+        usage: {
+          contextTokens: 29_300,
+          inputTokens: 28_700,
+          outputTokens: 609,
+          cacheReadTokens: null
+        }
+      }
+    },
+    canRegenerate: true
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-slot="chat-reply-usage"]')).toHaveTextContent(
+      '28.7K in · 609 out'
+    )
   }
 }

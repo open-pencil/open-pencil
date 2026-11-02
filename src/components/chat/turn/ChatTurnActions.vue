@@ -43,7 +43,7 @@ const revertable = computed(() => turn.value?.revertable === true)
 const restorable = computed(() => turn.value?.restorable === true)
 const partlyUndone = computed(() => undone > 0 && undone < edits)
 const ui = chatContextTheme()
-/** On hover the usage is the reply's tooltip, so a reply with nothing else here leaves no row. */
+/** On hover the usage sits beside the copy button, so a reply with nothing else here leaves no row. */
 const inlineUsage = computed(() =>
   usage && tokenUsageDisplay.value === 'always' ? usageParts(ai.value, usage) : null
 )
