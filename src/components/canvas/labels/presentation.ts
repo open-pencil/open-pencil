@@ -38,7 +38,8 @@ export function canvasLabelPresentation(
         outline &&
         editor.renderer?.resolveStrokeColor(outline, figJam.strokeIndex, node, editor.graph)) ||
       figJam.background
-    return { background, foreground: figJam.lightText ? 'light' : 'dark' }
+    // Opaque, as the pill it edits is.
+    return { background: { ...background, a: 1 }, foreground: figJam.lightText ? 'light' : 'dark' }
   }
   const fill = node?.fills[0]
   const background =

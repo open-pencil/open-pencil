@@ -26,8 +26,8 @@ export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: Sce
     const text = figJam.lightText ? 1 : 0
     const outline = node.strokes[figJam.strokeIndex]
     return {
-      // Drawn as the outline is, in the canvas's colour space.
-      background: r.resolveStrokeColor(outline, figJam.strokeIndex, node, graph),
+      // The outline's colour as drawn, in the canvas's colour space; the pill itself is opaque.
+      background: { ...r.resolveStrokeColor(outline, figJam.strokeIndex, node, graph), a: 1 },
       border: r.ck.Color4f(0, 0, 0, FIGJAM_TITLE_EDGE),
       hover: r.ck.Color4f(text, text, text, 0.08),
       foreground: r.ck.Color4f(text, text, text, 1)
