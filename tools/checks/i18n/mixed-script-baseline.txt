@@ -599,9 +599,17 @@ ja:ai.notificationsAllowHint
 ja:ai.notificationsSystemHint
 ja:ai.notifyReplyFinished
 ja:ai.notifyReplyFailed
+ja:diagnostics.reportDocumentDescription
+ja:diagnostics.reportErrorDescription
+ja:diagnostics.reportProblemDescription
+ja:diagnostics.reportUnexpectedError
 zh-cn:ai.skillsDescription
 zh-cn:ai.notificationsHint
 zh-cn:ai.notificationsAllowHint
 zh-cn:ai.notificationsSystemHint
 zh-cn:ai.notifyReplyFinished
 zh-cn:ai.notifyReplyFailed
+zh-cn:diagnostics.reportDocumentDescription
+zh-cn:diagnostics.reportErrorDescription
+zh-cn:diagnostics.reportProblemDescription
+zh-cn:diagnostics.reportUnexpectedError

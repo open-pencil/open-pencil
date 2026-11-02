@@ -2,6 +2,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { openTour } from '@/app/demo/document'
 import { requestAppExit } from '@/app/document/close/exit'
+import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
 import {
@@ -57,6 +58,7 @@ export function useShellMenu() {
     },
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
+    'report-problem': () => openReportDialog(),
     'snap-geometry': () => {
       const current = appPreferences.value.editing.snapping.geometry
       setSnappingPreference('geometry', !current)

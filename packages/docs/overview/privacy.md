@@ -28,7 +28,7 @@ const events = describeUsageEvents()
 
 # Privacy and Usage Stats
 
-- Your designs, file names, layer names, text, prompts, and keys never leave your device unless you share or sync them yourself.
+- Your designs, file names, layer names, text, prompts, and keys never leave your device unless you share or sync them yourself, or attach a design to a report you send.
 - Official builds send one anonymous ping a day, with no ID. You can turn it off.
 - Detailed usage stats are sent only if you say yes when asked, and you can stop at any time.
 
@@ -67,6 +67,18 @@ These are all the events the app can send. The service at `feedback.openpencil.d
 </template>
 
 Accepted events go to [PostHog](https://posthog.com), a product analytics service, on its EU cloud. The request comes from our server, not your device, so PostHog never sees your address. Events create no person profiles and skip location lookups. We keep usage stats for 12 months.
+
+## Error and problem reports
+
+When OpenPencil hits an unexpected error, an official build adds **Report…** to the error notice, and **File → Report a problem…** is always there. Both open a form, and nothing is sent until you choose **Send report**. **What will be sent** shows the exact report before it goes. It has:
+
+- For an error: its type and message, scrubbed of keys, tokens, email addresses, and your user name in folder paths, and where in OpenPencil's code it happened. Errors from AI providers, which can quote your prompts, are sent without a message.
+- What you write, and an email address if you give one so we can reply.
+- The build fields above (<code>{{ buildFields }}</code>), and your install ID if you share usage stats.
+- If you leave **Include recent activity** on: the last 50 events from **Settings → Diagnostics**, such as errors, timings, and file formats. They never include chat messages or tool output.
+- If you turn on **Attach this document**: the open design as a `.fig` file.
+
+Reports go to `feedback.openpencil.dev`, which passes them to PostHog's error tracking on its EU cloud, without your address, a person profile, or a location lookup, and keeps nothing of them itself. An attached design is stored in Cloudflare R2 in the EU, only the OpenPencil team can open it, and it is deleted after 90 days.
 
 ## Turning it all off
 

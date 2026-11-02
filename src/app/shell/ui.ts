@@ -5,6 +5,7 @@ import { ref } from 'vue'
 import { ReadOnlyDocumentError } from '@open-pencil/core'
 
 import { recordRuntimeError } from '@/app/diagnostics'
+import { reportErrorAction } from '@/app/reports/state'
 import { isTauri } from '@/app/tauri/env'
 import type { ProgressAmount } from '@/components/ui/feedback/progress'
 import type { ToastVariant } from '@/components/ui/feedback/toast'
@@ -146,7 +147,10 @@ function setupGlobalErrorHandler() {
       return
     }
     recordRuntimeError(e.error ?? e.message, 'window')
-    error(e.message || 'An unexpected error occurred')
+    error(
+      e.message || 'An unexpected error occurred',
+      reportErrorAction(e.error ?? e.message, 'window')
+    )
   })
   useEventListener(window, 'unhandledrejection', (e) => {
     if (e.reason instanceof ReadOnlyDocumentError) {
@@ -155,7 +159,7 @@ function setupGlobalErrorHandler() {
     }
     recordRuntimeError(e.reason, 'rejection')
     const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
-    error(msg || 'An unexpected error occurred')
+    error(msg || 'An unexpected error occurred', reportErrorAction(e.reason, 'rejection'))
   })
 }
 
