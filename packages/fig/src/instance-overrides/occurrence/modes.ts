@@ -90,21 +90,41 @@ function insideComponent(
 interface ClaimRouting {
   readonly ending: ModeLayer | undefined
   readonly continuing: readonly ModeClaim[]
-  readonly elsewhere: readonly ModeClaim[]
+  readonly passing: readonly ModeClaim[]
+}
+
+function outerFirstWins(layers: readonly ModeLayer[]): ModeLayer | undefined {
+  if (layers.length < 2) {
+    return layers[0]
+  }
+  const merged = new Map<string, string | undefined>()
+  for (const [collection, mode] of layers.flatMap((layer) => [...layer])) {
+    if (!merged.has(collection)) {
+      merged.set(collection, mode)
+    }
+  }
+  return merged
 }
 
 function routeClaims(claims: readonly ModeClaim[], record: NodeChange): ClaimRouting | undefined {
-  const matching = claims.filter(({ path }) => recordMatches(record, path[0]))
-  if (matching.length === 0) {
+  const ending: ModeLayer[] = []
+  const continuing: ModeClaim[] = []
+  const passing: ModeClaim[] = []
+  for (const claim of claims) {
+    if (!recordMatches(record, claim.path[0])) {
+      passing.push(claim)
+    } else if (claim.path.length === 1) {
+      ending.push(claim.modes)
+    } else {
+      const next = { path: claim.path.slice(1), modes: claim.modes }
+      continuing.push(next)
+      passing.push(next)
+    }
+  }
+  if (ending.length === 0 && continuing.length === 0) {
     return undefined
   }
-  return {
-    ending: matching.find(({ path }) => path.length === 1)?.modes,
-    continuing: matching
-      .filter(({ path }) => path.length > 1)
-      .map(({ path, modes }) => ({ path: path.slice(1), modes })),
-    elsewhere: claims.filter((claim) => !matching.includes(claim))
-  }
+  return { ending: outerFirstWins(ending), continuing, passing }
 }
 
 export function createModeScopes(index: InterpreterIndex) {
@@ -190,7 +210,7 @@ export function createModeScopes(index: InterpreterIndex) {
         }
         return {
           placed: layered(scope.placed, own, claimed),
-          descendantClaims: routing?.elsewhere ?? scope.descendantClaims
+          descendantClaims: routing?.passing ?? scope.descendantClaims
         }
       }
       const expandedComponent = recordOf(component)

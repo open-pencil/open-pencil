@@ -72,6 +72,19 @@ test('override transfer remaps the collection a mode override is keyed by', () =
   )
 })
 
+test('override transfer remaps the collection of a self mode override', () => {
+  const state = createInstanceOverrideState()
+  state.self.set(variableModeOverrideField('sizes'), true)
+  const result = remapInstanceOverrideState(state, {
+    node: (id) => id,
+    variable: (id) => id,
+    collection: (id) => (id === 'sizes' ? 'pasted-sizes' : undefined)
+  })
+  expect(result.self).toEqual(
+    new Map<string, unknown>([[variableModeOverrideField('pasted-sizes'), true]])
+  )
+})
+
 test('override transfer without a collection mapper keeps mode override keys', () => {
   const state = createInstanceOverrideState()
   state.descendants.set(

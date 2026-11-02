@@ -324,3 +324,71 @@ test('an instance record mode map stands for all of its modes', () => {
 
   expect(nested.variableModes).toEqual({ [`1:${THEME}`]: `1:${DARK}` })
 })
+
+function twoLevelClaims(outerModes: Partial<NodeChange>, innerModes: Partial<NodeChange>): Patches {
+  return {
+    [PANEL_CARD]: instanceOf(CARD, [at([NESTED], innerModes)]),
+    [OUTER_PANEL]: instanceOf(PANEL, [at([PANEL_CARD, NESTED], outerModes)])
+  }
+}
+
+test('modes two owners set on one nested instance for different collections all apply', () => {
+  const patches = twoLevelClaims(modes([THEME, DARK]), modes([SIZES, WIDE]))
+  expect(nestedWidth(fixture(patches), OUTER_PANEL, 2)).toBe(WIDTH_BY_MODE[WIDE])
+})
+
+test('the outer owner mode wins where two owners set one collection on a nested instance', () => {
+  const patches = twoLevelClaims(modes([SIZES, WIDE]), modes([SIZES, COMPACT]))
+  expect(nestedWidth(fixture(patches), OUTER_PANEL, 2)).toBe(WIDTH_BY_MODE[WIDE])
+})
+
+const CARD_BODY = 41
+
+function withCardBody(changes: NodeChange[]): NodeChange[] {
+  const body: NodeChange = {
+    guid: guid(CARD_BODY),
+    type: 'FRAME',
+    size: { x: 100, y: 10 },
+    ...child(CARD, 'a')
+  }
+  return [...changes, body]
+}
+
+test('a mode addressed through a frame inside the component reaches the nested instance', () => {
+  const patches = {
+    [NESTED]: child(CARD_BODY, 'a'),
+    [OUTER]: instanceOf(CARD, [at([CARD_BODY, NESTED], modes([SIZES, WIDE]))])
+  }
+  expect(nestedWidth(withCardBody(fixture(patches)), OUTER, 2)).toBe(WIDTH_BY_MODE[WIDE])
+})
+
+test('the outer owner mode wins over an inner one addressed through a frame', () => {
+  const patches = {
+    [NESTED]: child(CARD_BODY, 'a'),
+    [PANEL_CARD]: instanceOf(CARD, [at([CARD_BODY, NESTED], modes([SIZES, COMPACT]))]),
+    [OUTER_PANEL]: instanceOf(PANEL, [at([PANEL_CARD, NESTED], modes([SIZES, WIDE]))])
+  }
+  expect(nestedWidth(withCardBody(fixture(patches)), OUTER_PANEL, 3)).toBe(WIDTH_BY_MODE[WIDE])
+})
+
+test('a binding to a library variable by asset reference drops the saved size', () => {
+  const libraryBinding = {
+    variableConsumptionMap: {
+      entries: [
+        {
+          variableField: 'WIDTH',
+          variableData: { dataType: 'ALIAS', value: { alias: { assetRef: { key: 'width' } } } }
+        }
+      ]
+    }
+  }
+  const patches = {
+    [WIDTH]: { key: 'width' },
+    [NESTED]: libraryBinding,
+    [OUTER]: modes([SIZES, WIDE])
+  } as Patches
+  const outer = createOccurrenceInterpreter(fixture(patches)).instance(`1:${OUTER}`)
+  const nested = [...occurrences(outer)].find(({ sourceId }) => sourceId === `1:${NESTED}`)
+
+  expect(nested?.derivedSize).toBeUndefined()
+})

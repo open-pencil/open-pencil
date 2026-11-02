@@ -216,6 +216,7 @@ export function defaultModesByCollection(records: readonly NodeChange[]): Map<st
 
 export interface DocumentVariables {
   readonly defaultModes: ReadonlyMap<string, string>
+  readonly variableIdOf: (reference: NodeChange['variableSetID']) => string | undefined
   collectionsReachedFrom(variableId: string): ReadonlySet<string>
 }
 
@@ -257,6 +258,7 @@ export function createDocumentVariables(
       )
       return defaultModes
     },
+    variableIdOf: resolve,
     collectionsReachedFrom(variableId) {
       let collections = reached.get(variableId)
       if (!collections) {

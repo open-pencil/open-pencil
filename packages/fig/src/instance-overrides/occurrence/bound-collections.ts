@@ -13,19 +13,22 @@ type Collections = ReadonlySet<string>
 const NO_COLLECTIONS: Collections = new Set()
 const collectionsByRecord = new WeakMap<NodeChange, Collections>()
 
-function variablesBoundBy(holder: NodeChange, found: Set<string>): void {
+type VariableIdOf = InterpreterIndex['variables']['variableIdOf']
+
+function variablesBoundBy(holder: NodeChange, variableIdOf: VariableIdOf, found: Set<string>) {
   for (const entry of variableConsumptionEntries(holder)) {
     visitVariableReferences(entry.variableData, (reference) => {
-      if (reference.guid) {
-        found.add(guidToString(reference.guid))
+      const id = variableIdOf(reference)
+      if (id) {
+        found.add(id)
       }
     })
   }
   for (const range of holder.textData?.styleOverrideTable ?? []) {
-    variablesBoundBy(range, found)
+    variablesBoundBy(range, variableIdOf, found)
   }
   for (const override of symbolOverridesOf(holder)) {
-    variablesBoundBy(override, found)
+    variablesBoundBy(override, variableIdOf, found)
   }
 }
 
@@ -45,7 +48,7 @@ export function createBoundCollections({ sources, children, variables }: Interpr
     }
     collectionsByRecord.set(record, NO_COLLECTIONS)
     const bound = new Set<string>()
-    variablesBoundBy(record, bound)
+    variablesBoundBy(record, variables.variableIdOf, bound)
     const collections = new Set<string>()
     for (const variable of bound) {
       for (const collection of variables.collectionsReachedFrom(variable)) {
