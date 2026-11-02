@@ -17,8 +17,8 @@ const {
 
 // The canvas draws section titles in 11px semibold with 6px padding, names in 11px regular.
 const TEXT = {
-  section: 'px-1.5 text-[11px] font-semibold leading-6',
-  name: 'px-0.5 text-[11px] font-normal leading-[18px]'
+  section: 'px-1.5 text-2xs font-semibold leading-6',
+  name: 'px-0.5 text-2xs font-normal leading-4.5'
 }
 const { pixelRatio } = useDevicePixelRatio()
 // Section titles use the canvas's own title face; names use Inter like the rest of the page.

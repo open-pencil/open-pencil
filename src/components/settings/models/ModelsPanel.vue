@@ -122,7 +122,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
               :ui="{
                 root: 'py-3 max-sm:flex-wrap',
                 label: 'text-xs',
-                description: 'text-[11px] leading-relaxed',
+                description: 'text-2xs leading-relaxed',
                 trailing: 'max-sm:w-full max-sm:justify-end'
               }"
               @click="editModel(profile.id)"
@@ -139,7 +139,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
               </template>
               <template #trailing>
                 <span
-                  class="mr-1 flex items-center gap-1 text-[11px] text-muted"
+                  class="mr-1 flex items-center gap-1 text-2xs text-muted"
                   data-test-id="settings-model-status"
                   :data-state="connectionState(profile.connectionId, profile.providerID)"
                 >
@@ -154,7 +154,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
                 <span
                   v-for="capability in profile.capabilities"
                   :key="capability"
-                  class="rounded bg-panel px-1.5 py-0.5 text-[11px] text-muted"
+                  class="rounded bg-panel px-1.5 py-0.5 text-2xs text-muted"
                 >
                   {{
                     capability === 'tools'

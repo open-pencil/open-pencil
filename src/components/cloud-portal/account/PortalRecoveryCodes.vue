@@ -50,7 +50,7 @@ function downloadCodes() {
       >
         <li v-for="code in codes" :key="code" class="select-all">{{ code }}</li>
       </ul>
-      <p v-if="!saved" class="mt-2 text-[11px] text-muted">{{ messages.recoveryCodesSaveFirst }}</p>
+      <p v-if="!saved" class="mt-2 text-2xs text-muted">{{ messages.recoveryCodesSaveFirst }}</p>
     </AppDialogBody>
     <AppDialogFooter :ui="{ footer: 'justify-between' }">
       <div class="flex items-center gap-1">

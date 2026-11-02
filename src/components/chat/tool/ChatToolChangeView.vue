@@ -41,7 +41,7 @@ const aspectRatio = computed(() =>
   <div class="space-y-2" data-slot="chat-tool-change">
     <template v-if="hasImages">
       <div class="flex items-center justify-between gap-2">
-        <span class="text-[10px] text-muted">
+        <span class="text-3xs text-muted">
           {{ visible ? ai.changedPixels({ percent: changedPercent }) : ai.noVisibleChange }}
         </span>
         <IconButton

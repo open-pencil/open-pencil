@@ -321,7 +321,7 @@ const story = (
       ...extra
     }),
     template: `
-      <div class="h-[720px]">
+      <div class="h-180">
         <PortalConsoleLayout host="cloud.studio.example" :account="account" :sections="sections" active="${active}" heading="${heading}" description="${description}">
           ${body}
         </PortalConsoleLayout>

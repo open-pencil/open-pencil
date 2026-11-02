@@ -89,7 +89,7 @@ function setExpanded(key: string, open: boolean) {
       @set-item="(_group, name, enabled) => setToolEnabled(name, enabled)"
     />
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="max-w-prose text-[11px] leading-relaxed text-muted">
+      <p class="max-w-prose text-2xs leading-relaxed text-muted">
         {{
           target === 'ai'
             ? automation.aiToolsNotice

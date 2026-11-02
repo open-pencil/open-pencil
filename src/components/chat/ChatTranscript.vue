@@ -128,7 +128,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
         <!-- Thinking indicator: shown when AI is working but no visible activity -->
         <div v-if="isThinking" data-test-id="chat-typing-indicator" class="flex gap-2">
           <div
-            class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted/20 text-[10px] font-bold text-muted"
+            class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted/20 text-3xs font-bold text-muted"
           >
             AI
           </div>

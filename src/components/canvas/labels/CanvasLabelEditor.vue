@@ -64,7 +64,7 @@ const emit = defineEmits<{
         :data-foreground="presentation.foreground"
         :style="{ backgroundColor: colorToCSS(presentation.background) }"
         class="z-50 text-black ring-1 ring-accent data-[foreground=light]:text-white"
-        :class="compact ? 'h-[18px] rounded-[2px]' : 'h-6 rounded-[5px] shadow-sm'"
+        :class="compact ? 'h-4.5 rounded-xs' : 'h-6 rounded-[0.3125rem] shadow-sm'"
         @open-auto-focus.prevent
         @escape-key-down.prevent="emit('cancel')"
         @pointer-down-outside="emit('commit')"
