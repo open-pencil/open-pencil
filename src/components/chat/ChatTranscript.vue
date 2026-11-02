@@ -133,7 +133,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
 <template>
   <ScrollAreaRoot class="relative min-h-0 flex-1">
-    <ScrollAreaViewport ref="viewportComponent" class="h-full px-3 pt-3 pb-5 [&>div]:h-full">
+    <ScrollAreaViewport ref="viewportComponent" class="h-full px-3 pt-3 [&>div]:h-full">
       <AppPlaceholder
         v-if="messages.length === 0 && sending === null && !compacting"
         data-test-id="chat-empty-state"
@@ -146,7 +146,12 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
       </AppPlaceholder>
 
       <!-- Messages -->
-      <div v-else ref="transcriptContent" data-test-id="chat-messages" class="flex flex-col gap-3">
+      <div
+        v-else
+        ref="transcriptContent"
+        data-test-id="chat-messages"
+        class="flex flex-col gap-3 pb-5"
+      >
         <template
           v-for="({ message: msg, compaction, tokensAfter }, index) in entries"
           :key="msg.id"
