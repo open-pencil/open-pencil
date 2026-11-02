@@ -1,0 +1,18 @@
+{
+  "move": "تحريك",
+  "frame": "إطار",
+  "section": "قسم",
+  "rectangle": "مستطيل",
+  "ellipse": "شكل بيضاوي",
+  "line": "خط",
+  "polygon": "مضلّع",
+  "star": "نجمة",
+  "pen": "القلم",
+  "pencil": "قلم الرصاص",
+  "text": "نص",
+  "sticky": "ملاحظة لاصقة",
+  "shape": "شكل",
+  "connector": "موصل",
+  "hand": "اليد",
+  "comment": "تعليق"
+}

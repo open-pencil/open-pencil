@@ -41,7 +41,7 @@ const bound = ref<number | symbol>(8)
           <NumberFieldLeading class="px-2 text-[var(--vp-c-text-2)]">W</NumberFieldLeading>
           <NumberFieldInput class="min-w-0 flex-1 border-0 bg-transparent outline-none" />
           <NumberFieldValue class="min-w-0 flex-1 truncate" />
-          <NumberFieldUnit class="pr-1 text-[var(--vp-c-text-2)]">px</NumberFieldUnit>
+          <NumberFieldUnit class="pe-1 text-[var(--vp-c-text-2)]">px</NumberFieldUnit>
           <NumberFieldTrailing
             class="flex size-[26px] items-center justify-center text-[var(--vp-c-text-2)]"
           >
@@ -107,7 +107,7 @@ const bound = ref<number | symbol>(8)
           >
             <NumberFieldInput class="min-w-0 flex-1 border-0 bg-transparent outline-none" />
             <NumberFieldValue />
-            <NumberFieldUnit class="ml-1">gap/md</NumberFieldUnit>
+            <NumberFieldUnit class="ms-1">gap/md</NumberFieldUnit>
           </div>
         </NumberFieldRoot>
       </div>

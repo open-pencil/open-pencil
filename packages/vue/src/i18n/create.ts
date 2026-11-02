@@ -5,6 +5,7 @@ import { locale } from '#vue/i18n/locale'
 import type { Locale, TranslatedLocale } from '#vue/i18n/locale'
 
 const localeLoaders = {
+  ar: () => import('#vue/i18n/locales/ar'),
   de: () => import('#vue/i18n/locales/de'),
   es: () => import('#vue/i18n/locales/es'),
   fr: () => import('#vue/i18n/locales/fr'),

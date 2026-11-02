@@ -100,7 +100,7 @@ const emails = usePortalList<CloudAdminEmailFilter, PortalEmail>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { class: 'w-px text-end', actions: true },
       cell: ({ row: { original: email } }) =>
         email.status === 'failed'
           ? h(

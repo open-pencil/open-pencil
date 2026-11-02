@@ -368,7 +368,7 @@ async function remove() {
         <AppButton v-if="canDelete" color="error" :disabled="busy" @click="deleteOpen = true">
           {{ ai.deleteModel }}
         </AppButton>
-        <AppButton class="ml-auto" :disabled="busy" @click="emit('done')">
+        <AppButton class="ms-auto" :disabled="busy" @click="emit('done')">
           {{ common.cancel }}
         </AppButton>
         <AppButton v-if="!choosing" type="submit" color="primary" variant="solid" :loading="busy">

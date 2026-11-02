@@ -1,0 +1,43 @@
+{
+  "upToDate": "OpenPencil محدَّث",
+  "windowTitle": "تحديث البرنامج",
+  "checking": "جارٍ التحقق من وجود تحديثات…",
+  "available": {
+    "input": "OpenPencil {version} متاح"
+  },
+  "currentVersion": {
+    "input": "لديك الإصدار {version}."
+  },
+  "whatsNew": "ما الجديد",
+  "noNotes": "لا توجد ملاحظات لهذا الإصدار.",
+  "fullReleaseNotes": "ملاحظات الإصدار الكاملة",
+  "later": "لاحقًا",
+  "install": "تثبيت التحديث",
+  "installAndRestart": "تثبيت وإعادة التشغيل",
+  "retry": "حاول مرة أخرى",
+  "downloadProgress": {
+    "input": "{percent}% · {downloaded} من {total}"
+  },
+  "downloadProgressUnknown": {
+    "input": "تم تنزيل {downloaded}"
+  },
+  "installing": "جارٍ التثبيت…",
+  "installed": {
+    "input": "تم تثبيت OpenPencil {version}"
+  },
+  "restartToFinish": "أعد تشغيل OpenPencil لبدء استخدام الإصدار الجديد.",
+  "restartNow": "إعادة التشغيل الآن",
+  "downloadFailed": {
+    "input": "تعذّر تنزيل التحديث: {error}"
+  },
+  "installFailed": {
+    "input": "تعذّر تثبيت التحديث: {error}"
+  },
+  "restartFailed": {
+    "input": "تعذّرت إعادة تشغيل OpenPencil: {error}"
+  },
+  "unavailable": "التحديثات غير متاحة بعد. انشر إصدارًا موقّعًا مع latest.json أولًا.",
+  "checkFailed": {
+    "input": "تعذّر التحقق من وجود تحديثات: {error}"
+  }
+}

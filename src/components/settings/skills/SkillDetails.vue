@@ -79,7 +79,7 @@ const useDescription = computed(() => {
     <template #footer>
       <AppButton
         v-if="uploaded"
-        class="mr-auto"
+        class="me-auto"
         color="error"
         variant="link"
         @click="emit('remove')"

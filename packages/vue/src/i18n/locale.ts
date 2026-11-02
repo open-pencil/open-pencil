@@ -1,11 +1,12 @@
 import { localeFrom } from '@nanostores/i18n'
 import { atom, onStart } from 'nanostores'
 
-export const AVAILABLE_LOCALES = ['en', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'ru', 'zh-CN'] as const
+export const AVAILABLE_LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'ru', 'zh-CN'] as const
 export type Locale = (typeof AVAILABLE_LOCALES)[number]
 export type TranslatedLocale = Exclude<Locale, 'en'>
 
 export const TRANSLATED_LOCALES = [
+  'ar',
   'de',
   'es',
   'fr',
@@ -17,6 +18,7 @@ export const TRANSLATED_LOCALES = [
 ] as const satisfies ReadonlyArray<TranslatedLocale>
 
 export const LOCALE_DIR_NAMES = {
+  ar: 'ar',
   de: 'de',
   es: 'es',
   fr: 'fr',
@@ -29,6 +31,7 @@ export const LOCALE_DIR_NAMES = {
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
+  ar: 'العربية',
   de: 'Deutsch',
   es: 'Español',
   fr: 'Français',
@@ -37,6 +40,13 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   pl: 'Polski',
   ru: 'Русский',
   'zh-CN': '中文（简体）'
+}
+
+/** Locales whose script runs right to left; the app mirrors its interface for them. */
+export const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(['ar'])
+
+export function localeDirection(code: Locale): 'ltr' | 'rtl' {
+  return RTL_LOCALES.has(code) ? 'rtl' : 'ltr'
 }
 
 const LOCALE_STORAGE_KEY = 'open-pencil-locale'

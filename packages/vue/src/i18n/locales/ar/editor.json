@@ -1,0 +1,28 @@
+{
+  "wideGamutUnavailable": "لا تستطيع هذه الشاشة أو هذا المتصفح عرض ألوان Display-P3، لذا تعرضها لوحة الرسم بنظام sRGB. يحتفظ المستند بمساحة ألوانه.",
+  "toolOptions": {
+    "input": "خيارات {tool}"
+  },
+  "removeGradientStop": "إزالة نقطة التدرّج",
+  "cornerRadius": "نصف القطر",
+  "pointCount": "العدد",
+  "starRatio": "النسبة",
+  "arcStart": "البداية",
+  "arcSweep": "الامتداد",
+  "arcRatio": "النسبة",
+  "stickyPlaceholder": "اكتب أي شيء، واذكر أي شخص بـ @",
+  "connectorLabelPlaceholder": "إضافة نص",
+  "showUI": {
+    "input": "إظهار الواجهة ({shortcut})"
+  },
+  "openChat": "فتح محادثة الذكاء الاصطناعي",
+  "closeChat": "إغلاق محادثة الذكاء الاصطناعي",
+  "previewing": "جارٍ المعاينة",
+  "startPreview": {
+    "input": "معاينة ({shortcut})"
+  },
+  "resetPreview": "إعادة تعيين",
+  "leavePreview": {
+    "input": "مغادرة المعاينة ({shortcut})"
+  }
+}

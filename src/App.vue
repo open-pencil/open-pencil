@@ -2,12 +2,12 @@
 import { useHead } from '@unhead/vue'
 import { useEventListener } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
-import { TooltipProvider } from 'reka-ui'
+import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { provideEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { localeDirection, useI18n } from '@open-pencil/vue/i18n'
 
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
@@ -34,11 +34,14 @@ import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 
 const { updates, locale } = useI18n()
 const router = useRouter()
+// Arabic mirrors the interface; the canvas keeps its own coordinates.
+const dir = computed(() => localeDirection(locale.value))
 
 useHead({
   titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
   htmlAttrs: {
     lang: locale,
+    dir,
     'data-motion': computed(() => (animationsEnabled.value ? 'full' : 'off'))
   }
 })
@@ -62,6 +65,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <ConfigProvider :dir="dir">
   <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
     <TooltipProvider :delay-duration="400">
       <AppShell>
@@ -80,4 +84,5 @@ onMounted(() => {
       <VoiceCallAudio />
     </TooltipProvider>
   </MotionConfig>
+  </ConfigProvider>
 </template>

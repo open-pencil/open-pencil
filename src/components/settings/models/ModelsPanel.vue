@@ -139,7 +139,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
               </template>
               <template #trailing>
                 <span
-                  class="mr-1 flex items-center gap-1 text-[11px] text-muted"
+                  class="me-1 flex items-center gap-1 text-[11px] text-muted"
                   data-test-id="settings-model-status"
                   :data-state="connectionState(profile.connectionId, profile.providerID)"
                 >

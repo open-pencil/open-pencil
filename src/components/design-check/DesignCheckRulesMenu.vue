@@ -31,7 +31,7 @@ import { usePresetLabels } from './usePresetLabels'
 const messages = useDesignCheckMessages()
 const presetLabels = usePresetLabels()
 const menuCls = useMenuUI({ content: 'min-w-56' })
-const itemCls = menuItem({ justify: 'start', class: 'relative pl-7' })
+const itemCls = menuItem({ justify: 'start', class: 'relative ps-7' })
 const preferences = computed(() => appPreferences.value.designCheck)
 
 const presetModel = computed({
@@ -61,7 +61,7 @@ const presetModel = computed({
               :value="preset"
               :class="itemCls"
             >
-              <DropdownMenuItemIndicator class="absolute left-2">
+              <DropdownMenuItemIndicator class="absolute start-2">
                 <icon-lucide-check class="size-3.5" />
               </DropdownMenuItemIndicator>
               {{ presetLabels[preset] }}
@@ -79,7 +79,7 @@ const presetModel = computed({
             :class="itemCls"
             @update:model-value="setDesignIssuesOnCanvas"
           >
-            <DropdownMenuItemIndicator class="absolute left-2">
+            <DropdownMenuItemIndicator class="absolute start-2">
               <icon-lucide-check class="size-3.5" />
             </DropdownMenuItemIndicator>
             {{ messages.showOnCanvas }}

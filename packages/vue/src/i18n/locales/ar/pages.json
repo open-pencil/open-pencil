@@ -1,0 +1,13 @@
+{
+  "newPage": "صفحة جديدة",
+  "rename": "إعادة تسمية",
+  "delete": "حذف",
+  "pageName": {
+    "input": "الصفحة {number}"
+  },
+  "pages": "الصفحات",
+  "goToPage": "الانتقال إلى صفحة…",
+  "recentPage": "الأخيرة",
+  "currentPage": "الصفحة الحالية",
+  "pageNameLabel": "اسم الصفحة"
+}

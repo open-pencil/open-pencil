@@ -1,0 +1,101 @@
+{
+  "inThisRoom": "في هذه الغرفة",
+  "onThisPage": "في هذه الصفحة",
+  "yourName": "اسمك",
+  "enterYourName": "أدخل اسمك",
+  "shareThisFile": "مشاركة هذا الملف",
+  "joinRoom": "الانضمام إلى غرفة",
+  "join": "انضمام",
+  "roomLink": "رابط الغرفة",
+  "joinCollaboration": "الانضمام إلى التعاون",
+  "orJoinRoom": "أو انضم إلى غرفة",
+  "pasteRoomLinkOrId": "الصق رابط الغرفة أو معرّفها",
+  "connected": "متصل",
+  "disconnect": "قطع الاتصال",
+  "share": "مشاركة",
+  "follow": {
+    "input": "متابعة {name}"
+  },
+  "stopFollowing": {
+    "input": "إيقاف متابعة {name}"
+  },
+  "followingPerson": {
+    "input": "تتابع {name}"
+  },
+  "followingAgent": {
+    "input": "تتابع {agent} ({owner})"
+  },
+  "stopFollowingShort": "إيقاف المتابعة",
+  "leaveRoom": "مغادرة الغرفة",
+  "morePeople": {
+    "input": "{count} آخرون"
+  },
+  "renameAgent": {
+    "input": "إعادة تسمية {name}"
+  },
+  "agentName": "اسم الوكيل",
+  "agentThinking": "يفكّر",
+  "agentEditing": "يحرّر",
+  "agentIdle": "خامل",
+  "sharedFile": "ملف مشترك",
+  "invalidRoomLink": "هذا ليس رابط غرفة أو معرّفها.",
+  "joiningTitle": "جارٍ الانضمام إلى الغرفة…",
+  "connectingDescription": "جارٍ الاتصال بخوادم الغرفة.",
+  "lookingDescription": "جارٍ البحث عن أشخاص في هذه الغرفة.",
+  "receivingDescription": {
+    "input": "جارٍ الحصول على الملف من {name}."
+  },
+  "othersWaiting": {
+    "input": "ينتظرون أيضًا: {names}"
+  },
+  "unreachableTitle": "يتعذّر الوصول إلى خوادم الغرفة",
+  "unreachableDescription": "تحقق من اتصالك بالإنترنت. يواصل OpenPencil المحاولة ويفتح الملف فور الاتصال.",
+  "waitingTitle": "في انتظار شخص لديه هذا الملف",
+  "waitingDescription": "لا تُخزَّن الغرف على خادم. يوجد الملف على أجهزة الأشخاص الذين كانوا في الغرفة، لذا لا يمكن فتحه إلا عندما يكون أحدهم متصلًا.",
+  "waitingAskSharer": "اطلب من الشخص الذي شارك الرابط أن يفتحه.",
+  "waitingCheckLink": "تحقق من أن الرابط كامل.",
+  "waitingOpensAutomatically": "يُفتح الملف هنا فور انضمام شخص لديه.",
+  "copyLink": "نسخ الرابط",
+  "linkCopied": "تم النسخ",
+  "leave": "مغادرة",
+  "statusLive": {
+    "input": "مباشر · {count} هنا"
+  },
+  "statusAlone": "أنت وحدك هنا — تتم مزامنة التغييرات عند انضمام الآخرين",
+  "leftRoomTitle": "لقد غادرت هذه الغرفة",
+  "leftRoomDescription": "هذه الآن نسخة محلية. احفظها للاحتفاظ بها.",
+  "dismiss": "تجاهل",
+  "openInDesktopApp": "فتح في تطبيق سطح المكتب",
+  "downloadDesktopApp": "تنزيل",
+  "appearsAs": {
+    "input": "ستظهر باسم {name}"
+  },
+  "changeName": "تغيير",
+  "joinRoomEllipsis": "الانضمام إلى غرفة…",
+  "joinRoomDescription": "الصق رابط غرفة أو معرّفها لفتح ملف شاركه أحدهم معك.",
+  "nameSettingTitle": "اسمك",
+  "nameSettingDescription": "يرى الآخرون هذا الاسم بجوار مؤشرك في الغرف المشتركة.",
+  "voiceCall": "مكالمة صوتية",
+  "startVoiceCall": "بدء مكالمة صوتية",
+  "joinVoiceCall": "الانضمام إلى المكالمة الصوتية",
+  "joiningVoiceCall": "جارٍ الانضمام…",
+  "leaveVoiceCall": "مغادرة المكالمة",
+  "mute": "كتم الصوت",
+  "unmute": "إلغاء كتم الصوت",
+  "muted": "مكتوم",
+  "microphone": "الميكروفون",
+  "speakers": "مكبرات الصوت",
+  "systemDefault": "افتراضي النظام",
+  "peopleInCall": {
+    "input": "{count} في المكالمة"
+  },
+  "nobodyInCall": "لا أحد في المكالمة بعد.",
+  "voiceDeniedTitle": "الوصول إلى الميكروفون محظور",
+  "voiceDeniedDescription": "اسمح لـ OpenPencil باستخدام الميكروفون في إعدادات المتصفح أو النظام، ثم حاول مرة أخرى.",
+  "voiceNoMicrophoneTitle": "لم يُعثر على ميكروفون",
+  "voiceNoMicrophoneDescription": "وصّل ميكروفونًا، ثم حاول مرة أخرى.",
+  "voiceUnavailableTitle": "يتعذّر فتح الميكروفون",
+  "voiceUnavailableDescription": "ربما يستخدمه تطبيق آخر. اختر ميكروفونًا آخر أو أغلق ذلك التطبيق، ثم حاول مرة أخرى.",
+  "voiceUnsupportedTitle": "المكالمات الصوتية غير متاحة هنا",
+  "voiceUnsupportedDescription": "لا يمكن لهذا المتصفح استخدام الميكروفون."
+}

@@ -82,7 +82,7 @@ const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
     }),
     column.accessor('workspaceCount', {
       header: () => messages.value.columnWorkspaces,
-      meta: { class: 'hidden w-24 text-right tabular-nums @2xl/table:table-cell' }
+      meta: { class: 'hidden w-24 text-end tabular-nums @2xl/table:table-cell' }
     }),
     column.accessor((person) => person.lastActive ?? messages.value.notSignedIn, {
       id: 'lastActive',
@@ -96,7 +96,7 @@ const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { class: 'w-px text-end', actions: true },
       cell: ({ row: { original: person } }) =>
         h(PortalPersonActions, {
           person,

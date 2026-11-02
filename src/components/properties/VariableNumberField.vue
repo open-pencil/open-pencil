@@ -121,7 +121,7 @@ defineOptions({ inheritAttrs: false })
         />
       </template>
       <template #suffix>
-        <span :class="$slots['after-variable'] ? '' : 'pr-1'" class="flex items-center">
+        <span :class="$slots['after-variable'] ? '' : 'pe-1'" class="flex items-center">
           <VariableBindingPicker
             :trigger-label="panels.applyVariable"
             :search-placeholder="common.search"

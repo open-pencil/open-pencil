@@ -39,10 +39,10 @@ export const Pins: StoryObj = {
     setup: () => ({ discussed }),
     template: `
       <div class="relative h-24 w-72 rounded-lg bg-canvas">
-        <CommentPin :author="discussed.author" :color="discussed.authorColor" aria-label="Dana Scully" class="top-16 left-6" />
-        <CommentPin :author="discussed.author" :color="discussed.authorColor" active aria-label="Dana Scully, open" class="top-16 left-24" />
-        <CommentPin :author="discussed.author" :color="discussed.authorColor" resolved aria-label="Dana Scully, resolved" class="top-16 left-42" />
-        <CommentPin draft aria-hidden="true" tabindex="-1" class="top-16 left-60" />
+        <CommentPin :author="discussed.author" :color="discussed.authorColor" aria-label="Dana Scully" class="top-16 start-6" />
+        <CommentPin :author="discussed.author" :color="discussed.authorColor" active aria-label="Dana Scully, open" class="top-16 start-24" />
+        <CommentPin :author="discussed.author" :color="discussed.authorColor" resolved aria-label="Dana Scully, resolved" class="top-16 start-42" />
+        <CommentPin draft aria-hidden="true" tabindex="-1" class="top-16 start-60" />
       </div>
     `
   })

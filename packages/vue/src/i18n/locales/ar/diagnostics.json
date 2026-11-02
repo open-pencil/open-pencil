@@ -1,0 +1,112 @@
+{
+  "usageDescription": "ملخصات استخدام محلية من طلبات الذكاء الاصطناعي المسجّلة.",
+  "usageRequests": "الطلبات",
+  "usageCompleted": "المكتملة",
+  "usageInputTokens": "رموز الإدخال",
+  "usageOutputTokens": "رموز الإخراج",
+  "usageCachedInputTokens": "رموز الإدخال المخزّنة مؤقتًا",
+  "usageCacheWriteTokens": "رموز الكتابة في ذاكرة التخزين المؤقت",
+  "usageByModel": "حسب النموذج",
+  "usageNoData": "لا توجد بيانات استخدام مسجّلة.",
+  "usageNotReported": "غير مُبلَّغ عنه",
+  "usageCacheNote": "تظهر قيم ذاكرة التخزين المؤقت فقط عندما يُبلغ عنها المزوّد.",
+  "title": "التشخيصات",
+  "chatCompleted": "اكتملت محادثة الذكاء الاصطناعي",
+  "chatStopped": "توقفت محادثة الذكاء الاصطناعي",
+  "chatFailed": "فشلت محادثة الذكاء الاصطناعي",
+  "storageFailed": "فشلت عملية التخزين",
+  "documentFailed": "فشلت عملية المستند",
+  "acpFailed": "فشل نقل ACP",
+  "mcpFailed": "فشل اتصال MCP",
+  "modelStep": {
+    "input": "خطوة النموذج · {model}"
+  },
+  "modelStepTokens": {
+    "input": "{input} إدخال · {output} إخراج من الرموز"
+  },
+  "toolCompleted": {
+    "input": "الأداة: {tool}"
+  },
+  "toolFailed": {
+    "input": "فشلت الأداة: {tool}"
+  },
+  "durationMs": {
+    "input": "{ms} مللي ثانية"
+  },
+  "runtimeError": {
+    "input": "خطأ: {name}"
+  },
+  "preparationDocumentOpen": "فتح المستند",
+  "preparationDocumentReload": "إعادة تحميل المستند",
+  "preparationRecoveryRestore": "استعادة المستند المسترجَع",
+  "preparationStorageOpen": "فتح من التخزين السحابي",
+  "preparationPageSwitch": "تبديل الصفحة",
+  "preparationFontRetry": "إعادة محاولة الخطوط",
+  "preparationDomImport": "استيراد HTML",
+  "preparationDemoLoad": "تحميل مستند تجريبي",
+  "preparationCompleted": {
+    "input": "اكتمل · {duration}"
+  },
+  "preparationCancelled": {
+    "input": "أُلغي: {reason} · {duration}"
+  },
+  "preparationFailed": {
+    "input": "فشل: {code} · {duration}"
+  },
+  "filterLevel": "مستوى الحدث",
+  "filterAll": "الكل",
+  "filterProblems": "الأخطاء والتحذيرات",
+  "filterCategory": "فئة الحدث",
+  "allCategories": "كل الفئات",
+  "categoryAI": "الذكاء الاصطناعي",
+  "categoryDocument": "المستند",
+  "categoryRenderer": "العارض",
+  "categoryStorage": "التخزين",
+  "categorySync": "المزامنة",
+  "categoryMCP": "MCP",
+  "categoryRecovery": "الاستعادة",
+  "categoryPerformance": "الأداء",
+  "categoryRuntime": "وقت التشغيل",
+  "noMatchingEvents": "لا توجد أحداث تطابق عوامل التصفية هذه.",
+  "showMore": "عرض المزيد",
+  "showingEvents": {
+    "input": "{shown} من {total}"
+  },
+  "retention": "مدة الاحتفاظ بالتشخيصات",
+  "retentionCustom": "مخصّص…",
+  "retentionRange": {
+    "input": "أدخل عددًا صحيحًا من {min} إلى {max}."
+  },
+  "retentionDescription": "الاحتفاظ محليًا بهذا العدد كحد أقصى من الأحداث الأخيرة.",
+  "description": "تخزين الأحداث التقنية محليًا للمساعدة في استكشاف مشكلات OpenPencil وإصلاحها. تُستثنى الطلبات النصية ومحتوى التصميم وبيانات الاعتماد ومفاتيح API.",
+  "localDiagnostics": "التشخيصات المحلية",
+  "localDiagnosticsDescription": "الاحتفاظ بالأحداث التقنية الأخيرة على هذا الجهاز.",
+  "usageHistory": "سجل الاستخدام",
+  "usageHistoryDescription": "الاحتفاظ بملخصات استخدام الذكاء الاصطناعي محليًا.",
+  "eventCount": {
+    "input": "{count} حدث · {size} كيلوبايت"
+  },
+  "copy": "نسخ التشخيصات",
+  "save": "حفظ التشخيصات…",
+  "clear": "مسح",
+  "clearDescription": "يؤدي هذا إلى إزالة أحداث التشخيص المخزّنة محليًا من هذا الجهاز.",
+  "cleared": "تم مسح التشخيصات.",
+  "copyFailed": "تعذّر نسخ التشخيصات إلى الحافظة.",
+  "saveFailed": "تعذّر حفظ التشخيصات.",
+  "sharingTitle": "المشاركة مع OpenPencil",
+  "sharingDescription": "ما يرسله هذا التطبيق إلى فريق OpenPencil. لا تُرسل تصاميمك وأسماء ملفاتك وطلباتك ومفاتيحك أبدًا.",
+  "sharingPing": "إشارة يومية مجهولة الهوية",
+  "sharingPingDescription": "مرة واحدة يوميًا: إصدار التطبيق ونظام التشغيل وما إذا كان يعمل على سطح المكتب أو الويب. بدون معرّف.",
+  "sharingUsageStats": "إحصاءات الاستخدام",
+  "sharingUsageStatsDescription": "الميزات وتنسيقات الملفات المستخدمة، تحت معرّف عشوائي لا يدل على أي شخص. متوقفة ما لم توافق.",
+  "sharingDetails": "ما الذي يُرسَل",
+  "sharingUnofficialBuild": "لا يرسل هذا الإصدار أي شيء. ترسل إصدارات OpenPencil الرسمية فقط الإشارات أو إحصاءات الاستخدام.",
+  "sharingDisabledByEnvironment": "أوقفه OPENPENCIL_TELEMETRY أو DO_NOT_TRACK في بيئتك.",
+  "sharingQuestionTitle": "هل تساعد في تحسين OpenPencil؟",
+  "sharingQuestionDescription": "شارك إحصاءات استخدام مجهولة الهوية: مرات تشغيل التطبيق وتنسيقات الملفات والميزات المستخدمة. لا تشمل أبدًا تصاميمك أو أسماء ملفاتك أو طلباتك. فهي تُظهر لنا ما يجب بناؤه لاحقًا وأن OpenPencil مُستخدَم، مما يحافظ على تمويله.",
+  "sharingQuestionDecline": "لا، شكرًا",
+  "sharingQuestionAccept": "مشاركة الإحصاءات",
+  "sharingQuestionAccepted": "شكرًا لك. يمكنك تغيير ذلك في إعدادات الخصوصية.",
+  "sharingQuestionDeclined": "ستبقى إحصاءات الاستخدام متوقفة. يمكنك تغيير ذلك في إعدادات الخصوصية.",
+  "sharingLocalData": "يحتفظ الاستخدام والتشخيصات بسجلاتهما على هذا الجهاز ولا يرسلانها أبدًا."
+}

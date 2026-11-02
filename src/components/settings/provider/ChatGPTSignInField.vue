@@ -41,7 +41,7 @@ const failure = computed(() => {
         <icon-lucide-loader-2 class="size-3.5 animate-spin" aria-hidden="true" />
         {{ ai.aiSetupChatGPTWaiting }}
       </p>
-      <AppButton class="ml-auto" size="xs" variant="outline" @click="emit('reopen')">
+      <AppButton class="ms-auto" size="xs" variant="outline" @click="emit('reopen')">
         {{ ai.aiSetupSignInReopen }}
       </AppButton>
       <AppButton size="xs" @click="emit('cancel')">{{ common.cancel }}</AppButton>
@@ -52,7 +52,7 @@ const failure = computed(() => {
         {{ ai.aiSetupChatGPTSignedInTitle }}
         <span v-if="email" class="text-muted">{{ email }}</span>
       </p>
-      <AppButton class="ml-auto" size="xs" :disabled="disabled" @click="emit('signIn')">
+      <AppButton class="ms-auto" size="xs" :disabled="disabled" @click="emit('signIn')">
         {{ ai.aiSetupSignInChange }}
       </AppButton>
       <AppButton size="xs" :disabled="disabled" @click="emit('signOut')">

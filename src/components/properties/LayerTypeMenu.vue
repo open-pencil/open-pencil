@@ -68,7 +68,7 @@ const itemCls = menuItem({ justify: 'between' })
               <component :is="item.icon" class="size-3.5 shrink-0 text-muted" />
               <span>{{ item.label() }}</span>
             </div>
-            <IconCheck v-if="item.type === node.type" class="ml-4 size-3.5" />
+            <IconCheck v-if="item.type === node.type" class="ms-4 size-3.5" />
           </DropdownMenuItem>
         </MenuScrollArea>
       </DropdownMenuContent>

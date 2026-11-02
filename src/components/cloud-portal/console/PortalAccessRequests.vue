@@ -89,7 +89,7 @@ const requests = usePortalList<AccessRequestStatus, AccessRequest>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
+      meta: { class: 'w-px whitespace-nowrap text-end', actions: true },
       cell: ({ row: { original: request } }) =>
         h(PortalRequestActions, {
           request,

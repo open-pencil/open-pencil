@@ -115,7 +115,7 @@ async function finish(): Promise<void> {
     :close-label="common.close"
   >
     <template #actions>
-      <AppButton v-if="phase === 'wizard'" size="xs" class="mr-1 ml-auto" @click="emit('advanced')">
+      <AppButton v-if="phase === 'wizard'" size="xs" class="me-1 ms-auto" @click="emit('advanced')">
         {{ ai.aiSetupAdvanced }}
       </AppButton>
     </template>
@@ -247,7 +247,7 @@ async function finish(): Promise<void> {
       </AppButton>
     </template>
     <template v-else-if="phase === 'saved'">
-      <AppButton class="ml-auto" color="primary" variant="solid" @click="emit('close')">
+      <AppButton class="ms-auto" color="primary" variant="solid" @click="emit('close')">
         {{ common.done }}
       </AppButton>
     </template>

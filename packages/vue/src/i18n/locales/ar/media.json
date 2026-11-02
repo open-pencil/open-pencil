@@ -1,0 +1,27 @@
+{
+  "vectorization": "تحويل الصور إلى متجهات",
+  "vectorizationDescription": "أرسل طبقات الصور إلى Recraft أو fal.ai أو QuiverAI واستعد متجهات قابلة للتحرير. قد يفرض المزوّد رسومًا.",
+  "vectorizeProvider": "خدمة التحويل إلى متجهات",
+  "pexelsAPIKey": "مفتاح Pexels API (صور مخزنية)",
+  "unsplashAccessKey": "مفتاح وصول Unsplash",
+  "stockPhotoToolOptional": "اختياري — لأداة stock_photo",
+  "pexelsAlternativeOptional": "اختياري — بديل لـ Pexels",
+  "getPexelsAPIKey": "احصل على مفتاح Pexels API مجاني ←",
+  "getUnsplashAccessKey": "احصل على مفتاح وصول Unsplash مجاني ←",
+  "photoKeyWorks": {
+    "input": "قبِل {service} هذا المفتاح."
+  },
+  "photoKeyRejected": {
+    "input": "رفض {service} هذا المفتاح. تحقق من أنك نسخته كاملًا."
+  },
+  "unsplashKeyRejected": "رفض Unsplash هذا المفتاح. الصق مفتاح الوصول (Access Key) الخاص بتطبيقك، لا المفتاح السري (Secret key).",
+  "photoKeyRateLimited": {
+    "input": "استنفد هذا المفتاح طلبات {service} لهذه الساعة. حاول مرة أخرى لاحقًا."
+  },
+  "photoKeyUnreachable": {
+    "input": "تعذّر الوصول إلى {service}. تحقق من اتصالك بالشبكة."
+  },
+  "photoKeyCheckFailed": {
+    "input": "لم يستجب {service} للاختبار. حاول مرة أخرى لاحقًا."
+  }
+}

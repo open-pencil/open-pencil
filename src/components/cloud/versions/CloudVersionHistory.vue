@@ -48,7 +48,7 @@ const shown = useEditorStore()
 const t = useCloudMessages()
 const ui = cloudVersions()
 const menuCls = useMenuUI({ content: 'min-w-52', item: 'justify-start gap-2' })
-const filterItem = menuItem({ justify: 'start', class: 'relative pl-7' })
+const filterItem = menuItem({ justify: 'start', class: 'relative ps-7' })
 
 const list = useVersionList(shown)
 const listElement = useTemplateRef<HTMLUListElement>('listElement')

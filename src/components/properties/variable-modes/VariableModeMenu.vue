@@ -31,7 +31,7 @@ const emit = defineEmits<{ set: [collectionId: string, modeId: string | null] }>
 
 const panels = usePanelMessages()
 const menu = useMenuUI({ content: 'min-w-44' })
-const item = menuItem({ justify: 'start', class: 'pl-6 relative' })
+const item = menuItem({ justify: 'start', class: 'ps-6 relative' })
 const groups = computed(() =>
   [
     { label: panels.value.variableModesInFile, choices: choices.filter((c) => !c.library) },
@@ -80,7 +80,7 @@ function select(choice: VariableModeChoice, value: string) {
                       "
                     >
                       <DropdownMenuRadioItem :value="AUTO_MODE" :class="item">
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute start-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ autoModeLabel(panels, choice) }}
@@ -95,7 +95,7 @@ function select(choice: VariableModeChoice, value: string) {
                         :value="mode.modeId"
                         :class="item"
                       >
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute start-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ mode.name }}

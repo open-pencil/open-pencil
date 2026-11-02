@@ -167,7 +167,7 @@ async function publish() {
             @update:model-value="toggleAll"
           />
           <span>{{ panels.libraryChanges }}</span>
-          <span class="ml-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
+          <span class="ms-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
         </div>
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ panels.loading }}

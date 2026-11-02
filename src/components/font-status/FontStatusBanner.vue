@@ -23,7 +23,7 @@ const issues = computed(() => status.value.issues)
       <button
         type="button"
         data-test-id="font-status-toggle"
-        class="min-w-0 flex-1 text-left font-medium"
+        class="min-w-0 flex-1 text-start font-medium"
         @click="expanded = !expanded"
       >
         {{ issues.length === 1 ? fonts.issueFound : fonts.issuesFound({ count: issues.length }) }}

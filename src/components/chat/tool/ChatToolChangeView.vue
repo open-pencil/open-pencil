@@ -73,14 +73,14 @@ const aspectRatio = computed(() =>
               :alt="ai.changeBefore"
               :class="ui.compareBefore()"
             />
-            <span :class="ui.compareLabel({ class: 'left-1' })">{{ ai.changeBefore }}</span>
+            <span :class="ui.compareLabel({ class: 'start-1' })">{{ ai.changeBefore }}</span>
           </SplitterPanel>
           <SplitterResizeHandle :class="splitter.handle()" :aria-label="ai.changeSplit">
             <div :class="splitter.divider({ class: ui.compareDivider() })" />
           </SplitterResizeHandle>
           <SplitterPanel :default-size="50" :class="ui.comparePanel()">
             <img v-if="afterURL" :src="afterURL" :alt="ai.changeAfter" :class="ui.compareAfter()" />
-            <span :class="ui.compareLabel({ class: 'right-1' })">{{ ai.changeAfter }}</span>
+            <span :class="ui.compareLabel({ class: 'end-1' })">{{ ai.changeAfter }}</span>
           </SplitterPanel>
         </SplitterGroup>
       </div>

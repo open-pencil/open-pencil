@@ -39,7 +39,7 @@ function updateOpen(open: boolean) {
       <AppButton
         color="neutral"
         variant="ghost"
-        class="mr-auto"
+        class="me-auto"
         @click="answerClosePrompt('discard')"
       >
         {{ files.discard }}

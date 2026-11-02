@@ -158,7 +158,7 @@ async function save() {
           :src="url"
           alt=""
           draggable="false"
-          class="pointer-events-none absolute top-0 left-0 max-w-none"
+          class="pointer-events-none absolute top-0 start-0 max-w-none"
           :class="{ invisible: !size }"
           :style="placement"
           @load="loaded"

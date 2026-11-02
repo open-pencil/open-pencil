@@ -140,7 +140,7 @@ defineExpose({ focusInvalid: () => focusInvalidField(formElement.value) })
       <template #footer>
         <AppButton
           v-if="draft.id"
-          class="mr-auto"
+          class="me-auto"
           color="error"
           variant="link"
           :disabled="busy"

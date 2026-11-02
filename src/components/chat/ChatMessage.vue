@@ -145,7 +145,7 @@ function groupKey(group: MessagePartGroup): string {
             <div
               v-else-if="isTextUIPart(group.part) && group.part.text"
               data-test-id="chat-text-bubble"
-              class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
+              class="group/response relative rounded-xl rounded-ss-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
               <IconButton
@@ -155,7 +155,7 @@ function groupKey(group: MessagePartGroup): string {
                 :label="copied ? ai.responseCopied : ai.copyResponse"
                 size="xs"
                 data-slot="chat-copy-response"
-                class="absolute right-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
+                class="absolute end-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
                 @click="copyResponse"
               >
                 <icon-lucide-check v-if="copied" class="size-3 text-success" />
@@ -191,7 +191,7 @@ function groupKey(group: MessagePartGroup): string {
         <div v-else class="group/request relative">
           <div
             data-test-id="chat-text-bubble"
-            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
+            class="rounded-xl rounded-ee-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
             <ChatReferenceText :text="userText" />
           </div>
@@ -200,7 +200,7 @@ function groupKey(group: MessagePartGroup): string {
             :label="ai.editMessage"
             size="xs"
             data-slot="chat-edit-message"
-            class="absolute top-1/2 -left-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
+            class="absolute top-1/2 -start-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
             @click="editing = true"
           >
             <icon-lucide-pencil class="size-3" />

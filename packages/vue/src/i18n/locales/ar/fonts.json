@@ -1,0 +1,55 @@
+{
+  "settingsTitle": "إعدادات الخطوط",
+  "issueFound": "وجه خط واحد غير متاح أو مُستبدَل",
+  "issuesFound": {
+    "input": "{count} من أوجه الخطوط غير متاحة أو مُستبدَلة"
+  },
+  "selectAffectedLayers": "تحديد الطبقات",
+  "retry": "إعادة محاولة الخطوط",
+  "retrying": "جارٍ إعادة المحاولة…",
+  "expandIssues": "إظهار مشكلات الخطوط",
+  "collapseIssues": "إخفاء مشكلات الخطوط",
+  "noSubstitute": "لا يتوفر بديل",
+  "unsupportedFormatShort": "تنسيق غير مدعوم",
+  "unsupportedFormat": "مُثبَّت، لكن بتنسيق لا يستطيع OpenPencil رسمه بعد",
+  "affectedLayer": "طبقة واحدة متأثرة",
+  "affectedLayerCount": {
+    "input": "{count} طبقات متأثرة"
+  },
+  "settingsDesktopDescription": "الوصول إلى خطوط النظام والمزوّدين عبر الإنترنت وحزم الخطوط البديلة والتنزيلات المخزّنة مؤقتًا.",
+  "settingsBrowserDescription": "السماح للمتصفح بالوصول إلى الخطوط المحلية وإدارة مزوّدي الخطوط عبر الإنترنت.",
+  "localFonts": "الخطوط المحلية",
+  "onlineFonts": "الخطوط عبر الإنترنت",
+  "downloadedCache": "ذاكرة التنزيلات المؤقتة",
+  "cachedFontCount": {
+    "zero": "لا توجد خطوط",
+    "one": "خط واحد",
+    "two": "خطان",
+    "few": "{count} خطوط",
+    "many": "{count} خطًا",
+    "other": "{count} خط"
+  },
+  "systemFontAccess": "الوصول إلى خطوط النظام",
+  "systemFontsAvailable": "خطوط النظام متاحة.",
+  "allowBrowserFontAccess": "السماح للمتصفح بالوصول إلى الخطوط عند عدم توفر خطوط النظام.",
+  "onlineFontProviders": "مزوّدو الخطوط عبر الإنترنت",
+  "downloadMissingWebFonts": "تنزيل خطوط الويب المفقودة عبر المزوّدين المفعّلين.",
+  "webFontProvidersRequireDesktopApp": "كتالوجات مزوّدي الخطوط عبر الإنترنت غير متاحة في تطبيق الويب. نزّل تطبيق سطح المكتب لتصفح خطوط المزوّدين وتحميلها.",
+  "fallbackPacks": "حزم الخطوط البديلة",
+  "downloadFallbackPacksDescription": "تنزيل الخطوط البديلة لـ CJK والعربية قبل فتح الملفات التي تحتاج إليها.",
+  "localFontAccessEnabled": "تم تفعيل الوصول إلى الخطوط المحلية.",
+  "localFontAccessNotGranted": "لم يُمنح الوصول إلى الخطوط المحلية.",
+  "onlineFontProvidersEnabled": "تم تفعيل مزوّدي الخطوط عبر الإنترنت.",
+  "onlineFontProvidersDisabled": "تم تعطيل مزوّدي الخطوط عبر الإنترنت.",
+  "providerEnabled": {
+    "input": "تم تفعيل {provider}."
+  },
+  "providerDisabled": {
+    "input": "تم تعطيل {provider}."
+  },
+  "fallbackDownloaded": "تم تنزيل الخطوط البديلة.",
+  "fallbackDownloadFailed": "تعذّر تنزيل الخطوط البديلة.",
+  "downloadedFontCacheCleared": "تم مسح ذاكرة الخطوط المنزّلة المؤقتة.",
+  "downloadedFontCacheClearFailed": "تعذّر مسح ذاكرة الخطوط المنزّلة المؤقتة.",
+  "clearCache": "مسح ذاكرة التخزين المؤقت"
+}

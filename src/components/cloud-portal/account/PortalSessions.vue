@@ -102,7 +102,7 @@ const sessionTable = usePortalRows(() => sessions, {
     sessionColumn.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { class: 'w-px text-end', actions: true },
       cell: ({ row: { original: session } }) =>
         session.current
           ? null

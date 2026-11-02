@@ -78,7 +78,7 @@ const workspaces = usePortalRows(() => detail.workspaces, {
     }),
     column.accessor('memberCount', {
       header: () => messages.value.columnMembers,
-      meta: { class: 'w-24 text-right tabular-nums' }
+      meta: { class: 'w-24 text-end tabular-nums' }
     })
   ])
 })

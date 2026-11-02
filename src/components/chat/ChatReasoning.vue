@@ -84,7 +84,7 @@ function updateOpen(value: boolean): void {
     <CollapsibleTrigger
       data-slot="chat-reasoning-trigger"
       :data-streaming="streaming || undefined"
-      class="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-[11px] text-muted hover:bg-hover hover:text-surface"
+      class="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-start text-[11px] text-muted hover:bg-hover hover:text-surface"
     >
       <icon-lucide-brain class="size-3.5 shrink-0 text-primary" aria-hidden="true" />
       <span class="flex-1">{{ streaming ? thinkingLabel : finishedLabel }}</span>

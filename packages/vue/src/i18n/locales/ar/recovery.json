@@ -1,0 +1,11 @@
+{
+  "dialogTitle": "استعادة العمل غير المحفوظ",
+  "dialogDescription": "عثر OpenPencil على مستندات من جلسة سابقة.",
+  "restoreFailed": "تعذّرت استعادة هذا المستند.",
+  "settingsTitle": "الاستعادة",
+  "settingsDescription": "التحكم في نسخ الاستعادة المحلية من الأعطال للمستندات غير المحفوظة.",
+  "preserveUnsavedWork": "الحفاظ على العمل غير المحفوظ تلقائيًا",
+  "preserveUnsavedWorkDescription": "تخزين نسخ استعادة محلية لتتمكن من استعادة المستندات بعد إيقاف تشغيل غير متوقع.",
+  "restore": "استعادة",
+  "discard": "تجاهل"
+}

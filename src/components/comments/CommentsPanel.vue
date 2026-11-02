@@ -38,7 +38,7 @@ const store = useEditorStore()
 const comments = useComments()
 const messages = useCommentMessages()
 const menuCls = useMenuUI({ content: 'min-w-52' })
-const itemCls = menuItem({ justify: 'start', class: 'relative pl-7' })
+const itemCls = menuItem({ justify: 'start', class: 'relative ps-7' })
 const ui = commentsTheme()
 const { listQuery, listShowResolved, listOnlyPage, listSort, listOnlyMine } = comments
 

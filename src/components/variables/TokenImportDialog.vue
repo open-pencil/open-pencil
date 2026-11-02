@@ -230,7 +230,7 @@ function importTokens() {
             <div
               v-for="(mode, modeIndex) in collection.modes"
               :key="`${modeIndex}:${mode.name}`"
-              class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pr-3 pl-6"
+              class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pe-3 ps-6"
             >
               <span class="truncate text-muted">{{ mode.name }}</span>
               <icon-lucide-arrow-right class="size-3 text-muted" aria-hidden="true" />

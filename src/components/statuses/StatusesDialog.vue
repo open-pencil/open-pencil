@@ -239,7 +239,7 @@ function discard() {
         :label="messages.preset"
         size="sm"
         :ui="{ trigger: 'w-40' }"
-        class="mr-auto"
+        class="me-auto"
         @update:model-value="choosePreset(String($event))"
       />
       <AppButton variant="ghost" :disabled="!dirty" @click="editor.reset()">
