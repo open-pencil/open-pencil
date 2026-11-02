@@ -213,11 +213,7 @@
         "max": 260
       }
     ],
-    "open-pencil/no-core-parent-relative-imports": "error",
     "open-pencil/no-document-change-capture": "error",
-    "open-pencil/no-mcp-parent-relative-imports": "error",
-    "open-pencil/no-vue-parent-relative-imports": "error",
-    "open-pencil/no-cli-parent-relative-imports": "error",
     "open-pencil/no-core-self-package-imports": "error",
     "open-pencil/no-inline-prompt-constants": "error",
     "open-pencil/no-direct-graph-emitter-subscriptions": "error",
@@ -227,7 +223,33 @@
     "open-pencil/prefer-vueuse-timeouts": "error",
     "open-pencil/vue-component-file-pascal-case": "error",
     "open-pencil/component-namespace-casing": "error",
-    "open-pencil/no-mixed-case-acronym-identifiers": "error",
+    "open-pencil/no-mixed-case-acronym-identifiers": [
+      "error",
+      {
+        "ignoredImports": [
+          "@agentclientprotocol/sdk",
+          "@realfavicongenerator/generate-favicon",
+          "@tauri-apps/plugin-clipboard-manager",
+          "@tauri-apps/plugin-opener",
+          "@vueuse/core",
+          "culori",
+          "reka-ui"
+        ],
+        "ignoredIdentifiers": [
+          "convertToHsb",
+          "convertToHsl",
+          "convertToRgb",
+          "formatCss",
+          "formatRgb",
+          "McpServer",
+          "ndJsonStream",
+          "openUrl",
+          "useObjectUrl",
+          "useUrlSearchParams",
+          "writeHtml"
+        ]
+      }
+    ],
     "open-pencil/non-component-source-directories-kebab-case": "error",
     "open-pencil/no-component-root-sibling-folder": "error",
     "open-pencil/no-flat-kiwi-modules": "error",
@@ -441,6 +463,30 @@
   },
   "overrides": [
     {
+      "files": ["packages/core/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": ["error", { "minDepth": 1, "alias": "#core/*" }]
+      }
+    },
+    {
+      "files": ["packages/mcp/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": ["error", { "minDepth": 1, "alias": "#mcp/*" }]
+      }
+    },
+    {
+      "files": ["packages/vue/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": ["error", { "minDepth": 1, "alias": "#vue/*" }]
+      }
+    },
+    {
+      "files": ["packages/cli/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": ["error", { "minDepth": 1, "alias": "#cli/*" }]
+      }
+    },
+    {
       "files": ["packages/cloud/src/server/db/migrations/*.ts"],
       "rules": {
         "typescript/no-unnecessary-type-assertion": "off"
@@ -470,7 +516,7 @@
       "files": ["packages/cloud/src/server/**/*.ts"],
       "rules": {
         "open-pencil/no-raw-sql": "error",
-        "open-pencil/no-cloud-dynamic-html": "error"
+        "open-pencil/no-dynamic-html": "error"
       }
     },
     {
@@ -497,8 +543,8 @@
         "src/app/integrations/storage/cloud/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-cloud-secret-in-query": "error",
-        "open-pencil/no-cloud-secret-logging": "error"
+        "open-pencil/no-secret-in-query": "error",
+        "open-pencil/no-secret-logging": "error"
       }
     },
     {
@@ -508,7 +554,7 @@
       }
     },
     {
-      "files": ["tools/checks/lint/src/rules/quality/widen-then-assert.ts"],
+      "files": ["packages/oxlint-plugin/src/rules/quality/widen-then-assert.ts"],
       "rules": {
         "complexity": "off"
       }
@@ -516,7 +562,9 @@
     {
       "files": [
         "tools/checks/lint/src/**/*.ts",
-        "tools/checks/lint/tests/**/*.ts"
+        "tools/checks/lint/tests/**/*.ts",
+        "packages/oxlint-plugin/src/**/*.ts",
+        "packages/oxlint-plugin/tests/**/*.ts"
       ],
       "rules": {
         "open-pencil/no-generated-test-id-literals": "off",
@@ -542,7 +590,10 @@
     {
       "files": ["src/**/*.{ts,vue}", "packages/*/src/**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/valibot-schema-conventions": "error"
+        "open-pencil/valibot-schema-conventions": [
+          "error",
+          { "schemaModules": ["/packages/cloud/src/contract/"] }
+        ]
       }
     },
     {

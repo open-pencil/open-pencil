@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "declaration": true,
+    "declarationDir": "./dist/src",
+    "declarationMap": true,
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "types": ["bun"],
+    "paths": {
+      "#oxlint-plugin/*": ["./src/*"],
+      "#oxlint-plugin-tests/*": ["./tests/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
