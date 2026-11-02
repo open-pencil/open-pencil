@@ -1,8 +1,6 @@
 {
   "tab": "الفحص",
-  "tabCount": {
-    "input": "الأخطاء والتحذيرات: {count}"
-  },
+  "tabCount": "الأخطاء والتحذيرات: {count}",
   "scope": "النطاق",
   "scopePage": "الصفحة",
   "scopeSelection": "التحديد",
@@ -10,9 +8,7 @@
   "errors": "الأخطاء",
   "warnings": "التحذيرات",
   "suggestions": "الاقتراحات",
-  "filterBySeverity": {
-    "input": "إظهار {severity}"
-  },
+  "filterBySeverity": "إظهار {severity}",
   "filterSeverities": "تصفية حسب الخطورة",
   "showOnCanvas": "إظهار المشكلات على لوحة الرسم",
   "rules": "القواعد",
@@ -21,46 +17,30 @@
   "presetAccessibility": "إمكانية الوصول",
   "ruleActions": "إجراءات القاعدة",
   "turnOffRule": "إيقاف القاعدة",
-  "turnOnRules": {
-    "input": "تشغيل القواعد المتوقفة ({count})"
-  },
+  "turnOnRules": "تشغيل القواعد المتوقفة ({count})",
   "checking": "جارٍ الفحص…",
   "emptyPage": "لا توجد مشكلات في هذه الصفحة",
   "emptySelection": "لا توجد مشكلات في التحديد",
   "emptyDocument": "لا توجد مشكلات في هذا المستند",
-  "documentUnchecked": {
-    "input": "صفحات لم تُفحص بعد: {count}"
-  },
-  "onPage": {
-    "input": "في {page}"
-  },
-  "emptyDescription": {
-    "input": "تم الفحص بقواعد {preset}."
-  },
+  "documentUnchecked": "صفحات لم تُفحص بعد: {count}",
+  "onPage": "في {page}",
+  "emptyDescription": "تم الفحص بقواعد {preset}.",
   "noSelection": "حدّد طبقات لفحصها",
   "noSelectionDescription": "تظهر هنا المشكلات الموجودة داخل الطبقات المحددة.",
   "noFilteredIssues": "لا توجد مشكلات مطابقة لعوامل التصفية",
   "clearFilters": "إظهار كل المشكلات",
-  "showMore": {
-    "input": "إظهار {count} أخرى"
-  },
+  "showMore": "إظهار {count} أخرى",
   "hiddenLayer": "مخفية",
   "missingLayer": "طبقة محذوفة",
-  "markerMore": {
-    "input": "+{count} أخرى"
-  },
-  "markerLayers": {
-    "input": "الطبقات: {count}"
-  },
+  "markerMore": "+{count} أخرى",
+  "markerLayers": "الطبقات: {count}",
   "markerHint": "انقر للمراجعة",
   "edgeLeft": "خارج الشاشة إلى اليسار",
   "edgeRight": "خارج الشاشة إلى اليمين",
   "edgeAbove": "خارج الشاشة في الأعلى",
   "edgeBelow": "خارج الشاشة في الأسفل",
   "edgeHint": "انقر للانتقال إلى الأقرب",
-  "layerIssues": {
-    "input": "الأخطاء والتحذيرات: {count}"
-  },
+  "layerIssues": "الأخطاء والتحذيرات: {count}",
   "layerContainsIssues": "تحتوي على أخطاء أو تحذيرات",
   "ruleColorContrast": "تباين نص منخفض",
   "ruleColorContrastHelp": "يحتاج النص إلى نسبة تباين لا تقل عن 4.5:1 مع خلفيته لاستيفاء WCAG AA.",
@@ -70,60 +50,36 @@
   "ruleMinTextSizeHelp": "يصعب قراءة النص الأصغر من 12 px على معظم الشاشات.",
   "ruleConsistentSpacing": "تباعد خارج المقياس",
   "ruleConsistentSpacingHelp": "يجب أن تأتي مسافات وحشوات التخطيط التلقائي من مقياس التباعد أو من مضاعفات 4.",
-  "detailSpacingGap": {
-    "input": "المسافة {value}"
-  },
-  "detailSpacingTop": {
-    "input": "الحشوة العلوية {value}"
-  },
-  "detailSpacingRight": {
-    "input": "الحشوة اليمنى {value}"
-  },
-  "detailSpacingBottom": {
-    "input": "الحشوة السفلية {value}"
-  },
-  "detailSpacingLeft": {
-    "input": "الحشوة اليسرى {value}"
-  },
+  "detailSpacingGap": "المسافة {value}",
+  "detailSpacingTop": "الحشوة العلوية {value}",
+  "detailSpacingRight": "الحشوة اليمنى {value}",
+  "detailSpacingBottom": "الحشوة السفلية {value}",
+  "detailSpacingLeft": "الحشوة اليسرى {value}",
   "ruleConsistentRadius": "نصف قطر زاوية خارج المقياس",
   "ruleConsistentRadiusHelp": "يجب أن يأتي نصف قطر الزاوية من مقياس أنصاف الأقطار أو من متغيّر.",
   "ruleNoHardcodedColors": "لون غير مرتبط",
   "ruleNoHardcodedColorsHelp": "يطابق هذا اللون متغيّر لون. اربطه به لتصل تغييرات السمة ولوحة الألوان إلى هذه الطبقة.",
-  "detailStrokeColor": {
-    "input": "الحد: {variable}"
-  },
-  "bindVariable": {
-    "input": "ربط بـ {variable}"
-  },
-  "bindAll": {
-    "input": "ربط الكل ({count})"
-  },
+  "detailStrokeColor": "الحد: {variable}",
+  "bindVariable": "ربط بـ {variable}",
+  "bindAll": "ربط الكل ({count})",
   "fixRoundPixels": "تقريب إلى بكسلات كاملة",
-  "fixUseValue": {
-    "input": "تغيير إلى {value}"
-  },
+  "fixUseValue": "تغيير إلى {value}",
   "fixFullRadius": "استخدام نصف القطر الكامل",
   "fixConvertToFrame": "تحويل إلى إطار",
   "fixDeleteLayer": "حذف الطبقة",
-  "fixAll": {
-    "input": "إصلاح الكل ({count})"
-  },
+  "fixAll": "إصلاح الكل ({count})",
   "ruleNoDefaultNames": "اسم طبقة افتراضي",
   "ruleNoDefaultNamesHelp": "الأسماء الوصفية تجعل العثور على الطبقات وتسليمها وإعادة استخدامها أسهل.",
   "rulePreferAutoLayout": "بلا تخطيط تلقائي",
   "rulePreferAutoLayoutHelp": "الإطارات التي ترصّ عدة طبقات يتحسّن تغيير حجمها مع التخطيط التلقائي.",
-  "detailChildren": {
-    "input": "الطبقات: {children}"
-  },
+  "detailChildren": "الطبقات: {children}",
   "ruleTextStyleRequired": "نمط نص غير مرتبط",
   "ruleTextStyleRequiredHelp": "اربط حجم الخط أو عائلته بمتغيّر للحفاظ على اتساق الطباعة.",
   "ruleNoHiddenLayers": "طبقة مخفية",
   "ruleNoHiddenLayersHelp": "غالبًا ما تكون الطبقات المخفية بقايا. احذفها ما لم تحتج إليها إحدى الحالات.",
   "ruleNoDeeplyNested": "تداخل عميق",
   "ruleNoDeeplyNestedHelp": "يصعب تعديل الطبقات المتداخلة بعمق. سطّحها أو استخرج منها مكوّنًا.",
-  "detailDepth": {
-    "input": "المستويات: {depth}"
-  },
+  "detailDepth": "المستويات: {depth}",
   "ruleNoEmptyFrames": "إطار فارغ",
   "ruleNoEmptyFramesHelp": "الإطارات التي لا تحتوي على محتوى أو تعبئة تكون عادةً بقايا.",
   "rulePixelPerfect": "هندسة دون البكسل",

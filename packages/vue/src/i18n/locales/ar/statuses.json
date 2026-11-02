@@ -5,13 +5,9 @@
   "removeStatus": "إزالة الحالة",
   "editStatuses": "تعديل الحالات…",
   "mixed": "مختلطة",
-  "setFor": {
-    "input": "معيّنة لـ {count} من {total} طبقة"
-  },
+  "setFor": "معيّنة لـ {count} من {total} طبقة",
   "moveTo": "نقل إلى",
-  "hiddenInside": {
-    "input": "الحالة {state} مخفية ما دامت هذه الطبقة داخل {layer}"
-  },
+  "hiddenInside": "الحالة {state} مخفية ما دامت هذه الطبقة داخل {layer}",
   "remove": "إزالة",
   "presetHandoff": "تسليم Figma",
   "presetSimple": "بسيط",
@@ -22,13 +18,9 @@
   "color": "اللون",
   "newStatus": "حالة جديدة",
   "deleteStatus": "حذف الحالة",
-  "inUse": {
-    "input": "الحالة {state} مستخدمة في {layers}. انقلها إلى:"
-  },
+  "inUse": "الحالة {state} مستخدمة في {layers}. انقلها إلى:",
   "noStatus": "بلا حالة",
-  "figmaShows": {
-    "input": "تظهر في Figma بالحالة {status}"
-  },
+  "figmaShows": "تظهر في Figma بالحالة {status}",
   "readyForDev": "جاهز للتطوير",
   "completed": "مكتمل",
   "layerCount": {

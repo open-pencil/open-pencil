@@ -15,20 +15,12 @@
   "accentCustom": "لون مخصص",
   "toolbar": "شريط الأدوات",
   "toolbarDescription": "اسحب الأدوات لإعادة ترتيبها، وأفلت أداة فوق أخرى لوضعهما معًا في قائمة. تحتفظ الأدوات المخفية باختصاراتها.",
-  "toolbarShow": {
-    "input": "إظهار {tool}"
-  },
-  "toolbarReorder": {
-    "input": "إعادة ترتيب {tool}"
-  },
-  "toolbarOptions": {
-    "input": "خيارات {tool}"
-  },
+  "toolbarShow": "إظهار {tool}",
+  "toolbarReorder": "إعادة ترتيب {tool}",
+  "toolbarOptions": "خيارات {tool}",
   "toolbarMoveUp": "نقل لأعلى",
   "toolbarMoveDown": "نقل لأسفل",
-  "toolbarGroupWith": {
-    "input": "تجميع مع {tool}"
-  },
+  "toolbarGroupWith": "تجميع مع {tool}",
   "toolbarUngroup": "فك التجميع",
   "toolbarReset": "إعادة التعيين إلى الافتراضي",
   "resetToDefault": "إعادة التعيين إلى الافتراضي",
@@ -46,9 +38,7 @@
   "recentFilesDescription": "اختر عدد الملفات التي تُحفظ في القائمة الأخيرة وقائمة «فتح الأخيرة».",
   "recentFilesLimit": "عدد الملفات الأخيرة",
   "recentFilesLimitCustom": "مخصص…",
-  "recentFilesLimitRange": {
-    "input": "أدخل عددًا صحيحًا من {min} إلى {max}."
-  },
+  "recentFilesLimitRange": "أدخل عددًا صحيحًا من {min} إلى {max}.",
   "languageDescription": "اختر اللغة المستخدمة في واجهة التطبيق.",
   "editing": "التحرير",
   "snappingDescription": "التحكم في المحاذاة أثناء تحرير المسارات ونقل الطبقات وتغيير حجمها.",

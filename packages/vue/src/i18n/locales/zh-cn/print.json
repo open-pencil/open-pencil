@@ -7,12 +7,8 @@
   "product": "印刷品",
   "toDieline": "转换为刀版",
   "toDielineHint": "带出血、安全区、裁切线和折线的印刷就绪文件",
-  "done": {
-    "input": "已创建 {count} 个"
-  },
-  "failed": {
-    "input": "无法适配设计：{error}"
-  },
+  "done": "已创建 {count} 个",
+  "failed": "无法适配设计：{error}",
   "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
   "productBusinessCardEu": "Business card 85×55 mm (Europe)",
   "productBusinessCardUs": "Business card 3.5×2 in (US)",

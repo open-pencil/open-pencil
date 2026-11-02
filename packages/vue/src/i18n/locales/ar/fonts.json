@@ -1,9 +1,7 @@
 {
   "settingsTitle": "إعدادات الخطوط",
   "issueFound": "وجه خط واحد غير متاح أو مُستبدَل",
-  "issuesFound": {
-    "input": "{count} من أوجه الخطوط غير متاحة أو مُستبدَلة"
-  },
+  "issuesFound": "{count} من أوجه الخطوط غير متاحة أو مُستبدَلة",
   "selectAffectedLayers": "تحديد الطبقات",
   "retry": "إعادة محاولة الخطوط",
   "retrying": "جارٍ إعادة المحاولة…",
@@ -13,9 +11,7 @@
   "unsupportedFormatShort": "تنسيق غير مدعوم",
   "unsupportedFormat": "مُثبَّت، لكن بتنسيق لا يستطيع Lawha رسمه بعد",
   "affectedLayer": "طبقة واحدة متأثرة",
-  "affectedLayerCount": {
-    "input": "{count} طبقات متأثرة"
-  },
+  "affectedLayerCount": "{count} طبقات متأثرة",
   "settingsDesktopDescription": "الوصول إلى خطوط النظام والمزوّدين عبر الإنترنت وحزم الخطوط البديلة والتنزيلات المخزّنة مؤقتًا.",
   "settingsBrowserDescription": "السماح للمتصفح بالوصول إلى الخطوط المحلية وإدارة مزوّدي الخطوط عبر الإنترنت.",
   "localFonts": "الخطوط المحلية",
@@ -41,12 +37,8 @@
   "localFontAccessNotGranted": "لم يُمنح الوصول إلى الخطوط المحلية.",
   "onlineFontProvidersEnabled": "تم تفعيل مزوّدي الخطوط عبر الإنترنت.",
   "onlineFontProvidersDisabled": "تم تعطيل مزوّدي الخطوط عبر الإنترنت.",
-  "providerEnabled": {
-    "input": "تم تفعيل {provider}."
-  },
-  "providerDisabled": {
-    "input": "تم تعطيل {provider}."
-  },
+  "providerEnabled": "تم تفعيل {provider}.",
+  "providerDisabled": "تم تعطيل {provider}.",
   "fallbackDownloaded": "تم تنزيل الخطوط البديلة.",
   "fallbackDownloadFailed": "تعذّر تنزيل الخطوط البديلة.",
   "downloadedFontCacheCleared": "تم مسح ذاكرة الخطوط المنزّلة المؤقتة.",

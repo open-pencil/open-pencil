@@ -8,26 +8,16 @@
   "importToCanvas": "استيراد إلى لوحة الرسم",
   "newTab": "علامة تبويب جديدة",
   "home": "الرئيسية",
-  "closeTab": {
-    "input": "إغلاق {name}"
-  },
+  "closeTab": "إغلاق {name}",
   "unsavedChanges": "تغييرات غير محفوظة",
-  "saveBeforeClosing": {
-    "input": "هل تريد حفظ التغييرات في «{name}»؟"
-  },
+  "saveBeforeClosing": "هل تريد حفظ التغييرات في «{name}»؟",
   "saveBeforeClosingDescription": "ستُفقد تغييراتك إذا أغلقت دون حفظ.",
   "discard": "عدم الحفظ",
   "clipboardImageUnavailableWeb": "يتضمن التصميم الملصق صورة واحدة لا يمكن تحميلها في تطبيق الويب. استخدم تطبيق سطح المكتب لتضمينها.",
-  "clipboardImagesUnavailableWeb": {
-    "input": "يتضمن التصميم الملصق {count} صور لا يمكن تحميلها في تطبيق الويب. استخدم تطبيق سطح المكتب لتضمينها."
-  },
+  "clipboardImagesUnavailableWeb": "يتضمن التصميم الملصق {count} صور لا يمكن تحميلها في تطبيق الويب. استخدم تطبيق سطح المكتب لتضمينها.",
   "clipboardImageFetchFailed": "فشل جلب صورة واحدة من Figma. تحقق من إمكانية الوصول إلى الملف المصدر وحاول مرة أخرى.",
-  "clipboardImagesFetchFailed": {
-    "input": "فشل جلب {count} صور من Figma. تحقق من إمكانية الوصول إلى الملف المصدر وحاول مرة أخرى."
-  },
-  "mermaidPasteFailed": {
-    "input": "تعذّرت قراءة مخطط Mermaid. {error}"
-  },
+  "clipboardImagesFetchFailed": "فشل جلب {count} صور من Figma. تحقق من إمكانية الوصول إلى الملف المصدر وحاول مرة أخرى.",
+  "mermaidPasteFailed": "تعذّرت قراءة مخطط Mermaid. {error}",
   "recentFiles": "الملفات الأخيرة",
   "recentFilesDescription": "تابع العمل على تصميم أو ابدأ تصميمًا جديدًا.",
   "noRecentFiles": "لا توجد ملفات حديثة بعد",
@@ -42,23 +32,13 @@
   "createBoard": "لوحة",
   "allFiles": "كل الملفات",
   "fileKind": "نوع الملف",
-  "createIn": {
-    "input": "يُنشئه في {place}"
-  },
-  "noMatchingFiles": {
-    "input": "لا توجد ملفات تطابق «{query}»."
-  },
-  "documentActions": {
-    "input": "إجراءات {name}"
-  },
+  "createIn": "يُنشئه في {place}",
+  "noMatchingFiles": "لا توجد ملفات تطابق «{query}».",
+  "documentActions": "إجراءات {name}",
   "deleteDocument": "حذف",
-  "deleteDocumentConfirmation": {
-    "input": "هل تريد حذف «{name}»؟"
-  },
+  "deleteDocumentConfirmation": "هل تريد حذف «{name}»؟",
   "deleteDocumentDescription": "يُحذف المستند لدى كل من يمكنه فتحه. لا يمكن التراجع عن ذلك.",
-  "deleteDocumentFailed": {
-    "input": "تعذّر حذف «{name}». حاول مرة أخرى."
-  },
+  "deleteDocumentFailed": "تعذّر حذف «{name}». حاول مرة أخرى.",
   "saveAsPrompt": "حفظ باسم:",
   "browserFileAPINotSupported": "لا يدعم متصفحك واجهة API للملفات المحلية. سيتم تنزيل الملفات بدلًا من حفظها في مكانها."
 }

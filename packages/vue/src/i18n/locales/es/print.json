@@ -7,12 +7,8 @@
   "product": "Producto impreso",
   "toDieline": "Convertir a troquel",
   "toDielineHint": "Pliego listo para imprenta con sangrado, zona segura y líneas de corte y plegado",
-  "done": {
-    "input": "Creados: {count}"
-  },
-  "failed": {
-    "input": "No se pudo adaptar el diseño: {error}"
-  },
+  "done": "Creados: {count}",
+  "failed": "No se pudo adaptar el diseño: {error}",
   "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
   "productBusinessCardEu": "Business card 85×55 mm (Europe)",
   "productBusinessCardUs": "Business card 3.5×2 in (US)",

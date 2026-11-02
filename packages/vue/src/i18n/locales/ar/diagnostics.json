@@ -18,24 +18,12 @@
   "documentFailed": "فشلت عملية المستند",
   "acpFailed": "فشل نقل ACP",
   "mcpFailed": "فشل اتصال MCP",
-  "modelStep": {
-    "input": "خطوة النموذج · {model}"
-  },
-  "modelStepTokens": {
-    "input": "{input} إدخال · {output} إخراج من الرموز"
-  },
-  "toolCompleted": {
-    "input": "الأداة: {tool}"
-  },
-  "toolFailed": {
-    "input": "فشلت الأداة: {tool}"
-  },
-  "durationMs": {
-    "input": "{ms} مللي ثانية"
-  },
-  "runtimeError": {
-    "input": "خطأ: {name}"
-  },
+  "modelStep": "خطوة النموذج · {model}",
+  "modelStepTokens": "{input} إدخال · {output} إخراج من الرموز",
+  "toolCompleted": "الأداة: {tool}",
+  "toolFailed": "فشلت الأداة: {tool}",
+  "durationMs": "{ms} مللي ثانية",
+  "runtimeError": "خطأ: {name}",
   "preparationDocumentOpen": "فتح المستند",
   "preparationDocumentReload": "إعادة تحميل المستند",
   "preparationRecoveryRestore": "استعادة المستند المسترجَع",
@@ -44,15 +32,9 @@
   "preparationFontRetry": "إعادة محاولة الخطوط",
   "preparationDomImport": "استيراد HTML",
   "preparationDemoLoad": "تحميل مستند تجريبي",
-  "preparationCompleted": {
-    "input": "اكتمل · {duration}"
-  },
-  "preparationCancelled": {
-    "input": "أُلغي: {reason} · {duration}"
-  },
-  "preparationFailed": {
-    "input": "فشل: {code} · {duration}"
-  },
+  "preparationCompleted": "اكتمل · {duration}",
+  "preparationCancelled": "أُلغي: {reason} · {duration}",
+  "preparationFailed": "فشل: {code} · {duration}",
   "filterLevel": "مستوى الحدث",
   "filterAll": "الكل",
   "filterProblems": "الأخطاء والتحذيرات",
@@ -69,23 +51,17 @@
   "categoryRuntime": "وقت التشغيل",
   "noMatchingEvents": "لا توجد أحداث تطابق عوامل التصفية هذه.",
   "showMore": "عرض المزيد",
-  "showingEvents": {
-    "input": "{shown} من {total}"
-  },
+  "showingEvents": "{shown} من {total}",
   "retention": "مدة الاحتفاظ بالتشخيصات",
   "retentionCustom": "مخصّص…",
-  "retentionRange": {
-    "input": "أدخل عددًا صحيحًا من {min} إلى {max}."
-  },
+  "retentionRange": "أدخل عددًا صحيحًا من {min} إلى {max}.",
   "retentionDescription": "الاحتفاظ محليًا بهذا العدد كحد أقصى من الأحداث الأخيرة.",
   "description": "تخزين الأحداث التقنية محليًا للمساعدة في استكشاف مشكلات Lawha وإصلاحها. تُستثنى الطلبات النصية ومحتوى التصميم وبيانات الاعتماد ومفاتيح API.",
   "localDiagnostics": "التشخيصات المحلية",
   "localDiagnosticsDescription": "الاحتفاظ بالأحداث التقنية الأخيرة على هذا الجهاز.",
   "usageHistory": "سجل الاستخدام",
   "usageHistoryDescription": "الاحتفاظ بملخصات استخدام الذكاء الاصطناعي محليًا.",
-  "eventCount": {
-    "input": "{count} حدث · {size} كيلوبايت"
-  },
+  "eventCount": "{count} حدث · {size} كيلوبايت",
   "copy": "نسخ التشخيصات",
   "save": "حفظ التشخيصات…",
   "clear": "مسح",

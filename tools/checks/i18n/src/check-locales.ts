@@ -166,6 +166,12 @@ for (const [locale, dir] of expectedLocaleDirs) {
       }
       const source = sourceMessage(defaults[key as keyof typeof defaults])
       const localized = data[key]
+      // A message with {params} is a plain string in locale files; any other shape is shown to
+      // users as raw JSON and would otherwise skip every check below.
+      if (source !== null && typeof localized !== 'string') {
+        report(`${baselineLocaleId(locale)}:${namespace}.${key}: must be a plain string`)
+        continue
+      }
       if (source === null || typeof localized !== 'string') continue
       total++
       const id = `${baselineLocaleId(locale)}:${namespace}.${key}`

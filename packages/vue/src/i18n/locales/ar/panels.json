@@ -19,12 +19,8 @@
   "enableLibrary": "تفعيل المكتبة",
   "disableLibrary": "تعطيل المكتبة",
   "noLibraries": "لا توجد مكتبات منشورة",
-  "libraryAssetCount": {
-    "input": "الأصول: {count}"
-  },
-  "libraryInstanceCount": {
-    "input": "النسخ: {count}"
-  },
+  "libraryAssetCount": "الأصول: {count}",
+  "libraryInstanceCount": "النسخ: {count}",
   "libraryUpdateAvailable": "يتوفر تحديث",
   "applyLibraryUpdate": "تطبيق التحديث",
   "browseLibraries": "تصفّح المكتبات",
@@ -42,18 +38,14 @@
   "overlayOpacity": "شفافية التراكب",
   "loadingUpdatePreview": "جارٍ تحميل معاينة التحديث…",
   "updateInstance": "تحديث النسخة",
-  "libraryInstancePosition": {
-    "input": "{current} من {total} نسخة"
-  },
+  "libraryInstancePosition": "{current} من {total} نسخة",
   "previousLibraryInstance": "النسخة السابقة",
   "nextLibraryInstance": "النسخة التالية",
   "libraryVariantFallbackWarning": "متغيّر الشكل المطابق غير متاح في المكتبة المحدّثة. سيُستخدم متغيّر الشكل الافتراضي.",
   "reviewLibraryUpdate": "مراجعة تحديث المكتبة",
   "reviewLibraryUpdateDescription": "قارن النسخ الحالية والمحدّثة قبل قبول التغييرات.",
   "noLibraryAssetChanges": "لا توجد تغييرات في الأصول",
-  "libraryUpdateImpact": {
-    "input": "النسخ المتأثرة: {affected} · بدائل متغيّرات الشكل: {fallback}"
-  },
+  "libraryUpdateImpact": "النسخ المتأثرة: {affected} · بدائل متغيّرات الشكل: {fallback}",
   "publishLibrary": "نشر المكتبة",
   "publishingLibrary": "جارٍ النشر…",
   "publishLibraryHelp": "انشر مكوّنات هذا الملف كمراجعة غير قابلة للتغيير.",
@@ -76,9 +68,7 @@
   "storageNotConfigured": "لم يُهيّأ التخزين",
   "storageLibrariesUnavailable": "لا يدعم مزوّد التخزين هذا المكتبات",
   "preferLibrary": "تفضيل هذه المكتبة",
-  "assetVariantSummary": {
-    "input": "متغيّرات الشكل: {count} · {names}"
-  },
+  "assetVariantSummary": "متغيّرات الشكل: {count} · {names}",
   "duplicateVariantValues": "قيم متغيّرات شكل مكرّرة",
   "addVariantProperty": "إضافة خاصية متغيّر شكل",
   "addVariant": "إضافة متغيّر شكل",
@@ -95,30 +85,20 @@
   "openDocs": "فتح الوثائق",
   "properties": "الخصائص",
   "componentPropertyVariant": "متغيّر شكل",
-  "variantsShareValues": {
-    "input": "متغيّرات الشكل التي تشترك في {values}: {count}"
-  },
+  "variantsShareValues": "متغيّرات الشكل التي تشترك في {values}: {count}",
   "selectVariants": "تحديد",
-  "removeVariantValue": {
-    "input": "إزالة {value}"
-  },
-  "moveVariantsTo": {
-    "input": "نقل متغيّرات الشكل ذات القيمة {value} إلى"
-  },
+  "removeVariantValue": "إزالة {value}",
+  "moveVariantsTo": "نقل متغيّرات الشكل ذات القيمة {value} إلى",
   "addVariantValue": "إضافة قيمة",
   "variantValues": "القيم",
   "componentPropertyText": "نص",
   "componentPropertyBoolean": "منطقية",
   "componentPropertySwap": "تبديل النسخة",
   "createComponentProperty": "إنشاء خاصية…",
-  "applyComponentProperty": {
-    "input": "تطبيق خاصية المكوّن على {field}"
-  },
+  "applyComponentProperty": "تطبيق خاصية المكوّن على {field}",
   "applyVariableOrProperty": "تطبيق متغيّر/خاصية",
   "applyVariableToTextContent": "تطبيق متغيّر على محتوى النص",
-  "propertiesInComponent": {
-    "input": "الخصائص في {name}"
-  },
+  "propertiesInComponent": "الخصائص في {name}",
   "goToComponentProperty": "الانتقال إلى الخاصية",
   "detachComponentProperty": "فصل الخاصية",
   "deleteComponentProperty": "حذف الخاصية",
@@ -130,18 +110,12 @@
   "layerVisibility": "الظهور",
   "nestedInstance": "نسخة",
   "nestedInstances": "النسخ المتداخلة",
-  "hideNestedInstance": {
-    "input": "إيقاف إظهار {name}"
-  },
+  "hideNestedInstance": "إيقاف إظهار {name}",
   "nothingToExpose": "لا يحتوي مكوّنها على خصائص لإظهارها",
-  "showLayer": {
-    "input": "إظهار {name}"
-  },
+  "showLayer": "إظهار {name}",
   "content": "المحتوى",
   "allVariants": "كل متغيّرات الشكل",
-  "usedInVariants": {
-    "input": "{count} من {total} متغيّر شكل"
-  },
+  "usedInVariants": "{count} من {total} متغيّر شكل",
   "xAxis": "المحور X",
   "yAxis": "المحور Y",
   "rotation": "التدوير",
@@ -150,14 +124,10 @@
   "opacity": "الشفافية",
   "blendMode": "وضع الدمج",
   "applyVariableMode": "تطبيق وضع المتغيّر",
-  "removeVariableMode": {
-    "input": "إزالة وضع {collection}"
-  },
+  "removeVariableMode": "إزالة وضع {collection}",
   "variableModesInFile": "مُنشأة في هذا الملف",
   "variableModesFromLibraries": "من المكتبات",
-  "variableModeAuto": {
-    "input": "تلقائي ({mode})"
-  },
+  "variableModeAuto": "تلقائي ({mode})",
   "variableModeAutoMixed": "تلقائي",
   "variableModeHeading": "الوضع",
   "radius": "نصف القطر",
@@ -200,9 +170,7 @@
   "resetIcon": "إعادة التعيين إلى الأيقونة الأصلية",
   "detachIcon": "فصل الأيقونة",
   "swapEditedIconHeading": "تجاهل تعديلاتك؟",
-  "swapEditedIconDescription": {
-    "input": "يرسم التبديل {name} مكان هذه الأيقونة ويتجاهل التغييرات التي أُجريت على مساراتها."
-  },
+  "swapEditedIconDescription": "يرسم التبديل {name} مكان هذه الأيقونة ويتجاهل التغييرات التي أُجريت على مساراتها.",
   "export": "تصدير",
   "typography": "الطباعة",
   "fontFamily": "عائلة الخط",
@@ -303,9 +271,7 @@
   "selectLayers": "تحديد الطبقات",
   "resetSlot": "إعادة تعيين الفتحة",
   "deleteSlotContents": "حذف المحتويات",
-  "slotActions": {
-    "input": "إجراءات {name}"
-  },
+  "slotActions": "إجراءات {name}",
   "behaviour": "السلوك",
   "addBehaviour": "إضافة سلوك",
   "removeBehaviour": "إزالة السلوك",
@@ -349,9 +315,7 @@
   "behaviourPressed": "مضغوط",
   "behaviourAddTextLayer": "إضافة طبقة نص",
   "behaviourAddVariants": "إضافة متغيّرَي الإيقاف والتشغيل",
-  "behaviourAddSlot": {
-    "input": "إضافة فتحة {name}"
-  },
+  "behaviourAddSlot": "إضافة فتحة {name}",
   "behaviourMoreOptions": "مزيد من الخيارات",
   "behaviourValue": "القيمة",
   "behaviourDisabled": "معطّل",
@@ -373,9 +337,7 @@
   "behaviourMax": "الحد الأقصى",
   "behaviourStep": "الخطوة",
   "behaviourStart": "البداية",
-  "behaviourNextStep": {
-    "input": "لا يزال مطلوبًا: {names}."
-  },
+  "behaviourNextStep": "لا يزال مطلوبًا: {names}.",
   "behaviourStatesHint": "تُرسم مظاهر التمرير والضغط والتركيز والتعطيل كمتغيّرات شكل.",
   "behaviourAddStates": "إضافة متغيّرات الحالات",
   "behaviourButton": "زر",
@@ -387,9 +349,7 @@
   "behaviourStateFocus": "تركيز",
   "behaviourStateDisabled": "معطّل",
   "behaviourStateUnset": "بلا",
-  "behaviourStateField": {
-    "input": "حالة {state}"
-  },
+  "behaviourStateField": "حالة {state}",
   "searchComponentProperties": "البحث في الخصائص",
   "noComponentProperties": "لم يُعثر على خصائص",
   "slots": "الفتحات",
@@ -546,12 +506,8 @@
   "create": "إنشاء",
   "add": "إضافة",
   "createVariable": "إنشاء متغيّر",
-  "createColorVariable": {
-    "input": "إنشاء متغيّر لون من {value}"
-  },
-  "createNumberVariable": {
-    "input": "إنشاء متغيّر رقمي من {value}"
-  },
+  "createColorVariable": "إنشاء متغيّر لون من {value}",
+  "createNumberVariable": "إنشاء متغيّر رقمي من {value}",
   "variableName": "اسم المتغيّر",
   "mixed": "مختلط",
   "none": "بلا",
@@ -560,12 +516,8 @@
   "textStyle": "نمط النص",
   "effectStyle": "نمط التأثير",
   "gridStyle": "نمط الشبكة",
-  "missingStyle": {
-    "input": "نمط مفقود ({id})"
-  },
-  "selectedCount": {
-    "input": "المحدد: {count}"
-  },
+  "missingStyle": "نمط مفقود ({id})",
+  "selectedCount": "المحدد: {count}",
   "goToMainComponent": "الانتقال إلى المكوّن الرئيسي",
   "gap": "المسافة",
   "solid": "لون خالص",
@@ -593,9 +545,7 @@
   "colorHintHsl": "H تدرّج اللون · S التشبّع · L الإضاءة",
   "colorHintHsb": "H تدرّج اللون · S التشبّع · B السطوع",
   "colorHintOkhcl": "H تدرّج اللون · C الصفاء اللوني · L الإضاءة · A ألفا",
-  "colorPreviewClipped": {
-    "input": "مقصوص إلى نطاق ألوان معاينة {space}"
-  },
+  "colorPreviewClipped": "مقصوص إلى نطاق ألوان معاينة {space}",
   "rulers": "المساطر",
   "multiplayerCursors": "مؤشرات المتعاونين",
   "direction": "الاتجاه",
@@ -666,18 +616,10 @@
   "gridAlignBottom": "أسفل",
   "gridAlignCenter": "وسط",
   "gridAlignStretch": "تمديد",
-  "gridSummaryColumns": {
-    "input": "الأعمدة: {count}"
-  },
-  "gridSummaryRows": {
-    "input": "الصفوف: {count}"
-  },
-  "gridSummaryGrid": {
-    "input": "شبكة {size}px"
-  },
-  "gridSummaryFixed": {
-    "input": "{summary} ({size}px)"
-  },
+  "gridSummaryColumns": "الأعمدة: {count}",
+  "gridSummaryRows": "الصفوف: {count}",
+  "gridSummaryGrid": "شبكة {size}px",
+  "gridSummaryFixed": "{summary} ({size}px)",
   "searchFonts": "البحث في الخطوط…",
   "noFontsFound": "لم يُعثر على خطوط",
   "searchIcons": "البحث في الأيقونات…",
@@ -698,23 +640,13 @@
   "stockPhoto": "صورة مخزّنة",
   "searchPhotos": "البحث في الصور…",
   "noPhotosFound": "لم يُعثر على صور",
-  "photoSearchHint": {
-    "input": "اكتب للبحث في الصور المجانية على {service}"
-  },
-  "photoSearchFailed": {
-    "input": "تعذّر البحث في {service}. تحقّق من اتصالك ومفتاحك."
-  },
+  "photoSearchHint": "اكتب للبحث في الصور المجانية على {service}",
+  "photoSearchFailed": "تعذّر البحث في {service}. تحقّق من اتصالك ومفتاحك.",
   "insertPhotoFailed": "تعذّر إدراج الصورة.",
   "photoService": "خدمة الصور",
-  "photoCredit": {
-    "input": "صورة بواسطة {photographer} على {service}"
-  },
-  "photoKeyHeading": {
-    "input": "ربط {service}"
-  },
-  "photoKeyDescription": {
-    "input": "صور {service} مجانية الاستخدام. أضف مفتاح API المجاني الخاص بها في الإعدادات للبحث فيها هنا."
-  },
+  "photoCredit": "صورة بواسطة {photographer} على {service}",
+  "photoKeyHeading": "ربط {service}",
+  "photoKeyDescription": "صور {service} مجانية الاستخدام. أضف مفتاح API المجاني الخاص بها في الإعدادات للبحث فيها هنا.",
   "photoKeyAction": "فتح الإعدادات",
   "iconResultCount": {
     "zero": "لا توجد نتائج",
@@ -724,9 +656,7 @@
     "many": "{count} نتيجة",
     "other": "{count} نتيجة"
   },
-  "iconResultCountCapped": {
-    "input": "{count}+ نتيجة"
-  },
+  "iconResultCountCapped": "{count}+ نتيجة",
   "noLocalFontsAvailable": "لا تتوفر خطوط محلية.",
   "localFontsAccessHint": "استخدم تطبيق سطح المكتب أو Chrome/Edge للوصول إلى خطوط النظام.",
   "editColor": "تعديل اللون",

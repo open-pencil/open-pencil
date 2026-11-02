@@ -7,12 +7,8 @@
   "product": "Produkt drukowany",
   "toDieline": "Zamień na wykrojnik",
   "toDielineHint": "Arkusz gotowy do druku ze spadami, polem bezpiecznym, liniami cięcia i bigowania",
-  "done": {
-    "input": "Utworzono: {count}"
-  },
-  "failed": {
-    "input": "Nie udało się dostosować projektu: {error}"
-  },
+  "done": "Utworzono: {count}",
+  "failed": "Nie udało się dostosować projektu: {error}",
   "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
   "productBusinessCardEu": "Business card 85×55 mm (Europe)",
   "productBusinessCardUs": "Business card 3.5×2 in (US)",

@@ -6,9 +6,7 @@
   "mcpFailureNotInstalled": "خادم MCP غير مثبّت",
   "mcpFailureNotInstalledHint": "يُثبَّت خادم MCP بشكل منفصل للحفاظ على صغر حجم تنزيل Lawha.",
   "mcpFailureOutdated": "خادم MCP لا يتوافق مع هذا الإصدار من Lawha",
-  "mcpFailureOutdatedHint": {
-    "input": "خادم MCP المثبّت هو {running}، ويحتاج هذا الإصدار من Lawha إلى {version}. يُثبَّت الخادم بشكل منفصل للحفاظ على صغر حجم التنزيل، لذا لا يتحدّث مع التطبيق."
-  },
+  "mcpFailureOutdatedHint": "خادم MCP المثبّت هو {running}، ويحتاج هذا الإصدار من Lawha إلى {version}. يُثبَّت الخادم بشكل منفصل للحفاظ على صغر حجم التنزيل، لذا لا يتحدّث مع التطبيق.",
   "mcpInstallByHand": "ثبّته من الطرفية، أو انسخ موجّهًا يطلب من وكيلك القيام بذلك.",
   "mcpCopyAgentPrompt": "نسخ موجّه لوكيلك",
   "mcpUpdating": "جارٍ التحديث…",
@@ -23,9 +21,7 @@
   "mcpFailureMalformed": "أعاد خادم MCP استجابة غير متوقعة",
   "mcpFailureMalformedHint": "أعد تشغيله. إذا تكرّر ذلك، فانسخ التفاصيل وأبلغ عن المشكلة.",
   "mcpFailureUnreachable": "تعذّر الوصول إلى خادم MCP",
-  "mcpFailureUnreachableHint": {
-    "input": "لا شيء يستجيب على {endpoint}. أعد تشغيل الخادم؛ وإذا كان تطبيق آخر يستخدم هذا العنوان، فأغلقه أولًا."
-  },
+  "mcpFailureUnreachableHint": "لا شيء يستجيب على {endpoint}. أعد تشغيل الخادم؛ وإذا كان تطبيق آخر يستخدم هذا العنوان، فأغلقه أولًا.",
   "mcpFailureUnknown": "تعذّر تشغيل خادم MCP",
   "mcpFailureUnknownHint": "شغّله مرة أخرى، أو راجع تفاصيل التشخيص أدناه.",
   "mcpFailureDetails": "التفاصيل",
@@ -76,9 +72,7 @@
   "useDefaultRoot": "استخدام الافتراضي",
   "rootDirectoryDescription": "أدوات الملفات مقصورة على هذا المجلد. أعد تشغيل خادم MCP لتطبيق التغييرات.",
   "tools": "الأدوات المتاحة",
-  "toolsEnabled": {
-    "input": "{enabled} من {total} مفعّلة"
-  },
+  "toolsEnabled": "{enabled} من {total} مفعّلة",
   "enableAllTools": "تفعيل الكل",
   "searchTools": "البحث في الأدوات",
   "readOnlyTools": "أدوات للقراءة فقط",

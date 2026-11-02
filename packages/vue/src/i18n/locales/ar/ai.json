@@ -11,21 +11,15 @@
   "notificationsBlocked": "الإشعارات محظورة لهذا الموقع. اسمح بها من إعدادات الموقع في المتصفح.",
   "notificationsUnsupported": "لا يستطيع هذا المتصفح عرض الإشعارات.",
   "notificationsSystemHint": "إن لم يظهر أي منها، فاسمح لـ Lawha في إعدادات الإشعارات بنظامك.",
-  "notifyTitle": {
-    "input": "{agent} · {document}"
-  },
+  "notifyTitle": "{agent} · {document}",
   "notifyPermission": "يطلب إذنًا.",
-  "notifyPermissionAction": {
-    "input": "يطلب إذنًا: {action}"
-  },
+  "notifyPermissionAction": "يطلب إذنًا: {action}",
   "notifyReplyFinished": "اكتمل رد الذكاء الاصطناعي.",
   "notifyReplyFailed": "توقف رد الذكاء الاصطناعي بسبب خطأ.",
   "maxAgentSteps": "الحد الأقصى للخطوات لكل رسالة",
   "maxAgentStepsCustom": "مخصص…",
   "maxAgentStepsHint": "للذكاء الاصطناعي المدمج فقط؛ يتحكم ACP وPi في حدودهما الخاصة. يُحفظ عند الضغط على Enter أو مغادرة الحقل، ويُطبَّق على الرسالة التالية. قد تزيد الحدود الأعلى التكلفة.",
-  "maxAgentStepsRange": {
-    "input": "أدخل عددًا صحيحًا من {min} إلى {max}."
-  },
+  "maxAgentStepsRange": "أدخل عددًا صحيحًا من {min} إلى {max}.",
   "reasoningDisplay": "عرض الاستدلال",
   "reasoningCollapsed": "مطويّ افتراضيًا",
   "reasoningWhileThinking": "توسيع أثناء التفكير",
@@ -50,18 +44,14 @@
   "saveChatTitle": "حفظ",
   "cancelChatAction": "إلغاء",
   "deleteChatConfirmation": "حذف هذه المحادثة نهائيًا؟",
-  "deleteChatDescription": {
-    "input": "ستُزال «{title}» ورسائلها. لا يمكن التراجع عن ذلك."
-  },
+  "deleteChatDescription": "ستُزال «{title}» ورسائلها. لا يمكن التراجع عن ذلك.",
   "chatDocumentHint": "افتح مستند المحادثة لمتابعتها.",
   "chatReadOnly": "تنتمي هذه المحادثة إلى مستند آخر. افتح مستندها للمتابعة.",
   "chatAgentReadOnly": "نص محادثة هذا الوكيل محفوظ، لكن لا يمكن استئناف جلسته هنا بعد. ابدأ محادثة جديدة لمواصلة العمل.",
   "chatStorageFailed": "تعذّر حفظ سجل المحادثات. أبقِ هذه النافذة مفتوحة وحاول مرة أخرى.",
   "chatHistoryFailed": "تعذّر تحديث سجل المحادثات. حاول مرة أخرى.",
   "chatInterrupted": "انقطع هذا الرد.",
-  "chatAgentWorkingOn": {
-    "input": "يعمل {agent} على «{page}»"
-  },
+  "chatAgentWorkingOn": "يعمل {agent} على «{page}»",
   "chatGoToPage": "الانتقال إلى الصفحة",
   "connectProvider": "اربط مزوّد ذكاء اصطناعي لبدء المحادثة.",
   "connectionTestSuccess": "تم الاتصال بنجاح. يمكن الوصول إلى النموذج.",
@@ -79,44 +69,32 @@
   "connectionTestBrowserNetworkFailed": "تعذّر الوصول إلى نقطة النهاية هذه من المتصفح. جرّب تطبيق سطح المكتب أو استخدم نقطة نهاية تدعم CORS.",
   "connectionTestNetworkFailed": "تعذّر الوصول إلى نقطة النهاية. تحقق من URL واتصالك بالشبكة.",
   "connectionTestUnknownFailed": "فشل اختبار الاتصال. تحقق من إعدادات المزوّد وحاول مرة أخرى.",
-  "getProviderAPIKey": {
-    "input": "احصل على مفتاح API من {provider} ←"
-  },
+  "getProviderAPIKey": "احصل على مفتاح API من {provider} ←",
   "oneKeyManyModels": "مفتاح واحد لأكثر من 100 نموذج من جميع المزوّدين.",
   "describeChange": "صف تغييرًا…",
   "describeCreateOrChange": "صف ما تريد إنشاءه أو تغييره.",
   "stopGenerating": "إيقاف التوليد",
   "sendMessage": "إرسال الرسالة",
   "attachImages": "إرفاق صور",
-  "removeImageAttachment": {
-    "input": "إزالة الصورة {name}"
-  },
+  "removeImageAttachment": "إزالة الصورة {name}",
   "dropImagesToAttach": "أفلت الصور لإرفاقها",
   "queueMessage": "وجّه الوكيل… Alt+Enter ينتظر حتى ينتهي",
   "queuedSteer": "تُرسل بعد الخطوة الحالية",
   "queuedFollowUp": "تُرسل عندما ينتهي الوكيل",
   "removeQueuedMessage": "إزالة الرسالة المنتظرة",
   "dropImagesAfterReply": "أرفق الصور بعد الرد",
-  "dropImagesLimit": {
-    "input": "حتى {count} صور لكل رسالة"
-  },
-  "viewAttachment": {
-    "input": "عرض المرفق {name}"
-  },
+  "dropImagesLimit": "حتى {count} صور لكل رسالة",
+  "viewAttachment": "عرض المرفق {name}",
   "attachmentPreview": "معاينة المرفق",
   "closeAttachmentPreview": "إغلاق معاينة المرفق",
   "mentionSelection": "الإشارة إلى الطبقات المحددة",
   "thinking": "يفكّر…",
   "reasoning": "الاستدلال",
-  "thoughtFor": {
-    "input": "فكّر لمدة {seconds} ث"
-  },
+  "thoughtFor": "فكّر لمدة {seconds} ث",
   "copyResponse": "نسخ الرد",
   "revertTurn": "التراجع عن التغييرات",
   "turnReverted": "تم التراجع عن التغييرات",
-  "turnPartlyUndone": {
-    "input": "تم التراجع عن {undone} من {total} تغييرات"
-  },
+  "turnPartlyUndone": "تم التراجع عن {undone} من {total} تغييرات",
   "turnStopped": "متوقف",
   "restoreTurn": "استعادة التغييرات",
   "regenerate": "إعادة التوليد",
@@ -133,24 +111,16 @@
   "toolInput": "المدخلات",
   "toolOutput": "المخرجات",
   "toolDetails": "تفاصيل استدعاء الأداة",
-  "toolSteps": {
-    "input": "الخطوات السابقة: {count}"
-  },
-  "toolStepsFailed": {
-    "input": "فشلت: {count}"
-  },
-  "showNodeOnCanvas": {
-    "input": "إظهار {name} على لوحة الرسم"
-  },
+  "toolSteps": "الخطوات السابقة: {count}",
+  "toolStepsFailed": "فشلت: {count}",
+  "showNodeOnCanvas": "إظهار {name} على لوحة الرسم",
   "toolChanges": "التغييرات",
   "changeHighlight": "تمييز",
   "changeBefore": "قبل",
   "changeAfter": "بعد",
   "changeSplit": "عرض مقسوم قبل وبعد",
   "changeStructure": "تغييرات البنية",
-  "changedPixels": {
-    "input": "تغيّر {percent}% من البكسلات"
-  },
+  "changedPixels": "تغيّر {percent}% من البكسلات",
   "noVisibleChange": "لا يوجد تغيير مرئي",
   "changePreview": "معاينات التغييرات",
   "changePreviewHint": "صور قبل وبعد تُحفظ مع كل تعديل بالذكاء الاصطناعي في سجل المحادثات. تشغل المعاينات الأكبر مساحة تخزين أكثر.",
@@ -160,9 +130,7 @@
   "changePreviewLarge": "كبير (960 px)",
   "unknownTool": "أداة غير معروفة",
   "permissionRequestTitle": "طلب إذن",
-  "permissionRequest": {
-    "input": "تطلب {tool} إذنًا."
-  },
+  "permissionRequest": "تطلب {tool} إذنًا.",
   "baseURLPlaceholder": "URL الأساسي (مثل http://localhost:11434/v1)",
   "modelIDPlaceholder": "معرّف النموذج (مثل llama-3.3-70b)",
   "provider": "مزوّد الذكاء الاصطناعي",
@@ -254,16 +222,10 @@
   "cloudAIWorkspacesFailed": "تعذّر على Lawha Cloud التحقق من مساحات عملك التي تتضمن الذكاء الاصطناعي. تحقق من اتصالك وحاول مرة أخرى.",
   "chatCloudCreditsExhausted": "استهلكت مساحة العمل هذه رصيد الذكاء الاصطناعي لهذا الشهر. أدِر خطتها لإضافة المزيد.",
   "chatCloudAllowanceUsed": "استهلكت مساحة العمل هذه حصة الذكاء الاصطناعي لهذا الشهر. اطلب من مسؤول السحابة رفعها.",
-  "chatCloudAllowanceUsedUntil": {
-    "input": "استهلكت مساحة العمل هذه حصة الذكاء الاصطناعي لهذا الشهر. تتجدد في {date}. اطلب من مسؤول السحابة رفعها قبل ذلك."
-  },
+  "chatCloudAllowanceUsedUntil": "استهلكت مساحة العمل هذه حصة الذكاء الاصطناعي لهذا الشهر. تتجدد في {date}. اطلب من مسؤول السحابة رفعها قبل ذلك.",
   "connectionTestCloudCreditsExhausted": "لم يتبقَّ لمساحة العمل هذه رصيد ذكاء اصطناعي هذا الشهر.",
-  "cloudCreditsLeft": {
-    "input": "الرصيد المتبقي: {credits}"
-  },
-  "cloudCreditsRenew": {
-    "input": "يتجدد في {date}"
-  },
+  "cloudCreditsLeft": "الرصيد المتبقي: {credits}",
+  "cloudCreditsRenew": "يتجدد في {date}",
   "manageCloudPlanAction": "إدارة الخطة",
   "chatCloudUnavailable": "الذكاء الاصطناعي في Lawha Cloud غير متاح. سجّل الدخول إلى Lawha Cloud واختر مساحة عمل في الإعدادات.",
   "visionModelUnavailable": "اختر نموذج رؤية في الإعدادات قبل إرفاق الصور.",
@@ -283,9 +245,7 @@
   "aiSetupTakeTour": "فتح الجولة",
   "aiSetupStart": "إعداد الذكاء الاصطناعي",
   "aiSetupSkip": "بدء التصميم",
-  "aiSetupProgress": {
-    "input": "الخطوة {current} من {total}"
-  },
+  "aiSetupProgress": "الخطوة {current} من {total}",
   "aiSetupAdvanced": "الإعدادات المتقدمة",
   "aiSetupContinue": "متابعة",
   "aiSetupGoalsTitle": "بمَ يجب أن يساعد الذكاء الاصطناعي؟",
@@ -308,9 +268,7 @@
   "aiSetupAccessServerDescription": "أي خادم يدعم OpenAI API، مثل Ollama أو LM Studio.",
   "aiSetupConnectTitle": "اربط الذكاء الاصطناعي",
   "aiSetupNothingDescription": "عُد لاختيار وصول آخر، أو أعدّ الذكاء الاصطناعي في الإعدادات المتقدمة.",
-  "aiSetupAgentDescription": {
-    "input": "يشغّل Lawha ‏{agent} عند إرسال رسالة، بالحساب الذي سجّل {agent} الدخول به."
-  },
+  "aiSetupAgentDescription": "يشغّل Lawha ‏{agent} عند إرسال رسالة، بالحساب الذي سجّل {agent} الدخول به.",
   "aiSetupAgentInstall": "إن لم يكن مثبّتًا بعد، فشغّل:",
   "aiSetupAgentInstallSupported": "ثبّت المحوّل المدعوم:",
   "aiSetupAgentChecking": "جارٍ فحص هذا الكمبيوتر…",
@@ -318,18 +276,14 @@
   "aiSetupAgentNotFound": "غير موجود",
   "aiSetupAgentMCP": "خادم Lawha MCP",
   "aiSetupAgentMCPInstall": "يصل وكلاء البرمجة إلى لوحة الرسم عبر خادم MCP الخاص بـ Lawha. ثبّته باستخدام:",
-  "aiSetupAgentPromptHint": {
-    "input": "هل تستخدم {agent} أو وكيل برمجة آخر بالفعل؟ انسخ موجّه الإعداد والصقه هناك؛ فهو يثبّت ما يحتاج إليه Lawha."
-  },
+  "aiSetupAgentPromptHint": "هل تستخدم {agent} أو وكيل برمجة آخر بالفعل؟ انسخ موجّه الإعداد والصقه هناك؛ فهو يثبّت ما يحتاج إليه Lawha.",
   "aiSetupAgentNeedsAdapter": "مثبّت · محوّل Lawha مفقود",
   "aiSetupAgentInstallAdapter": "تثبيت المحوّل",
   "aiSetupAgentInstallMCP": "تثبيت خادم MCP",
   "aiSetupAgentUpdateMCP": "تحديث خادم MCP",
   "aiSetupAgentOutdated": "يحتاج إلى تحديث",
   "aiSetupAgentInstalling": "جارٍ التثبيت…",
-  "aiSetupAgentGetCLI": {
-    "input": "تثبيت {agent}"
-  },
+  "aiSetupAgentGetCLI": "تثبيت {agent}",
   "aiSetupAgentNeedsNpm": "يتطلب التثبيت npm، الذي يأتي مع Node.js. ثبّت Node.js، ثم تحقق مرة أخرى.",
   "aiSetupAgentNeedsAdmin": "يتطلب التثبيت صلاحيات المسؤول، لأن npm يحفظ الحزم العامة في مجلد محمي. شغّل الأمر أدناه في الطرفية، أو دع وكيلك يُعدّ مجلدًا تملكه.",
   "aiSetupAgentInstallFailed": "لم يكتمل التثبيت. تحقق من اتصالك، أو شغّل الأمر بنفسك.",
@@ -337,16 +291,12 @@
   "aiSetupAgentLookupFailed": "تعذّر فحص هذا الكمبيوتر. حاول مرة أخرى.",
   "aiSetupAgentCopyPrompt": "نسخ موجّه الإعداد",
   "aiSetupAgentCheckAgain": "التحقق مرة أخرى",
-  "aiSetupAgentInstallRuns": {
-    "input": "يشغّل التثبيت {command}."
-  },
+  "aiSetupAgentInstallRuns": "يشغّل التثبيت {command}.",
   "aiSetupDetectNotFound": "غير موجود على هذا الكمبيوتر",
   "aiSetupDetectFound": "موجود على هذا الكمبيوتر",
   "aiSetupDetectSignedOut": "موجود · غير مسجّل الدخول",
   "aiSetupDetectSignedIn": "مسجّل الدخول",
-  "aiSetupDetectSignedInAs": {
-    "input": "مسجّل الدخول · {account}"
-  },
+  "aiSetupDetectSignedInAs": "مسجّل الدخول · {account}",
   "aiSetupAgentAccount": "الحساب",
   "aiSetupAgentAccountChecking": "جارٍ التحقق…",
   "aiSetupAgentAccountUnknown": "تعذّر التحقق",
@@ -357,26 +307,18 @@
   "aiSetupAgentSignInOpenPage": "فتح صفحة تسجيل الدخول",
   "aiSetupAgentSignInCode": "الرمز من صفحة تسجيل الدخول، إن ظهر",
   "aiSetupAgentSignInSubmitCode": "إرسال الرمز",
-  "aiSetupAgentSignInFailed": {
-    "input": "تعذّر تسجيل الدخول إلى {agent}. حاول مرة أخرى."
-  },
+  "aiSetupAgentSignInFailed": "تعذّر تسجيل الدخول إلى {agent}. حاول مرة أخرى.",
   "aiSetupAgentTools": "أدوات Lawha",
   "aiSetupAgentToolsConnected": "متصل",
   "aiSetupAgentToolsUnreachable": "يتعذّر الوصول",
-  "aiSetupAgentToolsFailed": {
-    "input": "لا يستطيع {agent} الوصول إلى أدوات Lawha، لذا لن تبدأ المحادثات معه."
-  },
+  "aiSetupAgentToolsFailed": "لا يستطيع {agent} الوصول إلى أدوات Lawha، لذا لن تبدأ المحادثات معه.",
   "aiSetupAgentToolsHint": "تأكد من أن خادم MCP الخاص بـ Lawha قيد التشغيل في الإعدادات ← MCP، ثم اضغط «التحقق مرة أخرى».",
-  "aiSetupAgentAdapterMismatch": {
-    "input": "عثر Lawha على {path}، وهو محوّل آخر لا يدعمه. ثبّت المحوّل المدعوم، ثم أزل هذا أو انقله إلى موضع لاحق في PATH."
-  },
+  "aiSetupAgentAdapterMismatch": "عثر Lawha على {path}، وهو محوّل آخر لا يدعمه. ثبّت المحوّل المدعوم، ثم أزل هذا أو انقله إلى موضع لاحق في PATH.",
   "aiSetupPiDescription": "يشغّل Lawha ‏Pi عبر مرافق Harness ويستخدم المزوّدين الذين سجّلت الدخول إليهم في Pi.",
   "aiSetupPiCompanion": "مرافق Harness",
   "aiSetupPiInstallCompanion": "تثبيت المرافق",
   "aiSetupPiUpdateCompanion": "تحديث المرافق",
-  "aiSetupPiModel": {
-    "input": "النموذج الافتراضي في Pi: {model}"
-  },
+  "aiSetupPiModel": "النموذج الافتراضي في Pi: {model}",
   "aiSetupPiNoModel": "لم يُعيَّن نموذج افتراضي في Pi",
   "piModelHint": "نموذج Pi مثل provider/model. اتركه فارغًا لاستخدام النموذج الافتراضي في Pi.",
   "aiSetupPiSignIn": "لتسجيل الدخول إلى مزوّد أو اختيار نموذج افتراضي، شغّل pi في الطرفية واكتب /login أو /model.",
@@ -409,9 +351,7 @@
   "aiSetupSignInExpired": "استغرق تسجيل الدخول وقتًا طويلًا. حاول مرة أخرى.",
   "aiSetupOpenRouterFailed": "تعذّر تسجيل الدخول إلى OpenRouter. حاول مرة أخرى أو الصق مفتاح API.",
   "aiSetupOpenRouterSignedInTitle": "تم تسجيل الدخول إلى OpenRouter",
-  "aiSetupOpenRouterKeyLabel": {
-    "input": "· المفتاح «{label}»"
-  },
+  "aiSetupOpenRouterKeyLabel": "· المفتاح «{label}»",
   "aiSetupOpenRouterVerifying": "جارٍ التحقق من مفتاح OpenRouter…",
   "aiSetupOpenRouterNoCredits": "لا يوجد رصيد في حساب OpenRouter هذا بعد. أضف رصيدًا على OpenRouter لاستخدام النماذج المدفوعة مثل النموذج الموصى به.",
   "aiSetupSignInChange": "استخدام حساب مختلف",
@@ -434,13 +374,9 @@
   "chatReferencePages": "الصفحات",
   "chatReferenceSkills": "المهارات",
   "chatReferenceCommands": "الأوامر",
-  "openSkillSettings": {
-    "input": "فتح المهارة «{name}»"
-  },
+  "openSkillSettings": "فتح المهارة «{name}»",
   "skillsDescription": "تعليمات تحمّلها محادثة الذكاء الاصطناعي عندما يطابق الطلب وصفها. ارفع ملف ZIP لمجلد مهارة أو SKILL.md، أو استخدم المهارات التي ثبّتها وكلاء البرمجة.",
-  "skillsEnabledCount": {
-    "input": "{enabled} من {total} مفعّلة"
-  },
+  "skillsEnabledCount": "{enabled} من {total} مفعّلة",
   "searchSkills": "البحث في المهارات",
   "noMatchingSkills": "لا توجد مهارات تطابق بحثك.",
   "skillsUpload": "رفع مهارة",
@@ -449,9 +385,7 @@
   "skillsTrustFolder": "الوثوق بالمجلد",
   "skillsStopTrusting": "إيقاف الوثوق",
   "skillsTrustTitle": "الوثوق بهذا المجلد؟",
-  "skillsTrustDescription": {
-    "input": "تمنح المهارات في {folder} محادثة الذكاء الاصطناعي تعليمات تتبعها. لا تثق بمجلد إلا إذا كنت تعرف مصدر مهاراته."
-  },
+  "skillsTrustDescription": "تمنح المهارات في {folder} محادثة الذكاء الاصطناعي تعليمات تتبعها. لا تثق بمجلد إلا إذا كنت تعرف مصدر مهاراته.",
   "skillsFolderUntrusted": "ثق بمجلدها لاستخدام هذه المهارة.",
   "skillsAgentsSource": "مهارات الوكلاء المشتركة",
   "skillsClaudeSource": "مهارات Claude Code",
@@ -464,9 +398,7 @@
   "skillsUploadSeveral": "يحتوي الأرشيف على أكثر من مهارة. ارفعها واحدة تلو الأخرى.",
   "skillsUploadUnreadable": "اختر أرشيف ZIP أو ملفًا نصيًا SKILL.md.",
   "skillsDelete": "حذف المهارة",
-  "skillsDeleteDescription": {
-    "input": "ستُزال «{name}» من Lawha."
-  },
+  "skillsDeleteDescription": "ستُزال «{name}» من Lawha.",
   "skillsLocation": "الموقع",
   "skillsFiles": "الملفات",
   "skillsInstructions": "التعليمات",
@@ -479,18 +411,12 @@
   "skillsShadowed": "تُستخدم بدلًا منها مهارة بالاسم نفسه من مصدر أعلى.",
   "skillWarningPlainFrontmatter": "البيانات الأمامية ليست YAML صالحًا، لذا قُرئت سطرًا بسطر. ضع بين علامتي اقتباس القيم التي تحتوي على «: ».",
   "skillWarningNameFromFolder": "لا يوجد اسم في البيانات الأمامية، لذا يُستخدم اسم المجلد.",
-  "skillWarningLongName": {
-    "input": "الاسم أطول من {max} حرفًا."
-  },
+  "skillWarningLongName": "الاسم أطول من {max} حرفًا.",
   "skillWarningNameFormat": "يجب أن يستخدم الاسم الأحرف الصغيرة والأرقام والشرطات المفردة فقط.",
   "skillWarningNameMismatch": "الاسم لا يطابق اسم المجلد.",
-  "skillWarningLongDescription": {
-    "input": "الوصف أطول من {max} حرفًا."
-  },
+  "skillWarningLongDescription": "الوصف أطول من {max} حرفًا.",
   "skillErrorNoFrontmatter": "لا يبدأ SKILL.md ببيانات أمامية بصيغة YAML بين سطرَي ---.",
-  "skillErrorInvalidFrontmatter": {
-    "input": "البيانات الأمامية في SKILL.md غير صالحة: {detail}"
-  },
+  "skillErrorInvalidFrontmatter": "البيانات الأمامية في SKILL.md غير صالحة: {detail}",
   "skillErrorNoDescription": "لا يوجد وصف في البيانات الأمامية لملف SKILL.md.",
   "skillErrorNoName": "لا يوجد اسم في البيانات الأمامية لملف SKILL.md."
 }

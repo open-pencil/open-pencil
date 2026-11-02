@@ -13,26 +13,14 @@
   "connected": "متصل",
   "disconnect": "قطع الاتصال",
   "share": "مشاركة",
-  "follow": {
-    "input": "متابعة {name}"
-  },
-  "stopFollowing": {
-    "input": "إيقاف متابعة {name}"
-  },
-  "followingPerson": {
-    "input": "تتابع {name}"
-  },
-  "followingAgent": {
-    "input": "تتابع {agent} ({owner})"
-  },
+  "follow": "متابعة {name}",
+  "stopFollowing": "إيقاف متابعة {name}",
+  "followingPerson": "تتابع {name}",
+  "followingAgent": "تتابع {agent} ({owner})",
   "stopFollowingShort": "إيقاف المتابعة",
   "leaveRoom": "مغادرة الغرفة",
-  "morePeople": {
-    "input": "{count} آخرون"
-  },
-  "renameAgent": {
-    "input": "إعادة تسمية {name}"
-  },
+  "morePeople": "{count} آخرون",
+  "renameAgent": "إعادة تسمية {name}",
   "agentName": "اسم الوكيل",
   "agentThinking": "يفكّر",
   "agentEditing": "يحرّر",
@@ -42,12 +30,8 @@
   "joiningTitle": "جارٍ الانضمام إلى الغرفة…",
   "connectingDescription": "جارٍ الاتصال بخوادم الغرفة.",
   "lookingDescription": "جارٍ البحث عن أشخاص في هذه الغرفة.",
-  "receivingDescription": {
-    "input": "جارٍ الحصول على الملف من {name}."
-  },
-  "othersWaiting": {
-    "input": "ينتظرون أيضًا: {names}"
-  },
+  "receivingDescription": "جارٍ الحصول على الملف من {name}.",
+  "othersWaiting": "ينتظرون أيضًا: {names}",
   "unreachableTitle": "يتعذّر الوصول إلى خوادم الغرفة",
   "unreachableDescription": "تحقق من اتصالك بالإنترنت. يواصل Lawha المحاولة ويفتح الملف فور الاتصال.",
   "waitingTitle": "في انتظار شخص لديه هذا الملف",
@@ -58,18 +42,14 @@
   "copyLink": "نسخ الرابط",
   "linkCopied": "تم النسخ",
   "leave": "مغادرة",
-  "statusLive": {
-    "input": "مباشر · {count} هنا"
-  },
+  "statusLive": "مباشر · {count} هنا",
   "statusAlone": "أنت وحدك هنا — تتم مزامنة التغييرات عند انضمام الآخرين",
   "leftRoomTitle": "لقد غادرت هذه الغرفة",
   "leftRoomDescription": "هذه الآن نسخة محلية. احفظها للاحتفاظ بها.",
   "dismiss": "تجاهل",
   "openInDesktopApp": "فتح في تطبيق سطح المكتب",
   "downloadDesktopApp": "تنزيل",
-  "appearsAs": {
-    "input": "ستظهر باسم {name}"
-  },
+  "appearsAs": "ستظهر باسم {name}",
   "changeName": "تغيير",
   "joinRoomEllipsis": "الانضمام إلى غرفة…",
   "joinRoomDescription": "الصق رابط غرفة أو معرّفها لفتح ملف شاركه أحدهم معك.",
@@ -86,9 +66,7 @@
   "microphone": "الميكروفون",
   "speakers": "مكبرات الصوت",
   "systemDefault": "افتراضي النظام",
-  "peopleInCall": {
-    "input": "{count} في المكالمة"
-  },
+  "peopleInCall": "{count} في المكالمة",
   "nobodyInCall": "لا أحد في المكالمة بعد.",
   "voiceDeniedTitle": "الوصول إلى الميكروفون محظور",
   "voiceDeniedDescription": "اسمح لـ Lawha باستخدام الميكروفون في إعدادات المتصفح أو النظام، ثم حاول مرة أخرى.",

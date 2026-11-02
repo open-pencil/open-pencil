@@ -13,9 +13,7 @@
   "copyAsCSS": "نسخ جميع المتغيّرات بصيغة CSS",
   "copyAsTailwindTheme": "نسخ جميع المتغيّرات كسمة Tailwind",
   "deleteVariable": "حذف المتغيّر",
-  "modeActions": {
-    "input": "إجراءات {mode}"
-  },
+  "modeActions": "إجراءات {mode}",
   "collectionSettings": "إعدادات المجموعة",
   "noVariables": "لا توجد متغيّرات في هذه المجموعة",
   "name": "الاسم",
@@ -30,15 +28,9 @@
   "removeExpression": "إزالة تعبير CSS",
   "cssExpressionUnclosed": "دالة تنقصها علامة )",
   "cssExpressionSyntax": "CSS غير صالح",
-  "cssExpressionNegated": {
-    "input": "لعكس إشارة رمز، اكتب calc(-1 * var({property}))"
-  },
-  "cssExpressionUnknownToken": {
-    "input": "لا يوجد رمز باسم {name}"
-  },
-  "cssExpressionInvalid": {
-    "input": "ليست قيمة صالحة لـ {property}"
-  },
+  "cssExpressionNegated": "لعكس إشارة رمز، اكتب calc(-1 * var({property}))",
+  "cssExpressionUnknownToken": "لا يوجد رمز باسم {name}",
+  "cssExpressionInvalid": "ليست قيمة صالحة لـ {property}",
   "scopes": "النطاقات",
   "description": "الوصف",
   "collection": "المجموعة",
@@ -57,9 +49,7 @@
   "conditionContainerNarrower": "الحاوية أضيق من",
   "conditionContainerWider": "الحاوية أعرض من",
   "conditionCustom": "CSS مخصص",
-  "conditionManualHint": {
-    "input": "اختره لكل طبقة على لوحة الرسم. في الكود، أضف {attribute} إلى عنصر."
-  },
+  "conditionManualHint": "اختره لكل طبقة على لوحة الرسم. في الكود، أضف {attribute} إلى عنصر.",
   "conditionAutomaticHint": "يُفعَّل تلقائيًا في المتصفح. عاينه على لوحة الرسم بتعيين طبقة إلى هذا الوضع؛ تُصدَّر الطبقات المعيّنة له بقيم حرفية.",
   "conditionWidth": "العرض",
   "collectionActions": "إجراءات المجموعة",
@@ -71,13 +61,9 @@
   "noMatchingVariables": "لا توجد متغيّرات من هذا النوع",
   "hiddenFromPublishing": "إخفاء من النشر",
   "hiddenFromPublishingHint": "لا تراه الملفات التي تستخدم هذا الملف كمكتبة.",
-  "selectedCount": {
-    "input": "المتغيّرات المحددة: {count}"
-  },
+  "selectedCount": "المتغيّرات المحددة: {count}",
   "duplicate": "تكرار",
-  "duplicateName": {
-    "input": "نسخة من {name}"
-  },
+  "duplicateName": "نسخة من {name}",
   "moveToGroup": "نقل إلى مجموعة",
   "noGroup": "بلا مجموعة",
   "newGroup": "مجموعة جديدة…",
@@ -91,13 +77,9 @@
   "copyStylesheet": "نسخ ورقة الأنماط",
   "expand": "توسيع",
   "collapse": "طي",
-  "rowActions": {
-    "input": "إجراءات {name}"
-  },
+  "rowActions": "إجراءات {name}",
   "modeAttribute": "سمة التبديل",
-  "modeAttributeHint": {
-    "input": "تُفعَّل الأوضاع المبدّلة يدويًا باستخدام {example}."
-  },
+  "modeAttributeHint": "تُفعَّل الأوضاع المبدّلة يدويًا باستخدام {example}.",
   "modeAttributeInvalid": "استخدم الأحرف والأرقام والشرطات والشرطات السفلية، على أن يبدأ بحرف.",
   "stylesheet": "ورقة الأنماط",
   "mode": "الوضع",
@@ -131,12 +113,8 @@
   "importNewMode": "وضع جديد",
   "importSkipTarget": "عدم الاستيراد",
   "importAddMissing": "إضافة الرموز غير الموجودة بعد",
-  "importStyles": {
-    "input": "إنشاء أنماط النص والتأثيرات ({count})"
-  },
-  "importSummary": {
-    "input": "{added} للإضافة · {updated} للتحديث · {skipped} تم تخطيها"
-  },
+  "importStyles": "إنشاء أنماط النص والتأثيرات ({count})",
+  "importSummary": "{added} للإضافة · {updated} للتحديث · {skipped} تم تخطيها",
   "importSkippedTitle": "تم التخطي",
   "importReasonUnsupportedType": "نوعه ليس له متغيّر أو نمط",
   "importReasonInvalidValue": "تتعذّر قراءة قيمته",
@@ -144,12 +122,8 @@
   "importReasonMissingAlias": "يشير إلى رمز غير موجود",
   "importReasonNotAdded": "لا يوجد متغيّر بهذا الاسم",
   "importReasonMixedTypes": "أوضاعه من أنواع مختلفة",
-  "importInvalidFile": {
-    "input": "{file} ليس ملف رموز تصميم"
-  },
-  "importMissingFile": {
-    "input": "لم يُختر {file} الذي يشير إليه {from}"
-  },
+  "importInvalidFile": "{file} ليس ملف رموز تصميم",
+  "importMissingFile": "لم يُختر {file} الذي يشير إليه {from}",
   "importNothing": "لا تحتوي هذه الملفات على رموز تصميم.",
   "importAction": "استيراد",
   "formula": "الصيغة",
@@ -159,7 +133,5 @@
   "formulaIf": "شرط، ثم، وإلا",
   "formulaText": "رقم كنص",
   "formulaTruthy": "قيمة كصواب أو خطأ",
-  "unsupportedExpression": {
-    "input": "لا يستطيع Lawha تقييم {name} بعد. يحتفظ الحفظ به كما هو."
-  }
+  "unsupportedExpression": "لا يستطيع Lawha تقييم {name} بعد. يحتفظ الحفظ به كما هو."
 }

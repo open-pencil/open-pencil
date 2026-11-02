@@ -21,6 +21,7 @@ import menu from './menu.json'
 import pages from './pages.json'
 import panels from './panels.json'
 import print from './print.json'
+import prototype from './prototype.json'
 import recovery from './recovery.json'
 import rename from './rename.json'
 import settings from './settings.json'
@@ -54,6 +55,7 @@ export default {
   pages,
   panels,
   print,
+  prototype,
   recovery,
   rename,
   settings,

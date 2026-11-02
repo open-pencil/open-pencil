@@ -46,6 +46,7 @@ import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
 import RetainedPanel from './properties/panel/RetainedPanel.vue'
 import PositionSection from './properties/PositionSection.vue'
+import PrototypeSection from './properties/PrototypeSection.vue'
 import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
 import SelectionLayoutSection from './properties/selection/SelectionLayoutSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
@@ -255,6 +256,7 @@ const { panels } = useI18n()
         v-if="node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'"
         :node-id="node.id"
       />
+      <PrototypeSection :node-id="node.id" />
       <ExportSection />
     </div>
   </RetainedPanel>
@@ -268,6 +270,7 @@ const { panels } = useI18n()
     <VariablesSection @open-dialog="openVariablesDialog(store)" />
     <StatusesSection />
     <DocumentSection />
+    <PrototypeSection />
     <ExportSection />
   </div>
 </template>

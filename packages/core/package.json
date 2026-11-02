@@ -78,6 +78,11 @@
       "import": "./dist/tools/index.js",
       "default": "./dist/tools/index.js"
     },
+    "./prototype": {
+      "types": "./dist/prototype/index.d.ts",
+      "import": "./dist/prototype/index.js",
+      "default": "./dist/prototype/index.js"
+    },
     "./profiler": {
       "types": "./dist/profiler/index.d.ts",
       "import": "./dist/profiler/index.js",

@@ -7,12 +7,8 @@
   "product": "Druckprodukt",
   "toDieline": "In Stanzform umwandeln",
   "toDielineHint": "Druckfertiger Bogen mit Beschnitt, Sicherheitsabstand, Schneid- und Rilllinien",
-  "done": {
-    "input": "Erstellt: {count}"
-  },
-  "failed": {
-    "input": "Design konnte nicht angepasst werden: {error}"
-  },
+  "done": "Erstellt: {count}",
+  "failed": "Design konnte nicht angepasst werden: {error}",
   "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
   "productBusinessCardEu": "Business card 85×55 mm (Europe)",
   "productBusinessCardUs": "Business card 3.5×2 in (US)",

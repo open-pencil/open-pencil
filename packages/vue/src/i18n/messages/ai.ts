@@ -15,8 +15,7 @@ export const aiMessageDefaults = {
   notificationsBlocked:
     'Notifications are blocked for this site. Allow them in the browser’s site settings.',
   notificationsUnsupported: 'This browser cannot show notifications.',
-  notificationsSystemHint:
-    'If none appear, allow Lawha in your system’s notification settings.',
+  notificationsSystemHint: 'If none appear, allow Lawha in your system’s notification settings.',
   notifyTitle: params('{agent} · {document}'),
   notifyPermission: 'Asks for permission.',
   notifyPermissionAction: params('Asks for permission: {action}'),

@@ -7,12 +7,8 @@
   "product": "印刷物",
   "toDieline": "抜き型データに変換",
   "toDielineHint": "塗り足し、安全領域、カット線と折り線付きの入稿データ",
-  "done": {
-    "input": "{count} 件作成しました"
-  },
-  "failed": {
-    "input": "デザインを展開できませんでした: {error}"
-  },
+  "done": "{count} 件作成しました",
+  "failed": "デザインを展開できませんでした: {error}",
   "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
   "productBusinessCardEu": "Business card 85×55 mm (Europe)",
   "productBusinessCardUs": "Business card 3.5×2 in (US)",

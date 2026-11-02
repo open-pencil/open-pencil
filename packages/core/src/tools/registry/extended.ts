@@ -116,6 +116,13 @@ import {
   resizeForScreens
 } from '#core/tools/mockup'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
+import {
+  addInteraction,
+  autoPrototype,
+  getPrototype,
+  setFlow,
+  setInteractions
+} from '#core/tools/prototype'
 
 /**
  * Extended tools not in CORE_TOOLS — variables, vector ops, analysis,
@@ -132,6 +139,12 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   listPrintProducts,
   createPrintTemplate,
   convertToDieline,
+  // Prototype
+  getPrototype,
+  setInteractions,
+  addInteraction,
+  setFlow,
+  autoPrototype,
   // Read (advanced)
   getPageTree,
   getCurrentPage,

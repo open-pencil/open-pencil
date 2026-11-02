@@ -13,35 +13,23 @@
   "roleViewer": "مُشاهد",
   "roleEditor": "محرّر",
   "roleAdmin": "مسؤول",
-  "changedInTwoPlaces": {
-    "input": "تم تغيير «{name}» في مكانين"
-  },
+  "changedInTwoPlaces": "تم تغيير «{name}» في مكانين",
   "conflictDescription": "حفظ شخص ما نسخة أحدث بينما كانت لديك تغييرات لم تُرسل بعد. لن يضيع شيء حتى تختار.",
   "connectHeading": "الاتصال بـ Lawha Cloud",
   "connectDescription": "مزامنة الملفات عبر الأجهزة ودعوة الآخرين للتعديل معك.",
   "connectServerHeading": "الاتصال بخادم فريقك",
   "connectServerDescription": "أدخل العنوان الذي يستخدمه فريقك لـ Lawha Cloud.",
   "checkingServer": "جارٍ فحص الخادم…",
-  "signInHeading": {
-    "input": "تسجيل الدخول إلى {name}"
-  },
-  "onHost": {
-    "input": "على {host}."
-  },
-  "verifyDescription": {
-    "input": "أرسلنا رابطًا إلى {email}."
-  },
+  "signInHeading": "تسجيل الدخول إلى {name}",
+  "onHost": "على {host}.",
+  "verifyDescription": "أرسلنا رابطًا إلى {email}.",
   "verifyNote": "افتح الرابط في تلك الرسالة ثم عد إلى هنا. سيكتمل تسجيل الدخول تلقائيًا.",
   "verifyNotYet": "لم يتم تأكيد بريدك الإلكتروني بعد. افتح الرابط في الرسالة ثم أعد المحاولة.",
   "verifyNoEmail": "لم تصلك رسالة؟",
   "deviceHeading": "التأكيد في متصفحك",
-  "deviceDescription": {
-    "input": "وافق على تسجيل الدخول هذا على {host}."
-  },
+  "deviceDescription": "وافق على تسجيل الدخول هذا على {host}.",
   "deviceDescriptionNoHost": "وافق على تسجيل الدخول هذا على الخادم.",
-  "officialDescription": {
-    "input": "مستضاف لدى Lawha · {host}"
-  },
+  "officialDescription": "مستضاف لدى Lawha · {host}",
   "selfHostedLabel": "خادم فريقك",
   "selfHostedDescription": "Lawha Cloud مستضاف ذاتيًا",
   "serverAddress": "عنوان الخادم",
@@ -66,55 +54,29 @@
   "signInNoteBrowser": "ستعود إلى علامة التبويب هذه بعد تسجيل الدخول.",
   "yourCode": "رمزك",
   "copyCode": "نسخ الرمز",
-  "deviceWaiting": {
-    "input": "في انتظار موافقتك… تنتهي صلاحية الرمز خلال {duration}."
-  },
+  "deviceWaiting": "في انتظار موافقتك… تنتهي صلاحية الرمز خلال {duration}.",
   "openBrowserAgain": "فتح المتصفح مجددًا",
-  "accountPending": {
-    "input": "حسابك على {host} بانتظار موافقة أحد المسؤولين."
-  },
-  "signedInAs": {
-    "input": "تم تسجيل الدخول إلى {host} باسم {email}."
-  },
+  "accountPending": "حسابك على {host} بانتظار موافقة أحد المسؤولين.",
+  "signedInAs": "تم تسجيل الدخول إلى {host} باسم {email}.",
   "invitationUnavailableHeading": "لا يمكن استخدام هذه الدعوة",
   "invitationOpening": "جارٍ فتح الدعوة",
-  "invitedYou": {
-    "input": "دعاك {name}"
-  },
-  "invitationEditDescription": {
-    "input": "لتعديل مستند على {host}."
-  },
-  "invitationViewDescription": {
-    "input": "لعرض مستند على {host}."
-  },
-  "invitationWorkspaceDescription": {
-    "input": "للانضمام إلى مساحة عمل على {host}."
-  },
+  "invitedYou": "دعاك {name}",
+  "invitationEditDescription": "لتعديل مستند على {host}.",
+  "invitationViewDescription": "لعرض مستند على {host}.",
+  "invitationWorkspaceDescription": "للانضمام إلى مساحة عمل على {host}.",
   "joinWorkspace": "الانضمام إلى مساحة العمل",
   "invitationChecking": "جارٍ التحقق من الدعوة…",
-  "invitationUnavailableDescription": {
-    "input": "انتهت صلاحيتها أو سُحبت أو قُبلت مسبقًا. اطلب دعوة جديدة من {name}."
-  },
+  "invitationUnavailableDescription": "انتهت صلاحيتها أو سُحبت أو قُبلت مسبقًا. اطلب دعوة جديدة من {name}.",
   "invitationUnavailableDescriptionNoName": "انتهت صلاحيتها أو سُحبت أو قُبلت مسبقًا. اطلب دعوة جديدة من الشخص الذي أرسلها.",
-  "invitationSentTo": {
-    "input": "أُرسلت إلى {recipient}"
-  },
-  "invitationExpiresIn": {
-    "input": "تنتهي خلال {duration}"
-  },
-  "unknownServerHeading": {
-    "input": "لم تستخدم {host} من قبل"
-  },
+  "invitationSentTo": "أُرسلت إلى {recipient}",
+  "invitationExpiresIn": "تنتهي خلال {duration}",
+  "unknownServerHeading": "لم تستخدم {host} من قبل",
   "unknownServerDescription": "لا تسجّل الدخول إلا إذا كنت تثق بهذا الخادم. فهو يخزّن المستند ويرى تعديلاتك.",
   "unknownServerWorkspaceDescription": "لا تسجّل الدخول إلا إذا كنت تثق بهذا الخادم. فهو يخزّن مستندات مساحة العمل ويرى تعديلاتك.",
-  "invitationSignInHeading": {
-    "input": "تسجيل الدخول إلى {host}"
-  },
+  "invitationSignInHeading": "تسجيل الدخول إلى {host}",
   "invitationSignInDescription": "استخدم الحساب الذي أُرسلت إليه هذه الدعوة. سيُفتح المستند بعد ذلك مباشرة.",
   "wrongAccountHeading": "هذه الدعوة لحساب آخر",
-  "wrongAccountDescription": {
-    "input": "أنت مسجّل الدخول باسم {email}. سجّل الدخول باستخدام {recipient} لفتحها."
-  },
+  "wrongAccountDescription": "أنت مسجّل الدخول باسم {email}. سجّل الدخول باستخدام {recipient} لفتحها.",
   "notNow": "ليس الآن",
   "signInToOpen": "تسجيل الدخول للفتح",
   "useAnotherAccount": "استخدام حساب آخر",
@@ -131,20 +93,12 @@
   "saveOfflineDescription": "اتصل بالإنترنت للحفظ في السحابة. لم يتغير شيء على هذا الجهاز.",
   "saveFailedHeading": "تعذّر الحفظ",
   "saveFailedDescription": "لم يقبل الخادم الملف. أعد المحاولة بعد قليل.",
-  "saveUploading": {
-    "input": "جارٍ الرفع… {sent} من {total}"
-  },
+  "saveUploading": "جارٍ الرفع… {sent} من {total}",
   "saveTooLargeHeading": "هذا الملف كبير جدًا على هذا الخادم",
-  "saveTooLargeDescription": {
-    "input": "يقبل ملفات حتى {limit}. أزل الصور أو الصفحات غير المستخدمة ثم أعد المحاولة."
-  },
+  "saveTooLargeDescription": "يقبل ملفات حتى {limit}. أزل الصور أو الصفحات غير المستخدمة ثم أعد المحاولة.",
   "saveNote": "تُفتح النسخة المحفوظة في علامة التبويب هذه وتُحفظ أثناء عملك. يبقى الملف على هذا الجهاز كما هو.",
-  "shareHeading": {
-    "input": "مشاركة «{name}»"
-  },
-  "shareDescriptionInWorkspace": {
-    "input": "في {workspace} على Lawha Cloud"
-  },
+  "shareHeading": "مشاركة «{name}»",
+  "shareDescriptionInWorkspace": "في {workspace} على Lawha Cloud",
   "shareDescription": "على Lawha Cloud",
   "shareAddPeople": "إضافة أشخاص عبر البريد الإلكتروني",
   "shareEmailAddress": "عنوان البريد الإلكتروني",
@@ -153,17 +107,11 @@
   "sharePeopleWithAccess": "الأشخاص الذين لديهم وصول",
   "shareYou": "(أنت)",
   "shareInvited": "مدعو",
-  "shareInvitationExpires": {
-    "input": "تنتهي الدعوة في {date}"
-  },
-  "shareAccessFor": {
-    "input": "وصول {name}"
-  },
+  "shareInvitationExpires": "تنتهي الدعوة في {date}",
+  "shareAccessFor": "وصول {name}",
   "shareOwner": "المالك",
   "shareRemoveAccess": "إزالة الوصول",
-  "shareEveryoneIn": {
-    "input": "الجميع في {workspace}"
-  },
+  "shareEveryoneIn": "الجميع في {workspace}",
   "shareMemberCount": {
     "zero": "لا يوجد أعضاء",
     "one": "عضو واحد",
@@ -190,15 +138,11 @@
   "shareLoadFailed": "تعذّر تحميل قائمة من لديهم وصول. تحقق من اتصالك ثم أعد المحاولة.",
   "shareChangeFailed": "لم يتم تطبيق هذا التغيير. أعد المحاولة بعد قليل.",
   "conflictKeepBoth": "الاحتفاظ بكليهما",
-  "conflictKeepBothDescription": {
-    "input": "تبقى نسخة السحابة باسم «{name}». وتُحفظ نسختك بجانبها باسم «{copyName}»."
-  },
+  "conflictKeepBothDescription": "تبقى نسخة السحابة باسم «{name}». وتُحفظ نسختك بجانبها باسم «{copyName}».",
   "conflictUseCloud": "استخدام نسخة السحابة",
   "conflictUseCloudDescription": "سيتم تجاهل تغييراتك غير المرسلة على هذا الجهاز.",
   "conflictUseMine": "استبدالها بنسختك",
-  "conflictUseMineDescriptionBy": {
-    "input": "ستُستبدل أحدث تغييرات {name} لدى الجميع."
-  },
+  "conflictUseMineDescriptionBy": "ستُستبدل أحدث تغييرات {name} لدى الجميع.",
   "conflictUseMineDescription": "ستُستبدل النسخة الأحدث على الخادم لدى الجميع.",
   "conflictConfirmUseCloud": "استخدام نسخة السحابة",
   "conflictConfirmUseMine": "الاستبدال بنسختي",
@@ -206,26 +150,18 @@
   "conflictCloudVersion": "نسخة السحابة",
   "conflictWhichVersion": "النسخة التي سيُحتفظ بها",
   "conflictDecideLater": "القرار لاحقًا",
-  "conflictYourCopyName": {
-    "input": "{name} (نسختك)"
-  },
+  "conflictYourCopyName": "{name} (نسختك)",
   "conflictYouOnThisDevice": "أنت، على هذا الجهاز",
   "conflictResolveFailed": "تعذّر حل التعارض. لا تزال تغييراتك على هذا الجهاز.",
   "statusViewOnlyDetail": "يمكنك التصفح ومتابعة الآخرين؛ لن تصل تغييراتك إلى أحد.",
   "statusNotLive": "لا يتم التعديل مباشرة",
   "statusNotLiveDetail": "أنهى الخادم الجلسة المباشرة لعلامة التبويب هذه، لذا لم تعد التعديلات تنتقل بينها وبين الآخرين. أعد الانضمام لرؤية أحدث نسخة.",
   "statusRejoin": "إعادة الانضمام",
-  "statusSavedTo": {
-    "input": "تم الحفظ في {workspace}"
-  },
-  "statusSavedAgo": {
-    "input": "تم الحفظ {time}"
-  },
+  "statusSavedTo": "تم الحفظ في {workspace}",
+  "statusSavedAgo": "تم الحفظ {time}",
   "statusUpToDate": "محدّث",
   "statusSaving": "جارٍ الحفظ…",
-  "statusUploadingTo": {
-    "input": "جارٍ الرفع إلى {workspace}"
-  },
+  "statusUploadingTo": "جارٍ الرفع إلى {workspace}",
   "statusSavedOnDevice": "تم الحفظ على هذا الجهاز",
   "statusUploadsSoon": "سيُرفع بعد قليل",
   "statusOfflineDetail": "أنت غير متصل. ستُرفع التغييرات عند إعادة الاتصال.",
@@ -252,12 +188,8 @@
   "invitationSentNote": "أرسلنا الدعوة بالبريد الإلكتروني. إذا كان هذا الخادم لا يرسل بريدًا، فشارك هذا الرابط معهم بدلًا من ذلك.",
   "copyInvitationLink": "نسخ رابط الدعوة",
   "membersLoading": "جارٍ تحميل الأعضاء…",
-  "memberRole": {
-    "input": "دور {name}"
-  },
-  "removeMember": {
-    "input": "إزالة {name}"
-  },
+  "memberRole": "دور {name}",
+  "removeMember": "إزالة {name}",
   "pendingInvitations": "بانتظار الانضمام",
   "revokeInvitation": "سحب",
   "membersSections": "مساحة العمل",
@@ -266,15 +198,9 @@
   "settingsTab": "الإعدادات",
   "searchMembers": "البحث عن أعضاء…",
   "noMembersMatch": "لا أحد يطابق هذا البحث.",
-  "memberJoined": {
-    "input": "انضم في {date}"
-  },
-  "invitationSent": {
-    "input": "دُعي في {date}"
-  },
-  "invitationSentBy": {
-    "input": "دُعي في {date} من قِبل {name}"
-  },
+  "memberJoined": "انضم في {date}",
+  "invitationSent": "دُعي في {date}",
+  "invitationSentBy": "دُعي في {date} من قِبل {name}",
   "resendInvitation": "إعادة الإرسال",
   "invitationResent": "أُرسلت مجددًا",
   "noInvitations": "لا أحد بانتظار الانضمام",
@@ -283,23 +209,15 @@
   "roleEditorDescription": "ينشئ مستندات مساحة العمل ويعدّلها",
   "roleViewerDescription": "يفتح مستندات مساحة العمل دون تغييرها",
   "leaveWorkspace": "مغادرة مساحة العمل",
-  "leaveWorkspaceHeading": {
-    "input": "مغادرة {workspace}؟"
-  },
+  "leaveWorkspaceHeading": "مغادرة {workspace}؟",
   "leaveWorkspaceDescription": "ستفقد الوصول إلى مستنداتها ما لم يشاركها أحد معك مباشرة. يمكن لمسؤول دعوتك مجددًا.",
-  "removeMemberHeading": {
-    "input": "إزالة {name} من {workspace}؟"
-  },
+  "removeMemberHeading": "إزالة {name} من {workspace}؟",
   "removeMemberDescription": "سيفقد الوصول إلى مستنداتها ما لم يشاركها أحد معه مباشرة. يمكنك دعوته مجددًا.",
   "removeMemberConfirm": "إزالة",
   "deleteWorkspace": "حذف مساحة العمل",
-  "deleteWorkspaceHeading": {
-    "input": "حذف {workspace}؟"
-  },
+  "deleteWorkspaceHeading": "حذف {workspace}؟",
   "deleteWorkspaceDescription": "سيفقد الجميع الوصول وتتوقف دعواتها عن العمل. لا يمكن حذف إلا مساحة عمل فارغة.",
-  "deleteWorkspaceTypeName": {
-    "input": "للتأكيد، اكتب «{workspace}»."
-  },
+  "deleteWorkspaceTypeName": "للتأكيد، اكتب «{workspace}».",
   "dangerZone": "منطقة الخطر",
   "leaveWorkspaceShort": "مغادرة",
   "deleteWorkspaceShort": "حذف",
@@ -318,22 +236,16 @@
   "settingsSelfHostedDescription": "Lawha Cloud مستضاف ذاتيًا، على العنوان الذي يستخدمه فريقك.",
   "settingsOnHome": "في الصفحة الرئيسية",
   "settingsSignInExpired": "انتهت صلاحية تسجيل الدخول",
-  "settingsSignInExpiredFor": {
-    "input": "انتهت صلاحية تسجيل الدخول لـ {email}"
-  },
+  "settingsSignInExpiredFor": "انتهت صلاحية تسجيل الدخول لـ {email}",
   "settingsSignedOut": "تم تسجيل الخروج",
   "settingsWaitingForApproval": "بانتظار موافقة أحد المسؤولين على حسابك",
   "settingsAccessClosed": "رفض أحد المسؤولين وصولك أو أزاله",
-  "settingsOptionsFor": {
-    "input": "خيارات {host}"
-  },
+  "settingsOptionsFor": "خيارات {host}",
   "settingsAccountAndSecurity": "الحساب والأمان",
   "settingsShowOnHome": "إظهار في الصفحة الرئيسية",
   "settingsDisconnectServer": "قطع الاتصال بالخادم",
   "settingsSignOutFailed": "تعذّر تسجيل الخروج. تحقق من اتصالك ثم أعد المحاولة.",
-  "settingsDisconnectHeading": {
-    "input": "قطع الاتصال بـ {host}؟"
-  },
+  "settingsDisconnectHeading": "قطع الاتصال بـ {host}؟",
   "settingsDisconnectDescription": "سيتم تسجيل خروجك وستختفي مساحات عمله من الصفحة الرئيسية على هذا الجهاز. تبقى مستنداتك على الخادم، ويمكنك الاتصال مجددًا في أي وقت.",
   "settingsDisconnectUnsavedDescription": {
     "zero": "سيتم تسجيل خروجك وستختفي مساحات عمله من الصفحة الرئيسية على هذا الجهاز. لا توجد مستندات بتغييرات لم تصل إلى الخادم.",
@@ -347,33 +259,21 @@
   "settingsDisconnectAndDiscard": "قطع الاتصال وتجاهل التغييرات",
   "homeLocations": "المواقع",
   "homeRecent": "الأخيرة",
-  "homeAccount": {
-    "input": "الحساب: {email}"
-  },
+  "homeAccount": "الحساب: {email}",
   "homeAccountSettings": "إعدادات الحساب",
   "homeConnectAnotherServer": "الاتصال بخادم آخر…",
   "homeAttentionTip": "يحتاج ملف هنا إلى قرار",
   "homeNeedsAttention": "يحتاج إلى انتباه",
   "homeSharedWithYou": "مُشارك معك",
   "homeSharedSubtitle": "ملفات دعاك إليها الآخرون",
-  "homeSharedBy": {
-    "input": "شاركه {name}"
-  },
+  "homeSharedBy": "شاركه {name}",
   "homeSignIn": "تسجيل الدخول…",
   "homeStorage": "التخزين",
   "homeStorageSettings": "إعدادات التخزين",
-  "homeCloudOnHost": {
-    "input": "Lawha Cloud · {host}"
-  },
-  "homeUsageUsed": {
-    "input": "مستخدم {used}"
-  },
-  "homeUsageOf": {
-    "input": "{used} من {total}"
-  },
-  "homeWorkspaceStorage": {
-    "input": "تخزين مساحة العمل، {usage}"
-  },
+  "homeCloudOnHost": "Lawha Cloud · {host}",
+  "homeUsageUsed": "مستخدم {used}",
+  "homeUsageOf": "{used} من {total}",
+  "homeWorkspaceStorage": "تخزين مساحة العمل، {usage}",
   "homeView": "العرض",
   "homeGrid": "شبكة",
   "homeList": "قائمة",
@@ -391,9 +291,7 @@
   },
   "homeReview": "مراجعة",
   "homeLoadingFiles": "جارٍ تحميل الملفات",
-  "homeEmptyWorkspace": {
-    "input": "لا توجد ملفات في {workspace} بعد"
-  },
+  "homeEmptyWorkspace": "لا توجد ملفات في {workspace} بعد",
   "homeEmptyWorkspaceDescription": "أنشئ تصميمًا هنا، أو احفظ ملفًا مفتوحًا في مساحة العمل هذه من قائمة «ملف».",
   "homeNothingShared": "لم يُشارك معك شيء بعد",
   "homeNothingSharedDescription": "تظهر هنا الملفات التي يدعوك إليها الآخرون.",
@@ -409,9 +307,7 @@
   "syncError": "تعذّر رفع التغييرات",
   "shareLinkFailed": "هذا الرابط لا يفتح مستندًا. اطلب رابطًا جديدًا.",
   "documentLinkFailed": "تعذّر فتح هذا المستند. اطلب الوصول من مالكه.",
-  "documentLinkUnknownServer": {
-    "input": "سجّل الدخول إلى {host} أولًا لفتح هذا الرابط."
-  },
+  "documentLinkUnknownServer": "سجّل الدخول إلى {host} أولًا لفتح هذا الرابط.",
   "shareOpenedInBrowser": "فُتح في المتصفح",
   "openInDesktopApp": "فتح في تطبيق سطح المكتب",
   "versionHistory": "سجل النسخ",
@@ -429,19 +325,13 @@
   "versionsAll": "الكل",
   "versionsOnlyYours": "نسخك فقط",
   "showAutosaveVersions": "إظهار نسخ الحفظ التلقائي",
-  "restoredVersion": {
-    "input": "النسخة المستعادة: {name}"
-  },
+  "restoredVersion": "النسخة المستعادة: {name}",
   "restoredVersionUnnamed": "نسخة مستعادة",
-  "viewingVersion": {
-    "input": "عرض {name}"
-  },
+  "viewingVersion": "عرض {name}",
   "olderVersions": "إظهار النسخ الأقدم",
   "noVersions": "لا توجد نسخ لعرضها",
   "versionsFailed": "تعذّر تحميل سجل النسخ.",
   "versionFailed": "تعذّر فتح هذه النسخة.",
   "versionChangeFailed": "تعذّر تغيير سجل النسخ.",
-  "versionCopyName": {
-    "input": "{name} (نسخة)"
-  }
+  "versionCopyName": "{name} (نسخة)"
 }

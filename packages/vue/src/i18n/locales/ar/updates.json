@@ -2,12 +2,8 @@
   "upToDate": "Lawha محدَّث",
   "windowTitle": "تحديث البرنامج",
   "checking": "جارٍ التحقق من وجود تحديثات…",
-  "available": {
-    "input": "Lawha {version} متاح"
-  },
-  "currentVersion": {
-    "input": "لديك الإصدار {version}."
-  },
+  "available": "Lawha {version} متاح",
+  "currentVersion": "لديك الإصدار {version}.",
   "whatsNew": "ما الجديد",
   "noNotes": "لا توجد ملاحظات لهذا الإصدار.",
   "fullReleaseNotes": "ملاحظات الإصدار الكاملة",
@@ -15,29 +11,15 @@
   "install": "تثبيت التحديث",
   "installAndRestart": "تثبيت وإعادة التشغيل",
   "retry": "حاول مرة أخرى",
-  "downloadProgress": {
-    "input": "{percent}% · {downloaded} من {total}"
-  },
-  "downloadProgressUnknown": {
-    "input": "تم تنزيل {downloaded}"
-  },
+  "downloadProgress": "{percent}% · {downloaded} من {total}",
+  "downloadProgressUnknown": "تم تنزيل {downloaded}",
   "installing": "جارٍ التثبيت…",
-  "installed": {
-    "input": "تم تثبيت Lawha {version}"
-  },
+  "installed": "تم تثبيت Lawha {version}",
   "restartToFinish": "أعد تشغيل Lawha لبدء استخدام الإصدار الجديد.",
   "restartNow": "إعادة التشغيل الآن",
-  "downloadFailed": {
-    "input": "تعذّر تنزيل التحديث: {error}"
-  },
-  "installFailed": {
-    "input": "تعذّر تثبيت التحديث: {error}"
-  },
-  "restartFailed": {
-    "input": "تعذّرت إعادة تشغيل Lawha: {error}"
-  },
+  "downloadFailed": "تعذّر تنزيل التحديث: {error}",
+  "installFailed": "تعذّر تثبيت التحديث: {error}",
+  "restartFailed": "تعذّرت إعادة تشغيل Lawha: {error}",
   "unavailable": "التحديثات غير متاحة بعد. انشر إصدارًا موقّعًا مع latest.json أولًا.",
-  "checkFailed": {
-    "input": "تعذّر التحقق من وجود تحديثات: {error}"
-  }
+  "checkFailed": "تعذّر التحقق من وجود تحديثات: {error}"
 }

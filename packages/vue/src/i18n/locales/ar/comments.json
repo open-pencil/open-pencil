@@ -23,9 +23,7 @@
   "oldestFirst": "الأقدم أولًا",
   "empty": "لا توجد تعليقات بعد. انقر على لوحة الرسم لترك تعليق.",
   "noMatches": "لا توجد تعليقات مطابقة.",
-  "replyCount": {
-    "input": "الردود: {count}"
-  },
+  "replyCount": "الردود: {count}",
   "commentDeleted": "تم حذف التعليق",
   "hideComments": "إخفاء التعليقات"
 }

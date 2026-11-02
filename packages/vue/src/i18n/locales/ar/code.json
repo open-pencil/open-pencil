@@ -16,14 +16,10 @@
   "reset": "إعادة تعيين",
   "copyJSXReference": "نسخ مرجع خصائص JSX إلى الحافظة",
   "jsxUpToDate": "محدَّث",
-  "canvasChangedExpression": {
-    "input": "تحتوي لوحة الرسم الآن على {value}؛ يبقى التعبير كما كُتب."
-  },
+  "canvasChangedExpression": "تحتوي لوحة الرسم الآن على {value}؛ يبقى التعبير كما كُتب.",
   "canvasChangedOrder": "ترتّب لوحة الرسم هذه الطبقات الآن بشكل مختلف؛ يبقى الكود كما كُتب.",
   "noSelection": "حدّد طبقة لرؤية الكود الخاص بها",
   "noSelectionDesignJSX": "أو اكتب Design JSX لإضافة طبقات جديدة إلى الصفحة.",
-  "noSelectionComponents": {
-    "input": "تُولَّد مكوّنات {framework} للطبقات المحددة."
-  },
+  "noSelectionComponents": "تُولَّد مكوّنات {framework} للطبقات المحددة.",
   "writeJSX": "كتابة JSX"
 }

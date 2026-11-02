@@ -7,12 +7,8 @@
   "product": "Prodotto di stampa",
   "toDieline": "Converti in fustella",
   "toDielineHint": "Foglio pronto per la stampa con abbondanza, area sicura, linee di taglio e cordonatura",
-  "done": {
-    "input": "Creati: {count}"
-  },
-  "failed": {
-    "input": "Impossibile adattare il design: {error}"
-  },
+  "done": "Creati: {count}",
+  "failed": "Impossibile adattare il design: {error}",
   "productBusinessCardGulf": "Business card 90×50 mm (Gulf)",
   "productBusinessCardEu": "Business card 85×55 mm (Europe)",
   "productBusinessCardUs": "Business card 3.5×2 in (US)",

@@ -22,6 +22,7 @@ import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
 import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
 import { printMessageDefaults, printMessages } from '#vue/i18n/messages/print'
+import { prototypeMessageDefaults, prototypeMessages } from '#vue/i18n/messages/prototype'
 import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/recovery'
 import { renameMessageDefaults, renameMessages } from '#vue/i18n/messages/rename'
 import { settingsMessageDefaults, settingsMessages } from '#vue/i18n/messages/settings'
@@ -56,6 +57,7 @@ export {
   pageMessages,
   panelMessages,
   printMessages,
+  prototypeMessages,
   recoveryMessages,
   renameMessages,
   settingsMessages,
@@ -90,6 +92,7 @@ export const messageDefaults = {
   pages: pageMessageDefaults,
   panels: panelMessageDefaults,
   print: printMessageDefaults,
+  prototype: prototypeMessageDefaults,
   recovery: recoveryMessageDefaults,
   rename: renameMessageDefaults,
   settings: settingsMessageDefaults,
