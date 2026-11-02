@@ -246,7 +246,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
             class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-panel-focus"
           />
         </SliderRoot>
-        <span v-if="mode === 'overlay'" class="w-8 text-right text-[10px] text-muted">
+        <span v-if="mode === 'overlay'" class="w-8 text-right text-3xs text-muted">
           {{ opacity[0] }}%
         </span>
       </div>

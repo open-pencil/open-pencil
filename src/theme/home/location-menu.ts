@@ -11,7 +11,7 @@ export default {
     chevron: 'size-3.5 shrink-0 text-muted pointer-coarse:size-4',
     content: 'w-[var(--reka-dropdown-menu-trigger-width)]',
     itemLabel: 'min-w-0 flex-1 truncate',
-    count: 'shrink-0 text-[11px] text-muted tabular-nums',
+    count: 'shrink-0 text-2xs text-muted tabular-nums',
     check: 'size-3.5 shrink-0 text-surface',
     attention: 'size-3.5 shrink-0 text-warning'
   }

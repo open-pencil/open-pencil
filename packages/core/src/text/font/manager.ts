@@ -7,15 +7,18 @@ import {
   faceLoadKey,
   namesWeight,
   normalizeFontFamily,
-  parseFontStyle,
-  styleToWeight
+  parseFontStyle
 } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { fontFallbackEntry, type FontFallbackScript } from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
 import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
-import { fontFaceRenderFamily, type FamilyFace } from '#core/text/font/faces'
+import {
+  browserFaceDescriptors,
+  fontFaceRenderFamily,
+  type FamilyFace
+} from '#core/text/font/faces'
 import { loadHarfBuzz } from '#core/text/font/harfbuzz'
 import { LocalFonts } from '#core/text/font/local'
 import { sameFontFile, SharedReads, withHarfBuzz } from '#core/text/font/reads'
@@ -871,12 +874,7 @@ export class FontManager {
   /** Makes a face available to the page's own text, such as fields over canvas labels. */
   registerFontInBrowser(family: string, style: string, data: ArrayBuffer) {
     if (!IS_BROWSER) return
-    const weight = styleToWeight(style)
-    const italic = style.toLowerCase().includes('italic') ? 'italic' : 'normal'
-    const face = new FontFace(family, data, {
-      weight: String(weight),
-      style: italic
-    })
+    const face = new FontFace(family, data, browserFaceDescriptors(style, data))
     face
       .load()
       .then(() => document.fonts.add(face))

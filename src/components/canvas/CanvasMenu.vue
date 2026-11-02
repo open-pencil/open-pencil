@@ -175,7 +175,7 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
             <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
             <span
               v-if="item.shortcut"
-              class="text-[11px]"
+              class="text-2xs"
               :class="canvasMenuShortcutClass(item.label)"
               >{{ item.shortcut }}</span
             >

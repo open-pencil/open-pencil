@@ -67,7 +67,7 @@ const statusText = computed(() =>
   <div class="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
     <p
       v-if="room.desktopLink.value"
-      class="flex shrink-0 items-center gap-1.5 text-[11px] whitespace-nowrap text-muted"
+      class="flex shrink-0 items-center gap-1.5 text-2xs whitespace-nowrap text-muted"
     >
       <a
         :href="room.desktopLink.value"

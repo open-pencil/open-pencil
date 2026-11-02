@@ -85,7 +85,7 @@ async function discard(snapshot: RecoverableSnapshot): Promise<void> {
     <div
       :class="
         view === 'grid'
-          ? 'grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]'
+          ? 'grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]'
           : 'overflow-hidden rounded-lg border border-border'
       "
     >

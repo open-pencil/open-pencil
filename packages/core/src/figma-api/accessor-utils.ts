@@ -119,8 +119,27 @@ export function updateNode(
   changes: Partial<SceneNode>
 ): void {
   assertProxyEditable(target, internals)
-  const g = graph(target, internals)
-  const id = nodeId(target, internals)
+  applyLayerChanges(
+    graph(target, internals),
+    nodeId(target, internals),
+    changes,
+    hostFitOptions(target, internals)
+  )
+}
+
+/**
+ * Changes a layer as the plugin API's setters do: auto-sizing text measures its new content, a
+ * vector's regions take its new fills, an edit to a style's fields leaves the style, overrides
+ * record only what changed, and the groups around a moved or resized layer refit. A change that
+ * follows the layer's source, such as a style it uses, records no override.
+ */
+export function applyLayerChanges(
+  g: SceneGraph,
+  id: string,
+  changes: Partial<SceneNode>,
+  fitOptions: GroupFitOptions,
+  recordOverrides = true
+): void {
   const applied = Object.fromEntries(
     Object.keys(changes)
       .filter((key) => Reflect.get(changes, key) !== undefined)
@@ -128,19 +147,16 @@ export function updateNode(
   ) as Partial<SceneNode>
   if (Object.keys(applied).length === 0) return
   const before = g.getNode(id)
-  // Auto-sizing text measures its new content, and a vector's regions take its new fills, as the
-  // editor's updates do.
   Object.assign(applied, textAutoResizeChanges(before, applied))
   if (before) Object.assign(applied, regionFillChanges(before, applied))
-  // An edit to a style's fields leaves that style, as the editor's updates do.
   const edit = before ? styleDetachmentChanges(before, applied) : applied
   // Figma overrides only what an edit changes, so setting a layer's own value claims nothing.
   const changed = Object.keys(edit).filter(
     (key) => !before || !isEqual(Reflect.get(edit, key), Reflect.get(before, key))
   )
   g.updateNode(id, edit)
-  recordInstanceOverride(g, id, changed)
+  if (recordOverrides) recordInstanceOverride(g, id, changed)
   if (Object.keys(edit).some((key) => GEOMETRY_FIELDS.has(key))) {
-    fitGroupsAround(g, g.getNode(id)?.parentId, hostFitOptions(target, internals))
+    fitGroupsAround(g, g.getNode(id)?.parentId, fitOptions)
   }
 }

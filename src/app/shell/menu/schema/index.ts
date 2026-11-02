@@ -1,71 +1,17 @@
-import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+import type { AppMenuActionItem, AppMenuGroupSchema } from './types'
 
-export type AppMenuTarget = 'all' | 'browser' | 'native'
-
-export type AppMenuIcon =
-  | 'download'
-  | 'eye'
-  | 'file'
-  | 'folder-open'
-  | 'layers'
-  | 'pencil'
-  | 'redo'
-  | 'save'
-  | 'settings'
-  | 'type'
-  | 'variables'
-  | 'undo'
-  | 'zoom-in'
-  | 'zoom-out'
-
-export type AppMenuPaletteLabel =
-  | 'exportSelectionAsPNG'
-  | 'exportSelectionAsSVG'
-  | 'exportSelectionAsPPTX'
-  | 'exportSelectionAsDrawIO'
-  | 'exportSelectionAsFig'
-
-export interface AppMenuPaletteMetadata {
-  icon?: AppMenuIcon
-  label?: AppMenuPaletteLabel
-  description?: string
-  keywords?: string[]
-}
-
-export type AppMenuHandler = 'editor' | 'shell'
-
-/** A feature an item waits for: it shows only while the feature is available (`./features`). */
-/** Items shown only for a document backed by a file on disk. */
-export type AppMenuFeature = 'local-file' | 'cloud-document'
-
-export interface AppMenuActionItem {
-  type?: 'item'
-  id: string
-  label: string
-  shortcut?: string
-  accelerator?: string
-  command?: EditorCommandId
-  checkbox?: boolean
-  target?: AppMenuTarget
-  handler?: AppMenuHandler
-  feature?: AppMenuFeature
-  palette?: AppMenuPaletteMetadata
-  sub?: AppMenuEntry[]
-}
-
-export interface AppMenuSeparatorItem {
-  type: 'separator'
-  target?: AppMenuTarget
-}
-
-export type AppMenuEntry = AppMenuActionItem | AppMenuSeparatorItem
-
-export interface AppMenuGroupSchema {
-  label: string
-  target?: AppMenuTarget
-  paletteIcon?: AppMenuIcon
-  items: AppMenuEntry[]
-}
+export type {
+  AppMenuTarget,
+  AppMenuIcon,
+  AppMenuPaletteLabel,
+  AppMenuPaletteMetadata,
+  AppMenuHandler,
+  AppMenuFeature,
+  AppMenuActionItem,
+  AppMenuSeparatorItem,
+  AppMenuEntry,
+  AppMenuGroupSchema
+} from './types'
 
 /** Settings…, where each platform expects it: the macOS application menu, otherwise File. */
 const SETTINGS_MENU_ITEM = {
@@ -92,9 +38,9 @@ export const APP_MENU_SCHEMA = [
         palette: { keywords: ['log', 'report', 'bug', 'problem', 'troubleshoot'] }
       },
       { type: 'separator' },
-      { id: 'save', label: 'Save', shortcut: 'MOD+S' },
-      { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
-      { id: 'save-to', label: 'Save To…' },
+      { id: 'save', feature: 'document', label: 'Save', shortcut: 'MOD+S' },
+      { id: 'save-as', feature: 'document', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
+      { id: 'save-to', feature: 'document', label: 'Save To…' },
       {
         id: 'save-version',
         label: 'Save to Version History…',
@@ -105,6 +51,7 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       {
         id: 'export-selection',
+        feature: 'document',
         label: 'Export Selection',
         palette: { icon: 'download' },
         shortcut: 'MOD+SHIFT+E',
@@ -138,7 +85,7 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       { id: 'autosave', label: 'Autosave', checkbox: true, feature: 'local-file' },
-      { id: 'close', label: 'Close Tab', shortcut: 'MOD+W' },
+      { id: 'close', feature: 'document', label: 'Close Tab', shortcut: 'MOD+W' },
       // ⌃Tab on every platform, as in Figma's desktop app, so it is not a MOD shortcut.
       { id: 'previous-tab', label: 'Select Previous Tab', accelerator: 'Ctrl+Shift+Tab' },
       { id: 'next-tab', label: 'Select Next Tab', accelerator: 'Ctrl+Tab' },
@@ -153,11 +100,13 @@ export const APP_MENU_SCHEMA = [
     items: [
       {
         id: 'edit.undo',
+        feature: 'document',
         label: 'Undo',
         command: 'edit.undo'
       },
       {
         id: 'edit.redo',
+        feature: 'document',
         label: 'Redo',
         command: 'edit.redo'
       },
@@ -165,26 +114,40 @@ export const APP_MENU_SCHEMA = [
       { id: 'copy', label: 'Copy', shortcut: 'MOD+C' },
       { id: 'cut', label: 'Cut', shortcut: 'MOD+X' },
       { id: 'paste', label: 'Paste', shortcut: 'MOD+V' },
-      { id: 'paste-to-replace', label: 'Paste to replace', shortcut: 'MOD+SHIFT+R' },
+      {
+        id: 'paste-to-replace',
+        feature: 'document',
+        label: 'Paste to replace',
+        shortcut: 'MOD+SHIFT+R'
+      },
       {
         id: 'selection.duplicate',
+        feature: 'document',
         label: 'Duplicate',
         command: 'selection.duplicate'
       },
       {
         id: 'selection.delete',
+        feature: 'document',
         label: 'Delete',
         command: 'selection.delete'
       },
-      { id: 'selection.rename', label: 'Rename Selection…', shortcut: 'MOD+R' },
+      {
+        id: 'selection.rename',
+        feature: 'document',
+        label: 'Rename Selection…',
+        shortcut: 'MOD+R'
+      },
       { type: 'separator' },
       {
         id: 'selection.selectAll',
+        feature: 'document',
         label: 'Select All',
         command: 'selection.selectAll'
       },
       {
         id: 'selection.selectInverse',
+        feature: 'document',
         label: 'Select Inverse',
         command: 'selection.selectInverse'
       }
@@ -196,36 +159,51 @@ export const APP_MENU_SCHEMA = [
     items: [
       {
         id: 'view.zoom100',
+        feature: 'document',
         label: 'Zoom to 100%',
         command: 'view.zoom100'
       },
       {
         id: 'view.zoomFit',
+        feature: 'document',
         label: 'Zoom to Fit',
         command: 'view.zoomFit'
       },
       {
         id: 'view.zoomSelection',
+        feature: 'document',
         label: 'Zoom to Selection',
         command: 'view.zoomSelection'
       },
-      { id: 'zoom-in', label: 'Zoom In', shortcut: 'MOD+=' },
-      { id: 'zoom-out', label: 'Zoom Out', shortcut: 'MOD+-' },
+      { id: 'zoom-in', feature: 'document', label: 'Zoom In', shortcut: 'MOD+=' },
+      { id: 'zoom-out', feature: 'document', label: 'Zoom Out', shortcut: 'MOD+-' },
       { type: 'separator' },
       {
         id: 'view.zoomPreviousFrame',
+        feature: 'document',
         label: 'Zoom to Previous Frame',
         command: 'view.zoomPreviousFrame'
       },
-      { id: 'view.zoomNextFrame', label: 'Zoom to Next Frame', command: 'view.zoomNextFrame' },
-      { id: 'view.previousPage', label: 'Previous Page', command: 'view.previousPage' },
-      { id: 'view.nextPage', label: 'Next Page', command: 'view.nextPage' },
+      {
+        id: 'view.zoomNextFrame',
+        feature: 'document',
+        label: 'Zoom to Next Frame',
+        command: 'view.zoomNextFrame'
+      },
+      {
+        id: 'view.previousPage',
+        feature: 'document',
+        label: 'Previous Page',
+        command: 'view.previousPage'
+      },
+      { id: 'view.nextPage', feature: 'document', label: 'Next Page', command: 'view.nextPage' },
       { type: 'separator' },
-      { id: 'view-split-right', label: 'Split Right' },
-      { id: 'view-split-down', label: 'Split Down' },
+      { id: 'view-split-right', feature: 'document', label: 'Split Right' },
+      { id: 'view-split-down', feature: 'document', label: 'Split Down' },
       { type: 'separator' },
       {
         id: 'variables',
+        feature: 'document',
         label: 'Variables…',
         palette: {
           icon: 'variables',
@@ -233,17 +211,42 @@ export const APP_MENU_SCHEMA = [
         }
       },
       { type: 'separator' },
-      { id: 'view-rulers', label: 'Rulers', checkbox: true, shortcut: 'SHIFT+R' },
+      {
+        id: 'view-rulers',
+        feature: 'document',
+        label: 'Rulers',
+        checkbox: true,
+        shortcut: 'SHIFT+R'
+      },
       // Figma's View › Pixel grid, shown once zoomed in far enough.
-      { id: 'view-pixel-grid', label: 'Pixel Grid', checkbox: true, shortcut: "SHIFT+'" },
+      {
+        id: 'view-pixel-grid',
+        feature: 'document',
+        label: 'Pixel Grid',
+        checkbox: true,
+        shortcut: "SHIFT+'"
+      },
       {
         id: 'view-multiplayer-cursors',
+        feature: 'document',
         label: 'Multiplayer Cursors',
         checkbox: true,
         shortcut: 'ALT+MOD+\\'
       },
-      { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
-      { id: 'view-comments', label: 'Comments', checkbox: true, shortcut: 'SHIFT+C' },
+      {
+        id: 'view-design-issues',
+        feature: 'document',
+        label: 'Design Issues',
+        checkbox: true,
+        handler: 'shell'
+      },
+      {
+        id: 'view-comments',
+        feature: 'document',
+        label: 'Comments',
+        checkbox: true,
+        shortcut: 'SHIFT+C'
+      },
       { type: 'separator' },
       {
         id: 'theme',
@@ -282,8 +285,8 @@ export const APP_MENU_SCHEMA = [
         ]
       },
       { type: 'separator' },
-      { id: 'toggle-ui', label: 'Toggle UI', shortcut: 'MOD+\\' },
-      { id: 'toggle-preview', label: 'Preview', shortcut: 'MOD+ALT+↩' },
+      { id: 'toggle-ui', feature: 'document', label: 'Toggle UI', shortcut: 'MOD+\\' },
+      { id: 'toggle-preview', feature: 'document', label: 'Preview', shortcut: 'MOD+ALT+↩' },
       { type: 'separator' },
       { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
       {
@@ -296,6 +299,7 @@ export const APP_MENU_SCHEMA = [
   },
   {
     label: 'Object',
+    feature: 'document',
     paletteIcon: 'layers',
     items: [
       {
@@ -449,6 +453,7 @@ export const APP_MENU_SCHEMA = [
   },
   {
     label: 'Text',
+    feature: 'document',
     paletteIcon: 'type',
     items: [
       { id: 'text.bold', label: 'Bold', shortcut: 'MOD+B' },
@@ -458,6 +463,7 @@ export const APP_MENU_SCHEMA = [
   },
   {
     label: 'Arrange',
+    feature: 'document',
     paletteIcon: 'layers',
     items: [
       {

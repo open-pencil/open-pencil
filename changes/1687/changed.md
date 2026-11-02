@@ -1,0 +1,2 @@
+- The menus follow the tab in front: on Home and in a New file tab they leave out Object, Text, and Arrange and the items that need a document, and in the desktop app items that cannot act, such as Group with nothing selected, are greyed out, as in Figma.
+- Document tabs show what kind of file they hold, with the pen and sticky note Home uses for designs and boards.

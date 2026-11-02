@@ -14,7 +14,7 @@ const ctx = useColorPickerPanelContext()
   <div class="flex flex-col gap-2">
     <div class="flex items-center justify-between gap-2">
       <AppSelect
-        class="w-[120px]"
+        class="w-30"
         data-test-id="color-format-select"
         :model-value="ctx.fieldFormat"
         :options="ctx.fieldOptions"

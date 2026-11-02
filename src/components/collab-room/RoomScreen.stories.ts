@@ -37,7 +37,7 @@ const meta = {
   render: (args) => ({
     components: { RoomScreen },
     setup: () => ({ args }),
-    template: '<div class="relative h-[480px] bg-canvas"><RoomScreen v-bind="args" /></div>'
+    template: '<div class="relative h-120 bg-canvas"><RoomScreen v-bind="args" /></div>'
   })
 } satisfies Meta<Args>
 

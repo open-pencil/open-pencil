@@ -5,7 +5,6 @@ import { asTextNode, createAPI, registerTestFont } from '#core-tests/helpers/fig
 
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 
-
 beforeAll(() => registerTestFont())
 
 describe('components', () => {
@@ -189,17 +188,19 @@ describe('applied shared styles on instance children', () => {
       sharedStyleType: 'TEXT',
       text: 'Ag'
     })
+    heading.source.id = 'S:heading,'
+    body.source.id = 'S:body,'
     const component = graph.createNode('COMPONENT', page.id, { name: 'Card' })
     const title = graph.createNode('TEXT', component.id, { name: 'title', text: 'Title' })
     const first = expectDefined(graph.createInstance(component.id, page.id), 'first instance')
     const second = expectDefined(graph.createInstance(component.id, page.id), 'second instance')
     const firstTitle = expectDefined(graph.getChildren(first.id)[0], 'first title')
-    asTextNode(api.wrapNode(firstTitle.id)).textStyleId = heading.id
+    asTextNode(api.wrapNode(firstTitle.id)).textStyleId = 'S:heading,'
     expect(hasInstanceOverride(graph, firstTitle.id, 'textStyleId')).toBe(true)
 
-    graph.updateNode(title.id, { textStyleId: body.id })
+    graph.updateNode(title.id, { textStyleId: 'S:body,' })
     graph.syncInstances(component.id)
-    expect(graph.getNode(firstTitle.id)?.textStyleId).toBe(heading.id)
-    expect(graph.getChildren(second.id)[0]?.textStyleId).toBe(body.id)
+    expect(graph.getNode(firstTitle.id)?.textStyleId).toBe('S:heading,')
+    expect(graph.getChildren(second.id)[0]?.textStyleId).toBe('S:body,')
   })
 })
