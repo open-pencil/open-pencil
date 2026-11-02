@@ -53,11 +53,9 @@ export function stickyDriver(page: () => Page) {
 
     /** Setup: notes centred on page points, for specs whose subject is how notes look. */
     add(notes: StickyNoteSetup[]) {
-      return page().evaluate(async (specs) => {
+      return page().evaluate((specs) => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
-        // As a person can only once the canvas is up: its faces are in before notes are set up.
-        await store.renderer?.whenFontsLoaded()
         for (const spec of specs) {
           const note = store.createStickyNote(store.state.currentPageId, spec)
           const [body, author] = store.graph.getChildren(note.id)

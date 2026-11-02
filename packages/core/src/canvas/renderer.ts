@@ -382,7 +382,10 @@ export class SkiaRenderer {
     this.resolveFontsLoaded = resolve
   })
 
-  /** Settles once the canvas has the faces it draws and creates text with. */
+  /**
+   * Settles once the canvas has the faces it draws and creates text with, or once it is destroyed
+   * without them, so nothing waits on a canvas that is gone.
+   */
   whenFontsLoaded(): Promise<void> {
     return this.fontsLoaded ? Promise.resolve() : this.fontsLoadedPromise
   }
@@ -885,5 +888,6 @@ export class SkiaRenderer {
 
   destroy(): void {
     destroyRenderer(this)
+    this.resolveFontsLoaded()
   }
 }

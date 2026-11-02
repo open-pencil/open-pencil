@@ -21,6 +21,7 @@ import { createLayoutRunner } from '#core/layout/mutations'
 import { emitNavigationTrace } from '#core/profiler'
 import { TextEditor } from '#core/text/editor'
 import { fontManager } from '#core/text/font/manager'
+import { prepareTextFonts } from '#core/text/prepare'
 import { fontResolver } from '#core/text/resolver'
 
 import { createAlignmentActions } from './alignment'
@@ -62,7 +63,7 @@ import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
-import { createTextFontGate } from './text/font-gate'
+import { createPendingTextLayout } from './text/pending-layout'
 import { createTextSelectionStyle } from './text/selection-style'
 import { createFigJamTextActions } from './text/typeface'
 import type {
@@ -99,6 +100,7 @@ export function createEditor(options?: EditorOptions) {
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
   const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) => {
+    if (event === 'settled') pendingTextLayout.retryStalled()
     events.emit('font:resolution-changed', event, snapshot)
   })
   const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
@@ -224,6 +226,13 @@ export function createEditor(options?: EditorOptions) {
 
   const graphReads = createGraphReadActions(() => _graph)
   const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
+  const pendingTextLayout = createPendingTextLayout({
+    getGraph: () => _graph,
+    getRenderer: () => _renderer,
+    prepareFonts: (texts) => prepareTextFonts(texts, { loadFont: _loadFont }),
+    runLayoutForNode,
+    requestRender
+  })
   const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
@@ -247,9 +256,6 @@ export function createEditor(options?: EditorOptions) {
 
   // Build the shared context
   const ctx: EditorContext = {
-    get textFonts() {
-      return textFonts
-    },
     get graph() {
       return _graph
     },
@@ -282,7 +288,6 @@ export function createEditor(options?: EditorOptions) {
   }
 
   // Assemble domain modules
-  const textFonts = createTextFontGate(ctx)
   const viewport = createViewportActions(ctx)
   const selection = createSelectionActions(ctx)
   const shaderFrames = createShaderFrames(ctx, options)
@@ -362,7 +367,9 @@ export function createEditor(options?: EditorOptions) {
     uninstallTextMeasurer?.()
     uninstallTextMeasurer =
       typeof renderer.measureTextNode === 'function'
-        ? installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
+        ? installTextMeasurer((node, maxWidth) =>
+            pendingTextLayout.measure(renderer, node, maxWidth)
+          )
         : null
   }
 
@@ -385,6 +392,7 @@ export function createEditor(options?: EditorOptions) {
     _graph = newGraph
     state.documentKind = _graph.documentKind
     setActiveTool(offeredTool(state, state.activeTool))
+    pendingTextLayout.clear()
     subscribeToGraph()
     const previousPageId = state.currentPageId
     state.currentPageId = _graph.getPages()[0]?.id ?? _graph.rootId

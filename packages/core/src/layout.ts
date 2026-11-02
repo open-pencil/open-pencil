@@ -32,7 +32,6 @@ export {
   estimateTextSize,
   getTextMeasurer,
   installTextMeasurer,
-  reportUnpreparedText,
   setTextMeasurer,
   type TextMeasurer
 } from './layout/text-measurement'

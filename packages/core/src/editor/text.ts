@@ -308,7 +308,7 @@ export function createTextActions(ctx: EditorContext) {
    * becomes a step first, and the edit then goes on from the text the change leaves, which an
    * undo or redo can also be.
    */
-  function runTextEditStep(change: () => unknown) {
+  function runTextEditStep(change: () => void) {
     const te = ctx.getTextEditor()
     const textState = te?.isActive ? te.state : null
     if (!te || !textState) {
@@ -317,26 +317,7 @@ export function createTextActions(ctx: EditorContext) {
     }
     recordTextEdit(textState)
     change()
-    // A change that waits for its text's fonts goes on from the text once it has landed.
-    const waiting = ctx.textFonts.settled(textState.nodeId)
-    if (waiting) void continueOnceWritten(waiting, te, textState.nodeId)
-    else continueTextEdit(te, textState.nodeId)
-  }
-
-  async function continueOnceWritten(
-    waiting: Promise<void>,
-    te: NonNullable<ReturnType<typeof ctx.getTextEditor>>,
-    nodeId: string
-  ) {
-    const graph = ctx.graph
-    await waiting
-    // An edit that moved to another text, or a replaced document, goes on without this one.
-    if (ctx.graph !== graph || !te.isActive || te.nodeId !== nodeId) return
-    continueTextEdit(te, nodeId)
-  }
-
-  function continueTextEdit(te: NonNullable<ReturnType<typeof ctx.getTextEditor>>, nodeId: string) {
-    const node = ctx.graph.getNode(nodeId)
+    const node = ctx.graph.getNode(textState.nodeId)
     if (!node) {
       // The change took the text away, such as an undo past the step that made it: the edit
       // ends with it, recording nothing of a node that is gone.

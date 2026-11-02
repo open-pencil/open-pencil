@@ -24,57 +24,8 @@ export function applyBoundTextEdit(ctx: EditorContext, nodeId: string, text: str
     (reference) => reference.field === 'TEXT'
   )?.propertyId
   if (!node || !propertyId) return
-  const authoring = componentAuthoringContext(ctx.graph, nodeId) !== null
-  const others = authoring
-    ? (defaultTarget(ctx, node, propertyId)?.others ?? [])
-    : (instanceTarget(ctx, node, propertyId)?.others ?? [])
-  // The other layers take the typed characters once their own fonts have them.
-  ctx.textFonts.write(
-    [nodeId, ...others.map((layer) => layer.id)],
-    () => others.map((layer) => ({ ...layer, text })),
-    () => {
-      const live = ctx.graph.getNode(nodeId)
-      if (!live) return
-      if (authoring) setDefault(ctx, live, propertyId, text)
-      else setInstanceValue(ctx, live, propertyId, text)
-    }
-  )
-}
-
-/** The component owning the property a main-component layer shows, and its other text layers. */
-function defaultTarget(ctx: EditorContext, node: SceneNode, propertyId: string) {
-  const context = componentAuthoringContext(ctx.graph, node.id)
-  const owner = context?.owners.find((item) =>
-    item.componentPropertyDefinitions.some((definition) => definition.id === propertyId)
-  )
-  const definition = owner?.componentPropertyDefinitions.find((item) => item.id === propertyId)
-  if (!owner || !definition) return null
-  const others = componentPropertySources(ctx.graph, owner.id, propertyId).flatMap((source) =>
-    source.node.id !== node.id && source.node.type === 'TEXT' ? [source.node] : []
-  )
-  return { owner, definition, others }
-}
-
-/** The instance whose property a layer shows, and the other text layers it drives there. */
-function instanceTarget(ctx: EditorContext, node: SceneNode, propertyId: string) {
-  const instance = node.parentId
-    ? ctx.graph.closest(
-        node.parentId,
-        (item) =>
-          item.type === 'INSTANCE' &&
-          componentPropertyDefinitions(ctx.graph, item).some(
-            (definition) => definition.id === propertyId
-          )
-      )
-    : undefined
-  const definition = instance
-    ? componentPropertyDefinitions(ctx.graph, instance).find((item) => item.id === propertyId)
-    : undefined
-  if (!instance || !definition) return null
-  const others = findComponentPropertyTargets(ctx.graph, instance, propertyId).flatMap((target) =>
-    target.node.id !== node.id && target.node.type === 'TEXT' ? [target.node] : []
-  )
-  return { instance, definition, others }
+  if (componentAuthoringContext(ctx.graph, nodeId)) setDefault(ctx, node, propertyId, text)
+  else setInstanceValue(ctx, node, propertyId, text)
 }
 
 interface LayerChanges {
@@ -96,14 +47,20 @@ function layerTextChanges(layers: SceneNode[], text: string) {
 }
 
 function setDefault(ctx: EditorContext, node: SceneNode, propertyId: string, text: string) {
-  const target = defaultTarget(ctx, node, propertyId)
-  if (!target || target.definition.defaultValue === text) return
-  const { owner, others } = target
+  const context = componentAuthoringContext(ctx.graph, node.id)
+  const owner = context?.owners.find((item) =>
+    item.componentPropertyDefinitions.some((definition) => definition.id === propertyId)
+  )
+  const definition = owner?.componentPropertyDefinitions.find((item) => item.id === propertyId)
+  if (!owner || !definition || definition.defaultValue === text) return
   const before = structuredClone(owner.componentPropertyDefinitions)
   const after = before.map((item) =>
     item.id === propertyId ? { ...item, defaultValue: text } : item
   )
   // Every other layer the property drives shows the same default, resized as an edit would be.
+  const others = componentPropertySources(ctx.graph, owner.id, propertyId).flatMap((source) =>
+    source.node.id !== node.id && source.node.type === 'TEXT' ? [source.node] : []
+  )
   const { before: othersBefore, after: othersAfter } = layerTextChanges(others, text)
   const apply = (definitions: typeof before, layers: LayerChanges[]) => {
     ctx.graph.updateNode(owner.id, { componentPropertyDefinitions: structuredClone(definitions) })
@@ -121,14 +78,28 @@ function setDefault(ctx: EditorContext, node: SceneNode, propertyId: string, tex
 }
 
 function setInstanceValue(ctx: EditorContext, node: SceneNode, propertyId: string, text: string) {
-  const target = instanceTarget(ctx, node, propertyId)
-  if (!target) return
-  const { instance, definition, others } = target
+  const instance = node.parentId
+    ? ctx.graph.closest(
+        node.parentId,
+        (item) =>
+          item.type === 'INSTANCE' &&
+          componentPropertyDefinitions(ctx.graph, item).some(
+            (definition) => definition.id === propertyId
+          )
+      )
+    : undefined
+  const definition = instance
+    ? componentPropertyDefinitions(ctx.graph, instance).find((item) => item.id === propertyId)
+    : undefined
+  if (!instance || !definition) return
   const before = {
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
     instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides)
   }
   // Other layers the property drives in this instance change and resize with it, and undo with it.
+  const others = findComponentPropertyTargets(ctx.graph, instance, propertyId).flatMap((target) =>
+    target.node.id !== node.id && target.node.type === 'TEXT' ? [target.node] : []
+  )
   const { before: othersBefore, after: othersAfter } = layerTextChanges(others, text)
   const apply = (values: typeof before, layers: LayerChanges[]) => {
     ctx.graph.updateNode(instance.id, structuredClone(values))

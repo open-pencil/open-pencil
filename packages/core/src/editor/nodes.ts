@@ -27,19 +27,6 @@ export function opacityFromBuffer(buffer: string): number {
   return Math.min(100, Math.max(0, percent)) / 100
 }
 
-/** Fields that decide which faces a text needs, or the characters it shows. */
-const TEXT_FONT_FIELDS = [
-  'text',
-  'fontFamily',
-  'fontWeight',
-  'italic',
-  'fontStyle',
-  'fontVariations',
-  'styleRuns',
-  'textLanguage',
-  'textCase'
-] as const satisfies readonly (keyof SceneNode)[]
-
 export function createNodeActions(ctx: EditorContext) {
   // Function declarations below are hoisted, so the preview can wrap updateNode here.
   const previewActions = createNodePreviewActions(ctx, updateNode)
@@ -55,27 +42,7 @@ export function createNodeActions(ctx: EditorContext) {
     ctx.runLayoutForNode(id)
   }
 
-  /**
-   * Applies a write once the text it leaves can be measured in its own fonts, through the
-   * editor's font gate: a write that changes no face or character of a text applies at once.
-   */
-  function withTextFonts(id: string, changes: Partial<SceneNode>, apply: () => void): void {
-    const touchesFonts = TEXT_FONT_FIELDS.some((field) => field in changes)
-    ctx.textFonts.write(
-      [id],
-      () => {
-        const node = ctx.graph.getNode(id)
-        return node?.type === 'TEXT' && touchesFonts ? [{ ...node, ...changes }] : []
-      },
-      apply
-    )
-  }
-
   function updateNode(id: string, changes: Partial<SceneNode>) {
-    withTextFonts(id, changes, () => applyNodeUpdate(id, changes))
-  }
-
-  function applyNodeUpdate(id: string, changes: Partial<SceneNode>) {
     const node = ctx.graph.getNode(id)
     if (!node) return
     // Path-edit last so its reflowed glyphs win over auto-resize's glyph clear
@@ -92,10 +59,6 @@ export function createNodeActions(ctx: EditorContext) {
   }
 
   function updateNodeWithUndo(id: string, changes: Partial<SceneNode>, label = 'Update') {
-    withTextFonts(id, changes, () => applyNodeUpdateWithUndo(id, changes, label))
-  }
-
-  function applyNodeUpdateWithUndo(id: string, changes: Partial<SceneNode>, label: string) {
     const node = ctx.graph.getNode(id)
     if (!node) return
     // A layer a boolean property shows or hides sets the property too, in the same undo step.

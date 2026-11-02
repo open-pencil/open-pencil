@@ -52,12 +52,7 @@ export function createStickyActions(ctx: EditorContext, nodes: NodeActions) {
         y: Math.round(center.y - STICKY_SIZE / 2)
       }
     )
-    // Its body and author are laid out in their own face, once the canvas has it.
-    ctx.textFonts.write(
-      [sticky.id],
-      () => ctx.graph.getChildren(sticky.id).filter((child) => child.type === 'TEXT'),
-      () => ctx.runLayoutForNode(sticky.id)
-    )
+    ctx.runLayoutForNode(sticky.id)
     pushCreatedSubtreesUndo(ctx, 'Create sticky', [sticky.id], previousSelection)
     ctx.setSelectedIds(new Set([sticky.id]))
     ctx.requestRender()

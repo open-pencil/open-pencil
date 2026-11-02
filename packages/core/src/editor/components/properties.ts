@@ -129,30 +129,6 @@ export function createComponentPropertyActions(
       return
     }
 
-    // A text the property sets takes the value's characters once their fonts are in.
-    const targets = findComponentPropertyTargets(ctx.graph, instance, propertyId)
-    ctx.textFonts.write(
-      [instanceId, ...targets.map((target) => target.node.id)],
-      () =>
-        definition.type === 'TEXT'
-          ? targets.flatMap((target) =>
-              target.field === 'TEXT' && target.node.type === 'TEXT'
-                ? [{ ...target.node, text: value }]
-                : []
-            )
-          : [],
-      () => applyAndRecord(instanceId, propertyId, definition, value)
-    )
-  }
-
-  function applyAndRecord(
-    instanceId: string,
-    propertyId: string,
-    definition: ComponentPropertyDefinition,
-    value: string
-  ) {
-    const instance = ctx.graph.getNode(instanceId)
-    if (instance?.type !== 'INSTANCE') return
     const previousAssignments = { ...instance.componentPropertyAssignments }
     const previousOverrides = cloneInstanceOverrideState(instance.instanceOverrides)
 

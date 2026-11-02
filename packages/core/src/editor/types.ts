@@ -29,7 +29,6 @@ import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
-import type { TextFontGate } from '#core/editor/text/font-gate'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
@@ -281,8 +280,6 @@ export interface EditorContext {
   icons: IconProvider
   getCk: () => CanvasKit | null
   getRenderer: () => SkiaRenderer | null
-  /** How writes wait for the fonts of the text they leave; see `createTextFontGate`. */
-  textFonts: TextFontGate
   /** Every canvas drawing the document, such as each pane's scene and overlays. */
   getRenderers: () => Iterable<SkiaRenderer>
   getTextEditor: () => TextEditor | null
