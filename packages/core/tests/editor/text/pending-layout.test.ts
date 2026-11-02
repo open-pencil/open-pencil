@@ -332,9 +332,29 @@ test('text whose fonts fail to load shows at its size, and is laid out once font
   }
   expect(fontManager.isNodeBlocked(graph, text.id)).toBe(false)
   expect([text.width, text.height]).toEqual([100, 20])
-  expect(renders()).toBe(0)
+  expect(renders()).toBe(1)
 
   pending.retryStalled()
   await settle()
   expect([text.width, text.height]).toEqual([234, 29])
+})
+
+test('text whose face loads while a failing preparation runs is laid out in it', async () => {
+  const { text, runLayoutForNode, renders, failNextPreparation, holdPreparation, loadElsewhere } =
+    setup()
+  failNextPreparation()
+  const release = holdPreparation()
+  const warn = spyOn(console, 'warn').mockImplementation(noop)
+  try {
+    runLayoutForNode(text.id)
+    await settle()
+    loadElsewhere()
+    release()
+    await settle()
+    expect(warn).toHaveBeenCalledTimes(1)
+  } finally {
+    warn.mockRestore()
+  }
+  expect([text.width, text.height]).toEqual([234, 29])
+  expect(renders()).toBe(1)
 })

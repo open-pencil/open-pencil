@@ -31,7 +31,7 @@ interface PendingTextLayoutContext {
 export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
   /** Layer id → whether it was measured only while laying out the document's own state. */
   const queued = new Map<string, boolean>()
-  /** Text its prepared fonts still could not measure, tried again once fonts settle. */
+  /** Text its fonts could not measure, prepared or failed, tried again once fonts settle. */
   const stalled = new Map<string, boolean>()
   /** The text being laid out after its fonts were prepared, which measuring does not queue again. */
   let layingOut: ReadonlySet<string> = new Set()
@@ -80,25 +80,19 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     const opened = documents
     const ids = [...batch.keys()]
     const held = ids.filter((id) => hidden.delete(id))
-    let prepared = false
     try {
       const renderer = ctx.getRenderer()
       if (renderer && !renderer.fontsLoaded) await renderer.whenFontsLoaded()
       await ctx.prepareFonts(compact(ids.map((id) => graph.getNode(id))))
-      prepared = true
     } catch (error) {
+      // Text in faces that did load is still laid out; text in faces that failed stalls there.
       console.warn('Text fonts could not be prepared:', error)
     } finally {
       // Text queued again meanwhile holds a block of its own until it is prepared in turn.
       fontManager.unblockNodes(graph, held)
     }
     if (opened !== documents || ctx.getGraph() !== graph) return
-    if (prepared) {
-      layOut(graph, batch)
-      return
-    }
-    // Fonts that failed to load leave the text showing at its size, tried again once fonts settle.
-    for (const [id, derived] of batch) note(stalled, id, derived)
+    layOut(graph, batch)
   }
 
   function layOut(graph: SceneGraph, batch: ReadonlyMap<string, boolean>) {
