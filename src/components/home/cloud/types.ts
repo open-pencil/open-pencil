@@ -1,3 +1,5 @@
+import type { DocumentKind } from '@open-pencil/scene-graph'
+
 /** A place the home tab lists documents from. */
 export type HomeLocation =
   | { kind: 'recent'; id: 'recent' }
@@ -20,6 +22,8 @@ export type CloudSyncState = 'synced' | 'uploading' | 'pending' | 'offline' | 'c
 export type CloudDocumentRow = {
   id: string
   name: string
+  /** A design or a board, when Cloud says which. */
+  kind?: DocumentKind
   previewURL?: string | null
   editedAt: string
   editedBy?: string

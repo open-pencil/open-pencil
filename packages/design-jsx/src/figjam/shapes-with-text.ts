@@ -10,7 +10,8 @@ import { SHAPE_KIND } from '../enums'
 import { collectFillProps, collectStrokeProps } from '../export/paints'
 import type { JSXProp } from '../export/value'
 import { readElementProps, shapePropsSchema } from '../schema'
-import { plainTextOf, type TreeNode } from '../tree'
+import { textContentText } from '../text-content'
+import type { TreeNode } from '../tree'
 import { figJamTextFields, figJamTextProps } from './text'
 
 /**
@@ -30,7 +31,7 @@ export function renderShapeNode(
   layer: Partial<SceneNode>
 ) {
   const props = readElementProps(shapePropsSchema, tree.props)
-  const text = plainTextOf(tree)
+  const text = textContentText(tree)
   const shape = createShapeWithText(
     graph,
     parentId,
@@ -71,9 +72,4 @@ export function shapeWithTextProps(graph: SceneGraph, node: SceneNode): JSXProp[
   if (node.cornerRadius !== SHAPE_WITH_TEXT_CORNER_RADIUS)
     props.push(['rounded', node.cornerRadius])
   return props
-}
-
-/** The label a shape writes as its children. */
-export function shapeWithTextLabelText(graph: SceneGraph, node: SceneNode): string {
-  return shapeWithTextLabel(graph, node)?.text ?? ''
 }

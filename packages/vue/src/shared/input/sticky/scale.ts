@@ -12,7 +12,7 @@ import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
-import { proportionalResizeRect } from '#vue/shared/input/resize/snap'
+import { proportionalResizeDriver, proportionalResizeRect } from '#vue/shared/input/resize/snap'
 import type { DragStickyScale } from '#vue/shared/input/types'
 
 /** The smallest scale a corner drag takes a note to, so it never folds away. */
@@ -113,30 +113,25 @@ export function applyStickyScale(
   const { origRect } = d
   // The note keeps its proportions, anchored and snapped as a Shift-resize from the same handle.
   const aspect = origRect.width / origRect.height
-  const rect = proportionalResizeRect(
-    d,
-    origRect,
-    cx - d.startX,
-    cy - d.startY,
-    aspect,
-    editor,
-    disableSnapping
-  )
-  d.scale = Math.max(MIN_STICKY_SCALE, rect.width / origRect.width)
-  const clamped = d.scale !== rect.width / origRect.width
+  const [dx, dy] = [cx - d.startX, cy - d.startY]
+  const rect = proportionalResizeRect(d, origRect, dx, dy, aspect, editor, disableSnapping)
+  // The scale comes from the side that snapped; the other follows it, rounded or not.
+  const driver = proportionalResizeDriver(d.handle, origRect, dx, dy, aspect)
+  const snappedScale = rect[driver] / origRect[driver]
+  d.scale = Math.max(MIN_STICKY_SCALE, snappedScale)
+  const clamped = d.scale !== snappedScale
   // At its smallest the note no longer meets the edge it snapped to, so no guide shows one.
   if (clamped) editor.setSnapGuides([])
-  // A note scaled down to its smallest stays anchored as the handle anchors it.
-  const placed = !clamped
-    ? rect
-    : constrainToAspectRatio(
-        d.handle,
-        origRect,
-        origRect.width * d.scale,
-        origRect.height * d.scale,
-        aspect,
-        'width'
-      )
+  // The note lands at the size its scale gives, anchored as the handle anchors it, so its edges
+  // meet the size it records and the snapped one stays on its guide.
+  const placed = constrainToAspectRatio(
+    d.handle,
+    origRect,
+    origRect.width * d.scale,
+    origRect.height * d.scale,
+    aspect,
+    driver
+  )
   d.position = { x: placed.x, y: placed.y }
   for (const [id, original] of d.originals) {
     const changes = scaleNodeChanges(original, d.scale, id !== d.nodeId)

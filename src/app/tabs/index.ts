@@ -5,7 +5,6 @@ import { shallowRef, computed, triggerRef } from 'vue'
 import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
-import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
@@ -36,7 +35,7 @@ import {
   type StorageLocation
 } from '@/app/integrations/storage'
 import {
-  cacheRecentFileThumbnail,
+  cacheRecentFileCover,
   loadCachedRecentFileThumbnail,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
@@ -61,7 +60,6 @@ export interface Tab {
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const fileOpenCoordinator = createFileOpenCoordinator()
-const RECENT_FILE_THUMBNAIL_SIZE = 512
 const coverThumbnailListeners = new WeakMap<EditorStore, () => void>()
 
 let nextTabId = 1
@@ -359,8 +357,8 @@ async function showImportedGraph(
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
-  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
-  if (!thumbnailPageId) return
+  // A document without a page has no cover, so it never waits for a renderer.
+  if (!figThumbnailPageId(store.graph.getPages())) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }
@@ -369,19 +367,9 @@ async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<vo
     console.warn('[Recent files] Thumbnail skipped because the renderer was unavailable')
     return
   }
-  const bytes = renderThumbnail(
-    renderer.ck,
-    renderer,
-    store.graph,
-    thumbnailPageId,
-    RECENT_FILE_THUMBNAIL_SIZE,
-    RECENT_FILE_THUMBNAIL_SIZE
-  )
-  if (!bytes) {
+  if (!(await cacheRecentFileCover(path, store.graph, renderer))) {
     console.warn('[Recent files] Thumbnail skipped because its page was empty')
-    return
   }
-  await cacheRecentFileThumbnail(path, bytes)
 }
 
 function watchOpenedFigCover(path: string, store: EditorStore): void {
@@ -495,7 +483,7 @@ export async function openStorageDocumentInNewTab(
   const existing = findStorageTab(binding)
   if (existing) {
     switchTab(existing.id)
-    rememberRecentStorageDocument(binding, document.name)
+    rememberRecentStorageDocument(binding, document.name, existing.store.state.documentKind)
     return existing.store
   }
 
@@ -509,7 +497,7 @@ export async function openStorageDocumentInNewTab(
   let succeeded = false
   try {
     await showStorageDocument(store, binding, document, load)
-    rememberRecentStorageDocument(binding, document.name)
+    rememberRecentStorageDocument(binding, document.name, store.state.documentKind)
     succeeded = true
   } catch (error) {
     if (!load.signal.aborted) {

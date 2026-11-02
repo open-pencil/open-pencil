@@ -1,0 +1,1 @@
+- Design JSX export of several layers is one JSX expression, wrapped in a fragment, so code editors and other JSX tools read it; sticky note, shape, and connector labels styled in ranges export with `<Span>` and `<Paragraph>` and read back the same.

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import { figJamColor, figJamColorName, figJamLayerColorFields, figJamLayerColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamSectionColorFields, figJamSectionColorName, figJamShapePaint } from '@open-pencil/scene-graph/figjam'
+import { figJamColor, figJamColorName, figJamLayerColorFields, figJamLayerColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamOutlineColorName, figJamSectionColorFields, figJamSectionColorName, figJamShapePaint } from '@open-pencil/scene-graph/figjam'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
@@ -94,6 +94,13 @@ describe("FigJam's shape colours", () => {
     expect(figJamSectionColorName({ fills: [hidden, ...(red.fills ?? [])] })).toBe('red')
   })
 
+  test("a section's outline reads as its colour, darker for black and lighter for white", () => {
+    for (const name of ['black', 'white', 'red'] as const) {
+      const outline = figJamSectionColorFields({ strokes: [] }, name).strokes?.[0]?.color
+      expect(figJamOutlineColorName(outline)).toBe(name)
+    }
+  })
+
   test('the colour menu paints text, a line, and other layers as FigJam does', () => {
     const text = figJamLayerColorFields({ type: 'TEXT', fills: [], strokes: [], styleRuns: [] }, 'red')
     expect(hexes(text.fills)).toEqual(['#f24822'])
@@ -120,7 +127,7 @@ describe("FigJam's shape colours", () => {
 
   test('a layer shows the colour of its first paint the canvas draws', () => {
     const paint = (name: 'red' | 'green' | 'blue', visible: boolean, opacity = 1) => ({ type: 'SOLID' as const, color: figJamColor(name), opacity, visible })
-    const fills = [paint('red', false), paint('green', true, 0), paint('blue', true)]
+    const fills = [paint('red', true), paint('blue', true), paint('green', true, 0), paint('red', false)]
     expect(figJamLayerColorName({ type: 'RECTANGLE', fills, strokes: [] })).toBe('blue')
   })
 

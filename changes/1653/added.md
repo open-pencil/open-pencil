@@ -1,0 +1,1 @@
+- Cloud keeps whether a document is a design or a FigJam board, and Home marks each file with its kind and filters recent files by it.

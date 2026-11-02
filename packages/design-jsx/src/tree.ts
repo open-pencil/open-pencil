@@ -22,14 +22,6 @@ function inlineFragments(children: (TreeNode | string)[]): (TreeNode | string)[]
   )
 }
 
-/**
- * The text an element holds as children, such as a sticky note's body or a connector's label.
- * Elements among its children are not text and are skipped.
- */
-export function plainTextOf(tree: TreeNode): string {
-  return tree.children.filter((child): child is string => typeof child === 'string').join('')
-}
-
 export function isTreeNode(x: unknown): x is TreeNode {
   if (x === null || typeof x !== 'object') return false
   return (

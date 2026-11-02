@@ -62,10 +62,16 @@ export const documentAccessSchema = v.object({
 })
 export type DocumentAccess = v.InferOutput<typeof documentAccessSchema>
 
+/** What a document is: a Figma design or a FigJam board, which the file it stores says too. */
+export const documentKindSchema = v.picklist(['design', 'board'])
+export type CloudDocumentKind = v.InferOutput<typeof documentKindSchema>
+
 export const documentSummarySchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   workspaceId: v.pipe(v.string(), v.uuid()),
   name: v.string(),
+  /** A design unless said otherwise; servers from before boards list no kind. */
+  kind: v.optional(documentKindSchema, 'design'),
   currentRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
   version: v.number(),
   createdAt: v.string(),
@@ -116,9 +122,13 @@ export const CLOUD_DOCUMENT_NAME_MAX_LENGTH = 255
 
 export const createDocumentSchema = v.object({
   id: v.optional(v.pipe(v.string(), v.uuid())),
-  name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(CLOUD_DOCUMENT_NAME_MAX_LENGTH))
+  name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(CLOUD_DOCUMENT_NAME_MAX_LENGTH)),
+  /** A design unless said otherwise; older clients create only designs. */
+  kind: v.optional(documentKindSchema, 'design')
 })
 export type CreateDocumentInput = v.InferOutput<typeof createDocumentSchema>
+/** A new document as a client sends it, which may leave out its kind to make a design. */
+export type CreateDocumentRequest = v.InferInput<typeof createDocumentSchema>
 
 export const createUploadSchema = v.object({
   baseRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
@@ -193,6 +203,8 @@ export const commitUploadSchema = v.object({
   checksum: checksumSchema,
   /** The document title captured with this revision; omitted by older clients. */
   name: v.optional(createDocumentSchema.entries.name),
+  /** What the uploaded file is, which the document takes; omitted by older clients. */
+  kind: v.optional(documentKindSchema),
   multipart: v.optional(
     v.object({
       uploadId: v.pipe(v.string(), v.minLength(1)),

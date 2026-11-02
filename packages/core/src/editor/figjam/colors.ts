@@ -8,10 +8,9 @@ import {
   type FigJamColorName,
   type FigJamLineStyle
 } from '@open-pencil/scene-graph/figjam'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
-import { showsImage } from '#core/editor/figjam/toolbar'
+import { figJamColoredLayers } from '#core/editor/figjam/toolbar'
 import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
 
@@ -38,28 +37,23 @@ export function createFigJamColorActions(ctx: EditorContext, nodes: NodeActions)
     )
   }
 
-  /** The layers a colour lands on: a group's contents, as FigJam colours a group. */
-  function painted(layer: SceneNode): SceneNode[] {
-    if (layer.type !== 'GROUP') return [layer]
-    return ctx.graph.getChildren(layer.id).flatMap(painted)
-  }
-
   /**
    * Paints the sections and plain layers among `ids` in palette colour `name`, as FigJam's colour
    * menu does: a section takes a pale tint outlined in the colour, other layers the colour itself.
+   * A layer with nothing to paint, such as a group of images, records no step.
    */
   function setFigJamColor(ids: Iterable<string>, name: FigJamColorName) {
-    const layers = layersAmong(ids, (node) => !isGeneratedFrame(node))
+    const layers = layersAmong(
+      ids,
+      (node) => node.type === 'SECTION' || figJamColoredLayers(ctx.graph, node).length > 0
+    )
     edit('Change color', layers, (layer) => {
       if (layer.type === 'SECTION') {
         nodes.updateNode(layer.id, figJamSectionColorFields(layer, name))
         return
       }
-      // An image in a group keeps its picture, as a lone image has no colour menu.
-      for (const target of painted(layer)) {
-        if (!isGeneratedFrame(target) && !showsImage(target))
-          nodes.updateNode(target.id, figJamLayerColorFields(target, name))
-      }
+      for (const target of figJamColoredLayers(ctx.graph, layer))
+        nodes.updateNode(target.id, figJamLayerColorFields(target, name))
     })
   }
 

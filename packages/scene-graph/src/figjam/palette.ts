@@ -232,6 +232,18 @@ export function figJamColorName(color: Color | undefined): FigJamColorName | nul
   return FIGJAM_COLOR_NAMES.find((name) => sameColor(color, figJamColor(name))) ?? null
 }
 
+/**
+ * The palette colour an outline is drawn in: a colour itself, or the outline a section of that
+ * colour takes, which is darker for black and lighter for white.
+ */
+export function figJamOutlineColorName(color: Color | undefined): FigJamColorName | null {
+  return (
+    figJamColorName(color) ??
+    FIGJAM_COLOR_NAMES.find((name) => sameColor(color, parseColor(PALETTE[name].sectionStroke))) ??
+    null
+  )
+}
+
 /** The fill mode a shape's first fill shows. */
 export function figJamFillMode(fill: Fill | undefined): FigJamFillMode {
   if (!fill || !fill.visible || fill.opacity === 0) return 'none'
@@ -375,9 +387,12 @@ export function figJamSectionColorFields(
   }
 }
 
-/** The first of `paints` the canvas draws: a hidden or fully transparent one shows nothing. */
+/**
+ * The paint of `paints` the canvas shows on top: the last it draws, skipping hidden and fully
+ * transparent ones, which show nothing.
+ */
 function drawnPaint<P extends Fill>(paints: readonly P[]): P | undefined {
-  return paints.find((paint) => paint.visible && paint.opacity > 0)
+  return paints.findLast((paint) => paint.visible && paint.opacity > 0)
 }
 
 /** The palette colour a section is painted, by its tint. */

@@ -711,18 +711,17 @@ export class SceneGraph {
     py: number,
     scopeId: string,
     selectedIds: ReadonlySet<string>,
-    pad = 0,
-    framesOpen = true
+    options?: HitTest.SelectableHitOptions
   ): SceneNode | null {
-    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, pad, framesOpen)
+    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, options)
   }
 
   hitTestOpenContainer(px: number, py: number, scopeId: string): SceneNode | null {
     return HitTest.hitTestOpenContainer(this, px, py, scopeId)
   }
 
-  isOpenContainer(nodeId: string): boolean {
-    return HitTest.isOpenContainer(this, nodeId)
+  isOpenContainer(nodeId: string, framesOpen = true): boolean {
+    return HitTest.isOpenContainer(this, nodeId, framesOpen)
   }
 
   isPointInNode(nodeId: string, px: number, py: number): boolean {

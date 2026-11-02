@@ -26,7 +26,6 @@ import type {
 
 import { openTour } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -193,7 +192,6 @@ export function useAppMenu() {
     'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
-    variables: () => openVariablesDialog(store),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

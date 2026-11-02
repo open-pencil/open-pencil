@@ -16,7 +16,15 @@ import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
-  r: Pick<SkiaRenderer, 'worldViewport' | 'viewportImageRendering' | 'renderNode' | 'nodePaths'>,
+  r: Pick<
+    SkiaRenderer,
+    | 'worldViewport'
+    | 'viewportImageRendering'
+    | 'renderNode'
+    | 'nodePaths'
+    | 'editingTextId'
+    | 'invalidateNodePicture'
+  >,
   canvas: Canvas,
   graph: SceneGraph,
   pageId: string
@@ -24,7 +32,12 @@ export function renderSceneToCanvas(
   r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
+  const editing = r.editingTextId
   r.viewportImageRendering = false
+  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited;
+  // the edited text's picture is of its live layout, so it is dropped on the way in and out.
+  r.editingTextId = null
+  if (editing) r.invalidateNodePicture(editing)
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
     const pageNode = graph.getNode(pageId)
@@ -34,6 +47,8 @@ export function renderSceneToCanvas(
   } finally {
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
+    r.editingTextId = editing
+    if (editing) r.invalidateNodePicture(editing)
   }
 }
 
@@ -246,6 +261,7 @@ export function render(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
+  r.editingTextId = overlays.editingTextId ?? null
   emitNavigationTrace('render:start', {
     layer,
     sceneVersion,

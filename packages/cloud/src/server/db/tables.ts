@@ -79,6 +79,8 @@ export interface DocumentTable {
   id: string
   workspaceId: string
   name: string
+  /** A design or a board; see migration 027. */
+  kind: Generated<'design' | 'board'>
   currentRevisionId: string | null
   collaborationEpoch: Generated<number>
   version: Generated<number>
