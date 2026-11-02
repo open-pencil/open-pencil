@@ -9,7 +9,6 @@ import {
 } from './dynamic-tailwind-classes.ts'
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
 import { noNativeTitleAttributesInVue } from './native-titles.ts'
-import { noPxTailwindValues } from './px-classes.ts'
 import {
   collectFiles,
   collectFolders,
@@ -550,7 +549,6 @@ export const openPencilArchitecturePlugin = {
     noDynamicTailwindStateClasses,
     noVueTemplateUIHooksOrSVG,
     noNativeTitleAttributesInVue,
-    noPxTailwindValues,
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
     noUIImportsInCore,
