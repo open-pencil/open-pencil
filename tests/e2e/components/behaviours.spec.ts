@@ -465,6 +465,8 @@ test('a Button behaviour maps its states and shows them in preview', async () =>
   await expect(section.getByRole('combobox', { name: 'Hover state' })).toHaveText(/Hover/)
   await expect(section.getByRole('combobox', { name: 'Pressed state' })).toHaveText(/Pressed/)
   await expect(section.getByRole('combobox', { name: 'Disabled state' })).toHaveText(/Disabled/)
+  // Only a form control has an invalid state.
+  await expect(section.getByRole('combobox', { name: 'Invalid state' })).toHaveCount(0)
 
   await startPreview()
   // Each state shows its variant's fill: the components are filled by index, as created above.

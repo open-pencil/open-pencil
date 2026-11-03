@@ -201,6 +201,7 @@ export const BEHAVIOUR_PROPS = [
   'modelValue',
   'open',
   'disabled',
+  'invalid',
   'filled',
   'states',
   'min',
@@ -227,8 +228,10 @@ function rootSpec(kind: BehaviourKind, props: Record<string, unknown>): Behaviou
   const values: NonNullable<BehaviourSpec['values']> = {}
   const main = kind === 'collapsible' ? props.open : props.modelValue
   if (isBinding(main)) values[kind === 'collapsible' ? 'open' : 'value'] = main
-  if (isBinding(props.disabled)) values.disabled = props.disabled
-  if (isBinding(props.filled)) values.filled = props.filled
+  for (const flag of ['disabled', 'invalid', 'filled'] as const) {
+    const binding = props[flag]
+    if (isBinding(binding)) values[flag] = binding
+  }
   const range: Record<string, number> = {}
   for (const key of ['min', 'max', 'step'] as const) {
     const value = props[key]
