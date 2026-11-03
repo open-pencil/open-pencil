@@ -12,7 +12,9 @@ import { createTextEditActions } from '#vue/canvas/text-edit/editing'
 
 const WHITE = colorToFill('#ffffff')
 const BLACK = colorToFill('#000000')
+const RED = colorToFill('#ff0000')
 const WHITE_RUN: CharacterStyleOverride = { fills: [WHITE] }
+const RED_RUN: CharacterStyleOverride = { fills: [RED] }
 const BOLD_BOUND_RUN: CharacterStyleOverride = {
   fontFamily: 'Inter',
   fontWeight: 700,
@@ -165,5 +167,126 @@ describe('typing into text coloured by its character runs', () => {
 
     expect(text.read().text).toBe('Bolder')
     expect(getStyleAt(text.read().styleRuns, 5)).toEqual(BOLD_BOUND_RUN)
+  })
+
+  test('typing over a selection across several runs takes the style of its first character', () => {
+    const text = editStyledText('abcdef', [
+      { start: 0, length: 2, style: WHITE_RUN },
+      { start: 2, length: 2, style: RED_RUN }
+    ])
+    placeCaret(text, 5, 1)
+    text.actions.insertText('X', text.read())
+
+    expect(text.read().text).toBe('aXf')
+    expect(fillAt(text, 1)).toEqual([WHITE])
+    expect(fillAt(text, 2)).toEqual([BLACK])
+  })
+
+  test('an input method composition over a selection takes the style of its first character', () => {
+    const text = editStyledText('Lead tail', [{ start: 0, length: 4, style: WHITE_RUN }])
+    placeCaret(text, 7, 2)
+    text.actions.replaceComposedText('x', text.read())
+    text.actions.replaceComposedText('xy', text.read())
+    text.actions.finishComposition()
+
+    expect(text.read().text).toBe('Lexyil')
+    expect(fillAt(text, 2)).toEqual([WHITE])
+    expect(fillAt(text, 3)).toEqual([WHITE])
+    expect(fillAt(text, 4)).toEqual([BLACK])
+  })
+
+  test('a cancelled composition restores the runs it replaced exactly', () => {
+    const runs: StyleRun[] = [
+      { start: 0, length: 2, style: WHITE_RUN },
+      { start: 2, length: 2, style: RED_RUN }
+    ]
+    const text = editStyledText('abcdef', runs)
+    placeCaret(text, 3, 1)
+    text.actions.replaceComposedText('k', text.read())
+    text.actions.replaceComposedText('ka', text.read())
+    text.actions.replaceComposedText('kan', text.read())
+    text.actions.restoreComposition(text.read())
+
+    expect(text.read().text).toBe('abcdef')
+    expect(text.read().styleRuns).toEqual(runs)
+  })
+})
+
+describe('typing into text emptied while editing it', () => {
+  test('typing after deleting every character keeps the style of the deleted text', () => {
+    const text = editWhiteRunText('Title')
+    text.textEditor.selectAll()
+    text.actions.deleteText(text.read(), false)
+
+    expect(text.read().text).toBe('')
+    expect(text.read().styleRuns).toEqual([])
+
+    text.actions.insertText('A', text.read())
+
+    expect(text.read().styleRuns).toEqual([{ start: 0, length: 1, style: WHITE_RUN }])
+  })
+
+  test('deleting a selection then typing matches typing over it', () => {
+    const text = editStyledText('abcdef', [
+      { start: 0, length: 2, style: WHITE_RUN },
+      { start: 2, length: 2, style: RED_RUN }
+    ])
+    placeCaret(text, 6, 2)
+    text.actions.deleteText(text.read(), false)
+    placeCaret(text, 0, 2)
+    text.actions.deleteText(text.read(), true)
+    text.actions.insertText('X', text.read())
+
+    expect(text.read().text).toBe('X')
+    expect(fillAt(text, 0)).toEqual([WHITE])
+  })
+
+  test('the last character deleted with backspace gives the style', () => {
+    const text = editStyledText('ab', [
+      { start: 0, length: 1, style: WHITE_RUN },
+      { start: 1, length: 1, style: RED_RUN }
+    ])
+    text.actions.deleteText(text.read(), false)
+    text.actions.deleteText(text.read(), false)
+    text.actions.insertText('c', text.read())
+
+    expect(fillAt(text, 0)).toEqual([WHITE])
+  })
+
+  test('the last character deleted forward gives the style', () => {
+    const text = editStyledText('ab', [
+      { start: 0, length: 1, style: WHITE_RUN },
+      { start: 1, length: 1, style: RED_RUN }
+    ])
+    placeCaret(text, 0)
+    text.actions.deleteText(text.read(), true)
+    text.actions.deleteText(text.read(), true)
+    text.actions.insertText('c', text.read())
+
+    expect(fillAt(text, 0)).toEqual([RED])
+  })
+
+  test('an input method composition into emptied text keeps the deleted style', () => {
+    const text = editWhiteRunText('Title')
+    text.textEditor.selectAll()
+    text.actions.deleteText(text.read(), false)
+    text.actions.replaceComposedText('k', text.read())
+    text.actions.replaceComposedText('ka', text.read())
+    text.actions.finishComposition()
+
+    expect(text.read().text).toBe('ka')
+    expect(text.read().styleRuns).toEqual([{ start: 0, length: 2, style: WHITE_RUN }])
+  })
+
+  test('a new editing session on the emptied text starts from the base style', () => {
+    const text = editWhiteRunText('Title')
+    text.textEditor.selectAll()
+    text.actions.deleteText(text.read(), false)
+    text.textEditor.stop()
+    text.textEditor.start(text.read())
+    text.actions.insertText('A', text.read())
+
+    expect(text.read().styleRuns).toEqual([])
+    expect(fillAt(text, 0)).toEqual([BLACK])
   })
 })

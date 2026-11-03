@@ -4,6 +4,7 @@ import {
   adjustRunsForDelete,
   applyStyleToRange,
   getStyleAt,
+  insertRunsWithStyle,
   removeStyleFromRange,
   runsAfterTyping,
   selectionHasStyle,
@@ -96,6 +97,40 @@ describe('runsAfterTyping', () => {
 
   test('typing into an empty text adds no runs', () => {
     expect(runsAfterTyping([], 0, 0, 0, 3)).toEqual([])
+  })
+})
+
+describe('insertRunsWithStyle', () => {
+  const bold = { fontWeight: 700 }
+
+  test('merges the inserted run with an equal-styled neighbour on either side', () => {
+    const runs: StyleRun[] = [
+      { start: 0, length: 2, style: bold },
+      { start: 2, length: 2, style: bold }
+    ]
+    expect(insertRunsWithStyle(runs, 2, 2, bold)).toEqual([{ start: 0, length: 6, style: bold }])
+  })
+
+  test('leaves equal-styled runs away from the insert as they were', () => {
+    const runs: StyleRun[] = [
+      { start: 0, length: 2, style: bold },
+      { start: 2, length: 2, style: bold },
+      { start: 6, length: 2, style: bold }
+    ]
+    expect(insertRunsWithStyle(runs, 5, 1, {})).toEqual([
+      { start: 0, length: 2, style: bold },
+      { start: 2, length: 2, style: bold },
+      { start: 7, length: 2, style: bold }
+    ])
+  })
+
+  test('keeps a neighbour with another style apart from the inserted run', () => {
+    const italic = { italic: true }
+    const runs: StyleRun[] = [{ start: 0, length: 2, style: italic }]
+    expect(insertRunsWithStyle(runs, 2, 3, bold)).toEqual([
+      { start: 0, length: 2, style: italic },
+      { start: 2, length: 3, style: bold }
+    ])
   })
 })
 

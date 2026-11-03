@@ -2,8 +2,15 @@ import { useIntervalFn } from '@vueuse/core'
 import type { ShallowRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { adjustRunsForDelete, runsAfterTyping } from '@open-pencil/core/text'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  adjustRunsForDelete,
+  getStyleAt,
+  insertRunsWithStyle,
+  runsAfterTyping,
+  type TextEditor,
+  type TextEditorState
+} from '@open-pencil/core/text'
+import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/scene-graph'
 import { paragraphStylesAfterTextChange } from '@open-pencil/scene-graph/text'
 
 const CARET_BLINK_MS = 530
@@ -130,7 +137,49 @@ export function createTextCompositionHandlers({
   }
 }
 
+function deletedRange(
+  editor: TextEditor,
+  node: SceneNode,
+  forward: boolean
+): [number, number] | null {
+  const selection = editor.getSelectionRange()
+  if (selection) {
+    return selection
+  }
+  const cursor = editor.state?.cursor
+  if (cursor === undefined) {
+    return null
+  }
+  if (forward && cursor < node.text.length) {
+    return [cursor, cursor + 1]
+  }
+  if (!forward && cursor > 0) {
+    return [cursor - 1, cursor]
+  }
+  return null
+}
+
 export function createTextEditActions(store: Editor) {
+  const styleOfEmptiedText = new WeakMap<TextEditorState, CharacterStyleOverride>()
+
+  function emptiedTextStyle(): CharacterStyleOverride {
+    const session = store.textEditor?.state
+    return (session && styleOfEmptiedText.get(session)) ?? {}
+  }
+
+  function runsAfterTypingInSession(
+    runs: StyleRun[],
+    textLength: number,
+    start: number,
+    end: number,
+    typedLength: number
+  ): StyleRun[] {
+    if (textLength > 0) {
+      return runsAfterTyping(runs, textLength, start, end, typedLength)
+    }
+    return insertRunsWithStyle([], 0, typedLength, emptiedTextStyle())
+  }
+
   function getEditingNode() {
     const id = store.state.editingTextId
     if (!id) return null
@@ -163,7 +212,7 @@ export function createTextEditActions(store: Editor) {
     if (!editor) return
     const cursor = editor.state?.cursor ?? 0
     const [start, end] = editor.getSelectionRange() ?? [cursor, cursor]
-    const runs = runsAfterTyping(node.styleRuns, node.text.length, start, end, text.length)
+    const runs = runsAfterTypingInSession(node.styleRuns, node.text.length, start, end, text.length)
     editor.insert(text, node)
     syncText(node.id, editor.state?.text ?? '', runs)
   }
@@ -211,7 +260,7 @@ export function createTextEditActions(store: Editor) {
     state.cursor = draft.start + text.length
     state.selectionAnchor = null
 
-    const runs = runsAfterTyping(
+    const runs = runsAfterTypingInSession(
       draft.baseRuns,
       draft.baseText.length,
       draft.start,
@@ -249,21 +298,21 @@ export function createTextEditActions(store: Editor) {
   function deleteText(node: SceneNode, forward: boolean) {
     const editor = store.textEditor
     if (!editor) return
-    const range = editor.getSelectionRange()
-    let runs = node.styleRuns
-    if (range) {
-      runs = adjustRunsForDelete(runs, range[0], range[1] - range[0])
-    } else if (forward && editor.state && editor.state.cursor < node.text.length) {
-      runs = adjustRunsForDelete(runs, editor.state.cursor, 1)
-    } else if (!forward && editor.state && editor.state.cursor > 0) {
-      runs = adjustRunsForDelete(runs, editor.state.cursor - 1, 1)
-    }
+    const range = deletedRange(editor, node, forward)
+    const runs = range
+      ? adjustRunsForDelete(node.styleRuns, range[0], range[1] - range[0])
+      : node.styleRuns
     if (forward) {
       editor.delete(node)
     } else {
       editor.backspace(node)
     }
-    syncText(node.id, editor.state?.text ?? '', runs)
+    const session = editor.state
+    const text = session?.text ?? ''
+    if (session && range && text.length === 0) {
+      styleOfEmptiedText.set(session, getStyleAt(node.styleRuns, range[0]))
+    }
+    syncText(node.id, text, runs)
   }
 
   return {
