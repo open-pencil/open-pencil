@@ -232,6 +232,31 @@ describe('typing into text emptied while editing it', () => {
     expect(text.read().styleRuns).toEqual([{ start: 0, length: 1, style: WHITE_RUN }])
   })
 
+  test('typing after deleting every character keeps the font and variable bindings', () => {
+    const text = editStyledText('Bold', [{ start: 0, length: 4, style: BOLD_BOUND_RUN }])
+    text.textEditor.selectAll()
+    text.actions.deleteText(text.read(), false)
+    text.actions.insertText('A', text.read())
+
+    expect(text.read().styleRuns).toEqual([{ start: 0, length: 1, style: BOLD_BOUND_RUN }])
+  })
+
+  test('the emptied text keeps the deleted style while fonts arriving later resize it', () => {
+    const text = editWhiteRunText('Title')
+    text.textEditor.selectAll()
+    text.actions.deleteText(text.read(), false)
+    text.store.graph.updateNode(text.read().id, {
+      width: 120,
+      height: 24,
+      derivedLayout: null,
+      derivedTextGlyphs: null,
+      derivedTextHeight: null
+    })
+    text.actions.insertText('A', text.read())
+
+    expect(text.read().styleRuns).toEqual([{ start: 0, length: 1, style: WHITE_RUN }])
+  })
+
   test('deleting a selection then typing matches typing over it', () => {
     const text = editStyledText('abcdef', [
       { start: 0, length: 2, style: WHITE_RUN },
@@ -367,8 +392,11 @@ describe('undoing back to a text emptied while editing it', () => {
   test('typing after undoing to the empty text takes the base style', async () => {
     const { read, actions } = await editEmptyText()
     actions.insertText('abc', read())
-    editor.textEditor?.selectAll()
-    editor.updateNodeWithUndo(read().id, { fills: [RED] }, 'Change fill')
+    editor.updateNodeWithUndo(
+      read().id,
+      { styleRuns: [{ start: 0, length: 3, style: WHITE_RUN }] },
+      'Colour text'
+    )
     editor.textEditor?.selectAll()
     actions.deleteText(read(), false)
     editor.undoAction()

@@ -93,6 +93,8 @@ describe('runsAfterTyping', () => {
   test('typing over a selection takes the style of its first character', () => {
     expect(runsAfterTyping([bold], 8, 4, 7, 2)).toEqual([{ ...bold, length: 4 }])
     expect(runsAfterTyping([bold], 8, 1, 4, 1)).toEqual([{ ...bold, start: 2, length: 1 }])
+    const leadingBold: StyleRun = { start: 0, length: 1, style: { fontWeight: 700 } }
+    expect(runsAfterTyping([leadingBold], 8, 1, 4, 1)).toEqual([leadingBold])
   })
 
   test('typing into an empty text adds no runs', () => {

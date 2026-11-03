@@ -165,6 +165,20 @@ type EmptiedTextStyle = {
   stopWatchingNode: () => void
 }
 
+const MEASURED_TEXT_FIELDS: ReadonlySet<string> = new Set([
+  'x',
+  'y',
+  'width',
+  'height',
+  'derivedLayout',
+  'derivedTextGlyphs',
+  'derivedTextHeight'
+])
+
+function restylesOrRewritesText(changes: Partial<SceneNode>) {
+  return Object.keys(changes).some((field) => !MEASURED_TEXT_FIELDS.has(field))
+}
+
 export function createTextEditActions(store: Editor) {
   let styleOfEmptiedText: EmptiedTextStyle | null = null
   let writingTypedText = false
@@ -181,8 +195,8 @@ export function createTextEditActions(store: Editor) {
   ) {
     forgetEmptiedTextStyle()
     const stopWatchingNode = store.graph.onNodeEvents({
-      updated: (id) => {
-        if (id === nodeId && !writingTypedText) {
+      updated: (id, changes) => {
+        if (id === nodeId && !writingTypedText && restylesOrRewritesText(changes)) {
           forgetEmptiedTextStyle()
         }
       }
