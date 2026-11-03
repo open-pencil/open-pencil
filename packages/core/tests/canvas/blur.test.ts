@@ -228,6 +228,27 @@ describe('a negative blur, which only a bound variable gives', () => {
     })
   }
 
+  for (const type of ['DROP_SHADOW', 'INNER_SHADOW'] as const) {
+    test(`draws a ${type.toLowerCase()} cast from a boolean's silhouette as no blur`, () => {
+      const inner = type === 'INNER_SHADOW'
+      const row = (radius: number) =>
+        edgeRow((graph, frameId) => {
+          const union = graph.createNode('BOOLEAN_OPERATION', frameId, {
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 200,
+            booleanOperation: 'UNION',
+            fills: [solid(1, 1, 1)],
+            effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
+          })
+          graph.createNode('RECTANGLE', union.id, { width: 200, height: 120 })
+          graph.createNode('RECTANGLE', union.id, { y: 80, width: 200, height: 120 })
+        }, inner ? 0 : 3)
+      expect(row(-6)).toEqual(row(0))
+    })
+  }
+
   test('draws a background blur as no blur', () => {
     expect(backgroundBlurRow(-6)).toEqual(backgroundBlurRow(0))
   })
