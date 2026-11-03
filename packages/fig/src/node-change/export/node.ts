@@ -1019,7 +1019,12 @@ function exportedChildren(node: SceneNode, context: SceneNodeToKiwiContext): Sce
   }
   return context.graph
     .getChildren(node.id)
-    .filter((child) => !child.internalOnly && child.sharedStyleType === null)
+    .filter(
+      (child) =>
+        !child.internalOnly &&
+        child.sharedStyleType === null &&
+        !context.skippedNodeIds?.has(child.id)
+    )
 }
 
 /** Stroke geometry and lock state, which a layer's record and its instance claims both write. */

@@ -505,6 +505,33 @@ describe("a set's properties as each variant's linked copy", () => {
     expect(expectDefined(pasted.children[0], 'dot').visible).toBe(false)
   })
 
+  // The set an instance brings would write a copied variant a second time under one GUID.
+  test('a variant copied with an instance of its sibling pastes once', async () => {
+    const graph = await dotSet()
+    const nodes = [...graph.getAllNodes()]
+    const large = expectDefined(
+      nodes.find((node) => node.name === 'Size=Large'),
+      'large'
+    )
+    const small = expectDefined(
+      nodes.find((node) => node.name === 'Size=Small'),
+      'small'
+    )
+    const sibling = expectDefined(graph.createInstance(small.id, graph.getPages()[0].id), 'sibling')
+    const html = expectDefined(await buildFigmaClipboardHTML([large, sibling], graph), 'html')
+    const records = expectDefined(await parseFigmaClipboard(html), 'parsed').nodes
+    const guids = records.map((record) => guidOf(record.guid))
+    expect(new Set(guids).size).toBe(guids.length)
+
+    const target = createEditor()
+    await target.pasteFromHTML(html)
+    const pasted = [...target.graph.getAllNodes()]
+    expect(pasted.filter((node) => node.type === 'INSTANCE')).toHaveLength(1)
+    expect(pasted.some((node) => node.name === 'Size=Large' && node.type === 'COMPONENT')).toBe(
+      true
+    )
+  })
+
   // Figma (desktop 126) writes a variant copied alone with its set's properties as its own,
   // under its copies' GUIDs, so it pastes as a component its layers still bind to.
   test('a copied variant pastes as a component defining its set’s properties', async () => {

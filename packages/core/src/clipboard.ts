@@ -227,6 +227,9 @@ async function writeFigmaClipboardHTML(
         modeIdToGuid: modeIds,
         slotContentRecords,
         propertyCopyGuids,
+        // A set brought for an instance leaves out a copied variant, already written on the
+        // page, which would otherwise repeat its GUID.
+        skippedNodeIds: selected,
         runtime
       })
     )

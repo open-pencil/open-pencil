@@ -109,6 +109,8 @@ export interface SceneNodeToKiwiContext {
   orderKeys?: ReadonlyMap<string, string>
   /** False to write a layer's record alone, as when only some records change. */
   writeChildren?: boolean
+  /** Layers a caller writes elsewhere, which their parents' records leave out. */
+  skippedNodeIds?: ReadonlySet<string>
   /**
    * Receives the content frames of instance slots. Figma stores them on the internal canvas,
    * so the caller re-parents the `isSlotContent` roots there after serializing its nodes.
