@@ -26,12 +26,16 @@ test('a fill’s colour binding stays with it when a fill above it is removed', 
   })
   const bindings = () =>
     page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.boundVariables, id)
+  const fillCount = () =>
+    page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.fills.length, id)
 
   const fill = page.getByRole('region', { name: 'Fill', exact: true })
   await fill.getByRole('button', { name: 'Remove fill' }).nth(1).click()
+  await expect.poll(fillCount).toBe(2)
   await expect.poll(bindings).toEqual({ 'fills/0/color': red, 'fills/1/color': blue })
 
   await fill.getByRole('heading', { name: 'Fill' }).click()
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect.poll(fillCount).toBe(3)
   await expect.poll(bindings).toEqual({ 'fills/0/color': red, 'fills/2/color': blue })
 })
