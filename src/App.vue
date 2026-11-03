@@ -13,6 +13,7 @@ import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { offerCrashReports } from '@/app/reports/crash'
 import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
@@ -25,6 +26,7 @@ import { CloudHosts } from '@/components/cloud/integration'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
+import ReportDialogHost from '@/components/reports/ReportDialogHost.vue'
 import SaveToHost from '@/components/save-to/SaveToHost.vue'
 import AISetupDialog from '@/components/settings/ai-setup/AISetupDialog.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
@@ -61,6 +63,7 @@ useEventListener(window, 'pageshow', (event) => {
 
 onMounted(() => {
   toast.setupGlobalErrorHandler()
+  void offerCrashReports()
   scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
   onUnmounted(
@@ -83,6 +86,7 @@ onMounted(() => {
       <PublishLibraryDialog />
       <LibraryUpdateReviewDialog />
       <UsageStatsPrompt />
+      <ReportDialogHost />
       <AppToaster />
       <VoiceCallAudio />
     </TooltipProvider>

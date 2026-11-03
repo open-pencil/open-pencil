@@ -308,6 +308,77 @@ export function tabsComponent() {
 }
 
 /**
+ * Tabs whose triggers are instances of a Tab set, as the shadcn/ui kit draws them: the set
+ * draws Selected On and Off and a disabled look, and the list holds Account (selected),
+ * Password, and Billing (drawn disabled), each with a panel.
+ */
+export function tabsOfTabSets() {
+  const graph = new SceneGraph()
+  const { set: tab } = componentSet(
+    'Tab',
+    { Selected: ['Off', 'On'], State: ['Default', 'Disabled'] },
+    {
+      ...emptyBehaviour('tab'),
+      booleans: { value: { propertyId: 'selected', on: 'On', off: 'Off' } },
+      states: { propertyId: 'state', rest: 'Default', disabled: 'Disabled' }
+    },
+    (graph, variant, { Selected, State }) =>
+      graph.updateNode(variant, {
+        width: 80,
+        height: 24,
+        fills: Selected === 'On' ? COLORS.on : COLORS.off,
+        opacity: State === 'Disabled' ? 0.5 : 1
+      }),
+    ({ Selected, State }) => Selected === 'On' && State === 'Disabled',
+    graph
+  )
+  const variant = (values: string) =>
+    graph.getChildren(tab.id).find((child) => child.name === values)
+  const tabs = graph.createNode('COMPONENT', graph.getPages()[0].id, {
+    name: 'Settings',
+    y: 100,
+    width: 260,
+    height: 120
+  })
+  const list = graph.createNode('FRAME', tabs.id, {
+    name: 'List',
+    componentPropertyReferences: slot('list-slot'),
+    width: 260,
+    height: 24
+  })
+  const panels = graph.createNode('FRAME', tabs.id, {
+    name: 'Panels',
+    componentPropertyReferences: slot('panels-slot'),
+    y: 30,
+    width: 260,
+    height: 80
+  })
+  const triggers = [
+    ['Account', 'Selected=On, State=Default'],
+    ['Password', 'Selected=Off, State=Default'],
+    ['Billing', 'Selected=Off, State=Disabled']
+  ] as const
+  for (const [index, [label, values]] of triggers.entries()) {
+    const main = variant(values)
+    if (!main) throw new Error(`No ${values} variant`)
+    graph.createInstance(main.id, list.id, { name: label, x: index * 86 })
+    graph.createNode('FRAME', panels.id, {
+      name: `${label} panel`,
+      width: 260,
+      height: 80,
+      visible: index === 0
+    })
+  }
+  graph.updateNode(tabs.id, {
+    pluginData: withBehaviour(tabs, {
+      ...emptyBehaviour('tabs'),
+      parts: { list: 'list-slot', panels: 'panels-slot' }
+    })
+  })
+  return { graph, tab: graph.getNode(tab.id) ?? tab, set: graph.getNode(tabs.id) ?? tabs }
+}
+
+/**
  * A group as design JSX builds one: a standalone component with the group's behaviour whose
  * items slot holds instances of `item`, each labelled through the item's text property, with
  * the item at `chosen` drawn on.

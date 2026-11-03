@@ -3,10 +3,12 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import {
   endRecoverySession,
   recoverySessionId,
+  recoverySessionStates,
   sessionStates,
   startRecoverySession
 } from '@/app/document/recovery/session'
 import {
+  markSessionStarted,
   setSessionRegistryForTests,
   startedSessionIds
 } from '@/app/document/recovery/session/storage'
@@ -61,5 +63,21 @@ describe('recovery sessions', () => {
     expect(startedSessionIds()).toEqual([recoverySessionId])
     endRecoverySession()
     expect(startedSessionIds()).toEqual([])
+  })
+
+  test('a window that closes while the locks are read is not a crash', async () => {
+    markSessionStarted('crashed', true)
+    markSessionStarted('closing', true)
+    const locks = {
+      query: async () => {
+        // The closing window leaves the registry, then lets its lock go, before the answer.
+        markSessionStarted('closing', false)
+        return { held: [], pending: [] }
+      },
+      request: (() => Promise.resolve()) as LockManager['request']
+    }
+    const { crashed } = await recoverySessionStates(locks)
+    expect([...crashed]).toEqual(['crashed'])
+    markSessionStarted('crashed', false)
   })
 })
