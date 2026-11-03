@@ -105,6 +105,7 @@
   "reportSent": "レポートを送信しました。ありがとうございます。",
   "reportFailed": "レポートを送信できませんでした。接続を確認して、もう一度お試しください。",
   "reportFilesFailed": "レポートは送信されましたが、ドキュメントをアップロードできませんでした。",
+  "reportDocumentFailed": "ドキュメントを添付できませんでした。添付せずにレポートを送信できます。",
   "reportUnexpectedError": "OpenPencil で問題が発生しました。",
   "reportPanic": "前回の実行中に OpenPencil で内部エラーが発生しました。",
   "reportCrashed": "OpenPencil はエラーの後、予期せず終了しました。"

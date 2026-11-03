@@ -23,6 +23,7 @@ const {
   attachDocument,
   hasDocument,
   preparingDocument,
+  documentFailed,
   report,
   preview,
   sending,
@@ -86,6 +87,7 @@ const description = computed(() =>
           data-test-id="report-preview"
           >{{ preview }}</pre>
       </AppCollapsible>
+      <AppAlert v-if="documentFailed" tone="error" :heading="messages.reportDocumentFailed" />
       <AppAlert
         v-if="failure"
         tone="error"

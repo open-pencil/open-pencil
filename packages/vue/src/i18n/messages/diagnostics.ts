@@ -121,6 +121,7 @@ export const diagnosticsMessageDefaults = {
   reportSent: 'Report sent. Thank you.',
   reportFailed: 'Could not send the report. Check your connection and try again.',
   reportFilesFailed: 'The report was sent, but the document could not be uploaded.',
+  reportDocumentFailed: 'The document could not be attached. You can send the report without it.',
   reportPanic: 'OpenPencil hit an internal error the last time it ran.',
   reportCrashed: 'OpenPencil closed unexpectedly after an error.',
   reportUnexpectedError: 'Something went wrong in OpenPencil.'

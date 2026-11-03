@@ -8,6 +8,7 @@ import { diagnosticsMessages } from '@open-pencil/vue/i18n'
 import { diagnostics, type DiagnosticEvent } from '@/app/diagnostics'
 import { scrubDiagnosticText } from '@/app/diagnostics/scrub'
 import { recoverySessionStates } from '@/app/document/recovery/session'
+import { startedSessionIds } from '@/app/document/recovery/session/storage'
 import { APP_VERSION } from '@/app/runtime/version'
 import { toast } from '@/app/shell/ui'
 import { IS_TAURI } from '@/constants'
@@ -24,9 +25,10 @@ const crashedAtLaunch = recoverySessionStates()
   .then((states) => states.crashed)
   .catch(() => new Set<string>())
 
-const MAX_REMEMBERED = 50
-
-/** Crashed sessions already offered, so each crash is offered once whatever is chosen. */
+/**
+ * Crashed sessions already offered, so each crash is offered once whatever is chosen. Only those
+ * still in the registry are kept, as no other can be offered again.
+ */
 const offeredSessions = useLocalStorage<string[]>('open-pencil:reports:offered-crashes', [])
 
 const panicSchema = v.object({
@@ -108,7 +110,8 @@ export async function offerCrashReports(): Promise<void> {
   const crashed = new Set([...(await crashedAtLaunch)].filter((id) => !offered.has(id)))
   if (crashed.size === 0) return
   const events = await diagnostics.list()
-  offeredSessions.value = [...offeredSessions.value, ...crashed].slice(-MAX_REMEMBERED)
+  const registered = new Set(startedSessionIds())
+  offeredSessions.value = [...offered, ...crashed].filter((id) => registered.has(id))
   const last = crashErrors(events, crashed).at(0)
   if (last) offer(messages.reportCrashed, storedErrorExceptions(last))
 }

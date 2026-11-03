@@ -105,6 +105,7 @@
   "reportSent": "Segnalazione inviata. Grazie!",
   "reportFailed": "Impossibile inviare la segnalazione. Controlla la connessione e riprova.",
   "reportFilesFailed": "La segnalazione è stata inviata, ma non è stato possibile caricare il documento.",
+  "reportDocumentFailed": "Impossibile allegare il documento. Puoi inviare la segnalazione senza.",
   "reportUnexpectedError": "Qualcosa è andato storto in OpenPencil.",
   "reportPanic": "OpenPencil ha avuto un errore interno l’ultima volta che è stato eseguito.",
   "reportCrashed": "OpenPencil si è chiuso inaspettatamente dopo un errore."

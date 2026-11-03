@@ -76,7 +76,7 @@ Accepted events go to [PostHog](https://posthog.com), a product analytics servic
 
 ## Error and problem reports
 
-When OpenPencil hits an unexpected error, an official build adds **Report…** to the error notice. If OpenPencil closed unexpectedly after an error, or the desktop app hit an internal error, the next launch offers the same, once. **File → Report a problem…** is always there. Both open a form, and nothing is sent until you choose **Send report**. **What will be sent** shows the exact report before it goes. It has:
+When OpenPencil's own code throws an unexpected error, an official build adds **Report…** to the error notice; errors from browser extensions or without a stack trace get none. If OpenPencil closed unexpectedly after an error, or the desktop app hit an internal error, the next launch offers the same, once. **File → Report a problem…** is always there. Both open a form, and nothing is sent until you choose **Send report**. **What will be sent** shows the exact report before it goes. It has:
 
 - For an error: its type and message, scrubbed of keys, tokens, email addresses, and your user name in folder paths, and where in OpenPencil's code it happened. Errors from AI providers, which can quote your prompts, are sent without a message.
 - What you write, and an email address if you give one so we can reply.

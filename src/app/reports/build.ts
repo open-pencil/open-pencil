@@ -64,8 +64,9 @@ function withinBodyLimit(report: Report): Report | null {
     budget -= size
     kept++
   }
-  if (budget < 0) return null
-  return { ...report, steps: kept > 0 ? steps.slice(-kept) : undefined }
+  if (kept > 0) return { ...report, steps: steps.slice(-kept) }
+  const withoutSteps = { ...report, steps: undefined }
+  return bodyBytes(withoutSteps) <= REPORT_BODY_MAX_BYTES ? withoutSteps : null
 }
 
 /**

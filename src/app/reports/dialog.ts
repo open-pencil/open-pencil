@@ -6,7 +6,7 @@ import type { Build, ReportReceipt } from '@open-pencil/feedback/contract'
 import { diagnosticsMessages } from '@open-pencil/vue/i18n'
 
 import { diagnostics, type DiagnosticEvent } from '@/app/diagnostics'
-import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
+import { useActiveEditorStoreRef, type EditorStore } from '@/app/editor/active-store'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 import { showsDocument } from '@/app/tabs'
@@ -28,10 +28,13 @@ function sharedInstallId(): string | null {
   return shared ? sharingState.value.installId : null
 }
 
-/** The open document as a `.fig` file under the name reports accept, never its own name. */
-async function documentAttachment(): Promise<ReportAttachment | null> {
-  const store = showsDocument() ? getActiveEditorStoreOrNull() : null
-  if (!store) return null
+/** The document in the active tab; Home and a New file tab hold none, as the File menu decides. */
+const activeDocument = computed(() =>
+  showsDocument() ? (useActiveEditorStoreRef().value ?? null) : null
+)
+
+/** A document as a `.fig` file under the name reports accept, never its own name. */
+async function documentAttachment(store: EditorStore): Promise<ReportAttachment> {
   const bytes = await exportFigFile(store.graph, {
     pageId: store.state.currentPageId,
     documentName: 'document'
@@ -49,13 +52,14 @@ export function useReportDialog() {
   const email = ref('')
   const includeActivity = ref(true)
   const attachDocument = ref(false)
-  const hasDocument = ref(false)
+  const hasDocument = computed(() => activeDocument.value !== null)
   const sending = ref(false)
   const failure = ref<ReportSendFailure | null>(null)
   const build = shallowRef<Build | null>(null)
   const activity = shallowRef<DiagnosticEvent[]>([])
   const attachment = shallowRef<ReportAttachment | null>(null)
   const preparingDocument = ref(false)
+  const documentFailed = ref(false)
   /** Set once the report went through but a file did not, so Send uploads only the files. */
   const delivered = shallowRef<ReportReceipt | null>(null)
   let exportRequest = 0
@@ -73,26 +77,33 @@ export function useReportDialog() {
       failure.value = null
       delivered.value = null
       sending.value = false
-      // Home and a New file tab hold no document, as the File menu decides.
-      hasDocument.value = showsDocument() && getActiveEditorStoreOrNull() !== null
       activity.value = diagnostics.recent()
       build.value = await currentBuild()
     },
     { immediate: true }
   )
 
-  watch(attachDocument, async (attach) => {
+  // The attachment follows the active tab, so a tab switched to with the dialog open is the one sent.
+  watch([attachDocument, activeDocument], async ([attach, store]) => {
     // Only the latest export counts: an earlier one may be of the tab that was active before.
     const request = ++exportRequest
     attachment.value = null
-    preparingDocument.value = attach
-    if (!attach) return
+    documentFailed.value = false
+    preparingDocument.value = attach && store !== null
+    if (!attach || !store) return
     try {
-      const file = await documentAttachment()
+      const file = await documentAttachment(store)
       if (request === exportRequest) attachment.value = file
+    } catch {
+      if (request === exportRequest) documentFailed.value = true
     } finally {
       if (request === exportRequest) preparingDocument.value = false
     }
+  })
+
+  // A changed report is a new one: sending it posts it rather than reusing a delivered receipt.
+  watch([note, email, includeActivity, attachment], () => {
+    delivered.value = null
   })
 
   const kind = computed(() => (reportDialogError.value ? 'error' : 'problem'))
@@ -100,7 +111,7 @@ export function useReportDialog() {
   /** The body that would be sent, or `null` while the service would refuse it. */
   const report = computed(() => {
     if (!build.value) return null
-    if (attachDocument.value && !attachment.value) return null
+    if (attachDocument.value && (!attachment.value || !hasDocument.value)) return null
     return buildReport(
       {
         exceptions: reportDialogError.value,
@@ -156,6 +167,7 @@ export function useReportDialog() {
     attachDocument,
     hasDocument,
     preparingDocument,
+    documentFailed,
     report,
     preview,
     sending,
