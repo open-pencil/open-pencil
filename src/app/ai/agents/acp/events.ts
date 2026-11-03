@@ -25,6 +25,7 @@ interface ToolIdentity {
 }
 
 const OWN_PREFIX = `mcp__${OPEN_PENCIL_MCP_SERVER}__`
+const GROK_OWN_PREFIX = `${OPEN_PENCIL_MCP_SERVER}__`
 
 const codexMCPInputSchema = v.object({
   server: v.string(),
@@ -48,6 +49,14 @@ const cursorMCPInputSchema = v.object({
   providerIdentifier: v.string(),
   toolName: v.string(),
   args: v.optional(v.unknown())
+})
+const grokMetaSchema = v.object({ 'x.ai/tool': v.object({ name: v.literal('use_tool') }) })
+const grokMCPInputSchema = v.object({ tool_name: v.string(), tool_input: v.optional(v.unknown()) })
+/** Grok Build's MCP result: the tool's text, under `OkayOutput` or, for a failure, `Error`. */
+const grokMCPOutputSchema = v.object({
+  type: v.literal('MCP'),
+  output: v.union([v.object({ OkayOutput: v.string() }), v.object({ Error: v.string() })]),
+  is_error: v.optional(v.boolean())
 })
 const mcpResultSchema = v.object({
   content: v.array(v.unknown()),
@@ -95,11 +104,23 @@ function cursorIdentity(update: ToolCallReport): ToolIdentity | null {
     : { name: `mcp__${server}__${tool}`, kind: 'mcp', input: args ?? {} }
 }
 
+/** Grok Build calls every MCP tool through its `use_tool`, naming it `server__tool`. */
+function grokIdentity(update: ToolCallReport): ToolIdentity | null {
+  if (!v.is(grokMetaSchema, update._meta)) return null
+  const input = v.safeParse(grokMCPInputSchema, update.rawInput)
+  if (!input.success) return null
+  const { tool_name: name, tool_input: args } = input.output
+  return name.startsWith(GROK_OWN_PREFIX)
+    ? { name: name.slice(GROK_OWN_PREFIX.length), kind: 'own', input: args ?? {} }
+    : { name: `mcp__${name}`, kind: 'mcp', input: args ?? {} }
+}
+
 function identify(update: ToolCallReport): ToolIdentity {
   return (
     codexIdentity(update) ??
     claudeIdentity(update) ??
-    cursorIdentity(update) ?? { name: update.title || 'unknown', kind: 'agent' }
+    cursorIdentity(update) ??
+    grokIdentity(update) ?? { name: update.title || 'unknown', kind: 'agent' }
   )
 }
 
@@ -174,8 +195,18 @@ type ToolResult = { ok: true; output: unknown } | { ok: false; errorText: string
 
 const FAILED = 'Tool call failed'
 
-/** An MCP call's result, unwrapped from Codex's `{ result, error }`, or the error it reports. */
+/**
+ * An MCP call's result, unwrapped from Codex's `{ result, error }` or Grok Build's text, or the
+ * error it reports.
+ */
 function mcpOutcome(update: ToolCallReport): ToolResult {
+  const grok = v.safeParse(grokMCPOutputSchema, update.rawOutput)
+  if (grok.success) {
+    const { output } = grok.output
+    const text = 'OkayOutput' in output ? output.OkayOutput : output.Error
+    const isError = grok.output.is_error === true || 'Error' in output
+    return { ok: true, output: { content: [{ type: 'text', text }], isError } }
+  }
   const codex = v.safeParse(codexMCPOutputSchema, update.rawOutput)
   if (!codex.success) return { ok: true, output: update.rawOutput }
   const { error, result } = codex.output

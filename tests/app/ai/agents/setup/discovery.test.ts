@@ -153,7 +153,8 @@ describe('local agent discovery', () => {
       ['claude-code', 'needs-adapter'],
       ['codex', 'available'],
       ['gemini-cli', 'not-installed'],
-      ['cursor', 'not-installed']
+      ['cursor', 'not-installed'],
+      ['grok-build', 'not-installed']
     ])
   })
 
@@ -163,7 +164,8 @@ describe('local agent discovery', () => {
       ['claude-code', 'needs-adapter'],
       ['codex', 'needs-adapter'],
       ['gemini-cli', 'not-installed'],
-      ['cursor', 'not-installed']
+      ['cursor', 'not-installed'],
+      ['grok-build', 'not-installed']
     ])
   })
 
