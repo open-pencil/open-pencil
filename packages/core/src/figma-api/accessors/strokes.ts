@@ -10,6 +10,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import {
+  setDashPattern,
   setIndependentStrokeWeight,
   setStrokeAlign,
   setStrokeWeight
@@ -63,7 +64,7 @@ export function installStrokeNodeProxyAccessors(
         return Object.freeze([...raw(strokeOwner(this, internals), internals).dashPattern])
       },
       set(this: ProxyThis, value: readonly number[]) {
-        updateNode(strokeOwner(this, internals), internals, { dashPattern: [...value] })
+        setDashPattern(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
       }
     },
     strokeCap: {
