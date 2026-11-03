@@ -39,7 +39,8 @@ export const AI_PROVIDERS = [
   'harness:pi',
   'acp:claude-code',
   'acp:codex',
-  'acp:gemini-cli'
+  'acp:gemini-cli',
+  'acp:cursor'
 ] as const
 
 export type Platform = (typeof PLATFORMS)[number]

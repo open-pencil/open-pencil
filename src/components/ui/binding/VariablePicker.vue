@@ -134,7 +134,6 @@ defineOptions({ inheritAttrs: false })
           v-if="state !== 'unbound'"
           size="xs"
           class="w-full justify-start"
-          data-slot="action"
           @click="detach"
         >
           <template #leading><icon-lucide-unlink class="size-3" /></template>
@@ -154,13 +153,7 @@ defineOptions({ inheritAttrs: false })
             :class="styles.createInput"
             data-slot="createInput"
           />
-          <AppButton
-            size="xs"
-            variant="soft"
-            :disabled="!canCreate"
-            data-slot="createSubmit"
-            type="submit"
-          >
+          <AppButton size="xs" variant="soft" :disabled="!canCreate" type="submit">
             {{ createSubmitLabel }}
           </AppButton>
         </form>
@@ -168,7 +161,6 @@ defineOptions({ inheritAttrs: false })
           v-else-if="createLabel"
           size="xs"
           class="w-full justify-start"
-          data-slot="action"
           @click="startCreate"
         >
           <template #leading><icon-lucide-plus class="size-3" /></template>

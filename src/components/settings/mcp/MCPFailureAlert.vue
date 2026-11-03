@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { compact } from 'es-toolkit/array'
 import { computed, ref } from 'vue'
 
@@ -16,6 +15,7 @@ import { APP_VERSION } from '@/app/runtime/version'
 import { useSetupProblemMessage } from '@/components/settings/agents/problem'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCopyField from '@/components/ui/input/AppCopyField.vue'
@@ -53,8 +53,6 @@ const restartFixes = computed(() => restartFixesMCPFailure(failure))
 const automation = useAutomationMessages()
 const { ai, common } = useI18n()
 const setupProblemMessage = useSetupProblemMessage()
-const { copy: copyDetailsText, copied: detailsCopied } = useClipboard({ copiedDuring: 1500 })
-const { copy: copyPrompt, copied: promptCopied } = useClipboard({ copiedDuring: 1500 })
 const detailsOpen = ref(false)
 
 /** One-click install or update first; a command and an agent prompt only where it cannot help. */
@@ -130,13 +128,10 @@ const detail = computed(() =>
   EXPLAINED_REASONS.has(failure.code) ? null : failure.detail?.trim() || null
 )
 
-async function copyDetails(): Promise<void> {
-  const payload = compact([
-    `code=${failure.code}`,
-    failure.detail ? `detail=${failure.detail}` : null
-  ]).join('\n')
-  await copyDetailsText(payload)
-}
+/** What a bug report needs: the failure's code and its detail. */
+const details = computed(() =>
+  compact([`code=${failure.code}`, failure.detail ? `detail=${failure.detail}` : null]).join('\n')
+)
 </script>
 
 <template>
@@ -189,20 +184,16 @@ async function copyDetails(): Promise<void> {
         @click="emit('install')"
         >{{ installAction }}</AppButton
       >
-      <AppButton
+      <AppCopyButton
         v-if="manualCommand"
+        :value="mcpServerSetupPrompt(failure, manualCommand)"
+        :label="automation.mcpCopyAgentPrompt"
+        :copied-label="common.copied"
         size="xs"
         :color="installAction ? 'neutral' : 'primary'"
         :variant="installAction ? 'outline' : 'solid'"
         data-test-id="settings-mcp-copy-agent-prompt"
-        @click="copyPrompt(mcpServerSetupPrompt(failure, manualCommand))"
-      >
-        <template #leading>
-          <icon-lucide-check v-if="promptCopied" class="size-3" />
-          <icon-lucide-copy v-else class="size-3" />
-        </template>
-        {{ promptCopied ? common.copied : automation.mcpCopyAgentPrompt }}
-      </AppButton>
+      />
       <AppButton
         v-if="restartFixes"
         size="xs"
@@ -222,13 +213,13 @@ async function copyDetails(): Promise<void> {
         @click="emit('check')"
         >{{ ai.aiSetupAgentCheckAgain }}</AppButton
       >
-      <AppButton size="xs" variant="outline" @click="copyDetails">
-        <template #leading>
-          <icon-lucide-check v-if="detailsCopied" class="size-3" />
-          <icon-lucide-copy v-else class="size-3" />
-        </template>
-        {{ detailsCopied ? common.copied : automation.mcpFailureCopy }}
-      </AppButton>
+      <AppCopyButton
+        :value="details"
+        :label="automation.mcpFailureCopy"
+        :copied-label="common.copied"
+        size="xs"
+        variant="outline"
+      />
     </template>
   </AppAlert>
 </template>

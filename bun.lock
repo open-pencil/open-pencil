@@ -587,6 +587,17 @@
         "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
     },
+    "packages/oxlint-plugin": {
+      "name": "@open-pencil/oxlint-plugin",
+      "version": "0.17.0-beta.1",
+      "dependencies": {
+        "@oxlint/plugins": "1.57.0",
+        "es-toolkit": "^1.52.0",
+      },
+      "peerDependencies": {
+        "oxlint": ">=1.90.0",
+      },
+    },
     "packages/pen": {
       "name": "@open-pencil/pen",
       "version": "0.17.0-beta.1",
@@ -1735,6 +1746,8 @@
     "@open-pencil/mermaid-sources-tools": ["@open-pencil/mermaid-sources-tools@workspace:tools/generate/mermaid-sources"],
 
     "@open-pencil/navigation-benchmark-tools": ["@open-pencil/navigation-benchmark-tools@workspace:tools/dev/navigation-benchmark"],
+
+    "@open-pencil/oxlint-plugin": ["@open-pencil/oxlint-plugin@workspace:packages/oxlint-plugin"],
 
     "@open-pencil/package-artifacts-tools": ["@open-pencil/package-artifacts-tools@workspace:tools/release/package-artifacts"],
 

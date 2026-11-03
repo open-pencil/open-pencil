@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { isReasoningUIPart, isTextUIPart } from 'ai'
 import type { UIMessage } from 'ai'
 import { computed, ref } from 'vue'
@@ -27,6 +26,7 @@ import ChatCompactionDivider from '@/components/chat/turn/ChatCompactionDivider.
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
 import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 import { usageParts } from './turn/usage'
@@ -88,12 +88,9 @@ const firstAssistantTextPartIndex = computed(() =>
 const lastAssistantTextPartIndex = computed(() =>
   message.parts.findLastIndex((part) => isTextUIPart(part) && part.text.length > 0)
 )
-const { copy, copied, isSupported: clipboardSupported } = useClipboard({ copiedDuring: 1500 })
 const ui = chatReplyTheme()
 /** The text the copy button sits on: the reply's first, when there is text to copy. */
-const copyPartIndex = computed(() =>
-  assistantText.value && clipboardSupported.value ? firstAssistantTextPartIndex.value : -1
-)
+const copyPartIndex = computed(() => (assistantText.value ? firstAssistantTextPartIndex.value : -1))
 
 // The AI SDK updates parts in place and replaces only the message, so copy each part for
 // the cards' computed state to see the new values.
@@ -206,16 +203,13 @@ function groupKey(group: MessagePartGroup): string {
                 >
                   {{ usageOnHover }}
                 </span>
-                <IconButton
+                <AppCopyButton
                   v-if="group.index === copyPartIndex"
-                  :label="copied ? ai.responseCopied : ai.copyResponse"
-                  size="xs"
-                  data-slot="chat-copy-response"
-                  @click="copy(assistantText)"
-                >
-                  <icon-lucide-check v-if="copied" class="size-3 text-success" />
-                  <icon-lucide-copy v-else class="size-3" />
-                </IconButton>
+                  icon
+                  :value="assistantText"
+                  :label="ai.copyResponse"
+                  :copied-label="ai.responseCopied"
+                />
               </div>
             </div>
           </template>
@@ -256,7 +250,6 @@ function groupKey(group: MessagePartGroup): string {
             v-if="canEdit"
             :label="ai.editMessage"
             size="xs"
-            data-slot="chat-edit-message"
             class="absolute top-1/2 -left-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
             @click="editing = true"
           >
