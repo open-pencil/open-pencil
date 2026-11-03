@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "bun run dev --host",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run generate:icons --target desktop && bun run build",
+    "beforeBuildCommand": "bun run generate:icons --target desktop && bun run build:packages && bunx vite build",
     "frontendDist": "../dist"
   },
   "app": {
