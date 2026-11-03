@@ -404,13 +404,18 @@ export const analyzeOverlaps = defineTool({
     )
   }),
   execute: async (figma: FigmaAPI, args) => {
-    const page_id = args.page_id ?? (args.page ? undefined : figma.currentPageId)
-    // A page not yet visited has no layers until it loads; the analysis trims both arguments.
-    const pageName = args.page?.trim()
+    // A blank page argument is no page argument, so the current page is analyzed.
+    const pageName = args.page?.trim() || undefined
+    const page_id = args.page_id?.trim() || (pageName ? undefined : figma.currentPageId)
+    // A page not yet visited has no layers until it loads.
     const page = page_id
-      ? figma.getNodeById(page_id.trim())
+      ? figma.getNodeById(page_id)
       : figma.root.children.find((candidate) => candidate.name === pageName)
     if (page && figma.graph.getNode(page.id)?.type === 'CANVAS') await page.loadAsync()
-    return computeOverlaps(figma.graph, { ...(args as AnalyzeOverlapsArgs), page_id })
+    return computeOverlaps(figma.graph, {
+      ...(args as AnalyzeOverlapsArgs),
+      page: pageName,
+      page_id
+    })
   }
 })

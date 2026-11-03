@@ -298,6 +298,17 @@ describe('pages not yet visited', () => {
     await expect(figma.setCurrentPageAsync(figma.wrapNode(doomed.id))).rejects.toThrow(
       'removed while it loaded'
     )
+
+    const later = graph.addPage('Later')
+    const removing = new FigmaAPI(graph, {
+      loadPage: async () => {
+        await Promise.resolve()
+        graph.deleteNode(later.id)
+      }
+    })
+    await expect(removing.setCurrentPageAsync(removing.wrapNode(later.id))).rejects.toThrow(
+      'removed while it loaded'
+    )
   })
 
   test('load when a script or a tool switches to them', async () => {
