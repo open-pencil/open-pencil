@@ -61,13 +61,40 @@ function percent(value: number): string {
   return `${Number((value * 100).toFixed(3))}%`
 }
 
-function gradientStopsCSS(fill: Fill): string {
+/** The stops, each at `place(position)`, its own position unless the gradient line differs. */
+function gradientStopsCSS(fill: Fill, place: (position: number) => number = (p) => p): string {
   return (fill.gradientStops ?? [])
     .map(
       (stop) =>
-        `${cssColor({ ...stop.color, a: stop.color.a * fill.opacity })} ${percent(stop.position)}`
+        `${cssColor({ ...stop.color, a: stop.color.a * fill.opacity })} ${percent(place(stop.position))}`
     )
     .join(', ')
+}
+
+/**
+ * Where a linear gradient's stops fall on CSS's gradient line, which runs through the box's
+ * centre at the gradient's angle and ends where the corners meet it: a stop at `position` along
+ * the paint's own handles lands at the share of that line its point lies at, so the colours sit
+ * where the canvas draws them whatever the angle and the box.
+ */
+function cssLinePosition(
+  fill: Fill,
+  width: number,
+  height: number,
+  angle: number
+): (position: number) => number {
+  const t = fill.gradientTransform
+  if (!t || width <= 0 || height <= 0) return (position) => position
+  const start = gradientPoint(t, { x: 0, y: 0.5 })
+  const end = gradientPoint(t, { x: 1, y: 0.5 })
+  const radians = (angle * Math.PI) / 180
+  const direction = { x: Math.sin(radians), y: -Math.cos(radians) }
+  const length = Math.abs(width * direction.x) + Math.abs(height * direction.y)
+  return (position) => {
+    const x = (start.x + (end.x - start.x) * position) * width - width / 2
+    const y = (start.y + (end.y - start.y) * position) * height - height / 2
+    return (x * direction.x + y * direction.y) / length + 0.5
+  }
 }
 
 /**
@@ -89,7 +116,9 @@ export function gradientToCSS(fill: Fill, width: number, height: number): string
   const t = fill.gradientTransform ?? { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   const center = gradientPoint(t, { x: 0.5, y: 0.5 })
   if (fill.type === 'GRADIENT_LINEAR') {
-    return `linear-gradient(${gradientAngle(fill, width, height)}deg, ${gradientStopsCSS(fill)})`
+    const angle = gradientAngle(fill, width, height)
+    const stops = gradientStopsCSS(fill, cssLinePosition(fill, width, height, angle))
+    return `linear-gradient(${angle}deg, ${stops})`
   }
   if (fill.type === 'GRADIENT_RADIAL') {
     const right = gradientPoint(t, { x: 1, y: 0.5 })

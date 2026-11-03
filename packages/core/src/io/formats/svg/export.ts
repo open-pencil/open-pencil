@@ -1,4 +1,5 @@
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 
 import { normalizeDashPattern } from '#core/canvas/strokes'
 import { lineStrokePath } from '#core/canvas/strokes/line'
@@ -13,8 +14,7 @@ import {
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
-  SVG_STROKE_JOIN,
-  SVG_BLEND_MODE
+  SVG_STROKE_JOIN
 } from './defs'
 import {
   round,
@@ -239,7 +239,7 @@ function buildGroupAttrs(
 
   if (node.opacity < 1) attrs.opacity = round(node.opacity)
 
-  const blend = SVG_BLEND_MODE[node.blendMode]
+  const blend = CSS_BLEND_MODE[node.blendMode]
   if (blend && blend !== 'normal' && node.blendMode !== 'PASS_THROUGH') {
     attrs.style = `mix-blend-mode: ${blend}`
   }

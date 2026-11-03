@@ -1,7 +1,8 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
@@ -280,23 +281,38 @@ function addShaderLayerStyle(style: DesignStyleDeclaration): void {
  * gradient of itself. An image fill is the element's own image.
  */
 function addBackground(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  const layers: string[] = []
+  const layers: { image: string; blend: string }[] = []
   let color: string | undefined
   node.fills.forEach((fill, index) => {
     if (!fill.visible) return
+    const blend = layerBlendMode(fill.blendMode)
     if (fill.type === 'SOLID') {
       const value = css(`fills/${index}/color`, fillToCSS(fill) ?? '')
       if (color === undefined && layers.length === 0) color = value
-      else layers.unshift(`linear-gradient(${value}, ${value})`)
+      else layers.unshift({ image: `linear-gradient(${value}, ${value})`, blend })
       return
     }
     const gradient = gradientToCSS(fill, node.width, node.height)
-    if (gradient) layers.unshift(gradient)
+    if (gradient) layers.unshift({ image: gradient, blend })
     // A paint below every colour, such as an image, leaves no colour for the bottom.
     else if (color === undefined) color = ''
   })
-  if (layers.length > 0) style['background-image'] = layers.join(', ')
+  if (layers.length > 0) {
+    style['background-image'] = layers.map((layer) => layer.image).join(', ')
+    if (layers.some((layer) => layer.blend !== 'normal')) {
+      style['background-blend-mode'] = layers.map((layer) => layer.blend).join(', ')
+    }
+  }
   if (color) style['background-color'] = color
+}
+
+/**
+ * A fill's blend mode as `background-blend-mode` takes it, which has no `plus-` modes: linear
+ * burn and dodge blend normally there.
+ */
+function layerBlendMode(mode: Fill['blendMode']): string {
+  const css = mode ? CSS_BLEND_MODE[mode] : undefined
+  return css && !css.startsWith('plus-') ? css : 'normal'
 }
 
 function addImageStyle(style: DesignStyleDeclaration, node: SceneNode): void {
