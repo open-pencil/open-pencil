@@ -77,6 +77,11 @@ export function createKeyboardActions({
       store.setRotationPreview(null)
       return
     }
+    // Esc leaves the eyedropper without touching the selection or a waiting color picker.
+    if (store.state.activeTool === 'EYEDROPPER') {
+      store.setTool('SELECT')
+      return
+    }
     if (store.state.nodeEditState) {
       store.exitNodeEditMode(true)
       return
@@ -91,11 +96,9 @@ export function createKeyboardActions({
       else store.penCancel()
       return
     }
-    if (store.state.enteredContainerId) {
-      store.exitContainer()
-      return
-    }
     if (useComments().closeCard()) return
+    // Figma's Escape clears the selection at any depth; Shift+Enter is the way up a level.
+    store.exitContainers()
     store.clearSelection()
     store.setTool('SELECT')
   }

@@ -38,7 +38,7 @@ const dimensions = computed(
       alt=""
       class="h-20 w-28 border-b border-border bg-canvas object-contain"
     />
-    <span class="block max-w-28 truncate px-1.5 py-1 text-[9px] leading-tight text-surface">
+    <span class="block max-w-28 truncate px-1.5 py-1 text-4xs leading-tight text-surface">
       {{ attachment.name }}
     </span>
   </button>

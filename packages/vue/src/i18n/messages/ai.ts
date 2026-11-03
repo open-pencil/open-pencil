@@ -230,6 +230,8 @@ export const aiMessageDefaults = {
   chatNetworkFailed: 'OpenPencil could not reach the provider. Check your connection and endpoint.',
   chatRateLimited: 'The provider rate limit was reached. Wait a moment and try again.',
   chatRequestFailed: 'The model request failed. Check the provider settings and try again.',
+  chatAgentNotInstalled:
+    'The coding agent is not installed. Install it in Settings, then try again.',
   openProviderSettingsAction: 'Open settings',
   cloudWorkspace: 'Workspace',
   cloudWorkspaceHint: 'The workspace whose plan pays for these requests.',
@@ -480,6 +482,35 @@ export const aiMessageDefaults = {
   skillWarningLongDescription: params('The description is longer than {max} characters.'),
   skillErrorNoFrontmatter: 'SKILL.md does not start with YAML frontmatter between --- lines.',
   skillErrorInvalidFrontmatter: params('The SKILL.md frontmatter is invalid: {detail}'),
+  contextUsed: params('Context: {percent}% used'),
+  contextTitle: 'Context',
+  contextTokens: params('{used} of {total} tokens'),
+  contextCompactsAt: params(
+    'Compacts automatically at {tokens} tokens, keeping room for the reply.'
+  ),
+  contextCompactsOff: 'Automatic compaction is off.',
+  contextNearlyFull: params('Context {percent}% used'),
+  compact: 'Compact',
+  compactCommand: 'Summarize the conversation so far; text after it says what to keep',
+  compactAutomatically: 'Compact automatically',
+  compactAutomaticallyHint: 'Summarizes older messages when the context window fills up.',
+  compacting: 'Compacting the conversation…',
+  compactionFailed: 'The conversation could not be compacted. Nothing was changed.',
+  compactAndRetry: 'Compact and retry',
+  chatContextLimit: 'The conversation is longer than the model can read.',
+  conversationCompacted: 'Conversation compacted',
+  compactionKeepsMessages:
+    'The model now gets this summary instead of the messages above; you still see them.',
+  agentCompactionKeepsMessages:
+    'The agent now works from its own summary of the messages above; you still see them.',
+  compactionTokens: params('{before} → {after} tokens'),
+  tokenUsage: 'Token usage',
+  tokenUsageHint: "Shows each reply's tokens.",
+  tokenUsageHover: 'On hover',
+  tokenUsageAlways: 'Always',
+  tokenUsageHidden: 'Hidden',
+  replyTokens: params('{input} in · {output} out'),
+  replyCachedTokens: params('{cached} cached'),
   skillErrorNoDescription: 'The SKILL.md frontmatter has no description.',
   skillErrorNoName: 'The SKILL.md frontmatter has no name.'
 } as const

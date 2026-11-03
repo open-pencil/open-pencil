@@ -6,6 +6,7 @@ import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { prepareGraphFonts } from '@open-pencil/core/text'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
@@ -20,7 +21,9 @@ import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { isFigArchiveName } from '@/app/document/io/names'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
+import { recoverySessionId } from '@/app/document/recovery/session'
 import { setActiveEditorStore } from '@/app/editor/active-store'
+import { loadFont } from '@/app/editor/fonts'
 import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
@@ -37,6 +40,8 @@ import {
 import {
   cacheRecentFileCover,
   loadCachedRecentFileThumbnail,
+  rememberDocumentView,
+  rememberedDocumentView,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -85,6 +90,8 @@ export const allTabs = computed(() =>
     isHome: t.kind === 'home',
     isNewFile: t.kind === 'new-file',
     isDirty: t.kind === 'document' && t.store.hasUnsavedChanges(),
+    // What kind of file the tab holds, for its icon, as Home marks its files.
+    fileKind: t.kind === 'document' ? t.store.state.documentKind : undefined,
     isPreparing: t.store.state.preparation !== null,
     preparationProgress: t.store.state.preparation?.progress ?? null,
     isActive: t.id === activeTabId.value
@@ -241,6 +248,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   else await closingTab.store.persistRecoveryNow()
   if (!tabsRef.value.includes(closingTab)) return
   if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
+  rememberDocumentView(closingTab.store)
   removeTab(closingTab)
 }
 
@@ -325,13 +333,16 @@ async function discardFailedRecovery(store: EditorStore): Promise<void> {
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
   const imported = await readFigDocument(file, signal)
   const firstPageId = imported.getPages()[0]?.id
-  const layOut = (pageId: string) =>
+  // Each page is laid out once its text's fonts are prepared, never in a face it would lose.
+  const layOut = async (pageId: string) => {
+    await prepareGraphFonts(imported, [pageId], { loadFont, signal })
     imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
-  if (firstPageId) layOut(firstPageId)
+  }
+  if (firstPageId) await layOut(firstPageId)
   const thumbnailPageId = figThumbnailPageId(imported.getPages())
   if (thumbnailPageId && thumbnailPageId !== firstPageId) {
     populateFigPage(imported, thumbnailPageId)
-    layOut(thumbnailPageId)
+    await layOut(thumbnailPageId)
   }
   return imported
 }
@@ -347,12 +358,20 @@ async function showImportedGraph(
   load?.signal.throwIfAborted()
   await prepare?.()
   load?.signal.throwIfAborted()
-  const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  // A document opens where it was left; a new one on its first page, fitted.
+  const remembered = rememberedDocumentView(store)
+  const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  const pageId = remembered?.pageId ?? firstPageId
   load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
   await store.switchPage(pageId, { preparation: load })
   load?.signal.throwIfAborted()
   load?.update({ phase: 'preparing-render', detail: store.state.documentName })
-  await store.fitCurrentPageToViewport()
+  if (remembered) {
+    await yieldToUI()
+    store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
+  } else {
+    await store.fitCurrentPageToViewport()
+  }
 }
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
@@ -639,6 +658,13 @@ export async function listRecoverySnapshots(): Promise<RecoverySnapshotMeta[]> {
   return getRecoveryStore().list()
 }
 
+/** The recovery copies of the documents open in tabs, which belong to those tabs while open. */
+export function openRecoveryIds(): Set<string> {
+  return new Set(
+    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store.getRecoveryId())
+  )
+}
+
 export async function discardRecoverySnapshot(id: string): Promise<void> {
   await getRecoveryStore().remove(id)
 }
@@ -669,6 +695,8 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
       async () => {
         store.state.documentName = snapshot.documentName
         await store.adoptRecoverySnapshot(id)
+        // The copy is this window's now, so no other window lists it while it is open here.
+        await getRecoveryStore().claim(id, recoverySessionId)
       },
       load
     )
@@ -682,13 +710,18 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
   }
 }
 
-export function prepareForClose(): Promise<boolean> {
-  return confirmAllDocuments(() =>
-    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
-  )
+function documentStores(): EditorStore[] {
+  return tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
+}
+
+export async function prepareForClose(): Promise<boolean> {
+  const closing = await confirmAllDocuments(documentStores)
+  if (closing) documentStores().forEach(rememberDocumentView)
+  return closing
 }
 
 export async function prepareForReload(): Promise<void> {
+  documentStores().forEach(rememberDocumentView)
   await Promise.all(tabsRef.value.map((tab) => tab.store.persistRecoveryNow()))
 }
 

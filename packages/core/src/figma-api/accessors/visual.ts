@@ -14,34 +14,13 @@ import {
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
-import { paintBindings, setPaintBindings } from '#core/figma-api/variables/bindings'
+import {
+  effectBindings,
+  paintBindings,
+  setEffectBindings,
+  setPaintBindings
+} from '#core/figma-api/variables/bindings'
 import { textStyleChanges } from '#core/text/character-style'
-
-function styleReference(
-  internals: NodeProxyInternals,
-  field: 'fillStyleId' | 'strokeStyleId' | 'effectStyleId' | 'gridStyleId',
-  mixed: symbol
-): PropertyDescriptor {
-  return {
-    get(this: ProxyThis): string | symbol {
-      const node = raw(this, internals)
-      // Characters of a text can each use a fill style of their own.
-      if (field === 'fillStyleId' && node.type === 'TEXT') {
-        return getTextStyle(node, 'fillStyleId', mixed) as string | symbol
-      }
-      return node[field] ?? ''
-    },
-    set(this: ProxyThis, value: string) {
-      const node = raw(this, internals)
-      const changes = { [field]: value || null }
-      updateNode(
-        this,
-        internals,
-        field === 'fillStyleId' && node.type === 'TEXT' ? textStyleChanges(node, changes) : changes
-      )
-    }
-  }
-}
 
 /**
  * `node`'s fills as Figma's plugin API reads them, bound colours resolved and carrying the
@@ -62,6 +41,57 @@ export function figmaStrokes(sceneGraph: SceneGraph, node: SceneNode): FigmaPain
     ? (resolvedPaintBindings(sceneGraph, node).strokes ?? node.strokes)
     : node.strokes
   return strokes.map((stroke, index) => toFigmaPaint(stroke, bound.get(index)))
+}
+
+/**
+ * `node`'s effects as Figma's plugin API reads them, carrying the variables they are bound to.
+ * Bound values are read as the layer holds them, as bound sizes are: resolving bindings keeps them
+ * current, and a layer scaled outside an instance keeps its scaled values until then, as in Figma.
+ */
+export function figmaEffects(node: SceneNode): FigmaEffect[] {
+  const bound = effectBindings(node)
+  return node.effects.map((effect, index) => toFigmaEffect(effect, bound.get(index)))
+}
+
+function setFills(
+  target: ProxyThis,
+  internals: NodeProxyInternals,
+  value: readonly FigmaPaint[],
+  method: string
+): void {
+  const node = raw(target, internals)
+  const fills = parseFigmaPaints(value, method)
+  updateNode(
+    target,
+    internals,
+    node.type === 'TEXT' ? textStyleChanges(node, { fills }) : { fills }
+  )
+  setPaintBindings(graph(target, internals), raw(target, internals), 'fills', value)
+}
+
+/** Figma paints carry no geometry; a stroke takes the weight, alignment, and dashes the node keeps. */
+function setStrokes(
+  target: ProxyThis,
+  internals: NodeProxyInternals,
+  value: readonly FigmaPaint[],
+  method: string
+): void {
+  const owner = strokeOwner(target, internals)
+  const geometry = newStrokeGeometry(raw(owner, internals))
+  const { dashPattern } = raw(owner, internals)
+  const strokes = parseFigmaPaints(value, method, 'strokes').map((paint): Stroke => ({
+    ...paint,
+    weight: geometry.weight,
+    align: geometry.align,
+    dashPattern: dashPattern.length > 0 ? [...dashPattern] : undefined
+  }))
+  const kept = newStrokeGeometry({
+    strokes,
+    strokeWeight: geometry.weight,
+    strokeAlign: geometry.align
+  })
+  updateNode(owner, internals, { strokes, strokeWeight: kept.weight, strokeAlign: kept.align })
+  setPaintBindings(graph(target, internals), raw(owner, internals), 'strokes', value)
 }
 
 export function installVisualNodeProxyAccessors(
@@ -87,14 +117,7 @@ export function installVisualNodeProxyAccessors(
         return typeof fills === 'symbol' ? fills : Object.freeze(fills as FigmaPaint[])
       },
       set(this: ProxyThis, value: readonly FigmaPaint[]) {
-        const node = raw(this, internals)
-        const fills = parseFigmaPaints(value)
-        updateNode(
-          this,
-          internals,
-          node.type === 'TEXT' ? textStyleChanges(node, { fills }) : { fills }
-        )
-        setPaintBindings(graph(this, internals), raw(this, internals), 'fills', value)
+        setFills(this, internals, value, 'set_fills')
       }
     },
     strokes: {
@@ -102,42 +125,34 @@ export function installVisualNodeProxyAccessors(
         const owner = raw(strokeOwner(this, internals), internals)
         return Object.freeze(figmaStrokes(graph(this, internals), owner))
       },
-      // Figma paints carry no geometry; a stroke takes the node's weight and alignment, which
-      // outlast its strokes.
       set(this: ProxyThis, value: readonly FigmaPaint[]) {
-        const owner = strokeOwner(this, internals)
-        const geometry = newStrokeGeometry(raw(owner, internals))
-        const strokes = parseFigmaPaints(value, 'set_strokes', 'strokes').map((paint): Stroke => ({
-          ...paint,
-          weight: geometry.weight,
-          align: geometry.align
-        }))
-        const kept = newStrokeGeometry({
-          strokes,
-          strokeWeight: geometry.weight,
-          strokeAlign: geometry.align
-        })
-        updateNode(owner, internals, {
-          strokes,
-          strokeWeight: kept.weight,
-          strokeAlign: kept.align
-        })
-        setPaintBindings(graph(this, internals), raw(owner, internals), 'strokes', value)
+        setStrokes(this, internals, value, 'set_strokes')
+      }
+    },
+    // Figma loads a pattern's source first; every node here is loaded, so these check and set as
+    // `fills` and `strokes` do, throwing before they return.
+    setFillsAsync: {
+      value(this: ProxyThis, value: readonly FigmaPaint[]): Promise<void> {
+        setFills(this, internals, value, 'setFillsAsync')
+        return Promise.resolve()
+      }
+    },
+    setStrokesAsync: {
+      value(this: ProxyThis, value: readonly FigmaPaint[]): Promise<void> {
+        setStrokes(this, internals, value, 'setStrokesAsync')
+        return Promise.resolve()
       }
     },
     effects: {
       get(this: ProxyThis): readonly FigmaEffect[] {
-        return Object.freeze(raw(this, internals).effects.map(toFigmaEffect))
+        return Object.freeze(figmaEffects(raw(this, internals)))
       },
       set(this: ProxyThis, value: readonly FigmaEffect[]) {
         updateNode(this, internals, { effects: parseFigmaEffects(value) })
+        setEffectBindings(graph(this, internals), raw(this, internals), value)
       }
     },
     // Applied shared styles, as Figma exposes them; an assignment inside an instance is an override.
-    fillStyleId: styleReference(internals, 'fillStyleId', mixed),
-    strokeStyleId: styleReference(internals, 'strokeStyleId', mixed),
-    effectStyleId: styleReference(internals, 'effectStyleId', mixed),
-    gridStyleId: styleReference(internals, 'gridStyleId', mixed),
     opacity: {
       get(this: ProxyThis): number {
         return raw(this, internals).opacity

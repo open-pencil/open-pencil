@@ -15,6 +15,7 @@ import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import { defaultIcons, drawIcon, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
+import { prepareGraphFonts } from '#core/text/prepare'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
@@ -320,6 +321,13 @@ export const penFormat: IOFormatAdapter<'pen'> = {
       loadPenImages(assets.images, input),
       loadPenIcons(assets.icons, context?.icons ?? defaultIcons)
     ])
+    // Its text takes fonts from variables and components too, so the fonts it uses are read
+    // from a build without layout and prepared before the build that lays it out.
+    const unlaid = buildPenGraph(doc, { images, icons })
+    await prepareGraphFonts(
+      unlaid,
+      unlaid.getPages(true).map((page) => page.id)
+    )
     // A .pen file stores its layout intent, not the sizes and positions it implies.
     const graph = buildPenGraph(doc, {
       images,
@@ -370,6 +378,10 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
       throw new Error(`Could not read the draw.io pages ${file.unreadable.join(', ')}`)
     }
     const graph = drawioToSceneGraph(file)
+    await prepareGraphFonts(
+      graph,
+      graph.getPages().map((page) => page.id)
+    )
     // draw.io stores label text, not the sizes it lays out to.
     layoutAuthoredNodes(
       graph,

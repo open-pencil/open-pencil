@@ -1,10 +1,17 @@
-import { metricsQuerySchema } from '#feedback/contract'
+import { metricsQuerySchema, reportFileNameSchema } from '#feedback/contract'
 import type { FeedbackEnv, FeedbackServices } from '#feedback/env'
 import { validatedQuery } from '#feedback/http/request'
+import { reportFileKey } from '#feedback/reports/files'
 import { Hono } from 'hono'
+import * as v from 'valibot'
 
 import { requireAccess } from './access'
 import { buildSnapshot } from './snapshot'
+
+const reportFileParamsSchema = v.object({
+  reportId: v.pipe(v.string(), v.uuid()),
+  name: reportFileNameSchema
+})
 
 /**
  * The metrics dashboard's page and API, behind Cloudflare Access. Answers are for one signed-in
@@ -19,6 +26,19 @@ export function adminRoutes(services: FeedbackServices) {
       .get('/admin/api/snapshot', validatedQuery(metricsQuerySchema), async (c) => {
         c.header('Cache-Control', 'private, no-store')
         return c.json(await buildSnapshot(c.env, services, c.req.valid('query')), 200)
+      })
+      // A file attached to a report, linked from its PostHog event; always a download, never rendered.
+      .get('/admin/reports/:reportId/files/:name', async (c) => {
+        const params = v.safeParse(reportFileParamsSchema, c.req.param())
+        if (!params.success) return c.notFound()
+        const { reportId, name } = params.output
+        const object = await c.env.REPORTS.get(reportFileKey(reportId, name))
+        if (!object) return c.notFound()
+        return c.body(await object.arrayBuffer(), 200, {
+          'Content-Type': 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${reportId}-${name}"`,
+          'Cache-Control': 'private, no-store'
+        })
       })
       .get('/admin', (c) => c.redirect('/admin/'))
       // The page and its files, from the Worker's static assets once Access has let the request in.

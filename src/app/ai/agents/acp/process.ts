@@ -8,6 +8,13 @@ export type TauriChild = {
   kill(): Promise<void>
 }
 
+/** A started agent: its process, and the pipes the ACP connection reads and writes. */
+export interface ACPProcess {
+  child: TauriChild
+  input: WritableStream<Uint8Array>
+  output: ReadableStream<Uint8Array>
+}
+
 type ACPProcessOptions = {
   command: string
   args: string[]
@@ -22,7 +29,7 @@ export async function spawnACPProcess({
   logId,
   destroying,
   onUnexpectedClose
-}: ACPProcessOptions) {
+}: ACPProcessOptions): Promise<ACPProcess> {
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',

@@ -84,7 +84,7 @@ function formattedDate(updatedAt: string): string {
 
     <div
       v-if="documents.length && view === 'grid'"
-      class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
+      class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"
     >
       <DocumentEntry
         v-for="document in documents"

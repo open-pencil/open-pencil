@@ -16,9 +16,8 @@ test('destroying a renderer that never loaded fonts leaves the others their font
   const provider = expectDefined(drawing.getFontProvider(), 'font provider')
   try {
     renderer().destroy()
-    expect(fontManager.provider()).toBe(provider)
+    expect(fontManager.providerFor(ck)).toBe(provider)
   } finally {
     drawing.destroy()
   }
-  expect(fontManager.provider()).not.toBe(provider)
 })

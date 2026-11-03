@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { Paint } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, Paint } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { assignmentOverrideField } from '@open-pencil/scene-graph/components'
 import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
@@ -9,9 +9,11 @@ import {
   setInstanceOverride
 } from '@open-pencil/scene-graph/instances/overrides'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { nodeChangeToProps } from '../node-change'
 import { numericVariableBindingScales } from '../node-change/variable/bindings'
+import { EFFECT_VARIABLE_FIELDS } from '../node-change/variable/effects'
 import {
   recordVariableBindingClaims,
   occurrenceAssignmentScales,
@@ -312,6 +314,27 @@ function recordPaintBindingClaims(
   if (declared) setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')
 }
 
+/** A claimed effect carries its properties' aliases, so its bindings are part of the claim too. */
+function recordEffectBindingClaims(owner: SceneNode, target: SceneNode, effects: unknown): void {
+  if (!Array.isArray(effects)) return
+  let declared = false
+  for (const [index, effect] of (effects as KiwiEffect[]).entries()) {
+    for (const property of EFFECT_BINDING_PROPERTIES) {
+      if (!effect[EFFECT_VARIABLE_FIELDS[property]]?.value?.alias) continue
+      const path = effectBindingField(index, property)
+      setInstanceOverride(
+        owner.instanceOverrides,
+        owner.id,
+        target.id,
+        bindingOverrideField(path),
+        target.boundVariables[path] ?? null
+      )
+      declared = true
+    }
+  }
+  if (declared) setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')
+}
+
 function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>): void {
   for (const [ownerOccurrence, owner] of nodes) {
     if (owner.type !== 'INSTANCE') continue
@@ -335,6 +358,7 @@ function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>)
         }
         if (field.kind === 'paint')
           recordPaintBindingClaims(owner, target, field.scene[0], claim.properties[raw])
+        if (raw === 'effects') recordEffectBindingClaims(owner, target, claim.properties[raw])
       }
       recordVariableBindingClaims(owner, target, claim.properties)
     }

@@ -1,0 +1,1 @@
+- The desktop app can use Cursor as the design agent, signed in with `cursor-agent login`.

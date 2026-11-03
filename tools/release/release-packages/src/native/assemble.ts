@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { readReleaseNotes } from '#release/release-notes'
+import { sourceMapsAssetName } from '#release/sourcemaps/bundle'
 import { isEqual } from 'es-toolkit'
 import { decode, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
@@ -89,6 +90,10 @@ try {
 } finally {
   await rm(temporary, { recursive: true, force: true })
 }
+
+// The frontend job archived the source maps PostHog symbolicates error reports with.
+const sourceMaps = sourceMapsAssetName(version)
+await copyFile(join(paths.root, sourceMaps), join(output, sourceMaps))
 
 const pubDate = new Date().toISOString()
 await writeFile(

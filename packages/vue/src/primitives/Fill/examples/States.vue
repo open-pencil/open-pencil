@@ -57,7 +57,7 @@ const provider: BindingProvider<Color> = {
 
 <template>
   <div
-    class="w-full max-w-[560px] space-y-5 rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-[var(--vp-c-text-1)]"
+    class="w-full max-w-140 space-y-5 rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-[var(--vp-c-text-1)]"
   >
     <section>
       <h3 class="mb-2 text-sm font-semibold">Fill swatches</h3>
@@ -68,7 +68,7 @@ const provider: BindingProvider<Color> = {
           v-slot="swatch"
           :fill="item"
           :label="`${name} fill`"
-          class="relative size-10 overflow-hidden rounded-md border border-[var(--vp-c-divider)] bg-[conic-gradient(#ddd_25%,#fff_0_50%,#ddd_0_75%,#fff_0)] bg-[size:10px_10px]"
+          class="relative size-10 overflow-hidden rounded-md border border-[var(--vp-c-divider)] bg-[conic-gradient(#ddd_25%,#fff_0_50%,#ddd_0_75%,#fff_0)] bg-[size:0.625rem_0.625rem]"
         >
           <span class="absolute inset-0" :style="{ background: swatch.background }" />
         </FillSwatch>

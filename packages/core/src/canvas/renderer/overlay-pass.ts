@@ -10,7 +10,6 @@ import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { drawNodeEditOverlay } from '#core/canvas/node-edit-overlay'
 import {
   drawAutoLayoutHover,
-  drawEnteredContainer,
   drawFlashes,
   drawHoverHighlight,
   drawLayoutInsertIndicator,
@@ -142,7 +141,6 @@ export function drawOverlayPass(
   if (!measuring) drawLayoutOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays)
   drawHoverHighlight(r, canvas, graph, hoveredNodeId, overlays.rotationPreview)
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
-  drawEnteredContainer(r, canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   drawDropTarget(r, canvas, graph, overlays.dropTargetId, overlays.rotationPreview)
   drawConnectorTarget(r, canvas, graph, overlays.connectorTarget, overlays.rotationPreview)
   drawEditingText(r, canvas, graph, overlays)

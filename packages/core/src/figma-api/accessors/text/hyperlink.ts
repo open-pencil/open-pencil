@@ -1,8 +1,14 @@
+import * as v from 'valibot'
+
 import type { HyperlinkTarget, NodeType, SceneGraph } from '@open-pencil/scene-graph'
 
-import { invalid, received } from './messages'
+import { parseFigma } from '#core/figma-api/validation'
 
-const HYPERLINK_TYPES = new Set(['URL', 'NODE'])
+/** Figma's `HyperlinkTarget`, or null to remove a link; Figma checks a value against both. */
+const hyperlinkSchema = v.union([
+  v.strictObject({ type: v.picklist(['URL', 'NODE']), value: v.string() }),
+  v.null()
+])
 
 /**
  * URLs Figma links to: web addresses with a host, in lower case and without surrounding space,
@@ -23,27 +29,17 @@ const LINK_TARGETS = new Set<NodeType>([
 
 /**
  * A link Figma takes: a URL it supports or a layer it can show, or `null` to remove one. An
- * empty URL removes the link, as in Figma.
+ * empty URL removes the link, as in Figma. Figma names the value `hyperlink` in the range
+ * method's messages and `value` in the node setter's.
  */
 export function hyperlinkTarget(
   method: string,
   value: unknown,
-  graph: SceneGraph
+  graph: SceneGraph,
+  property: string
 ): HyperlinkTarget | null {
-  if (value === null) return null
-  if (typeof value !== 'object' || Array.isArray(value)) {
-    throw invalid(method, `Expected object, received ${received(value)}`)
-  }
-  const target = value as Partial<Record<keyof HyperlinkTarget, unknown>>
-  if (!HYPERLINK_TYPES.has(target.type as string)) {
-    throw invalid(
-      method,
-      `Invalid enum value. Expected 'URL' | 'NODE', received '${String(target.type)}' at .type`
-    )
-  }
-  if (typeof target.value !== 'string') {
-    throw invalid(method, `Expected string, received ${received(target.value)} at .value`)
-  }
+  const target = parseFigma(hyperlinkSchema, value, method, property)
+  if (target === null) return null
   if (target.type === 'URL') {
     if (target.value === '') return null
     if (!LINK_URL.test(target.value)) {

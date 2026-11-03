@@ -30,7 +30,7 @@ type ModelsDevModel = {
   status?: unknown
   release_date?: unknown
   modalities?: { output?: unknown }
-  limit?: { output?: unknown }
+  limit?: { output?: unknown; context?: unknown }
 }
 
 type ModelsDevProvider = {
@@ -47,7 +47,9 @@ const modelsDevCatalogSchema = v.record(
         v.string(),
         v.looseObject({
           modalities: v.optional(v.looseObject({ output: v.optional(v.unknown()) })),
-          limit: v.optional(v.looseObject({ output: v.optional(v.unknown()) }))
+          limit: v.optional(
+            v.looseObject({ output: v.optional(v.unknown()), context: v.optional(v.unknown()) })
+          )
         })
       )
     )
@@ -72,6 +74,10 @@ function normalizeModel(id: string, model: ModelsDevModel): ModelOption {
   const output = model.limit?.output
   if (typeof output === 'number' && Number.isFinite(output)) {
     normalized.recommendedMaxOutputTokens = Math.min(128_000, Math.max(1024, output))
+  }
+  const context = model.limit?.context
+  if (typeof context === 'number' && Number.isFinite(context) && context > 0) {
+    normalized.contextWindow = context
   }
   if (typeof model.release_date === 'string') normalized.releaseDate = model.release_date
   return normalized
@@ -118,7 +124,8 @@ function mergeCuratedModels(curated: ModelOption[], catalog: ModelOption[]): Mod
     ...model,
     capabilities: catalogById.get(model.id)?.capabilities ?? model.capabilities,
     recommendedMaxOutputTokens:
-      catalogById.get(model.id)?.recommendedMaxOutputTokens ?? model.recommendedMaxOutputTokens
+      catalogById.get(model.id)?.recommendedMaxOutputTokens ?? model.recommendedMaxOutputTokens,
+    contextWindow: catalogById.get(model.id)?.contextWindow ?? model.contextWindow
   }))
   const curatedIds = new Set(curated.map((model) => model.id))
   const remaining = catalog

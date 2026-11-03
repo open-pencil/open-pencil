@@ -1,0 +1,1 @@
+- The Behaviour section labels the two variant values a control draws as on and off, so a set whose values read like the value itself, such as Checked and Unchecked, is clear to set up (#1722).

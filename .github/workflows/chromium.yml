@@ -1,0 +1,159 @@
+name: Chromium build
+
+# OpenPencil Chromium: the desktop app on Tauri v3 with the CEF runtime, a
+# flavor of each release built by hand from a branch that carries it
+# (desktop/tauri.chromium.conf.json). Given a release tag, it adds the macOS
+# bundles and latest-chromium.json, the flavor's update feed, to that release
+# once the branch has merged exactly that tag; without one it only builds.
+# The steps run tools/release/release-packages/src/chromium from this
+# workflow's commit, checked out under .pipeline as in build.yml.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or commit with the Chromium flavor.
+        required: true
+        default: build/tauri-v3
+        type: string
+      tag:
+        description: Release to add the build to (vX.Y.Z or vX.Y.Z-beta.N); empty only builds.
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chromium-build
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      source: ${{ steps.plan.outputs.source }}
+      tag-commit: ${{ steps.plan.outputs.tag-commit }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .pipeline
+          persist-credentials: false
+      - uses: ./.pipeline/.github/actions/setup-bun
+        with:
+          install-args: --cwd .pipeline --frozen-lockfile
+          cache-save: 'false'
+      - id: plan
+        name: Pin the commit and check it carries the release
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: bun .pipeline/tools/release/release-packages/src/chromium/plan.ts
+
+  native:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .pipeline
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26.x
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop -> target
+          key: chromium-${{ matrix.target }}
+      - uses: ./.pipeline/.github/actions/setup-bun
+        with:
+          cache-scope: desktop
+          cache-save: 'false'
+      - name: Install pinned workflow tooling
+        run: bun install --cwd .pipeline --frozen-lockfile
+      - name: Build, sign, and notarize
+        id: tauri
+        uses: tauri-apps/tauri-action@v0
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tauriScript: node node_modules/@tauri-apps/cli/tauri.js
+          args: >-
+            --target ${{ matrix.target }} --features cef
+            --config desktop/tauri.chromium.conf.json
+          retryAttempts: 0
+      - name: Name the bundles for this architecture
+        env:
+          CHROMIUM_TARGET: ${{ matrix.target }}
+          CHROMIUM_VERSION: ${{ needs.plan.outputs.version }}
+          TAURI_ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
+        run: bun .pipeline/tools/release/release-packages/src/chromium/collect.ts
+      - uses: actions/upload-artifact@v7
+        with:
+          name: chromium-${{ matrix.arch }}
+          path: chromium-output/*
+          if-no-files-found: error
+          compression-level: 0
+
+  # Runs only once every architecture has built, so a failed build adds
+  # nothing to the release, and latest-chromium.json is written once.
+  publish:
+    if: inputs.tag != ''
+    needs: [plan, native]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .pipeline
+          persist-credentials: false
+      - uses: ./.pipeline/.github/actions/setup-bun
+        with:
+          install-args: --cwd .pipeline --frozen-lockfile
+          cache-save: 'false'
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: chromium-*
+          path: chromium-artifacts
+          merge-multiple: true
+      - name: Install signature verifier
+        run: sudo apt-get update && sudo apt-get install -y minisign
+      - name: Verify signatures, write the feed, and add them to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          TAG_COMMIT: ${{ needs.plan.outputs.tag-commit }}
+        run: bun .pipeline/tools/release/release-packages/src/chromium/publish.ts

@@ -19,6 +19,11 @@
       "import": "./dist/canvas/drop/index.js",
       "default": "./dist/canvas/drop/index.js"
     },
+    "./canvas/eyedropper": {
+      "types": "./dist/canvas/eyedropper/index.d.ts",
+      "import": "./dist/canvas/eyedropper/index.js",
+      "default": "./dist/canvas/eyedropper/index.js"
+    },
     "./canvas/issues": {
       "types": "./dist/canvas/issues/index.d.ts",
       "import": "./dist/canvas/issues/index.js",

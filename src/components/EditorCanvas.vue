@@ -28,6 +28,7 @@ import {
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
 import { useCanvasDrop } from '@open-pencil/vue/canvas/drop'
+import { useEyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
 import { useCanvasIssueMarkers } from '@open-pencil/vue/canvas/issues'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 import { useCanvasStatusLabels } from '@open-pencil/vue/canvas/statuses'
@@ -44,6 +45,7 @@ import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
+import CanvasEyedropperLoupe from '@/components/canvas/CanvasEyedropperLoupe.vue'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
@@ -288,11 +290,16 @@ const valueEditorIcon = computed(() => {
     : IconLucideAlignHorizontalSpaceBetween
 })
 
+const eyedropperLoupe = useEyedropperLoupe(store, canvasRef, () => isActivePane.value)
+
+// The eyedropper's loupe stands in for the cursor while it shows.
 const cursor = computed(() =>
-  toolCursor(
-    store.state.activeTool,
-    issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
-  )
+  eyedropperLoupe.visible.value
+    ? 'none'
+    : toolCursor(
+        store.state.activeTool,
+        issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
+      )
 )
 </script>
 
@@ -328,6 +335,7 @@ const cursor = computed(() =>
         <PlayIslands :view="paneView" :drawn="drawnView" :canvas="canvasRef" />
         <AppDropOverlay :visible="isDraggingOver" />
         <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
+        <CanvasEyedropperLoupe :loupe="eyedropperLoupe" />
         <StatusLabelMenu
           :label="openStatusLabel"
           :canvas="canvasRef"

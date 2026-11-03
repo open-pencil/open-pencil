@@ -1,3 +1,6 @@
+import { recoverySessionId } from '@/app/document/recovery/session'
+import { APP_VERSION } from '@/app/runtime/version'
+
 import { diagnosticErrorDetails } from '../error'
 import { recordDiagnostic } from '../recorder'
 
@@ -49,7 +52,10 @@ export function recordRuntimeError(
       errorCode: details.errorCode,
       message: details.message,
       stack: details.stack,
-      info: info ?? null
+      info: info ?? null,
+      // Which window's run and build it came from, so a launch after a crash can offer to report it.
+      appSession: recoverySessionId,
+      appVersion: APP_VERSION
     }
   })
 }

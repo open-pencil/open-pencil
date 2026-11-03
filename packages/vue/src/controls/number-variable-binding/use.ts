@@ -26,6 +26,7 @@ export type NumberBindingPath =
   | 'letterSpacing'
   | 'paragraphSpacing'
   | 'paragraphIndent'
+  | `effects/${number}/${'radius' | 'spread' | 'offsetX' | 'offsetY'}`
 
 export function useNumberVariableBinding(path: NumberBindingPath) {
   const binding = useVariableBinding({

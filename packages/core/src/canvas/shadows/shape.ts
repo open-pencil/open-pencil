@@ -1,6 +1,7 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
 import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 
 import { setPaintBlendMode } from '#core/canvas/blend'
 import { blurSigma } from '#core/canvas/effects'
@@ -256,7 +257,7 @@ export function drawShapeInnerShadow(
 
   canvas.save()
   try {
-    const expand = effect.radius * 2
+    const expand = drawnBlurRadius(effect.radius) * 2
     const { x: offsetX, y: offsetY } = effect.offset
     const spreadPadding = sp < 0 ? -sp : 0
     const area = new r.ck.PathBuilder()

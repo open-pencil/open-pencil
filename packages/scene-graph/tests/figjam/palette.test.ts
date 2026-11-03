@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
-import { figJamColor, figJamColorName, figJamLayerColorFields, figJamLayerColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamOutlineColorName, figJamSectionColorFields, figJamSectionColorName, figJamShapePaint } from '@open-pencil/scene-graph/figjam'
+import { figJamColor, figJamColorName, figJamLayerColorFields, figJamLayerColorName, figJamLineColorFields, figJamLineStyle, figJamLineStyleFields, figJamOutlineColorName, figJamSectionColorFields, figJamSectionTitleColors, figJamSectionColorName, figJamShapePaint } from '@open-pencil/scene-graph/figjam'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
@@ -90,8 +90,27 @@ describe("FigJam's shape colours", () => {
     expect(hexes(figJamSectionColorFields({ strokes: [] }, 'black').strokes)).toEqual(['#2c2c2c'])
     expect(hexes(figJamSectionColorFields({ strokes: [] }, 'lightBlue').fills)).toEqual(['#f5fbff'])
     expect(figJamSectionColorName({ fills: red.fills ?? [] })).toBe('red')
+    // A new section's faint outline shows in full once coloured; one the line menu hid stays hidden.
+    const faint = { type: 'SOLID' as const, color: figJamColor('white'), opacity: 0.1, visible: true, weight: 1, align: 'INSIDE' as const }
+    expect(figJamSectionColorFields({ strokes: [faint] }, 'red').strokes?.[0]?.opacity).toBe(1)
+    expect(figJamSectionColorFields({ strokes: [{ ...faint, opacity: 0 }] }, 'red').strokes?.[0]?.opacity).toBe(0)
     const hidden = { type: 'SOLID' as const, color: figJamColor('blue'), opacity: 1, visible: false }
     expect(figJamSectionColorName({ fills: [hidden, ...(red.fills ?? [])] })).toBe('red')
+  })
+
+  // Measured in FigJam: the title pill takes the outline colour, white text on the darkest colours.
+  test("a section's title takes its outline colour, with light text on the darkest", () => {
+    const title = (name: 'red' | 'yellow' | 'black' | 'lightBlue') => {
+      const colors = figJamSectionTitleColors({ strokes: figJamSectionColorFields({ strokes: [] }, name).strokes ?? [] })
+      return colors && [colorToHex(colors.background).toLowerCase(), colors.lightText]
+    }
+    expect([title('red'), title('yellow'), title('black'), title('lightBlue')]).toEqual([
+      ['#f24822', true],
+      ['#ffc943', false],
+      ['#2c2c2c', true],
+      ['#c2e5ff', false]
+    ])
+    expect(figJamSectionTitleColors({ strokes: [] })).toBeNull()
   })
 
   test("a section's outline reads as its colour, darker for black and lighter for white", () => {

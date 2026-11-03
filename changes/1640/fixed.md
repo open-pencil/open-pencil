@@ -1,0 +1,1 @@
+- On Linux, Backspace and keys such as `[`, `]` and `N` type into comments and other text fields again instead of running menu commands, so Backspace no longer deletes the selected layer while you type.

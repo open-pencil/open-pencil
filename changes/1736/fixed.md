@@ -1,0 +1,1 @@
+- Removing a fill, stroke, or effect in the properties panel keeps each remaining item's variable binding on that item, instead of moving a binding onto the wrong paint or effect.

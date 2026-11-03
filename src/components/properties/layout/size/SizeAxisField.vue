@@ -91,7 +91,7 @@ function handleSelect(value: SizeSelectValue) {
           <SelectTrigger
             data-slot="sizing-trigger"
             :aria-label="label"
-            class="flex shrink-0 cursor-pointer items-center gap-0.5 self-stretch border-none bg-transparent px-1.5 text-[10px] text-muted outline-none data-[state=open]:text-surface"
+            class="flex shrink-0 cursor-pointer items-center gap-0.5 self-stretch border-none bg-transparent px-1.5 text-3xs text-muted outline-none data-[state=open]:text-surface"
             @pointerdown.stop
           >
             <span v-if="sizingLabel()">{{ sizingLabel() }}</span>

@@ -5,6 +5,7 @@ import {
   createCollaborationStateStore,
   createConfiguredCloudPolicy,
   relayDocumentLookups,
+  reportCloudError,
   type CollaborationRelay,
   type RelayConnection
 } from '#cloud/server'
@@ -96,7 +97,7 @@ export function createCloudflareRelayObject(
     #opened: CollaborationRelay | null = null
 
     #open(documentId: string) {
-      this.#relay ??= prepare(this.env).then(({ config }) => {
+      this.#relay ??= prepare(this.env).then(({ config, reportError }) => {
         const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
         this.#opened = createCollaborationRelay({
           authSecret: config.authSecret,
@@ -104,6 +105,8 @@ export function createCloudflareRelayObject(
           store: createCollaborationStateStore(database),
           maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
           maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
+          onError: (message, error) =>
+            this.ctx.waitUntil(reportCloudError(reportError, message, error, { source: 'relay' })),
           ...relayDocumentLookups(
             database,
             createConfiguredCloudPolicy(config, database),

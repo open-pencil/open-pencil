@@ -342,13 +342,13 @@ const story = (frame: string, withUsage = true, withActivity = true): Story => (
   })
 })
 
-export const Overview = story('h-[3950px]')
+export const Overview = story('h-987.5')
 
 /** PostHog did not answer: retention and usage give way to a notice, the rest stays. */
-export const WithoutUsage = story('h-[3550px]', false)
+export const WithoutUsage = story('h-887.5', false)
 
 /** Before the first nightly sync, issues and pull requests give way to a notice. */
-export const BeforeIssueSync = story('h-[3400px]', true, false)
+export const BeforeIssueSync = story('h-850', true, false)
 
 /** The dashboard in a phone-width window. */
-export const Narrow = story('h-[6450px] w-[390px]')
+export const Narrow = story('h-1612.5 w-97.5')

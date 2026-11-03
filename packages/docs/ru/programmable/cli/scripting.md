@@ -114,7 +114,7 @@ API намеренно близок к Figma Plugin API, но работает �
 
 - `figma.variables.getLocalVariables(type?)`, `getVariableById(id)`, `getLocalVariableCollections()`, `getVariableCollectionById(id)` и их варианты `…Async`
 - `figma.variables.createVariableCollection(name)` и `createVariable(name, collection, resolvedType)` — каждый режим получает значение Figma по умолчанию
-- `figma.variables.createVariableAlias(variable)` и `setBoundVariableForPaint(paint, 'color', variable)`
+- `figma.variables.createVariableAlias(variable)`, `setBoundVariableForPaint(paint, 'color', variable)` и `setBoundVariableForEffect(effect, field, variable)` — привязывает `color`, `radius`, `spread`, `offsetX` или `offsetY` тени либо `radius` размытия
 - `variable.setValueForMode(modeId, value)`, `valuesByMode`, `resolveForConsumer(node)`, `name`, `description`, `scopes`, `codeSyntax` и `remove()`
 - `collection.addMode(name)`, `renameMode(modeId, name)`, `removeMode(modeId)`, `modes`, `defaultModeId`, `variableIds` и `remove()`
 - `node.boundVariables`, `node.setBoundVariable(field, variable)` — поля и типы как в Figma, `node.setExplicitVariableModeForCollection(collection, modeId)` и `node.clearExplicitVariableModeForCollection(collection)`
@@ -149,9 +149,7 @@ API намеренно близок к Figma Plugin API, но работает �
 
 Следующие API пока не предоставляются в совместимом виде:
 
-- `node.exportAsync()`
-- переменные из библиотек, расширенные коллекции и привязки переменных к эффектам и сеткам
-- API стилей Figma, например `figma.createPaintStyle()` и `figma.createTextStyle()`
+- переменные из библиотек, расширенные коллекции и привязки переменных к сеткам
 - полная совместимость логических операций над векторами
 
 Вместо них используйте команды экспорта OpenPencil CLI, инструменты основного пакета или прямые вспомогательные функции SceneGraph, когда они доступны.

@@ -6,7 +6,7 @@ export default {
     barHome:
       'flex items-center gap-2 rounded focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none',
     barTitle: 'text-xs font-semibold whitespace-nowrap',
-    barHost: 'truncate text-[11px] text-muted max-sm:hidden',
+    barHost: 'truncate text-2xs text-muted max-sm:hidden',
     barEnd: 'ml-auto flex items-center gap-2',
     console: 'flex min-h-0 flex-1 max-md:flex-col',
     // Narrow screens turn the section list into one row above the page that scrolls without a

@@ -7,6 +7,7 @@ export {
   createRouteRateLimiter,
   createTrustedIPRateLimiter,
   routeHasOwnBudget,
+  routeParamResource,
   type RateLimitPolicy
 } from './middleware'
 export { PostgresRateLimitStore } from './postgres'
