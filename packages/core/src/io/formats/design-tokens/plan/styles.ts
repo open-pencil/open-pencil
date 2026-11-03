@@ -53,6 +53,19 @@ const bindingTargetSchema = v.object({
 })
 type BindingTarget = v.InferOutput<typeof bindingTargetSchema>
 
+/** Recorded targets by field; one that does not read is left out, not the whole extension. */
+const aliasDataSchema = v.pipe(
+  v.record(v.string(), v.unknown()),
+  v.transform((entries): Record<string, BindingTarget> =>
+    Object.fromEntries(
+      Object.entries(entries).flatMap(([field, entry]) => {
+        const target = v.safeParse(bindingTargetSchema, entry)
+        return target.success ? [[field, target.output]] : []
+      })
+    )
+  )
+)
+
 const ownTextSchema = v.object({
   text: v.object({
     fontFamily: v.string(),
@@ -65,12 +78,12 @@ const ownTextSchema = v.object({
     textCase: v.picklist(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
   }),
   bindings: v.optional(v.record(v.string(), v.string())),
-  aliasData: v.optional(v.record(v.string(), bindingTargetSchema))
+  aliasData: v.optional(aliasDataSchema)
 })
 const ownEffectsSchema = v.object({
   effects: v.optional(v.array(v.unknown())),
   bindings: v.optional(v.record(v.string(), v.string())),
-  aliasData: v.optional(v.record(v.string(), bindingTargetSchema))
+  aliasData: v.optional(aliasDataSchema)
 })
 
 /** The composite types that become styles. */

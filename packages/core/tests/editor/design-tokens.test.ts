@@ -447,3 +447,64 @@ test('a style bound to one of two variables that share a path reads back bound t
   expect(graph.getNode(text.nodeId)?.boundVariables.fontSize).toBe(productSize)
   expect(graph.getNode(effect.nodeId)?.boundVariables['effects/0/radius']).toBe(productSize)
 })
+
+describe('style bindings to a path two collections share', () => {
+  function sharedSize() {
+    const source = new SceneGraph()
+    const brand = source.createCollection('Brand')
+    source.createVariable('Size', 'FLOAT', brand.id, 12)
+    const product = source.createCollection('Product')
+    const size = source.createVariable('Size', 'FLOAT', product.id, 20)
+    return { source, size }
+  }
+
+  test('a malformed recorded target leaves the rest of the style’s fields', () => {
+    const { source, size } = sharedSize()
+    const heading = source.createNode('TEXT', source.getPages()[0].id, {
+      name: 'Heading',
+      fontFamily: 'Inter',
+      fontSize: 20,
+      textCase: 'UPPER',
+      sharedStyleType: 'TEXT',
+      internalOnly: true,
+      boundVariables: { fontSize: size.id }
+    })
+    heading.source.id = 'style:heading'
+    const files = exported(source).map((file) =>
+      file.path === 'styles.tokens.json'
+        ? { ...file, text: file.text.replace('"targetVariableName":"Size"', '"targetVariableName":7') }
+        : file
+    )
+
+    const graph = new SceneGraph()
+    importInto(graph, files)
+
+    const [style] = getSharedStyles(graph, 'text')
+    expect(graph.getNode(style.nodeId)?.textCase).toBe('UPPER')
+  })
+
+  test('a style with no token warns about none of its references', () => {
+    const { source, size } = sharedSize()
+    const glass = source.createNode('RECTANGLE', source.getPages()[0].id, {
+      name: 'Glass',
+      sharedStyleType: 'EFFECT',
+      internalOnly: true,
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          radius: 20,
+          spread: 0,
+          visible: true
+        }
+      ]
+    })
+    glass.source.id = 'style:glass'
+    source.bindVariable(glass.id, 'effects/0/radius', size.id)
+
+    expect(exportDesignTokens(source).issues).toEqual([
+      { kind: 'unsupported-effect', style: 'Glass' }
+    ])
+  })
+})

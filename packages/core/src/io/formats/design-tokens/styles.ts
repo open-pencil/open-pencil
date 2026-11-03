@@ -201,6 +201,12 @@ function shadowToken(
   return { $type: 'shadow', $value, $extensions: { [OPENPENCIL_EXTENSION]: own } }
 }
 
+/** Whether a style's token writes a reference for this bound field. */
+function writesBinding(node: SceneNode, field: string): boolean {
+  if (node.sharedStyleType === 'TEXT') return TEXT_BINDING_FIELDS.some((bound) => bound === field)
+  return effectBindingTarget(field) !== null
+}
+
 /** Text and effect styles as typography and shadow tokens, nested by their names. */
 export function styleTokens(
   graph: SceneGraph,
@@ -219,11 +225,6 @@ export function styleTokens(
       .map(([reference]) => reference)
   )
   const candidates = styles.flatMap((node) => {
-    for (const [field, variableId] of Object.entries(node.boundVariables)) {
-      const path = references.get(variableId)
-      if (path && shared.has(tokenReference(path)))
-        issues.push({ kind: 'ambiguous-reference', style: node.name, field, token: pathName(path) })
-    }
     const token =
       node.sharedStyleType === 'TEXT'
         ? typographyToken(graph, node, references)
@@ -231,6 +232,11 @@ export function styleTokens(
     if (!token) {
       issues.push({ kind: 'unsupported-effect', style: node.name })
       return []
+    }
+    for (const [field, variableId] of Object.entries(node.boundVariables)) {
+      const path = writesBinding(node, field) ? references.get(variableId) : undefined
+      if (path && shared.has(tokenReference(path)))
+        issues.push({ kind: 'ambiguous-reference', style: node.name, field, token: pathName(path) })
     }
     return [{ key: { node, token }, path: tokenPath(node.name) }]
   })
