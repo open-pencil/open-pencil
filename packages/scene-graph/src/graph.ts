@@ -26,6 +26,7 @@ import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
 import { textCacheInvalidationChanges } from './text/picture'
+import { remapCopiedReferences } from './transfer/copied'
 import type {
   DocumentColorSpace,
   DocumentKind,
@@ -750,6 +751,20 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
+    const ids = new Map<string, string>()
+    const clone = this.cloneSubtree(sourceId, parentId, overrides, ids)
+    // Copies point at one another, as a paste's do: an instance at a component cloned with it,
+    // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
+    remapCopiedReferences(this, ids)
+    return clone
+  }
+
+  private cloneSubtree(
+    sourceId: string,
+    parentId: string,
+    overrides: Partial<SceneNode>,
+    ids: Map<string, string>
+  ): SceneNode | null {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
@@ -760,9 +775,10 @@ export class SceneGraph {
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
     if (src.status) markSourceFieldsEdited(clone, ['status'])
+    ids.set(src.id, clone.id)
 
     for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
+      this.cloneSubtree(childId, clone.id, {}, ids)
     }
 
     return clone

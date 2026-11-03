@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- font loading and registration share FontManager lifecycle state */
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import { uniq } from 'es-toolkit/array'
 
 import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 import {
@@ -11,7 +12,12 @@ import {
 } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
-import { fontFallbackEntry, type FontFallbackScript } from '#core/text/fallbacks'
+import {
+  ARABIC_CHARACTER,
+  CJK_FALLBACK_CHARACTER,
+  fontFallbackEntry,
+  type FontFallbackScript
+} from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
 import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
 import {
@@ -99,6 +105,39 @@ export class FontManager {
   private cjkFallbackPromise: Promise<string[]> | null = null
   private arabicFallbackFamilies: string[] = []
   private arabicFallbackPromise: Promise<string[]> | null = null
+  private readonly sharedProviders = new Map<
+    CanvasKit,
+    { provider: TypefaceFontProvider; users: number }
+  >()
+
+  /**
+   * The provider every renderer and shaper of `canvasKit` draws from. They share one module's
+   * heap, and a provider holds its own copy of each font file, so a second provider would copy
+   * every face again: the scene and overlay canvases, and every CJK system font, alike. Each call
+   * is matched by {@link releaseProvider}; the last release deletes it.
+   */
+  acquireProvider(canvasKit: CanvasKit): TypefaceFontProvider {
+    const shared = this.sharedProviders.get(canvasKit)
+    if (shared) {
+      shared.users++
+      return shared.provider
+    }
+    const provider = canvasKit.TypefaceFontProvider.Make()
+    this.sharedProviders.set(canvasKit, { provider, users: 1 })
+    this.attachProvider(canvasKit, provider)
+    return provider
+  }
+
+  releaseProvider(provider: TypefaceFontProvider): void {
+    for (const [canvasKit, shared] of this.sharedProviders) {
+      if (shared.provider !== provider) continue
+      if (--shared.users > 0) return
+      this.sharedProviders.delete(canvasKit)
+      this.detachProvider(provider)
+      provider.delete()
+      return
+    }
+  }
 
   attachProvider(canvasKit: CanvasKit, provider: TypefaceFontProvider): void {
     this.fontProviders.add(provider)
@@ -713,6 +752,12 @@ export class FontManager {
     }
   }
 
+  /**
+   * Loads the fallback faces for `script`. The first installed one of its families comes in, and
+   * the next only for the characters of its writing system among `characters` that CanvasKit finds
+   * no glyph for in the fallbacks loaded: each is a whole system face, tens of megabytes for a CJK one, copied
+   * into CanvasKit. Web fonts come in, cut to the characters, when no installed face covers them.
+   */
   private async ensureFallbackFamilies(
     script: FontFallbackScript,
     targetFamilies: string[],
@@ -721,26 +766,34 @@ export class FontManager {
   ): Promise<string[]> {
     signal?.throwIfAborted()
     const manifest = fontFallbackEntry(script, this.fallbackUserAgent)
+    // A CJK face draws Han shared across the languages too, so each covers the text's CJK.
+    const scriptCharacter = script === 'arabic' ? ARABIC_CHARACTER : CJK_FALLBACK_CHARACTER
+    const needed = uniq(Array.from(characters)).filter((character) =>
+      scriptCharacter.test(character)
+    )
+    // Families only come in, so what one check resolved stays resolved.
+    let pending = needed
+    const missing = () => (pending = this.unresolvedCharacters(targetFamilies, pending))
 
+    let installed = false
     for (const family of manifest.localFamilies) {
+      if (installed && missing().length === 0) break
       signal?.throwIfAborted()
       const buffer =
         (await this.loadHostFont(family, 'Regular')) ?? (await this.localFonts.read(family))
       signal?.throwIfAborted()
-      if (
-        buffer &&
-        this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
-        !targetFamilies.includes(family)
-      ) {
-        targetFamilies.push(family)
+      if (buffer && this.registerAndCache(family, 'Regular', buffer, 'fallback')) {
+        if (!targetFamilies.includes(family)) targetFamilies.push(family)
+        installed = true
       }
     }
 
-    if (targetFamilies.length === 0 || characters) {
+    const remoteCharacters = installed ? missing().join('') : characters
+    if (!installed || remoteCharacters) {
       const results = await Promise.allSettled(
         manifest.remoteFamilies.map(async (family) => {
           signal?.throwIfAborted()
-          const data = await this.loadRemoteFont(family, 'Regular', characters, signal)
+          const data = await this.loadRemoteFont(family, 'Regular', remoteCharacters, signal)
           signal?.throwIfAborted()
           return data ? family : null
         })
@@ -757,6 +810,36 @@ export class FontManager {
     }
 
     return targetFamilies
+  }
+
+  /**
+   * The characters CanvasKit finds no glyph for in `families`, shaped with the provider the
+   * canvas draws from. Without one, as in an export before any canvas or shaper holds it, it
+   * cannot tell and counts every character missing, so every family loads as it always did.
+   */
+  private unresolvedCharacters(families: readonly string[], characters: string[]): string[] {
+    if (characters.length === 0) return []
+    if (families.length === 0) return characters
+    const shared = this.sharedProviders.entries().next().value
+    if (!shared) return characters
+    const [canvasKit, { provider }] = shared
+    const style = new canvasKit.ParagraphStyle({
+      textStyle: { fontFamilies: [...families], fontSize: 16 }
+    })
+    const builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(style, provider)
+    try {
+      builder.addText(characters.join(''))
+      const paragraph = builder.build()
+      try {
+        paragraph.layout(Number.MAX_SAFE_INTEGER)
+        const unresolved = new Set(paragraph.unresolvedCodepoints())
+        return characters.filter((character) => unresolved.has(character.codePointAt(0) ?? 0))
+      } finally {
+        paragraph.delete()
+      }
+    } finally {
+      builder.delete()
+    }
   }
 
   private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
@@ -855,7 +938,9 @@ export class FontManager {
     this.loadedFamilies.set(key, buffer)
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
-    this.registerFontInBrowser(family, style, buffer)
+    // The page's own text falls back to the system's fonts by itself, and a browser face would be
+    // one more copy of a whole system file.
+    if (source !== 'fallback') this.registerFontInBrowser(family, style, buffer)
     for (const listener of this.faceListeners) listener(family, style)
     return buffer
   }

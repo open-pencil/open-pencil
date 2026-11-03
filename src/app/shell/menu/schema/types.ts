@@ -38,9 +38,9 @@ export type AppMenuHandler = 'editor' | 'shell'
  * A feature an item or a whole menu waits for: it shows only while the feature is available
  * (`./features`). `document`: the tab in front holds a document, not Home or a New file tab;
  * `local-file`: that document is backed by a file on disk; `cloud-document`: it is kept by a
- * Cloud server.
+ * Cloud server; `reports`: the build sends problem reports, which only official releases do.
  */
-export type AppMenuFeature = 'document' | 'local-file' | 'cloud-document'
+export type AppMenuFeature = 'document' | 'local-file' | 'cloud-document' | 'reports'
 
 export interface AppMenuActionItem {
   type?: 'item'

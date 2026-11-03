@@ -1,0 +1,1 @@
+- The desktop app can use Grok Build as the design agent, signed in with `grok login`.

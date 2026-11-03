@@ -1,10 +1,10 @@
 import { behaviourArgs, type BehaviourArgs } from '#dom-css/behaviours/args'
+import { behaviourControls, booleanOf } from '#dom-css/behaviours/controls'
 import { BUTTON_RESET } from '#dom-css/behaviours/reset'
 import { allElements } from '#dom-css/behaviours/states/layers'
 import { ownerVariants, restLayerOf, stateStyles } from '#dom-css/behaviours/states/model'
 import { layerClassNames, propAttribute } from '#dom-css/behaviours/states/names'
 import type { StateElement, StateStyles } from '#dom-css/behaviours/states/types'
-import { uniq } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -16,7 +16,6 @@ import {
   textBinding,
   type Behaviour
 } from '@open-pencil/scene-graph/behaviours'
-import { variantDefaultValue } from '@open-pencil/scene-graph/components'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import type { SceneGraphToDesignOptions } from '../projection'
@@ -126,6 +125,8 @@ export interface ComponentElement {
   layerId?: string
   /** The value a repeated part stands for, such as a tab trigger's tab. */
   value?: string
+  /** A tab trigger that cannot be chosen. */
+  disabled?: boolean
   /** The shader the layer fills with, which plays behind its content. */
   shader?: ShaderLayer
   children: ComponentNode[]
@@ -321,14 +322,8 @@ function variantProps(
     .map((definition) => ({
       name: claimName(camelCase(identifierName(definition.name, 'Prop')), taken),
       property: definition.name,
-      // A document may record no options, which the variants' own values then are.
-      options: uniq([
-        ...(definition.variantOptions ?? []),
-        ...ownerVariants(graph, set).map(
-          (variant) => variant.componentPropertyValues[definition.name] ?? ''
-        )
-      ]).filter((option) => option !== ''),
-      default: variantDefaultValue(graph, set, definition)
+      options: definition.variantOptions ?? [],
+      default: definition.defaultValue
     }))
 }
 
@@ -415,6 +410,24 @@ function borderBoxes(root: StateElement): void {
 }
 
 /**
+ * A trigger that is a tab drawn disabled, by its disabled value or its disabled state, is a
+ * disabled trigger, which cannot be chosen, as preview runs it.
+ */
+function disableDrawnTabs(
+  graph: SceneGraph,
+  styles: StateStyles,
+  repeated: ReadonlyMap<StateElement, RepeatedPart>
+): void {
+  for (const [element, item] of repeated) {
+    if (item.part !== 'trigger') continue
+    const layerId = restLayerOf(graph, styles, element)
+    const tab = layerId ? behaviourControls(graph, layerId).get('') : undefined
+    if (tab?.kind !== 'tab') continue
+    if (booleanOf(tab, 'disabled')?.designed || tab.states?.designedDisabled) item.disabled = true
+  }
+}
+
+/**
  * Each layer's part, and tabs' triggers and panels, with the styles the generated parts need:
  * native buttons cleared, the chosen tab's look, and moving parts free of their drawn place.
  */
@@ -472,6 +485,7 @@ export function componentModel(
   const name = options.name ?? identifierName(set.name, 'Component')
 
   const { parts, tabs, repeated } = drawnParts(graph, set, behaviour, kind, styles.root)
+  disableDrawnTabs(graph, styles, repeated)
 
   // A group's items first, so its item component is used for them rather than a standalone one.
   const variantIds = [styles.restId, ...ownerVariants(graph, set).map((variant) => variant.id)]

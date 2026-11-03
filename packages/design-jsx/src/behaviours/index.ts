@@ -49,10 +49,13 @@ const REKA_PARTS = {
     Thumb: part('thumb')
   },
   Progress: { Root: root('progress'), Track: part('track'), Indicator: part('indicator') },
+  // `Trigger` is a plain trigger; `Tab` is a trigger with states of its own, written alone as
+  // its component and in a list as an instance of it, as a group's `Item` is.
   Tabs: {
     Root: root('tabs'),
     List: part('list'),
     Trigger: repeat('list'),
+    Tab: root('tab'),
     Content: repeat('panels')
   },
   Collapsible: { Root: root('collapsible'), Trigger: part('trigger'), Content: part('content') },
@@ -109,8 +112,10 @@ const GROUPS = new Set<BehaviourKind>(['radioGroup', 'toggleGroup', 'accordion']
 function containerOf(child: TreeNode, kind: BehaviourKind): string | undefined {
   const role = rekaRole(child.type)
   if (role?.role === 'repeat') return role.container
-  if (GROUPS.has(kind) && role?.role === 'root' && namesComponent(child.props)) return 'items'
-  return undefined
+  if (role?.role !== 'root' || !namesComponent(child.props)) return undefined
+  if (GROUPS.has(kind)) return 'items'
+  // A tab written directly under its Tabs.Root goes in the list, as a plain trigger does.
+  return kind === 'tabs' ? 'list' : undefined
 }
 
 /**
