@@ -7,6 +7,7 @@ import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/s
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
+import { renderSceneToCanvas } from '#core/canvas/renderer/pipeline'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
@@ -118,7 +119,7 @@ function renderToSurface(
     const canvas = surface.getCanvas()
     canvas.scale(renderScale, renderScale)
     setup(canvas)
-    renderer.renderSceneToCanvas(canvas, renderGraph, pageId)
+    renderSceneToCanvas(renderer, canvas, renderGraph, pageId)
     surface.flush()
 
     const highResImage = surface.makeImageSnapshot()

@@ -11,7 +11,11 @@ import { render, renderSceneToCanvas } from '#core/canvas/renderer/pipeline'
 import { createGraphEventSubscription } from '#core/editor/graph-events'
 import { createDefaultEditorState } from '#core/editor/state'
 import { initCanvasKit } from '#core/io/formats/raster/headless'
-import { renderNodesToImage } from '#core/io/formats/raster/render'
+import {
+  drawRegionToImage,
+  renderNodesToImage,
+  renderThumbnail
+} from '#core/io/formats/raster/render'
 
 const ck = await initCanvasKit()
 
@@ -126,14 +130,7 @@ function pixelAt(pixels: Uint8Array, x: number, y: number, width = 256): number[
   return Array.from(pixels.subarray(offset, offset + 4))
 }
 
-function exportPixels(renderer: SkiaRenderer, graph: SceneGraph, pageId: string) {
-  const png = expectDefined(
-    renderNodesToImage(ck, renderer, graph, pageId, ['reused-vector'], {
-      scale: 1,
-      format: 'PNG'
-    }),
-    'vector PNG'
-  )
+function imagePixels(png: Uint8Array) {
   const image = expectDefined(ck.MakeImageFromEncoded(png), 'decoded PNG')
   try {
     const pixels = expectDefined(
@@ -150,6 +147,17 @@ function exportPixels(renderer: SkiaRenderer, graph: SceneGraph, pageId: string)
   } finally {
     image.delete()
   }
+}
+
+function exportPixels(renderer: SkiaRenderer, graph: SceneGraph, pageId: string) {
+  const png = expectDefined(
+    renderNodesToImage(ck, renderer, graph, pageId, ['reused-vector'], {
+      scale: 1,
+      format: 'PNG'
+    }),
+    'vector PNG'
+  )
+  return imagePixels(png)
 }
 
 function withRenderer(pageId: string, run: (renderer: SkiaRenderer) => void) {
@@ -213,6 +221,24 @@ describe('renderer path caches', () => {
     })
   })
 
+  test('draws replacement graph vectors through the direct canvas method', () => {
+    const before = replacementGraph('upper-right')
+    const after = replacementGraph('lower-left')
+    withRenderer(before.pageId, (renderer) => {
+      const state = createDefaultEditorState(before.pageId)
+      state.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+      renderer.renderFromEditorState(state, before.graph, null, 256, 256, false, 'scene')
+      const canvas = renderer.surface.getCanvas()
+      canvas.clear(ck.Color4f(1, 1, 1, 1))
+
+      renderer.renderSceneToCanvas(canvas, after.graph, after.pageId)
+      const pixels = surfacePixels(renderer)
+
+      expect(pixelAt(pixels, 45, 15)).toEqual([255, 255, 255, 255])
+      expect(pixelAt(pixels, 15, 45)).toEqual([255, 0, 0, 255])
+    })
+  })
+
   test('exports replacement graph vectors whose node ids were reused', () => {
     const before = replacementGraph('upper-right')
     const after = replacementGraph('lower-left')
@@ -224,6 +250,55 @@ describe('renderer path caches', () => {
       expect(pixelAt(beforeImage.pixels, 35, 5, beforeImage.width)).toEqual([255, 0, 0, 255])
       expect(pixelAt(beforeImage.pixels, 5, 35, beforeImage.width)).toEqual([0, 0, 0, 0])
       expect(pixelAt(afterImage.pixels, 35, 5, afterImage.width)).toEqual([0, 0, 0, 0])
+      expect(pixelAt(afterImage.pixels, 5, 35, afterImage.width)).toEqual([255, 0, 0, 255])
+    })
+  })
+
+  test('renders thumbnails from replacement graphs with reused node ids', () => {
+    const before = replacementGraph('upper-right')
+    const after = replacementGraph('lower-left')
+    withRenderer(before.pageId, (renderer) => {
+      const beforeImage = imagePixels(
+        expectDefined(
+          renderThumbnail(ck, renderer, before.graph, before.pageId, 40, 40),
+          'original thumbnail'
+        )
+      )
+      const afterImage = imagePixels(
+        expectDefined(
+          renderThumbnail(ck, renderer, after.graph, after.pageId, 40, 40),
+          'replacement thumbnail'
+        )
+      )
+
+      expect(afterImage.width).toBe(40)
+      expect(pixelAt(beforeImage.pixels, 35, 5, beforeImage.width)).toEqual([255, 0, 0, 255])
+      expect(pixelAt(afterImage.pixels, 35, 5, afterImage.width)).not.toEqual([255, 0, 0, 255])
+      expect(pixelAt(afterImage.pixels, 5, 35, afterImage.width)).toEqual([255, 0, 0, 255])
+    })
+  })
+
+  test('draws regions from replacement graphs with reused node ids', () => {
+    const before = replacementGraph('upper-right')
+    const after = replacementGraph('lower-left')
+    const bounds = { minX: 10, minY: 10, maxX: 50, maxY: 50 }
+    withRenderer(before.pageId, (renderer) => {
+      const beforeImage = imagePixels(
+        expectDefined(
+          drawRegionToImage(ck, renderer, before.graph, before.pageId, bounds, 1),
+          'original region image'
+        )
+      )
+      const afterImage = imagePixels(
+        expectDefined(
+          drawRegionToImage(ck, renderer, after.graph, after.pageId, bounds, 1),
+          'replacement region image'
+        )
+      )
+
+      expect(afterImage.width).toBe(40)
+      expect(pixelAt(beforeImage.pixels, 35, 5, beforeImage.width)).toEqual([255, 0, 0, 255])
+      expect(pixelAt(afterImage.pixels, 35, 5, afterImage.width)).not.toEqual([255, 0, 0, 255])
       expect(pixelAt(afterImage.pixels, 5, 35, afterImage.width)).toEqual([255, 0, 0, 255])
     })
   })

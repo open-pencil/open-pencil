@@ -606,6 +606,7 @@ export class SkiaRenderer {
   }
 
   renderSceneToCanvas(canvas: Canvas, graph: SceneGraph, pageId: string): void {
+    this.nodePaths.useGraph(graph)
     RenderPipeline.renderSceneToCanvas(this, canvas, graph, pageId)
   }
 
