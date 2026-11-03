@@ -249,7 +249,7 @@ describe('Cloud version history', () => {
         .where('id', '=', context.documentId)
         .executeTakeFirstOrThrow()
       // What the relay saved of the live room, which the restore replaces.
-      const rooms = createCollaborationStateStore(context.runtime.database)
+      const rooms = createCollaborationStateStore(context.runtime.database, context.objects.store)
       const room = { documentId: context.documentId, roomEpoch: before.collaborationEpoch }
       await rooms.compact(room, 0, Uint8Array.from([1]))
       await rooms.append(room, 1, Uint8Array.from([2]))

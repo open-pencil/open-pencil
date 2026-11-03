@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
+import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { connectTestClient, until } from '#cloud-tests/helpers/relay'
 import {
   COLLAB_ACTIONS,
@@ -44,7 +45,7 @@ async function seed() {
     authSecret,
     relayURL
   })
-  const store = createCollaborationStateStore(runtime.database)
+  const store = createCollaborationStateStore(runtime.database, createMemoryObjectStore().store)
   const relay = () =>
     createCollaborationRelay({
       authSecret,

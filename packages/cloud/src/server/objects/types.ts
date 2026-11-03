@@ -78,4 +78,8 @@ export interface ObjectStore {
   abortUpload(input: AbortObjectUploadInput): Promise<void>
   head(key: string): Promise<StoredObject | null>
   delete(key: string): Promise<void>
+  /** Stores bytes the server holds itself, such as a collaboration room's snapshot. */
+  write(key: string, bytes: Uint8Array, contentType: string): Promise<StoredObject>
+  /** The bytes stored under `key`, or null when there are none. */
+  read(key: string): Promise<Uint8Array | null>
 }

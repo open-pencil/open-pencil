@@ -1,5 +1,6 @@
 import { RELAY_CLOSE, RELAY_DOCUMENT_PARAM } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
+import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   createCollaborationRelay,
   createCollaborationStateStore,
@@ -98,7 +99,7 @@ export function createCloudflareRelayObject(
         const relay = createCollaborationRelay({
           authSecret: config.authSecret,
           documentId,
-          store: createCollaborationStateStore(database),
+          store: createCollaborationStateStore(database, createS3ObjectStore(config)),
           maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
           maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
           onError: (message, error) =>

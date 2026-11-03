@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
+import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { createCollaborationStateStore } from '#cloud/server'
+import { unreferencedObject } from '#cloud/server/cleanup/objects'
 
 async function storedRoom() {
   const runtime = await createCloudTestDatabase()
@@ -15,9 +17,11 @@ async function storedRoom() {
     .insertInto('document')
     .values({ id: documentId, workspaceId, name: 'Homepage', createdBy: 'owner' })
     .execute()
+  const objects = createMemoryObjectStore()
   return {
     runtime,
-    store: createCollaborationStateStore(runtime.database),
+    objects,
+    store: createCollaborationStateStore(runtime.database, objects.store),
     room: { documentId, roomEpoch: 0 }
   }
 }
@@ -80,6 +84,56 @@ describe('collaboration state store', () => {
       await store.append(room, 2, bytes(3))
       await store.compact(room, 2, bytes(6))
       expect(await store.load(room)).toEqual({ snapshot: null, updates: [bytes(1)], sequence: 1 })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('keeps snapshots as stored files the database only names, and frees the ones it replaced', async () => {
+    const { runtime, store, room, objects } = await storedRoom()
+    try {
+      await store.compact(room, 0, bytes(1, 1))
+      await store.compact(room, 0, bytes(2, 2))
+      expect((await store.load(room)).snapshot).toEqual(bytes(2, 2))
+
+      const files = await runtime.database
+        .selectFrom('storageObject')
+        .select(['objectKey', 'byteSize'])
+        .where('objectKey', 'like', `collaboration/${room.documentId}/0/%`)
+        .execute()
+      expect(files).toHaveLength(2)
+      expect(await objects.store.read(files[0]?.objectKey ?? '')).not.toBeNull()
+      // The replaced snapshot is referenced by nothing, so the object sweep removes it.
+      const freed = await runtime.database
+        .selectFrom('storageObject')
+        .select('objectKey')
+        .where('objectKey', 'like', `collaboration/${room.documentId}/0/%`)
+        .where(unreferencedObject)
+        .execute()
+      expect(freed).toHaveLength(1)
+      expect(await objects.store.read(freed[0]?.objectKey ?? '')).toEqual(bytes(1, 1))
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('records a snapshot written for a replaced epoch, so the sweep frees it', async () => {
+    const { runtime, store, room } = await storedRoom()
+    try {
+      await runtime.database
+        .updateTable('document')
+        .set({ collaborationEpoch: 1 })
+        .where('id', '=', room.documentId)
+        .execute()
+      await store.compact(room, 0, bytes(3))
+      const files = await runtime.database
+        .selectFrom('storageObject')
+        .select('objectKey')
+        .where('objectKey', 'like', `collaboration/${room.documentId}/0/%`)
+        .where(unreferencedObject)
+        .execute()
+      expect(files).toHaveLength(1)
+      expect((await store.load(room)).snapshot).toBeNull()
     } finally {
       await runtime.close()
     }

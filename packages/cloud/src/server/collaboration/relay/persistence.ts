@@ -1,4 +1,5 @@
 import type { CloudDatabase } from '#cloud/server/db'
+import type { ObjectStore } from '#cloud/server/objects'
 import type { Kysely, Transaction } from 'kysely'
 
 export type CollaborationRoomIdentity = {
@@ -29,7 +30,7 @@ export type CollaborationStateStore = {
   append(room: CollaborationRoomIdentity, sequence: number, update: Uint8Array): Promise<void>
   /**
    * Replaces the snapshot with `state`, which holds every update through `sequence`, and drops
-   * those updates; running it again leaves the same room. Like `append`, it writes nothing for an
+   * those updates; running it again leaves the same room. Like `append`, it changes no room of an
    * epoch a restore replaced.
    */
   compact(room: CollaborationRoomIdentity, sequence: number, state: Uint8Array): Promise<void>
@@ -52,17 +53,43 @@ async function holdsEpoch(
   return document?.collaborationEpoch === room.roomEpoch
 }
 
+/** A snapshot is a Yjs update, as the store hands it back. */
+const SNAPSHOT_CONTENT_TYPE = 'application/octet-stream'
+
+/**
+ * Where a room's snapshots go. Each compaction writes a new file and points the room at it in one
+ * transaction; the one it replaced is no longer referenced, and the object sweep removes it as it
+ * does a deleted revision's file.
+ */
+function snapshotKey(room: CollaborationRoomIdentity): string {
+  return `collaboration/${room.documentId}/${room.roomEpoch}/${crypto.randomUUID()}.yjs`
+}
+
+/**
+ * A store keeping each room's snapshot as a file in the object store and the updates logged after
+ * it in the database, so the database holds only what changed since the last snapshot.
+ */
 export function createCollaborationStateStore(
-  database: Kysely<CloudDatabase>
+  database: Kysely<CloudDatabase>,
+  objects: Pick<ObjectStore, 'write' | 'read' | 'delete'>
 ): CollaborationStateStore {
   return {
     async load(room) {
       const snapshot = await database
         .selectFrom('documentCollaborationState')
-        .select(['state', 'throughSequence'])
-        .where('documentId', '=', room.documentId)
-        .where('roomEpoch', '=', room.roomEpoch)
+        .innerJoin(
+          'storageObject',
+          'storageObject.id',
+          'documentCollaborationState.snapshotObjectId'
+        )
+        .select(['storageObject.objectKey', 'documentCollaborationState.throughSequence'])
+        .where('documentCollaborationState.documentId', '=', room.documentId)
+        .where('documentCollaborationState.roomEpoch', '=', room.roomEpoch)
         .executeTakeFirst()
+      const state = snapshot ? await objects.read(snapshot.objectKey) : null
+      if (snapshot && !state) {
+        throw new Error(`The snapshot of room ${room.documentId}:${room.roomEpoch} is missing`)
+      }
       const through = snapshot?.throughSequence ?? 0
       const updates = await database
         .selectFrom('documentCollaborationUpdate')
@@ -73,7 +100,7 @@ export function createCollaborationStateStore(
         .orderBy('sequence')
         .execute()
       return {
-        snapshot: snapshot ? new Uint8Array(snapshot.state) : null,
+        snapshot: state,
         updates: updates.map((row) => new Uint8Array(row.data)),
         sequence: updates.at(-1)?.sequence ?? through
       }
@@ -95,33 +122,52 @@ export function createCollaborationStateStore(
     },
 
     async compact(room, sequence, state) {
-      await database.transaction().execute(async (transaction) => {
-        if (!(await holdsEpoch(transaction, room))) return
-        await transaction
-          .insertInto('documentCollaborationState')
-          .values({
-            documentId: room.documentId,
-            roomEpoch: room.roomEpoch,
-            state,
-            throughSequence: sequence,
-            updatedAt: new Date()
-          })
-          .onConflict((conflict) =>
-            conflict.columns(['documentId', 'roomEpoch']).doUpdateSet({
-              state,
+      const objectKey = snapshotKey(room)
+      const stored = await objects.write(objectKey, state, SNAPSHOT_CONTENT_TYPE)
+      try {
+        await database.transaction().execute(async (transaction) => {
+          // The file is recorded either way, so a snapshot of a replaced room is swept like any other.
+          const snapshotObjectId = crypto.randomUUID()
+          await transaction
+            .insertInto('storageObject')
+            .values({
+              id: snapshotObjectId,
+              objectKey,
+              checksum: stored.checksum,
+              byteSize: stored.byteSize,
+              contentType: stored.contentType
+            })
+            .execute()
+          if (!(await holdsEpoch(transaction, room))) return
+          await transaction
+            .insertInto('documentCollaborationState')
+            .values({
+              documentId: room.documentId,
+              roomEpoch: room.roomEpoch,
+              snapshotObjectId,
               throughSequence: sequence,
-              version: (expression) => expression('documentCollaborationState.version', '+', 1),
               updatedAt: new Date()
             })
-          )
-          .execute()
-        await transaction
-          .deleteFrom('documentCollaborationUpdate')
-          .where('documentId', '=', room.documentId)
-          .where('roomEpoch', '=', room.roomEpoch)
-          .where('sequence', '<=', sequence)
-          .execute()
-      })
+            .onConflict((conflict) =>
+              conflict.columns(['documentId', 'roomEpoch']).doUpdateSet({
+                snapshotObjectId,
+                throughSequence: sequence,
+                updatedAt: new Date()
+              })
+            )
+            .execute()
+          await transaction
+            .deleteFrom('documentCollaborationUpdate')
+            .where('documentId', '=', room.documentId)
+            .where('roomEpoch', '=', room.roomEpoch)
+            .where('sequence', '<=', sequence)
+            .execute()
+        })
+      } catch (error) {
+        // Nothing records the file, so nothing would ever sweep it.
+        await objects.delete(objectKey).catch(() => undefined)
+        throw error
+      }
     }
   }
 }

@@ -1,0 +1,1 @@
+- Cloud keeps each collaboration room's snapshot in object storage beside the documents' files instead of in PostgreSQL. Upgrading starts every document's live room over from its last saved version, so edits a room held that no saved version has yet are dropped.
