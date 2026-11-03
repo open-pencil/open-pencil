@@ -1,6 +1,6 @@
-import type { CloudAPIEnvironment } from '#cloud/server/api/types'
+import type { CloudAPIEnvironment, RateLimitUse } from '#cloud/server/api/types'
 import type { CloudDatabase } from '#cloud/server/db'
-import type { Context, Env, Input } from 'hono'
+import type { Context, Env, Input, MiddlewareHandler } from 'hono'
 import { rateLimiter, type RateLimitExceededEventHandler } from 'hono-rate-limiter'
 import { every } from 'hono/combine'
 import { matchedRoutes } from 'hono/route'
@@ -175,7 +175,41 @@ export function createResourceRateLimiter(
     { namespace: `${policy.namespace}-actor`, windowMs: policy.windowMs, limit: policy.actorLimit },
     skip
   )
-  return ownBudget(every(perResource, perActor), skip)
+  return ownBudget(
+    every(perResource, keepResourceUse, perActor, reportTighterBudget(policy.windowMs)),
+    skip
+  )
+}
+
+/** Keeps the resource budget's use, which the actor-wide limiter would record over. */
+const keepResourceUse: MiddlewareHandler<CloudAPIEnvironment> = async (context, next) => {
+  context.set('resourceRateLimit', context.get('rateLimit'))
+  await next()
+}
+
+/**
+ * Reports whichever budget has fewer requests left in the `RateLimit` headers, as both limiters
+ * write them and the last would otherwise win. A refused request keeps the headers of the budget
+ * that refused it.
+ */
+function reportTighterBudget(windowMs: number): MiddlewareHandler<CloudAPIEnvironment> {
+  return async (context, next) => {
+    const resource = context.get('resourceRateLimit')
+    const actor = context.get('rateLimit')
+    const tighter = resource && actor && resource.remaining < actor.remaining ? resource : actor
+    if (tighter) setBudgetHeaders(context, tighter, windowMs)
+    await next()
+  }
+}
+
+/** The draft-7 `RateLimit` headers `hono-rate-limiter` writes, for one budget's use. */
+function setBudgetHeaders(context: Context, use: RateLimitUse, windowMs: number): void {
+  const windowSeconds = Math.ceil(windowMs / 1000)
+  const reset = use.resetTime
+    ? Math.max(0, Math.ceil((use.resetTime.getTime() - Date.now()) / 1000))
+    : windowSeconds
+  context.header('RateLimit-Policy', `${use.limit};w=${windowSeconds}`)
+  context.header('RateLimit', `limit=${use.limit}, remaining=${use.remaining}, reset=${reset}`)
 }
 
 /**
