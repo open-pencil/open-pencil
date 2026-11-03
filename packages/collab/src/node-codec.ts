@@ -1,4 +1,4 @@
-import { isPlainObject, omit } from 'es-toolkit'
+import { cloneDeep, isPlainObject, omit } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { Fill, GeometryPath, SceneNode, SourceMetadata } from '@open-pencil/scene-graph'
@@ -20,7 +20,7 @@ import { ORDER_KEY_FIELD, PAGE_FIELD, PARENTS_FIELD } from './shared-tree/fields
 
 const DERIVED_NODE_FIELDS = new Set<keyof SceneNode>(['textPicture'])
 /**
- * The layer tree syncs as parent entries, order keys and pages (`src/app/collab/shared-tree/fields.ts`), so a
+ * The layer tree syncs as parent entries, order keys and pages (`shared-tree/fields.ts`), so a
  * layer's own fields leave out its place in the tree, and decoding skips the tree's fields.
  */
 const TREE_FIELDS = new Set<string>([
@@ -43,7 +43,8 @@ export function encodeNodeForYjs(node: SceneNode): Record<string, unknown> {
   const encoded: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(node)) {
     if (DERIVED_NODE_FIELDS.has(key as keyof SceneNode) || TREE_FIELDS.has(key)) continue
-    encoded[key] = structuredClone(value)
+    // eslint-disable-next-line unicorn/prefer-structured-clone -- copies a byte array view's own bytes, not its whole buffer.
+    encoded[key] = cloneDeep(value)
   }
   encoded.instanceOverrides = serializeInstanceOverrideState(node.instanceOverrides)
   return encoded
@@ -51,7 +52,7 @@ export function encodeNodeForYjs(node: SceneNode): Record<string, unknown> {
 
 /**
  * The document node's plugin data is shared entry by entry beside the layers
- * (`src/app/collab/document/sync.ts`), so the document node's own map leaves it out.
+ * (`document/sync.ts`), so the document node's own map leaves it out.
  */
 export const DOCUMENT_NODE_FIELDS: readonly (keyof SceneNode)[] = ['pluginData']
 
@@ -67,11 +68,18 @@ export function syncEncodedNodeToYMap(
   writeRecord(ynode, omit(encodeNodeForYjs(node), omitted), { drop: false })
 }
 
+/**
+ * A layer's fields as a peer's graph takes them. The room's byte arrays, such as a geometry path's
+ * commands, are views into the whole update they arrived in, and `structuredClone` copies a view's
+ * whole buffer, the update again for every path, so values are copied with `cloneDeep`, which
+ * copies a view's own bytes.
+ */
 export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {
   const props: Record<string, unknown> = {}
   for (const [key, value] of ynode.entries()) {
     if (DERIVED_NODE_FIELDS.has(key as keyof SceneNode) || TREE_FIELDS.has(key)) continue
-    props[key] = structuredClone(value)
+    // eslint-disable-next-line unicorn/prefer-structured-clone -- copies a byte array view's own bytes, not its whole buffer.
+    props[key] = cloneDeep(value)
   }
 
   props.source = normalizeSourceMetadata(props.source)
@@ -99,9 +107,11 @@ export function normalizeSourceMetadata(source: unknown): SourceMetadata {
     fig: {
       rawSize: normalizeVector(fig.rawSize),
       rawTransform: normalizeMatrix(fig.rawTransform),
-      rawNodeFields: isPlainObject(fig.rawNodeFields) ? structuredClone(fig.rawNodeFields) : {},
+      // eslint-disable-next-line unicorn/prefer-structured-clone -- copies a byte array view's own bytes, not its whole buffer.
+      rawNodeFields: isPlainObject(fig.rawNodeFields) ? cloneDeep(fig.rawNodeFields) : {},
       layout: isPlainObject(fig.layout)
-        ? (structuredClone(fig.layout) as SourceMetadata['fig']['layout'])
+        ? // eslint-disable-next-line unicorn/prefer-structured-clone -- copies a byte array view's own bytes, not its whole buffer.
+          (cloneDeep(fig.layout) as SourceMetadata['fig']['layout'])
         : null,
       symbolOverrides: arrayOrEmpty(fig.symbolOverrides),
       componentPropAssignments: arrayOrEmpty(fig.componentPropAssignments),
@@ -156,7 +166,8 @@ function normalizeMatrix(value: unknown): Matrix | null {
 }
 
 function arrayOrEmpty(value: unknown): unknown[] {
-  return Array.isArray(value) ? structuredClone(value) : []
+  // eslint-disable-next-line unicorn/prefer-structured-clone -- copies a byte array view's own bytes, not its whole buffer.
+  return Array.isArray(value) ? cloneDeep(value) : []
 }
 
 function stringArray(value: unknown): string[] {
