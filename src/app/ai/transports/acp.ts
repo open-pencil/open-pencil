@@ -8,6 +8,7 @@ import type {
   RequestPermissionResponse,
   Usage
 } from '@agentclientprotocol/sdk'
+import { promiseTimeout } from '@vueuse/core'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import * as v from 'valibot'
 
@@ -17,7 +18,7 @@ import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
-import { spawnACPProcess } from '@/app/ai/agents/acp/process'
+import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
   isAuthRequiredError,
@@ -35,7 +36,25 @@ import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
 
-type TauriChild = Awaited<ReturnType<typeof spawnACPProcess>>['child']
+type TauriChild = ACPProcess['child']
+
+/** What starting an agent reaches outside the transport, which tests replace. */
+export interface ACPStartup {
+  resolveCommand: typeof resolveSpawnCommand
+  spawn: typeof spawnACPProcess
+  authToken: typeof getAutomationAuthToken
+  linkTools: typeof linkOwnTools
+}
+
+const DEFAULT_STARTUP: ACPStartup = {
+  resolveCommand: resolveSpawnCommand,
+  spawn: spawnACPProcess,
+  authToken: getAutomationAuthToken,
+  linkTools: linkOwnTools
+}
+
+/** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
+const AGENT_START_TIMEOUT_MS = 60_000
 
 interface ACPSession {
   connection: ClientSideConnection
@@ -155,6 +174,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   /** The agent session the next start continues: a saved chat's, then the one a turn ran in. */
   private resume: string | null
   private onSession: ((sessionId: string | null) => void) | null
+  private startup: ACPStartup
+  private startTimeoutMs: number
 
   constructor(options: {
     agentDef: ACPAgentDef
@@ -169,6 +190,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
      * and null when the saved session can no longer be continued.
      */
     onSession?: (sessionId: string | null) => void
+    startup?: ACPStartup
+    startTimeoutMs?: number
   }) {
     this.agentDef = options.agentDef
     this.cwd = options.cwd ?? '.'
@@ -176,6 +199,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.onUsage = options.onUsage ?? null
     this.resume = options.resume ?? null
     this.onSession = options.onSession ?? null
+    this.startup = options.startup ?? DEFAULT_STARTUP
+    this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
   }
 
   async sendMessages({
@@ -196,7 +221,15 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     if (!this.session) {
-      const started = await this.spawnAgent()
+      // Stop reaches an agent still starting: it stops, and the message never goes to it.
+      const stopStarting = () => void this.starting?.kill().catch(() => undefined)
+      abortSignal?.addEventListener('abort', stopStarting, { once: true })
+      let started: ACPSession
+      try {
+        started = await this.spawnAgent()
+      } finally {
+        abortSignal?.removeEventListener('abort', stopStarting)
+      }
       // Destroyed between startup and here: the agent is still `starting`, so stop it.
       if (this.destroying) {
         await started.child.kill().catch(() => undefined)
@@ -303,10 +336,10 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   }
 
   private async spawnAgent(): Promise<ACPSession> {
-    let process: Awaited<ReturnType<typeof spawnACPProcess>>
+    let process: ACPProcess
     try {
-      process = await spawnACPProcess({
-        command: await resolveSpawnCommand(this.agentDef),
+      process = await this.startup.spawn({
+        command: await this.startup.resolveCommand(this.agentDef),
         args: this.agentDef.args,
         logId: this.agentDef.id,
         destroying: () => this.destroying,
@@ -373,10 +406,19 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       throw new Error('The agent stopped while it was starting.')
     })
     stopped.catch(() => undefined)
-    const untilStopped = <T>(request: Promise<T>): Promise<T> => Promise.race([request, stopped])
+    // An agent that runs but never answers must not keep the message waiting either.
+    const startTimeoutMs = this.startTimeoutMs
+    const untilStopped = <T>(request: Promise<T>): Promise<T> =>
+      Promise.race([
+        request,
+        stopped,
+        promiseTimeout(startTimeoutMs).then((): never => {
+          throw new Error(`${agentDef.name} did not answer while starting.`)
+        })
+      ])
     let automationAuthToken: string | null
     try {
-      automationAuthToken = await getAutomationAuthToken()
+      automationAuthToken = await this.startup.authToken()
     } catch (e) {
       await child.kill().catch(() => undefined)
       throw startupError(e, this.agentDef)
@@ -398,7 +440,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     // The agent must reach OpenPencil's tools before it gets a prompt.
     let tools: Awaited<ReturnType<typeof linkOwnTools>>
     try {
-      tools = await linkOwnTools(automationAuthToken)
+      tools = await this.startup.linkTools(automationAuthToken)
     } catch (e) {
       // An outside MCP connection whose credential cannot be read fails here.
       await child.kill().catch(() => undefined)
@@ -429,6 +471,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       outcome = await untilStopped(tools.outcome())
     } catch (e) {
       tools.stop()
+      // A deadline leaves the agent running.
+      await child.kill().catch(() => undefined)
       throw startupError(e, this.agentDef)
     }
     // Destroyed while starting, as when the chat closes: the agent must not get a prompt.
