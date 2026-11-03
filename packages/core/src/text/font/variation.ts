@@ -9,9 +9,10 @@ interface TableRange {
 const WINDOWS_PLATFORM = 3
 const MAC_PLATFORM = 1
 const ENGLISH_US = 0x409
-/** Windows names are UTF-16, Mac Roman names are in the Mac's own encoding. */
+/** Windows names are UTF-16; Mac names are read in the Roman script, the one with a decoder. */
 const WINDOWS_NAMES = new TextDecoder('utf-16be')
-const MAC_NAMES = new TextDecoder('macintosh')
+const MAC_ROMAN_NAMES = new TextDecoder('macintosh')
+const MAC_ROMAN = 0
 const NAME_HEADER_SIZE = 6
 const NAME_RECORD_SIZE = 12
 const FVAR_HEADER_SIZE = 16
@@ -75,8 +76,8 @@ function fontName(view: DataView, name: TableRange, nameId: number): string | nu
       const value = WINDOWS_NAMES.decode(bytes)
       if (language === ENGLISH_US) return value
       fallback ??= value
-    } else if (platform === MAC_PLATFORM) {
-      fallback ??= MAC_NAMES.decode(bytes)
+    } else if (platform === MAC_PLATFORM && view.getUint16(record + 2) === MAC_ROMAN) {
+      fallback ??= MAC_ROMAN_NAMES.decode(bytes)
     }
   }
   return fallback

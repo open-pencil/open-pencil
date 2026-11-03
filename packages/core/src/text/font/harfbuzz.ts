@@ -156,12 +156,13 @@ const outlineCache = new ResourceCache<number, readonly OutlineCommand[]>({
 let nextInstanceId = 0
 
 /**
- * One of the face's tables as HarfBuzz finds it, in a file or a collection; read it at once, as
- * it views HarfBuzz's memory, which moves when it grows.
+ * A copy of one of the face's tables as HarfBuzz finds it, in a file or a collection. HarfBuzz
+ * hands back a view of its memory, which the next call can move; the tables read this way are a
+ * few dozen bytes.
  */
 export function harfBuzzTable(face: HarfBuzzModule.Face, tag: string): DataView | null {
   const table = face.referenceTable(tag)
-  return table ? new DataView(table.buffer, table.byteOffset, table.byteLength) : null
+  return table ? new DataView(table.slice().buffer) : null
 }
 
 /** A font file read by HarfBuzz, or `null` when HarfBuzz is not loaded or the file has no glyphs. */
