@@ -36,6 +36,7 @@
   "noMatchingFiles": "Keine Dateien entsprechen „{query}“.",
   "documentActions": "Aktionen für {name}",
   "deleteDocument": "Löschen",
+  "removeFromRecent": "Aus „Zuletzt verwendet“ entfernen",
   "deleteDocumentConfirmation": "„{name}“ löschen?",
   "deleteDocumentDescription": "Das Dokument wird für alle gelöscht, die es öffnen können. Das lässt sich nicht rückgängig machen.",
   "deleteDocumentFailed": "„{name}“ konnte nicht gelöscht werden. Versuche es erneut.",
