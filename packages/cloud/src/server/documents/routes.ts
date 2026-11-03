@@ -158,34 +158,26 @@ export function createDocumentRoutes(
         throw error
       }
     })
-    .get('/documents/:documentId/access', documentParams, async (context) => {
-      try {
-        return context.json({
+    .get('/documents/:documentId/access', documentParams, (context) =>
+      documentResponse(context, async () =>
+        context.json({
           access: await service.access(
             context.get('actor').userId,
             context.req.valid('param').documentId
           )
         })
-      } catch (error) {
-        const response = documentDomainError(context, error)
-        if (response) return response
-        throw error
-      }
-    })
-    .get('/documents/:documentId', documentParams, async (context) => {
-      try {
-        return context.json({
+      )
+    )
+    .get('/documents/:documentId', documentParams, (context) =>
+      documentResponse(context, async () =>
+        context.json({
           document: await service.download(
             context.get('actor').userId,
             context.req.valid('param').documentId
           )
         })
-      } catch (error) {
-        const response = documentDomainError(context, error)
-        if (response) return response
-        throw error
-      }
-    })
+      )
+    )
     .post(
       '/documents/:documentId/uploads',
       documentParams,
