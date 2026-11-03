@@ -76,15 +76,24 @@ export function prepareSlotMove(
   childId: string,
   method: 'appendChild' | 'insertChild'
 ): void {
+  const sourceParentId = g.getNode(childId)?.parentId
+  const source = sourceParentId ? slotScope(g, sourceParentId) : undefined
+  prepareSlotInsertion(g, parentId, method)
+  if (source?.kind === 'slot') claimSlotContent(g, source)
+}
+
+/**
+ * Ready adding new layers under `parentId`, as a tool that builds layers in place does, by the
+ * rule appendChild follows: the locked part of an instance refuses them, since its layers come
+ * from the component, and a slot's content becomes the instance's own first.
+ */
+export function prepareSlotInsertion(g: SceneGraph, parentId: string, method: string): void {
   const target = slotScope(g, parentId)
   if (target.kind === 'locked')
     throw new Error(
       `in ${method}: Cannot move node. New parent is an instance or is inside of an instance`
     )
-  const sourceParentId = g.getNode(childId)?.parentId
-  const source = sourceParentId ? slotScope(g, sourceParentId) : undefined
   if (target.kind === 'slot') claimSlotContent(g, target)
-  if (source?.kind === 'slot') claimSlotContent(g, source)
 }
 
 /**

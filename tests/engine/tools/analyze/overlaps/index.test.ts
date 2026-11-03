@@ -335,7 +335,7 @@ describe('analyze overlaps', () => {
     expect(severityCapped.overlaps.length).toBe(scoped.overlaps.length)
   })
 
-  test('ToolDef defaults to current page and does not report overlaps on other pages', () => {
+  test('ToolDef defaults to current page and does not report overlaps on other pages', async () => {
     const graph = new SceneGraph()
     const page2 = graph.addPage('Page 2')
 
@@ -343,12 +343,12 @@ describe('analyze overlaps', () => {
     rect(graph, 'B', page2.id, 50, 50, 100, 100)
 
     const api = new FigmaAPI(graph)
-    const result = analyzeOverlaps.execute(api, {}) as AnalyzeOverlapsResult
+    const result = (await analyzeOverlaps.execute(api, {})) as AnalyzeOverlapsResult
     expect(result.summary.overlapCount).toBe(0)
     expect(result.overlaps).toHaveLength(0)
   })
 
-  test('ToolDef respects explicit page argument', () => {
+  test('ToolDef respects explicit page argument', async () => {
     const graph = new SceneGraph()
     const page2 = graph.addPage('Page 2')
 
@@ -356,7 +356,7 @@ describe('analyze overlaps', () => {
     rect(graph, 'B', page2.id, 50, 50, 100, 100)
 
     const api = new FigmaAPI(graph)
-    const result = analyzeOverlaps.execute(api, { page: 'Page 2' }) as AnalyzeOverlapsResult
+    const result = (await analyzeOverlaps.execute(api, { page: 'Page 2' })) as AnalyzeOverlapsResult
     expect(result.summary.overlapCount).toBeGreaterThan(0)
   })
 

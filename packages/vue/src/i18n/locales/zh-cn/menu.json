@@ -87,5 +87,7 @@
   "togglePreview": "预览",
   "saveTo": "保存到…",
   "showVersionHistory": "显示版本历史",
-  "saveToVersionHistory": "保存到版本历史…"
+  "saveToVersionHistory": "保存到版本历史…",
+  "reportProblem": "报告问题…",
+  "supportOpenPencil": "支持 OpenPencil…"
 }

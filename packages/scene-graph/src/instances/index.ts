@@ -267,6 +267,7 @@ export function recordInstanceOverride(
 
   if (relevant.length === 0) return
 
+  graph.willChangeNode(instance)
   for (const field of relevant)
     setInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
   graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })

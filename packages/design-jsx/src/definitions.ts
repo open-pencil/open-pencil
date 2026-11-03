@@ -202,6 +202,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'modelValue',
   'open',
   'disabled',
+  'invalid',
   'filled',
   'states',
   'min',

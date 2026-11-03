@@ -1,3 +1,4 @@
+import { FLAGS, isFlag } from '#dom-css/behaviours/args'
 import { layerKind } from '#dom-css/behaviours/states/layers'
 import type { StateElement } from '#dom-css/behaviours/states/types'
 import type { DesignStyleDeclaration } from '#dom-css/types'
@@ -12,7 +13,7 @@ import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import { drawsAsMain } from './drawn'
 import type { ComponentModel } from './model'
 
-/** A prop a reference sets on the component it uses: a variant or text value, or `disabled`. */
+/** A prop a reference sets on the component it uses: a variant or text value, or a flag. */
 export interface ReferenceProp {
   name: string
   value: string | boolean
@@ -102,6 +103,16 @@ export function shownText(
   return target?.node.text ?? (typeof assigned === 'string' ? assigned : undefined)
 }
 
+/** `disabled` and `invalid`, set where the instance shows the state property's value for them. */
+function drawnFlags(component: ComponentModel, values: Record<string, string>): ReferenceProp[] {
+  const states = component.args.states
+  if (!states) return []
+  return FLAGS.filter((flag) => {
+    const value = states[flag]
+    return value !== undefined && values[states.property] === value
+  }).map((flag) => ({ name: flag, value: true }))
+}
+
 /**
  * What `instance` sets on `component`: the values it is drawn with that differ from defaults,
  * and whether it is drawn on: its model, or for a group's item the value that marks it chosen.
@@ -116,13 +127,13 @@ export function referenceValues(
   let model: string | null = null
   for (const [property, arg] of component.args.booleans) {
     if (values[property] !== arg.on) continue
-    const on = arg.name === component.model || (component.valueProp && arg.name !== 'disabled')
+    const on = arg.name === component.model || (component.valueProp && !isFlag(arg.name))
     if (on) model = arg.name
     else props.push({ name: arg.name, value: true })
   }
-  const states = component.args.states
-  if (states?.disabled && values[states.property] === states.disabled)
-    props.push({ name: 'disabled', value: true })
+  // A set may draw a flag both as a boolean and as a state value; the prop is set once.
+  const flags = drawnFlags(component, values)
+  props.push(...flags.filter((flag) => !props.some((prop) => prop.name === flag.name)))
   for (const prop of component.props) {
     const value = values[prop.property]
     if (Object.hasOwn(values, prop.property) && value !== prop.default)

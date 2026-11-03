@@ -100,7 +100,8 @@ export function baseShapePath(r: SkiaRenderer, node: SceneNode): Path | null {
   return r.makeNodeShapePath(node)
 }
 
-function strokeSourcePath(r: SkiaRenderer, node: SceneNode): Path | null {
+/** The path a layer's strokes follow: a vector's own paths, or its shape. */
+export function strokeSourcePath(r: SkiaRenderer, node: SceneNode): Path | null {
   const network = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
   if (!network || network.length === 0) {
     return baseShapePath(r, node)

@@ -33,6 +33,7 @@
         "@nanostores/vue": "^1.1.0",
         "@open-pencil/cli": "workspace:*",
         "@open-pencil/cloud": "workspace:*",
+        "@open-pencil/collab": "workspace:*",
         "@open-pencil/core": "workspace:*",
         "@open-pencil/design-jsx": "workspace:*",
         "@open-pencil/dom-css": "workspace:*",
@@ -45,6 +46,7 @@
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/vue": "workspace:*",
         "@openrouter/ai-sdk-provider": "^3.1.0",
+        "@posthog/core": "1.59.1",
         "@smithy/fetch-http-handler": "^5.8.0",
         "@stream-markdown/code": "2.0.0-beta.5",
         "@tailwindcss/vite": "^4.3.3",
@@ -250,6 +252,7 @@
         "kysely": "^0.29.6",
         "lib0": "^0.2.117",
         "nodemailer": "^9.0.5",
+        "posthog-node": "5.56.0",
         "smol-toml": "^1.8.0",
         "ufo": "^1.6.4",
         "valibot": "^1.5.0",
@@ -272,6 +275,21 @@
       },
       "optionalDependencies": {
         "pg": "^8.23.0",
+      },
+    },
+    "packages/collab": {
+      "name": "@open-pencil/collab",
+      "version": "0.17.0-beta.1",
+      "dependencies": {
+        "@open-pencil/scene-graph": "workspace:*",
+        "es-toolkit": "^1.52.0",
+        "valibot": "^1.5.0",
+        "yjs": "^13.6.32",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "lib0": "^0.2.117",
+        "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
     },
     "packages/core": {
@@ -313,6 +331,7 @@
         "micromark-extension-gfm": "^3",
         "nanoevents": "^9.1.0",
         "ofetch": "^1.5.1",
+        "opencc-js": "1.4.2",
         "parse5": "^8.0.1",
         "pathe": "^2.0.3",
         "pixelmatch": "^7.2.0",
@@ -335,12 +354,15 @@
         "@types/rbush": "^4.0.0",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
         "unplugin-raw": "^0.7.0",
+        "vite": "8.1.4",
       },
       "peerDependencies": {
         "ai": "^7.0.127",
+        "vite": ">=6",
       },
       "optionalPeers": [
         "ai",
+        "vite",
       ],
     },
     "packages/design-jsx": {
@@ -884,6 +906,7 @@
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@open-pencil/package-quality-tools": "workspace:*",
+        "@posthog/cli": "0.18.12",
         "@sigstore/bundle": "^5.0.0",
         "citty": "^0.1.6",
         "es-toolkit": "^1.52.0",
@@ -1703,6 +1726,8 @@
 
     "@open-pencil/cloud-tools": ["@open-pencil/cloud-tools@workspace:tools/dev/cloud"],
 
+    "@open-pencil/collab": ["@open-pencil/collab@workspace:packages/collab"],
+
     "@open-pencil/core": ["@open-pencil/core@workspace:packages/core"],
 
     "@open-pencil/demo-tools": ["@open-pencil/demo-tools@workspace:tools/generate/demo"],
@@ -1992,6 +2017,12 @@
     "@poppinss/dumper": ["@poppinss/dumper@0.6.5", "", { "dependencies": { "@poppinss/colors": "^4.1.5", "@sindresorhus/is": "^7.0.2", "supports-color": "^10.0.0" } }, "sha512-NBdYIb90J7LfOI32dOewKI1r7wnkiH6m920puQ3qHUeZkxNkQiFnXVWoE6YtFSv6QOiPPf7ys6i+HWWecDz7sw=="],
 
     "@poppinss/exception": ["@poppinss/exception@1.2.3", "", {}, "sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw=="],
+
+    "@posthog/cli": ["@posthog/cli@0.18.12", "", { "dependencies": { "detect-libc": "^2.1.2" }, "bin": { "posthog-cli": "run-posthog-cli.js" } }, "sha512-/eT9riWOkBb9uwsdOxQgW3fan/T3hwT8rvwZCzPl3DAgSBEhzpP59usD0fyFS++X2967E5AQe74nrBw1rywf6A=="],
+
+    "@posthog/core": ["@posthog/core@1.59.1", "", { "dependencies": { "@posthog/types": "^1.416.0" } }, "sha512-P39YgzQVDh6oz6wAzQXEnoHgTYpM7gifonmVKq1scAJco79h31XmmNVurRq9tTmmyIrr1uX8FHT0riCsyfV9AQ=="],
+
+    "@posthog/types": ["@posthog/types@1.419.0", "", {}, "sha512-XX7zRYt/vK8AzaD6V+oDquAzacZf5exJv971dja9En8Qf6g84Qvc3rpT0w6hDYYLWrjaSSkdjFfvvoXI0ouJDg=="],
 
     "@promptbook/utils": ["@promptbook/utils@0.69.5", "", { "dependencies": { "spacetrim": "0.11.59" } }, "sha512-xm5Ti/Hp3o4xHrsK9Yy3MS6KbDxYbq485hDsFvxqaNA7equHLPdo8H8faTitTeb14QCDfLW4iwCxdVYu5sn6YQ=="],
 
@@ -4259,6 +4290,8 @@
 
     "openai": ["openai@6.26.0", "", { "peerDependencies": { "ws": "^8.18.0", "zod": "^3.25 || ^4.0" }, "optionalPeers": ["ws", "zod"], "bin": { "openai": "bin/cli" } }, "sha512-zd23dbWTjiJ6sSAX6s0HrCZi41JwTA1bQVs0wLQPZ2/5o2gxOJA5wh7yOAUgwYybfhDXyhwlpeQf7Mlgx8EOCA=="],
 
+    "opencc-js": ["opencc-js@1.4.2", "", {}, "sha512-EdcspgdROiCCZDM+jZR6Pa670xW+EW2QhctPBQ8gRjg6lrx4IHEl+2s+kt5izk/TkxVRgdWuFgaGkaEdIUfdaw=="],
+
     "optionator": ["optionator@0.9.4", "", { "dependencies": { "deep-is": "^0.1.3", "fast-levenshtein": "^2.0.6", "levn": "^0.4.1", "prelude-ls": "^1.2.1", "type-check": "^0.4.0", "word-wrap": "^1.2.5" } }, "sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g=="],
 
     "own-keys": ["own-keys@1.0.2", "", { "dependencies": { "call-bound": "^1.0.4", "get-intrinsic": "^1.3.0", "object-keys": "^1.1.1", "safe-push-apply": "^1.0.0" } }, "sha512-19YVAg7T+WTrxggPukVq7DjTv6+PJ867TmhCvBsYwmbFCsZd344rq2Ld1p0wo8f8Qrrhgp82c6FJRqdXWtSEhg=="],
@@ -4398,6 +4431,8 @@
     "postgres-date": ["postgres-date@1.0.7", "", {}, "sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q=="],
 
     "postgres-interval": ["postgres-interval@1.2.0", "", { "dependencies": { "xtend": "^4.0.0" } }, "sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ=="],
+
+    "posthog-node": ["posthog-node@5.56.0", "", { "dependencies": { "@posthog/core": "^1.59.0" }, "peerDependencies": { "rxjs": "^7.0.0" }, "optionalPeers": ["rxjs"] }, "sha512-BOCNJfM+ZTivY+qvNpxyUsG2rV4dyGjiz1+j5OcEqSy7YoSKabTZvLyl8h8X+pADgq5TlqpN0UdT+bXQJjs3mQ=="],
 
     "pptxgenjs": ["pptxgenjs@4.0.1", "", { "dependencies": { "@types/node": "^22.8.1", "https": "^1.0.0", "image-size": "^1.2.1", "jszip": "^3.10.1" } }, "sha512-TeJISr8wouAuXw4C1F/mC33xbZs/FuEG6nH9FG1Zj+nuPcGMP5YRHl6X+j3HSUnS1f3at6k75ZZXPMZlA5Lj9A=="],
 

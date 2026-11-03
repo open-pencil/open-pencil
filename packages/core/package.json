@@ -13,12 +13,17 @@
     "assets"
   ],
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/runtime-assets/install.ts",
+    "./dist/runtime-assets/install.js"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "imports": {
     "#core/*": "./src/*.ts",
-    "#core-tests/*": "./tests/*.ts"
+    "#core-tests/*": "./tests/*.ts",
+    "#core-assets/*.ttf": "./assets/*.ttf",
+    "#core-assets/*.woff2": "./assets/*.woff2"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -159,6 +164,12 @@
       "import": "./dist/canvaskit.js",
       "default": "./dist/canvaskit.js"
     },
+    "./runtime-assets/install": {
+      "bun": "./src/runtime-assets/install.ts",
+      "types": "./dist/runtime-assets/install.d.ts",
+      "import": "./dist/runtime-assets/install.js",
+      "default": "./dist/runtime-assets/install.js"
+    },
     "./layout": {
       "types": "./dist/layout.d.ts",
       "import": "./dist/layout.js",
@@ -169,6 +180,12 @@
       "types": "./dist/node/fs.d.ts",
       "import": "./dist/node/fs.js",
       "default": "./dist/node/fs.js"
+    },
+    "./node/vite": {
+      "bun": "./src/node/vite.ts",
+      "types": "./dist/node/vite.d.ts",
+      "import": "./dist/node/vite.js",
+      "default": "./dist/node/vite.js"
     }
   },
   "publishConfig": {
@@ -217,6 +234,7 @@
     "micromark-extension-gfm": "^3",
     "nanoevents": "^9.1.0",
     "ofetch": "^1.5.1",
+    "opencc-js": "1.4.2",
     "parse5": "^8.0.1",
     "pathe": "^2.0.3",
     "pixelmatch": "^7.2.0",
@@ -238,13 +256,18 @@
     "@types/mdast": "^4.0.4",
     "@types/rbush": "^4.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "unplugin-raw": "^0.7.0"
+    "unplugin-raw": "^0.7.0",
+    "vite": "8.1.4"
   },
   "peerDependencies": {
-    "ai": "^7.0.127"
+    "ai": "^7.0.127",
+    "vite": ">=6"
   },
   "peerDependenciesMeta": {
     "ai": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   }

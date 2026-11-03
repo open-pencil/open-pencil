@@ -184,6 +184,30 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
+  test('reports server errors only when error tracking is configured', () => {
+    expect(parseCloudDeploymentTOML(minimalSource, environment).errorTracking).toBeUndefined()
+
+    const tracked = `${minimalSource}
+[error_tracking]
+provider = "posthog"
+`
+    expect(() => parseCloudDeploymentTOML(tracked, environment)).toThrow('POSTHOG_PROJECT_API_KEY')
+    expect(
+      parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
+        .errorTracking
+    ).toEqual({ provider: 'posthog', host: 'https://us.i.posthog.com', projectAPIKey: 'phc_test' })
+
+    const inline = tracked.replace(
+      'provider = "posthog"',
+      'provider = "posthog"\nhost = "https://eu.i.posthog.com"\nproject_api_key = "phc_inline"'
+    )
+    expect(parseCloudDeploymentTOML(inline, environment).errorTracking).toEqual({
+      provider: 'posthog',
+      host: 'https://eu.i.posthog.com',
+      projectAPIKey: 'phc_inline'
+    })
+  })
+
   test('advertises an AI service and billing portal only when configured', () => {
     const plain = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment))
     expect(plain.ai).toBeUndefined()

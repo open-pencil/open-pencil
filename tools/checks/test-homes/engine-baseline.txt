@@ -19,9 +19,6 @@ tests/engine/app/automation/mcp-runtime.test.ts
 tests/engine/app/automation/mcp-vite-plugin.test.ts
 tests/engine/app/automation/portless-route.test.ts
 tests/engine/app/cache.test.ts
-tests/engine/app/chat/history/continuation.test.ts
-tests/engine/app/chat/history/controller.test.ts
-tests/engine/app/chat/history/idb.test.ts
 tests/engine/app/chat/step-limit.test.ts
 tests/engine/app/chat/tool-access.test.ts
 tests/engine/app/chat/tool-state.test.ts

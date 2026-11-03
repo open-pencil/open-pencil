@@ -1,0 +1,1 @@
+- HTML export draws linear, radial, and angular gradient fills and every stacked fill with its blend mode, writes the colour a variable-bound paint draws, and standalone pages define the tokens their layers use. Diamond gradients are still left out.

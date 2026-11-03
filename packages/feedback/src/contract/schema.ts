@@ -40,7 +40,8 @@ export const AI_PROVIDERS = [
   'acp:claude-code',
   'acp:codex',
   'acp:gemini-cli',
-  'acp:cursor'
+  'acp:cursor',
+  'acp:grok-build'
 ] as const
 
 export type Platform = (typeof PLATFORMS)[number]
@@ -58,6 +59,10 @@ export type UsageStatsAnswer = (typeof USAGE_STATS_ANSWERS)[number]
 /** Where a person agreed to share usage stats. */
 export const CONSENT_SOURCES = ['welcome', 'prompt', 'settings'] as const
 export type ConsentSource = (typeof CONSENT_SOURCES)[number]
+
+/** Where a person chose to donate: the question the app asks, the File menu, or Settings. */
+export const DONATION_SOURCES = ['prompt', 'menu', 'settings'] as const
+export type DonationSource = (typeof DONATION_SOURCES)[number]
 
 const appVersionSchema = v.pipe(
   v.string(),
@@ -118,6 +123,11 @@ export const usageEventSchema = v.variant('name', [
     name: v.literal('usage_stats_enabled'),
     timestamp: timestampSchema,
     source: v.picklist(CONSENT_SOURCES)
+  }),
+  v.strictObject({
+    name: v.literal('donate_clicked'),
+    timestamp: timestampSchema,
+    source: v.picklist(DONATION_SOURCES)
   })
 ])
 export type UsageEvent = v.InferOutput<typeof usageEventSchema>
@@ -125,11 +135,13 @@ export type UsageEventName = UsageEvent['name']
 
 export const USAGE_BATCH_LIMIT = 50
 
+/** A random ID made on the device when its user agreed to usage stats; it names no person or account. */
+export const installIdSchema = v.pipe(v.string(), v.regex(/^[0-9a-f]{32}$/))
+
 /** A batch of usage events from one install that agreed to share them. */
 export const usageBatchSchema = v.strictObject({
   ...buildEntries,
-  /** A random ID made on the device when its user agreed; it names no person or account. */
-  installId: v.pipe(v.string(), v.regex(/^[0-9a-f]{32}$/)),
+  installId: installIdSchema,
   events: v.pipe(v.array(usageEventSchema), v.minLength(1), v.maxLength(USAGE_BATCH_LIMIT))
 })
 export type UsageBatch = v.InferOutput<typeof usageBatchSchema>
@@ -307,3 +319,127 @@ export const metricsSnapshotSchema = v.object({
   usage: v.nullable(metricsUsageSchema)
 })
 export type MetricsSnapshot = v.InferOutput<typeof metricsSnapshotSchema>
+
+/** How long the files attached to a report are kept before retention deletes them. */
+export const REPORT_FILE_RETENTION_DAYS = 90
+export const REPORT_FILE_MAX_BYTES = 50 * 1024 * 1024
+export const REPORT_STEPS_LIMIT = 50
+/** The largest report body the service takes; the app leaves out the oldest steps to fit it. */
+export const REPORT_BODY_MAX_BYTES = 256 * 1024
+export const REPORT_FRAMES_LIMIT = 100
+export const REPORT_NOTE_MAX_LENGTH = 5000
+
+/** Where an error was caught: the window, an unhandled rejection, a Vue component, or the desktop shell. */
+export const REPORT_ERROR_SOURCES = ['window', 'rejection', 'vue', 'panic'] as const
+export type ReportErrorSource = (typeof REPORT_ERROR_SOURCES)[number]
+
+export const REPORT_STEP_LEVELS = ['debug', 'info', 'warning', 'error'] as const
+
+const text = (max: number) => v.pipe(v.string(), v.maxLength(max))
+const positionSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
+const uuidSchema = v.pipe(v.string(), v.uuid())
+
+/** One stack frame as PostHog's error tracking reads it; `chunk_id` points it at an uploaded source map. */
+const frameSchema = v.strictObject({
+  platform: v.literal('web:javascript'),
+  filename: v.optional(text(1024)),
+  function: v.optional(text(256)),
+  lineno: v.optional(positionSchema),
+  colno: v.optional(positionSchema),
+  in_app: v.optional(v.boolean()),
+  chunk_id: v.optional(uuidSchema)
+})
+
+/** One error in PostHog's `$exception_list` shape; a cause chain sends several. */
+const exceptionSchema = v.strictObject({
+  type: v.pipe(v.string(), v.minLength(1), v.maxLength(128)),
+  value: v.optional(text(1000)),
+  mechanism: v.strictObject({
+    handled: v.boolean(),
+    synthetic: v.boolean(),
+    type: v.picklist(REPORT_ERROR_SOURCES)
+  }),
+  stacktrace: v.optional(
+    v.strictObject({
+      type: v.literal('raw'),
+      frames: v.pipe(v.array(frameSchema), v.maxLength(REPORT_FRAMES_LIMIT))
+    })
+  )
+})
+
+const attributeKeySchema = v.pipe(v.string(), v.regex(/^[A-Za-z][\w.]{0,63}$/))
+
+/** A recent diagnostics event, scrubbed on the device, that led up to the report. */
+const stepSchema = v.strictObject({
+  name: v.pipe(v.string(), v.regex(/^[a-z][a-z0-9_.]{0,63}$/)),
+  category: v.pipe(v.string(), v.regex(/^[a-z]{1,32}$/)),
+  level: v.picklist(REPORT_STEP_LEVELS),
+  timestamp: v.pipe(v.string(), v.isoTimestamp()),
+  attributes: v.pipe(
+    v.record(attributeKeySchema, v.nullable(v.union([text(4000), v.number(), v.boolean()]))),
+    v.maxEntries(24)
+  )
+})
+
+/**
+ * The files a report may attach, each under this fixed name, never its own: the open document.
+ * A name joins the list when the app starts to send that file.
+ */
+export const REPORT_FILE_NAMES = ['document.fig'] as const
+export const reportFileNameSchema = v.picklist(REPORT_FILE_NAMES)
+export type ReportFileName = v.InferOutput<typeof reportFileNameSchema>
+
+const reportFileSchema = v.strictObject({
+  name: reportFileNameSchema,
+  size: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(REPORT_FILE_MAX_BYTES))
+})
+
+const reportEntries = {
+  ...buildSchema.entries,
+  /** Present only when the install shares usage stats, so the report joins its usage events. */
+  installId: v.optional(installIdSchema),
+  /** The PostHog release the app's chunks carry, which picks the source maps for its frames. */
+  release: v.optional(uuidSchema),
+  note: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(REPORT_NOTE_MAX_LENGTH))),
+  email: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(254), v.email())),
+  steps: v.optional(v.pipe(v.array(stepSchema), v.maxLength(REPORT_STEPS_LIMIT))),
+  files: v.optional(
+    v.pipe(
+      v.array(reportFileSchema),
+      v.maxLength(REPORT_FILE_NAMES.length),
+      v.check(
+        (files) => new Set(files.map((file) => file.name)).size === files.length,
+        'Attached files need distinct names'
+      )
+    )
+  )
+}
+
+/**
+ * A report a person chose to send: an error the app caught, or a problem they describe. Nothing
+ * is sent without their click; the app shows them this body before it goes.
+ */
+export const reportSchema = v.variant('kind', [
+  v.strictObject({
+    kind: v.literal('error'),
+    exceptions: v.pipe(v.array(exceptionSchema), v.minLength(1), v.maxLength(5)),
+    ...reportEntries
+  }),
+  v.strictObject({
+    kind: v.literal('problem'),
+    ...reportEntries,
+    note: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(REPORT_NOTE_MAX_LENGTH))
+  })
+])
+export type Report = v.InferOutput<typeof reportSchema>
+export type ReportException = v.InferOutput<typeof exceptionSchema>
+export type ReportFrame = v.InferOutput<typeof frameSchema>
+export type ReportStep = v.InferOutput<typeof stepSchema>
+export type ReportFile = v.InferOutput<typeof reportFileSchema>
+
+/** What `POST /reports` answers: the report's ID and, when it declared files, the token that uploads them. */
+export const reportReceiptSchema = v.strictObject({
+  reportId: uuidSchema,
+  uploadToken: v.nullable(v.string())
+})
+export type ReportReceipt = v.InferOutput<typeof reportReceiptSchema>

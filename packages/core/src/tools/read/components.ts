@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 
+import type { FigmaAPI } from '#core/figma-api'
 import { getComponentCatalog } from '#core/tools/component-catalog'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -25,6 +26,32 @@ interface LibraryComponentResult {
   source: 'library'
   enabled: boolean
   priority: number
+}
+
+/** The enabled library components the document's catalog has, matching `name` and `libraryId`. */
+async function listLibraryComponents(
+  figma: FigmaAPI,
+  args: { name?: string; library_id?: string }
+): Promise<LibraryComponentResult[]> {
+  const catalog = getComponentCatalog(figma.graph)
+  if (!catalog) return []
+  const assets = await catalog.listComponents({
+    name: args.name,
+    libraryId: args.library_id,
+    enabledOnly: true
+  })
+  return assets.map(({ libraryId, libraryName, revisionId, enabled, priority, asset }) => ({
+    libraryId,
+    libraryName,
+    revisionId,
+    assetKey: asset.key,
+    name: asset.name,
+    type: asset.type,
+    description: asset.description,
+    source: 'library',
+    enabled,
+    priority
+  }))
 }
 
 export const getComponents = defineTool({
@@ -54,10 +81,15 @@ export const getComponents = defineTool({
     const source = args.source
     const nameFilter = args.name?.toLowerCase()
     const documentComponents: DocumentComponentResult[] = []
+    const libraryComponents = source === 'document' ? [] : await listLibraryComponents(figma, args)
+    // Library components sort ahead of the document's, so when they fill the list no page loads.
+    const libraryFilled = libraryComponents.filter(({ priority }) => priority > -1).length >= limit
 
-    if (source !== 'libraries') {
+    if (source !== 'libraries' && !libraryFilled) {
       for (const page of figma.root.children) {
         if (documentComponents.length >= limit) break
+        // Pages load as the search reaches them, so a short list loads only the pages it needs.
+        await page.loadAsync()
         page.findAll((node) => {
           if (documentComponents.length >= limit) return false
           if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
@@ -78,30 +110,6 @@ export const getComponents = defineTool({
           return false
         })
       }
-    }
-
-    const catalog = getComponentCatalog(figma.graph)
-    const libraryComponents: LibraryComponentResult[] = []
-    if (source !== 'document' && catalog) {
-      const assets = await catalog.listComponents({
-        name: args.name,
-        libraryId: args.library_id,
-        enabledOnly: true
-      })
-      libraryComponents.push(
-        ...assets.map(({ libraryId, libraryName, revisionId, enabled, priority, asset }) => ({
-          libraryId,
-          libraryName,
-          revisionId,
-          assetKey: asset.key,
-          name: asset.name,
-          type: asset.type,
-          description: asset.description,
-          source: 'library' as const,
-          enabled,
-          priority
-        }))
-      )
     }
 
     const components = [...libraryComponents, ...documentComponents]

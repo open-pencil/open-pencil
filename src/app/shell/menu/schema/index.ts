@@ -37,6 +37,20 @@ export const APP_MENU_SCHEMA = [
         handler: 'shell',
         palette: { keywords: ['log', 'report', 'bug', 'problem', 'troubleshoot'] }
       },
+      {
+        id: 'report-problem',
+        feature: 'reports',
+        label: 'Report a Problem…',
+        handler: 'shell',
+        palette: { keywords: ['bug', 'issue', 'feedback', 'crash', 'support'] }
+      },
+      {
+        id: 'support-openpencil',
+        feature: 'donation',
+        label: 'Support OpenPencil…',
+        handler: 'shell',
+        palette: { keywords: ['donate', 'donation', 'sponsor', 'fund', 'tip'] }
+      },
       { type: 'separator' },
       { id: 'save', feature: 'document', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', feature: 'document', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },

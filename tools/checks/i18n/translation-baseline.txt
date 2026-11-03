@@ -55,11 +55,13 @@ de:panels.radius
 de:panels.stickyColorOrange
 de:panels.textCaseOriginal
 de:panels.slots
+de:panels.behaviourTab
 de:panels.behaviourTabs
 de:panels.behaviourMin
 de:panels.behaviourMax
 de:panels.behaviourStateHover
 de:panels.behaviourText
+de:panels.behaviourValueField
 de:panels.shader
 de:settings.mcp
 de:settings.navigation
@@ -94,6 +96,7 @@ es:diagnostics.categoryMCP
 es:diagnostics.durationMs
 es:diagnostics.runtimeError
 es:panels.auto
+es:panels.behaviourValueField
 es:panels.blendModeColor
 es:panels.blendModeNormal
 es:panels.colorFormatHsb
@@ -184,6 +187,7 @@ fr:panels.slotDescription
 fr:panels.behaviourMin
 fr:panels.behaviourMax
 fr:panels.behaviourStateFocus
+fr:panels.behaviourValueField
 fr:panels.shader
 fr:panels.variableModeAuto
 fr:panels.variableModeAutoMixed
@@ -238,6 +242,7 @@ it:panels.behaviourMin
 it:panels.behaviourMax
 it:panels.behaviourStateHover
 it:panels.behaviourStateFocus
+it:panels.behaviourValueField
 it:panels.shader
 it:panels.variableModeAuto
 it:panels.variableModeAutoMixed
@@ -301,6 +306,7 @@ pl:panels.framePresetCategoryFigmaCommunity
 pl:panels.framePresetCategoryTablet
 pl:panels.kerning
 pl:panels.behaviourMin
+pl:panels.behaviourValueField
 pl:panels.shader
 pl:settings.mcp
 pl:settings.media
@@ -320,6 +326,7 @@ ru:code.stylingCSS
 ru:code.stylingTailwind
 ru:diagnostics.categoryMCP
 ru:panels.ai
+ru:panels.behaviourValueField
 ru:panels.colorFormatHsb
 ru:panels.colorFormatHsl
 ru:panels.colorFormatOkhcl
@@ -375,6 +382,7 @@ de:panels.gridAuto
 de:storage.cloudTitle
 de:statuses.name
 de:statuses.status
+es:panels.effectColor
 es:panels.gridColor
 es:panels.gridAuto
 es:storage.cloudTitle

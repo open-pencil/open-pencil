@@ -30,6 +30,16 @@
         "label": "Diagnostics…"
       },
       {
+        "id": "report-problem",
+        "label": "Report a Problem…",
+        "feature": "reports"
+      },
+      {
+        "id": "support-openpencil",
+        "label": "Support OpenPencil…",
+        "feature": "donation"
+      },
+      {
         "type": "separator"
       },
       {

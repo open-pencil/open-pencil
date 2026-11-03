@@ -1,4 +1,11 @@
-import { pingSchema, usageEventSchema, type UsageEvent } from './schema'
+import {
+  pingSchema,
+  REPORT_FILE_NAMES,
+  reportSchema,
+  usageEventSchema,
+  type Report,
+  type UsageEvent
+} from './schema'
 
 export interface FieldDescription {
   name: string
@@ -43,6 +50,10 @@ const EVENT_DESCRIPTIONS: {
     properties: {
       source: 'Where: right after the first-run welcome, on a later launch, or in Settings.'
     }
+  },
+  donate_clicked: {
+    description: 'The donation page was opened; whether a donation followed is not known.',
+    properties: { source: 'Where: the question the app asks, the File menu, or Settings.' }
   }
 }
 
@@ -103,4 +114,47 @@ export function describeUsageEvents(): UsageEventDescription[] {
         }))
     }
   })
+}
+
+/** A key of any kind of report, not only the keys every kind shares. */
+type ReportKey<R = Report> = R extends unknown ? keyof R : never
+type ReportField = Exclude<ReportKey, (typeof BUILD_FIELDS)[number]>
+
+/** Plain-language meaning of each report field besides the build; the privacy page renders these. */
+const REPORT_DESCRIPTIONS: Record<ReportField, string> = {
+  kind: 'An error the app caught, or a problem you describe.',
+  exceptions:
+    'For an error: each error in its chain, with its type, its scrubbed message, whether the app handled it, where it was raised, and the code locations it passed through.',
+  installId: 'Your install ID, only while you share usage stats.',
+  release: 'Which release the app’s code came from, so the code locations can be read.',
+  note: 'What you wrote.',
+  email: 'The email address you gave, if any, so we can reply.',
+  steps:
+    'If you include recent activity: the latest diagnostics events, each with its name, category, level, time, and scrubbed details.',
+  files: 'If you attach the open document: the name it is sent under and its size.'
+}
+
+const REPORT_FIELDS = [
+  'kind',
+  'exceptions',
+  'installId',
+  'release',
+  'note',
+  'email',
+  'steps',
+  'files'
+] as const satisfies readonly ReportField[]
+
+const REPORT_VALUES: Partial<Record<ReportField, readonly string[]>> = {
+  kind: reportSchema.options.map((option) => option.entries.kind.literal),
+  files: REPORT_FILE_NAMES
+}
+
+/** Every field a report may carry besides the build fields. */
+export function describeReportFields(): FieldDescription[] {
+  return REPORT_FIELDS.map((name) => ({
+    name,
+    description: REPORT_DESCRIPTIONS[name],
+    values: REPORT_VALUES[name] ?? []
+  }))
 }

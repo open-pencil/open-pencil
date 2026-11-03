@@ -1,9 +1,8 @@
 import type { ComponentSetNode } from '@figma/plugin-typings/plugin-api-standalone'
-import { compact, uniq } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { defaultVariant } from '@open-pencil/scene-graph/components'
+import { defaultVariant, variantOptions } from '@open-pencil/scene-graph/components'
 
 import {
   graph,
@@ -73,24 +72,12 @@ export function installComponentNodeAccessors(
     variantGroupProperties: {
       get(this: ProxyThis): ComponentSetNode['variantGroupProperties'] {
         const set = raw(this, internals)
-        const variants = graph(this, internals)
-          .getChildren(set.id)
-          .filter((child) => child.type === 'COMPONENT')
         return Object.fromEntries(
           set.componentPropertyDefinitions
             .filter((definition) => definition.type === 'VARIANT')
             .map((definition) => [
               definition.name,
-              // A file may leave the options out; the variants still hold their values.
-              {
-                values: definition.variantOptions
-                  ? [...definition.variantOptions]
-                  : uniq(
-                      compact(
-                        variants.map((variant) => variant.componentPropertyValues[definition.name])
-                      )
-                    )
-              }
+              { values: variantOptions(graph(this, internals), set, definition) }
             ])
         )
       }

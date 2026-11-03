@@ -14,6 +14,18 @@ describe('tree operations', () => {
     expect(expectDefined(child.parent, 'child parent').id).toBe(parent.id)
   })
 
+  // Measured in Figma's plugin API (Figma desktop 126).
+  test('appendChild moves a child already there to the end', () => {
+    const api = createAPI()
+    const parent = api.createFrame()
+    const a = api.createRectangle()
+    const b = api.createRectangle()
+    parent.appendChild(a)
+    parent.appendChild(b)
+    parent.appendChild(a)
+    expect(parent.children.map((c) => c.id)).toEqual([b.id, a.id])
+  })
+
   test('insertChild at index', () => {
     const api = createAPI()
     const parent = api.createFrame()

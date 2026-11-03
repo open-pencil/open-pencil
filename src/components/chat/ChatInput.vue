@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { acpAgentFor } from '@open-pencil/core/constants'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -106,8 +106,7 @@ const isAgentProvider = computed(
 )
 const agentName = computed(() => {
   if (providerID.value === 'harness:pi') return 'Pi'
-  const agentId = providerID.value.replace('acp:', '')
-  return ACP_AGENTS.find((a) => a.id === agentId)?.name ?? agentId
+  return acpAgentFor(providerID.value)?.name ?? providerID.value.replace('acp:', '')
 })
 const isCustomProvider = computed(
   () => providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'

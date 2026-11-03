@@ -68,7 +68,7 @@ const DEFAULT_WEB_FONT_SUBSETS = [
 ]
 
 export function normalizedCoverageText(text: string): string {
-  return Array.from(new Set(text)).sort().join('')
+  return uniq(Array.from(text)).sort().join('')
 }
 
 export function webFontSubsetsForText(text: string): string[] {

@@ -1,4 +1,4 @@
-import { partition } from 'es-toolkit/array'
+import { compact, partition, uniq } from 'es-toolkit/array'
 import { omit, omitBy } from 'es-toolkit/object'
 
 import { BLACK } from '../constants'
@@ -7,6 +7,7 @@ import { findInstanceAncestor } from '../instances'
 import { bindingOverrideField, setInstanceOverride } from '../instances/overrides'
 import { siblingOrderKeys } from '../order-keys'
 import type {
+  Effect,
   Variable,
   VariableCollection,
   VariableCollectionMode,
@@ -20,6 +21,10 @@ import {
 } from './bindings'
 import {
   BOOLEAN_BINDING_FIELDS,
+  effectBindableProperties,
+  effectBindingTarget,
+  effectBindingVariableType,
+  type EffectBindingProperty,
   paintBindingTarget,
   STRING_BINDING_FIELDS,
   TEXT_CONTENT_VARIABLE_TYPES,
@@ -237,6 +242,25 @@ export function getVariablesByType(graph: SceneGraph, type: VariableType): Varia
   return [...graph.variables.values()].filter((v) => v.type === type)
 }
 
+/** Checks that an effect binding names an effect the node has, a property it binds, and its type. */
+function assertEffectBinding(
+  effects: readonly Effect[],
+  target: { index: number; property: EffectBindingProperty },
+  type: VariableType,
+  field: string
+): void {
+  const effect = effects.at(target.index)
+  if (!effect) {
+    throw new Error(`Index ${target.index} out of range for effects (length ${effects.length})`)
+  }
+  if (!effectBindableProperties(effect.type).includes(target.property)) {
+    throw new Error(`A ${effect.type} effect has no bindable ${target.property} ("${field}")`)
+  }
+  if (type !== effectBindingVariableType(target.property)) {
+    throw new Error(`Cannot bind ${type} variable to effect field "${field}"`)
+  }
+}
+
 export function bindVariable(
   graph: SceneGraph,
   nodeId: string,
@@ -267,9 +291,13 @@ export function bindVariable(
     }
     // Auto-remove top-level dead binding (e.g. 'fills') when setting indexed binding
     if (paint.list in node.boundVariables) {
+      graph.willChangeNode(node)
       node.boundVariables = omit(node.boundVariables, [paint.list])
     }
   }
+
+  const effect = effectBindingTarget(field)
+  if (effect) assertEffectBinding(node.effects, effect, variable.type, field)
 
   if (isNumericVariableBindingField(field) && variable.type !== 'FLOAT') {
     throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
@@ -292,7 +320,8 @@ export function bindVariable(
     isNumericVariableBindingField(field) ||
     STRING_BINDING_FIELDS.has(field) ||
     BOOLEAN_BINDING_FIELDS.has(field) ||
-    paint !== null
+    paint !== null ||
+    effect !== null
 
   if (!isKnownField) {
     throw new Error(`Unknown binding field "${field}"`)
@@ -333,6 +362,8 @@ function markBoundVariablesOverrideOnInstance(
   const owner = variableBindingOwner(graph, node)
   if (owner.type !== 'INSTANCE') return
   const nearest = findInstanceAncestor(graph, nodeId)
+  const instances = uniq(compact([nearest, owner])).filter((x) => x.id !== nodeId)
+  for (const instance of instances) graph.willChangeNode(instance)
   if (nearest) setInstanceOverride(nearest.instanceOverrides, nearest.id, nodeId, 'boundVariables')
   setInstanceOverride(owner.instanceOverrides, owner.id, nodeId, 'boundVariables')
   if (field)
@@ -343,6 +374,8 @@ function markBoundVariablesOverrideOnInstance(
       bindingOverrideField(field),
       node.boundVariables[field] ?? null
     )
+  for (const instance of instances)
+    graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
 }
 
 export * from './bindings'

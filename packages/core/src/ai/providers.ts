@@ -1,6 +1,6 @@
 /** ACP agents, direct AI providers, and the models each provider recommends. */
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'cursor'
+export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'cursor' | 'grok-build'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -20,6 +20,11 @@ export interface ACPAgentDef {
    * which the desktop shell scope pins under `<command>-sign-in`.
    */
   signIn?: { via: 'acp'; method: string } | { via: 'terminal'; method: string; args: string[] }
+  /**
+   * Whether a saved chat continues the agent's own session through ACP `session/resume`, so the
+   * agent keeps what was said. Set only for agents whose adapter is known to resume reliably.
+   */
+  resumesSessions?: boolean
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
@@ -36,7 +41,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
       via: 'terminal',
       method: 'claude-ai-login',
       args: ['--cli', 'auth', 'login', '--claudeai']
-    }
+    },
+    resumesSessions: true
   },
   {
     id: 'codex',
@@ -47,7 +53,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     adapterPackage: '@agentclientprotocol/codex-acp',
     setupURL: 'https://developers.openai.com/codex/cli',
     installCommand: 'npm i -g @agentclientprotocol/codex-acp',
-    signIn: { via: 'acp', method: 'chat-gpt' }
+    signIn: { via: 'acp', method: 'chat-gpt' },
+    resumesSessions: true
   },
   {
     id: 'gemini-cli',
@@ -65,8 +72,20 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     command: 'cursor-agent',
     args: ['acp'],
     setupURL: 'https://cursor.com/docs/cli/installation'
+  },
+  {
+    id: 'grok-build',
+    name: 'Grok Build',
+    command: 'grok',
+    args: ['agent', 'stdio'],
+    setupURL: 'https://docs.x.ai/build/overview'
   }
 ]
+
+/** The ACP agent a provider runs, or undefined for a provider that is not one. */
+export function acpAgentFor(providerID: string): ACPAgentDef | undefined {
+  return ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)
+}
 
 export type AIProviderID =
   | 'openrouter'

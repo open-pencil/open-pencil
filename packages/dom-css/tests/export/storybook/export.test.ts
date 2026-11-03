@@ -3,6 +3,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { invalidCheckboxSet } from '#dom-css-tests/behaviours/fixtures'
 import { BLUE_500, card, designSystem } from '#dom-css-tests/export/token-fixtures'
 import { exportStorybook } from '#dom-css/index'
 
@@ -290,6 +291,27 @@ describe('exportStorybook', () => {
     })
     expect(storyExport(story, 'OffDisabled')).toMatchObject({
       args: { checked: false, Interaction: 'Default', disabled: true }
+    })
+  })
+
+  it('picks the invalid variant by an invalid arg, disabled over it', async () => {
+    const { graph } = invalidCheckboxSet()
+    const story = await importStory(
+      String((await exportStorybook(graph, { framework: 'html' }))[0]?.content)
+    )
+    expect(story.default.args).toEqual({
+      checked: false,
+      State: 'Default',
+      disabled: false,
+      invalid: false
+    })
+    const render = (args: object) =>
+      story.default.render({ checked: false, State: 'Default', disabled: false, ...args })
+    expect(render({ invalid: true })).toContain('#DB2626')
+    expect(render({ invalid: true, disabled: true })).toContain('opacity: 0.5')
+    expect(render({ invalid: true, disabled: true })).not.toContain('#DB2626')
+    expect(storyExport(story, 'OnInvalid')).toMatchObject({
+      args: { checked: true, State: 'Default', disabled: false, invalid: true }
     })
   })
 

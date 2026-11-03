@@ -117,6 +117,25 @@ function square(graph: SceneGraph, frameId: string, props: Partial<SceneNode>) {
   graph.createNode('RECTANGLE', frameId, { x: 100, y: 100, width: 200, height: 200, ...props })
 }
 
+/** Red across a black-to-white edge at x = 100 under a layer of background blur. */
+function backgroundBlurRow(radius: number): number[] {
+  return edgeRow((graph, frameId) => {
+    graph.createNode('RECTANGLE', frameId, { width: 100, height: 400, fills: [solid(0, 0, 0)] })
+    graph.createNode('RECTANGLE', frameId, {
+      x: 100,
+      width: 300,
+      height: 400,
+      fills: [solid(1, 1, 1)]
+    })
+    graph.createNode('RECTANGLE', frameId, {
+      width: 400,
+      height: 400,
+      fills: [solid(1, 1, 1, 0.01)],
+      effects: [effect('BACKGROUND_BLUR', radius)]
+    })
+  }, 0)
+}
+
 function expectFigmaEdge(row: number[], figma: number[], from = 60) {
   const differences = row.flatMap((value, index) =>
     60 + index < from ? [] : [Math.abs(value - figma[index])]
@@ -161,22 +180,7 @@ describe('blur effects fall off as in Figma', () => {
   })
 
   test('background blur', () => {
-    const row = edgeRow((graph, frameId) => {
-      graph.createNode('RECTANGLE', frameId, { width: 100, height: 400, fills: [solid(0, 0, 0)] })
-      graph.createNode('RECTANGLE', frameId, {
-        x: 100,
-        width: 300,
-        height: 400,
-        fills: [solid(1, 1, 1)]
-      })
-      graph.createNode('RECTANGLE', frameId, {
-        width: 400,
-        height: 400,
-        fills: [solid(1, 1, 1, 0.01)],
-        effects: [effect('BACKGROUND_BLUR', 16)]
-      })
-    }, 0)
-    expectFigmaEdge(row, FIGMA['BACKGROUND_BLUR 16'])
+    expectFigmaEdge(backgroundBlurRow(16), FIGMA['BACKGROUND_BLUR 16'])
   })
 
   test('background blur on a boolean, inside its result alone', () => {
@@ -202,6 +206,51 @@ describe('blur effects fall off as in Figma', () => {
       graph.createNode('ELLIPSE', union.id, { x: 60, y: 120, width: 120, height: 120 })
     }, 0)
     expectFigmaEdge(row, FIGMA['BACKGROUND_BLUR 16 union'])
+  })
+})
+
+describe('a negative blur, which only a bound variable gives', () => {
+  // Figma 126 exports each effect at radius -6 pixel for pixel as at radius 0.
+  for (const type of ['DROP_SHADOW', 'INNER_SHADOW', 'LAYER_BLUR'] as const) {
+    test(`draws a ${type.toLowerCase()} as no blur`, () => {
+      // An inner shadow moved right darkens the white fill at the left edge the row crosses.
+      const inner = type === 'INNER_SHADOW'
+      const row = (radius: number) =>
+        edgeRow(
+          (graph, frameId) =>
+            square(graph, frameId, {
+              fills: [solid(1, 1, 1)],
+              effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
+            }),
+          inner ? 0 : 3
+        )
+      expect(row(-6)).toEqual(row(0))
+    })
+  }
+
+  for (const type of ['DROP_SHADOW', 'INNER_SHADOW'] as const) {
+    test(`draws a ${type.toLowerCase()} cast from a boolean's silhouette as no blur`, () => {
+      const inner = type === 'INNER_SHADOW'
+      const row = (radius: number) =>
+        edgeRow((graph, frameId) => {
+          const union = graph.createNode('BOOLEAN_OPERATION', frameId, {
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 200,
+            booleanOperation: 'UNION',
+            fills: [solid(1, 1, 1)],
+            effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
+          })
+          graph.createNode('RECTANGLE', union.id, { width: 200, height: 120 })
+          graph.createNode('RECTANGLE', union.id, { y: 80, width: 200, height: 120 })
+        }, inner ? 0 : 3)
+      expect(row(-6)).toEqual(row(0))
+    })
+  }
+
+  test('draws a background blur as no blur', () => {
+    expect(backgroundBlurRow(-6)).toEqual(backgroundBlurRow(0))
   })
 })
 

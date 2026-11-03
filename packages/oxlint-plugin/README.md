@@ -21,7 +21,7 @@ The plugin is named `open-pencil`. Every rule is off until the configuration tur
 
 ## Recommended configuration
 
-`@open-pencil/oxlint-plugin/recommended` is the configuration OpenPencil's own repositories extend: Oxlint's `typescript`, `import`, `unicorn`, `promise`, and `node` plugins with the built-in rules they follow, and every rule below except `no-raw-sql` and `no-dynamic-html`, which fit only some code. Load the plugin beside it, since a configuration file cannot load a plugin for the one that extends it:
+`@open-pencil/oxlint-plugin/recommended` is the configuration OpenPencil's own repositories extend: Oxlint's `typescript`, `import`, `unicorn`, `promise`, and `node` plugins with the built-in rules they follow, and every rule below except `no-raw-sql`, `no-dynamic-html`, and `no-unvalidated-route-params`, which fit only some code. Load the plugin beside it, since a configuration file cannot load a plugin for the one that extends it:
 
 ```json
 {
@@ -63,16 +63,17 @@ An `extends` path resolves from the file that declares it, so a configuration in
 
 ### Runtime and security
 
-| Rule                                          | What it asks for                                                                                                                                                                               |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `no-silent-catch`                             | No empty `catch` blocks.                                                                                                                                                                       |
-| `no-math-random`                              | `crypto.getRandomValues()` instead of `Math.random()`.                                                                                                                                         |
-| `no-reflect-delete-global-this-outside-tests` | No `Reflect.deleteProperty(globalThis, …)` outside `tests/`.                                                                                                                                   |
-| `no-module-mocking`                           | Inject dependencies instead of mocking modules in tests.                                                                                                                                       |
-| `no-secret-in-query`                          | Secrets and tokens in a URL fragment or request body, never its query string.                                                                                                                  |
-| `no-secret-logging`                           | Never log secrets, tokens, cookies, or authorization values.                                                                                                                                   |
-| `no-dynamic-html`                             | Return typed JSON or a constant body; never build an HTML response from values. Every `.html(...)` call counts as a response, as Hono's `context.html` is, so turn it on for server code only. |
-| `no-conditional-object-spreads`               | An explicit branch instead of several or large conditional spreads in one object.                                                                                                              |
+| Rule                                          | What it asks for                                                                                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `no-silent-catch`                             | No empty `catch` blocks.                                                                                                                                                                                     |
+| `no-math-random`                              | `crypto.getRandomValues()` instead of `Math.random()`.                                                                                                                                                       |
+| `no-reflect-delete-global-this-outside-tests` | No `Reflect.deleteProperty(globalThis, …)` outside `tests/`.                                                                                                                                                 |
+| `no-module-mocking`                           | Inject dependencies instead of mocking modules in tests.                                                                                                                                                     |
+| `no-secret-in-query`                          | Secrets and tokens in a URL fragment or request body, never its query string.                                                                                                                                |
+| `no-secret-logging`                           | Never log secrets, tokens, cookies, or authorization values.                                                                                                                                                 |
+| `no-dynamic-html`                             | Return typed JSON or a constant body; never build an HTML response from values. Every `.html(...)` call counts as a response, as Hono's `context.html` is, so turn it on for server code only.               |
+| `no-unvalidated-route-params`                 | Read Hono route parameters from `context.req.valid('param')` behind a param validator, never `context.req.param()`, so a malformed ID is refused before it reaches a query. Turn it on for server code only. |
+| `no-conditional-object-spreads`               | An explicit branch instead of several or large conditional spreads in one object.                                                                                                                            |
 
 ### Imports, naming, and layout
 

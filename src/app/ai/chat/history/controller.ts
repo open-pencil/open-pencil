@@ -1,5 +1,6 @@
 import type { UIMessage } from 'ai'
-import { ref, shallowRef } from 'vue'
+import { omit } from 'es-toolkit'
+import { computed, ref, shallowRef } from 'vue'
 
 import { chatDocumentId, resolveChatDocumentId, type ChatDocumentEditor } from './document'
 import { createConversationStore } from './idb'
@@ -7,6 +8,7 @@ import { restoreMessages } from './messages'
 import { createHistoryPersistence } from './persistence'
 import { createHistorySession } from './session'
 import type {
+  AgentSessionRef,
   Conversation,
   ConversationMeta,
   ConversationStore,
@@ -23,6 +25,8 @@ export function createConversationHistory<TChat extends HistoryChat>(
   const messages = shallowRef<UIMessage[]>([])
   const conversations = ref<ConversationMeta[]>([])
   const readOnly = ref(false)
+  /** The live chat's agent could not continue the saved session, so that chat takes no more. */
+  const chatEnded = ref(false)
   const busy = ref(false)
   let ownerRecoveryId: string | null = null
   // Weak, so the history does not keep a closed document's editor alive.
@@ -58,6 +62,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
     conversations.value = await store.list()
   }
   function detach() {
+    chatEnded.value = false
     return session.detach(flush)
   }
 
@@ -129,25 +134,64 @@ export function createConversationHistory<TChat extends HistoryChat>(
     await refresh()
   }
 
+  /** The saved agent session the chat's agent continues, when it is that agent's. */
+  function resumableSession(conversation: Conversation | null): string | null {
+    const saved = conversation?.agentSession
+    return saved && saved.agent === runtime.resumingAgent() ? saved.id : null
+  }
+  const continuesAgentSession = computed(() => resumableSession(current.value) !== null)
+  /**
+   * A saved transcript no chat can continue: it ran on an external agent, or the chat now runs on
+   * one, and that agent does not continue its saved session.
+   */
+  const agentReadOnly = computed(() => {
+    const conversation = current.value
+    if (!conversation?.messages.length || continuesAgentSession.value) return false
+    return runtime.backend() !== 'direct' || conversation.backend !== 'direct'
+  })
+
+  /** Saves or forgets the session a conversation's agent runs in, while it is current. */
+  function recordAgentSession(conversationId: string, agentSession: AgentSessionRef | null) {
+    const conversation = current.value
+    if (!conversation || conversation.id !== conversationId) return
+    const saved = conversation.agentSession
+    if (saved?.agent === agentSession?.agent && saved?.id === agentSession?.id) return
+    current.value = agentSession
+      ? { ...conversation, agentSession }
+      : omit(conversation, ['agentSession'])
+    void flush().catch(() => undefined)
+  }
+
   function ensureChat() {
     return serialize(async () => {
       if (readOnly.value && owner?.deref() === runtime.getEditor()) return null
       await loadDocument()
-      // A restored transcript does not restore an external agent session.
-      if (
-        current.value?.messages.length &&
-        !session.chat &&
-        (runtime.backend() !== 'direct' || current.value.backend !== 'direct')
-      )
-        return null
+      const resume = resumableSession(current.value)
+      if (chatEnded.value) await detach()
+      if (!session.chat && agentReadOnly.value) return null
       const editor = runtime.getEditor()
-      const next = await runtime.ensureChat(messages.value, current.value?.id)
+      const conversation = current.value
+      // Only a session that sees the whole conversation is saved to continue it.
+      const recordsFor =
+        conversation && (resume !== null || !messages.value.length) ? conversation.id : null
+      const next = await runtime.ensureChat(messages.value, conversation?.id, {
+        resume,
+        record: (agentSession) => {
+          if (recordsFor !== null) recordAgentSession(recordsFor, agentSession)
+          // The resume failed; the conversation turns read-only once its failure is shown.
+          if (agentSession === null && conversation?.id === current.value?.id)
+            chatEnded.value = true
+        }
+      })
       if (runtime.getEditor() !== editor) {
         await next?.stop()
         await runtime.resetChat()
         return null
       }
-      if (next) session.attach(next, flush)
+      if (!next) return null
+      session.attach(next, flush)
+      // A session that missed what this chat adds must not be continued; kept until the chat starts.
+      if (conversation?.agentSession && resume === null) recordAgentSession(conversation.id, null)
       return next
     })
   }
@@ -199,6 +243,9 @@ export function createConversationHistory<TChat extends HistoryChat>(
     messages,
     conversations,
     readOnly,
+    continuesAgentSession,
+    agentReadOnly,
+    chatEnded,
     busy,
     storageError,
     initialize,

@@ -14,7 +14,12 @@ import {
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
-import { paintBindings, setPaintBindings } from '#core/figma-api/variables/bindings'
+import {
+  effectBindings,
+  paintBindings,
+  setEffectBindings,
+  setPaintBindings
+} from '#core/figma-api/variables/bindings'
 import { textStyleChanges } from '#core/text/character-style'
 
 /**
@@ -38,6 +43,16 @@ export function figmaStrokes(sceneGraph: SceneGraph, node: SceneNode): FigmaPain
   return strokes.map((stroke, index) => toFigmaPaint(stroke, bound.get(index)))
 }
 
+/**
+ * `node`'s effects as Figma's plugin API reads them, carrying the variables they are bound to.
+ * Bound values are read as the layer holds them, as bound sizes are: resolving bindings keeps them
+ * current, and a layer scaled outside an instance keeps its scaled values until then, as in Figma.
+ */
+export function figmaEffects(node: SceneNode): FigmaEffect[] {
+  const bound = effectBindings(node)
+  return node.effects.map((effect, index) => toFigmaEffect(effect, bound.get(index)))
+}
+
 function setFills(
   target: ProxyThis,
   internals: NodeProxyInternals,
@@ -54,7 +69,7 @@ function setFills(
   setPaintBindings(graph(target, internals), raw(target, internals), 'fills', value)
 }
 
-/** Figma paints carry no geometry; a stroke takes the weight and alignment the node keeps. */
+/** Figma paints carry no geometry; a stroke takes the weight, alignment, and dashes the node keeps. */
 function setStrokes(
   target: ProxyThis,
   internals: NodeProxyInternals,
@@ -63,10 +78,12 @@ function setStrokes(
 ): void {
   const owner = strokeOwner(target, internals)
   const geometry = newStrokeGeometry(raw(owner, internals))
+  const { dashPattern } = raw(owner, internals)
   const strokes = parseFigmaPaints(value, method, 'strokes').map((paint): Stroke => ({
     ...paint,
     weight: geometry.weight,
-    align: geometry.align
+    align: geometry.align,
+    dashPattern: dashPattern.length > 0 ? [...dashPattern] : undefined
   }))
   const kept = newStrokeGeometry({
     strokes,
@@ -128,10 +145,11 @@ export function installVisualNodeProxyAccessors(
     },
     effects: {
       get(this: ProxyThis): readonly FigmaEffect[] {
-        return Object.freeze(raw(this, internals).effects.map(toFigmaEffect))
+        return Object.freeze(figmaEffects(raw(this, internals)))
       },
       set(this: ProxyThis, value: readonly FigmaEffect[]) {
         updateNode(this, internals, { effects: parseFigmaEffects(value) })
+        setEffectBindings(graph(this, internals), raw(this, internals), value)
       }
     },
     // Applied shared styles, as Figma exposes them; an assignment inside an instance is an override.

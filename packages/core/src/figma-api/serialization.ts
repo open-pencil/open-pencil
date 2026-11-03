@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { figmaNodeType } from './accessors/basic'
 import { pluginChildren } from './accessors/sticky'
 import { figmaFills, figmaStrokes } from './accessors/visual'
 import type { NodeProxyHost } from './proxy'
@@ -60,7 +61,7 @@ export function nodeProxyToJSON(
 
   const obj: Record<string, unknown> = {
     id: n.id,
-    type: n.type,
+    type: figmaNodeType(graph, n),
     name: n.name,
     x: n.x,
     y: n.y,

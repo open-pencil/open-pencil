@@ -170,7 +170,9 @@ describe('completing a behaviour', () => {
       .getNode(set.id)
       ?.componentPropertyDefinitions.map((item) => item.name)
     expect(names).toEqual(['State', 'Interaction'])
-    expect(editor.graph.getChildren(set.id)).toHaveLength(10)
+    // A switch is a form control, so it draws invalid too; a slider above does not.
+    expect(editor.graph.getChildren(set.id)).toHaveLength(12)
+    expect(readBehaviour(editor.graph.getNode(set.id) ?? set)?.states?.invalid).toBe('Invalid')
   })
 
   test('a lone switch gets Off and On variants as a new set', () => {

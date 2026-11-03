@@ -140,9 +140,15 @@ export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): 
   return parts.join('')
 }
 
-/** Path commands written as SVG path data into `parts`, as the canvas would build a path. */
-export function svgPathSink(parts: string[]): PathSink {
-  const point = (x: number, y: number) => `${round(x)} ${round(y)}`
+/**
+ * Path commands written as SVG path data into `parts`, as the canvas would build a path, each
+ * coordinate written by `format`.
+ */
+export function svgPathSink(
+  parts: string[],
+  format: (value: number) => number = (value) => round(value)
+): PathSink {
+  const point = (x: number, y: number) => `${format(x)} ${format(y)}`
   return {
     moveTo: (x, y) => parts.push(`M${point(x, y)}`),
     lineTo: (x, y) => parts.push(`L${point(x, y)}`),

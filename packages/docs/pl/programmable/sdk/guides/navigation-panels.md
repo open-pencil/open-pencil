@@ -17,12 +17,12 @@ Vue SDK udostępnia komponenty bez narzuconego wyglądu dla obu zastosowań.
 Użyj `PageListRoot` albo `usePageList()`.
 
 ```vue
-<PageListRoot v-slot="{ pages, currentPageId, switchPage, addPage }">
+<PageListRoot v-slot="{ pages, currentPageId, actions }">
   <div>
-    <button v-for="page in pages" :key="page.id" @click="switchPage(page.id)">
+    <button v-for="page in pages" :key="page.id" @click="actions.switch(page.id)">
       {{ page.name }}
     </button>
-    <button @click="addPage()">Nowa strona</button>
+    <button @click="actions.add()">Nowa strona</button>
   </div>
 </PageListRoot>
 ```
@@ -32,15 +32,23 @@ Użyj `PageListRoot` albo `usePageList()`.
 Użyj `LayerTreeRoot`, jeśli SDK ma zarządzać strukturą drzewa, a aplikacja jego wyglądem.
 
 ```vue
-<LayerTreeRoot v-slot="{ items, selectedIds, select, toggleExpand, getKey, getChildren }">
-  <TreeView
-    :items="items"
-    :selected-ids="selectedIds"
-    :get-key="getKey"
-    :get-children="getChildren"
-    @select="select"
-    @toggle-expand="toggleExpand"
-  />
+<LayerTreeRoot v-slot="{ visibleRows }">
+  <LayerTreeItem
+    v-for="row in visibleRows"
+    :key="row.node.id"
+    v-slot="{ node, isSelected, padLeft, actions }"
+    :node="row.node"
+    :level="row.level"
+    :has-children="row.hasChildren"
+  >
+    <button
+      :data-selected="isSelected"
+      :style="{ paddingLeft: padLeft }"
+      @click="actions.select($event.shiftKey)"
+    >
+      {{ node.name }}
+    </button>
+  </LayerTreeItem>
 </LayerTreeRoot>
 ```
 

@@ -187,7 +187,8 @@ export function createDefaultNode(
     textTruncation: 'DISABLED',
     autoRename: true,
     pointCount: 5,
-    starInnerRadius: 0.38,
+    // Figma's: the golden-ratio star, whose inner points line up with its outer ones.
+    starInnerRadius: (3 - Math.sqrt(5)) / 2,
     shapeWithTextType: 'SQUARE',
     shapeUserHeight: 0,
     shapeTruncates: false,

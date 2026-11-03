@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import {
+  cloneInstanceOverrideState,
+  copiedComponentLayerId,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 
@@ -104,6 +109,52 @@ describe('SceneGraph.cloneTree', () => {
     const clonedChild = graph.getChildren(clone.id)[0]
     expect(clonedChild.source.id).toBeNull()
   })
+  // A badge with a left and a right icon, as the shadcn/ui kit draws one. A .fig file records
+  // which badge layer each icon copy copies, by the copy's id: both copies are instances of the
+  // same icon, so their own componentId cannot tell them apart.
+  test('a cloned instance keeps which component layer each copy copies', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const icon = graph.createNode('COMPONENT', page.id, { name: 'Icon', width: 16, height: 16 })
+    const badge = graph.createNode('COMPONENT', page.id, { name: 'Badge', width: 60, height: 20 })
+    for (const name of ['Left', 'Right'])
+      expectDefined(graph.createInstance(icon.id, badge.id, { name }), name)
+    const instance = expectDefined(graph.createInstance(badge.id, page.id), 'badge instance')
+    const layers = graph.getChildren(badge.id).map((layer) => layer.id)
+    // As the .fig reader builds them: each icon copy names the icon itself, and the instance
+    // records the badge layer it copies.
+    const overrides = cloneInstanceOverrideState(instance.instanceOverrides)
+    for (const [index, copy] of graph.getChildren(instance.id).entries()) {
+      graph.updateNode(copy.id, { componentId: icon.id })
+      setInstanceOverride(overrides, instance.id, copy.id, 'sourceComponentId', layers[index])
+    }
+    graph.updateNode(instance.id, { instanceOverrides: overrides })
+    const sources = (id: string) => {
+      const node = getNodeOrThrow(graph, id)
+      return graph
+        .getChildren(id)
+        .map((copy) => copiedComponentLayerId(node.instanceOverrides, id, copy))
+    }
+    expect(sources(instance.id)).toEqual(layers)
+
+    const clone = expectDefined(graph.cloneTree(instance.id, page.id), 'clone')
+    expect(sources(clone.id)).toEqual(layers)
+  })
+
+  // Figma (desktop 126): cloning a frame that holds a component and an instance of it gives an
+  // instance of the cloned component.
+  test('an instance cloned with its component names the cloned component', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, { name: 'Holder', width: 300, height: 100 })
+    const component = graph.createNode('COMPONENT', frame.id, { name: 'Inner', width: 40 })
+    expectDefined(graph.createInstance(component.id, frame.id, { x: 100 }), 'instance')
+    const clone = expectDefined(graph.cloneTree(frame.id, page.id), 'clone')
+    const [clonedComponent, clonedInstance] = graph.getChildren(clone.id)
+    expect(clonedComponent.id).not.toBe(component.id)
+    expect(clonedInstance.componentId).toBe(clonedComponent.id)
+  })
+
   test('clone deep-copies source.fig so mutations do not affect original', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
