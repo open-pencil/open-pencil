@@ -697,37 +697,68 @@ function applyPropertyDefinitions(
   localIdCounter: { value: number }
 ): void {
   const copies = variantPropertyCopies(context, node, localIdCounter)
-  if (copies) {
+  const set = copies && variantSet(context.graph, node)
+  if (copies && set && writtenInSet(context, set, nc)) {
     if (copies.length > 0) nc.componentPropDefs = copies
     return
   }
-  const componentPropDefs = node.componentPropertyDefinitions.map((def) => {
-    const record: Record<string, unknown> = {
-      id: getOrCreatePropertyGuid(context, def.id, localIdCounter),
-      name: def.name,
-      type: componentPropertyTypeForKiwi(def.type),
-      preferredValues: componentPropertyPreferredValues(def, context)
-    }
-    if (def.type === 'SLOT') Object.assign(record, slotDefinitionFields(def))
-    else {
-      record.initialValue = componentPropertyValue(
-        def.type,
-        def.defaultValue,
-        context,
-        localIdCounter
-      )
-      record.varValue = componentPropertyVariableValue(
-        def.type,
-        def.defaultValue,
-        context,
-        localIdCounter
-      )
-    }
-    if (def.description) record.description = def.description
-    return record
-  })
+  if (copies && set) {
+    // A variant written outside its set, as a copied variant is, defines its set's properties
+    // itself under its copies' GUIDs, which its layers name, as Figma copies one (desktop 126).
+    const copied = set.componentPropertyDefinitions.filter((def) => def.type !== 'VARIANT')
+    nc.componentPropDefs = copied.map((def, index) =>
+      propertyDefinitionRecord(context, def, copies[index]?.id, localIdCounter)
+    )
+    return
+  }
+  const componentPropDefs = node.componentPropertyDefinitions.map((def) =>
+    propertyDefinitionRecord(context, def, undefined, localIdCounter)
+  )
   if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0))
     nc.componentPropDefs = componentPropDefs
+}
+
+/** Whether a variant's record goes beneath its set's, which defines what its copies link to. */
+function writtenInSet(context: SceneNodeToKiwiContext, set: SceneNode, nc: KiwiNodeChange) {
+  const setGuid = context.nodeIdToGuid?.get(set.id)
+  const parent = nc.parentIndex?.guid
+  return (
+    !!setGuid &&
+    !!parent &&
+    setGuid.sessionID === parent.sessionID &&
+    setGuid.localID === parent.localID
+  )
+}
+
+function propertyDefinitionRecord(
+  context: SceneNodeToKiwiContext,
+  def: ComponentPropertyDefinition,
+  id: GUID | undefined,
+  localIdCounter: { value: number }
+): Record<string, unknown> {
+  const record: Record<string, unknown> = {
+    id: id ?? getOrCreatePropertyGuid(context, def.id, localIdCounter),
+    name: def.name,
+    type: componentPropertyTypeForKiwi(def.type),
+    preferredValues: componentPropertyPreferredValues(def, context)
+  }
+  if (def.type === 'SLOT') Object.assign(record, slotDefinitionFields(def))
+  else {
+    record.initialValue = componentPropertyValue(
+      def.type,
+      def.defaultValue,
+      context,
+      localIdCounter
+    )
+    record.varValue = componentPropertyVariableValue(
+      def.type,
+      def.defaultValue,
+      context,
+      localIdCounter
+    )
+  }
+  if (def.description) record.description = def.description
+  return record
 }
 
 function applyComponentMetadata(

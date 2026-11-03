@@ -185,17 +185,21 @@ async function writeFigmaClipboardHTML(
     for (const child of graph.getChildren(node.id)) mark(child)
   }
   for (const node of nodes) mark(node)
+  // An instance of a variant brings the variant's whole set, which defines the properties the
+  // variant's copies link to, with every variant beneath it, as Figma copies one (desktop 126).
+  const dependencyOf = (component: SceneNode): SceneNode => {
+    const parent = component.parentId ? graph.getNode(component.parentId) : undefined
+    return component.type === 'COMPONENT' && parent?.type === 'COMPONENT_SET' ? parent : component
+  }
   const visitDependencies = (node: SceneNode): void => {
-    if (
-      node.type === 'INSTANCE' &&
-      node.componentId &&
-      !selected.has(node.componentId) &&
-      !dependencies.has(node.componentId)
-    ) {
+    if (node.type === 'INSTANCE' && node.componentId) {
       const component = graph.getNode(node.componentId)
       if (!component) throw new Error(`Missing clipboard component ${node.componentId}`)
-      dependencies.set(component.id, component)
-      visitDependencies(component)
+      const dependency = dependencyOf(component)
+      if (!selected.has(dependency.id) && !dependencies.has(dependency.id)) {
+        dependencies.set(dependency.id, dependency)
+        visitDependencies(dependency)
+      }
     }
     for (const child of graph.getChildren(node.id)) visitDependencies(child)
   }

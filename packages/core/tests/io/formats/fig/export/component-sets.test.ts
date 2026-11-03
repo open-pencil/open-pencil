@@ -4,6 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { deflateSync } from 'fflate'
 
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
+import { createEditor } from '@open-pencil/core/editor'
 import {
   FigmaAPI,
   type FigmaComponentNode,
@@ -477,6 +478,57 @@ describe("a set's properties as each variant's linked copy", () => {
     )
     const [assignment] = (written.componentPropAssignments ?? []) as { defID?: GUID }[]
     expect(guidOf(assignment?.defID)).toBe(largeCopy)
+  })
+
+  // Figma (desktop 126) copies an instance of a variant with the variant's whole set, which
+  // defines what its copies link to; pasted, the instance keeps its value.
+  test('a copied instance of a variant brings its set and pastes with its value', async () => {
+    const graph = await dotSet()
+    const instance = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.type === 'INSTANCE'),
+      'instance'
+    )
+    const html = expectDefined(await buildFigmaClipboardHTML([instance], graph), 'html')
+    const records = expectDefined(await parseFigmaClipboard(html), 'parsed').nodes
+    expect(variantRecords(records, setRecord(records))).toHaveLength(2)
+
+    const target = createEditor()
+    await target.pasteFromHTML(html)
+    const pasted = expectDefined(
+      new FigmaAPI(target.graph).currentPage.findOne(
+        (node) => node.type === 'INSTANCE'
+      ) as FigmaInstanceNode | null,
+      'pasted instance'
+    )
+    const key = Object.keys(pasted.componentProperties).find((name) => name.startsWith('Show dot#'))
+    expect(pasted.componentProperties[key ?? '']?.value).toBe(false)
+    expect(expectDefined(pasted.children[0], 'dot').visible).toBe(false)
+  })
+
+  // Figma (desktop 126) writes a variant copied alone with its set's properties as its own,
+  // under its copies' GUIDs, so it pastes as a component its layers still bind to.
+  test('a copied variant pastes as a component defining its set’s properties', async () => {
+    const graph = await dotSet()
+    const large = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.name === 'Size=Large'),
+      'large'
+    )
+    const html = expectDefined(await buildFigmaClipboardHTML([large], graph), 'html')
+
+    const target = createEditor()
+    await target.pasteFromHTML(html)
+    const pasted = expectDefined(
+      [...target.graph.getAllNodes()].find((node) => node.type === 'COMPONENT'),
+      'pasted component'
+    )
+    const [definition] = pasted.componentPropertyDefinitions
+    expect(pasted.componentPropertyDefinitions.map((def) => [def.name, def.type])).toEqual([
+      ['Show dot', 'BOOLEAN']
+    ])
+    const dot = expectDefined(target.graph.getChildren(pasted.id)[0], 'dot')
+    expect(dot.componentPropertyReferences).toEqual([
+      { field: 'VISIBLE', propertyId: definition?.id }
+    ])
   })
 })
 
