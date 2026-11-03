@@ -56,6 +56,16 @@ describe('setBoundVariableForEffect', () => {
     expect(api.variables.setBoundVariableForEffect(both, 'radius', null).boundVariables).toEqual({})
   })
 
+  test('returns a copy that shares no aliases with the effect it was made from', () => {
+    const { api, color, radius } = elevation()
+    const bound = api.variables.setBoundVariableForEffect(DROP, 'color', color)
+    const copy = api.variables.setBoundVariableForEffect(bound, 'radius', radius)
+    const aliases = copy.boundVariables
+    if (aliases && 'color' in aliases && aliases.color) aliases.color.id = radius.id
+
+    expect(bound.boundVariables).toEqual({ color: alias(color.id) })
+  })
+
   test('binds every shadow property and a blur’s radius only', () => {
     const { api, radius } = elevation()
     for (const field of ['radius', 'spread', 'offsetX', 'offsetY'] as const)

@@ -140,7 +140,8 @@ export function boundEffectCopy(
   bindings: (effect: ModelledPluginEffect) => FigmaEffectBindings
 ): FigmaEffect {
   const modelled = modelledPluginEffect(method, effect)
-  const boundVariables = bindings(modelled)
+  // The copy owns its aliases, so changing them leaves the effect it was made from alone.
+  const boundVariables = structuredClone(bindings(modelled))
   const { visible, radius } = modelled
   if (!isPluginShadow(modelled)) {
     return { type: modelled.type, visible, radius, boundVariables, blurType: 'NORMAL' }
