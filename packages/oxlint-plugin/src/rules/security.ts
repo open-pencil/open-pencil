@@ -158,3 +158,29 @@ export const noSecretLoggingRule = defineRule({
     }
   }
 })
+
+/**
+ * Route parameters reach handlers through `validatedParams`, which answers 404 for one that names
+ * nothing; `req.param()` hands the raw path segment to the handler, and from there to queries.
+ */
+export const noUnvalidatedRouteParamsRule = defineRule({
+  meta: {
+    type: 'problem',
+    docs: { description: 'Disallow reading Hono route parameters without validating them.' },
+    messages: {
+      raw: "Validate route parameters with a `validatedParams` validator and read them from `context.req.valid('param')`."
+    }
+  },
+  createOnce(context) {
+    return {
+      CallExpression(node) {
+        const { callee } = node
+        if (callee.type !== 'MemberExpression' || staticMemberName(callee) !== 'param') return
+        const request = callee.object
+        if (request.type === 'MemberExpression' && staticMemberName(request) === 'req') {
+          context.report({ node, messageId: 'raw' })
+        }
+      }
+    }
+  }
+})

@@ -72,3 +72,19 @@ describe('no-secret-logging', () => {
     expect(await diagnostics('no-secret-logging', source)).toHaveLength(0)
   })
 })
+
+describe('no-unvalidated-route-params', () => {
+  test.each(["context.req.param('documentId')", 'c.req.param()', "c.req['param']('id')"])(
+    'rejects %s',
+    async (source) => {
+      expect(await diagnostics('no-unvalidated-route-params', source)).toHaveLength(1)
+    }
+  )
+
+  test.each(["context.req.valid('param').documentId", "c.req.query('page')", "url.param('id')"])(
+    'accepts %s',
+    async (source) => {
+      expect(await diagnostics('no-unvalidated-route-params', source)).toHaveLength(0)
+    }
+  )
+})

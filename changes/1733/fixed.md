@@ -1,0 +1,1 @@
+- Cloud answers a malformed document, workspace, version, share, invitation, or upload ID in an API request with not found instead of a server error.

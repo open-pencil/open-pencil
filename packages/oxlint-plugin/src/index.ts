@@ -20,7 +20,8 @@ import {
 import {
   noDynamicHTMLRule,
   noSecretInQueryRule,
-  noSecretLoggingRule
+  noSecretLoggingRule,
+  noUnvalidatedRouteParamsRule
 } from '#oxlint-plugin/rules/security'
 import { noRawSQLRule } from '#oxlint-plugin/rules/sql'
 import {
@@ -69,6 +70,7 @@ const plugin = definePlugin({
     'no-ts-suppression-comments': noTsSuppressionComments,
     'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
     'no-unvalidated-json-parse': noUnvalidatedJSONParseRule,
+    'no-unvalidated-route-params': noUnvalidatedRouteParamsRule,
     'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,
     'no-widen-then-assert': noWidenThenAssertRule,
     'prefer-es-toolkit': preferEsToolkitRule,

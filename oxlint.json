@@ -266,6 +266,12 @@
       }
     },
     {
+      "files": ["packages/cloud/src/server/**/*.ts", "packages/cloud/src/admin/**/*.ts"],
+      "rules": {
+        "open-pencil/no-unvalidated-route-params": "error"
+      }
+    },
+    {
       "files": ["packages/feedback/src/**/*.ts"],
       "rules": {
         "open-pencil/no-raw-sql": "error"
