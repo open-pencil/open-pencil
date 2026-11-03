@@ -2,7 +2,12 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
-import { measureTextWithFont } from '#core/text/font/glyphs'
+import {
+  capHeightWithFont,
+  measureTextWithFont,
+  TYPICAL_CAP_HEIGHT_EMS,
+  type MeasuredTextLines
+} from '#core/text/font/glyphs'
 
 export type TextMeasurer = (
   node: SceneNode,
@@ -24,18 +29,38 @@ export function estimateTextSize(
 
   const ownLineH = lineHeightPixels(node.lineHeight, fontSize) ?? 0
   const explicitLineH = ownLineH > 0 ? ownLineH : undefined
-  const measured = measureTextWithFont(text, fontSize, family, style, maxWidth, explicitLineH)
-  if (measured) return measured
+  const measured =
+    measureTextWithFont(text, fontSize, family, style, maxWidth, explicitLineH) ??
+    estimateTextLines(text, fontSize, maxWidth, explicitLineH)
+  if (node.leadingTrim === 'CAP_HEIGHT') {
+    const capHeight = (capHeightWithFont(family, style) ?? TYPICAL_CAP_HEIGHT_EMS) * fontSize
+    return { width: measured.width, height: capHeight + (measured.lines - 1) * measured.lineHeight }
+  }
+  return { width: measured.width, height: untrimmedHeight(measured) }
+}
 
+function estimateTextLines(
+  text: string,
+  fontSize: number,
+  maxWidth: number | undefined,
+  explicitLineH: number | undefined
+): MeasuredTextLines {
   const charWidth = fontSize * GLYPH_WIDTH_FACTOR
   const singleLineWidth = Math.ceil(text.length * charWidth)
-  const lineH = explicitLineH ?? Math.ceil(fontSize * 1.4)
+  const lineHeight = explicitLineH ?? Math.ceil(fontSize * 1.4)
 
   if (maxWidth && maxWidth > 0 && singleLineWidth > maxWidth) {
     const lines = Math.ceil(singleLineWidth / maxWidth)
-    return { width: maxWidth, height: Math.ceil(lines * lineH) }
+    return { width: maxWidth, lines, lineHeight }
   }
-  return { width: singleLineWidth, height: lineH }
+  return { width: singleLineWidth, lines: 1, lineHeight }
+}
+
+function untrimmedHeight(measured: MeasuredTextLines): number {
+  if (measured.lines === 1) {
+    return measured.lineHeight
+  }
+  return Math.ceil(measured.lines * measured.lineHeight)
 }
 
 export function getTextMeasurer(): TextMeasurer | null {

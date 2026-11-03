@@ -16,7 +16,12 @@ import {
 } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from '#core/canvas/text/layout'
+import {
+  TextLayout,
+  type LineCapHeight,
+  type TextLayoutBlock,
+  type TextLayoutMarker
+} from '#core/canvas/text/layout'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import {
@@ -29,6 +34,7 @@ import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
+import { rangeCapHeight } from '#core/text/character-face'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
 import { utf8Length } from '#core/text/utf8'
@@ -111,23 +117,19 @@ function paragraphLines(
   }
   return {
     heights: lineHeightRuns(node, lead),
-    // A trimmed edge is laid out by where it stands in the paragraph.
-    build:
-      node.leadingTrim === 'CAP_HEIGHT'
-        ? undefined
-        : (start, end, lines, truncated) => {
-            const from = Math.max(0, start - lead)
-            const to = justified ? node.text.length : end - lead
-            const line: ParagraphNode = {
-              ...node,
-              text: node.text.slice(from, to),
-              styleRuns: sliceStyleRuns(node.styleRuns, from, to)
-            }
-            return buildSkParagraph(r, line, color, options, {
-              firstLineIndent: start === 0 ? firstLineIndent : 0,
-              truncation: lineTruncation(lines, truncated)
-            })
-          }
+    build: (start, end, lines, truncated) => {
+      const from = Math.max(0, start - lead)
+      const to = justified ? node.text.length : end - lead
+      const line: ParagraphNode = {
+        ...node,
+        text: node.text.slice(from, to),
+        styleRuns: sliceStyleRuns(node.styleRuns, from, to)
+      }
+      return buildSkParagraph(r, line, color, options, {
+        firstLineIndent: start === 0 ? firstLineIndent : 0,
+        truncation: lineTruncation(lines, truncated)
+      })
+    }
   }
 }
 
@@ -245,7 +247,7 @@ function buildBlocks(
     }
     throw error
   }
-  return new TextLayout(r.ck, blocks, maxLines)
+  return new TextLayout(r.ck, blocks, maxLines, trimmedCapHeight(node))
 
   function buildBlock(index: number, start: number, end: number): TextLayoutBlock {
     const shownRange: TextParagraphRange = shownRanges[index]
@@ -264,8 +266,7 @@ function buildBlocks(
       paragraphStyle.listType === 'NONE' && paragraphIndent > 0 ? paragraphIndent : 0
     const blockOptions = (lines?: number): ParagraphBlockOptions => ({
       firstLineIndent,
-      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis },
-      edges: { first: index === 0, last: index === sources.length - 1 }
+      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis }
     })
     const betweenItems =
       index > 0 &&
@@ -363,14 +364,25 @@ function createTextLayout(
         r.ck,
         buildSkParagraph(r, node, color, options),
         shownText(node).length,
-        paragraphLines(r, node, color, options)
+        paragraphLines(r, node, color, options),
+        trimmedCapHeight(node)
       )
 }
 
+function trimmedCapHeight(node: ParagraphNode): LineCapHeight | undefined {
+  if (node.leadingTrim !== 'CAP_HEIGHT') {
+    return undefined
+  }
+  return (start, end) => rangeCapHeight(node, start, end)
+}
+
 /** How many laid-out line boxes fit the fixed height, preserving the first line. */
-function linesWithinHeight(layout: TextLayout, height: number): number {
+function linesWithinHeight(layout: TextLayout, node: ParagraphNode): number {
   const lines = layout.getLineMetrics()
-  const firstOverflow = lines.findIndex((line) => line.baseline + line.descent > height)
+  const trimmed = node.leadingTrim === 'CAP_HEIGHT'
+  const firstOverflow = lines.findIndex(
+    (line) => line.baseline + (trimmed ? 0 : line.descent) > node.height
+  )
   return Math.max(1, firstOverflow === -1 ? lines.length : firstOverflow)
 }
 
@@ -389,7 +401,9 @@ export function buildParagraph(
   let fittingLines: number | undefined
   try {
     layoutForNode(layout, node)
-    if (heightTruncation) fittingLines = linesWithinHeight(layout, node.height)
+    if (heightTruncation) {
+      fittingLines = linesWithinHeight(layout, node)
+    }
   } catch (error) {
     layout.delete()
     throw error

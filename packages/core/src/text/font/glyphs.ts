@@ -11,6 +11,7 @@ import {
   loadHarfBuzz,
   shapeText,
   type HarfBuzzFont,
+  type HarfBuzzInstance,
   type OutlineCommand,
   type ShapingOptions
 } from './harfbuzz'
@@ -125,6 +126,15 @@ function lineMetrics(parsed: HarfBuzzFont): LineMetrics {
   return metrics
 }
 
+/** A cap height most Latin fonts are near, in ems, for text whose font cannot be read. */
+export const TYPICAL_CAP_HEIGHT_EMS = 0.7
+
+export interface MeasuredTextLines {
+  width: number
+  lines: number
+  lineHeight: number
+}
+
 export function measureTextWithFont(
   text: string,
   fontSize: number,
@@ -132,7 +142,7 @@ export function measureTextWithFont(
   style: string,
   maxWidth?: number,
   lineHeight?: number
-): { width: number; height: number } | null {
+): MeasuredTextLines | null {
   const parsed = getParsedFont(family, style)
   if (!parsed) return null
 
@@ -146,9 +156,14 @@ export function measureTextWithFont(
 
   if (maxWidth && maxWidth > 0 && singleLineWidth > maxWidth) {
     const lines = Math.ceil(singleLineWidth / maxWidth)
-    return { width: maxWidth, height: Math.ceil(lines * lineH) }
+    return { width: maxWidth, lines, lineHeight: lineH }
   }
-  return { width: Math.ceil(singleLineWidth), height: lineH }
+  return { width: Math.ceil(singleLineWidth), lines: 1, lineHeight: lineH }
+}
+
+export function capHeightWithFont(family: string, style: string): number | null {
+  const parsed = getParsedFont(family, style)
+  return parsed ? instanceCapHeight(parsed, fontInstance(parsed, [])) : null
 }
 
 /**
@@ -300,6 +315,8 @@ export interface GlyphOutlineSource {
   /** The glyphs HarfBuzz shapes `text` into in this font, at its axes and as `shaping` asks. */
   shape(text: string, shaping: RunShaping): ShapedGlyph[]
   outline(glyphId: number, fontSize: number): OutlineCommand[] | null
+  /** The cap height at the font's axes, in ems; HarfBuzz measures `H` when no table declares it. */
+  capHeight(): number
 }
 
 /**
@@ -348,8 +365,21 @@ function outlineSource(
         yOffset: (glyph.yOffset ?? 0) / parsed.face.upem
       })),
     outline: (glyphId, fontSize) =>
-      glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null
+      glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null,
+    capHeight: () => instanceCapHeight(parsed, instance)
   }
+}
+
+const capHeights = new WeakMap<HarfBuzzInstance, number>()
+
+function instanceCapHeight(parsed: HarfBuzzFont, instance: HarfBuzzInstance): number {
+  let capHeight = capHeights.get(instance)
+  if (capHeight === undefined) {
+    const units = instance.font.getMetricPositionWithFallback(parsed.hb.MetricsTag.CAP_HEIGHT)
+    capHeight = units / parsed.face.upem
+    capHeights.set(instance, capHeight)
+  }
+  return capHeight
 }
 
 /** The advance of glyph `glyphId` of a loaded font at `fontSize`, or `null` when it has none. */
