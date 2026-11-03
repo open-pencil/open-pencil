@@ -1,5 +1,6 @@
 import type { Effect, Fill, Stroke, TextLength } from '@open-pencil/scene-graph'
 import { colorToCSS, colorToHex } from '@open-pencil/scene-graph/color'
+import { blurSigma } from '@open-pencil/scene-graph/geometry'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -20,14 +21,24 @@ export function strokeColorToCSS(stroke: Stroke | undefined): string | undefined
   return cssColor({ ...stroke.color, a: stroke.opacity })
 }
 
-function shadowToCSS(effect: Effect): string {
-  const inset = effect.type === 'INNER_SHADOW' ? 'inset ' : ''
-  return `${inset}${effect.offset.x}px ${effect.offset.y}px ${effect.radius}px ${effect.spread}px ${cssColor(effect.color)}`
+function px(value: number): string {
+  return `${Number(value.toFixed(3))}px`
 }
 
-export function dropShadowToCSS(effect: Effect | undefined): string | undefined {
-  if (effect?.type !== 'DROP_SHADOW' || !effect.visible) return undefined
-  return shadowToCSS(effect)
+/**
+ * A shadow as `box-shadow` writes it, or as `text-shadow` does without its spread. CSS blurs a
+ * shadow by half its blur length, so the length is twice the sigma the canvas blurs it by.
+ */
+function shadowToCSS(effect: Effect, spread = true): string {
+  const inset = effect.type === 'INNER_SHADOW' ? 'inset ' : ''
+  const lengths = [effect.offset.x, effect.offset.y, 2 * blurSigma(effect.radius)]
+  if (spread) lengths.push(effect.spread)
+  return `${inset}${lengths.map(px).join(' ')} ${cssColor(effect.color)}`
+}
+
+/** A blur as CSS's `blur()` takes it: the sigma itself, as the canvas blurs by. */
+function blurToCSS(effect: Effect): string {
+  return `blur(${px(blurSigma(effect.radius))})`
 }
 
 /** Every visible shadow, in order, plus layer and background blur. */
@@ -37,11 +48,30 @@ export function effectsToCSS(effects: Effect[]): DesignStyleDeclaration {
   const shadows = visible.filter(
     (effect) => effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
   )
-  if (shadows.length > 0) style['box-shadow'] = shadows.map(shadowToCSS).join(', ')
+  if (shadows.length > 0)
+    style['box-shadow'] = shadows.map((shadow) => shadowToCSS(shadow)).join(', ')
   for (const effect of visible) {
     if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
-      style.filter = `blur(${effect.radius}px)`
-    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = `blur(${effect.radius}px)`
+      style.filter = blurToCSS(effect)
+    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blurToCSS(effect)
+  }
+  return style
+}
+
+/**
+ * Text's effects: each visible drop shadow as `text-shadow`, which has no spread and shadows the
+ * glyphs, and a layer blur. An inner shadow has no form CSS gives text.
+ */
+export function textEffectsToCSS(effects: Effect[]): DesignStyleDeclaration {
+  const style: DesignStyleDeclaration = {}
+  const visible = effects.filter((effect) => effect.visible)
+  const shadows = visible.filter((effect) => effect.type === 'DROP_SHADOW')
+  if (shadows.length > 0) {
+    style['text-shadow'] = shadows.map((shadow) => shadowToCSS(shadow, false)).join(', ')
+  }
+  for (const effect of visible) {
+    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
+      style.filter = blurToCSS(effect)
   }
   return style
 }
