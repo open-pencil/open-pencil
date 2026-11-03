@@ -591,10 +591,19 @@ export function figArchiveComponentUsePages(
   return figComponentUsePages(scannedRecords(bytes), componentIds)
 }
 
+/** Each archive's records by GUID, scanned once: an archive's bytes are never written to. */
+const archiveRecordIndexes = new WeakMap<ArrayBuffer, Map<string, NodeChange>>()
+
 /** `figRecordPages` over an encoded archive, reading only what it needs of each record. */
 export function figArchiveRecordPages(
   bytes: ArrayBuffer,
   ids: readonly string[]
 ): (string | undefined)[] {
-  return figRecordPages(scannedRecords(bytes), ids)
+  let byId = archiveRecordIndexes.get(bytes)
+  if (!byId) {
+    byId = recordsById(scannedRecords(bytes))
+    archiveRecordIndexes.set(bytes, byId)
+  }
+  const index = byId
+  return ids.map((id) => nearestOfType(index, id, 'CANVAS'))
 }
