@@ -317,3 +317,56 @@ describe('a matched copy', () => {
     )
   })
 })
+
+describe('layers a switch adds', () => {
+  test('take the text the instance assigns their property', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const set = graph.createNode('COMPONENT_SET', pageId, {
+      name: 'Chip',
+      componentPropertyDefinitions: [
+        { id: 'prop:label', name: 'Label', type: 'TEXT', defaultValue: 'Default' }
+      ]
+    })
+    const bare = graph.createNode('COMPONENT', set.id, { name: 'Kind=Bare' })
+    const labelled = graph.createNode('COMPONENT', set.id, { name: 'Kind=Labelled' })
+    graph.createNode('TEXT', labelled.id, {
+      name: 'Caption',
+      text: 'Default',
+      componentPropertyReferences: [{ field: 'TEXT', propertyId: 'prop:label' }]
+    })
+    const chip = must(graph.createInstance(bare.id, pageId))
+    graph.updateNode(chip.id, { componentPropertyAssignments: { 'prop:label': 'Hi' } })
+
+    graph.swapInstanceComponent(chip.id, labelled.id)
+
+    expect(must(graph.getChildren(chip.id)[0]).text).toBe('Hi')
+  })
+
+  test('come back with the unit scale of a binding their overrides kept', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const collection = graph.createCollection('Size')
+    const gap = graph.createVariable('Gap', 'FLOAT', collection.id, 4)
+    const set = graph.createNode('COMPONENT_SET', pageId, { name: 'Chip' })
+    const small = graph.createNode('COMPONENT', set.id, { name: 'Size=Small' })
+    graph.createNode('FRAME', small.id, { name: 'Row', width: 10, height: 10 })
+    const large = graph.createNode('COMPONENT', set.id, { name: 'Size=Large' })
+    const chip = must(graph.createInstance(small.id, pageId))
+    const row = must(graph.getChildren(chip.id)[0])
+    // The instance binds the row's spacing, at twice the variable's value.
+    setInstanceOverride(chip.instanceOverrides, chip.id, row.id, 'boundVariables/itemSpacing')
+    graph.updateNode(row.id, {
+      boundVariables: { itemSpacing: gap.id },
+      variableBindingScales: { itemSpacing: 2 },
+      itemSpacing: 8
+    })
+
+    graph.swapInstanceComponent(chip.id, large.id)
+    graph.swapInstanceComponent(chip.id, small.id)
+
+    const restored = must(graph.getChildren(chip.id)[0])
+    expect(restored.boundVariables.itemSpacing).toBe(gap.id)
+    expect(restored.variableBindingScales.itemSpacing).toBe(2)
+  })
+})

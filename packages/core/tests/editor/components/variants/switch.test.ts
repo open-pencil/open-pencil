@@ -2,6 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI, type FigmaInstanceNode } from '@open-pencil/core/figma-api'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 function must<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) {
@@ -201,6 +203,123 @@ test('a layer the new variant draws as another type keeps its overrides', () => 
   editor.undo.undo()
   expect(shape().type).toBe('RECTANGLE')
   expect(shape().opacity).toBe(0.5)
+})
+
+type LayerSpec = {
+  name: string
+  type: 'RECTANGLE' | 'FRAME' | 'GROUP' | 'INSTANCE'
+  of?: string
+  children?: LayerSpec[]
+}
+
+/** A Size set whose variants draw the given layers, and an instance of its first variant. */
+function chipDrawing(
+  variants: Record<string, LayerSpec[]>,
+  makeComponents: (graph: SceneGraph, pageId: string) => Record<string, string> = () => ({})
+) {
+  const editor = createEditor()
+  const { graph } = editor
+  const pageId = editor.state.currentPageId
+  const components = makeComponents(graph, pageId)
+  const set = graph.createNode('COMPONENT_SET', pageId, {
+    name: 'Chip',
+    componentPropertyDefinitions: [
+      { id: 'prop:size', name: 'Size', type: 'VARIANT', defaultValue: Object.keys(variants)[0] }
+    ]
+  })
+  const draw = (parentId: string, layers: LayerSpec[]) => {
+    for (const layer of layers) {
+      const node =
+        layer.type === 'INSTANCE'
+          ? must(graph.createInstance(must(components[layer.of ?? '']), parentId, { name: layer.name }))
+          : graph.createNode(layer.type, parentId, { name: layer.name, width: 10, height: 10 })
+      if (layer.children) draw(node.id, layer.children)
+    }
+  }
+  for (const [size, layers] of Object.entries(variants)) {
+    const component = graph.createNode('COMPONENT', set.id, {
+      name: `Size=${size}`,
+      componentPropertyValues: { Size: size }
+    })
+    draw(component.id, layers)
+  }
+  const chip = must(graph.createInstance(must(graph.getChildren(set.id)[0]).id, pageId))
+  const at = (...names: string[]) => {
+    let node = chip
+    for (const name of names) {
+      node = must(graph.getChildren(node.id).find((child) => child.name === name))
+    }
+    return node
+  }
+  const to = (size: string) => editor.switchInstanceVariant(chip.id, 'Size', size)
+  return { editor, graph, chip, at, to }
+}
+
+test('a layer comes back with its overrides after a variant that draws it under another ID', () => {
+  const badge: LayerSpec = { name: 'Badge', type: 'RECTANGLE' }
+  const { editor, at, to } = chipDrawing({ Small: [badge], Large: [], Huge: [badge] })
+  editor.updateNodeWithUndo(at('Badge').id, { opacity: 0.3 })
+  to('Large')
+  to('Huge')
+  expect(at('Badge').opacity).toBe(0.3)
+})
+
+test('undoing a switch back and switching again brings the overrides back once more', () => {
+  const { editor, chip, named } = withOwnLayers()
+  editor.updateNodeWithUndo(named('Badge').id, { opacity: 0.3 })
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  editor.switchInstanceVariant(chip.id, 'Size', 'Small')
+  editor.undo.undo()
+  editor.switchInstanceVariant(chip.id, 'Size', 'Small')
+  expect(named('Badge').opacity).toBe(0.3)
+})
+
+test('the layers in a layer drawn as another type keep their overrides', () => {
+  const dot: LayerSpec = { name: 'Dot', type: 'RECTANGLE' }
+  const { editor, at, to } = chipDrawing({
+    Small: [{ name: 'Box', type: 'FRAME', children: [dot] }],
+    Large: [{ name: 'Box', type: 'GROUP', children: [dot] }]
+  })
+  editor.updateNodeWithUndo(at('Box', 'Dot').id, { opacity: 0.4 })
+  to('Large')
+  expect(at('Box').type).toBe('GROUP')
+  expect(at('Box', 'Dot').opacity).toBe(0.4)
+})
+
+test('a nested instance the other variant lacks comes back with the overrides on its layers', () => {
+  const { editor, at, to } = chipDrawing(
+    { Small: [{ name: 'Pill', type: 'INSTANCE', of: 'pill' }], Large: [] },
+    (graph, pageId) => {
+      const pill = graph.createNode('COMPONENT', pageId, { name: 'Pill', x: 400 })
+      graph.createNode('RECTANGLE', pill.id, { name: 'Label', width: 10, height: 10 })
+      return { pill: pill.id }
+    }
+  )
+  editor.updateNodeWithUndo(at('Pill').id, { opacity: 0.6 })
+  editor.updateNodeWithUndo(at('Pill', 'Label').id, { opacity: 0.2 })
+  to('Large')
+  to('Small')
+  expect(at('Pill').opacity).toBe(0.6)
+  expect(at('Pill', 'Label').opacity).toBe(0.2)
+})
+
+test('a layer drawn as another type keeps a binding its instance removed', () => {
+  const { graph, chip, at, to } = chipDrawing({
+    Small: [{ name: 'Shape', type: 'RECTANGLE' }],
+    Large: [{ name: 'Shape', type: 'FRAME' }]
+  })
+  const collection = graph.createCollection('Look')
+  const faded = graph.createVariable('Faded', 'FLOAT', collection.id, 0.5)
+  for (const variant of graph.getChildren(must(chip.componentId && graph.getNode(chip.componentId)?.parentId)))
+    graph.bindVariable(must(graph.getChildren(variant.id)[0]).id, 'opacity', faded.id)
+  graph.syncInstances(must(chip.componentId))
+  // Removing the variable claims the layer's bindings, as the panel records it.
+  const shape = at('Shape')
+  setInstanceOverride(chip.instanceOverrides, chip.id, shape.id, 'boundVariables')
+  graph.unbindVariable(shape.id, 'opacity')
+  to('Large')
+  expect(at('Shape').type).toBe('FRAME')
+  expect(at('Shape').boundVariables.opacity).toBeUndefined()
 })
 
 test('a switch lays out the auto layout around it, and undo puts the siblings back', () => {
