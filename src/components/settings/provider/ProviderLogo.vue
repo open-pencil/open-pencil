@@ -8,6 +8,7 @@ import IconCursor from '~icons/ai/cursor'
 import IconDeepSeek from '~icons/ai/deepseek'
 import IconGemini from '~icons/ai/gemini'
 import IconGeminiCLI from '~icons/ai/geminicli'
+import IconGrok from '~icons/ai/grok'
 import IconLMStudio from '~icons/ai/lmstudio'
 import IconMiniMax from '~icons/ai/minimax'
 import IconOllama from '~icons/ai/ollama'
@@ -35,6 +36,7 @@ const LOGOS: Record<string, Component> = {
   'acp:codex': IconCodex,
   'acp:cursor': IconCursor,
   'acp:gemini-cli': IconGeminiCLI,
+  'acp:grok-build': IconGrok,
   'harness:pi': IconBot
 }
 

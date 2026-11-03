@@ -2,8 +2,12 @@ import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import {
+  computeDescendantVisualBounds,
+  unionVisualBounds,
+  type VisualBounds
+} from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -21,6 +25,31 @@ interface RenderOptions {
   quality?: number
   colorSpace?: RenderColorSpace
   trimTransparent?: boolean
+  /** Crop to the layers' boxes rather than to everything they draw, as Figma can for text. */
+  useAbsoluteBounds?: boolean
+}
+
+/**
+ * The most pixels a raster export holds: 8192 by 8192, 256 MB of RGBA. Larger images would
+ * exhaust the renderer's memory, so they are refused rather than attempted.
+ */
+export const MAX_RASTER_PIXELS = 8192 * 8192
+
+/** Exports up to this size are drawn at twice their size and scaled down, for smoother edges. */
+const SUPERSAMPLE = 2
+
+/** The pixel size of `bounds` exported at `scale`. */
+export function rasterSize(bounds: VisualBounds, scale: number): { width: number; height: number } {
+  return {
+    width: Math.ceil((bounds.maxX - bounds.minX) * scale),
+    height: Math.ceil((bounds.maxY - bounds.minY) * scale)
+  }
+}
+
+/** Why an image of `width` by `height` pixels is too big to export, or null when it is not. */
+export function oversizedRaster(width: number, height: number): string | null {
+  if (width * height <= MAX_RASTER_PIXELS) return null
+  return `An image can hold at most ${MAX_RASTER_PIXELS} pixels; this one would be ${width} by ${height}`
 }
 
 function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {
@@ -33,6 +62,26 @@ export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
     (id) => graph.getNode(id),
     (id) => graph.getAbsolutePosition(id)
   )
+}
+
+/**
+ * What an export of `nodeIds` covers: everything they draw, or with `useAbsoluteBounds` their
+ * boxes alone; null when nothing is visible.
+ */
+export function exportBounds(
+  graph: SceneGraph,
+  nodeIds: string[],
+  useAbsoluteBounds = false
+): VisualBounds | null {
+  if (!useAbsoluteBounds) return computeContentBounds(graph, nodeIds)
+  let bounds: VisualBounds | null = null
+  for (const id of nodeIds) {
+    const node = graph.getNode(id)
+    if (!node?.visible) continue
+    const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
+    bounds = unionVisualBounds(bounds, { minX: x, minY: y, maxX: x + width, maxY: y + height })
+  }
+  return bounds
 }
 
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {
@@ -94,7 +143,10 @@ function renderToSurface(
   setup: (canvas: Canvas) => void,
   trimTransparent = false
 ): Uint8Array<ArrayBuffer> | null {
-  const renderScale = 2
+  const oversized = oversizedRaster(width, height)
+  if (oversized) throw new RangeError(oversized)
+  const renderScale =
+    width * height * SUPERSAMPLE * SUPERSAMPLE <= MAX_RASTER_PIXELS ? SUPERSAMPLE : 1
   const renderWidth = width * renderScale
   const renderHeight = height * renderScale
   const pixels = ck.Malloc(Uint8Array, renderWidth * renderHeight * 4)
@@ -254,15 +306,14 @@ export function renderNodesToImage(
     throw new Error('Raster export selection must stay on a single page')
   }
 
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = exportBounds(graph, nodeIds, options.useAbsoluteBounds)
   if (!bounds) return null
 
   const contentW = bounds.maxX - bounds.minX
   const contentH = bounds.maxY - bounds.minY
   if (contentW <= 0 || contentH <= 0) return null
 
-  const pixelW = Math.ceil(contentW * options.scale)
-  const pixelH = Math.ceil(contentH * options.scale)
+  const { width: pixelW, height: pixelH } = rasterSize(bounds, options.scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
   // Figma exports a layer by itself, without the page behind it, even when it blends.

@@ -13,6 +13,7 @@ export const BEHAVIOUR_KINDS = [
   'slider',
   'progress',
   'tabs',
+  'tab',
   'collapsible',
   'accordion'
 ] as const
@@ -60,7 +61,8 @@ export interface BehaviourPartContract {
   required: boolean
   /**
    * Whether the slot holds the control's items, each an instance with its own behaviour (a
-   * radio, a toggle, a collapsible), which the control turns on and off.
+   * radio, a toggle, a collapsible, a tab), which the control turns on and off. A tab list's
+   * triggers may also be plain layers, which have no state of their own.
    */
   items?: boolean
   /**
@@ -153,9 +155,17 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
   tabs: {
     values: [{ id: 'value', type: 'choice', required: false }],
     parts: [
-      { id: 'list', required: true, children: 'trigger' },
+      { id: 'list', required: true, items: true, children: 'trigger' },
       { id: 'panels', required: false, children: 'content' }
     ]
+  },
+  // A tab list's trigger, after Reka's TabsTrigger: on while its tab is the chosen one.
+  tab: {
+    values: [
+      { id: 'value', type: 'boolean', required: true },
+      { id: 'disabled', type: 'boolean', required: false }
+    ],
+    parts: []
   },
   progress: {
     values: [{ id: 'value', type: 'number', required: false }],

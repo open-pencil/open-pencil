@@ -19,6 +19,7 @@ import {
   settingsSectionSet,
   switchSet,
   tabsComponent,
+  tabsOfTabSets,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
@@ -129,6 +130,20 @@ describe('generated Vue components', () => {
     const second = await render(component, { value: 'password' })
     expect(second).toContain('Password settings')
     expect(second).not.toContain('Account settings')
+  })
+
+  test('tabs drawn as Tab instances take the selected look when active and keep a disabled tab disabled', async () => {
+    const { files, component } = await generate(tabsOfTabSets())
+    const html = await render(component)
+    const trigger = (name: string) =>
+      new RegExp(`<button class="settings__${name}"[^>]*>`).exec(html)?.[0] ?? ''
+    expect(trigger('account')).toContain('data-state="active"')
+    expect(trigger('billing')).toContain('data-disabled')
+    expect(trigger('password')).not.toContain('data-disabled')
+    const css = cssRules(String(files.find((file) => file.path === 'Settings.vue')?.content))
+    expect(css.get('.settings .settings__password[data-state="active"]')).toEqual(
+      css.get('.settings .settings__account[data-state="active"]')
+    )
   })
 
   test('a radio group writes an item component and chooses among its labelled items', async () => {

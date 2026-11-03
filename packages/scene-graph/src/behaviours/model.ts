@@ -1,5 +1,6 @@
 import { mapValues } from 'es-toolkit'
 
+import { resolvedVariantDefinition } from '../components/variants'
 import type { SceneGraph } from '../graph'
 import { readPluginData, withPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
@@ -85,17 +86,25 @@ export function withBehaviour(
   return withPluginData(owner.pluginData, OPEN_PENCIL_PLUGIN_DATA.behaviour, behaviour ?? undefined)
 }
 
-/** Component properties the behaviour can bind to: the owner's, and a set's variants' own. */
+/**
+ * Component properties the behaviour can bind to: the owner's, with a set's variant values and
+ * defaults read from its variants, and a set's variants' own.
+ */
 export function behaviourProperties(
   graph: SceneGraph,
   owner: SceneNode
 ): ComponentPropertyDefinition[] {
-  const variants =
-    owner.type === 'COMPONENT_SET'
-      ? owner.childIds.flatMap((id) => graph.getNode(id)?.componentPropertyDefinitions ?? [])
-      : []
+  const isSet = owner.type === 'COMPONENT_SET'
+  const own = isSet
+    ? owner.componentPropertyDefinitions.map((definition) =>
+        resolvedVariantDefinition(graph, owner, definition)
+      )
+    : owner.componentPropertyDefinitions
+  const variants = isSet
+    ? owner.childIds.flatMap((id) => graph.getNode(id)?.componentPropertyDefinitions ?? [])
+    : []
   const seen = new Set<string>()
-  return [...owner.componentPropertyDefinitions, ...variants].filter((definition) => {
+  return [...own, ...variants].filter((definition) => {
     if (seen.has(definition.id)) return false
     seen.add(definition.id)
     return true

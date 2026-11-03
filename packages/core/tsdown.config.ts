@@ -22,7 +22,9 @@ export default defineConfig({
   deps: {
     neverBundle: [
       ...Object.keys({ ...packageJSON.dependencies, ...packageJSON.peerDependencies }),
-      /^node:/
+      /^node:/,
+      // The runtime assets module's `?url` imports stay as written, for the host's Vite.
+      /\?url$/
     ],
     onlyBundle: false
   }

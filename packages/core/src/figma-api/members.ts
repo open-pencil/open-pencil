@@ -2,6 +2,7 @@ import type {
   BooleanOperationNode,
   ComponentSetNode,
   DocumentNode,
+  ExportMixin,
   Guide,
   LeadingTrim,
   MinimalFillsMixin,
@@ -91,6 +92,8 @@ export abstract class FigmaNodeMembers {
   declare horizontalPadding: number
   declare verticalPadding: number
   declare guides: readonly Guide[]
+  declare exportSettings: ExportMixin['exportSettings']
+  declare exportAsync: ExportMixin['exportAsync']
   declare layoutWrap: string
   declare primaryAxisSizingMode: string
   declare counterAxisSizingMode: string

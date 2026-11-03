@@ -106,6 +106,7 @@ pub fn run() {
             launch::take_pending_open,
             launch::take_pending_rooms,
             system::env::sharing_disabled_by_env,
+            system::crash::take_last_panic,
             launch::take_pending_cloud_links,
             system::env::webview_version
         ])
@@ -122,6 +123,14 @@ pub fn run() {
             handle_menu_event(app, event.id().0.as_str());
         })
         .setup(|app| {
+            // Panics from here on are kept for the next launch to offer as a report.
+            if let Ok(directory) = app.path().app_data_dir() {
+                system::crash::install_panic_hook(
+                    directory,
+                    app.package_info().version.to_string(),
+                );
+            }
+
             // The main window is built here rather than from the config alone, so that pages it
             // opens with `window.open` reach the system browser.
             let main = app

@@ -74,6 +74,11 @@ export default defineCommand({
     populateWholeDocument(graph)
     await measureDocumentText(graph)
     const figma = new FigmaAPI(graph)
+    // CanvasKit starts only when a script exports an image.
+    figma.exportImage = async (nodeIds, options) => {
+      const { headlessRenderNodes } = await import('@open-pencil/core/io/formats/raster')
+      return headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
+    }
 
     let result: unknown
     try {

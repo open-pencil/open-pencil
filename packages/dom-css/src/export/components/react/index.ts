@@ -291,6 +291,7 @@ function designElement(node: ComponentElement, uses: MarkupUses, depth: number):
     // takes them.
     ...(root && !INPUT_PROPS[kind] ? [jsx.spread(es.identifier('props'))] : []),
     ...(node.value === undefined ? [] : [jsx.attribute('value', jsx.stringValue(node.value))]),
+    ...(node.disabled ? [jsx.attribute('disabled', null)] : []),
     ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
       jsx.attribute(name, jsx.stringValue(value))
     ),

@@ -28,6 +28,7 @@ export function useBehaviourLabels() {
       slider: { label: p.behaviourSlider, description: p.behaviourSliderDescription },
       progress: { label: p.behaviourProgress, description: p.behaviourProgressDescription },
       tabs: { label: p.behaviourTabs, description: p.behaviourTabsDescription },
+      tab: { label: p.behaviourTab, description: p.behaviourTabDescription },
       collapsible: {
         label: p.behaviourCollapsible,
         description: p.behaviourCollapsibleDescription
@@ -69,6 +70,7 @@ export function useBehaviourLabels() {
       checkbox: p.behaviourChecked,
       radio: p.behaviourChecked,
       toggle: p.behaviourPressed,
+      tab: p.behaviourSelected,
       textField: p.behaviourText,
       textarea: p.behaviourText
     }

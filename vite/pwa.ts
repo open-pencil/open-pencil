@@ -19,6 +19,9 @@ export function openPencilPwaPlugin() {
     devOptions: { enabled: false },
     workbox: {
       maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
+      // Workbox follows `build.sourcemap` and would link a map the release then removes; the
+      // service worker's errors never reach error reports anyway.
+      sourcemap: false,
       globPatterns: ['**/*.{js,css,html,wasm,png,svg,ico,ttf,webmanifest}'],
       navigateFallback: '/index.html',
       navigateFallbackDenylist: NOT_EDITOR_PAGES
