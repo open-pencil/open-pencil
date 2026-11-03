@@ -122,11 +122,11 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
 
 <template>
   <div
-    class="w-full max-w-[560px] space-y-5 rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-[var(--vp-c-text-1)]"
+    class="w-full max-w-140 space-y-5 rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-[var(--vp-c-text-1)]"
   >
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div>
-        <p class="mb-1 text-[11px] text-[var(--vp-c-text-2)]">Detach on edit</p>
+        <p class="mb-1 text-2xs text-[var(--vp-c-text-2)]">Detach on edit</p>
         <BindableValueRoot
           v-slot="{ stateAttrs }"
           :provider="provider"
@@ -140,7 +140,7 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
           >
             <div
               v-bind="{ ...attrs, ...stateAttrs }"
-              class="flex h-[26px] items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs data-[bound]:text-[var(--vp-c-brand-1)]"
+              class="flex h-6.5 items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs data-[bound]:text-[var(--vp-c-brand-1)]"
               @pointerdown="!editing && actions.startScrub($event)"
             >
               <NumberFieldInput class="min-w-0 flex-1 bg-transparent outline-none" />
@@ -151,7 +151,7 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
       </div>
 
       <div>
-        <p class="mb-1 text-[11px] text-[var(--vp-c-text-2)]">Read-only bound</p>
+        <p class="mb-1 text-2xs text-[var(--vp-c-text-2)]">Read-only bound</p>
         <BindableValueRoot
           v-slot="{ stateAttrs }"
           :provider="provider"
@@ -166,7 +166,7 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
           >
             <div
               v-bind="{ ...attrs, ...stateAttrs }"
-              class="flex h-[26px] items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs data-[bound]:text-[var(--vp-c-brand-1)]"
+              class="flex h-6.5 items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs data-[bound]:text-[var(--vp-c-brand-1)]"
               @pointerdown="!editing && actions.startScrub($event)"
             >
               <NumberFieldInput class="min-w-0 flex-1 bg-transparent outline-none" />
@@ -177,7 +177,7 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
       </div>
 
       <div>
-        <p class="mb-1 text-[11px] text-[var(--vp-c-text-2)]">Edit variable</p>
+        <p class="mb-1 text-2xs text-[var(--vp-c-text-2)]">Edit variable</p>
         <BindableValueRoot
           v-slot="{ stateAttrs }"
           :provider="provider"
@@ -192,7 +192,7 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
           >
             <div
               v-bind="{ ...attrs, ...stateAttrs }"
-              class="flex h-[26px] items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs data-[bound]:text-[var(--vp-c-brand-1)]"
+              class="flex h-6.5 items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs data-[bound]:text-[var(--vp-c-brand-1)]"
               @pointerdown="!editing && actions.startScrub($event)"
             >
               <NumberFieldInput class="min-w-0 flex-1 bg-transparent outline-none" />
@@ -203,7 +203,7 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
       </div>
 
       <div>
-        <p class="mb-1 text-[11px] text-[var(--vp-c-text-2)]">Mixed bindings</p>
+        <p class="mb-1 text-2xs text-[var(--vp-c-text-2)]">Mixed bindings</p>
         <BindableValueRoot
           v-slot="{ state, stateAttrs }"
           :provider="provider"
@@ -212,7 +212,7 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
         >
           <div
             v-bind="stateAttrs"
-            class="flex h-[26px] items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs text-[var(--vp-c-text-2)]"
+            class="flex h-6.5 items-center rounded bg-[var(--vp-c-bg-alt)] px-2 text-xs text-[var(--vp-c-text-2)]"
             aria-label="Mixed binding value"
           >
             {{ state }}

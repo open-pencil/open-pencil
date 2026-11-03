@@ -58,7 +58,7 @@ const meta = {
     components: { SaveToDialog },
     setup: () => ({ args, name: ref('Onboarding flow'), destination: ref(args.destination) }),
     template: `
-      <div class="h-[680px]">
+      <div class="h-170">
         <SaveToDialog :open="true" v-model:name="name" v-model:destination="destination" :destinations="args.destinations" :state="args.state" @save="args.onSave" />
       </div>`
   })

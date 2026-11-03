@@ -80,3 +80,95 @@ export function createNestedBoard(graph: SceneGraph, pageId: string) {
   })
   return { grid: grid.id, cell: cell.id, label: label.id }
 }
+
+/**
+ * A top-level component holding a group with an unfilled curve drawn by a 2-unit stroke, as the
+ * shadcn kit's line chart is built; the curve runs from (0, 80) to (300, 80) bowing up to y 0.
+ */
+export function createComponentChart(graph: SceneGraph, pageId: string) {
+  const component = graph.createNode('COMPONENT', pageId, {
+    name: 'Chart',
+    x: 100,
+    y: 100,
+    width: 340,
+    height: 200,
+    fills: fill(1, 1, 1)
+  })
+  const group = graph.createNode('GROUP', component.id, {
+    name: 'Plot',
+    x: 20,
+    y: 60,
+    width: 300,
+    height: 80
+  })
+  const curve = graph.createNode('VECTOR', group.id, {
+    name: 'Curve',
+    width: 300,
+    height: 80,
+    fills: [],
+    strokes: [{ ...fill(0, 0, 0)[0], weight: 2, align: 'CENTER' }],
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 80 },
+        { x: 300, y: 80 }
+      ],
+      segments: [
+        {
+          start: 0,
+          end: 1,
+          tangentStart: { x: 100, y: -107 },
+          tangentEnd: { x: -100, y: -107 }
+        }
+      ],
+      regions: []
+    }
+  })
+  return { component: component.id, group: group.id, curve: curve.id }
+}
+
+/**
+ * A section holding a top-level frame with a nested frame: `a` sits in the nested frame, `c`
+ * directly in the top-level frame. Both are selected and cleared, so their layer rows are open.
+ */
+export function createScopeTree(graph: SceneGraph, pageId: string) {
+  const grey = fill(0.9, 0.9, 0.9)
+  const section = graph.createNode('SECTION', pageId, {
+    name: 'Section',
+    width: 500,
+    height: 400,
+    fills: grey
+  })
+  const top = graph.createNode('FRAME', section.id, {
+    name: 'Top',
+    x: 40,
+    y: 40,
+    width: 400,
+    height: 300,
+    fills: grey
+  })
+  const inner = graph.createNode('FRAME', top.id, {
+    name: 'Inner',
+    x: 40,
+    y: 40,
+    width: 300,
+    height: 200,
+    fills: grey
+  })
+  const a = graph.createNode('RECTANGLE', inner.id, {
+    name: 'A',
+    x: 40,
+    y: 40,
+    width: 60,
+    height: 60,
+    fills: grey
+  })
+  const c = graph.createNode('RECTANGLE', top.id, {
+    name: 'C',
+    x: 20,
+    y: 260,
+    width: 30,
+    height: 30,
+    fills: grey
+  })
+  return { inner: inner.id, a: a.id, c: c.id }
+}

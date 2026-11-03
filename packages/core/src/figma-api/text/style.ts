@@ -1,5 +1,7 @@
+import type { TextDecorationOffset } from '@figma/plugin-typings/plugin-api-standalone'
 import { mapValues, pickBy } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
+import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
@@ -10,6 +12,7 @@ import {
 
 import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import { parseFigma, tooSmall } from '#core/figma-api/validation'
 import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
 import { textStyleName } from '#core/text/font/names'
@@ -47,7 +50,8 @@ export const TEXT_SEGMENT_FIELDS = [
 export type TextSegmentField = (typeof TEXT_SEGMENT_FIELDS)[number]
 
 /** A size Figma reads as automatic or in pixels; the node keeps pixels. */
-export type FigmaTextLength = { unit: 'AUTO' } | { unit: 'PIXELS' | 'PERCENT'; value: number }
+/** Figma's lengths that may be automatic, such as `TextDecorationOffset`. */
+export type FigmaTextLength = TextDecorationOffset
 
 function pixels(value: number | null): FigmaTextLength {
   return value === null ? { unit: 'AUTO' } : { unit: 'PIXELS', value }
@@ -124,7 +128,10 @@ const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown
   textDecorationColor: whenUnderlined(decorationColor),
   textCase: ({ style }) => style.textCase,
   lineHeight: ({ style }) => (style.lineHeight ? { ...style.lineHeight } : { unit: 'AUTO' }),
-  letterSpacing: ({ style }) => ({ ...style.letterSpacing }),
+  letterSpacing: ({ style }) => ({
+    unit: style.letterSpacing.unit,
+    value: style.letterSpacing.value
+  }),
   fills: ({ node, style }) => rangeFills(node, style),
   textStyleId: ({ style }) => style.textStyleId ?? '',
   fillStyleId: ({ style }) => style.fillStyleId ?? '',
@@ -156,9 +163,7 @@ function readField(
 /** Figma's messages for a range a text method cannot use. */
 export function assertTextRange(method: string, node: SceneNode, start: number, end: number) {
   if (start < 0) {
-    throw new Error(
-      `in ${method}: Property "start" failed validation: Number must be greater than or equal to 0`
-    )
+    throw new Error(`in ${method}: Property "start" failed validation: ${tooSmall(0)}`)
   }
   if (end <= start) {
     throw new Error(`in ${method}: Empty range selected. 'end' must be greater than 'start'`)
@@ -188,6 +193,26 @@ function fieldValues(
   })
 }
 
+/** Fields that style an underline, which characters without one read as null. */
+const UNDERLINE_FIELDS: ReadonlySet<TextSegmentField> = new Set([
+  'textDecorationStyle',
+  'textDecorationSkipInk',
+  'textDecorationOffset',
+  'textDecorationThickness',
+  'textDecorationColor'
+])
+
+/**
+ * The value characters share, or `mixed`. An underline's style is read from the underlined
+ * characters alone, and null when there are none (Figma desktop 126).
+ */
+function sharedValue(field: TextSegmentField, values: unknown[], mixed: symbol): unknown {
+  const read = UNDERLINE_FIELDS.has(field) ? values.filter((value) => value !== null) : values
+  if (read.length === 0) return null
+  const [first, ...rest] = read
+  return rest.every((value) => isEqual(value, first)) ? first : mixed
+}
+
 /** The value every character of the range shares, or `mixed`. */
 export function getRangeTextStyle(
   method: string,
@@ -198,15 +223,13 @@ export function getRangeTextStyle(
   mixed: symbol
 ): unknown {
   assertTextRange(method, node, start, end)
-  const [first, ...rest] = fieldValues(node, field, start, end)
-  return rest.every((value) => isEqual(value, first)) ? first : mixed
+  return sharedValue(field, fieldValues(node, field, start, end), mixed)
 }
 
 /** The value every character of the text shares, or `mixed`; empty text reads its own style. */
 export function getTextStyle(node: SceneNode, field: TextSegmentField, mixed: symbol): unknown {
   if (node.text.length === 0) return readField(node, nodeStyle(node), 0, field)
-  const [first, ...rest] = fieldValues(node, field, 0, node.text.length)
-  return rest.every((value) => isEqual(value, first)) ? first : mixed
+  return sharedValue(field, fieldValues(node, field, 0, node.text.length), mixed)
 }
 
 export type StyledTextSegment = {
@@ -222,14 +245,7 @@ export function getStyledTextSegments(
   end?: number
 ): StyledTextSegment[] {
   const method = 'getStyledTextSegments'
-  for (const [index, field] of fields.entries()) {
-    if (!(TEXT_SEGMENT_FIELDS as readonly string[]).includes(field)) {
-      throw new Error(
-        `in ${method}: Property "${method}" failed validation: Invalid enum value. Expected ` +
-          `${TEXT_SEGMENT_FIELDS.map((name) => `'${name}'`).join(' | ')}, received '${String(field)}' at index ${index}`
-      )
-    }
-  }
+  parseFigma(v.array(v.picklist(TEXT_SEGMENT_FIELDS)), fields, method, method)
   if ((start === undefined) !== (end === undefined)) {
     throw new Error(`in ${method}: Invalid range. Must provide both 'start' and 'end'`)
   }

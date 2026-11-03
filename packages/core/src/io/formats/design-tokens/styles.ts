@@ -122,7 +122,11 @@ function shadowToken(node: SceneNode): DesignToken | undefined {
     $value,
     ...(exact
       ? {}
-      : { $extensions: { [OPENPENCIL_EXTENSION]: { effects: node.effects.map(toFigmaEffect) } } })
+      : {
+          $extensions: {
+            [OPENPENCIL_EXTENSION]: { effects: node.effects.map((effect) => toFigmaEffect(effect)) }
+          }
+        })
   }
 }
 

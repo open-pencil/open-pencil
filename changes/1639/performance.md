@@ -1,0 +1,1 @@
+- AI and MCP agents can edit properties in documents of any size: a one-property edit copies only the layers it changes, so it takes milliseconds instead of seconds on large files and is no longer refused above 10 000 layers.

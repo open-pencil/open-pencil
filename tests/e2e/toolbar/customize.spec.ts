@@ -66,6 +66,8 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
   await page.getByTestId('toolbar').click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Customize toolbar…' }).click()
   await page.getByRole('button', { name: 'Reset to default' }).click()
+  // Back at the default layout, the section has nothing left to reset.
+  await expect(page.getByRole('button', { name: 'Reset to default' })).toHaveCount(0)
   await page.getByTestId('app-settings-done').click()
   await expect(page.getByTestId(toolbarToolTestId('PEN'))).toBeVisible()
   canvas.assertNoErrors()

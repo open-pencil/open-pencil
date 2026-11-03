@@ -34,6 +34,13 @@ export interface ElementOverride {
   children?: () => (VNode | string)[]
 }
 
+/**
+ * A text's link opens in a new tab, as in Figma's prototype view, so following it never takes
+ * the editor away from the document.
+ */
+const linkProps = (tag: string): Record<string, string> =>
+  tag === 'a' ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+
 /** The image a layer's shader fill shows: its first fill's, as the projection reads it. */
 function shaderImage(element: DesignElement): string | undefined {
   const node = element.sourceSceneNode
@@ -70,9 +77,10 @@ export function renderElement(
     ...content()
   ]
   const { 'data-open-pencil-node-id': _id, ...attrs } = element.attrs
+  const tag = override.tag ?? element.tagName
   return h(
-    override.tag ?? element.tagName,
-    { ...attrs, key: path, 'data-layer': path, style, ...override.props },
+    tag,
+    { ...attrs, ...linkProps(tag), key: path, 'data-layer': path, style, ...override.props },
     children()
   )
 }

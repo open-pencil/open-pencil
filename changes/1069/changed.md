@@ -1,1 +1,0 @@
-- Home lists places in a sidebar: Recent files, the storage bucket, and the Cloud workspaces of the server you connect each have their own page instead of sharing one, and phones get the same places in a menu above the documents.

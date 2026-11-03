@@ -135,3 +135,14 @@ export function createRouteRateLimiter(
 ) {
   return ownBudget(createActorRateLimiter(database, secret, policy, skip, resource), skip)
 }
+
+/**
+ * A limiter's resource named by a route parameter, such as the document a request uploads to. It
+ * runs before the route's param validator, and the value only names the limiter's counter, which
+ * `rateLimitKey` hashes; it never reaches a query.
+ */
+export function routeParamResource(name: string) {
+  return (context: Context): string =>
+    // eslint-disable-next-line open-pencil/no-unvalidated-route-params -- a counter name, hashed, never queried.
+    context.req.param(name) ?? 'unknown'
+}

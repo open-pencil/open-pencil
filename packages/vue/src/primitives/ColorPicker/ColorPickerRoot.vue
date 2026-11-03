@@ -7,6 +7,8 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 
+import { pickerOutsideHandlers, type PickerKeepOpen } from './outside'
+
 export interface ColorPickerUI {
   content?: string
   swatch?: string
@@ -15,11 +17,14 @@ export interface ColorPickerUI {
 const {
   color,
   label = 'Edit color',
-  ui
+  ui,
+  keepOpen
 } = defineProps<{
   color: Color
   label?: string
   ui?: ColorPickerUI
+  /** Whether a press outside the picker should leave it open, such as one that samples the canvas. */
+  keepOpen?: PickerKeepOpen
 }>()
 
 const emit = defineEmits<{
@@ -33,6 +38,8 @@ const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
   emit('cancel')
   emit('openChange', false)
 })
+
+const outside = pickerOutsideHandlers(() => keepOpen)
 
 function cancelFromEscape(event: KeyboardEvent) {
   event.stopPropagation()
@@ -60,6 +67,8 @@ function cancelFromEscape(event: KeyboardEvent) {
         side="left"
         data-picker-content
         @escape-key-down="cancelFromEscape"
+        @pointer-down-outside="outside.onPointerDownOutside"
+        @focus-outside="outside.onFocusOutside"
       >
         <slot :color="color" />
       </PopoverContent>

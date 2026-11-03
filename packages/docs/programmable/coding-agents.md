@@ -1,6 +1,6 @@
 # Coding agents
 
-The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, Gemini CLI, or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
+The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
 
 Coding agents need the desktop app; the browser cannot start programs on your computer. They take only the **Design agent** role. Visual review, plan reviews, and fast background work need an API model, which guided setup can add for you.
 
@@ -47,6 +47,28 @@ npm install -g @google/gemini-cli
 ```
 
 Gemini CLI speaks ACP itself, so there is no separate program. Run `gemini` once and choose a sign-in method.
+
+## Cursor
+
+Cursor's CLI speaks ACP itself, so there is no separate program. Install it from the [CLI installation guide](https://cursor.com/docs/cli/installation):
+
+```sh
+curl https://cursor.com/install -fsS | bash
+```
+
+On Windows, use the PowerShell command on that page. The installer adds two commands for the same program, `agent` and `cursor-agent`. OpenPencil starts `cursor-agent`, because other coding agents, such as Grok Build, install an `agent` command of their own.
+
+Run `cursor-agent login` once to sign in.
+
+## Grok Build
+
+Grok Build speaks ACP itself, so there is no separate program. Install it from the [Grok Build guide](https://docs.x.ai/build/overview):
+
+```sh
+curl -fsSL https://x.ai/cli/install.sh | bash
+```
+
+On Windows, use the PowerShell command on that page. OpenPencil starts it as `grok agent stdio`. Run `grok login` once to sign in.
 
 ## Pi
 

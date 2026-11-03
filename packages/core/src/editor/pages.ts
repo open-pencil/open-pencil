@@ -1,5 +1,3 @@
-import { limitAsync } from 'es-toolkit/promise'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -15,12 +13,10 @@ import {
 } from '#core/kiwi/fig/population/client'
 import { isReaderPagePending, recoverReaderPage } from '#core/kiwi/fig/session/document-state'
 import { computeAllLayouts } from '#core/layout'
-import { fontManager } from '#core/text/font/manager'
-import { collectGraphFontRequirements } from '#core/text/requirements/collect'
-import { missingGraphFontScripts } from '#core/text/requirements/resolved'
+import { prepareGraphFonts } from '#core/text/prepare'
 
-import { createPageViewportStore } from './page-viewports'
 import { createPageLayouts } from './pages/layouts'
+import { createPageViewportStore } from './pages/viewports'
 import type { EditorContext } from './types'
 
 export interface PageSwitchProgress {
@@ -139,60 +135,16 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     options: PreparePageOptions
   ): Promise<void> {
     const childIds = ctx.graph.getChildren(pageId).map((node) => node.id)
-    const toLoad = fontManager.collectFontKeys(ctx.graph, childIds)
-    const requirements = collectGraphFontRequirements(ctx.graph, childIds)
-    options.onProgress?.({
-      phase: 'resolving-fonts',
-      detail: pageName,
-      completed: 0,
-      total: toLoad.length
-    })
-    fontManager.blockNodesUntilFontsResolve(childIds)
     try {
-      let completedFaces = 0
-      const loadFace = limitAsync(async ([family, style]: [string, string]) => {
-        throwIfAborted(options.signal)
-        const result = await ctx.loadFont(family, style, requirements.characters, options.signal)
-        throwIfAborted(options.signal)
-        completedFaces++
-        options.onProgress?.({
-          phase: 'resolving-fonts',
-          detail: `${family} ${style}`,
-          completed: completedFaces,
-          total: toLoad.length
-        })
-        return result
-      }, MAX_CONCURRENT_FONT_LOADS)
-      const results = await Promise.all(toLoad.map(loadFace))
-      throwIfAborted(options.signal)
-      const requiredFallbacks = missingGraphFontScripts(requirements)
-      options.onProgress?.({
-        phase: 'resolving-fallbacks',
-        detail: pageName,
-        completed: 0,
-        total: requiredFallbacks.length
+      await prepareGraphFonts(ctx.graph, childIds, {
+        loadFont: ctx.loadFont,
+        hide: true,
+        signal: options.signal,
+        concurrency: MAX_CONCURRENT_FONT_LOADS,
+        label: pageName,
+        onProgress: options.onProgress
       })
-      const fallbacks = await fontManager.ensureFallbackPack(
-        requiredFallbacks,
-        requirements.characters,
-        options.signal
-      )
-      throwIfAborted(options.signal)
-      options.onProgress?.({
-        phase: 'resolving-fallbacks',
-        detail: pageName,
-        completed: requiredFallbacks.length,
-        total: requiredFallbacks.length
-      })
-      const facesReady = results.every((result) => result !== null)
-      const fallbacksReady = requiredFallbacks.every(
-        (script) => (fallbacks[script]?.length ?? 0) > 0
-      )
-      if (facesReady && fallbacksReady) {
-        for (const node of requirements.nodes) if (node.type === 'TEXT') node.textPicture = null
-      }
     } finally {
-      fontManager.unblockNodes(childIds)
       ctx.getRenderer()?.invalidateAllPictures()
     }
   }

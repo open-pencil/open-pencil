@@ -1,11 +1,16 @@
-import type { McpServer, SessionUpdate } from '@agentclientprotocol/sdk'
+import type {
+  McpServer,
+  RequestPermissionRequest,
+  RequestPermissionResponse,
+  SessionUpdate
+} from '@agentclientprotocol/sdk'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
 
 import { buildACPMCPServers } from '@/app/integrations/mcp'
 import { linkChatAgent } from '@/app/integrations/mcp/link'
 
-import { textFromContent } from './events'
+import { isOwnToolCall, textFromContent } from './events'
 
 /**
  * Lets the agent use OpenPencil's own tools without asking each time: their edits are undoable
@@ -14,6 +19,29 @@ import { textFromContent } from './events'
  */
 export const OWN_TOOLS_ALLOWED = {
   claudeCode: { options: { allowedTools: [`mcp__${OPEN_PENCIL_MCP_SERVER}`] } }
+}
+
+/**
+ * Answers the permission requests of agents that ask before every MCP call, as Cursor does, for
+ * OpenPencil's own tools, on the same grounds as `OWN_TOOLS_ALLOWED`. A request carries only the
+ * call's id, so the updates that name the call's server are noted first. Each call is allowed
+ * once, which leaves the agent's saved permissions alone.
+ */
+export function createOwnToolApproval() {
+  const ownCalls = new Set<string>()
+  return {
+    noteUpdate(update: SessionUpdate) {
+      if (update.sessionUpdate !== 'tool_call' && update.sessionUpdate !== 'tool_call_update')
+        return
+      if (isOwnToolCall(update)) ownCalls.add(update.toolCallId)
+    },
+    /** The answer for a call to OpenPencil's tools; null when the person decides. */
+    answer(request: RequestPermissionRequest): RequestPermissionResponse | null {
+      if (!ownCalls.has(request.toolCall.toolCallId)) return null
+      const allow = request.options.find((option) => option.kind === 'allow_once')
+      return allow ? { outcome: { outcome: 'selected', optionId: allow.optionId } } : null
+    }
+  }
 }
 
 /** Whether an agent's session reached OpenPencil's tools; null when the server cannot tell. */

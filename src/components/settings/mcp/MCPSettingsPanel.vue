@@ -102,7 +102,7 @@ const serverSetup = useMCPServerSetup(() =>
             <AppStatus :tone="statusTone">{{ statusMessage }}</AppStatus>
           </template>
           <template v-if="mcpRuntime.version" #description>
-            <span class="mt-1 block text-[11px] text-muted"
+            <span class="mt-1 block text-2xs text-muted"
               >{{ automation.version }} <code>{{ mcpRuntime.version }}</code></span
             >
           </template>
@@ -139,10 +139,10 @@ const serverSetup = useMCPServerSetup(() =>
         </SettingsRow>
         <SettingsRow :label="automation.rootDirectory">
           <template #description>
-            <code class="mt-1 block text-[11px] break-all text-surface">{{
+            <code class="mt-1 block text-2xs break-all text-surface">{{
               mcpRootDirectory || automation.rootDirectoryDefault
             }}</code>
-            <span class="mt-1 block text-[11px] leading-relaxed text-muted">{{
+            <span class="mt-1 block text-2xs leading-relaxed text-muted">{{
               automation.rootDirectoryDescription
             }}</span>
           </template>

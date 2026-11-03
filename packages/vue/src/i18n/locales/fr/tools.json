@@ -14,5 +14,7 @@
   "shape": "Forme",
   "connector": "Connecteur",
   "hand": "Main",
-  "comment": "Commentaire"
+  "comment": "Commentaire",
+  "eyedropper": "Pipette",
+  "eyedropperSample": "Prélever une couleur sur le canevas"
 }

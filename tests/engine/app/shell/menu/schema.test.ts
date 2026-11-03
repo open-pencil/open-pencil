@@ -51,6 +51,8 @@ describe('APP_MENU_SCHEMA', () => {
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
       'open-tour',
       'diagnostics',
+      'report-problem',
+      'support-openpencil',
       'settings',
       'view-design-issues',
       'theme-light',
@@ -82,6 +84,35 @@ describe('APP_MENU_SCHEMA', () => {
     expect(entries).toContainEqual(
       expect.objectContaining({ id: 'open-recent', label: 'Open Recent', target: 'native' })
     )
+  })
+
+  // Home and a New file tab hold no document: the menus keep what starts, opens, and switches
+  // documents, and the app's own settings, and leave out what edits or shows one.
+  test('shows only document-free menus and items while no document is in front', () => {
+    const shownIds = (items: readonly AppMenuEntry[]) =>
+      items.flatMap((entry) =>
+        entry.type === 'separator' || entry.feature === 'document' ? [] : [entry.id]
+      )
+    const shown = new Map(
+      APP_MENU_SCHEMA.filter((group) => group.feature !== 'document').map((group) => [
+        group.label,
+        shownIds(group.items)
+      ])
+    )
+
+    expect([...shown.keys()]).toEqual(['File', 'Edit', 'View'])
+    expect(shown.get('File')).toEqual(expect.arrayContaining(['new', 'open', 'settings']))
+    expect(shown.get('Edit')).toEqual(expect.arrayContaining(['copy', 'cut', 'paste']))
+    const shownAnywhere = [...shown.values()].flat()
+    for (const id of [
+      'save',
+      'export-selection',
+      'edit.undo',
+      'selection.selectAll',
+      'view.zoomFit'
+    ]) {
+      expect(shownAnywhere).not.toContain(id)
+    }
   })
 
   test('keeps move-to-page destination selection in the browser menu', () => {

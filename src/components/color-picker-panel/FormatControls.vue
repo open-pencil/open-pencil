@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
+import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.vue'
 import HsbFields from '@/components/color-picker-panel/HsbFields.vue'
 import HslFields from '@/components/color-picker-panel/HslFields.vue'
 import OkhclFields from '@/components/color-picker-panel/OkhclFields.vue'
@@ -11,13 +12,16 @@ const ctx = useColorPickerPanelContext()
 
 <template>
   <div class="flex flex-col gap-2">
-    <AppSelect
-      class="w-[120px]"
-      data-test-id="color-format-select"
-      :model-value="ctx.fieldFormat"
-      :options="ctx.fieldOptions"
-      @update:model-value="ctx.setFieldFormat"
-    />
+    <div class="flex items-center justify-between gap-2">
+      <AppSelect
+        class="w-30"
+        data-test-id="color-format-select"
+        :model-value="ctx.fieldFormat"
+        :options="ctx.fieldOptions"
+        @update:model-value="ctx.setFieldFormat"
+      />
+      <EyedropperButton v-if="ctx.eyedropper" />
+    </div>
 
     <div class="min-w-0 flex flex-col gap-2">
       <RGBFields v-if="ctx.fieldFormat === 'rgb'" />

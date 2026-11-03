@@ -3,10 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { effectiveFigmaRawNodeFields } from '@open-pencil/fig'
 import type { Effect, Fill, SceneNode } from '@open-pencil/scene-graph'
-import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import {
+  getSharedStyles,
+  sharedStyleDetachPatch,
+  sharedStylePatch
+} from '@open-pencil/scene-graph/shared-styles'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
-import { sharedStyleDetachPatch, sharedStylePatch } from '#vue/controls/shared-style/model'
 
 import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 

@@ -1,5 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
+import type { ExportImageOptions } from '@open-pencil/core/figma-api'
 import type { RasterExportFormat } from '@open-pencil/core/io/formats/raster'
 import { selectionToJSX } from '@open-pencil/design-jsx'
 import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/export'
@@ -14,16 +15,14 @@ import type { EditorStore } from '@/app/editor/active-store'
 export function renderAutomationImage(
   store: EditorStore,
   nodeIds: string[],
-  scale: number,
-  format: RasterExportFormat,
-  pageId?: string
+  { scale = 1, format = 'PNG', pageId, useAbsoluteBounds }: ExportImageOptions
 ): Promise<Uint8Array | null> {
   if (!store.renderer) {
     throw new Error(
       'This document has no canvas renderer, so it cannot be exported as an image: its canvas has not started or could not create a WebGL surface'
     )
   }
-  return store.renderExportImage(nodeIds, scale, format, pageId)
+  return store.renderExportImage(nodeIds, scale, format, pageId, { useAbsoluteBounds })
 }
 
 type ExportArgs = { nodeIds?: string[]; scope?: 'page'; scale?: number; format?: string }
@@ -41,12 +40,10 @@ export async function handleExport(target: AutomationTarget, args: unknown): Pro
   const exportArgs = args as ExportArgs | undefined
   const nodeIds = exportNodeIds(target, exportArgs)
   if (nodeIds.length === 0) throw new Error('No nodes to export')
-  const data = await renderAutomationImage(
-    store,
-    nodeIds,
-    exportArgs?.scale ?? 1,
-    (exportArgs?.format ?? 'PNG') as RasterExportFormat
-  )
+  const data = await renderAutomationImage(store, nodeIds, {
+    scale: exportArgs?.scale,
+    format: exportArgs?.format as RasterExportFormat | undefined
+  })
   if (!data) throw new Error('The renderer returned no image for these layers')
   const base64 = fromUint8Array(data)
   return {

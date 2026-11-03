@@ -7,19 +7,29 @@ describe('document & pages', () => {
   test('root has pages as children', () => {
     const api = createAPI()
     expect(api.root.children.length).toBeGreaterThan(0)
-    expect(api.root.children[0].type).toBe('CANVAS')
+    expect(api.root.children[0].type).toBe('PAGE')
+  })
+
+  test("the root, pages and their layers read Figma's node types", () => {
+    const api = createAPI()
+    const rectangle = api.createRectangle()
+    expect(api.root.type).toBe('DOCUMENT')
+    expect(rectangle.parent?.type).toBe('PAGE')
+    expect(rectangle.parent?.parent?.type).toBe('DOCUMENT')
+    expect(api.currentPage.toJSON().type).toBe('PAGE')
+    expect(api.root.toJSON(0).type).toBe('DOCUMENT')
   })
 
   test('currentPage is first page', () => {
     const api = createAPI()
-    expect(api.currentPage.type).toBe('CANVAS')
+    expect(api.currentPage.type).toBe('PAGE')
     expect(api.currentPage.name).toBe('Page 1')
   })
 
   test('createPage adds a new page', () => {
     const api = createAPI()
     const page = api.createPage()
-    expect(page.type).toBe('CANVAS')
+    expect(page.type).toBe('PAGE')
     expect(api.root.children.length).toBe(2)
   })
 

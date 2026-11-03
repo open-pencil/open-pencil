@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { SOLID_FILL } from '#tests/helpers/scene'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -11,6 +13,7 @@ describe('hitTest — hidden nodes', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const rect = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 100,
       y: 100,
@@ -27,6 +30,7 @@ describe('hitTest — hidden nodes', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 100,
       y: 100,
@@ -50,6 +54,7 @@ describe('hitTest — hidden nodes', () => {
       height: 200
     })
     graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 50,
       y: 50,
@@ -78,6 +83,7 @@ describe('hitTest — locked nodes', () => {
       locked: true
     })
     graph.createNode('RECTANGLE', group.id, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 50,
       y: 50,
@@ -103,6 +109,7 @@ describe('hitTest — locked nodes', () => {
       height: 200
     })
     const rect = graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 50,
       y: 50,
@@ -121,6 +128,7 @@ describe('hitTest — opacity', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const rect = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 100,
       y: 100,
@@ -148,6 +156,7 @@ describe('hitTest — point outside all nodes', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 100,
       y: 100,
@@ -172,6 +181,7 @@ describe('hitTest — deep mode', () => {
       height: 200
     })
     graph.createNode('RECTANGLE', component.id, {
+      fills: [SOLID_FILL],
       name: 'R',
       x: 50,
       y: 50,
@@ -195,6 +205,7 @@ describe('hitTest — z-order (last child wins)', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const rect1 = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'R1',
       x: 0,
       y: 0,
@@ -202,6 +213,7 @@ describe('hitTest — z-order (last child wins)', () => {
       height: 100
     })
     const rect2 = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'R2',
       x: 0,
       y: 0,

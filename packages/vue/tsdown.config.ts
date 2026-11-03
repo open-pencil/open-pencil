@@ -59,6 +59,7 @@ export default defineConfig({
     index: './src/index.ts',
     'canvas/index': './src/canvas/index.ts',
     'canvas/drop/index': './src/canvas/drop/index.ts',
+    'canvas/eyedropper/index': './src/canvas/eyedropper/index.ts',
     'canvas/issues/index': './src/canvas/issues/index.ts',
     'canvas/labels/index': './src/canvas/labels/index.ts',
     'canvas/overlays/index': './src/canvas/overlays/index.ts',

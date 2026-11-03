@@ -8,14 +8,14 @@ export const designCheckTheme = {
     toolbarRow: 'flex min-w-0 items-center gap-1',
     filters: 'flex min-w-0 flex-1 items-center gap-0.5',
     filter:
-      'flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 text-[11px] text-surface tabular-nums outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus data-[state=off]:text-muted data-[state=off]:[&_svg]:opacity-50',
+      'flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 text-2xs text-surface tabular-nums outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus data-[state=off]:text-muted data-[state=off]:[&_svg]:opacity-50',
     list: 'scrollbar-thin min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-2',
-    status: 'px-3 py-2 text-[11px] text-muted',
+    status: 'px-3 py-2 text-2xs text-muted',
     // Group slots override the matching AppCollapsible slots.
     group: 'group/issue border-b border-border/60 last:border-b-0',
     groupHeader: 'group/header relative h-8 gap-0 pr-2 pl-1.5',
     groupTrigger:
-      'h-7 cursor-pointer gap-1.5 rounded pr-1 text-[11px] focus-visible:ring-1 focus-visible:ring-panel-focus',
+      'h-7 cursor-pointer gap-1.5 rounded pr-1 text-2xs focus-visible:ring-1 focus-visible:ring-panel-focus',
     chevron: 'size-3 text-muted',
     groupLabel: 'flex min-w-0 flex-1 items-center gap-1.5',
     groupTitle: 'block min-w-0 truncate font-semibold',
@@ -25,17 +25,17 @@ export const designCheckTheme = {
       'invisible absolute inset-y-0 right-1.5 flex items-center gap-0.5 group-focus-within/header:visible group-hover/header:visible group-data-[menu-open]/issue:visible',
     rows: 'pb-1',
     rowItem: 'group/row relative',
-    row: 'flex h-7 w-full cursor-default items-center gap-2 pr-2 pl-7 text-left text-[11px] text-surface outline-none hover:bg-hover focus-visible:bg-hover data-[selected]:bg-panel-selected-muted data-[missing]:text-muted',
+    row: 'flex h-7 w-full cursor-default items-center gap-2 pr-2 pl-7 text-left text-2xs text-surface outline-none hover:bg-hover focus-visible:bg-hover data-[selected]:bg-panel-selected-muted data-[missing]:text-muted',
     rowIcon: 'size-3 shrink-0 text-muted',
     rowName: 'min-w-0 flex-1 truncate',
-    rowTag: 'shrink-0 text-[10px] text-muted',
+    rowTag: 'shrink-0 text-3xs text-muted',
     rowDetail: 'flex max-w-[50%] min-w-0 shrink items-center gap-1.5 text-muted tabular-nums',
     rowDetailText: 'truncate',
     rowAction:
       'absolute top-1/2 right-1.5 hidden h-5 -translate-y-1/2 cursor-pointer items-center rounded bg-panel px-1.5 text-primary shadow-[0_0_0_1px_var(--color-border)] outline-none group-focus-within/row:flex group-hover/row:flex hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
     contrastSwatch:
-      'flex h-3.5 shrink-0 items-center rounded-[3px] px-[3px] text-[9px] leading-none font-semibold shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]',
-    swatch: 'size-2.5 shrink-0 rounded-[3px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]',
+      'flex h-3.5 shrink-0 items-center rounded-[0.1875rem] px-0.75 text-4xs leading-none font-semibold shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]',
+    swatch: 'size-2.5 shrink-0 rounded-[0.1875rem] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]',
     more: 'mb-1 ml-6'
   }
 } as const
@@ -57,7 +57,7 @@ export const layerIssueMarkTheme = {
 
 /** The page list badge: the count of errors and warnings, in the most severe color. */
 export const pageIssueBadgeTheme = {
-  base: 'flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full px-1 text-[9px] leading-none font-semibold tabular-nums',
+  base: 'flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full px-1 text-4xs leading-none font-semibold tabular-nums',
   variants: {
     severity: {
       error: 'bg-error-fill text-white',
@@ -68,11 +68,7 @@ export const pageIssueBadgeTheme = {
 
 export const issueTooltipTheme = {
   slots: {
-    content: [
-      'pointer-events-none z-50 w-64 py-1.5 text-[11px]',
-      floatingSurface,
-      motionStyles.popup
-    ],
+    content: ['pointer-events-none z-50 w-64 py-1.5 text-2xs', floatingSurface, motionStyles.popup],
     header: 'flex items-center gap-1.5 px-2.5 pt-0.5 pb-1 font-semibold',
     headerIcon: 'size-3 shrink-0 text-muted',
     headerText: 'min-w-0 truncate',

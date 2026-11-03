@@ -6,7 +6,7 @@ export default {
   slots: {
     page: 'flex h-full min-h-0 flex-col overflow-y-auto bg-canvas text-surface',
     main: 'flex flex-1 flex-col items-center justify-center px-4 pt-12 pb-[12vh]',
-    column: 'flex w-full max-w-[360px] flex-col gap-6',
+    column: 'flex w-full max-w-90 flex-col gap-6',
     header: 'flex flex-col items-center gap-4 text-center',
     icon: 'size-12 rounded-xl',
     headingGroup: 'flex flex-col gap-1.5',

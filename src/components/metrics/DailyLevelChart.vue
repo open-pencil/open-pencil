@@ -37,7 +37,7 @@ const formatTick = (value: unknown) =>
     :height="height"
     :margin="{ top: 8, right: 0, bottom: 0, left: 0 }"
     :is-animation-active="false"
-    class="text-[11px]"
+    class="text-2xs"
     :title="label"
   >
     <CartesianGrid :vertical="false" />

@@ -36,6 +36,7 @@ export default defineConfig({
     'mutation-impact': './src/mutation-impact.ts',
     'node-defaults': './src/node-defaults.ts',
     'order-keys': './src/order-keys.ts',
+    'outline/index': './src/outline/index.ts',
     'paints/index': './src/paints/index.ts',
     'parse-path': './src/parse-path.ts',
     'plugin-data/index': './src/plugin-data/index.ts',

@@ -1,7 +1,12 @@
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 
-import type { NodeChange, Paint, StyleReference } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type {
+  Effect as KiwiEffect,
+  NodeChange,
+  Paint,
+  StyleReference
+} from '@open-pencil/kiwi/fig/codec'
+import { isUnsetGuid, stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   PluginDataEntry,
@@ -9,8 +14,10 @@ import type {
   SceneNode
 } from '@open-pencil/scene-graph'
 import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
+import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { variableAlias } from '../variable/bindings'
+import { EFFECT_VARIABLE_FIELDS, kiwiEffectWithBindings } from '../variable/effects'
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
 
@@ -88,8 +95,6 @@ export interface SceneNodeToKiwiContext {
   glyphBlobMap?: Map<string, number>
   varIdToGuid?: Map<string, GUID>
   modeIdToGuid?: Map<string, GUID>
-  /** Variable GUIDs used only where raw effect aliases cannot retain asset refs. */
-  assetRefToVarGuid?: Map<string, GUID>
   /** GUIDs minted for component property IDs (e.g. "prop:abc123") that aren't
    *  already Figma-GUID-shaped, keyed by the original ID so refs/assignments/
    *  variantPropSpecs pointing at the same property reuse the same GUID. */
@@ -149,14 +154,21 @@ export interface SceneNodeToKiwiContext {
   ) => KiwiNodeChange[]
 }
 
-/** Figma reads both parts of a GUID as signed 32-bit integers and drops a paste beyond them. */
+/** Figma drops a pasted layer whose GUID part is past a signed 32-bit integer. */
 const MAX_FIGMA_GUID_PART = 0x7fffffff
 
-/** The GUID an ID spells, or null when it spells none Figma can read. */
-export function parseGuidOrNull(value: string) {
+/**
+ * The GUID an ID spells, or null when it spells none Figma can read. A layer's GUID parts stay
+ * within signed 32 bits; `wholeParts` allows the full unsigned 32 bits Figma itself gives
+ * component properties, in files and on the clipboard alike (desktop 126). The unset GUID never
+ * names anything.
+ */
+export function parseGuidOrNull(value: string, { wholeParts = false } = {}) {
   if (!/^\d+:\d+$/.test(value)) return null
   const guid = stringToGuid(value)
-  return guid.sessionID <= MAX_FIGMA_GUID_PART && guid.localID <= MAX_FIGMA_GUID_PART ? guid : null
+  if (isUnsetGuid(guid)) return null
+  const max = wholeParts ? UNSET_GUID.sessionID : MAX_FIGMA_GUID_PART
+  return guid.sessionID <= max && guid.localID <= max ? guid : null
 }
 
 export function resolveInstanceComponentId(
@@ -280,6 +292,55 @@ export function createStrokePaints(context: SceneNodeToKiwiContext, node: SceneN
       context.fillToKiwiPaint(stroke),
       `strokes/${index}/color`
     )
+  )
+}
+
+/**
+ * `effects` as a record writes them for `node`. Each bound property names its variable as a
+ * paint's colour does and carries the value it resolves to; a property the node no longer binds
+ * loses its alias. With `keepUnresolved`, an imported alias to a library variable the document
+ * never resolved stays as it came, since nothing stands in for it.
+ */
+export function bindKiwiEffects(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  effects: readonly KiwiEffect[],
+  keepUnresolved = false
+): KiwiEffect[] {
+  const alias = (variableId: string) =>
+    variableAlias(context.graph, variableId, context.varIdToGuid)
+  return effects.map((effect, index) => {
+    const bound = kiwiEffectWithBindings(effect, index, node.boundVariables, alias)
+    const current = node.effects.at(index)
+    for (const property of EFFECT_BINDING_PROPERTIES) {
+      const key = EFFECT_VARIABLE_FIELDS[property]
+      const kept = effect[key]?.value?.alias
+      if (keepUnresolved && !bound[key] && kept?.assetRef && !kept.guid) bound[key] = effect[key]
+      if (!current || !node.boundVariables[effectBindingField(index, property)]) continue
+      if (property === 'color') bound.color = context.safeColor(current.color)
+      else if (property === 'radius') bound.radius = current.radius
+      else if (property === 'spread') bound.spread = current.spread
+      else bound.offset = { ...current.offset }
+    }
+    return bound
+  })
+}
+
+/** A node's effects as its record writes them, `.fig` naming a layer blur a foreground blur. */
+export function createEffects(context: SceneNodeToKiwiContext, node: SceneNode): KiwiEffect[] {
+  return bindKiwiEffects(
+    context,
+    node,
+    node.effects.map((effect) => ({
+      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
+      color: context.safeColor(effect.color),
+      offset: effect.offset,
+      radius: effect.radius,
+      spread: effect.spread,
+      visible: effect.visible,
+      blendMode: effect.blendMode ?? 'NORMAL',
+      showShadowBehindNode: effect.showShadowBehindNode
+    }))
   )
 }
 

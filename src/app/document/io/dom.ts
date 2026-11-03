@@ -69,7 +69,7 @@ export function createDOMOpenActions({
       signal: load.signal
     })
     load.signal.throwIfAborted()
-    const graph = sceneGraphFromStyledHTML(styled, { pageName })
+    const graph = await sceneGraphFromStyledHTML(styled, { pageName })
     await yieldToUI()
     await applyImportedDocument(editor, graph, load)
     // Into a reused tab too, the document opens with the panels its kind starts with.
