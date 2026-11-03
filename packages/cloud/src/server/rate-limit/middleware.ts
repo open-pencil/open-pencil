@@ -2,6 +2,7 @@ import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { Context, Env, Input } from 'hono'
 import { rateLimiter, type RateLimitExceededEventHandler } from 'hono-rate-limiter'
+import { every } from 'hono/combine'
 import { matchedRoutes } from 'hono/route'
 import type { Kysely } from 'kysely'
 
@@ -14,18 +15,39 @@ export type RateLimitPolicy = {
   limit: number
 }
 
+/**
+ * A budget counted per resource, such as a document, with `actorLimit` capping one actor across
+ * every resource, so new resources do not add budget without end.
+ */
+export type ResourceRateLimitPolicy = RateLimitPolicy & { actorLimit: number }
+
 export const CLOUD_RATE_LIMITS = {
   publicCapability: { namespace: 'public-capability', windowMs: 60_000, limit: 30 },
-  collaborationTicket: { namespace: 'collaboration-ticket', windowMs: 60_000, limit: 60 },
-  invitationMutation: { namespace: 'invitation-mutation', windowMs: 60_000, limit: 30 },
+  collaborationTicket: {
+    namespace: 'collaboration-ticket',
+    windowMs: 60_000,
+    limit: 60,
+    actorLimit: 300
+  },
+  invitationMutation: {
+    namespace: 'invitation-mutation',
+    windowMs: 60_000,
+    limit: 30,
+    actorLimit: 60
+  },
   workspaceCreation: { namespace: 'workspace-creation', windowMs: 60_000, limit: 30 },
-  documentCreation: { namespace: 'document-creation', windowMs: 60_000, limit: 60 },
-  uploadCreation: { namespace: 'upload-creation', windowMs: 60_000, limit: 120 },
+  documentCreation: {
+    namespace: 'document-creation',
+    windowMs: 60_000,
+    limit: 60,
+    actorLimit: 120
+  },
+  uploadCreation: { namespace: 'upload-creation', windowMs: 60_000, limit: 120, actorLimit: 600 },
   authenticatedMutation: { namespace: 'authenticated-mutation', windowMs: 60_000, limit: 120 },
   aiToken: { namespace: 'ai-token', windowMs: 60_000, limit: 30 },
   adminRead: { namespace: 'admin-read', windowMs: 60_000, limit: 300 },
   adminMutation: { namespace: 'admin-mutation', windowMs: 60_000, limit: 30 }
-} as const satisfies Record<string, RateLimitPolicy>
+} as const satisfies Record<string, RateLimitPolicy | ResourceRateLimitPolicy>
 
 /**
  * The limiters routes mount for their own budget, each with which requests it counts. A general
@@ -123,17 +145,37 @@ export function createActorRateLimiter(
 }
 
 /**
- * A limiter a route mounts for its own budget, such as document creation; general limiters leave
+ * A limiter a route mounts for its own budget, such as workspace creation; general limiters leave
  * the requests it counts to it.
  */
 export function createRouteRateLimiter(
   database: Kysely<CloudDatabase>,
   secret: string,
   policy: RateLimitPolicy,
-  skip?: (context: Context) => boolean,
-  resource?: (context: Context<CloudAPIEnvironment, '*'>) => string
+  skip?: (context: Context) => boolean
 ) {
-  return ownBudget(createActorRateLimiter(database, secret, policy, skip, resource), skip)
+  return ownBudget(createActorRateLimiter(database, secret, policy, skip), skip)
+}
+
+/**
+ * A route's own budget counted per resource, such as uploads per document, and capped per actor
+ * across resources by `actorLimit`; general limiters leave the requests it counts to it.
+ */
+export function createResourceRateLimiter(
+  database: Kysely<CloudDatabase>,
+  secret: string,
+  policy: ResourceRateLimitPolicy,
+  resource: (context: Context<CloudAPIEnvironment, '*'>) => string,
+  skip?: (context: Context) => boolean
+) {
+  const perResource = createActorRateLimiter(database, secret, policy, skip, resource)
+  const perActor = createActorRateLimiter(
+    database,
+    secret,
+    { namespace: `${policy.namespace}-actor`, windowMs: policy.windowMs, limit: policy.actorLimit },
+    skip
+  )
+  return ownBudget(every(perResource, perActor), skip)
 }
 
 /**

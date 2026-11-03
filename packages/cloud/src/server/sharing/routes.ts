@@ -12,8 +12,8 @@ import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import {
   CLOUD_RATE_LIMITS,
-  createRouteRateLimiter,
-  routeParamResource
+  routeParamResource,
+  createResourceRateLimiter
 } from '#cloud/server/rate-limit'
 import { sharingRoute } from '#cloud/server/sharing/http'
 import type { DocumentSharingService } from '#cloud/server/sharing/service'
@@ -44,12 +44,12 @@ export function createDocumentSharingRoutes(
   if (rateLimit) {
     router.use(
       '/documents/:documentId/invitations',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
-        (context) => context.req.method !== 'POST',
-        routeParamResource('documentId')
+        routeParamResource('documentId'),
+        (context) => context.req.method !== 'POST'
       )
     )
   }
