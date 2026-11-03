@@ -2,12 +2,17 @@ import { describe, expect, test } from 'bun:test'
 
 import { APICallError, StreamProviderError } from 'ai'
 
+import { ACP_AGENTS } from '@open-pencil/core/constants'
+
+import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import {
   classifyAIChatError,
   classifyAIChatFinish,
   isContextLimitError,
   isInsufficientCreditError
 } from '@/app/ai/chat/failure'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 describe('AI chat failures', () => {
   test('a request past the context window is its own failure, which compaction can fix', () => {
@@ -96,6 +101,17 @@ describe('AI chat failures', () => {
     expect(classifyAIChatError(new Error('API key expired.')).reason).toBe('authentication')
     expect(classifyAIChatError(new Error('Invalid API key.')).reason).toBe('authentication')
     expect(classifyAIChatError(new Error('Failed to fetch provider')).reason).toBe('network')
+    const cursor = expectDefined(
+      ACP_AGENTS.find((agent) => agent.id === 'cursor'),
+      'Cursor'
+    )
+    expect(classifyAIChatError(new AgentNotInstalledError(cursor)).reason).toBe(
+      'agent-not-installed'
+    )
+    expect(classifyAIChatError(new Error('ENOENT: no such file')).reason).toBe('request-failed')
+    expect(classifyAIChatError(new Error('"agent" is not installed.')).reason).toBe(
+      'request-failed'
+    )
     expect(classifyAIChatError(new Error('Provider unavailable')).reason).toBe('request-failed')
   })
 

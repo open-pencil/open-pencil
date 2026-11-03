@@ -41,7 +41,9 @@ import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
 import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 const {
   isConfigured,
@@ -240,6 +242,8 @@ const failureMessage = computed(() => {
       return cloudCreditsMessage(chatFailure.value.resetsAt)
     case 'model-not-found':
       return ai.value.chatModelNotFound
+    case 'agent-not-installed':
+      return ai.value.chatAgentNotInstalled
     case 'network':
       return ai.value.chatNetworkFailed
     case 'output-limit':
@@ -304,7 +308,8 @@ watch(
   (reason) => {
     if (failureToast !== null) toast.remove(failureToast)
     failureToast = null
-    if (!reason) return
+    // The install guidance stays in the panel until the next message clears it.
+    if (!reason || reason === 'agent-not-installed') return
     const failedId = chat.value?.messages.at(-1)?.id
     failureToast = toast.error(
       failureMessage.value ?? ai.value.chatRequestFailed,
@@ -451,6 +456,18 @@ function handleStop() {
         :page="runLocation.page"
         @open="runLocation.open"
       />
+      <AppAlert
+        v-if="chatFailure?.reason === 'agent-not-installed'"
+        class="mx-3 mb-2"
+        tone="error"
+        :heading="ai.chatAgentNotInstalled"
+      >
+        <template #actions>
+          <AppButton size="xs" variant="outline" @click="openSettingsDialog('ai')">
+            {{ ai.openProviderSettingsAction }}
+          </AppButton>
+        </template>
+      </AppAlert>
       <ChatContextWarning
         v-if="
           isConfigured &&

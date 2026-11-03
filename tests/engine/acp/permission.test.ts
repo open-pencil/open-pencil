@@ -9,6 +9,7 @@ import {
   respondToPermission,
   rejectCurrentPermission
 } from '@/app/ai/agents/acp/permission'
+import { createOwnToolApproval } from '@/app/ai/agents/acp/tools'
 import { AGENT_INPUT_NOTIFY_DELAY_MS } from '@/constants'
 
 function makeRequest(
@@ -166,5 +167,37 @@ describe('acp-permission', () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+})
+
+describe('permission for OpenPencil’s own tools', () => {
+  test('a call to OpenPencil’s server is allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call_update',
+      toolCallId: 'tc-1',
+      rawInput: { providerIdentifier: 'open-pencil', toolName: 'get_current_page', args: {} }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('another server’s calls and the agent’s own tools are left to the person', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call_update',
+      toolCallId: 'tc-1',
+      rawInput: { providerIdentifier: 'github', toolName: 'create_issue', args: {} }
+    })
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-2',
+      title: 'rm -rf build',
+      kind: 'execute',
+      rawInput: { command: 'rm -rf build' }
+    })
+    expect(approval.answer(makeRequest())).toBeNull()
+    expect(approval.answer({ ...makeRequest(), toolCall: { toolCallId: 'tc-2' } })).toBeNull()
   })
 })

@@ -17,8 +17,10 @@ import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
-import { linkOwnTools } from '@/app/ai/agents/acp/tools'
+import { createOwnToolApproval, linkOwnTools } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
+import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
+import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
@@ -279,7 +281,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     let process: Awaited<ReturnType<typeof spawnACPProcess>>
     try {
       process = await spawnACPProcess({
-        command: this.agentDef.command,
+        command: await resolveSpawnCommand(this.agentDef),
         args: this.agentDef.args,
         logId: this.agentDef.id,
         destroying: () => this.destroying,
@@ -291,6 +293,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       })
     } catch (e) {
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
+      if (e instanceof AgentNotInstalledError) throw e
+      const message = e instanceof Error ? e.message : String(e)
+      if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
       throw new Error(formatConnectionError(e, this.agentDef))
     }
     const { child, input, output } = process
@@ -300,11 +305,14 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     let sessionRef: ACPSession | null = null
     const agentId = this.agentDef.id
     const { agentDef, store } = this
+    const ownToolApproval = createOwnToolApproval()
 
     const clientImpl: Client = {
       async requestPermission(
         params: RequestPermissionRequest
       ): Promise<RequestPermissionResponse> {
+        const allowed = ownToolApproval.answer(params)
+        if (allowed) return allowed
         const title = params.toolCall.title ?? ''
         return requestPermissionFromUser(
           params,
@@ -315,6 +323,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       async sessionUpdate(params: SessionNotification): Promise<void> {
         // Claude's adapter names its model only in its usage updates.
         const { update } = params
+        ownToolApproval.noteUpdate(update)
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']

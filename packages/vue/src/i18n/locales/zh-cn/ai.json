@@ -228,6 +228,7 @@
   "cloudCreditsRenew": "将于 {date} 续期",
   "manageCloudPlanAction": "管理方案",
   "chatCloudUnavailable": "OpenPencil Cloud AI 不可用。请登录 OpenPencil Cloud，并在设置中选择一个工作区。",
+  "chatAgentNotInstalled": "编程代理尚未安装。请在设置中安装后再试。",
   "visionModelUnavailable": "附加图片前，请在设置中选择视觉模型。",
   "chatPiCompanionMissing": "Pi 需要 Harness 配套程序。运行引导式设置来安装它。",
   "chatPiCompanionOutdated": "Harness 配套程序与此版本的 OpenPencil 不匹配。运行引导式设置来更新它。",
