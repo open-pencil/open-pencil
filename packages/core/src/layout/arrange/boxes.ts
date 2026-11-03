@@ -247,7 +247,8 @@ function layoutOptions(input: ArrangeInput): Record<string, string> {
  * SPOrE's importer moves a box whose centre another box already has with an unseeded
  * `Math.random()`, and SPOrE ignores `elk.randomSeed`, so a pile would spread differently on every
  * run (ElkGraphImporter.java, eclipse-elk/elk b715fb1, lines 166-172). Doing that move here,
- * deterministically, means ELK never reaches it. Remove once elkjs seeds it. `NUDGE` is the first
+ * deterministically, means ELK never reaches it. Remove once elkjs seeds it
+ * (https://github.com/eclipse-elk/elk/issues/1211). `NUDGE` is the first
  * move's length in pixels.
  */
 const NUDGE = 0.5
