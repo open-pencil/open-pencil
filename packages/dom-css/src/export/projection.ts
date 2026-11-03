@@ -1,12 +1,14 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -15,6 +17,7 @@ import {
   dropShadowToCSS,
   effectsToCSS,
   fillToCSS,
+  gradientToCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
   strokeColorToCSS
@@ -271,6 +274,47 @@ function addShaderLayerStyle(style: DesignStyleDeclaration): void {
   style.isolation = 'isolate'
 }
 
+/**
+ * The layer's visible fills, painted bottom to top: its lowest solid fill as `background-color`,
+ * and every gradient and every colour stacked above another fill as `background-image`, the top
+ * one first, as CSS stacks them. A colour can only stack as an image, so it is written as a
+ * gradient of itself. An image fill is the element's own image.
+ */
+function addBackground(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  const layers: { image: string; blend: string }[] = []
+  let color: string | undefined
+  node.fills.forEach((fill, index) => {
+    if (!fill.visible) return
+    const blend = layerBlendMode(fill.blendMode)
+    if (fill.type === 'SOLID') {
+      const value = css(`fills/${index}/color`, fillToCSS(fill) ?? '')
+      if (color === undefined && layers.length === 0) color = value
+      else layers.unshift({ image: `linear-gradient(${value}, ${value})`, blend })
+      return
+    }
+    const gradient = gradientToCSS(fill, node.width, node.height)
+    if (gradient) layers.unshift({ image: gradient, blend })
+    // A paint below every colour, such as an image, leaves no colour for the bottom.
+    else if (color === undefined) color = ''
+  })
+  if (layers.length > 0) {
+    style['background-image'] = layers.map((layer) => layer.image).join(', ')
+    if (layers.some((layer) => layer.blend !== 'normal')) {
+      style['background-blend-mode'] = layers.map((layer) => layer.blend).join(', ')
+    }
+  }
+  if (color) style['background-color'] = color
+}
+
+/**
+ * A fill's blend mode as `background-blend-mode` takes it, which has no `plus-` modes: linear
+ * burn and dodge blend normally there.
+ */
+function layerBlendMode(mode: Fill['blendMode']): string {
+  const css = mode ? CSS_BLEND_MODE[mode] : undefined
+  return css && !css.startsWith('plus-') ? css : 'normal'
+}
+
 function addImageStyle(style: DesignStyleDeclaration, node: SceneNode): void {
   const fill = node.fills.at(0)
   if (fill?.type !== 'IMAGE' || !fill.visible || shaderOfPaint(node, fill)) return
@@ -315,8 +359,7 @@ function styleFromSceneNode(
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addSizeConstraints(style, node, css)
-  const fill = fillToCSS(node.fills.at(0))
-  if (fill) style['background-color'] = css('fills/0/color', fill)
+  addBackground(style, node, css)
   addImageStyle(style, node)
   addStroke(style, node, css)
   Object.assign(style, effectsToCSS(node.effects))
@@ -461,10 +504,14 @@ function sceneNodeToDesignNode(
   const entered = tokens?.enter(node, inherited, root)
   const modes = entered?.modes ?? inherited
   const attrs = { ...attrsForNode(graph, node, includeSourceIds), ...entered?.attrs }
-  const css: FieldCSS = (field, literal) => tokens?.reference(node, field, modes) ?? literal
+  // A bound paint keeps the colour it was set with; the canvas draws its variable's value, so
+  // the styles do too, and a token reference then matches what is drawn.
+  const paints = resolvedPaintBindings(graph, node)
+  const drawn = paints.fills || paints.strokes ? { ...node, ...paints } : node
+  const css: FieldCSS = (field, literal) => tokens?.reference(drawn, field, modes) ?? literal
 
   if (node.type === 'TEXT') {
-    const content = textElementContent(node, styleFromTextNode(node, parent, css))
+    const content = textElementContent(drawn, styleFromTextNode(drawn, parent, css))
     return {
       type: 'element',
       tagName: content.tagName,
@@ -478,7 +525,7 @@ function sceneNodeToDesignNode(
 
   // An icon is one drawing, however many paths it has.
   if (VECTOR_SHAPES.has(node.type) || readIcon(node)) {
-    const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(node, parent, css))
+    const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(drawn, parent, css))
     if (vector) return vector
   }
 
@@ -497,7 +544,7 @@ function sceneNodeToDesignNode(
     }
   }
 
-  const style = styleFromSceneNode(node, parent, css)
+  const style = styleFromSceneNode(drawn, parent, css)
   const shader = layerShader(graph, node)
   if (shader) addShaderLayerStyle(style)
   return {
@@ -547,16 +594,26 @@ export function sceneNodeToDesignDocument(
   nodeId: string,
   options: Omit<SceneGraphToDesignOptions, 'rootId'> = {}
 ): DesignDocument {
-  const node = graph.getNode(nodeId)
+  return sceneNodesToDesignDocument(graph, [nodeId], options)
+}
+
+/**
+ * Project several nodes, each with its own box, as one document: the tokens any of them
+ * references are the document's, so its stylesheet defines them all.
+ */
+export function sceneNodesToDesignDocument(
+  graph: SceneGraph,
+  nodeIds: readonly string[],
+  options: Omit<SceneGraphToDesignOptions, 'rootId'> = {}
+): DesignDocument {
   const context = projectionContext(graph, options)
   const modes = context.tokens?.defaultModes() ?? new Map<string, string>()
-  const projected = node ? sceneNodeToDesignNode(context, node, modes, true) : null
-  return {
-    type: 'document',
-    sourceGraph: graph,
-    tokens: context.tokens,
-    children: projected ? [projected] : []
-  }
+  const children = nodeIds.flatMap((id) => {
+    const node = graph.getNode(id)
+    const projected = node ? sceneNodeToDesignNode(context, node, modes, true) : null
+    return projected ? [projected] : []
+  })
+  return { type: 'document', sourceGraph: graph, tokens: context.tokens, children }
 }
 
 export type { SceneGraphToDesignOptions as ToDesignDocumentOptions }

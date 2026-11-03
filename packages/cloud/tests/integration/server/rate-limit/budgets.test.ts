@@ -4,8 +4,10 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import {
   createActorRateLimiter,
+  createResourceRateLimiter,
   createRouteRateLimiter,
-  routeHasOwnBudget
+  routeHasOwnBudget,
+  routeParamResource
 } from '#cloud/server/rate-limit'
 import { Hono } from 'hono'
 
@@ -50,6 +52,49 @@ describe('rate limit budgets', () => {
       // A request the route's limiter does not count is the general limiter's.
       expect(await status('DELETE', '/documents')).toBe(200)
       expect(await status('POST', '/rename')).toBe(429)
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('caps an actor across resources, not only per resource', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const app = new Hono<CloudAPIEnvironment>()
+        .use('/*', async (context, next) => {
+          context.set('actor', { userId: 'ada', email: 'ada@example.com', name: 'Ada' })
+          await next()
+        })
+        .use(
+          '/*',
+          createActorRateLimiter(runtime.database, SECRET, policy('general', 1), (context) =>
+            routeHasOwnBudget(context)
+          )
+        )
+        .use(
+          '/documents/:documentId/uploads',
+          createResourceRateLimiter(
+            runtime.database,
+            SECRET,
+            { ...policy('uploads', 2), actorLimit: 3 },
+            routeParamResource('documentId')
+          )
+        )
+        .post('/documents/:documentId/uploads', (context) => context.text('created'))
+      const upload = async (document: string) => {
+        const response = await app.request(`/documents/${document}/uploads`, { method: 'POST' })
+        const budget = response.headers.get('RateLimit')?.match(/limit=(\d+), remaining=(\d+)/)
+        return { status: response.status, limit: budget?.[1], remaining: budget?.[2] }
+      }
+
+      // The headers report whichever budget has fewer requests left.
+      expect(await upload('a')).toEqual({ status: 200, limit: '2', remaining: '1' })
+      expect(await upload('a')).toEqual({ status: 200, limit: '2', remaining: '0' })
+      // The document's own budget is spent; a refused request does not count against the actor.
+      expect((await upload('a')).status).toBe(429)
+      expect(await upload('b')).toEqual({ status: 200, limit: '3', remaining: '0' })
+      // Three uploads in all: another document does not reopen the actor's budget.
+      expect((await upload('c')).status).toBe(429)
     } finally {
       await runtime.close()
     }

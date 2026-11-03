@@ -32,11 +32,17 @@ describe('token references in design-to-code', () => {
     expect(attrs).not.toHaveProperty('data-theme')
   })
 
-  test('keeps the literal value where the node no longer draws the token', () => {
+  test('writes the colour the canvas draws for a bound paint, whatever colour the paint keeps', () => {
+    // A script binding a paint keeps the colour it gave; the canvas draws the variable's value.
     const graph = designSystem()
-    const frame = card(graph, graph.getPages()[0].id, BLUE_300)
+    const page = graph.getPages()[0].id
+    const stale = card(graph, page, BLUE_300)
+    const current = card(graph, page, BLUE_500)
 
-    expect(element(graph, frame.id).inlineStyle?.['background-color']).toBe('#94C4FC')
+    expect(element(graph, stale.id).inlineStyle?.['background-color']).toBe('var(--color-primary)')
+    expect(element(graph, stale.id, false).inlineStyle?.['background-color']).toBe(
+      element(graph, current.id, false).inlineStyle?.['background-color']
+    )
   })
 
   test('keeps a length literal when the token is unitless', () => {

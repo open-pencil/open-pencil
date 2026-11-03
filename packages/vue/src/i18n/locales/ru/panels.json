@@ -449,6 +449,7 @@
   "pointCount": "Количество",
   "starRatio": "Соотношение",
   "spread": "Размах",
+  "effectColor": "Цвет",
   "foregroundBlur": "Размытие переднего плана",
   "strokeType": "Тип обводки",
   "strokeWeight": "Толщина обводки",

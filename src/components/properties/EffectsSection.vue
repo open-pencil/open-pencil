@@ -1,17 +1,32 @@
 <script setup lang="ts">
 import type { Effect, Fill } from '@open-pencil/scene-graph'
+import { colorToHexRaw } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { EffectBindingProperty } from '@open-pencil/scene-graph/variables'
+import {
+  useColorBindingProvider,
+  type BindingTarget
+} from '@open-pencil/vue/controls/binding-provider'
 import { useEffectsControls } from '@open-pencil/vue/controls/effects'
 import { useI18n } from '@open-pencil/vue/i18n'
+import {
+  BindableValueRoot,
+  type BindableValueActions
+} from '@open-pencil/vue/primitives/BindableValue'
 
-import ColorInput from '@/components/ColorPicker/ColorInput.vue'
+import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
+import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
 import {
   commitDiscretePropertyListChange,
   useBlendModeGroups
 } from '@/components/properties/blend-mode/use'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
+import { applyPaintMutation, commitPaintMutation } from '@/components/properties/paint/binding'
+import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import { useSharedStylePicker } from '@/components/properties/shared-style/useSharedStylePicker'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -20,7 +35,8 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const effectsCtx = useEffectsControls()
-const { panels } = useI18n()
+const { panels, common } = useI18n()
+const colorProvider = useColorBindingProvider()
 const blendModeGroups = useBlendModeGroups()
 const {
   visible: stylesVisible,
@@ -29,6 +45,24 @@ const {
   options: styleOptions,
   update: updateStyle
 } = useSharedStylePicker('effect')
+
+/** The binding field of one effect property on every selected layer, such as `effects/0/radius`. */
+function effectTargets(
+  nodeIds: readonly string[],
+  index: number,
+  property: EffectBindingProperty
+): BindingTarget[] {
+  return nodeIds.map((nodeId) => ({ nodeId, path: `effects/${index}/${property}` }))
+}
+
+/** A bound colour edits its variable in the layer's mode; an unbound one edits the effect. */
+function updateEffectColor(
+  binding: BindableValueActions<Color>,
+  flush: () => void,
+  update: () => void
+) {
+  if (applyPaintMutation(binding, flush, update)) commitPaintMutation(binding)
+}
 
 function effectPreview(effect: Effect): Fill {
   return {
@@ -42,7 +76,7 @@ function effectPreview(effect: Effect): Fill {
 
 <template>
   <PropertyListRoot
-    v-slot="{ items, isMixed, activeNode, flush, actions }"
+    v-slot="{ items, isMixed, activeNode, selectedNodeIds, flush, actions }"
     prop-key="effects"
     :label="panels.effects"
   >
@@ -158,10 +192,13 @@ function effectPreview(effect: Effect): Fill {
           <template v-if="effectsCtx.isShadow(effect.type)">
             <div class="flex items-center gap-1.5">
               <Tip :label="panels.xAxis">
-                <NumberField
+                <VariableNumberField
                   icon="X"
+                  :aria-label="panels.xAxis"
                   :model-value="effect.offset.x"
-                  data-property="effect-offset-x"
+                  :node-id="selectedNodeIds[0] ?? ''"
+                  :node-ids="selectedNodeIds"
+                  :binding-path="`effects/${index}/offsetX`"
                   @update:model-value="
                     effectsCtx.scrubEffect(index, {
                       offset: { ...effect.offset, x: $event }
@@ -175,10 +212,13 @@ function effectPreview(effect: Effect): Fill {
                 />
               </Tip>
               <Tip :label="panels.yAxis">
-                <NumberField
+                <VariableNumberField
                   icon="Y"
+                  :aria-label="panels.yAxis"
                   :model-value="effect.offset.y"
-                  data-property="effect-offset-y"
+                  :node-id="selectedNodeIds[0] ?? ''"
+                  :node-ids="selectedNodeIds"
+                  :binding-path="`effects/${index}/offsetY`"
                   @update:model-value="
                     effectsCtx.scrubEffect(index, {
                       offset: { ...effect.offset, y: $event }
@@ -195,63 +235,113 @@ function effectPreview(effect: Effect): Fill {
 
             <div class="flex items-center gap-1.5">
               <Tip :label="panels.radius">
-                <NumberField
+                <VariableNumberField
                   icon="B"
+                  :aria-label="panels.radius"
                   :model-value="effect.radius"
                   :min="0"
-                  data-property="effect-radius"
+                  :node-id="selectedNodeIds[0] ?? ''"
+                  :node-ids="selectedNodeIds"
+                  :binding-path="`effects/${index}/radius`"
                   @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
                   @commit="effectsCtx.commitEffect(index, { radius: $event })"
                 />
               </Tip>
               <Tip :label="panels.spread">
-                <NumberField
+                <VariableNumberField
                   icon="S"
+                  :aria-label="panels.spread"
                   :model-value="effect.spread"
-                  data-property="effect-spread"
+                  :node-id="selectedNodeIds[0] ?? ''"
+                  :node-ids="selectedNodeIds"
+                  :binding-path="`effects/${index}/spread`"
                   @update:model-value="effectsCtx.scrubEffect(index, { spread: $event })"
                   @commit="effectsCtx.commitEffect(index, { spread: $event })"
                 />
               </Tip>
             </div>
 
-            <div class="flex items-center gap-1.5">
-              <ColorInput
-                class="min-w-0 flex-1"
-                :color="effect.color"
-                editable
-                @update="effectsCtx.updateColor(actions.patch, index, $event)"
-              />
-              <Tip :label="panels.opacity">
-                <NumberField
-                  class="w-14"
-                  suffix="%"
-                  :model-value="Math.round(effect.color.a * 100)"
-                  :min="0"
-                  :max="100"
-                  data-property="effect-opacity"
-                  @update:model-value="
-                    effectsCtx.scrubEffect(index, {
-                      color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
-                    })
-                  "
-                  @commit="
-                    effectsCtx.commitEffect(index, {
-                      color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
-                    })
+            <BindableValueRoot
+              v-slot="binding"
+              :provider="colorProvider"
+              :targets="effectTargets(selectedNodeIds, index, 'color')"
+              :value="effect.color"
+              batch-label="Change effect color"
+            >
+              <div class="flex items-center gap-1.5" data-property="effect-color">
+                <ColorPicker
+                  :color="binding.resolvedValue ?? effect.color"
+                  @update="
+                    updateEffectColor(binding.actions, flush, () =>
+                      effectsCtx.updateColor(actions.patch, index, $event)
+                    )
                   "
                 />
-              </Tip>
-            </div>
+                <PaintValue
+                  :color="effect.color"
+                  :resolved-color="binding.resolvedValue"
+                  :variable-name="binding.variable?.name ?? binding.bindingId"
+                  :unavailable-label="
+                    binding.state === 'unresolved' ? panels.unresolvedVariable : undefined
+                  "
+                  :label="panels.effectColor"
+                  @update="
+                    updateEffectColor(binding.actions, flush, () =>
+                      effectsCtx.updateColor(actions.patch, index, $event)
+                    )
+                  "
+                />
+                <!-- A bound colour takes its opacity from the variable, as in Figma. -->
+                <Tip
+                  v-if="!binding.variable && binding.state !== 'unresolved'"
+                  :label="panels.opacity"
+                >
+                  <NumberField
+                    class="w-14"
+                    suffix="%"
+                    :inherit-binding="false"
+                    :aria-label="panels.opacity"
+                    :model-value="Math.round(effect.color.a * 100)"
+                    :min="0"
+                    :max="100"
+                    data-property="effect-opacity"
+                    @update:model-value="
+                      effectsCtx.scrubEffect(index, {
+                        color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
+                      })
+                    "
+                    @commit="
+                      effectsCtx.commitEffect(index, {
+                        color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
+                      })
+                    "
+                  />
+                </Tip>
+                <VariableBindingPicker
+                  :trigger-label="panels.applyVariable"
+                  :search-placeholder="common.search"
+                  :empty-label="panels.noVariablesFound"
+                  :detach-label="panels.detachVariable"
+                  :create-label="
+                    panels.createColorVariable({ value: `#${colorToHexRaw(effect.color)}` })
+                  "
+                  :create-name-placeholder="panels.variableName"
+                  :create-submit-label="panels.create"
+                />
+              </div>
+            </BindableValueRoot>
           </template>
 
-          <NumberField
+          <VariableNumberField
             v-else
             class="w-24 flex-none"
             icon="B"
+            :aria-label="panels.radius"
             :model-value="effect.radius"
             :min="0"
-            data-property="effect-radius"
+            :node-id="selectedNodeIds[0] ?? ''"
+            :node-ids="selectedNodeIds"
+            :binding-path="`effects/${index}/radius`"
             @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
             @commit="effectsCtx.commitEffect(index, { radius: $event })"
           />

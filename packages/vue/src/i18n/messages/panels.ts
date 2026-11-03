@@ -143,6 +143,7 @@ export const panelMessageDefaults = {
   /** A star's inner radius as a share of its outer one. */
   starRatio: 'Ratio',
   spread: 'Spread',
+  effectColor: 'Color',
 
   page: 'Page',
   selectionColors: 'Selection colors',

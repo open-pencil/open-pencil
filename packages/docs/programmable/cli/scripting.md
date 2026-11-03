@@ -40,7 +40,7 @@ References use variable names or `{Collection::variable}` and are stored as stab
 
 ## Variable bindings
 
-Figma's `node.setBoundVariable(field, variable)` binds with Figma's field names and type rules. Use `openpencil.bindVariable(node, field, variable)` to bind a layer field to a variable from `figma.variables` the way the layer panel does, and `openpencil.unbindVariable(node, field)` to let it go; the field keeps the value the variable last gave it. Fields use OpenPencil's names, such as `text`, `visible`, `opacity`, `paddingLeft` or `fills/0/color`. Bindings follow the layer panel, which takes more than Figma's `setBoundVariable`: text content takes a text or number variable, a number shown as text, and visibility a boolean or a text variable that shows the layer unless it is empty or reads `false`, `no` or `off`.
+Figma's `node.setBoundVariable(field, variable)` binds with Figma's field names and type rules. Use `openpencil.bindVariable(node, field, variable)` to bind a layer field to a variable from `figma.variables` the way the layer panel does, and `openpencil.unbindVariable(node, field)` to let it go; the field keeps the value the variable last gave it. Fields use OpenPencil's names, such as `text`, `visible`, `opacity`, `paddingLeft`, `fills/0/color` or `effects/0/radius`. Bindings follow the layer panel, which takes more than Figma's `setBoundVariable`: text content takes a text or number variable, a number shown as text, and visibility a boolean or a text variable that shows the layer unless it is empty or reads `false`, `no` or `off`.
 
 ```js
 const [price] = figma.variables.getLocalVariables('FLOAT')
@@ -257,6 +257,10 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `node.fillGeometry` and `node.strokeGeometry` on shapes, text, frames, components, instances, and boolean operations give Figma's `VectorPaths` in the layer's own box. `fillGeometry` is the outline of the layer's shape whatever its fills, and empty for lines and open vectors. `strokeGeometry` is the band every visible stroke covers, centred on the edge and twice the weight wide for inside and outside strokes, with dashes and per-side weights. It covers the same area as Figma's, though Figma writes a stroke as a piece per edge and corner where OpenPencil writes its outline
 - `node.outlineStroke()` adds the layer's stroke as a vector filled with the stroke's paints, named `<name> (Stroke)` (a group of glyph vectors for text), at the end of the page at the layer's position in its parent, as Figma does, and keeps the layer. It returns `null` without a visible stroke
 - These measure with a renderer: the canvas's in the desktop and browser apps, and a headless one in `open-pencil eval`. Before a document's canvas is ready, or on a host without a renderer, they throw `This host has no renderer to measure geometry with`
+
+### CSS
+
+- `node.getCSSAsync()` resolves to the CSS OpenPencil's HTML export writes for a layer, as a record of property names and values: its size, auto layout and its place in its parent's, its fills as `background-color` and `background-image` (gradients, and colours stacked above another fill, top first), borders, corner radius, effects, and for text its font and colour. Like the HTML export, it leaves out diamond gradients, draws a rotated elliptical radial gradient unrotated, since CSS cannot turn one, and leaves out an image fill, which the export draws as an `<img>` element that covers any fill above it. Bound variables are written as the custom properties of OpenPencil's token stylesheet, such as `var(--color-brand-primary)`. A hidden layer gives the CSS it would show, and pages and the document give `{}`. The values describe the same layer as Figma's Dev Mode, but are not written in its exact format
 
 ### Properties
 
