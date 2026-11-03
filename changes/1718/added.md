@@ -1,0 +1,1 @@
+- On desktop, a Claude Code conversation reopened from chat history continues in Claude Code's own session, so the agent remembers what was said, instead of being read-only.
