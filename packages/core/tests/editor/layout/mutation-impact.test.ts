@@ -42,12 +42,14 @@ describe('mutation layout reconciliation', () => {
       counterAxisSizing: 'HUG'
     })
     const child = graph.createNode('RECTANGLE', left.id, { width: 40, height: 20 })
+    graph.createNode('RECTANGLE', left.id, { width: 30, height: 20 })
     const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => graph)
     runLayoutForNode(left.id)
+    expect(left.width).toBe(70)
 
     await runMutationWithLayout(() => graph.reparentNode(child.id, right.id), page)
 
-    expect(left.width).toBe(0)
+    expect(left.width).toBe(30)
     expect(right.width).toBe(40)
   })
 })
