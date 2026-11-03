@@ -19,7 +19,6 @@ import {
 } from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
 import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
-import { fontFileMapsCharacter } from '#core/text/font/cmap'
 import {
   browserFaceDescriptors,
   fontFaceRenderFamily,
@@ -754,9 +753,9 @@ export class FontManager {
 
   /**
    * Loads the fallback faces for `script`. The first installed one of its families comes in, and
-   * the next only for the script's characters among `characters` that those loaded lack: each is
-   * a whole system face, tens of megabytes for a CJK one, copied into CanvasKit. Web fonts come
-   * in, cut to the characters, when no installed face covers them.
+   * the next only for the script's characters among `characters` that CanvasKit finds no glyph
+   * for in those loaded: each is a whole system face, tens of megabytes for a CJK one, copied
+   * into CanvasKit. Web fonts come in, cut to the characters, when no installed face covers them.
    */
   private async ensureFallbackFamilies(
     script: FontFallbackScript,
@@ -770,8 +769,7 @@ export class FontManager {
     const needed = uniq(Array.from(characters)).filter((character) =>
       scriptCharacter.test(character)
     )
-    const missing = () =>
-      needed.filter((character) => !this.fallbacksCover(targetFamilies, character))
+    const missing = () => this.unresolvedCharacters(targetFamilies, needed)
 
     let installed = false
     for (const family of manifest.localFamilies) {
@@ -811,14 +809,32 @@ export class FontManager {
   }
 
   /**
-   * Whether one of the fallback families maps `character`, by its file's own table; a file that
-   * cannot say counts as covering it, as CanvasKit may still draw it.
+   * The characters CanvasKit finds no glyph for in `families`, shaped with the provider the
+   * canvas draws from. Without one, as before a canvas loads, it cannot tell and finds none.
    */
-  private fallbacksCover(families: readonly string[], character: string): boolean {
-    return families.some((family) => {
-      const data = this.loadedData(family, 'Regular')
-      return data !== null && fontFileMapsCharacter(data, character) !== false
+  private unresolvedCharacters(families: readonly string[], characters: string[]): string[] {
+    if (characters.length === 0) return []
+    if (families.length === 0) return characters
+    const shared = this.sharedProviders.entries().next().value
+    if (!shared) return []
+    const [canvasKit, { provider }] = shared
+    const style = new canvasKit.ParagraphStyle({
+      textStyle: { fontFamilies: [...families], fontSize: 16 }
     })
+    const builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(style, provider)
+    try {
+      builder.addText(characters.join(''))
+      const paragraph = builder.build()
+      try {
+        paragraph.layout(Number.MAX_SAFE_INTEGER)
+        const unresolved = new Set(paragraph.unresolvedCodepoints())
+        return characters.filter((character) => unresolved.has(character.codePointAt(0) ?? 0))
+      } finally {
+        paragraph.delete()
+      }
+    } finally {
+      builder.delete()
+    }
   }
 
   private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {

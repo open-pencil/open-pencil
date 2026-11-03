@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { FIXTURES } from '#core-tests/helpers/paths'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
+import { getCanvasKit } from '#core/canvaskit'
 import { FontManager, facesFromStyles } from '@open-pencil/core/text'
 
 /** A font manager that asks no web provider, so a family's faces come from its catalog. */
@@ -161,9 +162,10 @@ test('macOS fallback preparation after a document edit reads and registers each 
   expect([...registrations.values()].every((count) => count === 1)).toBe(true)
 })
 
-test('loads the next fallback family only for the characters the ones loaded lack', async () => {
+test('loads the next fallback family only for the characters CanvasKit finds no glyph for', async () => {
   const manager = offlineManager()
   manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const provider = manager.acquireProvider(await getCanvasKit())
   const latin = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
   const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
   const reads: string[] = []
@@ -173,10 +175,13 @@ test('loads the next fallback family only for the characters the ones loaded lac
     return family === 'PingFang SC' ? latin : chinese
   })
 
-  await manager.ensureFallbackPack(['cjk-sc'], '设计')
-
-  expect(reads).toEqual(['PingFang SC', 'Heiti SC'])
-  expect(manager.getCJKFallbackFamilies()).toEqual(['PingFang SC', 'Heiti SC'])
+  try {
+    await manager.ensureFallbackPack(['cjk-sc'], '设计')
+    expect(reads).toEqual(['PingFang SC', 'Heiti SC'])
+    expect(manager.getCJKFallbackFamilies()).toEqual(['PingFang SC', 'Heiti SC'])
+  } finally {
+    manager.releaseProvider(provider)
+  }
 })
 
 test('a host read that outlives its loader never registers the replaced loader data', async () => {
