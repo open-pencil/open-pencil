@@ -117,6 +117,25 @@ function square(graph: SceneGraph, frameId: string, props: Partial<SceneNode>) {
   graph.createNode('RECTANGLE', frameId, { x: 100, y: 100, width: 200, height: 200, ...props })
 }
 
+/** Red across a black-to-white edge at x = 100 under a layer of background blur. */
+function backgroundBlurRow(radius: number): number[] {
+  return edgeRow((graph, frameId) => {
+    graph.createNode('RECTANGLE', frameId, { width: 100, height: 400, fills: [solid(0, 0, 0)] })
+    graph.createNode('RECTANGLE', frameId, {
+      x: 100,
+      width: 300,
+      height: 400,
+      fills: [solid(1, 1, 1)]
+    })
+    graph.createNode('RECTANGLE', frameId, {
+      width: 400,
+      height: 400,
+      fills: [solid(1, 1, 1, 0.01)],
+      effects: [effect('BACKGROUND_BLUR', radius)]
+    })
+  }, 0)
+}
+
 function expectFigmaEdge(row: number[], figma: number[], from = 60) {
   const differences = row.flatMap((value, index) =>
     60 + index < from ? [] : [Math.abs(value - figma[index])]
@@ -161,22 +180,7 @@ describe('blur effects fall off as in Figma', () => {
   })
 
   test('background blur', () => {
-    const row = edgeRow((graph, frameId) => {
-      graph.createNode('RECTANGLE', frameId, { width: 100, height: 400, fills: [solid(0, 0, 0)] })
-      graph.createNode('RECTANGLE', frameId, {
-        x: 100,
-        width: 300,
-        height: 400,
-        fills: [solid(1, 1, 1)]
-      })
-      graph.createNode('RECTANGLE', frameId, {
-        width: 400,
-        height: 400,
-        fills: [solid(1, 1, 1, 0.01)],
-        effects: [effect('BACKGROUND_BLUR', 16)]
-      })
-    }, 0)
-    expectFigmaEdge(row, FIGMA['BACKGROUND_BLUR 16'])
+    expectFigmaEdge(backgroundBlurRow(16), FIGMA['BACKGROUND_BLUR 16'])
   })
 
   test('background blur on a boolean, inside its result alone', () => {
@@ -206,21 +210,27 @@ describe('blur effects fall off as in Figma', () => {
 })
 
 describe('a negative blur, which only a bound variable gives', () => {
-  // Figma 126 exports a drop shadow and a layer blur of radius -6 pixel for pixel as radius 0.
-  for (const type of ['DROP_SHADOW', 'LAYER_BLUR'] as const) {
+  // Figma 126 exports each effect at radius -6 pixel for pixel as at radius 0.
+  for (const type of ['DROP_SHADOW', 'INNER_SHADOW', 'LAYER_BLUR'] as const) {
     test(`draws a ${type.toLowerCase()} as no blur`, () => {
+      // An inner shadow moved right darkens the white fill at the left edge the row crosses.
+      const inner = type === 'INNER_SHADOW'
       const row = (radius: number) =>
         edgeRow(
           (graph, frameId) =>
             square(graph, frameId, {
               fills: [solid(1, 1, 1)],
-              effects: [{ ...effect(type, radius), offset: { x: -10, y: 0 } }]
+              effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
             }),
-          3
+          inner ? 0 : 3
         )
       expect(row(-6)).toEqual(row(0))
     })
   }
+
+  test('draws a background blur as no blur', () => {
+    expect(backgroundBlurRow(-6)).toEqual(backgroundBlurRow(0))
+  })
 })
 
 describe('shadows of a transparent fill', () => {
