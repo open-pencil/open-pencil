@@ -1,4 +1,5 @@
 // Child cloning and property synchronization shared by instance creation, swap, and sync.
+import { pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
@@ -189,9 +190,10 @@ export function updateSyncedProps(
 }
 
 /**
- * A number bound to a variable takes the value it resolves to where the copy sits, not the one
- * its component holds: an instance that sets another mode, or sits in one that does, shows that
- * mode's value, as Figma draws it.
+ * A bound number the sync writes takes the value it resolves to where the copy sits, not the
+ * one its component holds: an instance that sets another mode, or sits in one that does, shows
+ * that mode's value, as Figma draws it. A field the sync leaves alone, such as one an instance
+ * overrides, keeps its own value.
  */
 function resolveBoundNumbersInPlace(
   graph: SceneGraph,
@@ -199,8 +201,15 @@ function resolveBoundNumbersInPlace(
   updates: Partial<SceneNode>
 ): void {
   const bound = updates.boundVariables ?? target.boundVariables
-  if (!Object.keys(bound).some(isNumericVariableBindingField)) return
-  Object.assign(updates, resolvedNumericBindings(graph, { ...target, ...updates }))
+  const synced = Object.keys(updates).filter(
+    (field) => isNumericVariableBindingField(field) && bound[field]
+  )
+  if (synced.length === 0) return
+  // The modes the copy takes in this sync decide what its bindings resolve to.
+  if (updates.variableModes && !isEqual(updates.variableModes, target.variableModes))
+    graph.updateNode(target.id, { variableModes: updates.variableModes })
+  const resolved = resolvedNumericBindings(graph, { ...target, ...updates })
+  Object.assign(updates, pick(resolved, synced as (keyof SceneNode)[]))
 }
 
 function cloneChildInCoordinates(

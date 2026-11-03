@@ -46,3 +46,44 @@ test('syncing an edited component keeps a bound number in the mode its copy sits
   expect(nested().opacity).toBe(0.9)
   expect([nested().width, nestedBar().width]).toEqual([200, 200])
 })
+
+test('syncing a component that changed its own mode resolves its copies in the new mode', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const collection = graph.createCollection('Size')
+  const large = must(graph.createMode(collection.id, 'L'), 'mode')
+  const width = graph.createVariable('Width', 'FLOAT', collection.id, 100)
+  width.valuesByMode[large] = 200
+  const chip = graph.createNode('COMPONENT', page, { name: 'Chip', width: 100, height: 20 })
+  graph.bindVariable(chip.id, 'width', width.id)
+  const instance = must(graph.createInstance(chip.id, page), 'instance')
+  expect(instance.width).toBe(100)
+
+  graph.updateNode(chip.id, { variableModes: { [collection.id]: large } })
+  reconcileVariableBindings(graph, { subtrees: [chip.id] })
+  graph.syncInstances(chip.id)
+
+  const synced = must(graph.getNode(instance.id), 'synced instance')
+  expect(synced.variableModes).toEqual({ [collection.id]: large })
+  expect(synced.width).toBe(200)
+})
+
+test('syncing a component keeps a bound number its instance overrides', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const collection = graph.createCollection('Look')
+  const faded = graph.createVariable('Faded', 'FLOAT', collection.id, 0.8)
+  const chip = graph.createNode('COMPONENT', page, { name: 'Chip', width: 40, height: 20 })
+  graph.bindVariable(chip.id, 'opacity', faded.id)
+  reconcileVariableBindings(graph)
+  const instance = must(graph.createInstance(chip.id, page), 'instance')
+  setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'opacity')
+  graph.updateNode(instance.id, { opacity: 0.3 })
+
+  graph.updateNode(chip.id, { width: 60 })
+  graph.syncInstances(chip.id)
+
+  const synced = must(graph.getNode(instance.id), 'synced instance')
+  expect(synced.width).toBe(60)
+  expect(synced.opacity).toBe(0.3)
+})
