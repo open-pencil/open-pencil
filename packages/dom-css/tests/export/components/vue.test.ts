@@ -7,6 +7,7 @@ import {
   accordionComponent,
   buttonSet,
   collapsibleSet,
+  componentSet,
   invalidCheckboxSet,
   labelledButtonSet,
   numberFieldComponent,
@@ -29,6 +30,8 @@ import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
 import { renderToString } from 'vue/server-renderer'
+
+import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
 const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook', 'shaders']
@@ -367,6 +370,82 @@ describe('generated Vue form controls', () => {
     // Typed words take the filled look; the empty look is the placeholder's.
     expect(input?.color).toBe('#121726')
     expect(placeholder?.color).toBe('#9CA3B0')
+  })
+
+  // As the React field spreads its props on the input and gives its root the caller's className.
+  test("a field's input takes the caller's attributes, and its root the caller's class", async () => {
+    for (const fixture of [textFieldSet(), textFieldSet({ invalid: true }), textareaComponent()]) {
+      const { component } = await generate(fixture)
+      const html = await render(component, {
+        name: 'email',
+        required: true,
+        placeholder: 'you@example.com',
+        'aria-invalid': 'true',
+        class: 'wide'
+      })
+      const root = /^<div[^>]*>/.exec(html)?.[0] ?? ''
+      const input = /<(?:input|textarea)[^>]*>/.exec(html)?.[0] ?? ''
+      expect(root).toContain('wide')
+      expect(root).not.toContain('name=')
+      expect(root).not.toContain('aria-invalid')
+      expect(input).toContain('name="email"')
+      expect(input).toContain('required')
+      expect(input).toContain('aria-invalid="true"')
+      expect(input).not.toContain('wide')
+      if (fixture.set.name === 'Email') expect(input).toContain('placeholder="you@example.com"')
+    }
+  })
+
+  test('a field with no text bound yet draws no input, and its root takes the attributes', async () => {
+    const fixture = componentSet(
+      'Message',
+      { Size: ['Default'] },
+      emptyBehaviour('textarea'),
+      (graph, variant) => {
+        graph.createNode('TEXT', variant, { name: 'Hint', text: 'Tell us more' })
+      }
+    )
+    const { files, component } = await generate(fixture)
+    expect(fileText(files, 'Message.vue')).not.toContain('inheritAttrs')
+    const html = await render(component, { 'data-testid': 'message', class: 'wide' })
+    expect(html).toMatch(/^<div[^>]*data-testid="message"/)
+    expect(html).toMatch(/^<div[^>]*class="[^"]*wide/)
+  })
+
+  test('a field whose input sits in a slot keeps its attributes on the root', async () => {
+    const fixture = componentSet(
+      'Message',
+      { Size: ['Default'] },
+      { ...emptyBehaviour('textarea'), texts: { value: { propertyId: 'message' } } },
+      (graph, variant) => {
+        const body = graph.createNode('FRAME', variant, {
+          name: 'Body',
+          width: 200,
+          height: 60,
+          componentPropertyReferences: [{ propertyId: 'body', field: 'SLOT_CONTENT' }]
+        })
+        graph.createNode('TEXT', body.id, {
+          name: 'Value',
+          text: 'Tell us more',
+          componentPropertyReferences: [{ propertyId: 'message', field: 'TEXT' }]
+        })
+      }
+    )
+    fixture.graph.updateNode(fixture.set.id, {
+      componentPropertyDefinitions: [
+        ...fixture.set.componentPropertyDefinitions,
+        { id: 'message', name: 'Message', type: 'TEXT', defaultValue: 'Tell us more' },
+        { id: 'body', name: 'Body', type: 'SLOT', defaultValue: '' }
+      ]
+    })
+    const { files, component } = await generate(fixture)
+    const source = fileText(files, 'Message.vue')
+    // The slot's own content replaces the input, so the attributes stay where Vue puts them.
+    expect(source).toContain('<slot name="body">')
+    expect(source).not.toContain('inheritAttrs')
+    expect(await render(component, { 'data-testid': 'message' })).toMatch(
+      /^<div[^>]*data-testid="message"/
+    )
   })
 
   test('a textarea starts with its words', async () => {

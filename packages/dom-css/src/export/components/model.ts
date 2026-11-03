@@ -167,6 +167,18 @@ export type ComponentNode =
   | ComponentReference
   | IconReference
 
+/**
+ * Whether a field's markup always draws its input, which then takes the caller's attributes. A
+ * field whose text is not bound yet has none, and an input inside a slot is replaced when the
+ * caller fills the slot; the root takes the attributes then.
+ */
+export function drawsInput(node: ComponentElement): boolean {
+  return node.children.some(
+    (child) =>
+      child.type === 'input' || (child.type === 'element' && !child.slot && drawsInput(child))
+  )
+}
+
 /** One component generated from a component set with a behaviour. */
 export interface ComponentModel {
   /** The component's identifier and file name. */
