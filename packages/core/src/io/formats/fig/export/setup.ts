@@ -11,7 +11,8 @@ import {
   parseGuidOrNull,
   type FigNodeChangeExportRuntime,
   makeCanvasNodeChange,
-  makeDocumentNodeChange
+  makeDocumentNodeChange,
+  savedPropertyCopyIds
 } from '@open-pencil/fig/node-change'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
@@ -149,11 +150,11 @@ function assignOwnLayerGuids(
 
 /**
  * The first local ID the counter can mint in sessions 0 and 1: past every saved GUID and every
- * ID that layers, collections, modes, variables and component properties are saved under.
+ * ID that layers, collections, modes, variables, component properties, and variants' copies of
+ * their sets' properties are saved under.
  */
-/** The first local ID above every GUID the graph's layers, variables, and properties claim. */
 export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
-  const ids = [...propertyIds]
+  const ids = [...propertyIds, ...savedPropertyCopyIds(graph)]
   for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
   for (const [collectionId, collection] of graph.variableCollections) {
     ids.push(collectionId, ...collection.modes.map((mode) => mode.modeId))

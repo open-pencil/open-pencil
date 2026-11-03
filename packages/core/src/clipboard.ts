@@ -141,6 +141,8 @@ async function writeFigmaClipboardHTML(
   }
 
   const nodeIdToGuid = new Map<string, GUID>()
+  // One for every layer written, so an instance names the copy its variant's record defines.
+  const propertyCopyGuids = new Map<string, GUID>()
   const assignedGuidValues = new Set<string>()
   const blobs: Uint8Array[] = []
   const variableIds = new Map<string, GUID>()
@@ -170,6 +172,7 @@ async function writeFigmaClipboardHTML(
         assignedGuidValues,
         modeIdToGuid: modeIds,
         slotContentRecords,
+        propertyCopyGuids,
         runtime
       })
     )
@@ -219,6 +222,7 @@ async function writeFigmaClipboardHTML(
         assignedGuidValues,
         modeIdToGuid: modeIds,
         slotContentRecords,
+        propertyCopyGuids,
         runtime
       })
     )

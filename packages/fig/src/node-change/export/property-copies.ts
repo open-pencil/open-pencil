@@ -3,7 +3,7 @@ import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { getOrCreatePropertyGuid, type SceneNodeToKiwiContext } from './context'
 
@@ -47,6 +47,21 @@ function copyGuid(
   if (!kept) context.assignedGuidValues?.add(`${guid.sessionID}:${guid.localID}`)
   guids.set(key, guid)
   return guid
+}
+
+/**
+ * The GUIDs variants keep for the copies their file saved, which a save writes again, so the
+ * counter that mints new GUIDs must start past them.
+ */
+export function savedPropertyCopyIds(graph: SceneGraph): string[] {
+  const ids: string[] = []
+  for (const node of graph.getAllNodes()) {
+    if (!variantSet(graph, node)) continue
+    const saved = effectiveFigmaRawNodeFields(node).componentPropDefs
+    for (const copy of Array.isArray(saved) ? (saved as SavedCopy[]) : [])
+      if (copy.id && copy.parentPropDefId) ids.push(guidToString(copy.id))
+  }
+  return ids
 }
 
 /** A variant's copies of its set's properties, as its `componentPropDefs`; none elsewhere. */

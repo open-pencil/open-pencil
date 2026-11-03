@@ -3,6 +3,7 @@ import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { deflateSync } from 'fflate'
 
+import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
 import {
   FigmaAPI,
   type FigmaComponentNode,
@@ -12,6 +13,7 @@ import {
 } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import type { GUID } from '@open-pencil/kiwi/fig'
 import {
@@ -72,6 +74,11 @@ async function kitStyleArchive(): Promise<Uint8Array> {
   for (const record of parsed.nodeChanges)
     for (const spec of specsOf(record))
       if (spec.propDefId && guidToString(spec.propDefId) === saved) spec.propDefId = KIT_PROPERTY
+  return encodeArchive(parsed)
+}
+
+/** A parsed archive written back as a .fig, after a test edited its records. */
+function encodeArchive(parsed: ReturnType<typeof parseFigBuffer>): Uint8Array {
   const kiwi = getCompiledSchema().encodeMessage({
     type: 'NODE_CHANGES',
     sessionID: 0,
@@ -381,6 +388,95 @@ describe("a set's properties as each variant's linked copy", () => {
       (override) => (override.componentPropAssignments ?? []) as { defID?: GUID }[]
     )
     expect(assigned.map((assignment) => guidOf(assignment.defID))).toEqual([largeCopy])
+  })
+
+  // A file OpenPencil wrote keeps copies under GUIDs from its own counter, which a later full
+  // save must not mint again for a new property's copy.
+  test('a full save mints new copies past the copies the file saved', async () => {
+    const graph = await open(await exportFigFile(await dotSet()))
+    releaseFigArchive(graph)
+    const set = expectDefined(
+      new FigmaAPI(graph).currentPage.findOne(
+        (node) => node.type === 'COMPONENT_SET'
+      ) as FigmaComponentSetNode | null,
+      'set'
+    )
+    set.addComponentProperty('Label', 'TEXT', 'Label')
+
+    const records = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
+      .nodeChanges
+    const recordGuids = new Set(records.map((record) => guidOf(record.guid)))
+    const copyIds = variantRecords(records, setRecord(records)).flatMap((variant) =>
+      ((variant.componentPropDefs ?? []) as SavedCopy[]).map((copy) => guidOf(copy.id))
+    )
+    expect(copyIds).toHaveLength(4)
+    expect(new Set(copyIds).size).toBe(4)
+    expect(copyIds.filter((id) => recordGuids.has(id))).toEqual([])
+  })
+
+  // Figma's own property GUIDs may pass 31 bits; a full save writes the set's property and the
+  // variants' copies under one GUID, and the file reads back with the property intact.
+  test('a full save links copies to a property saved under a GUID past 31 bits', async () => {
+    const parsed = parseFigBuffer((await exportFigFile(await dotSet())).slice().buffer as ArrayBuffer)
+    const set = setRecord(parsed.nodeChanges)
+    const property = expectDefined(
+      definitionsOf(set).find((definition) => definition.type === 'BOOL'),
+      'boolean property'
+    )
+    const saved = guidOf(property.id)
+    property.id = KIT_PROPERTY
+    for (const variant of variantRecords(parsed.nodeChanges, set))
+      for (const copy of (variant.componentPropDefs ?? []) as SavedCopy[])
+        if (guidOf(copy.parentPropDefId) === saved) copy.parentPropDefId = KIT_PROPERTY
+    const graph = await open(encodeArchive(parsed))
+    releaseFigArchive(graph)
+
+    const bytes = await exportFigFile(graph)
+    const records = parseFigBuffer(bytes.slice().buffer as ArrayBuffer).nodeChanges
+    const written = setRecord(records)
+    const boolean = definitionsOf(written).find((definition) => definition.type === 'BOOL')
+    const parents = variantRecords(records, written).flatMap((variant) =>
+      ((variant.componentPropDefs ?? []) as SavedCopy[]).map((copy) => guidOf(copy.parentPropDefId))
+    )
+    expect(parents).toEqual([guidOf(boolean?.id), guidOf(boolean?.id)])
+    const instance = expectDefined(
+      new FigmaAPI(await open(bytes)).currentPage.findOne(
+        (node) => node.type === 'INSTANCE'
+      ) as FigmaInstanceNode | null,
+      'instance'
+    )
+    const key = Object.keys(instance.componentProperties).find((name) =>
+      name.startsWith('Show dot#')
+    )
+    expect(instance.componentProperties[key ?? '']?.value).toBe(false)
+  })
+
+  // The clipboard writes each copied layer in a call of its own; a set copied with an instance
+  // of it still gives the instance the copy its variant defines.
+  test('a copied instance names the copy its copied variant defines', async () => {
+    const graph = await dotSet()
+    const figma = new FigmaAPI(graph)
+    const set = expectDefined(
+      figma.currentPage.findOne((node) => node.type === 'COMPONENT_SET'),
+      'set'
+    )
+    const instance = expectDefined(
+      figma.currentPage.findOne((node) => node.type === 'INSTANCE'),
+      'instance'
+    )
+    const html = await buildFigmaClipboardHTML(
+      [set.id, instance.id].map((id) => expectDefined(graph.getNode(id), id)),
+      graph
+    )
+    const records = expectDefined(await parseFigmaClipboard(expectDefined(html, 'html')), 'parsed')
+      .nodes
+    const largeCopy = savedCopies(records)[1]?.copies['Show dot']
+    const written = expectDefined(
+      records.find((record) => record.type === 'INSTANCE'),
+      'instance record'
+    )
+    const [assignment] = (written.componentPropAssignments ?? []) as { defID?: GUID }[]
+    expect(guidOf(assignment?.defID)).toBe(largeCopy)
   })
 })
 
