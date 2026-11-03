@@ -19,28 +19,48 @@ export function strokeColorToCSS(stroke: Stroke | undefined): string | undefined
   return cssColor({ ...stroke.color, a: stroke.opacity })
 }
 
-function shadowToCSS(effect: Effect): string {
+/** A bound field's CSS: `var()` where its variable draws the value, else the literal. */
+export type EffectFieldCSS = (field: string, literal: string) => string
+
+const LITERAL: EffectFieldCSS = (_field, literal) => literal
+
+function shadowToCSS(effect: Effect, index: number, css: EffectFieldCSS): string {
   const inset = effect.type === 'INNER_SHADOW' ? 'inset ' : ''
-  return `${inset}${effect.offset.x}px ${effect.offset.y}px ${effect.radius}px ${effect.spread}px ${cssColor(effect.color)}`
+  const length = (property: string, value: number) =>
+    css(`effects/${index}/${property}`, `${value}px`)
+  return [
+    `${inset}${length('offsetX', effect.offset.x)}`,
+    length('offsetY', effect.offset.y),
+    length('radius', effect.radius),
+    length('spread', effect.spread),
+    css(`effects/${index}/color`, cssColor(effect.color))
+  ].join(' ')
 }
 
-export function dropShadowToCSS(effect: Effect | undefined): string | undefined {
+/** The first effect as a drop shadow, as a text's `text-shadow` writes it. */
+export function dropShadowToCSS(effect: Effect | undefined, css = LITERAL): string | undefined {
   if (effect?.type !== 'DROP_SHADOW' || !effect.visible) return undefined
-  return shadowToCSS(effect)
+  return shadowToCSS(effect, 0, css)
 }
 
-/** Every visible shadow, in order, plus layer and background blur. */
-export function effectsToCSS(effects: Effect[]): DesignStyleDeclaration {
+const isShadow = (effect: Effect) => effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
+
+/**
+ * Every visible shadow, in order, plus layer and background blur. `css` names the variable a
+ * bound field, such as `effects/0/radius`, draws from.
+ */
+export function effectsToCSS(effects: Effect[], css = LITERAL): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  const visible = effects.filter((effect) => effect.visible)
-  const shadows = visible.filter(
-    (effect) => effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
-  )
-  if (shadows.length > 0) style['box-shadow'] = shadows.map(shadowToCSS).join(', ')
-  for (const effect of visible) {
-    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
-      style.filter = `blur(${effect.radius}px)`
-    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = `blur(${effect.radius}px)`
+  const visible = [...effects.entries()].filter(([, effect]) => effect.visible)
+  const shadows = visible.filter(([, effect]) => isShadow(effect))
+  if (shadows.length > 0)
+    style['box-shadow'] = shadows
+      .map(([index, effect]) => shadowToCSS(effect, index, css))
+      .join(', ')
+  for (const [index, effect] of visible) {
+    const blur = () => `blur(${css(`effects/${index}/radius`, `${effect.radius}px`)})`
+    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') style.filter = blur()
+    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blur()
   }
   return style
 }
