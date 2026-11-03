@@ -1,0 +1,1 @@
+- HTML export writes the colour a variable-bound paint draws, and standalone pages define the tokens their layers use.

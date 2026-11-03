@@ -1,1 +1,1 @@
-- Scripts get a layer's CSS with `getCSSAsync()`, as Figma's Dev Mode shows it.
+- Scripts get a layer's CSS with `getCSSAsync()`, the CSS OpenPencil's HTML export writes for it.
