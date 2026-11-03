@@ -1,5 +1,5 @@
 import type { CloudDatabase } from '#cloud/server/db'
-import type { Kysely } from 'kysely'
+import type { Kysely, Transaction } from 'kysely'
 
 export type CollaborationRoomIdentity = {
   documentId: string
@@ -22,13 +22,34 @@ export type SavedRoom = {
  */
 export type CollaborationStateStore = {
   load(room: CollaborationRoomIdentity): Promise<SavedRoom>
-  /** Logs one update; fails when the sequence is already taken. */
+  /**
+   * Logs one update; fails when the sequence is already taken. Writes nothing once a restore moved
+   * the document past the room's epoch, since that room never opens again.
+   */
   append(room: CollaborationRoomIdentity, sequence: number, update: Uint8Array): Promise<void>
   /**
    * Replaces the snapshot with `state`, which holds every update through `sequence`, and drops
-   * those updates. Running it again with the same arguments changes nothing.
+   * those updates; running it again leaves the same room. Like `append`, it writes nothing for an
+   * epoch a restore replaced.
    */
   compact(room: CollaborationRoomIdentity, sequence: number, state: Uint8Array): Promise<void>
+}
+
+/**
+ * Whether the document is still at the room's epoch, holding its row so a restore, which advances
+ * the epoch and deletes the replaced rooms' rows, waits for this write or this write sees it.
+ */
+async function holdsEpoch(
+  transaction: Transaction<CloudDatabase>,
+  room: CollaborationRoomIdentity
+): Promise<boolean> {
+  const document = await transaction
+    .selectFrom('document')
+    .select('collaborationEpoch')
+    .where('id', '=', room.documentId)
+    .forShare()
+    .executeTakeFirst()
+  return document?.collaborationEpoch === room.roomEpoch
 }
 
 export function createCollaborationStateStore(
@@ -59,14 +80,23 @@ export function createCollaborationStateStore(
     },
 
     async append(room, sequence, update) {
-      await database
-        .insertInto('documentCollaborationUpdate')
-        .values({ documentId: room.documentId, roomEpoch: room.roomEpoch, sequence, data: update })
-        .execute()
+      await database.transaction().execute(async (transaction) => {
+        if (!(await holdsEpoch(transaction, room))) return
+        await transaction
+          .insertInto('documentCollaborationUpdate')
+          .values({
+            documentId: room.documentId,
+            roomEpoch: room.roomEpoch,
+            sequence,
+            data: update
+          })
+          .execute()
+      })
     },
 
     async compact(room, sequence, state) {
       await database.transaction().execute(async (transaction) => {
+        if (!(await holdsEpoch(transaction, room))) return
         await transaction
           .insertInto('documentCollaborationState')
           .values({

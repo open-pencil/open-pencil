@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { memoryStateStore } from '#cloud-tests/helpers/relay'
+import { memoryStateStore, until } from '#cloud-tests/helpers/relay'
 import { openRoomLog } from '#cloud/server/collaboration/relay/log'
 import type * as Y from 'yjs'
 
@@ -74,5 +74,62 @@ describe('room log', () => {
     expect((await openRoomLog(memory.store, room, limits)).document.getText('t').toString()).toBe(
       'ab'
     )
+  })
+
+  test('covers an append whose result is unknown, so the next append takes a fresh sequence', async () => {
+    const memory = memoryStateStore()
+    let lose = true
+    const { document, log } = await openLog({
+      ...memory.store,
+      // The row lands, but the answer is lost.
+      async append(identity, sequence, update) {
+        await memory.store.append(identity, sequence, update)
+        if (lose) {
+          lose = false
+          throw new Error('Connection reset')
+        }
+      }
+    })
+    type(document, 'a')
+    await expect(log.save(document)).rejects.toThrow('Connection reset')
+    type(document, 'b')
+    await log.save(document)
+    type(document, 'c')
+    await log.save(document)
+    const saved = await memory.store.load(room)
+    expect(saved.sequence).toBe(2)
+    expect(saved.updates).toHaveLength(1)
+    expect((await openRoomLog(memory.store, room, limits)).document.getText('t').toString()).toBe(
+      'abc'
+    )
+  })
+
+  test('runs one save at a time, so two never claim one sequence', async () => {
+    const memory = memoryStateStore()
+    let release: (() => void) | undefined
+    const sequences: number[] = []
+    const { document, log } = await openLog({
+      ...memory.store,
+      async append(identity, sequence, update) {
+        sequences.push(sequence)
+        if (sequence === 1) {
+          await new Promise<void>((resolve) => {
+            release = resolve
+          })
+        }
+        await memory.store.append(identity, sequence, update)
+      }
+    })
+    type(document, 'a')
+    const first = log.save(document)
+    await until(() => release !== undefined)
+    // An edit after the first save took its batch, saved while that one is still writing.
+    type(document, 'b')
+    const second = log.save(document)
+    await Bun.sleep(5)
+    expect(sequences).toEqual([1])
+    release?.()
+    await Promise.all([first, second])
+    expect(sequences).toEqual([1, 2])
   })
 })

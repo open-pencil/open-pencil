@@ -162,6 +162,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       return true
     } catch (error) {
       report('Saving a collaboration room failed:', error)
+      // The room holds edits the store doesn't have; save again without waiting for another edit.
+      // A closing room retries through `saveAndClose`.
+      if (!closing && rooms.get(room.id) === room) {
+        room.persistTimer ??= setTimeout(() => void persist(room), persistRetryMs)
+      }
       return false
     }
   }
