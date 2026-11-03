@@ -256,11 +256,22 @@ fn build_recent_files_submenu<R: tauri::Runtime>(
     builder.build()
 }
 
+fn schema_groups() -> serde_json::Result<Vec<MenuGroup>> {
+    serde_json::from_str(include_str!("../../generated/menu.json"))
+}
+
+/// Whether the schema has a check item `id`, shown or hidden.
+fn is_schema_check_item(entries: &[MenuEntry], id: &str) -> bool {
+    entries.iter().any(|entry| {
+        (entry.checkbox && entry.id.as_deref() == Some(id)) || is_schema_check_item(&entry.sub, id)
+    })
+}
+
 fn build_schema_menus<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     build: &MenuBuild,
 ) -> tauri::Result<Vec<Submenu<R>>> {
-    let groups: Vec<MenuGroup> = serde_json::from_str(include_str!("../../generated/menu.json"))?;
+    let groups = schema_groups()?;
     groups
         .iter()
         .filter(|group| {
@@ -349,6 +360,13 @@ pub fn set_native_menu_checked<R: tauri::Runtime>(
     id: String,
     checked: bool,
 ) -> Result<(), String> {
+    let groups = schema_groups().map_err(|error| error.to_string())?;
+    if !groups
+        .iter()
+        .any(|group| is_schema_check_item(&group.items, &id))
+    {
+        return Err(format!("Menu item is not a check item: {id}"));
+    }
     let state = tauri::Manager::state::<NativeMenuState>(&app);
     let mut inputs = state
         .0
@@ -356,12 +374,12 @@ pub fn set_native_menu_checked<R: tauri::Runtime>(
         .map_err(|_| "Menu state is unavailable".to_string())?;
     inputs.checked.insert(id.clone(), checked);
     let menu = editor_menu(&app).ok_or_else(|| "Application menu is unavailable".to_string())?;
-    // An item the menu hides now takes the state when it shows again.
     match find_menu_item(menu.items().map_err(|error| error.to_string())?, &id) {
         Some(MenuItemKind::Check(item)) => {
             item.set_checked(checked).map_err(|error| error.to_string())
         }
         Some(_) => Err(format!("Menu item is not checkable: {id}")),
+        // A check item the menu hides now takes the state when it shows again.
         None => Ok(()),
     }
 }
@@ -531,6 +549,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn knows_check_items_the_menu_hides() {
+        let groups = groups();
+        let has = |id: &str| {
+            groups
+                .iter()
+                .any(|group| is_schema_check_item(&group.items, id))
+        };
+        assert!(has("view-rulers"));
+        assert!(!has("view-rulerz"));
+        assert!(!has("new"));
+    }
+
+    #[test]
     fn keeps_check_states_of_hidden_items() {
         let set = HashMap::from([
             ("view-rulers".to_string(), false),
@@ -544,7 +575,7 @@ mod tests {
     }
 
     fn groups() -> Vec<MenuGroup> {
-        serde_json::from_str(include_str!("../../generated/menu.json")).expect("menu.json")
+        schema_groups().expect("menu.json")
     }
 
     fn shown(group: &MenuGroup, features: &[String]) -> Vec<String> {
