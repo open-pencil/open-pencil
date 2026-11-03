@@ -3,6 +3,7 @@ import * as v from 'valibot'
 
 import { PDF_MODES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
 import type { RasterExportFormat } from '#core/io/formats/raster'
+import type { SVGExportWarning } from '#core/io/formats/svg'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 const exportInputs = {
@@ -66,18 +67,47 @@ export function boundedRasterScale(
 
 export const exportSVG = defineTool({
   name: 'export_svg',
-  description: 'Export nodes as SVG markup. Returns the SVG string.',
+  description:
+    'Export nodes as SVG markup. If an effect cannot be represented faithfully, returns a warning and offers `skip_unsupported_effects: true` to omit only unsupported effects.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.strictObject({ ...exportInputs }),
+  input: v.strictObject({
+    ...exportInputs,
+    skip_unsupported_effects: v.optional(
+      v.pipe(
+        v.boolean(),
+        v.description(
+          'Omit effects SVG cannot represent (currently BACKGROUND_BLUR) and return warnings for them. When false, export_svg returns a warning and this option to retry.'
+        )
+      ),
+      false
+    )
+  }),
   execute: async (figma, args) => {
-    const { renderNodesToLaidOutSVG } = await import('#core/io/formats/svg/text/layout')
+    const [{ renderNodesToLaidOutSVG }, { SVGUnsupportedEffectError }] = await Promise.all([
+      import('#core/io/formats/svg/text/layout'),
+      import('#core/io/formats/svg')
+    ])
     const pageId = figma.currentPageId
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const svg = await renderNodesToLaidOutSVG(figma.graph, pageId, ids)
-    if (!svg) return { error: 'No visible nodes to export' }
-    return { svg }
+    const warnings: SVGExportWarning[] = []
+    try {
+      const svg = await renderNodesToLaidOutSVG(figma.graph, pageId, ids, {
+        skipUnsupportedEffects: args.skip_unsupported_effects,
+        onWarning: (warning) => warnings.push(warning)
+      })
+      if (!svg) return { error: 'No visible nodes to export' }
+      return { svg, ...(warnings.length > 0 ? { warnings } : {}) }
+    } catch (error) {
+      if (!(error instanceof SVGUnsupportedEffectError)) throw error
+      return {
+        warning: error.message,
+        unsupportedEffects: error.warnings,
+        canSkipUnsupportedEffects: true,
+        retryWith: { ids, skip_unsupported_effects: true }
+      }
+    }
   }
 })
 

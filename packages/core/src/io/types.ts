@@ -7,6 +7,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import type { IconProvider } from '#core/icons'
 
 import type { RasterExportFormat } from './formats/raster'
+import type { SVGExportWarning } from './formats/svg/defs'
 
 export type IOFormatRole = 'native-document' | 'interchange-document' | 'derived-export'
 
@@ -89,6 +90,8 @@ export interface RasterExportOptions {
 export interface SVGExportOptions {
   xmlDeclaration?: boolean
   colorSpace?: RenderColorSpace
+  skipUnsupportedEffects?: boolean
+  onWarning?: (warning: SVGExportWarning) => void
 }
 
 /** A file written next to an export's main file, at a path relative to it. */
@@ -103,6 +106,8 @@ export interface ExportResult {
   extension: string
   data: IOData
   encoding?: IOTextEncoding
+  /** Effects omitted by an export format that cannot represent them. */
+  warnings?: SVGExportWarning[]
   /** Extra files the main file refers to, such as external images and fonts. */
   assets?: ExportAsset[]
 }

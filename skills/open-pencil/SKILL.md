@@ -337,7 +337,7 @@ Discover available tools and their arguments from the connected server or browse
 - **`diff_visual`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.
 - **`batch_update`** — apply multiple node updates efficiently.
-- **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables.
+- **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables. `export_svg` reports effects it cannot represent; retry with `skip_unsupported_effects: true` only when omitting them is acceptable.
 - **`viewport_zoom_to_fit` / `viewport_set` / `viewport_get`** — move the user's view only when they ask to be shown something.
 - **`get_codegen_prompt`** — retrieve OpenPencil's current JSX/codegen guidance.
 - **`undo` / `redo`** — revert or reapply your newest change; they refuse to touch the user's edits.

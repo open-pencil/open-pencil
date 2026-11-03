@@ -17,6 +17,8 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import type { ExportTarget } from '#core/io'
+import { sceneGraphToDrawIO } from '#core/io/formats/drawio'
+import { SVGUnsupportedEffectError } from '#core/io/formats/svg'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -134,6 +136,166 @@ describe('saving a draw.io file', () => {
       sourcePoint: { x: 100, y: 100 },
       targetPoint: { x: 300, y: 100 }
     })
+  })
+
+  test('exports SVG pictures and reports omitted backdrop blur', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const star = graph.createNode('STAR', page.id, {
+      width: 40,
+      height: 40,
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          radius: 12,
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ]
+    })
+
+    const result = await io.exportContent('drawio', {
+      graph,
+      target: { scope: 'page', pageId: page.id }
+    })
+
+    expect(typeof result.data).toBe('string')
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: 'unsupported-effect',
+        effect: 'BACKGROUND_BLUR',
+        nodeId: star.id
+      })
+    ])
+  })
+
+  test('reports omitted backdrop blur on native draw.io shapes', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const rectangle = graph.createNode('RECTANGLE', page.id, {
+      width: 40,
+      height: 40,
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          radius: 12,
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ]
+    })
+
+    const result = await io.exportContent('drawio', {
+      graph,
+      target: { scope: 'page', pageId: page.id }
+    })
+
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: 'unsupported-effect',
+        effect: 'BACKGROUND_BLUR',
+        nodeId: rectangle.id
+      })
+    ])
+  })
+
+  test('requires explicit omission for direct draw.io conversion', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const rectangle = graph.createNode('RECTANGLE', page.id, {
+      width: 40,
+      height: 40,
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          radius: 12,
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ]
+    })
+
+    expect(() => sceneGraphToDrawIO(graph, { pageIds: [page.id] })).toThrow(
+      SVGUnsupportedEffectError
+    )
+
+    const warnings: Array<{ code: string; nodeId: string; effect: string }> = []
+    const result = sceneGraphToDrawIO(
+      graph,
+      { pageIds: [page.id] },
+      {
+        skipUnsupportedEffects: true,
+        onWarning: (warning) => warnings.push(warning)
+      }
+    )
+
+    expect(result.pages[0]?.cells).toHaveLength(1)
+    expect(warnings).toEqual([
+      expect.objectContaining({
+        code: 'unsupported-effect',
+        effect: 'BACKGROUND_BLUR',
+        nodeId: rectangle.id
+      })
+    ])
+  })
+
+  test('keeps hidden cells without reporting their unsupported effects', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const hiddenGroup = graph.createNode('GROUP', page.id, { visible: false })
+    const hiddenChild = graph.createNode('RECTANGLE', hiddenGroup.id, {
+      width: 40,
+      height: 40,
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          radius: 12,
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ]
+    })
+    const hiddenShape = graph.createNode('RECTANGLE', page.id, {
+      visible: false,
+      width: 40,
+      height: 40,
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          radius: 12,
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ]
+    })
+
+    const result = sceneGraphToDrawIO(graph, { pageIds: [page.id] })
+    expect(result.pages[0]?.cells).toHaveLength(3)
+    expect(result.pages[0]?.cells.map((cell) => [cell.id, cell.visible])).toEqual([
+      ['2', false],
+      ['3', true],
+      ['4', false]
+    ])
+
+    const warnings: Array<{ nodeId: string; effect: string }> = []
+    sceneGraphToDrawIO(
+      graph,
+      { pageIds: [page.id] },
+      { skipUnsupportedEffects: true, onWarning: (warning) => warnings.push(warning) }
+    )
+    expect(warnings).toEqual([])
+    expect(hiddenChild.visible).toBe(true)
+    expect(hiddenShape.visible).toBe(false)
   })
 
   test('turned rectangles, ellipses, and text keep their turn', async () => {
