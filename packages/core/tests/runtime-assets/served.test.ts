@@ -16,6 +16,7 @@ describe('runtime assets', () => {
     expect(servesRuntimeAsset(response(200, 'text/html; charset=utf-8'))).toBe(false)
     expect(servesRuntimeAsset(response(200, 'Text/HTML; charset=utf-8'))).toBe(false)
     expect(servesRuntimeAsset(response(404, 'text/plain'))).toBe(false)
+    expect(servesRuntimeAsset(response(204, 'font/ttf'))).toBe(false)
   })
 
   test('the message names the file, what answered, the plugin, and the locator', () => {
@@ -32,5 +33,8 @@ describe('runtime assets', () => {
     expect(
       unservedRuntimeAssetMessage('Inter.ttf', '/Inter.ttf', response(404, 'text/plain'), 'x')
     ).toContain('(it answered 404)')
+    expect(
+      unservedRuntimeAssetMessage('Inter.ttf', '/Inter.ttf', response(204, 'font/ttf'), 'x')
+    ).toContain('(it answered 204)')
   })
 })

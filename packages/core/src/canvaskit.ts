@@ -5,6 +5,9 @@ import { servesRuntimeAsset, unservedRuntimeAssetMessage } from './runtime-asset
 
 let instance: Promise<CanvasKit> | null = null
 
+/** How long a failed load waits to learn whether its binary was served before giving up. */
+const EXPLAIN_TIMEOUT_MS = 5000
+
 /**
  * Maps a CanvasKit file name (`canvaskit.wasm`) to the URL it loads from. Mirrors the font
  * manager's bundled-font locator: under Node the file is read beside the package, since
@@ -31,7 +34,8 @@ export function setCanvasKitLocator(locate: CanvasKitLocator): void {
  */
 async function explainFailedLoad(url: string, error: unknown): Promise<unknown> {
   try {
-    const response = await fetch(url)
+    // Bounded, so a stalled request leaves the load failed rather than pending for every caller.
+    const response = await fetch(url, { signal: AbortSignal.timeout(EXPLAIN_TIMEOUT_MS) })
     void response.body?.cancel()
     if (servesRuntimeAsset(response)) return error
     return new Error(

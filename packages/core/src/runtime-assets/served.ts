@@ -8,11 +8,19 @@
 const SETUP_HINT =
   "Add openPencil() from '@open-pencil/core/node/vite' to the Vite config, or serve the file and point Core at it with"
 
-/** Whether a response carries the file asked for, not an error or a fallback page. */
+/** `204 No Content`: `ok`, but with no file to read. */
+const NO_CONTENT = 204
+
+/** Whether the status carries a body: not an error, and not an empty answer. */
+function answeredWithBody(response: Response): boolean {
+  return response.ok && response.status !== NO_CONTENT
+}
+
+/** Whether a response carries the file asked for, not an error, an empty answer, or a fallback page. */
 export function servesRuntimeAsset(response: Response): boolean {
   // Media types are case-insensitive, and a header keeps the case the server wrote.
   const type = (response.headers.get('content-type') ?? '').toLowerCase()
-  return response.ok && !type.includes('text/html')
+  return answeredWithBody(response) && !type.includes('text/html')
 }
 
 /** What a host that does not serve one of Core's files is told, naming the locator to set. */
@@ -22,7 +30,7 @@ export function unservedRuntimeAssetMessage(
   response: Response,
   locator: string
 ): string {
-  const answer = response.ok
+  const answer = answeredWithBody(response)
     ? (response.headers.get('content-type') ?? 'no content type')
     : response.status
   return `${file} is not served at ${url} (it answered ${answer}). ${SETUP_HINT} ${locator}.`
