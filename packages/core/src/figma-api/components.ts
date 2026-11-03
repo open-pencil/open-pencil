@@ -14,7 +14,8 @@ import {
   createComponentPropertyId,
   exposedInstances,
   instanceExposureIssue,
-  resolveComponentPropertyValue
+  resolveComponentPropertyValue,
+  resolvedVariantDefinition
 } from '@open-pencil/scene-graph/components'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
@@ -167,8 +168,15 @@ function definitions(
 ): Record<string, FigmaComponentPropertyDefinition> {
   const node = raw(target, internals)
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return {}
+  const scene = graph(target, internals)
+  const resolved =
+    node.type === 'COMPONENT_SET'
+      ? node.componentPropertyDefinitions.map((item) =>
+          resolvedVariantDefinition(scene, node, item)
+        )
+      : node.componentPropertyDefinitions
   return Object.fromEntries(
-    node.componentPropertyDefinitions.map((definition) => [
+    resolved.map((definition) => [
       propertyName(definition),
       {
         type: definition.type,

@@ -597,6 +597,7 @@
   "behaviourDisabled": "無効",
   "behaviourOnValue": "オン",
   "behaviourOffValue": "オフ",
+  "behaviourValueField": "{value}：{side}",
   "behaviourTrack": "トラック",
   "behaviourThumb": "つまみ",
   "behaviourRange": "範囲",

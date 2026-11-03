@@ -228,6 +228,7 @@
   "cloudCreditsRenew": "{date} に更新",
   "manageCloudPlanAction": "プランを管理",
   "chatCloudUnavailable": "OpenPencil Cloud の AI を利用できません。OpenPencil Cloud にサインインし、設定でワークスペースを選んでください。",
+  "chatAgentNotInstalled": "コーディングエージェントがインストールされていません。設定でインストールしてから、もう一度お試しください。",
   "visionModelUnavailable": "画像を添付する前に、設定でビジョンモデルを選択してください。",
   "chatPiCompanionMissing": "Pi には Harness コンパニオンが必要です。ガイド付きセットアップを実行してインストールしてください。",
   "chatPiCompanionOutdated": "Harness コンパニオンがこのバージョンの OpenPencil と一致しません。ガイド付きセットアップを実行して更新してください。",

@@ -19,6 +19,22 @@ npm install --save-dev oxlint @open-pencil/oxlint-plugin
 
 The plugin is named `open-pencil`. Every rule is off until the configuration turns it on, so a project picks the ones it follows.
 
+## Recommended configuration
+
+`@open-pencil/oxlint-plugin/recommended` is the configuration OpenPencil's own repositories extend: Oxlint's `typescript`, `import`, `unicorn`, `promise`, and `node` plugins with the built-in rules they follow, and every rule below except `no-raw-sql` and `no-dynamic-html`, which fit only some code. Load the plugin beside it, since a configuration file cannot load a plugin for the one that extends it:
+
+```json
+{
+  "extends": ["./node_modules/@open-pencil/oxlint-plugin/recommended.json"],
+  "jsPlugins": ["@open-pencil/oxlint-plugin"],
+  "rules": {
+    "open-pencil/valibot-schema-conventions": ["error", { "schemaModules": ["/src/contract/"] }]
+  }
+}
+```
+
+An `extends` path resolves from the file that declares it, so a configuration in a nested workspace names the `node_modules` the package is installed in, such as `../../node_modules/@open-pencil/oxlint-plugin/recommended.json` when it is hoisted to the root. In `oxlint.config.ts`, import it instead, which resolves like any module, typed as `OxlintConfig`: `import recommended from '@open-pencil/oxlint-plugin/recommended'`, then `extends: [recommended]`. Some rules, such as `typescript/no-floating-promises`, run only with `oxlint --type-aware`. `max-lines` (600), `complexity` (20), and the `no-console` methods it allows are OpenPencil's choices; override any rule after `extends`.
+
 ## Rules
 
 ### Validation and data

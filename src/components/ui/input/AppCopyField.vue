@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { tv, type VariantProps } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/input/copy-field'
 
@@ -25,19 +24,18 @@ const {
   ui?: ComponentUI<typeof theme>
 }>()
 
-const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 const cls = computed(() => copyField({ look }))
 </script>
 
 <template>
   <div data-slot="copy-field" :data-look="look" :class="cls.root({ class: ui?.root })">
     <code :class="cls.value({ class: ui?.value })">{{ value }}</code>
-    <AppButton size="xs" :variant="look === 'plain' ? 'link' : 'ghost'" @click="copy(value)">
-      <template #leading>
-        <icon-lucide-check v-if="copied" class="size-3" />
-        <icon-lucide-copy v-else class="size-3" />
-      </template>
-      {{ copied ? copiedLabel : copyLabel }}
-    </AppButton>
+    <AppCopyButton
+      :value="value"
+      :label="copyLabel"
+      :copied-label="copiedLabel"
+      size="xs"
+      :variant="look === 'plain' ? 'link' : 'ghost'"
+    />
   </div>
 </template>

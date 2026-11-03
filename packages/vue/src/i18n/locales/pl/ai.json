@@ -228,6 +228,7 @@
   "cloudCreditsRenew": "Odnawia się {date}",
   "manageCloudPlanAction": "Zarządzaj planem",
   "chatCloudUnavailable": "AI OpenPencil Cloud jest niedostępne. Zaloguj się do OpenPencil Cloud i wybierz obszar roboczy w ustawieniach.",
+  "chatAgentNotInstalled": "Agent programistyczny nie jest zainstalowany. Zainstaluj go w Ustawieniach i spróbuj ponownie.",
   "visionModelUnavailable": "Przed dołączeniem obrazów wybierz model Vision w Ustawieniach.",
   "chatPiCompanionMissing": "Pi potrzebuje programu towarzyszącego Harness. Uruchom konfigurację z przewodnikiem, aby go zainstalować.",
   "chatPiCompanionOutdated": "Program towarzyszący Harness nie pasuje do tej wersji OpenPencil. Uruchom konfigurację z przewodnikiem, aby go zaktualizować.",

@@ -611,6 +611,7 @@
   "behaviourDisabled": "Отключено",
   "behaviourOnValue": "Вкл.",
   "behaviourOffValue": "Выкл.",
+  "behaviourValueField": "{value}: {side}",
   "behaviourTrack": "Дорожка",
   "behaviourThumb": "Бегунок",
   "behaviourRange": "Диапазон",

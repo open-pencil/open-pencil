@@ -75,6 +75,12 @@ jobs:
           bun run generate:icons --target desktop
           bun run generate:tauri-menu
           bun run build
+      - name: Upload source maps for error reports
+        env:
+          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+          POSTHOG_CLI_PROJECT_ID: "267806"
+          POSTHOG_CLI_HOST: https://eu.posthog.com
+        run: bun .pipeline/tools/release/release-packages/src/sourcemaps/publish.ts --archive
       - name: Prepare and validate npm tarballs
         run: |
           bun .pipeline/tools/release/release-packages/src/cli.ts prepare
@@ -94,6 +100,7 @@ jobs:
           path: |
             frontend.tar
             release-notes.md
+            OpenPencil_*_sourcemaps.tar.gz
           if-no-files-found: error
           compression-level: 0
       - uses: actions/upload-artifact@v7

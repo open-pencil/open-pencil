@@ -604,6 +604,7 @@
   "behaviourDisabled": "Désactivé",
   "behaviourOnValue": "Activé",
   "behaviourOffValue": "Désactivé",
+  "behaviourValueField": "{value}: {side}",
   "behaviourTrack": "Piste",
   "behaviourThumb": "Bouton",
   "behaviourRange": "Plage",

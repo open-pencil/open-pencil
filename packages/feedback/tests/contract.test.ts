@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { describeBuildFields, describePingFields, describeUsageEvents } from '#feedback/contract'
+import {
+  describeBuildFields,
+  describePingFields,
+  describeReportFields,
+  describeUsageEvents,
+  reportSchema
+} from '#feedback/contract'
 
 describe('contract descriptions', () => {
   test('describe every usage event and property, with the values each can take', () => {
@@ -45,5 +51,19 @@ describe('contract descriptions', () => {
       'app',
       'browser'
     ])
+  })
+
+  test('describe every report field besides the build', () => {
+    const build = new Set(describeBuildFields().map(({ name }) => name))
+    const fields = new Set(
+      reportSchema.options
+        .flatMap((option) => Object.keys(option.entries))
+        .filter((name) => !build.has(name))
+    )
+    const described = describeReportFields()
+
+    expect(new Set(described.map(({ name }) => name))).toEqual(fields)
+    expect(described.every(({ description }) => description !== '')).toBe(true)
+    expect(described.find(({ name }) => name === 'kind')?.values).toEqual(['error', 'problem'])
   })
 })

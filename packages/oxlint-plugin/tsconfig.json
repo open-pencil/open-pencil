@@ -11,12 +11,14 @@
     "declarationMap": true,
     "outDir": "./dist",
     "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
     "types": ["bun"],
     "paths": {
       "#oxlint-plugin/*": ["./src/*"],
       "#oxlint-plugin-tests/*": ["./tests/*"]
     }
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "recommended.d.json.ts"],
   "exclude": ["node_modules", "dist"]
 }

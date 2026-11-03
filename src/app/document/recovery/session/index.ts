@@ -69,15 +69,20 @@ export function sessionStates(
   return { live, crashed: new Set(started.filter((id) => !live.has(id))) }
 }
 
+/** The sessions whose windows hold their lock right now. */
+async function heldSessions(locks: SessionLocks): Promise<string[]> {
+  const { held = [] } = await locks.query()
+  return held.flatMap(({ name }) =>
+    name?.startsWith(SESSION_LOCK_PREFIX) ? [name.slice(SESSION_LOCK_PREFIX.length)] : []
+  )
+}
+
 export async function recoverySessionStates(
   locks = sessionLocks()
 ): Promise<RecoverySessionStates> {
   if (!locks) return sessionStates(startedSessionIds(), null)
   const before = startedSessionIds()
-  const { held = [] } = await locks.query()
-  const sessions = held.flatMap(({ name }) =>
-    name?.startsWith(SESSION_LOCK_PREFIX) ? [name.slice(SESSION_LOCK_PREFIX.length)] : []
-  )
+  const sessions = await heldSessions(locks)
   // Started both before and after the query: one that began or ended meanwhile is not a crash.
   const after = new Set(startedSessionIds())
   return sessionStates(

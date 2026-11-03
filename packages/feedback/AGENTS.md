@@ -1,6 +1,6 @@
 # Feedback service
 
-Cloudflare Worker for pings, opt-in usage stats, and the Cloud waitlist; overview and setup in `README.md`.
+Cloudflare Worker for pings, opt-in usage stats, error and problem reports, and the Cloud waitlist; overview and setup in `README.md`.
 
 - Every field the app may send is a closed Valibot list in `src/contract/schema.ts`, with its plain-language meaning in `src/contract/describe.ts`; the privacy page renders both. Add an event or property in both files and update `packages/docs/overview/privacy.md` prose if what is collected changes (`tests/contract.test.ts`).
 - The Worker never stores or forwards a client address: rate limits key on it in memory, PostHog requests are new requests from the Worker, and Turnstile is verified without `remoteip` (`tests/ingest.test.ts`). Pings count the sender's network only as Cloudflare's AS number and operator name (`tests/ping.test.ts`).
@@ -11,3 +11,4 @@ Cloudflare Worker for pings, opt-in usage stats, and the Cloud waitlist; overvie
 - Outside services (`fetch`, the clock) come through `FeedbackServices`, and bindings through `Env`, so tests run the real app against a local D1 under `bun test` (`tests/harness.ts`).
 - The metrics snapshot (`src/snapshot/`) keys every table on the UTC day it describes and replaces whole days in one D1 batch (`replaceDays`), so a rerun corrects a day and a failed write keeps the old rows; it writes the table it resumes from (`site_visits`) last, runs each source on its own, and parses every answer with Valibot before writing (`tests/snapshot.test.ts`). Issues and pull requests are the exception: `repo_items` mirrors each one by number and resumes from its newest update, and the admin API derives daily counts from it.
 - Everything under `/admin` passes `requireAccess` (`src/admin/access.ts`), which verifies Cloudflare Access's signed token against the team's keys and the application's audience even though Access already blocks others at the edge; admin answers are `private, no-store` and carry waitlist domains, never addresses (`tests/admin.test.ts`).
+- Reports (`src/reports/`) are forwarded to PostHog and never stored; only the files they declare are kept, in R2 under `reports/<id>/<name>` with fixed names such as `document.fig`, uploaded with an HS256 token bound to the report, each file's name, and its size, and deleted by retention after `REPORT_FILE_RETENTION_DAYS` (`tests/reports.test.ts`).

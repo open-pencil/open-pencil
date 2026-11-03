@@ -2,6 +2,7 @@ import { createHead } from '@unhead/vue/client'
 import { createApp, nextTick } from 'vue'
 
 import { ReadOnlyDocumentError } from '@open-pencil/core'
+import { diagnosticsMessages } from '@open-pencil/vue/i18n'
 import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 import './app.css'
@@ -10,8 +11,10 @@ import { installNativeFigArchives } from '@/app/document/io/native-fig'
 import { installCanvasKitBinary, preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
 import { preloadFonts } from '@/app/editor/fonts'
 import { installBundledFonts } from '@/app/editor/fonts/bundled'
+import { reportErrorAction } from '@/app/reports/state'
 import { observeBootErrors } from '@/app/shell/support/boot'
 import { reportBootFailure } from '@/app/shell/support/gate'
+import { toast } from '@/app/shell/ui'
 import { IS_TAURI } from '@/constants'
 
 import App from './App.vue'
@@ -46,6 +49,9 @@ export async function boot(): Promise<void> {
     if (error instanceof ReadOnlyDocumentError) return
     recordRuntimeError(error, 'vue', info)
     console.error(error)
+    // Official builds offer to report it; others keep it in the console and the diagnostics log.
+    const report = reportErrorAction(error, 'vue')
+    if (report) toast.error(diagnosticsMessages.get().reportUnexpectedError, report)
   }
 
   if (!IS_TAURI) {

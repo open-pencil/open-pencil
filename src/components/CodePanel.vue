@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useClipboard, useDebounceFn } from '@vueuse/core'
+import { useDebounceFn } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import {
   computed,
@@ -39,8 +39,8 @@ import { codeStyling } from '@/app/code/styling'
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import statusTheme from '@/theme/feedback/status'
@@ -55,8 +55,6 @@ const { active = true, initialSource = 'design-jsx' } = defineProps<{
 const store = useEditorStore()
 const editorActive = computed(() => active)
 const { code, common } = useI18n()
-const { copy, copied } = useClipboard({ copiedDuring: 2000 })
-const { copy: copyReference, copied: copiedReference } = useClipboard({ copiedDuring: 2000 })
 const source = ref<CodeSource>(initialSource)
 const draft = ref('')
 /** The person has written in the code since it was generated for the current selection. */
@@ -414,19 +412,16 @@ watch(
         :ui="{ root: 'shrink-0' }"
         @update:model-value="changeStyling"
       />
-      <Tip v-if="source === 'design-jsx'" :label="code.copyJSXReference">
-        <AppButton
-          color="neutral"
-          variant="ghost"
-          size="xs"
-          shape="square"
-          data-test-id="code-panel-copy-ref"
-          @click="copyReference(JSX_REFERENCE)"
-        >
-          <icon-lucide-check v-if="copiedReference" class="size-3 text-success" />
-          <icon-lucide-book-open v-else class="size-3" />
-        </AppButton>
-      </Tip>
+      <AppCopyButton
+        v-if="source === 'design-jsx'"
+        icon
+        :value="JSX_REFERENCE"
+        :label="code.copyJSXReference"
+        :copied-label="common.copied"
+        data-test-id="code-panel-copy-ref"
+      >
+        <template #icon><icon-lucide-book-open class="size-3" aria-hidden="true" /></template>
+      </AppCopyButton>
     </header>
 
     <AppPlaceholder
@@ -498,17 +493,13 @@ watch(
           <icon-lucide-rotate-ccw class="size-3" />
           {{ code.reset }}
         </AppButton>
-        <AppButton
-          color="neutral"
-          variant="ghost"
+        <AppCopyButton
+          :value="draft"
+          :label="common.copy"
+          :copied-label="common.copied"
           size="xs"
           data-test-id="code-panel-copy"
-          @click="copy(draft)"
-        >
-          <icon-lucide-check v-if="copied" class="size-3 text-success" />
-          <icon-lucide-copy v-else class="size-3" />
-          {{ copied ? common.copied : common.copy }}
-        </AppButton>
+        />
       </div>
     </footer>
   </div>

@@ -8,6 +8,7 @@ import {
 } from '#fig/node-change/plugin-data'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { ExportSetting } from '@open-pencil/scene-graph'
 import { clampExportScale } from '@open-pencil/scene-graph/export-scale'
 import {
   OPEN_PENCIL_PLUGIN_DATA,
@@ -80,6 +81,66 @@ describe('OpenPencil plugin data readers', () => {
         )
       ).toEqual([{ scale: 1, format: 'svg' }])
     }
+  })
+
+  test('native export settings keep Figma’s options, by name or by index', () => {
+    expect(
+      extractExportSettings({
+        exportSettings: [
+          {
+            imageType: 'PNG',
+            suffix: '@2x',
+            constraint: { type: 'CONTENT_WIDTH', value: 120 },
+            contentsOnly: false,
+            useAbsoluteBounds: true,
+            colorProfile: 'SRGB'
+          },
+          {
+            imageType: 2,
+            constraint: { type: 0, value: 3 },
+            svgOutlineText: false,
+            svgIDMode: 1,
+            svgForceStrokeMasks: true,
+            colorProfile: 0
+          },
+          { imageType: 'MP4' }
+        ]
+      })
+    ).toEqual([
+      {
+        scale: 1,
+        format: 'png',
+        suffix: '@2x',
+        size: { type: 'WIDTH', value: 120 },
+        contentsOnly: false,
+        useAbsoluteBounds: true,
+        colorProfile: 'SRGB'
+      },
+      {
+        scale: 3,
+        format: 'svg',
+        svgOutlineText: false,
+        svgIdAttribute: true,
+        svgSimplifyStroke: false
+      }
+    ])
+  })
+
+  test('export settings in plugin data keep Figma’s options', () => {
+    const settings: ExportSetting[] = [
+      {
+        scale: 1,
+        format: 'jpg',
+        suffix: '-small',
+        size: { type: 'HEIGHT', value: 40 },
+        colorProfile: 'DISPLAY_P3_V4'
+      }
+    ]
+    expect(
+      extractExportSettings(
+        withPluginValue(OPEN_PENCIL_PLUGIN_DATA.exportSettings.key, JSON.stringify(settings))
+      )
+    ).toEqual(settings)
   })
 
   test('library source defaults its optional fields and rejects a malformed identity', () => {

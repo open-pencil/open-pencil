@@ -48,33 +48,42 @@ export async function lintFiles(
         return sourcePath
       })
     )
-    const configPath = join(directory, 'oxlint.json')
-    await writeFile(
-      configPath,
-      JSON.stringify({ plugins: ['typescript'], jsPlugins: [PLUGIN], rules })
-    )
-    const child = Bun.spawn([OXLINT, '-c', configPath, '--format', 'json', ...sourcePaths], {
-      cwd: directory,
-      stdout: 'pipe',
-      stderr: 'pipe'
-    })
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
-      child.exited
-    ])
-    if (code !== 0 && code !== 1) throw new Error(`Oxlint exited ${code}: ${stderr}`)
-    const { diagnostics } = v.parse(resultSchema, stdout)
-    const parserFailure = diagnostics.find(
-      (item) => item.severity === 'error' && item.code === undefined
-    )
-    if (parserFailure) {
-      throw new Error(`Oxlint could not parse the fixture: ${parserFailure.message}`)
-    }
-    return diagnostics
+    return await lintWithConfig({ plugins: ['typescript'], rules }, directory, sourcePaths)
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
+}
+
+/**
+ * Run Oxlint over files with a configuration written into `directory`, adding this plugin from
+ * source.
+ */
+export async function lintWithConfig(
+  config: Record<string, unknown>,
+  directory: string,
+  files: string[]
+): Promise<Diagnostic[]> {
+  const configPath = join(directory, 'oxlint.json')
+  await writeFile(configPath, JSON.stringify({ ...config, jsPlugins: [PLUGIN] }))
+  const child = Bun.spawn([OXLINT, '-c', configPath, '--format', 'json', ...files], {
+    cwd: directory,
+    stdout: 'pipe',
+    stderr: 'pipe'
+  })
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited
+  ])
+  if (code !== 0 && code !== 1) throw new Error(`Oxlint exited ${code}: ${stderr}`)
+  const { diagnostics } = v.parse(resultSchema, stdout)
+  const parserFailure = diagnostics.find(
+    (item) => item.severity === 'error' && item.code === undefined
+  )
+  if (parserFailure) {
+    throw new Error(`Oxlint could not parse the fixture: ${parserFailure.message}`)
+  }
+  return diagnostics
 }
 
 export function ruleDiagnostics(diagnostics: Diagnostic[], rule: string): Diagnostic[] {

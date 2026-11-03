@@ -144,6 +144,91 @@ test('a switch inside a frame, named after its variant, toggles both ways in pre
   await editor.page.keyboard.press('Escape')
 })
 
+/**
+ * A slider component at 20 of 0 to 100 in steps of 10, its range a slot inside its track's
+ * slot, as Reka draws it and Figma keeps it, and an instance of it below.
+ */
+async function createSlider() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const graph = store.graph
+    const pageId = store.state.currentPageId
+    const solid = (r: number, g: number, b: number) => [
+      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+    ]
+    const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
+    const slider = graph.createNode('COMPONENT', pageId, {
+      name: 'Volume',
+      x: 120,
+      y: 120,
+      width: 200,
+      height: 20,
+      componentPropertyDefinitions: ['Track', 'Range', 'Thumb'].map((name) => ({
+        id: `${name.toLowerCase()}-slot`,
+        name,
+        type: 'SLOT' as const,
+        defaultValue: ''
+      }))
+    })
+    const track = graph.createNode('FRAME', slider.id, {
+      name: 'Track',
+      componentPropertyReferences: slot('track-slot'),
+      y: 8,
+      width: 200,
+      height: 4,
+      fills: solid(0.8, 0.8, 0.85)
+    })
+    graph.createNode('FRAME', track.id, {
+      name: 'Range',
+      componentPropertyReferences: slot('range-slot'),
+      width: 40,
+      height: 4,
+      fills: solid(0.2, 0.6, 1)
+    })
+    graph.createNode('FRAME', slider.id, {
+      name: 'Thumb',
+      componentPropertyReferences: slot('thumb-slot'),
+      x: 30,
+      width: 20,
+      height: 20,
+      cornerRadius: 10,
+      fills: solid(1, 1, 1)
+    })
+    store.setBehaviour(slider.id, {
+      kind: 'slider',
+      booleans: {},
+      texts: {},
+      numbers: { value: { min: 0, max: 100, step: 10, default: 20 } },
+      parts: { track: 'track-slot', range: 'range-slot', thumb: 'thumb-slot' }
+    })
+    const instance = graph.createInstance(slider.id, pageId, { x: 120, y: 260 })
+    if (!instance) throw new Error('Instance not created')
+    return instance.id
+  })
+}
+
+// In an instance the range is part of the track's content, and preview still has Reka place it.
+test('a slider instance in preview moves the range inside its track', async () => {
+  const instanceId = await createSlider()
+  await editor.canvas.waitForRender()
+  await startPreview()
+
+  const control = island(instanceId).getByRole('slider')
+  const range = island(instanceId).locator('[data-layer$="Range"]')
+  const width = async () => (await range.boundingBox())?.width ?? 0
+  await expect(control).toHaveAttribute('aria-valuenow', '20')
+  // A range that shows, so twice its width is a real change.
+  await expect.poll(width).toBeGreaterThan(0)
+  const before = await width()
+  await control.press('ArrowRight')
+  await control.press('ArrowRight')
+  await expect(control).toHaveAttribute('aria-valuenow', '40')
+  // Twice the value, twice the range: Reka places it, the design's width no longer stands.
+  await expect.poll(width).toBeCloseTo(before * 2, 0)
+  await editor.page.keyboard.press('Escape')
+})
+
 // Tabs as the shadcn/ui kit draws them: triggers are instances of a Tab set that draws
 // Selected On and Off and a disabled look.
 test('tabs whose triggers are Tab instances show the chosen one and skip a disabled one', async () => {

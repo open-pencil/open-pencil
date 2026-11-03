@@ -30,6 +30,11 @@
         "label": "Diagnostics…"
       },
       {
+        "id": "report-problem",
+        "label": "Report a Problem…",
+        "feature": "reports"
+      },
+      {
         "type": "separator"
       },
       {

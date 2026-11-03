@@ -604,6 +604,7 @@
   "behaviourDisabled": "Deaktiviert",
   "behaviourOnValue": "An",
   "behaviourOffValue": "Aus",
+  "behaviourValueField": "{value}: {side}",
   "behaviourTrack": "Spur",
   "behaviourThumb": "Regler",
   "behaviourRange": "Bereich",

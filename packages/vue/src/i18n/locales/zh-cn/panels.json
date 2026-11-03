@@ -597,6 +597,7 @@
   "behaviourDisabled": "已禁用",
   "behaviourOnValue": "开",
   "behaviourOffValue": "关",
+  "behaviourValueField": "{value}：{side}",
   "behaviourTrack": "轨道",
   "behaviourThumb": "滑块按钮",
   "behaviourRange": "范围",

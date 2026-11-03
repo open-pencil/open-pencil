@@ -604,6 +604,7 @@
   "behaviourDisabled": "Disattivato",
   "behaviourOnValue": "Acceso",
   "behaviourOffValue": "Spento",
+  "behaviourValueField": "{value}: {side}",
   "behaviourTrack": "Traccia",
   "behaviourThumb": "Cursore",
   "behaviourRange": "Intervallo",

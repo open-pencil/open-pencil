@@ -1,6 +1,6 @@
 /** ACP agents, direct AI providers, and the models each provider recommends. */
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli'
+export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'cursor' | 'grok-build'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -56,6 +56,22 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     args: ['--acp'],
     setupURL: 'https://geminicli.com/docs/get-started/installation/',
     installCommand: 'npm i -g @google/gemini-cli'
+  },
+  {
+    id: 'cursor',
+    name: 'Cursor',
+    // Cursor's installer links both `agent` and `cursor-agent`; other CLIs, such as Grok Build,
+    // install an `agent` of their own, so only `cursor-agent` is sure to be Cursor.
+    command: 'cursor-agent',
+    args: ['acp'],
+    setupURL: 'https://cursor.com/docs/cli/installation'
+  },
+  {
+    id: 'grok-build',
+    name: 'Grok Build',
+    command: 'grok',
+    args: ['agent', 'stdio'],
+    setupURL: 'https://docs.x.ai/build/overview'
   }
 ]
 

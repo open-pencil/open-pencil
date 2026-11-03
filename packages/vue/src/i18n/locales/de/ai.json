@@ -228,6 +228,7 @@
   "cloudCreditsRenew": "Erneuert sich am {date}",
   "manageCloudPlanAction": "Tarif verwalten",
   "chatCloudUnavailable": "OpenPencil-Cloud-KI ist nicht verfügbar. Melde dich bei OpenPencil Cloud an und wähle in den Einstellungen einen Arbeitsbereich.",
+  "chatAgentNotInstalled": "Der Coding-Agent ist nicht installiert. Installiere ihn in den Einstellungen und versuche es erneut.",
   "visionModelUnavailable": "Wähle in den Einstellungen ein Vision-Modell aus, bevor du Bilder anhängst.",
   "chatPiCompanionMissing": "Pi braucht den Harness-Begleiter. Starte die geführte Einrichtung, um ihn zu installieren.",
   "chatPiCompanionOutdated": "Der Harness-Begleiter passt nicht zu dieser OpenPencil-Version. Starte die geführte Einrichtung, um ihn zu aktualisieren.",
