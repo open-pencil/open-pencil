@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
 import {
@@ -156,6 +157,142 @@ function removeCopy(swap: Swap, copy: SceneNode): void {
   swap.graph.deleteNode(copy.id)
 }
 
+/** What one owner overrides on a copy: the override fields and the values the copy shows. */
+interface OwnedOverrides {
+  ownerId: string
+  fields: Map<string, unknown>
+  values: Partial<SceneNode>
+  bindings: Record<string, string | undefined>
+}
+
+/** Override fields that link a copy to its layer, which a new copy gets from its own layer. */
+const LINK_FIELDS: ReadonlySet<string> = new Set(['sourceComponentId', 'componentId'])
+
+/** Takes what the owners override on a copy off them, with the values the copy shows. */
+function takeOverrides(swap: Swap, copy: SceneNode): OwnedOverrides[] {
+  const taken: OwnedOverrides[] = []
+  for (const owner of swap.owners) {
+    const fields = owner.instanceOverrides.descendants.get(copy.id)
+    if (!fields) {
+      continue
+    }
+    changeOwner(swap, owner)
+    owner.instanceOverrides.descendants.delete(copy.id)
+    const kept = new Map([...fields].filter(([field]) => !LINK_FIELDS.has(field)))
+    const values: Partial<SceneNode> = {}
+    const bindings: Record<string, string | undefined> = {}
+    for (const field of kept.keys()) {
+      const binding = overriddenBindingField(field)
+      if (binding !== null) {
+        bindings[binding] = copy.boundVariables[binding]
+      } else if (field in copy && field !== 'boundVariables') {
+        Object.assign(values, { [field]: structuredClone(copy[field as keyof SceneNode]) })
+      }
+    }
+    if (kept.size > 0) {
+      taken.push({ ownerId: owner.id, fields: kept, values, bindings })
+    }
+  }
+  return taken
+}
+
+/** Gives a copy the overrides another copy of its layer had, for the owners still enclosing it. */
+function giveOverrides(swap: Swap, taken: readonly OwnedOverrides[], copy: SceneNode): void {
+  const values: Partial<SceneNode> = {}
+  const bound: Record<string, string> = { ...copy.boundVariables }
+  const unbound: string[] = []
+  for (const { ownerId, fields, values: shown, bindings } of taken) {
+    const owner = swap.owners.find((candidate) => candidate.id === ownerId)
+    if (!owner) {
+      continue
+    }
+    changeOwner(swap, owner)
+    owner.instanceOverrides.descendants.set(copy.id, new Map(fields))
+    Object.assign(values, structuredClone(shown))
+    for (const [field, variableId] of Object.entries(bindings)) {
+      if (variableId) bound[field] = variableId
+      else unbound.push(field)
+    }
+  }
+  const boundVariables = omit(bound, unbound)
+  if (!isEqual(boundVariables, copy.boundVariables)) {
+    values.boundVariables = boundVariables
+  }
+  if (Object.keys(values).length > 0) {
+    swap.graph.updateNode(copy.id, values)
+  }
+}
+
+/**
+ * Moves what the owners override on a copy onto the copy that replaces it: Figma keeps a
+ * layer's overrides when the new variant draws it as another type, as a rectangle's opacity
+ * stays on the ellipse of the same name (desktop 126).
+ */
+function carryOverrides(swap: Swap, from: SceneNode, to: SceneNode): void {
+  giveOverrides(swap, takeOverrides(swap, from), to)
+}
+
+/**
+ * Overrides on layers a switch removed, by switched instance and then by the component layer
+ * the copy showed. Figma brings them back when the instance switches to a variant that draws
+ * the layer again, though its saved records keep none of them while the layer is gone
+ * (desktop 126), so they live with the open document only.
+ */
+const removedOverridesByGraph = new WeakMap<
+  SceneGraph,
+  Map<string, Map<string, OwnedOverrides[]>>
+>()
+
+function removedOverrides(swap: Swap): Map<string, OwnedOverrides[]> {
+  let byInstance = removedOverridesByGraph.get(swap.graph)
+  if (!byInstance) {
+    byInstance = new Map()
+    removedOverridesByGraph.set(swap.graph, byInstance)
+  }
+  let byLayer = byInstance.get(swap.instance.id)
+  if (!byLayer) {
+    byLayer = new Map()
+    byInstance.set(swap.instance.id, byLayer)
+  }
+  return byLayer
+}
+
+/** Keeps what the owners override on a copy and its layers, before the switch removes it. */
+function keepRemovedOverrides(swap: Swap, copy: SceneNode): void {
+  const layer = sourceLayer(swap, copy)
+  const taken = takeOverrides(swap, copy)
+  // A layer removed with nothing overridden clears what an earlier removal kept for it.
+  if (layer && taken.length > 0) removedOverrides(swap).set(layer.id, taken)
+  else if (layer) removedOverridesByGraph.get(swap.graph)?.get(swap.instance.id)?.delete(layer.id)
+  for (const child of swap.graph.getChildren(copy.id)) {
+    keepRemovedOverrides(swap, child)
+  }
+}
+
+/** Gives a new copy and its layers the overrides kept when an earlier switch removed them. */
+function restoreRemovedOverrides(swap: Swap, copy: SceneNode, layer: SceneNode): void {
+  const kept = removedOverridesByGraph.get(swap.graph)?.get(swap.instance.id)
+  if (!kept?.size) {
+    return
+  }
+  const restore = (node: SceneNode, source: SceneNode | undefined) => {
+    const taken = source && kept.get(source.id)
+    if (taken) {
+      kept.delete(source.id)
+      giveOverrides(swap, taken, node)
+    }
+    for (const child of swap.graph.getChildren(node.id)) {
+      restore(child, sourceLayer(swap, child))
+    }
+  }
+  restore(copy, layer)
+}
+
+function removeStaleCopy(swap: Swap, copy: SceneNode): void {
+  keepRemovedOverrides(swap, copy)
+  removeCopy(swap, copy)
+}
+
 function isSwappedCopy(swap: Swap, copy: SceneNode): boolean {
   return swap.owners.some((owner) =>
     hasInstanceOverride(owner.instanceOverrides, owner.id, copy.id, 'componentId')
@@ -273,6 +410,7 @@ function cloneLayer(
   if (layer.childIds.length > 0) {
     cloneChildrenWithMapping(swap.graph, layer.id, clone.id)
   }
+  restoreRemovedOverrides(swap, clone, layer)
   return clone
 }
 
@@ -289,9 +427,11 @@ function followInside(swap: Swap, layer: SceneNode, copy: SceneNode): void {
 
 function matchCopies(swap: Swap, compParent: SceneNode, instParent: SceneNode) {
   const stale: SceneNode[] = []
+  /** Copies whose layer the new variant draws as another type, by that layer's index. */
+  const retyped = new Map<number, SceneNode>()
   const byLayer = copiesByLayer(swap, instParent, stale)
   const ordinals = new Map<string, number>()
-  const matched = compParent.childIds.map((layerId) => {
+  const matched = compParent.childIds.map((layerId, index) => {
     const layer = swap.graph.getNode(layerId)
     if (!layer) {
       return undefined
@@ -302,11 +442,11 @@ function matchCopies(swap: Swap, compParent: SceneNode, instParent: SceneNode) {
     if (!copy || copy.type === layer.type) {
       return copy
     }
-    stale.push(copy)
+    retyped.set(index, copy)
     return undefined
   })
   stale.push(...untakenCopies(byLayer))
-  return { matched, stale }
+  return { matched, stale, retyped }
 }
 
 function standsInOrderFor(swap: Swap, copy: SceneNode, layer: SceneNode, index: number): boolean {
@@ -353,9 +493,9 @@ function followLayers(swap: Swap, compParent: SceneNode, instParent: SceneNode):
     return
   }
   const { graph } = swap
-  const { matched, stale } = matchCopies(swap, compParent, instParent)
+  const { matched, stale, retyped } = matchCopies(swap, compParent, instParent)
   for (const copy of stale) {
-    removeCopy(swap, copy)
+    removeStaleCopy(swap, copy)
   }
   compParent.childIds.forEach((layerId, index) => {
     const layer = graph.getNode(layerId)
@@ -363,6 +503,11 @@ function followLayers(swap: Swap, compParent: SceneNode, instParent: SceneNode):
       return
     }
     const copy = matched[index] ?? cloneLayer(swap, compParent, instParent, layer)
+    const replaced = retyped.get(index)
+    if (replaced) {
+      carryOverrides(swap, replaced, copy)
+      removeCopy(swap, replaced)
+    }
     if (instParent.childIds[index] !== copy.id) {
       graph.insertChildAt(copy.id, instParent.id, index)
     }

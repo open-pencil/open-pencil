@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
+import { FigmaAPI, type FigmaInstanceNode } from '@open-pencil/core/figma-api'
 
 function must<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) {
@@ -140,6 +141,66 @@ test('redoing a switch brings back the layers it added, so later edits redo on t
   editor.undo.redo()
   expect(named('Icon').id).toBe(iconId)
   expect(named('Icon').opacity).toBe(0.4)
+})
+
+// Figma (desktop 126) brings back an override on a layer the other variant lacks when the
+// instance switches back, though its saved records drop it while the layer is gone.
+test('switching back brings back the overrides of a layer the other variant lacks', () => {
+  const { editor, chip, named } = withOwnLayers()
+  editor.updateNodeWithUndo(named('Badge').id, { opacity: 0.3 })
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  expect(chip.instanceOverrides.descendants.size).toBe(0)
+  editor.switchInstanceVariant(chip.id, 'Size', 'Small')
+  const badge = named('Badge')
+  expect(badge.opacity).toBe(0.3)
+  expect(chip.instanceOverrides.descendants.get(badge.id)?.has('opacity')).toBe(true)
+})
+
+test('a layer removed with nothing overridden does not bring back an older override', () => {
+  const { editor, chip, named } = withOwnLayers()
+  const badge = named('Badge')
+  editor.updateNodeWithUndo(badge.id, { opacity: 0.3 })
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  // Undo brings the layer back with its override, then a script resets it.
+  editor.undo.undo()
+  ;(new FigmaAPI(editor.graph).wrapNode(chip.id) as FigmaInstanceNode).resetOverrides()
+  expect(named('Badge').opacity).toBe(1)
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  editor.switchInstanceVariant(chip.id, 'Size', 'Small')
+  expect(named('Badge').opacity).toBe(1)
+})
+
+// Figma (desktop 126) keeps a rectangle's opacity on the ellipse of the same name.
+test('a layer the new variant draws as another type keeps its overrides', () => {
+  const editor = createEditor()
+  const { graph } = editor
+  const pageId = editor.state.currentPageId
+  const set = graph.createNode('COMPONENT_SET', pageId, {
+    name: 'Chip',
+    componentPropertyDefinitions: [
+      { id: 'prop:size', name: 'Size', type: 'VARIANT', defaultValue: 'Small' }
+    ]
+  })
+  for (const [size, type] of [
+    ['Small', 'RECTANGLE'],
+    ['Large', 'ELLIPSE']
+  ] as const) {
+    const component = graph.createNode('COMPONENT', set.id, {
+      name: `Size=${size}`,
+      componentPropertyValues: { Size: size }
+    })
+    graph.createNode(type, component.id, { name: 'Shape', width: 10, height: 10 })
+  }
+  const chip = must(graph.createInstance(must(graph.getChildren(set.id)[0]).id, pageId))
+  const shape = () => must(graph.getChildren(chip.id)[0])
+  editor.updateNodeWithUndo(shape().id, { opacity: 0.5 })
+  editor.switchInstanceVariant(chip.id, 'Size', 'Large')
+  expect(shape().type).toBe('ELLIPSE')
+  expect(shape().opacity).toBe(0.5)
+  expect(chip.instanceOverrides.descendants.get(shape().id)?.has('opacity')).toBe(true)
+  editor.undo.undo()
+  expect(shape().type).toBe('RECTANGLE')
+  expect(shape().opacity).toBe(0.5)
 })
 
 test('a switch lays out the auto layout around it, and undo puts the siblings back', () => {
