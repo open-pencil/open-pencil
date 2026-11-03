@@ -291,6 +291,8 @@ export const panelMessageDefaults = {
   behaviourDisabled: 'Disabled',
   behaviourOnValue: 'On',
   behaviourOffValue: 'Off',
+  /** A value's on or off variant field, such as "Checked: On". */
+  behaviourValueField: params('{value}: {side}'),
   behaviourTrack: 'Track',
   behaviourThumb: 'Thumb',
   behaviourRange: 'Range',
