@@ -2,7 +2,7 @@ import { filename } from 'pathe/utils'
 
 import {
   exportHTMLBundle,
-  sceneNodeToDesignDocument,
+  sceneNodesToDesignDocument,
   type DesignDocument
 } from '@open-pencil/dom-css/export'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -12,14 +12,9 @@ import { exportWebFontFaceAssets } from '#core/text/web-font/assets'
 
 import { vectorElement } from './vectors'
 
+/** The layers as one document, which keeps the tokens they reference for its stylesheet. */
 function designDocument(graph: SceneGraph, nodeIds: string[]): DesignDocument {
-  return {
-    type: 'document',
-    sourceGraph: graph,
-    children: nodeIds.flatMap(
-      (id) => sceneNodeToDesignDocument(graph, id, { vectorElement }).children
-    )
-  }
+  return sceneNodesToDesignDocument(graph, nodeIds, { vectorElement })
 }
 
 /** `card.html` keeps its external files in `card.assets/` next to it, whatever the path style. */
