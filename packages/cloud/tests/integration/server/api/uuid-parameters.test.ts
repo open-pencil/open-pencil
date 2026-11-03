@@ -33,7 +33,8 @@ const MALFORMED: [method: string, path: string][] = [
   ['POST', `/api/workspaces/${MISSING}/invitations/abc/resend`],
   ['POST', '/api/uploads/abc/commit'],
   ['POST', '/api/shares/abc/document'],
-  ['POST', '/api/invitations/abc/preview']
+  ['POST', '/api/invitations/abc/preview'],
+  ['POST', '/api/invitations/abc/accept']
 ]
 
 const notFoundSchema = v.object({ error: v.object({ code: v.literal('not_found') }) })
