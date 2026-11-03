@@ -190,6 +190,7 @@ ja:menu.exportSelectionAsPNG
 ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
+ja:menu.supportOpenPencil
 ja:menu.toggleUI
 ja:panels.behaviourAddVariants
 ja:panels.colorHintHsb
@@ -412,6 +413,7 @@ zh-cn:menu.exportSelectionAsPNG
 zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
+zh-cn:menu.supportOpenPencil
 zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb
 zh-cn:panels.colorHintHsl
@@ -605,6 +607,9 @@ ja:diagnostics.reportErrorDescription
 ja:diagnostics.reportPanic
 ja:diagnostics.reportProblemDescription
 ja:diagnostics.reportUnexpectedError
+ja:diagnostics.supportDescription
+ja:diagnostics.supportQuestionTitle
+ja:diagnostics.supportTitle
 zh-cn:ai.skillsDescription
 zh-cn:ai.notificationsHint
 zh-cn:ai.notificationsAllowHint
@@ -617,3 +622,6 @@ zh-cn:diagnostics.reportErrorDescription
 zh-cn:diagnostics.reportPanic
 zh-cn:diagnostics.reportProblemDescription
 zh-cn:diagnostics.reportUnexpectedError
+zh-cn:diagnostics.supportDescription
+zh-cn:diagnostics.supportQuestionTitle
+zh-cn:diagnostics.supportTitle

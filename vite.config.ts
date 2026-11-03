@@ -21,6 +21,7 @@ import {
 } from './vite/automation'
 import { bootSplashPlugin } from './vite/boot-splash'
 import { cloudSitePlugin } from './vite/cloud-site'
+import { donationDefine } from './vite/funding'
 import { aiIconCollection } from './vite/icons'
 import { inlineScriptPlugin } from './vite/inline-script'
 import { metricsBrandPlugin } from './vite/metrics'
@@ -51,6 +52,7 @@ export default defineConfig(async ({ command, mode }) => {
     define: {
       __OPENPENCIL_APP_VERSION__: JSON.stringify(packageJson.version),
       __OPENPENCIL_CLOUD_SITE__: JSON.stringify(cloudSite),
+      ...donationDefine(__dirname),
       __OPENPENCIL_OFFICIAL_CLOUD_URL__: JSON.stringify(
         env.VITE_OPENPENCIL_OFFICIAL_CLOUD_URL ?? null
       ),

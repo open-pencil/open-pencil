@@ -24,6 +24,7 @@ import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import { CloudHosts } from '@/components/cloud/integration'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
+import DonationPrompt from '@/components/donation/DonationPrompt.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
 import ReportDialogHost from '@/components/reports/ReportDialogHost.vue'
@@ -86,6 +87,7 @@ onMounted(() => {
       <PublishLibraryDialog />
       <LibraryUpdateReviewDialog />
       <UsageStatsPrompt />
+      <DonationPrompt />
       <ReportDialogHost />
       <AppToaster />
       <VoiceCallAudio />
