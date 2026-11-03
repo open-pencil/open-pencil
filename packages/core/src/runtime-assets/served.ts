@@ -10,7 +10,9 @@ const SETUP_HINT =
 
 /** Whether a response carries the file asked for, not an error or a fallback page. */
 export function servesRuntimeAsset(response: Response): boolean {
-  return response.ok && !(response.headers.get('content-type') ?? '').includes('text/html')
+  // Media types are case-insensitive, and a header keeps the case the server wrote.
+  const type = (response.headers.get('content-type') ?? '').toLowerCase()
+  return response.ok && !type.includes('text/html')
 }
 
 /** What a host that does not serve one of Core's files is told, naming the locator to set. */

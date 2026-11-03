@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'
 
 function response(status: number, contentType: string): Response {
   return new Response(status === 204 ? null : 'body', {
@@ -14,6 +14,7 @@ describe('runtime assets', () => {
     expect(servesRuntimeAsset(response(200, 'application/wasm'))).toBe(true)
     expect(servesRuntimeAsset(response(200, 'font/ttf'))).toBe(true)
     expect(servesRuntimeAsset(response(200, 'text/html; charset=utf-8'))).toBe(false)
+    expect(servesRuntimeAsset(response(200, 'Text/HTML; charset=utf-8'))).toBe(false)
     expect(servesRuntimeAsset(response(404, 'text/plain'))).toBe(false)
   })
 

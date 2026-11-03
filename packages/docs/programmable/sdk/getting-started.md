@@ -34,7 +34,7 @@ export default defineConfig({
 })
 ```
 
-The plugin adds a module to `index.html` that tells Core where the files are. An app that loads Core behind a gate of its own, or has no `index.html`, passes `openPencil({ inject: false })` and imports `virtual:open-pencil/assets` before Core loads anything.
+The plugin adds `@open-pencil/core/runtime-assets/install` to `index.html`, a module that imports each file as a Vite asset and tells Core where it is. An app that loads Core behind a gate of its own, or has no `index.html`, passes `openPencil({ inject: false })` and imports that module itself before Core loads anything.
 
 With another bundler, serve these files and point Core at them before the canvas mounts:
 

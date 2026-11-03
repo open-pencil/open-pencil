@@ -13,12 +13,17 @@
     "assets"
   ],
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/runtime-assets/install.ts",
+    "./dist/runtime-assets/install.js"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "imports": {
     "#core/*": "./src/*.ts",
-    "#core-tests/*": "./tests/*.ts"
+    "#core-tests/*": "./tests/*.ts",
+    "#core-assets/*.ttf": "./assets/*.ttf",
+    "#core-assets/*.woff2": "./assets/*.woff2"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -158,6 +163,12 @@
       "types": "./dist/canvaskit.d.ts",
       "import": "./dist/canvaskit.js",
       "default": "./dist/canvaskit.js"
+    },
+    "./runtime-assets/install": {
+      "bun": "./src/runtime-assets/install.ts",
+      "types": "./dist/runtime-assets/install.d.ts",
+      "import": "./dist/runtime-assets/install.js",
+      "default": "./dist/runtime-assets/install.js"
     },
     "./layout": {
       "types": "./dist/layout.d.ts",

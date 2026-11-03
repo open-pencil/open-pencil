@@ -4,7 +4,7 @@ import type { FontVariation } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
 import { IS_BROWSER } from '#core/constants'
-import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'
 
 import { fontTableView } from './variation'
 

@@ -27,6 +27,3 @@ declare module '*?script' {
   const source: string
   export default source
 }
-
-/** Points Core at the engine files the `openPencil()` Vite plugin serves (`@open-pencil/core/node/vite`). */
-declare module 'virtual:open-pencil/assets' {}

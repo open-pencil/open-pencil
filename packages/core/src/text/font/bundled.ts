@@ -1,5 +1,5 @@
 import { IS_BROWSER } from '#core/constants'
-import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'
 
 /** Inter's weights, each drawn from Inter's variable files at its named instance. */
 const INTER_WEIGHTS = [

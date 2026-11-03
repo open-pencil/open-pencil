@@ -23,6 +23,8 @@ With Vite, add the plugin that serves the engine's WebAssembly and fonts; other 
 
 ```ts
 // vite.config.ts
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 import { openPencil } from '@open-pencil/core/node/vite'
 
 export default defineConfig({ plugins: [vue(), openPencil()] })

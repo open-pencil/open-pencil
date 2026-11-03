@@ -1,6 +1,6 @@
-// Points Core at the CanvasKit binary, bundled fonts, and HarfBuzz subsetter that the openPencil()
-// Vite plugin serves; importing this module is what sets them, before anything loads.
-import 'virtual:open-pencil/assets'
+// Points Core at the CanvasKit binary, bundled fonts, and HarfBuzz subsetter Vite serves;
+// importing the module is what sets them, before anything loads.
+import '@open-pencil/core/runtime-assets/install'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 /**

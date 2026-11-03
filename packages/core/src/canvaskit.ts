@@ -1,7 +1,7 @@
 import CanvasKitInit, { type CanvasKit } from 'canvaskit-wasm/full'
 
 import { IS_BROWSER } from './constants'
-import { servesRuntimeAsset, unservedRuntimeAssetMessage } from './runtime-assets'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from './runtime-assets/served'
 
 let instance: Promise<CanvasKit> | null = null
 
