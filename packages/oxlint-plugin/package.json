@@ -16,6 +16,7 @@
   "files": [
     "dist",
     "src",
+    "recommended.json",
     "README.md"
   ],
   "type": "module",
@@ -32,6 +33,12 @@
       "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./recommended": {
+      "types": "./dist/recommended.d.ts",
+      "bun": "./src/recommended.ts",
+      "import": "./dist/recommended.js",
+      "default": "./dist/recommended.js"
     }
   },
   "publishConfig": {
