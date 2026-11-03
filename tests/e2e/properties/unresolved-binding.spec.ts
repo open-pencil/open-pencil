@@ -104,6 +104,7 @@ for (const theme of ['light', 'dark']) {
       await page.getByRole('option', { name: 'Tracking/Replacement' }).click()
       // A resolved number shows its value, so the unresolved pill is gone.
       await expect(field).toHaveAttribute('data-bound')
+      await expect(field).toContainText('6')
       await expect(field.locator('[data-slot="pill"]')).toHaveCount(0)
     })
   })

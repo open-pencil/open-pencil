@@ -68,6 +68,7 @@ test('collapsed equivalent corners preserve their shared token through expansion
   await toggle.click()
   for (const path of paths) {
     await expect(propertyField(page, path)).toHaveAttribute('data-bound')
+    await expect(propertyField(page, path)).toContainText('12')
   }
   expect(await readCorners()).toEqual(original)
   await toggle.click()
