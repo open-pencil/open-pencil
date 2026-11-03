@@ -53,6 +53,9 @@ describe('library definition capabilities', () => {
     expect(() => {
       proxy.strokeAlign = 'CENTER'
     }).toThrow(ReadOnlyLibraryDefinitionError)
+    expect(() => {
+      proxy.strokeTopWeight = 4
+    }).toThrow(ReadOnlyLibraryDefinitionError)
     expect(graph.getNode(component.id)?.name).toBe('Remote button')
     const instanceProxy = figma.getNodeById(instance.id)
     if (!instanceProxy) throw new Error('Expected instance proxy')

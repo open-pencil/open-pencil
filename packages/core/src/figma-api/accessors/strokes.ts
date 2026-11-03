@@ -33,6 +33,7 @@ function independentWeight(internals: NodeProxyInternals, field: IndependentWeig
       return raw(this, internals)[field]
     },
     set(this: ProxyThis, value: number) {
+      assertProxyEditable(this, internals)
       setIndependentStrokeWeight(graph(this, internals), nodeId(this, internals), field, value)
     }
   }
