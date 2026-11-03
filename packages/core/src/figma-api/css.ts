@@ -11,17 +11,18 @@ import { vectorElement } from '#core/io/formats/html/vectors'
  */
 export function installCSSAccessors(target: object, internals: NodeProxyInternals): void {
   Object.defineProperty(target, 'getCSSAsync', {
-    value(this: ProxyThis): Promise<Record<string, string>> {
+    // Async, so a removed node rejects rather than throwing before a promise exists.
+    async value(this: ProxyThis): Promise<Record<string, string>> {
       const scene = graph(this, internals)
       const node = raw(this, internals)
-      if (node.type === 'CANVAS' || node.id === scene.rootId) return Promise.resolve({})
+      if (node.type === 'CANVAS' || node.id === scene.rootId) return {}
       // A script's edits that nothing read yet are laid out first, as Figma lays them out.
       flushPendingLayout(scene)
       const element = sceneNodeToDesignDocument(scene, node.id, {
         vectorElement,
         shown: new Set([node.id])
       }).children.at(0)
-      return Promise.resolve(element?.type === 'element' ? { ...element.inlineStyle } : {})
+      return element?.type === 'element' ? { ...element.inlineStyle } : {}
     }
   })
 }

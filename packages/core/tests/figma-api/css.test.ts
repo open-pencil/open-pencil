@@ -67,6 +67,15 @@ describe('getCSSAsync', () => {
     expect((await rect.getCSSAsync())['background-color']).toBe('var(--color-brand-primary)')
   })
 
+  test('rejects for a removed layer rather than throwing', async () => {
+    const figma = createAPI()
+    const rect = figma.createRectangle()
+    rect.remove()
+    const css = rect.getCSSAsync()
+    expect(css).toBeInstanceOf(Promise)
+    await expect(css).rejects.toThrow()
+  })
+
   test('gives pages and the document none', async () => {
     const figma = createAPI()
     expect(await figma.currentPage.getCSSAsync()).toEqual({})

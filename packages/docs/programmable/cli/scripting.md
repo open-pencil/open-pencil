@@ -260,7 +260,7 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 
 ### CSS
 
-- `node.getCSSAsync()` resolves to the CSS OpenPencil's HTML export writes for a layer, as a record of property names and values: its size, auto layout and its place in its parent's, paints, borders, corner radius, effects, and for text its font. Bound variables are written as the custom properties of OpenPencil's token stylesheet, such as `var(--color-brand-primary)`. A hidden layer gives the CSS it would show, and pages and the document give `{}`. The values describe the same layer as Figma's Dev Mode, but are not written in its exact format
+- `node.getCSSAsync()` resolves to the CSS OpenPencil's HTML export writes for a layer, as a record of property names and values: its size, auto layout and its place in its parent's, its bottom solid fill as `background-color`, borders, corner radius, effects, and for text its font and colour. Like the HTML export, it leaves out gradient fills and fills stacked above the bottom one, and an image fill, which the export draws as an `<img>` element. Bound variables are written as the custom properties of OpenPencil's token stylesheet, such as `var(--color-brand-primary)`. A hidden layer gives the CSS it would show, and pages and the document give `{}`. The values describe the same layer as Figma's Dev Mode, but are not written in its exact format
 
 ### Properties
 
