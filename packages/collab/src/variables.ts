@@ -5,15 +5,14 @@ import type * as Y from 'yjs'
 import type { Variable, VariableCollection } from '@open-pencil/scene-graph'
 import { variableCollectionSchema, variableSchema } from '@open-pencil/scene-graph/variables'
 
-import type { EditorStore } from '@/app/editor/active-store'
-
+import type { CollabEditor } from './editor'
 import { changedIds, writeChanges, type YRecords } from './records'
 
 /** A variable's values are a map of their own by mode. */
 const BY_MODE = new Set(['valuesByMode'])
 
 type VariableSyncOptions = {
-  store: EditorStore
+  editor: CollabEditor
   ydoc: Y.Doc
   yvariables: YRecords
   ycollections: YRecords
@@ -46,8 +45,8 @@ function applyRecord<T extends object>(target: Map<string, T>, id: string, value
  * peers' edits are applied without one, and the layers bound to them are laid out again.
  * Which mode a collection shows is each viewer's own, and stays out of the room.
  */
-export function bindVariableSync({ store, ydoc, yvariables, ycollections }: VariableSyncOptions) {
-  const graph = () => store.graph
+export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: VariableSyncOptions) {
+  const graph = () => editor.graph
   // What the room holds as this peer last wrote or read it, so only what changed since is sent.
   let sentVariables = structuredClone(graph().variables)
   let sentCollections = structuredClone(graph().variableCollections)
@@ -133,7 +132,7 @@ export function bindVariableSync({ store, ydoc, yvariables, ycollections }: Vari
     for (const id of collections) {
       for (const variableId of variableCollections.get(id)?.variableIds ?? []) scope.add(variableId)
     }
-    store.refreshVariables({ variables: scope })
+    editor.refreshVariables({ variables: scope })
   }
 
   // This peer's own writes are already in its graph.
@@ -151,7 +150,7 @@ export function bindVariableSync({ store, ydoc, yvariables, ycollections }: Vari
 
   yvariables.observeDeep(onVariables)
   ycollections.observeDeep(onCollections)
-  const stopHistory = store.onEditorEvent('history:changed', send)
+  const stopHistory = editor.onEditorEvent('history:changed', send)
 
   return {
     share,

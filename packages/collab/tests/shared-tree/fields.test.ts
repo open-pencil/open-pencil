@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { claimRoot, readRoot } from '#collab/shared-tree/fields'
 import * as Y from 'yjs'
-
-import { claimRoot, readRoot } from '@/app/collab/shared-tree/fields'
 
 function meta(): Y.Map<unknown> {
   return new Y.Doc().getMap('meta')

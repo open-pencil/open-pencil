@@ -23,6 +23,7 @@ import { installVariableModeNodeProxyAccessors } from './accessors/variables'
 import { installVectorNodeProxyAccessors } from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
+import { installCSSAccessors } from './css'
 import { installDevStatusAccessors } from './dev-status'
 import { installExportAccessors } from './export/accessors'
 import type { ExportHost } from './export/render'
@@ -48,18 +49,29 @@ export const INTERNAL_ID = Symbol('id')
 export const INTERNAL_GRAPH = Symbol('graph')
 export const INTERNAL_API = Symbol('api')
 
+/** How a host loads pages as they are visited; see `FigmaAPIOptions`. */
+export interface PageHost {
+  load: (pageId: string) => Promise<void>
+  pageOfNode?: (nodeId: string) => Promise<string | null>
+}
+
 /**
  * How each API loads a page's layers, a host's hook kept off `figma`, which has only Figma's
- * members; see `FigmaAPIOptions.loadPage`. Without one every page is in memory.
+ * members. Without one every page is in memory.
  */
-const pageLoaders = new WeakMap<NodeProxyHost, (pageId: string) => Promise<void>>()
+const pageHosts = new WeakMap<NodeProxyHost, PageHost>()
 
-export function setPageLoader(api: NodeProxyHost, load: (pageId: string) => Promise<void>): void {
-  pageLoaders.set(api, load)
+export function setPageHost(api: NodeProxyHost, host: PageHost): void {
+  pageHosts.set(api, host)
 }
 
 export function loadPage(api: NodeProxyHost, pageId: string): Promise<void> {
-  return pageLoaders.get(api)?.(pageId) ?? Promise.resolve()
+  return pageHosts.get(api)?.load(pageId) ?? Promise.resolve()
+}
+
+/** The page holding a layer not loaded yet, which loading that page brings in. */
+export function pageOfNode(api: NodeProxyHost, nodeId: string): Promise<string | null> {
+  return pageHosts.get(api)?.pageOfNode?.(nodeId) ?? Promise.resolve(null)
 }
 
 export interface NodeProxyHost extends ExportHost {
@@ -105,6 +117,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     if (type) installInstanceOverrideAccessors(this, internals, type)
     if (type) installStyleReferenceAccessors(this, internals, type, id === graph.rootId, MIXED)
     if (type && id !== graph.rootId) installExportAccessors(this, internals)
+    installCSSAccessors(this, internals)
     if (type) installGeometryAccessors(this, internals, type)
     // Figma loads a page's layers on demand in dynamic-page mode and has `loadAsync` on pages
     // alone, as the editor loads a page's layers when it is first visited.

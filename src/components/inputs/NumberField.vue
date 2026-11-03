@@ -132,10 +132,7 @@ defineOptions({ inheritAttrs: false })
         actions.startScrub($event)
       "
     >
-      <span
-        v-if="editing || !slots.bound || rootAttrs['data-bound'] === undefined"
-        :class="styles.leading({ class: ui?.leading })"
-      >
+      <span :class="styles.leading({ class: ui?.leading })">
         <slot name="icon">
           <span v-if="icon" class="text-2xs leading-none">{{ icon }}</span>
         </slot>

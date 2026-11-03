@@ -3,6 +3,7 @@ import { isValid, toUint8Array } from 'js-base64'
 
 import {
   SceneGraph,
+  type Effect,
   type Fill,
   type ImageScaleMode,
   type SceneNode,
@@ -10,6 +11,7 @@ import {
 } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
+import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -38,6 +40,17 @@ const IMAGE_SOURCE_URL_KEY = 'image-source-url'
 
 export interface DesignDocumentToSceneGraphOptions {
   pageName?: string
+}
+
+/**
+ * CSS shadows as the layer's effects, each blurred as the browser blurs it: CSS blurs a shadow
+ * by half its blur length, which the canvas draws from the radius that gives that sigma.
+ */
+function cssShadows(value: string | undefined): Effect[] {
+  return parseCSSShadows(value).map((effect) => ({
+    ...effect,
+    radius: blurRadiusForSigma(effect.radius / 2)
+  }))
 }
 
 function textContent(node: DesignNode): string {
@@ -327,7 +340,7 @@ function applyElementStyle(
     setBorderWeights(node, style, strokes[0])
   }
 
-  const effects = parseCSSShadows(pickStyle(style, 'box-shadow'))
+  const effects = cssShadows(pickStyle(style, 'box-shadow'))
   if (effects.length > 0) node.effects = effects
 
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
@@ -367,7 +380,7 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
   if (opacity !== null) node.opacity = opacity
 
-  const effects = parseCSSShadows(pickStyle(style, 'text-shadow'))
+  const effects = cssShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
   const textAlign = pickStyle(style, 'text-align')?.toUpperCase()

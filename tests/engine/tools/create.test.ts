@@ -140,7 +140,7 @@ describe('render', () => {
     })) as ToolResult
     const textId = (card.children as string[])[0]
     const getNode = getTool('get_node')
-    const result = getNode.execute(figma, { id: textId, depth: 0 }) as ToolResult
+    const result = (await getNode.execute(figma, { id: textId, depth: 0 })) as ToolResult
 
     expect(result.characters).toBe('Hello')
     expect(result.fontFamily).toBe('Inter')

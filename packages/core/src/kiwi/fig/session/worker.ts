@@ -40,7 +40,9 @@ function populate(request: Extract<FigSessionRequest, { type: 'populate' }>): vo
 
 type ArchiveRequest = Extract<
   FigSessionRequest,
-  { type: 'original-archive' | 'archive-info' | 'component-pages' | 'patch-archive' }
+  {
+    type: 'original-archive' | 'archive-info' | 'component-pages' | 'record-pages' | 'patch-archive'
+  }
 >
 
 async function answerArchiveRequest(request: ArchiveRequest): Promise<void> {
@@ -55,6 +57,9 @@ async function answerArchiveRequest(request: ArchiveRequest): Promise<void> {
     } else if (request.type === 'component-pages') {
       const pageIds = archive.componentPages(request.componentIds)
       respond({ type: 'component-pages-result', requestId, pageIds })
+    } else if (request.type === 'record-pages') {
+      const pageIds = archive.recordPages(request.recordIds)
+      respond({ type: 'record-pages-result', requestId, pageIds })
     } else {
       const bytes = await archive.patch(request.patch, request.input)
       port?.postMessage({ type: 'patch-archive-result', requestId, bytes }, [bytes.buffer])
@@ -74,6 +79,7 @@ function handleRequest(request: FigSessionRequest): void {
       request.type === 'original-archive' ||
       request.type === 'archive-info' ||
       request.type === 'component-pages' ||
+      request.type === 'record-pages' ||
       request.type === 'patch-archive'
     ) {
       void answerArchiveRequest(request)

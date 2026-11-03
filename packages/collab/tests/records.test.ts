@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { writeRecord } from '#collab/records'
 import * as Y from 'yjs'
-
-import { writeRecord } from '@/app/collab/records'
 
 /** Two peers of one room, each with the record's map, and a way to exchange what they wrote. */
 function peers() {

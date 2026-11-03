@@ -18,8 +18,8 @@ import type { DocumentService } from '#cloud/server/documents/service'
 import { StorageQuotaExceededError } from '#cloud/server/quota'
 import {
   CLOUD_RATE_LIMITS,
-  createRouteRateLimiter,
-  routeParamResource
+  routeParamResource,
+  createResourceRateLimiter
 } from '#cloud/server/rate-limit'
 import {
   documentParams,
@@ -78,32 +78,32 @@ export function createDocumentRoutes(
   if (rateLimit) {
     router.use(
       '/workspaces/:workspaceId/documents',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.documentCreation,
-        (context) => context.req.method !== 'POST',
-        routeParamResource('workspaceId')
+        routeParamResource('workspaceId'),
+        (context) => context.req.method !== 'POST'
       )
     )
     router.use(
       '/documents/:documentId/images',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.uploadCreation,
-        (context) => context.req.method !== 'POST',
-        routeParamResource('documentId')
+        routeParamResource('documentId'),
+        (context) => context.req.method !== 'POST'
       )
     )
     router.use(
       '/documents/:documentId/uploads',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.uploadCreation,
-        (context) => context.req.method !== 'POST',
-        routeParamResource('documentId')
+        routeParamResource('documentId'),
+        (context) => context.req.method !== 'POST'
       )
     )
   }

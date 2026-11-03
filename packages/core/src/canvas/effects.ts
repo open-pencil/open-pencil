@@ -2,7 +2,6 @@ import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
 
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -26,15 +25,6 @@ export function createImageFilterCache(): ImageFilterCache {
 
 export function createMaskFilterCache(): MaskFilterCache {
   return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
-}
-
-/**
- * The Gaussian sigma that draws a Figma blur radius as Figma does. Measured on Figma 126 exports,
- * layer blur, both shadows, and background blur fall off as a Gaussian of 0.43 × radius; Figma's
- * SVG export writes radius / 2, which is wider (`packages/core/tests/canvas/blur.test.ts`).
- */
-export function blurSigma(radius: number): number {
-  return drawnBlurRadius(radius) * 0.43
 }
 
 export function getCachedDropShadow(

@@ -201,7 +201,7 @@ describe('Cloud workspace routes', () => {
     }
   })
 
-  test("counts a workspace's invitations and resends on one budget", async () => {
+  test("counts a workspace's invitations and resends on one budget, and caps the actor across workspaces", async () => {
     const { app, runtime } = await testApp(alice)
     try {
       const createWorkspace = async (slug: string) => {
@@ -217,6 +217,7 @@ describe('Cloud workspace routes', () => {
       }
       const first = await createWorkspace('first-team')
       const second = await createWorkspace('second-team')
+      const third = await createWorkspace('third-team')
       // Bodies the routes refuse still count: the budget is spent before the route answers.
       const invite = async (workspaceId: string) =>
         (
@@ -243,6 +244,13 @@ describe('Cloud workspace routes', () => {
       expect(await resend(first)).toBe(429)
       expect(await invite(first)).toBe(429)
       expect(await invite(second)).not.toBe(429)
+
+      // Spread over workspaces, each under its own budget, requests still meet the actor's.
+      const { actorLimit } = CLOUD_RATE_LIMITS.invitationMutation
+      for (let sent = limit + 1; sent < actorLimit; sent++) {
+        expect(await invite(second)).not.toBe(429)
+      }
+      expect(await invite(third)).toBe(429)
     } finally {
       await runtime.close()
     }

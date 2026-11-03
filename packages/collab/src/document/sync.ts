@@ -18,8 +18,7 @@ import {
   withPluginData
 } from '@open-pencil/scene-graph/plugin-data'
 
-import type { EditorStore } from '@/app/editor/active-store'
-
+import type { CollabEditor } from '../editor'
 import { changedIds, writeChanges, type YRecords } from '../records'
 import { readRoot, type YMeta } from '../shared-tree/fields'
 
@@ -113,8 +112,8 @@ function documentNodeData(pluginData: readonly PluginDataEntry[]): DocumentNodeD
 }
 
 /** What the document holds that the room shares outside its layers. */
-function readDocumentData(store: EditorStore): DocumentData {
-  const { graph } = store
+function readDocumentData(editor: CollabEditor): DocumentData {
+  const { graph } = editor
   return {
     ...documentNodeData(graph.getNode(graph.rootId)?.pluginData ?? []),
     libraries: structuredClone(graph.enabledLibraries),
@@ -167,18 +166,18 @@ const readThreadRecord = (value: unknown) => {
  * the libraries it uses; and its color space. A viewer receives these and sends none.
  */
 export function bindDocumentSync({
-  store,
+  editor,
   ydoc,
   data,
   meta
 }: {
-  store: EditorStore
+  editor: CollabEditor
   ydoc: Y.Doc
   data: YDocumentData
   meta: YMeta
 }) {
   // What the room holds as this peer last wrote or read it, so only what changed since is sent.
-  let sent = readDocumentData(store)
+  let sent = readDocumentData(editor)
   /** Set while the room's data is applied, so applying it is not sent back. */
   let receiving = false
   /** The root the room's document data was last taken in whole for. */
@@ -186,12 +185,12 @@ export function bindDocumentSync({
 
   function send() {
     // A joining tab's own document is not the room's until it follows the room.
-    if (receiving || store.state.hostRestrictions.readOnly || !holdsRoomRoot()) return
+    if (receiving || editor.isReadOnly() || !holdsRoomRoot()) return
     write()
   }
 
   function write() {
-    const next = readDocumentData(store)
+    const next = readDocumentData(editor)
     ydoc.transact(() => {
       writeChanges(data.entries, next.entries, sent.entries)
       writeChanges(data.threads, next.threads, sent.threads, { nested: BY_REPLY })
@@ -205,7 +204,7 @@ export function bindDocumentSync({
   /** Whether this tab shows the room's document, so its document node is the room's. */
   function holdsRoomRoot(): boolean {
     const rootId = readRoot(meta)
-    return rootId !== undefined && rootId === store.graph.rootId
+    return rootId !== undefined && rootId === editor.graph.rootId
   }
 
   /**
@@ -218,7 +217,7 @@ export function bindDocumentSync({
     libraries?: ReadonlySet<string>
     settings?: true
   }) {
-    const next = readDocumentData(store)
+    const next = readDocumentData(editor)
     if (!ids || ids.entries) takeRecords(data.entries, next.entries, readEntry, ids?.entries)
     if (!ids || ids.threads) takeRecords(data.threads, next.threads, readThreadRecord, ids?.threads)
     if (!ids || ids.libraries) {
@@ -244,7 +243,7 @@ export function bindDocumentSync({
    * peers' layers do, so a viewer, whose editor refuses edits, takes them too.
    */
   function apply(next: DocumentData) {
-    const { graph } = store
+    const { graph } = editor
     const root = graph.getNode(graph.rootId)
     const pluginData = pluginDataOf(next)
     if (root && !isEqual(root.pluginData, pluginData)) graph.updateNode(root.id, { pluginData })
@@ -254,7 +253,7 @@ export function bindDocumentSync({
     if (next.colorSpace !== undefined) graph.documentColorSpace = next.colorSpace
     const kind = next.kind !== undefined && next.kind !== graph.documentKind
     if (next.kind !== undefined) graph.documentKind = next.kind
-    if (libraries || colorSpace || kind) store.refreshDocumentSettings()
+    if (libraries || colorSpace || kind) editor.refreshDocumentSettings()
   }
 
   /**
@@ -262,8 +261,8 @@ export function bindDocumentSync({
    * holds what its people changed since the document was saved.
    */
   function follow() {
-    if (!holdsRoomRoot() || followedRoot === store.graph.rootId) return
-    followedRoot = store.graph.rootId
+    if (!holdsRoomRoot() || followedRoot === editor.graph.rootId) return
+    followedRoot = editor.graph.rootId
     receive()
   }
 
@@ -288,12 +287,12 @@ export function bindDocumentSync({
     observe('entries'),
     observe('threads'),
     observe('libraries'),
-    store.onEditorEvent('node:updated', (id, changes) => {
-      if (id === store.graph.rootId && 'pluginData' in changes) send()
+    editor.onEditorEvent('node:updated', (id, changes) => {
+      if (id === editor.graph.rootId && 'pluginData' in changes) send()
     }),
-    store.onEditorEvent('document:libraries-changed', send),
-    store.onEditorEvent('document:color-space-changed', send),
-    store.onEditorEvent('document:kind-changed', send)
+    editor.onEditorEvent('document:libraries-changed', send),
+    editor.onEditorEvent('document:color-space-changed', send),
+    editor.onEditorEvent('document:kind-changed', send)
   ]
   data.settings.observe(onSettings)
 
@@ -303,8 +302,8 @@ export function bindDocumentSync({
      * root, and the sharing tab is the room's source, so it has nothing to follow.
      */
     share() {
-      if (store.state.hostRestrictions.readOnly) return
-      followedRoot = store.graph.rootId
+      if (editor.isReadOnly()) return
+      followedRoot = editor.graph.rootId
       sent = {
         entries: new Map(),
         threads: new Map(),

@@ -4,35 +4,36 @@ import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
+import {
+  bindCollabGraphEvents,
+  bindDocumentSync,
+  bindVariableSync,
+  createYjsGraphSync,
+  readRoomName,
+  readRoot,
+  registerYjsObservers,
+  roomDocumentData,
+  trackRoomSaves,
+  TREE_FORMAT,
+  writeRoomName,
+  type RoomSaves,
+  type YNodes,
+  type YRecords
+} from '@open-pencil/collab'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { shareAgentPreviews } from '@/app/collab/agent-preview'
 import { buildRemotePeers } from '@/app/collab/awareness'
-import { bindDocumentSync, roomDocumentData } from '@/app/collab/document/sync'
+import { collabEditor, followRoomPages } from '@/app/collab/editor'
 import { useCollabIdentity } from '@/app/collab/identity'
 import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
-import type { YRecords } from '@/app/collab/records'
 import { connectCollabRoom } from '@/app/collab/room/connection'
-import { trackRoomSaves, type RoomSaves } from '@/app/collab/room/saves'
 import { deriveRoomStatus, type RoomStatus } from '@/app/collab/room/status'
-import {
-  readRoomName,
-  readRoot,
-  TREE_FORMAT,
-  writeRoomName,
-  type YNodes
-} from '@/app/collab/shared-tree/fields'
 import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { CollabAction } from '@/app/collab/transport/types'
 import type { RemotePeer } from '@/app/collab/types'
-import { bindVariableSync } from '@/app/collab/variables'
 import { attachRoomVoice, type RoomVoice } from '@/app/collab/voice/room'
-import {
-  bindCollabGraphEvents,
-  createYjsGraphSync,
-  registerYjsObservers
-} from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
 import { setPeers } from '@/app/presence/registry'
 import { ROOM_STATUS_TICK_MS, ROOM_UNREACHABLE_MS } from '@/constants'
@@ -160,7 +161,8 @@ export function openRoomSession({
     documentData.libraries,
     documentData.settings
   ])
-  const documentSync = bindDocumentSync({ store, ydoc, data: documentData, meta })
+  const editor = collabEditor(store)
+  const documentSync = bindDocumentSync({ editor, ydoc, data: documentData, meta })
   const adopt = (apply: () => void) => (holdsDocument ? store.adoptChanges(apply) : apply())
 
   const peers = shallowRef<RemotePeer[]>([])
@@ -193,14 +195,15 @@ export function openRoomSession({
   )
 
   const sync = createYjsGraphSync({
-    getStore: () => store,
+    getEditor: () => editor,
     getYdoc: () => (disposed ? null : ydoc),
     getYnodes: () => (disposed ? null : ynodes),
     getYimages: () => (disposed ? null : yimages),
     shareImage: roomImages ? (name, bytes) => roomImages.share(name, bytes) : undefined,
     setSuppressYjsEvents: (value) => {
       suppressYjsEvents = value
-    }
+    },
+    onApplied: followRoomPages(store)
   })
 
   function refreshDocument() {
@@ -240,7 +243,7 @@ export function openRoomSession({
   }
 
   const unregisterYjsObservers = registerYjsObservers({
-    store,
+    editor,
     ynodes,
     yimages,
     hasImageRef: roomImages ? (name) => roomImages.hasRef(name) : undefined,
@@ -298,9 +301,9 @@ export function openRoomSession({
   const stopAgentSync = publishLocalAgents(store, () => awareness, identity.color)
   const stopAgentPreviews = shareAgentPreviews(store, connection)
   const voice = attachRoomVoice({ awareness, peers, connection })
-  const variableSync = bindVariableSync({ store, ydoc, yvariables, ycollections })
+  const variableSync = bindVariableSync({ editor, ydoc, yvariables, ycollections })
   const unbindGraphEvents = bindCollabGraphEvents({
-    store,
+    editor,
     getYdoc: () => (disposed ? null : ydoc),
     getYnodes: () => (disposed ? null : ynodes),
     getSuppressGraphSync: () => suppressGraphSync,

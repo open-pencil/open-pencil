@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { trackRoomSaves } from '#collab/saves'
 import * as Y from 'yjs'
-
-import { trackRoomSaves } from '@/app/collab/room/saves'
 
 function peer() {
   const ydoc = new Y.Doc()
