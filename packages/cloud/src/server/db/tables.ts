@@ -236,10 +236,10 @@ export interface UserPictureTable {
 export interface DocumentCollaborationStateTable {
   documentId: string
   roomEpoch: number
-  state: Uint8Array
+  /** The stored file holding the room's snapshot. */
+  snapshotObjectId: string
   /** The last logged update the snapshot holds; later ones are in `documentCollaborationUpdate`. */
-  throughSequence: Generated<number>
-  version: Generated<number>
+  throughSequence: number
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
 }

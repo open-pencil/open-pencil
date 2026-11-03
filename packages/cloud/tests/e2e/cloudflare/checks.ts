@@ -201,7 +201,7 @@ try {
   await until(async () => {
     const saved = await database
       .selectFrom('documentCollaborationState')
-      .select('state')
+      .select('snapshotObjectId')
       .where('documentId', '=', documentId)
       .executeTakeFirst()
     return saved !== undefined
