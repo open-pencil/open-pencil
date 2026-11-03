@@ -207,10 +207,17 @@ function withBoundEffectValue(
   return effect
 }
 
+/** A bound effect length in an occurrence's coordinates, which are 1:1 outside instances. */
+function scaledLength(length: number | undefined, node: SceneNode): number | undefined {
+  return length === undefined ? undefined : length * node.componentScale
+}
+
 /**
  * The effects a node's effect bindings resolve to in its mode, when one differs from what the node
- * holds. Values stay as the variables give them, negative lengths included, as Figma keeps them;
- * drawing treats a negative blur as none.
+ * holds. Lengths stay as the variables give them, negative ones included, as Figma keeps them;
+ * drawing treats a negative blur as none. In an instance they take its scale against its
+ * component, whenever they were bound, as Figma scales them; a layer scaled outside an instance
+ * goes back to the variable's own value.
  */
 export function resolvedEffectBindings(
   graph: SceneGraph,
@@ -227,7 +234,7 @@ export function resolvedEffectBindings(
     const value =
       target.property === 'color'
         ? graph.resolveColorVariableForNode(node.id, variableId, fallback)
-        : graph.resolveNumberVariableForNode(node.id, variableId, fallback)
+        : scaledLength(graph.resolveNumberVariableForNode(node.id, variableId, fallback), node)
     if (value == null || (typeof value === 'number' && !Number.isFinite(value))) continue
     const next = withBoundEffectValue(effect, target.property, value)
     if (isEqual(next, effect)) continue

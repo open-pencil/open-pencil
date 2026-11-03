@@ -1,10 +1,6 @@
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
-import {
-  independentCornerChanges,
-  resolvedEffectBindings,
-  resolvedPaintBindings
-} from '@open-pencil/scene-graph/variables'
+import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
@@ -48,15 +44,13 @@ export function figmaStrokes(sceneGraph: SceneGraph, node: SceneNode): FigmaPain
 }
 
 /**
- * `node`'s effects as Figma's plugin API reads them, bound values resolved and carrying the
- * variables they are bound to.
+ * `node`'s effects as Figma's plugin API reads them, carrying the variables they are bound to.
+ * Bound values are read as the layer holds them, as bound sizes are: resolving bindings keeps them
+ * current, and a layer scaled outside an instance keeps its scaled values until then, as in Figma.
  */
-export function figmaEffects(sceneGraph: SceneGraph, node: SceneNode): FigmaEffect[] {
+export function figmaEffects(node: SceneNode): FigmaEffect[] {
   const bound = effectBindings(node)
-  const effects = bound.size
-    ? (resolvedEffectBindings(sceneGraph, node).effects ?? node.effects)
-    : node.effects
-  return effects.map((effect, index) => toFigmaEffect(effect, bound.get(index)))
+  return node.effects.map((effect, index) => toFigmaEffect(effect, bound.get(index)))
 }
 
 function setFills(
@@ -149,7 +143,7 @@ export function installVisualNodeProxyAccessors(
     },
     effects: {
       get(this: ProxyThis): readonly FigmaEffect[] {
-        return Object.freeze(figmaEffects(graph(this, internals), raw(this, internals)))
+        return Object.freeze(figmaEffects(raw(this, internals)))
       },
       set(this: ProxyThis, value: readonly FigmaEffect[]) {
         updateNode(this, internals, { effects: parseFigmaEffects(value) })

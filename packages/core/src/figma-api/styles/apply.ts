@@ -98,7 +98,7 @@ export function bindStyleEffects(
   if (kind !== 'effect' || !styleId) return
   const style = findSharedStyle(graph, styleId, 'EFFECT')
   if (!style) return
-  setEffectBindings(graph, node, figmaEffects(graph, style))
+  setEffectBindings(graph, node, figmaEffects(style))
 }
 
 /** Binds `node` to the variables the style it now uses binds, for each kind that binds any. */

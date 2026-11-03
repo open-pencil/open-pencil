@@ -187,4 +187,29 @@ describe('bound effects on a layer', () => {
       a: 0.6
     })
   })
+
+  test('scale with an instance, whenever bound, and not with a plain layer', () => {
+    const { api, collection, dark, radius } = elevation()
+    const shadow = api.variables.setBoundVariableForEffect(DROP, 'radius', radius)
+    const rect = api.createRectangle()
+    rect.effects = [shadow]
+    rect.rescale(2)
+    rect.setExplicitVariableModeForCollection(collection, dark)
+    expect(rect.effects[0].radius).toBe(24)
+
+    const component = api.createComponent()
+    const child = api.createRectangle()
+    component.appendChild(child)
+    child.effects = [shadow]
+    const instance = component.createInstance()
+    instance.rescale(2)
+    expect(instance.children[0].effects[0].radius).toBe(16)
+    instance.setExplicitVariableModeForCollection(collection, dark)
+    expect(instance.children[0].effects[0].radius).toBe(48)
+
+    const scaled = component.createInstance()
+    scaled.rescale(3)
+    scaled.effects = [shadow]
+    expect(scaled.effects[0].radius).toBe(24)
+  })
 })
