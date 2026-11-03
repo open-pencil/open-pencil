@@ -48,10 +48,12 @@ function configEnvironment(env: CloudflareCloudEnvironment): CloudEnvironment {
  */
 export function cloudflareCloudSetup(source: string) {
   let prepared: Promise<PreparedCloudflareCloud> | null = null
-  /** Kept once the config parses, so a later setup step that fails can still be reported. */
+  /** Set once an attempt's config parses, so its later setup steps that fail can be reported. */
   let reportError: CloudErrorReporter | undefined
   const prepare = (env: CloudflareCloudEnvironment): Promise<PreparedCloudflareCloud> => {
     prepared ??= (async () => {
+      // An attempt whose config fails to parse has no project to report to, not an earlier one's.
+      reportError = undefined
       const config = parseCloudDeploymentTOML(source, configEnvironment(env))
       reportError = createPostHogErrorReporter(config, 'cloudflare')
       return { config, aiSigningKey: await loadAISigningKey(config), reportError }
@@ -63,7 +65,7 @@ export function cloudflareCloudSetup(source: string) {
   }
   return {
     prepare,
-    /** The reporter of the last config that parsed, if it configures error tracking. */
+    /** The reporter of the latest attempt, once its config parsed, if it configures error tracking. */
     reporter: () => reportError
   }
 }

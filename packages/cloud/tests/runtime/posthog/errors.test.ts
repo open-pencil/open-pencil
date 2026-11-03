@@ -86,9 +86,10 @@ describe('PostHog error reporter', () => {
         }
       )
       await report?.(new Error('broken'), { source: 'cleanup' })
-      expect(logged.mock.calls.map(([message]) => message)).toContain(
-        '[Cloud] PostHog refused an error report:'
+      const refusal = logged.mock.calls.find(
+        ([message]) => message === '[Cloud] PostHog refused an error report:'
       )
+      expect(refusal?.[1]).toBeInstanceOf(Error)
     } finally {
       logged.mockRestore()
     }

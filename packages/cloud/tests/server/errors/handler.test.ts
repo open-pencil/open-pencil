@@ -6,6 +6,8 @@ import { HTTPException } from 'hono/http-exception'
 
 type Reported = { error: unknown; context: CloudErrorContext }
 
+const failure = new Error('database unavailable')
+
 function appReporting(reported: Reported[]) {
   return new Hono()
     .onError(
@@ -14,7 +16,7 @@ function appReporting(reported: Reported[]) {
       })
     )
     .get('/api/documents/:id', () => {
-      throw new Error('database unavailable')
+      throw failure
     })
     .get('/api/limited', () => {
       throw new HTTPException(429, { message: 'slow down' })
@@ -30,7 +32,7 @@ describe('Cloud error handler', () => {
       expect(response.status).toBe(500)
       expect(await response.text()).toBe('Internal Server Error')
       expect(reported).toHaveLength(1)
-      expect(reported[0]?.error).toBeInstanceOf(Error)
+      expect(reported[0]?.error).toBe(failure)
       expect(reported[0]?.context).toEqual({
         source: 'request',
         method: 'GET',

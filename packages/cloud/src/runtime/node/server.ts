@@ -45,12 +45,15 @@ function siteFiles(
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
   const { config, database } = await createMigratedNodeCloudDatabase(environment)
+  const reportError = createPostHogErrorReporter(config, 'node')
   // Before any worker starts, so a key that cannot sign leaves nothing running.
   const aiSigningKey = await loadAISigningKey(config).catch(async (error: unknown) => {
+    await reportCloudError(reportError, 'Loading the AI signing key failed:', error, {
+      source: 'setup'
+    })
     await database.destroy()
     throw error
   })
-  const reportError = createPostHogErrorReporter(config, 'node')
   const objects = createS3ObjectStore(config)
   const {
     email,

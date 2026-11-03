@@ -85,20 +85,23 @@ describe('Cloud server', () => {
 
   test('reports a site file it fails to read and answers 500', async () => {
     const logged = spyOn(console, 'error').mockImplementation(() => undefined)
-    const reported: CloudErrorContext[] = []
+    const reported: { error: unknown; context: CloudErrorContext }[] = []
+    const failure = new Error('assets unavailable')
     try {
       const failing = createCloudServer(api, {
         site: async () => {
-          throw new Error('assets unavailable')
+          throw failure
         },
         indexingPolicy: 'deny',
-        reportError: async (_error, context) => {
-          reported.push(context)
+        reportError: async (error, context) => {
+          reported.push({ error, context })
         }
       })
       const response = await failing.request(new Request('https://cloud.example/favicon.svg'))
       expect(response.status).toBe(500)
-      expect(reported).toEqual([{ source: 'request', method: 'GET', route: '/*' }])
+      expect(reported).toEqual([
+        { error: failure, context: { source: 'request', method: 'GET', route: '/*' } }
+      ])
     } finally {
       logged.mockRestore()
     }

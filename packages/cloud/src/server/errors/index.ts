@@ -9,7 +9,8 @@ export const CLOUD_ERROR_SOURCES = [
   'cleanup',
   'email',
   'relay',
-  'scheduled'
+  'scheduled',
+  'setup'
 ] as const
 export type CloudErrorSource = (typeof CLOUD_ERROR_SOURCES)[number]
 
