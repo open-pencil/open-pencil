@@ -1,5 +1,3 @@
-import type { Editor } from '@open-pencil/core'
-import { vectorChangesFromPagePath } from '@open-pencil/core/vector'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import { slotScope } from '@open-pencil/scene-graph/slots'
@@ -8,46 +6,49 @@ import {
   vectorNetworksEqual
 } from '@open-pencil/scene-graph/vector-network'
 
-import { getLiveNetwork } from './network'
-import type { VectorEditState } from './types'
+import type { EditorContext } from '#core/editor/types'
+import { vectorChangesFromPagePath } from '#core/vector'
 
-// Always read editor.graph at call time: opening a file swaps the graph
+import { getLiveNetwork } from './network'
+import type { VectorEditActionDeps } from './types'
+
+// Always read ctx.graph at call time: opening a file swaps the graph
 // instance (editor.replaceGraph), so a captured reference goes stale.
 //
 // Edit-state geometry lives in page-absolute space, mapped through the node's
 // full world matrix so nested, rotated, and flipped nodes edit correctly.
-export function createVectorEditLifecycle(editor: Editor, state: VectorEditState) {
+export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEditActionDeps) {
   function getNodeEditState() {
-    return state.nodeEditState
+    return ctx.state.nodeEditState
   }
 
   // A path whose layer is gone, by undo, a script, or another document, has nothing to edit.
   const close = () => {
-    state.nodeEditState = null
-    state.snapGuides = []
-    editor.requestRender()
+    ctx.state.nodeEditState = null
+    ctx.state.snapGuides = []
+    ctx.requestRender()
   }
-  editor.onEditorEvent('node:deleted', (id) => {
-    if (state.nodeEditState?.nodeId === id) close()
+  ctx.onEditorEvent('node:deleted', (id) => {
+    if (ctx.state.nodeEditState?.nodeId === id) close()
   })
-  editor.onEditorEvent('graph:replaced', () => {
-    if (state.nodeEditState) close()
+  ctx.onEditorEvent('graph:replaced', () => {
+    if (ctx.state.nodeEditState) close()
   })
 
-  function commitNodeEditChanges(es: NonNullable<typeof state.nodeEditState>) {
-    const node = editor.graph.getNode(es.nodeId)
+  function commitNodeEditChanges(es: NonNullable<typeof ctx.state.nodeEditState>) {
+    const node = ctx.graph.getNode(es.nodeId)
     if (node?.type !== 'VECTOR') return
 
     // Session geometry only changes through explicit edits, so an exact
     // comparison detects a no-op session — skip it to keep undo clean.
     if (vectorNetworksEqual(getLiveNetwork(es), es.origAbsNetwork)) return
 
-    const changes = vectorChangesFromPagePath(editor.graph, node, getLiveNetwork(es))
+    const changes = vectorChangesFromPagePath(ctx.graph, node, getLiveNetwork(es))
     if (!changes) return
-    editor.updateNodeWithUndo(node.id, changes, 'Edit vector')
-    const committed = editor.graph.getNode(es.nodeId)
+    actions.updateNodeWithUndo(node.id, changes, 'Edit vector')
+    const committed = ctx.graph.getNode(es.nodeId)
     if (committed?.type === 'VECTOR' && committed.vectorNetwork) {
-      const committedWorld = getWorldMatrix(committed, editor.graph)
+      const committedWorld = getWorldMatrix(committed, ctx.graph)
       es.origNetwork = cloneVectorNetwork(committed.vectorNetwork)
       es.origBounds = {
         x: committed.x,
@@ -59,20 +60,20 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
         transformVectorNetwork(committedWorld, committed.vectorNetwork)
       )
     }
-    editor.requestRender()
+    ctx.requestRender()
   }
 
   function enterNodeEditMode(nodeId: string) {
-    const node = editor.graph.getNode(nodeId)
+    const node = ctx.graph.getNode(nodeId)
     if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
     // A vector inside an instance draws its component's path, so Figma does not open it.
-    if (node.parentId && slotScope(editor.graph, node.parentId).kind === 'locked') return
+    if (node.parentId && slotScope(ctx.graph, node.parentId).kind === 'locked') return
 
-    const world = getWorldMatrix(node, editor.graph)
+    const world = getWorldMatrix(node, ctx.graph)
     const absNetwork = transformVectorNetwork(world, node.vectorNetwork)
 
-    state.snapGuides = []
-    state.nodeEditState = {
+    ctx.state.snapGuides = []
+    ctx.state.nodeEditState = {
       nodeId,
       origNetwork: cloneVectorNetwork(node.vectorNetwork),
       origBounds: { x: node.x, y: node.y, width: node.width, height: node.height },
@@ -91,37 +92,37 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
       selectedRegions: new Set()
     }
 
-    editor.select([nodeId])
-    editor.requestRender()
+    actions.select([nodeId])
+    ctx.requestRender()
   }
 
   function exitNodeEditMode(commit: boolean) {
     const es = getNodeEditState()
     if (!es) return
-    state.snapGuides = []
-    editor.requestRender()
+    ctx.state.snapGuides = []
+    ctx.requestRender()
 
-    const node = editor.graph.getNode(es.nodeId)
+    const node = ctx.graph.getNode(es.nodeId)
     if (node?.type !== 'VECTOR') {
-      state.nodeEditState = null
-      editor.requestRender()
+      ctx.state.nodeEditState = null
+      ctx.requestRender()
       return
     }
 
     if (commit) {
       commitNodeEditChanges(es)
     } else {
-      editor.graph.updateNode(es.nodeId, {
+      ctx.graph.updateNode(es.nodeId, {
         x: es.origBounds.x,
         y: es.origBounds.y,
         width: es.origBounds.width,
         height: es.origBounds.height,
         vectorNetwork: cloneVectorNetwork(es.origNetwork)
       })
-      editor.requestRender()
+      ctx.requestRender()
     }
 
-    state.nodeEditState = null
+    ctx.state.nodeEditState = null
   }
 
   return { getNodeEditState, commitNodeEditChanges, enterNodeEditMode, exitNodeEditMode }

@@ -76,6 +76,7 @@ import type {
 } from './types'
 import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
+import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
 import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
@@ -346,10 +347,16 @@ export function createEditor(options?: EditorOptions) {
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
   /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
   const readsOnly = () => !resolveEditorProfile(state).edits
+  const vectorEdit = createVectorEditActions(ctx, {
+    updateNodeWithUndo: nodes.updateNodeWithUndo,
+    select: selection.select,
+    deleteSelected: clipboard.deleteSelected
+  })
   const readOnly = createReadOnlyActions(ctx, () => {
     nodes.flushNudge()
     nodes.cancelNodePreviews()
     if (state.editingTextId) text.commitTextEdit()
+    vectorEdit.exitNodeEditMode(true)
     shapes.penCancel()
     shapes.pencilCancel()
     state.gradientEdit = null
@@ -484,6 +491,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Shapes & tools
     ...shapes,
+
+    // Vector edit mode: a path edited point by point
+    ...vectorEdit,
 
     // Structure (group, reorder, reparent, z-order)
     ...structure,

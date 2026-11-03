@@ -1,6 +1,7 @@
-import type { Editor } from '@open-pencil/core'
-import { findAllHandles, findOppositeHandle, mirrorHandle } from '@open-pencil/core/vector'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+
+import type { EditorContext } from '#core/editor/types'
+import { findAllHandles, findOppositeHandle, mirrorHandle } from '#core/vector'
 
 import { constrainContinuousTangent } from './handles'
 import { pushNodeEditHistory } from './history'
@@ -9,7 +10,10 @@ import type { NodeEditState } from './types'
 
 type GetNodeEditState = () => NodeEditState | null
 
-export function createVectorEditHandleActions(editor: Editor, getNodeEditState: GetNodeEditState) {
+export function createVectorEditHandleActions(
+  ctx: EditorContext,
+  getNodeEditState: GetNodeEditState
+) {
   function nodeEditSetHandle(
     segmentIndex: number,
     tangentField: 'tangentStart' | 'tangentEnd',
@@ -55,22 +59,22 @@ export function createVectorEditHandleActions(editor: Editor, getNodeEditState: 
     const mode = vertex.handleMirroring ?? 'NONE'
     if (lockDirection && mode === 'NONE') {
       seg[tangentField] = { x: newTangent.x, y: newTangent.y }
-      editor.requestRepaint()
+      ctx.requestRepaint()
       return
     }
     if (breakMirroring) {
       vertex.handleMirroring = 'NONE'
-      editor.requestRepaint()
+      ctx.requestRepaint()
       return
     }
     if (mode === 'NONE') {
-      editor.requestRepaint()
+      ctx.requestRepaint()
       return
     }
 
     const opposite = findOppositeHandle(live, vertexIndex, segmentIndex)
     if (!opposite) {
-      editor.requestRepaint()
+      ctx.requestRepaint()
       return
     }
 
@@ -82,7 +86,7 @@ export function createVectorEditHandleActions(editor: Editor, getNodeEditState: 
     if (mirrored) {
       oppositeSeg[opposite.tangentField] = mirrored
     }
-    editor.requestRepaint()
+    ctx.requestRepaint()
   }
 
   function nodeEditBendHandle(
@@ -122,7 +126,7 @@ export function createVectorEditHandleActions(editor: Editor, getNodeEditState: 
     }
 
     es.vertices[vertexIndex].handleMirroring = independent ? 'NONE' : 'ANGLE_AND_LENGTH'
-    editor.requestRepaint()
+    ctx.requestRepaint()
   }
 
   function nodeEditZeroVertexHandles(vertexIndex: number) {
@@ -135,7 +139,7 @@ export function createVectorEditHandleActions(editor: Editor, getNodeEditState: 
       es.segments[h.segmentIndex][h.tangentField] = { x: 0, y: 0 }
     }
     es.vertices[vertexIndex].handleMirroring = 'NONE'
-    editor.requestRepaint()
+    ctx.requestRepaint()
   }
 
   return { nodeEditSetHandle, nodeEditBendHandle, nodeEditZeroVertexHandles }

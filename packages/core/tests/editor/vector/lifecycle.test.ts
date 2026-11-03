@@ -3,10 +3,7 @@ import { expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 
-import { createVectorEditLifecycle } from '@/app/editor/vector/lifecycle'
-import type { VectorEditState } from '@/app/editor/vector/types'
-
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '#core-tests/helpers/assert'
 
 const TRIANGLE: VectorNetwork = {
   vertices: [
@@ -34,13 +31,12 @@ test('opens a vector in a component but not its copy in an instance, as Figma do
   })
   const instance = expectDefined(graph.createInstance(component.id, pageId))
   const copy = expectDefined(graph.getChildren(instance.id)[0])
-  const state = { nodeEditState: null } as VectorEditState
-  const lifecycle = createVectorEditLifecycle(createEditor({ graph }), state)
+  const editor = createEditor({ graph })
 
-  lifecycle.enterNodeEditMode(copy.id)
-  expect(state.nodeEditState).toBeNull()
-  lifecycle.enterNodeEditMode(vector.id)
-  expect(state.nodeEditState?.nodeId).toBe(vector.id)
+  editor.enterNodeEditMode(copy.id)
+  expect(editor.state.nodeEditState).toBeNull()
+  editor.enterNodeEditMode(vector.id)
+  expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
 })
 
 test('closes the path when its layer is deleted or the document is replaced', () => {
@@ -53,18 +49,16 @@ test('closes the path when its layer is deleted or the document is replaced', ()
       vectorNetwork: TRIANGLE
     })
   const vector = open(graph)
-  const state = { nodeEditState: null } as VectorEditState
   const editor = createEditor({ graph })
-  const lifecycle = createVectorEditLifecycle(editor, state)
 
-  lifecycle.enterNodeEditMode(vector.id)
+  editor.enterNodeEditMode(vector.id)
   graph.deleteNode(graph.createNode('RECTANGLE', pageId).id)
-  expect(state.nodeEditState?.nodeId).toBe(vector.id)
+  expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
   graph.deleteNode(vector.id)
-  expect(state.nodeEditState).toBeNull()
+  expect(editor.state.nodeEditState).toBeNull()
 
   const next = new SceneGraph()
-  lifecycle.enterNodeEditMode(open(graph).id)
+  editor.enterNodeEditMode(open(graph).id)
   editor.replaceGraph(next)
-  expect(state.nodeEditState).toBeNull()
+  expect(editor.state.nodeEditState).toBeNull()
 })

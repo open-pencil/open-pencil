@@ -1,9 +1,10 @@
-import type { Editor } from '@open-pencil/core'
-import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@open-pencil/core/vector'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 
+import type { EditorContext } from '#core/editor/types'
+import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '#core/vector'
+
 import { pushNodeEditHistory } from './history'
-import type { NodeEditState, VectorEditState } from './types'
+import type { NodeEditState } from './types'
 
 export function setNodeEditNetwork(es: NodeEditState, network: VectorNetwork) {
   es.vertices = network.vertices.map((v) => ({ ...v }))
@@ -34,8 +35,7 @@ export function getLiveNetwork(es: NodeEditState): VectorNetwork {
 }
 
 export function createVectorEditNetworkActions(
-  editor: Editor,
-  state: VectorEditState,
+  ctx: EditorContext,
   getNodeEditState: () => NodeEditState | null
 ) {
   const nodeEditHitThreshold = 8
@@ -69,7 +69,7 @@ export function createVectorEditNetworkActions(
     es.selectedSegmentIndices = new Set()
     es.selectedRegions = new Set()
     es.selectedHandles = new Set()
-    editor.requestRender()
+    ctx.requestRender()
   }
 
   /** Splits the segment under a canvas point; false when no segment is near enough. */
@@ -77,7 +77,7 @@ export function createVectorEditNetworkActions(
     const es = getNodeEditState()
     if (!es) return false
     const live = getLiveNetwork(es)
-    const nearest = nearestPointOnNetwork(cx, cy, live, nodeEditHitThreshold / state.zoom)
+    const nearest = nearestPointOnNetwork(cx, cy, live, nodeEditHitThreshold / ctx.state.zoom)
     if (!nearest) return false
     pushNodeEditHistory(es)
     const split = splitSegmentAt(live, nearest.segmentIndex, nearest.t)
@@ -86,7 +86,7 @@ export function createVectorEditNetworkActions(
     es.selectedSegmentIndices = new Set()
     es.selectedRegions = new Set()
     es.selectedHandles = new Set()
-    editor.requestRender()
+    ctx.requestRender()
     return true
   }
 
@@ -102,7 +102,7 @@ export function createVectorEditNetworkActions(
     es.selectedSegmentIndices = new Set()
     es.selectedRegions = new Set()
     es.selectedHandles = new Set()
-    editor.requestRender()
+    ctx.requestRender()
   }
 
   return { nodeEditConnectEndpoints, nodeEditAddVertex, nodeEditRemoveVertex }

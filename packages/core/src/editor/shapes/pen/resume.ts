@@ -1,14 +1,16 @@
-import type { EditorState, ResumedPath } from '@open-pencil/core'
 import type {
   SceneNode,
   VectorNetwork,
   VectorSegment,
   VectorVertex
 } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
-export type PenState = EditorState
+import type { EditorContext, EditorState, ResumedPath } from '#core/editor/types'
+
 type PenStateInit = NonNullable<EditorState['penState']>
 
 export interface PenChain {
@@ -98,4 +100,36 @@ export function chainEndingAt(network: VectorNetwork, end: number): PenChain {
     }),
     path: { network, vertices, segments }
   }
+}
+
+// Pen state is page-absolute; resumed geometry maps through the node's world matrix so nested,
+// rotated, and flipped vectors resume in place. The layer stays in the document while its path
+// grows, and committing updates it.
+export function createPenResumeActions(ctx: EditorContext) {
+  /** Continues `nodeId`'s path with the pen, on the chain `pick` takes from its page-space network. */
+  function resumeOn(nodeId: string, pick: (network: VectorNetwork) => PenChain) {
+    const node = ctx.graph.getNode(nodeId)
+    if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
+
+    const absNetwork = transformVectorNetwork(getWorldMatrix(node, ctx.graph), node.vectorNetwork)
+    ctx.state.penState = createResumedPenState(node, pick(absNetwork))
+    ctx.setSelectedIds(new Set())
+    ctx.setActiveTool('PEN')
+    ctx.requestRender()
+  }
+
+  function penResumeOnPath(nodeId: string) {
+    resumeOn(nodeId, wholeChain)
+  }
+
+  function penResumeFromEndpoint(nodeId: string, endpointVertexIndex: number) {
+    resumeOn(nodeId, (network) => chainEndingAt(network, endpointVertexIndex))
+  }
+
+  /** Starts a new piece of `nodeId`'s path at a page point, as a pen click off the path does in Figma. */
+  function penStartPiece(nodeId: string, point: Vector) {
+    resumeOn(nodeId, (network) => newPieceAt(network, point))
+  }
+
+  return { penResumeOnPath, penResumeFromEndpoint, penStartPiece }
 }

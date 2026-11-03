@@ -3,9 +3,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 
-import { createPenActions } from '@/app/editor/pen'
-
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '#core-tests/helpers/assert'
 
 const STRAIGHT = { tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
 
@@ -36,7 +34,7 @@ function setup() {
     height: 80,
     vectorNetwork: structuredClone(T)
   })
-  return { pen: createPenActions(editor, editor.state), id: vector.id }
+  return { pen: editor, id: vector.id }
 }
 
 const points = (network: VectorNetwork | null | undefined) =>

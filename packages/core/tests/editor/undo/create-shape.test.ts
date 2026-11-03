@@ -85,4 +85,19 @@ describe('pen path undo/redo', () => {
     expect(restored.strokes).toEqual(drawn.strokes)
     expect(restored.fills).toEqual(drawn.fills)
   })
+
+  test('another tool keeps the path drawn so far; the hand pans while drawing', () => {
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(100, 0)
+
+    editor.setTool('HAND')
+    expect(editor.state.penState?.vertices).toHaveLength(2)
+
+    editor.setTool('RECTANGLE')
+    expect(editor.state.penState).toBeNull()
+    const id = [...editor.state.selectedIds][0]
+    expect(getNodeOrThrow(editor.graph, id).vectorNetwork?.segments).toHaveLength(1)
+  })
 })

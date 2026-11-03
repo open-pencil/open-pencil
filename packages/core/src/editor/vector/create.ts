@@ -1,30 +1,31 @@
-import type { Editor } from '@open-pencil/core'
+import type { EditorContext } from '#core/editor/types'
 
 import { createVectorEditHandleActions } from './handle-actions'
 import { createVectorEditHistoryActions } from './history'
 import { createVectorEditLifecycle } from './lifecycle'
 import { createVectorEditNetworkActions, getLiveNetwork, setNodeEditNetwork } from './network'
 import { createVectorEditSelectionActions } from './selection'
-import type { VectorEditState } from './types'
+import type { VectorEditActionDeps } from './types'
 
-export function createVectorEditActions(editor: Editor, state: VectorEditState) {
+/**
+ * Vector edit mode: a VECTOR layer's path edited point by point, with its own undo history,
+ * committed to the document as one undo step when the session ends.
+ */
+export function createVectorEditActions(ctx: EditorContext, actions: VectorEditActionDeps) {
   const { getNodeEditState, commitNodeEditChanges, enterNodeEditMode, exitNodeEditMode } =
-    createVectorEditLifecycle(editor, state)
+    createVectorEditLifecycle(ctx, actions)
   const {
     nodeEditSelectVertex,
     nodeEditAlignVertices,
     nodeEditDeleteSelected,
     nodeEditBreakAtVertex
-  } = createVectorEditSelectionActions(editor, state, exitNodeEditMode)
+  } = createVectorEditSelectionActions(ctx, actions, exitNodeEditMode)
 
   const { nodeEditSetHandle, nodeEditBendHandle, nodeEditZeroVertexHandles } =
-    createVectorEditHandleActions(editor, getNodeEditState)
-  const { nodeEditPushHistory, nodeEditUndo, nodeEditRedo } = createVectorEditHistoryActions(
-    editor,
-    state
-  )
+    createVectorEditHandleActions(ctx, getNodeEditState)
+  const { nodeEditPushHistory, nodeEditUndo, nodeEditRedo } = createVectorEditHistoryActions(ctx)
   const { nodeEditConnectEndpoints, nodeEditAddVertex, nodeEditRemoveVertex } =
-    createVectorEditNetworkActions(editor, state, getNodeEditState)
+    createVectorEditNetworkActions(ctx, getNodeEditState)
 
   function cancelNodeEditDrag() {
     const editState = getNodeEditState()
@@ -33,7 +34,7 @@ export function createVectorEditActions(editor: Editor, state: VectorEditState) 
     if (!previous) return
     setNodeEditNetwork(editState, previous)
     editState.history.pop()
-    editor.requestRender()
+    ctx.requestRender()
   }
 
   return {

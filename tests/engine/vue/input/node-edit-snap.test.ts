@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { DEFAULT_SNAPPING_PREFERENCES, createEditor } from '@open-pencil/core'
+import { DEFAULT_SNAPPING_PREFERENCES, createEditor, type Editor } from '@open-pencil/core'
 
 import type { DragEditNode } from '#vue/shared/input/types'
 import { applyNodeEditSnap } from '#vue/shared/input/vector/snap'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 function createDrag(startX: number, startY: number): DragEditNode {
   return {
@@ -12,6 +14,13 @@ function createDrag(startX: number, startY: number): DragEditNode {
     startY,
     origPositions: new Map([[0, { x: startX, y: startY }]])
   }
+}
+
+/** Opens a vector's path with its first point selected, as pressing that point does. */
+function editFirstVertex(editor: Editor, nodeId: string) {
+  editor.enterNodeEditMode(nodeId)
+  editor.nodeEditSelectVertex(0, false)
+  return expectDefined(editor.getNodeEditState(), 'nodeEditState')
 }
 
 describe('vector edit snapping', () => {
@@ -35,16 +44,7 @@ describe('vector edit snapping', () => {
       width: 100,
       height: 100
     })
-    const editState = {
-      nodeId: vector.id,
-      vertices: [{ x: 10, y: 20 }],
-      segments: [],
-      regions: [],
-      selectedVertexIndices: new Set([0]),
-      selectedSegmentIndices: new Set<number>(),
-      selectedHandles: new Set<number>(),
-      hoveredHandleInfo: null
-    }
+    const editState = editFirstVertex(editor, vector.id)
 
     const snapped = applyNodeEditSnap(createDrag(10, 20), 87, 0, editor, editState)
 
@@ -74,19 +74,7 @@ describe('vector edit snapping', () => {
         regions: []
       }
     })
-    const editState = {
-      nodeId: vector.id,
-      vertices: [
-        { x: 10, y: 20 },
-        { x: 80, y: 60 }
-      ],
-      segments: [],
-      regions: [],
-      selectedVertexIndices: new Set([0]),
-      selectedSegmentIndices: new Set<number>(),
-      selectedHandles: new Set<number>(),
-      hoveredHandleInfo: null
-    }
+    const editState = editFirstVertex(editor, vector.id)
 
     const snapped = applyNodeEditSnap(createDrag(10, 20), 67, 37, editor, editState)
 
@@ -117,19 +105,7 @@ describe('vector edit snapping', () => {
         regions: []
       }
     })
-    const editState = {
-      nodeId: vector.id,
-      vertices: [
-        { x: 10, y: 20 },
-        { x: 80, y: 60 }
-      ],
-      segments: [],
-      regions: [],
-      selectedVertexIndices: new Set([0]),
-      selectedSegmentIndices: new Set<number>(),
-      selectedHandles: new Set<number>(),
-      hoveredHandleInfo: null
-    }
+    const editState = editFirstVertex(editor, vector.id)
 
     const outsideScreenThreshold = applyNodeEditSnap(createDrag(10, 20), 67, 0, editor, editState)
     const insideScreenThreshold = applyNodeEditSnap(createDrag(10, 20), 68, 0, editor, editState)
@@ -156,19 +132,7 @@ describe('vector edit snapping', () => {
       }
     })
     editor.graph.createNode('RECTANGLE', pageId, { x: 100, y: 0, width: 100, height: 100 })
-    const editState = {
-      nodeId: vector.id,
-      vertices: [
-        { x: 10, y: 20 },
-        { x: 80, y: 60 }
-      ],
-      segments: [],
-      regions: [],
-      selectedVertexIndices: new Set([0]),
-      selectedSegmentIndices: new Set<number>(),
-      selectedHandles: new Set<number>(),
-      hoveredHandleInfo: null
-    }
+    const editState = editFirstVertex(editor, vector.id)
 
     editor.state.snappingPreferences = {
       ...DEFAULT_SNAPPING_PREFERENCES,
@@ -198,16 +162,7 @@ describe('vector edit snapping', () => {
       height: 100,
       vectorNetwork: { vertices: [{ x: 10.2, y: 20.4 }], segments: [], regions: [] }
     })
-    const editState = {
-      nodeId: vector.id,
-      vertices: [{ x: 10.2, y: 20.4 }],
-      segments: [],
-      regions: [],
-      selectedVertexIndices: new Set([0]),
-      selectedSegmentIndices: new Set<number>(),
-      selectedHandles: new Set<number>(),
-      hoveredHandleInfo: null
-    }
+    const editState = editFirstVertex(editor, vector.id)
 
     const snapped = applyNodeEditSnap(createDrag(10.2, 20.4), 2.2, 3.3, editor, editState)
 
