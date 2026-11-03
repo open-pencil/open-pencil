@@ -19,7 +19,6 @@ import { withGeneratedFrameSize } from './generated'
 import * as HitTest from './hit-test'
 import { generateId } from './ids'
 import * as Instances from './instances'
-import { rekeyInstanceOverrideDescendants } from './instances/overrides'
 import { LayoutWrites } from './layout/writes'
 import Matrix from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
@@ -27,6 +26,7 @@ import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
 import { invalidateTextCaches } from './text/picture'
+import { remapCopiedReferences } from './transfer/copied'
 import type {
   DocumentColorSpace,
   DocumentKind,
@@ -746,14 +746,9 @@ export class SceneGraph {
   ): SceneNode | null {
     const ids = new Map<string, string>()
     const clone = this.cloneSubtree(sourceId, parentId, overrides, ids)
-    // An instance records its copies by id, and every copy inside has a new one now.
-    for (const id of ids.values()) {
-      const node = this.nodes.get(id)
-      if (!node?.instanceOverrides.descendants.size) continue
-      this.updateNode(id, {
-        instanceOverrides: rekeyInstanceOverrideDescendants(node.instanceOverrides, ids)
-      })
-    }
+    // Copies point at one another, as a paste's do: an instance at a component cloned with it,
+    // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
+    remapCopiedReferences(this, ids)
     return clone
   }
 

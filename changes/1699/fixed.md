@@ -3,3 +3,4 @@
 - A variant property's default is the value of the set's top-left variant, as in Figma, whatever default the file records (#1699).
 - `appendChild` in scripts moves a layer that is already a child to the end, as Figma does (#1699).
 - Duplicating or cloning an instance from a `.fig` file that holds two instances of the same component, such as a button with left and right icons, no longer makes the document fail to save (#1699).
+- Duplicating a frame that holds a component and its instances gives instances of the duplicated component, as in Figma (#1699).

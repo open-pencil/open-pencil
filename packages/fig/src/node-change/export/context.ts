@@ -1,7 +1,7 @@
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 
 import type { NodeChange, Paint, StyleReference } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import { isUnsetGuid, stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   PluginDataEntry,
@@ -149,14 +149,21 @@ export interface SceneNodeToKiwiContext {
   ) => KiwiNodeChange[]
 }
 
-/** Figma reads both parts of a GUID as signed 32-bit integers and drops a paste beyond them. */
+/** Figma drops a pasted layer whose GUID part is past a signed 32-bit integer. */
 const MAX_FIGMA_GUID_PART = 0x7fffffff
 
-/** The GUID an ID spells, or null when it spells none Figma can read. */
-export function parseGuidOrNull(value: string) {
+/**
+ * The GUID an ID spells, or null when it spells none Figma can read. A layer's GUID parts stay
+ * within signed 32 bits; `wholeParts` allows the full unsigned 32 bits Figma itself gives
+ * component properties, in files and on the clipboard alike (desktop 126). The unset GUID never
+ * names anything.
+ */
+export function parseGuidOrNull(value: string, { wholeParts = false } = {}) {
   if (!/^\d+:\d+$/.test(value)) return null
   const guid = stringToGuid(value)
-  return guid.sessionID <= MAX_FIGMA_GUID_PART && guid.localID <= MAX_FIGMA_GUID_PART ? guid : null
+  if (isUnsetGuid(guid)) return null
+  const max = wholeParts ? UNSET_GUID.sessionID : MAX_FIGMA_GUID_PART
+  return guid.sessionID <= max && guid.localID <= max ? guid : null
 }
 
 export function resolveInstanceComponentId(

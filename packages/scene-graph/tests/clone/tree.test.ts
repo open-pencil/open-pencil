@@ -141,6 +141,20 @@ describe('SceneGraph.cloneTree', () => {
     expect(sources(clone.id)).toEqual(layers)
   })
 
+  // Figma (desktop 126): cloning a frame that holds a component and an instance of it gives an
+  // instance of the cloned component.
+  test('an instance cloned with its component names the cloned component', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, { name: 'Holder', width: 300, height: 100 })
+    const component = graph.createNode('COMPONENT', frame.id, { name: 'Inner', width: 40 })
+    expectDefined(graph.createInstance(component.id, frame.id, { x: 100 }), 'instance')
+    const clone = expectDefined(graph.cloneTree(frame.id, page.id), 'clone')
+    const [clonedComponent, clonedInstance] = graph.getChildren(clone.id)
+    expect(clonedComponent.id).not.toBe(component.id)
+    expect(clonedInstance.componentId).toBe(clonedComponent.id)
+  })
+
   test('clone deep-copies source.fig so mutations do not affect original', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
