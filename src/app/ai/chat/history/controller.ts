@@ -171,8 +171,6 @@ export function createConversationHistory<TChat extends HistoryChat>(
       if (!session.chat && agentReadOnly.value) return null
       const editor = runtime.getEditor()
       const conversation = current.value
-      // A session that missed some of the conversation, run elsewhere, must not be continued.
-      if (conversation?.agentSession && resume === null) recordAgentSession(conversation.id, null)
       // Only a session that sees the whole conversation is saved to continue it.
       const recordsFor =
         conversation && (resume !== null || !messages.value.length) ? conversation.id : null
@@ -190,7 +188,10 @@ export function createConversationHistory<TChat extends HistoryChat>(
         await runtime.resetChat()
         return null
       }
-      if (next) session.attach(next, flush)
+      if (!next) return null
+      session.attach(next, flush)
+      // A session that missed what this chat adds must not be continued; kept until the chat starts.
+      if (conversation?.agentSession && resume === null) recordAgentSession(conversation.id, null)
       return next
     })
   }

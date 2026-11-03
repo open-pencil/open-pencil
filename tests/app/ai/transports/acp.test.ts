@@ -8,7 +8,7 @@ import {
   type NewSessionRequest,
   type ResumeSessionRequest
 } from '@agentclientprotocol/sdk'
-import type { UIMessage } from 'ai'
+import type { UIMessage, UIMessageChunk } from 'ai'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 
@@ -36,6 +36,8 @@ interface FakeAgentOptions {
    * after it started answering. Either way it first sends updates that are not part of a turn.
    */
   turn?: 'answered' | 'refused' | 'cut-off'
+  /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
+  lookupWaits?: boolean
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -43,8 +45,10 @@ function fakeAgents({
   answersSessions = true,
   resumeFails = false,
   tokenHangs = false,
-  turn = 'answered'
+  turn = 'answered',
+  lookupWaits = false
 }: FakeAgentOptions = {}) {
+  const lookup = createDeferred<undefined>()
   const prompts: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
@@ -131,7 +135,10 @@ function fakeAgents({
   }
 
   const startup: ACPStartup = {
-    resolveCommand: async (agent) => agent.command,
+    resolveCommand: async (agent) => {
+      if (lookupWaits) await lookup.promise
+      return agent.command
+    },
     spawn,
     authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
     linkTools: async () => ({
@@ -152,6 +159,7 @@ function fakeAgents({
     killed: killed.promise,
     kills: () => kills,
     spawns: () => spawns,
+    finishLookup: () => lookup.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
 }
@@ -166,7 +174,7 @@ async function send(
   text: string,
   history: UIMessage[] = [],
   abortSignal?: AbortSignal
-): Promise<void> {
+): Promise<UIMessageChunk[]> {
   const reply = await transport.sendMessages({
     trigger: 'submit-message',
     chatId: 'chat',
@@ -174,7 +182,9 @@ async function send(
     messages: [...history, message('user', text)],
     abortSignal
   })
-  await reply.pipeTo(new WritableStream())
+  const chunks: UIMessageChunk[] = []
+  await reply.pipeTo(new WritableStream({ write: (chunk) => void chunks.push(chunk) }))
+  return chunks
 }
 
 function transport(
@@ -267,11 +277,25 @@ test('a reply stopped before the agent starts launches no agent', async () => {
   expect(agents.prompts).toEqual([])
 })
 
+test('a command lookup that finishes after the deadline launches no agent', async () => {
+  const agents = fakeAgents({ lookupWaits: true })
+  const { transport: chat } = transport(agents, { startTimeoutMs: 20 })
+  await expect(send(chat, 'first')).rejects.toBeInstanceOf(Error)
+  agents.finishLookup()
+  // A task boundary runs everything the finished lookup queued, including a spawn.
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0)
+  })
+  expect(agents.spawns()).toBe(0)
+})
+
 test('a session is not saved when its first prompt fails before the agent takes it', async () => {
   const agents = fakeAgents({ turn: 'refused' })
   const { transport: chat, sessions } = transport(agents)
-  await send(chat, 'first')
+  const reply = await send(chat, 'first')
   expect(agents.prompts).toHaveLength(1)
+  expect(reply).toContainEqual(expect.objectContaining({ type: 'error' }))
+  expect(reply).toContainEqual({ type: 'finish', finishReason: 'error' })
   expect(sessions).toEqual([])
   await chat.destroy()
 })

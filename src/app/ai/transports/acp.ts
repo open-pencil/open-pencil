@@ -368,11 +368,15 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         })
       ])
 
+    // Aborted once the startup gave up, by Stop or the deadline, so a lookup still running launches nothing.
+    const gaveUp = new AbortController()
     const spawning = (async () => {
-      // Stopped before the startup began: the race below already rejects, so launch nothing.
-      if (abortSignal?.aborted) throw new Error('The reply was stopped before the agent started.')
+      const command = await this.startup.resolveCommand(this.agentDef)
+      if (gaveUp.signal.aborted || abortSignal?.aborted) {
+        throw new Error('The reply was stopped before the agent started.')
+      }
       return this.startup.spawn({
-        command: await this.startup.resolveCommand(this.agentDef),
+        command,
         args: this.agentDef.args,
         logId: this.agentDef.id,
         destroying: () => this.destroying,
@@ -387,6 +391,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     try {
       process = await bounded(spawning)
     } catch (e) {
+      gaveUp.abort()
       // A process that starts after the startup gave up must not keep running.
       void spawning.then((late) => late.child.kill()).catch(() => undefined)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })

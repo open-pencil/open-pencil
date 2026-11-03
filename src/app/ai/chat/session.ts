@@ -162,14 +162,15 @@ export function createChatSessionManager({
     if (errors.length) throw new AggregateError(errors, 'Agent transport teardown failed')
   }
 
+  /** `provider` is the one the chat chose, which a profile change while the agent starts keeps. */
   async function createActiveACPTransport(
     store: EditorStore,
     context: AIDiagnosticContext,
+    provider: AIProviderID,
     agentSession?: AgentSessionLink
   ) {
     await destroyAgentTransports()
     await assertAgentReady('acp')
-    const provider = providerID.value
     // An agent's turn counts as one step of the model it names, or of the agent itself.
     const transport = await createACPTransport(
       provider,
@@ -274,7 +275,12 @@ export function createChatSessionManager({
       let agentKind: 'acp' | 'harness' | null = null
       if (isACPProvider.value) {
         agentKind = 'acp'
-        transport = await createActiveACPTransport(store, diagnosticContext, agentSession)
+        transport = await createActiveACPTransport(
+          store,
+          diagnosticContext,
+          chatProviderID,
+          agentSession
+        )
       } else if (isHarnessProvider.value) {
         agentKind = 'harness'
         transport = await createActiveHarnessTransport(sessionId, diagnosticContext)

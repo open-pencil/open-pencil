@@ -56,6 +56,8 @@ function connection({ resumeError }: FakeConnectionOptions = {}) {
 
 test('only agents that resume sessions continue saved chats', () => {
   expect(resumingAgent(`acp:${resuming.id}`)).toBe(resuming.id)
+  expect(resumingAgent('acp:claude-code')).toBe('claude-code')
+  expect(resumingAgent('acp:codex')).toBe('codex')
   expect(resumingAgent(`acp:${notResuming.id}`)).toBeNull()
   expect(resumingAgent('anthropic')).toBeNull()
 })

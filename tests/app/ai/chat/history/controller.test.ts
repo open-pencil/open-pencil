@@ -192,6 +192,7 @@ test('a pending transport is rejected when the active document changes', async (
 async function agentFixture(initialAgent: ACPAgentID | null, saved?: { messages: UIMessage[] }) {
   const active = editor()
   let agent = initialAgent
+  let starts = true
   const store = createConversationStore()
   const chat = reactive({
     messages: [] as UIMessage[],
@@ -204,6 +205,7 @@ async function agentFixture(initialAgent: ACPAgentID | null, saved?: { messages:
       getEditor: () => active,
       ensureChat: async (messages, _sessionId, link) => {
         links.push(link)
+        if (!starts) return null
         chat.messages = messages ?? []
         return chat
       },
@@ -237,6 +239,10 @@ async function agentFixture(initialAgent: ACPAgentID | null, saved?: { messages:
     id: draft.id,
     switchAgent: (next: ACPAgentID | null) => {
       agent = next
+    },
+    /** Whether the next chat starts, or fails as for an unconfigured provider. */
+    setStarts: (next: boolean) => {
+      starts = next
     }
   }
 }
@@ -300,6 +306,28 @@ test('a saved session the agent can no longer continue is forgotten', async () =
   await f.history.flush()
   expect((await f.store.read(f.id))?.agentSession).toBeUndefined()
   expect(f.history.continuesAgentSession.value).toBe(false)
+})
+
+test('a saved session stays read-only for another agent that resumes its own sessions', async () => {
+  const f = await agentFixture('codex', { messages: [savedMessage] })
+  expect(f.history.continuesAgentSession.value).toBe(false)
+  expect(f.history.agentReadOnly.value).toBe(true)
+  expect(await f.history.ensureChat()).toBeNull()
+  expect(f.links).toEqual([])
+})
+
+test('a saved session is kept until a chat on another agent starts', async () => {
+  const f = await agentFixture('claude-code')
+  await f.history.ensureChat()
+  f.chat.messages = [savedMessage]
+  expectDefined(f.links.at(-1), 'agent session link').record({ agent: 'claude-code', id: 'kept' })
+  f.switchAgent('codex')
+  f.setStarts(false)
+  expect(await f.history.ensureChat()).toBeNull()
+  expect(f.history.current.value?.agentSession).toEqual({ agent: 'claude-code', id: 'kept' })
+  f.setStarts(true)
+  expect(await f.history.ensureChat()).toBe(f.chat)
+  expect(f.history.current.value?.agentSession).toBeUndefined()
 })
 
 test('a chat whose saved session could not be continued takes no more messages', async () => {
