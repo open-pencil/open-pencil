@@ -47,7 +47,7 @@ describe('collaboration state store', () => {
         sequence: 3
       })
 
-      // Compacting again with the same arguments, as after an unknown result, changes nothing.
+      // Compacting again with the same arguments, as after an unknown result, leaves the same room.
       await store.compact(room, 3, bytes(8))
       await store.compact(room, 3, bytes(8))
       expect(await store.load(room)).toEqual({ snapshot: bytes(8), updates: [], sequence: 3 })
@@ -61,15 +61,25 @@ describe('collaboration state store', () => {
     }
   })
 
-  test('keeps rooms of other epochs apart', async () => {
+  test('keeps rooms of other epochs apart, and writes nothing for an epoch a restore replaced', async () => {
     const { runtime, store, room } = await storedRoom()
     try {
       await store.append(room, 1, bytes(1))
+      // A restore advances the document's epoch; the earlier room never opens again.
+      await runtime.database
+        .updateTable('document')
+        .set({ collaborationEpoch: 1 })
+        .where('id', '=', room.documentId)
+        .execute()
       const restored = { ...room, roomEpoch: 1 }
       await store.append(restored, 1, bytes(2))
       await store.compact(restored, 1, bytes(5))
-      expect((await store.load(room)).updates).toEqual([bytes(1)])
       expect(await store.load(restored)).toEqual({ snapshot: bytes(5), updates: [], sequence: 1 })
+
+      // A save of the replaced room that lands late changes nothing.
+      await store.append(room, 2, bytes(3))
+      await store.compact(room, 2, bytes(6))
+      expect(await store.load(room)).toEqual({ snapshot: null, updates: [bytes(1)], sequence: 1 })
     } finally {
       await runtime.close()
     }

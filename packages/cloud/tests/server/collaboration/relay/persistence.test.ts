@@ -127,4 +127,32 @@ describe('collaboration room saves', () => {
     expect(await textIn(hub)).toHaveLength(2)
     await hub.close()
   })
+
+  test('saves again after a failed save while the room stays open, without another edit', async () => {
+    const memory = memoryStateStore()
+    let refuse = true
+    const hub = createCollaborationRelay({
+      authSecret: relaySecret,
+      store: {
+        ...memory.store,
+        async append(identity, sequence, update) {
+          if (refuse) {
+            refuse = false
+            throw new Error('Database unavailable')
+          }
+          await memory.store.append(identity, sequence, update)
+        }
+      },
+      maximumMessageBytes: 1_048_576,
+      maximumConnectionsPerRoom: 100,
+      persistDelayMs: 0,
+      persistRetryMs: 10,
+      onError: () => undefined
+    })
+    await type(hub, 'a')
+    // The retry writes a snapshot, since whether the refused append landed is unknown.
+    await until(async () => (await memory.store.load(room)).snapshot !== null)
+    expect(await textIn(hub)).toBe('a')
+    await hub.close()
+  })
 })
