@@ -52,6 +52,9 @@ describe('effects in HTML export', () => {
 
   test('blur by the first layer blur and every background blur, as the canvas draws them', () => {
     const blurs = style('RECTANGLE', [
+      // Hidden blurs are neither the first layer blur nor among the background blurs.
+      effect('LAYER_BLUR', 30, { visible: false }),
+      effect('BACKGROUND_BLUR', 30, { visible: false }),
       effect('LAYER_BLUR', 10),
       effect('LAYER_BLUR', 20),
       effect('BACKGROUND_BLUR', 10),
