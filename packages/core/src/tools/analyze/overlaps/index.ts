@@ -409,7 +409,7 @@ export const analyzeOverlaps = defineTool({
     const page = page_id
       ? figma.getNodeById(page_id)
       : figma.root.children.find((candidate) => candidate.name === args.page)
-    if (page?.type === 'CANVAS') await page.loadAsync()
+    if (page && figma.graph.getNode(page.id)?.type === 'CANVAS') await page.loadAsync()
     return computeOverlaps(figma.graph, { ...(args as AnalyzeOverlapsArgs), page_id })
   }
 })

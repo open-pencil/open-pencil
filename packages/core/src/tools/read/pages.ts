@@ -29,7 +29,8 @@ export const switchPage = defineTool({
   execute: async (figma, { page }) => {
     const target =
       figma.root.children.find((candidate) => candidate.name === page) ?? figma.getNodeById(page)
-    if (target?.type !== 'CANVAS') return { error: `Page "${page}" not found` }
+    if (!target || figma.graph.getNode(target.id)?.type !== 'CANVAS')
+      return { error: `Page "${page}" not found` }
     // A page not yet visited has its layers loaded first, so the calls after see them.
     await figma.setCurrentPageAsync(target)
     return { page: target.name, id: target.id }
