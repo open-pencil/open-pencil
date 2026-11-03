@@ -144,10 +144,12 @@ test('a switch inside a frame, named after its variant, toggles both ways in pre
   await editor.page.keyboard.press('Escape')
 })
 
-// The range is a slot inside the track's slot, as Reka draws it and Figma keeps it; in an
-// instance it is part of the track's content, and preview still has Reka place it.
-test('a slider instance in preview moves the range inside its track', async () => {
-  const instanceId = await editor.page.evaluate(() => {
+/**
+ * A slider component at 20 of 0 to 100 in steps of 10, its range a slot inside its track's
+ * slot, as Reka draws it and Figma keeps it, and an instance of it below.
+ */
+async function createSlider() {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const graph = store.graph
@@ -204,18 +206,26 @@ test('a slider instance in preview moves the range inside its track', async () =
     if (!instance) throw new Error('Instance not created')
     return instance.id
   })
+}
+
+// In an instance the range is part of the track's content, and preview still has Reka place it.
+test('a slider instance in preview moves the range inside its track', async () => {
+  const instanceId = await createSlider()
   await editor.canvas.waitForRender()
   await startPreview()
 
   const control = island(instanceId).getByRole('slider')
   const range = island(instanceId).locator('[data-layer$="Range"]')
+  const width = async () => (await range.boundingBox())?.width ?? 0
   await expect(control).toHaveAttribute('aria-valuenow', '20')
-  const before = (await range.boundingBox())?.width ?? 0
+  // A range that shows, so twice its width is a real change.
+  await expect.poll(width).toBeGreaterThan(0)
+  const before = await width()
   await control.press('ArrowRight')
   await control.press('ArrowRight')
   await expect(control).toHaveAttribute('aria-valuenow', '40')
   // Twice the value, twice the range: Reka places it, the design's width no longer stands.
-  await expect.poll(async () => (await range.boundingBox())?.width ?? 0).toBeCloseTo(before * 2, 0)
+  await expect.poll(width).toBeCloseTo(before * 2, 0)
   await editor.page.keyboard.press('Escape')
 })
 
