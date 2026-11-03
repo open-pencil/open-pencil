@@ -4,10 +4,9 @@ import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {
   ARABIC_CHARACTER,
   cjkFallbackScriptForLanguage,
+  fallbackScriptCharacter,
   fontFallbackScriptForCharacter,
   HAN_CHARACTER,
-  HANGUL_CHARACTER,
-  KANA_CHARACTER,
   TRADITIONAL_HAN_CHARACTER,
   type FontFallbackScript
 } from '#core/text/fallbacks'
@@ -15,21 +14,6 @@ import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
 
 const CJK_CHAR_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
-
-function scriptCharRegex(script: FontFallbackScript): RegExp {
-  switch (script) {
-    case 'arabic':
-      return ARABIC_CHARACTER
-    case 'cjk-jp':
-      return KANA_CHARACTER
-    case 'cjk-kr':
-      return HANGUL_CHARACTER
-    case 'cjk-tc':
-      return TRADITIONAL_HAN_CHARACTER
-    default:
-      return HAN_CHARACTER
-  }
-}
 
 export function textHasFallbackScript(text: string): boolean {
   return ARABIC_CHARACTER.test(text) || CJK_CHAR_RE.test(text)
@@ -58,7 +42,7 @@ function styleForCharacter(
  */
 export function textNeedsFallbackScript(node: SceneNode, script: FontFallbackScript): boolean {
   if (node.type !== 'TEXT' || !node.text) return false
-  const regex = scriptCharRegex(script)
+  const regex = fallbackScriptCharacter(script)
 
   let index = 0
   for (const char of node.text) {

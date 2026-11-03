@@ -1,7 +1,7 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
 import { styleSpelling, styleToWeight } from '@open-pencil/scene-graph/font-style'
 
-interface TableRange {
+export interface TableRange {
   offset: number
   length: number
 }
@@ -14,11 +14,12 @@ const NAME_RECORD_SIZE = 12
 const FVAR_HEADER_SIZE = 16
 const AXIS_RECORD_SIZE = 20
 
-function sfntTable(view: DataView, tag: string): TableRange | null {
-  if (view.byteLength < 12) return null
-  const numTables = view.getUint16(4)
+/** A table of the font whose table directory starts at `directory`: 0, or a collection's face. */
+export function sfntTable(view: DataView, tag: string, directory = 0): TableRange | null {
+  if (view.byteLength < directory + 12) return null
+  const numTables = view.getUint16(directory + 4)
   for (let i = 0; i < numTables; i++) {
-    const record = 12 + i * 16
+    const record = directory + 12 + i * 16
     if (record + 16 > view.byteLength) return null
     let recordTag = ''
     for (let c = 0; c < 4; c++) recordTag += String.fromCharCode(view.getUint8(record + c))

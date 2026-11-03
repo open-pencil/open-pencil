@@ -183,10 +183,8 @@ export async function loadFonts(
     settleFontDemand(r, snapshot, nodeIds)
     onFallbackFontsLoaded?.()
   }
-  r.fontProvider?.delete()
-  r.fontProvider = r.ck.TypefaceFontProvider.Make()
-
-  fontManager.attachProvider(r.ck, r.fontProvider)
+  if (r.fontProvider) fontManager.releaseProvider(r.fontProvider)
+  r.fontProvider = fontManager.acquireProvider(r.ck)
   syncFontGeneration(r)
 
   const [fontData, titleData] = await Promise.all([
