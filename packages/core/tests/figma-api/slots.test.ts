@@ -22,6 +22,7 @@ describe('slots', () => {
     const slot = component.createSlot()
 
     expect(slot.type).toBe('SLOT')
+    expect(slot.toJSON().type).toBe('SLOT')
     expect(slot.name).toBe('Slot')
     expect([slot.width, slot.height]).toEqual([100, 100])
     expect(slot.parent?.id).toBe(component.id)
