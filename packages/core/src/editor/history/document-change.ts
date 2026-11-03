@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, omit } from 'es-toolkit'
 
 import type {
   FigmaSourcePayload,
@@ -19,7 +19,7 @@ import {
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
 
-import { diffFields, fieldsDiffer, type FieldChanges } from './diff'
+import { diffFields, type FieldChanges } from './diff'
 
 type Side = 'before' | 'after'
 
@@ -380,11 +380,13 @@ export function documentChangeFromCheckpoint(
  * layer already had is not counted.
  */
 export function countChangedLayers(graph: SceneGraph, checkpoint: TouchedCheckpoint): number {
+  const skipped = [...NESTED_FIELDS]
   let count = 0
   for (const id of checkpoint.reported) {
     const previous = checkpoint.nodes.get(id)
     const current = graph.getNode(id)
-    if (!previous || !current || fieldsDiffer(previous, current, NESTED_FIELDS)) count++
+    const same = previous && current && isEqual(omit(previous, skipped), omit(current, skipped))
+    if (!same) count++
   }
   return count
 }
