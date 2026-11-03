@@ -83,30 +83,6 @@ describe('Tauri process helpers', () => {
     await process.child.kill()
   })
 
-  test('forwards extra environment variables without changing the command line', async () => {
-    await mockTauriIPC((cmd, args) => {
-      if (cmd === 'plugin:shell|spawn') {
-        expect(args).toMatchObject({
-          program: 'agent',
-          args: ['acp'],
-          options: { encoding: 'raw', env: { CURSOR_API_KEY: 'user-key' } }
-        })
-        return 45
-      }
-      return null
-    })
-
-    const process = await spawnACPProcess({
-      command: 'agent',
-      args: ['acp'],
-      logId: 'cursor',
-      destroying: () => false,
-      onUnexpectedClose: vi.fn(),
-      env: { CURSOR_API_KEY: 'user-key' }
-    })
-    await process.child.kill()
-  })
-
   test('signals unexpected ACP process close to the output stream', async () => {
     const spawned: { onEvent: ((event: unknown) => void) | null } = { onEvent: null }
     const onUnexpectedClose = vi.fn()

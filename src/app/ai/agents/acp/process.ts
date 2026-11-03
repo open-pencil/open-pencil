@@ -14,8 +14,6 @@ type ACPProcessOptions = {
   logId: string
   destroying: () => boolean
   onUnexpectedClose: () => void
-  /** Extra environment variables. An empty object leaves the process environment unchanged. */
-  env?: Record<string, string>
 }
 
 export async function spawnACPProcess({
@@ -23,13 +21,12 @@ export async function spawnACPProcess({
   args,
   logId,
   destroying,
-  onUnexpectedClose,
-  env = {}
+  onUnexpectedClose
 }: ACPProcessOptions) {
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',
-    env
+    env: {}
   })
 
   const stdoutChunks: Uint8Array[] = []

@@ -232,8 +232,6 @@ export const aiMessageDefaults = {
   chatRequestFailed: 'The model request failed. Check the provider settings and try again.',
   chatAgentNotInstalled:
     'The coding agent is not installed. Install it in Settings, then try again.',
-  cursorUserKeyHint:
-    'A personal Cursor user API key from the dashboard. Not a Grok API key, and not a Cursor (legacy) or admin key.',
   openProviderSettingsAction: 'Open settings',
   cloudWorkspace: 'Workspace',
   cloudWorkspaceHint: 'The workspace whose plan pays for these requests.',

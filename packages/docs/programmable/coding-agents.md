@@ -14,7 +14,7 @@ Coding agents need the desktop app; the browser cannot start programs on your co
    npm install -g @open-pencil/mcp
    ```
 
-4. The agent signed in to your account. Pi can use an AI Gateway key instead (see [Pi](#pi)), and Cursor a personal user API key (see [Cursor](#cursor)).
+4. The agent signed in to your account. Pi can use an AI Gateway key instead (see [Pi](#pi)).
 
 Then open **Settings → Models → Run guided setup**, choose the agent under **Coding agents on this computer**, and check that both the agent and the MCP server show as installed. **Install adapter** runs the npm command shown under it. Once the ACP program is installed, guided setup asks the agent which account it uses and shows what it reports, such as the plan and email; when it is not signed in, **Sign in** opens the agent's own login in your browser. For a signed-in agent, **OpenPencil tools** shows whether a session reaches OpenPencil's MCP server, checked the way a chat starts, without sending a message. **Check again** repeats the check after you install something or sign in elsewhere.
 
@@ -58,7 +58,7 @@ curl https://cursor.com/install -fsS | bash
 
 On Windows, use the PowerShell command on that page. The installer adds two commands for the same program, `agent` and `cursor-agent`. OpenPencil starts `cursor-agent`, because other coding agents, such as Grok Build, install an `agent` command of their own.
 
-Paste a personal user API key from [Cursor Dashboard → API Keys](https://cursor.com/dashboard) into the Cursor model's settings. OpenPencil passes it only as `CURSOR_API_KEY` when it starts the agent. A team Admin key does not work. If no key is saved, a previous `cursor-agent login` is used.
+Run `cursor-agent login` once to sign in.
 
 ## Pi
 

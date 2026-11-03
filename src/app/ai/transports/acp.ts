@@ -14,7 +14,6 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
-import { agentProcessEnv } from '@/app/ai/agents/acp/env'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
@@ -290,8 +289,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           if (!this.session) return
           this.session.dead = true
           this.session = null
-        },
-        env: await agentProcessEnv(this.agentDef)
+        }
       })
     } catch (e) {
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })

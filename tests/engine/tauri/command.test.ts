@@ -126,10 +126,7 @@ describe('shell scope', () => {
     agent.signIn?.via === 'terminal' ? [[signInScope(agent), agent.command, agent.signIn.args]] : []
   )
   const spawns: [string, string[]][] = [
-    ...ACP_AGENTS.flatMap((agent): [string, string[]][] => [
-      [agent.command, agent.args],
-      ...(agent.commandAliases ?? []).map((command): [string, string[]] => [command, agent.args])
-    ]),
+    ...ACP_AGENTS.map((agent): [string, string[]] => [agent.command, agent.args]),
     ['openpencil-mcp-http', []],
     ['openpencil-harness', []],
     ...installs.map((target): [string, string[]] => ['npm', npmInstallArgs(target)]),

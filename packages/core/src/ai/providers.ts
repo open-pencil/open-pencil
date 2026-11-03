@@ -2,17 +2,6 @@
 
 export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'cursor'
 
-/** A user API key the desktop app stores and passes to the agent as an environment variable. */
-export interface ACPAgentAPIKey {
-  /** Credential-store integration id. Segments cannot contain `:`. */
-  integrationId: string
-  /** Environment variable set on the agent process when a key is saved. */
-  env: string
-  /** Page where the person creates a personal user API key. */
-  url: string
-  placeholder: string
-}
-
 export interface ACPAgentDef {
   id: ACPAgentID
   name: string
@@ -31,8 +20,6 @@ export interface ACPAgentDef {
    * which the desktop shell scope pins under `<command>-sign-in`.
    */
   signIn?: { via: 'acp'; method: string } | { via: 'terminal'; method: string; args: string[] }
-  /** Present when the agent accepts a pasted user API key instead of only its own login. */
-  apiKey?: ACPAgentAPIKey
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
@@ -77,20 +64,9 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     // install an `agent` of their own, so only `cursor-agent` is sure to be Cursor.
     command: 'cursor-agent',
     args: ['acp'],
-    setupURL: 'https://cursor.com/docs/cli/installation',
-    apiKey: {
-      integrationId: 'acp-cursor',
-      env: 'CURSOR_API_KEY',
-      url: 'https://cursor.com/dashboard',
-      placeholder: 'User API key'
-    }
+    setupURL: 'https://cursor.com/docs/cli/installation'
   }
 ]
-
-/** The ACP agent a provider id names, such as `acp:cursor`. */
-export function acpAgentForProvider(providerID: string): ACPAgentDef | undefined {
-  return ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)
-}
 
 export type AIProviderID =
   | 'openrouter'

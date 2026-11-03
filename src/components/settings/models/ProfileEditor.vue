@@ -74,7 +74,6 @@ const {
 } = profile
 const pi = usePiSetup(isHarness)
 const codingAgent = useCodingAgentSetup(() => draft.providerID)
-const agentAPIKey = computed(() => codingAgent.agent.value?.apiKey)
 const signIn = useProfileSignIn(keyInput)
 const customModelPlaceholder = computed(() =>
   isHarness.value ? (pi.state.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
@@ -193,21 +192,6 @@ async function remove() {
               @submit-sign-in-code="codingAgent.submitSignInCode($event)"
             />
           </div>
-
-          <ProviderSettingsKeyField
-            v-if="agentAPIKey"
-            v-model="keyInput"
-            :label="ai.apiKey"
-            :saved="hasExistingKey"
-            :hint="hasExistingKey ? settings.savedCredentialHint : ai.cursorUserKeyHint"
-            :error="fieldErrors.credential"
-            kind="api"
-            :placeholder="hasExistingKey ? credentials.savedReplace : agentAPIKey.placeholder"
-            :key-u-r-l="agentAPIKey.url"
-            :key-u-r-l-label="credentials.getAPIKey"
-            @blur="feedback.blur('credential')"
-            @clear="clearKey"
-          />
 
           <div v-if="pi.state.value" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
             <PiSetup

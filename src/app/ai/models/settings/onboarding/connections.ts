@@ -1,14 +1,11 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { reactive } from 'vue'
 
-import { acpAgentForProvider } from '@open-pencil/core/constants'
-
 import {
   aiModelSettings,
   modelConnectionCredentialStatus,
   modelConnectionCredentialStore,
   resolveModelConnectionAPIKey,
-  setModelConnectionAPIKey,
   type AIModelConnection
 } from '@/app/ai/models'
 import {
@@ -36,8 +33,6 @@ export interface OnboardingConnectionState {
   reason: ProviderConnectionTestFailureReason | null
   /** Set once a key from signing in has been checked with the provider. */
   account: OnboardingAccount | null
-  /** Set when Clear could not remove a saved key. */
-  keyError: 'clear-failed' | null
 }
 
 /** The account a sign-in connected, as setup shows it. */
@@ -94,7 +89,6 @@ interface OnboardingConnectionsOptions {
 export function useOnboardingConnections({ plannedModel }: OnboardingConnectionsOptions) {
   const states = reactive<Partial<Record<OnboardingAccess, OnboardingConnectionState>>>({})
   const keyStatuses = reactive<Record<string, CredentialStatus>>({})
-  const statusRequests = new Map<string, number>()
   const testVersions = new Map<OnboardingAccess, number>()
   let disposed = false
 
@@ -108,17 +102,11 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
   }
 
   async function loadKeyStatus(connectionId: string): Promise<void> {
-    const request = (statusRequests.get(connectionId) ?? 0) + 1
-    statusRequests.set(connectionId, request)
     try {
       const status = await modelConnectionCredentialStatus(connectionId)
-      if (!disposed && statusRequests.get(connectionId) === request) {
-        keyStatuses[connectionId] = status
-      }
+      if (!disposed) keyStatuses[connectionId] = status
     } catch {
-      if (!disposed && statusRequests.get(connectionId) === request) {
-        keyStatuses[connectionId] = 'unavailable'
-      }
+      if (!disposed) keyStatuses[connectionId] = 'unavailable'
     }
   }
 
@@ -136,15 +124,14 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
       customModelID: serverProfile?.customModelID ?? '',
       test: 'idle',
       reason: null,
-      account: null,
-      keyError: null
+      account: null
     }
     return states[providerID]
   }
 
   /** The configured connection matching what is entered now, whose saved key may be used. */
   function savedConnection(providerID: OnboardingAccess): AIModelConnection | null {
-    if (isOnboardingAgent(providerID) && !acpAgentForProvider(providerID)?.apiKey) return null
+    if (isOnboardingAgent(providerID)) return null
     const saved = existingOnboardingConnection(providerID, connection(providerID).customBaseURL)
     if (saved && !(saved.id in keyStatuses)) {
       keyStatuses[saved.id] = 'missing'
@@ -216,28 +203,7 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
 
   /** Records a key that setup stored, so the connection shows as saved without a reload. */
   function markKeySaved(connectionId: string): void {
-    statusRequests.set(connectionId, (statusRequests.get(connectionId) ?? 0) + 1)
     keyStatuses[connectionId] = 'configured'
-  }
-
-  /**
-   * Removes a saved key now. Applying setup skips an empty draft, so Clear cannot wait for it.
-   * A failed remove leaves the key saved and names the failure on the field.
-   */
-  async function clearSavedKey(providerID: OnboardingAccess): Promise<void> {
-    const saved = savedConnection(providerID)
-    const state = connection(providerID)
-    if (!saved) return
-    try {
-      await setModelConnectionAPIKey(saved.id, '')
-      if (disposed) return
-      statusRequests.set(saved.id, (statusRequests.get(saved.id) ?? 0) + 1)
-      keyStatuses[saved.id] = 'missing'
-      state.apiKey = ''
-      state.keyError = null
-    } catch {
-      if (!disposed) state.keyError = 'clear-failed'
-    }
   }
 
   return {
@@ -248,7 +214,6 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
     updateConnection,
     testConnection,
     clearKeys,
-    markKeySaved,
-    clearSavedKey
+    markKeySaved
   }
 }

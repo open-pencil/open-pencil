@@ -1,7 +1,7 @@
 import type { LanguageModel } from 'ai'
 import { ref } from 'vue'
 
-import { acpAgentForProvider, type ReasoningEffort } from '@open-pencil/core/constants'
+import type { ReasoningEffort } from '@open-pencil/core/constants'
 
 import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
@@ -41,16 +41,11 @@ export function modelConnectionCredentialRef(connection: AIModelConnection): Cre
   return providerCredentialRef(connection.providerID, connection.credentialProfileId)
 }
 
-/** ACP agents keep their own login, except one that stores a user API key. */
-function connectionSkipsAPIKey(providerID: string): boolean {
-  return providerID.startsWith('acp:') && !acpAgentForProvider(providerID)?.apiKey
-}
-
 export async function modelConnectionCredentialStatus(
   connectionId: string
 ): Promise<CredentialStatus> {
   const connection = modelConnection(connectionId)
-  if (!connection || connectionSkipsAPIKey(connection.providerID)) return 'missing'
+  if (!connection || connection.providerID.startsWith('acp:')) return 'missing'
   return appCredentialServices.manager.status(modelConnectionCredentialRef(connection))
 }
 
@@ -59,7 +54,7 @@ export const modelCredentialRevision = ref(0)
 
 export async function setModelConnectionAPIKey(connectionId: string, value: string): Promise<void> {
   const connection = modelConnection(connectionId)
-  if (!connection || connectionSkipsAPIKey(connection.providerID)) return
+  if (!connection || connection.providerID.startsWith('acp:')) return
   const reference = modelConnectionCredentialRef(connection)
   const key = value.trim()
   try {
@@ -73,7 +68,7 @@ export async function setModelConnectionAPIKey(connectionId: string, value: stri
 export async function resolveModelConnectionAPIKey(connectionId: string): Promise<string | null> {
   await initializeCredentialMigration()
   const connection = modelConnection(connectionId)
-  if (!connection || connectionSkipsAPIKey(connection.providerID)) return null
+  if (!connection || connection.providerID.startsWith('acp:')) return null
   return appCredentialServices.resolver.resolve(modelConnectionCredentialRef(connection))
 }
 

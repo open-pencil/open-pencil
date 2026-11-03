@@ -1,1 +1,1 @@
-- The desktop app can use Cursor as the design agent, signed in with `cursor-agent login` or a personal API key from the Cursor dashboard.
+- The desktop app can use Cursor as the design agent, signed in with `cursor-agent login`.

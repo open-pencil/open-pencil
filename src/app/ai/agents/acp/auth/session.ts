@@ -4,7 +4,6 @@ import { promiseTimeout } from '@vueuse/core'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { agentProcessEnv } from '@/app/ai/agents/acp/env'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import type { OwnToolsLink, OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
 import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
@@ -65,8 +64,7 @@ export async function spawnAgentStreams(agent: ACPAgentDef): Promise<AgentStream
     args: agent.args,
     logId: `${agent.id} sign-in`,
     destroying: () => closing,
-    onUnexpectedClose: () => undefined,
-    env: await agentProcessEnv(agent)
+    onUnexpectedClose: () => undefined
   })
   return {
     input,
