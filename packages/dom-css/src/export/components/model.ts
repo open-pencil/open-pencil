@@ -168,12 +168,14 @@ export type ComponentNode =
   | IconReference
 
 /**
- * Whether a field's markup draws its input, which takes the caller's attributes; a field whose
- * text is not bound yet has none, and its root takes them.
+ * Whether a field's markup always draws its input, which then takes the caller's attributes. A
+ * field whose text is not bound yet has none, and an input inside a slot is replaced when the
+ * caller fills the slot; the root takes the attributes then.
  */
 export function drawsInput(node: ComponentElement): boolean {
   return node.children.some(
-    (child) => child.type === 'input' || (child.type === 'element' && drawsInput(child))
+    (child) =>
+      child.type === 'input' || (child.type === 'element' && !child.slot && drawsInput(child))
   )
 }
 

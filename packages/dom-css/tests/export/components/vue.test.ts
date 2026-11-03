@@ -412,6 +412,42 @@ describe('generated Vue form controls', () => {
     expect(html).toMatch(/^<div[^>]*class="[^"]*wide/)
   })
 
+  test('a field whose input sits in a slot keeps its attributes on the root', async () => {
+    const fixture = componentSet(
+      'Message',
+      { Size: ['Default'] },
+      { ...emptyBehaviour('textarea'), texts: { value: { propertyId: 'message' } } },
+      (graph, variant) => {
+        const body = graph.createNode('FRAME', variant, {
+          name: 'Body',
+          width: 200,
+          height: 60,
+          componentPropertyReferences: [{ propertyId: 'body', field: 'SLOT_CONTENT' }]
+        })
+        graph.createNode('TEXT', body.id, {
+          name: 'Value',
+          text: 'Tell us more',
+          componentPropertyReferences: [{ propertyId: 'message', field: 'TEXT' }]
+        })
+      }
+    )
+    fixture.graph.updateNode(fixture.set.id, {
+      componentPropertyDefinitions: [
+        ...fixture.set.componentPropertyDefinitions,
+        { id: 'message', name: 'Message', type: 'TEXT', defaultValue: 'Tell us more' },
+        { id: 'body', name: 'Body', type: 'SLOT', defaultValue: '' }
+      ]
+    })
+    const { files, component } = await generate(fixture)
+    const source = fileText(files, 'Message.vue')
+    // The slot's own content replaces the input, so the attributes stay where Vue puts them.
+    expect(source).toContain('<slot name="body">')
+    expect(source).not.toContain('inheritAttrs')
+    expect(await render(component, { 'data-testid': 'message' })).toMatch(
+      /^<div[^>]*data-testid="message"/
+    )
+  })
+
   test('a textarea starts with its words', async () => {
     const { component } = await generate(textareaComponent())
     expect(await render(component)).toMatch(/<textarea[^>]*>Tell us more<\/textarea>/)
