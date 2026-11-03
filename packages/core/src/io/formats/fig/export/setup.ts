@@ -22,7 +22,7 @@ import {
   renameBehaviourProperties,
   withBehaviour
 } from '@open-pencil/scene-graph/behaviours'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+import { orderKeyBetween, siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
@@ -270,6 +270,9 @@ function buildCanvasEntries(
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
+  // Pages keep the keys they were read with while those stay in order; a page added or moved
+  // gets one between its neighbours', as Figma sorts pages by these keys.
+  const orderKeys = siblingOrderKeys(pages.map((page) => page.source.orderKey))
   for (let p = 0; p < pages.length; p++) {
     const page = pages[p]
     const canvasGuid = (() => {
@@ -298,17 +301,11 @@ function buildCanvasEntries(
     assignedGuidValues.add(`${canvasGuid.sessionID}:${canvasGuid.localID}`)
     if (page.internalOnly) internalCanvasGuid = canvasGuid
 
-    const canvasNc = makeCanvasNodeChange(
-      canvasGuid,
-      docGuid,
-      page.source.orderKey ?? fractionalPosition(p),
-      page.name,
-      {
-        backgroundOpacity: 1,
-        backgroundColor: { ...CANVAS_BG_COLOR },
-        backgroundEnabled: true
-      }
-    )
+    const canvasNc = makeCanvasNodeChange(canvasGuid, docGuid, orderKeys[p], page.name, {
+      backgroundOpacity: 1,
+      backgroundColor: { ...CANVAS_BG_COLOR },
+      backgroundEnabled: true
+    })
     applyImportedCanvasFields(page, canvasNc)
     if (page.internalOnly) canvasNc.internalOnly = true
     canvasEntries.push({ page, canvasGuid, canvasNc })
@@ -328,7 +325,7 @@ function buildCanvasEntries(
       canvasNc: makeCanvasNodeChange(
         internalCanvasGuid,
         docGuid,
-        fractionalPosition(canvasEntries.length),
+        orderKeyBetween(orderKeys.at(-1) ?? null, null),
         'Internal Only Canvas',
         { internalOnly: true }
       )
