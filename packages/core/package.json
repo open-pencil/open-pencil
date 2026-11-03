@@ -234,6 +234,7 @@
     "micromark-extension-gfm": "^3",
     "nanoevents": "^9.1.0",
     "ofetch": "^1.5.1",
+    "opencc-js": "1.4.2",
     "parse5": "^8.0.1",
     "pathe": "^2.0.3",
     "pixelmatch": "^7.2.0",
