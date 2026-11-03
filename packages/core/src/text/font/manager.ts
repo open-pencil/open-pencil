@@ -771,7 +771,9 @@ export class FontManager {
     const needed = uniq(Array.from(characters)).filter((character) =>
       scriptCharacter.test(character)
     )
-    const missing = () => this.unresolvedCharacters(targetFamilies, needed)
+    // Families only come in, so what one check resolved stays resolved.
+    let pending = needed
+    const missing = () => (pending = this.unresolvedCharacters(targetFamilies, pending))
 
     let installed = false
     for (const family of manifest.localFamilies) {
@@ -812,13 +814,14 @@ export class FontManager {
 
   /**
    * The characters CanvasKit finds no glyph for in `families`, shaped with the provider the
-   * canvas draws from. Without one, as before a canvas loads, it cannot tell and finds none.
+   * canvas draws from. Without one, as in an export before any canvas or shaper holds it, it
+   * cannot tell and counts every character missing, so every family loads as it always did.
    */
   private unresolvedCharacters(families: readonly string[], characters: string[]): string[] {
     if (characters.length === 0) return []
     if (families.length === 0) return characters
     const shared = this.sharedProviders.entries().next().value
-    if (!shared) return []
+    if (!shared) return characters
     const [canvasKit, { provider }] = shared
     const style = new canvasKit.ParagraphStyle({
       textStyle: { fontFamilies: [...families], fontSize: 16 }

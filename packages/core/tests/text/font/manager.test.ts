@@ -206,6 +206,22 @@ test('a Traditional Chinese fallback covers the Han characters it shares with th
   }
 })
 
+test('loads every listed fallback family when no canvas can tell what they cover', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const reads: string[] = []
+  manager.setHostFontLoader(async (family) => {
+    reads.push(family)
+    return chinese
+  })
+
+  // As an export before any canvas or shaper holds a provider.
+  await manager.ensureFallbackPack(['cjk-sc'], '设计')
+
+  expect(reads).toEqual(['PingFang SC', 'Heiti SC', 'PingFang TC', 'Hiragino Sans'])
+})
+
 test('a host read that outlives its loader never registers the replaced loader data', async () => {
   const manager = offlineManager()
   manager.setFallbackUserAgent('Windows')
