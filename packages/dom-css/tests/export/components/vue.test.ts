@@ -391,6 +391,9 @@ describe('generated Vue form controls', () => {
     expect(html).toMatch(/^<div[^>]*data-invalid="true"/)
     expect(html).toMatch(/<input[^>]*aria-invalid="true"/)
     expect(html.match(/aria-invalid/g)).toHaveLength(1)
+    // An `aria-invalid` the caller sets reaches the input too, not just the root it falls to.
+    const passed = await render(component, { 'aria-invalid': 'true' })
+    expect(passed).toMatch(/<input[^>]*aria-invalid="true"/)
   })
 })
 

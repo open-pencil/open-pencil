@@ -109,6 +109,13 @@ const INVALID_FLAG = es.parseExpression('invalid || undefined')
 /** `aria-invalid` on the control a person fills in: a field's input, or else the root. */
 const ariaInvalid = () => vue.bound('aria-invalid', INVALID_FLAG)
 
+/**
+ * A field's input reads an `aria-invalid` the caller set too: the caller's attributes fall
+ * through to the root, so the input would not otherwise see it.
+ */
+const INPUT_ARIA_INVALID = es.parseExpression("invalid || $attrs['aria-invalid']")
+const inputAriaInvalid = () => vue.bound('aria-invalid', INPUT_ARIA_INVALID)
+
 function bindingAttributes(
   binding: ComponentBinding,
   uses: TemplateUses,
@@ -169,7 +176,7 @@ function inputNode(className: string, uses: TemplateUses): vue.VueElement {
     uses.reka.add('NumberFieldInput')
     return vue.element('NumberFieldInput', [
       vue.attribute('class', uses.classOf(className)),
-      ...(component.invalid ? [ariaInvalid()] : [])
+      ...(component.invalid ? [inputAriaInvalid()] : [])
     ])
   }
   const placeholder = component.text?.placeholder
@@ -178,7 +185,7 @@ function inputNode(className: string, uses: TemplateUses): vue.VueElement {
     ...(component.model ? [vue.model(identifier(component.model))] : []),
     ...(placeholder ? [vue.attribute('placeholder', placeholder)] : []),
     ...(component.disabled ? [vue.bound('disabled', identifier('disabled'))] : []),
-    ...(component.invalid ? [ariaInvalid()] : [])
+    ...(component.invalid ? [inputAriaInvalid()] : [])
   ])
 }
 

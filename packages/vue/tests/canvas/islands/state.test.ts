@@ -8,8 +8,12 @@ import { createIslandState, instanceStates } from '#vue/canvas/islands/state'
 
 const STATES = ['Default', 'Focus', 'Disabled', 'Invalid']
 
-/** A checkbox as the shadcn/ui kit draws one, and a form holding one drawn `shown`. */
-function form(shown: string) {
+/**
+ * A checkbox as the shadcn/ui kit draws one, and a form holding one drawn `shown`. Without
+ * `drawsDisabled`, its State property has no Disabled value, as when a set draws disabled on a
+ * property of its own.
+ */
+function form(shown: string, { drawsDisabled = true } = {}) {
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   const set = graph.createNode('COMPONENT_SET', pageId, {
@@ -31,7 +35,7 @@ function form(shown: string) {
         propertyId: 'state',
         rest: 'Default',
         focus: 'Focus',
-        disabled: 'Disabled',
+        disabled: drawsDisabled ? 'Disabled' : undefined,
         invalid: 'Invalid'
       }
     })
@@ -65,5 +69,16 @@ describe('preview island states', () => {
     const { current, shows } = form('Default')
     current.focused = true
     expect(shows()).toBe('Focus')
+  })
+
+  test('disabled elsewhere, the states property still shows invalid, and never focus', () => {
+    const invalid = form('Invalid', { drawsDisabled: false })
+    invalid.current.booleans.disabled = true
+    invalid.current.focused = true
+    expect(invalid.shows()).toBe('Invalid')
+    const valid = form('Default', { drawsDisabled: false })
+    valid.current.booleans.disabled = true
+    valid.current.focused = true
+    expect(valid.shows()).toBe('Default')
   })
 })

@@ -82,11 +82,15 @@ function isInvalid(control: ControlModel, state: ControlState): boolean {
 
 /**
  * The state a control's states property shows: disabled, then invalid, which the pointer and
- * focus leave as it is, then the interactions.
+ * focus leave as it is, then the interactions. A disabled control the property draws no
+ * disabled value for shows its invalid value, if any, or its rest value, never an interaction.
  */
 function interactionState(control: ControlModel, state: ControlState): InteractionState {
-  if (isDisabled(control, state)) return 'disabled'
-  if (isInvalid(control, state) && control.states?.values.invalid !== undefined) return 'invalid'
+  const values = control.states?.values
+  const disabled = isDisabled(control, state)
+  if (disabled && values?.disabled !== undefined) return 'disabled'
+  if (isInvalid(control, state) && values?.invalid !== undefined) return 'invalid'
+  if (disabled) return 'rest'
   if (state.pressed) return 'pressed'
   if (state.hovered) return 'hover'
   if (state.focused) return 'focus'
