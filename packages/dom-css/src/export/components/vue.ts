@@ -226,6 +226,7 @@ function elementAttributes(
     ),
     vue.attribute('class', compact([node.attrs.class, uses.classOf(node.className)]).join(' ')),
     ...(node.value === undefined ? [] : [vue.attribute('value', node.value)]),
+    ...(node.disabled ? [vue.bound('disabled', es.parseExpression('true'))] : []),
     ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses, native))
   ]
 }

@@ -12,6 +12,15 @@ export const ARABIC_CHARACTER = /\p{Script=Arabic}/u
 export const HANGUL_CHARACTER = /\p{Script=Hangul}/u
 export const KANA_CHARACTER = /[\p{Script=Hiragana}\p{Script=Katakana}]/u
 export const HAN_CHARACTER = /\p{Script=Han}/u
+export const CJK_CHARACTER =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+/**
+ * What CJK text draws from its fallback: every character Unicode lists as used with a CJK script
+ * (its letters, punctuation, strokes, and Bopomofo), and the East Asian presentation forms, which
+ * it lists with none: vertical, compatibility, halfwidth and fullwidth forms.
+ */
+export const CJK_FALLBACK_CHARACTER =
+  /[\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Hangul}\p{scx=Bopomofo}\u3000\ufe10-\ufe1f\ufe30-\ufe4f\uff00-\uffef]/u
 
 // Common Traditional-only characters. This is a heuristic for fallback order, not language ID.
 export const TRADITIONAL_HAN_CHARACTER =

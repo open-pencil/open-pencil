@@ -19,6 +19,17 @@ bun add @open-pencil/vue @open-pencil/core @open-pencil/scene-graph canvaskit-wa
 
 The current development version requires Vue `^3.5.41` and, when supplying the optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. See [SDK Getting Started](https://openpencil.dev/programmable/sdk/getting-started) for migration guidance; older releases may have different peer requirements.
 
+With Vite, add the plugin that serves the engine's WebAssembly and fonts; other bundlers set Core's locators instead (see the guide):
+
+```ts
+// vite.config.ts
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+import { openPencil } from '@open-pencil/core/node/vite'
+
+export default defineConfig({ plugins: [vue(), openPencil()] })
+```
+
 ## Quick start
 
 ```vue

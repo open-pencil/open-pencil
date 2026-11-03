@@ -3,8 +3,8 @@ import type { ChatTransport, FinishReason, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
-import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
+import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@open-pencil/core/constants'
 
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
@@ -59,9 +59,8 @@ export async function createACPTransport(
   onUsage?: (usage: AgentTurnUsage) => void,
   agentSession?: AgentSessionLink
 ) {
-  const agentId = providerID.replace('acp:', '') as ACPAgentID
-  const agentDef = ACP_AGENTS.find((a) => a.id === agentId)
-  if (!agentDef) throw new Error(`Unknown ACP agent: ${agentId}`)
+  const agentDef = acpAgentFor(providerID)
+  if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
 
   // A folder of its own, not the home folder, whose project settings the agent would read.
   // Claude keeps its sessions per folder, so resuming one needs the same folder every time.
@@ -95,8 +94,7 @@ async function settleEndedReply(
 
 /** The agent or provider a chat runs on, as the composer names it. */
 function providerName(id: AIProviderID): string {
-  const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === id)
-  return agent?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
+  return acpAgentFor(id)?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
 }
 
 export function createChatSessionManager({

@@ -82,6 +82,11 @@ export const ACP_AGENTS: ACPAgentDef[] = [
   }
 ]
 
+/** The ACP agent a provider runs, or undefined for a provider that is not one. */
+export function acpAgentFor(providerID: string): ACPAgentDef | undefined {
+  return ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)
+}
+
 export type AIProviderID =
   | 'openrouter'
   | 'anthropic'

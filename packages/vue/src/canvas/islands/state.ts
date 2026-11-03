@@ -20,7 +20,12 @@ export interface ControlState {
 const TEXT_INPUTS = new Set(['textField', 'textarea', 'numberField'])
 
 function initialChoice(control: ControlModel): string {
-  if (control.kind === 'tabs') return '0'
+  if (control.kind === 'tabs') {
+    // The tab drawn selected, at its place among the triggers; else the first, as Reka starts.
+    const tab = control.items.find((item) => booleanOf(item, 'value')?.designed)
+    const index = tab ? control.triggers.indexOf(tab.path) : -1
+    return String(Math.max(index, 0))
+  }
   const index = control.items.findIndex((item) => {
     const value = booleanOf(item, 'value') ?? booleanOf(item, 'open')
     return value?.designed ?? false

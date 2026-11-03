@@ -13,7 +13,7 @@ import {
 } from '@open-pencil/scene-graph/behaviours'
 import { findComponentPropertyTargets } from '@open-pencil/scene-graph/components'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
-import { instanceSlotFrames, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 /** A boolean value of a control and the property that draws it. */
 export interface BooleanModel {
@@ -97,6 +97,24 @@ function statesModel(
   }
 }
 
+/**
+ * The frames an instance binds to slot properties, which its parts are. A slot may sit inside
+ * another, as a slider's range in its track: Figma keeps both in the component and makes the
+ * inner one part of the outer one's content in an instance, so the search goes through slots
+ * but not into nested instances, which are controls of their own.
+ */
+function partFrames(graph: SceneGraph, instance: SceneNode): SceneNode[] {
+  const frames: SceneNode[] = []
+  const visit = (node: SceneNode): void => {
+    for (const child of graph.getChildren(node.id)) {
+      if (slotPropertyId(child)) frames.push(child)
+      if (child.type !== 'INSTANCE') visit(child)
+    }
+  }
+  visit(instance)
+  return frames
+}
+
 function controlModel(graph: SceneGraph, rootId: string, instance: SceneNode): ControlModel | null {
   const component = instanceMainComponent(graph, instance)
   const owner = component && behaviourOwner(graph, component)
@@ -116,7 +134,7 @@ function controlModel(graph: SceneGraph, rootId: string, instance: SceneNode): C
       designed: designedBoolean(graph, instance, definition, binding.on)
     }
   }
-  const frames = instanceSlotFrames(graph, instance)
+  const frames = partFrames(graph, instance)
   const parts = Object.fromEntries(
     Object.entries(behaviour.parts).flatMap(([partId, propertyId]) => {
       const frame = frames.find((item) => slotPropertyId(item) === propertyId)
