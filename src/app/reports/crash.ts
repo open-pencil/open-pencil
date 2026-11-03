@@ -7,17 +7,22 @@ import { diagnosticsMessages } from '@open-pencil/vue/i18n'
 
 import { diagnostics, type DiagnosticEvent } from '@/app/diagnostics'
 import { scrubDiagnosticText } from '@/app/diagnostics/scrub'
-import { crashedSessionsOf } from '@/app/document/recovery/session'
-import { startedSessionIds } from '@/app/document/recovery/session/storage'
+import { recoverySessionStates } from '@/app/document/recovery/session'
 import { APP_VERSION } from '@/app/runtime/version'
 import { toast } from '@/app/shell/ui'
 import { IS_TAURI } from '@/constants'
 
 import { reportExceptions } from './exception'
-import { openReportDialog, REPORTS_ENABLED } from './state'
+import { reportAction, REPORTS_ENABLED } from './state'
 
-/** Read as the app launches, before recovery forgets the crashed sessions it has no copies of. */
-const startedAtLaunch = startedSessionIds()
+/**
+ * The sessions that crashed, read as the app launches. Recovery forgets the crashed sessions it has
+ * no copies of, after a lock query of its own that is queued behind this one; a window that closes
+ * meanwhile leaves the registry, so it is not taken for a crash.
+ */
+const crashedAtLaunch = recoverySessionStates()
+  .then((states) => states.crashed)
+  .catch(() => new Set<string>())
 
 const MAX_REMEMBERED = 50
 
@@ -78,10 +83,7 @@ export function crashErrors(
 }
 
 function offer(message: string, exceptions: ReportException[]): void {
-  toast.error(message, {
-    label: diagnosticsMessages.get().reportError,
-    run: (toastId) => openReportDialog(exceptions, toastId)
-  })
+  toast.error(message, reportAction(exceptions))
 }
 
 async function lastPanic() {
@@ -103,11 +105,10 @@ export async function offerCrashReports(): Promise<void> {
   if (panic) offer(messages.reportPanic, panicExceptions(panic))
 
   const offered = new Set(offeredSessions.value)
-  const crashed = new Set(
-    [...(await crashedSessionsOf(startedAtLaunch))].filter((id) => !offered.has(id))
-  )
+  const crashed = new Set([...(await crashedAtLaunch)].filter((id) => !offered.has(id)))
   if (crashed.size === 0) return
+  const events = await diagnostics.list()
   offeredSessions.value = [...offeredSessions.value, ...crashed].slice(-MAX_REMEMBERED)
-  const last = crashErrors(await diagnostics.list(), crashed).at(0)
+  const last = crashErrors(events, crashed).at(0)
   if (last) offer(messages.reportCrashed, storedErrorExceptions(last))
 }

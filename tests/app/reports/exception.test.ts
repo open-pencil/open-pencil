@@ -38,13 +38,14 @@ describe('reportExceptions', () => {
     expect(exception.value).not.toContain('abc123secret')
   })
 
-  test('keeps no message from an error that may quote prompts', () => {
+  test('keeps no message from a chain where any error may quote prompts', () => {
     const error = new Error('The model refused: "Draw my secret project"')
     error.name = 'AI_APICallError'
     const exceptions = reportExceptions(new Error('Reply failed', { cause: error }), 'rejection')
     const quoting = reportExceptions(error, 'rejection')
 
     expect(exceptions.length).toBe(2)
+    expect(exceptions.every((exception) => exception.value === undefined)).toBe(true)
     expect(quoting.every((exception) => exception.value === undefined)).toBe(true)
   })
 

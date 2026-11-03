@@ -52,7 +52,7 @@ test('sends the report, then each file with its upload token', async () => {
     request.method === 'POST' ? receipt('token') : new Response(null, { status: 204 })
   )
 
-  expect(await sendReport(REPORT, [FILE], client)).toEqual({ ok: true, reportId: REPORT_ID })
+  expect(await sendReport(REPORT, [FILE], { client })).toEqual({ ok: true, reportId: REPORT_ID })
   expect(sent.map(({ method, path }) => `${method} ${path}`)).toEqual([
     'POST /reports',
     `PUT /reports/${REPORT_ID}/files/document.fig`
@@ -64,22 +64,28 @@ test('sends the report, then each file with its upload token', async () => {
 test('a refused report sends no files', async () => {
   const { client, sent } = fakeService(() => new Response(null, { status: 502 }))
 
-  expect(await sendReport(REPORT, [FILE], client)).toEqual({
-    ok: false,
-    failure: 'report',
-    reportId: null
-  })
+  expect(await sendReport(REPORT, [FILE], { client })).toEqual({ ok: false, failure: 'report' })
   expect(sent).toHaveLength(1)
 })
 
-test('a failed upload keeps the delivered report’s ID', async () => {
-  const { client } = fakeService((request) =>
-    request.method === 'POST' ? receipt('token') : new Response(null, { status: 403 })
-  )
+test('a failed upload keeps the receipt, and sending with it uploads only the files', async () => {
+  let uploads = 0
+  const { client, sent } = fakeService((request) => {
+    if (request.method === 'POST') return receipt('token')
+    uploads++
+    return new Response(null, { status: uploads === 1 ? 503 : 204 })
+  })
 
-  expect(await sendReport(REPORT, [FILE], client)).toEqual({
+  const first = await sendReport(REPORT, [FILE], { client })
+  expect(first).toEqual({
     ok: false,
     failure: 'files',
+    receipt: { reportId: REPORT_ID, uploadToken: 'token' }
+  })
+  const delivered = first.ok || first.failure !== 'files' ? null : first.receipt
+  expect(await sendReport(REPORT, [FILE], { client, delivered })).toEqual({
+    ok: true,
     reportId: REPORT_ID
   })
+  expect(sent.map(({ method }) => method)).toEqual(['POST', 'PUT', 'PUT'])
 })

@@ -1,13 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import {
-  crashedSessionsOf,
   endRecoverySession,
   recoverySessionId,
+  recoverySessionStates,
   sessionStates,
   startRecoverySession
 } from '@/app/document/recovery/session'
 import {
+  markSessionStarted,
   setSessionRegistryForTests,
   startedSessionIds
 } from '@/app/document/recovery/session/storage'
@@ -64,15 +65,19 @@ describe('recovery sessions', () => {
     expect(startedSessionIds()).toEqual([])
   })
 
-  test('sessions started before launch crashed when no window holds them now', async () => {
+  test('a window that closes while the locks are read is not a crash', async () => {
+    markSessionStarted('crashed', true)
+    markSessionStarted('closing', true)
     const locks = {
-      query: async () => ({
-        held: [{ name: 'open-pencil:recovery-session:other-window', mode: 'exclusive' as const }],
-        pending: []
-      }),
+      query: async () => {
+        // The closing window leaves the registry, then lets its lock go, before the answer.
+        markSessionStarted('closing', false)
+        return { held: [], pending: [] }
+      },
       request: (() => Promise.resolve()) as LockManager['request']
     }
-    const crashed = await crashedSessionsOf(['crashed', 'other-window', recoverySessionId], locks)
+    const { crashed } = await recoverySessionStates(locks)
     expect([...crashed]).toEqual(['crashed'])
+    markSessionStarted('crashed', false)
   })
 })

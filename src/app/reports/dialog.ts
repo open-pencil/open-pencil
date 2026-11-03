@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import type { Build, ReportReceipt } from '@open-pencil/feedback/contract'
 import { diagnosticsMessages } from '@open-pencil/vue/i18n'
 
 import { diagnostics, type DiagnosticEvent } from '@/app/diagnostics'
@@ -12,13 +13,19 @@ import { showsDocument } from '@/app/tabs'
 import { currentBuild } from '@/app/telemetry/build'
 import { sharingState } from '@/app/telemetry/state'
 
-import { buildReport, type ReportAttachment, type ReportContext } from './build'
+import { buildReport, type ReportAttachment } from './build'
 import { sendReport, type ReportSendFailure } from './send'
-import { reportDialogError, reportDialogNotice, reportDialogOpen } from './state'
+import {
+  reportDialogError,
+  reportDialogNotice,
+  reportDialogOpen,
+  reportDialogOpening
+} from './state'
 
-async function reportContext(): Promise<ReportContext> {
+/** The install ID while usage stats are shared, read as it changes, also from another window. */
+function sharedInstallId(): string | null {
   const shared = appPreferences.value.sharing.usageStats === 'granted'
-  return { build: await currentBuild(), installId: shared ? sharingState.value.installId : null }
+  return shared ? sharingState.value.installId : null
 }
 
 /** The open document as a `.fig` file under the name reports accept, never its own name. */
@@ -45,38 +52,46 @@ export function useReportDialog() {
   const hasDocument = ref(false)
   const sending = ref(false)
   const failure = ref<ReportSendFailure | null>(null)
-  const context = shallowRef<ReportContext | null>(null)
+  const build = shallowRef<Build | null>(null)
   const activity = shallowRef<DiagnosticEvent[]>([])
   const attachment = shallowRef<ReportAttachment | null>(null)
   const preparingDocument = ref(false)
+  /** Set once the report went through but a file did not, so Send uploads only the files. */
+  const delivered = shallowRef<ReportReceipt | null>(null)
+  let exportRequest = 0
 
+  // Each opening resets the draft, also one that replaces a report still open.
   watch(
-    reportDialogOpen,
-    async (open) => {
-      if (!open) return
+    reportDialogOpening,
+    async () => {
+      if (!reportDialogOpen.value) return
       note.value = ''
       email.value = ''
       includeActivity.value = true
       attachDocument.value = false
       attachment.value = null
       failure.value = null
+      delivered.value = null
+      sending.value = false
       // Home and a New file tab hold no document, as the File menu decides.
       hasDocument.value = showsDocument() && getActiveEditorStoreOrNull() !== null
       activity.value = diagnostics.recent()
-      context.value = await reportContext()
+      build.value = await currentBuild()
     },
     { immediate: true }
   )
 
   watch(attachDocument, async (attach) => {
+    // Only the latest export counts: an earlier one may be of the tab that was active before.
+    const request = ++exportRequest
     attachment.value = null
+    preparingDocument.value = attach
     if (!attach) return
-    preparingDocument.value = true
     try {
       const file = await documentAttachment()
-      if (attachDocument.value) attachment.value = file
+      if (request === exportRequest) attachment.value = file
     } finally {
-      preparingDocument.value = false
+      if (request === exportRequest) preparingDocument.value = false
     }
   })
 
@@ -84,7 +99,7 @@ export function useReportDialog() {
 
   /** The body that would be sent, or `null` while the service would refuse it. */
   const report = computed(() => {
-    if (!context.value) return null
+    if (!build.value) return null
     if (attachDocument.value && !attachment.value) return null
     return buildReport(
       {
@@ -94,7 +109,7 @@ export function useReportDialog() {
         activity: includeActivity.value ? activity.value : null,
         attachments: attachment.value ? [attachment.value] : []
       },
-      context.value
+      { build: build.value, installId: sharedInstallId() }
     )
   })
 
@@ -107,20 +122,28 @@ export function useReportDialog() {
   async function send(): Promise<void> {
     const body = report.value
     if (!body || sending.value) return
+    // A send that ends after the dialog opened again leaves the newer report alone.
+    const opening = reportDialogOpening.value
+    const notice = reportDialogNotice.value
+    const current = () => opening === reportDialogOpening.value
     sending.value = true
     failure.value = null
     try {
-      const result = await sendReport(body, attachment.value ? [attachment.value] : [])
+      const result = await sendReport(body, attachment.value ? [attachment.value] : [], {
+        delivered: delivered.value
+      })
       if (!result.ok) {
+        if (!current()) return
         failure.value = result.failure
+        if (result.failure === 'files') delivered.value = result.receipt
         return
       }
-      reportDialogOpen.value = false
       // The notice that offered this report would only offer it again.
-      if (reportDialogNotice.value !== null) toast.remove(reportDialogNotice.value)
+      if (notice) toast.removeOffer(notice.toastId, notice.action)
       toast.info(diagnosticsMessages.get().reportSent)
+      if (current()) reportDialogOpen.value = false
     } finally {
-      sending.value = false
+      if (current()) sending.value = false
     }
   }
 

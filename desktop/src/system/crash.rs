@@ -37,11 +37,12 @@ fn write_record(directory: &Path, record: &PanicRecord) {
     let _ = fs::write(directory.join(FILE_NAME), json);
 }
 
-/// Reads and removes the record, so each panic is offered once.
+/// Reads and removes the record, so each panic is offered once. A record that cannot be removed
+/// is not offered, as every later launch would offer it again.
 fn take_record(directory: &Path) -> Option<PanicRecord> {
     let path = directory.join(FILE_NAME);
     let bytes = fs::read(&path).ok()?;
-    let _ = fs::remove_file(&path);
+    fs::remove_file(&path).ok()?;
     serde_json::from_slice(&bytes).ok()
 }
 

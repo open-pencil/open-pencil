@@ -2,19 +2,21 @@ import { getInjectedReleaseId } from '@posthog/core/error-tracking'
 import * as v from 'valibot'
 
 import {
+  REPORT_BODY_MAX_BYTES,
   reportSchema,
   type Build,
   type Report,
-  type ReportException
+  type ReportException,
+  type ReportFileName
 } from '@open-pencil/feedback/contract'
 
 import type { DiagnosticEvent } from '@/app/diagnostics'
 
 import { reportSteps } from './steps'
 
-/** A file attached to a report, under the fixed name the service accepts. */
+/** A file attached to a report, under a fixed name the service accepts. */
 export interface ReportAttachment {
-  name: 'document.fig'
+  name: ReportFileName
   bytes: Uint8Array
 }
 
@@ -40,9 +42,36 @@ function optionalText(text: string): string | undefined {
   return trimmed ? trimmed : undefined
 }
 
+const encoder = new TextEncoder()
+
+function bodyBytes(value: unknown): number {
+  return encoder.encode(JSON.stringify(value)).byteLength
+}
+
+/**
+ * The report within the body limit: its most recent steps that fit, or `null` when even without
+ * steps it is too large.
+ */
+function withinBodyLimit(report: Report): Report | null {
+  if (bodyBytes(report) <= REPORT_BODY_MAX_BYTES) return report
+  const steps = report.steps ?? []
+  // Counts an empty list, which is longer than none, and a comma before each step.
+  let budget = REPORT_BODY_MAX_BYTES - bodyBytes({ ...report, steps: [] })
+  let kept = 0
+  for (const step of steps.toReversed()) {
+    const size = bodyBytes(step) + 1
+    if (size > budget) break
+    budget -= size
+    kept++
+  }
+  if (budget < 0) return null
+  return { ...report, steps: kept > 0 ? steps.slice(-kept) : undefined }
+}
+
 /**
  * The report exactly as it will be sent, which the dialog shows before sending, or `null` while
- * the draft is not one the service would accept, such as a problem without a description.
+ * the draft is not one the service would accept, such as a problem without a description. Steps
+ * that would push the body past the service's limit are left out, oldest first.
  */
 export function buildReport(draft: ReportDraft, context: ReportContext): Report | null {
   const steps = draft.activity ? reportSteps(draft.activity) : undefined
@@ -61,5 +90,5 @@ export function buildReport(draft: ReportDraft, context: ReportContext): Report 
     ? { kind: 'error', exceptions: draft.exceptions, ...fields }
     : { kind: 'problem', ...fields }
   const parsed = v.safeParse(reportSchema, report)
-  return parsed.success ? parsed.output : null
+  return parsed.success ? withinBodyLimit(parsed.output) : null
 }

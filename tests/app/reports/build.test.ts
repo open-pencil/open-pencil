@@ -1,7 +1,8 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import type { Build } from '@open-pencil/feedback/contract'
+import { REPORT_BODY_MAX_BYTES, type Build } from '@open-pencil/feedback/contract'
 
+import type { DiagnosticEvent } from '@/app/diagnostics'
 import { buildReport, type ReportDraft } from '@/app/reports/build'
 import { reportExceptions } from '@/app/reports/exception'
 
@@ -70,4 +71,27 @@ test('an invalid email keeps the report from being sent', () => {
       installId: null
     })
   ).toBeNull()
+})
+
+test('the oldest steps are left out to keep the body within the service’s limit', () => {
+  const attributes = Object.fromEntries(
+    Array.from({ length: 24 }, (_, index) => [`field${index}`, 'x'.repeat(4000)])
+  )
+  const activity = Array.from({ length: 50 }, (_, index): DiagnosticEvent => ({
+    id: `event-${index}`,
+    timestamp: Date.UTC(2026, 10, 3, 9, 0, 50 - index),
+    category: 'document',
+    level: 'info',
+    name: 'document.saved',
+    attributes
+  }))
+  const report = buildReport(draft({ note: 'Broken', activity }), { build: BUILD, installId: null })
+  const steps = report?.steps ?? []
+
+  expect(new TextEncoder().encode(JSON.stringify(report)).byteLength).toBeLessThanOrEqual(
+    REPORT_BODY_MAX_BYTES
+  )
+  expect(steps.length).toBeGreaterThan(0)
+  expect(steps.length).toBeLessThan(50)
+  expect(steps.at(-1)?.timestamp).toBe(new Date(Date.UTC(2026, 10, 3, 9, 0, 50)).toISOString())
 })

@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEventListener } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
 
 import { ReadOnlyDocumentError } from '@open-pencil/core'
 
@@ -137,6 +137,14 @@ function remove(id: number) {
   toasts.value = toasts.value.filter((t) => t.id !== id)
 }
 
+/**
+ * Removes the toast once its action is done, unless a later message merged into it and brought
+ * an action of its own, which stays on offer.
+ */
+function removeOffer(id: number, action: ToastAction) {
+  toasts.value = toasts.value.filter((t) => t.id !== id || toRaw(t.action) !== action)
+}
+
 function setupGlobalErrorHandler() {
   if (errorHandlersInitialized) return
   errorHandlersInitialized = true
@@ -170,6 +178,7 @@ export const toast = {
   error,
   startProgress,
   remove,
+  removeOffer,
   toasts,
   setupGlobalErrorHandler,
   TOAST_DURATION,

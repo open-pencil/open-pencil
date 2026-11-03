@@ -14,8 +14,16 @@ export const REPORTS_ENABLED = FEEDBACK_ENABLED
 export const reportDialogOpen = ref(false)
 /** The error the open dialog reports, or `null` for a problem the person describes. */
 export const reportDialogError = shallowRef<ReportException[] | null>(null)
+/** A toast that offered a report, and the action on it that did. */
+export interface ReportNotice {
+  toastId: number
+  action: ToastAction
+}
+
 /** The notice that offered the open report, which goes away once the report is sent. */
-export const reportDialogNotice = ref<number | null>(null)
+export const reportDialogNotice = shallowRef<ReportNotice | null>(null)
+/** Counts the dialog's openings, so a send that ends after a newer one opened leaves it alone. */
+export const reportDialogOpening = ref(0)
 
 /**
  * Opens the report dialog, for a caught error or, without one, for a problem the person
@@ -23,11 +31,21 @@ export const reportDialogNotice = ref<number | null>(null)
  */
 export function openReportDialog(
   exceptions: ReportException[] | null = null,
-  notice: number | null = null
+  notice: ReportNotice | null = null
 ): void {
   reportDialogError.value = exceptions
   reportDialogNotice.value = notice
+  reportDialogOpening.value++
   reportDialogOpen.value = true
+}
+
+/** A toast action that opens the report dialog for `exceptions`. */
+export function reportAction(exceptions: ReportException[]): ToastAction {
+  const action: ToastAction = {
+    label: diagnosticsMessages.get().reportError,
+    run: (toastId) => openReportDialog(exceptions, { toastId, action })
+  }
+  return action
 }
 
 /**
@@ -42,8 +60,5 @@ export function reportErrorAction(
   if (!REPORTS_ENABLED) return undefined
   const exceptions = reportExceptions(error, source)
   if (!isOwnError(exceptions, location.origin)) return undefined
-  return {
-    label: diagnosticsMessages.get().reportError,
-    run: (toastId) => openReportDialog(exceptions, toastId)
-  }
+  return reportAction(exceptions)
 }

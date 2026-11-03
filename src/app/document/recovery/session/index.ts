@@ -91,19 +91,6 @@ export async function recoverySessionStates(
   )
 }
 
-/**
- * Which of the sessions `started` at some earlier moment crashed: those no window holds now. The
- * report offer reads `started` as the app launches, before recovery forgets crashes it has no
- * copies of.
- */
-export async function crashedSessionsOf(
-  started: readonly string[],
-  locks = sessionLocks()
-): Promise<ReadonlySet<string>> {
-  if (!locks) return new Set()
-  return sessionStates(started, await heldSessions(locks)).crashed
-}
-
 /** Forgets crashed sessions, once no copy they wrote is left to mark as a crash's. */
 export function forgetCrashedSessions(crashed: ReadonlySet<string>): void {
   for (const id of crashed) markSessionStarted(id, false)

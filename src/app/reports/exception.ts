@@ -20,7 +20,7 @@ import {
   type ReportFrame
 } from '@open-pencil/feedback/contract'
 
-import { diagnosticErrorDetails } from '@/app/diagnostics'
+import { diagnosticErrorDetails, mayQuoteContent } from '@/app/diagnostics'
 import { scrubDiagnosticText } from '@/app/diagnostics/scrub'
 
 /** PostHog's own conversion, as its browser SDK sets it up; it also reads the injected chunk IDs. */
@@ -82,18 +82,32 @@ function toException(
   }
 }
 
+/** The error and the causes it chains, as far as a report follows them. */
+function causeChain(error: unknown): unknown[] {
+  const chain: unknown[] = []
+  for (let link = error; link !== undefined && chain.length < MAX_EXCEPTIONS;) {
+    if (chain.includes(link)) break
+    chain.push(link)
+    link = link instanceof Error ? link.cause : undefined
+  }
+  return chain
+}
+
 /**
  * An uncaught error, its causes included, as PostHog error tracking reads it. Messages are
- * scrubbed as the diagnostics log scrubs them; when the error may quote prompts or responses,
- * as provider errors do, no message in the chain is kept, only types and frames.
+ * scrubbed as the diagnostics log scrubs them; when any error in the chain may quote prompts or
+ * responses, as provider errors do, no message in it is kept, only types and frames.
  */
 export function reportExceptions(error: unknown, source: ReportErrorSource): ReportException[] {
   const exceptions = builder
     .buildFromUnknown(error, { mechanism: { handled: false } })
     .$exception_list.slice(0, MAX_EXCEPTIONS)
+  const quotesContent = causeChain(error).some(
+    (link) => link instanceof Error && mayQuoteContent(link)
+  )
   const topMessage = diagnosticErrorDetails(error).message
   return exceptions.map((exception, index) => {
-    if (topMessage === null) return toException(exception, undefined, source)
+    if (quotesContent) return toException(exception, undefined, source)
     const value = index === 0 ? topMessage : exception.value && scrubDiagnosticText(exception.value)
     return toException(exception, value || undefined, source)
   })
