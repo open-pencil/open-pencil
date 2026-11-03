@@ -22,7 +22,10 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
 import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
-import { invalidateBooleanAncestors } from '#core/editor/graph-events'
+import {
+  invalidateBooleanAncestors,
+  rendererInvalidationForChanges
+} from '#core/editor/graph-events'
 import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
@@ -149,9 +152,9 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   }
 
   /**
-   * The renderer that measures for the API: boolean results and flattened vectors. It keeps
-   * each boolean operation's result between readings, so the API tells it when a change lands
-   * inside one, as the editor does for its renderers.
+   * The renderer that measures for the API: geometry, boolean results, and flattened vectors. It
+   * keeps paths between readings, so the API tells it when a layer's shape changes or a change
+   * lands inside a boolean operation, as the editor does for its renderers.
    */
   setRenderer(renderer: SkiaRenderer | null): void {
     this._unbindRendererEvents?.()
@@ -161,10 +164,16 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     const graph = this.graph
     const invalidate = (id: string | null | undefined) =>
       invalidateBooleanAncestors(graph, [renderer], id)
+    // A layer's own paths are kept too, so an edit to its shape drops them, as the editor's do.
+    const changed = (id: string, changes: Partial<CoreSceneNode>) => {
+      invalidate(id)
+      const { geometryCache } = rendererInvalidationForChanges(changes, { preview: false })
+      if (geometryCache) renderer.invalidateVectorPath(id)
+    }
     this._unbindRendererEvents = graph.onNodeEvents({
       created: (node) => invalidate(node.parentId),
-      updated: (id) => invalidate(id),
-      previewUpdated: (id) => invalidate(id),
+      updated: (id, changes) => changed(id, changes),
+      previewUpdated: (id, changes) => changed(id, changes),
       deleted: (_id, parentId) => invalidate(parentId),
       reparented: (id, oldParentId) => {
         invalidate(oldParentId)

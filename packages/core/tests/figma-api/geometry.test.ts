@@ -109,6 +109,15 @@ describe('fillGeometry', () => {
     ])
   })
 
+  test('follows a vector edited after it was read', async () => {
+    const { figma } = await setup()
+    const vector = figma.createVector()
+    vector.vectorPaths = [{ windingRule: 'NONZERO', data: 'M 0 0 L 10 0 L 10 10 Z' }]
+    expect(vector.fillGeometry[0]?.data).toBe('M0 0 L10 0 L10 10 L0 0 Z')
+    vector.vectorPaths = [{ windingRule: 'NONZERO', data: 'M 0 0 L 20 0 L 20 20 Z' }]
+    expect(vector.fillGeometry[0]?.data).toBe('M0 0 L20 0 L20 20 L0 0 Z')
+  })
+
   test('is empty for a line and an open vector', async () => {
     const { figma } = await setup()
     const line = figma.createLine()
