@@ -102,7 +102,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     : undefined
   const cloudServer = createCloudServer(app, {
     site: siteFiles(environment),
-    indexingPolicy: config.indexingPolicy
+    indexingPolicy: config.indexingPolicy,
+    reportError
   })
   const server = await listen(
     async (request) => cloudServer.fetch(request),

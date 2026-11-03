@@ -4,6 +4,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer } from '#cloud/runtime/site/server'
 import {
   cleanupPassOptions,
+  cloudErrorHandler,
   createCleanupServices,
   createCloudApp,
   createCloudAuthenticationRuntime,
@@ -97,7 +98,6 @@ function cloudServices(
     transport,
     runInBackground,
     deliver,
-    reportError,
     reporter,
     /** Sends what the request queued and closes the database after everything it started. */
     finish() {
@@ -111,15 +111,39 @@ function cloudServices(
   }
 }
 
+/** Cleanup, and email that failed to send after its request or that a full batch left behind. */
+async function runScheduled(
+  prepared: PreparedCloudflareCloud,
+  env: CloudflareCloudEnvironment,
+  context: Pick<ExecutionContext, 'waitUntil'>
+) {
+  const services = cloudServices(prepared, env, context)
+  const { config, database, objects } = services
+  try {
+    if (config.cleanupEnabled) {
+      const policy = createConfiguredCloudPolicy(config, database)
+      await runCleanup(
+        createCleanupServices(config, database, objects, policy),
+        cleanupPassOptions(config)
+      )
+    }
+    if (services.transport) await services.deliver()
+  } finally {
+    services.finish()
+  }
+}
+
 /**
  * OpenPencil Cloud on Cloudflare Workers, configured by a deployment TOML. The Worker serves the
  * API, the editor, and the portal per request, a Durable Object per document runs its collaboration rooms, and a
  * Cron Trigger runs cleanup and retries email.
  */
 export function createCloudflareCloud(configSource: string) {
-  const prepare = cloudflareCloudSetup(configSource)
+  const { prepare, reporter } = cloudflareCloudSetup(configSource)
 
   const router = new Hono<{ Bindings: CloudflareCloudEnvironment }>()
+    // Setup, relay routing, and the runtime around the app; the app reports its own errors.
+    .onError((error, c) => cloudErrorHandler(keptAlive(reporter(), c.executionCtx))(error, c))
     .get(RELAY_PATH, routeToRelay)
     .all('*', async (c) => {
       const prepared = await prepare(c.env)
@@ -148,7 +172,8 @@ export function createCloudflareCloud(configSource: string) {
         })
         return await createCloudServer(app, {
           site: assetSiteFiles(c.env.ASSETS),
-          indexingPolicy: config.indexingPolicy
+          indexingPolicy: config.indexingPolicy,
+          reportError: services.reporter
         }).fetch(c.req.raw)
       } finally {
         services.finish()
@@ -159,24 +184,11 @@ export function createCloudflareCloud(configSource: string) {
     fetch: (request, env, context) => router.fetch(request, env, context),
 
     async scheduled(_controller, env, context) {
-      const prepared = await prepare(env)
-      const services = cloudServices(prepared, env, context)
-      const { config, database, objects } = services
       try {
-        if (config.cleanupEnabled) {
-          const policy = createConfiguredCloudPolicy(config, database)
-          await runCleanup(
-            createCleanupServices(config, database, objects, policy),
-            cleanupPassOptions(config)
-          )
-        }
-        // Retries what failed to send after its request, and what a full batch left behind.
-        if (services.transport) await services.deliver()
+        await runScheduled(await prepare(env), env, context)
       } catch (error) {
-        await services.reportError('Scheduled run failed:', error, 'scheduled')
+        await reportCloudError(reporter(), 'Scheduled run failed:', error, { source: 'scheduled' })
         throw error
-      } finally {
-        services.finish()
       }
     }
   }

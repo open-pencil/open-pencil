@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 import { gunzipSync } from 'node:zlib'
 
 import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
@@ -73,5 +73,24 @@ describe('PostHog error reporter', () => {
         }
       ]
     })
+  })
+
+  test('logs a report PostHog refuses', async () => {
+    const logged = spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const report = createPostHogErrorReporter(
+        config({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_x' }),
+        'node',
+        {
+          fetch: async () => ({ status: 401, text: async () => '{}', json: async () => ({}) })
+        }
+      )
+      await report?.(new Error('broken'), { source: 'cleanup' })
+      expect(logged.mock.calls.map(([message]) => message)).toContain(
+        '[Cloud] PostHog refused an error report:'
+      )
+    } finally {
+      logged.mockRestore()
+    }
   })
 })

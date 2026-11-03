@@ -141,7 +141,7 @@ Revision keys are immutable, so bucket versioning isn't needed, but it isn't a b
 
 ## Error tracking
 
-The server reports nothing unless you ask it to. Add an `[error_tracking]` table with `provider = "posthog"` to send errors no request handled, and failures of background work, cleanup, email delivery, and the collaboration relay, to PostHog error tracking. `host` defaults to PostHog's US Cloud, `https://us.i.posthog.com`; set `https://eu.i.posthog.com` or your own instance's address instead. The project API key defaults to `POSTHOG_PROJECT_API_KEY`. Each report carries the error and its stack, the runtime, the deployment mode and host, where the error was caught, and for a request its method and route pattern; it carries no account, address, or request body, and creates no person in PostHog. Errors are still logged either way.
+The server reports nothing unless you ask it to. Add an `[error_tracking]` table with `provider = "posthog"` to send errors no request handled, and failures of background work, cleanup, email delivery, and the collaboration relay, to PostHog error tracking. `host` defaults to PostHog's US Cloud, `https://us.i.posthog.com`; set `https://eu.i.posthog.com` or your own instance's address instead. The project API key defaults to `POSTHOG_PROJECT_API_KEY`. Each report carries the error's message and stack, the runtime, the deployment mode and host, where the error was caught, and for a request its method and route pattern. It names no account and creates no person in PostHog, and it leaves out the client's address and the request body, though an error's message can quote a value the failing code handled, such as a malformed ID in a database error. Errors are still logged either way.
 
 ## Backups and upgrades
 

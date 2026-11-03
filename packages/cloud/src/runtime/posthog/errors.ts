@@ -23,6 +23,10 @@ export function createPostHogErrorReporter(
     disableGeoip: true,
     ...options
   })
+  // The SDK resolves a capture that PostHog refused and emits the refusal instead.
+  client.on('error', (failure: unknown) => {
+    console.error('[Cloud] PostHog refused an error report:', failure)
+  })
   const deployment = {
     cloud_runtime: runtime,
     cloud_deployment: config.deployment,
