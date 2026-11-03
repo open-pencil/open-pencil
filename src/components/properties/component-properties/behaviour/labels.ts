@@ -39,7 +39,8 @@ export function useBehaviourLabels() {
       open: p.behaviourOpen,
       filled: p.behaviourFilled,
       text: p.behaviourText,
-      disabled: p.behaviourDisabled
+      disabled: p.behaviourDisabled,
+      invalid: p.behaviourInvalid
     }
     const parts: Record<string, string> = {
       track: p.behaviourTrack,
@@ -59,7 +60,8 @@ export function useBehaviourLabels() {
       hover: p.behaviourStateHover,
       pressed: p.behaviourStatePressed,
       focus: p.behaviourStateFocus,
-      disabled: p.behaviourStateDisabled
+      disabled: p.behaviourStateDisabled,
+      invalid: p.behaviourStateInvalid
     }
     /** What a control's main value is called, which code calls its `value`. */
     const mainValue: Partial<Record<BehaviourKind, string>> = {

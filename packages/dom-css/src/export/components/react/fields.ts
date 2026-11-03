@@ -12,6 +12,12 @@ export const INPUT_PROPS: Partial<Record<GeneratedKind, 'input' | 'textarea'>> =
   textarea: 'textarea'
 }
 
+/** `invalid || undefined`, so `aria-invalid` and `data-invalid` are set only while invalid. */
+export const INVALID_FLAG = () => es.parseExpression('invalid || undefined')
+
+/** `aria-invalid` on the control a person fills in: a field's input, or else the root. */
+export const ariaInvalid = () => jsx.attribute('aria-invalid', jsx.container(INVALID_FLAG()))
+
 /** A number field's stepper parts, which change its value by a step. */
 export const STEPPERS: Record<string, { label: string; sign: '+' | '-' }> = {
   increment: { label: 'Increase', sign: '+' },
@@ -62,6 +68,7 @@ export function inputElement(className: string, uses: MarkupUses, depth: number)
         numeric('max', range.max),
         numeric('step', range.step),
         jsx.attribute('disabled', jsx.container(es.identifier('disabled'))),
+        ...(component.invalid ? [ariaInvalid()] : []),
         classAttribute
       ],
       [],
@@ -76,6 +83,7 @@ export function inputElement(className: string, uses: MarkupUses, depth: number)
       ...(start ? [jsx.attribute('defaultValue', jsx.stringValue(start))] : []),
       // The input takes the caller's props, such as `name` or `onChange`.
       jsx.spread(es.identifier('props')),
+      ...(component.invalid ? [ariaInvalid()] : []),
       classAttribute
     ],
     [],

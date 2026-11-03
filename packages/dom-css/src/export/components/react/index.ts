@@ -8,13 +8,14 @@ import { camelCase, upperFirst } from 'es-toolkit/string'
 import { es, jsx } from '@open-pencil/emit'
 import type { ShaderComponent } from '@open-pencil/scene-graph/shaders'
 
-import type {
-  ComponentElement,
-  ComponentGenerator,
-  GeneratedComponent,
-  ComponentModel,
-  ComponentNode,
-  GeneratedKind
+import {
+  FIELD_KINDS,
+  type ComponentElement,
+  type ComponentGenerator,
+  type GeneratedComponent,
+  type ComponentModel,
+  type ComponentNode,
+  type GeneratedKind
 } from '../model'
 import type { ComponentReference } from '../references'
 import {
@@ -28,7 +29,9 @@ import {
 } from '../shaders'
 import { componentClasses } from '../styling'
 import {
+  ariaInvalid,
   INPUT_PROPS,
+  INVALID_FLAG,
   inputElement,
   kindParameters,
   NUMBER_STATE,
@@ -233,6 +236,11 @@ function bindingAttributes(
   return node.bindings.flatMap((binding) => {
     if (binding.type === 'prop')
       return [jsx.attribute(binding.attribute, jsx.container(es.identifier(binding.prop.name)))]
+    if (binding.type === 'invalid')
+      return [
+        ...(FIELD_KINDS.has(kind) ? [] : [ariaInvalid()]),
+        jsx.attribute('data-invalid', jsx.container(INVALID_FLAG()))
+      ]
     // Radix sets `data-disabled` on its own roots; a native root needs it for the styles.
     if (binding.type === 'disabled' && native)
       return [jsx.attribute('data-disabled', jsx.container(disabledFlag(kind)))]
@@ -396,12 +404,15 @@ function rootPropsType(kind: GeneratedKind, tag: string): es.SyntaxNode {
 function propsType(component: ComponentModel): es.SyntaxNode {
   const base = rootPropsType(component.kind, component.tree.tag)
   const own = [component.props, component.texts, component.booleans, component.slots]
-  if (own.every((list) => list.length === 0)) return base
+  if (!component.invalid && own.every((list) => list.length === 0)) return base
   return {
     type: 'TSIntersectionType',
     types: [
       base,
       es.objectType([
+        ...(component.invalid
+          ? [['invalid', es.parseType('boolean'), true] as [string, es.SyntaxNode, boolean]]
+          : []),
         ...component.props.map((prop): [string, es.SyntaxNode, boolean] => [
           prop.name,
           es.stringUnionType(prop.options),
@@ -434,6 +445,8 @@ function propsType(component: ComponentModel): es.SyntaxNode {
 function parameters(component: ComponentModel): es.SyntaxNode {
   const own: Parameter[] = [
     ...kindParameters(component),
+    // Marked as `aria-invalid` and `data-invalid`, never passed on as an attribute of its own.
+    ...(component.invalid ? [{ name: 'invalid' }] : []),
     ...[...component.props, ...component.texts].map((prop) => ({
       name: prop.name,
       default: es.string(prop.default)

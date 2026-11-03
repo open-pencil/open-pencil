@@ -70,8 +70,18 @@ export function isDisabled(control: ControlModel, state: ControlState | undefine
   return !!state?.booleans.disabled || !!control.states?.designedDisabled
 }
 
+/** Whether a control is invalid: its invalid value is on, or it is drawn invalid. */
+function isInvalid(control: ControlModel, state: ControlState): boolean {
+  return !!state.booleans.invalid || !!control.states?.designedInvalid
+}
+
+/**
+ * The state a control's states property shows: disabled, then invalid, which the pointer and
+ * focus leave as it is, then the interactions.
+ */
 function interactionState(control: ControlModel, state: ControlState): InteractionState {
   if (isDisabled(control, state)) return 'disabled'
+  if (isInvalid(control, state) && control.states?.values.invalid !== undefined) return 'invalid'
   if (state.pressed) return 'pressed'
   if (state.hovered) return 'hover'
   if (state.focused) return 'focus'

@@ -7,6 +7,7 @@ import {
   accordionComponent,
   buttonSet,
   collapsibleSet,
+  invalidCheckboxSet,
   labelledButtonSet,
   numberFieldComponent,
   plainBadgeSet,
@@ -356,6 +357,25 @@ describe('generated Vue form controls', () => {
   test('a textarea starts with its words', async () => {
     const { component } = await generate(textareaComponent())
     expect(await render(component)).toMatch(/<textarea[^>]*>Tell us more<\/textarea>/)
+  })
+
+  test('an invalid checkbox is marked for assistive technology and its styles', async () => {
+    const { component, stories } = await generate(invalidCheckboxSet())
+    const valid = await render(component)
+    expect(valid).not.toContain('aria-invalid')
+    expect(valid).not.toContain('data-invalid')
+    const invalid = await render(component, { invalid: true })
+    expect(invalid).toMatch(/<button[^>]*aria-invalid="true"[^>]*role="checkbox"/)
+    expect(invalid).toContain('data-invalid="true"')
+    expect(Object.keys(stories)).toContain('Invalid')
+  })
+
+  test("an invalid field marks its input, and its root for the field's styles", async () => {
+    const { component } = await generate(textFieldSet({ invalid: true }))
+    const html = await render(component, { invalid: true })
+    expect(html).toMatch(/^<div[^>]*data-invalid="true"/)
+    expect(html).toMatch(/<input[^>]*aria-invalid="true"/)
+    expect(html.match(/aria-invalid/g)).toHaveLength(1)
   })
 })
 

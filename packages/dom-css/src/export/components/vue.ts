@@ -10,13 +10,14 @@ import type { ShaderComponent } from '@open-pencil/scene-graph/shaders'
 
 import { claimName } from '../storybook/names'
 import { progressWidth } from './fields'
-import type {
-  ComponentBinding,
-  ComponentElement,
-  ComponentGenerator,
-  ComponentModel,
-  ComponentNode,
-  GeneratedKind
+import {
+  FIELD_KINDS,
+  type ComponentBinding,
+  type ComponentElement,
+  type ComponentGenerator,
+  type ComponentModel,
+  type ComponentNode,
+  type GeneratedKind
 } from './model'
 import type { ComponentReference } from './references'
 import {
@@ -102,6 +103,12 @@ const HEADING_STYLE = Object.entries(HEADING_RESET)
 /** `disabled || undefined`, so a native button sets `data-disabled` only while disabled. */
 const DISABLED_FLAG = es.parseExpression('disabled || undefined')
 
+/** `invalid || undefined`, so `aria-invalid` and `data-invalid` are set only while invalid. */
+const INVALID_FLAG = es.parseExpression('invalid || undefined')
+
+/** `aria-invalid` on the control a person fills in: a field's input, or else the root. */
+const ariaInvalid = () => vue.bound('aria-invalid', INVALID_FLAG)
+
 function bindingAttributes(
   binding: ComponentBinding,
   uses: TemplateUses,
@@ -116,6 +123,11 @@ function bindingAttributes(
   }
   if (binding.type === 'prop') return [vue.bound(binding.attribute, identifier(binding.prop.name))]
   if (binding.type === 'value') return [vue.bound('value', identifier('value'))]
+  if (binding.type === 'invalid')
+    return [
+      ...(FIELD_KINDS.has(kind) ? [] : [ariaInvalid()]),
+      vue.bound('data-invalid', INVALID_FLAG)
+    ]
   // Reka sets `data-disabled` on its own roots; a native root needs it for the state styles.
   return [
     ...(native && kind !== 'button' ? [] : [vue.bound('disabled', identifier('disabled'))]),
@@ -155,14 +167,18 @@ function inputNode(className: string, uses: TemplateUses): vue.VueElement {
   const { component } = uses
   if (component.kind === 'numberField') {
     uses.reka.add('NumberFieldInput')
-    return vue.element('NumberFieldInput', [vue.attribute('class', uses.classOf(className))])
+    return vue.element('NumberFieldInput', [
+      vue.attribute('class', uses.classOf(className)),
+      ...(component.invalid ? [ariaInvalid()] : [])
+    ])
   }
   const placeholder = component.text?.placeholder
   return vue.element(component.kind === 'textarea' ? 'textarea' : 'input', [
     vue.attribute('class', uses.classOf(className)),
     ...(component.model ? [vue.model(identifier(component.model))] : []),
     ...(placeholder ? [vue.attribute('placeholder', placeholder)] : []),
-    ...(component.disabled ? [vue.bound('disabled', identifier('disabled'))] : [])
+    ...(component.disabled ? [vue.bound('disabled', identifier('disabled'))] : []),
+    ...(component.invalid ? [ariaInvalid()] : [])
   ])
 }
 
@@ -304,6 +320,7 @@ function propsType(component: ComponentModel): es.SyntaxNode {
     es.stringUnionType(prop.options),
     true
   ])
+  if (component.invalid) members.unshift(['invalid', es.parseType('boolean'), true])
   if (component.disabled) members.unshift(['disabled', es.parseType('boolean'), true])
   // A group's item always stands for a value, which has no default.
   if (component.valueProp) members.unshift(['value', es.parseType('string'), false])
@@ -313,9 +330,10 @@ function propsType(component: ComponentModel): es.SyntaxNode {
 }
 
 /** `defineProps`, with `withDefaults` when any prop has a default to give. */
-/** Whether any prop has a default to give: `disabled`, a variant, a text, or a boolean. */
+/** Whether any prop has a default to give: a flag, a variant, a text, or a boolean. */
 const hasDefaults = (component: ComponentModel) =>
   component.disabled ||
+  component.invalid ||
   component.props.length > 0 ||
   component.texts.length > 0 ||
   component.booleans.length > 0
@@ -330,6 +348,7 @@ function propsDeclaration(component: ComponentModel): es.SyntaxNode[] {
 function propsDefaults(component: ComponentModel): es.SyntaxNode {
   return es.object([
     ...(component.disabled ? [['disabled', es.parseExpression('false')] as const] : []),
+    ...(component.invalid ? [['invalid', es.parseExpression('false')] as const] : []),
     ...component.props.map((prop) => [prop.name, es.string(prop.default)] as const),
     ...component.texts.map((text) => [text.name, es.string(text.default)] as const),
     ...component.booleans.map(
@@ -441,7 +460,8 @@ export const vueComponent: ComponentGenerator = async (component, options = {}) 
     ...component.booleans.map((prop) => prop.name),
     ...component.slots.map((slot) => slot.name),
     ...(component.model ? [component.model] : []),
-    'disabled'
+    'disabled',
+    'invalid'
   ])
   const uses: TemplateUses = {
     component,

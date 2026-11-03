@@ -10,7 +10,8 @@ export const COLORS = {
   off: solid(0.8, 0.84, 0.88),
   on: solid(0.31, 0.27, 0.9),
   hover: solid(0.72, 0.77, 0.84),
-  white: solid(1, 1, 1)
+  white: solid(1, 1, 1),
+  error: solid(0.86, 0.15, 0.15)
 }
 
 /** A component set whose variants are built by `draw` for each combination of `axes`. */
@@ -103,6 +104,36 @@ export function checkboxSet() {
           height: 10,
           fills: COLORS.on
         })
+    }
+  )
+}
+
+/**
+ * A checkbox as the shadcn/ui kit draws one: one State property for focus, disabled, and
+ * invalid, which shows a red border.
+ */
+export function invalidCheckboxSet() {
+  return componentSet(
+    'Checkbox',
+    { Checked: ['Off', 'On'], State: ['Default', 'Focus', 'Disabled', 'Invalid'] },
+    {
+      ...emptyBehaviour('checkbox'),
+      booleans: { value: { propertyId: 'checked', on: 'On', off: 'Off' } },
+      states: {
+        propertyId: 'state',
+        rest: 'Default',
+        focus: 'Focus',
+        disabled: 'Disabled',
+        invalid: 'Invalid'
+      }
+    },
+    (graph, variant, { Checked, State }) => {
+      const border = { Focus: COLORS.hover, Invalid: COLORS.error }[State] ?? COLORS.off
+      graph.updateNode(variant, {
+        fills: Checked === 'On' ? COLORS.on : COLORS.white,
+        strokes: border.map((paint) => ({ ...paint, weight: 1, align: 'INSIDE' as const })),
+        opacity: State === 'Disabled' ? 0.5 : 1
+      })
     }
   )
 }
@@ -600,19 +631,27 @@ const MUTED = solid(0.61, 0.64, 0.69)
 
 /**
  * A text field drawn empty, its placeholder in a muted color, and filled, its words in ink, its
- * text bound to an Email property whose words are the placeholder.
+ * text bound to an Email property whose words are the placeholder. With `invalid`, an Invalid
+ * property draws it with a red border.
  */
-export function textFieldSet() {
+export function textFieldSet({ invalid = false } = {}) {
   const fixture = componentSet(
     'Email',
-    { Filled: ['No', 'Yes'] },
+    { Filled: ['No', 'Yes'], ...(invalid ? { Invalid: ['No', 'Yes'] } : {}) },
     {
       ...emptyBehaviour('textField'),
       texts: { value: { propertyId: 'email' } },
-      booleans: { filled: { propertyId: 'filled', on: 'Yes', off: 'No' } }
+      booleans: {
+        filled: { propertyId: 'filled', on: 'Yes', off: 'No' },
+        ...(invalid ? { invalid: { propertyId: 'invalid', on: 'Yes', off: 'No' } } : {})
+      }
     },
-    (graph, variant, { Filled }) => {
-      graph.updateNode(variant, { width: 240, height: 36, strokes: [] })
+    (graph, variant, { Filled, Invalid }) => {
+      const strokes =
+        Invalid === 'Yes'
+          ? COLORS.error.map((paint) => ({ ...paint, weight: 1, align: 'INSIDE' as const }))
+          : []
+      graph.updateNode(variant, { width: 240, height: 36, strokes })
       graph.createNode('TEXT', variant, {
         name: 'Value',
         text: Filled === 'Yes' ? 'ada@example.com' : 'Email',

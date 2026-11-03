@@ -32,6 +32,8 @@ export interface StatesModel {
   rest: string | undefined
   /** Whether the document's instance is drawn disabled. */
   designedDisabled: boolean
+  /** Whether the document's instance is drawn invalid. */
+  designedInvalid: boolean
 }
 
 /** An instance with a behaviour below a root layer: its values, states, and bound layers. */
@@ -93,7 +95,8 @@ function statesModel(
     name: definition.name,
     values: states,
     rest: states.rest ?? authored,
-    designedDisabled: !!states.disabled && authored === states.disabled
+    designedDisabled: !!states.disabled && authored === states.disabled,
+    designedInvalid: !!states.invalid && authored === states.invalid
   }
 }
 

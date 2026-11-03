@@ -6,7 +6,7 @@ import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
 import {
   behaviourContract,
-  INTERACTION_STATES,
+  interactionStatesOf,
   type BehaviourKind,
   type InteractionState
 } from './kinds'
@@ -142,19 +142,21 @@ const STATE_NAMES: Record<InteractionState, readonly string[]> = {
   hover: ['hover', 'hovered', 'hovering'],
   pressed: ['pressed', 'active', 'down', 'pressing'],
   focus: ['focus', 'focused', 'focus visible', 'focus-visible'],
-  disabled: ['disabled', 'inactive']
+  disabled: ['disabled', 'inactive'],
+  invalid: ['invalid', 'error']
 }
 
 /**
- * Interaction states for a variant property, each mapped to the value whose name means it, such
- * as `Hover` or `Pressed`; states without such a value are left unset.
+ * A kind of control's interaction states for a variant property, each mapped to the value whose
+ * name means it, such as `Hover` or `Pressed`; states without such a value are left unset.
  */
 export function guessInteractionStates(
+  kind: BehaviourKind,
   propertyId: string,
   values: readonly string[]
 ): BehaviourInteractionStates {
   const states: BehaviourInteractionStates = { propertyId }
-  for (const state of INTERACTION_STATES) {
+  for (const state of interactionStatesOf(kind)) {
     const match = values.find((value) => STATE_NAMES[state].includes(value.trim().toLowerCase()))
     if (match) states[state] = match
   }

@@ -79,5 +79,11 @@ describe('behaviour specs', () => {
     expect(() =>
       behaviourFromSpec(graph, set, { kind: 'slider', parts: { track: 'Thumb', thumb: 'Thumb' } })
     ).toThrow('"Thumb" is already the track; a slot draws one part')
+    expect(() =>
+      behaviourFromSpec(graph, set, {
+        kind: 'button',
+        states: { property: 'Interaction', invalid: 'Disabled' }
+      })
+    ).toThrow('A button has no invalid state')
   })
 })

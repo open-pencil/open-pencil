@@ -33,7 +33,8 @@ export const interactionStateValues = {
   hover: v.optional(v.string()),
   pressed: v.optional(v.string()),
   focus: v.optional(v.string()),
-  disabled: v.optional(v.string())
+  disabled: v.optional(v.string()),
+  invalid: v.optional(v.string())
 } satisfies Record<InteractionState, unknown>
 
 const interactionStatesSchema = v.object({ propertyId: v.string(), ...interactionStateValues })

@@ -5,6 +5,7 @@ import {
   behaviourOwner,
   emptyBehaviour,
   guessInteractionStates,
+  interactionStatesOf,
   missingBindings,
   readBehaviour,
   withBehaviour
@@ -93,7 +94,14 @@ describe('behaviour model', () => {
 
   test('interaction states are guessed from variant value names', () => {
     expect(
-      guessInteractionStates('interaction', ['Idle', 'Hovered', 'Active', 'Focus visible', 'Big'])
+      guessInteractionStates('button', 'interaction', [
+        'Idle',
+        'Hovered',
+        'Active',
+        'Focus visible',
+        'Error',
+        'Big'
+      ])
     ).toEqual({
       propertyId: 'interaction',
       rest: 'Idle',
@@ -101,5 +109,22 @@ describe('behaviour model', () => {
       pressed: 'Active',
       focus: 'Focus visible'
     })
+  })
+
+  // The shadcn/ui kit draws Checkbox and RadioGroup invalid as `Invalid`, and Radio as `Error`,
+  // beside Disabled on one property; a button has no invalid state, so its Error is left alone.
+  test('only a form control is guessed invalid', () => {
+    const values = ['Default', 'Focus', 'Disabled', 'Invalid']
+    expect(guessInteractionStates('checkbox', 'state', values)).toEqual({
+      propertyId: 'state',
+      rest: 'Default',
+      focus: 'Focus',
+      disabled: 'Disabled',
+      invalid: 'Invalid'
+    })
+    expect(guessInteractionStates('radio', 'state', ['Default', 'Error']).invalid).toBe('Error')
+    expect(guessInteractionStates('tabs', 'state', values).invalid).toBeUndefined()
+    expect(interactionStatesOf('textField')).toContain('invalid')
+    expect(interactionStatesOf('toggle')).not.toContain('invalid')
   })
 })

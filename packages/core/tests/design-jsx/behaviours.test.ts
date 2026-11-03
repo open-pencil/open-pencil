@@ -185,6 +185,29 @@ describe('Reka UI elements in JSX export', () => {
     expect(Object.keys(again?.parts ?? {})).toEqual(Object.keys(before?.parts ?? {}))
   })
 
+  test('a checkbox keeps its invalid value and invalid state through export', async () => {
+    const graph = new SceneGraph()
+    const [first] = await renderJSX(
+      graph,
+      `<Checkbox.Root name="Checkbox" modelValue="Checked" invalid="Error" states="State">
+        <Component name="Checked=Off, Error=Off, State=Default" w={16} h={16} />
+        <Component name="Checked=On, Error=Off, State=Default" w={16} h={16} />
+        <Component name="Checked=Off, Error=On, State=Default" w={16} h={16} />
+        <Component name="Checked=Off, Error=Off, State=Invalid" w={16} h={16} />
+      </Checkbox.Root>`
+    )
+    const before = readBehaviour(getNodeOrThrow(graph, first.id))
+    expect(before?.booleans.invalid).toMatchObject({ on: 'On', off: 'Off' })
+    expect(before?.states?.invalid).toBe('Invalid')
+    const code = sceneNodeToJSX(first.id, graph)
+    expect(code).toContain('invalid={{ property: "Error", on: "On", off: "Off" }}')
+
+    const [second] = await renderJSX(graph, code)
+    const again = readBehaviour(getNodeOrThrow(graph, second.id))
+    expect(again?.booleans.invalid).toMatchObject({ on: 'On', off: 'Off' })
+    expect(again?.states?.invalid).toBe('Invalid')
+  })
+
   test('tabs and a radio group export their repeated parts and items as Reka writes them', async () => {
     const graph = new SceneGraph()
     const [radio] = await renderJSX(
