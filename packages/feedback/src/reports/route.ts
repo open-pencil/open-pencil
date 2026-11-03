@@ -36,6 +36,15 @@ export function reportRoutes(services: FeedbackServices) {
         const report = c.req.valid('json')
         const reportId = crypto.randomUUID()
         const now = services.now()
+        // Signed first, so a failure here stops the report before PostHog receives it.
+        const files = report.files ?? []
+        const receipt: ReportReceipt = {
+          reportId,
+          uploadToken:
+            files.length > 0
+              ? await signUploadToken(c.env.REPORT_UPLOAD_SECRET, reportId, files, now)
+              : null
+        }
         const body = toPostHogReport(report, {
           apiKey: c.env.POSTHOG_KEY,
           reportId,
@@ -50,14 +59,6 @@ export function reportRoutes(services: FeedbackServices) {
           })
           .catch(() => null)
         if (!response?.ok) return c.body(null, 502)
-        const files = report.files ?? []
-        const receipt: ReportReceipt = {
-          reportId,
-          uploadToken:
-            files.length > 0
-              ? await signUploadToken(c.env.REPORT_UPLOAD_SECRET, reportId, files, now)
-              : null
-        }
         return c.json(receipt, 201)
       }
     )
