@@ -5,7 +5,9 @@ import type {
   TextNode
 } from '@figma/plugin-typings/plugin-api-standalone'
 
+import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -83,4 +85,18 @@ export function createStackHost() {
   }
   const order = () => host.children.map((child: FigmaNodeProxy) => child.name)
   return { figma, host, rect, order }
+}
+
+/**
+ * Attaches a headless renderer to `api`, as the app and `open-pencil eval` do, so geometry,
+ * booleans, and flatten measure real paths. The renderer lives as long as the test process.
+ */
+export async function attachTestRenderer(api: FigmaAPI): Promise<SkiaRenderer> {
+  const ck = await initCanvasKit()
+  const surface = ck.MakeSurface(200, 200)
+  if (!surface) throw new Error('Could not create a CanvasKit surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  await renderer.loadFonts()
+  api.setRenderer(renderer)
+  return renderer
 }

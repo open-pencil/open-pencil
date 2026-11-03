@@ -144,6 +144,10 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     this._currentPageId = pages[0]?.id ?? graph.rootId
   }
 
+  get renderer(): SkiaRenderer | null {
+    return this._renderer
+  }
+
   /**
    * The renderer that measures for the API: boolean results and flattened vectors. It keeps
    * each boolean operation's result between readings, so the API tells it when a change lands

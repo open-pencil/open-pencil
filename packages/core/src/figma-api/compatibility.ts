@@ -7,6 +7,7 @@ import type {
   Effect,
   EffectStyle,
   ExportMixin,
+  GeometryMixin,
   FrameNode,
   GradientPaint,
   GridStyle,
@@ -399,6 +400,12 @@ type ExportMembersMatch = Expect<
   Extends<Pick<FigmaNodeProxy, ExportKeys>, Pick<ExportMixin, ExportKeys>>
 >
 const _exportMembersMatch: ExportMembersMatch = true
+
+type GeometryKeys = 'fillGeometry' | 'strokeGeometry'
+type GeometryMembersMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, GeometryKeys>, Pick<GeometryMixin, GeometryKeys>>
+>
+const _geometryMembersMatch: GeometryMembersMatch = true
 
 // --- Styles: each style's members are Figma's, apart from consumers, which read node proxies ---
 
