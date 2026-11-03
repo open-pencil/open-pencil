@@ -14,7 +14,8 @@ export type { ToastVariant } from '@/components/ui/feedback/toast'
 
 export interface ToastAction {
   label: string
-  run: () => void
+  /** Gets the toast it was clicked on, for actions that close it once their work is done. */
+  run: (toastId: number) => void
 }
 
 export interface Toast {

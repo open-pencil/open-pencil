@@ -80,7 +80,7 @@ export function crashErrors(
 function offer(message: string, exceptions: ReportException[]): void {
   toast.error(message, {
     label: diagnosticsMessages.get().reportError,
-    run: () => openReportDialog(exceptions)
+    run: (toastId) => openReportDialog(exceptions, toastId)
   })
 }
 

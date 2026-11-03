@@ -14,7 +14,7 @@ import { sharingState } from '@/app/telemetry/state'
 
 import { buildReport, type ReportAttachment, type ReportContext } from './build'
 import { sendReport, type ReportSendFailure } from './send'
-import { reportDialogError, reportDialogOpen } from './state'
+import { reportDialogError, reportDialogNotice, reportDialogOpen } from './state'
 
 async function reportContext(): Promise<ReportContext> {
   const shared = appPreferences.value.sharing.usageStats === 'granted'
@@ -116,6 +116,8 @@ export function useReportDialog() {
         return
       }
       reportDialogOpen.value = false
+      // The notice that offered this report would only offer it again.
+      if (reportDialogNotice.value !== null) toast.remove(reportDialogNotice.value)
       toast.info(diagnosticsMessages.get().reportSent)
     } finally {
       sending.value = false
