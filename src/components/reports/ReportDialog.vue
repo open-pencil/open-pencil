@@ -1,112 +1,134 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { tv } from 'tailwind-variants'
+import { computed, useId } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { useReportDialog } from '@/app/reports/dialog'
-import { reportDialogOpen } from '@/app/reports/state'
+import type { ReportSendFailure } from '@/app/reports/send'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import {
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot
+} from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
+import reportsTheme from '@/theme/reports'
 
-const { common, diagnostics: messages } = useI18n()
 const {
   kind,
-  note,
-  email,
-  emailInvalid,
-  includeActivity,
-  attachDocument,
-  hasDocument,
-  preparingDocument,
-  documentFailed,
-  report,
+  emailInvalid = false,
+  hasDocument = false,
+  preparingDocument = false,
+  documentFailed = false,
   preview,
-  sending,
-  failure,
-  send
-} = useReportDialog()
+  canSend,
+  sending = false,
+  failure = null
+} = defineProps<{
+  kind: 'error' | 'problem'
+  emailInvalid?: boolean
+  /** Whether the active tab holds a document to attach. */
+  hasDocument?: boolean
+  preparingDocument?: boolean
+  documentFailed?: boolean
+  /** The exact body that would be sent. */
+  preview: string
+  canSend: boolean
+  sending?: boolean
+  failure?: ReportSendFailure | null
+}>()
+
+const emit = defineEmits<{ send: [] }>()
+
+const open = defineModel<boolean>('open', { default: false })
+const note = defineModel<string>('note', { default: '' })
+const email = defineModel<string>('email', { default: '' })
+const includeActivity = defineModel<boolean>('includeActivity', { default: true })
+const attachDocument = defineModel<boolean>('attachDocument', { default: false })
+
+const { common, diagnostics: messages } = useI18n()
+const ui = tv(reportsTheme)()
+const id = useId()
 
 const heading = computed(() =>
-  kind.value === 'error' ? messages.value.reportErrorTitle : messages.value.reportProblemTitle
+  kind === 'error' ? messages.value.reportErrorTitle : messages.value.reportProblemTitle
 )
 const description = computed(() =>
-  kind.value === 'error'
-    ? messages.value.reportErrorDescription
-    : messages.value.reportProblemDescription
+  kind === 'error' ? messages.value.reportErrorDescription : messages.value.reportProblemDescription
 )
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="reportDialogOpen" size="md" data-test-id="report-dialog">
+  <AppDialogRoot v-model:open="open" size="md" data-test-id="report-dialog">
     <AppDialogHeader :heading="heading" :description="description" />
-    <form
-      id="report-form"
-      class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
-      @submit.prevent="send"
-    >
-      <label class="flex flex-col gap-1.5 text-xs text-muted">
-        {{ kind === 'error' ? messages.reportNoteError : messages.reportNoteProblem }}
-        <AppTextarea
-          v-model="note"
-          :rows="4"
-          :placeholder="messages.reportNotePlaceholder"
-          data-test-id="report-note"
+    <form novalidate class="flex min-h-0 flex-1 flex-col" @submit.prevent="emit('send')">
+      <AppDialogBody :ui="{ body: ui.body() }">
+        <div :class="ui.field()">
+          <label :for="`${id}-note`" :class="ui.label()">
+            {{ kind === 'error' ? messages.reportNoteError : messages.reportNoteProblem }}
+          </label>
+          <AppTextarea
+            :id="`${id}-note`"
+            v-model="note"
+            :rows="4"
+            :placeholder="messages.reportNotePlaceholder"
+            data-test-id="report-note"
+          />
+        </div>
+        <div :class="ui.field()">
+          <label :for="`${id}-email`" :class="ui.label()">{{ messages.reportEmail }}</label>
+          <AppInput
+            :id="`${id}-email`"
+            v-model="email"
+            type="email"
+            size="md"
+            :state="emailInvalid ? 'invalid' : 'idle'"
+            :aria-invalid="emailInvalid"
+            :aria-describedby="`${id}-email-hint`"
+            autocomplete="email"
+          />
+          <p :id="`${id}-email-hint`" :class="ui.hint()">{{ messages.reportEmailHint }}</p>
+        </div>
+        <AppCheckboxCard
+          v-model="includeActivity"
+          :label="messages.reportActivity"
+          :description="messages.reportActivityDescription"
         />
-      </label>
-      <label class="flex flex-col gap-1.5 text-xs text-muted">
-        {{ messages.reportEmail }}
-        <AppInput
-          v-model="email"
-          type="email"
+        <AppCheckboxCard
+          v-if="hasDocument"
+          v-model="attachDocument"
+          :label="messages.reportDocument"
+          :description="messages.reportDocumentDescription"
+        />
+        <AppCollapsible :label="messages.reportPreview">
+          <pre :class="ui.preview()" data-test-id="report-preview">{{ preview }}</pre>
+        </AppCollapsible>
+        <AppAlert v-if="documentFailed" tone="error" :heading="messages.reportDocumentFailed" />
+        <AppAlert
+          v-if="failure"
+          tone="error"
+          :heading="failure === 'files' ? messages.reportFilesFailed : messages.reportFailed"
+        />
+      </AppDialogBody>
+      <AppDialogFooter>
+        <AppButton type="button" size="md" @click="open = false">{{ common.cancel }}</AppButton>
+        <AppButton
+          type="submit"
           size="md"
-          :state="emailInvalid ? 'invalid' : 'idle'"
-          :aria-invalid="emailInvalid"
-          autocomplete="email"
-        />
-        <span>{{ messages.reportEmailHint }}</span>
-      </label>
-      <AppCheckboxCard
-        v-model="includeActivity"
-        :label="messages.reportActivity"
-        :description="messages.reportActivityDescription"
-      />
-      <AppCheckboxCard
-        v-if="hasDocument"
-        v-model="attachDocument"
-        :label="messages.reportDocument"
-        :description="messages.reportDocumentDescription"
-      />
-      <AppCollapsible :label="messages.reportPreview">
-        <pre
-          class="max-h-64 overflow-auto rounded-md border border-border bg-input p-2 font-mono text-3xs whitespace-pre-wrap text-surface"
-          data-test-id="report-preview"
-          >{{ preview }}</pre>
-      </AppCollapsible>
-      <AppAlert v-if="documentFailed" tone="error" :heading="messages.reportDocumentFailed" />
-      <AppAlert
-        v-if="failure"
-        tone="error"
-        :heading="failure === 'files' ? messages.reportFilesFailed : messages.reportFailed"
-      />
+          color="primary"
+          variant="solid"
+          :loading="sending"
+          :disabled="!canSend || preparingDocument"
+          data-test-id="report-send"
+        >
+          {{ messages.reportSend }}
+        </AppButton>
+      </AppDialogFooter>
     </form>
-    <AppDialogFooter>
-      <AppButton size="md" @click="reportDialogOpen = false">{{ common.cancel }}</AppButton>
-      <AppButton
-        type="submit"
-        form="report-form"
-        size="md"
-        color="primary"
-        variant="solid"
-        :disabled="!report || sending || preparingDocument"
-        data-test-id="report-send"
-      >
-        {{ sending ? messages.reportSending : messages.reportSend }}
-      </AppButton>
-    </AppDialogFooter>
   </AppDialogRoot>
 </template>

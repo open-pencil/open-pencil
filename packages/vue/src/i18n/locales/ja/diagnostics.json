@@ -101,7 +101,6 @@
   "reportDocumentDescription": "デザイン全体を .fig ファイルとしてアップロードします。開けるのは OpenPencil チームだけで、90 日後に削除されます。",
   "reportPreview": "送信される内容",
   "reportSend": "レポートを送信",
-  "reportSending": "送信中…",
   "reportSent": "レポートを送信しました。ありがとうございます。",
   "reportFailed": "レポートを送信できませんでした。接続を確認して、もう一度お試しください。",
   "reportFilesFailed": "レポートは送信されましたが、ドキュメントをアップロードできませんでした。",

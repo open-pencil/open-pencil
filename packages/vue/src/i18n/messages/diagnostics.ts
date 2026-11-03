@@ -117,7 +117,6 @@ export const diagnosticsMessageDefaults = {
     'Uploads the whole design as a .fig file. Only the OpenPencil team can open it, and it is deleted after 90 days.',
   reportPreview: 'What will be sent',
   reportSend: 'Send report',
-  reportSending: 'Sending…',
   reportSent: 'Report sent. Thank you.',
   reportFailed: 'Could not send the report. Check your connection and try again.',
   reportFilesFailed: 'The report was sent, but the document could not be uploaded.',

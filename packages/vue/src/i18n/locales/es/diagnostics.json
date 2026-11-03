@@ -101,7 +101,6 @@
   "reportDocumentDescription": "Sube el diseño completo como archivo .fig. Solo el equipo de OpenPencil puede abrirlo, y se elimina a los 90 días.",
   "reportPreview": "Qué se enviará",
   "reportSend": "Enviar informe",
-  "reportSending": "Enviando…",
   "reportSent": "Informe enviado. ¡Gracias!",
   "reportFailed": "No se pudo enviar el informe. Comprueba tu conexión e inténtalo de nuevo.",
   "reportFilesFailed": "El informe se envió, pero no se pudo subir el documento.",

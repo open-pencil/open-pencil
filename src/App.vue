@@ -26,7 +26,7 @@ import { CloudHosts } from '@/components/cloud/integration'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
-import ReportDialog from '@/components/reports/ReportDialog.vue'
+import ReportDialogHost from '@/components/reports/ReportDialogHost.vue'
 import SaveToHost from '@/components/save-to/SaveToHost.vue'
 import AISetupDialog from '@/components/settings/ai-setup/AISetupDialog.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
@@ -86,7 +86,7 @@ onMounted(() => {
       <PublishLibraryDialog />
       <LibraryUpdateReviewDialog />
       <UsageStatsPrompt />
-      <ReportDialog />
+      <ReportDialogHost />
       <AppToaster />
       <VoiceCallAudio />
     </TooltipProvider>

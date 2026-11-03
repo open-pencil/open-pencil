@@ -101,7 +101,6 @@
   "reportDocumentDescription": "将整个设计作为 .fig 文件上传。只有 OpenPencil 团队可以打开它，90 天后删除。",
   "reportPreview": "将要发送的内容",
   "reportSend": "发送报告",
-  "reportSending": "正在发送…",
   "reportSent": "报告已发送。谢谢！",
   "reportFailed": "无法发送报告。请检查网络连接后重试。",
   "reportFilesFailed": "报告已发送，但文档未能上传。",

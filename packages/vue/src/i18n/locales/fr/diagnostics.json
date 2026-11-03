@@ -101,7 +101,6 @@
   "reportDocumentDescription": "Envoie tout le design sous forme de fichier .fig. Seule l’équipe OpenPencil peut l’ouvrir, et il est supprimé au bout de 90 jours.",
   "reportPreview": "Ce qui sera envoyé",
   "reportSend": "Envoyer le rapport",
-  "reportSending": "Envoi…",
   "reportSent": "Rapport envoyé. Merci !",
   "reportFailed": "Impossible d’envoyer le rapport. Vérifiez votre connexion et réessayez.",
   "reportFilesFailed": "Le rapport a été envoyé, mais le document n’a pas pu être téléversé.",

@@ -101,7 +101,6 @@
   "reportDocumentDescription": "Przesyła cały projekt jako plik .fig. Otworzyć go może tylko zespół OpenPencil, a po 90 dniach jest usuwany.",
   "reportPreview": "Co zostanie wysłane",
   "reportSend": "Wyślij zgłoszenie",
-  "reportSending": "Wysyłanie…",
   "reportSent": "Zgłoszenie wysłane. Dziękujemy!",
   "reportFailed": "Nie udało się wysłać zgłoszenia. Sprawdź połączenie i spróbuj ponownie.",
   "reportFilesFailed": "Zgłoszenie zostało wysłane, ale nie udało się przesłać dokumentu.",

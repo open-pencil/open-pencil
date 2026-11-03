@@ -101,7 +101,6 @@
   "reportDocumentDescription": "Carica l’intero design come file .fig. Solo il team di OpenPencil può aprirlo e viene eliminato dopo 90 giorni.",
   "reportPreview": "Cosa verrà inviato",
   "reportSend": "Invia segnalazione",
-  "reportSending": "Invio…",
   "reportSent": "Segnalazione inviata. Grazie!",
   "reportFailed": "Impossibile inviare la segnalazione. Controlla la connessione e riprova.",
   "reportFilesFailed": "La segnalazione è stata inviata, ma non è stato possibile caricare il documento.",
