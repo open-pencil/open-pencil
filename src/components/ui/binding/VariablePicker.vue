@@ -47,6 +47,11 @@ const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
 const canCreate = computed(() => createName.value.trim().length > 0)
 const styles = computed(() => useBindingFieldUI({ state, open: open.value, disabled, derived }, ui))
+/** Hovering the variable button of a bound value names its variable. */
+const triggerTooltip = computed(() => {
+  const bound = state === 'bound' ? items.find((item) => item.id === selected) : undefined
+  return bound?.name ?? triggerLabel
+})
 const pickerItems = computed<AppPickerItem[]>(() =>
   items.map((item) => ({ value: item.id, label: item.name, group: item.collection }))
 )
@@ -92,7 +97,7 @@ defineOptions({ inheritAttrs: false })
       :search-placeholder="searchPlaceholder"
       :empty-label="emptyLabel"
       :close-label="closeLabel ?? common.close"
-      :tooltip="triggerLabel"
+      :tooltip="triggerTooltip"
       :side="side"
       @select="emit('select', $event)"
       @close-auto-focus="emit('closeAutoFocus', $event)"
