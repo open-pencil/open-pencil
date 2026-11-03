@@ -71,6 +71,19 @@ function visibleEffects(effects: Effect[]): [number, Effect][] {
   return [...effects.entries()].filter(([, effect]) => effect.visible)
 }
 
+/** The layer blur as `filter` and the background blur as `backdrop-filter`. */
+function addBlurs(
+  style: DesignStyleDeclaration,
+  visible: [number, Effect][],
+  css: EffectFieldCSS
+): void {
+  for (const [index, effect] of visible) {
+    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
+      style.filter = blurToCSS(effect, index, css)
+    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blurToCSS(effect, index, css)
+  }
+}
+
 /**
  * Every visible shadow, in order, plus layer and background blur. `css` names the variable a
  * bound field, such as `effects/0/radius`, draws from.
@@ -83,11 +96,7 @@ export function effectsToCSS(effects: Effect[], css = LITERAL): DesignStyleDecla
     style['box-shadow'] = shadows
       .map(([index, effect]) => shadowToCSS(effect, index, css))
       .join(', ')
-  for (const [index, effect] of visible) {
-    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
-      style.filter = blurToCSS(effect, index, css)
-    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blurToCSS(effect, index, css)
-  }
+  addBlurs(style, visible, css)
   return style
 }
 
@@ -104,11 +113,7 @@ export function textEffectsToCSS(effects: Effect[], css = LITERAL): DesignStyleD
       .map(([index, effect]) => shadowToCSS(effect, index, css, false))
       .join(', ')
   }
-  for (const [index, effect] of visible) {
-    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
-      style.filter = blurToCSS(effect, index, css)
-    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blurToCSS(effect, index, css)
-  }
+  addBlurs(style, visible, css)
   return style
 }
 

@@ -37,16 +37,27 @@ describe('effects in HTML export', () => {
     const graph = new SceneGraph()
     const collection = graph.createCollection('Tokens')
     const blur = graph.createVariable('blur/md', 'FLOAT', collection.id, 10)
+    const soft = graph.createVariable('shadow/soft', 'FLOAT', collection.id, 10)
     const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
       effects: [effect('LAYER_BLUR', 10), effect('DROP_SHADOW', 10)]
     })
     graph.bindVariable(node.id, 'effects/0/radius', blur.id)
-    graph.bindVariable(node.id, 'effects/1/radius', blur.id)
+    graph.bindVariable(node.id, 'effects/1/radius', soft.id)
     const [element] = sceneNodeToDesignDocument(graph, node.id).children
     if (element?.type !== 'element') throw new Error('Expected an element')
-    const name = /var\((--[\w-]+)\)/.exec(element.inlineStyle?.filter ?? '')?.[1]
-    expect(element.inlineStyle?.filter).toBe(`blur(calc(var(${name}) * 0.43))`)
-    expect(element.inlineStyle?.['box-shadow']).toContain(`calc(var(${name}) * 0.86)`)
+    const token = (pattern: RegExp, value: string | undefined) => pattern.exec(value ?? '')?.[1]
+    const blurToken = token(
+      /blur\(calc\(var\((--[\w-]+)\) \* 0\.43\)\)/,
+      element.inlineStyle?.filter
+    )
+    const shadowToken = token(
+      /calc\(var\((--[\w-]+)\) \* 0\.86\)/,
+      element.inlineStyle?.['box-shadow']
+    )
+    // Each effect reads its own binding.
+    expect(blurToken).toBeDefined()
+    expect(shadowToken).toBeDefined()
+    expect(shadowToken).not.toBe(blurToken)
   })
 
   test('blur as the canvas blurs, by the sigma CSS takes', () => {
