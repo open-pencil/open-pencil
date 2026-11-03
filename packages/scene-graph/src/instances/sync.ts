@@ -1,4 +1,5 @@
 // Child cloning and property synchronization shared by instance creation, swap, and sync.
+import { uniq } from 'es-toolkit/array'
 import { pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
@@ -201,7 +202,12 @@ function resolveBoundNumbersInPlace(
   updates: Partial<SceneNode>
 ): void {
   const bound = updates.boundVariables ?? target.boundVariables
-  const synced = Object.keys(updates).filter(
+  // The fields the sync writes, and the ones it binds anew, which keep an equal value only in
+  // the component's mode.
+  const rebound = updates.boundVariables
+    ? Object.keys(bound).filter((field) => bound[field] !== target.boundVariables[field])
+    : []
+  const synced = uniq([...Object.keys(updates), ...rebound]).filter(
     (field) => isNumericVariableBindingField(field) && bound[field]
   )
   if (synced.length === 0) return

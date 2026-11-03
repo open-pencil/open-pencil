@@ -47,6 +47,26 @@ test('syncing an edited component keeps a bound number in the mode its copy sits
   expect([nested().width, nestedBar().width]).toEqual([200, 200])
 })
 
+test('syncing a component that rebinds a number resolves its copies by the new binding', () => {
+  const { graph, chip, card, nested } = chipInLargeCard()
+  const collection = must([...graph.variableCollections.values()][0], 'collection')
+  const large = must(collection.modes.find((mode) => mode.name === 'L'), 'mode').modeId
+  // 100 in either mode, so the copy in the card shows the component's own width.
+  const flat = graph.createVariable('Flat', 'FLOAT', collection.id, 100)
+  flat.valuesByMode[large] = 100
+  graph.bindVariable(chip.id, 'width', flat.id)
+  graph.syncInstancesTogether([chip.id, card.id])
+  expect(nested().width).toBe(100)
+  // The same value as the old binding in the component's mode, another in the card's.
+  const wide = graph.createVariable('Wide', 'FLOAT', collection.id, 100)
+  wide.valuesByMode[large] = 300
+  graph.bindVariable(chip.id, 'width', wide.id)
+  graph.syncInstancesTogether([chip.id, card.id])
+
+  expect(nested().boundVariables.width).toBe(wide.id)
+  expect(nested().width).toBe(300)
+})
+
 test('syncing a component that changed its own mode resolves its copies in the new mode', () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
