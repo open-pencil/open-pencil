@@ -8,6 +8,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - `src/server` receives its database, object store, auth adapter, and delivery through injection and never imports `pg`, opens listeners, runs migrations, or starts timers; runtimes under `src/runtime/` own those (`src/runtime/node/server.ts`).
 - The package is published to npm; a directory imported as `#cloud/<dir>` is listed in `imports` in `package.json`, since the wildcard there names `.ts` files (`bun run check:packages`).
 - `@better-auth/core` is pinned to the `better-auth` version though nothing imports it: `@better-auth/passkey` accepts any later core, whose exact `@better-fetch/fetch` differs from its own, and npm then never finishes installing the package (`bun run test:packages`).
+- Errors no route handled, and failures of work a runtime owns, go through `reportCloudError` with the injected `CloudErrorReporter`; only runtimes create one, from the optional `[error_tracking]` table, so a deployment without it sends nothing (`src/runtime/posthog/errors.ts`, `tests/server/errors/handler.test.ts`).
 - Runtime code runs on Node 22 and Bun alike: serve HTTP through `@hono/node-server`, not `Bun.serve` or other `Bun.*` APIs (`tsdown.standalone.config.ts` targets `node22`).
 
 ## Data and security
