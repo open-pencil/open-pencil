@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import { ACP_AGENTS, HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
+import { acpAgentFor, HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
 
 import {
   codingAgentDetection,
@@ -93,7 +93,7 @@ export function useModelConnectionStates(
       const pi = setup.piSetup(providerID)
       return pi?.supported ? { agent: piDetection(pi), toolsUnreachable: false } : none
     }
-    const definition = ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)
+    const definition = acpAgentFor(providerID)
     const agent = definition && setup.agentSetup(providerID)
     if (!definition || !agent?.supported) return none
     return {
