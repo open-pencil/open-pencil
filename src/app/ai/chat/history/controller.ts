@@ -25,6 +25,8 @@ export function createConversationHistory<TChat extends HistoryChat>(
   const messages = shallowRef<UIMessage[]>([])
   const conversations = ref<ConversationMeta[]>([])
   const readOnly = ref(false)
+  /** The live chat's agent could not continue the saved session, so that chat takes no more. */
+  const chatEnded = ref(false)
   const busy = ref(false)
   let ownerRecoveryId: string | null = null
   // Weak, so the history does not keep a closed document's editor alive.
@@ -60,6 +62,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
     conversations.value = await store.list()
   }
   function detach() {
+    chatEnded.value = false
     return session.detach(flush)
   }
 
@@ -164,6 +167,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
       if (readOnly.value && owner?.deref() === runtime.getEditor()) return null
       await loadDocument()
       const resume = resumableSession(current.value)
+      if (chatEnded.value) await detach()
       if (!session.chat && agentReadOnly.value) return null
       const editor = runtime.getEditor()
       const conversation = current.value
@@ -176,6 +180,9 @@ export function createConversationHistory<TChat extends HistoryChat>(
         resume,
         record: (agentSession) => {
           if (recordsFor !== null) recordAgentSession(recordsFor, agentSession)
+          // The resume failed; the conversation turns read-only once its failure is shown.
+          if (agentSession === null && conversation?.id === current.value?.id)
+            chatEnded.value = true
         }
       })
       if (runtime.getEditor() !== editor) {
@@ -237,6 +244,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
     readOnly,
     continuesAgentSession,
     agentReadOnly,
+    chatEnded,
     busy,
     storageError,
     initialize,

@@ -169,7 +169,9 @@ const historyOptions = computed(() => {
     available: conversation.documentId === chatDocumentId(getActiveEditorStore())
   }))
 })
-const agentHistoryReadOnly = computed(() => !chat.value && history.agentReadOnly.value)
+const agentHistoryReadOnly = computed(
+  () => history.agentReadOnly.value && (!chat.value || history.chatEnded.value)
+)
 /** Set while the conversation changes, so stopping its reply does not send what waits. */
 let queueHeld = false
 async function historyAction(action: () => Promise<unknown>) {

@@ -3,6 +3,7 @@ import type {
   Client,
   Agent,
   SessionNotification,
+  SessionUpdate,
   RequestPermissionRequest,
   RequestPermissionResponse,
   Usage
@@ -50,6 +51,20 @@ const DEFAULT_STARTUP: ACPStartup = {
   authToken: getAutomationAuthToken,
   linkTools: linkOwnTools
 }
+
+/**
+ * Updates that belong to a turn the agent took, after which it can continue the session even if
+ * the turn is cut off. Claude Code and Codex cannot resume a session that never took a prompt, and
+ * both send command, usage, and session info updates before they take one.
+ */
+const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
+  'user_message_chunk',
+  'agent_message_chunk',
+  'agent_thought_chunk',
+  'tool_call',
+  'tool_call_update',
+  'plan'
+])
 
 /** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
 const AGENT_START_TIMEOUT_MS = 60_000
@@ -264,6 +279,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
         session.onUpdate = (params) => {
           if (closed) return
+          if (TURN_UPDATES.has(params.update.sessionUpdate)) this.recordSession(sessionId)
           for (const chunk of mapper.map(params.update)) controller.enqueue(chunk)
         }
 
@@ -283,8 +299,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           return
         }
 
-        // The agent saves its conversation once it takes the prompt, even a turn cut off later.
-        this.recordSession(sessionId)
         connection
           .prompt({
             sessionId,
@@ -292,6 +306,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           })
           // The prompt answers once the agent's turn is over; nothing else ends the reply.
           .then((result) => {
+            this.recordSession(sessionId)
             if (result.usage) this.onUsage?.(agentTurnUsage(result.usage, session.model))
             finish(result.stopReason === 'end_turn' ? 'stop' : 'other')
             return undefined
@@ -307,7 +322,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     })
   }
 
-  /** Keeps the session a prompt went to, which the agent continues when it starts again. */
+  /** Keeps the session that took a prompt, which the agent continues when it starts again. */
   private recordSession(sessionId: string): void {
     if (!this.agentDef.resumesSessions || this.resume === sessionId) return
     this.resume = sessionId
@@ -353,8 +368,10 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         })
       ])
 
-    const spawning = (async () =>
-      this.startup.spawn({
+    const spawning = (async () => {
+      // Stopped before the startup began: the race below already rejects, so launch nothing.
+      if (abortSignal?.aborted) throw new Error('The reply was stopped before the agent started.')
+      return this.startup.spawn({
         command: await this.startup.resolveCommand(this.agentDef),
         args: this.agentDef.args,
         logId: this.agentDef.id,
@@ -364,7 +381,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           this.session.dead = true
           this.session = null
         }
-      }))()
+      })
+    })()
     let process: ACPProcess
     try {
       process = await bounded(spawning)

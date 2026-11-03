@@ -31,13 +31,19 @@ interface FakeAgentOptions {
   resumeFails?: boolean
   /** True for an automation token that is never read, as with a credential prompt left open. */
   tokenHangs?: boolean
+  /**
+   * How the agent's turn ends: `refused` fails before the agent takes the prompt, `cut-off` fails
+   * after it started answering. Either way it first sends updates that are not part of a turn.
+   */
+  turn?: 'answered' | 'refused' | 'cut-off'
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
 function fakeAgents({
   answersSessions = true,
   resumeFails = false,
-  tokenHangs = false
+  tokenHangs = false,
+  turn = 'answered'
 }: FakeAgentOptions = {}) {
   const prompts: string[] = []
   const created: NewSessionRequest[] = []
@@ -45,9 +51,11 @@ function fakeAgents({
   const sessionRequested = createDeferred<undefined>()
   const killed = createDeferred<undefined>()
   let kills = 0
+  let spawns = 0
   let crashLatest: (() => void) | null = null
 
   const spawn: ACPStartup['spawn'] = async (options) => {
+    spawns++
     const toAgent = new TransformStream<Uint8Array, Uint8Array>()
     const toClient = new TransformStream<Uint8Array, Uint8Array>()
     const agent: Agent = {
@@ -71,6 +79,22 @@ function fakeAgents({
       async prompt(params) {
         const [part] = params.prompt
         prompts.push(part?.type === 'text' ? part.text : '')
+        const { sessionId } = params
+        await connection.sessionUpdate({
+          sessionId,
+          update: { sessionUpdate: 'available_commands_update', availableCommands: [] }
+        })
+        if (turn === 'refused') throw new Error('The prompt never reached the model')
+        if (turn === 'cut-off') {
+          await connection.sessionUpdate({
+            sessionId,
+            update: {
+              sessionUpdate: 'agent_message_chunk',
+              content: { type: 'text', text: 'On it' }
+            }
+          })
+          throw new Error('The turn broke off')
+        }
         return { stopReason: 'end_turn' }
       },
       async authenticate() {
@@ -78,7 +102,10 @@ function fakeAgents({
       },
       cancel: async () => undefined
     }
-    void new AgentSideConnection(() => agent, ndJsonStream(toClient.writable, toAgent.readable))
+    const connection = new AgentSideConnection(
+      () => agent,
+      ndJsonStream(toClient.writable, toAgent.readable)
+    )
     // Ending the pipe ends what the client reads, as a process that exits does.
     const output = new TransformStream<Uint8Array, Uint8Array>()
     const stop = new AbortController()
@@ -124,6 +151,7 @@ function fakeAgents({
     sessionRequested: sessionRequested.promise,
     killed: killed.promise,
     kills: () => kills,
+    spawns: () => spawns,
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
 }
@@ -164,7 +192,7 @@ function transport(
   return { transport: created, sessions }
 }
 
-test('a new session gets the instructions once and is reported when the prompt goes out', async () => {
+test('a new session gets the instructions once and is reported once the agent answers', async () => {
   const agents = fakeAgents()
   const { transport: chat, sessions } = transport(agents)
   await send(chat, 'first')
@@ -229,15 +257,31 @@ test('stopping while the agent starts stops the agent before it gets the message
   expect(agents.prompts).toEqual([])
 })
 
-test('stopping before the agent process is recorded still stops it', async () => {
+test('a reply stopped before the agent starts launches no agent', async () => {
   const agents = fakeAgents()
   const { transport: chat } = transport(agents)
   const stop = new AbortController()
   stop.abort()
   await expect(send(chat, 'first', [], stop.signal)).rejects.toBeInstanceOf(Error)
-  await agents.killed
-  expect(agents.created).toEqual([])
+  expect(agents.spawns()).toBe(0)
   expect(agents.prompts).toEqual([])
+})
+
+test('a session is not saved when its first prompt fails before the agent takes it', async () => {
+  const agents = fakeAgents({ turn: 'refused' })
+  const { transport: chat, sessions } = transport(agents)
+  await send(chat, 'first')
+  expect(agents.prompts).toHaveLength(1)
+  expect(sessions).toEqual([])
+  await chat.destroy()
+})
+
+test('a session is saved once the agent answers, even when the turn is cut off', async () => {
+  const agents = fakeAgents({ turn: 'cut-off' })
+  const { transport: chat, sessions } = transport(agents)
+  await send(chat, 'first')
+  expect(sessions).toEqual(['session-1'])
+  await chat.destroy()
 })
 
 test('a startup step outside the agent connection is bounded by the deadline too', async () => {

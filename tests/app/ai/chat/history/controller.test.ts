@@ -302,6 +302,19 @@ test('a saved session the agent can no longer continue is forgotten', async () =
   expect(f.history.continuesAgentSession.value).toBe(false)
 })
 
+test('a chat whose saved session could not be continued takes no more messages', async () => {
+  const f = await agentFixture('claude-code', { messages: [savedMessage] })
+  await f.history.ensureChat()
+  expectDefined(f.links.at(-1), 'agent session link').record(null)
+  expect(f.history.chatEnded.value).toBe(true)
+  expect(f.history.agentReadOnly.value).toBe(true)
+  expect(await f.history.ensureChat()).toBeNull()
+  expect(f.links).toHaveLength(1)
+  // A new chat starts clean.
+  await f.history.newChat()
+  expect(f.history.chatEnded.value).toBe(false)
+})
+
 test('a conversation continued on another agent no longer resumes the saved session', async () => {
   const f = await agentFixture('claude-code', { messages: [savedMessage] })
   await f.history.ensureChat()
