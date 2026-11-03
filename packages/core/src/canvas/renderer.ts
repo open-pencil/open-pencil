@@ -2,6 +2,7 @@ import { isEqual, noop } from 'es-toolkit'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
+import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
@@ -350,7 +351,7 @@ export class SkiaRenderer {
     let expand = 0
     for (const e of node.effects) {
       if (!e.visible) continue
-      const blur = e.radius
+      const blur = drawnBlurRadius(e.radius)
       const spread = e.spread
       const ox = Math.abs(e.offset.x)
       const oy = Math.abs(e.offset.y)

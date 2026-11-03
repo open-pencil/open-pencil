@@ -19,7 +19,7 @@ import {
   type PluginDataField
 } from '@open-pencil/scene-graph/plugin-data'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
+import { effectBindingTarget, paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import {
@@ -28,6 +28,7 @@ import {
   VARIABLE_BINDING_FIELDS_INVERSE,
   referencesVariable
 } from './variable/bindings'
+import { effectBindingsFromKiwi } from './variable/effects'
 
 const { boundVariables, exportSettings, librarySource, textPathBox } = OPEN_PENCIL_PLUGIN_DATA
 
@@ -93,9 +94,10 @@ export function extractTextPathBox(nc: NodeChange): Rect | null {
 
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
   let bindings = readNodeChangePluginData(nc, boundVariables) ?? {}
-  // Each paint carries its colour's alias. An instance's copy pairs its component's plugin data
-  // with paints an override set, so the plugin data can name a binding those paints dropped.
+  // Each paint and effect carries its own aliases. An instance's copy pairs its component's plugin
+  // data with paints or effects an override set, so the plugin data can name a binding they dropped.
   const decidedByPaints = (field: string) => {
+    if (effectBindingTarget(field)) return nc.effects !== undefined
     const list = paintBindingTarget(field)?.list
     return list === 'fills'
       ? nc.fillPaints !== undefined
@@ -120,6 +122,7 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     const variableGuid = paint.colorVar?.value?.alias?.guid
     if (variableGuid) bindings[`strokes/${i}/color`] = guidToString(variableGuid)
   })
+  if (nc.effects) Object.assign(bindings, effectBindingsFromKiwi(nc.effects))
   return bindings
 }
 

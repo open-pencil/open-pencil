@@ -16,9 +16,9 @@ import {
   sharedStyleTypeForKind
 } from '@open-pencil/scene-graph/shared-styles'
 
-import { figmaFills } from '#core/figma-api/accessors/visual'
+import { figmaEffects, figmaFills } from '#core/figma-api/accessors/visual'
 import { rangeSharedStylePatch } from '#core/figma-api/text/bindings'
-import { setPaintBindings } from '#core/figma-api/variables/bindings'
+import { setEffectBindings, setPaintBindings } from '#core/figma-api/variables/bindings'
 import {
   layerTextStyleChanges,
   styleRunsWithPatchOver,
@@ -83,6 +83,33 @@ export function bindStylePaints(
   const style = findSharedStyle(graph, styleId, 'FILL')
   if (!style) return
   setPaintBindings(graph, node, kind === 'fill' ? 'fills' : 'strokes', figmaFills(graph, style))
+}
+
+/**
+ * Binds `node`'s effects to the variables its effect style's effects are bound to, and drops
+ * bindings the style's effects do not carry, so the layer follows them in its own mode as in Figma.
+ */
+export function bindStyleEffects(
+  graph: SceneGraph,
+  node: SceneNode,
+  kind: SharedStyleKind,
+  styleId: string
+): void {
+  if (kind !== 'effect' || !styleId) return
+  const style = findSharedStyle(graph, styleId, 'EFFECT')
+  if (!style) return
+  setEffectBindings(graph, node, figmaEffects(style))
+}
+
+/** Binds `node` to the variables the style it now uses binds, for each kind that binds any. */
+export function bindStyleVariables(
+  graph: SceneGraph,
+  node: SceneNode,
+  kind: SharedStyleKind,
+  styleId: string
+): void {
+  bindStylePaints(graph, node, kind, styleId)
+  bindStyleEffects(graph, node, kind, styleId)
 }
 
 /** A layer that uses a style itself, and the fields it uses it through, as Figma lists them. */
@@ -181,7 +208,7 @@ export function restyleUsers(graph: SceneGraph, style: SceneNode, update: LayerU
     // A layer's own fields only: its ranges keep the values they set themselves.
     (node, kind) => sharedStylePatch(kind, node, id, style),
     (kind) => rangeSharedStylePatch(graph, kind, id) ?? {},
-    (node, kind) => bindStylePaints(graph, node, kind, id)
+    (node, kind) => bindStyleVariables(graph, node, kind, id)
   )
 }
 
