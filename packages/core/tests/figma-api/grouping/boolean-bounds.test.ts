@@ -71,6 +71,21 @@ describe('boolean operation bounds', () => {
     expect(box(intersect)).toEqual([40, 20, 10, 30])
   })
 
+  test('switching the operation refits the boolean and the group around it', () => {
+    const { figma, square } = api()
+    const boolean = figma.union([square(0, 0), square(20, 20)], figma.currentPage)
+    const group = figma.group([boolean, square(100, 0, 10, 10)], figma.currentPage)
+    expect([box(boolean), box(group)]).toEqual([
+      [0, 0, 70, 70],
+      [0, 0, 110, 70]
+    ])
+    boolean.booleanOperation = 'INTERSECT'
+    expect([box(boolean), box(group)]).toEqual([
+      [20, 20, 30, 30],
+      [20, 0, 90, 50]
+    ])
+  })
+
   test('from the canvas, a boolean takes the box of its result too', () => {
     const editor = createEditor()
     // Attaching CanvasKit installs a global text measurer that later tests must not inherit.

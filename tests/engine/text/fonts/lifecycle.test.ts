@@ -65,12 +65,19 @@ describe('font lifecycle', () => {
 
   test('tracks nodes gated by pre-render font resolution', () => {
     const manager = new FontManager()
-    manager.blockNodesUntilFontsResolve(['first', 'second'])
-    expect(manager.isNodeBlocked('first')).toBe(true)
-    expect(manager.isNodeBlocked('second')).toBe(true)
-    manager.unblockNodes(['first'])
-    expect(manager.isNodeBlocked('first')).toBe(false)
-    expect(manager.isNodeBlocked('second')).toBe(true)
+    const graph = new SceneGraph()
+    const other = new SceneGraph()
+    manager.blockNodesUntilFontsResolve(graph, ['first', 'second'])
+    manager.blockNodesUntilFontsResolve(graph, ['second'])
+    expect(manager.isNodeBlocked(graph, 'first')).toBe(true)
+    expect(manager.isNodeBlocked(other, 'first')).toBe(false)
+    manager.unblockNodes(other, ['first'])
+    manager.unblockNodes(graph, ['first', 'second'])
+    expect(manager.isNodeBlocked(graph, 'first')).toBe(false)
+    // Another preparation still holds it.
+    expect(manager.isNodeBlocked(graph, 'second')).toBe(true)
+    manager.unblockNodes(graph, ['second'])
+    expect(manager.isNodeBlocked(graph, 'second')).toBe(false)
   })
 
   test('rejects a text picture observed before the font generation changed', () => {

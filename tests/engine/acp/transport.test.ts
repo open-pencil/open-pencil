@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SessionUpdate } from '@agentclientprotocol/sdk'
+import type { SessionUpdate, ToolCallUpdate } from '@agentclientprotocol/sdk'
 import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
@@ -69,6 +69,22 @@ function codexDone(result: unknown, error: unknown = null, id = 'call-1'): Sessi
     status: error ? 'failed' : 'completed',
     rawOutput: { result, error }
   }
+}
+
+/** Cursor first reports a call with neither its tool nor its input; an update names them. */
+function cursorStart(title: string, kind: 'other' | 'search'): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call',
+    toolCallId: 'cur-1',
+    title,
+    kind,
+    status: 'pending',
+    rawInput: {}
+  }
+}
+
+function cursorUpdate(fields: Omit<ToolCallUpdate, 'toolCallId'>): SessionUpdate {
+  return { sessionUpdate: 'tool_call_update', toolCallId: 'cur-1', ...fields }
 }
 
 function mcpText(value: unknown, isError?: boolean) {
@@ -182,6 +198,37 @@ describe('an ACP turn in the chat', () => {
       input: { jsx: '<Frame />' },
       state: 'done',
       output: { id: '1:3' }
+    })
+  })
+
+  test('Cursor’s calls to OpenPencil’s tools show the same way, named by their first update', async () => {
+    const [call] = await transcript([
+      cursorStart('MCP: tool', 'other'),
+      cursorUpdate({
+        title: 'open-pencil: get_current_page',
+        rawInput: { providerIdentifier: 'open-pencil', toolName: 'get_current_page', args: {} }
+      }),
+      cursorUpdate({ status: 'in_progress' }),
+      cursorUpdate({ status: 'completed', rawOutput: { success: true } })
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-get_current_page',
+      input: {},
+      state: 'done'
+    })
+  })
+
+  test('Cursor’s own tools take the title of the update that names them', async () => {
+    const [call] = await transcript([
+      cursorStart('grep', 'search'),
+      cursorUpdate({ title: 'grep "Frame"', rawInput: { pattern: 'Frame' } }),
+      cursorUpdate({ status: 'completed', rawOutput: {} })
+    ])
+    expect(expectDefined(call, 'tool part')).toMatchObject({
+      type: 'tool-grep "Frame"',
+      title: 'grep "Frame"',
+      input: { pattern: 'Frame' },
+      state: 'output-available'
     })
   })
 

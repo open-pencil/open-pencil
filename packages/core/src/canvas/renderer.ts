@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, noop } from 'es-toolkit'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
@@ -146,6 +146,8 @@ export class SkiaRenderer {
   pageColor = CANVAS_BG_COLOR
   /** The board grid the page's dots follow, in canvas units, or null for a page without dots. */
   pageDotGrid: number | null = null
+  /** What section titles are coloured from, as the document's profile says. */
+  sectionTitles: 'fill' | 'outline' = 'fill'
   showRulers = true
   rulerTheme: RulerTheme | null = null
   /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */
@@ -374,6 +376,20 @@ export class SkiaRenderer {
 
   async loadFonts(onFallbackFontsLoaded?: () => void): Promise<void> {
     await RendererFonts.loadFonts(this, onFallbackFontsLoaded)
+    if (this.fontsLoaded) this.resolveFontsLoaded()
+  }
+
+  private resolveFontsLoaded: () => void = noop
+  private readonly fontsLoadedPromise = new Promise<void>((resolve) => {
+    this.resolveFontsLoaded = resolve
+  })
+
+  /**
+   * Settles once the canvas has the faces it draws and creates text with, or once it is destroyed
+   * without them, so nothing waits on a canvas that is gone.
+   */
+  whenFontsLoaded(): Promise<void> {
+    return this.fontsLoaded ? Promise.resolve() : this.fontsLoadedPromise
   }
 
   syncFontGeneration(): void {
@@ -651,6 +667,10 @@ export class SkiaRenderer {
     return RenderText.measureTextNode(this, node, maxWidth)
   }
 
+  measureTextAsDrawn(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
+    return RenderText.measureTextAsDrawn(this, node, maxWidth)
+  }
+
   nodeFontReadiness(node: SceneNode): RenderText.NodeFontReadiness {
     if (node.type !== 'TEXT') return 'ready'
     const cached = this.textFonts.readiness.get(node.id)
@@ -870,5 +890,6 @@ export class SkiaRenderer {
 
   destroy(): void {
     destroyRenderer(this)
+    this.resolveFontsLoaded()
   }
 }

@@ -26,7 +26,7 @@ const meta = {
       return { lineType, startCap, endCap }
     },
     template: `
-      <div class="w-[240px] bg-panel p-4">
+      <div class="w-60 bg-panel p-4">
         <ConnectorControls
           :line-type="lineType"
           :start-cap="startCap"

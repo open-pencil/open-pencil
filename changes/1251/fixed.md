@@ -1,1 +1,0 @@
-- Exporting a PNG from the command line on Windows no longer fails to find the CanvasKit binary.

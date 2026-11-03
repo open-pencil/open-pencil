@@ -105,6 +105,7 @@ export function renderFromEditorState(
   const profile = resolveEditorProfile(state)
   const { editChrome, live, edits } = profile
   r.pageDotGrid = profile.dotGrid
+  r.sectionTitles = profile.sectionTitles
   r.editHandles = edits
   render(
     r,
@@ -118,7 +119,6 @@ export function renderFromEditorState(
       gradientEdit: state.gradientEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
-      enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
       renamingLabelId: state.renamingLabelId,
       textEditor: textEditor as RenderOverlays['textEditor'],

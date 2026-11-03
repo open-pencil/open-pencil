@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { computed, effectScope } from 'vue'
 
-import { createEditor } from '@open-pencil/core'
+import { applySampledColor, createEditor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager } from '@open-pencil/core/text'
@@ -152,6 +152,27 @@ test('undoing or redoing back to the saved state saves the document again', asyn
     editor.redoAction()
     await record()
     expect(states).toEqual([true, false, true, false])
+  })
+})
+
+test('an eyedropper sample is one saved-state step, and one that changes nothing is none', async () => {
+  await withSavedRectangle(async (editor, id, changes) => {
+    const red = { r: 1, g: 0, b: 0, a: 1 }
+    editor.select([id])
+    const states: boolean[] = []
+    const record = async () => {
+      await settle()
+      states.push(changes.hasUnsavedChanges())
+    }
+    applySampledColor(editor, red)
+    await record()
+    editor.undoAction()
+    await record()
+    editor.redoAction()
+    changes.markSaved()
+    applySampledColor(editor, red)
+    await record()
+    expect(states).toEqual([true, false, false])
   })
 })
 

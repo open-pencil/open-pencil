@@ -13,7 +13,12 @@ import {
 
 const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
 // Packages whose tests run in their own CI job instead of the unit shards.
-const OWN_SUITES = ['packages/harness/', 'packages/feedback/', 'packages/cloud/']
+const OWN_SUITES = [
+  'packages/harness/',
+  'packages/feedback/',
+  'packages/cloud/',
+  'packages/oxlint-plugin/'
+]
 
 async function discover(pattern: string): Promise<string[]> {
   return Array.fromAsync(new Bun.Glob(pattern).scan({ cwd: REPO_ROOT }))

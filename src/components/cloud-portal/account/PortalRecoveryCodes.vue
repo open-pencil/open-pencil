@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
@@ -19,13 +19,7 @@ const { codes } = defineProps<{ codes: string[] }>()
 const open = defineModel<boolean>('open', { default: false })
 
 const messages = useCloudPortalMessages()
-const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 const saved = ref(false)
-
-async function copyCodes() {
-  await copy(codes.join('\n'))
-  saved.value = true
-}
 
 function downloadCodes() {
   downloadBlob(
@@ -50,17 +44,17 @@ function downloadCodes() {
       >
         <li v-for="code in codes" :key="code" class="select-all">{{ code }}</li>
       </ul>
-      <p v-if="!saved" class="mt-2 text-[11px] text-muted">{{ messages.recoveryCodesSaveFirst }}</p>
+      <p v-if="!saved" class="mt-2 text-2xs text-muted">{{ messages.recoveryCodesSaveFirst }}</p>
     </AppDialogBody>
     <AppDialogFooter :ui="{ footer: 'justify-between' }">
       <div class="flex items-center gap-1">
-        <AppButton variant="outline" @click="copyCodes">
-          <template #leading>
-            <icon-lucide-check v-if="copied" class="size-3.5" />
-            <icon-lucide-copy v-else class="size-3.5" />
-          </template>
-          {{ copied ? messages.copied : messages.copyCodes }}
-        </AppButton>
+        <AppCopyButton
+          :value="codes.join('\n')"
+          :label="messages.copyCodes"
+          :copied-label="messages.copied"
+          variant="outline"
+          @copied="saved = true"
+        />
         <AppButton variant="ghost" @click="downloadCodes">
           <template #leading><icon-lucide-download class="size-3.5" /></template>
           {{ messages.downloadCodes }}

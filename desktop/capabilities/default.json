@@ -140,6 +140,7 @@
         },
         { "name": "codex-acp", "cmd": "codex-acp", "args": false },
         { "name": "gemini", "cmd": "gemini", "args": ["--acp"] },
+        { "name": "cursor-agent", "cmd": "cursor-agent", "args": ["acp"] },
         {
           "name": "npm",
           "cmd": "npm",
@@ -174,6 +175,7 @@
         },
         { "name": "cmd-codex-acp", "cmd": "cmd", "args": ["/c", "codex-acp"] },
         { "name": "cmd-gemini", "cmd": "cmd", "args": ["/c", "gemini", "--acp"] },
+        { "name": "cmd-cursor-agent", "cmd": "cmd", "args": ["/c", "cursor-agent", "acp"] },
         {
           "name": "cmd-npm",
           "cmd": "cmd",

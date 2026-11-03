@@ -1,1 +1,0 @@
-- Flatten keeps each layer's fill on its own part of the vector and gives it the topmost layer's stroke, as Figma does, instead of filling everything with the first layer's fill and turning strokes into shape.

@@ -1,3 +1,10 @@
+import type {
+  ComponentNode,
+  PageNode,
+  SolidPaint,
+  TextNode
+} from '@figma/plugin-typings/plugin-api-standalone'
+
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'

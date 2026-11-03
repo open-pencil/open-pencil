@@ -1,0 +1,1 @@
+- Every setting with a default offers the same Reset to default, shown only while it differs, including the toolbar layout, tool access, chat, notifications, and online fonts.

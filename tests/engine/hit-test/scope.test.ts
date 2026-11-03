@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { SOLID_FILL } from '#tests/helpers/scene'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -20,6 +21,7 @@ describe('hitTest — group behavior', () => {
       height: 200
     })
     const child = graph.createNode('RECTANGLE', group.id, {
+      fills: [SOLID_FILL],
       name: 'Rect',
       x: 10,
       y: 10,
@@ -82,6 +84,7 @@ describe('hitTest — nested groups', () => {
       height: 100
     })
     const rect = graph.createNode('RECTANGLE', groupB.id, {
+      fills: [SOLID_FILL],
       name: 'DeepRect',
       x: 10,
       y: 10,
@@ -136,6 +139,7 @@ describe('hitTest — locked nodes', () => {
       locked: true
     })
     graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
       name: 'Child',
       x: 10,
       y: 10,
@@ -152,6 +156,7 @@ describe('hitTest — locked nodes', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'LockedRect',
       x: 0,
       y: 0,
@@ -171,6 +176,7 @@ describe('hitTest — visibility', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'Hidden',
       x: 0,
       y: 0,
@@ -189,6 +195,7 @@ describe('scene graph — locked node operations', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const rect = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'LockedRect',
       x: 0,
       y: 0,
@@ -206,6 +213,7 @@ describe('scene graph — locked node operations', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const rect = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'Rect',
       x: 0,
       y: 0,
@@ -224,6 +232,7 @@ describe('scene graph — locked node operations', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const rect = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
       name: 'Rect',
       x: 0,
       y: 0,
@@ -251,6 +260,7 @@ describe('hitTest — frame with children', () => {
       height: 200
     })
     const child = graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
       name: 'InnerRect',
       x: 20,
       y: 20,
@@ -275,6 +285,7 @@ describe('hitTest — frame with children', () => {
       rotation: 45
     })
     const child = graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
       name: 'InnerRect',
       x: 60,
       y: 30,
@@ -298,6 +309,7 @@ describe('hitTest — frame with children', () => {
     const left = graph.createNode('FRAME', page, { x: 100, y: 100, width: 200, height: 100 })
     const right = graph.createNode('FRAME', page, { x: 400, y: 100, width: 200, height: 100 })
     const child = graph.createNode('RECTANGLE', left.id, {
+      fills: [SOLID_FILL],
       x: 20,
       y: 20,
       width: 40,
@@ -331,6 +343,7 @@ describe('hitTest — frame with children', () => {
       flipX: true
     })
     const child = graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
       x: 20,
       y: 20,
       width: 40,
@@ -354,6 +367,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
       height: 100
     })
     graph.createNode('RECTANGLE', comp.id, {
+      fills: [SOLID_FILL],
       name: 'CompChild',
       x: 10,
       y: 10,
@@ -377,6 +391,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
       height: 100
     })
     const child = graph.createNode('RECTANGLE', comp.id, {
+      fills: [SOLID_FILL],
       name: 'CompChild',
       x: 10,
       y: 10,
@@ -400,6 +415,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
       height: 80
     })
     graph.createNode('RECTANGLE', inst.id, {
+      fills: [SOLID_FILL],
       name: 'InstChild',
       x: 5,
       y: 5,
@@ -423,6 +439,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
       height: 80
     })
     const child = graph.createNode('RECTANGLE', inst.id, {
+      fills: [SOLID_FILL],
       name: 'InstChild',
       x: 5,
       y: 5,
@@ -448,6 +465,7 @@ describe('hitTest — absolute position and scope offset', () => {
       height: 400
     })
     const child = graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
       name: 'Child',
       x: 50,
       y: 60,

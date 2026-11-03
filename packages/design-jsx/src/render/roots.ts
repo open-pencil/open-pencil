@@ -149,6 +149,7 @@ async function renderInto<Artwork>(
     ...context.warnings,
     ...resolveConnectorEnds(graph, rootIds, connectors, refs)
   ]
+  await services.prepareFonts?.(graph, rootIds)
   if (!options.deferLayout) services.layout(graph, rootIds)
 
   return nodes.map((node) => ({

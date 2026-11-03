@@ -141,6 +141,12 @@
       ],
       "#cloud-tests/*": [
         "./packages/cloud/tests/*"
+      ],
+      "#oxlint-plugin/*": [
+        "./packages/oxlint-plugin/src/*"
+      ],
+      "#oxlint-plugin-tests/*": [
+        "./packages/oxlint-plugin/tests/*"
       ]
     },
     "types": [

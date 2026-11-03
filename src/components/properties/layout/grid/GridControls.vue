@@ -24,7 +24,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
   <template v-for="trackProp in trackProps" :key="trackProp">
     <div class="mt-2">
       <div class="mb-1 flex items-center justify-between">
-        <label class="text-[11px] text-muted">
+        <label class="text-2xs text-muted">
           {{ trackProp === 'gridTemplateColumns' ? panels.columns : panels.rows }}
         </label>
         <IconButton

@@ -21,6 +21,7 @@ import { createLayoutRunner } from '#core/layout/mutations'
 import { emitNavigationTrace } from '#core/profiler'
 import { TextEditor } from '#core/text/editor'
 import { fontManager } from '#core/text/font/manager'
+import { prepareTextFonts } from '#core/text/prepare'
 import { fontResolver } from '#core/text/resolver'
 
 import { createAlignmentActions } from './alignment'
@@ -98,10 +99,9 @@ export function createEditor(options?: EditorOptions) {
   const interactiveEdits = new Set<symbol>()
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
-  const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) => {
-    if (event === 'settled') pendingTextLayout.relayoutReady(_renderer)
+  const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) =>
     events.emit('font:resolution-changed', event, snapshot)
-  })
+  )
   const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
     events.emit('font:loaded', family, style)
   )
@@ -227,8 +227,11 @@ export function createEditor(options?: EditorOptions) {
   const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
+    getRenderer: () => _renderer,
+    prepareFonts: (texts) => prepareTextFonts(texts, { loadFont: _loadFont }),
     runLayoutForNode,
-    requestRender
+    requestRender,
+    onEditorEvent
   })
   const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
 
@@ -362,10 +365,11 @@ export function createEditor(options?: EditorOptions) {
     _renderers.add(renderer)
     _textEditor ??= new TextEditor(ck)
     uninstallTextMeasurer?.()
+    // Measures with the editor's current renderer, which removing this one falls back from.
     uninstallTextMeasurer =
       typeof renderer.measureTextNode === 'function'
         ? installTextMeasurer((node, maxWidth) =>
-            pendingTextLayout.measure(renderer, node, maxWidth)
+            _renderer ? pendingTextLayout.measure(_renderer, node, maxWidth) : null
           )
         : null
   }
@@ -386,10 +390,10 @@ export function createEditor(options?: EditorOptions) {
   function replaceGraph(newGraph: SceneGraph) {
     nodes.cancelNodePreviews()
     undo.discardBatches()
+    pendingTextLayout.clear()
     _graph = newGraph
     state.documentKind = _graph.documentKind
     setActiveTool(offeredTool(state, state.activeTool))
-    pendingTextLayout.clear()
     subscribeToGraph()
     const previousPageId = state.currentPageId
     state.currentPageId = _graph.getPages()[0]?.id ?? _graph.rootId

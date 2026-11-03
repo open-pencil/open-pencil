@@ -4,6 +4,8 @@ import { i18n } from '#vue/i18n/create'
 
 export const settingsMessageDefaults = {
   appearance: 'Appearance',
+  interfaceScale: 'Interface size',
+  interfaceScaleDescription: 'Scale panels, text, and controls without changing canvas zoom.',
   animations: 'Animations',
   animationsSystem: 'Follow system',
   animationsOff: 'Off',
@@ -27,7 +29,6 @@ export const settingsMessageDefaults = {
   toolbarMoveDown: 'Move down',
   toolbarGroupWith: params('Group with {tool}'),
   toolbarUngroup: 'Ungroup',
-  toolbarReset: 'Reset to default',
   resetToDefault: 'Reset to default',
   customizeToolbar: 'Customize toolbar…',
   title: 'Settings',
