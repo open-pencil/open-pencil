@@ -39,7 +39,9 @@ test.describe('a populated recent files list', () => {
     await page.goto('/?recent-files')
     await page.getByTestId('recent-files-home').waitFor()
     // As in Figma's Recents, the list has no control that clears all of it.
-    await expect(page.getByTestId('recent-files-clear')).toHaveCount(0)
+    await expect(
+      page.getByTestId('recent-files-home').getByRole('button', { name: /clear/i })
+    ).toHaveCount(0)
     const openButton = (name: RegExp) =>
       page.locator('[data-slot="trigger"]').and(page.getByRole('button', { name }))
     const removed = openButton(/Recent design 0\b/)
@@ -54,6 +56,14 @@ test.describe('a populated recent files list', () => {
     await page.getByTestId('recent-files-home').waitFor()
     await expect(openButton(/Recent design 1\b/)).toHaveCount(1)
     await expect(removed).toHaveCount(0)
+
+    // The list view offers the same item, from a right-click as well as the ⋯ button.
+    await page.getByRole('button', { name: 'List view', exact: true }).click()
+    const listed = openButton(/Recent design 1\b/)
+    await listed.click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Remove from recent', exact: true }).click()
+    await expect(listed).toHaveCount(0)
+    await expect(openButton(/Recent design 2\b/)).toHaveCount(1)
   })
 
   test('the recent files limit in General settings updates the list and persists', async ({
