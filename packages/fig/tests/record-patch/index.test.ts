@@ -1,7 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { guid } from '#fig-tests/helpers/guid'
-import { figComponentUsePages, patchFigMessage, patchFigRecords } from '#fig/record-patch/index'
+import {
+  figComponentUsePages,
+  figRecordPages,
+  patchFigMessage,
+  patchFigRecords
+} from '#fig/record-patch/index'
 import { deflateSync } from 'fflate'
 
 import {
@@ -123,6 +128,26 @@ describe('pages using components', () => {
       record(14, 3, { type: 'FRAME' })
     ]
     expect(figComponentUsePages(records, ['1:10']).toSorted()).toEqual(['1:1', '1:2'])
+  })
+})
+
+describe('the page a record is on', () => {
+  test('is the page above it, through its parents, whether that page is loaded or not', () => {
+    const records = [
+      record(0, null, { type: 'DOCUMENT' }),
+      record(1, 0, { type: 'CANVAS' }),
+      record(2, 1),
+      record(3, 2, { type: 'TEXT' }),
+      record(4, 0, { type: 'CANVAS' }),
+      record(5, 4)
+    ]
+    expect(figRecordPages(records, ['1:3', '1:5', '1:4', '1:0', '9:9'])).toEqual([
+      '1:1',
+      '1:4',
+      '1:4',
+      undefined,
+      undefined
+    ])
   })
 })
 
