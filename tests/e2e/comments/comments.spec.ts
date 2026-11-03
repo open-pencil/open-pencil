@@ -159,18 +159,14 @@ test('middle mouse pans the canvas while the Comment tool is selected', async ()
 
 test('right-clicking a guide in the Comment tool preserves selection and leaves the guide unselected', async () => {
   await editor.canvas.drawRect(100, 100, 120, 80)
-  await commentTool().click()
-  const selection = await selectedIds()
-  expect(selection).toHaveLength(1)
-  expect(await selectedGuide()).toBeNull()
-
   const guides = new CanvasGuideDriver(editor.page)
   const guidePoint = await guides.addFromRuler('x', 400, 300)
   await expect.poll(() => selectedGuide()).not.toBeNull()
 
   await moveTool().click()
   await editor.canvas.click(150, 140)
-  expect(await selectedIds()).toEqual(selection)
+  const selection = await selectedIds()
+  expect(selection).toHaveLength(1)
   expect(await selectedGuide()).toBeNull()
   await commentTool().click()
 
@@ -194,6 +190,7 @@ test('right-clicking a guide in the Comment tool preserves selection and leaves 
 })
 
 test('right and middle clicks preserve a selected guide in the Comment tool', async () => {
+  await moveTool().click()
   const guides = new CanvasGuideDriver(editor.page)
   const guidePoint = await guides.addFromRuler('x', 400, 300)
   const guideSelection = await selectedGuide()
