@@ -55,12 +55,15 @@ describe('effects in HTML export', () => {
       effect('DROP_SHADOW', 4, { offset: { x: 1, y: 2 }, spread: 2 }),
       effect('DROP_SHADOW', 4, { offset: { x: -1, y: 2 } }),
       effect('INNER_SHADOW', 4),
-      effect('LAYER_BLUR', 10)
+      effect('DROP_SHADOW', 4, { visible: false, offset: { x: 3, y: 3 } }),
+      effect('LAYER_BLUR', 10),
+      effect('BACKGROUND_BLUR', 20)
     ])
     expect(text?.['text-shadow']).toBe(
       '1px 2px 3.44px rgba(0, 0, 0, 0.5), -1px 2px 3.44px rgba(0, 0, 0, 0.5)'
     )
     expect(text?.filter).toBe('blur(4.3px)')
+    expect(text?.['backdrop-filter']).toBe('blur(8.6px)')
     expect(text?.['box-shadow']).toBeUndefined()
   })
 })

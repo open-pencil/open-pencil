@@ -60,7 +60,7 @@ export function effectsToCSS(effects: Effect[]): DesignStyleDeclaration {
 
 /**
  * Text's effects: each visible drop shadow as `text-shadow`, which has no spread and shadows the
- * glyphs, and a layer blur. An inner shadow has no form CSS gives text.
+ * glyphs, and its layer and background blurs. An inner shadow has no form CSS gives text.
  */
 export function textEffectsToCSS(effects: Effect[]): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
@@ -72,6 +72,7 @@ export function textEffectsToCSS(effects: Effect[]): DesignStyleDeclaration {
   for (const effect of visible) {
     if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
       style.filter = blurToCSS(effect)
+    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blurToCSS(effect)
   }
   return style
 }
