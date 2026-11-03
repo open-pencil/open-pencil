@@ -392,3 +392,58 @@ test('a formula token holds its result and keeps the formula with token referenc
   expect(token).toContain('"$value":{"value":16,"unit":"px"}')
   expect(token).toContain('"formula":"{Base} * 4"')
 })
+
+test('a style bound to one of two variables that share a path reads back bound to the same one', () => {
+  const source = new SceneGraph()
+  const page = source.getPages()[0].id
+  const brand = source.createCollection('Brand')
+  source.createVariable('Size', 'FLOAT', brand.id, 12)
+  const product = source.createCollection('Product')
+  const size = source.createVariable('Size', 'FLOAT', product.id, 20)
+  const heading = source.createNode('TEXT', page, {
+    name: 'Heading',
+    fontFamily: 'Inter',
+    fontSize: 20,
+    sharedStyleType: 'TEXT',
+    internalOnly: true,
+    boundVariables: { fontSize: size.id }
+  })
+  heading.source.id = 'style:heading'
+  const card = source.createNode('RECTANGLE', page, {
+    name: 'Card',
+    sharedStyleType: 'EFFECT',
+    internalOnly: true,
+    effects: [
+      {
+        type: 'DROP_SHADOW',
+        color: { r: 0, g: 0, b: 0, a: 0.25 },
+        offset: { x: 0, y: 4 },
+        radius: 20,
+        spread: 0,
+        visible: true
+      }
+    ]
+  })
+  card.source.id = 'style:card'
+  source.bindVariable(card.id, 'effects/0/radius', size.id)
+
+  // Other tools read `{Size}` as whichever collection comes last, so the export says so.
+  expect(exportDesignTokens(source).issues).toEqual(
+    expect.arrayContaining([
+      { kind: 'ambiguous-reference', style: 'Heading', field: 'fontSize', token: 'Size' },
+      { kind: 'ambiguous-reference', style: 'Card', field: 'effects/0/radius', token: 'Size' }
+    ])
+  )
+  const graph = new SceneGraph()
+  importInto(graph, exported(source))
+
+  const productSize = [...graph.variables.values()].find(
+    (variable) =>
+      variable.name === 'Size' &&
+      graph.variableCollections.get(variable.collectionId)?.name === 'Product'
+  )?.id
+  const [text] = getSharedStyles(graph, 'text')
+  const [effect] = getSharedStyles(graph, 'effect')
+  expect(graph.getNode(text.nodeId)?.boundVariables.fontSize).toBe(productSize)
+  expect(graph.getNode(effect.nodeId)?.boundVariables['effects/0/radius']).toBe(productSize)
+})
