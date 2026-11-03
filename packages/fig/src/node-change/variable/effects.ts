@@ -4,6 +4,7 @@ import type { Effect as KiwiEffect, VariableAliasValue } from '@open-pencil/kiwi
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   EFFECT_BINDING_PROPERTIES,
+  effectBindableProperties,
   effectBindingField,
   effectBindingVariableType,
   type EffectBindingProperty
@@ -26,11 +27,14 @@ export function effectVariableAliases(effect: KiwiEffect): VariableAliasValue[] 
   })
 }
 
-/** The node binding fields the effects of a record bind, such as `effects/0/radius`. */
+/**
+ * The node binding fields the effects of a record bind, such as `effects/0/radius`, skipping an
+ * alias on a property the effect does not have, such as a blur's colour.
+ */
 export function effectBindingsFromKiwi(effects: readonly KiwiEffect[]): Record<string, string> {
   const bindings: Record<string, string> = {}
   effects.forEach((effect, index) => {
-    for (const property of EFFECT_BINDING_PROPERTIES) {
+    for (const property of effectBindableProperties(effect.type)) {
       const guid = effect[EFFECT_VARIABLE_FIELDS[property]]?.value?.alias?.guid
       if (guid) bindings[effectBindingField(index, property)] = guidToString(guid)
     }

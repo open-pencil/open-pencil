@@ -173,6 +173,25 @@ describe('bound effects on a layer', () => {
     expect(rect.boundVariables).toEqual({ effects: [alias(radius.id)] })
   })
 
+  test('follow a style rebound to another variable of the same value', async () => {
+    const { api, collection, radius } = elevation()
+    const twin = api.variables.createVariable('twin', collection, 'FLOAT')
+    twin.setValueForMode(collection.defaultModeId, 8)
+    const style = api.createEffectStyle()
+    style.effects = [api.variables.setBoundVariableForEffect(DROP, 'radius', radius)]
+    const rect = api.createRectangle()
+    await rect.setEffectStyleIdAsync(style.id)
+
+    style.effects = [api.variables.setBoundVariableForEffect(DROP, 'radius', twin)]
+    expect(rect.effects[0]).toMatchObject({ radius: 8, boundVariables: { radius: alias(twin.id) } })
+    expect(rect.effectStyleId).toBe(style.id)
+
+    twin.setValueForMode(collection.defaultModeId, 20)
+    radius.setValueForMode(collection.defaultModeId, 50)
+    expect(rect.effects[0].radius).toBe(20)
+    expect(rect.boundVariables).toEqual({ effects: [alias(twin.id)] })
+  })
+
   test('resolve in an instance’s mode', () => {
     const { api, collection, dark, color } = elevation()
     const component = api.createComponent()

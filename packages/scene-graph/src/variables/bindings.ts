@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit/predicate'
+import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
 import type { VariableModeFallback } from '.'
 import { copyFills, copyStrokes } from '../copy'
@@ -322,20 +322,22 @@ function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterab
 /**
  * Resolve live numeric, text, visibility, and effect bindings, numbers in scene units, without
  * authoring instance overrides. A scope limits it to the layers a change can reach, so layers whose
- * saved values differ from their bindings elsewhere in the document are left as saved.
+ * saved values differ from their bindings elsewhere in the document are left as saved. Returns the
+ * layers whose change needs a layout pass; effects are not a layout input, so an effect-only change
+ * is written but not returned.
  */
 export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
-  const changed: string[] = []
+  const relaid: string[] = []
   for (const node of scopedNodes(graph, scope)) {
-    const updates = {
+    const layoutUpdates = {
       ...resolvedNumericBindings(graph, node),
       ...resolvedValueBindings(graph, node),
-      ...resolvedRunBindings(graph, node),
-      ...resolvedEffectBindings(graph, node)
+      ...resolvedRunBindings(graph, node)
     }
-    if (Object.keys(updates).length === 0) continue
+    const updates = { ...layoutUpdates, ...resolvedEffectBindings(graph, node) }
+    if (isEmptyObject(updates)) continue
     graph.updateNode(node.id, updates)
-    changed.push(node.id)
+    if (!isEmptyObject(layoutUpdates)) relaid.push(node.id)
   }
-  return changed
+  return relaid
 }

@@ -54,6 +54,26 @@ describe('OpenPencil plugin data readers', () => {
     }
   })
 
+  test('effect aliases bind only the properties each effect has', () => {
+    const alias = (localID: number, resolvedDataType: 'COLOR' | 'FLOAT') => ({
+      dataType: 'ALIAS' as const,
+      resolvedDataType,
+      value: { alias: { guid: { sessionID: 1, localID } } }
+    })
+    expect(
+      extractBoundVariables({
+        effects: [
+          { type: 'DROP_SHADOW', colorVar: alias(2, 'COLOR'), yVar: alias(3, 'FLOAT') },
+          { type: 'FOREGROUND_BLUR', colorVar: alias(2, 'COLOR'), radiusVar: alias(3, 'FLOAT') }
+        ]
+      })
+    ).toEqual({
+      'effects/0/color': '1:2',
+      'effects/0/offsetY': '1:3',
+      'effects/1/radius': '1:3'
+    })
+  })
+
   test('export settings clamp scales and fall back to native settings when any entry is invalid', () => {
     const native: NodeChange = {
       exportSettings: [{ imageType: 'SVG', constraint: { type: 'CONTENT_SCALE', value: 1 } }]

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import {
   reconcileVariableBindings,
   resolvedEffectBindings
@@ -77,6 +78,18 @@ describe('effect bindings', () => {
     expect(resolvedEffectBindings(graph, card).effects?.[0].spread).toBe(-7)
   })
 
+  test('write an effect-only change without asking for a layout pass', () => {
+    const { graph, blur, card } = elevation()
+    graph.bindVariable(card.id, 'effects/0/radius', blur.id)
+    const width = graph.createVariable('Width', 'FLOAT', blur.collectionId, 60)
+
+    expect(reconcileVariableBindings(graph)).toEqual([])
+    expect(graph.getNode(card.id)?.effects[0].radius).toBe(8)
+
+    graph.bindVariable(card.id, 'width', width.id)
+    expect(reconcileVariableBindings(graph)).toEqual([card.id])
+  })
+
   test('change nothing when the effects already hold the values', () => {
     const { graph, blur, card } = elevation()
     graph.bindVariable(card.id, 'effects/0/radius', blur.id)
@@ -109,5 +122,28 @@ describe('effect bindings', () => {
     expect(() => graph.bindVariable(card.id, 'effects/0/color', blur.id)).toThrow(
       'Cannot bind FLOAT variable to effect field "effects/0/color"'
     )
+  })
+})
+
+describe('effect bindings in instances', () => {
+  test('an instance that overrides its effects keeps them through a component sync', () => {
+    const { graph, blur } = elevation()
+    const page = graph.getPages()[0].id
+    const component = graph.createNode('COMPONENT', page, { width: 100, height: 100 })
+    const shape = graph.createNode('RECTANGLE', component.id, { effects: [SHADOW] })
+    graph.bindVariable(shape.id, 'effects/0/radius', blur.id)
+    const instance = graph.createInstance(component.id, page)
+    const copy = instance && graph.getNode(instance.childIds[0])
+    if (!copy) throw new Error('No instance copy')
+    // A .fig override replaces the effects without a radius alias, claiming effects alone.
+    graph.updateNode(copy.id, { effects: [{ ...SHADOW, radius: 2 }], boundVariables: {} })
+    setInstanceOverride(instance.instanceOverrides, instance.id, copy.id, 'effects', [])
+
+    graph.updateNode(shape.id, { name: 'Edited' })
+    graph.syncInstances(component.id)
+    reconcileVariableBindings(graph)
+
+    expect(graph.getNode(copy.id)?.boundVariables).toEqual({})
+    expect(graph.getNode(copy.id)?.effects[0].radius).toBe(2)
   })
 })
