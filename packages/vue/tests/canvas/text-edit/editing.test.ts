@@ -3,12 +3,15 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import { createEditor, type Editor } from '@open-pencil/core'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { getStyleAt, TextEditor } from '@open-pencil/core/text'
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 
 import { createTextClipboardActions } from '#vue/canvas/text-edit/clipboard'
 import { createTextEditActions } from '#vue/canvas/text-edit/editing'
+import { createTextFormattingActions } from '#vue/canvas/text-edit/formatting'
 
 const WHITE = colorToFill('#ffffff')
 const BLACK = colorToFill('#000000')
@@ -22,10 +25,13 @@ const BOLD_BOUND_RUN: CharacterStyleOverride = {
 }
 
 let editor: Editor
+let releaseRenderer: (() => void) | null = null
 const originalNavigator = globalThis.navigator
 
 afterEach(() => {
   editor.dispose()
+  releaseRenderer?.()
+  releaseRenderer = null
   Object.defineProperty(globalThis, 'navigator', { value: originalNavigator, configurable: true })
 })
 
@@ -288,5 +294,91 @@ describe('typing into text emptied while editing it', () => {
 
     expect(text.read().styleRuns).toEqual([])
     expect(fillAt(text, 0)).toEqual([BLACK])
+  })
+})
+
+describe('formatting a text emptied while editing it', () => {
+  function emptiedText(style: CharacterStyleOverride) {
+    const text = editStyledText('Title', [{ start: 0, length: 5, style }])
+    text.textEditor.selectAll()
+    text.actions.deleteText(text.read(), false)
+    return text
+  }
+
+  function styleOfTyped(text: EditedText) {
+    return { ...text.read(), ...getStyleAt(text.read().styleRuns, 0) }
+  }
+
+  test('a fill chosen while the text is empty colours what is typed next', () => {
+    const text = emptiedText(WHITE_RUN)
+    text.store.updateNodeWithUndo(text.read().id, { fills: [RED] }, 'Change fill')
+    text.actions.insertText('A', text.read())
+
+    expect(fillAt(text, 0)).toEqual([RED])
+  })
+
+  test('a font size chosen while the text is empty sizes what is typed next', () => {
+    const text = emptiedText({ fontSize: 32 })
+    text.store.updateNodeWithUndo(text.read().id, { fontSize: 48 }, 'Change font size')
+    text.actions.insertText('A', text.read())
+
+    expect(styleOfTyped(text).fontSize).toBe(48)
+  })
+
+  test.each([
+    ['bold', 'toggleBold', { fontWeight: 400 }, { fontWeight: 700 }],
+    ['italic', 'toggleItalic', { italic: false }, { italic: true }],
+    ['underline', 'toggleUnderline', { textDecoration: 'NONE' }, { textDecoration: 'UNDERLINE' }]
+  ] as const)(
+    '%s toggled while the text is empty applies to what is typed next',
+    (_name, toggle, deleted, toggled) => {
+      const text = emptiedText(deleted)
+      createTextFormattingActions(text.store)[toggle](text.read())
+      text.actions.insertText('A', text.read())
+
+      expect(styleOfTyped(text)).toMatchObject(toggled)
+    }
+  )
+})
+
+describe('undoing back to a text emptied while editing it', () => {
+  async function editEmptyText() {
+    const ck = await initCanvasKit()
+    const surface = ck.MakeSurface(200, 200)
+    if (!surface) {
+      throw new Error('no surface')
+    }
+    const renderer = new SkiaRenderer(ck, surface)
+    editor = createEditor()
+    editor.setCanvasKit(ck, renderer)
+    await renderer.loadFonts()
+    releaseRenderer = () => renderer.destroy()
+    const node = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: '',
+      fills: [BLACK],
+      width: 200,
+      height: 20
+    })
+    editor.startTextEditing(node.id)
+    const read = () => editor.graph.getNode(node.id) ?? node
+    return { read, actions: createTextEditActions(editor) }
+  }
+
+  test('typing after undoing to the empty text takes the base style', async () => {
+    const { read, actions } = await editEmptyText()
+    actions.insertText('abc', read())
+    editor.textEditor?.selectAll()
+    editor.updateNodeWithUndo(read().id, { fills: [RED] }, 'Change fill')
+    editor.textEditor?.selectAll()
+    actions.deleteText(read(), false)
+    editor.undoAction()
+    editor.undoAction()
+    editor.undoAction()
+
+    expect(read().text).toBe('')
+
+    actions.insertText('A', read())
+
+    expect(getStyleAt(read().styleRuns, 0).fills ?? read().fills).toEqual([BLACK])
   })
 })

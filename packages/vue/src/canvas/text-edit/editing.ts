@@ -159,12 +159,42 @@ function deletedRange(
   return null
 }
 
+type EmptiedTextStyle = {
+  session: TextEditorState
+  style: CharacterStyleOverride
+  stopWatchingNode: () => void
+}
+
 export function createTextEditActions(store: Editor) {
-  const styleOfEmptiedText = new WeakMap<TextEditorState, CharacterStyleOverride>()
+  let styleOfEmptiedText: EmptiedTextStyle | null = null
+  let writingTypedText = false
+
+  function forgetEmptiedTextStyle() {
+    styleOfEmptiedText?.stopWatchingNode()
+    styleOfEmptiedText = null
+  }
+
+  function rememberEmptiedTextStyle(
+    session: TextEditorState,
+    nodeId: string,
+    style: CharacterStyleOverride
+  ) {
+    forgetEmptiedTextStyle()
+    const stopWatchingNode = store.graph.onNodeEvents({
+      updated: (id) => {
+        if (id === nodeId && !writingTypedText) {
+          forgetEmptiedTextStyle()
+        }
+      }
+    })
+    styleOfEmptiedText = { session, style, stopWatchingNode }
+  }
 
   function emptiedTextStyle(): CharacterStyleOverride {
-    const session = store.textEditor?.state
-    return (session && styleOfEmptiedText.get(session)) ?? {}
+    if (!styleOfEmptiedText || styleOfEmptiedText.session !== store.textEditor?.state) {
+      return {}
+    }
+    return styleOfEmptiedText.style
   }
 
   function runsAfterTypingInSession(
@@ -201,7 +231,12 @@ export function createTextEditActions(store: Editor) {
       // A new paragraph continues the list it is typed in; a joined one keeps the first's style.
       changes.textParagraphs = paragraphStylesAfterTextChange(node.textParagraphs, node.text, text)
     }
-    store.updateTextEditNode(nodeId, changes)
+    writingTypedText = true
+    try {
+      store.updateTextEditNode(nodeId, changes)
+    } finally {
+      writingTypedText = false
+    }
     const updated = store.graph.getNode(nodeId)
     if (updated) store.textEditor?.rebuildParagraph(updated)
     store.requestRender()
@@ -309,10 +344,11 @@ export function createTextEditActions(store: Editor) {
     }
     const session = editor.state
     const text = session?.text ?? ''
-    if (session && range && text.length === 0) {
-      styleOfEmptiedText.set(session, getStyleAt(node.styleRuns, range[0]))
-    }
+    const deletedStyle = range ? getStyleAt(node.styleRuns, range[0]) : null
     syncText(node.id, text, runs)
+    if (session && deletedStyle && text.length === 0) {
+      rememberEmptiedTextStyle(session, node.id, deletedStyle)
+    }
   }
 
   return {
