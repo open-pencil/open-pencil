@@ -6,6 +6,7 @@ import type {
   DocumentNode,
   Effect,
   EffectStyle,
+  ExportMixin,
   FrameNode,
   GradientPaint,
   GridStyle,
@@ -392,6 +393,12 @@ type ShapeMembersMatch = Expect<
   >
 >
 const _shapeMembersMatch: ShapeMembersMatch = true
+
+type ExportKeys = 'exportSettings' | 'exportAsync'
+type ExportMembersMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, ExportKeys>, Pick<ExportMixin, ExportKeys>>
+>
+const _exportMembersMatch: ExportMembersMatch = true
 
 // --- Styles: each style's members are Figma's, apart from consumers, which read node proxies ---
 

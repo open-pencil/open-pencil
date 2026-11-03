@@ -11,4 +11,6 @@ export interface ExportImageOptions {
   format?: RasterExportFormat
   quality?: number
   pageId?: string
+  /** Crop to the layers' boxes rather than to everything they draw. */
+  useAbsoluteBounds?: boolean
 }

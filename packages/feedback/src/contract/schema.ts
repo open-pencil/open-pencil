@@ -40,7 +40,8 @@ export const AI_PROVIDERS = [
   'acp:claude-code',
   'acp:codex',
   'acp:gemini-cli',
-  'acp:cursor'
+  'acp:cursor',
+  'acp:grok-build'
 ] as const
 
 export type Platform = (typeof PLATFORMS)[number]

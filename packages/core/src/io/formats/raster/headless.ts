@@ -42,6 +42,7 @@ export async function headlessRenderNodes(
     format?: ExportFormat
     quality?: number
     trimTransparent?: boolean
+    useAbsoluteBounds?: boolean
   } = {}
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
@@ -53,7 +54,8 @@ export async function headlessRenderNodes(
     scale: options.scale ?? 1,
     format: options.format ?? 'PNG',
     quality: options.quality,
-    trimTransparent: options.trimTransparent
+    trimTransparent: options.trimTransparent,
+    useAbsoluteBounds: options.useAbsoluteBounds
   })
 }
 

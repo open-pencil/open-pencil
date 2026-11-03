@@ -23,6 +23,8 @@ import { installVectorNodeProxyAccessors } from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
 import { installDevStatusAccessors } from './dev-status'
+import { installExportAccessors } from './export/accessors'
+import type { ExportHost } from './export/render'
 import { FigmaNodeMembers } from './members'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors } from './overrides'
@@ -44,7 +46,7 @@ export const INTERNAL_ID = Symbol('id')
 export const INTERNAL_GRAPH = Symbol('graph')
 export const INTERNAL_API = Symbol('api')
 
-export interface NodeProxyHost {
+export interface NodeProxyHost extends ExportHost {
   wrapNode(id: string): FigmaNodeProxy
   readonly currentPageId: string
   /** How groups and booleans refit; booleans size to their result when a renderer is attached. */
@@ -82,6 +84,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     if (type) installGuideAccessors(this, internals, type)
     if (type) installInstanceOverrideAccessors(this, internals, type)
     if (type) installStyleReferenceAccessors(this, internals, type, id === graph.rootId, MIXED)
+    if (type && id !== graph.rootId) installExportAccessors(this, internals)
     // Figma loads a page's layers on demand in dynamic-page mode and has `loadAsync` on pages
     // alone; every page here is already loaded.
     if (type === 'CANVAS')
