@@ -7,7 +7,16 @@ import type { SelectionTheme } from '#core/canvas/renderer/types'
 export * from './ai/providers'
 
 export const IS_BROWSER = typeof window !== 'undefined'
-export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window
+/** The mobile app (Android, iOS): a native WebView that runs the web editor. */
+export const IS_MOBILE_APP =
+  IS_BROWSER &&
+  '__TAURI_INTERNALS__' in window &&
+  /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+/**
+ * The desktop app. The mobile app is left out on purpose: it has none of the desktop commands
+ * (system fonts, keychain, agents), so it runs the editor exactly as the browser does.
+ */
+export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window && !IS_MOBILE_APP
 
 export const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }
 export const TRANSPARENT: Color = { r: 0, g: 0, b: 0, a: 0 }

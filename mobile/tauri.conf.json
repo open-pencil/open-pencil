@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lawha",
+  "version": "0.17.0",
+  "identifier": "app.lawha.mobile",
+  "build": {
+    "beforeDevCommand": "bun run dev --host",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun run generate:icons --target desktop && bun run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{ "label": "main", "title": "Lawha" }],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "icon": ["../desktop/icons/32x32.png", "../desktop/icons/128x128.png", "../desktop/icons/128x128@2x.png", "../desktop/icons/icon.icns", "../desktop/icons/icon.ico"],
+    "android": { "minSdkVersion": 26 }
+  }
+}
