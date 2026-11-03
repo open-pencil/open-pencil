@@ -55,6 +55,7 @@ de:panels.radius
 de:panels.stickyColorOrange
 de:panels.textCaseOriginal
 de:panels.slots
+de:panels.behaviourTab
 de:panels.behaviourTabs
 de:panels.behaviourMin
 de:panels.behaviourMax

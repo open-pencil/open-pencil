@@ -222,6 +222,42 @@ describe('Reka UI elements in JSX export', () => {
     expect(code).not.toContain('name="Panels"')
   })
 
+  test('a Tabs.Tab component draws the triggers a tab list holds as its instances', async () => {
+    const graph = new SceneGraph()
+    const [tab] = await renderJSX(
+      graph,
+      `<Tabs.Tab name="Tab" modelValue="Selected">
+        <Component name="Selected=Off" w={60} h={24} />
+        <Component name="Selected=On" w={60} h={24} />
+      </Tabs.Tab>`
+    )
+    expect(readBehaviour(getNodeOrThrow(graph, tab.id))?.kind).toBe('tab')
+    const [tabs] = await renderJSX(
+      graph,
+      `<Tabs.Root name="Tabs" flex="col">
+        <Tabs.Tab of="${tab.id}" Selected="On" />
+        <Tabs.Tab of="${tab.id}" />
+        <Tabs.Content><Text>First</Text></Tabs.Content>
+        <Tabs.Content><Text>Second</Text></Tabs.Content>
+      </Tabs.Root>`
+    )
+    const root = getNodeOrThrow(graph, tabs.id)
+    const [list] = graph.getChildren(root.id)
+    expect(list?.name).toBe('List')
+    expect(graph.getChildren(list?.id ?? '').map((trigger) => trigger.type)).toEqual([
+      'INSTANCE',
+      'INSTANCE'
+    ])
+    const behaviour = readBehaviour(root)
+    expect(behaviour && missingBindings(graph, root, behaviour)).toEqual([])
+
+    const exported = sceneNodeToJSX(tabs.id, graph)
+    expect(exported).toContain('<Tabs.Tab of="Tab" Selected="On" />')
+    expect(exported).toContain('<Tabs.Tab of="Tab" Selected="Off" />')
+    const [copy] = await renderJSX(graph, exported)
+    expect(sceneNodeToJSX(copy.id, graph)).toBe(exported)
+  })
+
   test('a group item whose changes JSX cannot write is written as the layer it draws', async () => {
     const graph = new SceneGraph()
     await renderJSX(
