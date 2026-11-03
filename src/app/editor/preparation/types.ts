@@ -26,6 +26,15 @@ export const EDITOR_PREPARATION_PHASES = [
 
 export type EditorPreparationPhase = (typeof EDITOR_PREPARATION_PHASES)[number]
 
+/**
+ * The versions a canvas frame drew: `sceneVersion` for the document's content and
+ * `renderVersion` for everything else on screen, such as the viewport a document is fitted to.
+ */
+export interface PresentedVersions {
+  renderVersion: number
+  sceneVersion: number
+}
+
 export interface EditorPreparationProgress {
   completed: number
   total: number

@@ -181,7 +181,9 @@ export function createCanvasSurfaceManager({
     )
     renderLoop.markRendered()
     options?.onFrame?.({ panX: view.panX, panY: view.panY, zoom: view.zoom })
-    acknowledgePresentation()
+    // A scene frame with tiles still to draw is not shown yet: a loader waiting on it would
+    // give way to a canvas that then fills in.
+    if (options?.layer !== 'scene' || state.renderer.tiledSceneCovered) acknowledgePresentation()
     if (options?.layer === 'scene' && tileWorkPending(state.renderer)) {
       renderLoop.markDirty()
     }

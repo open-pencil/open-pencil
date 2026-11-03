@@ -69,7 +69,10 @@ async function recordRun({ steps, contextLimits }: RunOptions) {
     api.currentPage = api.wrapNode(pageId ?? editor.state.currentPageId)
     return api
   })
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   aiToolOverrides.value = { create_shape: true }
 
   let call = 0

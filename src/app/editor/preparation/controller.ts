@@ -6,14 +6,15 @@ import type {
   EditorPreparationCancelReason,
   EditorPreparationFailure,
   EditorPreparationHandle,
-  EditorPreparationUpdate
+  EditorPreparationUpdate,
+  PresentedVersions
 } from '@/app/editor/preparation/types'
 import type { AppEditorState } from '@/app/editor/session/types'
 
 const PRESENTATION_TIMEOUT_MS = 10_000
 
 interface PresentationWaiter {
-  sceneVersion: number
+  versions: PresentedVersions
   resolve: () => void
   reject: (error: Error) => void
   /** Runs only while a canvas shows the document, which is the only place it is presented. */
@@ -30,8 +31,13 @@ export interface EditorPreparationControllerOptions {
 
 export interface EditorPreparationController {
   begin(options: BeginEditorPreparation): EditorPreparationHandle
-  acknowledgePresentation(sceneVersion: number): void
-  waitForPresentation(id: number, sceneVersion: number): Promise<void>
+  /** A canvas finished drawing a frame of these versions, every visible part of it. */
+  acknowledgePresentation(versions: PresentedVersions): void
+  /**
+   * Resolves once a frame at least as new as `versions` in both is fully drawn. The versions are
+   * read when called, so an editor's live state can be passed.
+   */
+  waitForPresentation(id: number, versions: PresentedVersions): Promise<void>
   /**
    * A canvas started showing the document; returns its detach. A tab in the background has no
    * canvas, so its scene waits to be presented until the tab is shown, without timing out.
@@ -54,7 +60,10 @@ export function createEditorPreparationController(
   let nextId = 0
   let activeAbort: AbortController | null = null
   let activeCancel: ((reason: EditorPreparationCancelReason) => void) | null = null
-  let presentedSceneVersion = -1
+  const presented: PresentedVersions = { renderVersion: -1, sceneVersion: -1 }
+  const isPresented = (versions: PresentedVersions) =>
+    presented.renderVersion >= versions.renderVersion &&
+    presented.sceneVersion >= versions.sceneVersion
   let canvases = 0
   let canvasFailure: Error | null = null
   const presentationWaiters = new Map<number, PresentationWaiter>()
@@ -157,18 +166,19 @@ export function createEditorPreparationController(
         cancel
       }
     },
-    acknowledgePresentation(sceneVersion) {
-      presentedSceneVersion = Math.max(presentedSceneVersion, sceneVersion)
+    acknowledgePresentation(versions) {
+      presented.renderVersion = Math.max(presented.renderVersion, versions.renderVersion)
+      presented.sceneVersion = Math.max(presented.sceneVersion, versions.sceneVersion)
       for (const [id, waiter] of presentationWaiters) {
-        if (waiter.sceneVersion <= presentedSceneVersion) settle(id, null)
+        if (isPresented(waiter.versions)) settle(id, null)
       }
     },
-    waitForPresentation(id, sceneVersion) {
-      if (!isActive(id) || presentedSceneVersion >= sceneVersion) return Promise.resolve()
+    waitForPresentation(id, versions) {
+      if (!isActive(id) || isPresented(versions)) return Promise.resolve()
       settle(id, null)
       return new Promise<void>((resolve, reject) => {
         const waiter: PresentationWaiter = {
-          sceneVersion,
+          versions: { renderVersion: versions.renderVersion, sceneVersion: versions.sceneVersion },
           resolve,
           reject,
           timer: null,

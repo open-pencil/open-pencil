@@ -363,15 +363,20 @@ async function showImportedGraph(
   const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
   const pageId = remembered?.pageId ?? firstPageId
   load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
-  await store.switchPage(pageId, { preparation: load })
+  // The view is placed before the first frame counts as shown, so the loader gives way to the
+  // page drawn where it opens rather than one that then moves and fills in.
+  await store.switchPage(pageId, {
+    preparation: load,
+    beforePresentation: async () => {
+      if (remembered) {
+        await yieldToUI()
+        store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
+      } else {
+        await store.fitCurrentPageToViewport()
+      }
+    }
+  })
   load?.signal.throwIfAborted()
-  load?.update({ phase: 'preparing-render', detail: store.state.documentName })
-  if (remembered) {
-    await yieldToUI()
-    store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
-  } else {
-    await store.fitCurrentPageToViewport()
-  }
 }
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {

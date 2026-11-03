@@ -38,8 +38,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIs
     shouldSuspendRender,
     onReady: store.markCanvasReady,
     onViewportResize: (width, height) => store.setViewportSize(width, height),
-    onPresented: ({ sceneVersion }) =>
-      store.preparationController.acknowledgePresentation(sceneVersion)
+    onPresented: (versions) => store.preparationController.acknowledgePresentation(versions)
   })
 
 const { cursorOverride } = useCanvasInput(

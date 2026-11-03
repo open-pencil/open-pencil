@@ -68,6 +68,7 @@ export function createOpenActions({
       await fitCurrentPageToViewport()
       load.update({ phase: 'preparing-render', detail: state.documentName })
       editor.requestRender()
+      await preparationController.waitForPresentation(load.id, editor.state)
       succeeded = true
     } catch (e) {
       if (load.signal.aborted) return
