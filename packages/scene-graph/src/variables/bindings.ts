@@ -3,7 +3,7 @@ import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 import type { VariableModeFallback } from '.'
 import { copyFills, copyStrokes } from '../copy'
 import type { SceneGraph } from '../graph'
-import { hasInstanceOverride } from '../instances'
+import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
 import { pixelLength } from '../text/lengths'
 import type { Effect, Fill, SceneNode, Stroke, StyleRun, TextLength } from '../types'
@@ -59,6 +59,12 @@ export function assignVariableBindingUnits(
 /** Fields a bound number sets as a length in pixels, as Figma's do, whatever unit they held. */
 const TEXT_LENGTH_FIELDS: ReadonlySet<string> = new Set(['lineHeight', 'letterSpacing'])
 
+/** Whether the instance a layer sits in, or the instance itself, overrides one of its fields. */
+function overriddenInInstance(graph: SceneGraph, nodeId: string, field: string): boolean {
+  const instance = graph.closest(nodeId, (node) => node.type === 'INSTANCE')
+  return !!instance && hasInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
+}
+
 /** A bound number as the field stores it. */
 export function boundNumberValue(field: string, value: number): number | TextLength {
   return TEXT_LENGTH_FIELDS.has(field) ? pixelLength(value) : value
@@ -76,7 +82,7 @@ export function resolvedNumericBindings(
   const updates: Partial<SceneNode> = {}
   for (const [field, variableId] of Object.entries(node.boundVariables)) {
     if (!NUMERIC_FIELDS.has(field)) continue
-    if ((field === 'width' || field === 'height') && hasInstanceOverride(graph, node.id, field))
+    if ((field === 'width' || field === 'height') && overriddenInInstance(graph, node.id, field))
       continue
     const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
     if (value === undefined || !Number.isFinite(value)) continue
@@ -107,7 +113,7 @@ export function resolvedValueBindings(
   const updates: Partial<SceneNode> = {}
   const resolve = (field: 'text' | 'visible') => {
     const variableId = node.boundVariables[field]
-    if (!variableId || hasInstanceOverride(graph, node.id, field)) return undefined
+    if (!variableId || overriddenInInstance(graph, node.id, field)) return undefined
     return graph.resolveVariableForNode(node.id, variableId, fallback)
   }
   const text = node.type === 'TEXT' ? variableText(resolve('text')) : undefined

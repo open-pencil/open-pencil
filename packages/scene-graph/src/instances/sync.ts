@@ -7,7 +7,8 @@ import type { SceneGraph } from '../graph'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
-import { effectBindingTarget } from '../variables/fields'
+import { resolvedNumericBindings } from '../variables/bindings'
+import { effectBindingTarget, isNumericVariableBindingField } from '../variables/fields'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -177,6 +178,7 @@ export function updateSyncedProps(
   target: SceneNode,
   updates: Partial<SceneNode>
 ): void {
+  resolveBoundNumbersInPlace(graph, target, updates)
   const changed = Object.fromEntries(
     Object.entries(updates).filter(
       ([key, value]) => !isEqual(target[key as keyof SceneNode], value)
@@ -184,6 +186,21 @@ export function updateSyncedProps(
   ) as Partial<SceneNode>
   if (changed.fills && updates.fillStyleId !== undefined) changed.fillStyleId = updates.fillStyleId
   if (Object.keys(changed).length) graph.updateNode(target.id, changed)
+}
+
+/**
+ * A number bound to a variable takes the value it resolves to where the copy sits, not the one
+ * its component holds: an instance that sets another mode, or sits in one that does, shows that
+ * mode's value, as Figma draws it.
+ */
+function resolveBoundNumbersInPlace(
+  graph: SceneGraph,
+  target: SceneNode,
+  updates: Partial<SceneNode>
+): void {
+  const bound = updates.boundVariables ?? target.boundVariables
+  if (!Object.keys(bound).some(isNumericVariableBindingField)) return
+  Object.assign(updates, resolvedNumericBindings(graph, { ...target, ...updates }))
 }
 
 function cloneChildInCoordinates(
