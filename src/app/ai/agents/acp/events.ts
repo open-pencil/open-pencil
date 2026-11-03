@@ -1,5 +1,6 @@
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
 import type { UIMessageChunk } from 'ai'
+import { isEmptyObject } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
@@ -43,6 +44,11 @@ const codexMCPOutputSchema = v.pipe(
   v.object({ result: v.unknown(), error: v.unknown() })
 )
 const claudeMetaSchema = v.object({ claudeCode: v.object({ toolName: v.string() }) })
+const cursorMCPInputSchema = v.object({
+  providerIdentifier: v.string(),
+  toolName: v.string(),
+  args: v.optional(v.unknown())
+})
 const mcpResultSchema = v.object({
   content: v.array(v.unknown()),
   isError: v.optional(v.boolean())
@@ -79,11 +85,39 @@ function claudeIdentity(update: ToolCallReport): ToolIdentity | null {
   return toolName.startsWith('mcp__') ? { name: toolName, kind: 'mcp' } : null
 }
 
+/** Cursor names an MCP call's server and tool, with the arguments, in its input. */
+function cursorIdentity(update: ToolCallReport): ToolIdentity | null {
+  const input = v.safeParse(cursorMCPInputSchema, update.rawInput)
+  if (!input.success) return null
+  const { providerIdentifier: server, toolName: tool, args } = input.output
+  return server === OPEN_PENCIL_MCP_SERVER
+    ? { name: tool, kind: 'own', input: args ?? {} }
+    : { name: `mcp__${server}__${tool}`, kind: 'mcp', input: args ?? {} }
+}
+
 function identify(update: ToolCallReport): ToolIdentity {
   return (
     codexIdentity(update) ??
-    claudeIdentity(update) ?? { name: update.title || 'unknown', kind: 'agent' }
+    claudeIdentity(update) ??
+    cursorIdentity(update) ?? { name: update.title || 'unknown', kind: 'agent' }
   )
+}
+
+/** Whether a tool call goes to OpenPencil's own MCP server. */
+export function isOwnToolCall(update: ToolCallReport): boolean {
+  return identify(update).kind === 'own'
+}
+
+function isFinished(update: ToolCallReport): boolean {
+  return update.status === 'completed' || update.status === 'failed'
+}
+
+/**
+ * A call that names neither its tool nor its input, as Cursor's first report of every call does,
+ * waits for the update that does, since a tool part keeps the name it starts with.
+ */
+function waitsForIdentity(update: ToolCallReport, identity: ToolIdentity): boolean {
+  return identity.kind === 'agent' && isEmptyObject(update.rawInput ?? {}) && !isFinished(update)
 }
 
 /** A tool's text and image blocks, as MCP returns them and Claude's adapter passes them on. */
@@ -183,6 +217,8 @@ function toolResult(update: ToolCallReport, identity: ToolIdentity): ToolResult 
 export function createUpdateMapper(idPrefix: string) {
   const stream = createReplyStream(idPrefix)
   const tools = new Map<string, ToolIdentity>()
+  /** Calls held back until an update identifies them, with the title they started with. */
+  const unnamed = new Map<string, string | undefined>()
 
   function callOf(id: string, identity: ToolIdentity, title: string | undefined): ReplyToolCall {
     // The agent's own tools keep its title; OpenPencil's are named by the tool.
@@ -197,6 +233,21 @@ export function createUpdateMapper(idPrefix: string) {
       : stream.toolError(update.toolCallId, result.errorText)
   }
 
+  function startCall(
+    update: ToolCallReport,
+    identity: ToolIdentity,
+    title: string | undefined
+  ): UIMessageChunk[] {
+    tools.set(update.toolCallId, identity)
+    const call = callOf(update.toolCallId, identity, title)
+    const chunks = stream.toolStart(call)
+    const input = identity.input ?? update.rawInput
+    // A call can arrive already finished, as Codex reports an MCP server that failed to start.
+    if (input || isFinished(update)) chunks.push(...stream.toolInput(call, input ?? {}))
+    chunks.push(...resultChunks(update, identity))
+    return chunks
+  }
+
   function map(update: SessionUpdate): UIMessageChunk[] {
     switch (update.sessionUpdate) {
       case 'agent_message_chunk':
@@ -208,17 +259,18 @@ export function createUpdateMapper(idPrefix: string) {
       case 'tool_call': {
         if (!update.title) console.warn('[ACP] Tool call without title:', update.toolCallId)
         const identity = identify(update)
-        tools.set(update.toolCallId, identity)
-        const call = callOf(update.toolCallId, identity, update.title)
-        const chunks = stream.toolStart(call)
-        const input = identity.input ?? update.rawInput
-        // A call can arrive already finished, as Codex reports an MCP server that failed to start.
-        const finished = update.status === 'completed' || update.status === 'failed'
-        if (input || finished) chunks.push(...stream.toolInput(call, input ?? {}))
-        chunks.push(...resultChunks(update, identity))
-        return chunks
+        if (waitsForIdentity(update, identity)) {
+          unnamed.set(update.toolCallId, update.title)
+          return []
+        }
+        return startCall(update, identity, update.title)
       }
       case 'tool_call_update': {
+        if (unnamed.has(update.toolCallId)) {
+          const title = update.title ?? unnamed.get(update.toolCallId)
+          unnamed.delete(update.toolCallId)
+          return startCall(update, identify({ ...update, title }), title)
+        }
         const identity = tools.get(update.toolCallId) ?? identify(update)
         const chunks: UIMessageChunk[] = []
         // Claude's adapter sends a call's complete input once it has streamed in.

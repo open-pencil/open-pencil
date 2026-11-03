@@ -17,7 +17,7 @@ import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
-import { linkOwnTools } from '@/app/ai/agents/acp/tools'
+import { createOwnToolApproval, linkOwnTools } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
@@ -305,11 +305,14 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     let sessionRef: ACPSession | null = null
     const agentId = this.agentDef.id
     const { agentDef, store } = this
+    const ownToolApproval = createOwnToolApproval()
 
     const clientImpl: Client = {
       async requestPermission(
         params: RequestPermissionRequest
       ): Promise<RequestPermissionResponse> {
+        const allowed = ownToolApproval.answer(params)
+        if (allowed) return allowed
         const title = params.toolCall.title ?? ''
         return requestPermissionFromUser(
           params,
@@ -320,6 +323,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       async sessionUpdate(params: SessionNotification): Promise<void> {
         // Claude's adapter names its model only in its usage updates.
         const { update } = params
+        ownToolApproval.noteUpdate(update)
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
