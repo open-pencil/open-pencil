@@ -1,6 +1,7 @@
 import { memoize } from 'es-toolkit/function'
 import TS_CHARACTERS from 'opencc-js/dict/TSCharacters'
 
+import { ResourceCache } from '#core/cache/resource'
 import {
   CJK_FALLBACK_FAMILIES_LINUX,
   CJK_FALLBACK_FAMILIES_MACOS,
@@ -65,18 +66,26 @@ export function cjkFallbackScriptForLanguage(
   return language ? languageFallback(language) : null
 }
 
+/** How many language tags keep their answer; a document names a handful. */
+const CACHED_LANGUAGE_TAGS = 64
+
 const languageFallback = memoize(
   (
     language: string
   ): Extract<FontFallbackScript, 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr'> | null => {
-    let script: string | undefined
+    let locale: Intl.Locale
     try {
-      script = new Intl.Locale(language.replaceAll('_', '-')).maximize().script
+      locale = new Intl.Locale(language.replaceAll('_', '-'))
     } catch {
       return null
     }
+    // `Hani` names Han without telling Simplified from Traditional, so the region does.
+    if (locale.script === 'Hani')
+      locale = new Intl.Locale(locale.language, { region: locale.region })
+    const { script } = locale.maximize()
     return script ? (LANGUAGE_SCRIPT_FALLBACKS[script] ?? null) : null
-  }
+  },
+  { cache: new ResourceCache({ maxEntries: CACHED_LANGUAGE_TAGS }) }
 )
 
 const LANGUAGE_SCRIPT_FALLBACKS: Partial<
