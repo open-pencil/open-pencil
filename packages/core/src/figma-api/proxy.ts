@@ -23,6 +23,7 @@ import { installVariableModeNodeProxyAccessors } from './accessors/variables'
 import { installVectorNodeProxyAccessors } from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
+import { installCSSAccessors } from './css/accessors'
 import { installDevStatusAccessors } from './dev-status'
 import { installExportAccessors } from './export/accessors'
 import type { ExportHost } from './export/render'
@@ -91,6 +92,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     if (type) installInstanceOverrideAccessors(this, internals, type)
     if (type) installStyleReferenceAccessors(this, internals, type, id === graph.rootId, MIXED)
     if (type && id !== graph.rootId) installExportAccessors(this, internals)
+    installCSSAccessors(this, internals)
     if (type) installGeometryAccessors(this, internals, type)
     // Figma loads a page's layers on demand in dynamic-page mode and has `loadAsync` on pages
     // alone; every page here is already loaded.

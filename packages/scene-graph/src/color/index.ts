@@ -55,6 +55,15 @@ export function colorToCSS(color: Color): string {
   return formatRgb({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a })
 }
 
+/**
+ * `rgba()` with spaced channels and its alpha at `alphaDigits` decimals, trailing zeros kept, as
+ * Figma's Dev Mode writes a translucent colour: `rgba(51, 102, 153, 0.50)`.
+ */
+export function colorToRgbaCSS(color: Color, alphaDigits: number): string {
+  const { r, g, b } = colorToRgba255(color)
+  return `rgba(${r}, ${g}, ${b}, ${color.a.toFixed(alphaDigits)})`
+}
+
 export function colorToCSSCompact(color: Color): string {
   const { r, g, b } = colorToRgba255(color)
   const a = Number(color.a.toFixed(3))

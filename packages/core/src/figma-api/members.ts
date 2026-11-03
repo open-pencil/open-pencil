@@ -1,4 +1,5 @@
 import type {
+  BaseNodeMixin,
   BooleanOperationNode,
   ComponentSetNode,
   DocumentNode,
@@ -95,6 +96,7 @@ export abstract class FigmaNodeMembers {
   declare guides: readonly Guide[]
   declare exportSettings: ExportMixin['exportSettings']
   declare exportAsync: ExportMixin['exportAsync']
+  declare getCSSAsync: BaseNodeMixin['getCSSAsync']
   declare fillGeometry: GeometryMixin['fillGeometry']
   declare strokeGeometry: GeometryMixin['strokeGeometry']
   declare layoutWrap: string

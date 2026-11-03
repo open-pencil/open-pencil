@@ -258,6 +258,10 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `node.outlineStroke()` adds the layer's stroke as a vector filled with the stroke's paints, named `<name> (Stroke)` (a group of glyph vectors for text), at the end of the page at the layer's position in its parent, as Figma does, and keeps the layer. It returns `null` without a visible stroke
 - These measure with a renderer: the canvas's in the desktop and browser apps, and a headless one in `open-pencil eval`. Before a document's canvas is ready, or on a host without a renderer, they throw `This host has no renderer to measure geometry with`
 
+### CSS
+
+- `node.getCSSAsync()` resolves to the CSS Figma's Dev Mode shows for a layer, as a record of property names and values, in Figma's order: size, auto layout and what a child takes from it, turn, corner radius, borders, opacity, fills as `background` (or `fill` and `stroke` for ellipses, stars, polygons, vectors, and booleans), blend mode, shadows, and blurs, and for text its font, colour, spacing, and decoration. Bound variables are written as `var(--Name, value)`, or as their web code syntax. Pages and the document give `{}`
+
 ### Properties
 
 Common node properties are readable/writable through the proxy, including:
