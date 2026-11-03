@@ -290,7 +290,7 @@ These Figma APIs are not exposed as compatible helpers yet:
 
 - `node.exportAsync()`
 - `figma.util.normalizeMarkdown()`, which fails because OpenPencil has no rich-text descriptions or annotations to normalize for
-- Library variables, extended collections, and variable bindings on effects and layout grids
+- Library variables, extended collections, and variable bindings on layout grids
 - Figma style APIs such as `figma.createPaintStyle()` / `figma.createTextStyle()`
 - Full vector boolean operation parity
 
