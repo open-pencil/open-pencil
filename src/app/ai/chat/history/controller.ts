@@ -1,5 +1,6 @@
 import type { UIMessage } from 'ai'
-import { ref, shallowRef } from 'vue'
+import { omit } from 'es-toolkit'
+import { computed, ref, shallowRef } from 'vue'
 
 import { chatDocumentId, resolveChatDocumentId, type ChatDocumentEditor } from './document'
 import { createConversationStore } from './idb'
@@ -7,6 +8,7 @@ import { restoreMessages } from './messages'
 import { createHistoryPersistence } from './persistence'
 import { createHistorySession } from './session'
 import type {
+  AgentSessionRef,
   Conversation,
   ConversationMeta,
   ConversationStore,
@@ -129,19 +131,51 @@ export function createConversationHistory<TChat extends HistoryChat>(
     await refresh()
   }
 
+  /** The saved agent session the chat's agent continues, when it is that agent's. */
+  function resumableSession(conversation: Conversation | null): string | null {
+    const saved = conversation?.agentSession
+    return saved && saved.agent === runtime.resumingAgent() ? saved.id : null
+  }
+  const continuesAgentSession = computed(() => resumableSession(current.value) !== null)
+
+  /** Saves or forgets the session a conversation's agent runs in, while it is current. */
+  function recordAgentSession(conversationId: string, agentSession: AgentSessionRef | null) {
+    const conversation = current.value
+    if (!conversation || conversation.id !== conversationId) return
+    const saved = conversation.agentSession
+    if (saved?.agent === agentSession?.agent && saved?.id === agentSession?.id) return
+    current.value = agentSession
+      ? { ...conversation, agentSession }
+      : omit(conversation, ['agentSession'])
+    void flush().catch(() => undefined)
+  }
+
   function ensureChat() {
     return serialize(async () => {
       if (readOnly.value && owner?.deref() === runtime.getEditor()) return null
       await loadDocument()
-      // A restored transcript does not restore an external agent session.
+      const resume = resumableSession(current.value)
+      // A restored transcript continues an external agent only in a session that agent resumes.
       if (
         current.value?.messages.length &&
         !session.chat &&
+        resume === null &&
         (runtime.backend() !== 'direct' || current.value.backend !== 'direct')
       )
         return null
       const editor = runtime.getEditor()
-      const next = await runtime.ensureChat(messages.value, current.value?.id)
+      const conversation = current.value
+      // A session that missed some of the conversation, run elsewhere, must not be continued.
+      if (conversation?.agentSession && resume === null) recordAgentSession(conversation.id, null)
+      // Only a session that sees the whole conversation is saved to continue it.
+      const recordsFor =
+        conversation && (resume !== null || !messages.value.length) ? conversation.id : null
+      const next = await runtime.ensureChat(messages.value, conversation?.id, {
+        resume,
+        record: (agentSession) => {
+          if (recordsFor !== null) recordAgentSession(recordsFor, agentSession)
+        }
+      })
       if (runtime.getEditor() !== editor) {
         await next?.stop()
         await runtime.resetChat()
@@ -199,6 +233,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
     messages,
     conversations,
     readOnly,
+    continuesAgentSession,
     busy,
     storageError,
     initialize,

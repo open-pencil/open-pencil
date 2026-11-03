@@ -4,9 +4,12 @@ import { expect, test } from 'bun:test'
 import type { UIMessage } from 'ai'
 import { reactive } from 'vue'
 
+import type { ACPAgentID } from '@open-pencil/core/constants'
+
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
 import type { ChatDocumentEditor } from '@/app/ai/chat/history/document'
 import { createConversationStore } from '@/app/ai/chat/history/idb'
+import type { AgentSessionLink } from '@/app/ai/chat/history/types'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -30,7 +33,8 @@ test('adopting recovery in the same editor loads its selection instead of moving
       ensureChat: async () => null,
       profileId: () => null,
       resetChat: async () => undefined,
-      backend: () => 'direct'
+      backend: () => 'direct',
+      resumingAgent: () => null
     },
     store
   )
@@ -72,7 +76,8 @@ function fixture() {
         resets++
       },
       profileId: () => null,
-      backend: () => 'direct'
+      backend: () => 'direct',
+      resumingAgent: () => null
     },
     {
       ...store,
@@ -164,7 +169,8 @@ test('a pending transport is rejected when the active document changes', async (
       },
       profileId: () => null,
       resetChat: async () => undefined,
-      backend: () => 'direct'
+      backend: () => 'direct',
+      resumingAgent: () => null
     },
     createConversationStore()
   )
@@ -180,4 +186,133 @@ test('a pending transport is rejected when the active document changes', async (
   })
   expect(await initializing).toBeNull()
   expect(stops).toBe(1)
+})
+
+/** A Claude Code chat whose history holds `saved`, with `agent` as the chat's current agent. */
+async function agentFixture(initialAgent: ACPAgentID | null, saved?: { messages: UIMessage[] }) {
+  const active = editor()
+  let agent = initialAgent
+  const store = createConversationStore()
+  const chat = reactive({
+    messages: [] as UIMessage[],
+    status: 'ready' as const,
+    stop: async () => undefined
+  })
+  const links: (AgentSessionLink | undefined)[] = []
+  const history = createConversationHistory(
+    {
+      getEditor: () => active,
+      ensureChat: async (messages, _sessionId, link) => {
+        links.push(link)
+        chat.messages = messages ?? []
+        return chat
+      },
+      resetChat: async () => undefined,
+      profileId: () => null,
+      backend: () => 'acp',
+      resumingAgent: () => agent
+    },
+    store
+  )
+  await history.initialize()
+  const draft = expectDefined(history.current.value, 'draft conversation')
+  if (saved) {
+    await store.write({
+      ...draft,
+      title: 'Saved agent chat',
+      titleSource: 'manual',
+      backend: 'acp',
+      agentSession: { agent: 'claude-code', id: 'claude-session' },
+      messages: saved.messages.map((message) => ({ message, attachments: [] }))
+    })
+    // Away and back, so the saved row is what opens.
+    await history.newChat()
+    await history.open(draft.id)
+  }
+  return {
+    history,
+    store,
+    chat,
+    links,
+    id: draft.id,
+    switchAgent: (next: ACPAgentID | null) => {
+      agent = next
+    }
+  }
+}
+
+const savedMessage: UIMessage = {
+  id: 'saved',
+  role: 'user',
+  parts: [{ type: 'text', text: 'Make the hero bigger' }]
+}
+
+test('a saved agent conversation continues in its session with the agent that resumes it', async () => {
+  const f = await agentFixture('claude-code', { messages: [savedMessage] })
+  expect(f.history.continuesAgentSession.value).toBe(true)
+  expect(await f.history.ensureChat()).toBe(f.chat)
+  expect(f.links.at(-1)?.resume).toBe('claude-session')
+  expect(f.chat.messages.map((message) => message.id)).toEqual(['saved'])
+})
+
+test('a saved agent conversation stays read-only for an agent that cannot resume it', async () => {
+  const f = await agentFixture(null, { messages: [savedMessage] })
+  expect(f.history.continuesAgentSession.value).toBe(false)
+  expect(await f.history.ensureChat()).toBeNull()
+  expect(f.links).toEqual([])
+})
+
+test('the agent session a turn ran in is saved with its conversation', async () => {
+  const f = await agentFixture('claude-code')
+  await f.history.ensureChat()
+  const link = expectDefined(f.links.at(-1), 'agent session link')
+  expect(link.resume).toBeNull()
+  f.chat.messages = [savedMessage]
+  link.record({ agent: 'claude-code', id: 'new-session' })
+  await f.history.flush()
+  expect((await f.store.read(f.id))?.agentSession).toEqual({
+    agent: 'claude-code',
+    id: 'new-session'
+  })
+  expect(f.history.continuesAgentSession.value).toBe(true)
+})
+
+test('a session reported after switching conversations is not saved on the new one', async () => {
+  const f = await agentFixture('claude-code')
+  await f.history.ensureChat()
+  const link = expectDefined(f.links.at(-1), 'agent session link')
+  f.chat.messages = [savedMessage]
+  await f.history.newChat()
+  const other = expectDefined(f.history.current.value, 'new conversation')
+  link.record({ agent: 'claude-code', id: 'late-session' })
+  await f.history.flush()
+  expect(f.history.current.value?.agentSession).toBeUndefined()
+  expect((await f.store.read(f.id))?.agentSession).toBeUndefined()
+  expect(other.id).not.toBe(f.id)
+})
+
+test('a saved session the agent can no longer continue is forgotten', async () => {
+  const f = await agentFixture('claude-code', { messages: [savedMessage] })
+  await f.history.ensureChat()
+  expectDefined(f.links.at(-1), 'agent session link').record(null)
+  await f.history.flush()
+  expect((await f.store.read(f.id))?.agentSession).toBeUndefined()
+  expect(f.history.continuesAgentSession.value).toBe(false)
+})
+
+test('a conversation continued on another agent no longer resumes the saved session', async () => {
+  const f = await agentFixture('claude-code', { messages: [savedMessage] })
+  await f.history.ensureChat()
+  f.switchAgent(null)
+  await f.history.ensureChat()
+  await f.history.flush()
+  expect((await f.store.read(f.id))?.agentSession).toBeUndefined()
+  // Back on Claude Code, the new session missed the turns in between, so it is not saved.
+  f.switchAgent('claude-code')
+  await f.history.ensureChat()
+  const link = expectDefined(f.links.at(-1), 'agent session link')
+  expect(link.resume).toBeNull()
+  link.record({ agent: 'claude-code', id: 'partial-session' })
+  await f.history.flush()
+  expect((await f.store.read(f.id))?.agentSession).toBeUndefined()
 })

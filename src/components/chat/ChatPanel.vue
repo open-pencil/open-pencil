@@ -170,7 +170,11 @@ const historyOptions = computed(() => {
   }))
 })
 const agentHistoryReadOnly = computed(
-  () => !chat.value && messages.value.length > 0 && history.current.value?.backend !== 'direct'
+  () =>
+    !chat.value &&
+    messages.value.length > 0 &&
+    history.current.value?.backend !== 'direct' &&
+    !history.continuesAgentSession.value
 )
 /** Set while the conversation changes, so stopping its reply does not send what waits. */
 let queueHeld = false

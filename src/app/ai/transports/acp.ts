@@ -2,6 +2,7 @@ import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclie
 import type {
   Client,
   Agent,
+  InitializeResponse,
   SessionNotification,
   RequestPermissionRequest,
   RequestPermissionResponse,
@@ -17,6 +18,12 @@ import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
+import {
+  AgentSessionResumeError,
+  isAuthRequiredError,
+  openAgentSession,
+  type OpenedAgentSession
+} from '@/app/ai/agents/acp/session'
 import { createOwnToolApproval, linkOwnTools } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
@@ -40,6 +47,8 @@ interface ACPSession {
   dead: boolean
   /** The model the agent says it uses, once it has said; Codex names it, Claude in its usage. */
   model: string | null
+  /** Whether the agent continued a saved session, which already holds the instructions. */
+  resumed: boolean
 }
 
 /** One agent turn's tokens, as an ACP agent reports them with its answer to the prompt. */
@@ -104,11 +113,6 @@ export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): strin
   return msg
 }
 
-/** ACP's `auth_required` error, which an agent returns for a new session before sign-in. */
-function isAuthRequiredError(e: unknown): boolean {
-  return typeof e === 'object' && e !== null && 'code' in e && e.code === -32000
-}
-
 /** The agent never opened its session with OpenPencil's MCP server, so it has no design tools. */
 function toolsUnreachableError(agentDef: ACPAgentDef, reason: string | null): Error {
   return new Error(
@@ -148,6 +152,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   /** The chat's document, where each reply's run records the edits the agent makes in it. */
   private store: EditorStore | null
   private onUsage: ((usage: AgentTurnUsage) => void) | null
+  /** The agent session the next start continues: a saved chat's, then the one a turn ran in. */
+  private resume: string | null
+  private onSession: ((sessionId: string | null) => void) | null
 
   constructor(options: {
     agentDef: ACPAgentDef
@@ -155,11 +162,20 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     store?: EditorStore
     /** Told each turn's tokens, which the Usage settings count with the chat's other models. */
     onUsage?: (usage: AgentTurnUsage) => void
+    /** A saved chat's agent session, which the agent continues when it resumes sessions. */
+    resume?: string | null
+    /**
+     * Told the agent's session once a prompt went to it, so the chat can be continued later,
+     * and null when the saved session can no longer be continued.
+     */
+    onSession?: (sessionId: string | null) => void
   }) {
     this.agentDef = options.agentDef
     this.cwd = options.cwd ?? '.'
     this.store = options.store ?? null
     this.onUsage = options.onUsage ?? null
+    this.resume = options.resume ?? null
+    this.onSession = options.onSession ?? null
   }
 
   async sendMessages({
@@ -188,7 +204,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       }
       this.session = started
       this.starting = null
-      this.sentContext = false
+      this.sentContext = started.resumed
     }
 
     const carriesContext = !this.sentContext
@@ -239,6 +255,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           return
         }
 
+        // The agent saves its conversation once it takes the prompt, even a turn cut off later.
+        this.recordSession(sessionId)
         connection
           .prompt({
             sessionId,
@@ -259,6 +277,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           })
       }
     })
+  }
+
+  /** Keeps the session a prompt went to, which the agent continues when it starts again. */
+  private recordSession(sessionId: string): void {
+    if (!this.agentDef.resumesSessions || this.resume === sessionId) return
+    this.resume = sessionId
+    this.onSession?.(sessionId)
   }
 
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
@@ -357,8 +382,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       throw startupError(e, this.agentDef)
     }
 
+    let initialized: InitializeResponse
     try {
-      await untilStopped(
+      initialized = await untilStopped(
         connection.initialize({
           protocolVersion: PROTOCOL_VERSION,
           clientCapabilities: {}
@@ -380,18 +406,21 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
     onUpdate = ({ update }) => tools.noteUpdate(update)
 
-    let sessionResult
+    let opened: OpenedAgentSession
     try {
-      sessionResult = await untilStopped(
-        connection.newSession({
+      opened = await untilStopped(
+        openAgentSession(connection, this.agentDef, initialized, {
           cwd: this.cwd,
           mcpServers: tools.mcpServers,
-          _meta: tools.meta
+          meta: tools.meta,
+          resume: this.resume
         })
       )
     } catch (e) {
       tools.stop()
       await child.kill().catch(() => undefined)
+      // The saved conversation goes back to read-only; this chat keeps failing, never starting anew.
+      if (e instanceof AgentSessionResumeError) this.onSession?.(null)
       throw startupError(e, this.agentDef)
     }
 
@@ -417,11 +446,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     const session: ACPSession = {
       connection,
-      sessionId: sessionResult.sessionId,
+      sessionId: opened.sessionId,
       chat: tools.chat,
       child,
       dead: false,
-      model: sessionResult.models?.currentModelId ?? null,
+      model: opened.model,
+      resumed: opened.resumed,
       get onUpdate() {
         return onUpdate
       },

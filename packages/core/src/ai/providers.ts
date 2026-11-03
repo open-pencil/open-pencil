@@ -20,6 +20,11 @@ export interface ACPAgentDef {
    * which the desktop shell scope pins under `<command>-sign-in`.
    */
   signIn?: { via: 'acp'; method: string } | { via: 'terminal'; method: string; args: string[] }
+  /**
+   * Whether a saved chat continues the agent's own session through ACP `session/resume`, so the
+   * agent keeps what was said. Set only for agents whose adapter is known to resume reliably.
+   */
+  resumesSessions?: boolean
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
@@ -36,7 +41,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
       via: 'terminal',
       method: 'claude-ai-login',
       args: ['--cli', 'auth', 'login', '--claudeai']
-    }
+    },
+    resumesSessions: true
   },
   {
     id: 'codex',
