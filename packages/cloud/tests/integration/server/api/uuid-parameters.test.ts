@@ -90,6 +90,8 @@ describe('Cloud API route parameters', () => {
         ['GET', '/workspaces/abc/entitlements'],
         ['POST', `/workspaces/${workspaceId}/invitations/abc/resend`],
         ['POST', '/uploads/abc/commit'],
+        ['POST', '/documents/abc/collaboration-ticket'],
+        ['POST', '/shares/abc/collaboration-ticket'],
         ['POST', '/shares/abc/document'],
         ['POST', '/invitations/abc/preview'],
         ['POST', '/invitations/abc/accept'],
