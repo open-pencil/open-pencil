@@ -1,0 +1,1 @@
+- Scripts read a layer's `fillGeometry` and `strokeGeometry` and call `outlineStroke()` as in Figma, in the desktop and browser apps.

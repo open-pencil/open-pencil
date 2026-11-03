@@ -1,0 +1,2 @@
+- Dashes a script sets with `dashPattern` now draw.
+- New stars have Figma's inner radius.
