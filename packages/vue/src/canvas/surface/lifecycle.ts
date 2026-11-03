@@ -219,7 +219,7 @@ export function createCanvasSurfaceManager({
       return
     }
     state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
-    state.renderer.replaceSurface(surface)
+    state.renderer.replaceSurface(surface, { sameContext: result.glHandle === null })
     renderNow()
   }
 
