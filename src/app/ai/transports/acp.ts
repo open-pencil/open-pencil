@@ -2,7 +2,6 @@ import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclie
 import type {
   Client,
   Agent,
-  InitializeResponse,
   SessionNotification,
   RequestPermissionRequest,
   RequestPermissionResponse,
@@ -22,10 +21,9 @@ import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
   isAuthRequiredError,
-  openAgentSession,
-  type OpenedAgentSession
+  openAgentSession
 } from '@/app/ai/agents/acp/session'
-import { createOwnToolApproval, linkOwnTools } from '@/app/ai/agents/acp/tools'
+import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
@@ -138,6 +136,11 @@ function toolsUnreachableError(agentDef: ACPAgentDef, reason: string | null): Er
     `${agentDef.name} couldn't reach OpenPencil's tools, so your message wasn't sent.` +
       (reason ? ` ${agentDef.name} reported: ${reason}` : '')
   )
+}
+
+/** Closes a tools link that opens after the startup gave up, so it does not stay open. */
+function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
+  linking.then((late) => late.stop()).catch(() => undefined)
 }
 
 function startupError(error: unknown, agentDef: ACPAgentDef): Error {
@@ -425,78 +428,56 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     })
     stopped.catch(() => undefined)
     const untilStopped = <T>(request: Promise<T>): Promise<T> => bounded(request, stopped)
-    let automationAuthToken: string | null
-    try {
-      automationAuthToken = await untilStopped(this.startup.authToken())
-    } catch (e) {
+    // What startup opened so far, which a failed step closes along with the agent.
+    let release: (() => void) | null = null
+    const abandon = async (reason: Error): Promise<never> => {
+      release?.()
       await child.kill().catch(() => undefined)
-      throw startupError(e, this.agentDef)
+      throw reason
+    }
+    /** One startup step: when it fails or never answers, the agent stops and never gets a prompt. */
+    const step = async <T>(request: Promise<T>, failed?: (error: unknown) => void): Promise<T> => {
+      try {
+        return await untilStopped(request)
+      } catch (e) {
+        failed?.(e)
+        return abandon(startupError(e, this.agentDef))
+      }
     }
 
-    let initialized: InitializeResponse
-    try {
-      initialized = await untilStopped(
-        connection.initialize({
-          protocolVersion: PROTOCOL_VERSION,
-          clientCapabilities: {}
-        })
-      )
-    } catch (e) {
-      await child.kill().catch(() => undefined)
-      throw startupError(e, this.agentDef)
-    }
+    const automationAuthToken = await step(this.startup.authToken())
+    const initialized = await step(
+      connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
+    )
 
-    // The agent must reach OpenPencil's tools before it gets a prompt.
-    let tools: Awaited<ReturnType<typeof linkOwnTools>>
+    // The agent must reach OpenPencil's tools before it gets a prompt. An outside MCP connection
+    // whose credential cannot be read fails here.
     const linking = this.startup.linkTools(automationAuthToken)
-    try {
-      tools = await untilStopped(linking)
-    } catch (e) {
-      // A link that opens after the startup gave up must not stay open.
-      void linking.then((late) => late.stop()).catch(() => undefined)
-      // An outside MCP connection whose credential cannot be read fails here.
-      await child.kill().catch(() => undefined)
-      throw startupError(e, this.agentDef)
-    }
+    release = () => stopWhenLinked(linking)
+    const tools = await step(linking)
+    release = () => tools.stop()
     onUpdate = ({ update }) => tools.noteUpdate(update)
 
-    let opened: OpenedAgentSession
-    try {
-      opened = await untilStopped(
-        openAgentSession(connection, this.agentDef, initialized, {
-          cwd: this.cwd,
-          mcpServers: tools.mcpServers,
-          meta: tools.meta,
-          resume: this.resume
-        })
-      )
-    } catch (e) {
-      tools.stop()
-      await child.kill().catch(() => undefined)
-      // The saved conversation goes back to read-only; this chat keeps failing, never starting anew.
-      if (e instanceof AgentSessionResumeError) this.onSession?.(null)
-      throw startupError(e, this.agentDef)
-    }
+    const opened = await step(
+      openAgentSession(connection, this.agentDef, initialized, {
+        cwd: this.cwd,
+        mcpServers: tools.mcpServers,
+        meta: tools.meta,
+        resume: this.resume
+      }),
+      (e) => {
+        // The saved conversation goes back to read-only; this chat keeps failing, never starting anew.
+        if (e instanceof AgentSessionResumeError) this.onSession?.(null)
+      }
+    )
 
-    let outcome: Awaited<ReturnType<typeof tools.outcome>>
-    try {
-      outcome = await untilStopped(tools.outcome())
-    } catch (e) {
-      tools.stop()
-      // A deadline leaves the agent running.
-      await child.kill().catch(() => undefined)
-      throw startupError(e, this.agentDef)
-    }
+    const outcome = await step(tools.outcome())
     // Destroyed while starting, as when the chat closes: the agent must not get a prompt.
-    if (this.destroying) {
-      await child.kill().catch(() => undefined)
-      throw new Error('The chat closed while its agent was starting.')
-    }
+    if (this.destroying) await abandon(new Error('The chat closed while its agent was starting.'))
     if (outcome.connected === false) {
-      await child.kill().catch(() => undefined)
       const error = toolsUnreachableError(this.agentDef, outcome.reason)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(error) })
-      throw error
+      await abandon(error)
     }
     onUpdate = null
 

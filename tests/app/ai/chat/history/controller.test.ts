@@ -250,6 +250,7 @@ const savedMessage: UIMessage = {
 test('a saved agent conversation continues in its session with the agent that resumes it', async () => {
   const f = await agentFixture('claude-code', { messages: [savedMessage] })
   expect(f.history.continuesAgentSession.value).toBe(true)
+  expect(f.history.agentReadOnly.value).toBe(false)
   expect(await f.history.ensureChat()).toBe(f.chat)
   expect(f.links.at(-1)?.resume).toBe('claude-session')
   expect(f.chat.messages.map((message) => message.id)).toEqual(['saved'])
@@ -258,6 +259,7 @@ test('a saved agent conversation continues in its session with the agent that re
 test('a saved agent conversation stays read-only for an agent that cannot resume it', async () => {
   const f = await agentFixture(null, { messages: [savedMessage] })
   expect(f.history.continuesAgentSession.value).toBe(false)
+  expect(f.history.agentReadOnly.value).toBe(true)
   expect(await f.history.ensureChat()).toBeNull()
   expect(f.links).toEqual([])
 })

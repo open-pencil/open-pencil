@@ -137,6 +137,15 @@ export function createConversationHistory<TChat extends HistoryChat>(
     return saved && saved.agent === runtime.resumingAgent() ? saved.id : null
   }
   const continuesAgentSession = computed(() => resumableSession(current.value) !== null)
+  /**
+   * A saved transcript no chat can continue: it ran on an external agent, or the chat now runs on
+   * one, and that agent does not continue its saved session.
+   */
+  const agentReadOnly = computed(() => {
+    const conversation = current.value
+    if (!conversation?.messages.length || continuesAgentSession.value) return false
+    return runtime.backend() !== 'direct' || conversation.backend !== 'direct'
+  })
 
   /** Saves or forgets the session a conversation's agent runs in, while it is current. */
   function recordAgentSession(conversationId: string, agentSession: AgentSessionRef | null) {
@@ -155,14 +164,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
       if (readOnly.value && owner?.deref() === runtime.getEditor()) return null
       await loadDocument()
       const resume = resumableSession(current.value)
-      // A restored transcript continues an external agent only in a session that agent resumes.
-      if (
-        current.value?.messages.length &&
-        !session.chat &&
-        resume === null &&
-        (runtime.backend() !== 'direct' || current.value.backend !== 'direct')
-      )
-        return null
+      if (!session.chat && agentReadOnly.value) return null
       const editor = runtime.getEditor()
       const conversation = current.value
       // A session that missed some of the conversation, run elsewhere, must not be continued.
@@ -234,6 +236,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
     conversations,
     readOnly,
     continuesAgentSession,
+    agentReadOnly,
     busy,
     storageError,
     initialize,
