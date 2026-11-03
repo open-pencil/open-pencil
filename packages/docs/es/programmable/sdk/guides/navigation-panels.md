@@ -12,12 +12,12 @@ Un panel lateral suele incluir una lista de páginas y el árbol de capas. El SD
 Usa `PageListRoot` o `usePageList()`:
 
 ```vue
-<PageListRoot v-slot="{ pages, currentPageId, switchPage, addPage }">
+<PageListRoot v-slot="{ pages, currentPageId, actions }">
   <div>
-    <button v-for="page in pages" :key="page.id" @click="switchPage(page.id)">
+    <button v-for="page in pages" :key="page.id" @click="actions.switch(page.id)">
       {{ page.name }}
     </button>
-    <button @click="addPage()">Nueva Page</button>
+    <button @click="actions.add()">Nueva Page</button>
   </div>
 </PageListRoot>
 ```
@@ -27,15 +27,23 @@ Usa `PageListRoot` o `usePageList()`:
 Usa `LayerTreeRoot` si quieres que el SDK gestione Tree structure e Interactions y que la aplicación defina el Markup y los Styles:
 
 ```vue
-<LayerTreeRoot v-slot="{ items, selectedIds, select, toggleExpand, getKey, getChildren }">
-  <TreeView
-    :items="items"
-    :selected-ids="selectedIds"
-    :get-key="getKey"
-    :get-children="getChildren"
-    @select="select"
-    @toggle-expand="toggleExpand"
-  />
+<LayerTreeRoot v-slot="{ visibleRows }">
+  <LayerTreeItem
+    v-for="row in visibleRows"
+    :key="row.node.id"
+    v-slot="{ node, isSelected, padLeft, actions }"
+    :node="row.node"
+    :level="row.level"
+    :has-children="row.hasChildren"
+  >
+    <button
+      :data-selected="isSelected"
+      :style="{ paddingLeft: padLeft }"
+      @click="actions.select($event.shiftKey)"
+    >
+      {{ node.name }}
+    </button>
+  </LayerTreeItem>
 </LayerTreeRoot>
 ```
 

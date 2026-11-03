@@ -17,7 +17,8 @@ describe('contract descriptions', () => {
       'document_opened',
       'document_exported',
       'ai_reply_finished',
-      'usage_stats_enabled'
+      'usage_stats_enabled',
+      'donate_clicked'
     ])
     for (const event of events) {
       expect(event.description).not.toBe('')

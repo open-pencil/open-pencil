@@ -1,0 +1,1 @@
+- The first Chinese, Japanese, or Korean text in the desktop app loads one system font per script instead of every listed one and keeps a single copy of each, using hundreds of megabytes less memory, and draws in about 70 ms instead of 2 s per render while its fonts load (#1684).

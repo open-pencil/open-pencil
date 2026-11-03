@@ -95,6 +95,11 @@ export const diagnosticsMessageDefaults = {
   sharingQuestionAccept: 'Share stats',
   sharingQuestionAccepted: 'Thank you. You can change this in Privacy settings.',
   sharingQuestionDeclined: 'Usage stats stay off. You can change this in Privacy settings.',
+  supportTitle: 'Support OpenPencil',
+  supportDescription:
+    'Enjoying OpenPencil? It’s free and open source, and a donation helps speed up its development and covers the servers and services it runs on.',
+  supportNotNow: 'Not now',
+  supportDonate: 'Donate',
   sharingLocalData:
     'Usage and Diagnostics keep their records on this device. Diagnostics leave it only in a report you choose to send.',
   reportError: 'Report…',

@@ -50,6 +50,10 @@ const EVENT_DESCRIPTIONS: {
     properties: {
       source: 'Where: right after the first-run welcome, on a later launch, or in Settings.'
     }
+  },
+  donate_clicked: {
+    description: 'The donation page was opened; whether a donation followed is not known.',
+    properties: { source: 'Where: the question the app asks, the File menu, or Settings.' }
   }
 }
 

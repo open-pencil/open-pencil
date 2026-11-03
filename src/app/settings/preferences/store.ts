@@ -75,6 +75,11 @@ export interface SharingPreferences {
 export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
 
+/** When the donation question may show again, as a time in milliseconds; `null` before it was ever due. */
+export interface DonationPreferences {
+  promptAfter: number | null
+}
+
 /** Which events send a system notification while OpenPencil is out of view. */
 export interface NotificationPreferences {
   /** An agent waits on a permission request. */
@@ -119,6 +124,7 @@ export interface AppPreferences {
     aiSetup: AISetupState
   }
   sharing: SharingPreferences
+  donation: DonationPreferences
   notifications: NotificationPreferences
 }
 
@@ -150,6 +156,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   toolbar: structuredClone(DEFAULT_TOOLBAR_LAYOUT),
   onboarding: { aiSetup: 'pending' },
   sharing: { dailyPing: true, usageStats: 'unset' },
+  donation: { promptAfter: null },
   notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false }
 }
 
@@ -237,6 +244,12 @@ const appPreferencesSchema = section({
     dailyPing: v.fallback(v.boolean(), defaults.sharing.dailyPing),
     usageStats: v.fallback(v.picklist(USAGE_STATS_CONSENTS), defaults.sharing.usageStats)
   }),
+  donation: section({
+    promptAfter: v.fallback(
+      v.nullable(v.pipe(v.number(), v.integer(), v.minValue(0))),
+      defaults.donation.promptAfter
+    )
+  }),
   notifications: section({
     agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
     agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
@@ -283,6 +296,13 @@ export function updateSharingPreferences(changes: Partial<SharingPreferences>): 
   appPreferences.value = {
     ...appPreferences.value,
     sharing: { ...appPreferences.value.sharing, ...changes }
+  }
+}
+
+export function updateDonationPreferences(changes: Partial<DonationPreferences>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    donation: { ...appPreferences.value.donation, ...changes }
   }
 }
 

@@ -35,6 +35,11 @@
         "feature": "reports"
       },
       {
+        "id": "support-openpencil",
+        "label": "Support OpenPencil…",
+        "feature": "donation"
+      },
+      {
         "type": "separator"
       },
       {

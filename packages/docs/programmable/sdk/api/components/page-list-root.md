@@ -21,12 +21,12 @@ Use it when you want SDK-provided page-list structure with app-specific renderin
 ## Basic example
 
 ```vue
-<PageListRoot v-slot="{ pages, currentPageId, switchPage }">
+<PageListRoot v-slot="{ pages, currentPageId, actions }">
   <ul>
     <li v-for="page in pages" :key="page.id">
       <button
         :data-active="page.id === currentPageId"
-        @click="switchPage(page.id)"
+        @click="actions.switch(page.id)"
       >
         {{ page.name }}
       </button>

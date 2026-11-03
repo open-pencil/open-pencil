@@ -52,6 +52,7 @@ describe('APP_MENU_SCHEMA', () => {
       'open-tour',
       'diagnostics',
       'report-problem',
+      'support-openpencil',
       'settings',
       'view-design-issues',
       'theme-light',
