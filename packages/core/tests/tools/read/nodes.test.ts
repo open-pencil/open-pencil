@@ -10,7 +10,7 @@ function getNodeTool() {
   return tool
 }
 
-test('get_node includes component properties and layer references', () => {
+test('get_node includes component properties and layer references', async () => {
   const graph = new SceneGraph()
   const figma = new FigmaAPI(graph)
   const definition = {
@@ -29,7 +29,7 @@ test('get_node includes component properties and layer references', () => {
     componentPropertyReferences: [{ propertyId: definition.id, field: 'TEXT' }]
   })
 
-  const result = getNodeTool().execute(figma, { id: component.id })
+  const result = await getNodeTool().execute(figma, { id: component.id })
   expect(result).toMatchObject({
     componentPropertyDefinitions: [definition],
     children: [

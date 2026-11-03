@@ -24,7 +24,8 @@ export function makeFigmaFromStore(
     loadPage: async (id) => {
       if (!(await store.preparePageNodes(id)))
         throw new Error(`Page "${id}" was closed before it finished loading`)
-    }
+    },
+    pageOfNode: (id) => store.pageHoldingNode(id)
   })
   api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider
