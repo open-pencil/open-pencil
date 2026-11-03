@@ -75,12 +75,16 @@ function edgePath(r: SkiaRenderer, node: SceneNode): Path {
   return builder.detachAndDelete()
 }
 
-/** All dashes along `edge`, stroked with `options`, as one path. */
+/**
+ * All dashes along `edge`, one contour, stroked with `options`, as one path. A closed contour's
+ * dashes run on past its start; an open one's stop at its end.
+ */
 export function dashPath(
   r: SkiaRenderer,
   edge: Path,
   pattern: readonly number[],
-  options: Parameters<Path['makeStroked']>[0]
+  options: Parameters<Path['makeStroked']>[0],
+  closed = true
 ): Path | null {
   const pieces = outlinePieces(r, edge)
   const total = pieces.reduce((sum, [, length]) => sum + length, 0)
@@ -91,9 +95,10 @@ export function dashPath(
         ? sideDashSpans(length, pattern).map(([s, e]): Span => [start + s, start + e])
         : []
     ),
-    total
+    total,
+    closed
   )
-  const iter = new r.ck.ContourMeasureIter(edge, true, 1)
+  const iter = new r.ck.ContourMeasureIter(edge, closed, 1)
   const contour = iter.next()
   iter.delete()
   if (!contour) return null
@@ -102,7 +107,9 @@ export function dashPath(
     for (const [start, end] of spans) {
       const line = new r.ck.PathBuilder()
       appendSegment(r.ck, line, contour.getSegment(start, Math.min(end, total), true), false)
-      if (end > total) appendSegment(r.ck, line, contour.getSegment(0, end - total, true), true)
+      if (closed && end > total) {
+        appendSegment(r.ck, line, contour.getSegment(0, end - total, true), true)
+      }
       const centre = line.detachAndDelete()
       const outline = centre.makeStroked(options)
       centre.delete()
@@ -169,14 +176,15 @@ function curveLength(r: SkiaRenderer, from: Vector, verb: number, args: Float32A
  * Spans in order along a closed outline of length `total`, with spans that touch joined into one,
  * the last running past `total` into the first when they meet where the outline starts.
  */
-function mergeTouching(spans: Span[], total: number): Span[] {
+function mergeTouching(spans: Span[], total: number, closed: boolean): Span[] {
   const merged: Span[] = []
   for (const [start, end] of spans) {
     const last = merged.at(-1)
     if (last && start - last[1] < EPSILON) last[1] = Math.max(last[1], end)
     else merged.push([start, end])
   }
-  if (merged.length < 2) return merged
+  // A closed contour's last dash runs on into its first; an open one's ends stay apart.
+  if (!closed || merged.length < 2) return merged
   const first = merged[0]
   const last = merged[merged.length - 1]
   if (first[0] < EPSILON && total - last[1] < EPSILON) {

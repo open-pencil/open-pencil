@@ -23,7 +23,11 @@ import {
  */
 export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> {
   const figma = new FigmaAPI(graph)
-  figma.setRenderer(await measureTextHeadlessly())
+  const renderer = await measureTextHeadlessly()
+  // The process's one renderer keeps paths by layer id, which another document's layers share.
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
+  figma.setRenderer(renderer)
   figma.exportImage = (nodeIds, options) =>
     headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
   figma.rasterCodec = createCanvasKitRasterCodec(await initCanvasKit())

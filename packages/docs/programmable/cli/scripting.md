@@ -256,7 +256,7 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 
 - `node.fillGeometry` and `node.strokeGeometry` on shapes, text, frames, components, instances, and boolean operations give Figma's `VectorPaths` in the layer's own box. `fillGeometry` is the outline of the layer's shape whatever its fills, and empty for lines and open vectors. `strokeGeometry` is the band every visible stroke covers, centred on the edge and twice the weight wide for inside and outside strokes, with dashes and per-side weights. It covers the same area as Figma's, though Figma writes a stroke as a piece per edge and corner where OpenPencil writes its outline
 - `node.outlineStroke()` adds the layer's stroke as a vector filled with the stroke's paints, named `<name> (Stroke)` (a group of glyph vectors for text), at the end of the page at the layer's position in its parent, as Figma does, and keeps the layer. It returns `null` without a visible stroke
-- These measure with a renderer, which the desktop app, the browser app, and `open-pencil eval` have; a host without one throws `This host has no renderer to measure geometry with`
+- These measure with a renderer: the canvas's in the desktop and browser apps, and a headless one in `open-pencil eval`. Before a document's canvas is ready, or on a host without a renderer, they throw `This host has no renderer to measure geometry with`
 
 ### Properties
 
