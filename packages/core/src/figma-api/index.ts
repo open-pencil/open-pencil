@@ -130,6 +130,8 @@ export type { FigmaVariationSettings } from './fonts/variations'
 export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   readonly graph: SceneGraph
   private _currentPageId: string
+  /** Counts page switches, so a switch whose page loads after a later one does not undo it. */
+  #pageSwitch = 0
   private _selection: FigmaNodeProxy[] = []
   private _nodeCache = new Map<string, FigmaNodeProxy>()
   private _nodeTypes = new Map<string, string | undefined>()
@@ -234,6 +236,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   }
 
   set currentPage(page: FigmaNodeProxy) {
+    this.#pageSwitch++
     this._currentPageId = page[INTERNAL_ID]
   }
 
@@ -260,7 +263,11 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
       return Promise.reject(new Error('figma.setCurrentPageAsync expects a PageNode'))
     }
     const pageId = this._nodeId(page)
+    const pageSwitch = ++this.#pageSwitch
     return loadPage(this, pageId).then(() => {
+      if (pageSwitch !== this.#pageSwitch) return undefined
+      if (this.graph.getNode(pageId)?.type !== 'CANVAS')
+        throw new Error('in setCurrentPageAsync: The page was removed while it loaded')
       this._currentPageId = pageId
       return undefined
     })

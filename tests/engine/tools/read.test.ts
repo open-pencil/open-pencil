@@ -260,6 +260,46 @@ describe('pages not yet visited', () => {
     })
   })
 
+  test('switch to the page asked for last, whichever loads last', async () => {
+    const { graph } = setupToolTest()
+    const [first] = graph.getPages()
+    const slow = graph.addPage('Slow')
+    const fast = graph.addPage('Fast')
+    const slowLoad = Promise.withResolvers<undefined>()
+    const figma = new FigmaAPI(graph, {
+      loadPage: async (id) => {
+        if (id === slow.id) await slowLoad.promise
+      }
+    })
+    const slowSwitch = figma.setCurrentPageAsync(figma.wrapNode(slow.id))
+    await figma.setCurrentPageAsync(figma.wrapNode(fast.id))
+    slowLoad.resolve(undefined)
+    await slowSwitch
+    expect(figma.currentPage.id).toBe(fast.id)
+
+    // A page set directly counts as asked for last too.
+    const pending = Promise.withResolvers<undefined>()
+    const later = new FigmaAPI(graph, { loadPage: () => pending.promise })
+    const switching = later.setCurrentPageAsync(later.wrapNode(slow.id))
+    later.currentPage = later.wrapNode(first.id)
+    pending.resolve(undefined)
+    await switching
+    expect(later.currentPage.id).toBe(first.id)
+  })
+
+  test('refuse to switch to a page removed while it loaded', async () => {
+    const { graph } = setupToolTest()
+    const doomed = graph.addPage('Doomed')
+    const figma = new FigmaAPI(graph, {
+      loadPage: async () => {
+        graph.deleteNode(doomed.id)
+      }
+    })
+    await expect(figma.setCurrentPageAsync(figma.wrapNode(doomed.id))).rejects.toThrow(
+      'removed while it loaded'
+    )
+  })
+
   test('load when a script or a tool switches to them', async () => {
     const { figma, later, loads } = lazyDocument()
     await getTool('switch_page').execute(figma, { page: 'Later' })

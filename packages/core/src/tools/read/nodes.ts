@@ -84,7 +84,11 @@ export const getPageTree = defineTool({
 
     if (root_id !== undefined) {
       const root = figma.getNodeById(root_id)
-      if (!root) return { error: `Node "${root_id}" not found` }
+      // Layers of a page not yet visited are not in the document until it loads.
+      if (!root)
+        return {
+          error: `Node "${root_id}" not found. A node on a page not yet opened is found once that page loads: pass its page_id.`
+        }
       // A page not yet visited has no layers until it loads.
       if (figma.graph.getNode(root.id)?.type === 'CANVAS') await root.loadAsync()
       return { root: root.id, tree: nodeToTreeEntry(root, 1, depth, typeFilter) }
