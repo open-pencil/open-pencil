@@ -1,0 +1,1 @@
+- New npm package `@open-pencil/oxlint-plugin`: OpenPencil's code conventions as Oxlint rules for any TypeScript project, such as validated JSON, Valibot schema placement, no broad type casts or silent catches, and no secrets in logs or URL query strings.

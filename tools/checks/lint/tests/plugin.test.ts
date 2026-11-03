@@ -1,10 +1,7 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import type lintPlugin from '#lint/plugin.ts'
-import { noSiblingDomainPrefixedFiles } from '#lint/rules/structure.ts'
 import {
   noHardcodedTipLabelsInVue,
   noNativeTitleAttributesInVue,
@@ -16,9 +13,7 @@ import { AST_NODE_TYPES, type TSESTree } from '@typescript-eslint/utils'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
-import { lint, lintFiles, ruleDiagnostics } from './helpers/lint.ts'
-
-const temporaryDirectories: string[] = []
+import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
 const unavailable = (member: string) => () => {
   throw new Error(`${member} is not available in the filename-only harness`)
@@ -49,7 +44,6 @@ function emptyProgram(): TSESTree.Program {
 
 /** Rules the filename-only harness below can drive without a parsed AST. */
 const harnessRules = {
-  'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles,
   'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
   'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
   'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates
@@ -76,18 +70,6 @@ async function runRule(
   return reports
 }
 
-test('domain naming uses ownership prefixes, not control-kind suffixes', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'open-pencil-domains-'))
-  temporaryDirectories.push(directory)
-  await mkdir(join(directory, 'list'))
-  expect(
-    await runRule('no-sibling-domain-prefixed-files', '', join(directory, 'page-list.ts'))
-  ).toBe(0)
-  expect(
-    await runRule('no-sibling-domain-prefixed-files', '', join(directory, 'list-actions.ts'))
-  ).toBe(1)
-})
-
 test('storage rule permits data keys but rejects storage access', async () => {
   const rule = 'no-direct-storage-access'
   const cases = {
@@ -109,67 +91,10 @@ test('storage rule permits data keys but rejects storage access', async () => {
   }
 })
 
-afterEach(async () => {
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true }))
-  )
-})
-
-describe('no-conditional-object-spreads', () => {
-  const rule = 'no-conditional-object-spreads'
-  const rules = { [`open-pencil/${rule}`]: 'error' }
-
-  test('accepts a simple one-property projection', async () => {
-    const diagnostics = await lint(
-      'export const result = { ...(enabled ? { value: 1 } : {}) }',
-      rules
-    )
-    expect(ruleDiagnostics(diagnostics, rule)).toHaveLength(0)
-  })
-
-  test('reports a multi-property conditional projection', async () => {
-    const diagnostics = await lint(
-      'export const result = { ...(enabled ? { value: 1, label: "yes" } : {}) }',
-      rules
-    )
-    expect(ruleDiagnostics(diagnostics, rule)).toHaveLength(1)
-  })
-
-  test('reports multiple conditional projections in one object', async () => {
-    const diagnostics = await lint(
-      'export const result = { ...(first ? { a: 1 } : {}), ...(second ? { b: 2 } : {}) }',
-      rules
-    )
-    expect(ruleDiagnostics(diagnostics, rule)).toHaveLength(2)
-  })
-})
-
-describe('AST-backed rules', () => {
-  test('recognizes Record<string, unknown> from the TypeScript AST', async () => {
-    const rule = 'no-unknown-record-double-cast'
-    const diagnostics = await lint(
-      'export const result = value as unknown as Record< string, unknown >',
-      { [`open-pencil/${rule}`]: 'error' }
-    )
-    expect(ruleDiagnostics(diagnostics, rule)).toHaveLength(1)
-  })
-
-  test('keeps distinct callback signatures out of duplicate type diagnostics', async () => {
-    const rule = 'no-duplicate-type-shapes'
-    const diagnostics = await lint(
-      [
-        'interface First { handler: (value: string) => number; enabled: boolean }',
-        'interface Second { handler: (value: number) => number; enabled: boolean }'
-      ].join('\n'),
-      { [`open-pencil/${rule}`]: 'error' }
-    )
-    expect(ruleDiagnostics(diagnostics, rule)).toHaveLength(0)
-  })
-
+describe('Vue template rules', () => {
   test('recognizes native title attributes from the Vue template AST', async () => {
-    const rule = 'no-native-title-attributes-in-vue'
     const reports = await runRule(
-      rule,
+      'no-native-title-attributes-in-vue',
       '<template><button title="Save">Save</button></template>',
       '/repo/src/components/SaveButton.vue'
     )
@@ -225,10 +150,12 @@ describe('path support', () => {
 })
 
 describe('plugin entrypoint', () => {
-  test('loads all custom rules through the compatibility entrypoint', async () => {
+  test("loads this repository's rules and the published plugin's as one plugin", async () => {
     const pluginPath = join(await resolveWorkspaceRoot(import.meta.dir), 'lint/plugin.js')
     const module = (await import(pluginPath)) as { default: typeof lintPlugin }
-    expect(Object.keys(module.default.rules)).toContain('no-conditional-object-spreads')
-    expect(Object.keys(module.default.rules).length).toBeGreaterThan(60)
+    const rules = Object.keys(module.default.rules)
+    expect(module.default.meta.name).toBe('open-pencil')
+    expect(rules).toContain('no-conditional-object-spreads')
+    expect(rules).toContain('no-direct-storage-access')
   })
 })
