@@ -1,4 +1,5 @@
 import { defaultRelayURL } from '#cloud/contract'
+import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import {
@@ -11,6 +12,7 @@ import {
   createCleanupServices,
   createConfiguredCloudPolicy,
   relayDocumentLookups,
+  reportCloudError,
   startCleanupWorker,
   startTransactionalEmailWorker
 } from '#cloud/server'
@@ -48,6 +50,7 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     await database.destroy()
     throw error
   })
+  const reportError = createPostHogErrorReporter(config, 'node')
   const objects = createS3ObjectStore(config)
   const {
     email,
@@ -60,7 +63,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     ? startCleanupWorker(createCleanupServices(config, database, objects, policy), {
         ...cleanupPassOptions(config),
         intervalMs: config.cleanupIntervalMs,
-        onError: (error) => console.error('[Cloud] Cleanup worker failed:', error)
+        onError: (error) =>
+          void reportCloudError(reportError, 'Cleanup worker failed:', error, { source: 'cleanup' })
       })
     : undefined
   const relay = createCollaborationRelay({
@@ -68,6 +72,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     store: createCollaborationStateStore(database),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
+    onError: (message, error) =>
+      void reportCloudError(reportError, message, error, { source: 'relay' }),
     ...relayDocumentLookups(database, policy, config.deployment)
   })
   const app = createCloudApp({
@@ -81,7 +87,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     aiSigningKey,
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
     onDocumentRestored: (documentId) => relay.startOver(documentId),
-    onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId)
+    onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
+    reportError
   })
   const emailWorker = emailTransport
     ? startTransactionalEmailWorker(email, {
@@ -89,7 +96,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
         intervalMs: config.emailIntervalMs,
         leaseDurationMs: config.emailLeaseDurationMs,
         maximumAttempts: config.emailMaximumAttempts,
-        onError: (error) => console.error('[Cloud] Email worker failed:', error)
+        onError: (error) =>
+          void reportCloudError(reportError, 'Email worker failed:', error, { source: 'email' })
       })
     : undefined
   const cloudServer = createCloudServer(app, {

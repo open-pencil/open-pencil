@@ -1,8 +1,10 @@
+import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
 import {
   loadAISigningKey,
   parseCloudDeploymentTOML,
   type AISigningKey,
   type CloudEnvironment,
+  type CloudErrorReporter,
   type CloudServerConfig
 } from '#cloud/server'
 
@@ -26,6 +28,8 @@ export type CloudflareCloudEnvironment = CloudflareCloudBindings & Record<string
 export type PreparedCloudflareCloud = {
   config: CloudServerConfig
   aiSigningKey: AISigningKey | undefined
+  /** Set when the deployment configures error tracking. */
+  reportError: CloudErrorReporter | undefined
 }
 
 /** The Worker's string variables and secrets, with `DATABASE_URL` from Hyperdrive. */
@@ -47,7 +51,11 @@ export function cloudflareCloudSetup(source: string) {
   return (env: CloudflareCloudEnvironment): Promise<PreparedCloudflareCloud> => {
     prepared ??= (async () => {
       const config = parseCloudDeploymentTOML(source, configEnvironment(env))
-      return { config, aiSigningKey: await loadAISigningKey(config) }
+      return {
+        config,
+        aiSigningKey: await loadAISigningKey(config),
+        reportError: createPostHogErrorReporter(config, 'cloudflare')
+      }
     })().catch((error: unknown) => {
       prepared = null
       throw error

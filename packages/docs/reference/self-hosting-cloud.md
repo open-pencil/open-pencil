@@ -139,6 +139,10 @@ Any S3-compatible store works; the project tests against SeaweedFS and Garage. K
 
 Revision keys are immutable, so bucket versioning isn't needed, but it isn't a backup either. Size `[workers.cleanup]` for your upload volume and retention, or set `enabled = false` and run `cleanup` from a scheduler.
 
+## Error tracking
+
+The server reports nothing unless you ask it to. Add an `[error_tracking]` table with `provider = "posthog"` to send errors no request handled, and failures of background work, cleanup, email delivery, and the collaboration relay, to PostHog error tracking. `host` defaults to PostHog's US Cloud, `https://us.i.posthog.com`; set `https://eu.i.posthog.com` or your own instance's address instead. The project API key defaults to `POSTHOG_PROJECT_API_KEY`. Each report carries the error and its stack, the runtime, the deployment mode and host, where the error was caught, and for a request its method and route pattern; it carries no account, address, or request body, and creates no person in PostHog. Errors are still logged either way.
+
 ## Backups and upgrades
 
 Back up PostgreSQL and the bucket together. To upgrade, build the new version, stop the old process, and start the new one: it applies migrations before it accepts requests. Migrations only move forward, so restore the database backup to roll back.
