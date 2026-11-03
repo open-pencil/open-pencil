@@ -1,6 +1,6 @@
 import type { ClientSideConnection, InitializeResponse, McpServer } from '@agentclientprotocol/sdk'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { acpAgentFor } from '@open-pencil/core/constants'
 import type { ACPAgentDef, ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import type { OwnToolsLink } from './tools'
@@ -30,7 +30,7 @@ export function isAuthRequiredError(e: unknown): boolean {
 
 /** The ACP agent a provider runs, when OpenPencil continues that agent's saved sessions. */
 export function resumingAgent(providerID: AIProviderID): ACPAgentID | null {
-  const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === providerID)
+  const agent = acpAgentFor(providerID)
   return agent?.resumesSessions ? agent.id : null
 }
 
