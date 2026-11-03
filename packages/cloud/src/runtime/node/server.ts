@@ -14,10 +14,13 @@ import {
   relayDocumentLookups,
   reportCloudError,
   startCleanupWorker,
-  startTransactionalEmailWorker
+  startTransactionalEmailWorker,
+  type CloudErrorReporter,
+  type CloudServerConfig
 } from '#cloud/server'
 
-import { createMigratedNodeCloudDatabase } from './bootstrap'
+import { migratedNodeCloudDatabase } from './bootstrap'
+import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
 import { listen } from './listen'
 import { attachCollaborationRelay } from './relay'
@@ -42,15 +45,32 @@ function siteFiles(
   return undefined
 }
 
+/**
+ * Starts the server. Once the config parses, a startup that fails, such as a migration, a signing
+ * key, or a port that cannot be bound, is reported before it is thrown; a config that does not
+ * parse has no error tracking to report to.
+ */
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
-  const { config, database } = await createMigratedNodeCloudDatabase(environment)
+  const config = await loadNodeCloudServerConfig(environment)
   const reportError = createPostHogErrorReporter(config, 'node')
+  try {
+    return await startConfiguredServer(config, environment, options, reportError)
+  } catch (error) {
+    await reportCloudError(reportError, 'Starting the server failed:', error, { source: 'setup' })
+    throw error
+  }
+}
+
+async function startConfiguredServer(
+  config: CloudServerConfig,
+  environment: Readonly<Record<string, string | undefined>>,
+  options: NodeCloudServerOptions,
+  reportError: CloudErrorReporter | undefined
+) {
+  const { database } = await migratedNodeCloudDatabase(config)
   // Before any worker starts, so a key that cannot sign leaves nothing running.
   const aiSigningKey = await loadAISigningKey(config).catch(async (error: unknown) => {
-    await reportCloudError(reportError, 'Loading the AI signing key failed:', error, {
-      source: 'setup'
-    })
     await database.destroy()
     throw error
   })
