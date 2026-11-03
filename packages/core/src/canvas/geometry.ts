@@ -5,7 +5,7 @@ import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import { baseShapePath, makeBooleanOperationPath, strokeSourcePath } from './boolean'
-import { forEachVerb } from './paths/verbs'
+import { appendVerb, forEachVerb } from './paths/verbs'
 import type { SkiaRenderer } from './renderer'
 import { nodeHasRadius } from './shapes'
 import { getStrokeCapEntity, getStrokeJoinEntity, normalizeDashPattern } from './strokes'
@@ -143,18 +143,10 @@ function contours(r: SkiaRenderer, source: Path): { path: Path; closed: boolean 
     if (verb === r.ck.MOVE_VERB) {
       finish()
       current = { builder: new r.ck.PathBuilder(), closed: false }
-      current.builder.moveTo(a[0], a[1])
-      return
     }
     if (!current) return
-    if (verb === r.ck.LINE_VERB) current.builder.lineTo(a[0], a[1])
-    else if (verb === r.ck.QUAD_VERB) current.builder.quadTo(a[0], a[1], a[2], a[3])
-    else if (verb === r.ck.CONIC_VERB) current.builder.conicTo(a[0], a[1], a[2], a[3], a[4])
-    else if (verb === r.ck.CUBIC_VERB) current.builder.cubicTo(a[0], a[1], a[2], a[3], a[4], a[5])
-    else if (verb === r.ck.CLOSE_VERB) {
-      current.builder.close()
-      current.closed = true
-    }
+    if (verb === r.ck.CLOSE_VERB) current.closed = true
+    appendVerb(r.ck, current.builder, verb, a)
   })
   finish()
   return found

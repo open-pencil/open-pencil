@@ -3,7 +3,7 @@ import type { Canvas, CanvasKit, Path, PathBuilder } from 'canvaskit-wasm'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { forEachVerb } from '#core/canvas/paths/verbs'
+import { appendVerb, forEachVerb } from '#core/canvas/paths/verbs'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from '#core/canvas/shapes'
 import { getStrokeCapEntity, getStrokeJoinEntity } from '#core/canvas/strokes'
@@ -202,12 +202,8 @@ function appendSegment(
   continues: boolean
 ): void {
   forEachVerb(ck, segment, (verb, a) => {
-    if (verb === ck.MOVE_VERB) {
-      if (!continues) builder.moveTo(a[0], a[1])
-    } else if (verb === ck.LINE_VERB) builder.lineTo(a[0], a[1])
-    else if (verb === ck.QUAD_VERB) builder.quadTo(a[0], a[1], a[2], a[3])
-    else if (verb === ck.CONIC_VERB) builder.conicTo(a[0], a[1], a[2], a[3], a[4])
-    else if (verb === ck.CUBIC_VERB) builder.cubicTo(a[0], a[1], a[2], a[3], a[4], a[5])
+    if (verb === ck.CLOSE_VERB || (verb === ck.MOVE_VERB && continues)) return
+    appendVerb(ck, builder, verb, a)
   })
   segment.delete()
 }

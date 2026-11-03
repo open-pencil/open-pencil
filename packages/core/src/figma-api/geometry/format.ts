@@ -2,54 +2,51 @@ import type { CanvasKit, Path } from 'canvaskit-wasm'
 
 import type { VectorPath } from '@open-pencil/scene-graph/vector-network'
 
-import { forEachVerb } from '#core/canvas/paths/verbs'
+import { tracePath } from '#core/canvas/paths/verbs'
+import { svgPathSink } from '#core/io/formats/svg/paths'
+import type { PathSink } from '#core/vector/path-helpers'
 
 /** A number as Figma writes path data: six significant digits, no trailing zeros. */
-function figmaNumber(value: number): string {
+function figmaNumber(value: number): number {
   const rounded = Number(value.toPrecision(6))
-  return String(Object.is(rounded, -0) ? 0 : rounded)
+  return Object.is(rounded, -0) ? 0 : rounded
 }
 
-function point(x: number, y: number): string {
-  return `${figmaNumber(x)} ${figmaNumber(y)}`
+/** `sink`, but a shape that ends away from its start runs back to it before closing, as Figma's do. */
+function closingAtStart(sink: PathSink): PathSink {
+  let start = ''
+  let at = ''
+  const key = (x: number, y: number) => `${figmaNumber(x)} ${figmaNumber(y)}`
+  let startPoint: [number, number] = [0, 0]
+  return {
+    moveTo(x, y) {
+      start = at = key(x, y)
+      startPoint = [x, y]
+      sink.moveTo(x, y)
+    },
+    lineTo(x, y) {
+      at = key(x, y)
+      sink.lineTo(x, y)
+    },
+    cubicTo(x1, y1, x2, y2, x, y) {
+      at = key(x, y)
+      sink.cubicTo(x1, y1, x2, y2, x, y)
+    },
+    close() {
+      if (at !== start) sink.lineTo(...startPoint)
+      at = start
+      sink.close()
+    }
+  }
 }
 
 /**
- * `path` as Figma's `fillGeometry` and `strokeGeometry` write it: `M0 0 L40 0 C…`, commands
- * spaced apart, each closed shape running back to its start before `Z`, and a conic as the cubic
- * Figma draws arcs with.
+ * `path` as Figma's `fillGeometry` and `strokeGeometry` write it: `M0 0 L40 0 C…`, commands spaced
+ * apart, six significant digits, curves as cubics, each closed shape running back to its start.
  */
 export function figmaPathData(ck: CanvasKit, path: Path): string {
   const parts: string[] = []
-  let start: [number, number] = [0, 0]
-  let at: [number, number] = [0, 0]
-  forEachVerb(ck, path, (verb, a) => {
-    if (verb === ck.MOVE_VERB) {
-      start = [a[0], a[1]]
-      at = start
-      parts.push(`M${point(a[0], a[1])}`)
-    } else if (verb === ck.LINE_VERB) {
-      at = [a[0], a[1]]
-      parts.push(`L${point(a[0], a[1])}`)
-    } else if (verb === ck.QUAD_VERB) {
-      at = [a[2], a[3]]
-      parts.push(`Q${point(a[0], a[1])} ${point(a[2], a[3])}`)
-    } else if (verb === ck.CONIC_VERB) {
-      // A conic of weight w is the cubic whose handles run 4w / 3(1 + w) of the way to its corner.
-      const share = (4 * a[4]) / (3 * (1 + a[4]))
-      const c1 = point(at[0] + (a[0] - at[0]) * share, at[1] + (a[1] - at[1]) * share)
-      const c2 = point(a[2] + (a[0] - a[2]) * share, a[3] + (a[1] - a[3]) * share)
-      at = [a[2], a[3]]
-      parts.push(`C${c1} ${c2} ${point(a[2], a[3])}`)
-    } else if (verb === ck.CUBIC_VERB) {
-      at = [a[4], a[5]]
-      parts.push(`C${point(a[0], a[1])} ${point(a[2], a[3])} ${point(a[4], a[5])}`)
-    } else if (verb === ck.CLOSE_VERB) {
-      if (point(...at) !== point(...start)) parts.push(`L${point(...start)}`)
-      parts.push('Z')
-      at = start
-    }
-  })
+  tracePath(ck, path, closingAtStart(svgPathSink(parts, figmaNumber)))
   return parts.join(' ')
 }
 
