@@ -7,7 +7,7 @@ import { SkiaRenderer } from '#core/canvas'
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
 let cachedCk: CanvasKit | null = null
-let cachedRenderer: SkiaRenderer | null = null
+let cachedRenderer: Promise<SkiaRenderer> | null = null
 
 export async function initCanvasKit(): Promise<CanvasKit> {
   if (cachedCk) return cachedCk
@@ -19,9 +19,25 @@ export async function initCanvasKit(): Promise<CanvasKit> {
   return cachedCk
 }
 
+/**
+ * The one headless renderer a process keeps, fonts loaded: every renderer registers its own font
+ * provider, which holds a copy of each font loaded after it, so a second one doubles that memory.
+ */
+export async function headlessRenderer(): Promise<SkiaRenderer> {
+  return (await getRenderer()).renderer
+}
+
 async function getRenderer(): Promise<{ ck: CanvasKit; renderer: SkiaRenderer }> {
   const ck = await initCanvasKit()
-  if (cachedRenderer) return { ck, renderer: cachedRenderer }
+  // Callers that arrive together share one renderer rather than each making their own.
+  cachedRenderer ??= createRenderer(ck).catch((error: unknown) => {
+    cachedRenderer = null
+    throw error
+  })
+  return { ck, renderer: await cachedRenderer }
+}
+
+async function createRenderer(ck: CanvasKit): Promise<SkiaRenderer> {
   const surface = ck.MakeSurface(1, 1)
   if (!surface) throw new Error('Failed to create CanvasKit surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -29,8 +45,7 @@ async function getRenderer(): Promise<{ ck: CanvasKit; renderer: SkiaRenderer }>
   renderer.viewportHeight = 1
   renderer.dpr = 1
   await renderer.loadFonts()
-  cachedRenderer = renderer
-  return { ck, renderer }
+  return renderer
 }
 
 export async function headlessRenderNodes(

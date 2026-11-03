@@ -5,9 +5,9 @@ import type {
   TextNode
 } from '@figma/plugin-typings/plugin-api-standalone'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -88,15 +88,15 @@ export function createStackHost() {
 }
 
 /**
- * Attaches a headless renderer to `api`, as the app and `open-pencil eval` do, so geometry,
- * booleans, and flatten measure real paths. The renderer lives as long as the test process.
+ * Attaches the process's headless renderer to `api`, as the app and `open-pencil eval` do, so
+ * geometry, booleans, and flatten measure real paths. One renderer serves every test, as each new
+ * one would keep its own copy of every font loaded after it; the paths it keeps by layer id are
+ * cleared, since another document's layers share those ids.
  */
 export async function attachTestRenderer(api: FigmaAPI): Promise<SkiaRenderer> {
-  const ck = await initCanvasKit()
-  const surface = ck.MakeSurface(200, 200)
-  if (!surface) throw new Error('Could not create a CanvasKit surface')
-  const renderer = new SkiaRenderer(ck, surface)
-  await renderer.loadFonts()
+  const renderer = await headlessRenderer()
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
   api.setRenderer(renderer)
   return renderer
 }

@@ -1,11 +1,11 @@
 import { readFile, realpath } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { headlessRenderer, initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import {
   computeAllLayouts,
   installTextMeasurer,
@@ -62,11 +62,7 @@ let textMeasurer: Promise<SkiaRenderer> | null = null
  */
 export function measureTextHeadlessly(): Promise<SkiaRenderer> {
   textMeasurer ??= (async () => {
-    const ck = await initCanvasKit()
-    const surface = ck.MakeSurface(1, 1)
-    if (!surface) throw new Error('CanvasKit could not make a surface to measure text')
-    const renderer = new SkiaRenderer(ck, surface)
-    await renderer.loadFonts()
+    const renderer = await headlessRenderer()
     installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
     return renderer
   })().catch((error: unknown) => {
