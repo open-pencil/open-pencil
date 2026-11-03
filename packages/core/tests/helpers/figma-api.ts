@@ -41,14 +41,17 @@ export function asComponentNode(node: FigmaNodeProxy): FigmaNodeProxy & Componen
   return node as FigmaNodeProxy & ComponentNode
 }
 
+function isPageNode(node: FigmaNodeProxy): node is FigmaNodeProxy & PageNode {
+  return node.type === 'PAGE'
+}
+
 /**
  * Names `api.currentPage` as a page. The boolean-operation entry points only take Figma's node
  * types, while the current-page proxy is typed by its selection alone.
  */
-export function asPageNode(
-  page: FigmaNodeProxy & { selection: FigmaNodeProxy[] }
-): FigmaNodeProxy & PageNode {
-  return page as FigmaNodeProxy & PageNode
+export function asPageNode(page: FigmaNodeProxy): FigmaNodeProxy & PageNode {
+  if (!isPageNode(page)) throw new Error(`Expected a page, got ${page.type}`)
+  return page
 }
 
 /**
