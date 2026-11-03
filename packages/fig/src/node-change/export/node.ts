@@ -1,3 +1,4 @@
+import { variantSet } from '#fig/document/component/links'
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
 import { compact } from 'es-toolkit/array'
@@ -57,6 +58,7 @@ import {
 import { generatedFrameRecord, writesGeneratedFrame } from './generated'
 import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
+import { boundPropertyGuid, variantPropertyCopies } from './property-copies'
 import { exportedNode } from './resolved-bindings'
 import { slotDefinitionFields } from './slots'
 import { serializeText } from './text'
@@ -368,12 +370,17 @@ function isEditedPathText(node: SceneNode): boolean {
   )
 }
 
-function applyRawFigmaNodeFields(
+/** The raw fields a node writes, without the ones it writes from its current state instead. */
+function writableRawFields(
   context: SceneNodeToKiwiContext,
-  node: SceneNode,
-  nc: KiwiNodeChange
-): void {
+  node: SceneNode
+): Record<string, unknown> {
   let rawFields = effectiveFigmaRawNodeFields(node)
+  // A variant writes its copies of its set's properties from the set (`variantPropertyCopies`).
+  if (variantSet(context.graph, node) && 'componentPropDefs' in rawFields) {
+    rawFields = { ...rawFields }
+    delete rawFields.componentPropDefs
+  }
   if (isReflowedStrokedPathText(node) || isEditedPathText(node)) {
     // Strip before materializing so the stale blobs never enter the file:
     // silhouettes are re-derived from glyphs by Figma/reimport, and
@@ -383,6 +390,15 @@ function applyRawFigmaNodeFields(
     delete rawFields.strokeGeometry
     delete rawFields.derivedTextData
   }
+  return rawFields
+}
+
+function applyRawFigmaNodeFields(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  nc: KiwiNodeChange
+): void {
+  const rawFields = writableRawFields(context, node)
   const materialized = materializeFigmaPayload(rawFields, context.blobs, {
     blobIndexByHex: context.blobIndexByHex,
     includePaintVariables: true,
@@ -670,27 +686,21 @@ function applyParameterReferences(nc: KiwiNodeChange, refs: ExportedPropertyRefe
   nc.parameterConsumptionMap = { entries }
 }
 
-function applyComponentMetadata(
+/**
+ * A component's or set's own property definitions, and a variant's copies of its set's, which
+ * it writes from them whatever the file saved.
+ */
+function applyPropertyDefinitions(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
   nc: KiwiNodeChange,
   localIdCounter: { value: number }
 ): void {
-  if (node.componentKey) nc.componentKey = node.componentKey
-  if (node.sourceLibraryKey) nc.sourceLibraryKey = node.sourceLibraryKey
-  const publishId = node.publishId ? parseGuidOrNull(node.publishId) : null
-  const overrideKey = node.overrideKey ? parseGuidOrNull(node.overrideKey) : null
-  if (publishId) nc.publishID = publishId
-  if (overrideKey) nc.overrideKey = overrideKey
-  if (node.sharedSymbolVersion) nc.sharedSymbolVersion = node.sharedSymbolVersion
-  if (node.publishedVersion) nc.publishedVersion = node.publishedVersion
-  if (node.type === 'COMPONENT_SET' || node.isPublishable) nc.isPublishable = node.isPublishable
-  if (node.type === 'COMPONENT' || node.isSymbolPublishable) {
-    nc.isSymbolPublishable = node.isSymbolPublishable
+  const copies = variantPropertyCopies(context, node, localIdCounter)
+  if (copies) {
+    if (copies.length > 0) nc.componentPropDefs = copies
+    return
   }
-  if (node.isExposedInstance) nc.propsAreBubbled = true
-  if (node.symbolDescription) nc.symbolDescription = node.symbolDescription
-  if (node.symbolLinks.length > 0) nc.symbolLinks = structuredClone(node.symbolLinks)
   const componentPropDefs = node.componentPropertyDefinitions.map((def) => {
     const record: Record<string, unknown> = {
       id: getOrCreatePropertyGuid(context, def.id, localIdCounter),
@@ -716,12 +726,35 @@ function applyComponentMetadata(
     if (def.description) record.description = def.description
     return record
   })
-  if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0)) {
+  if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0))
     nc.componentPropDefs = componentPropDefs
+}
+
+function applyComponentMetadata(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  localIdCounter: { value: number }
+): void {
+  if (node.componentKey) nc.componentKey = node.componentKey
+  if (node.sourceLibraryKey) nc.sourceLibraryKey = node.sourceLibraryKey
+  const publishId = node.publishId ? parseGuidOrNull(node.publishId) : null
+  const overrideKey = node.overrideKey ? parseGuidOrNull(node.overrideKey) : null
+  if (publishId) nc.publishID = publishId
+  if (overrideKey) nc.overrideKey = overrideKey
+  if (node.sharedSymbolVersion) nc.sharedSymbolVersion = node.sharedSymbolVersion
+  if (node.publishedVersion) nc.publishedVersion = node.publishedVersion
+  if (node.type === 'COMPONENT_SET' || node.isPublishable) nc.isPublishable = node.isPublishable
+  if (node.type === 'COMPONENT' || node.isSymbolPublishable) {
+    nc.isSymbolPublishable = node.isSymbolPublishable
   }
+  if (node.isExposedInstance) nc.propsAreBubbled = true
+  if (node.symbolDescription) nc.symbolDescription = node.symbolDescription
+  if (node.symbolLinks.length > 0) nc.symbolLinks = structuredClone(node.symbolLinks)
+  applyPropertyDefinitions(context, node, nc, localIdCounter)
 
   const parameterRefs = node.componentPropertyReferences.map((ref) => ({
-    defID: getOrCreatePropertyGuid(context, ref.propertyId, localIdCounter),
+    defID: boundPropertyGuid(context, node, ref.propertyId, localIdCounter),
     componentPropNodeField: componentPropertyNodeField(ref.field)
   }))
   // Figma binds a slot frame only through its parameter map, never a legacy property ref.

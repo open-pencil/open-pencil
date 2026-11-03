@@ -1,0 +1,104 @@
+import { bindingVariant, variantSet } from '#fig/document/component/links'
+import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
+
+import type { GUID } from '@open-pencil/kiwi/fig'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import type { SceneNode } from '@open-pencil/scene-graph'
+
+import { getOrCreatePropertyGuid, type SceneNodeToKiwiContext } from './context'
+
+/**
+ * Figma reads a set's boolean, text, instance swap, and slot properties through each variant's
+ * own copy of them, linked by `parentPropDefId`: the variant's layers bind to the copy, and an
+ * instance of the variant assigns it. A set without the copies opens with instances that lack
+ * those properties (desktop 126). OpenPencil keeps the set's properties alone, and writes the
+ * copies from them, under the GUIDs the file gave them or new ones.
+ */
+
+interface SavedCopy {
+  id?: GUID
+  parentPropDefId?: GUID
+}
+
+/** Whether a property is one each of the set's variants copies: any but a variant property. */
+function copiedProperty(set: SceneNode, propertyId: string): boolean {
+  return set.componentPropertyDefinitions.some(
+    (definition) => definition.id === propertyId && definition.type !== 'VARIANT'
+  )
+}
+
+/** The GUID a variant's copy of a set property is written with. */
+function copyGuid(
+  context: SceneNodeToKiwiContext,
+  variant: SceneNode,
+  propertyId: string,
+  localIdCounter: { value: number }
+): GUID {
+  const guids = context.propertyCopyGuids
+  const key = `${variant.id}\0${propertyId}`
+  const known = guids.get(key)
+  if (known) return known
+  const property = guidToString(getOrCreatePropertyGuid(context, propertyId, localIdCounter))
+  const saved = effectiveFigmaRawNodeFields(variant).componentPropDefs
+  const kept = (Array.isArray(saved) ? (saved as SavedCopy[]) : []).find(
+    (copy) => copy.id && copy.parentPropDefId && guidToString(copy.parentPropDefId) === property
+  )?.id
+  const guid = kept ?? { sessionID: 1, localID: localIdCounter.value++ }
+  if (!kept) context.assignedGuidValues?.add(`${guid.sessionID}:${guid.localID}`)
+  guids.set(key, guid)
+  return guid
+}
+
+/** A variant's copies of its set's properties, as its `componentPropDefs`; none elsewhere. */
+export function variantPropertyCopies(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  localIdCounter: { value: number }
+): { id: GUID; parentPropDefId: GUID }[] | null {
+  const set = variantSet(context.graph, node)
+  if (!set) return null
+  return set.componentPropertyDefinitions.flatMap((definition) =>
+    definition.type === 'VARIANT'
+      ? []
+      : [
+          {
+            id: copyGuid(context, node, definition.id, localIdCounter),
+            parentPropDefId: getOrCreatePropertyGuid(context, definition.id, localIdCounter)
+          }
+        ]
+  )
+}
+
+/** The GUID a property is named by in `variant`'s file context: its copy, if it has one. */
+function propertyGuidIn(
+  context: SceneNodeToKiwiContext,
+  variant: SceneNode | undefined,
+  propertyId: string,
+  localIdCounter: { value: number }
+): GUID {
+  const set = variant && variantSet(context.graph, variant)
+  return variant && set && copiedProperty(set, propertyId)
+    ? copyGuid(context, variant, propertyId, localIdCounter)
+    : getOrCreatePropertyGuid(context, propertyId, localIdCounter)
+}
+
+/** The GUID a layer's reference names a property with: its variant's copy, if it has one. */
+export function boundPropertyGuid(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  propertyId: string,
+  localIdCounter: { value: number }
+): GUID {
+  return propertyGuidIn(context, bindingVariant(context.graph, node), propertyId, localIdCounter)
+}
+
+/** The GUID an instance assigns a property by: its component's copy, if it has one. */
+export function assignedPropertyGuid(
+  context: SceneNodeToKiwiContext,
+  instance: SceneNode,
+  propertyId: string,
+  localIdCounter: { value: number }
+): GUID {
+  const main = instance.componentId ? context.graph.getNode(instance.componentId) : undefined
+  return propertyGuidIn(context, main, propertyId, localIdCounter)
+}

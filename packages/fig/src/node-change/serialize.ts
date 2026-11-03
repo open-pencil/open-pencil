@@ -463,6 +463,8 @@ export interface SceneNodeToKiwiOptions {
   componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>
   modeIdToGuid?: Map<string, GUID>
   propertyIdToGuid?: Map<string, GUID>
+  /** The GUID each variant's copy of a set property is written with, shared by every record. */
+  propertyCopyGuids?: Map<string, GUID>
   slotContentRecords?: KiwiNodeChange[]
   /** Plugin data a node is written with instead of its own, by node ID. */
   pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
@@ -491,6 +493,7 @@ export function sceneNodeToKiwi(
     componentPropertyDefinitionsById = buildComponentPropIndex(graph),
     modeIdToGuid,
     propertyIdToGuid = new Map<string, GUID>(),
+    propertyCopyGuids = new Map<string, GUID>(),
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,
@@ -513,6 +516,7 @@ export function sceneNodeToKiwi(
     assetRefToVarGuid,
     componentPropertyDefinitionsById,
     propertyIdToGuid,
+    propertyCopyGuids,
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,

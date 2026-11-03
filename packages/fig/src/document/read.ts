@@ -22,7 +22,11 @@ import {
 import { planComponentConstruction } from './components'
 import { DecodedMap } from './decoded-map'
 import { collectSceneDependencies } from './dependency-closure'
-import { inheritComponentPropertyDefinitions, inheritFromAncestors } from './property-inheritance'
+import {
+  inheritComponentPropertyDefinitions,
+  inheritFromAncestors,
+  linkedPropertyCopies
+} from './property-inheritance'
 import { vectorStyleTable } from './style-dependencies'
 
 /** Indexed source document. Resources remain separate from scene occurrences. */
@@ -315,6 +319,11 @@ function createScopedReader(
       return structuredClone(resources.map(whole))
     },
     bindingDiagnostics,
+    /** A record's copies of its set's properties, each by its own id to the set property's. */
+    propertyCopies(id: string): Map<string, string> {
+      const header = index.sources.get(id)
+      return header ? linkedPropertyCopies(shared.records.shared(header)) : new Map()
+    },
     readPage(id: string, options: InterpretInstanceOptions = {}) {
       if (!knownPageIds.has(id)) throw new Error(`Unknown page ${id}`)
       const page = interpreter.page(id, options)

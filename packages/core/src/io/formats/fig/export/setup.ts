@@ -383,6 +383,8 @@ export interface FigExportSetup {
   varIdToGuid: Map<string, GUID>
   modeIdToGuid: Map<string, GUID>
   propertyIdToGuid: Map<string, GUID>
+  /** The GUID each variant's copy of a set property is written with, by variant and property. */
+  propertyCopyGuids: Map<string, GUID>
   fontDigestMap: Map<string, Uint8Array>
   glyphBlobMap: Map<string, number>
   blobIndexByHex: Map<string, number>
@@ -507,6 +509,7 @@ export async function prepareFigExport(
     varIdToGuid,
     modeIdToGuid,
     propertyIdToGuid,
+    propertyCopyGuids: new Map<string, GUID>(),
     fontDigestMap,
     glyphBlobMap: new Map(),
     blobIndexByHex: new Map(),
@@ -528,6 +531,7 @@ export function figExportRecordOptions(setup: FigExportSetup) {
     componentPropertyDefinitionsById: setup.componentPropertyDefinitionsById,
     modeIdToGuid: setup.modeIdToGuid,
     propertyIdToGuid: setup.propertyIdToGuid,
+    propertyCopyGuids: setup.propertyCopyGuids,
     pluginDataOverrides: setup.pluginDataOverrides,
     recordOwners: setup.recordOwners,
     runtime: setup.runtime

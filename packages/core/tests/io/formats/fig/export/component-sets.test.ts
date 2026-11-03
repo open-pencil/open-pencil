@@ -6,6 +6,8 @@ import { deflateSync } from 'fflate'
 import {
   FigmaAPI,
   type FigmaComponentSetNode,
+  type FigmaInstanceNode,
+  type FigmaRectangleNode,
 } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
@@ -155,6 +157,182 @@ test('a set made in OpenPencil is written as a set Figma reads', async () => {
   const set = setRecord(parseFigBuffer(saved.slice().buffer as ArrayBuffer).nodeChanges)
   expect(set.isStateGroup).toBe(true)
   expect(set.stateGroupPropertyValueOrders).toEqual([{ property: 'State', values: ['Off', 'On'] }])
+})
+
+interface SavedCopy {
+  id?: GUID
+  parentPropDefId?: GUID
+}
+
+const guidOf = (guid: unknown) => (guid ? guidToString(guid as GUID) : null)
+
+/** The GUID a record's parameter map binds a field to. */
+function boundGuid(record: NodeChange, field: string): string | null {
+  const entries = (record.parameterConsumptionMap?.entries ?? []) as {
+    variableField?: string
+    variableData?: { value?: { propRefValue?: { defId?: GUID } } }
+  }[]
+  const entry = entries.find((item) => item.variableField === field)
+  return guidOf(entry?.variableData?.value?.propRefValue?.defId)
+}
+
+/** A set's variants' records, in order. */
+function variantRecords(records: NodeChange[], set: NodeChange): NodeChange[] {
+  const setGuid = guidOf(set.guid)
+  return records.filter((record) => guidOf(record.parentIndex?.guid) === setGuid)
+}
+
+/**
+ * A Size set whose variants each show a dot bound to its Show dot boolean, and an instance of
+ * the large one with the dot turned off.
+ */
+async function dotSet(): Promise<SceneGraph> {
+  await initCodec()
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const dots: FigmaRectangleNode[] = []
+  const variants = ['Size=Small', 'Size=Large'].map((name, index) => {
+    const component = figma.createComponent()
+    component.name = name
+    component.x = index * 100
+    const dot = figma.createRectangle()
+    dot.name = 'Dot'
+    component.appendChild(dot)
+    dots.push(dot)
+    return component
+  })
+  const set = figma.combineAsVariants(variants, figma.currentPage)
+  const key = set.addComponentProperty('Show dot', 'BOOLEAN', true)
+  for (const dot of dots) dot.componentPropertyReferences = { visible: key }
+  const instance = expectDefined(variants[1], 'large').createInstance()
+  instance.setProperties({ [key]: false })
+  return graph
+}
+
+/** Each variant's copies, by the name of the set property each copies, and its dot's binding. */
+function savedCopies(records: NodeChange[]) {
+  const set = setRecord(records)
+  const names = new Map(
+    definitionsOf(set).map((definition) => [guidOf(definition.id), definition.name])
+  )
+  return variantRecords(records, set).map((variant) => {
+    const dot = records.find((record) => guidOf(record.parentIndex?.guid) === guidOf(variant.guid))
+    return {
+      copies: Object.fromEntries(
+        ((variant.componentPropDefs ?? []) as SavedCopy[]).map((copy) => [
+          names.get(guidOf(copy.parentPropDefId)),
+          guidOf(copy.id)
+        ])
+      ),
+      dot: dot ? boundGuid(dot, 'VISIBLE') : null
+    }
+  })
+}
+
+/**
+ * Figma (desktop 126) gives each variant its own copy of a set's boolean, text, swap, and slot
+ * properties, linked by `parentPropDefId`; the variant's layers bind to the copy and an instance
+ * assigns its variant's copy. A set saved without the copies opens with instances that lack
+ * the property. Its scripts see the set's property alone, whichever variant shows.
+ */
+describe("a set's properties as each variant's linked copy", () => {
+  test('a set made in OpenPencil writes a copy per variant, which its layers and instances name', async () => {
+    const graph = await dotSet()
+
+    const records = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
+      .nodeChanges
+    const saved = setRecord(records)
+    const property = definitionsOf(saved).find((definition) => definition.type === 'BOOL')
+    const copies = variantRecords(records, saved).map((variant) => {
+      const [copy] = (variant.componentPropDefs ?? []) as SavedCopy[]
+      expect(guidOf(copy?.parentPropDefId)).toBe(guidOf(property?.id))
+      const dot = records.find((record) => guidOf(record.parentIndex?.guid) === guidOf(variant.guid))
+      expect(dot && boundGuid(dot, 'VISIBLE')).toBe(guidOf(copy?.id))
+      return guidOf(copy?.id)
+    })
+    expect(new Set(copies).size).toBe(2)
+    const written = expectDefined(
+      records.find((record) => record.type === 'INSTANCE'),
+      'instance record'
+    )
+    const [assignment] = (written.componentPropAssignments ?? []) as { defID?: GUID }[]
+    expect(guidOf(assignment?.defID)).toBe(copies[1])
+
+    // Read back, the set's property is the only one: scripts name it the same everywhere, the
+    // instance keeps its value, and switching variant keeps it, as in Figma.
+    const reopened = new FigmaAPI(await open(await exportFigFile(graph)))
+    const readSet = expectDefined(
+      reopened.currentPage.findOne((node) => node.type === 'COMPONENT_SET') as FigmaComponentSetNode | null,
+      'set'
+    )
+    const readKey = expectDefined(
+      Object.keys(readSet.componentPropertyDefinitions).find((name) => name.startsWith('Show dot#')),
+      'property key'
+    )
+    const readInstance = expectDefined(
+      reopened.currentPage.findOne((node) => node.type === 'INSTANCE') as FigmaInstanceNode | null,
+      'instance'
+    )
+    expect(Object.keys(readInstance.componentProperties).sort()).toEqual([readKey, 'Size'].sort())
+    expect(readInstance.componentProperties[readKey]?.value).toBe(false)
+    readInstance.setProperties({ Size: 'Small' })
+    expect(readInstance.componentProperties[readKey]?.value).toBe(false)
+    expect(expectDefined(readInstance.children[0], 'dot').visible).toBe(false)
+  })
+
+  // Untouched layers and instances keep naming the copies the archive saved, so a save writes
+  // a variant's existing copies under their saved GUIDs, beside a copy of the new property.
+  test('saving a set read from a .fig keeps its variants’ copies and adds new ones', async () => {
+    const bytes = await exportFigFile(await dotSet())
+    const before = savedCopies(parseFigBuffer(bytes.slice().buffer as ArrayBuffer).nodeChanges)
+    const graph = await open(bytes)
+    const set = expectDefined(
+      new FigmaAPI(graph).currentPage.findOne(
+        (node) => node.type === 'COMPONENT_SET'
+      ) as FigmaComponentSetNode | null,
+      'set'
+    )
+    set.addComponentProperty('Label', 'TEXT', 'Label')
+    const after = savedCopies(
+      parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer).nodeChanges
+    )
+    expect(after).toHaveLength(2)
+    after.forEach((variant, index) => {
+      expect(variant.copies['Show dot']).toBe(before[index]?.copies['Show dot'])
+      expect(variant.dot).toBe(variant.copies['Show dot'])
+      expect(variant.copies.Label).toBeTruthy()
+    })
+  })
+
+  test('a property added to a set read from a .fig gives every variant a copy', async () => {
+    const bytes = await kitStyleArchive()
+    const saves: Uint8Array[] = []
+    for (const keepArchive of [true, false]) {
+      const graph = await open(bytes)
+      if (!keepArchive) releaseFigArchive(graph)
+      const figma = new FigmaAPI(graph)
+      const set = expectDefined(
+        figma.currentPage.findOne((node) => node.type === 'COMPONENT_SET') as FigmaComponentSetNode | null,
+        'set'
+      )
+      set.addComponentProperty('Label', 'TEXT', 'Label')
+      saves.push(await exportFigFile(graph))
+    }
+    // Patched into the archive, and written in full.
+    for (const saved of saves) {
+      const records = parseFigBuffer(saved.slice().buffer as ArrayBuffer).nodeChanges
+      const set = setRecord(records)
+      const label = definitionsOf(set).find((definition) => definition.name === 'Label')
+      const variants = variantRecords(records, set)
+      expect(variants).toHaveLength(2)
+      for (const variant of variants)
+        expect(
+          ((variant.componentPropDefs ?? []) as SavedCopy[]).map((copy) =>
+            guidOf(copy.parentPropDefId)
+          )
+        ).toEqual([guidOf(label?.id)])
+    }
+  })
 })
 
 describe('saving variants edited in a set read from a .fig', () => {

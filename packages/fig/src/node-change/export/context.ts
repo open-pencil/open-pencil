@@ -94,6 +94,11 @@ export interface SceneNodeToKiwiContext {
    *  already Figma-GUID-shaped, keyed by the original ID so refs/assignments/
    *  variantPropSpecs pointing at the same property reuse the same GUID. */
   propertyIdToGuid: Map<string, GUID>
+  /**
+   * The GUID each variant's copy of a set property is written with, by variant and property,
+   * so the copy, its layers' references, and its instances' assignments agree.
+   */
+  propertyCopyGuids: Map<string, GUID>
   componentPropertyDefinitionsById: ReadonlyMap<string, ComponentPropertyDefinition>
   /**
    * Writing records into the archive a document came from: the layer each archive GUID
