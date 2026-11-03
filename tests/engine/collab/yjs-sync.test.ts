@@ -4,12 +4,11 @@ import { create as createPRNG } from 'lib0/prng'
 import * as Y from 'yjs'
 import { TestConnector, type TestYInstance } from 'yjs/testHelper'
 
+import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@open-pencil/collab'
 import type { Fill, GeometryPath, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
-
-import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { withSyncedStores } from '#tests/helpers/collab/synced-stores'

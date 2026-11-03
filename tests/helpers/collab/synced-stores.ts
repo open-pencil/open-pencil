@@ -2,13 +2,14 @@ import { expect } from 'bun:test'
 
 import * as Y from 'yjs'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-
 import {
   bindCollabGraphEvents,
   createYjsGraphSync,
   registerYjsObservers
-} from '@/app/collab/yjs-sync'
+} from '@open-pencil/collab'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { collabEditor, followRoomPages } from '@/app/collab/editor'
 import { createEditorStore } from '@/app/editor/session'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
@@ -34,32 +35,36 @@ export function createSyncedStores(options: SyncedStoreOptions = {}) {
   const peerNodes = peerDoc.getMap<Y.Map<unknown>>('nodes')
   const hostImages = hostDoc.getMap<Uint8Array>('images')
   const peerImages = peerDoc.getMap<Uint8Array>('images')
+  const hostEditor = collabEditor(hostStore)
+  const peerEditor = collabEditor(peerStore)
   let hostSuppressYjsEvents = false
   let peerSuppressYjsEvents = false
   let hostSuppressGraphSync = false
   let peerSuppressGraphSync = false
 
   const hostSync = createYjsGraphSync({
-    getStore: () => hostStore,
+    getEditor: () => hostEditor,
     getYdoc: () => hostDoc,
     getYnodes: () => hostNodes,
     getYimages: () => hostImages,
     setSuppressYjsEvents: (value) => {
       hostSuppressYjsEvents = value
-    }
+    },
+    onApplied: followRoomPages(hostStore)
   })
   const peerSync = createYjsGraphSync({
-    getStore: () => peerStore,
+    getEditor: () => peerEditor,
     getYdoc: () => peerDoc,
     getYnodes: () => peerNodes,
     getYimages: () => peerImages,
     setSuppressYjsEvents: (value) => {
       peerSuppressYjsEvents = value
-    }
+    },
+    onApplied: followRoomPages(peerStore)
   })
 
   registerYjsObservers({
-    store: hostStore,
+    editor: hostEditor,
     ynodes: hostNodes,
     yimages: hostImages,
     getSuppressYjsEvents: () => hostSuppressYjsEvents,
@@ -69,7 +74,7 @@ export function createSyncedStores(options: SyncedStoreOptions = {}) {
     applyYjsToGraph: hostSync.applyYjsToGraph
   })
   registerYjsObservers({
-    store: peerStore,
+    editor: peerEditor,
     ynodes: peerNodes,
     yimages: peerImages,
     getSuppressYjsEvents: () => peerSuppressYjsEvents,
@@ -82,14 +87,14 @@ export function createSyncedStores(options: SyncedStoreOptions = {}) {
   const unbindGraphEvents = options.bindGraphEvents
     ? [
         bindCollabGraphEvents({
-          store: hostStore,
+          editor: hostEditor,
           getYdoc: () => hostDoc,
           getYnodes: () => hostNodes,
           getSuppressGraphSync: () => hostSuppressGraphSync,
           syncLocalEdit: hostSync.syncLocalEdit
         }),
         bindCollabGraphEvents({
-          store: peerStore,
+          editor: peerEditor,
           getYdoc: () => peerDoc,
           getYnodes: () => peerNodes,
           getSuppressGraphSync: () => peerSuppressGraphSync,

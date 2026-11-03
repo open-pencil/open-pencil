@@ -1,6 +1,6 @@
 import type * as Y from 'yjs'
 
-import { readCounter } from '@/app/collab/shared-tree/fields'
+import { readCounter } from './shared-tree/fields'
 
 /** How many edits each peer's client has made to a room's document. */
 export type EditCounts = ReadonlyMap<string, number>

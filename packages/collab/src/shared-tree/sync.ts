@@ -4,8 +4,7 @@ import type * as Y from 'yjs'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
-import { LayerTree, type TreeMove } from '@/app/collab/tree/layer-tree'
-
+import { LayerTree, type TreeMove } from '../tree/layer-tree'
 import {
   createMoveClock,
   markTreeFormat,
