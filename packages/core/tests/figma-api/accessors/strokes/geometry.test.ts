@@ -81,4 +81,21 @@ describe('plugin API stroke geometry', () => {
     rect.rescale(2)
     expect([rect.strokeWeight, rect.strokeAlign]).toEqual([6, 'CENTER'])
   })
+
+  test('dashes reach the strokes the renderer draws, before and after they are set', () => {
+    const figma = api()
+    const rect = figma.createRectangle()
+    Reflect.set(rect, 'strokes', red)
+    rect.dashPattern = [4, 2]
+    expect(figma.graph.getNode(rect.id)?.strokes.map((stroke) => stroke.dashPattern)).toEqual([
+      [4, 2]
+    ])
+    const later = figma.createRectangle()
+    later.dashPattern = [6, 3]
+    Reflect.set(later, 'strokes', red)
+    expect(later.dashPattern).toEqual([6, 3])
+    expect(figma.graph.getNode(later.id)?.strokes.map((stroke) => stroke.dashPattern)).toEqual([
+      [6, 3]
+    ])
+  })
 })

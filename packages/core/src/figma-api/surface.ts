@@ -11,6 +11,7 @@ export const FIGMA_API_HOST_MEMBERS = [
   'currentPageId',
   'groupFitOptions',
   'setRenderer',
+  'renderer',
   'theme',
   'exportImage',
   'icons',

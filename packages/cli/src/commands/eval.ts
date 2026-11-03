@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { FigmaAPI, flushPendingLayout } from '@open-pencil/core/figma-api'
+import { flushPendingLayout } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
@@ -14,6 +14,7 @@ import {
   populateWholeDocument,
   writeFigDocument
 } from '#cli/headless'
+import { createHeadlessFigma } from '#cli/tool-data'
 
 function printResult(value: unknown, json: boolean) {
   if (json || !process.stdout.isTTY) {
@@ -73,12 +74,7 @@ export default defineCommand({
     const graph = await loadDocument(file)
     populateWholeDocument(graph)
     await measureDocumentText(graph)
-    const figma = new FigmaAPI(graph)
-    // CanvasKit starts only when a script exports an image.
-    figma.exportImage = async (nodeIds, options) => {
-      const { headlessRenderNodes } = await import('@open-pencil/core/io/formats/raster')
-      return headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
-    }
+    const figma = await createHeadlessFigma(graph)
 
     let result: unknown
     try {

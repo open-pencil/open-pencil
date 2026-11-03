@@ -252,6 +252,12 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `node.exportAsync(settings?)` on layers and pages writes `PNG` and `JPG` (sized by a `SCALE`, `WIDTH`, or `HEIGHT` constraint, cropped to the layer's box with `useAbsoluteBounds`), `SVG` as bytes, `SVG_STRING` as a string (with layer names as element ids when `svgIdAttribute` is set), and `PDF`. PNG and JPG need a renderer: the desktop app, the browser app, and `open-pencil eval` have one. SVG text stays `<text>` whatever `svgOutlineText` says, colour profiles are not applied, and `contentsOnly: false` exports the layer alone. A hidden or empty layer is refused with `The layer draws nothing to export`, where Figma exports a 1×1 image. OpenPencil also refuses an image at less than 0.01 or more than 1024 times the layer's size, or larger than 8192 by 8192 pixels. `JSON_REST_V1` and video formats are refused
 - `node.exportSettings` reads and sets the exports a layer keeps, with Figma's options and defaults; exports in formats Figma has no setting for, such as WebP or PowerPoint, are left out
 
+### Geometry
+
+- `node.fillGeometry` and `node.strokeGeometry` on shapes, text, frames, components, instances, and boolean operations give Figma's `VectorPaths` in the layer's own box. `fillGeometry` is the outline of the layer's shape whatever its fills, and empty for lines and open vectors. `strokeGeometry` is the band every visible stroke covers, centred on the edge and twice the weight wide for inside and outside strokes, with dashes and per-side weights. It covers the same area as Figma's, though Figma writes a stroke as a piece per edge and corner where OpenPencil writes its outline
+- `node.outlineStroke()` adds the layer's stroke as a vector filled with the stroke's paints, named `<name> (Stroke)` (a group of glyph vectors for text), at the end of the page at the layer's position in its parent, as Figma does, and keeps the layer. It returns `null` without a visible stroke
+- These measure with a renderer: the canvas's in the desktop and browser apps, and a headless one in `open-pencil eval`. Before a document's canvas is ready, or on a host without a renderer, they throw `This host has no renderer to measure geometry with`
+
 ### Properties
 
 Common node properties are readable/writable through the proxy, including:

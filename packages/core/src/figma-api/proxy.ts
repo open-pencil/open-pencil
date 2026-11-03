@@ -4,6 +4,7 @@ import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { createsComponentCycle, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
+import type { SkiaRenderer } from '#core/canvas'
 import { assertNodeEditable } from '#core/editor/capabilities'
 
 import { prepareFollowedFieldEdit, fitGroupsAround } from './accessor-utils'
@@ -25,6 +26,7 @@ import { installComponentPropertyAccessors } from './components'
 import { installDevStatusAccessors } from './dev-status'
 import { installExportAccessors } from './export/accessors'
 import type { ExportHost } from './export/render'
+import { installGeometryAccessors } from './geometry/accessors'
 import { FigmaNodeMembers } from './members'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors } from './overrides'
@@ -51,6 +53,8 @@ export interface NodeProxyHost extends ExportHost {
   readonly currentPageId: string
   /** How groups and booleans refit; booleans size to their result when a renderer is attached. */
   readonly groupFitOptions: GroupFitOptions
+  /** The renderer that measures geometry, when the host has one. */
+  readonly renderer: SkiaRenderer | null
 }
 
 export { MIXED }
@@ -67,6 +71,8 @@ function assertNoComponentCycle(
 }
 
 export class FigmaNodeProxy extends FigmaNodeMembers {
+  /** Installed by `installGeometryAccessors` on the layers Figma gives it. */
+  declare outlineStroke: () => FigmaNodeProxy | null;
   [INTERNAL_ID]: string;
   [INTERNAL_GRAPH]: SceneGraph;
   [INTERNAL_API]: NodeProxyHost
@@ -85,6 +91,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     if (type) installInstanceOverrideAccessors(this, internals, type)
     if (type) installStyleReferenceAccessors(this, internals, type, id === graph.rootId, MIXED)
     if (type && id !== graph.rootId) installExportAccessors(this, internals)
+    if (type) installGeometryAccessors(this, internals, type)
     // Figma loads a page's layers on demand in dynamic-page mode and has `loadAsync` on pages
     // alone; every page here is already loaded.
     if (type === 'CANVAS')

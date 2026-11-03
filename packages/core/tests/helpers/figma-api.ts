@@ -5,7 +5,9 @@ import type {
   TextNode
 } from '@figma/plugin-typings/plugin-api-standalone'
 
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
+import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -83,4 +85,18 @@ export function createStackHost() {
   }
   const order = () => host.children.map((child: FigmaNodeProxy) => child.name)
   return { figma, host, rect, order }
+}
+
+/**
+ * Attaches the process's headless renderer to `api`, as the app and `open-pencil eval` do, so
+ * geometry, booleans, and flatten measure real paths. One renderer serves every test, as each new
+ * one would keep its own copy of every font loaded after it; the paths it keeps by layer id are
+ * cleared, since another document's layers share those ids.
+ */
+export async function attachTestRenderer(api: FigmaAPI): Promise<SkiaRenderer> {
+  const renderer = await headlessRenderer()
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
+  api.setRenderer(renderer)
+  return renderer
 }

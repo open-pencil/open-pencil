@@ -69,7 +69,7 @@ function setFills(
   setPaintBindings(graph(target, internals), raw(target, internals), 'fills', value)
 }
 
-/** Figma paints carry no geometry; a stroke takes the weight and alignment the node keeps. */
+/** Figma paints carry no geometry; a stroke takes the weight, alignment, and dashes the node keeps. */
 function setStrokes(
   target: ProxyThis,
   internals: NodeProxyInternals,
@@ -78,10 +78,12 @@ function setStrokes(
 ): void {
   const owner = strokeOwner(target, internals)
   const geometry = newStrokeGeometry(raw(owner, internals))
+  const { dashPattern } = raw(owner, internals)
   const strokes = parseFigmaPaints(value, method, 'strokes').map((paint): Stroke => ({
     ...paint,
     weight: geometry.weight,
-    align: geometry.align
+    align: geometry.align,
+    dashPattern: dashPattern.length > 0 ? [...dashPattern] : undefined
   }))
   const kept = newStrokeGeometry({
     strokes,
