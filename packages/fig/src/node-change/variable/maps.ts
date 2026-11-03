@@ -43,20 +43,7 @@ export function mergeVariableModeMaps(
   if (!('variableModeBySetMap' in patch)) {
     return NO_FIELDS
   }
-  const unresolved: VariableModeEntry[] = []
-  const byCollection = new Map<string, VariableModeEntry>()
-  for (const entry of [...variableModeEntries(base), ...variableModeEntries(patch)]) {
-    const key = collectionKey(entry)
-    if (!key) {
-      unresolved.push(entry)
-    } else if (entry.variableModeID) {
-      byCollection.set(key, entry)
-    } else {
-      byCollection.delete(key)
-    }
-  }
-  const entries = [...byCollection.values(), ...unresolved]
-  return { variableModeBySetMap: { entries: structuredClone(entries) } }
+  return mergedModeMap(base, patch, 'clear')
 }
 
 export function mergeVariableModeClaims(
@@ -66,14 +53,29 @@ export function mergeVariableModeClaims(
   if (!('variableModeBySetMap' in later) || !('variableModeBySetMap' in earlier)) {
     return NO_FIELDS
   }
+  return mergedModeMap(earlier, later, 'keep')
+}
+
+/**
+ * One mode map from two, the later entry winning per collection. A cleared entry, one without
+ * a mode, either clears the collection (`clear`, applying a layer) or stays as a claim to clear
+ * it (`keep`, merging claims for export).
+ */
+function mergedModeMap(
+  earlier: VariableConsumptionSource,
+  later: VariableConsumptionSource,
+  cleared: 'clear' | 'keep'
+): Readonly<Record<string, unknown>> {
   const unresolved: VariableModeEntry[] = []
   const byCollection = new Map<string, VariableModeEntry>()
   for (const entry of [...variableModeEntries(earlier), ...variableModeEntries(later)]) {
     const key = collectionKey(entry)
-    if (key) {
+    if (!key) {
+      unresolved.push(entry)
+    } else if (entry.variableModeID || cleared === 'keep') {
       byCollection.set(key, entry)
     } else {
-      unresolved.push(entry)
+      byCollection.delete(key)
     }
   }
   const entries = [...byCollection.values(), ...unresolved]
