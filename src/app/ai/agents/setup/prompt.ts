@@ -10,7 +10,8 @@ const SIGN_IN: Record<ACPAgentID, string> = {
     'Make sure I am signed in to Claude Code: run `claude` and use `/login` if it asks me to sign in.',
   codex: 'Make sure I am signed in to Codex: run `codex login` if I am not.',
   'gemini-cli': 'Make sure I am signed in to Gemini CLI: run `gemini` and choose a sign-in method.',
-  cursor: 'Make sure I am signed in to Cursor: run `cursor-agent login` if I am not.'
+  cursor: 'Make sure I am signed in to Cursor: run `cursor-agent login` if I am not.',
+  'grok-build': 'Make sure I am signed in to Grok Build: run `grok login` if I am not.'
 }
 
 export function codingAgentGuideURL(agentID: ACPAgentID): string {

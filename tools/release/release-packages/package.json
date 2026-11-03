@@ -16,6 +16,7 @@
   "dependencies": {
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "@open-pencil/package-quality-tools": "workspace:*",
+    "@posthog/cli": "0.18.12",
     "@sigstore/bundle": "^5.0.0",
     "citty": "^0.1.6",
     "es-toolkit": "^1.52.0",

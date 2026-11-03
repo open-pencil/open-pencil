@@ -183,6 +183,20 @@ describe('permission for OpenPencil’s own tools', () => {
     })
   })
 
+  test('Grok Build’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'use_tool',
+      rawInput: { tool_name: 'open-pencil__get_node', tool_input: { id: '1:2' } },
+      _meta: { 'x.ai/tool': { name: 'use_tool' } }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
   test('another server’s calls and the agent’s own tools are left to the person', () => {
     const approval = createOwnToolApproval()
     approval.noteUpdate({

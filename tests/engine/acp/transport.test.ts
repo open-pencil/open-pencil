@@ -87,6 +87,29 @@ function cursorUpdate(fields: Omit<ToolCallUpdate, 'toolCallId'>): SessionUpdate
   return { sessionUpdate: 'tool_call_update', toolCallId: 'cur-1', ...fields }
 }
 
+const GROK_USE_TOOL = { 'x.ai/tool': { name: 'use_tool', namespace: 'grok_build' } }
+
+/** Grok Build calls every MCP tool through its `use_tool`, naming it `server__tool`. */
+function grokCall(id: string, tool: string, args: unknown): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call',
+    toolCallId: id,
+    title: 'use_tool',
+    rawInput: { tool_name: tool, tool_input: args },
+    _meta: GROK_USE_TOOL
+  }
+}
+
+function grokDone(id: string, output: { OkayOutput: string } | { Error: string }): SessionUpdate {
+  const failed = 'Error' in output
+  return {
+    sessionUpdate: 'tool_call_update',
+    toolCallId: id,
+    status: failed ? 'failed' : 'completed',
+    rawOutput: { type: 'MCP', output, ...(failed ? { is_error: true } : {}) }
+  }
+}
+
 function mcpText(value: unknown, isError?: boolean) {
   return {
     content: [{ type: 'text', text: JSON.stringify(value) }],
@@ -229,6 +252,38 @@ describe('an ACP turn in the chat', () => {
       title: 'grep "Frame"',
       input: { pattern: 'Frame' },
       state: 'output-available'
+    })
+  })
+
+  test('Grok Build’s calls to OpenPencil’s tools show the same way, with their result or error', async () => {
+    const [done, failed] = await transcript([
+      grokCall('grok-1', 'open-pencil__get_node', { id: '1:2' }),
+      grokDone('grok-1', { OkayOutput: JSON.stringify({ id: '1:2', name: 'Card' }) }),
+      grokCall('grok-2', 'open-pencil__describe', { id: '9:9' }),
+      grokDone('grok-2', { Error: JSON.stringify({ error: 'Node 9:9 not found' }) })
+    ])
+    expect(shown(expectDefined(done, 'tool part'))).toMatchObject({
+      type: 'tool-get_node',
+      input: { id: '1:2' },
+      state: 'done',
+      output: { id: '1:2', name: 'Card' }
+    })
+    expect(shown(expectDefined(failed, 'tool part'))).toMatchObject({
+      type: 'tool-describe',
+      state: 'error',
+      errorText: 'Node 9:9 not found'
+    })
+  })
+
+  test('Grok Build’s calls to another server keep the MCP name', async () => {
+    const [call] = await transcript([
+      grokCall('grok-1', 'github__create_issue', { title: 'Bug' }),
+      grokDone('grok-1', { OkayOutput: 'created' })
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-mcp__github__create_issue',
+      input: { title: 'Bug' },
+      state: 'done'
     })
   })
 

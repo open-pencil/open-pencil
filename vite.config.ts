@@ -73,7 +73,8 @@ export default defineConfig(async ({ command, mode }) => {
         pages: ['index.html', 'cloud.html', 'metrics.html']
       }),
       tailwindcss(),
-      // Not added to the page: Core loads behind the support gate, so `boot.ts` imports it.
+      // Not added to the page: Core loads behind the support gate, so the app's canvas module,
+      // which `boot.ts` loads, imports @open-pencil/core/runtime-assets/install itself.
       openPencil({ inject: false }),
       Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
@@ -94,6 +95,9 @@ export default defineConfig(async ({ command, mode }) => {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
       chunkSizeWarningLimit: 2500,
+      // Official releases upload their maps to PostHog for error reports, then remove them
+      // (`tools/release/release-packages/src/sourcemaps/publish.ts`); no chunk links one.
+      sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
       outDir: metrics ? 'dist-metrics/admin' : cloudSite ? 'dist-cloud' : 'dist',
       rolldownOptions: {
         // The desktop Software Update window is its own page; a Cloud server adds its own
