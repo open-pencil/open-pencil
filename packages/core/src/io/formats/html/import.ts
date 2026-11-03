@@ -36,7 +36,7 @@ export async function readHTMLDocument(
   const styled = options.tailwind
     ? await tailwindHTMLToDesignDocument(html, options.tailwind, { css: options.cssText, runtime })
     : await htmlToDesignDocument(html, { cssText: options.cssText, runtime })
-  return { styled, graph: sceneGraphFromStyledHTML(styled, { pageName: options.pageName }) }
+  return { styled, graph: await sceneGraphFromStyledHTML(styled, { pageName: options.pageName }) }
 }
 
 /** Reads HTML files where the headless CSS runtime is available, as in the CLI. */

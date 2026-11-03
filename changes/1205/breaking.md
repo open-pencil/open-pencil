@@ -1,1 +1,0 @@
-- `SceneGraph.updateNode` writes fields as given and no longer detaches shared styles. An edit detaches the styles whose fields it changes before writing, with `styleDetachmentChanges` from `@open-pencil/scene-graph/shared-styles`, as the editor and the plugin API do.

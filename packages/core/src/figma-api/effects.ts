@@ -3,8 +3,11 @@ import * as v from 'valibot'
 import type { BlendMode, Effect } from '@open-pencil/scene-graph'
 
 import { TRANSPARENT } from '#core/constants'
+import { invalid, parseFigma } from '#core/figma-api/validation'
 
+/** Blend modes in the order Figma lists them in its messages. */
 const BLEND_MODE_KEYS = {
+  PASS_THROUGH: true,
   NORMAL: true,
   DARKEN: true,
   MULTIPLY: true,
@@ -22,8 +25,7 @@ const BLEND_MODE_KEYS = {
   HUE: true,
   SATURATION: true,
   COLOR: true,
-  LUMINOSITY: true,
-  PASS_THROUGH: true
+  LUMINOSITY: true
 } satisfies Record<BlendMode, true>
 
 export const BLEND_MODES = Object.keys(BLEND_MODE_KEYS) as BlendMode[]
@@ -72,13 +74,6 @@ const effectsSchema = v.array(effectSchema)
 /** An effect as Figma's plugin API reads and writes it (`Effect` in `@figma/plugin-typings`). */
 export type FigmaEffect = v.InferOutput<typeof effectSchema>
 
-/** Figma's spelling of a path into a value: `[0].color.r`. */
-export function issuePath(path: readonly v.IssuePathItem[] | undefined): string {
-  return (path ?? [])
-    .map((item) => (typeof item.key === 'number' ? `[${item.key}]` : `.${String(item.key)}`))
-    .join('')
-}
-
 function unsupportedEffect(value: unknown): string | null {
   if (!Array.isArray(value)) return null
   for (const [index, effect] of value.entries()) {
@@ -93,21 +88,12 @@ function unsupportedEffect(value: unknown): string | null {
   return null
 }
 
-/**
- * Check `value` against Figma's effect shapes and convert it to scene effects.
- * Throws with the first problem, as Figma's `effects` setter does.
- */
+/** Check `value` against Figma's effect shapes and convert it to scene effects. */
 export function parseFigmaEffects(value: unknown): Effect[] {
+  const method = 'set_effects'
   const unsupported = unsupportedEffect(value)
-  if (unsupported) throw new Error(`Property "effects" failed validation: ${unsupported}`)
-  const result = v.safeParse(effectsSchema, value)
-  if (!result.success) {
-    const [issue] = result.issues
-    throw new Error(
-      `Property "effects" failed validation: ${issue.message} at ${issuePath(issue.path) || 'effects'}`
-    )
-  }
-  return result.output.map(toSceneEffect)
+  if (unsupported) throw invalid(method, unsupported, 'effects')
+  return parseFigma(effectsSchema, value, method, 'effects').map(toSceneEffect)
 }
 
 /** `value` as scene effects when it holds valid Figma effects, or null. */

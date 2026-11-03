@@ -3,6 +3,7 @@ import {
   autocompletion,
   completionKeymap,
   completionStatus,
+  selectedCompletion,
   type Completion,
   type CompletionSource
 } from '@codemirror/autocomplete'
@@ -80,6 +81,9 @@ export function useChatEditor(
         override: options.completions,
         icons: false,
         activateOnTyping: true,
+        // The field sits at the panel's bottom: a short list fits under its first line but would
+        // cover the field's own buttons, so lists always open above.
+        aboveCursor: true,
         addToOptions: [{ render: renderCompletionIcon, position: 20 }]
       }),
       // The list opens above the field and may be wider than the panel, which clips its content.
@@ -94,6 +98,17 @@ export function useChatEditor(
               if (completionStatus(editor.state) === 'active') return acceptCompletion(editor)
               options.onSubmit(false)
               return true
+            }
+          },
+          {
+            // Typing a completion's whole label, such as `/compact`, then a space picks it, so a
+            // command typed in full becomes the same chip as one chosen from the list.
+            key: 'Space',
+            run: (editor) => {
+              const selected = selectedCompletion(editor.state)
+              if (completionStatus(editor.state) !== 'active' || !selected) return false
+              const typed = editor.state.sliceDoc(0, editor.state.selection.main.head)
+              return typed === selected.label && acceptCompletion(editor)
             }
           },
           {

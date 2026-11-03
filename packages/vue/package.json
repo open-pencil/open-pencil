@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/vue",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.1",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -18,6 +18,11 @@
       "types": "./dist/canvas/drop/index.d.ts",
       "import": "./dist/canvas/drop/index.js",
       "default": "./dist/canvas/drop/index.js"
+    },
+    "./canvas/eyedropper": {
+      "types": "./dist/canvas/eyedropper/index.d.ts",
+      "import": "./dist/canvas/eyedropper/index.js",
+      "default": "./dist/canvas/eyedropper/index.js"
     },
     "./canvas/issues": {
       "types": "./dist/canvas/issues/index.d.ts",

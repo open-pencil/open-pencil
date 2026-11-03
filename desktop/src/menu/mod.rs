@@ -1,11 +1,11 @@
 pub mod events;
 
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Mutex;
 use tauri::menu::{
-    CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, MenuItemKind, Submenu, SubmenuBuilder,
+    CheckMenuItemBuilder, Menu, MenuBuilder, MenuItemBuilder, MenuItemKind, Submenu, SubmenuBuilder,
 };
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -14,6 +14,8 @@ use tauri::menu::PredefinedMenuItem;
 #[derive(Deserialize)]
 struct MenuGroup {
     label: String,
+    /// A feature the frontend turns on before the whole menu shows (`set_native_menu_features`).
+    feature: Option<String>,
     items: Vec<MenuEntry>,
 }
 
@@ -32,11 +34,13 @@ struct MenuEntry {
     sub: Vec<MenuEntry>,
 }
 
-/// What the schema menu is built from besides the schema: recent files and enabled features.
+/// What the schema menu is built from besides the schema: recent files, enabled features, and
+/// the items whose editor command is unavailable, such as Group with nothing selected.
 #[derive(Default)]
 pub struct NativeMenuInputs {
     pub recent_files: Vec<String>,
     pub features: Vec<String>,
+    pub disabled: HashSet<String>,
 }
 
 pub struct NativeMenuState(pub Mutex<NativeMenuInputs>);
@@ -73,10 +77,43 @@ fn app_menu_file() -> tauri::Result<AppMenuFile> {
     ))?)
 }
 
-/// The macOS application menu holds Settings…, so the schema's copy is left out there, along
-/// with a separator it would leave at the end of its menu.
+/// Whether `accelerator` holds a modifier other than Shift: Ctrl, Alt, Super, or Cmd.
+fn has_command_modifier(accelerator: &str) -> bool {
+    let parts: Vec<&str> = accelerator.split('+').collect();
+    // The last part is the key itself, which may be `+` as in `CmdOrCtrl++`.
+    parts[..parts.len().saturating_sub(1)]
+        .iter()
+        .any(|part| !part.trim().is_empty() && !part.trim().eq_ignore_ascii_case("shift"))
+}
+
+/// The accelerator an item registers natively, if any.
+///
+/// GTK activates a window's accelerators before the focused widget sees the key, so on Linux a
+/// menu accelerator without Ctrl, Alt, or Super takes typed characters, Backspace, and paging
+/// keys away from text fields in the WebView. Those, and copy, cut, and paste, whose native
+/// commands need X11 automation that Wayland lacks, are left to the frontend's shortcuts, which
+/// skip text fields (`src/app/shell/keyboard/registry.ts`).
+fn native_accelerator(entry: &MenuEntry) -> Option<&str> {
+    let accelerator = entry.accelerator.as_deref()?;
+    if cfg!(target_os = "linux") {
+        let clipboard = matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
+        if clipboard || !has_command_modifier(accelerator) {
+            return None;
+        }
+    }
+    Some(accelerator)
+}
+
+fn is_separator(entry: &MenuEntry) -> bool {
+    entry.r#type.as_deref() == Some("separator")
+}
+
+/// The entries a menu shows. Items whose feature is off are left out, as is the schema's
+/// Settings… on macOS, where the application menu holds it, along with the separators they
+/// would leave at either end of the menu or next to each other.
 fn platform_entries<'a>(items: &'a [MenuEntry], features: &[String]) -> Vec<&'a MenuEntry> {
-    let mut entries: Vec<&MenuEntry> = items
+    let mut entries: Vec<&MenuEntry> = Vec::new();
+    for entry in items
         .iter()
         .filter(|entry| !(cfg!(target_os = "macos") && entry.id.as_deref() == Some("settings")))
         .filter(|entry| {
@@ -85,14 +122,20 @@ fn platform_entries<'a>(items: &'a [MenuEntry], features: &[String]) -> Vec<&'a 
                 .as_ref()
                 .is_none_or(|feature| features.contains(feature))
         })
-        .collect();
-    while entries
-        .last()
-        .is_some_and(|entry| entry.r#type.as_deref() == Some("separator"))
     {
+        if is_separator(entry) && entries.last().is_none_or(|last| is_separator(last)) {
+            continue;
+        }
+        entries.push(entry);
+    }
+    if entries.last().is_some_and(|entry| is_separator(entry)) {
         entries.pop();
     }
     entries
+}
+
+fn item_enabled(entry: &MenuEntry, disabled: &HashSet<String>) -> bool {
+    entry.id.as_ref().is_none_or(|id| !disabled.contains(id))
 }
 
 fn build_submenu<R: tauri::Runtime>(
@@ -104,7 +147,7 @@ fn build_submenu<R: tauri::Runtime>(
     let mut builder = SubmenuBuilder::new(app, label);
 
     for entry in platform_entries(items, &build.inputs.features) {
-        if entry.r#type.as_deref() == Some("separator") {
+        if is_separator(entry) {
             builder = builder.separator();
             continue;
         }
@@ -147,30 +190,26 @@ fn build_submenu<R: tauri::Runtime>(
                 .as_ref()
                 .and_then(|id| build.checked.get(id).copied())
                 .unwrap_or(true);
-            let mut item = CheckMenuItemBuilder::new(label).checked(checked);
+            let mut item = CheckMenuItemBuilder::new(label)
+                .checked(checked)
+                .enabled(item_enabled(entry, &build.inputs.disabled));
             if let Some(id) = &entry.id {
                 item = item.id(id);
             }
-            if let Some(accelerator) = &entry.accelerator {
+            if let Some(accelerator) = native_accelerator(entry) {
                 item = item.accelerator(accelerator);
             }
             builder = builder.item(&item.build(app)?);
             continue;
         }
 
-        let mut item = MenuItemBuilder::new(label);
+        let mut item =
+            MenuItemBuilder::new(label).enabled(item_enabled(entry, &build.inputs.disabled));
         if let Some(id) = &entry.id {
             item = item.id(id);
         }
-        // On Linux, muda's predefined edit commands depend on optional X11
-        // automation and do not work on Wayland. Leave these accelerators to the
-        // WebView instead, which preserves native input and canvas paste events.
-        let webview_handles_accelerator = cfg!(target_os = "linux")
-            && matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
-        if !webview_handles_accelerator {
-            if let Some(accelerator) = &entry.accelerator {
-                item = item.accelerator(accelerator);
-            }
+        if let Some(accelerator) = native_accelerator(entry) {
+            item = item.accelerator(accelerator);
         }
         builder = builder.item(&item.build(app)?);
     }
@@ -222,6 +261,12 @@ fn build_schema_menus<R: tauri::Runtime>(
     let groups: Vec<MenuGroup> = serde_json::from_str(include_str!("../../generated/menu.json"))?;
     groups
         .iter()
+        .filter(|group| {
+            group
+                .feature
+                .as_ref()
+                .is_none_or(|feature| build.inputs.features.contains(feature))
+        })
         .map(|group| build_submenu(app, &group.label, &group.items, build))
         .collect()
 }
@@ -249,7 +294,7 @@ fn collect_checked<R: tauri::Runtime>(
 
 fn current_checked<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> HashMap<String, bool> {
     let mut checked = HashMap::new();
-    if let Some(items) = app.menu().and_then(|menu| menu.items().ok()) {
+    if let Some(items) = editor_menu(app).and_then(|menu| menu.items().ok()) {
         collect_checked(items, &mut checked);
     }
     checked
@@ -274,14 +319,20 @@ fn find_menu_item<R: tauri::Runtime>(
     None
 }
 
+/// The menu `install_app_menu` installed: app-wide on macOS, the main window's elsewhere.
+fn editor_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<Menu<R>> {
+    #[cfg(target_os = "macos")]
+    return app.menu();
+    #[cfg(not(target_os = "macos"))]
+    return tauri::Manager::get_webview_window(app, "main").and_then(|window| window.menu());
+}
+
 #[tauri::command]
 pub fn native_menu_checked<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     id: String,
 ) -> Result<bool, String> {
-    let menu = app
-        .menu()
-        .ok_or_else(|| "Application menu is unavailable".to_string())?;
+    let menu = editor_menu(&app).ok_or_else(|| "Application menu is unavailable".to_string())?;
     let item = find_menu_item(menu.items().map_err(|error| error.to_string())?, &id)
         .ok_or_else(|| format!("Menu item not found: {id}"))?;
     match item {
@@ -296,9 +347,7 @@ pub fn set_native_menu_checked<R: tauri::Runtime>(
     id: String,
     checked: bool,
 ) -> Result<(), String> {
-    let menu = app
-        .menu()
-        .ok_or_else(|| "Application menu is unavailable".to_string())?;
+    let menu = editor_menu(&app).ok_or_else(|| "Application menu is unavailable".to_string())?;
     let item = find_menu_item(menu.items().map_err(|error| error.to_string())?, &id)
         .ok_or_else(|| format!("Menu item not found: {id}"))?;
     match item {
@@ -363,7 +412,15 @@ pub fn install_app_menu<R: tauri::Runtime>(
         builder = builder.item(menu);
     }
 
-    app.set_menu(builder.build()?)?;
+    let menu = builder.build()?;
+    // On Windows and Linux an app-wide menu is attached to every window without its own,
+    // including the Software Update window, so it goes on the editor window alone there.
+    #[cfg(target_os = "macos")]
+    app.set_menu(menu)?;
+    #[cfg(not(target_os = "macos"))]
+    if let Some(window) = tauri::Manager::get_webview_window(app, "main") {
+        window.set_menu(menu)?;
+    }
     Ok(())
 }
 
@@ -387,4 +444,169 @@ pub fn set_native_menu_features<R: tauri::Runtime>(
     features: Vec<String>,
 ) -> Result<(), String> {
     update_app_menu(&app, |inputs| inputs.features = features)
+}
+
+/// Sets the enabled state of the items among `changed`, wherever they sit in the menu.
+fn apply_disabled_changes<R: tauri::Runtime>(
+    items: Vec<MenuItemKind<R>>,
+    disabled: &HashSet<String>,
+    changed: &HashSet<String>,
+) {
+    for item in items {
+        if let MenuItemKind::Submenu(submenu) = &item {
+            if let Ok(children) = submenu.items() {
+                apply_disabled_changes(children, disabled, changed);
+            }
+            continue;
+        }
+        let id = &item.id().0;
+        if !changed.contains(id) {
+            continue;
+        }
+        let enabled = !disabled.contains(id);
+        match &item {
+            MenuItemKind::MenuItem(menu_item) => {
+                let _ = menu_item.set_enabled(enabled);
+            }
+            MenuItemKind::Check(check) => {
+                let _ = check.set_enabled(enabled);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Greys out the items whose editor command is unavailable and enables the rest. It changes the
+/// items in place, since it follows every selection change; a rebuild keeps the same state.
+#[tauri::command]
+pub fn set_native_menu_disabled<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    ids: Vec<String>,
+) -> Result<(), String> {
+    let state = tauri::Manager::state::<NativeMenuState>(&app);
+    let mut inputs = state
+        .0
+        .lock()
+        .map_err(|_| "Menu state is unavailable".to_string())?;
+    let previous = std::mem::replace(&mut inputs.disabled, ids.into_iter().collect());
+    let changed: HashSet<String> = previous
+        .symmetric_difference(&inputs.disabled)
+        .cloned()
+        .collect();
+    if changed.is_empty() {
+        return Ok(());
+    }
+    if let Some(items) = editor_menu(&app).and_then(|menu| menu.items().ok()) {
+        apply_disabled_changes(items, &inputs.disabled, &changed);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn groups() -> Vec<MenuGroup> {
+        serde_json::from_str(include_str!("../../generated/menu.json")).expect("menu.json")
+    }
+
+    fn shown(group: &MenuGroup, features: &[String]) -> Vec<String> {
+        platform_entries(&group.items, features)
+            .iter()
+            .map(|entry| entry.id.clone().unwrap_or_else(|| "---".into()))
+            .collect()
+    }
+
+    // Home holds no document: the items that need one are gone, and so are the separators they
+    // would leave at the ends of a menu or next to each other.
+    #[test]
+    fn leaves_no_stray_separators_without_a_document() {
+        for group in groups() {
+            let ids = shown(&group, &[]);
+            assert_ne!(
+                ids.first().map(String::as_str),
+                Some("---"),
+                "{}",
+                group.label
+            );
+            assert_ne!(
+                ids.last().map(String::as_str),
+                Some("---"),
+                "{}",
+                group.label
+            );
+            assert!(
+                !ids.windows(2)
+                    .any(|pair| pair[0] == "---" && pair[1] == "---"),
+                "{}: {ids:?}",
+                group.label
+            );
+        }
+    }
+
+    #[test]
+    fn hides_document_menus_until_a_document_is_in_front() {
+        let document_menus: Vec<String> = groups()
+            .into_iter()
+            .filter(|group| group.feature.as_deref() == Some("document"))
+            .map(|group| group.label)
+            .collect();
+        assert_eq!(document_menus, ["Object", "Text", "Arrange"]);
+
+        let file = groups()
+            .into_iter()
+            .find(|group| group.label == "File")
+            .expect("File menu");
+        assert!(!shown(&file, &[]).contains(&"save".to_string()));
+        assert!(shown(&file, &["document".to_string()]).contains(&"save".to_string()));
+    }
+
+    fn entry(id: &str, accelerator: &str) -> MenuEntry {
+        MenuEntry {
+            r#type: None,
+            id: Some(id.to_owned()),
+            label: Some(id.to_owned()),
+            accelerator: Some(accelerator.to_owned()),
+            checkbox: false,
+            feature: None,
+            sub: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn counts_every_modifier_but_shift_as_a_command_modifier() {
+        for accelerator in ["CmdOrCtrl+Z", "Ctrl+Tab", "Alt+W", "Super+K", "CmdOrCtrl++"] {
+            assert!(has_command_modifier(accelerator), "{accelerator}");
+        }
+        for accelerator in ["N", "[", "Backspace", "PageUp", "Shift+1", "Shift+'", "+"] {
+            assert!(!has_command_modifier(accelerator), "{accelerator}");
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn leaves_keys_that_text_fields_type_to_the_frontend_on_linux() {
+        for (id, accelerator) in [
+            ("selection.delete", "Backspace"),
+            ("selection.sendToBack", "["),
+            ("view.zoomNextFrame", "N"),
+            ("view.zoomFit", "Shift+1"),
+            ("copy", "CmdOrCtrl+C"),
+        ] {
+            assert_eq!(native_accelerator(&entry(id, accelerator)), None, "{id}");
+        }
+        assert_eq!(
+            native_accelerator(&entry("edit.undo", "CmdOrCtrl+Z")),
+            Some("CmdOrCtrl+Z")
+        );
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    #[test]
+    fn registers_every_accelerator_off_linux() {
+        assert_eq!(
+            native_accelerator(&entry("view.zoomNextFrame", "N")),
+            Some("N")
+        );
+    }
 }

@@ -298,12 +298,20 @@ export interface ThumbnailFrame {
   height: number
 }
 
-/** The page region a thumbnail fitted into `width` by `height` pixels shows, and its size. */
+/**
+ * How a thumbnail frames its page's content, always whole: `contain` is as large as the content
+ * fits in `width` by `height`, and `letterbox` is exactly that size with the content centred on
+ * the page colour, as Figma's file browser shows a file in its card.
+ */
+export type ThumbnailFit = 'contain' | 'letterbox'
+
+/** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
 export function thumbnailFrame(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  fit: ThumbnailFit = 'contain'
 ): ThumbnailFrame | null {
   const page = graph.getNode(pageId)
   if (!page || page.childIds.length === 0) return null
@@ -316,6 +324,24 @@ export function thumbnailFrame(
   if (contentW <= 0 || contentH <= 0) return null
 
   const scale = Math.min(width / contentW, height / contentH)
+  if (fit === 'letterbox') {
+    const centerX = (bounds.minX + bounds.maxX) / 2
+    const centerY = (bounds.minY + bounds.maxY) / 2
+    const halfW = width / scale / 2
+    const halfH = height / scale / 2
+    return {
+      bounds: {
+        minX: centerX - halfW,
+        minY: centerY - halfH,
+        maxX: centerX + halfW,
+        maxY: centerY + halfH
+      },
+      scale,
+      width,
+      height
+    }
+  }
+
   return {
     bounds,
     scale,
@@ -330,9 +356,10 @@ export function renderThumbnail(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  fit: ThumbnailFit = 'contain'
 ): Uint8Array<ArrayBuffer> | null {
-  const frame = thumbnailFrame(graph, pageId, width, height)
+  const frame = thumbnailFrame(graph, pageId, width, height, fit)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.

@@ -7,25 +7,25 @@ export default {
       'flex size-8 shrink-0 items-center justify-center rounded-md bg-panel text-muted group-data-[state=checked]:text-primary',
     choiceBody: 'min-w-0 flex-1',
     choiceLabel: 'block text-xs font-medium text-surface',
-    choiceDescription: 'mt-0.5 block truncate text-[11px] text-muted',
+    choiceDescription: 'mt-0.5 block truncate text-2xs text-muted',
     choiceMark:
       'size-3.5 shrink-0 rounded-full border border-border group-data-[state=checked]:border-4 group-data-[state=checked]:border-accent',
     address: 'mt-3 flex flex-col gap-1.5',
     addressAlone: 'flex flex-col gap-1.5',
-    addressLabel: 'text-[11px] font-medium text-muted',
+    addressLabel: 'text-2xs font-medium text-muted',
     stack: 'flex flex-col gap-3',
     methods: 'flex flex-col gap-1.5',
-    divider: 'flex items-center gap-3 text-[11px] text-muted',
+    divider: 'flex items-center gap-3 text-2xs text-muted',
     dividerLine: 'h-px flex-1 bg-border',
-    note: 'text-[11px] text-muted',
-    switch: 'flex items-center justify-center gap-1 text-[11px] text-muted',
+    note: 'text-2xs text-muted',
+    switch: 'flex items-center justify-center gap-1 text-2xs text-muted',
     verify: 'flex items-start gap-3',
     verifyIcon:
       'flex size-10 shrink-0 items-center justify-center rounded-full bg-panel-field text-muted',
     verifyText: 'pt-1 text-xs leading-relaxed text-muted',
     device: 'flex flex-col items-center gap-3 py-2',
-    deviceLabel: 'text-[11px] font-medium text-muted',
-    deviceStatus: 'flex items-center gap-2 text-[11px] text-muted',
+    deviceLabel: 'text-2xs font-medium text-muted',
+    deviceStatus: 'flex items-center gap-2 text-2xs text-muted',
     spinner: 'size-3.5 shrink-0 animate-spin motion-reduce:animate-none'
   }
 } as const

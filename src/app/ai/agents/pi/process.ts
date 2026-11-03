@@ -30,6 +30,12 @@ const harnessTurnEventSchema = v.variant('type', [
     // Companions before usage reporting send none.
     usage: v.optional(tokenUsageSchema)
   }),
+  v.object({
+    type: v.literal('compaction'),
+    trigger: v.picklist(['manual', 'auto']),
+    summary: v.string(),
+    tokensBefore: v.nullable(v.number())
+  }),
   v.object({ type: v.literal('error'), message: v.string() })
 ])
 

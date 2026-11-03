@@ -4,6 +4,7 @@ import { defineCommand, runMain } from 'citty'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
+import { adoptPublishedReleaseArtifacts, releaseSourceFromEnv } from './resume'
 import {
   buildReleasePackages,
   packReleasePackages,
@@ -32,6 +33,11 @@ await runMain(
         prepareReleasePackages
       ),
       pack: command('pack', 'Pack and validate release package artifacts', packReleasePackages),
+      resume: command(
+        'resume',
+        "Use the registry's tarballs for versions this release tag already published",
+        (root) => adoptPublishedReleaseArtifacts(root, releaseSourceFromEnv())
+      ),
       publish: command(
         'publish',
         'Publish the exact verified package artifacts',

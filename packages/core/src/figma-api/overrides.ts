@@ -239,11 +239,31 @@ function resetInstanceOverrides(graph: SceneGraph, root: SceneNode): void {
   graph.syncInstance(outermost.id)
 }
 
+/**
+ * Figma's `InstanceNode` members for overrides: the list, and `removeOverrides` with its
+ * deprecated name `resetOverrides`, which do the same. Installed on instance proxies alone, as
+ * Figma has them on no other node.
+ */
 export function installInstanceOverrideAccessors(
-  prototype: object,
-  internals: NodeProxyInternals
+  target: object,
+  internals: NodeProxyInternals,
+  type: SceneNode['type']
 ): void {
-  Object.defineProperties(prototype, {
+  if (type !== 'INSTANCE') return
+  // A proxy a script kept from before the instance was detached checks that it still is one.
+  const instance = (target: ProxyThis, method: string): SceneNode => {
+    const node = raw(target, internals)
+    if (node.type !== 'INSTANCE') throw new TypeError(`${method}() can only be called on instances`)
+    return node
+  }
+  const removal = (method: string) => ({
+    value(this: ProxyThis) {
+      const node = instance(this, method)
+      assertProxyEditable(this, internals)
+      resetInstanceOverrides(graph(this, internals), node)
+    }
+  })
+  Object.defineProperties(target, {
     overrides: {
       get(this: ProxyThis): FigmaInstanceOverride[] | undefined {
         const node = raw(this, internals)
@@ -253,14 +273,7 @@ export function installInstanceOverrideAccessors(
         return instanceOverrides(graph(this, internals), node)
       }
     },
-    resetOverrides: {
-      value(this: ProxyThis) {
-        const node = raw(this, internals)
-        if (node.type !== 'INSTANCE')
-          throw new TypeError('resetOverrides() can only be called on instances')
-        assertProxyEditable(this, internals)
-        resetInstanceOverrides(graph(this, internals), node)
-      }
-    }
+    resetOverrides: removal('resetOverrides'),
+    removeOverrides: removal('removeOverrides')
   })
 }

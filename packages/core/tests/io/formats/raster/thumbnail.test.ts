@@ -6,7 +6,8 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   createCanvasKitRasterCodec,
   headlessRenderThumbnail,
-  initCanvasKit
+  initCanvasKit,
+  thumbnailFrame
 } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -47,4 +48,20 @@ test('a thumbnail loads the faces its text is set in before drawing it', async (
   const inked = image.data.filter((red, index) => index % 4 === 0 && red < 128).length
 
   expect(inked).toBeGreaterThan(0)
+})
+
+test('a letterboxed thumbnail fills its size with the whole content centred', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  graph.createNode('RECTANGLE', page.id, { x: 0, y: 0, width: 1000, height: 1000 })
+
+  const contained = expectDefined(thumbnailFrame(graph, page.id, 160, 90), 'contained frame')
+  expect([contained.width, contained.height]).toEqual([90, 90])
+
+  const boxed = expectDefined(thumbnailFrame(graph, page.id, 160, 90, 'letterbox'), 'boxed frame')
+  expect([boxed.width, boxed.height, boxed.scale]).toEqual([160, 90, 0.09])
+  expect(boxed.bounds.minY).toBe(0)
+  expect(boxed.bounds.maxY).toBe(1000)
+  expect(boxed.bounds.minX).toBeCloseTo(-388.89, 2)
+  expect(boxed.bounds.maxX).toBeCloseTo(1388.89, 2)
 })

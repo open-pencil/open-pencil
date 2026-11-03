@@ -15,5 +15,5 @@ export async function createStoredDocument(
   const { store } = createDocumentTab(kind)
   if (!(await store.saveFigFileToStorage(location))) return
   const binding = store.getStorageBinding()
-  if (binding) rememberRecentStorageDocument(binding, store.state.documentName)
+  if (binding) rememberRecentStorageDocument(binding, store.state.documentName, kind)
 }

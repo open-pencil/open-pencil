@@ -27,6 +27,7 @@ describe('canvas view profiles', () => {
       dotGrid: null,
       pixelGrid: true,
       framesOpen: true,
+      sectionTitles: 'fill',
       lint: true,
       rulers: true,
       panelsOpen: true
@@ -50,6 +51,7 @@ describe('canvas view profiles', () => {
       dotGrid: null,
       pixelGrid: true,
       framesOpen: true,
+      sectionTitles: 'fill',
       lint: true,
       rulers: true,
       panelsOpen: true
@@ -143,6 +145,8 @@ describe('document kinds', () => {
       false,
       false
     ])
+    // FigJam colours a section's title from its outline.
+    expect(profile.sectionTitles).toBe('outline')
   })
 
   test('becoming a board drops a design tool, and refuses picking one', () => {

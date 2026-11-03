@@ -6,6 +6,9 @@ import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { isAttachableImageFile, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
+import { useChatContext } from '@/app/ai/chat/compaction/limits'
+import { compactionOf } from '@/app/ai/chat/compaction/marker'
+import { useChatCompaction } from '@/app/ai/chat/compaction/use'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
 import {
   clearQueuedMessages,
@@ -14,6 +17,7 @@ import {
   removeQueuedMessage,
   takeNextMessage
 } from '@/app/ai/chat/queue'
+import { leadingCommand, type LeadingCommand } from '@/app/ai/chat/references/command'
 import { useChatRunLocation } from '@/app/ai/chat/run-location'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
@@ -27,6 +31,9 @@ import { useDateFormat } from '@/app/i18n/date'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { openExternalLink, toast } from '@/app/shell/ui'
 import { activeTab } from '@/app/tabs'
+import ChatContextMeter from '@/components/chat/ChatContextMeter.vue'
+import ChatContextWarning from '@/components/chat/ChatContextWarning.vue'
+import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
 import ChatFollowAgentsToggle from '@/components/chat/ChatFollowAgentsToggle.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
@@ -34,14 +41,25 @@ import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
 import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
-const { isConfigured, ensureChat, history, chatFailure, clearChatFailure, providerID } = useAIChat()
+const {
+  isConfigured,
+  ensureChat,
+  compactAgent,
+  history,
+  chatFailure,
+  clearChatFailure,
+  providerID
+} = useAIChat()
 const { ai } = useI18n()
 const dates = useDateFormat()
 const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
+const compaction = useChatCompaction({ chat, ensureChat, flush: history.flush, compactAgent })
 const submission = useChatSubmission({
   chat,
   ensureChat,
@@ -64,7 +82,8 @@ const submission = useChatSubmission({
   })),
   reportError: toast.error,
   openModelSettings: () => openSettingsDialog('ai'),
-  openSetup: () => openAISetup()
+  openSetup: () => openAISetup(),
+  prepare: (current, text) => compaction.compactIfFull(current, text)
 })
 
 const chatInput = useTemplateRef<{
@@ -80,9 +99,23 @@ const { dragging: draggingImages } = useImageDrop(panel, {
 })
 let viewGeneration = 0
 
-/** Puts an unsent message back only in the conversation it was written in. */
+/**
+ * Puts an unsent message back only in the conversation it was written in. `/compact` compacts
+ * instead of sending, whether typed now or waiting in the queue, and what waits behind it goes
+ * next.
+ */
 async function submitMessage(message: ChatSubmission) {
   const generation = viewGeneration
+  const command = compactCommand(message)
+  if (command) {
+    const compacted = await compaction.compact({
+      trigger: 'manual',
+      instructions: command.rest || undefined
+    })
+    if (!compacted && generation === viewGeneration) chatInput.value?.restoreDraft(message)
+    if (compacted && status.value === 'ready') sendNextQueued()
+    return
+  }
   if (await submission.submit(message)) return
   if (generation === viewGeneration) chatInput.value?.restoreDraft(message)
   else for (const image of message.images) revokeImagePreviewURL(image.previewURL)
@@ -93,6 +126,40 @@ void history.initialize().catch(() => {
 })
 
 const messages = computed(() => chat.value?.messages ?? history.messages.value)
+const context = useChatContext(messages)
+/** Past this share of its window, a bar over the message field offers to compact. */
+const CONTEXT_WARNING = 0.7
+const contextPercent = computed(() =>
+  context.ratio.value === null ? null : Math.round(Math.min(1, context.ratio.value) * 100)
+)
+
+/**
+ * The command when `message` starts with `/compact`, and what to keep after it: the chat
+ * summarizes a model it calls itself and asks Pi to compact its own context. An ACP agent's
+ * own `/compact` goes to it as written.
+ */
+function compactCommand(message: ChatSubmission): LeadingCommand | null {
+  if (providerID.value.startsWith('acp:') || message.images.length > 0) return null
+  const command = leadingCommand(message.displayText)
+  return command?.name === 'compact' ? command : null
+}
+
+/** Compacts now, from the bar near the limit; a reply in progress finishes first. */
+function compactConversation(): void {
+  if (status.value === 'streaming' || status.value === 'submitted') return
+  void compaction.compact({ trigger: 'manual' })
+}
+
+watch(
+  () => compaction.failed.value,
+  (failed) => {
+    if (failed)
+      toast.error(ai.value.compactionFailed, {
+        label: ai.value.retryRequest,
+        run: () => void compaction.retry()
+      })
+  }
+)
 const historyOptions = computed(() => {
   const current = history.current.value
   const rows = [...history.conversations.value]
@@ -175,6 +242,8 @@ const failureMessage = computed(() => {
       return cloudCreditsMessage(chatFailure.value.resetsAt)
     case 'model-not-found':
       return ai.value.chatModelNotFound
+    case 'agent-not-installed':
+      return ai.value.chatAgentNotInstalled
     case 'network':
       return ai.value.chatNetworkFailed
     case 'output-limit':
@@ -187,6 +256,8 @@ const failureMessage = computed(() => {
       return ai.value.chatSignInExpired
     case 'plan-forbidden':
       return ai.value.chatPlanForbidden
+    case 'context-limit':
+      return ai.value.chatContextLimit
     default:
       return null
   }
@@ -237,7 +308,8 @@ watch(
   (reason) => {
     if (failureToast !== null) toast.remove(failureToast)
     failureToast = null
-    if (!reason) return
+    // The install guidance stays in the panel until the next message clears it.
+    if (!reason || reason === 'agent-not-installed') return
     const failedId = chat.value?.messages.at(-1)?.id
     failureToast = toast.error(
       failureMessage.value ?? ai.value.chatRequestFailed,
@@ -245,8 +317,23 @@ watch(
     )
   }
 )
+/**
+ * Compacts what came before the failed request, which stays after the summary, and asks again;
+ * the request itself is what the model is to answer.
+ */
+async function compactAndRetry(failedId: string | undefined): Promise<void> {
+  const request = messages.value.findLast(
+    (message) => message.role === 'user' && compactionOf(message) === null
+  )
+  if (!request) return
+  if (await compaction.compact({ trigger: 'manual', before: request.id })) retryFailed(failedId)
+}
 function failureAction(failedId: string | undefined): { label: string; run: () => void } {
   const billingURL = cloudBillingURL.value
+  // A request past the window goes again once the conversation is compacted.
+  if (chatFailure.value?.reason === 'context-limit') {
+    return { label: ai.value.compactAndRetry, run: () => void compactAndRetry(failedId) }
+  }
   if (chatFailure.value?.reason === 'cloud-credits-exhausted' && billingURL) {
     return { label: ai.value.manageCloudPlanAction, run: () => void openExternalLink(billingURL) }
   }
@@ -306,7 +393,18 @@ function handleStop() {
       @save-trace="saveTrace"
       @delete="historyAction(() => history.remove($event))"
     >
-      <template #actions><ChatFollowAgentsToggle /></template>
+      <template #actions>
+        <ChatContextMeter
+          v-if="context.limits.value && context.used.value !== null && context.compactsAt.value"
+          :used="context.used.value"
+          :context-window="context.limits.value.contextWindow"
+          :compacts-at="context.compactsAt.value"
+          :replying="status === 'streaming' || status === 'submitted'"
+        />
+        <!-- Without a known window there is no meter, and Cloud credits show on their own. -->
+        <ChatCreditBalance v-else :replying="status === 'streaming' || status === 'submitted'" />
+        <ChatFollowAgentsToggle />
+      </template>
     </ChatHistory>
     <p v-if="history.storageError.value" role="alert" class="px-3 py-2 text-xs text-error">
       {{ ai.chatStorageFailed }}
@@ -327,9 +425,11 @@ function handleStop() {
         :show-continue="showContinue"
         :queued="queuedMessages"
         :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
+        :sending="submission.sending.value?.displayText ?? null"
+        :compacting="compaction.compacting.value"
         @remove-queued="removeQueuedMessage"
         :nodes-live="!history.readOnly.value"
-        :interactive="chat !== null && !submission.busy.value"
+        :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
         @regenerate="submission.regenerate()"
         @revert="(messageId) => submission.revert(messageId)"
         @restore="(messageId) => submission.restore(messageId)"
@@ -355,6 +455,29 @@ function handleStop() {
         :agent="runLocation.agent"
         :page="runLocation.page"
         @open="runLocation.open"
+      />
+      <AppAlert
+        v-if="chatFailure?.reason === 'agent-not-installed'"
+        class="mx-3 mb-2"
+        tone="error"
+        :heading="ai.chatAgentNotInstalled"
+      >
+        <template #actions>
+          <AppButton size="xs" variant="outline" @click="openSettingsDialog('ai')">
+            {{ ai.openProviderSettingsAction }}
+          </AppButton>
+        </template>
+      </AppAlert>
+      <ChatContextWarning
+        v-if="
+          isConfigured &&
+          contextPercent !== null &&
+          contextPercent >= CONTEXT_WARNING * 100 &&
+          !history.readOnly.value
+        "
+        :percent="contextPercent"
+        :compacting="compaction.compacting.value"
+        @compact="compactConversation()"
       />
       <ChatInput
         v-if="isConfigured && !agentHistoryReadOnly && !history.readOnly.value"

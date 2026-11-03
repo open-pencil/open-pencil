@@ -1,1 +1,0 @@
-- `.pen` variables resolve in every theme a layer and its parents set, across several theme axes, with aliases and boolean visibility.

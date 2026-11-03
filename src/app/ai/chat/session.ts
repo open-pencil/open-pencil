@@ -102,7 +102,7 @@ export function createChatSessionManager({
   const currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
   let acpTransportInstance: { destroy(): Promise<void> } | null = null
-  let harnessTransportInstance: { stop(): Promise<void> } | null = null
+  let harnessTransportInstance: Pick<HarnessChatTransport, 'stop' | 'compact'> | null = null
   let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
   let activeProviderError: unknown = null
   const runRecorder = createRunRecorder(createTraceStore())
@@ -328,5 +328,18 @@ export function createChatSessionManager({
     markTransportDirty()
   }
 
-  return { ensureChat, resetChat, markTransportDirty, setOverrideTransport, failure, clearFailure }
+  /** Asks the chat's agent to compact its own context; false when it has none to compact yet. */
+  async function compactAgent(instructions?: string): Promise<boolean> {
+    return (await harnessTransportInstance?.compact(instructions)) ?? false
+  }
+
+  return {
+    ensureChat,
+    resetChat,
+    markTransportDirty,
+    setOverrideTransport,
+    compactAgent,
+    failure,
+    clearFailure
+  }
 }

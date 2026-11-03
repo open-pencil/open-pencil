@@ -16,9 +16,11 @@
   "dependencies": {
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "@open-pencil/package-quality-tools": "workspace:*",
+    "@sigstore/bundle": "^5.0.0",
     "citty": "^0.1.6",
     "es-toolkit": "^1.52.0",
     "js-base64": "^3.9.3",
+    "sigstore": "^5.0.0",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

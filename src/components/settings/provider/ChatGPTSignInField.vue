@@ -35,9 +35,9 @@ const failure = computed(() => {
 
 <template>
   <div class="flex flex-col gap-2" data-test-id="settings-chatgpt-sign-in">
-    <p class="text-[11px] text-muted">{{ ai.aiSetupChatGPTUsage }}</p>
+    <p class="text-2xs text-muted">{{ ai.aiSetupChatGPTUsage }}</p>
     <div v-if="status === 'waiting'" class="flex flex-wrap items-center gap-2">
-      <p role="status" class="flex items-center gap-1.5 text-[11px] text-muted">
+      <p role="status" class="flex items-center gap-1.5 text-2xs text-muted">
         <icon-lucide-loader-2 class="size-3.5 animate-spin" aria-hidden="true" />
         {{ ai.aiSetupChatGPTWaiting }}
       </p>
@@ -47,7 +47,7 @@ const failure = computed(() => {
       <AppButton size="xs" @click="emit('cancel')">{{ common.cancel }}</AppButton>
     </div>
     <div v-else-if="signedIn || saved" class="flex flex-wrap items-center gap-2">
-      <p role="status" class="flex items-center gap-1.5 text-[11px] text-surface">
+      <p role="status" class="flex items-center gap-1.5 text-2xs text-surface">
         <icon-lucide-circle-check class="size-3.5 text-success" aria-hidden="true" />
         {{ ai.aiSetupChatGPTSignedInTitle }}
         <span v-if="email" class="text-muted">{{ email }}</span>

@@ -66,7 +66,7 @@ const items = computed(() => {
             <component :is="item.icon" :class="menu.icon" />
             <span class="flex min-w-0 flex-1 flex-col">
               <span>{{ item.label }}</span>
-              <span class="truncate text-[10px] text-muted">{{ item.hint }}</span>
+              <span class="truncate text-3xs text-muted">{{ item.hint }}</span>
             </span>
           </DropdownMenuItem>
         </MenuScrollArea>

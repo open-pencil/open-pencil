@@ -36,6 +36,7 @@ function cleanGroup(group: AppMenuGroupSchema): unknown | null {
   if (!isNativeVisible(group)) return null
   return {
     label: group.label,
+    feature: group.feature,
     items: compact(group.items.map(cleanEntry))
   }
 }

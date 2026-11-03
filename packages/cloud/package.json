@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/cloud",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.1",
   "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
   "license": "Apache-2.0 AND MIT",
   "repository": {

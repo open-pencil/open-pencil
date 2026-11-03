@@ -1,6 +1,6 @@
 /** ACP agents, direct AI providers, and the models each provider recommends. */
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli'
+export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'cursor'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -56,6 +56,15 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     args: ['--acp'],
     setupURL: 'https://geminicli.com/docs/get-started/installation/',
     installCommand: 'npm i -g @google/gemini-cli'
+  },
+  {
+    id: 'cursor',
+    name: 'Cursor',
+    // Cursor's installer links both `agent` and `cursor-agent`; other CLIs, such as Grok Build,
+    // install an `agent` of their own, so only `cursor-agent` is sure to be Cursor.
+    command: 'cursor-agent',
+    args: ['acp'],
+    setupURL: 'https://cursor.com/docs/cli/installation'
   }
 ]
 
@@ -83,6 +92,8 @@ export interface ModelOption {
   tag?: string
   capabilities?: readonly ('tools' | 'vision')[]
   recommendedMaxOutputTokens?: number
+  /** Tokens a request may hold, prompt and reply together, as the provider's catalog gives it. */
+  contextWindow?: number
   releaseDate?: string
   status?: 'active' | 'beta' | 'deprecated'
   /** Lowest reasoning effort the model accepts; lower thinking levels, Off included, use it. */

@@ -56,7 +56,7 @@ onPicture((files) => {
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-semibold text-surface">{{ profile.name }}</p>
         <p class="truncate text-xs text-muted">{{ profile.email }}</p>
-        <p class="mt-0.5 text-[11px] text-muted">
+        <p class="mt-0.5 text-2xs text-muted">
           {{ messages.memberSince({ date: profile.memberSince }) }}
         </p>
       </div>

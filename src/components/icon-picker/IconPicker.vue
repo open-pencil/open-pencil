@@ -206,7 +206,7 @@ function pick(name: string) {
       <IconPreview :svg="previews.get(entry.value)" class="size-5 text-surface" />
     </template>
     <template v-if="items.length > 0" #footer="{ highlighted }">
-      <p class="flex h-5 items-center gap-1.5 truncate px-1 text-[11px] text-muted">
+      <p class="flex h-5 items-center gap-1.5 truncate px-1 text-2xs text-muted">
         <template v-if="highlighted">
           <span class="truncate text-surface">{{ highlighted.label }}</span>
           <span class="truncate">{{ details(highlighted.value) }}</span>

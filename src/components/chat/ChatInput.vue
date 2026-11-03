@@ -11,8 +11,6 @@ import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
-import { openSettingsDialog } from '@/app/settings/dialog'
-import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
@@ -83,8 +81,6 @@ function restoreDraft(submission: ChatSubmission): void {
   else for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
 }
 
-/** A reply is on its way, so the credit balance waits to update until it ends. */
-const replying = computed(() => status === 'streaming' || status === 'submitted')
 /** Why images dropped now would not be attached, or null when they would. */
 const dropRefusal = computed(() => {
   if (disabled) return ai.value.dropImagesAfterReply
@@ -144,7 +140,6 @@ const selectedProfileName = computed(
     @stop="emit('stop')"
     @interrupt="emit('interrupt')"
     @paste="handlePaste"
-    @settings="openSettingsDialog('ai')"
   >
     <template v-if="images.length" #attachment>
       <div class="flex flex-wrap gap-1.5">
@@ -160,7 +155,7 @@ const selectedProfileName = computed(
             height="40"
             class="size-10 shrink-0 rounded-md border border-border object-cover"
           />
-          <span class="min-w-0 flex-1 truncate text-[10px] text-surface">
+          <span class="min-w-0 flex-1 truncate text-3xs text-surface">
             {{ image.file.name }}
           </span>
           <IconButton
@@ -186,7 +181,6 @@ const selectedProfileName = computed(
         :label="ai.mentionSelection"
         size="sm"
         :disabled="disabled || !canMentionSelection"
-        data-slot="chat-mention-selection"
         @click="composer?.insert(selectionMentions())"
       >
         <icon-lucide-mouse-pointer-2 class="size-4" />
@@ -203,7 +197,7 @@ const selectedProfileName = computed(
     <template #model>
       <div class="@container flex min-w-0 items-center">
         <template v-if="isAgentProvider">
-          <div class="flex min-w-0 items-center gap-1 px-1.5 text-[10px] text-muted">
+          <div class="flex min-w-0 items-center gap-1 px-1.5 text-3xs text-muted">
             <icon-lucide-bot class="size-3 shrink-0" />
             <span class="truncate">{{ agentName }}</span>
           </div>
@@ -215,7 +209,6 @@ const selectedProfileName = computed(
             </template>
           </ChatProfileSelect>
           <ChatThinkingSelect />
-          <ChatCreditBalance :replying="replying" />
         </template>
       </div>
     </template>

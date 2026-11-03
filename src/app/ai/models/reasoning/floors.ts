@@ -11,6 +11,7 @@ const openRouterModelSchema = v.looseObject({
   id: v.optional(v.unknown()),
   name: v.optional(v.unknown()),
   supported_parameters: v.optional(v.unknown()),
+  context_length: v.optional(v.unknown()),
   architecture: v.nullish(v.looseObject({ input_modalities: v.optional(v.unknown()) })),
   top_provider: v.nullish(v.looseObject({ max_completion_tokens: v.optional(v.unknown()) })),
   reasoning: v.nullish(
@@ -73,6 +74,10 @@ export function normalizeOpenRouterModel(model: OpenRouterModel): ModelOption | 
   }
   if (typeof maxOutputTokens === 'number' && Number.isFinite(maxOutputTokens)) {
     normalized.recommendedMaxOutputTokens = Math.min(128_000, Math.max(1024, maxOutputTokens))
+  }
+  const context = model.context_length
+  if (typeof context === 'number' && Number.isFinite(context) && context > 0) {
+    normalized.contextWindow = context
   }
   const minEffort = minReasoningEffort(model)
   if (minEffort) normalized.minReasoningEffort = minEffort

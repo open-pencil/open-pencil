@@ -59,8 +59,42 @@ describe('the scripting surface is Figma’s Plugin API', () => {
 
   test('nodes have only the members of Figma’s node types', () => {
     const nodeMembers = figmaMembers('SceneNode', 'PageNode', 'DocumentNode')
-    for (const node of [figma.createFrame(), figma.createText(), figma.currentPage, figma.root])
+    const component = figma.createComponent()
+    const set = figma.combineAsVariants([component], figma.currentPage)
+    const nodes = [
+      figma.createFrame(),
+      figma.createText(),
+      figma.createRectangle(),
+      figma.createSection(),
+      figma.union([figma.createRectangle(), figma.createEllipse()], figma.currentPage),
+      figma.group([figma.createRectangle()], figma.currentPage),
+      component.createInstance(),
+      component,
+      set,
+      figma.currentPage,
+      figma.root
+    ]
+    for (const node of nodes)
       expect(beyondFigma(node, nodeMembers, SERIALIZATION_MEMBERS)).toEqual([])
+  })
+
+  test('styles have only the members of Figma’s styles', () => {
+    // Members live Figma's text styles have (desktop 126) that its typings do not declare yet.
+    const untypedTextStyleMembers = [
+      'textDecorationStyle',
+      'textDecorationOffset',
+      'textDecorationThickness',
+      'textDecorationColor',
+      'textDecorationSkipInk'
+    ]
+    const styles = [
+      [figma.createPaintStyle(), figmaMembers('PaintStyle'), []],
+      [figma.createTextStyle(), figmaMembers('TextStyle'), untypedTextStyleMembers],
+      [figma.createEffectStyle(), figmaMembers('EffectStyle'), []],
+      [figma.createGridStyle(), figmaMembers('GridStyle'), []]
+    ] as const
+    for (const [style, members, listed] of styles)
+      expect(beyondFigma(style, members, listed)).toEqual([])
   })
 
   test('variables, collections and figma.variables have only Figma’s members', () => {

@@ -1,4 +1,6 @@
 {
+  "interfaceScale": "Rozmiar interfejsu",
+  "interfaceScaleDescription": "Skaluj panele, tekst i elementy sterujące bez zmiany powiększenia płótna.",
   "recentFiles": "Ostatnie pliki",
   "recentFilesDescription": "Wybierz, ile plików zachować na liście ostatnich plików i w menu ich otwierania.",
   "recentFilesLimit": "Liczba ostatnich plików",
@@ -64,7 +66,6 @@
   "toolbarMoveDown": "Przesuń w dół",
   "toolbarGroupWith": "Grupuj z: {tool}",
   "toolbarUngroup": "Rozgrupuj",
-  "toolbarReset": "Przywróć domyślne",
   "resetToDefault": "Przywróć domyślne",
   "customizeToolbar": "Dostosuj pasek narzędzi…",
   "discardChanges": "Odrzucić zmiany?",

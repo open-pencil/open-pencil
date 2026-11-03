@@ -2,6 +2,7 @@ import { hitsConnectorLine } from './connectors/hit'
 import { getWorldMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
 import Matrix from './matrix'
+import { hitsShape, isHitPaint, strokeReach } from './outline/hit'
 import type { SceneNode, NodeType } from './types'
 
 const CONTAINER_TYPES = new Set<NodeType>([
@@ -15,8 +16,9 @@ const CONTAINER_TYPES = new Set<NodeType>([
 ])
 const OPAQUE_CONTAINER_TYPES = new Set<NodeType>(['COMPONENT', 'INSTANCE'])
 
-function hasVisibleFillOrStroke(node: SceneNode): boolean {
-  return node.fills.some((f) => f.visible) || node.strokes.some((s) => s.visible)
+/** Whether a container's own paints show, so its empty area is drawn (see `isHitPaint`). */
+function showsPaint(node: SceneNode): boolean {
+  return node.fills.some(isHitPaint) || node.strokes.some(isHitPaint)
 }
 
 function isTopLevel(graph: SceneGraph, node: SceneNode): boolean {
@@ -81,95 +83,88 @@ function containsPoint(
   )
 }
 
-function hitTestOpaqueContainer(
-  graph: SceneGraph,
-  px: number,
-  py: number,
-  child: SceneNode,
-  childId: string,
-  deep: boolean,
-  transformCache: Map<string, boolean>,
+/**
+ * How a walk down the layers takes a click. `deep` reaches past containers to the deepest layer;
+ * `pad`, in canvas units, grows each leaf layer's box, as Figma takes a click a few screen pixels
+ * outside a shape; `instanceBodies` lets a deep walk take an instance's empty area whatever its
+ * fill, as a plain click does, where a ⌘-click counts only a fill that shows.
+ */
+interface HitWalk {
+  deep: boolean
   pad: number
-): SceneNode | null {
-  if (!containsPoint(px, py, child, graph, transformCache)) return null
-  const childHit = hitTestChildren(graph, px, py, childId, deep, transformCache, pad)
-  if (childHit) return child
-  if (hasVisibleFillOrStroke(child)) return child
-  return null
+  instanceBodies: boolean
+  transformCache: Map<string, boolean>
 }
+
+function walkOf(deep: boolean, pad = 0, instanceBodies = false): HitWalk {
+  return { deep, pad, instanceBodies, transformCache: new Map() }
+}
+
+/** Whether a container's empty area under the point takes a click reaching past containers. */
+function takesEmptyArea(graph: SceneGraph, node: SceneNode, walk: HitWalk): boolean {
+  // Figma counts an empty area only where a paint shows, except a main component's, which always
+  // counts, and an instance's when the click is a plain one.
+  if (node.type === 'COMPONENT' || showsPaint(node) || ownsItsEmptyArea(graph, node)) return true
+  return walk.instanceBodies && node.type === 'INSTANCE'
+}
+
 function hitTestTransparentContainer(
   graph: SceneGraph,
   px: number,
   py: number,
   child: SceneNode,
-  childId: string,
-  deep: boolean,
-  transformCache: Map<string, boolean>,
-  pad: number
+  walk: HitWalk
 ): SceneNode | null {
   if (child.type === 'GROUP') {
     // A group fits its layers, so a padded click on one at its edge falls just outside it.
-    if (!containsPoint(px, py, child, graph, transformCache, pad)) return null
-    const childHit = hitTestChildren(graph, px, py, childId, deep, transformCache, pad)
-    if (childHit) return deep ? childHit : child
-    return containsPoint(px, py, child, graph, transformCache) ? child : null
+    if (!containsPoint(px, py, child, graph, walk.transformCache, walk.pad)) return null
+    // A group has no area of its own, as in Figma: between its layers the click falls through to
+    // whatever lies under the group.
+    const childHit = hitTestChildren(graph, px, py, child.id, walk)
+    return childHit ? (walk.deep ? childHit : child) : null
   }
 
-  const childHit = hitTestChildren(graph, px, py, childId, deep, transformCache, pad)
+  const childHit = hitTestChildren(graph, px, py, child.id, walk)
   if (childHit) {
     if (child.locked) return child
     return childHit
   }
 
   if (
-    containsPoint(px, py, child, graph, transformCache) &&
-    (hasVisibleFillOrStroke(child) || ownsItsEmptyArea(graph, child))
+    containsPoint(px, py, child, graph, walk.transformCache) &&
+    takesEmptyArea(graph, child, walk)
   )
     return child
   return null
 }
 
-/**
- * The topmost layer under the point among a container's children. `pad`, in canvas units, grows
- * each leaf layer's box, as Figma takes a click a few screen pixels outside a shape.
- */
+/** The topmost layer under the point among a container's children. */
 function hitTestChildren(
   graph: SceneGraph,
   px: number,
   py: number,
   parentId: string,
-  deep = false,
-  transformCache = new Map<string, boolean>(),
-  pad = 0
+  walk: HitWalk
 ): SceneNode | null {
   const parent = graph.nodes.get(parentId)
   if (!parent) return null
+  const { transformCache, pad } = walk
 
   if (parent.clipsContent) {
     if (!containsPoint(px, py, parent, graph, transformCache)) return null
   }
 
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
-    const childId = parent.childIds[i]
-    const child = graph.nodes.get(childId)
+    const child = graph.nodes.get(parent.childIds[i])
     if (!child || child.internalOnly || !child.visible) continue
     if (CONTAINER_TYPES.has(child.type)) {
-      if (OPAQUE_CONTAINER_TYPES.has(child.type) && !deep) {
-        const hit = hitTestOpaqueContainer(graph, px, py, child, childId, deep, transformCache, pad)
-        if (hit) return hit
+      if (OPAQUE_CONTAINER_TYPES.has(child.type) && !walk.deep) {
+        // A plain click takes an instance or component anywhere in its box, with a fill or
+        // without, as in Figma.
+        if (containsPoint(px, py, child, graph, transformCache)) return child
         continue
       }
-
-      const hit = hitTestTransparentContainer(
-        graph,
-        px,
-        py,
-        child,
-        childId,
-        deep,
-        transformCache,
-        pad
-      )
+      const hit = hitTestTransparentContainer(graph, px, py, child, walk)
       if (hit) return hit
       continue
     }
@@ -178,10 +173,28 @@ function hitTestChildren(
       if (hitsConnectorLine(graph, child, px, py, pad)) return child
       continue
     }
-    if (containsPoint(px, py, child, graph, transformCache, pad)) return child
+    if (hitsLeaf(graph, px, py, child, transformCache, pad)) return child
   }
 
   return null
+}
+
+/**
+ * Whether a click lands on a leaf layer: on what its paints draw, as Figma tests shapes (see
+ * `hitsShape`), or on its box for layers without an outline to test, such as text.
+ */
+function hitsLeaf(
+  graph: SceneGraph,
+  px: number,
+  py: number,
+  node: SceneNode,
+  transformCache: Map<string, boolean>,
+  pad: number
+): boolean {
+  if (!containsPoint(px, py, node, graph, transformCache, pad + strokeReach(node))) return false
+  return (
+    hitsShape(graph, node, px, py, pad) ?? containsPoint(px, py, node, graph, transformCache, pad)
+  )
 }
 
 export function hitTest(
@@ -191,7 +204,7 @@ export function hitTest(
   scopeId?: string
 ): SceneNode | null {
   const scope = scopeId ?? graph.rootId
-  return hitTestChildren(graph, px, py, scope, false)
+  return hitTestChildren(graph, px, py, scope, walkOf(false))
 }
 
 export function hitTestDeep(
@@ -202,7 +215,7 @@ export function hitTestDeep(
   pad = 0
 ): SceneNode | null {
   const scope = scopeId ?? graph.rootId
-  return hitTestChildren(graph, px, py, scope, true, new Map(), pad)
+  return hitTestChildren(graph, px, py, scope, walkOf(true, pad))
 }
 
 /**
@@ -241,17 +254,26 @@ function frameChildAt(
 }
 
 /**
- * The containers the selection opens: every ancestor of a selected layer inside the scope, and a
- * selected container itself, so a click inside it selects the layer under the point, as in Figma.
- * A selected group or boolean stays closed: clicking inside it keeps it selected.
+ * The containers the selection opens: every ancestor of a selected layer inside the scope, so a
+ * click reaches the siblings of selected layers, and a selected container itself, so hover and a
+ * read-only click reach the layer under the point. A plain press inside a selected frame still
+ * drags the frame, as in Figma, which `pressesSelection` in the Vue input decides. A selected group
+ * or boolean stays closed: clicking inside it keeps it selected.
  */
 function openedBySelection(
   graph: SceneGraph,
   selectedIds: ReadonlySet<string>,
   scopeId: string,
-  framesOpen = true
+  framesOpen: boolean,
+  enteredId: string | null
 ): Set<string> {
   const ancestors = new Set<string>()
+  // An entered container is open whatever its kind, so a double-click into a board's frame
+  // reaches its layers; its ancestors open with it.
+  for (let id = enteredId; id && id !== scopeId && !ancestors.has(id);) {
+    ancestors.add(id)
+    id = graph.nodes.get(id)?.parentId ?? null
+  }
   for (const id of selectedIds) {
     const node = graph.nodes.get(id)
     if (
@@ -280,16 +302,26 @@ function openedBySelection(
  * by the selection is selected, so is a top-level frame with auto layout, and a plain top-level
  * frame or a section is not.
  */
+export interface SelectableHitOptions {
+  /** Canvas units a leaf layer's box grows by, as Figma takes a click a few pixels outside. */
+  pad?: number
+  /** Whether top-level frames are looked into (a design) or selected whole (a board). */
+  framesOpen?: boolean
+  /** The container a double-click entered, open along with its ancestors. */
+  enteredId?: string | null
+}
+
 export function hitTestSelectable(
   graph: SceneGraph,
   px: number,
   py: number,
   scopeId: string,
   selectedIds: ReadonlySet<string>,
-  pad = 0,
-  framesOpen = true
+  options: SelectableHitOptions = {}
 ): SceneNode | null {
-  const deepest = hitTestChildren(graph, px, py, scopeId, true, new Map(), pad)
+  const { pad = 0, framesOpen = true, enteredId = null } = options
+  // A plain click: the walk takes an instance's empty area whatever its fill.
+  const deepest = hitTestChildren(graph, px, py, scopeId, walkOf(true, pad, true))
   if (!deepest) {
     const scope = graph.nodes.get(scopeId)
     return scope ? frameChildAt(graph, scope, px, py, framesOpen) : null
@@ -301,7 +333,7 @@ export function hitTestSelectable(
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
 
-  const opened = openedBySelection(graph, selectedIds, scopeId, framesOpen)
+  const opened = openedBySelection(graph, selectedIds, scopeId, framesOpen, enteredId)
 
   for (const node of chain) {
     // A locked layer stands in for everything inside it.
@@ -317,9 +349,9 @@ export function hitTestSelectable(
 }
 
 /** Whether a click looks into this container rather than selecting it; see `hitTestSelectable`. */
-export function isOpenContainer(graph: SceneGraph, nodeId: string): boolean {
+export function isOpenContainer(graph: SceneGraph, nodeId: string, framesOpen = true): boolean {
   const node = graph.nodes.get(nodeId)
-  return node !== undefined && opensByItself(graph, node)
+  return node !== undefined && opensByItself(graph, node, framesOpen)
 }
 
 /**
@@ -332,7 +364,7 @@ export function hitTestOpenContainer(
   py: number,
   scopeId: string
 ): SceneNode | null {
-  const deepest = hitTestChildren(graph, px, py, scopeId, true)
+  const deepest = hitTestChildren(graph, px, py, scopeId, walkOf(true))
   for (let node: SceneNode | undefined = deepest ?? undefined; node && node.id !== scopeId;) {
     if (!opensByItself(graph, node) || ownsItsEmptyArea(graph, node)) return null
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined

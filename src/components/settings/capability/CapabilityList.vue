@@ -74,17 +74,17 @@ function isOpen(group: CapabilityGroup) {
               aria-hidden="true"
             />
             <span class="shrink-0 font-semibold text-surface">{{ group.label }}</span>
-            <code v-if="group.detail" class="min-w-0 truncate text-[11px] text-muted">{{
+            <code v-if="group.detail" class="min-w-0 truncate text-2xs text-muted">{{
               group.detail
             }}</code>
           </CollapsibleTrigger>
-          <span v-if="group.count" class="shrink-0 text-[11px] text-muted">{{ group.count }}</span>
+          <span v-if="group.count" class="shrink-0 text-2xs text-muted">{{ group.count }}</span>
           <slot name="group-actions" :group="group" />
         </div>
         <CollapsibleContent :class="collapsibleContentMotion">
           <p
             v-if="!group.items.length"
-            class="border-t border-border py-2 pr-3 pl-13 text-[11px] text-muted"
+            class="border-t border-border py-2 pr-3 pl-13 text-2xs text-muted"
           >
             {{ group.empty }}
           </p>
@@ -127,9 +127,7 @@ function isOpen(group: CapabilityGroup) {
                     >{{ item.description }}</span
                   >
                 </Tip>
-                <span v-if="item.note" class="shrink-0 text-[11px] text-warning">{{
-                  item.note
-                }}</span>
+                <span v-if="item.note" class="shrink-0 text-2xs text-warning">{{ item.note }}</span>
                 <icon-lucide-chevron-right
                   v-if="openLabel"
                   class="size-3.5 shrink-0 text-muted"

@@ -72,5 +72,5 @@ const { panels } = useI18n()
     @update-number="ctx.updateHSBChannelValue('b', $event)"
   />
 
-  <p class="text-[10px] leading-4 text-muted">{{ ctx.panels.colorHintHsb }}</p>
+  <p class="text-3xs leading-4 text-muted">{{ ctx.panels.colorHintHsb }}</p>
 </template>

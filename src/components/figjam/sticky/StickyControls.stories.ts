@@ -28,7 +28,7 @@ const meta = {
       return { color, textSize, authorVisible }
     },
     template: `
-      <div class="w-[240px] bg-panel p-4">
+      <div class="w-60 bg-panel p-4">
         <StickyControls
           :color="color"
           :text-size="textSize"

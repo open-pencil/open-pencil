@@ -51,7 +51,6 @@ export interface RenderOverlays {
   gradientEdit?: GradientEdit | null
   transforming?: boolean
   measurementMode?: MeasurementMode
-  enteredContainerId?: string | null
   editingTextId?: string | null
   /** The layer whose name a field over the canvas renames, whose title the canvas leaves out. */
   renamingLabelId?: string | null

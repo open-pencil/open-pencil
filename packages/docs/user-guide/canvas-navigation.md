@@ -55,6 +55,8 @@ Pinch-to-zoom on UI panels (layers, properties) is prevented so it doesn't accid
 
 <kbd>Page Down</kbd> and <kbd>Page Up</kbd> open the next and previous page in the Pages panel's order.
 
+A page opens fitted to its layers the first time you visit it, and an empty page with its origin at the centre at 100%; later visits return to the view you left. In the desktop app, and for files in storage, a file reopens on the page and at the view you left it at; in the browser, a file picked through the file picker opens fitted each time. Zoom to fit and zoom to selection fill the canvas with the layers, zooming in past 100% for small ones, with the margins Figma keeps.
+
 ## Pixel Grid
 
 Zoomed in far enough that each document pixel covers eight screen pixels (800% on a standard display, 400% on a Retina one), the canvas shows a line at every pixel, as in Figma. Turn it off or on with **View → Pixel Grid**.

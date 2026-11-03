@@ -1,1 +1,0 @@
-- Strokes blend with what is under them by their paint's blend mode.

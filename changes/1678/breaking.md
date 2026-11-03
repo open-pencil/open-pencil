@@ -1,0 +1,1 @@
+- `sharedStylePatch` and `sharedStyleDetachPatch` move from `@open-pencil/vue/controls/shared-style` to `@open-pencil/scene-graph/shared-styles`.
