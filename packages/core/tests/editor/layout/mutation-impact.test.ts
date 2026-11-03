@@ -52,4 +52,25 @@ describe('mutation layout reconciliation', () => {
     expect(left.width).toBe(30)
     expect(right.width).toBe(40)
   })
+
+  test('keeps a hugging parent at its size when its last child moves out', async () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const hug = {
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG'
+    } as const
+    const left = graph.createNode('FRAME', page, hug)
+    const right = graph.createNode('FRAME', page, hug)
+    const child = graph.createNode('RECTANGLE', left.id, { width: 40, height: 20 })
+    const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => graph)
+    runLayoutForNode(left.id)
+
+    await runMutationWithLayout(() => graph.reparentNode(child.id, right.id), page)
+
+    // Figma keeps a frame with nothing left to hug at the size it hugged to.
+    expect([left.width, left.height]).toEqual([40, 20])
+    expect(right.width).toBe(40)
+  })
 })

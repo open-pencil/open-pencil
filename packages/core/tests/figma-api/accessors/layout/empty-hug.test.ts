@@ -21,12 +21,29 @@ describe('empty hugging frames', () => {
     const figma = createAPI()
     const frame = hugging(figma, 'VERTICAL')
     expect(size(frame)).toEqual([200, 120])
-    frame.itemSpacing = 10
-    frame.counterAxisAlignItems = 'CENTER'
-    frame.layoutMode = 'HORIZONTAL'
-    frame.paddingLeft = 8
-    frame.paddingTop = 4
-    expect(size(frame)).toEqual([200, 120])
+    const changes = [
+      () => (frame.itemSpacing = 10),
+      () => (frame.counterAxisAlignItems = 'CENTER'),
+      () => (frame.layoutMode = 'HORIZONTAL'),
+      () => (frame.paddingLeft = 8),
+      () => (frame.paddingTop = 4)
+    ]
+    for (const change of changes) {
+      change()
+      expect(size(frame)).toEqual([200, 120])
+    }
+  })
+
+  test('an empty frame inside an auto layout frame keeps its size there too', () => {
+    const figma = createAPI()
+    const row = hugging(figma, 'HORIZONTAL')
+    const empty = hugging(figma, 'VERTICAL')
+    row.appendChild(empty)
+    expect(size(empty)).toEqual([200, 120])
+    expect(size(row)).toEqual([200, 120])
+    row.paddingLeft = 10
+    expect(size(empty)).toEqual([200, 120])
+    expect(size(row)).toEqual([210, 120])
   })
 
   test('a frame that loses its last layer keeps the size it hugged to, then hugs the next', () => {
