@@ -68,7 +68,7 @@ function withoutUnsupportedStates(behaviour: StoredBehaviour): StoredBehaviour {
 export const behaviourSchema = v.pipe(storedBehaviourSchema, v.transform(withoutUnsupportedStates))
 
 /** How a main component behaves as a control, as kept in its plugin data. */
-export type Behaviour = v.InferOutput<typeof behaviourSchema>
+export type Behaviour = StoredBehaviour
 export type BehaviourBooleanBinding = v.InferOutput<typeof booleanBindingSchema>
 export type BehaviourNumberSettings = v.InferOutput<typeof numberSettingsSchema>
 export type BehaviourInteractionStates = v.InferOutput<typeof interactionStatesSchema>
