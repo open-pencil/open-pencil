@@ -4,6 +4,7 @@ import type { FontVariation } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
 import { IS_BROWSER } from '#core/constants'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets'
 
 import { fontTableView } from './variation'
 
@@ -87,7 +88,17 @@ async function readSubsetModule(): Promise<ArrayBuffer> {
   const url = locator()
   if (IS_BROWSER || !url.startsWith('file:')) {
     const response = await fetch(url)
-    if (!response.ok) throw new Error(`HarfBuzz subsetter answered ${response.status}`)
+    if (!servesRuntimeAsset(response)) {
+      void response.body?.cancel()
+      throw new Error(
+        unservedRuntimeAssetMessage(
+          'harfbuzz-subset.wasm',
+          url,
+          response,
+          'setHarfBuzzSubsetLocator'
+        )
+      )
+    }
     return response.arrayBuffer()
   }
   const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')

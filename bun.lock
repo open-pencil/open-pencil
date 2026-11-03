@@ -335,12 +335,15 @@
         "@types/rbush": "^4.0.0",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
         "unplugin-raw": "^0.7.0",
+        "vite": "8.1.4",
       },
       "peerDependencies": {
         "ai": "^7.0.127",
+        "vite": ">=6",
       },
       "optionalPeers": [
         "ai",
+        "vite",
       ],
     },
     "packages/design-jsx": {

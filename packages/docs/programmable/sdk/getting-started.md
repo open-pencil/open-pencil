@@ -19,6 +19,33 @@ import { provideEditor } from '@open-pencil/vue'
 import { useCanvas } from '@open-pencil/vue/canvas/surface'
 ```
 
+## Serve the engine's files
+
+The canvas loads files at run time: CanvasKit's WebAssembly, the bundled fonts, and HarfBuzz's subsetter for PDF export. With Vite, add the `openPencil()` plugin and they are served in development and emitted with the build:
+
+```ts
+// vite.config.ts
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+import { openPencil } from '@open-pencil/core/node/vite'
+
+export default defineConfig({
+  plugins: [vue(), openPencil()],
+})
+```
+
+The plugin adds a module to `index.html` that tells Core where the files are. An app that loads Core behind a gate of its own, or has no `index.html`, passes `openPencil({ inject: false })` and imports `virtual:open-pencil/assets` before Core loads anything.
+
+With another bundler, serve these files and point Core at them before the canvas mounts:
+
+| File | Comes from | Point Core at it with |
+| --- | --- | --- |
+| `canvaskit.wasm` | `canvaskit-wasm/bin/full/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
+| Bundled fonts (`*.ttf`, `*.woff2`) | `@open-pencil/core/assets/` | `fontManager.setBundledFontLocator` from `@open-pencil/core/text` |
+| `harfbuzz-subset.wasm` | `harfbuzzjs/dist/` | `setHarfBuzzSubsetLocator` from `@open-pencil/core/text` |
+
+Without a locator, Core requests each file from the site root, such as `/canvaskit.wasm`. When a file is missing there, the error names it and the locator to set.
+
 ## Mental model
 
 There are three layers:

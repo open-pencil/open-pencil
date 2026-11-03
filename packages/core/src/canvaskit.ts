@@ -1,6 +1,7 @@
 import CanvasKitInit, { type CanvasKit } from 'canvaskit-wasm/full'
 
 import { IS_BROWSER } from './constants'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from './runtime-assets'
 
 let instance: Promise<CanvasKit> | null = null
 
@@ -25,12 +26,33 @@ export function setCanvasKitLocator(locate: CanvasKitLocator): void {
 }
 
 /**
+ * Why CanvasKit failed to load: when its binary is not served, an error naming the setup that
+ * serves it, in place of the compile error the host's fallback page gave; otherwise the error.
+ */
+async function explainFailedLoad(url: string, error: unknown): Promise<unknown> {
+  try {
+    const response = await fetch(url)
+    void response.body?.cancel()
+    if (servesRuntimeAsset(response)) return error
+    return new Error(
+      unservedRuntimeAssetMessage('canvaskit.wasm', url, response, 'setCanvasKitLocator'),
+      { cause: error }
+    )
+  } catch {
+    return error
+  }
+}
+
+/**
  * Loads CanvasKit once; callers that ask while it loads share the load, and a failed load is
  * retried. It is the full build, whose encoders write JPEG and WebP as well as PNG.
  */
 export function getCanvasKit(options?: CanvasKitOptions): Promise<CanvasKit> {
   if (instance) return instance
-  const loading = CanvasKitInit({ locateFile: options?.locateFile ?? locator })
+  const locate = options?.locateFile ?? locator
+  const loading = CanvasKitInit({ locateFile: locate }).catch(async (error: unknown) => {
+    throw IS_BROWSER ? await explainFailedLoad(locate('canvaskit.wasm'), error) : error
+  })
   instance = loading
   loading.catch(() => {
     if (instance === loading) instance = null
