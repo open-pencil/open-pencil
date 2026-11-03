@@ -6,7 +6,11 @@ import {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { CLOUD_RATE_LIMITS, createRouteRateLimiter } from '#cloud/server/rate-limit'
+import {
+  CLOUD_RATE_LIMITS,
+  createRouteRateLimiter,
+  routeParamResource
+} from '#cloud/server/rate-limit'
 import {
   validatedJSON,
   workspaceInvitationParams,
@@ -81,7 +85,7 @@ export function createWorkspaceRoutes(
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
         () => false,
-        (context) => context.req.path
+        routeParamResource('workspaceId')
       )
     )
     router.use(
@@ -91,7 +95,7 @@ export function createWorkspaceRoutes(
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
         (context) => context.req.method !== 'POST',
-        (context) => context.req.path
+        routeParamResource('workspaceId')
       )
     )
   }

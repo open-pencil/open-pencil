@@ -3,7 +3,11 @@ import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration/service'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents'
-import { CLOUD_RATE_LIMITS, createRouteRateLimiter } from '#cloud/server/rate-limit'
+import {
+  CLOUD_RATE_LIMITS,
+  createRouteRateLimiter,
+  routeParamResource
+} from '#cloud/server/rate-limit'
 import { DocumentShareInvalidError, DocumentShareSignInRequiredError } from '#cloud/server/sharing'
 import { documentParams, shareParams, validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
@@ -34,7 +38,7 @@ export function createCollaborationRoutes(
         rateLimit.secret,
         CLOUD_RATE_LIMITS.collaborationTicket,
         undefined,
-        (context) => context.req.path
+        routeParamResource('documentId')
       )
     )
   }
