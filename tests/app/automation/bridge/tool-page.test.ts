@@ -74,6 +74,17 @@ describe('automation tools on a page that has not been shown', () => {
     expect(store.state.currentPageId).toBe(shown)
   })
 
+  test('get_page_tree rooted at a layer there loads its page', async () => {
+    const { store, frameId } = await storeWithUnshownPage()
+
+    const response = (await handleTargetCommand(target(store, store.state.currentPageId), 'tool', {
+      name: 'get_page_tree',
+      args: { root_id: frameId }
+    })) as { result: { root: string; tree: { name: string } } }
+
+    expect(response.result).toMatchObject({ root: frameId, tree: { name: 'Second frame' } })
+  })
+
   test('find_nodes sees the layers of the target page', async () => {
     const { store, pageId } = await storeWithUnshownPage()
     const shown = store.state.currentPageId
