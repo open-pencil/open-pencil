@@ -80,6 +80,8 @@
   --color-input: #1e1e1e;
   --color-component: #bb8cff;
   --color-slot: #f45cc4;
+  /* The heart beside a request for donations. */
+  --color-heart: #fb7185;
   /* A FigJam board's mark in file lists, after FigJam's own purple. */
   --color-board: #b38cff;
   /*
@@ -138,6 +140,7 @@ html[data-theme='light'] {
   --color-input: #ffffff;
   --color-component: #7c3aed;
   --color-slot: #db2777;
+  --color-heart: #e11d48;
   --color-board: #8b5cf6;
   --color-warning: #8f5500;
   --color-warning-bg: rgb(245 158 11 / 0.14);

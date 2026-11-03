@@ -608,7 +608,6 @@ ja:diagnostics.reportPanic
 ja:diagnostics.reportProblemDescription
 ja:diagnostics.reportUnexpectedError
 ja:diagnostics.supportDescription
-ja:diagnostics.supportQuestionTitle
 ja:diagnostics.supportTitle
 zh-cn:ai.skillsDescription
 zh-cn:ai.notificationsHint
@@ -623,5 +622,4 @@ zh-cn:diagnostics.reportPanic
 zh-cn:diagnostics.reportProblemDescription
 zh-cn:diagnostics.reportUnexpectedError
 zh-cn:diagnostics.supportDescription
-zh-cn:diagnostics.supportQuestionTitle
 zh-cn:diagnostics.supportTitle

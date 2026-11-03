@@ -96,9 +96,8 @@ export const diagnosticsMessageDefaults = {
   sharingQuestionAccepted: 'Thank you. You can change this in Privacy settings.',
   sharingQuestionDeclined: 'Usage stats stay off. You can change this in Privacy settings.',
   supportTitle: 'Support OpenPencil',
-  supportQuestionTitle: 'Support OpenPencil?',
   supportDescription:
-    'OpenPencil is free and open source. A donation helps speed up its development and covers the servers and services it runs on.',
+    'Enjoying OpenPencil? It’s free and open source, and a donation helps speed up its development and covers the servers and services it runs on.',
   supportNotNow: 'Not now',
   supportDonate: 'Donate',
   sharingLocalData:

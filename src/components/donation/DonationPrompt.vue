@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { donate, donationPrompt, postponeDonation } from '@/app/donation'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import donationTheme from '@/theme/donation'
 import promptTheme from '@/theme/sharing/prompt'
 import questionTheme from '@/theme/sharing/question'
 
@@ -13,6 +14,7 @@ import questionTheme from '@/theme/sharing/question'
 const { diagnostics } = useI18n()
 const prompt = tv(promptTheme)()
 const styles = tv(questionTheme)()
+const donation = tv(donationTheme)()
 const headingId = useId()
 </script>
 
@@ -24,7 +26,10 @@ const headingId = useId()
     data-test-id="donation-prompt"
   >
     <section :class="styles.root()">
-      <h3 :id="headingId" :class="styles.heading()">{{ diagnostics.supportQuestionTitle }}</h3>
+      <h3 :id="headingId" :class="donation.heading()">
+        <icon-lucide-heart :class="donation.heart()" aria-hidden="true" />
+        {{ diagnostics.supportTitle }}
+      </h3>
       <p :class="styles.text()">{{ diagnostics.supportDescription }}</p>
       <div :class="styles.actions()">
         <AppButton variant="outline" @click="postponeDonation()">
