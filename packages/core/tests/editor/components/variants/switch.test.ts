@@ -69,15 +69,22 @@ test('switching a variant keeps an edit made before it undoable', () => {
   expect(chip.instanceOverrides.descendants.has(bgId)).toBe(false)
 })
 
-test('switching a deep variant and back stays linear in its layers', () => {
-  const { editor, chip, deepest } = switchable(24, 3)
+test('switching a deep variant and back updates each of its layers once', () => {
+  const { editor, graph, chip, deepest } = switchable(24, 3)
   editor.updateNodeWithUndo(deepest().id, { opacity: 0.5 })
-  const started = performance.now()
+  const layers = graph.countDescendants(chip.id) + 1
+  let updates = 0
+  const updateNode = graph.updateNode.bind(graph)
+  graph.updateNode = (...args: Parameters<typeof updateNode>) => {
+    updates++
+    return updateNode(...args)
+  }
   for (let round = 0; round < 5; round++) {
     editor.switchInstanceVariant(chip.id, 'Size', 'Large')
     editor.switchInstanceVariant(chip.id, 'Size', 'Small')
   }
-  expect(performance.now() - started).toBeLessThan(1000)
+  graph.updateNode = updateNode
+  expect(updates).toBeLessThanOrEqual(10 * layers)
   expect(deepest().opacity).toBe(0.5)
 })
 
