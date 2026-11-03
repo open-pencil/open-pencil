@@ -15,7 +15,8 @@ import canvasKit from 'canvaskit-wasm/bin/full/canvaskit.wasm?url'
 import harfBuzzSubset from 'harfbuzzjs/dist/harfbuzz-subset.wasm?url'
 
 import { setCanvasKitLocator } from '#core/canvaskit'
-import { fontManager, setHarfBuzzSubsetLocator } from '#core/text'
+import { setHarfBuzzSubsetLocator } from '#core/text/font/harfbuzz'
+import { fontManager } from '#core/text/font/manager'
 
 /** Every font file in `@open-pencil/core/assets`: the bundled faces and the stand-ins. */
 const FONT_URLS: Record<string, string> = {
