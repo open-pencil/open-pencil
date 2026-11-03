@@ -231,6 +231,8 @@ describe('generated React form controls', () => {
     expect(invalid).toContain('data-invalid="true"')
     // `invalid` is the component's own prop, never passed on to the element.
     expect(invalid).not.toMatch(/ invalid=/)
+    // An `aria-invalid` the caller passes stays while `invalid` is off.
+    expect(render(component, { 'aria-invalid': 'true' })).toContain('aria-invalid="true"')
   })
 
   test("an invalid field marks its input, and its root for the field's styles", async () => {
@@ -239,6 +241,7 @@ describe('generated React form controls', () => {
     expect(html).toMatch(/^<div[^>]*data-invalid="true"/)
     expect(html).toMatch(/<input[^>]*aria-invalid="true"/)
     expect(html.match(/aria-invalid/g)).toHaveLength(1)
+    expect(render(component, { 'aria-invalid': 'true' })).toMatch(/<input[^>]*aria-invalid="true"/)
   })
 
   test("a slider starts at the design's value as Radix's list, within its range", async () => {

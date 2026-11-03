@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { BEHAVIOUR_KINDS, type InteractionState } from './kinds'
+import { BEHAVIOUR_KINDS, hasInvalidState, type InteractionState } from './kinds'
 
 const booleanBindingSchema = v.object({
   propertyId: v.string(),
@@ -39,7 +39,7 @@ export const interactionStateValues = {
 
 const interactionStatesSchema = v.object({ propertyId: v.string(), ...interactionStateValues })
 
-export const behaviourSchema = v.object({
+const storedBehaviourSchema = v.object({
   kind: v.picklist(BEHAVIOUR_KINDS),
   /** Boolean values, by value id, bound to component properties. */
   booleans: v.record(v.string(), booleanBindingSchema),
@@ -51,6 +51,21 @@ export const behaviourSchema = v.object({
   parts: v.record(v.string(), v.string()),
   states: v.optional(interactionStatesSchema)
 })
+
+type StoredBehaviour = v.InferOutput<typeof storedBehaviourSchema>
+
+/** The behaviour without an invalid state when its kind of control has none. */
+function withoutUnsupportedStates(behaviour: StoredBehaviour): StoredBehaviour {
+  if (behaviour.states?.invalid === undefined || hasInvalidState(behaviour.kind)) return behaviour
+  const { invalid: _invalid, ...states } = behaviour.states
+  return { ...behaviour, states }
+}
+
+/**
+ * A stored behaviour. An invalid state on a kind of control that has none, such as a button,
+ * is dropped as it is read, so nothing draws or exports it; the rest of the behaviour stays.
+ */
+export const behaviourSchema = v.pipe(storedBehaviourSchema, v.transform(withoutUnsupportedStates))
 
 /** How a main component behaves as a control, as kept in its plugin data. */
 export type Behaviour = v.InferOutput<typeof behaviourSchema>

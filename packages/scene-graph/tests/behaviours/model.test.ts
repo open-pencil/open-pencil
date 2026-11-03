@@ -84,6 +84,19 @@ describe('behaviour model', () => {
     }
   })
 
+  test('a stored invalid state reads only on a kind that can be invalid', () => {
+    const { graph, set } = switchSet()
+    const states = { propertyId: 'state', rest: 'Off', invalid: 'On' }
+    graph.updateNode(set.id, {
+      pluginData: withBehaviour(set, { ...emptyBehaviour('button'), states })
+    })
+    expect(readBehaviour(set)?.states).toEqual({ propertyId: 'state', rest: 'Off' })
+    graph.updateNode(set.id, {
+      pluginData: withBehaviour(set, { ...emptyBehaviour('switch'), states })
+    })
+    expect(readBehaviour(set)?.states).toEqual(states)
+  })
+
   test('unreadable plugin data reads as no behaviour', () => {
     const { graph, set } = switchSet()
     graph.updateNode(set.id, {

@@ -131,7 +131,9 @@ export function referenceValues(
     if (on) model = arg.name
     else props.push({ name: arg.name, value: true })
   }
-  props.push(...drawnFlags(component, values))
+  // A set may draw a flag both as a boolean and as a state value; the prop is set once.
+  const flags = drawnFlags(component, values)
+  props.push(...flags.filter((flag) => !props.some((prop) => prop.name === flag.name)))
   for (const prop of component.props) {
     const value = values[prop.property]
     if (Object.hasOwn(values, prop.property) && value !== prop.default)

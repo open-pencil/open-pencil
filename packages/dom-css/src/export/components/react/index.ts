@@ -238,7 +238,8 @@ function bindingAttributes(
       return [jsx.attribute(binding.attribute, jsx.container(es.identifier(binding.prop.name)))]
     if (binding.type === 'invalid')
       return [
-        ...(FIELD_KINDS.has(kind) ? [] : [ariaInvalid()]),
+        // The root takes the caller's props before its bindings (`designElement`).
+        ...(FIELD_KINDS.has(kind) ? [] : [ariaInvalid(true)]),
         jsx.attribute('data-invalid', jsx.container(INVALID_FLAG()))
       ]
     // Radix sets `data-disabled` on its own roots; a native root needs it for the styles.
