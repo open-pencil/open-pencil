@@ -167,6 +167,16 @@ export type ComponentNode =
   | ComponentReference
   | IconReference
 
+/**
+ * Whether a field's markup draws its input, which takes the caller's attributes; a field whose
+ * text is not bound yet has none, and its root takes them.
+ */
+export function drawsInput(node: ComponentElement): boolean {
+  return node.children.some(
+    (child) => child.type === 'input' || (child.type === 'element' && drawsInput(child))
+  )
+}
+
 /** One component generated from a component set with a behaviour. */
 export interface ComponentModel {
   /** The component's identifier and file name. */

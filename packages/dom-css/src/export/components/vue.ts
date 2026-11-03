@@ -11,6 +11,7 @@ import type { ShaderComponent } from '@open-pencil/scene-graph/shaders'
 import { claimName } from '../storybook/names'
 import { progressWidth } from './fields'
 import {
+  drawsInput,
   FIELD_KINDS,
   type ComponentBinding,
   type ComponentElement,
@@ -91,6 +92,10 @@ const REKA: Record<
  * as the React components spread the caller's props on the input.
  */
 const INPUT_MODEL: ReadonlySet<GeneratedKind> = new Set(['textField', 'textarea'])
+
+/** Whether the caller's attributes go to the field's input: it is a field, and draws one. */
+const attrsToInput = (component: ComponentModel) =>
+  INPUT_MODEL.has(component.kind) && drawsInput(component.tree)
 
 /** The caller's attributes but `class`, which the root takes, for a field's input. */
 const INPUT_ATTRS = es.parseExpression('{ ...$attrs, class: undefined }')
@@ -263,7 +268,7 @@ function elementAttributes(
       vue.attribute(name, value)
     ),
     vue.attribute('class', compact([node.attrs.class, uses.classOf(node.className)]).join(' ')),
-    ...(root && INPUT_MODEL.has(uses.kind) ? [vue.bound('class', ROOT_CLASS)] : []),
+    ...(root && attrsToInput(uses.component) ? [vue.bound('class', ROOT_CLASS)] : []),
     ...(node.value === undefined ? [] : [vue.attribute('value', node.value)]),
     ...(node.disabled ? [vue.bound('disabled', es.parseExpression('true'))] : []),
     ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses, native))
@@ -464,7 +469,7 @@ function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
   const refs = uses.models.flatMap(
     (item) => es.fill(MODEL_REF, { $name: identifier(item.name) }).body
   )
-  const options = INPUT_MODEL.has(component.kind) ? NO_ATTRS_FALLTHROUGH.body : []
+  const options = attrsToInput(component) ? NO_ATTRS_FALLTHROUGH.body : []
   return {
     type: 'Program',
     sourceType: 'module',

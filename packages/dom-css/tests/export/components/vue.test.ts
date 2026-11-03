@@ -7,6 +7,7 @@ import {
   accordionComponent,
   buttonSet,
   collapsibleSet,
+  componentSet,
   invalidCheckboxSet,
   labelledButtonSet,
   numberFieldComponent,
@@ -29,6 +30,8 @@ import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
 import { renderToString } from 'vue/server-renderer'
+
+import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
 const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook', 'shaders']
@@ -391,6 +394,22 @@ describe('generated Vue form controls', () => {
       expect(input).not.toContain('wide')
       if (fixture.set.name === 'Email') expect(input).toContain('placeholder="you@example.com"')
     }
+  })
+
+  test('a field with no text bound yet draws no input, and its root takes the attributes', async () => {
+    const fixture = componentSet(
+      'Message',
+      { Size: ['Default'] },
+      emptyBehaviour('textarea'),
+      (graph, variant) => {
+        graph.createNode('TEXT', variant, { name: 'Hint', text: 'Tell us more' })
+      }
+    )
+    const { files, component } = await generate(fixture)
+    expect(fileText(files, 'Message.vue')).not.toContain('inheritAttrs')
+    const html = await render(component, { 'data-testid': 'message', class: 'wide' })
+    expect(html).toMatch(/^<div[^>]*data-testid="message"/)
+    expect(html).toMatch(/^<div[^>]*class="[^"]*wide/)
   })
 
   test('a textarea starts with its words', async () => {
