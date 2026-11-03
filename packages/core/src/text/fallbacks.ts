@@ -1,3 +1,4 @@
+import { memoize } from 'es-toolkit/function'
 import TS_CHARACTERS from 'opencc-js/dict/TSCharacters'
 
 import {
@@ -54,19 +55,29 @@ export function fontFallbackScriptForCharacter(
   return null
 }
 
-/** The CJK fallback a BCP 47 language tag's script asks for, as Unicode's likely subtags fill it in. */
+/**
+ * The CJK fallback a BCP 47 language tag's script asks for, as Unicode's likely subtags fill it in.
+ * Text asks once per character, so each tag is read once.
+ */
 export function cjkFallbackScriptForLanguage(
   language: string | null | undefined
 ): Extract<FontFallbackScript, 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr'> | null {
-  if (!language) return null
-  let script: string | undefined
-  try {
-    script = new Intl.Locale(language.replaceAll('_', '-')).maximize().script
-  } catch {
-    return null
-  }
-  return script ? (LANGUAGE_SCRIPT_FALLBACKS[script] ?? null) : null
+  return language ? languageFallback(language) : null
 }
+
+const languageFallback = memoize(
+  (
+    language: string
+  ): Extract<FontFallbackScript, 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr'> | null => {
+    let script: string | undefined
+    try {
+      script = new Intl.Locale(language.replaceAll('_', '-')).maximize().script
+    } catch {
+      return null
+    }
+    return script ? (LANGUAGE_SCRIPT_FALLBACKS[script] ?? null) : null
+  }
+)
 
 const LANGUAGE_SCRIPT_FALLBACKS: Partial<
   Record<string, Extract<FontFallbackScript, 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr'>>
