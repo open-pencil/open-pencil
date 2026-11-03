@@ -16,6 +16,7 @@ import {
   dropShadowToCSS,
   effectsToCSS,
   fillToCSS,
+  gradientToCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
   strokeColorToCSS
@@ -272,6 +273,32 @@ function addShaderLayerStyle(style: DesignStyleDeclaration): void {
   style.isolation = 'isolate'
 }
 
+/**
+ * The layer's visible fills, painted bottom to top: its lowest solid fill as `background-color`,
+ * and every gradient and every colour stacked above another fill as `background-image`, the top
+ * one first, as CSS stacks them. A colour can only stack as an image, so it is written as a
+ * gradient of itself. An image fill is the element's own image.
+ */
+function addBackground(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  const layers: string[] = []
+  let color: string | undefined
+  node.fills.forEach((fill, index) => {
+    if (!fill.visible) return
+    if (fill.type === 'SOLID') {
+      const value = css(`fills/${index}/color`, fillToCSS(fill) ?? '')
+      if (color === undefined && layers.length === 0) color = value
+      else layers.unshift(`linear-gradient(${value}, ${value})`)
+      return
+    }
+    const gradient = gradientToCSS(fill, node.width, node.height)
+    if (gradient) layers.unshift(gradient)
+    // A paint below every colour, such as an image, leaves no colour for the bottom.
+    else if (color === undefined) color = ''
+  })
+  if (layers.length > 0) style['background-image'] = layers.join(', ')
+  if (color) style['background-color'] = color
+}
+
 function addImageStyle(style: DesignStyleDeclaration, node: SceneNode): void {
   const fill = node.fills.at(0)
   if (fill?.type !== 'IMAGE' || !fill.visible || shaderOfPaint(node, fill)) return
@@ -316,8 +343,7 @@ function styleFromSceneNode(
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addSizeConstraints(style, node, css)
-  const fill = fillToCSS(node.fills.at(0))
-  if (fill) style['background-color'] = css('fills/0/color', fill)
+  addBackground(style, node, css)
   addImageStyle(style, node)
   addStroke(style, node, css)
   Object.assign(style, effectsToCSS(node.effects))

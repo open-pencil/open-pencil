@@ -1,1 +1,1 @@
-- HTML export writes the colour a variable-bound paint draws, and standalone pages define the tokens their layers use.
+- HTML export draws gradient fills and every stacked fill, writes the colour a variable-bound paint draws, and standalone pages define the tokens their layers use.
