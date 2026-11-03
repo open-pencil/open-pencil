@@ -63,10 +63,10 @@ export function createEditorPreparationController(
   let nextId = 0
   let activeAbort: AbortController | null = null
   let activeCancel: ((reason: EditorPreparationCancelReason) => void) | null = null
-  const presented: RenderVersions = { renderVersion: -1, sceneVersion: -1 }
-  const isPresented = (versions: RenderVersions) =>
-    presented.renderVersion >= versions.renderVersion &&
-    presented.sceneVersion >= versions.sceneVersion
+  /** The newest frame shown; its two versions came together, so one frame meets a wait. */
+  let presented: RenderVersions = { renderVersion: -1, sceneVersion: -1 }
+  const covers = (frame: RenderVersions, versions: RenderVersions) =>
+    frame.renderVersion >= versions.renderVersion && frame.sceneVersion >= versions.sceneVersion
   let canvases = 0
   let canvasFailure: Error | null = null
   const presentationWaiters = new Map<number, PresentationWaiter>()
@@ -96,10 +96,9 @@ export function createEditorPreparationController(
   const isActive = (id: number) => state.preparation?.id === id
 
   function acknowledgePresentation(versions: RenderVersions) {
-    presented.renderVersion = Math.max(presented.renderVersion, versions.renderVersion)
-    presented.sceneVersion = Math.max(presented.sceneVersion, versions.sceneVersion)
+    presented = { renderVersion: versions.renderVersion, sceneVersion: versions.sceneVersion }
     for (const [id, waiter] of presentationWaiters) {
-      if (isPresented(waiter.versions)) settle(id, null)
+      if (covers(presented, waiter.versions)) settle(id, null)
     }
   }
 
@@ -184,7 +183,7 @@ export function createEditorPreparationController(
     },
     acknowledgePresentation,
     waitForPresentation(id, versions) {
-      if (!isActive(id) || isPresented(versions)) return Promise.resolve()
+      if (!isActive(id) || covers(presented, versions)) return Promise.resolve()
       settle(id, null)
       return new Promise<void>((resolve, reject) => {
         const waiter: PresentationWaiter = {

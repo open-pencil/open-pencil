@@ -104,6 +104,30 @@ describe('editor preparation controller', () => {
     handle.complete()
   })
 
+  test('waits for the scene as well as the view, and for one frame that has both', async () => {
+    const state = createInitialAppEditorState('page')
+    const controller = createEditorPreparationController(state)
+    const handle = controller.begin({ kind: 'page-switch' })
+
+    let presented = false
+    const waiting = controller
+      .waitForPresentation(handle.id, { renderVersion: 9, sceneVersion: 7 })
+      .then(() => {
+        presented = true
+        return presented
+      })
+    // The view without the scene, then the scene in an older view: neither frame has both.
+    controller.acknowledgePresentation({ renderVersion: 9, sceneVersion: 6 })
+    controller.acknowledgePresentation({ renderVersion: 8, sceneVersion: 7 })
+    await Promise.resolve()
+    expect(presented).toBe(false)
+
+    controller.acknowledgePresentation({ renderVersion: 9, sceneVersion: 7 })
+    await waiting
+    expect(presented).toBe(true)
+    handle.complete()
+  })
+
   test('waits for the prepared scene to be presented before finishing', async () => {
     const state = createInitialAppEditorState('page')
     const controller = createEditorPreparationController(state)

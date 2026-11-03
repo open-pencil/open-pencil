@@ -11,7 +11,7 @@ function surface() {
 }
 
 function liveImage() {
-  return { delete: mock() } as Image & { delete: ReturnType<typeof mock> }
+  return asDouble<Image & { delete: ReturnType<typeof mock> }>({ delete: mock() })
 }
 
 function rendererOn(previous: Surface, image: Image) {

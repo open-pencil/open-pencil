@@ -230,8 +230,9 @@ export interface EditorEvents extends SceneGraphEvents {
   'render:requested': (versions: RenderVersions) => void
   'repaint:requested': (versions: RenderVersions) => void
   /**
-   * A canvas drew a frame of these versions with the whole visible scene on screen, nothing
-   * left to fill in. Overlay-only canvases do not report.
+   * A canvas drawing the editor's own state showed a frame of these versions with the whole
+   * visible scene on screen, nothing left to fill in. Overlay-only canvases and split panes
+   * showing another view do not report.
    */
   'render:presented': (versions: RenderVersions) => void
   'graph:replaced': (graph: SceneGraph) => void
