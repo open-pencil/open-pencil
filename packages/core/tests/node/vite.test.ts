@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { corePackagePath } from '#core-tests/helpers/paths'
-import { build, type Rolldown } from 'vite'
+import { build, defaultClientConditions, type Rolldown } from 'vite'
 
 import { openPencil, type OpenPencilPluginOptions } from '@open-pencil/core/node/vite'
 
@@ -28,7 +28,12 @@ async function buildPage(options?: OpenPencilPluginOptions, base = '/') {
     base,
     logLevel: 'silent',
     configFile: false,
-    resolve: { alias: [{ find: /^@open-pencil\/core\/(.*)$/, replacement: `${CORE_SOURCE}/$1` }] },
+    // Workspace packages build from source, as tests run without their `dist`: Core through the
+    // alias, the packages it imports through their `bun` export condition.
+    resolve: {
+      alias: [{ find: /^@open-pencil\/core\/(.*)$/, replacement: `${CORE_SOURCE}/$1` }],
+      conditions: ['bun', ...defaultClientConditions]
+    },
     build: { write: false, minify: false },
     plugins: [openPencil(options)]
   })
