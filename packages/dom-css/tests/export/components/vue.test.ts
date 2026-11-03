@@ -369,6 +369,30 @@ describe('generated Vue form controls', () => {
     expect(placeholder?.color).toBe('#9CA3B0')
   })
 
+  // As the React field spreads its props on the input and gives its root the caller's className.
+  test("a field's input takes the caller's attributes, and its root the caller's class", async () => {
+    for (const fixture of [textFieldSet(), textFieldSet({ invalid: true }), textareaComponent()]) {
+      const { component } = await generate(fixture)
+      const html = await render(component, {
+        name: 'email',
+        required: true,
+        placeholder: 'you@example.com',
+        'aria-invalid': 'true',
+        class: 'wide'
+      })
+      const root = /^<div[^>]*>/.exec(html)?.[0] ?? ''
+      const input = /<(?:input|textarea)[^>]*>/.exec(html)?.[0] ?? ''
+      expect(root).toContain('wide')
+      expect(root).not.toContain('name=')
+      expect(root).not.toContain('aria-invalid')
+      expect(input).toContain('name="email"')
+      expect(input).toContain('required')
+      expect(input).toContain('aria-invalid="true"')
+      expect(input).not.toContain('wide')
+      if (fixture.set.name === 'Email') expect(input).toContain('placeholder="you@example.com"')
+    }
+  })
+
   test('a textarea starts with its words', async () => {
     const { component } = await generate(textareaComponent())
     expect(await render(component)).toMatch(/<textarea[^>]*>Tell us more<\/textarea>/)
