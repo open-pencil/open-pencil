@@ -53,7 +53,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     adapterPackage: '@agentclientprotocol/codex-acp',
     setupURL: 'https://developers.openai.com/codex/cli',
     installCommand: 'npm i -g @agentclientprotocol/codex-acp',
-    signIn: { via: 'acp', method: 'chat-gpt' }
+    signIn: { via: 'acp', method: 'chat-gpt' },
+    resumesSessions: true
   },
   {
     id: 'gemini-cli',
