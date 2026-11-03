@@ -257,6 +257,11 @@ test('leaves installed faces to the page, which draws them by name', async () =>
   expect(manager.isStyleLoaded('Installed Sans', 'Regular')).toBe(true)
   // A page face under an installed family's name would stand in for all of its faces.
   expect(registered).toEqual(['Inter Regular'])
+
+  // A file that replaces the installed one, as a web font does a fallback, keeps that one off it.
+  const replacement = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  await manager.markLoaded('Installed Sans', 'Regular', replacement)
+  expect(registered).toEqual(['Inter Regular', 'Installed Sans Regular'])
 })
 
 test('a host read that outlives its loader never registers the replaced loader data', async () => {
