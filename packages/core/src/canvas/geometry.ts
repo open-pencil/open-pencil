@@ -7,6 +7,7 @@ import { isOpenVectorNetwork } from '#core/vector/connectivity'
 import { baseShapePath, makeBooleanOperationPath, strokeSourcePath } from './boolean'
 import { forEachVerb } from './paths/verbs'
 import type { SkiaRenderer } from './renderer'
+import { nodeHasRadius } from './shapes'
 import { getStrokeCapEntity, getStrokeJoinEntity, normalizeDashPattern } from './strokes'
 import { makeLineSegmentPath } from './strokes/line'
 import { dashPath } from './strokes/outlined-dashes'
@@ -91,10 +92,17 @@ function strokeBand(
     if (node.independentStrokeWeights) {
       const ring = sidesBand(r, node, scale)
       if (!ring || pattern.length === 0) return ring
-      ring.delete()
-      return dashedSides(r, node, scale, (line, width) =>
-        dashPath(r, line, pattern, { ...options(width), cap: r.ck.StrokeCap.Butt }, false)
+      const dashes = dashedSides(r, node, scale, (line, width) =>
+        dashPath(r, line, pattern, options(width), false)
       )
+      // Rounded corners: the straight dashes are kept within the ring the corners round off.
+      const band =
+        dashes && nodeHasRadius(node)
+          ? r.ck.Path.MakeFromOp(dashes, ring, r.ck.PathOp.Intersect)
+          : dashes
+      if (band !== dashes) dashes?.delete()
+      ring.delete()
+      return band
     }
     const width = options(stroke.weight * scale)
     return pattern.length > 0

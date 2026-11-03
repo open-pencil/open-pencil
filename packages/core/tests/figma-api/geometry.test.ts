@@ -190,6 +190,31 @@ describe('strokeGeometry', () => {
     expect(sameArea(renderer, top.strokeGeometry[0].data, FIGMA_TOP_SIDE)).toBe(true)
   })
 
+  test('keeps dashed sides of a rounded layer within its rounded stroke', async () => {
+    const { figma, renderer } = await setup()
+    const sides = {
+      strokeTopWeight: 4,
+      strokeRightWeight: 2,
+      strokeBottomWeight: 1,
+      strokeLeftWeight: 2
+    }
+    const solid = rectangle(figma, { strokes: [...BLUE], cornerRadius: 8, ...sides })
+    const dashed = rectangle(figma, {
+      strokes: [...BLUE],
+      cornerRadius: 8,
+      ...sides,
+      dashPattern: [4, 4]
+    })
+    const { ck } = renderer
+    const ring = ck.Path.MakeFromSVGString(solid.strokeGeometry[0].data)
+    const dashes = ck.Path.MakeFromSVGString(dashed.strokeGeometry[0].data)
+    if (!ring || !dashes) throw new Error('unreadable path data')
+    const outside = ck.Path.MakeFromOp(dashes, ring, ck.PathOp.Difference)
+    if (!outside) throw new Error('difference failed')
+    expect(outside.isEmpty()).toBe(true)
+    for (const path of [ring, dashes, outside]) path.delete()
+  })
+
   test('dashes every loop of a vector', async () => {
     const { figma, renderer } = await setup()
     const loops = figma.createVector()

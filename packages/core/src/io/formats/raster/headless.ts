@@ -6,22 +6,33 @@ import { SkiaRenderer } from '#core/canvas'
 
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
-let cachedCk: CanvasKit | null = null
+let cachedCk: Promise<CanvasKit> | null = null
 let cachedRenderer: Promise<SkiaRenderer> | null = null
 
-export async function initCanvasKit(): Promise<CanvasKit> {
-  if (cachedCk) return cachedCk
-  const CanvasKitInit = (await import('canvaskit-wasm/full')).default
-  const ckURL = import.meta.resolve('canvaskit-wasm/full')
-  cachedCk = await CanvasKitInit({
-    locateFile: (file: string) => new URL(file, ckURL).href
+/**
+ * The process's one CanvasKit, started once even when callers arrive together: objects made by
+ * one instance must never meet another instance's memory.
+ */
+export function initCanvasKit(): Promise<CanvasKit> {
+  cachedCk ??= loadCanvasKit().catch((error: unknown) => {
+    cachedCk = null
+    throw error
   })
   return cachedCk
+}
+
+async function loadCanvasKit(): Promise<CanvasKit> {
+  const CanvasKitInit = (await import('canvaskit-wasm/full')).default
+  const ckURL = import.meta.resolve('canvaskit-wasm/full')
+  return CanvasKitInit({ locateFile: (file: string) => new URL(file, ckURL).href })
 }
 
 /**
  * The one headless renderer a process keeps, fonts loaded: every renderer registers its own font
  * provider, which holds a copy of each font loaded after it, so a second one doubles that memory.
+ * It keeps paths by layer id, which another document's layers share, so a caller measuring a
+ * different document clears `nodePaths` and calls `invalidateAllPictures()` first, as
+ * `headlessRenderNodes` does.
  */
 export async function headlessRenderer(): Promise<SkiaRenderer> {
   return (await getRenderer()).renderer
