@@ -5,7 +5,7 @@ import type { Effect, SceneGraph, SceneNode, TextLength } from '@open-pencil/sce
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
-import { effectBindingTarget } from '@open-pencil/scene-graph/variables'
+import { effectBindingField, effectBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { tryParseFigmaEffects } from '#core/figma-api/effects'
 import {
@@ -190,14 +190,18 @@ function shadowEffects(raw: unknown, resolve: Resolve, depth = 0): ReadShadows |
   const color = fieldValue<Color>(raw.color, resolve, (value) =>
     isPlainObject(value) && typeof value.r === 'number' ? (value as Color) : decodeColor(value)
   )
-  const length = (key: string) => fieldValue(raw[key], resolve, pixels) ?? 0
-  if (!color) return null
+  // A missing length is 0; one that names a token which does not resolve makes the shadow invalid.
+  const length = (key: string) =>
+    raw[key] === undefined ? 0 : fieldValue(raw[key], resolve, pixels)
+  const [offsetX, offsetY, radius, spread] = ['offsetX', 'offsetY', 'blur', 'spread'].map(length)
+  if (!color || offsetX === null || offsetY === null || radius === null || spread === null)
+    return null
   const effect: Effect = {
     type: raw.inset === true ? 'INNER_SHADOW' : 'DROP_SHADOW',
     color,
-    offset: { x: length('offsetX'), y: length('offsetY') },
-    radius: length('blur'),
-    spread: length('spread'),
+    offset: { x: offsetX, y: offsetY },
+    radius,
+    spread,
     visible: true,
     blendMode: 'NORMAL'
   }
@@ -219,28 +223,32 @@ function shadowList(value: unknown, resolve: Resolve, depth = 0): ReadShadows | 
 /**
  * Shadows edited in another tool, in place of the visible shadows OpenPencil wrote. Effects
  * `$value` cannot hold, such as blurs and hidden shadows, keep their places; extra shadows go last.
- * Also gives the position each new shadow lands at.
+ * Also gives the position each new shadow lands at, and each kept effect's new position.
  */
 function replaceShadows(
   exact: readonly Effect[],
   shadows: readonly Effect[]
-): { effects: Effect[]; positions: number[] } {
+): { effects: Effect[]; positions: number[]; kept: Map<number, number> } {
   const queue = [...shadows]
   const effects: Effect[] = []
   const positions: number[] = []
-  for (const effect of exact) {
+  const kept = new Map<number, number>()
+  for (const [index, effect] of exact.entries()) {
     if (isShadow(effect) && effect.visible) {
       const next = queue.shift()
       if (!next) continue
       positions.push(effects.length)
       effects.push(next)
-    } else effects.push(effect)
+    } else {
+      kept.set(index, effects.length)
+      effects.push(effect)
+    }
   }
   for (const next of queue) {
     positions.push(effects.length)
     effects.push(next)
   }
-  return { effects, positions }
+  return { effects, positions, kept }
 }
 
 /** A shadow token as effect style fields and the fields its references bind. */
@@ -260,8 +268,15 @@ function effectStyle(
   if (!shadows) return null
   const placed = exact
     ? replaceShadows(exact, shadows.effects)
-    : { effects: shadows.effects, positions: shadows.effects.map((_, index) => index) }
+    : { effects: shadows.effects, positions: shadows.effects.map((_, index) => index), kept: null }
   const references: Record<string, string> = {}
+  // Effects `$value` cannot hold, such as a bound blur, keep the bindings OpenPencil recorded.
+  for (const [field, reference] of Object.entries(ownBindings)) {
+    const target = effectBindingTarget(field)
+    const index = target && placed.kept?.get(target.index)
+    if (target && index !== undefined && index !== null)
+      references[effectBindingField(index, target.property)] = reference
+  }
   shadows.references.forEach((paths, shadow) => {
     const index = placed.positions.at(shadow)
     if (index === undefined) return
