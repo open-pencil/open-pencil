@@ -443,6 +443,7 @@
   "pointCount": "Anzahl",
   "starRatio": "Verhältnis",
   "spread": "Ausbreitung",
+  "effectColor": "Farbe",
   "foregroundBlur": "Vordergrund-Weichzeichnung",
   "strokeType": "Linientyp",
   "strokeWeight": "Linienstärke",

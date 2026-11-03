@@ -443,6 +443,7 @@
   "pointCount": "Nombre",
   "starRatio": "Rapport",
   "spread": "Diffusion",
+  "effectColor": "Couleur",
   "foregroundBlur": "Flou de premier plan",
   "strokeType": "Type de contour",
   "strokeWeight": "Épaisseur du contour",

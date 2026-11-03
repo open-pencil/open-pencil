@@ -382,6 +382,7 @@ de:panels.gridAuto
 de:storage.cloudTitle
 de:statuses.name
 de:statuses.status
+es:panels.effectColor
 es:panels.gridColor
 es:panels.gridAuto
 es:storage.cloudTitle
