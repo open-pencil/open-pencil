@@ -1,4 +1,9 @@
-import { reportFileNameSchema, reportSchema, type ReportReceipt } from '#feedback/contract'
+import {
+  REPORT_BODY_MAX_BYTES,
+  reportFileNameSchema,
+  reportSchema,
+  type ReportReceipt
+} from '#feedback/contract'
 import type { FeedbackEnv, FeedbackServices } from '#feedback/env'
 import { rateLimited, validatedJSON } from '#feedback/http/request'
 import { Hono } from 'hono'
@@ -8,9 +13,6 @@ import * as v from 'valibot'
 import { reportFileKey } from './files'
 import { toPostHogReport } from './posthog'
 import { allowedUpload, signUploadToken } from './upload'
-
-/** A report's body: up to five exceptions of a hundred frames each, fifty steps, and a note. */
-export const REPORT_BODY_MAX_BYTES = 256 * 1024
 
 const uploadParamsSchema = v.object({
   reportId: v.pipe(v.string(), v.uuid()),

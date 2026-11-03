@@ -4,18 +4,23 @@ description: What OpenPencil sends over the network, why it sends anonymous usag
 ---
 
 <script setup>
-import { describeBuildFields, describePingFields, describeUsageEvents } from '@open-pencil/feedback/contract'
+import {
+  describeBuildFields,
+  describePingFields,
+  describeReportFields,
+  describeUsageEvents
+} from '@open-pencil/feedback/contract'
 
 const columns = [
   { key: 'name', label: 'Field', kind: 'code' },
   { key: 'values', label: 'Values', kind: 'description' }
 ]
 
-function rows(fields) {
+function rows(fields, freeForm = 'A version number') {
   return fields.map((field) => ({
     name: field.name,
     description: field.description,
-    values: field.values.length > 0 ? field.values.join(', ') : 'A version number'
+    values: field.values.length > 0 ? field.values.join(', ') : freeForm
   }))
 }
 
@@ -24,6 +29,7 @@ const buildFields = describeBuildFields()
   .map((field) => field.name)
   .join(', ')
 const events = describeUsageEvents()
+const reportRows = rows(describeReportFields(), 'Free-form')
 </script>
 
 # Privacy and Usage Stats
@@ -77,6 +83,10 @@ When OpenPencil hits an unexpected error, an official build adds **Report…** t
 - The build fields above (<code>{{ buildFields }}</code>), and your install ID if you share usage stats.
 - If you leave **Include recent activity** on: the last 50 events from **Settings → Diagnostics**, such as errors, timings, and file formats. They never include chat messages or tool output.
 - If you turn on **Attach this document**: the open design as a `.fig` file.
+
+Besides the build fields, a report has these fields:
+
+<SdkDataTable :columns="columns" :rows="reportRows" />
 
 Reports go to `feedback.openpencil.dev`, which passes them to PostHog's error tracking on its EU cloud, without your address, a person profile, or a location lookup, and keeps nothing of them itself. An attached design is stored in Cloudflare R2 in the EU, only the OpenPencil team can open it, and it is deleted after 90 days.
 

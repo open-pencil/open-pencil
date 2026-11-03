@@ -4,6 +4,7 @@ import { signAccessToken, trustAccessKey } from '#feedback-tests/access'
 import { createTestService, type TestService } from '#feedback-tests/harness'
 import { reportReceiptSchema, type Report } from '#feedback/contract'
 import { deleteExpiredReportFiles, reportFileKey } from '#feedback/reports/files'
+import { runRetention } from '#feedback/retention'
 import type { CryptoKey } from 'jose'
 import * as v from 'valibot'
 
@@ -180,7 +181,11 @@ describe('error reports', () => {
         ]
       }
     ],
-    ['a file under its own name', { ...ERROR_REPORT, files: [{ name: 'Roadmap.fig', size: 5 }] }]
+    ['a file under its own name', { ...ERROR_REPORT, files: [{ name: 'Roadmap.fig', size: 5 }] }],
+    [
+      'a file the app never sends',
+      { ...ERROR_REPORT, files: [{ name: 'customer-data.txt', size: 5 }] }
+    ]
   ])('refuse a report with %s', async (_scenario, report) => {
     expect((await submit(report)).status).toBe(400)
     expect(service.fetchCalls).toHaveLength(0)
@@ -261,7 +266,7 @@ describe('report files', () => {
     expect(await download.text()).toBe('bytes')
   })
 
-  test('refuse a file the report did not declare, at another size, or for another report', async () => {
+  test('refuse a file the service does not take, at another size, or for another report', async () => {
     const { reportId, token } = await submitted()
     const other = await submitted()
 
@@ -287,6 +292,24 @@ describe('report files', () => {
     await deleteExpiredReportFiles(service.env.REPORTS, new Date(Date.now() + 89 * day))
     expect(await service.env.REPORTS.head(key)).not.toBeNull()
     await deleteExpiredReportFiles(service.env.REPORTS, new Date(Date.now() + 91 * day))
+    expect(await service.env.REPORTS.head(key)).toBeNull()
+  })
+
+  test('are deleted by retention even when the sign-up cleanup fails', async () => {
+    const { reportId, token } = await submitted()
+    await upload(reportId, 'document.fig', 'bytes', token)
+    const key = reportFileKey(reportId, 'document.fig')
+    const failingDatabase = {
+      ...service.env.DB,
+      prepare: () => {
+        throw new Error('D1 is unavailable')
+      }
+    }
+    const env = { ...service.env, DB: failingDatabase }
+
+    await expect(
+      runRetention(env, new Date(Date.now() + 91 * 24 * 60 * 60 * 1000))
+    ).rejects.toThrow('D1 is unavailable')
     expect(await service.env.REPORTS.head(key)).toBeNull()
   })
 })

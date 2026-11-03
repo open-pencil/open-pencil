@@ -8,6 +8,11 @@ import { deleteUnconfirmedSignups } from '#feedback/waitlist/signup'
  * report files. Ping counts hold no personal data and stay.
  */
 export async function runRetention(env: FeedbackBindings, now: Date): Promise<void> {
-  await deleteUnconfirmedSignups(createFeedbackDatabase(env.DB), now)
-  await deleteExpiredReportFiles(env.REPORTS, now)
+  // Each cleanup runs whether or not the other fails; the first failure is still thrown.
+  const results = await Promise.allSettled([
+    deleteUnconfirmedSignups(createFeedbackDatabase(env.DB), now),
+    deleteExpiredReportFiles(env.REPORTS, now)
+  ])
+  const failed = results.find((result) => result.status === 'rejected')
+  if (failed) throw failed.reason
 }

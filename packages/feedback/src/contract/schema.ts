@@ -313,8 +313,9 @@ export type MetricsSnapshot = v.InferOutput<typeof metricsSnapshotSchema>
 /** How long the files attached to a report are kept before retention deletes them. */
 export const REPORT_FILE_RETENTION_DAYS = 90
 export const REPORT_FILE_MAX_BYTES = 50 * 1024 * 1024
-export const REPORT_FILES_LIMIT = 3
 export const REPORT_STEPS_LIMIT = 50
+/** The largest report body the service takes; the app leaves out the oldest steps to fit it. */
+export const REPORT_BODY_MAX_BYTES = 256 * 1024
 export const REPORT_FRAMES_LIMIT = 100
 export const REPORT_NOTE_MAX_LENGTH = 5000
 
@@ -370,8 +371,13 @@ const stepSchema = v.strictObject({
   )
 })
 
-/** A file the reporter chose to attach, under a fixed name such as `document.fig`, never its own. */
-export const reportFileNameSchema = v.pipe(v.string(), v.regex(/^[a-z0-9-]{1,32}\.[a-z0-9]{1,8}$/))
+/**
+ * The files a report may attach, each under this fixed name, never its own: the open document.
+ * A name joins the list when the app starts to send that file.
+ */
+export const REPORT_FILE_NAMES = ['document.fig'] as const
+export const reportFileNameSchema = v.picklist(REPORT_FILE_NAMES)
+export type ReportFileName = v.InferOutput<typeof reportFileNameSchema>
 
 const reportFileSchema = v.strictObject({
   name: reportFileNameSchema,
@@ -390,7 +396,7 @@ const reportEntries = {
   files: v.optional(
     v.pipe(
       v.array(reportFileSchema),
-      v.maxLength(REPORT_FILES_LIMIT),
+      v.maxLength(REPORT_FILE_NAMES.length),
       v.check(
         (files) => new Set(files.map((file) => file.name)).size === files.length,
         'Attached files need distinct names'
