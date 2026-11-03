@@ -360,9 +360,9 @@ describe('collaboration relay', () => {
           if (refuse) throw new Error('Database unavailable')
           await state.store.append(room, sequence, update)
         },
-        async compact(room, update, sequence) {
+        async compact(room, sequence, update) {
           if (refuse) throw new Error('Database unavailable')
-          await state.store.compact(room, update, sequence)
+          await state.store.compact(room, sequence, update)
         }
       },
       maximumMessageBytes: 1_048_576,

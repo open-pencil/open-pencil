@@ -248,7 +248,8 @@ export interface DocumentCollaborationUpdateTable {
   documentId: string
   roomEpoch: number
   sequence: number
-  update: Uint8Array
+  /** One Yjs update, as the relay merged the changes of one save. */
+  data: Uint8Array
   createdAt: TimestampColumn
 }
 

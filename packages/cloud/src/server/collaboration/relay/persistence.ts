@@ -28,7 +28,7 @@ export type CollaborationStateStore = {
    * Replaces the snapshot with `state`, which holds every update through `sequence`, and drops
    * those updates. Running it again with the same arguments changes nothing.
    */
-  compact(room: CollaborationRoomIdentity, state: Uint8Array, sequence: number): Promise<void>
+  compact(room: CollaborationRoomIdentity, sequence: number, state: Uint8Array): Promise<void>
 }
 
 export function createCollaborationStateStore(
@@ -45,7 +45,7 @@ export function createCollaborationStateStore(
       const through = snapshot?.throughSequence ?? 0
       const updates = await database
         .selectFrom('documentCollaborationUpdate')
-        .select(['sequence', 'update'])
+        .select(['sequence', 'data'])
         .where('documentId', '=', room.documentId)
         .where('roomEpoch', '=', room.roomEpoch)
         .where('sequence', '>', through)
@@ -53,7 +53,7 @@ export function createCollaborationStateStore(
         .execute()
       return {
         snapshot: snapshot ? new Uint8Array(snapshot.state) : null,
-        updates: updates.map((row) => new Uint8Array(row.update)),
+        updates: updates.map((row) => new Uint8Array(row.data)),
         sequence: updates.at(-1)?.sequence ?? through
       }
     },
@@ -61,11 +61,11 @@ export function createCollaborationStateStore(
     async append(room, sequence, update) {
       await database
         .insertInto('documentCollaborationUpdate')
-        .values({ documentId: room.documentId, roomEpoch: room.roomEpoch, sequence, update })
+        .values({ documentId: room.documentId, roomEpoch: room.roomEpoch, sequence, data: update })
         .execute()
     },
 
-    async compact(room, state, sequence) {
+    async compact(room, sequence, state) {
       await database.transaction().execute(async (transaction) => {
         await transaction
           .insertInto('documentCollaborationState')

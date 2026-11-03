@@ -17,7 +17,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     )
     .addColumn('roomEpoch', 'integer', (column) => column.notNull())
     .addColumn('sequence', 'integer', (column) => column.notNull())
-    .addColumn('update', 'bytea', (column) => column.notNull())
+    .addColumn('data', 'bytea', (column) => column.notNull())
     .addColumn('createdAt', 'timestamptz', (column) =>
       column.notNull().defaultTo(database.fn('now'))
     )

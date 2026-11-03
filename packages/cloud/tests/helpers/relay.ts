@@ -155,7 +155,7 @@ export function memoryStateStore() {
       if (entry.updates.has(sequence)) throw new Error(`Sequence ${sequence} is taken`)
       entry.updates.set(sequence, update)
     },
-    async compact(room, state, sequence) {
+    async compact(room, sequence, state) {
       const entry = saved(room)
       entry.snapshot = state
       entry.through = sequence

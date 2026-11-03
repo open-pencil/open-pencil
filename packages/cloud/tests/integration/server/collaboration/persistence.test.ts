@@ -39,7 +39,7 @@ describe('collaboration state store', () => {
       })
       await expect(store.append(room, 2, bytes(9))).rejects.toThrow()
 
-      await store.compact(room, bytes(7, 7), 2)
+      await store.compact(room, 2, bytes(7, 7))
       await store.append(room, 3, bytes(3))
       expect(await store.load(room)).toEqual({
         snapshot: bytes(7, 7),
@@ -48,8 +48,8 @@ describe('collaboration state store', () => {
       })
 
       // Compacting again with the same arguments, as after an unknown result, changes nothing.
-      await store.compact(room, bytes(8), 3)
-      await store.compact(room, bytes(8), 3)
+      await store.compact(room, 3, bytes(8))
+      await store.compact(room, 3, bytes(8))
       expect(await store.load(room)).toEqual({ snapshot: bytes(8), updates: [], sequence: 3 })
       const logged = await runtime.database
         .selectFrom('documentCollaborationUpdate')
@@ -67,7 +67,7 @@ describe('collaboration state store', () => {
       await store.append(room, 1, bytes(1))
       const restored = { ...room, roomEpoch: 1 }
       await store.append(restored, 1, bytes(2))
-      await store.compact(restored, bytes(5), 1)
+      await store.compact(restored, 1, bytes(5))
       expect((await store.load(room)).updates).toEqual([bytes(1)])
       expect(await store.load(restored)).toEqual({ snapshot: bytes(5), updates: [], sequence: 1 })
     } finally {
