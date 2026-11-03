@@ -11,7 +11,7 @@ const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
 function isTauriRuntime() {
-  return IS_TAURI || ('window' in globalThis && '__TAURI_INTERNALS__' in window)
+  return IS_TAURI
 }
 
 function isStorageAvailable() {

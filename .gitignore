@@ -102,3 +102,4 @@ dist-metrics/
 
 # SwiftPM output of desktop Swift packages built by hand
 desktop/swift/*/.build/
+*.apk
