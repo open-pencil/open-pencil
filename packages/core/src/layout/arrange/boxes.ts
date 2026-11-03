@@ -243,17 +243,18 @@ function layoutOptions(input: ArrangeInput): Record<string, string> {
   }
 }
 
-/** How far apart, in pixels, boxes sharing a centre are set before ELK spreads them. */
+/**
+ * SPOrE's importer moves a box whose centre another box already has with an unseeded
+ * `Math.random()`, and SPOrE ignores `elk.randomSeed`, so a pile would spread differently on every
+ * run (ElkGraphImporter.java, eclipse-elk/elk b715fb1, lines 166-172). Doing that move here,
+ * deterministically, means ELK never reaches it. Remove once elkjs seeds it. `NUDGE` is the first
+ * move's length in pixels.
+ */
 const NUDGE = 0.5
-/** The golden angle, which keeps nudged centres off any one line. */
+/** Each further move turns by the golden angle, so the moved centres do not fall on one line. */
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 
-/**
- * Sets apart the centres boxes in one container share, at every level, each repeat a little
- * further along a golden-angle spiral.
- * ELK's overlap removal separates boxes sharing a centre with `Math.random`, whatever its seed, so
- * a pile would spread differently each time.
- */
+/** Gives every box in each container, at every level, a centre of its own. */
 function separateCentres(container: ElkNode): void {
   const repeats = new Map<string, number>()
   for (const node of container.children ?? []) {
