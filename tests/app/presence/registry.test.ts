@@ -80,7 +80,10 @@ test('follows the page on screen', async () => {
   const { store, other } = setup()
   addAgent(store, 'chat').update({ status: 'editing', cursor: { x: 1, y: 1, pageId: other } })
   expect(store.state.presenceCursors).toHaveLength(0)
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   await store.switchPage(other)
   expect(store.state.presenceCursors).toHaveLength(1)
 })
@@ -93,7 +96,10 @@ function centered(store: ReturnType<typeof createEditorStore>) {
 
 test('following an agent takes the view to its page and keeps its cursor centered', async () => {
   const { store, other } = setup()
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   const agent = addAgent(store, 'chat')
   agent.update({ status: 'editing', cursor: { x: 300, y: 200, pageId: other } })
   const switched = new Promise<string>((resolve) => {
@@ -131,7 +137,10 @@ test('following a person matches their zoom, and stops when they leave', () => {
 
 test('switching to another page yourself stops following', async () => {
   const { store, pageId, other } = setup()
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   const ana = { clientId: 4, name: 'Ana', color: red, agents: [] }
   setPeers(store, [{ ...ana, cursor: { x: 40, y: 50, pageId, zoom: 1 } }])
   follow(store, { kind: 'person', clientId: 4 })
@@ -142,7 +151,10 @@ test('switching to another page yourself stops following', async () => {
 
 test('following survives the target moving on while its page switch is in flight', async () => {
   const { store, other } = setup()
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   const third = store.graph.addPage('Third').id
   const agent = addAgent(store, 'chat')
   agent.update({ status: 'editing', cursor: { x: 10, y: 10, pageId: other } })
@@ -161,7 +173,10 @@ test('following survives the target moving on while its page switch is in flight
 
 test('switching pages yourself stops following a resting agent too', async () => {
   const { store, other } = setup()
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   const agent = addAgent(store, 'chat')
   follow(store, { kind: 'agent', agentId: agent.id })
   await store.switchPage(other)
@@ -191,7 +206,10 @@ test('zooming yourself stops following', () => {
 
 test('cursor updates while heading to a page do not restart the switch', async () => {
   const { store, other } = setup()
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   const switchPage = spyOn(store, 'switchPage')
   const agent = addAgent(store, 'chat')
   agent.update({ status: 'editing', cursor: { x: 10, y: 10, pageId: other } })
@@ -226,7 +244,10 @@ test('a cursor on a page this document lacks is waited out, not switched to', ()
 
 test('stopping while following heads to another page stays where you are', async () => {
   const { store, pageId, other } = setup()
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   const agent = addAgent(store, 'chat')
   agent.update({ status: 'editing', cursor: { x: 10, y: 10, pageId: other } })
   follow(store, { kind: 'agent', agentId: agent.id })

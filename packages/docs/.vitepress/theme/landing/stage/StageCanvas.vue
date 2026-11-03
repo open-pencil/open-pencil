@@ -37,9 +37,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIs
     showRulers: false,
     shouldSuspendRender,
     onReady: store.markCanvasReady,
-    onViewportResize: (width, height) => store.setViewportSize(width, height),
-    onPresented: ({ sceneVersion }) =>
-      store.preparationController.acknowledgePresentation(sceneVersion)
+    onViewportResize: (width, height) => store.setViewportSize(width, height)
   })
 
 const { cursorOverride } = useCanvasInput(
