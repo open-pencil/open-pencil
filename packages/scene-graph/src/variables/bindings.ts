@@ -341,3 +341,31 @@ export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScop
   }
   return relaid
 }
+
+/** A layer list whose items carry their own bindings, keyed by position such as `fills/1/color`. */
+export type BoundLayerList = 'fills' | 'strokes' | 'effects'
+
+/**
+ * `boundVariables` once the `list` items are rebuilt from `sources`, where `sources[i]` is the
+ * position the new item `i` had before, or null for an added item. A binding moves with its item
+ * and goes with a removed one, as Figma keeps a binding on its paint or effect.
+ */
+export function listBindingsAfterEdit(
+  boundVariables: Readonly<Record<string, string>>,
+  list: BoundLayerList,
+  sources: readonly (number | null)[]
+): Record<string, string> {
+  const prefix = `${list}/`
+  const moved: Record<string, string> = {}
+  for (const [field, variableId] of Object.entries(boundVariables)) {
+    if (!field.startsWith(prefix)) {
+      moved[field] = variableId
+      continue
+    }
+    const [index, ...property] = field.slice(prefix.length).split('/')
+    const next = sources.indexOf(Number(index))
+    if (next !== -1 && property.length > 0)
+      moved[`${prefix}${next}/${property.join('/')}`] = variableId
+  }
+  return moved
+}
