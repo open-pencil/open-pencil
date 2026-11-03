@@ -69,6 +69,10 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { default: plugin } = await import('@open-pencil/oxlint-plugin'); if (plugin.meta.name !== 'open-pencil' || Object.keys(plugin.rules).length < 28 || !plugin.rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
   },
   {
+    name: 'Oxlint recommended configuration',
+    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['open-pencil/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
+  },
+  {
     name: 'Cloud contract',
     code: "const { CLOUD_AI_TOKEN_AUDIENCE, aiWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_AI_TOKEN_AUDIENCE !== 'openpencil-ai' || !safeParse(aiWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
   },
