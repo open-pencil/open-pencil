@@ -1,20 +1,21 @@
 import { TimeoutError } from 'es-toolkit/error'
 
+import type { Editor, RenderVersions } from '@open-pencil/core'
+
 import type { EditorPreparationEventEmitter } from '@/app/editor/preparation/events'
 import type {
   BeginEditorPreparation,
   EditorPreparationCancelReason,
   EditorPreparationFailure,
   EditorPreparationHandle,
-  EditorPreparationUpdate,
-  PresentedVersions
+  EditorPreparationUpdate
 } from '@/app/editor/preparation/types'
 import type { AppEditorState } from '@/app/editor/session/types'
 
 const PRESENTATION_TIMEOUT_MS = 10_000
 
 interface PresentationWaiter {
-  versions: PresentedVersions
+  versions: RenderVersions
   resolve: () => void
   reject: (error: Error) => void
   /** Runs only while a canvas shows the document, which is the only place it is presented. */
@@ -27,17 +28,19 @@ interface PresentationWaiter {
 
 export interface EditorPreparationControllerOptions {
   presentationTimeoutMs?: number
+  /** The editor whose canvases report frames shown, through `render:presented`. */
+  editor?: Pick<Editor, 'onEditorEvent'>
 }
 
 export interface EditorPreparationController {
   begin(options: BeginEditorPreparation): EditorPreparationHandle
-  /** A canvas finished drawing a frame of these versions, every visible part of it. */
-  acknowledgePresentation(versions: PresentedVersions): void
+  /** A frame of these versions is fully shown; `render:presented` reports it from canvases. */
+  acknowledgePresentation(versions: RenderVersions): void
   /**
    * Resolves once a frame at least as new as `versions` in both is fully drawn. The versions are
    * read when called, so an editor's live state can be passed.
    */
-  waitForPresentation(id: number, versions: PresentedVersions): Promise<void>
+  waitForPresentation(id: number, versions: RenderVersions): Promise<void>
   /**
    * A canvas started showing the document; returns its detach. A tab in the background has no
    * canvas, so its scene waits to be presented until the tab is shown, without timing out.
@@ -60,8 +63,8 @@ export function createEditorPreparationController(
   let nextId = 0
   let activeAbort: AbortController | null = null
   let activeCancel: ((reason: EditorPreparationCancelReason) => void) | null = null
-  const presented: PresentedVersions = { renderVersion: -1, sceneVersion: -1 }
-  const isPresented = (versions: PresentedVersions) =>
+  const presented: RenderVersions = { renderVersion: -1, sceneVersion: -1 }
+  const isPresented = (versions: RenderVersions) =>
     presented.renderVersion >= versions.renderVersion &&
     presented.sceneVersion >= versions.sceneVersion
   let canvases = 0
@@ -91,6 +94,19 @@ export function createEditorPreparationController(
   }
 
   const isActive = (id: number) => state.preparation?.id === id
+
+  function acknowledgePresentation(versions: RenderVersions) {
+    presented.renderVersion = Math.max(presented.renderVersion, versions.renderVersion)
+    presented.sceneVersion = Math.max(presented.sceneVersion, versions.sceneVersion)
+    for (const [id, waiter] of presentationWaiters) {
+      if (isPresented(waiter.versions)) settle(id, null)
+    }
+  }
+
+  const stopPresentations = options.editor?.onEditorEvent(
+    'render:presented',
+    acknowledgePresentation
+  )
 
   return {
     begin(options) {
@@ -166,13 +182,7 @@ export function createEditorPreparationController(
         cancel
       }
     },
-    acknowledgePresentation(versions) {
-      presented.renderVersion = Math.max(presented.renderVersion, versions.renderVersion)
-      presented.sceneVersion = Math.max(presented.sceneVersion, versions.sceneVersion)
-      for (const [id, waiter] of presentationWaiters) {
-        if (isPresented(waiter.versions)) settle(id, null)
-      }
-    },
+    acknowledgePresentation,
     waitForPresentation(id, versions) {
       if (!isActive(id) || isPresented(versions)) return Promise.resolve()
       settle(id, null)
@@ -213,6 +223,7 @@ export function createEditorPreparationController(
       for (const id of presentationWaiters.keys()) settle(id, error)
     },
     dispose() {
+      stopPresentations?.()
       activeCancel?.('tab-closed')
       activeAbort?.abort()
       activeAbort = null

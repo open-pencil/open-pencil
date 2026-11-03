@@ -1,5 +1,7 @@
 import { describe, expect, jest, test } from 'bun:test'
 
+import { createEditor } from '@open-pencil/core'
+
 import { createEditorPreparationController } from '@/app/editor/preparation/controller'
 import { createEditorPreparationEvents } from '@/app/editor/preparation/events'
 import type { EditorPreparationResult } from '@/app/editor/preparation/types'
@@ -56,6 +58,27 @@ describe('editor preparation controller', () => {
     expect(state.preparation?.id).toBe(second.id)
     second.complete()
     expect(state.preparation).toBeNull()
+  })
+
+  test('hears frames shown on the editor bus until disposed', async () => {
+    const state = createInitialAppEditorState('page')
+    const editor = createEditor()
+    const controller = createEditorPreparationController(state, undefined, { editor })
+    const first = controller.begin({ kind: 'page-switch' })
+    const waiting = controller.waitForPresentation(first.id, at(3))
+    editor.reportPresented(at(3))
+    await waiting
+    first.complete()
+
+    controller.dispose()
+    const second = controller.begin({ kind: 'page-switch' })
+    let settled = false
+    void controller.waitForPresentation(second.id, at(4)).finally(() => {
+      settled = true
+    })
+    editor.reportPresented(at(4))
+    await Promise.resolve()
+    expect(settled).toBe(false)
   })
 
   test('waits for a frame of both the scene and the view, such as a fit after the page', async () => {

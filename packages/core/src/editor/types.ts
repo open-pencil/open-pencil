@@ -217,9 +217,23 @@ export type FigmaClipboardImageResolver = (
   hashes: string[]
 ) => Promise<ReadonlyMap<string, Uint8Array>>
 
+/**
+ * What a frame draws: `sceneVersion` counts the document's content, `renderVersion` everything
+ * on screen, the viewport included.
+ */
+export interface RenderVersions {
+  renderVersion: number
+  sceneVersion: number
+}
+
 export interface EditorEvents extends SceneGraphEvents {
-  'render:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
-  'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
+  'render:requested': (versions: RenderVersions) => void
+  'repaint:requested': (versions: RenderVersions) => void
+  /**
+   * A canvas drew a frame of these versions with the whole visible scene on screen, nothing
+   * left to fill in. Overlay-only canvases do not report.
+   */
+  'render:presented': (versions: RenderVersions) => void
   'graph:replaced': (graph: SceneGraph) => void
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void

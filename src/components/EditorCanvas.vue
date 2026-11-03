@@ -125,7 +125,6 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   getRenderState,
   onViewportResize,
-  onPresented: (versions) => store.preparationController.acknowledgePresentation(versions),
   onPresentation: (colorSpace) => {
     store.state.canvasPresentation = colorSpace
   }

@@ -71,7 +71,8 @@ import type {
   EditorEventName,
   EditorEvents,
   EditorOptions,
-  EditorState
+  EditorState,
+  RenderVersions
 } from './types'
 import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
@@ -149,6 +150,11 @@ export function createEditor(options?: EditorOptions) {
 
   function requestRefresh() {
     state.sceneVersion++
+  }
+
+  /** A canvas showed a frame of `versions` with nothing left to fill in. */
+  function reportPresented(versions: RenderVersions) {
+    emitEditorEvent('render:presented', versions)
   }
 
   function requestRepaint() {
@@ -456,6 +462,7 @@ export function createEditor(options?: EditorOptions) {
     requestRefresh,
     textSelectionChanged,
     requestRepaint,
+    reportPresented,
     onEditorEvent,
     setCanvasKit,
     setNavigationPhase,

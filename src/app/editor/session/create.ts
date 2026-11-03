@@ -137,7 +137,9 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     })
     preparationLifecycle.delete(failure.id)
   })
-  const preparationController = createEditorPreparationController(state, preparationEvents)
+  const preparationController = createEditorPreparationController(state, preparationEvents, {
+    editor
+  })
   const modules = createEditorStoreModules(editor, state, io, viewportSize, preparationController)
 
   // ─── Public API ───────────────────────────────────────────────

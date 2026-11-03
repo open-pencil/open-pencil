@@ -147,9 +147,15 @@ export function createCanvasSurfaceManager({
     return true
   }
 
-  function acknowledgePresentation() {
+  /**
+   * Reports the frame as shown once the whole visible scene is on it. A scene frame with tiles
+   * still to draw is not: a loader waiting on it would give way to a canvas that then fills in.
+   */
+  function reportPresented(renderer: SkiaRenderer) {
+    const layer = options?.layer ?? 'full'
+    if (layer === 'overlays' || (layer === 'scene' && !renderer.tiledSceneCovered)) return
     const renderedState = options?.getRenderState?.() ?? editor.state
-    options?.onPresented?.({
+    editor.reportPresented({
       renderVersion: renderedState.renderVersion,
       sceneVersion: renderedState.sceneVersion
     })
@@ -181,9 +187,7 @@ export function createCanvasSurfaceManager({
     )
     renderLoop.markRendered()
     options?.onFrame?.({ panX: view.panX, panY: view.panY, zoom: view.zoom })
-    // A scene frame with tiles still to draw is not shown yet: a loader waiting on it would
-    // give way to a canvas that then fills in.
-    if (options?.layer !== 'scene' || state.renderer.tiledSceneCovered) acknowledgePresentation()
+    reportPresented(state.renderer)
     if (options?.layer === 'scene' && tileWorkPending(state.renderer)) {
       renderLoop.markDirty()
     }
