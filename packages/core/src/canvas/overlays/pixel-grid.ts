@@ -3,6 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { compiledEffect, fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
 
 /** Device pixels one document pixel must cover before Figma shows the pixel grid: 800% at 1×. */
 export const PIXEL_GRID_MIN_DEVICE_PIXELS = 8
@@ -52,13 +53,7 @@ function lineColor(page: Color): Color {
 /** Figma's pixel grid: a line at every document pixel once zoomed in far enough to tell them apart. */
 export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
   if (!pixelGridVisible(r.zoom, r.dpr)) return
-  if (!r.pixelGridEffect) {
-    let error = ''
-    r.pixelGridEffect = r.ck.RuntimeEffect.Make(PIXEL_GRID_SHADER, (message) => {
-      error = message
-    })
-    if (!r.pixelGridEffect) throw new Error(`Cannot compile the pixel grid: ${error}`)
-  }
+  const effect = compiledEffect(r.ck, r.shaders, 'pixelGridEffect', PIXEL_GRID_SHADER, 'pixel grid')
   const color = lineColor(r.pageColor)
   const step = r.zoom * r.dpr
   const uniforms = [
@@ -72,15 +67,6 @@ export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
     color.a,
     r.dpr
   ]
-  // The shader holds only these uniforms, so a hover repaint at the same view reuses it.
-  const key = uniforms.join(',')
-  if (r.pixelGridShader?.key !== key) {
-    r.pixelGridShader?.shader.delete()
-    r.pixelGridShader = { key, shader: r.pixelGridEffect.makeShader(uniforms) }
-  }
-  // Skia scales a shader by the paint's alpha, which earlier overlays may have left translucent.
-  r.auxFill.setAlphaf(1)
-  r.auxFill.setShader(r.pixelGridShader.shader)
-  canvas.drawRect(r.ck.LTRBRect(0, 0, r.viewportWidth, r.viewportHeight), r.auxFill)
-  r.auxFill.setShader(null)
+  const shader = keptShader(r.shaders, 'pixelGrid', effect, uniforms)
+  fillWithShader(canvas, r.auxFill, shader, r.ck.LTRBRect(0, 0, r.viewportWidth, r.viewportHeight))
 }

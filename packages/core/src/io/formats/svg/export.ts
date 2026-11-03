@@ -3,12 +3,13 @@ import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { normalizeDashPattern } from '#core/canvas/strokes'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
-import { computeContentBounds } from '#core/io/formats/raster'
+import { exportBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
   formatSolidColor,
   createFilterDef,
+  drawnFills,
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
@@ -39,7 +40,7 @@ import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
-import { fillOutlines, paintedOutline } from './regions'
+import { fillOutlines, outlineElements } from './regions'
 import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
@@ -71,14 +72,7 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  for (const outline of filled?.outlines ?? []) {
-    const attrs = {
-      d: outline.d,
-      'fill-rule': outline.windingRule === 'EVENODD' ? 'evenodd' : undefined,
-      ...common
-    }
-    elements.push(...paintedOutline(node, attrs, ctx, outline.fills ?? fallbackFills))
-  }
+  elements.push(...outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
   const network = node.vectorNetwork
   if (network && !filled) elements.push(...networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
@@ -348,23 +342,18 @@ function fillAndStrokeElements(
     )
   }
 
-  if (visibleFills.length > 1) {
-    const elements: SVGNode[] = []
-    for (const fill of visibleFills) {
-      const ref = resolveFill(fill, node, ctx)
-      if (ref) {
-        elements.push(
-          ...nodeShapeElements(
-            node,
-            ref,
-            solidFillOpacity(fill, ctx.colorSpace),
-            fill === visibleFills[visibleFills.length - 1] ? strokeAttrs : {},
-            ctx
-          )
-        )
-      }
-    }
-    return elements
+  // A shape painted once per fill SVG can draw; with none, it draws below as one without fills.
+  const drawn = visibleFills.length > 1 ? drawnFills(visibleFills, node, ctx) : []
+  if (drawn.length > 0) {
+    return drawn.flatMap(({ fill, paint }, index) =>
+      nodeShapeElements(
+        node,
+        paint,
+        solidFillOpacity(fill, ctx.colorSpace),
+        index === drawn.length - 1 ? strokeAttrs : {},
+        ctx
+      )
+    )
   }
 
   const hasFillOrStroke = fillAttr || visibleStrokeCount > 0
@@ -393,7 +382,34 @@ function exportedFill(
 
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (!node.visible) return null
+  // A layer without a name has nothing to be found by.
+  if (!ctx.layerIds || !node.name) return drawNode(node, ctx)
+  // Parents take their names before their children, so a repeated name counts in layer order.
+  const id = layerId(node.name, ctx.layerIds)
+  const drawn = drawNode(node, ctx)
+  if (!drawn) return null
+  // A layer drawn as its only child's element keeps that child's id and gets its own group.
+  if ('id' in drawn.attrs) return svg('g', { id }, drawn)
+  return { ...drawn, attrs: { id, ...drawn.attrs } }
+}
 
+/**
+ * A layer's name as an element id, numbered from `_2` when an earlier layer has it, as Figma does,
+ * and past any id already given out.
+ */
+function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): string {
+  let count = ids.names.get(name) ?? 0
+  let id: string
+  do {
+    count += 1
+    id = count === 1 ? name : `${name}_${count}`
+  } while (ids.taken.has(id))
+  ids.names.set(name, count)
+  ids.taken.add(id)
+  return id
+}
+
+function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
@@ -478,6 +494,10 @@ export interface SVGExportOptions {
    * file under. Text in an aliased face is written in that family at normal weight and style.
    */
   fontAlias?: SVGFontAlias
+  /** Each layer's name as its element's `id`, as Figma's "Include id attribute" writes it. */
+  layerIds?: boolean
+  /** Size the drawing to the layers' boxes rather than to everything they draw. */
+  useAbsoluteBounds?: boolean
 }
 
 export function renderNodesToSVG(
@@ -486,7 +506,7 @@ export function renderNodesToSVG(
   nodeIds: string[],
   options: SVGExportOptions = {}
 ): string | null {
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = exportBounds(graph, nodeIds, options.useAbsoluteBounds)
   if (!bounds) return null
 
   const { minX, minY, maxX, maxY } = bounds
@@ -499,7 +519,8 @@ export function renderNodesToSVG(
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
     textLayout: options.textLayout,
-    fontAlias: options.fontAlias
+    fontAlias: options.fontAlias,
+    layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
 
   const contentNodes: SVGNode[] = []

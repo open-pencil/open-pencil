@@ -1,0 +1,1 @@
+- Shadow colour, blur, spread and offsets, and blur radius, bind to variables, so effects follow a variable mode; `figma.variables.setBoundVariableForEffect`, `bind_variable`, effect styles, `.fig` files and the Figma clipboard carry the bindings (#1712).

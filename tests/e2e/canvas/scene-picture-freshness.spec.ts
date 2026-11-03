@@ -47,87 +47,78 @@ async function observeScenePixels(page: Page) {
 
 test.use({ viewport: { width: 1400, height: 1000 }, deviceScaleFactor: 2 })
 
-for (const renderer of ['retained', 'tiled'] as const) {
-  test(`${renderer}: zoom fallback does not resurrect a picture from before creation`, async ({
-    page
-  }) => {
-    await page.goto(`/?test&no-rulers&renderer=${renderer}&navigation-benchmark`)
-    const canvas = new CanvasHelper(page)
-    await canvas.waitForInit()
-    await page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('Editor unavailable')
-      const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
-        x: 300,
-        y: 250,
-        width: 220,
-        height: 140,
-        fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
-      })
-      store.select([node.id])
-      store.requestRender()
+test('zoom fallback does not resurrect a picture from before creation', async ({ page }) => {
+  await page.goto('/?test&no-rulers&navigation-benchmark')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Editor unavailable')
+    const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+      x: 300,
+      y: 250,
+      width: 220,
+      height: 140,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
-    await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
-    const box = expectDefined(await canvas.canvas.boundingBox(), 'canvas bounds')
-    const x = box.x + 300
-    const y = box.y + 250
+    store.select([node.id])
+    store.requestRender()
+  })
+  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  const box = expectDefined(await canvas.canvas.boundingBox(), 'canvas bounds')
+  const x = box.x + 300
+  const y = box.y + 250
+  await page.mouse.move(x + 110, y + 70)
+  await page.keyboard.down('Control')
+  try {
+    // Leave backing coverage to record a whole-scene fallback, then return.
+    await page.mouse.wheel(0, 240)
+    await canvas.waitForRender()
+    await page.mouse.wheel(0, -240)
+  } finally {
+    await page.keyboard.up('Control')
+  }
+  await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  // The zoom went over the tiles and came back to a covered level.
+  expect(
+    await page.evaluate(() =>
+      window.openPencil
+        ?.getStore?.()
+        .canvasRenderers.some((r) => r.tracksSceneSettlement && r.tiledSceneCovered)
+    )
+  ).toBe(true)
+  await page.keyboard.press('Backspace')
+  await page.keyboard.press('r')
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x + 220, y + 140)
+  const probe = await observeScenePixels(page)
+  try {
+    await page.mouse.up()
     await page.mouse.move(x + 110, y + 70)
     await page.keyboard.down('Control')
-    try {
-      // Leave backing coverage to record a whole-scene fallback, then return.
-      await page.mouse.wheel(0, 240)
+    for (const delta of [60, 60, 60, -180, 180, -180]) {
+      await page.mouse.wheel(0, delta)
       await canvas.waitForRender()
-      await page.mouse.wheel(0, -240)
-    } finally {
-      await page.keyboard.up('Control')
     }
+    await page.keyboard.up('Control')
     await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
-    // The retained renderer zooms over a whole-scene picture; the tiled one over its tiles.
-    expect(
-      await page.evaluate(
-        (tiled) =>
-          window.openPencil
-            ?.getStore?.()
-            .canvasRenderers.some(
-              (r) =>
-                r.tracksSceneSettlement && (tiled ? r.tiledSceneCovered : r.scenePicture !== null)
-            ),
-        renderer === 'tiled'
-      )
-    ).toBe(true)
-    await page.keyboard.press('Backspace')
-    await page.keyboard.press('r')
-    await page.mouse.move(x, y)
-    await page.mouse.down()
-    await page.mouse.move(x + 220, y + 140)
-    const probe = await observeScenePixels(page)
-    try {
-      await page.mouse.up()
-      await page.mouse.move(x + 110, y + 70)
-      await page.keyboard.down('Control')
-      for (const delta of [60, 60, 60, -180, 180, -180]) {
-        await page.mouse.wheel(0, delta)
-        await canvas.waitForRender()
-      }
-      await page.keyboard.up('Control')
-      await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
-      const samples = await probe.evaluate((p) => p.samples())
-      expect(samples.length).toBeGreaterThan(4)
-      expect(samples.some((sample) => sample.zoom < 0.3)).toBe(true)
-      for (const sample of samples) {
-        expect(sample.pixel, JSON.stringify(sample)).toEqual([217, 217, 217, 255])
-      }
-      await expect(page).toHaveScreenshot('fresh-scene-picture.png', {
-        clip: { x: x - 20, y: y - 20, width: 260, height: 200 },
-        maxDiffPixels: 0,
-        threshold: 0
-      })
-      canvas.assertNoErrors()
-    } finally {
-      await page.keyboard.up('Control')
-      await page.mouse.up()
-      await probe.evaluate((p) => p.dispose())
-      await probe.dispose()
+    const samples = await probe.evaluate((p) => p.samples())
+    expect(samples.length).toBeGreaterThan(4)
+    expect(samples.some((sample) => sample.zoom < 0.3)).toBe(true)
+    for (const sample of samples) {
+      expect(sample.pixel, JSON.stringify(sample)).toEqual([217, 217, 217, 255])
     }
-  })
-}
+    await expect(page).toHaveScreenshot('fresh-scene-picture.png', {
+      clip: { x: x - 20, y: y - 20, width: 260, height: 200 },
+      maxDiffPixels: 0,
+      threshold: 0
+    })
+    canvas.assertNoErrors()
+  } finally {
+    await page.keyboard.up('Control')
+    await page.mouse.up()
+    await probe.evaluate((p) => p.dispose())
+    await probe.dispose()
+  }
+})

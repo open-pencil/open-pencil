@@ -40,6 +40,6 @@ const { dailyPing, usageStats, unofficialBuild, disabledByEnvironment } = useSha
         <AppSwitch v-model="usageStats" :label="diagnostics.sharingUsageStats" />
       </SettingsRow>
     </SettingsGroup>
-    <p class="text-[11px] text-muted">{{ diagnostics.sharingLocalData }}</p>
+    <p class="text-2xs text-muted">{{ diagnostics.sharingLocalData }}</p>
   </SettingsSection>
 </template>

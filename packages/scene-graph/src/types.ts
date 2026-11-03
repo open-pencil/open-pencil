@@ -443,9 +443,37 @@ export interface PluginDataEntry {
   value: string
 }
 
+/** A fixed width or height in pixels an export is scaled to, instead of a multiplier. */
+export interface ExportSize {
+  type: 'WIDTH' | 'HEIGHT'
+  value: number
+}
+
+/** The colour profile an export is written in; the document's own unless set. */
+export type ExportColorProfile = 'DOCUMENT' | 'SRGB' | 'DISPLAY_P3_V4'
+
+/**
+ * One export a layer keeps. The options past `scale` and `format` are Figma's and read as Figma's
+ * defaults when left out.
+ */
 export interface ExportSetting {
   scale: number
   format: ExportFormatId
+  /** Appended to the file name. */
+  suffix?: string
+  /** A size that replaces `scale`. */
+  size?: ExportSize
+  /** Only the layer, without what overlaps it (default true). */
+  contentsOnly?: boolean
+  /** The layer's box rather than everything it draws, for text (default false). */
+  useAbsoluteBounds?: boolean
+  colorProfile?: ExportColorProfile
+  /** SVG: text as outlines rather than `<text>` (default true). */
+  svgOutlineText?: boolean
+  /** SVG: every layer's name as its element's `id` (default false). */
+  svgIdAttribute?: boolean
+  /** SVG: strokes as strokes where possible rather than masked outlines (default true). */
+  svgSimplifyStroke?: boolean
 }
 
 export interface PluginRelaunchDataEntry {

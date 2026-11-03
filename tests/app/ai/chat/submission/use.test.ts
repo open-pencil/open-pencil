@@ -94,6 +94,24 @@ describe('useChatSubmission', () => {
       revoke.mockRestore()
     }
   })
+
+  test('shows a message as sending until the chat it waits for takes it in', async () => {
+    const connected = Promise.withResolvers<Chat<UIMessage> | null>()
+    const { chat } = submission(() => connected.promise)
+    const submitted = chat.submit(message)
+    expect(chat.sending.value).toEqual(message)
+    connected.resolve(fakeChat())
+    expect(await submitted).toBe(true)
+    expect(chat.sending.value).toBeNull()
+  })
+
+  test('stops showing a message that never reached the chat', async () => {
+    const { chat } = submission(async () => null)
+    const submitted = chat.submit(message)
+    expect(chat.sending.value).toEqual(message)
+    expect(await submitted).toBe(false)
+    expect(chat.sending.value).toBeNull()
+  })
 })
 
 function fakeChat(sendMessage: () => Promise<void> = async () => undefined): Chat<UIMessage> {

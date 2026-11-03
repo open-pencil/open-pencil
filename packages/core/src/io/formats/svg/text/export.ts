@@ -3,7 +3,6 @@ import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { drawnFontVariations } from '#core/canvas/text/font-families'
 import {
   formatColor,
   type SVGExportContext,
@@ -20,6 +19,7 @@ import {
   type SVGFallbackFace
 } from '#core/io/formats/svg/text/lines'
 import { shownText } from '#core/text/case'
+import { drawnFontVariations } from '#core/text/font/families'
 import { textFontFace } from '#core/text/requirements/collect'
 
 function styleOverrideToTspanAttrs(

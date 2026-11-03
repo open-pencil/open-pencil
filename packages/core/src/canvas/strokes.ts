@@ -373,7 +373,7 @@ export function drawStyledRRectStroke(
 ): void {
   const dash = normalizeDashPattern(stroke.dashPattern)
   configureStrokePaint(r, node, stroke, color)
-  withStrokeDash(r, dash, dashPhase, () => r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke))
+  withStrokeDash(r, dash, dashPhase, () => drawRRectStrokeWithAlign(r, canvas, rrect, node, stroke))
 }
 
 /** Strokes a layer's outline, or a vector's own paths, open ones included. */

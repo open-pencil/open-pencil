@@ -1,0 +1,1 @@
+- Text is always laid out in its own fonts: text whose font, script fallback, or emoji font is still loading no longer takes the size of another face and keeps it, which left titles, sticky notes, and imported text narrower or wider than they drew.

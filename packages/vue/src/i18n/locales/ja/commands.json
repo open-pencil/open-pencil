@@ -33,6 +33,7 @@
   "previousPage": "前のページ",
   "groupSelection": "グループ化",
   "frameSelection": "選択範囲をフレーム化",
+  "wrapInSection": "新しいセクションで囲む",
   "showHide": "表示/非表示",
   "lockUnlock": "ロック/ロック解除",
   "unionSelection": "選択範囲を結合 (合体)",

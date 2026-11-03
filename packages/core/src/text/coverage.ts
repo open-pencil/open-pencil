@@ -3,36 +3,35 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {
   ARABIC_CHARACTER,
+  CJK_CHARACTER,
   cjkFallbackScriptForLanguage,
   fontFallbackScriptForCharacter,
   HAN_CHARACTER,
   HANGUL_CHARACTER,
   KANA_CHARACTER,
-  TRADITIONAL_HAN_CHARACTER,
+  isTraditionalOnlyHan,
   type FontFallbackScript
 } from '#core/text/fallbacks'
 import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
 
-const CJK_CHAR_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
-
-function scriptCharRegex(script: FontFallbackScript): RegExp {
+function scriptCharacterTest(script: FontFallbackScript): (character: string) => boolean {
   switch (script) {
     case 'arabic':
-      return ARABIC_CHARACTER
+      return (character) => ARABIC_CHARACTER.test(character)
     case 'cjk-jp':
-      return KANA_CHARACTER
+      return (character) => KANA_CHARACTER.test(character)
     case 'cjk-kr':
-      return HANGUL_CHARACTER
+      return (character) => HANGUL_CHARACTER.test(character)
     case 'cjk-tc':
-      return TRADITIONAL_HAN_CHARACTER
+      return isTraditionalOnlyHan
     default:
-      return HAN_CHARACTER
+      return (character) => HAN_CHARACTER.test(character)
   }
 }
 
 export function textHasFallbackScript(text: string): boolean {
-  return ARABIC_CHARACTER.test(text) || CJK_CHAR_RE.test(text)
+  return ARABIC_CHARACTER.test(text) || CJK_CHARACTER.test(text)
 }
 
 function styleForCharacter(
@@ -58,11 +57,11 @@ function styleForCharacter(
  */
 export function textNeedsFallbackScript(node: SceneNode, script: FontFallbackScript): boolean {
   if (node.type !== 'TEXT' || !node.text) return false
-  const regex = scriptCharRegex(script)
+  const inScript = scriptCharacterTest(script)
 
   let index = 0
   for (const char of node.text) {
-    if (regex.test(char)) {
+    if (inScript(char)) {
       const { family, style } = styleForCharacter(node, index)
       if (fontGlyphCoverageSync(family, style, char) === 'missing') return true
     }
@@ -93,7 +92,7 @@ export function textNeededFallbackScripts(node: SceneNode): FontFallbackScript[]
   let missingTraditionalIdeograph = false
   let index = 0
   for (const char of node.text) {
-    if (CJK_CHAR_RE.test(char)) {
+    if (CJK_CHARACTER.test(char)) {
       const { family, style, language } = styleForCharacter(node, index)
       if (fontGlyphCoverageSync(family, style, char) === 'missing') {
         if (HAN_CHARACTER.test(char)) {
@@ -101,7 +100,7 @@ export function textNeededFallbackScripts(node: SceneNode): FontFallbackScript[]
           if (languageScript) scripts.add(languageScript)
           else {
             missingIdeograph = true
-            if (TRADITIONAL_HAN_CHARACTER.test(char)) missingTraditionalIdeograph = true
+            if (isTraditionalOnlyHan(char)) missingTraditionalIdeograph = true
           }
         } else {
           const script = fontFallbackScriptForCharacter(char, language)

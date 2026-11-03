@@ -17,9 +17,9 @@ const MAX_MEASURED_WIDTHS = 16
 const MAX_SHARED_SHAPINGS = 8192
 const MAX_SHARED_SHAPING_UNITS = 1_048_576
 
-import type { TextDecorationRect } from '#core/canvas/text/decorations'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { PARAGRAPH_INPUT_KEYS, shapingInputs } from '#core/canvas/text/paragraph/inputs'
+import type { TextDecorationRect } from '#core/text/decorations'
 
 type PreparationInput = SceneNode[(typeof PARAGRAPH_INPUT_KEYS)[number]]
 

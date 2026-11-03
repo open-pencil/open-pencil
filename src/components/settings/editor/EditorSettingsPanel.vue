@@ -6,10 +6,9 @@ import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import ToolbarSettingsPanel from '@/components/settings/toolbar/ToolbarSettingsPanel.vue'
 
 import NavigationSettingsSection from './NavigationSettingsSection.vue'
-import RenderingSettingsSection from './RenderingSettingsSection.vue'
 import SnappingSettingsSection from './SnappingSettingsSection.vue'
 
-/** How the canvas and its tools behave: snapping, navigation, the toolbar, and rendering. */
+/** How the canvas and its tools behave: snapping, navigation, and the toolbar. */
 const toolbar = useTemplateRef<HTMLElement>('toolbar')
 
 // Customize toolbar opens this page on the toolbar.
@@ -33,7 +32,6 @@ watch(
       <div ref="toolbar" class="scroll-mt-4">
         <ToolbarSettingsPanel />
       </div>
-      <RenderingSettingsSection />
     </div>
   </SettingsPage>
 </template>

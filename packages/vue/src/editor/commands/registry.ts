@@ -31,6 +31,7 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: '$mod+Alt+KeyG',
     contextTestId: 'context-frame-selection'
   },
+  'selection.wrapInSection': {},
   'selection.ungroup': { shortcut: 'MOD+SHIFT+G', keybinding: '$mod+Shift+KeyG' },
   'selection.createComponent': {
     shortcut: 'MOD+ALT+K',

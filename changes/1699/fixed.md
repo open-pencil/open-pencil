@@ -1,0 +1,6 @@
+- Component sets from files that save no variant values, such as the shadcn/ui community kits, list their values in Figma's order and take their defaults from the default variant, so behaviours bind to them and scripts read them as Figma does (#1699).
+- Component sets made in OpenPencil open in Figma as component sets rather than frames of loose components, and sets whose variants were renamed or given new properties are saved without Figma reporting errors (#1699).
+- A variant property's default is the value of the set's top-left variant, as in Figma, whatever default the file records (#1699).
+- `appendChild` in scripts moves a layer that is already a child to the end, as Figma does (#1699).
+- Duplicating or cloning an instance from a `.fig` file that holds two instances of the same component, such as a button with left and right icons, no longer makes the document fail to save (#1699).
+- Duplicating a frame that holds a component and its instances gives instances of the duplicated component, as in Figma (#1699).

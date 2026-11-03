@@ -45,7 +45,7 @@ const chosen = ref('')
 </script>
 
 <template>
-  <div class="flex w-[240px] flex-col gap-2 rounded-lg border border-border bg-panel p-3">
+  <div class="flex w-60 flex-col gap-2 rounded-lg border border-border bg-panel p-3">
     <div class="flex items-center justify-between text-xs text-surface">
       Components
       <AppPicker
@@ -102,10 +102,10 @@ const chosen = ref('')
           ><component :is="shapeIcon(item.value)" class="size-4"
         /></template>
         <template #footer="{ highlighted }">
-          <p class="h-5 truncate px-1 text-[11px] text-surface">{{ highlighted?.label }}</p>
+          <p class="h-5 truncate px-1 text-2xs text-surface">{{ highlighted?.label }}</p>
         </template>
       </AppPicker>
     </div>
-    <p class="text-[11px] text-muted">Chosen: {{ chosen || '—' }}</p>
+    <p class="text-2xs text-muted">Chosen: {{ chosen || '—' }}</p>
   </div>
 </template>

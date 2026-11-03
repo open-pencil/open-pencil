@@ -20,6 +20,6 @@ provideEditor(editor)
 
 <template>
   <CanvasRoot v-slot="{ ready }" :show-rulers="false">
-    <CanvasSurface class="block h-[400px] w-[600px]" :data-ready="ready || undefined" />
+    <CanvasSurface class="block h-100 w-150" :data-ready="ready || undefined" />
   </CanvasRoot>
 </template>

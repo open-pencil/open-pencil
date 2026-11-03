@@ -1,5 +1,4 @@
-import { isEqual } from 'es-toolkit'
-import { camelCase } from 'es-toolkit/string'
+import { camelCase, compact, groupBy, isEqual, mapValues, sortBy } from 'es-toolkit'
 
 import { jsx } from '@open-pencil/emit'
 import type {
@@ -10,8 +9,8 @@ import type {
 } from '@open-pencil/scene-graph'
 import { modesDefaultFirst } from '@open-pencil/scene-graph/variables'
 
-import { layersUnder } from '../connectors'
 import { DESIGN_JSX_ELEMENTS } from '../elements'
+import { layersUnder } from '../figjam/connectors'
 import { DESIGN_JSX_HELPERS } from '../helpers'
 import { DEFAULT_MODE_NAME, designMode, designVar, type DesignVariable } from '../variables'
 import { collectionNamed, resolveVariableId, variableModes } from '../variables/graph'
@@ -24,6 +23,8 @@ export interface VariableExport {
   mode(collectionId: string, modeId: string): JSXValue
   /** The `defineVars` and `defineMode` statements the JSX refers to, if it declares any. */
   declarations(): string
+  /** The names those statements declare, which other declarations must not take. */
+  names: ReadonlySet<string>
 }
 
 /**
@@ -48,6 +49,7 @@ export function variableReferences(graph: SceneGraph): VariableExport {
     }
   }
   return {
+    names: new Set(),
     variable(variableId) {
       const variable = graph.variables.get(variableId)
       if (!variable) return variableId
@@ -210,20 +212,15 @@ function definableVariables(graph: SceneGraph, rootIds: readonly string[]): Set<
 
 /** The variables by collection, each in its collection's order, as the variables panel lists them. */
 function byCollectionOf(graph: SceneGraph, included: Set<string>): Map<string, Variable[]> {
-  const byCollection = new Map<string, Variable[]>()
-  for (const id of included) {
-    const variable = graph.variables.get(id)
-    if (variable)
-      byCollection.set(variable.collectionId, [
-        ...(byCollection.get(variable.collectionId) ?? []),
-        variable
-      ])
-  }
-  for (const [collectionId, variables] of byCollection) {
-    const listed = graph.variableCollections.get(collectionId)?.variableIds ?? []
-    variables.sort((a, b) => listed.indexOf(a.id) - listed.indexOf(b.id))
-  }
-  return byCollection
+  const variables = compact([...included].map((id) => graph.variables.get(id)))
+  const grouped = mapValues(
+    groupBy(variables, (variable) => variable.collectionId),
+    (members, collectionId) => {
+      const listed = graph.variableCollections.get(collectionId)?.variableIds ?? []
+      return sortBy(members, [(variable) => listed.indexOf(variable.id)])
+    }
+  )
+  return new Map(Object.entries(grouped))
 }
 
 /** The collections in the order they are declared: after the ones their first mode aliases. */
@@ -346,6 +343,7 @@ function definitionExport(graph: SceneGraph, rootIds: readonly string[]): Variab
     )
 
   return {
+    names: new Set([...defined.values()].flatMap((entry) => [entry.name, ...entry.modes.values()])),
     variable,
     mode(collectionId, modeId) {
       const name = defined.get(collectionId)?.modes.get(modeId)

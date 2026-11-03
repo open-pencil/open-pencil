@@ -167,6 +167,8 @@ function bindToolShortcuts(bindings: KeyBindingMap, options: KeyboardShortcutRun
       if (!tool) return
       event.preventDefault()
       options.spaceTool.resetToolBeforeSpace()
+      // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
+      if (tool === 'SHAPE_WITH_TEXT') options.store.setShapeWithTextKind('SQUARE')
       options.store.setTool(tool)
     }
   }

@@ -361,6 +361,7 @@ export function createDocumentVersionService(
           id: copyId,
           workspaceId: document.workspaceId,
           name: input.name,
+          kind: document.kind,
           createdBy: userId
         })
         await transaction

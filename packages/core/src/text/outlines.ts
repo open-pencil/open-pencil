@@ -3,7 +3,7 @@ import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
-import { drawnFontVariations } from '#core/canvas/text/font-families'
+import { drawnFontVariations } from '#core/text/font/families'
 import {
   fontHasGlyphSync,
   getGlyphOutlineMetricsSync,

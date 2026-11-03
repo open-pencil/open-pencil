@@ -6,10 +6,10 @@ import { detectTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
 import { DEFAULT_FONT_FAMILY, SECTION_TITLE_FONT_FAMILY } from '#core/constants'
 import { textHasFallbackScript } from '#core/text/coverage'
 import { ELLIPSIS } from '#core/text/ellipsis'
+import { resolveParagraphFontFamilies } from '#core/text/font/families'
 import { missingGlyphOccurrences, type MissingGlyphOccurrence } from '#core/text/resolver'
 
 export type LabelParagraphMetrics = Readonly<Size>

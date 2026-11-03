@@ -69,56 +69,6 @@ test('general snapping preferences persist and apply to editor sessions', async 
   await pixelGrid.click()
 })
 
-test('progressive tiled rendering preference persists and URL overrides take precedence', async ({
-  page
-}) => {
-  await page.goto('/?test')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-
-  await page.getByTestId('app-settings-trigger').click()
-  await page.getByTestId('settings-section-editor').click()
-  const tiled = page.getByRole('switch', { name: 'Progressive rendering' })
-  // Progressive rendering is the default; switching it off selects the retained renderer.
-  await expect(tiled).toBeChecked()
-  await tiled.click()
-  await expect(page.getByText('Reload OpenPencil to apply this change.')).toBeVisible()
-
-  await page.reload()
-  await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
-  await page.getByTestId('settings-section-editor').click()
-  await expect(tiled).not.toBeChecked()
-  await expect(
-    page.evaluate(() =>
-      window.openPencil?.getStore?.().canvasRenderers.map((renderer) => ({
-        scene: renderer.tracksSceneSettlement,
-        tiled: renderer.tiledSceneEnabled
-      }))
-    )
-  ).resolves.toEqual(expect.arrayContaining([{ scene: true, tiled: false }]))
-
-  await page.goto('/?test&renderer=tiled')
-  await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
-  await page.getByTestId('settings-section-editor').click()
-  await expect(tiled).not.toBeChecked()
-  await expect(
-    page.getByText(/current session renderer is controlled by a URL override/i)
-  ).toBeVisible()
-  await expect(
-    page.evaluate(() =>
-      window.openPencil
-        ?.getStore?.()
-        .canvasRenderers.some(
-          (renderer) => renderer.tracksSceneSettlement && renderer.tiledSceneEnabled
-        )
-    )
-  ).resolves.toBe(true)
-
-  await tiled.click()
-})
-
 test('Preferences menu snapping controls use the same preferences', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)

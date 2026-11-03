@@ -25,8 +25,9 @@ import type {
 } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
+import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
-import { openVariablesDialog } from '@/app/editor/tokens/dialog'
+import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -36,6 +37,7 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
+import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
@@ -110,6 +112,8 @@ export function useAppMenu() {
     open: 'open',
     'open-tour': 'openTour',
     diagnostics: 'diagnostics',
+    'report-problem': 'reportProblem',
+    'support-openpencil': 'supportOpenPencil',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -193,7 +197,8 @@ export function useAppMenu() {
     'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
-    variables: () => openVariablesDialog(store),
+    'report-problem': () => openReportDialog(),
+    'support-openpencil': () => donate('menu'),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
@@ -346,7 +351,7 @@ export function useAppMenu() {
       disabled: disabled(entry),
       checked: checked(entry),
       onCheckedChange: onCheckedChange(entry),
-      sub: entry.sub?.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      sub: entry.sub ? visibleMenuEntries(entry.sub.map(buildEntry)) : undefined
     }
   }
 
@@ -360,7 +365,7 @@ export function useAppMenu() {
     return {
       label: groupLabel(group),
       paletteIcon: group.paletteIcon ? APP_MENU_ICONS[group.paletteIcon] : undefined,
-      items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      items: visibleMenuEntries(group.items.map(buildEntry))
     }
   }
 

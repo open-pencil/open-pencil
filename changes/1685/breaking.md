@@ -1,0 +1,1 @@
+- `@open-pencil/core/vector` no longer exports `evalCubic`, and `@open-pencil/scene-graph/geometry` no longer exports `geometryCommandCoordCount`; use `cubicPoint` and `readGeometryBlob` from `@open-pencil/scene-graph/geometry` (#1685).

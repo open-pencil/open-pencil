@@ -8,6 +8,8 @@ export { ReadOnlyDocumentError } from './read-only'
 export { DEFAULT_SNAPPING_PREFERENCES } from './preferences'
 export type { SnappingPreferences } from './preferences'
 export { createDocumentGraph } from './document-settings'
+export { gridNudge } from './nudge'
+export { figJamColoredLayers, figJamToolbarKind, type FigJamToolbarKind } from './figjam/toolbar'
 export { createDefaultEditorSharedState } from './state/shared'
 export { editedGradient, editedGradientLayout } from './gradient-edit'
 export type { SelectionSpacing } from './alignment'
@@ -25,7 +27,7 @@ export {
   pickEditorViewState
 } from './state/view'
 export { createDefaultEditorState, createEditor } from './create'
-export { executeAtomicTool } from './history/atomic-tool'
+export { executeAtomicTool, type AtomicToolOptions } from './history/atomic-tool'
 export { isEmptyDocumentChange, type DocumentChange } from './history/document-change'
 export type { RecordEditOptions } from './history/edit'
 export type { PageSnapshot } from './history/snapshot/page'
@@ -56,6 +58,14 @@ export { opacityFromBuffer } from './nodes'
 export { layerTypeOptions, type LayerType } from './structure/layer-type'
 export type { NodePreview } from './node-preview'
 export { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
+export {
+  applySampledColor,
+  eyedropperChanges,
+  sampleSceneColor,
+  sampleScenePixels,
+  scenePixelColor
+} from './eyedropper'
+export type { EyedropperTarget, ScenePixels } from './eyedropper'
 export type { RenameSelectionOptions, RenameSelectionPreview } from './structure/rename'
 export type { EditorToolDef } from './tool-registry'
 export type {

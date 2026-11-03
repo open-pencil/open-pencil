@@ -55,7 +55,6 @@ export function createCanvasSurfaceManager({
     glCanvas: null,
     presentation: null
   }
-  let sceneBackingRenderTimer: ReturnType<typeof setTimeout> | null = null
 
   // The scene of an editing canvas shows an empty sticky note's placeholder, and every layer an
   // empty connector label's while it is typed into, as the overlays draw the text being edited,
@@ -79,12 +78,6 @@ export function createCanvasSurfaceManager({
   function showPlaceholders(renderer: SkiaRenderer) {
     renderer.connectorLabelPlaceholder = connectorLabelPlaceholder
     if (showsStickyPlaceholder) renderer.stickyPlaceholder = stickyPlaceholder
-  }
-
-  function clearSceneBackingRenderTimer() {
-    if (sceneBackingRenderTimer === null) return
-    clearTimeout(sceneBackingRenderTimer)
-    sceneBackingRenderTimer = null
   }
 
   /** Releases the Skia context and the WebGL context CanvasKit registered for this canvas. */
@@ -131,11 +124,10 @@ export function createCanvasSurfaceManager({
 
     const glCtx = canvas.getContext('webgl2') ?? null
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
-    state.renderer.onImagePreviewReady = () => renderLoop.markDirty()
-    state.renderer.imagePreviews.setDecoder(createImagePreviewDecoder())
+    state.renderer.images.onPreviewReady = () => renderLoop.markDirty()
+    state.renderer.images.previews.setDecoder(createImagePreviewDecoder())
     state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
     state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
-    state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'
     showPlaceholders(state.renderer)
     editor.setCanvasKit(ck, state.renderer)
     // The scene surface draws shader frames; an overlay surface has none to draw.
@@ -190,13 +182,8 @@ export function createCanvasSurfaceManager({
     renderLoop.markRendered()
     options?.onFrame?.({ panX: view.panX, panY: view.panY, zoom: view.zoom })
     acknowledgePresentation()
-    clearSceneBackingRenderTimer()
     if (options?.layer === 'scene' && tileWorkPending(state.renderer)) {
       renderLoop.markDirty()
-    }
-    if (options?.layer === 'scene' && state.renderer.sceneBackingNeedsCrispRender) {
-      const delay = Math.max(0, state.renderer.sceneBackingPreviewUntil - performance.now())
-      sceneBackingRenderTimer = setTimeout(() => renderLoop.markDirty(), delay)
     }
   }
 
@@ -258,7 +245,6 @@ export function createCanvasSurfaceManager({
     stopPlaceholders()
     stopPresentationRefresh()
     stopColorSpaceRefresh()
-    clearSceneBackingRenderTimer()
     renderLoop.pause()
     if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()

@@ -1,7 +1,9 @@
 import type { Canvas, ImageFilter } from 'canvaskit-wasm'
 
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
@@ -24,7 +26,6 @@ import {
 import {
   drawSilhouette,
   fillsCastShadow,
-  isLayerContainer,
   paintsCastShadow,
   paintsOverKnockout,
   shadowIncludesChildren,
@@ -79,7 +80,7 @@ function shadowLayerBounds(
     height: node.height
   }
   const offset = effect.offset
-  const padding = effect.radius * 2 + Math.abs(spread)
+  const padding = drawnBlurRadius(effect.radius) * 2 + Math.abs(spread)
   return r.ck.LTRBRect(
     box.x + Math.min(0, offset.x) - padding,
     box.y + Math.min(0, offset.y) - padding,

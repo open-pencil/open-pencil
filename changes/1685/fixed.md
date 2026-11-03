@@ -1,0 +1,1 @@
+- Clicks and hover select a shape only where its fill or stroke draws, as in Figma: an unfilled line or curve is picked by its stroke, a filled ellipse or rounded rectangle by its outline, and a layer whose paints show nothing lets clicks through (#1685).

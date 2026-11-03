@@ -28,6 +28,7 @@ export function useBehaviourLabels() {
       slider: { label: p.behaviourSlider, description: p.behaviourSliderDescription },
       progress: { label: p.behaviourProgress, description: p.behaviourProgressDescription },
       tabs: { label: p.behaviourTabs, description: p.behaviourTabsDescription },
+      tab: { label: p.behaviourTab, description: p.behaviourTabDescription },
       collapsible: {
         label: p.behaviourCollapsible,
         description: p.behaviourCollapsibleDescription
@@ -39,7 +40,8 @@ export function useBehaviourLabels() {
       open: p.behaviourOpen,
       filled: p.behaviourFilled,
       text: p.behaviourText,
-      disabled: p.behaviourDisabled
+      disabled: p.behaviourDisabled,
+      invalid: p.behaviourInvalid
     }
     const parts: Record<string, string> = {
       track: p.behaviourTrack,
@@ -59,7 +61,8 @@ export function useBehaviourLabels() {
       hover: p.behaviourStateHover,
       pressed: p.behaviourStatePressed,
       focus: p.behaviourStateFocus,
-      disabled: p.behaviourStateDisabled
+      disabled: p.behaviourStateDisabled,
+      invalid: p.behaviourStateInvalid
     }
     /** What a control's main value is called, which code calls its `value`. */
     const mainValue: Partial<Record<BehaviourKind, string>> = {
@@ -67,6 +70,7 @@ export function useBehaviourLabels() {
       checkbox: p.behaviourChecked,
       radio: p.behaviourChecked,
       toggle: p.behaviourPressed,
+      tab: p.behaviourSelected,
       textField: p.behaviourText,
       textarea: p.behaviourText
     }

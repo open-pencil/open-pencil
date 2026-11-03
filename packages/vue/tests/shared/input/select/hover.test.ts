@@ -26,7 +26,7 @@ function selectedFrame(labelled: boolean) {
   })
   editor.select([frame.id])
   const fns = {
-    hitTestInScope: () => null,
+    hitTestLayer: () => null,
     hitTestFrameTitle: (): SceneNode | null => (labelled ? frame : null),
     hitTestSectionTitle: () => null,
     hitTestComponentLabel: () => null
@@ -51,7 +51,7 @@ test('a label does not take the press from a resize band', () => {
 })
 
 const NO_HITS = {
-  hitTestInScope: () => null,
+  hitTestLayer: () => null,
   hitTestFrameTitle: () => null,
   hitTestSectionTitle: () => null,
   hitTestComponentLabel: () => null

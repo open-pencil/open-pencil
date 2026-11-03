@@ -30,5 +30,12 @@
   "colorLightTeal": "Verde acqua chiaro",
   "colorLightBlue": "Blu chiaro",
   "colorLightViolet": "Viola chiaro",
-  "colorLightPink": "Rosa chiaro"
+  "colorLightPink": "Rosa chiaro",
+  "changeColor": "Cambia colore",
+  "lineStyle": "Stile linea",
+  "lineShape": "Forma linea",
+  "solid": "Continua",
+  "thin": "Sottile",
+  "renameSection": "Rinomina sezione",
+  "addText": "Aggiungi testo"
 }

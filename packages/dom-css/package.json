@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/dom-css",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.1",
   "license": "MIT",
   "type": "module",
   "imports": {

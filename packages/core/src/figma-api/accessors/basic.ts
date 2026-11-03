@@ -27,10 +27,10 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, numberProblem } from '#core/figma-api/accessors/text/messages'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
-import type { NodeProxyHost } from '#core/figma-api/proxy'
+import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
+import { atLeast } from '#core/figma-api/schema'
 import {
   containerTransform,
   setContainerTransform,
@@ -38,6 +38,7 @@ import {
   withOrigin
 } from '#core/figma-api/transform'
 import type { FigmaTransform } from '#core/figma-api/types'
+import { parseFigma } from '#core/figma-api/validation'
 import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 import { computeAccurateBounds } from '#core/vector/curve-math'
@@ -252,7 +253,34 @@ export function installBasicNodeProxyAccessors(
       if (node.parentId && findInstanceAncestor(scene, node.parentId))
         throw new Error('This property cannot be overridden in an instance: size')
       rescaleNodeTree(scene, node.id, scale)
+    },
+    getTopLevelFrame(this: ProxyThis): FigmaNodeProxy | undefined {
+      const top = topLevelFrame(graph(this, internals), raw(this, internals))
+      return top ? (this[internals.api] as NodeProxyHost).wrapNode(top.id) : undefined
     }
+  })
+}
+
+/** The layers `getTopLevelFrame` can return; a shape or boolean is never one. */
+const TOP_LEVEL_FRAME_TYPES: ReadonlySet<SceneNode['type']> = new Set([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/**
+ * The container a layer sits in at the top of its page or section: the nearest of the layer and
+ * its ancestors that is a frame, group, section, component, or instance directly under a page or
+ * section. A shape directly on a page has none (Figma desktop 126).
+ */
+function topLevelFrame(scene: SceneGraph, node: SceneNode): SceneNode | undefined {
+  return scene.closest(node.id, (current) => {
+    const parent = current.parentId ? scene.getNode(current.parentId) : undefined
+    const topLevel = parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+    return topLevel && TOP_LEVEL_FRAME_TYPES.has(current.type)
   })
 }
 
@@ -301,9 +329,7 @@ function resizedSize(
     ['width', width],
     ['height', height]
   ] as const) {
-    const problem =
-      numberProblem(value) ?? (value < 0 ? 'Too small: expected number to be >=0' : null)
-    if (problem) throw invalid(method, problem, property)
+    parseFigma(atLeast(0), value, method, property)
   }
   if (node.type === 'VECTOR' && width === 0 && height === 0)
     throw new Error('Cannot set width and height of vector node to zero')

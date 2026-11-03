@@ -58,14 +58,22 @@ export const completionListStyles = {
     color: 'var(--color-muted)',
     opacity: '1'
   },
+  // The label keeps its width; a long detail, such as a command's description, gives way first.
   '.cm-completionLabel': {
-    flex: '1',
+    flex: 'none',
+    maxWidth: '75%',
     minWidth: '0',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
   },
   '.cm-completionMatchedText': { textDecoration: 'none', fontWeight: '600' },
   '.cm-completionDetail': {
+    flex: '0 1 auto',
+    minWidth: '0',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    paddingLeft: '12px',
     marginLeft: 'auto',
     fontStyle: 'normal',
     fontVariantNumeric: 'tabular-nums',

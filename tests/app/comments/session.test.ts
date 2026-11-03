@@ -103,7 +103,13 @@ test('comments written to the document from elsewhere show up', async () => {
 test('a pin stays where its layer was when the layer is deleted, even if it was never drawn', async () => {
   const store = openDocument()
   const pageId = store.state.currentPageId
-  const rect = store.graph.createNode('RECTANGLE', pageId, { x: 100, y: 50, width: 80, height: 40 })
+  const rect = store.graph.createNode('RECTANGLE', pageId, {
+    x: 100,
+    y: 50,
+    width: 80,
+    height: 40,
+    fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, opacity: 1, visible: true }]
+  })
   const pinned = comment(store, 110, 55, 'on the rectangle')
   expect(pinned.nodeId).toBe(rect.id)
 

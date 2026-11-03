@@ -1,4 +1,5 @@
 import { omit } from 'es-toolkit/object'
+import * as v from 'valibot'
 
 import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
@@ -8,7 +9,7 @@ import type {
   PluginRelaunchDataEntry,
   SceneNode
 } from '@open-pencil/scene-graph'
-import type { ExportFormatId } from '@open-pencil/scene-graph/export-format'
+import { compactExportSetting, type ExportFormatId } from '@open-pencil/scene-graph/export-format'
 import { clampExportScale } from '@open-pencil/scene-graph/export-scale'
 import {
   hasPluginData,
@@ -18,7 +19,7 @@ import {
   type PluginDataField
 } from '@open-pencil/scene-graph/plugin-data'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
+import { effectBindingTarget, paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import {
@@ -27,6 +28,7 @@ import {
   VARIABLE_BINDING_FIELDS_INVERSE,
   referencesVariable
 } from './variable/bindings'
+import { effectBindingsFromKiwi } from './variable/effects'
 
 const { boundVariables, exportSettings, librarySource, textPathBox } = OPEN_PENCIL_PLUGIN_DATA
 
@@ -92,9 +94,10 @@ export function extractTextPathBox(nc: NodeChange): Rect | null {
 
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
   let bindings = readNodeChangePluginData(nc, boundVariables) ?? {}
-  // Each paint carries its colour's alias. An instance's copy pairs its component's plugin data
-  // with paints an override set, so the plugin data can name a binding those paints dropped.
+  // Each paint and effect carries its own aliases. An instance's copy pairs its component's plugin
+  // data with paints or effects an override set, so the plugin data can name a binding they dropped.
   const decidedByPaints = (field: string) => {
+    if (effectBindingTarget(field)) return nc.effects !== undefined
     const list = paintBindingTarget(field)?.list
     return list === 'fills'
       ? nc.fillPaints !== undefined
@@ -119,6 +122,7 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     const variableGuid = paint.colorVar?.value?.alias?.guid
     if (variableGuid) bindings[`strokes/${i}/color`] = guidToString(variableGuid)
   })
+  if (nc.effects) Object.assign(bindings, effectBindingsFromKiwi(nc.effects))
   return bindings
 }
 
@@ -131,29 +135,63 @@ function mapNativeImageType(imageType: unknown): ExportFormatId | null {
   return null
 }
 
-function extractNativeConstraintScale(constraint: unknown): number {
-  if (!constraint || typeof constraint !== 'object' || Array.isArray(constraint)) return 1
-  const type = (constraint as { type?: unknown }).type
-  if (type !== 'CONTENT_SCALE' && type !== 0) return 1
-  const value = (constraint as { value?: unknown }).value
-  // Clamp native CONTENT_SCALE too: malformed .fig data can carry huge multipliers.
-  return typeof value === 'number' && Number.isFinite(value) ? clampExportScale(value) : 1
-}
-
 export function extractExportSettings(nc: NodeChange): ExportSetting[] {
   const pluginSettings = readNodeChangePluginData(nc, exportSettings)
   if (pluginSettings) return pluginSettings
-
   return (nc.exportSettings ?? []).flatMap((entry): ExportSetting[] => {
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return []
-    const format = mapNativeImageType((entry as { imageType?: unknown }).imageType)
-    if (!format) return []
-    return [
-      {
-        scale: extractNativeConstraintScale((entry as { constraint?: unknown }).constraint),
-        format
-      }
-    ]
+    const native = v.safeParse(nativeExportSettingSchema, entry)
+    if (!native.success) return []
+    const format = mapNativeImageType(native.output.imageType)
+    return format ? [exportSettingFromNative(native.output, format)] : []
+  })
+}
+
+/** An enum Kiwi decodes by name, or by its index in `names` when it is a number. */
+function nativeEnum<const T extends string>(names: readonly T[], value: unknown): T | undefined {
+  const name = typeof value === 'number' ? names[value] : value
+  return names.find((candidate) => candidate === name)
+}
+
+const CONSTRAINT_TYPES = ['CONTENT_SCALE', 'CONTENT_WIDTH', 'CONTENT_HEIGHT'] as const
+const COLOR_PROFILES = ['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'] as const
+const SVG_ID_MODES = ['IF_NEEDED', 'ALWAYS'] as const
+
+const nativeExportSettingSchema = v.looseObject({
+  imageType: v.unknown(),
+  suffix: v.optional(v.string()),
+  constraint: v.optional(
+    v.looseObject({ type: v.unknown(), value: v.optional(v.pipe(v.number(), v.finite())) })
+  ),
+  contentsOnly: v.optional(v.boolean()),
+  useAbsoluteBounds: v.optional(v.boolean()),
+  colorProfile: v.optional(v.unknown()),
+  svgOutlineText: v.optional(v.boolean()),
+  svgIDMode: v.optional(v.unknown()),
+  svgForceStrokeMasks: v.optional(v.boolean())
+})
+
+/** Figma's export options as the model keeps them; an option Figma left out reads as its default. */
+function exportSettingFromNative(
+  native: v.InferOutput<typeof nativeExportSettingSchema>,
+  format: ExportFormatId
+): ExportSetting {
+  const constraint = nativeEnum(CONSTRAINT_TYPES, native.constraint?.type) ?? 'CONTENT_SCALE'
+  const value = native.constraint?.value
+  const svgIDMode = nativeEnum(SVG_ID_MODES, native.svgIDMode)
+  const sized = constraint !== 'CONTENT_SCALE' && value !== undefined
+  return compactExportSetting({
+    // Clamp native CONTENT_SCALE too: malformed .fig data can carry huge multipliers.
+    scale: constraint === 'CONTENT_SCALE' && value !== undefined ? clampExportScale(value) : 1,
+    format,
+    size: sized ? { type: constraint === 'CONTENT_WIDTH' ? 'WIDTH' : 'HEIGHT', value } : undefined,
+    suffix: native.suffix,
+    contentsOnly: native.contentsOnly,
+    useAbsoluteBounds: native.useAbsoluteBounds,
+    colorProfile: nativeEnum(COLOR_PROFILES, native.colorProfile),
+    svgOutlineText: native.svgOutlineText,
+    svgIdAttribute: svgIDMode === undefined ? undefined : svgIDMode === 'ALWAYS',
+    svgSimplifyStroke:
+      native.svgForceStrokeMasks === undefined ? undefined : !native.svgForceStrokeMasks
   })
 }
 

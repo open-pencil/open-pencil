@@ -55,7 +55,7 @@ function uncover(element: Element) {
         @mount-auto-focus="emit('openAutoFocus', $event)"
       >
         <div v-if="parent" data-slot="header" :class="styles.header({ class: ui?.header })">
-          <AppButton variant="ghost" size="sm" data-slot="back" @click="emit('back')">
+          <AppButton variant="ghost" size="sm" @click="emit('back')">
             <template #leading><icon-lucide-chevron-left class="size-4" /></template>
             <span class="sr-only">{{ back }}:</span>
             {{ parent }}

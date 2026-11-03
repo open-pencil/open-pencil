@@ -1,6 +1,7 @@
 import { clamp } from 'es-toolkit'
 
 import type { TextPathData } from '@open-pencil/scene-graph'
+import { cubicPoint } from '@open-pencil/scene-graph/geometry'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 interface Cubic {
@@ -60,18 +61,6 @@ function pathCurves(data: TextPathData, box: Rect): Cubic[] | null {
   return curves.length > 0 ? curves : null
 }
 
-function cubicPoint({ p0, p1, p2, p3 }: Cubic, t: number): Vector {
-  const u = 1 - t
-  const a = u * u * u
-  const b = 3 * u * u * t
-  const c = 3 * u * t * t
-  const d = t * t * t
-  return {
-    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y
-  }
-}
-
 function cubicDerivative({ p0, p1, p2, p3 }: Cubic, t: number): Vector {
   const u = 1 - t
   const a = 3 * u * u
@@ -113,7 +102,7 @@ export function sampleTextPath(data: TextPathData, box: Rect): SampledPath | nul
   for (const [curve, cubic] of curves.entries()) {
     for (let step = 0; step <= steps[curve]; step++) {
       const t = step / steps[curve]
-      const point = cubicPoint(cubic, t)
+      const point = cubicPoint(cubic.p0, cubic.p1, cubic.p2, cubic.p3, t)
       // A segment that does not start where the last one ended jumps there without adding length.
       if (step > 0) length += Math.hypot(point.x - xs[index - 1], point.y - ys[index - 1])
       xs[index] = point.x
@@ -147,7 +136,7 @@ export function pointAtArc(path: SampledPath, sIn: number): PathPoint {
   const sameCurve = curveIndex[lo] === curveIndex[hi]
   const curve = path.curves[sameCurve ? curveIndex[lo] : curveIndex[hi]]
   const t = sameCurve && span > 0 ? ts[lo] + ((ts[hi] - ts[lo]) * (s - cum[lo])) / span : ts[hi]
-  const point = cubicPoint(curve, t)
+  const point = cubicPoint(curve.p0, curve.p1, curve.p2, curve.p3, t)
 
   // A straight segment with no handles has no derivative at its ends; take the samples' direction.
   let { x: dx, y: dy } = cubicDerivative(curve, t)

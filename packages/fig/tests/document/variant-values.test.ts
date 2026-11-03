@@ -38,3 +38,31 @@ test('variant property values resolve through the component set definitions', ()
   expect(variant?.componentPropertyValues).toEqual({ State: 'Disabled' })
   expect(variant?.variantPropSpecs).toEqual([{ propDefId: '1:10', value: 'Disabled' }])
 })
+
+// The shadcn/ui kit's Accordion item saves no values with its property, only their order, which
+// Figma (desktop 126) reports as variantOptions: Open before Closed, against the layer order.
+test('a variant property saved without values takes their saved order', () => {
+  const changes: NodeChange[] = [
+    { guid: guid(0), type: 'DOCUMENT' },
+    { guid: guid(1), type: 'CANVAS', parentIndex: { guid: guid(0), position: '!' } },
+    {
+      guid: guid(2),
+      type: 'FRAME',
+      isStateGroup: true,
+      name: 'AccordionItem',
+      parentIndex: { guid: guid(1), position: '!' },
+      componentPropDefs: [{ id: guid(10), name: 'Data State', type: 'VARIANT' }],
+      stateGroupPropertyValueOrders: [{ property: 'Data State', values: ['Open', 'Closed'] }]
+    },
+    ...['Closed', 'Open'].map((value, index): NodeChange => ({
+      guid: guid(3 + index),
+      type: 'SYMBOL',
+      name: `Data State=${value}`,
+      parentIndex: { guid: guid(2), position: String.fromCharCode(33 + index) },
+      variantPropSpecs: [{ propDefId: guid(10), value }]
+    }))
+  ]
+  const { graph, sources } = materializeDocument(changes)
+  const set = graph.getNode(sources.get('1:2') ?? '')
+  expect(set?.componentPropertyDefinitions[0]?.variantOptions).toEqual(['Open', 'Closed'])
+})

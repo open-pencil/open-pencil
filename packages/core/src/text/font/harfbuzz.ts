@@ -4,8 +4,7 @@ import type { FontVariation } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
 import { IS_BROWSER } from '#core/constants'
-
-import { fontTableView } from './variation'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'
 
 export interface OutlineCommand {
   type: string
@@ -87,7 +86,17 @@ async function readSubsetModule(): Promise<ArrayBuffer> {
   const url = locator()
   if (IS_BROWSER || !url.startsWith('file:')) {
     const response = await fetch(url)
-    if (!response.ok) throw new Error(`HarfBuzz subsetter answered ${response.status}`)
+    if (!servesRuntimeAsset(response)) {
+      void response.body?.cancel()
+      throw new Error(
+        unservedRuntimeAssetMessage(
+          'harfbuzz-subset.wasm',
+          url,
+          response,
+          'setHarfBuzzSubsetLocator'
+        )
+      )
+    }
     return response.arrayBuffer()
   }
   const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
@@ -157,13 +166,25 @@ const outlineCache = new ResourceCache<number, readonly OutlineCommand[]>({
 })
 let nextInstanceId = 0
 
+/**
+ * A copy of one of the face's tables as HarfBuzz finds it, in a file or a collection. HarfBuzz
+ * hands back a view of its memory, which the next call can move; the tables read this way are a
+ * few dozen bytes.
+ */
+export function harfBuzzTable(face: HarfBuzzModule.Face, tag: string): DataView | null {
+  const table = face.referenceTable(tag)
+  return table ? new DataView(table.slice().buffer) : null
+}
+
 /** A font file read by HarfBuzz, or `null` when HarfBuzz is not loaded or the file has no glyphs. */
 export function harfBuzzFont(bytes: ArrayBuffer): HarfBuzzFont | null {
   const hb = harfBuzz
-  const maxp = fontTableView(bytes, 'maxp')
-  const glyphCount = maxp && maxp.byteLength >= 6 ? maxp.getUint16(4) : 0
-  if (!hb || glyphCount === 0) return null
+  if (!hb) return null
+  // The first face of a collection, the one CanvasKit draws.
   const face = new hb.Face(new hb.Blob(bytes))
+  const maxp = harfBuzzTable(face, 'maxp')
+  const glyphCount = maxp && maxp.byteLength >= 6 ? maxp.getUint16(4) : 0
+  if (glyphCount === 0) return null
   return {
     hb,
     face,

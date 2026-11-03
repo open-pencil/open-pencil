@@ -4,6 +4,8 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { strokeNodeShape } from '#core/canvas/strokes'
+import { SECTION_HOVER_STROKE_WIDTH } from '#core/constants'
 import type { RotationPreview, SceneGeometry } from '#core/geometry'
 
 /** Dashes drawn each frame, by their on and off lengths at the zoom they were made for. */
@@ -89,4 +91,21 @@ export function outlineNode(
       canvas.drawRect(r.ltrb(0, 0, node.width, node.height), paint)
     )
   )
+}
+
+/** Outlines the hovered layer in its outline colour, a section with its heavier stroke. */
+export function outlineHoveredNode(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  node: SceneNode,
+  preview?: RotationPreview | null
+): void {
+  r.auxStroke.setStrokeWidth((node.type === 'SECTION' ? SECTION_HOVER_STROKE_WIDTH : 1) / r.zoom)
+  r.auxStroke.setColor(r.outlineColor(node, graph))
+  r.auxStroke.setPathEffect(null)
+  canvas.save()
+  canvas.concat(r.sceneGeometry(graph, preview).screenMatrix(node, r))
+  strokeNodeShape(r, canvas, node, r.auxStroke)
+  canvas.restore()
 }

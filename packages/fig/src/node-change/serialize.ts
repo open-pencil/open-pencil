@@ -1,4 +1,4 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
@@ -17,7 +17,6 @@ import { computeExportTransform, mapToFigmaType } from './basics'
 import { buildNodeDerivedTextData } from './derived-text/build'
 import { fillsOwnSizingAxis } from './export/fill-sizing'
 import {
-  buildAssetRefToVarGuidMap,
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
@@ -356,7 +355,12 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
   fixFilledOwnSizing(node, nc, graph)
 }
 
-function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
+function serializeGeometry(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  blobs: Uint8Array[],
+  styleReference: (id: string) => StyleReference
+): void {
   if (node.isMask) {
     nc.mask = true
     // Figma's MaskType names a vector mask OUTLINE. ALPHA and LUMINANCE already match.
@@ -370,7 +374,7 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
     styleToId,
     regionStyleIds
   } = network
-    ? buildStyleOverrideTable(network)
+    ? buildStyleOverrideTable(network, styleReference)
     : { table: [] as StyleOverride[], styleToId: undefined, regionStyleIds: [] }
 
   const vectorData: Record<string, unknown> = {}
@@ -492,9 +496,6 @@ export function sceneNodeToKiwi(
     orderKeys,
     writeChildren
   } = options
-  // Raw paints retain library asset refs; effects use this map because their
-  // Kiwi schema accepts only GUID-backed aliases.
-  const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined
   return sceneNodeToKiwiWithContext(node, parentGuid, childIndex, localIdCounter, {
     graph,
     blobs,
@@ -505,7 +506,6 @@ export function sceneNodeToKiwi(
     glyphBlobMap,
     varIdToGuid,
     modeIdToGuid,
-    assetRefToVarGuid,
     componentPropertyDefinitionsById,
     propertyIdToGuid,
     slotContentRecords,

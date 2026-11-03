@@ -17,6 +17,9 @@ import {
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
+import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { markdownText } from '#core/text/markdown'
 
 import { nodeOf, type NodeRef } from './behaviours'
 
@@ -86,4 +89,22 @@ export function readTextDirection(graph: SceneGraph, ref: NodeRef): TextDirectio
 
 export function writeTextDirection(graph: SceneGraph, ref: NodeRef, value: string): void {
   editNode(graph, nodeOf(graph, ref), { textDirection: direction(value) })
+}
+
+/** The text, ranges, and paragraphs Markdown gives a text layer, as FigJam styles it. */
+export function textMarkdownChanges(node: SceneNode, markdown: string): Partial<SceneNode> {
+  if (node.type !== 'TEXT')
+    throw new Error(`Markdown is written into a text layer, not ${node.type}`)
+  return markdownText(markdown, node)
+}
+
+/**
+ * Writes Markdown as a text layer's text: its own style stays, and headings, emphasis, code,
+ * links, lists, and quotes become ranges and paragraphs. The fonts it uses must be loaded.
+ */
+export function writeTextMarkdown(graph: SceneGraph, ref: NodeRef, markdown: string): void {
+  const node = nodeOf(graph, ref)
+  const changes = textMarkdownChanges(node, markdown)
+  assertTextFontsLoaded('setTextMarkdown', { ...node, ...changes })
+  editNode(graph, node, { ...changes, ...textAutoResizeChanges(node, changes) })
 }

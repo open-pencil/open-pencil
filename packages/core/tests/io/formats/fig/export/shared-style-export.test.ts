@@ -131,6 +131,48 @@ test('reopen layers and ranges with the styles made in OpenPencil they use', asy
   expect(named('text', styled?.styleRuns[0]?.style.textStyleId)).toBe('Heading')
 })
 
+test('reopen a vector region with the paint style made in OpenPencil it uses', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const red = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+  const fill = graph.createNode('RECTANGLE', page.id, {
+    name: 'Brand',
+    sharedStyleType: 'FILL',
+    internalOnly: true,
+    fills: [red]
+  })
+  fill.source.id = 'style:a1b2c3d4e5f6'
+  const zero = { x: 0, y: 0 }
+  graph.createNode('VECTOR', page.id, {
+    name: 'Styled',
+    width: 10,
+    height: 10,
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 0, y: 10 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
+        { start: 1, end: 2, tangentStart: zero, tangentEnd: zero },
+        { start: 2, end: 0, tangentStart: zero, tangentEnd: zero }
+      ],
+      regions: [
+        { windingRule: 'NONZERO', loops: [[0, 1, 2]], fills: [red], fillStyleId: fill.source.id }
+      ]
+    }
+  })
+
+  const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
+  const styled = [...reopened.getAllNodes()].find((node) => node.name === 'Styled')
+  const [region] = styled?.vectorNetwork?.regions ?? []
+  expect(getSharedStyles(reopened, 'fill').find((style) => style.id === region?.fillStyleId)?.name).toBe(
+    'Brand'
+  )
+  expect(region?.fills?.[0]?.color).toEqual(red.color)
+})
+
 test('names a library style by its key, as Figma does, on layers and ranges', async () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
