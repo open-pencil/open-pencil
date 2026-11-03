@@ -97,7 +97,13 @@ async function renderPages(
   if (prepared.length === 0) return null
   const first = prepared[0]
 
-  const [{ jsPDF }, { svg2pdf }] = await Promise.all([import('jspdf'), import('svg2pdf.js')])
+  // svg2pdf.js's `main` is a UMD build in a `"type": "module"` package with no `exports`, so
+  // Node loads it as ESM and it throws for want of a global jsPDF. Its ES build, the `module`
+  // file bundlers and Bun already pick, loads everywhere.
+  const [{ jsPDF }, { svg2pdf }] = await Promise.all([
+    import('jspdf'),
+    import('svg2pdf.js/dist/svg2pdf.es.min.js')
+  ])
 
   const doc = new jsPDF({
     orientation: orientationOf(first),
