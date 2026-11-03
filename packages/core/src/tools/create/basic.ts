@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { toolNumber, positionInputs, defineTool, nodeSummary } from '#core/tools/schema'
 
 export const createShape = defineTool({
@@ -23,6 +24,8 @@ export const createShape = defineTool({
   execute: (figma, args) => {
     const parentId = args.parent_id
     const parent = parentId ? figma.getNodeById(parentId) : null
+    // Refuse before creating, so a refused parent leaves no layer behind on the page.
+    if (parent) prepareSlotInsertion(figma.graph, parent.id, 'create_shape')
     const createMap: Record<string, () => FigmaNodeProxy> = {
       FRAME: () => figma.createFrame(),
       RECTANGLE: () => figma.createRectangle(),
@@ -71,16 +74,15 @@ export const createSlice = defineTool({
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID')))
   }),
   execute: (figma, args) => {
+    const parent = args.parent_id ? figma.getNodeById(args.parent_id) : null
+    if (parent) prepareSlotInsertion(figma.graph, parent.id, 'create_slice')
     const node = figma.createFrame()
     node.x = args.x
     node.y = args.y
     node.resize(args.width, args.height)
     node.name = args.name ?? 'Slice'
     node.fills = []
-    if (args.parent_id) {
-      const parent = figma.getNodeById(args.parent_id)
-      if (parent) parent.appendChild(node)
-    }
+    if (parent) parent.appendChild(node)
     return nodeSummary(node)
   }
 })
