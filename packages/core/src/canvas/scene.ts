@@ -2,6 +2,7 @@ import type { Canvas } from 'canvaskit-wasm'
 
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
@@ -166,7 +167,7 @@ function renderMaskNodeContent(
   )
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const padding = (blur?.radius ?? 0) * 2
+    const padding = drawnBlurRadius(blur?.radius ?? 0) * 2
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
@@ -381,7 +382,7 @@ export function renderNode(
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
     r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
-    const blurPadding = layerBlur.radius * 2
+    const blurPadding = drawnBlurRadius(layerBlur.radius) * 2
     canvas.saveLayer(
       r.effectLayerPaint,
       viewportLayerBounds(r, world(), blurPadding) ??

@@ -7,6 +7,7 @@ import type { SceneGraph } from '../graph'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
+import { effectBindingTarget } from '../variables/fields'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -76,7 +77,12 @@ export function bindingProtection(scopes: ReadonlySet<string>[]): (field: string
       if (field !== 'boundVariables' || !perField) fields.add(field)
     }
   }
-  return (field) => fields.has(field)
+  return (field) => {
+    if (fields.has(field)) return true
+    // Effects an instance set itself own their bindings too, bound or not, as its fills do.
+    const binding = overriddenBindingField(field)
+    return binding !== null && fields.has('effects') && effectBindingTarget(binding) !== null
+  }
 }
 
 export function syncBindingFields(

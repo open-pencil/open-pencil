@@ -22,7 +22,9 @@ export const bindVariable = defineTool({
           '"borderTopWeight", "borderBottomWeight", "borderLeftWeight", "borderRightWeight", ' +
           '"gridRowGap", "gridColumnGap". ' +
           'For STRING: "fontFamily". For STRING or FLOAT: "text", a number shown as text. ' +
-          'For BOOLEAN or STRING: "visible", text showing the layer unless empty or "false", "no", "off".'
+          'For BOOLEAN or STRING: "visible", text showing the layer unless empty or "false", "no", "off". ' +
+          'For effects use indexed format: "effects/0/color" (COLOR), "effects/0/radius", ' +
+          '"effects/0/spread", "effects/0/offsetX", "effects/0/offsetY" (FLOAT); a blur binds only radius.'
       )
     ),
     variable_id: v.pipe(v.string(), v.description('Variable ID'))

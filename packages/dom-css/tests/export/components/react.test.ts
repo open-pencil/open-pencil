@@ -14,6 +14,7 @@ import {
   textFieldSet,
   buttonSet,
   collapsibleSet,
+  invalidCheckboxSet,
   labelledButtonSet,
   radioGroupComponent,
   settingsSectionSet,
@@ -212,11 +213,36 @@ describe('generated React form controls', () => {
       progressComponent(),
       numberFieldComponent(),
       textFieldSet(),
-      textareaComponent()
+      textFieldSet({ invalid: true }),
+      textareaComponent(),
+      invalidCheckboxSet()
     ]) {
       const { folder } = await generate(fixture)
       expect(await typeErrors(folder, fixture.set.name)).toEqual([])
     }
+  })
+
+  test('an invalid checkbox is marked for assistive technology and its styles', async () => {
+    const { component } = await generate(invalidCheckboxSet())
+    const valid = render(component)
+    expect(valid).not.toContain('aria-invalid')
+    expect(valid).not.toContain('data-invalid')
+    const invalid = render(component, { invalid: true })
+    expect(invalid).toContain('aria-invalid="true"')
+    expect(invalid).toContain('data-invalid="true"')
+    // `invalid` is the component's own prop, never passed on to the element.
+    expect(invalid).not.toMatch(/ invalid=/)
+    // An `aria-invalid` the caller passes stays while `invalid` is off.
+    expect(render(component, { 'aria-invalid': 'true' })).toContain('aria-invalid="true"')
+  })
+
+  test("an invalid field marks its input, and its root for the field's styles", async () => {
+    const { component } = await generate(textFieldSet({ invalid: true }))
+    const html = render(component, { invalid: true })
+    expect(html).toMatch(/^<div[^>]*data-invalid="true"/)
+    expect(html).toMatch(/<input[^>]*aria-invalid="true"/)
+    expect(html.match(/aria-invalid/g)).toHaveLength(1)
+    expect(render(component, { 'aria-invalid': 'true' })).toMatch(/<input[^>]*aria-invalid="true"/)
   })
 
   test("a slider starts at the design's value as Radix's list, within its range", async () => {

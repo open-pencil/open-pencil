@@ -27,6 +27,20 @@ export const CJK_FALLBACK_CHARACTER =
   /[\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Hangul}\p{scx=Bopomofo}\u3000\ufe10-\ufe1f\ufe30-\ufe4f\uff00-\uffef]/u
 
 /**
+ * Whether `script`'s fallback is loaded to draw `character`: the text's characters of its
+ * writing system, and the Han, punctuation, and forms the CJK languages share, but not another
+ * language's letters, which that language's fallback loads for.
+ */
+export function fallbackDrawsCharacter(script: FontFallbackScript, character: string): boolean {
+  if (script === 'arabic') return ARABIC_CHARACTER.test(character)
+  if (!CJK_FALLBACK_CHARACTER.test(character)) return false
+  if (script === 'cjk') return true
+  if (HANGUL_CHARACTER.test(character)) return script === 'cjk-kr'
+  if (KANA_CHARACTER.test(character)) return script === 'cjk-jp'
+  return true
+}
+
+/**
  * Han characters written only in Traditional Chinese: those OpenCC's Traditional-to-Simplified
  * character table changes. A guide to which fallback to load first, not language identification.
  */

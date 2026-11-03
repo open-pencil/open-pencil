@@ -292,6 +292,7 @@ export const panelMessageDefaults = {
   behaviourMoreOptions: 'More options',
   behaviourValue: 'Value',
   behaviourDisabled: 'Disabled',
+  behaviourInvalid: 'Invalid',
   behaviourOnValue: 'On',
   behaviourOffValue: 'Off',
   /** A value's on or off variant field, such as "Checked: On". */
@@ -323,6 +324,7 @@ export const panelMessageDefaults = {
   behaviourStatePressed: 'Pressed',
   behaviourStateFocus: 'Focus',
   behaviourStateDisabled: 'Disabled',
+  behaviourStateInvalid: 'Invalid',
   behaviourStateUnset: 'None',
   behaviourStateField: params('{state} state'),
   searchComponentProperties: 'Search properties',

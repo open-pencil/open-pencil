@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
-  INTERACTION_STATES,
+  interactionStatesOf,
   readBehaviour,
   type Behaviour,
   type InteractionState
@@ -32,7 +32,8 @@ const STATE_VALUES: Record<InteractionState, string> = {
   hover: 'Hover',
   pressed: 'Pressed',
   focus: 'Focus',
-  disabled: 'Disabled'
+  disabled: 'Disabled',
+  invalid: 'Invalid'
 }
 /** Names tried, in order, for a new states property, skipping ones the set already has. */
 const STATE_PROPERTY_NAMES = ['State', 'Interaction', 'Interaction state']
@@ -246,8 +247,8 @@ export function createBehaviourCompletionActions(
 
   /**
    * Give a control its interaction states: a new variant property with Default, Hover,
-   * Pressed, Focus, and Disabled, a copy of each variant for every state but Default, ready to
-   * restyle, and the behaviour's states bound to it. A lone main component first becomes the
+   * Pressed, Focus, Disabled, and, for a form control, Invalid, a copy of each variant for every
+   * state but Default, ready to restyle, and the behaviour's states bound to it. A lone main component first becomes the
    * only variant of a new set. Returns the new property's id.
    */
   function addBehaviourStates(ownerId: string): string | null {
@@ -260,7 +261,8 @@ export function createBehaviourCompletionActions(
       const name = STATE_PROPERTY_NAMES.find((item) => !taken.has(item))
       const id = name && variants.addPropertyDefinition(set.id, name, 'VARIANT', STATE_VALUES.rest)
       if (!id) return null
-      const others = INTERACTION_STATES.filter((state) => state !== 'rest')
+      const shown = interactionStatesOf(found.behaviour.kind)
+      const others = shown.filter((state) => state !== 'rest')
       const rows = variantsOf(ctx, set).map((variant) => [
         variant.id,
         ...others.flatMap((state) => {
@@ -271,7 +273,8 @@ export function createBehaviourCompletionActions(
       ])
       layOutRows(ctx, set.id, rows)
       const behaviour = readBehaviour(ctx.graph.getNode(set.id) ?? set) ?? found.behaviour
-      setBehaviour(set.id, { ...behaviour, states: { propertyId: id, ...STATE_VALUES } })
+      const states = Object.fromEntries(shown.map((state) => [state, STATE_VALUES[state]]))
+      setBehaviour(set.id, { ...behaviour, states: { propertyId: id, ...states } })
       ctx.setSelectedIds(new Set([set.id]))
       return id
     })

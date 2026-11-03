@@ -79,7 +79,12 @@ function componentSetGroup(
       return {
         name: def.name,
         options,
-        control: { type: 'state', rest: args.states.rest, disabled: args.states.disabled }
+        control: {
+          type: 'state',
+          rest: args.states.rest,
+          disabled: args.states.disabled,
+          invalid: args.states.invalid
+        }
       }
     return { name: def.name, options }
   })

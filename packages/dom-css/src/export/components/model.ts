@@ -1,4 +1,10 @@
-import { behaviourArgs, type BehaviourArgs } from '#dom-css/behaviours/args'
+import {
+  behaviourArgs,
+  FLAGS,
+  isFlag,
+  type BehaviourArgs,
+  type Flag
+} from '#dom-css/behaviours/args'
 import { behaviourControls, booleanOf } from '#dom-css/behaviours/controls'
 import { BUTTON_RESET } from '#dom-css/behaviours/reset'
 import { allElements } from '#dom-css/behaviours/states/layers'
@@ -94,12 +100,14 @@ export interface VariantProp {
 
 /**
  * What the control's root binds, which each framework writes in its own idiom: the two-way
- * value (`v-model`, or Radix's `checked` and `onCheckedChange`), `disabled`, and a variant
- * property the component sets as a `data-*` attribute from its prop.
+ * value (`v-model`, or Radix's `checked` and `onCheckedChange`), `disabled`, `invalid`, and a
+ * variant property the component sets as a `data-*` attribute from its prop.
  */
 export type ComponentBinding =
   | { type: 'model'; name: string }
   | { type: 'disabled' }
+  /** `aria-invalid` and `data-invalid` while the `invalid` prop is on. */
+  | { type: 'invalid' }
   /** A group's item: the value it stands for, which the group chooses among. */
   | { type: 'value' }
   | { type: 'prop'; prop: VariantProp; attribute: string }
@@ -159,6 +167,18 @@ export type ComponentNode =
   | ComponentReference
   | IconReference
 
+/**
+ * Whether a field's markup always draws its input, which then takes the caller's attributes. A
+ * field whose text is not bound yet has none, and an input inside a slot is replaced when the
+ * caller fills the slot; the root takes the attributes then.
+ */
+export function drawsInput(node: ComponentElement): boolean {
+  return node.children.some(
+    (child) =>
+      child.type === 'input' || (child.type === 'element' && !child.slot && drawsInput(child))
+  )
+}
+
 /** One component generated from a component set with a behaviour. */
 export interface ComponentModel {
   /** The component's identifier and file name. */
@@ -184,6 +204,8 @@ export interface ComponentModel {
   item: ComponentModel | null
   /** Whether the set draws a disabled state, so the component takes `disabled`. */
   disabled: boolean
+  /** Whether the set draws an invalid state, so the component takes `invalid`. */
+  invalid: boolean
   props: VariantProp[]
   texts: TextProp[]
   booleans: BooleanProp[]
@@ -327,17 +349,18 @@ function variantProps(
     }))
 }
 
-/** What the root binds: its model, an item's value, `disabled`, and its variant props. */
+/** What the root binds: its model, an item's value, `disabled`, `invalid`, and its variant props. */
 function rootBindings(
   model: string | null,
   item: boolean,
-  disabled: boolean,
+  flags: Flags,
   props: readonly VariantProp[]
 ): ComponentBinding[] {
   return [
     ...(model ? [{ type: 'model' as const, name: model }] : []),
     ...(item ? [{ type: 'value' as const }] : []),
-    ...(disabled ? [{ type: 'disabled' as const }] : []),
+    ...(flags.disabled ? [{ type: 'disabled' as const }] : []),
+    ...(flags.invalid ? [{ type: 'invalid' as const }] : []),
     ...props.map((prop) => ({
       type: 'prop' as const,
       prop,
@@ -371,13 +394,29 @@ function itemsOf(
 function modelName(args: BehaviourArgs, item: boolean, valued: boolean): string | null {
   if (valued) return 'value'
   if (item) return null
-  return [...args.booleans.values()].find((arg) => arg.name !== 'disabled')?.name ?? null
+  return [...args.booleans.values()].find((arg) => !isFlag(arg.name))?.name ?? null
 }
 
-/** Whether the set draws a disabled look, as a boolean or an interaction state. */
-const drawsDisabled = (args: BehaviourArgs) =>
-  [...args.booleans.values()].some((arg) => arg.name === 'disabled') ||
-  args.states?.disabled !== undefined
+/**
+ * Kinds whose input is the control a person fills in, which `aria-invalid` marks; other
+ * controls are marked on their root.
+ */
+export const FIELD_KINDS: ReadonlySet<GeneratedKind> = new Set([
+  'textField',
+  'textarea',
+  'numberField'
+])
+
+/** Whether the set draws each flag, so the component takes it as a prop. */
+type Flags = Record<Flag, boolean>
+
+/** Which flags the set draws, as a boolean or an interaction state. */
+const drawnFlags = (args: BehaviourArgs): Flags => {
+  const draws = (name: Flag) =>
+    [...args.booleans.values()].some((arg) => arg.name === name) ||
+    args.states?.[name] !== undefined
+  return { disabled: draws('disabled'), invalid: draws('invalid') }
+}
 
 /** The layers used rather than drawn: a group's items, then other generated components. */
 function usedLayers(
@@ -509,9 +548,9 @@ export function componentModel(
   const choice = tabs?.choice ?? items?.choice ?? null
   const { range, text, inputProperty } = valueModels(graph, set, kind, behaviour, args)
   const model = modelName(args, !!options.itemOf, !!(choice ?? range ?? text))
-  const taken = new Set([...(model ? [model] : []), 'disabled', 'value'])
+  const taken = new Set([...(model ? [model] : []), ...FLAGS, 'value'])
   const props = variantProps(graph, set, args, taken)
-  const disabled = drawsDisabled(args)
+  const flags = drawnFlags(args)
   const used = usedLayers(graph, styles.root, variantIds, items?.used, options.references)
   const elements = allElements(styles.root)
   const texts = textProps(graph, set, elements, taken, inputProperty)
@@ -537,7 +576,7 @@ export function componentModel(
         shaders: shaderLayers(graph, styles.restId, elements),
         layerOf: (element) => restLayerOf(graph, styles, element)
       },
-      rootBindings(model, !!options.itemOf, disabled, props)
+      rootBindings(model, !!options.itemOf, flags, props)
     ),
     model,
     choice,
@@ -545,7 +584,7 @@ export function componentModel(
     text,
     valueProp: !!options.itemOf,
     item: items?.item ?? null,
-    disabled,
+    ...flags,
     props,
     texts: texts.texts,
     booleans,

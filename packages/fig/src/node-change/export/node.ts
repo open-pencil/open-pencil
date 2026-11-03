@@ -3,7 +3,6 @@ import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/s
 import { compact } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
@@ -42,6 +41,8 @@ import {
 } from './assignments/values'
 import {
   applyColorVariableBinding,
+  bindKiwiEffects,
+  createEffects,
   createFillPaints,
   createStrokePaints,
   getOrCreateNodeGuid,
@@ -107,21 +108,6 @@ function toKiwiBooleanOperation(operation: SceneNode['booleanOperation']): KiwiB
   return operation === 'EXCLUDE' ? 'XOR' : (operation ?? 'UNION')
 }
 
-/** Resolve effect variable asset refs when the Kiwi effect schema requires GUID aliases. */
-export function buildAssetRefToVarGuidMap(
-  graph: SceneGraph,
-  varIdToGuid: Map<string, GUID>
-): Map<string, GUID> {
-  const map = new Map<string, GUID>()
-  for (const [varId, variable] of graph.variables) {
-    if (!variable.key) continue
-    const guid = varIdToGuid.get(varId) ?? stringToGuid(varId)
-    map.set(variable.key, guid)
-    if (variable.version) map.set(`${variable.key}@${variable.version}`, guid)
-  }
-  return map
-}
-
 function componentPropertyTypeForKiwi(type: string) {
   if (type === 'BOOLEAN') return 'BOOL'
   return type
@@ -173,17 +159,6 @@ interface FigmaPayloadVariableMap {
 
 interface FigmaPayloadVariableMapEntry {
   variableData?: { dataType?: string; value?: { propRefValue?: unknown } }
-}
-
-interface ColorVarCarrier {
-  colorVar?: {
-    value?: {
-      alias?: {
-        guid?: GUID
-        assetRef?: { key: string; version?: string }
-      }
-    }
-  }
 }
 
 function isFigmaPayloadVariableMap(value: unknown): value is FigmaPayloadVariableMap {
@@ -409,13 +384,9 @@ function applyRawFigmaNodeFields(
       })
       continue
     }
-    if (
-      key === 'effects' &&
-      node.source.id &&
-      context.assetRefToVarGuid &&
-      context.assetRefToVarGuid.size > 0
-    ) {
-      nc[key] = convertColorVarAssetRefs(materialized[key], context.assetRefToVarGuid)
+    // Imported effects keep what OpenPencil does not model, and take the node's bindings.
+    if (key === 'effects' && node.source.id && materialized.effects) {
+      nc.effects = bindKiwiEffects(context, node, materialized.effects, true)
       continue
     }
     if (key === 'derivedTextData' && node.source.id) {
@@ -430,28 +401,6 @@ function applyRawFigmaNodeFields(
     if (key in nc) continue
     nc[key] = materialized[key]
   }
-}
-
-/** Convert asset refs only for payloads whose Kiwi schema rejects asset-ref aliases. */
-function convertColorVarAssetRefs<T>(values: T, assetRefToVarGuid: Map<string, GUID>): T {
-  if (!Array.isArray(values)) return values
-  const converted = values.map((value: ColorVarCarrier) => {
-    const colorVar = value.colorVar
-    const alias = colorVar?.value?.alias
-    if (!colorVar || !alias || alias.guid || !alias.assetRef?.key) return value
-    const assetRef = alias.assetRef
-    const lookupKey = assetRef.version ? `${assetRef.key}@${assetRef.version}` : assetRef.key
-    const guid = assetRefToVarGuid.get(lookupKey) ?? assetRefToVarGuid.get(assetRef.key)
-    if (!guid) return value
-    return {
-      ...value,
-      colorVar: {
-        ...colorVar,
-        value: { ...colorVar.value, alias: { guid } }
-      }
-    }
-  })
-  return converted.some((value, index) => value !== values[index]) ? (converted as T) : values
 }
 
 function applyInstancePayload(
@@ -877,16 +826,7 @@ function applyNodeVisualProps(
   if (node.type === 'STAR') nc.starInnerScale = node.starInnerRadius
 
   if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
-    nc.effects = node.effects.map((effect) => ({
-      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
-      color: context.safeColor(effect.color),
-      offset: effect.offset,
-      radius: effect.radius,
-      spread: effect.spread,
-      visible: effect.visible,
-      blendMode: effect.blendMode ?? 'NORMAL',
-      showShadowBehindNode: effect.showShadowBehindNode
-    }))
+    nc.effects = createEffects(context, node)
   }
 
   if (node.type === 'TEXT') serializeText(context, node, nc)

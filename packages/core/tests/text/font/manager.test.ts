@@ -222,6 +222,26 @@ test('loads every listed fallback family when no canvas can tell what they cover
   expect(reads).toEqual(['PingFang SC', 'Heiti SC', 'PingFang TC', 'Hiragino Sans'])
 })
 
+test('a fallback leaves another language its letters, which that language loads for', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const provider = manager.acquireProvider(await getCanvasKit())
+  const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const reads: string[] = []
+  manager.setHostFontLoader(async (family) => {
+    reads.push(family)
+    return chinese
+  })
+
+  try {
+    // The Simplified Chinese face has no Hangul; the Korean fallback loads a face that has.
+    await manager.ensureFallbackPack(['cjk-sc'], '设计한국')
+    expect(reads).toEqual(['PingFang SC'])
+  } finally {
+    manager.releaseProvider(provider)
+  }
+})
+
 test('a host read that outlives its loader never registers the replaced loader data', async () => {
   const manager = offlineManager()
   manager.setFallbackUserAgent('Windows')

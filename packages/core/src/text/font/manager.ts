@@ -13,8 +13,7 @@ import {
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import {
-  ARABIC_CHARACTER,
-  CJK_FALLBACK_CHARACTER,
+  fallbackDrawsCharacter,
   fontFallbackEntry,
   type FontFallbackScript
 } from '#core/text/fallbacks'
@@ -766,10 +765,8 @@ export class FontManager {
   ): Promise<string[]> {
     signal?.throwIfAborted()
     const manifest = fontFallbackEntry(script, this.fallbackUserAgent)
-    // A CJK face draws Han shared across the languages too, so each covers the text's CJK.
-    const scriptCharacter = script === 'arabic' ? ARABIC_CHARACTER : CJK_FALLBACK_CHARACTER
     const needed = uniq(Array.from(characters)).filter((character) =>
-      scriptCharacter.test(character)
+      fallbackDrawsCharacter(script, character)
     )
     // Families only come in, so what one check resolved stays resolved.
     let pending = needed
