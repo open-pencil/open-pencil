@@ -1,0 +1,1 @@
+- Editors made with `createEditor()` open vector paths for point-by-point editing, with their own undo, and continue paths with the pen, so SDK hosts get the editing the app has: double-click or Enter opens a selected vector, and switching tools keeps a pen path in progress (#1756).
