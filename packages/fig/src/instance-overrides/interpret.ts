@@ -569,7 +569,10 @@ function interpretRoot(
         .flatMap((g) => g.assignments)
         // A slot whose content frame is gone falls back to its component's content.
         .filter((assignment) => !namesMissingSlotContent(assignment))
-      occurrence.ownerAssignedProperties = ownerAssignedProperties(groups)
+      occurrence.ownerAssignedProperties = ownerAssignedProperties(
+        groups,
+        (assignment) => !namesMissingSlotContent(assignment)
+      )
     }
     // A swapped instance without a name of its own takes the replacement's default name.
     if (base && replaced.length && !occurrence.hasOwnName)

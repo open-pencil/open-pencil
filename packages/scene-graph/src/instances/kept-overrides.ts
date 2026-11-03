@@ -2,8 +2,13 @@
 import { omit } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
+import {
+  overriddenAssignmentId,
+  reapplyComponentPropertyAssignments
+} from '../components/properties'
 import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
+import { instanceMainComponent } from './main-component'
 import { overriddenBindingField } from './overrides'
 
 /** Where a switch runs: the switched instance and the instances enclosing the layers it changes. */
@@ -32,6 +37,10 @@ interface KeptOverrides {
   bindings: Record<string, { variableId: string | undefined; scale: number | undefined }>
   /** Set when the overrides claim every binding, as removing a variable records. */
   allBindings?: { boundVariables: SceneNode['boundVariables']; scales: Scales }
+  /** The component a nested instance was switched to, which its new copy is switched to again. */
+  swappedTo?: string
+  /** Property values the overrides claim on a nested instance. */
+  assignments: Record<string, string>
 }
 
 type Scales = SceneNode['variableBindingScales']
@@ -85,18 +94,29 @@ function layerPath(scope: OverrideScope, node: SceneNode): string | undefined {
 }
 
 function snapshot(
+  graph: SceneGraph,
   node: SceneNode,
   owner: OwnerRef,
   self: boolean,
   fields: ReadonlyMap<string, unknown>
 ): KeptOverrides | undefined {
   const kept = new Map([...fields].filter(([field]) => !LINK_FIELDS.has(field)))
-  if (kept.size === 0) return undefined
+  // A swap is kept as the component it shows; the new copy records it again when switched.
+  const swappedTo =
+    fields.has('componentId') && node.type === 'INSTANCE'
+      ? instanceMainComponent(graph, node)?.id
+      : undefined
+  if (kept.size === 0 && !swappedTo) return undefined
   const values: Partial<SceneNode> = {}
   const bindings: KeptOverrides['bindings'] = {}
+  const assignments: Record<string, string> = {}
   for (const field of kept.keys()) {
     const binding = overriddenBindingField(field)
-    if (binding !== null) {
+    const assigned = overriddenAssignmentId(field)
+    if (assigned !== undefined) {
+      if (Object.hasOwn(node.componentPropertyAssignments, assigned))
+        assignments[assigned] = node.componentPropertyAssignments[assigned]
+    } else if (binding !== null) {
       bindings[binding] = {
         variableId: node.boundVariables[binding],
         scale: node.variableBindingScales[binding]
@@ -111,7 +131,7 @@ function snapshot(
         scales: { ...node.variableBindingScales }
       }
     : undefined
-  return { owner, self, fields: kept, values, bindings, allBindings }
+  return { owner, self, fields: kept, values, bindings, allBindings, swappedTo, assignments }
 }
 
 /** Takes the overrides on a layer off its owners, outer ones and those inside the removed copy. */
@@ -126,18 +146,18 @@ function takeOverrides(
     if (!fields) continue
     scope.willChange(owner)
     owner.instanceOverrides.descendants.delete(node.id)
-    const kept = snapshot(node, { id: owner.id }, false, fields)
+    const kept = snapshot(scope.graph, node, { id: owner.id }, false, fields)
     if (kept) taken.push(kept)
   }
   for (const owner of inner) {
     const fields = owner.instanceOverrides.descendants.get(node.id)
     const path = layerPath(scope, owner)
-    const kept = fields && path ? snapshot(node, { path }, false, fields) : undefined
+    const kept = fields && path ? snapshot(scope.graph, node, { path }, false, fields) : undefined
     if (kept) taken.push(kept)
   }
   const ownPath = node.type === 'INSTANCE' ? layerPath(scope, node) : undefined
   const own = ownPath
-    ? snapshot(node, { path: ownPath }, true, node.instanceOverrides.self)
+    ? snapshot(scope.graph, node, { path: ownPath }, true, node.instanceOverrides.self)
     : undefined
   if (own) taken.push(own)
   return taken
@@ -173,11 +193,46 @@ function ownerOf(scope: OverrideScope, ref: OwnerRef): SceneNode | undefined {
   return current?.type === 'INSTANCE' ? current : undefined
 }
 
-function giveOverrides(scope: OverrideScope, node: SceneNode, kept: readonly KeptOverrides[]) {
-  const values: Partial<SceneNode> = {}
+/**
+ * Switches a nested instance switched to another variant again first, so what is kept for it
+ * and its layers lands on what it then shows. Returns the node as it then stands.
+ */
+function switchAsKept(scope: OverrideScope, copy: SceneNode, kept: readonly KeptOverrides[]) {
+  const swappedTo = kept.find((entry) => entry.swappedTo)?.swappedTo
+  if (
+    swappedTo &&
+    copy.type === 'INSTANCE' &&
+    scope.graph.getNode(swappedTo) &&
+    instanceMainComponent(scope.graph, copy)?.id !== swappedTo
+  ) {
+    scope.graph.swapInstanceComponent(copy.id, swappedTo)
+  }
+  return scope.graph.getNode(copy.id) ?? copy
+}
+
+/** The bindings and unit scales a layer shows with the kept bindings applied over its own. */
+function keptBindings(node: SceneNode, kept: readonly KeptOverrides[]) {
   let boundVariables: Record<string, string> = { ...node.boundVariables }
   let scales: Scales = { ...node.variableBindingScales }
-  for (const { owner: ref, self, fields, values: shown, bindings, allBindings } of kept) {
+  for (const { bindings, allBindings } of kept) {
+    if (allBindings) {
+      boundVariables = { ...allBindings.boundVariables }
+      scales = { ...allBindings.scales }
+    }
+    for (const [field, { variableId, scale }] of Object.entries(bindings)) {
+      boundVariables = variableId
+        ? { ...boundVariables, [field]: variableId }
+        : omit(boundVariables, [field])
+      scales = scale !== undefined ? { ...scales, [field]: scale } : omit(scales, [field])
+    }
+  }
+  return { boundVariables, scales }
+}
+
+function giveOverrides(scope: OverrideScope, copy: SceneNode, kept: readonly KeptOverrides[]) {
+  const node = switchAsKept(scope, copy, kept)
+  const values: Partial<SceneNode> = {}
+  for (const { owner: ref, self, fields, values: shown } of kept) {
     const owner = ownerOf(scope, ref)
     if (!owner) continue
     scope.willChange(owner)
@@ -188,20 +243,21 @@ function giveOverrides(scope: OverrideScope, node: SceneNode, kept: readonly Kep
     if (self) owner.instanceOverrides.self = merged
     else owner.instanceOverrides.descendants.set(node.id, merged)
     Object.assign(values, structuredClone(shown))
-    if (allBindings) {
-      boundVariables = { ...allBindings.boundVariables }
-      scales = { ...allBindings.scales }
-    }
-    for (const [field, { variableId, scale }] of Object.entries(bindings)) {
-      if (variableId) boundVariables[field] = variableId
-      else boundVariables = omit(boundVariables, [field])
-      if (scale !== undefined) scales[field] = scale
-      else scales = omit(scales, [field])
-    }
   }
+  const { boundVariables, scales } = keptBindings(node, kept)
   if (!isEqual(boundVariables, node.boundVariables)) values.boundVariables = boundVariables
   if (!isEqual(scales, node.variableBindingScales)) values.variableBindingScales = scales
+  const assignments: Record<string, string> = Object.assign(
+    {},
+    ...kept.map((entry) => entry.assignments)
+  )
+  const assigns = Object.keys(assignments).length > 0
+  if (assigns) {
+    values.componentPropertyAssignments = { ...node.componentPropertyAssignments, ...assignments }
+  }
   if (Object.keys(values).length > 0) scope.graph.updateNode(node.id, values)
+  // The values a nested instance is given show in its layers, as a matched copy's do.
+  if (assigns) reapplyComponentPropertyAssignments(scope.graph, node.id)
 }
 
 /** Gives a copy just placed, and its layers, what an earlier switch kept for their paths. */

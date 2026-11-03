@@ -44,10 +44,18 @@ export interface AssignmentGroup {
   readonly rank: number
 }
 
-export function ownerAssignedProperties(groups: readonly AssignmentGroup[]): string[] {
+/**
+ * The properties outer owners assign an instance, which `keeps` filters as the instance's own
+ * assignment list is filtered, so a dropped assignment is not recorded as an owner's either.
+ */
+export function ownerAssignedProperties(
+  groups: readonly AssignmentGroup[],
+  keeps: (assignment: ComponentPropAssignment) => boolean
+): string[] {
   return groups
     .slice(1)
     .flatMap((group) => group.assignments)
+    .filter(keeps)
     .flatMap((assignment) => (assignment.defID ? [guidToString(assignment.defID)] : []))
 }
 

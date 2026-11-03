@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI, type FigmaInstanceNode } from '@open-pencil/core/figma-api'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 function must<T>(value: T | null | undefined): T {
@@ -320,6 +321,62 @@ test('a layer drawn as another type keeps a binding its instance removed', () =>
   to('Large')
   expect(at('Shape').type).toBe('FRAME')
   expect(at('Shape').boundVariables.opacity).toBeUndefined()
+})
+
+/** A Pill set (Shape=Round with a Label text property, and Shape=Square) to nest in variants. */
+function pillSet(graph: SceneGraph, pageId: string) {
+  const set = graph.createNode('COMPONENT_SET', pageId, {
+    name: 'Pill',
+    x: 400,
+    componentPropertyDefinitions: [
+      { id: 'pill:shape', name: 'Shape', type: 'VARIANT', defaultValue: 'Round' },
+      { id: 'pill:label', name: 'Label', type: 'TEXT', defaultValue: 'Pill' }
+    ]
+  })
+  const ids: Record<string, string> = {}
+  for (const shape of ['Round', 'Square']) {
+    const variant = graph.createNode('COMPONENT', set.id, {
+      name: `Shape=${shape}`,
+      componentPropertyValues: { Shape: shape }
+    })
+    graph.createNode('TEXT', variant.id, {
+      name: 'Label',
+      text: 'Pill',
+      componentPropertyReferences: [{ field: 'TEXT', propertyId: 'pill:label' }]
+    })
+    ids[shape] = variant.id
+  }
+  return { pill: must(ids.Round), square: must(ids.Square) }
+}
+
+test('a nested instance the other variant lacks comes back switched as it was', () => {
+  let square = ''
+  const { graph, at, to } = chipDrawing(
+    { Small: [{ name: 'Pill', type: 'INSTANCE', of: 'pill' }], Large: [] },
+    (scene, pageId) => {
+      const pills = pillSet(scene, pageId)
+      square = pills.square
+      return pills
+    }
+  )
+  graph.swapInstanceComponent(at('Pill').id, square)
+  expect(instanceMainComponent(graph, at('Pill'))?.id).toBe(square)
+  to('Large')
+  to('Small')
+  expect(instanceMainComponent(graph, at('Pill'))?.id).toBe(square)
+})
+
+test('a nested instance the other variant lacks comes back with its property values', () => {
+  const { editor, at, to } = chipDrawing(
+    { Small: [{ name: 'Pill', type: 'INSTANCE', of: 'pill' }], Large: [] },
+    pillSet
+  )
+  editor.setInstanceComponentProperty(at('Pill').id, 'pill:label', 'Mine')
+  expect(at('Pill', 'Label').text).toBe('Mine')
+  to('Large')
+  to('Small')
+  expect(at('Pill').componentPropertyAssignments['pill:label']).toBe('Mine')
+  expect(at('Pill', 'Label').text).toBe('Mine')
 })
 
 test('a switch lays out the auto layout around it, and undo puts the siblings back', () => {
