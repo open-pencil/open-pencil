@@ -69,7 +69,7 @@ async function exportImage(
   if (!host.exportImage) {
     throw new Error('in exportAsync: This host has no renderer to export PNG or JPG images with')
   }
-  const { exportBounds } = await import('#core/io/formats/raster')
+  const { exportBounds, oversizedRaster, rasterSize } = await import('#core/io/formats/raster')
   const bounds = exportBounds(graph, ids, request.useAbsoluteBounds)
   if (!bounds) throw nothingToExport()
   const constraint = request.constraint
@@ -83,6 +83,9 @@ async function exportImage(
       `in exportAsync: An image must be exported at ${MIN_EXPORT_SCALE} to ${MAX_EXPORT_SCALE} times the layer's size`
     )
   }
+  const { width, height } = rasterSize(bounds, scale)
+  const oversized = oversizedRaster(width, height)
+  if (oversized) throw new Error(`in exportAsync: ${oversized}`)
   const data = await host.exportImage(ids, {
     scale,
     format: request.format,

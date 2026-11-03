@@ -1,6 +1,9 @@
 export {
   computeContentBounds,
   exportBounds,
+  MAX_RASTER_PIXELS,
+  oversizedRaster,
+  rasterSize,
   renderNodesToImage,
   renderThumbnail,
   thumbnailFrame,

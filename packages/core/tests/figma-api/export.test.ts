@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
 
-import { headlessRenderNodes } from '#core/io/formats/raster'
+import { headlessRenderNodes, MAX_RASTER_PIXELS } from '#core/io/formats/raster'
 
 // Figma's answers measured in Figma desktop 126.
 
@@ -284,6 +284,30 @@ describe('exportAsync', () => {
     await expect(
       rect.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: -1 } })
     ).rejects.toThrow(limit)
+  })
+
+  test('refuses an image too big for the renderer before drawing it', async () => {
+    const figma = createAPI()
+    let drawn = 0
+    figma.exportImage = () => {
+      drawn++
+      return Promise.resolve(new Uint8Array([1]))
+    }
+    const rect = figma.createRectangle()
+    rect.resize(10, 10)
+    await expect(
+      rect.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 1024 } })
+    ).rejects.toThrow(
+      `in exportAsync: An image can hold at most ${MAX_RASTER_PIXELS} pixels; this one would be 10240 by 10240`
+    )
+    expect(drawn).toBe(0)
+    // The renderer refuses it as well, for callers that skip exportAsync.
+    await expect(
+      headlessRenderNodes(figma.graph, figma.currentPageId, [rect.id], {
+        scale: 1024,
+        format: 'PNG'
+      })
+    ).rejects.toThrow(`at most ${MAX_RASTER_PIXELS} pixels`)
   })
 
   test('says so when the host has no renderer for images', async () => {
