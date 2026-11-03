@@ -9,6 +9,7 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig, loadEnv } from 'vite'
 
 import { ensureBrandAssets } from '@open-pencil/brand-tools'
+import { openPencil } from '@open-pencil/core/node/vite'
 import { ensureDemoDocument } from '@open-pencil/demo-tools'
 
 import packageJson from './package.json'
@@ -72,6 +73,9 @@ export default defineConfig(async ({ command, mode }) => {
         pages: ['index.html', 'cloud.html', 'metrics.html']
       }),
       tailwindcss(),
+      // Not added to the page: Core loads behind the support gate, so the app's canvas module,
+      // which `boot.ts` loads, imports @open-pencil/core/runtime-assets/install itself.
+      openPencil({ inject: false }),
       Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
       automation ? openPencilAutomationPlugin(command, host) : undefined,

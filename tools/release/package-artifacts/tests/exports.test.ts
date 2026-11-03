@@ -71,6 +71,12 @@ describe('export metadata', () => {
     ])
   })
 
+  test('accepts a wildcard import target whose extension has a digit', () => {
+    expect(
+      validateManifest({ ...validManifest, imports: { '#fonts/*.woff2': './assets/*.woff2' } })
+    ).toEqual([])
+  })
+
   test('accepts a wildcard import target that names an index file', () => {
     expect(
       validateManifest({
