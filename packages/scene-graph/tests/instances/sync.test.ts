@@ -67,6 +67,26 @@ test('syncing a component that rebinds a number resolves its copies by the new b
   expect(nested().width).toBe(300)
 })
 
+test('syncing a component that rebinds a number keeps the value its instance overrides', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const collection = graph.createCollection('Look')
+  const faded = graph.createVariable('Faded', 'FLOAT', collection.id, 0.8)
+  const dim = graph.createVariable('Dim', 'FLOAT', collection.id, 0.5)
+  const chip = graph.createNode('COMPONENT', page, { name: 'Chip', width: 40, height: 20 })
+  graph.bindVariable(chip.id, 'opacity', faded.id)
+  reconcileVariableBindings(graph)
+  const instance = must(graph.createInstance(chip.id, page), 'instance')
+  setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'opacity')
+  graph.updateNode(instance.id, { opacity: 0.3 })
+
+  graph.bindVariable(chip.id, 'opacity', dim.id)
+  reconcileVariableBindings(graph, { subtrees: [chip.id] })
+  graph.syncInstances(chip.id)
+
+  expect(must(graph.getNode(instance.id), 'synced instance').opacity).toBe(0.3)
+})
+
 test('syncing a component that changed its own mode resolves its copies in the new mode', () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id

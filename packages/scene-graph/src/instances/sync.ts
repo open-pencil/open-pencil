@@ -178,9 +178,11 @@ function copySyncedFields(
 export function updateSyncedProps(
   graph: SceneGraph,
   target: SceneNode,
-  updates: Partial<SceneNode>
+  updates: Partial<SceneNode>,
+  /** A field the copy keeps as its own, which the sync leaves as it is. */
+  kept: (field: string) => boolean = () => false
 ): void {
-  resolveBoundNumbersInPlace(graph, target, updates)
+  resolveBoundNumbersInPlace(graph, target, updates, kept)
   const changed = Object.fromEntries(
     Object.entries(updates).filter(
       ([key, value]) => !isEqual(target[key as keyof SceneNode], value)
@@ -199,7 +201,8 @@ export function updateSyncedProps(
 function resolveBoundNumbersInPlace(
   graph: SceneGraph,
   target: SceneNode,
-  updates: Partial<SceneNode>
+  updates: Partial<SceneNode>,
+  kept: (field: string) => boolean
 ): void {
   const bound = updates.boundVariables ?? target.boundVariables
   // The fields the sync writes, and the ones it binds anew, which keep an equal value only in
@@ -208,7 +211,7 @@ function resolveBoundNumbersInPlace(
     ? Object.keys(bound).filter((field) => bound[field] !== target.boundVariables[field])
     : []
   const synced = uniq([...Object.keys(updates), ...rebound]).filter(
-    (field) => isNumericVariableBindingField(field) && bound[field]
+    (field) => isNumericVariableBindingField(field) && bound[field] && !kept(field)
   )
   if (synced.length === 0) return
   // The modes the copy takes in this sync decide what its bindings resolve to.
@@ -491,6 +494,8 @@ export function syncChildren(
 
     const protectedField = childBindingProtection(graph, instChild, overrides)
     const driven = propertyDrivenFields(graph, instChild, compChild)
+    const kept = (key: string) =>
+      driven.has(key) || isProtectedSyncField(instChild, key, protectedField)
     const componentScale =
       (compChild.componentScale * instParent.componentScale) / compParent.componentScale
     const effectiveSource = sourceWithEffectiveFill(graph, compChild, instChild)
@@ -506,11 +511,11 @@ export function syncChildren(
       compParent,
       instParent,
       factor: componentScale / compChild.componentScale,
-      skip: (key) => driven.has(key) || isProtectedSyncField(instChild, key, protectedField)
+      skip: kept
     })
     Object.assign(updates, assignedFieldValues(graph, instChild, compChild))
     keepOwnContentSize(graph, updates, instChild, source, placement)
-    updateSyncedProps(graph, instChild, updates)
+    updateSyncedProps(graph, instChild, updates, kept)
 
     if (
       compChild.childIds.length > 0 &&
