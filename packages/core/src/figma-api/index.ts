@@ -58,7 +58,15 @@ import type {
   FigmaVectorNode
 } from './node-types'
 import { startPendingLayout } from './pending-layout'
-import { FigmaNodeProxy, INTERNAL_ID, MIXED, type FigmaFont, type NodeProxyHost } from './proxy'
+import {
+  FigmaNodeProxy,
+  INTERNAL_ID,
+  loadPage,
+  MIXED,
+  setPageLoader,
+  type FigmaFont,
+  type NodeProxyHost
+} from './proxy'
 import { newShapeWithText } from './shape-with-text'
 import { FigmaStyleMethods } from './styles/api'
 import type { ExportImageOptions } from './types'
@@ -72,6 +80,12 @@ const noop = () => undefined
 export interface FigmaAPIOptions {
   /** Fetches the HTTP(S) URLs `figma.createImageAsync` loads; the global `fetch` by default. */
   fetch?: images.ImageFetch
+  /**
+   * Loads a page's layers, for a host that loads pages as they are visited, as the editor does a
+   * file it opens: `page.loadAsync`, `figma.loadAllPagesAsync`, and `setCurrentPageAsync` call
+   * it, as they load pages in Figma's dynamic-page mode. Without one every page is in memory.
+   */
+  loadPage?: (pageId: string) => Promise<void>
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -138,6 +152,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     super()
     this.graph = graph
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
+    if (options.loadPage) setPageLoader(this, options.loadPage)
     this.variables = new FigmaVariablesAPI(graph)
     startPendingLayout(graph)
     const pages = graph.getPages()
@@ -244,8 +259,11 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     if (this._rawNode(page).type !== 'CANVAS') {
       return Promise.reject(new Error('figma.setCurrentPageAsync expects a PageNode'))
     }
-    this._currentPageId = this._nodeId(page)
-    return Promise.resolve()
+    const pageId = this._nodeId(page)
+    return loadPage(this, pageId).then(() => {
+      this._currentPageId = pageId
+      return undefined
+    })
   }
 
   // --- Node Creation ---
@@ -630,9 +648,9 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     if (message) this.notify(message)
   }
 
-  /** Every page is already in memory. */
+  /** Loads every page's layers, one page after another, as Figma does in dynamic-page mode. */
   async loadAllPagesAsync(): Promise<void> {
-    return undefined
+    for (const page of this.graph.getPages()) await loadPage(this, page.id)
   }
 
   commitUndo(): void {

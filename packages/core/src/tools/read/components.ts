@@ -58,6 +58,8 @@ export const getComponents = defineTool({
     if (source !== 'libraries') {
       for (const page of figma.root.children) {
         if (documentComponents.length >= limit) break
+        // Pages load as the search reaches them, so a short list loads only the pages it needs.
+        await page.loadAsync()
         page.findAll((node) => {
           if (documentComponents.length >= limit) return false
           if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false

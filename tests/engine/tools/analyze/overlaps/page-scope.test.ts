@@ -52,7 +52,7 @@ describe('analyze overlaps page scope', () => {
     expect(result.overlaps).toHaveLength(0)
   })
 
-  test('ToolDef currentPage default uses page ID so duplicate page names do not leak', () => {
+  test('ToolDef currentPage default uses page ID so duplicate page names do not leak', async () => {
     const graph = new SceneGraph()
     const page1 = pageId(graph)
     const page2 = graph.addPage('Page 1')
@@ -63,12 +63,12 @@ describe('analyze overlaps page scope', () => {
     const api = new FigmaAPI(graph)
     expect(api.currentPageId).toBe(page1)
 
-    const defaultResult = analyzeOverlaps.execute(api, {}) as AnalyzeOverlapsResult
+    const defaultResult = (await analyzeOverlaps.execute(api, {})) as AnalyzeOverlapsResult
     expect(defaultResult.summary.overlapCount).toBe(0)
     expect(defaultResult.overlaps).toHaveLength(0)
 
     api.currentPage = api.wrapNode(page2.id)
-    const currentResult = analyzeOverlaps.execute(api, {}) as AnalyzeOverlapsResult
+    const currentResult = (await analyzeOverlaps.execute(api, {})) as AnalyzeOverlapsResult
     expect(currentResult.summary.overlapCount).toBeGreaterThan(0)
   })
 

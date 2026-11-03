@@ -333,7 +333,7 @@ export const analyzeOverlaps = defineTool({
   name: 'analyze_overlaps',
   description:
     'Detect visual overlaps and layout overflows across the current page. Useful for finding content that covers footers, text that bleeds outside frames, and accidental sibling overlaps.',
-  execution: { kind: 'sync', mutation: 'none' },
+  execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({
     scope: v.optional(
@@ -403,8 +403,13 @@ export const analyzeOverlaps = defineTool({
       100
     )
   }),
-  execute: (figma: FigmaAPI, args) => {
+  execute: async (figma: FigmaAPI, args) => {
     const page_id = args.page_id ?? (args.page ? undefined : figma.currentPageId)
+    // A page not yet visited has no layers until it loads.
+    const page = page_id
+      ? figma.getNodeById(page_id)
+      : figma.root.children.find((candidate) => candidate.name === args.page)
+    if (page?.type === 'CANVAS') await page.loadAsync()
     return computeOverlaps(figma.graph, { ...(args as AnalyzeOverlapsArgs), page_id })
   }
 })

@@ -52,7 +52,7 @@ export const getPageTree = defineTool({
   name: 'get_page_tree',
   description:
     'Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size, and text for TEXT nodes. Use depth, root_id, or node_types to keep large pages small. Use get_node for full properties of a specific node.',
-  execution: { kind: 'sync', mutation: 'none' },
+  execution: { kind: 'async', mutation: 'none' },
   input: v.strictObject({
     depth: v.optional(
       toolNumber(
@@ -79,12 +79,14 @@ export const getPageTree = defineTool({
       )
     )
   }),
-  execute: (figma, { depth, root_id, node_types }) => {
+  execute: async (figma, { depth, root_id, node_types }) => {
     const typeFilter = node_types && node_types.length > 0 ? new Set(node_types) : undefined
 
     if (root_id !== undefined) {
       const root = figma.getNodeById(root_id)
       if (!root) return { error: `Node "${root_id}" not found` }
+      // A page not yet visited has no layers until it loads.
+      if (root.type === 'CANVAS') await root.loadAsync()
       return { root: root.id, tree: nodeToTreeEntry(root, 1, depth, typeFilter) }
     }
 

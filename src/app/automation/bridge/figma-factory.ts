@@ -17,7 +17,15 @@ export function makeFigmaFromStore(
   store: EditorStore,
   pageId = store.state.currentPageId
 ): FigmaAPI {
-  const api = new FigmaAPI(store.graph, { fetch: imageFetch })
+  const api = new FigmaAPI(store.graph, {
+    fetch: imageFetch,
+    // A page not yet visited has no layers until the editor prepares it, as it does a page it
+    // switches to: with its fonts and layout.
+    loadPage: async (id) => {
+      if (!(await store.preparePageNodes(id)))
+        throw new Error(`Page "${id}" was closed before it finished loading`)
+    }
+  })
   api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider
   api.theme = store.state.theme ?? 'light'
