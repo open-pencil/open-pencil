@@ -429,6 +429,49 @@ describe('close_file and save_file never prompt', () => {
     expect(getTabById(tab.id)).toBeDefined()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
+
+  function tabWithHandle(name: string) {
+    const opened = { count: 0 }
+    const handle = asDouble<FileSystemFileHandle>({
+      name,
+      getFile: async () => asDouble<File>({ lastModified: 0 }),
+      createWritable: async () => {
+        opened.count += 1
+        return asDouble<FileSystemWritableFileStream>({
+          write: async () => undefined,
+          close: async () => undefined
+        })
+      }
+    })
+    const tab = createTab()
+    tab.store.setDocumentSource(name, 'fig', handle)
+    tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
+    return { tab, opened }
+  }
+
+  test('saving over a .pen browser handle does not open it for writing', async () => {
+    const { tab, opened } = tabWithHandle('notes.pen')
+    expect(tab.store.getDocumentFilePath()).toBeNull()
+    expect(tab.store.hasWritableSource()).toBe(true)
+    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow()
+    expect(opened.count).toBe(0)
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
+  })
+
+  test('closing with save over a .pen browser handle does not open it for writing', async () => {
+    const { tab, opened } = tabWithHandle('notes.pen')
+    await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow()
+    expect(opened.count).toBe(0)
+    expect(getTabById(tab.id)).toBeDefined()
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
+  })
+
+  test('saving over a .fig browser handle still writes', async () => {
+    const { tab, opened } = tabWithHandle('notes.fig')
+    await request('save_file', { document_id: tab.id })
+    expect(opened.count).toBe(1)
+    expect(tab.store.hasUnsavedChanges()).toBe(false)
+  })
 })
 
 describe('file paths in a browser go through the MCP server', () => {
