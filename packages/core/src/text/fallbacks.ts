@@ -14,9 +14,12 @@ export const KANA_CHARACTER = /[\p{Script=Hiragana}\p{Script=Katakana}]/u
 export const HAN_CHARACTER = /\p{Script=Han}/u
 export const CJK_CHARACTER =
   /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
-/** What CJK text draws from its fallback: its letters, CJK punctuation, and fullwidth forms. */
+/**
+ * What CJK text draws from its fallback: its letters, CJK punctuation, the vertical and
+ * compatibility forms, and fullwidth forms.
+ */
 export const CJK_FALLBACK_CHARACTER =
-  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u3000-\u303f\uff00-\uffef]/u
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u3000-\u303f\ufe10-\ufe1f\ufe30-\ufe4f\uff00-\uffef]/u
 
 // Common Traditional-only characters. This is a heuristic for fallback order, not language ID.
 export const TRADITIONAL_HAN_CHARACTER =
