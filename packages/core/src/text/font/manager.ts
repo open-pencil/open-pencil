@@ -935,9 +935,11 @@ export class FontManager {
     this.loadedFamilies.set(key, buffer)
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
-    // The page's own text falls back to the system's fonts by itself, and a browser face would be
-    // one more copy of a whole system file.
-    if (source !== 'fallback') this.registerFontInBrowser(family, style, buffer)
+    // The page draws installed fonts by name and falls back to the system's by itself. A browser
+    // face would copy a whole system file, and one under an installed family's name stands in for
+    // all of that family's faces: WebView2 draws its bold and italic text in it.
+    if (source !== 'fallback' && source !== 'local')
+      this.registerFontInBrowser(family, style, buffer)
     for (const listener of this.faceListeners) listener(family, style)
     return buffer
   }
