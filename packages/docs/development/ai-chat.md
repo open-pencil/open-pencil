@@ -79,6 +79,8 @@ A reply that finished or failed on its own, rather than one you stopped or one c
 
 An ACP agent calls OpenPencil's tools through the MCP server, and its replies keep their edits the same way. The ACP transport (`transports/acp.ts`) starts a run for each reply with `startAgentRun`, without the built-in chat's agent presence, since the agent shows through its MCP session, and ends it however the reply ends. Each MCP tool call carries the chat id from the agent's `x-openpencil-chat` header and the call's id in the agent's conversation, which Codex sends as `_meta.callId` and Claude Code as `_meta["claudecode/toolUseId"]`. While the reply goes on, a call that edits the chat's own document joins the run through `runEditorTool`, which `automation/bridge/tool-handlers.ts` calls with the reply, so Revert, Restore, and the undone marks work as for a provider model.
 
+Each request while the agent starts must answer within `AGENT_START_TIMEOUT_MS`, and Stop stops an agent that is still starting, so a message never waits on an agent that does not answer; either way the agent never gets the message.
+
 ## Undo and the model
 
 A turn keeps the reply's calls and their undo entries. On every undo history change, each turn works out which of its calls are undone with `UndoManager.stateOf`: an entry on the redo stack is undone, one on the undo stack applied. An entry that left the history keeps its last state; undone and then cleared from Redo by a new edit, it stays undone. Changes are written to the reply's metadata, and the transcript reads only the metadata.
@@ -90,6 +92,8 @@ Edit → Undo and the chat's **Revert changes** therefore end in the same state:
 ## Saved conversations
 
 A reply's metadata (`chat/metadata.ts`) keeps whether you stopped it, and its edits with those undone and what the model was last told. Conversations save messages with `structuredClone`, so metadata is written from the plain message, never from the chat's reactive copy. Reopening a conversation settles any reply saved mid-way. The undo history does not survive closing a document, so a reopened reply keeps its marks but offers no Revert or Restore.
+
+A reopened ACP or Pi conversation is read-only, since the conversation's context lives in the agent's own session, except with an agent whose `ACPAgentDef` sets `resumesSessions`: Claude Code and Codex. Once the agent starts answering a prompt, the ACP transport reports the agent's session id, since neither agent can resume a session that never took one, which the conversation saves as `agentSession`, and a later chat on the same agent continues it through ACP `session/resume` in the same agent workspace, without the instructions again and without replaying the transcript the chat already shows (`agents/acp/session.ts`, `chat/history/controller.ts`). A session the agent can no longer resume fails the message instead of starting a new session that would not know the conversation; the conversation forgets it, and the chat takes no more messages and shows as read-only. A conversation continued on another agent or model forgets its session too, and a session started on a conversation that already has messages is never saved, since it missed some of them.
 
 ## Compaction
 
