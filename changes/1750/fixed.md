@@ -1,0 +1,1 @@
+- A text or effect style bound to a variable reads back from design tokens bound to that variable, not to one with the same path in another collection; export warns when other tools could confuse the two.
