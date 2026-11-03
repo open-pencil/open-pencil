@@ -303,9 +303,11 @@ describe('MCP tool execution', () => {
     expect(result.pages[0].name).toBe('Page 1')
   })
 
-  test('error on missing node', () => {
+  test('error on missing node', async () => {
     const { api } = setup()
-    const result = findTool('get_node').execute(api, { id: 'nonexistent' }) as { error: string }
+    const result = (await findTool('get_node').execute(api, { id: 'nonexistent' })) as {
+      error: string
+    }
     expect(result.error).toContain('not found')
   })
 

@@ -197,14 +197,14 @@ describe('get_font_status', () => {
 })
 
 describe('get_node', () => {
-  test('returns node details', () => {
+  test('returns node details', async () => {
     const { figma } = setupToolTest()
     const rect = figma.createRectangle()
     rect.name = 'Test Rect'
     rect.resize(100, 50)
 
     const tool = getTool('get_node')
-    const result = tool.execute(figma, { id: rect.id }) as ToolResult
+    const result = (await tool.execute(figma, { id: rect.id })) as ToolResult
     expect(result.name).toBe('Test Rect')
     expect(result.width).toBe(100)
     expect(result.height).toBe(50)
