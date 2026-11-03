@@ -299,12 +299,14 @@ describe('report files', () => {
     const { reportId, token } = await submitted()
     await upload(reportId, 'document.fig', 'bytes', token)
     const key = reportFileKey(reportId, 'document.fig')
-    const failingDatabase = {
-      ...service.env.DB,
-      prepare: () => {
-        throw new Error('D1 is unavailable')
-      }
-    }
+    const failingDatabase = new Proxy(service.env.DB, {
+      get: (database, key) =>
+        key === 'prepare'
+          ? () => {
+              throw new Error('D1 is unavailable')
+            }
+          : Reflect.get(database, key)
+    })
     const env = { ...service.env, DB: failingDatabase }
 
     await expect(
