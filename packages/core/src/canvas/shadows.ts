@@ -1,7 +1,7 @@
 import type { Canvas, ImageFilter } from 'canvaskit-wasm'
 
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
@@ -10,7 +10,7 @@ import { nodeOrientationMatrix } from '#core/geometry'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
-import { blurSigma, renderNoiseEffects } from './effects'
+import { renderNoiseEffects } from './effects'
 import type { SkiaRenderer } from './renderer'
 import {
   castsFromOwnShape,

@@ -136,7 +136,8 @@ describe('Tailwind JSX appearance classes', () => {
         }
       ]
     })
-    expect(tw(graph, node.id)).toMatch(/shadow-\[0px_4px_8px/)
+    // CSS blurs a shadow by half its blur length: 2 × 0.43 × radius 8.
+    expect(tw(graph, node.id)).toMatch(/shadow-\[0px_4px_6.88px/)
   })
 
   test('inner shadow includes inset and spread', () => {
@@ -155,7 +156,7 @@ describe('Tailwind JSX appearance classes', () => {
         }
       ]
     })
-    expect(tw(graph, node.id)).toMatch(/shadow-\[inset_1px_2px_3px_4px/)
+    expect(tw(graph, node.id)).toMatch(/shadow-\[inset_1px_2px_2.58px_4px/)
   })
 
   test('blur emits blur class', () => {
@@ -174,7 +175,8 @@ describe('Tailwind JSX appearance classes', () => {
         }
       ]
     })
-    expect(tw(graph, node.id)).toContain('blur-[4px]')
+    // CSS's blur() takes the sigma: 0.43 × radius 4.
+    expect(tw(graph, node.id)).toContain('blur-[1.72px]')
   })
 
   test('font size — named values', () => {
