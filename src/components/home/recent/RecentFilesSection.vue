@@ -5,11 +5,10 @@ import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
-import { clearRecentFiles, recentDocumentKind, type RecentDocument } from '@/app/recent-files'
+import { forgetRecentDocument, recentDocumentKind, type RecentDocument } from '@/app/recent-files'
 import type { RecentFilesWorkspace } from '@/app/recent-files/workspace'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import type { DocumentKindFilter } from '@/components/home/document/filter'
-import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
@@ -27,12 +26,21 @@ const kindOptions = computed(() => [
   { value: 'design', label: files.value.createDesign },
   { value: 'board', label: files.value.createBoard }
 ])
-const { panels, files, common } = useI18n()
+const { panels, files } = useI18n()
 const { isTouch } = useViewportKind()
 const dates = useDateFormat()
 const previewURL = workspace.previewURL
 const vWorkspacePreview = workspace.previewDirective
 const hasRecentFiles = computed(() => workspace.documents.value.length > 0)
+
+/** As Figma's Recents: a file leaves the list from its own menu; nothing clears all of it. */
+function recentMenu(document: RecentDocument) {
+  return {
+    actions: files.value.documentActions({ name: document.name }),
+    delete: files.value.removeFromRecent,
+    destructive: false
+  }
+}
 
 /** A file's last change; a file that never reported one shows nothing. */
 function formattedDate(updatedAt: string): string {
@@ -48,15 +56,6 @@ function formattedDate(updatedAt: string): string {
         <p class="mt-0.5 text-pretty text-xs text-muted">{{ files.recentFilesDescription }}</p>
       </div>
       <div class="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
-        <IconButton
-          v-if="hasRecentFiles"
-          :label="common.clear"
-          class="size-10 sm:size-7"
-          data-test-id="recent-files-clear"
-          @click="clearRecentFiles"
-        >
-          <icon-lucide-trash-2 class="size-3.5" />
-        </IconButton>
         <AppSelect
           v-model="kind"
           :label="files.fileKind"
@@ -94,7 +93,9 @@ function formattedDate(updatedAt: string): string {
         :kind="recentDocumentKind(document)"
         :metadata="formattedDate(document.updatedAt)"
         :previewURL="previewURL(document.id)"
+        :menu="recentMenu(document)"
         @open="emit('open', document)"
+        @delete="forgetRecentDocument(document.id)"
       />
     </div>
 
@@ -106,7 +107,9 @@ function formattedDate(updatedAt: string): string {
         :name="document.name"
         :kind="recentDocumentKind(document)"
         :metadata="formattedDate(document.updatedAt)"
+        :menu="recentMenu(document)"
         @open="emit('open', document)"
+        @delete="forgetRecentDocument(document.id)"
       />
     </div>
 

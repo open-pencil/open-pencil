@@ -1,0 +1,1 @@
+- Recent files leave the list one at a time, from Remove from recent in each file's menu, instead of a button that cleared the whole list.
