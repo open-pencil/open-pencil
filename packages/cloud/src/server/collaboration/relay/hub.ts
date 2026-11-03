@@ -51,6 +51,12 @@ export type CollaborationRelayOptions = {
   currentRoomEpoch?: (documentId: string) => Promise<number | null>
   /** How long after a change the room's document is saved. */
   persistDelayMs?: number
+  /**
+   * How many logged updates, or how many of their bytes, a room saves before it writes a fresh
+   * snapshot in their place; a closing room always does.
+   */
+  compactAfterUpdates?: number
+  compactAfterBytes?: number
   /** How long a room whose last save failed waits before saving again. */
   persistRetryMs?: number
   /** How long a socket may stay open without presenting a ticket. */
@@ -75,6 +81,17 @@ type Room = {
   document: Y.Doc
   peers: Map<string, Peer>
   persistTimer: ReturnType<typeof setTimeout> | null
+  /** Updates since the last save, which the next one logs. */
+  pending: Uint8Array[]
+  /** The sequence of the last update the store holds for this room. */
+  sequence: number
+  /** The updates logged after the snapshot, which compaction folds into it. */
+  logged: { count: number; bytes: number }
+  /**
+   * Set when a write failed: whether it landed is unknown, so the next save writes a snapshot,
+   * which holds the room whatever the store kept, rather than logging the sequence again.
+   */
+  compactNext: boolean
 }
 
 export type CollaborationRelay = ReturnType<typeof createCollaborationRelay>
@@ -93,6 +110,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   let shuttingDown = false
   const persistDelayMs = options.persistDelayMs ?? 2_000
   const persistRetryMs = options.persistRetryMs ?? 30_000
+  const compactAfterUpdates = options.compactAfterUpdates ?? 500
+  const compactAfterBytes = options.compactAfterBytes ?? 4 * 1024 * 1024
   const authTimeoutMs = options.authTimeoutMs ?? 10_000
   const report = options.onError ?? ((message, error) => console.error(`[Cloud] ${message}`, error))
 
@@ -118,16 +137,27 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       const kept = rooms.get(authorization.roomId)
       if (kept) return kept
       const document = new Y.Doc()
-      const state = await options.store.load(identity)
-      if (state) Y.applyUpdate(document, state)
+      const saved = await options.store.load(identity)
+      if (saved.snapshot) Y.applyUpdate(document, saved.snapshot)
+      for (const update of saved.updates) Y.applyUpdate(document, update)
       const room: Room = {
         id: authorization.roomId,
         identity,
         document,
         peers: new Map(),
-        persistTimer: null
+        persistTimer: null,
+        pending: [],
+        sequence: saved.sequence,
+        logged: {
+          count: saved.updates.length,
+          bytes: saved.updates.reduce((total, update) => total + update.byteLength, 0)
+        },
+        compactNext: false
       }
-      document.on('update', () => schedulePersist(room))
+      document.on('update', (update: Uint8Array) => {
+        room.pending.push(update)
+        schedulePersist(room)
+      })
       rooms.set(room.id, room)
       return room
     })()
@@ -139,14 +169,43 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
   }
 
-  /** Saves the room's document; false when the store refused it. */
-  async function persist(room: Room): Promise<boolean> {
+  /**
+   * Saves what changed in the room since its last save: one merged update in the log, or, once the
+   * log has grown, or as the room closes, a snapshot in its place. False when the store refused it.
+   */
+  async function persist(room: Room, closing = false): Promise<boolean> {
     if (room.persistTimer) clearTimeout(room.persistTimer)
     room.persistTimer = null
+    const compact =
+      room.compactNext ||
+      room.logged.count >= compactAfterUpdates ||
+      room.logged.bytes >= compactAfterBytes ||
+      (closing && (room.logged.count > 0 || room.pending.length > 0))
+    if (room.pending.length === 0 && !compact) return true
+    // Updates that arrive while this save is in flight go to the next one.
+    const batch = room.pending
+    room.pending = []
     try {
-      await options.store.store(room.identity, Y.encodeStateAsUpdate(room.document))
+      if (compact) {
+        // The snapshot holds the whole room, this batch included, through the last logged update.
+        await options.store.compact(
+          room.identity,
+          Y.encodeStateAsUpdate(room.document),
+          room.sequence
+        )
+        room.logged = { count: 0, bytes: 0 }
+        room.compactNext = false
+      } else {
+        const update = Y.mergeUpdates(batch)
+        await options.store.append(room.identity, room.sequence + 1, update)
+        room.sequence += 1
+        room.logged.count += 1
+        room.logged.bytes += update.byteLength
+      }
       return true
     } catch (error) {
+      room.pending = [...batch, ...room.pending]
+      room.compactNext = true
       report('Saving a collaboration room failed:', error)
       return false
     }
@@ -311,7 +370,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   }
 
   async function saveAndClose(room: Room) {
-    if ((await persist(room)) || shuttingDown) {
+    if ((await persist(room, true)) || shuttingDown) {
       room.document.destroy()
       return
     }

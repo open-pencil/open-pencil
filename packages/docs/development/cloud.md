@@ -168,7 +168,10 @@ sequenceDiagram
 
 The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved in
 PostgreSQL by document and collaboration epoch, so a newcomer gets the document even when nobody
-else is online. Tickets are short-lived signed JWTs; the client presents a fresh one before the
+else is online. A save logs what changed since the last one as a single update, a few bytes for a
+typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
+the room closes, a fresh snapshot replaces it. A room reopens from its snapshot and the updates
+logged after it. Tickets are short-lived signed JWTs; the client presents a fresh one before the
 current one expires, and the relay closes a socket whose ticket lapsed or changed identity.
 
 A socket message carries at most 256 KiB of a frame, under the deployment's per-message limit,

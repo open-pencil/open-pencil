@@ -237,9 +237,19 @@ export interface DocumentCollaborationStateTable {
   documentId: string
   roomEpoch: number
   state: Uint8Array
+  /** The last logged update the snapshot holds; later ones are in `documentCollaborationUpdate`. */
+  throughSequence: Generated<number>
   version: Generated<number>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
+}
+
+export interface DocumentCollaborationUpdateTable {
+  documentId: string
+  roomEpoch: number
+  sequence: number
+  update: Uint8Array
+  createdAt: TimestampColumn
 }
 
 export interface InvitationContinuationTable {
@@ -364,6 +374,7 @@ export interface CloudDatabase {
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable
   documentCollaborationState: DocumentCollaborationStateTable
+  documentCollaborationUpdate: DocumentCollaborationUpdateTable
   invitationContinuation: InvitationContinuationTable
   workspaceEntitlement: WorkspaceEntitlementTable
   workspaceStorageUsage: WorkspaceStorageUsageTable

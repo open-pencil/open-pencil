@@ -95,6 +95,7 @@ export {
   type CollaborationRelayOptions,
   type CollaborationRoomIdentity,
   type CollaborationStateStore,
+  type SavedRoom,
   type RelayAuthorization,
   type RelayConnection,
   type RelaySocket,
