@@ -157,6 +157,86 @@ test('configured storage lists previews through ranges before opening the docume
   expect(fullDocumentGets).toBe(1)
 })
 
+test('closing a loading storage tab does not show an open error on Home', async ({ page }) => {
+  const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  const documentId = 'cancelled-open'
+  const objects = await memoryBucket(page)
+  objects.set(`open_pencil_storage/canvases/${documentId}.fig`, fixture)
+  objects.set(
+    `open_pencil_storage/canvases/${documentId}.meta.json`,
+    Buffer.from(JSON.stringify({ name: 'Cancelled design', updatedAt: '2026-01-02T03:04:05.000Z' }))
+  )
+
+  let notifyOpenStarted!: () => void
+  const openStarted = new Promise<void>((resolve) => {
+    notifyOpenStarted = resolve
+  })
+  let releaseBody!: () => void
+  const bodyGate = new Promise<void>((resolve) => {
+    releaseBody = resolve
+  })
+  let notifyBodySettled!: () => void
+  const bodySettled = new Promise<void>((resolve) => {
+    notifyBodySettled = resolve
+  })
+  await page.route('https://s3.example.com/**', async (route) => {
+    const request = route.request()
+    const url = new URL(request.url())
+    if (
+      request.method() === 'GET' &&
+      url.pathname.endsWith(`/${documentId}.fig`) &&
+      !request.headers().range
+    ) {
+      notifyOpenStarted()
+      await bodyGate
+      try {
+        await route.fulfill({ status: 200, body: fixture })
+      } finally {
+        notifyBodySettled()
+      }
+      return
+    }
+    await route.fallback()
+  })
+
+  await page.goto('/storage?test')
+  await new CanvasHelper(page).waitForInit()
+  await page.keyboard.press('ControlOrMeta+KeyN')
+  await page.getByRole('button', { name: 'Settings' }).last().click()
+  await page.getByTestId('settings-section-storage').click()
+  const panel = page.getByTestId('settings-storage-panel')
+  await panel.getByRole('button', { name: /S3 storage/ }).click()
+  await panel.getByLabel('Endpoint').fill('https://s3.example.com')
+  await panel.getByLabel('Bucket').fill('designs')
+  await panel.getByLabel('Access key ID').fill('access-key')
+  await panel.getByLabel('Secret access key').fill('secret-key')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByTestId('settings-storage-open-workspace').click()
+  await page.getByTestId('tabbar-new').click()
+
+  const home = page.getByTestId('recent-files-home')
+  await expect(home).toBeVisible()
+  await page.getByRole('button', { name: /^Cancelled design/ }).click()
+  await openStarted
+
+  try {
+    const closeButton = page.getByTestId('tabbar-close').last()
+    await closeButton.hover()
+    await closeButton.click()
+  } finally {
+    releaseBody()
+  }
+  await bodySettled
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve())
+      })
+  )
+
+  await expect(home.getByRole('alert')).toHaveCount(0)
+})
+
 test('storage workspace directs unconfigured users to Settings', async ({ page }) => {
   await page.goto('/storage?test')
   await new CanvasHelper(page).waitForInit()

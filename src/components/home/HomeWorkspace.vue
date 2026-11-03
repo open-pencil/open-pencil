@@ -193,6 +193,7 @@ async function openStorageDocument(document: StorageDocument): Promise<void> {
   try {
     await openStorageDocumentInNewTab(document)
   } catch (error) {
+    if (isRecentFileOpenCancellation(error)) return
     openError.value = error instanceof Error ? error.message : String(error)
   }
 }
