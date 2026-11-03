@@ -443,6 +443,7 @@
   "pointCount": "Numero",
   "starRatio": "Rapporto",
   "spread": "Diffusione",
+  "effectColor": "Colore",
   "foregroundBlur": "Sfocatura primo piano",
   "strokeType": "Tipo tratto",
   "strokeWeight": "Spessore tratto",

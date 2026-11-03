@@ -437,6 +437,7 @@
   "pointCount": "数量",
   "starRatio": "比例",
   "spread": "扩展",
+  "effectColor": "颜色",
   "foregroundBlur": "前景模糊",
   "strokeType": "描边类型",
   "strokeWeight": "描边粗细",

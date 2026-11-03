@@ -40,7 +40,7 @@ References use variable names or `{Collection::variable}` and are stored as stab
 
 ## Variable bindings
 
-Figma's `node.setBoundVariable(field, variable)` binds with Figma's field names and type rules. Use `openpencil.bindVariable(node, field, variable)` to bind a layer field to a variable from `figma.variables` the way the layer panel does, and `openpencil.unbindVariable(node, field)` to let it go; the field keeps the value the variable last gave it. Fields use OpenPencil's names, such as `text`, `visible`, `opacity`, `paddingLeft` or `fills/0/color`. Bindings follow the layer panel, which takes more than Figma's `setBoundVariable`: text content takes a text or number variable, a number shown as text, and visibility a boolean or a text variable that shows the layer unless it is empty or reads `false`, `no` or `off`.
+Figma's `node.setBoundVariable(field, variable)` binds with Figma's field names and type rules. Use `openpencil.bindVariable(node, field, variable)` to bind a layer field to a variable from `figma.variables` the way the layer panel does, and `openpencil.unbindVariable(node, field)` to let it go; the field keeps the value the variable last gave it. Fields use OpenPencil's names, such as `text`, `visible`, `opacity`, `paddingLeft`, `fills/0/color` or `effects/0/radius`. Bindings follow the layer panel, which takes more than Figma's `setBoundVariable`: text content takes a text or number variable, a number shown as text, and visibility a boolean or a text variable that shows the layer unless it is empty or reads `false`, `no` or `off`.
 
 ```js
 const [price] = figma.variables.getLocalVariables('FLOAT')
