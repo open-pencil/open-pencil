@@ -2,12 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
+import { readPage } from '@open-pencil/collab'
 import {
   captureGraphCheckpoint,
   captureTouchedCheckpoint
 } from '@open-pencil/scene-graph/checkpoint'
-
-import { readPage } from '@/app/collab/shared-tree/fields'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import {

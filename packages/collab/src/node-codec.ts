@@ -15,9 +15,8 @@ import {
   type Vector
 } from '@open-pencil/scene-graph/primitives'
 
-import { ORDER_KEY_FIELD, PAGE_FIELD, PARENTS_FIELD } from '@/app/collab/shared-tree/fields'
-
 import { writeRecord, type YFields } from './records'
+import { ORDER_KEY_FIELD, PAGE_FIELD, PARENTS_FIELD } from './shared-tree/fields'
 
 const DERIVED_NODE_FIELDS = new Set<keyof SceneNode>(['textPicture'])
 /**
