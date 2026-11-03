@@ -1,0 +1,1 @@
+- MCP tools and scripts read pages that have not been opened yet, such as `get_page_tree` on a page's ID or `query_nodes` by page name, instead of finding them empty, and `page.loadAsync()` and `figma.loadAllPagesAsync()` load pages as in Figma.
