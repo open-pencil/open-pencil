@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { progressComponent, sliderComponent } from '#dom-css-tests/behaviours/fixtures'
 import { behaviourControls, booleanOf } from '#dom-css/behaviours/controls'
 import { controlRoles } from '#dom-css/behaviours/roles'
 
@@ -52,6 +53,22 @@ describe('behaviour controls', () => {
     expect(control?.kind).toBe('switch')
     expect(control && booleanOf(control, 'value')?.designed).toBe(true)
     expect(control && booleanOf(control, 'open')).toBeUndefined()
+  })
+
+  // Figma (desktop 126) keeps a slot inside another slot of a component; in an instance the inner
+  // one is part of the outer one's content. Preview runs the instance, so it must still find it.
+  test('finds the parts an instance holds inside another part', () => {
+    for (const [build, parts] of [
+      [sliderComponent, ['range', 'thumb', 'track']],
+      [progressComponent, ['indicator', 'track']]
+    ] as const) {
+      const { graph, set } = build()
+      const card = graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Card' })
+      const instance = graph.createInstance(set.id, card.id)
+      if (!instance) throw new Error('No instance')
+      const control = behaviourControls(graph, card.id).get(instance.name)
+      expect(Object.keys(control?.parts ?? {}).sort()).toEqual([...parts])
+    }
   })
 
   test('gives a control root its role by layer path', () => {

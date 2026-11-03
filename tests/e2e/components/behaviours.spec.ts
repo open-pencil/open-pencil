@@ -144,6 +144,81 @@ test('a switch inside a frame, named after its variant, toggles both ways in pre
   await editor.page.keyboard.press('Escape')
 })
 
+// The range is a slot inside the track's slot, as Reka draws it and Figma keeps it; in an
+// instance it is part of the track's content, and preview still has Reka place it.
+test('a slider instance in preview moves the range inside its track', async () => {
+  const instanceId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const graph = store.graph
+    const pageId = store.state.currentPageId
+    const solid = (r: number, g: number, b: number) => [
+      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+    ]
+    const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
+    const slider = graph.createNode('COMPONENT', pageId, {
+      name: 'Volume',
+      x: 120,
+      y: 120,
+      width: 200,
+      height: 20,
+      componentPropertyDefinitions: ['Track', 'Range', 'Thumb'].map((name) => ({
+        id: `${name.toLowerCase()}-slot`,
+        name,
+        type: 'SLOT' as const,
+        defaultValue: ''
+      }))
+    })
+    const track = graph.createNode('FRAME', slider.id, {
+      name: 'Track',
+      componentPropertyReferences: slot('track-slot'),
+      y: 8,
+      width: 200,
+      height: 4,
+      fills: solid(0.8, 0.8, 0.85)
+    })
+    graph.createNode('FRAME', track.id, {
+      name: 'Range',
+      componentPropertyReferences: slot('range-slot'),
+      width: 40,
+      height: 4,
+      fills: solid(0.2, 0.6, 1)
+    })
+    graph.createNode('FRAME', slider.id, {
+      name: 'Thumb',
+      componentPropertyReferences: slot('thumb-slot'),
+      x: 30,
+      width: 20,
+      height: 20,
+      cornerRadius: 10,
+      fills: solid(1, 1, 1)
+    })
+    store.setBehaviour(slider.id, {
+      kind: 'slider',
+      booleans: {},
+      texts: {},
+      numbers: { value: { min: 0, max: 100, step: 10, default: 20 } },
+      parts: { track: 'track-slot', range: 'range-slot', thumb: 'thumb-slot' }
+    })
+    const instance = graph.createInstance(slider.id, pageId, { x: 120, y: 260 })
+    if (!instance) throw new Error('Instance not created')
+    return instance.id
+  })
+  await editor.canvas.waitForRender()
+  await startPreview()
+
+  const control = island(instanceId).getByRole('slider')
+  const range = island(instanceId).locator('[data-layer$="Range"]')
+  await expect(control).toHaveAttribute('aria-valuenow', '20')
+  const before = (await range.boundingBox())?.width ?? 0
+  await control.press('ArrowRight')
+  await control.press('ArrowRight')
+  await expect(control).toHaveAttribute('aria-valuenow', '40')
+  // Twice the value, twice the range: Reka places it, the design's width no longer stands.
+  await expect.poll(async () => (await range.boundingBox())?.width ?? 0).toBeCloseTo(before * 2, 0)
+  await editor.page.keyboard.press('Escape')
+})
+
 test('preview islands move with the frames the canvas draws, not ahead of them', async () => {
   const ids = await createSwitch({ nested: true })
   await editor.canvas.waitForRender()
