@@ -1,0 +1,1 @@
+- Scripts get a layer's CSS with `getCSSAsync()`, as Figma's Dev Mode shows it.
