@@ -1,12 +1,9 @@
 import type {
-  BlurEffectNormal,
-  DropShadowEffect,
   Effect as PluginEffect,
-  InnerShadowEffect,
   VariableBindableEffectField
 } from '@figma/plugin-typings/plugin-api-standalone'
 
-import type { SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph, VariableType } from '@open-pencil/scene-graph'
 import {
   EFFECT_BINDING_PROPERTIES,
   effectBindableProperties,
@@ -14,7 +11,7 @@ import {
   type EffectBindingProperty
 } from '@open-pencil/scene-graph/variables'
 
-import type { FigmaEffect, FigmaEffectBindings } from '#core/figma-api/effects'
+import { boundEffectCopy, type FigmaEffect } from '#core/figma-api/effects'
 
 import { FIGMA_DEFAULT_VALUES, variableAlias, type FigmaVariableAlias } from './values'
 import { FigmaVariable, FigmaVariableCollection, assertVariableName } from './variable'
@@ -170,65 +167,26 @@ export class FigmaVariablesAPI {
     field: VariableBindableEffectField,
     variable: { readonly id: string } | null
   ): FigmaEffect {
-    const modelled = modelledEffect(effect)
-    const property = assertEffectField(modelled, field)
-    if (variable === null) return effectCopy(modelled, {})
-    if (typeof variable !== 'object') {
-      throw new TypeError(`in setBoundVariableForEffect: Expected node, got ${typeof variable}`)
-    }
-    const type = effectBindingVariableType(property)
-    if (this.#graph.variables.get(variable.id)?.type !== type) {
-      throw new Error(
-        `in setBoundVariableForEffect: can only bind ${type.toLowerCase()} variables to ${property}`
-      )
-    }
-    return effectCopy(modelled, {
-      ...modelled.boundVariables,
-      [property]: variableAlias(variable.id)
+    return boundEffectCopy('setBoundVariableForEffect', effect, (modelled) => {
+      const property = assertEffectField(modelled.type, field)
+      if (variable === null) return {}
+      if (typeof variable !== 'object') {
+        throw new TypeError(`in setBoundVariableForEffect: Expected node, got ${typeof variable}`)
+      }
+      const type = effectBindingVariableType(property)
+      if (this.#graph.variables.get(variable.id)?.type !== type) {
+        throw new Error(
+          `in setBoundVariableForEffect: can only bind ${type.toLowerCase()} variables to ${property}`
+        )
+      }
+      return { ...modelled.boundVariables, [property]: variableAlias(variable.id) }
     })
   }
 }
 
-/** The shadows and plain blurs OpenPencil models; other effects are refused, as `effects` does. */
-type ModelledEffect = DropShadowEffect | InnerShadowEffect | BlurEffectNormal
-
-function modelledEffect(effect: PluginEffect): ModelledEffect {
-  if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') return effect
-  if (effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') {
-    if (effect.blurType !== 'PROGRESSIVE') return effect
-    throw new Error('in setBoundVariableForEffect: Progressive blur is not supported')
-  }
-  throw new Error(`in setBoundVariableForEffect: ${effect.type} effects are not supported`)
-}
-
-function isShadow(effect: ModelledEffect): effect is DropShadowEffect | InnerShadowEffect {
-  return effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
-}
-
-/** `effect` as `setBoundVariableForEffect` returns it, fields in Figma's order, spread at 0. */
-function effectCopy(effect: ModelledEffect, boundVariables: FigmaEffectBindings): FigmaEffect {
-  const { visible, radius } = effect
-  if (!isShadow(effect)) {
-    return { type: effect.type, visible, radius, boundVariables, blurType: 'NORMAL' }
-  }
-  const shadow = {
-    visible,
-    radius,
-    boundVariables,
-    color: { ...effect.color },
-    offset: { ...effect.offset },
-    spread: 0,
-    blendMode: effect.blendMode
-  }
-  if (effect.type === 'INNER_SHADOW') return { type: effect.type, ...shadow }
-  return effect.showShadowBehindNode === undefined
-    ? { type: effect.type, ...shadow }
-    : { type: effect.type, ...shadow, showShadowBehindNode: effect.showShadowBehindNode }
-}
-
 /** Figma's check of the property `setBoundVariableForEffect` binds, which a blur limits to radius. */
-function assertEffectField(effect: ModelledEffect, field: unknown): EffectBindingProperty {
-  const properties = effectBindableProperties(effect.type)
+function assertEffectField(type: Effect['type'], field: unknown): EffectBindingProperty {
+  const properties = effectBindableProperties(type)
   const found = properties.find((property) => property === field)
   if (found) return found
   const expected =

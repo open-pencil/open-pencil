@@ -16,8 +16,8 @@ import type {
 import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
 import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
-import { EFFECT_VARIABLE_FIELDS, kiwiEffectWithBindings } from '../effect-bindings'
 import { variableAlias } from '../variable/bindings'
+import { EFFECT_VARIABLE_FIELDS, kiwiEffectWithBindings } from '../variable/effects'
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
 

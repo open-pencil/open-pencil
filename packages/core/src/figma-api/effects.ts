@@ -1,3 +1,9 @@
+import type {
+  BlurEffectNormal,
+  DropShadowEffect,
+  Effect as PluginEffect,
+  InnerShadowEffect
+} from '@figma/plugin-typings/plugin-api-standalone'
 import * as v from 'valibot'
 
 import type { BlendMode, Effect } from '@open-pencil/scene-graph'
@@ -85,18 +91,73 @@ const effectsSchema = v.array(effectSchema)
 /** An effect as Figma's plugin API reads and writes it (`Effect` in `@figma/plugin-typings`). */
 export type FigmaEffect = v.InferOutput<typeof effectSchema>
 
+/** Why OpenPencil cannot keep `effect`, and the field that says so, or null when it can. */
+function unsupportedEffectReason(effect: unknown): { message: string; field: string } | null {
+  const type: unknown = v.is(v.object({ type: v.unknown() }), effect) ? effect.type : undefined
+  if (typeof type === 'string' && UNSUPPORTED_EFFECT_TYPES.has(type)) {
+    return { message: `${type} effects are not supported`, field: 'type' }
+  }
+  if (v.is(v.object({ blurType: v.literal('PROGRESSIVE') }), effect)) {
+    return { message: 'Progressive blur is not supported', field: 'blurType' }
+  }
+  return null
+}
+
 function unsupportedEffect(value: unknown): string | null {
   if (!Array.isArray(value)) return null
   for (const [index, effect] of value.entries()) {
-    const type: unknown = v.is(v.object({ type: v.unknown() }), effect) ? effect.type : undefined
-    if (typeof type === 'string' && UNSUPPORTED_EFFECT_TYPES.has(type)) {
-      return `${type} effects are not supported at [${index}].type`
-    }
-    if (v.is(v.object({ blurType: v.literal('PROGRESSIVE') }), effect)) {
-      return `Progressive blur is not supported at [${index}].blurType`
-    }
+    const reason = unsupportedEffectReason(effect)
+    if (reason) return `${reason.message} at [${index}].${reason.field}`
   }
   return null
+}
+
+/** The shadows and plain blurs OpenPencil models, in the shapes Figma's plugin typings give them. */
+type ModelledPluginEffect = DropShadowEffect | InnerShadowEffect | BlurEffectNormal
+
+function isPluginShadow(
+  effect: ModelledPluginEffect
+): effect is DropShadowEffect | InnerShadowEffect {
+  return effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
+}
+
+function modelledPluginEffect(method: string, effect: PluginEffect): ModelledPluginEffect {
+  if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') return effect
+  if (effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') {
+    if (effect.blurType !== 'PROGRESSIVE') return effect
+  }
+  const reason = unsupportedEffectReason(effect)
+  throw new Error(`in ${method}: ${reason?.message ?? `${effect.type} effects are not supported`}`)
+}
+
+/**
+ * `effect` with `bindings` as `setBoundVariableForEffect` returns it: fields in Figma's order, a
+ * shadow's spread at 0. Effects OpenPencil does not model are refused, as `effects` refuses them.
+ */
+export function boundEffectCopy(
+  method: string,
+  effect: PluginEffect,
+  bindings: (effect: ModelledPluginEffect) => FigmaEffectBindings
+): FigmaEffect {
+  const modelled = modelledPluginEffect(method, effect)
+  const boundVariables = bindings(modelled)
+  const { visible, radius } = modelled
+  if (!isPluginShadow(modelled)) {
+    return { type: modelled.type, visible, radius, boundVariables, blurType: 'NORMAL' }
+  }
+  const shadow = {
+    visible,
+    radius,
+    boundVariables,
+    color: { ...modelled.color },
+    offset: { ...modelled.offset },
+    spread: 0,
+    blendMode: modelled.blendMode
+  }
+  if (modelled.type === 'INNER_SHADOW') return { type: modelled.type, ...shadow }
+  return modelled.showShadowBehindNode === undefined
+    ? { type: modelled.type, ...shadow }
+    : { type: modelled.type, ...shadow, showShadowBehindNode: modelled.showShadowBehindNode }
 }
 
 /** Check `value` against Figma's effect shapes and convert it to scene effects. */

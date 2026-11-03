@@ -218,6 +218,14 @@ function miterRatio(network: VectorNetwork, join: StrokeJoin | undefined, limit 
   return ratio
 }
 
+/**
+ * The blur radius Figma draws: a negative one, which only a bound variable can give, draws as no
+ * blur, though the layer keeps the value.
+ */
+export function drawnBlurRadius(radius: number): number {
+  return Math.max(0, radius)
+}
+
 export function effectOverflow(effects?: Effect[]) {
   let left = 0
   let right = 0
@@ -233,8 +241,7 @@ export function effectOverflow(effects?: Effect[]) {
     ) {
       continue
     }
-    // A negative blur, which only a bound variable gives, draws as none.
-    const blurSpread = Math.max(0, effect.radius) + effect.spread
+    const blurSpread = drawnBlurRadius(effect.radius) + effect.spread
     left = Math.max(left, blurSpread + Math.max(0, -effect.offset.x))
     right = Math.max(right, blurSpread + Math.max(0, effect.offset.x))
     top = Math.max(top, blurSpread + Math.max(0, -effect.offset.y))

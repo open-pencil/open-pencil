@@ -1,6 +1,6 @@
 import { omit } from 'es-toolkit/object'
 
-import type { Effect as KiwiEffect, VariableAliasData } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   EFFECT_BINDING_PROPERTIES,
@@ -8,8 +8,6 @@ import {
   effectBindingVariableType,
   type EffectBindingProperty
 } from '@open-pencil/scene-graph/variables'
-
-type VariableAlias = NonNullable<NonNullable<VariableAliasData['value']>['alias']>
 
 /** The field of a `.fig` effect that holds each property's variable alias. */
 export const EFFECT_VARIABLE_FIELDS = {
@@ -21,7 +19,7 @@ export const EFFECT_VARIABLE_FIELDS = {
 } as const satisfies Record<EffectBindingProperty, keyof KiwiEffect>
 
 /** The aliases a `.fig` effect binds its properties to, library references included. */
-export function effectVariableAliases(effect: KiwiEffect): VariableAlias[] {
+export function effectVariableAliases(effect: KiwiEffect): VariableAliasValue[] {
   return EFFECT_BINDING_PROPERTIES.flatMap((property) => {
     const alias = effect[EFFECT_VARIABLE_FIELDS[property]]?.value?.alias
     return alias ? [alias] : []
@@ -48,7 +46,7 @@ export function kiwiEffectWithBindings(
   effect: KiwiEffect,
   index: number,
   boundVariables: Readonly<Record<string, string>>,
-  alias: (variableId: string) => VariableAlias
+  alias: (variableId: string) => VariableAliasValue
 ): KiwiEffect {
   const next: KiwiEffect = omit(effect, Object.values(EFFECT_VARIABLE_FIELDS))
   for (const property of EFFECT_BINDING_PROPERTIES) {

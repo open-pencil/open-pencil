@@ -11,8 +11,8 @@ import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defau
 import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { nodeChangeToProps } from '../node-change'
-import { EFFECT_VARIABLE_FIELDS } from '../node-change/effect-bindings'
 import { numericVariableBindingScales } from '../node-change/variable/bindings'
+import { EFFECT_VARIABLE_FIELDS } from '../node-change/variable/effects'
 import {
   recordVariableBindingClaims,
   occurrenceAssignmentScales,

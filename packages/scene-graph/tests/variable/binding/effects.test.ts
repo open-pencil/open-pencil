@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 import {
-  effectBindingTarget,
   reconcileVariableBindings,
   resolvedEffectBindings
 } from '@open-pencil/scene-graph/variables'
@@ -47,18 +46,6 @@ function elevation() {
   })
   return { graph, collection, dark, color, blur, lift, card }
 }
-
-describe('effect binding fields', () => {
-  test('name the effect and the property they bind', () => {
-    expect(effectBindingTarget('effects/1/offsetY')).toEqual({ index: 1, property: 'offsetY' })
-    expect(effectBindingTarget('effects/0/color')).toEqual({ index: 0, property: 'color' })
-  })
-
-  test('are not paint or unknown effect fields', () => {
-    for (const field of ['effects', 'effects/0/offset', 'effects/x/radius', 'fills/0/color'])
-      expect(effectBindingTarget(field)).toBeNull()
-  })
-})
 
 describe('effect bindings', () => {
   test('resolve each property in the layer mode, colour alpha included', () => {

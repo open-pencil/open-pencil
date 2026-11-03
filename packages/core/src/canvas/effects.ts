@@ -2,6 +2,7 @@ import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
 
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -34,14 +35,6 @@ export function createMaskFilterCache(): MaskFilterCache {
  */
 export function blurSigma(radius: number): number {
   return drawnBlurRadius(radius) * 0.43
-}
-
-/**
- * The blur radius Figma draws: a negative one, which only a bound variable can give, draws as no
- * blur, though the layer keeps the value.
- */
-export function drawnBlurRadius(radius: number): number {
-  return Math.max(0, radius)
 }
 
 export function getCachedDropShadow(

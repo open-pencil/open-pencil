@@ -1,6 +1,6 @@
 import { symbolOverridesOf, type SymbolOverride } from '#fig/instance-overrides/types'
-import { effectVariableAliases } from '#fig/node-change/effect-bindings'
 import { variableConsumptionEntries } from '#fig/node-change/variable/bindings'
+import { effectVariableAliases } from '#fig/node-change/variable/effects'
 import { visitVariableReferences } from '#fig/node-change/variable/expression'
 
 import type { GUID } from '@open-pencil/kiwi/fig'

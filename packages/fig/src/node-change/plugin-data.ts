@@ -21,13 +21,13 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { effectBindingTarget, paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
-import { effectBindingsFromKiwi } from './effect-bindings'
 import {
   resolveVariableConsumptionEntry,
   variableConsumptionEntries,
   VARIABLE_BINDING_FIELDS_INVERSE,
   referencesVariable
 } from './variable/bindings'
+import { effectBindingsFromKiwi } from './variable/effects'
 
 const { boundVariables, exportSettings, librarySource, textPathBox } = OPEN_PENCIL_PLUGIN_DATA
 
