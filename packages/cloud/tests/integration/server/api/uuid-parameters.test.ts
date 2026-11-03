@@ -32,8 +32,8 @@ const MALFORMED: [method: string, path: string][] = [
   ['GET', '/api/workspaces/abc/entitlements'],
   ['POST', `/api/workspaces/${MISSING}/invitations/abc/resend`],
   ['POST', '/api/uploads/abc/commit'],
-  ['GET', '/api/shares/abc/document'],
-  ['GET', '/api/invitations/abc/preview?token=secret']
+  ['POST', '/api/shares/abc/document'],
+  ['POST', '/api/invitations/abc/preview']
 ]
 
 const notFoundSchema = v.object({ error: v.object({ code: v.literal('not_found') }) })

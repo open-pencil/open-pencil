@@ -17,7 +17,7 @@ const presetSchema = v.pipe(
   v.looseObject({ plugins: v.array(v.string()), rules: v.record(v.string(), v.unknown()) })
 )
 /** Rules that fit only some code, which a project turns on where they apply. */
-const OPT_IN = new Set(['no-dynamic-html', 'no-raw-sql'])
+const OPT_IN = new Set(['no-dynamic-html', 'no-raw-sql', 'no-unvalidated-route-params'])
 
 async function preset() {
   return v.parse(presetSchema, await Bun.file(PRESET).text())

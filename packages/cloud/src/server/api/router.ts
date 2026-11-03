@@ -20,7 +20,7 @@ import {
   createPublicDocumentRoutes,
   createPublicSharingRoutes
 } from '#cloud/server/sharing'
-import { uuidParameter } from '#cloud/server/validation'
+import { workspaceParams } from '#cloud/server/validation'
 import type { WorkspaceMemberService, WorkspaceService } from '#cloud/server/workspaces'
 import { createWorkspaceRoutes } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
@@ -42,7 +42,7 @@ export type CloudAPIServices = {
 }
 
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
-  return routerCheckingUUIDs(PUBLIC_UUID_PARAMETER_PATHS)
+  return new Hono<CloudAPIEnvironment>()
     .route('/', createPublicSharingRoutes(services.sharing, services.resolveSession))
     .route(
       '/',
@@ -51,53 +51,16 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
 }
 
-/**
- * Routes whose parameters name rows by UUID, each with and without what follows it. Paths are
- * spelled out rather than matched by prefix, since `/invitations/continuations/...` is not an
- * invitation.
- */
-type UUIDParameterPaths = Readonly<Record<string, readonly string[]>>
-
-const PUBLIC_UUID_PARAMETER_PATHS: UUIDParameterPaths = {
-  shareId: ['/shares/:shareId/*'],
-  invitationId: ['/invitations/:invitationId/accept', '/invitations/:invitationId/preview']
-}
-
-const UUID_PARAMETER_PATHS: UUIDParameterPaths = {
-  documentId: ['/documents/:documentId', '/documents/:documentId/*'],
-  versionId: [
-    '/documents/:documentId/versions/:versionId',
-    '/documents/:documentId/versions/:versionId/*'
-  ],
-  shareId: ['/documents/:documentId/shares/:shareId', '/documents/:documentId/shares/:shareId/*'],
-  invitationId: [
-    '/documents/:documentId/invitations/:invitationId',
-    '/workspaces/:workspaceId/invitations/:invitationId',
-    '/workspaces/:workspaceId/invitations/:invitationId/*'
-  ],
-  workspaceId: ['/workspaces/:workspaceId', '/workspaces/:workspaceId/*'],
-  uploadId: ['/uploads/:uploadId/*']
-}
-
-/** A router that answers 404 for a malformed UUID in any of `paths`' parameters. */
-function routerCheckingUUIDs(paths: UUIDParameterPaths) {
-  const router = new Hono<CloudAPIEnvironment>()
-  for (const [name, patterns] of Object.entries(paths)) {
-    for (const pattern of patterns) router.use(pattern, uuidParameter(name))
-  }
-  return router
-}
-
 export function createCloudAPIRouter(services: CloudAPIServices) {
-  return routerCheckingUUIDs(UUID_PARAMETER_PATHS)
+  return new Hono<CloudAPIEnvironment>()
     .route('/public', createPublicCloudAPIRouter(services))
-    .get('/workspaces/:workspaceId/entitlements', async (context) => {
+    .get('/workspaces/:workspaceId/entitlements', workspaceParams, async (context) => {
       if (!services.entitlements)
         return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json({
         entitlements: await services.entitlements.workspace(
           context.get('actor').userId,
-          context.req.param('workspaceId')
+          context.req.valid('param').workspaceId
         )
       })
     })

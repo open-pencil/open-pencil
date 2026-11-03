@@ -1,4 +1,4 @@
-import type { Context, MiddlewareHandler } from 'hono'
+import type { Context } from 'hono'
 import { validator } from 'hono/validator'
 import * as v from 'valibot'
 
@@ -23,15 +23,55 @@ export function validatedQuery<T>(parse: (input: unknown) => T) {
   return validator('query', (value, context: Context) => parseOrReject(parse, value, context))
 }
 
-const uuidSchema = v.pipe(v.string(), v.uuid())
+/** A route parameter that names a row by UUID. */
+const uuidParamSchema = v.pipe(v.string(), v.uuid())
 
 /**
- * Answers 404 when a route parameter that names a row by UUID is not one: it names nothing, and
- * the database would refuse it as a server error. Mount it on the paths that declare the parameter.
+ * Route parameters through `schema`; handlers read them from `context.req.valid('param')`. A
+ * parameter that fails it names nothing, so the route answers 404 as for a missing row, and the
+ * value never reaches the database.
  */
-export function uuidParameter(name: string): MiddlewareHandler {
-  return async (context, next) => {
-    if (v.is(uuidSchema, context.req.param(name))) return next()
-    return context.json({ error: { code: 'not_found' as const } }, 404)
-  }
+export function validatedParams<TOutput>(schema: v.GenericSchema<unknown, TOutput>) {
+  return validator('param', (value, context: Context) => {
+    const parsed = v.safeParse(schema, value)
+    return parsed.success
+      ? parsed.output
+      : context.json({ error: { code: 'not_found' as const } }, 404)
+  })
 }
+
+/** A route parameter the server takes as text, such as a user ID, which is not a UUID column. */
+const textParamSchema = v.pipe(v.string(), v.minLength(1))
+
+export const documentParams = validatedParams(v.object({ documentId: uuidParamSchema }))
+export const documentVersionParams = validatedParams(
+  v.object({ documentId: uuidParamSchema, versionId: uuidParamSchema })
+)
+export const documentShareParams = validatedParams(
+  v.object({ documentId: uuidParamSchema, shareId: uuidParamSchema })
+)
+export const documentInvitationParams = validatedParams(
+  v.object({ documentId: uuidParamSchema, invitationId: uuidParamSchema })
+)
+export const documentUserParams = validatedParams(
+  v.object({ documentId: uuidParamSchema, userId: textParamSchema })
+)
+export const workspaceParams = validatedParams(v.object({ workspaceId: uuidParamSchema }))
+export const workspaceInvitationParams = validatedParams(
+  v.object({ workspaceId: uuidParamSchema, invitationId: uuidParamSchema })
+)
+export const workspaceMemberParams = validatedParams(
+  v.object({ workspaceId: uuidParamSchema, userId: textParamSchema })
+)
+export const shareParams = validatedParams(v.object({ shareId: uuidParamSchema }))
+export const invitationParams = validatedParams(v.object({ invitationId: uuidParamSchema }))
+export const invitationContinuationParams = validatedParams(
+  v.object({ continuationId: textParamSchema })
+)
+export const uploadParams = validatedParams(v.object({ uploadId: uuidParamSchema }))
+/** Admin records (enrollments, accounts, and messages), all named by UUID. */
+export const idParams = validatedParams(v.object({ id: uuidParamSchema }))
+/** A picture's address names its owner and a prefix of its checksum, which the service checks. */
+export const pictureParams = validatedParams(
+  v.object({ userId: textParamSchema, version: textParamSchema })
+)
