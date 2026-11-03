@@ -100,20 +100,25 @@ function compactRuns(chars: (CharacterStyleOverride | null)[]): StyleRun[] {
   return result
 }
 
-export function adjustRunsForInsert(
+/** Which neighbour inserted characters copy their style from, as Figma's `insertCharacters` takes it. */
+export type InsertStyleSource = 'BEFORE' | 'AFTER'
+
+/**
+ * The style inserted characters take, as Figma gives it: the preceding character's for `BEFORE`
+ * and the following one's for `AFTER`, or the closest character's at either end of the text.
+ */
+export function insertedStyleAt(
   runs: StyleRun[],
-  pos: number,
-  insertLength: number
-): StyleRun[] {
-  return runs.map((run) => {
-    if (pos <= run.start) {
-      return { ...run, start: run.start + insertLength }
-    }
-    if (pos > run.start && pos < run.start + run.length) {
-      return { ...run, length: run.length + insertLength }
-    }
-    return run
-  })
+  textLength: number,
+  start: number,
+  useStyle: InsertStyleSource
+): CharacterStyleOverride {
+  if (textLength === 0) {
+    return {}
+  }
+  const preferred = useStyle === 'BEFORE' ? start - 1 : start
+  const index = Math.min(Math.max(preferred, 0), textLength - 1)
+  return getStyleAt(runs, index)
 }
 
 /**
@@ -140,13 +145,17 @@ export function insertRunsWithStyle(
   }
   if (length > 0 && !isEmptyStyle(style)) moved.push({ start: pos, length, style: { ...style } })
   moved.sort((first, second) => first.start - second.start)
-  // Runs that meet with the same style become one, as compactRuns leaves them.
+  const insertEdges = new Set([pos, pos + length])
   const merged: StyleRun[] = []
   for (const run of moved) {
     const last = merged.at(-1)
-    if (last && last.start + last.length === run.start && isEqual(last.style, run.style)) {
+    const meetsAtInsertEdge =
+      last !== undefined && last.start + last.length === run.start && insertEdges.has(run.start)
+    if (last && meetsAtInsertEdge && isEqual(last.style, run.style)) {
       merged[merged.length - 1] = { ...last, length: last.length + run.length }
-    } else merged.push(run)
+    } else {
+      merged.push(run)
+    }
   }
   return merged
 }
@@ -179,6 +188,19 @@ export function adjustRunsForDelete(
     }
   }
   return result
+}
+
+export function runsAfterTyping(
+  runs: StyleRun[],
+  textLength: number,
+  start: number,
+  end: number,
+  typedLength: number
+): StyleRun[] {
+  const replacesSelection = end > start
+  const style = insertedStyleAt(runs, textLength, start, replacesSelection ? 'AFTER' : 'BEFORE')
+  const remaining = replacesSelection ? adjustRunsForDelete(runs, start, end - start) : runs
+  return insertRunsWithStyle(remaining, start, typedLength, style)
 }
 
 export function toggleBoldInRange(
