@@ -184,6 +184,28 @@ test('loads the next fallback family only for the characters CanvasKit finds no 
   }
 })
 
+test('a Traditional Chinese fallback covers the Han characters it shares with the others', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const provider = manager.acquireProvider(await getCanvasKit())
+  const latin = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const reads: string[] = []
+  // macOS lists PingFang TC, Heiti TC, PingFang SC, Hiragino Sans for Traditional Chinese.
+  manager.setHostFontLoader(async (family) => {
+    reads.push(family)
+    return family === 'PingFang TC' ? latin : chinese
+  })
+
+  try {
+    // 中 is written alike in both; 語 is Traditional only.
+    await manager.ensureFallbackPack(['cjk-tc'], '中')
+    expect(reads).toEqual(['PingFang TC', 'Heiti TC'])
+  } finally {
+    manager.releaseProvider(provider)
+  }
+})
+
 test('a host read that outlives its loader never registers the replaced loader data', async () => {
   const manager = offlineManager()
   manager.setFallbackUserAgent('Windows')

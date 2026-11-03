@@ -1,4 +1,4 @@
-import type { Font } from 'canvaskit-wasm'
+import type { Font, TypefaceFontProvider } from 'canvaskit-wasm'
 import { uniqBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -143,10 +143,20 @@ export function getFontProvider(r: SkiaRenderer) {
   return r.isDestroyed() || !r.fontProvider ? null : r.fontProvider
 }
 
+/**
+ * The shared providers that have the section titles' face. Every renderer that loads fonts reads
+ * the file again, and the provider would keep each copy.
+ */
+const sectionTitleProviders = new WeakSet<TypefaceFontProvider>()
+
 /** Section titles' face, for the canvas and for the field that renames a title in the page. */
 function registerSectionTitleFont(r: SkiaRenderer, data: ArrayBuffer) {
-  r.fontProvider?.registerFont(data, SECTION_TITLE_FONT_FAMILY)
-  fontManager.registerFontInBrowser(SECTION_TITLE_FONT_FAMILY, 'SemiBold', data)
+  const provider = r.fontProvider
+  if (provider && !sectionTitleProviders.has(provider)) {
+    sectionTitleProviders.add(provider)
+    provider.registerFont(data, SECTION_TITLE_FONT_FAMILY)
+    fontManager.registerFontInBrowser(SECTION_TITLE_FONT_FAMILY, 'SemiBold', data)
+  }
   const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(data)
   if (!typeface) return
   try {

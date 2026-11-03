@@ -13,7 +13,8 @@ import {
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import {
-  fallbackScriptCharacter,
+  ARABIC_CHARACTER,
+  CJK_CHARACTER,
   fontFallbackEntry,
   type FontFallbackScript
 } from '#core/text/fallbacks'
@@ -753,8 +754,8 @@ export class FontManager {
 
   /**
    * Loads the fallback faces for `script`. The first installed one of its families comes in, and
-   * the next only for the script's characters among `characters` that CanvasKit finds no glyph
-   * for in those loaded: each is a whole system face, tens of megabytes for a CJK one, copied
+   * the next only for the characters of its writing system among `characters` that CanvasKit finds
+   * no glyph for in the fallbacks loaded: each is a whole system face, tens of megabytes for a CJK one, copied
    * into CanvasKit. Web fonts come in, cut to the characters, when no installed face covers them.
    */
   private async ensureFallbackFamilies(
@@ -765,7 +766,8 @@ export class FontManager {
   ): Promise<string[]> {
     signal?.throwIfAborted()
     const manifest = fontFallbackEntry(script, this.fallbackUserAgent)
-    const scriptCharacter = fallbackScriptCharacter(script)
+    // A CJK face draws Han shared across the languages too, so each covers the text's CJK.
+    const scriptCharacter = script === 'arabic' ? ARABIC_CHARACTER : CJK_CHARACTER
     const needed = uniq(Array.from(characters)).filter((character) =>
       scriptCharacter.test(character)
     )
