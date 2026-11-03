@@ -900,7 +900,12 @@ export class FontManager {
   }
 
   /** Adds `buffer` to the files of `style` after its own, returning the copy of it they keep. */
-  private registerSupplemental(family: string, style: string, buffer: ArrayBuffer): ArrayBuffer {
+  private registerSupplemental(
+    family: string,
+    style: string,
+    buffer: ArrayBuffer,
+    source?: FontLoadedSource
+  ): ArrayBuffer {
     const key = `${family}|${style}`
     const supplemental = this.supplementalFamilyData.get(key) ?? []
     const kept = supplemental.find((file) => sameFontFile(file, buffer))
@@ -908,7 +913,7 @@ export class FontManager {
     supplemental.push(buffer)
     this.supplementalFamilyData.set(key, supplemental)
     this.registerFontInCanvasKit(family, buffer)
-    this.registerFontInBrowser(family, style, buffer)
+    if (!pageDrawsByName(source)) this.registerFontInBrowser(family, style, buffer)
     return buffer
   }
 
@@ -928,16 +933,16 @@ export class FontManager {
     }
     if (existing) {
       const replaced = this.replacedFileData.get(key) ?? new Set<ArrayBuffer>()
-      replaced.add(this.registerSupplemental(family, style, existing))
+      replaced.add(
+        this.registerSupplemental(family, style, existing, this.loadedFamilySources.get(key))
+      )
       this.replacedFileData.set(key, replaced)
       this.replacedFamilies.add(family)
     }
     this.loadedFamilies.set(key, buffer)
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
-    // The page's own text falls back to the system's fonts by itself, and a browser face would be
-    // one more copy of a whole system file.
-    if (source !== 'fallback') this.registerFontInBrowser(family, style, buffer)
+    if (!pageDrawsByName(source)) this.registerFontInBrowser(family, style, buffer)
     for (const listener of this.faceListeners) listener(family, style)
     return buffer
   }
@@ -992,6 +997,16 @@ export class FontManager {
         console.warn(`Failed to load font "${family}" (${style})`)
       })
   }
+}
+
+/**
+ * Whether the page draws a face from `source` by itself: it draws installed fonts by name and
+ * falls back to the system's. A browser face would copy a whole system file, and one under an
+ * installed family's name stands in for all of that family's faces: WebView2 draws their bold
+ * and italic text in it.
+ */
+function pageDrawsByName(source: FontLoadedSource | undefined): boolean {
+  return source === 'local' || source === 'fallback'
 }
 
 export const fontManager = new FontManager()
