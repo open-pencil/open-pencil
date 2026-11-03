@@ -111,6 +111,30 @@ export function buildFigmaClipboardHTML(
   )
 }
 
+/**
+ * A layer written twice, on the page and in a set brought as a dependency, keeps its page GUID
+ * as the override key of its copy in the set, as Figma keys it (desktop 126), so paths written
+ * against the page's GUID still find it. Layers only the dependencies wrote join the page map.
+ */
+function keyRenumberedCopies(
+  nodeChanges: KiwiNodeChange[],
+  nodeIdToGuid: Map<string, GUID>,
+  dependencyGuids: ReadonlyMap<string, GUID>
+): void {
+  const renumbered = new Map<string, GUID>()
+  for (const [id, guid] of dependencyGuids) {
+    const original = nodeIdToGuid.get(id)
+    if (!original) nodeIdToGuid.set(id, guid)
+    else if (original.sessionID !== guid.sessionID || original.localID !== guid.localID)
+      renumbered.set(`${guid.sessionID}:${guid.localID}`, original)
+  }
+  for (const change of nodeChanges) {
+    const original =
+      change.guid && renumbered.get(`${change.guid.sessionID}:${change.guid.localID}`)
+    if (original && !change.overrideKey) change.overrideKey = original
+  }
+}
+
 async function writeFigmaClipboardHTML(
   nodes: SceneNode[],
   graph: SceneGraph,
@@ -216,24 +240,25 @@ async function writeFigmaClipboardHTML(
       ...makeCanvasNodeChange(dependencyCanvas, docGuid, '"', 'Clipboard dependencies'),
       internalOnly: true
     })
+  // A set brought for an instance writes every variant beneath it, a copied one too, which
+  // takes new GUIDs there as Figma gives it (desktop 126), since the page already has its own.
+  const dependencyGuids = new Map([...nodeIdToGuid].filter(([id]) => !selected.has(id)))
   for (const component of dependencies.values()) {
     collectTextNodes(component)
     nodeChanges.push(
       ...sceneNodeToKiwi(component, dependencyCanvas, 0, localIdCounter, graph, blobs, {
-        nodeIdToGuid,
+        nodeIdToGuid: dependencyGuids,
         fontDigestMap,
         varIdToGuid: variableIds,
         assignedGuidValues,
         modeIdToGuid: modeIds,
         slotContentRecords,
         propertyCopyGuids,
-        // A set brought for an instance leaves out a copied variant, already written on the
-        // page, which would otherwise repeat its GUID.
-        skippedNodeIds: selected,
         runtime
       })
     )
   }
+  keyRenumberedCopies(nodeChanges, nodeIdToGuid, dependencyGuids)
   appendVariableNodeChanges(graph, nodeChanges, dependencyCanvas, variableIds, modeIds)
   // Slot content is collected while instances serialize; it follows the canvas's other records.
   const written = nodeChanges.filter(

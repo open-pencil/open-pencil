@@ -471,8 +471,6 @@ export interface SceneNodeToKiwiOptions {
   recordOwners?: ReadonlyMap<string, string>
   orderKeys?: ReadonlyMap<string, string>
   writeChildren?: boolean
-  /** Layers a caller writes elsewhere, which their parents' records leave out. */
-  skippedNodeIds?: ReadonlySet<string>
 }
 
 export function sceneNodeToKiwi(
@@ -500,8 +498,7 @@ export function sceneNodeToKiwi(
     pluginDataOverrides,
     recordOwners,
     orderKeys,
-    writeChildren,
-    skippedNodeIds
+    writeChildren
   } = options
   // Raw paints retain library asset refs; effects use this map because their
   // Kiwi schema accepts only GUID-backed aliases.
@@ -525,7 +522,6 @@ export function sceneNodeToKiwi(
     recordOwners,
     orderKeys,
     writeChildren,
-    skippedNodeIds,
     fractionalPosition,
     mapToFigmaType,
     fillToKiwiPaint,

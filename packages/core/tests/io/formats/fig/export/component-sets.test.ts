@@ -523,6 +523,18 @@ describe("a set's properties as each variant's linked copy", () => {
     const guids = records.map((record) => guidOf(record.guid))
     expect(new Set(guids).size).toBe(guids.length)
 
+    // As Figma copies it (desktop 126), the set keeps every variant, the copied one under a
+    // new GUID keyed by its page record's.
+    const pageLarge = expectDefined(
+      records.find(
+        (record) => record.name === 'Size=Large' && guidOf(record.parentIndex?.guid) === '0:1'
+      ),
+      'page variant'
+    )
+    const inSet = variantRecords(records, setRecord(records))
+    expect(inSet.map((variant) => variant.name)).toEqual(['Size=Small', 'Size=Large'])
+    expect(guidOf(inSet[1]?.overrideKey as GUID | undefined)).toBe(guidOf(pageLarge.guid))
+
     const target = createEditor()
     await target.pasteFromHTML(html)
     const pasted = [...target.graph.getAllNodes()]
@@ -530,6 +542,38 @@ describe("a set's properties as each variant's linked copy", () => {
     expect(pasted.some((node) => node.name === 'Size=Large' && node.type === 'COMPONENT')).toBe(
       true
     )
+  })
+
+  // A layer copied out of a variant stays in that variant's copy in the set an instance brings.
+  test('a layer copied out of a variant stays in the set its instance brings', async () => {
+    const graph = await dotSet()
+    const nodes = [...graph.getAllNodes()]
+    const large = expectDefined(
+      nodes.find((node) => node.name === 'Size=Large'),
+      'large'
+    )
+    const mark = graph.createNode('RECTANGLE', large.id, { name: 'Mark', width: 4, height: 4 })
+    const instance = expectDefined(
+      nodes.find((node) => node.type === 'INSTANCE'),
+      'instance'
+    )
+    graph.syncInstances(large.id)
+    const html = expectDefined(await buildFigmaClipboardHTML([mark, instance], graph), 'html')
+    const records = expectDefined(await parseFigmaClipboard(html), 'parsed').nodes
+    const guids = records.map((record) => guidOf(record.guid))
+    expect(new Set(guids).size).toBe(guids.length)
+
+    const target = createEditor()
+    await target.pasteFromHTML(html)
+    const pasted = expectDefined(
+      [...target.graph.getAllNodes()].find((node) => node.type === 'INSTANCE'),
+      'pasted instance'
+    )
+    const variant = expectDefined(target.graph.getMainComponent(pasted.id), 'pasted variant')
+    expect(target.graph.getChildren(variant.id).map((layer) => layer.name)).toEqual([
+      'Dot',
+      'Mark'
+    ])
   })
 
   // Figma (desktop 126) writes a variant copied alone with its set's properties as its own,
