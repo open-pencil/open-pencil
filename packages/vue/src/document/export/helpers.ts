@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
@@ -169,7 +170,8 @@ export function createExportSettingActions(editor: Editor, targetIds: ComputedRe
   function updateScale(index: number, scale: number) {
     updateEveryTarget(editor, targetIds, 'Update export scale', (settings) =>
       settings.map((setting, i) =>
-        i === index ? { ...setting, scale: clampExportScale(scale) } : setting
+        // A scale replaces a fixed width or height, which the panel has no field for.
+        i === index ? { ...omit(setting, ['size']), scale: clampExportScale(scale) } : setting
       )
     )
   }
