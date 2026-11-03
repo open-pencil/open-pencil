@@ -190,6 +190,21 @@ export interface ImageAdjustments {
   hue?: number
   /** Invert every channel. */
   invert?: boolean
+  /** Input levels: black and white points (0–1) and the midtone gamma (0.1–10, 1 unchanged). */
+  levels?: ImageLevels
+  /** A tone curve through these points (x and y 0–1, sorted by x); identity when absent. */
+  curve?: CurvePoint[]
+}
+
+export interface ImageLevels {
+  black: number
+  white: number
+  gamma: number
+}
+
+export interface CurvePoint {
+  x: number
+  y: number
 }
 
 export const IMAGE_ADJUSTMENT_KEYS = [

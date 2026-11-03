@@ -11,5 +11,11 @@
   "highlights": "Światła",
   "shadows": "Cienie",
   "hue": "Barwa",
-  "invert": "Odwróć"
+  "invert": "Odwróć",
+  "levels": "Poziomy",
+  "blackPoint": "Punkt czerni",
+  "whitePoint": "Punkt bieli",
+  "midtones": "Półtony",
+  "curve": "Krzywa",
+  "resetCurve": "Resetuj krzywą"
 }

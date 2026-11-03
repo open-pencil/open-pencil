@@ -11,5 +11,11 @@
   "highlights": "ハイライト",
   "shadows": "シャドウ",
   "hue": "色相",
-  "invert": "反転"
+  "invert": "反転",
+  "levels": "レベル補正",
+  "blackPoint": "黒点",
+  "whitePoint": "白点",
+  "midtones": "中間調",
+  "curve": "トーンカーブ",
+  "resetCurve": "カーブをリセット"
 }

@@ -11,5 +11,11 @@
   "highlights": "高光",
   "shadows": "阴影",
   "hue": "色相",
-  "invert": "反相"
+  "invert": "反相",
+  "levels": "色阶",
+  "blackPoint": "黑场",
+  "whitePoint": "白场",
+  "midtones": "中间调",
+  "curve": "曲线",
+  "resetCurve": "重置曲线"
 }

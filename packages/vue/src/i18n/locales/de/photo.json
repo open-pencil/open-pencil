@@ -11,5 +11,11 @@
   "highlights": "Lichter",
   "shadows": "Tiefen",
   "hue": "Farbton",
-  "invert": "Umkehren"
+  "invert": "Umkehren",
+  "levels": "Tonwerte",
+  "blackPoint": "Schwarzpunkt",
+  "whitePoint": "Weißpunkt",
+  "midtones": "Mitteltöne",
+  "curve": "Gradationskurve",
+  "resetCurve": "Kurve zurücksetzen"
 }

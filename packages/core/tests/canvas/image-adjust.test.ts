@@ -8,7 +8,12 @@ import { renderNodesToImage } from '@lawha/core/io/formats/raster'
 import { SceneGraph, type ImageAdjustments } from '@lawha/scene-graph'
 import { computeImageHash } from '@lawha/scene-graph/images'
 
-import { adjustmentUniforms, hasAdjustments } from '#core/canvas/image-adjust'
+import {
+  adjustmentUniforms,
+  CURVE_SAMPLES,
+  hasAdjustments,
+  sampleCurve
+} from '#core/canvas/image-adjust'
 import { getCanvasKit } from '#core/canvaskit'
 
 let ck: CanvasKit
@@ -90,9 +95,80 @@ describe('adjustment values', () => {
   })
 
   test('uniforms follow the declared order and are clamped to -1…1', () => {
-    expect(adjustmentUniforms({ exposure: 3, hue: -2, invert: true })).toEqual([
-      1, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1
+    const u = adjustmentUniforms({ exposure: 3, hue: -2, invert: true })
+    expect(u.slice(0, 15)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1, 1, 0])
+    expect(u).toHaveLength(15 + CURVE_SAMPLES)
+  })
+})
+
+describe('levels and curves', () => {
+  test('identity levels and a straight curve change nothing', () => {
+    expect(hasAdjustments({ levels: { black: 0, white: 1, gamma: 1 } })).toBe(false)
+    expect(
+      hasAdjustments({
+        curve: [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 }
+        ]
+      })
+    ).toBe(false)
+    expect(hasAdjustments({ levels: { black: 0.1, white: 1, gamma: 1 } })).toBe(true)
+    expect(hasAdjustments({ curve: [{ x: 0.5, y: 0.7 }] })).toBe(true)
+  })
+
+  test('a sampled curve passes through its points and never overshoots', () => {
+    const points = [
+      { x: 0, y: 0 },
+      { x: 0.25, y: 0.1 },
+      { x: 0.75, y: 0.9 },
+      { x: 1, y: 1 }
+    ]
+    const s = sampleCurve(points)
+    expect(s).toHaveLength(CURVE_SAMPLES)
+    expect(s[0]).toBeCloseTo(0)
+    expect(s[(CURVE_SAMPLES - 1) / 4]).toBeCloseTo(0.1)
+    expect(s[CURVE_SAMPLES - 1]).toBeCloseTo(1)
+    for (let i = 1; i < s.length; i++) expect(s[i]).toBeGreaterThanOrEqual(s[i - 1] - 1e-9)
+  })
+
+  test('the curve is flat outside its first and last point', () => {
+    const s = sampleCurve([
+      { x: 0.25, y: 0.3 },
+      { x: 0.75, y: 0.6 }
     ])
+    expect(s[0]).toBeCloseTo(0.3)
+    expect(s[CURVE_SAMPLES - 1]).toBeCloseTo(0.6)
+  })
+
+  test('levels: pixels at the black point become black, at the white point white', () => {
+    const levels = { black: 100 / 255, white: 200 / 255, gamma: 1 }
+    near(render([100, 100, 100], { levels })[0], 0, 2)
+    near(render([200, 200, 200], { levels })[0], 255, 2)
+    near(render([150, 150, 150], { levels })[0], 128, 3)
+  })
+
+  test('levels gamma above 1 lightens midtones', () => {
+    const mid = render([128, 128, 128], { levels: { black: 0, white: 1, gamma: 2 } })[0]
+    expect(mid).toBeGreaterThan(160)
+  })
+
+  test('a raised curve lightens; an inverted curve negates', () => {
+    expect(
+      render([128, 128, 128], {
+        curve: [
+          { x: 0, y: 0 },
+          { x: 0.5, y: 0.75 },
+          { x: 1, y: 1 }
+        ]
+      })[0]
+    ).toBeGreaterThan(175)
+    const [r] = render([60, 60, 60], {
+      curve: [
+        { x: 0, y: 1 },
+        { x: 1, y: 0 }
+      ]
+    })
+    near(r, 195, 3)
   })
 })
 

@@ -14,7 +14,13 @@ export const photoMessageDefaults = {
   highlights: 'Highlights',
   shadows: 'Shadows',
   hue: 'Hue',
-  invert: 'Invert'
+  invert: 'Invert',
+  levels: 'Levels',
+  blackPoint: 'Black point',
+  whitePoint: 'White point',
+  midtones: 'Midtones',
+  curve: 'Curve',
+  resetCurve: 'Reset curve'
 } as const
 
 export const photoMessages = i18n('photo', photoMessageDefaults)

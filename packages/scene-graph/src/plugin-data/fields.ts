@@ -155,7 +155,25 @@ const imageAdjustmentsSchema = v.record(
     highlights: adjustmentValueSchema,
     shadows: adjustmentValueSchema,
     hue: adjustmentValueSchema,
-    invert: v.optional(v.boolean())
+    invert: v.optional(v.boolean()),
+    levels: v.optional(
+      v.object({
+        black: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+        white: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+        gamma: v.pipe(v.number(), v.minValue(0.1), v.maxValue(10))
+      })
+    ),
+    curve: v.optional(
+      v.pipe(
+        v.array(
+          v.object({
+            x: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+            y: v.pipe(v.number(), v.minValue(0), v.maxValue(1))
+          })
+        ),
+        v.maxLength(32)
+      )
+    )
   })
 )
 

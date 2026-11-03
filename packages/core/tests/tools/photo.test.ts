@@ -59,6 +59,36 @@ describe('set_image_adjustments', () => {
     expect(() => run(other.figma, { id: other.id, exposure: 3 })).toThrow()
   })
 
+  test('sets levels and a curve; the curve is sorted, and identity values are dropped', () => {
+    const { figma, graph, id } = setup([image()])
+    run(figma, {
+      id,
+      levels: { black: 0.1, white: 0.8, gamma: 1.2 },
+      curve: [
+        { x: 1, y: 1 },
+        { x: 0, y: 0 },
+        { x: 0.5, y: 0.7 }
+      ]
+    })
+    expect(graph.getNode(id)?.fills[0].adjustments).toEqual({
+      levels: { black: 0.1, white: 0.8, gamma: 1.2 },
+      curve: [
+        { x: 0, y: 0 },
+        { x: 0.5, y: 0.7 },
+        { x: 1, y: 1 }
+      ]
+    })
+    run(figma, {
+      id,
+      levels: { black: 0, white: 1, gamma: 1 },
+      curve: [
+        { x: 0, y: 0 },
+        { x: 1, y: 1 }
+      ]
+    })
+    expect(graph.getNode(id)?.fills[0]).not.toHaveProperty('adjustments')
+  })
+
   test('reaches AI chat and MCP', () => {
     expect(isToolExposed(tool, 'mcp') && isToolExposed(tool, 'ai')).toBe(true)
   })

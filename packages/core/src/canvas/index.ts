@@ -42,3 +42,11 @@ export type {
 } from './issues/types'
 export { hitTestStatusLabels, type PlacedStatusLabel } from './labels/status'
 export { LabelCache, type CachedComponent, type CachedSection } from './labels/cache'
+export {
+  cleanAdjustments,
+  CURVE_SAMPLES,
+  hasAdjustments,
+  isIdentityCurve,
+  isIdentityLevels,
+  sampleCurve
+} from './image-adjust'

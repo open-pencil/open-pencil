@@ -45,7 +45,13 @@ const ALL: ImageAdjustments = {
   highlights: -0.6,
   shadows: 0.55,
   hue: 0.5,
-  invert: true
+  invert: true,
+  levels: { black: 0.1, white: 0.9, gamma: 1.4 },
+  curve: [
+    { x: 0, y: 0.05 },
+    { x: 0.5, y: 0.6 },
+    { x: 1, y: 0.95 }
+  ]
 }
 
 describe('Figma paint filter mapping', () => {
@@ -86,7 +92,7 @@ describe('Figma paint filter mapping', () => {
 })
 
 describe('.fig round trip', () => {
-  test('every adjustment, including hue, invert and vibrance, survives save and reopen', async () => {
+  test('every adjustment, including hue, invert, vibrance, levels and curve, survives save and reopen', async () => {
     const [fill] = await roundTrip([imageFill(ALL)])
     expect(fill.adjustments).toEqual(ALL)
   })

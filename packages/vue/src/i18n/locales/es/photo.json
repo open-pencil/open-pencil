@@ -11,5 +11,11 @@
   "highlights": "Luces",
   "shadows": "Sombras",
   "hue": "Tono",
-  "invert": "Invertir"
+  "invert": "Invertir",
+  "levels": "Niveles",
+  "blackPoint": "Punto negro",
+  "whitePoint": "Punto blanco",
+  "midtones": "Medios tonos",
+  "curve": "Curva",
+  "resetCurve": "Restablecer curva"
 }
