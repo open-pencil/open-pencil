@@ -9,7 +9,7 @@ import { nodeOrientationMatrix } from '#core/geometry'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
-import { blurSigma, renderNoiseEffects } from './effects'
+import { blurSigma, drawnBlurRadius, renderNoiseEffects } from './effects'
 import type { SkiaRenderer } from './renderer'
 import {
   castsFromOwnShape,
@@ -79,7 +79,7 @@ function shadowLayerBounds(
     height: node.height
   }
   const offset = effect.offset
-  const padding = effect.radius * 2 + Math.abs(spread)
+  const padding = drawnBlurRadius(effect.radius) * 2 + Math.abs(spread)
   return r.ck.LTRBRect(
     box.x + Math.min(0, offset.x) - padding,
     box.y + Math.min(0, offset.y) - padding,

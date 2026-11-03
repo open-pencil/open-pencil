@@ -12,7 +12,7 @@ import { fontManager } from '#core/text/font/manager'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { renderBooleanOperation } from './boolean'
-import { blurSigma } from './effects'
+import { blurSigma, drawnBlurRadius } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
@@ -166,7 +166,7 @@ function renderMaskNodeContent(
   )
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const padding = (blur?.radius ?? 0) * 2
+    const padding = drawnBlurRadius(blur?.radius ?? 0) * 2
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
@@ -381,7 +381,7 @@ export function renderNode(
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
     r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
-    const blurPadding = layerBlur.radius * 2
+    const blurPadding = drawnBlurRadius(layerBlur.radius) * 2
     canvas.saveLayer(
       r.effectLayerPaint,
       viewportLayerBounds(r, world(), blurPadding) ??

@@ -6,13 +6,26 @@ import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances'
 import type { Color } from '../primitives'
 import { pixelLength } from '../text/lengths'
-import type { Fill, SceneNode, Stroke, StyleRun, TextLength } from '../types'
-import { NUMERIC_FIELDS, isNumericVariableBindingField, paintBindingTarget } from './fields'
+import type { Effect, Fill, SceneNode, Stroke, StyleRun, TextLength } from '../types'
+import {
+  effectBindableProperties,
+  effectBindingTarget,
+  NUMERIC_FIELDS,
+  isNumericVariableBindingField,
+  paintBindingTarget,
+  type EffectBindingProperty
+} from './fields'
 import { variableText, variableTruthy } from './text'
 import { variableValueReferences } from './value'
 export {
+  EFFECT_BINDING_PROPERTIES,
+  effectBindableProperties,
+  effectBindingField,
+  effectBindingTarget,
+  effectBindingVariableType,
   isNumericVariableBindingField,
   paintBindingTarget,
+  type EffectBindingProperty,
   TEXT_CONTENT_VARIABLE_TYPES,
   VISIBILITY_VARIABLE_TYPES,
   type PaintBindingList
@@ -181,6 +194,49 @@ export function resolvedPaintBindings(
   return changes
 }
 
+/** `effect` with one bound property set to its variable's value; a colour keeps its alpha. */
+function withBoundEffectValue(
+  effect: Effect,
+  property: EffectBindingProperty,
+  value: number | Color
+): Effect {
+  if (typeof value !== 'number') return property === 'color' ? { ...effect, color: value } : effect
+  if (property === 'offsetX') return { ...effect, offset: { ...effect.offset, x: value } }
+  if (property === 'offsetY') return { ...effect, offset: { ...effect.offset, y: value } }
+  if (property === 'radius' || property === 'spread') return { ...effect, [property]: value }
+  return effect
+}
+
+/**
+ * The effects a node's effect bindings resolve to in its mode, when one differs from what the node
+ * holds. Values stay as the variables give them, negative lengths included, as Figma keeps them;
+ * drawing treats a negative blur as none.
+ */
+export function resolvedEffectBindings(
+  graph: SceneGraph,
+  node: SceneNode,
+  fallback: VariableModeFallback = 'active'
+): Pick<Partial<SceneNode>, 'effects'> {
+  // Most nodes bind nothing, so no copy is made until a value actually changes.
+  let effects: Effect[] | undefined
+  for (const [field, variableId] of Object.entries(node.boundVariables)) {
+    const target = effectBindingTarget(field)
+    if (!target) continue
+    const effect = (effects ?? node.effects).at(target.index)
+    if (!effect || !effectBindableProperties(effect.type).includes(target.property)) continue
+    const value =
+      target.property === 'color'
+        ? graph.resolveColorVariableForNode(node.id, variableId, fallback)
+        : graph.resolveNumberVariableForNode(node.id, variableId, fallback)
+    if (value == null || (typeof value === 'number' && !Number.isFinite(value))) continue
+    const next = withBoundEffectValue(effect, target.property, value)
+    if (isEqual(next, effect)) continue
+    effects ??= [...node.effects]
+    effects[target.index] = next
+  }
+  return effects ? { effects } : {}
+}
+
 /**
  * The layers a reconcile looks at: those bound to these variables, directly or through a variable
  * aliasing them, or the layers in these subtrees. Without a scope, every layer.
@@ -257,9 +313,9 @@ function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterab
 }
 
 /**
- * Resolve live numeric, text, and visibility bindings, numbers in scene units, without authoring
- * instance overrides. A scope limits it to the layers a change can reach, so layers whose saved
- * values differ from their bindings elsewhere in the document are left as saved.
+ * Resolve live numeric, text, visibility, and effect bindings, numbers in scene units, without
+ * authoring instance overrides. A scope limits it to the layers a change can reach, so layers whose
+ * saved values differ from their bindings elsewhere in the document are left as saved.
  */
 export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
   const changed: string[] = []
@@ -267,7 +323,8 @@ export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScop
     const updates = {
       ...resolvedNumericBindings(graph, node),
       ...resolvedValueBindings(graph, node),
-      ...resolvedRunBindings(graph, node)
+      ...resolvedRunBindings(graph, node),
+      ...resolvedEffectBindings(graph, node)
     }
     if (Object.keys(updates).length === 0) continue
     graph.updateNode(node.id, updates)

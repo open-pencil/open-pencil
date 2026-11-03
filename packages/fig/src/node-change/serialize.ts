@@ -17,7 +17,6 @@ import { computeExportTransform, mapToFigmaType } from './basics'
 import { buildNodeDerivedTextData } from './derived-text/build'
 import { fillsOwnSizingAxis } from './export/fill-sizing'
 import {
-  buildAssetRefToVarGuidMap,
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
@@ -497,9 +496,6 @@ export function sceneNodeToKiwi(
     orderKeys,
     writeChildren
   } = options
-  // Raw paints retain library asset refs; effects use this map because their
-  // Kiwi schema accepts only GUID-backed aliases.
-  const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined
   return sceneNodeToKiwiWithContext(node, parentGuid, childIndex, localIdCounter, {
     graph,
     blobs,
@@ -510,7 +506,6 @@ export function sceneNodeToKiwi(
     glyphBlobMap,
     varIdToGuid,
     modeIdToGuid,
-    assetRefToVarGuid,
     componentPropertyDefinitionsById,
     propertyIdToGuid,
     slotContentRecords,

@@ -12,7 +12,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { bindStylePaints, STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
+import { bindStyleVariables, STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
 import { getTextStyle } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
 
@@ -36,7 +36,8 @@ function styleKinds(type: SceneNode['type'], isDocument: boolean): SharedStyleKi
 
 /**
  * Gives `target` the style, or refuses it with `refusal`. A stroke style goes to the layer that
- * draws the strokes, a connector's line, and the layer binds to the variables its paints follow.
+ * draws the strokes, a connector's line, and the layer binds to the variables its paints and
+ * effects follow.
  */
 function applyStyle(
   target: ProxyThis,
@@ -50,7 +51,7 @@ function applyStyle(
   const changes = styleChanges(scene, raw(holder, internals), kind, styleId)
   if (!changes) throw new Error(refusal)
   updateNode(holder, internals, changes)
-  bindStylePaints(scene, raw(holder, internals), kind, styleId)
+  bindStyleVariables(scene, raw(holder, internals), kind, styleId)
 }
 
 function styleMembers(internals: NodeProxyInternals, kind: SharedStyleKind, mixed: symbol) {

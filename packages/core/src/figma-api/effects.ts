@@ -1,9 +1,11 @@
 import * as v from 'valibot'
 
 import type { BlendMode, Effect } from '@open-pencil/scene-graph'
+import type { EffectBindingProperty } from '@open-pencil/scene-graph/variables'
 
 import { TRANSPARENT } from '#core/constants'
 import { invalid, parseFigma } from '#core/figma-api/validation'
+import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
 
 /** Blend modes in the order Figma lists them in its messages. */
 const BLEND_MODE_KEYS = {
@@ -40,8 +42,17 @@ const nonNegativeSchema = v.pipe(finiteSchema, v.minValue(0))
 
 const colorSchema = v.strictObject({ r: unitSchema, g: unitSchema, b: unitSchema, a: unitSchema })
 const vectorSchema = v.strictObject({ x: finiteSchema, y: finiteSchema })
-// Variable bindings on effects are not supported; Figma reports an empty object.
-const boundVariablesSchema = v.optional(v.strictObject({}))
+const aliasSchema = v.strictObject({ type: v.literal('VARIABLE_ALIAS'), id: v.string() })
+const shadowBindingsSchema = v.optional(
+  v.strictObject({
+    color: v.optional(aliasSchema),
+    radius: v.optional(aliasSchema),
+    spread: v.optional(aliasSchema),
+    offsetX: v.optional(aliasSchema),
+    offsetY: v.optional(aliasSchema)
+  })
+)
+const blurBindingsSchema = v.optional(v.strictObject({ radius: v.optional(aliasSchema) }))
 
 const shadowEntries = {
   color: colorSchema,
@@ -50,7 +61,7 @@ const shadowEntries = {
   spread: v.optional(finiteSchema),
   visible: v.boolean(),
   blendMode: v.picklist(BLEND_MODES),
-  boundVariables: boundVariablesSchema
+  boundVariables: shadowBindingsSchema
 }
 
 const effectSchema = v.variant('type', [
@@ -65,7 +76,7 @@ const effectSchema = v.variant('type', [
     radius: nonNegativeSchema,
     visible: v.boolean(),
     blurType: v.optional(v.literal('NORMAL'), 'NORMAL'),
-    boundVariables: boundVariablesSchema
+    boundVariables: blurBindingsSchema
   })
 ])
 
@@ -129,8 +140,14 @@ function toSceneEffect(effect: FigmaEffect): Effect {
   }
 }
 
-/** A scene effect in the shape Figma's `effects` getter returns. */
-export function toFigmaEffect(effect: Effect): FigmaEffect {
+/** The variables an effect's properties are bound to, as its `boundVariables` names them. */
+export type FigmaEffectBindings = Partial<Record<EffectBindingProperty, FigmaVariableAlias>>
+
+/**
+ * A scene effect in the shape Figma's `effects` getter returns, with the variables its properties
+ * are bound to.
+ */
+export function toFigmaEffect(effect: Effect, bindings: FigmaEffectBindings = {}): FigmaEffect {
   if (
     effect.type === 'LAYER_BLUR' ||
     effect.type === 'FOREGROUND_BLUR' ||
@@ -141,14 +158,14 @@ export function toFigmaEffect(effect: Effect): FigmaEffect {
       type: effect.type === 'BACKGROUND_BLUR' ? 'BACKGROUND_BLUR' : 'LAYER_BLUR',
       visible: effect.visible,
       radius: effect.radius,
-      boundVariables: {},
+      boundVariables: bindings.radius ? { radius: bindings.radius } : {},
       blurType: 'NORMAL'
     }
   }
   const shadow = {
     visible: effect.visible,
     radius: effect.radius,
-    boundVariables: {},
+    boundVariables: bindings,
     color: { ...effect.color },
     offset: { ...effect.offset },
     spread: effect.spread,

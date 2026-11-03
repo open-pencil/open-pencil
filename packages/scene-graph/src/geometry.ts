@@ -233,7 +233,8 @@ export function effectOverflow(effects?: Effect[]) {
     ) {
       continue
     }
-    const blurSpread = effect.radius + effect.spread
+    // A negative blur, which only a bound variable gives, draws as none.
+    const blurSpread = Math.max(0, effect.radius) + effect.spread
     left = Math.max(left, blurSpread + Math.max(0, -effect.offset.x))
     right = Math.max(right, blurSpread + Math.max(0, effect.offset.x))
     top = Math.max(top, blurSpread + Math.max(0, -effect.offset.y))

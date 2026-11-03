@@ -1,6 +1,10 @@
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
-import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import {
+  independentCornerChanges,
+  resolvedEffectBindings,
+  resolvedPaintBindings
+} from '@open-pencil/scene-graph/variables'
 import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
@@ -14,7 +18,12 @@ import {
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
-import { paintBindings, setPaintBindings } from '#core/figma-api/variables/bindings'
+import {
+  effectBindings,
+  paintBindings,
+  setEffectBindings,
+  setPaintBindings
+} from '#core/figma-api/variables/bindings'
 import { textStyleChanges } from '#core/text/character-style'
 
 /**
@@ -36,6 +45,18 @@ export function figmaStrokes(sceneGraph: SceneGraph, node: SceneNode): FigmaPain
     ? (resolvedPaintBindings(sceneGraph, node).strokes ?? node.strokes)
     : node.strokes
   return strokes.map((stroke, index) => toFigmaPaint(stroke, bound.get(index)))
+}
+
+/**
+ * `node`'s effects as Figma's plugin API reads them, bound values resolved and carrying the
+ * variables they are bound to.
+ */
+export function figmaEffects(sceneGraph: SceneGraph, node: SceneNode): FigmaEffect[] {
+  const bound = effectBindings(node)
+  const effects = bound.size
+    ? (resolvedEffectBindings(sceneGraph, node).effects ?? node.effects)
+    : node.effects
+  return effects.map((effect, index) => toFigmaEffect(effect, bound.get(index)))
 }
 
 function setFills(
@@ -128,10 +149,11 @@ export function installVisualNodeProxyAccessors(
     },
     effects: {
       get(this: ProxyThis): readonly FigmaEffect[] {
-        return Object.freeze(raw(this, internals).effects.map(toFigmaEffect))
+        return Object.freeze(figmaEffects(graph(this, internals), raw(this, internals)))
       },
       set(this: ProxyThis, value: readonly FigmaEffect[]) {
         updateNode(this, internals, { effects: parseFigmaEffects(value) })
+        setEffectBindings(graph(this, internals), raw(this, internals), value)
       }
     },
     // Applied shared styles, as Figma exposes them; an assignment inside an instance is an override.

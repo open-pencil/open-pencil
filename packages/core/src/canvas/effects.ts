@@ -33,7 +33,15 @@ export function createMaskFilterCache(): MaskFilterCache {
  * SVG export writes radius / 2, which is wider (`packages/core/tests/canvas/blur.test.ts`).
  */
 export function blurSigma(radius: number): number {
-  return radius * 0.43
+  return drawnBlurRadius(radius) * 0.43
+}
+
+/**
+ * The blur radius Figma draws: a negative one, which only a bound variable can give, draws as no
+ * blur, though the layer keeps the value.
+ */
+export function drawnBlurRadius(radius: number): number {
+  return Math.max(0, radius)
 }
 
 export function getCachedDropShadow(

@@ -1,4 +1,5 @@
 import { symbolOverridesOf, type SymbolOverride } from '#fig/instance-overrides/types'
+import { effectVariableAliases } from '#fig/node-change/effect-bindings'
 import { variableConsumptionEntries } from '#fig/node-change/variable/bindings'
 import { visitVariableReferences } from '#fig/node-change/variable/expression'
 
@@ -60,6 +61,9 @@ function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolve
         ['strokePaints', node.strokePaints]
       ] as const) {
         for (const paint of paints ?? []) normalize(paint.colorVar?.value?.alias, field, path)
+      }
+      for (const effect of node.effects ?? []) {
+        for (const alias of effectVariableAliases(effect)) normalize(alias, 'effects', path)
       }
       const modeMap = node.variableModeBySetMap as
         | {

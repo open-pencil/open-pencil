@@ -205,6 +205,24 @@ describe('blur effects fall off as in Figma', () => {
   })
 })
 
+describe('a negative blur, which only a bound variable gives', () => {
+  // Figma 126 exports a drop shadow and a layer blur of radius -6 pixel for pixel as radius 0.
+  for (const type of ['DROP_SHADOW', 'LAYER_BLUR'] as const) {
+    test(`draws a ${type.toLowerCase()} as no blur`, () => {
+      const row = (radius: number) =>
+        edgeRow(
+          (graph, frameId) =>
+            square(graph, frameId, {
+              fills: [solid(1, 1, 1)],
+              effects: [{ ...effect(type, radius), offset: { x: -10, y: 0 } }]
+            }),
+          3
+        )
+      expect(row(-6)).toEqual(row(0))
+    })
+  }
+})
+
 describe('shadows of a transparent fill', () => {
   const shadowRow = (opacity: number, showShadowBehindNode = false) =>
     edgeRow(

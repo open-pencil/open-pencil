@@ -350,7 +350,7 @@ export class SkiaRenderer {
     let expand = 0
     for (const e of node.effects) {
       if (!e.visible) continue
-      const blur = e.radius
+      const blur = Effects.drawnBlurRadius(e.radius)
       const spread = e.spread
       const ox = Math.abs(e.offset.x)
       const oy = Math.abs(e.offset.y)

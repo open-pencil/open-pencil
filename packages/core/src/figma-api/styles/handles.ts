@@ -11,7 +11,8 @@ import { figmaFills } from '#core/figma-api/accessors/visual'
 import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 import { parseFigma } from '#core/figma-api/validation'
-import { setPaintBindings } from '#core/figma-api/variables/bindings'
+import { figmaBoundVariables, setPaintBindings } from '#core/figma-api/variables/bindings'
+import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
 
 import { releaseUsers, restyleUsers, styleConsumers, type LayerUpdate } from './apply'
 
@@ -55,7 +56,6 @@ export abstract class FigmaBaseStyle {
   abstract readonly type: FigmaStyleType
   readonly remote = false
   readonly documentationLinks: readonly never[] = Object.freeze([])
-  readonly boundVariables: Readonly<Record<string, never>> = Object.freeze({})
   readonly [HOST]: StyleHost
 
   constructor(host: StyleHost, id: string) {
@@ -79,6 +79,11 @@ export abstract class FigmaBaseStyle {
   /** Brings what uses the style up to its values, after they changed. */
   [RESTYLE](): void {
     restyleUsers(this[HOST].graph, this[NODE]('restyle'), this[HOST].updateLayer)
+  }
+
+  /** The variables the style's values use; only an effect style lists any. */
+  get boundVariables(): Readonly<Record<string, readonly FigmaVariableAlias[]>> {
+    return Object.freeze({})
   }
 
   get name(): string {
@@ -160,6 +165,14 @@ export class FigmaEffectStyle extends FigmaBaseStyle {
   set effects(value: FigmaNodeProxy['effects']) {
     this[LAYER]('set_effects').effects = value
     this[RESTYLE]()
+  }
+
+  /** Every variable the style's effects use, each once, as a layer lists its own. */
+  override get boundVariables(): Readonly<Record<string, readonly FigmaVariableAlias[]>> {
+    const { effects } = figmaBoundVariables(this[NODE]('get_boundVariables'))
+    const bound: Record<string, readonly FigmaVariableAlias[]> = {}
+    if (Array.isArray(effects)) bound.effects = effects
+    return Object.freeze(bound)
   }
 }
 

@@ -235,7 +235,7 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 
 - `figma.variables.getLocalVariables(type?)`, `getVariableById(id)`, `getLocalVariableCollections()`, `getVariableCollectionById(id)`, and their `…Async` forms
 - `figma.variables.createVariableCollection(name)` and `createVariable(name, collection, resolvedType)`, which starts every mode at Figma's default
-- `figma.variables.createVariableAlias(variable)` and `setBoundVariableForPaint(paint, 'color', variable)`
+- `figma.variables.createVariableAlias(variable)`, `setBoundVariableForPaint(paint, 'color', variable)`, and `setBoundVariableForEffect(effect, field, variable)`, which binds a shadow's `color`, `radius`, `spread`, `offsetX`, or `offsetY`, or a blur's `radius`
 - `variable.setValueForMode(modeId, value)`, `valuesByMode`, `resolveForConsumer(node)`, `name`, `description`, `scopes`, `codeSyntax`, and `remove()`
 - `collection.addMode(name)`, `renameMode(modeId, name)`, `removeMode(modeId)`, `modes`, `defaultModeId`, `variableIds`, and `remove()`
 - `node.boundVariables`, `node.setBoundVariable(field, variable)`, `node.setExplicitVariableModeForCollection(collection, modeId)`, and `node.clearExplicitVariableModeForCollection(collection)`
