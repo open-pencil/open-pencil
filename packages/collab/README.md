@@ -7,4 +7,4 @@ How a collaboration room's [Yjs](https://yjs.dev) document maps to and from an O
 - Variables and collections, and the document's data outside its layers: plugin data, comment threads, libraries, color space, and kind (`variables.ts`, `document/sync.ts`).
 - Which of the room's edits its stored revisions hold (`saves.ts`).
 
-It depends on `@open-pencil/scene-graph` and `yjs` only. What a room needs of an editor is the `CollabEditor` interface: its graph, the events of local edits, and the refreshes a peer's edit asks for. Transports, presence, and the room's image storage belong to the app.
+It depends on `@open-pencil/scene-graph`, `yjs`, `es-toolkit`, and `valibot`, with no Vue or app code. What a room needs of an editor is the `CollabEditor` interface: its graph, the events of local edits, and the refreshes a peer's edit asks for. Transports, presence, and the room's image storage belong to the app.
