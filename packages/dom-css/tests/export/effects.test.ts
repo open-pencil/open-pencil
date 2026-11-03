@@ -45,19 +45,20 @@ describe('effects in HTML export', () => {
     graph.bindVariable(node.id, 'effects/1/radius', soft.id)
     const [element] = sceneNodeToDesignDocument(graph, node.id).children
     if (element?.type !== 'element') throw new Error('Expected an element')
-    const token = (pattern: RegExp, value: string | undefined) => pattern.exec(value ?? '')?.[1]
-    const blurToken = token(
-      /blur\(calc\(var\((--[\w-]+)\) \* 0\.43\)\)/,
-      element.inlineStyle?.filter
-    )
-    const shadowToken = token(
-      /calc\(var\((--[\w-]+)\) \* 0\.86\)/,
-      element.inlineStyle?.['box-shadow']
-    )
     // Each effect reads its own binding.
-    expect(blurToken).toBeDefined()
-    expect(shadowToken).toBeDefined()
-    expect(shadowToken).not.toBe(blurToken)
+    expect(element.inlineStyle?.filter).toBe('blur(calc(var(--blur-md) * 0.43))')
+    expect(element.inlineStyle?.['box-shadow']).toContain('calc(var(--shadow-soft) * 0.86)')
+  })
+
+  test('blur by the first layer blur and every background blur, as the canvas draws them', () => {
+    const blurs = style('RECTANGLE', [
+      effect('LAYER_BLUR', 10),
+      effect('LAYER_BLUR', 20),
+      effect('BACKGROUND_BLUR', 10),
+      effect('BACKGROUND_BLUR', 20)
+    ])
+    expect(blurs?.filter).toBe('blur(4.3px)')
+    expect(blurs?.['backdrop-filter']).toBe('blur(4.3px) blur(8.6px)')
   })
 
   test('blur as the canvas blurs, by the sigma CSS takes', () => {

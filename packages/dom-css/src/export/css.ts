@@ -71,16 +71,24 @@ function visibleEffects(effects: Effect[]): [number, Effect][] {
   return [...effects.entries()].filter(([, effect]) => effect.visible)
 }
 
-/** The layer blur as `filter` and the background blur as `backdrop-filter`. */
+/**
+ * The blurs as the canvas draws them: the first visible layer blur as `filter`, and every
+ * background blur in turn as `backdrop-filter`.
+ */
 function addBlurs(
   style: DesignStyleDeclaration,
   visible: [number, Effect][],
   css: EffectFieldCSS
 ): void {
-  for (const [index, effect] of visible) {
-    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
-      style.filter = blurToCSS(effect, index, css)
-    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blurToCSS(effect, index, css)
+  const layer = visible.find(
+    ([, effect]) => effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR'
+  )
+  if (layer) style.filter = blurToCSS(layer[1], layer[0], css)
+  const backdrop = visible.filter(([, effect]) => effect.type === 'BACKGROUND_BLUR')
+  if (backdrop.length > 0) {
+    style['backdrop-filter'] = backdrop
+      .map(([index, effect]) => blurToCSS(effect, index, css))
+      .join(' ')
   }
 }
 
