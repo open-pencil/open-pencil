@@ -8,8 +8,37 @@ import { fontManager } from '@open-pencil/core/text'
 import {
   getGlyphOutlineMetricsSync,
   glyphAdvanceSync,
-  glyphOutlineSourceSync
+  glyphOutlineSourceSync,
+  measureTextWithFont
 } from '#core/text/font/glyphs'
+
+/** `data` as the only face of a collection, as system CJK fonts ship: table offsets move by 16. */
+function collectionOf(data: ArrayBuffer): ArrayBuffer {
+  const header = 16
+  const bytes = new Uint8Array(header + data.byteLength)
+  bytes.set(new Uint8Array(data), header)
+  const view = new DataView(bytes.buffer)
+  view.setUint32(0, 0x74746366)
+  view.setUint32(4, 0x00010000)
+  view.setUint32(8, 1)
+  view.setUint32(12, header)
+  for (let table = 0; table < view.getUint16(header + 4); table++) {
+    const offset = header + 12 + table * 16 + 8
+    view.setUint32(offset, view.getUint32(offset) + header)
+  }
+  return bytes.buffer
+}
+
+test('reads a font collection as its first face, as CanvasKit draws it', async () => {
+  const file = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  await fontManager.markLoaded('Collection Test', 'Regular', collectionOf(file))
+  await fontManager.markLoaded('Collection Test Single', 'Regular', file)
+
+  expect(glyphOutlineSourceSync('Collection Test', 'Regular')?.covers('中文')).toBe(true)
+  expect(measureTextWithFont('中文', 16, 'Collection Test', 'Regular')).toEqual(
+    measureTextWithFont('中文', 16, 'Collection Test Single', 'Regular')
+  )
+})
 
 test('measures default advances whatever instance of a variable font was last outlined', async () => {
   const family = 'OpenType Test Variable'
