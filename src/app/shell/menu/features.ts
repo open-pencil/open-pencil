@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { computed, watch } from 'vue'
 
 import { isCloudBinding } from '@/app/cloud/integration'
+import { DONATION_URL } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
 import { REPORTS_ENABLED } from '@/app/reports/state'
 import { showsDocument } from '@/app/tabs'
@@ -18,7 +19,8 @@ const available: Record<AppMenuFeature, () => boolean> = {
   'local-file': () => store.hasWritableSource() && !store.getStorageBinding(),
   // Version history lives on the Cloud server that keeps the document.
   'cloud-document': () => isCloudBinding(store.getStorageBinding()),
-  reports: () => REPORTS_ENABLED
+  reports: () => REPORTS_ENABLED,
+  donation: () => DONATION_URL !== null
 }
 
 /** Whether a menu item that waits for a feature shows; items without one always do. */

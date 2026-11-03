@@ -14,6 +14,7 @@ export const menuMessageDefaults = {
   openTour: 'Open the Tour',
   diagnostics: 'Diagnostics…',
   reportProblem: 'Report a problem…',
+  supportOpenPencil: 'Support OpenPencil…',
   save: 'Save',
   saveAs: 'Save as…',
   saveTo: 'Save to…',

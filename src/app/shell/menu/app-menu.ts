@@ -25,6 +25,7 @@ import type {
 } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
+import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -112,6 +113,7 @@ export function useAppMenu() {
     'open-tour': 'openTour',
     diagnostics: 'diagnostics',
     'report-problem': 'reportProblem',
+    'support-openpencil': 'supportOpenPencil',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -196,6 +198,7 @@ export function useAppMenu() {
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
     'report-problem': () => openReportDialog(),
+    'support-openpencil': () => donate('menu'),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

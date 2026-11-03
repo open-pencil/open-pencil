@@ -60,6 +60,10 @@ export type UsageStatsAnswer = (typeof USAGE_STATS_ANSWERS)[number]
 export const CONSENT_SOURCES = ['welcome', 'prompt', 'settings'] as const
 export type ConsentSource = (typeof CONSENT_SOURCES)[number]
 
+/** Where a person chose to donate: the question the app asks, the File menu, or Settings. */
+export const DONATION_SOURCES = ['prompt', 'menu', 'settings'] as const
+export type DonationSource = (typeof DONATION_SOURCES)[number]
+
 const appVersionSchema = v.pipe(
   v.string(),
   v.maxLength(32),
@@ -119,6 +123,11 @@ export const usageEventSchema = v.variant('name', [
     name: v.literal('usage_stats_enabled'),
     timestamp: timestampSchema,
     source: v.picklist(CONSENT_SOURCES)
+  }),
+  v.strictObject({
+    name: v.literal('donate_clicked'),
+    timestamp: timestampSchema,
+    source: v.picklist(DONATION_SOURCES)
   })
 ])
 export type UsageEvent = v.InferOutput<typeof usageEventSchema>
