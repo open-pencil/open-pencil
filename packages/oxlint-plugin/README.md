@@ -33,7 +33,7 @@ The plugin is named `open-pencil`. Every rule is off until the configuration tur
 }
 ```
 
-In `oxlint.config.ts`, import it instead, typed as `OxlintConfig`: `import recommended from '@open-pencil/oxlint-plugin/recommended'`, then `extends: [recommended]`. Some rules, such as `typescript/no-floating-promises`, run only with `oxlint --type-aware`. `max-lines` (600), `complexity` (20), and the `no-console` methods it allows are OpenPencil's choices; override any rule after `extends`.
+An `extends` path resolves from the file that declares it, so a configuration in a nested workspace names the `node_modules` the package is installed in, such as `../../node_modules/@open-pencil/oxlint-plugin/recommended.json` when it is hoisted to the root. In `oxlint.config.ts`, import it instead, which resolves like any module, typed as `OxlintConfig`: `import recommended from '@open-pencil/oxlint-plugin/recommended'`, then `extends: [recommended]`. Some rules, such as `typescript/no-floating-promises`, run only with `oxlint --type-aware`. `max-lines` (600), `complexity` (20), and the `no-console` methods it allows are OpenPencil's choices; override any rule after `extends`.
 
 ## Rules
 
