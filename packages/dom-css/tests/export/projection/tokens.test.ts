@@ -114,3 +114,47 @@ describe('token references in design-to-code', () => {
     })
   })
 })
+
+describe('token references in effects', () => {
+  const shadow = (offsetY: number) => ({
+    type: 'DROP_SHADOW' as const,
+    color: BLUE_500,
+    offset: { x: 0, y: offsetY },
+    radius: 8,
+    spread: 0,
+    visible: true
+  })
+
+  test('write a bound shadow’s colour and length as tokens', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, { effects: [shadow(24)] })
+    graph.bindVariable(frame.id, 'effects/0/offsetY', 'gutter')
+    graph.bindVariable(frame.id, 'effects/0/color', 'primary')
+
+    // A shadow's blur length is twice the sigma the canvas blurs radius 8 by.
+    expect(element(graph, frame.id).inlineStyle?.['box-shadow']).toBe(
+      '0px var(--spacing-gutter) 6.88px 0px var(--color-primary)'
+    )
+  })
+
+  test('write a bound blur radius as a token', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, {
+      effects: [{ ...shadow(0), type: 'LAYER_BLUR' as const, radius: 24 }]
+    })
+    graph.bindVariable(frame.id, 'effects/0/radius', 'gutter')
+
+    // The token holds the Figma radius; `blur()` takes the sigma the canvas draws it with.
+    expect(element(graph, frame.id).inlineStyle?.filter).toBe(
+      'blur(calc(var(--spacing-gutter) * 0.43))'
+    )
+  })
+
+  test('keep the literal where the shadow draws another value, as a scaled instance does', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, { effects: [shadow(48)] })
+    graph.updateNode(frame.id, { boundVariables: { 'effects/0/offsetY': 'gutter' } })
+
+    expect(element(graph, frame.id).inlineStyle?.['box-shadow']).toBe('0px 48px 6.88px 0px #3B82F5')
+  })
+})

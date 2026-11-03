@@ -33,6 +33,22 @@ function style(type: SceneNode['type'], effects: Effect[]) {
 }
 
 describe('effects in HTML export', () => {
+  test('scale a bound blur radius in calc(), since its token holds the Figma radius', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Tokens')
+    const blur = graph.createVariable('blur/md', 'FLOAT', collection.id, 10)
+    const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+      effects: [effect('LAYER_BLUR', 10), effect('DROP_SHADOW', 10)]
+    })
+    graph.bindVariable(node.id, 'effects/0/radius', blur.id)
+    graph.bindVariable(node.id, 'effects/1/radius', blur.id)
+    const [element] = sceneNodeToDesignDocument(graph, node.id).children
+    if (element?.type !== 'element') throw new Error('Expected an element')
+    const name = /var\((--[\w-]+)\)/.exec(element.inlineStyle?.filter ?? '')?.[1]
+    expect(element.inlineStyle?.filter).toBe(`blur(calc(var(${name}) * 0.43))`)
+    expect(element.inlineStyle?.['box-shadow']).toContain(`calc(var(${name}) * 0.86)`)
+  })
+
   test('blur as the canvas blurs, by the sigma CSS takes', () => {
     expect(style('RECTANGLE', [effect('LAYER_BLUR', 10)])?.filter).toBe('blur(4.3px)')
     expect(style('RECTANGLE', [effect('BACKGROUND_BLUR', 10)])?.['backdrop-filter']).toBe(
