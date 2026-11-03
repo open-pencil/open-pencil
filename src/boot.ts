@@ -7,9 +7,9 @@ import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 import './app.css'
 import { recordRuntimeError } from '@/app/diagnostics'
 import { installNativeFigArchives } from '@/app/document/io/native-fig'
-import { installCanvasKitBinary, preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
+import { preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
 import { preloadFonts } from '@/app/editor/fonts'
-import { installBundledFonts } from '@/app/editor/fonts/bundled'
+import { registerInterfaceFont } from '@/app/editor/fonts/interface'
 import { observeBootErrors } from '@/app/shell/support/boot'
 import { reportBootFailure } from '@/app/shell/support/gate'
 import { IS_TAURI } from '@/constants'
@@ -23,9 +23,8 @@ import router from './router'
  * evaluates the app bundle and can still show the gate's guidance.
  */
 export async function boot(): Promise<void> {
-  installBundledFonts()
+  registerInterfaceFont()
   if (IS_TAURI) installNativeFigArchives()
-  installCanvasKitBinary()
   preloadCanvasKit()
   preloadFonts()
   const head = createHead()
