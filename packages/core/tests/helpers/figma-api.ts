@@ -41,12 +41,13 @@ export function asComponentNode(node: FigmaNodeProxy): FigmaNodeProxy & Componen
 
 /**
  * Names `api.currentPage` as a page. The boolean-operation entry points only take Figma's node
- * types, while the current-page proxy is typed by its selection alone.
+ * types, while the current-page proxy is typed by its selection alone and implements only part
+ * of `PageNode`.
  */
 export function asPageNode(
   page: FigmaNodeProxy & { selection: FigmaNodeProxy[] }
 ): FigmaNodeProxy & PageNode {
-  return page as FigmaNodeProxy & PageNode
+  return page as unknown as FigmaNodeProxy & PageNode
 }
 
 /**

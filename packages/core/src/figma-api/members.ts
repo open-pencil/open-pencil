@@ -44,10 +44,16 @@ type StyleIdSetter = MinimalFillsMixin['setFillStyleIdAsync']
  * at runtime, on the prototype or, for members Figma has on some node types alone, on each
  * proxy; this class only declares their types.
  */
+/**
+ * A node's type as Figma's plugin API names it: the document root reads as `'DOCUMENT'`, a page
+ * as `'PAGE'` (the scene graph's `CANVAS`), and a slot frame as `'SLOT'`, as Figma's
+ * `DocumentNode`, `PageNode` and `SlotNode` do.
+ */
+export type FigmaNodeType = Exclude<NodeType, 'CANVAS'> | 'DOCUMENT' | 'PAGE' | 'SLOT'
+
 export abstract class FigmaNodeMembers {
   declare readonly id: string
-  /** A slot frame reads as `'SLOT'`, as Figma's `SlotNode` does. */
-  declare readonly type: NodeType | 'SLOT'
+  declare readonly type: FigmaNodeType
   declare name: string
   declare readonly removed: boolean
   declare x: number

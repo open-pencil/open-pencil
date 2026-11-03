@@ -27,6 +27,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import type { FigmaNodeType } from '#core/figma-api/members'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
@@ -92,6 +93,13 @@ function setTransform(
   fitGroupsAround(scene, node.parentId, hostFitOptions(target, internals))
 }
 
+/** A node's type as Figma's plugin API names it (`FigmaNodeType`). */
+export function figmaNodeType(graph: SceneGraph, node: SceneNode): FigmaNodeType {
+  if (node.id === graph.rootId) return 'DOCUMENT'
+  if (slotPropertyId(node)) return 'SLOT'
+  return node.type === 'CANVAS' ? 'PAGE' : node.type
+}
+
 export function installBasicNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals
@@ -103,9 +111,8 @@ export function installBasicNodeProxyAccessors(
       }
     },
     type: {
-      get(this: ProxyThis): SceneNode['type'] | 'SLOT' {
-        const node = raw(this, internals)
-        return slotPropertyId(node) ? 'SLOT' : node.type
+      get(this: ProxyThis): FigmaNodeType {
+        return figmaNodeType(graph(this, internals), raw(this, internals))
       }
     },
     name: {
