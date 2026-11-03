@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { memoryStateStore } from '#cloud-tests/helpers/relay'
 import { openRoomLog } from '#cloud/server/collaboration/relay/log'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 
 const room = { documentId: crypto.randomUUID(), roomEpoch: 0 }
 const limits = { updates: 3, bytes: 1 << 20 }
