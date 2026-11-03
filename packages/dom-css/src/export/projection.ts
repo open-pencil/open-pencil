@@ -362,7 +362,7 @@ function styleFromSceneNode(
   addBackground(style, node, css)
   addImageStyle(style, node)
   addStroke(style, node, css)
-  Object.assign(style, effectsToCSS(node.effects))
+  Object.assign(style, effectsToCSS(node.effects, css))
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   addCornerRadii(style, node, css)
   if (node.clipsContent) style.overflow = 'hidden'
@@ -417,7 +417,7 @@ function styleFromTextNode(
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
-  const shadow = dropShadowToCSS(node.effects[0])
+  const shadow = dropShadowToCSS(node.effects[0], css)
   if (shadow) style['text-shadow'] = shadow
   if (node.textDecoration !== 'NONE') {
     style['text-decoration-line'] =

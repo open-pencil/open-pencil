@@ -61,8 +61,8 @@ HTML export, Tailwind HTML, and Tailwind JSX (`sceneNodesToTailwindJSX`) share o
 | grid child position | `grid-column`, `grid-row`, `*-start` | Spans are written before starts. |
 | `layoutGrow` in auto layout | `flex-grow: 1` | |
 | rotation | `transform: rotate()` | Rotates around the element center. |
-| drop and inner shadows | `box-shadow` | Every visible shadow, in order; inner shadows use `inset`. |
-| layer / background blur | `filter` / `backdrop-filter: blur()` | |
+| drop and inner shadows | `box-shadow` | Every visible shadow, in order; inner shadows use `inset`. A field bound to a variable is written as its `var()` where it draws the variable's value. |
+| layer / background blur | `filter` / `backdrop-filter: blur()` | A radius bound to a variable is written as its `var()` where it draws the variable's value; a negative radius keeps the literal, since CSS has no negative blur. |
 | right-to-left layout or text | `direction: rtl` | |
 | section | `<section>` | |
 | colors | hex, or `rgba()` when translucent | Hex lets Tailwind match its palette. |

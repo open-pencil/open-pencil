@@ -5,6 +5,7 @@ import type { Effect, SceneGraph, SceneNode, TextLength } from '@open-pencil/sce
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
+import { effectBindingField, effectBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { tryParseFigmaEffects } from '#core/figma-api/effects'
 import {
@@ -14,8 +15,14 @@ import {
   decodeFontWeight,
   referencePath
 } from '#core/io/formats/design-tokens/decode'
+import { tokenReference } from '#core/io/formats/design-tokens/paths'
 import type { DesignTokenBundle, ReadToken } from '#core/io/formats/design-tokens/read'
-import { isShadow, shadowTokenValue, typographyValue } from '#core/io/formats/design-tokens/styles'
+import {
+  isShadow,
+  SHADOW_TOKEN_FIELDS,
+  shadowTokenValue,
+  typographyValue
+} from '#core/io/formats/design-tokens/styles'
 import { OPENPENCIL_EXTENSION } from '#core/io/formats/design-tokens/types'
 
 import type { AliasTarget, ImportSkip, ResolvedReference } from './'
@@ -27,8 +34,8 @@ export interface PlannedStyle {
   /** The style updated, or null for one the import makes. */
   existingNodeId: string | null
   fields: Partial<SceneNode>
-  /** Text style fields bound to variables. */
-  bindings: Partial<Record<TextBindingField, AliasTarget>>
+  /** Fields bound to variables, such as `fontSize` or `effects/0/radius`. */
+  bindings: Record<string, AliasTarget>
 }
 
 type TextBindingField = 'fontFamily' | 'fontSize' | 'letterSpacing' | 'lineHeight'
@@ -52,7 +59,10 @@ const ownTextSchema = v.object({
   }),
   bindings: v.optional(v.record(v.string(), v.string()))
 })
-const ownEffectsSchema = v.object({ effects: v.array(v.unknown()) })
+const ownEffectsSchema = v.object({
+  effects: v.optional(v.array(v.unknown())),
+  bindings: v.optional(v.record(v.string(), v.string()))
+})
 
 /** The composite types that become styles. */
 const STYLE_KINDS: Partial<Record<string, PlannedStyle['kind']>> = {
@@ -126,6 +136,16 @@ function decodedTextFields(token: ReadToken, resolve: Resolve): Partial<SceneNod
   }
 }
 
+/** A typography token as text style fields and the fields its references bind. */
+function textStyle(
+  token: ReadToken,
+  resolve: Resolve,
+  alias: Alias
+): Pick<PlannedStyle, 'fields' | 'bindings'> | null {
+  const fields = textFields(token, resolve)
+  return fields && { fields, bindings: textBindings(token, alias) }
+}
+
 /** Text style fields bound to variables: OpenPencil's recorded bindings, or the token's references. */
 function textBindings(token: ReadToken, alias: Alias): PlannedStyle['bindings'] {
   const own = ownText(token)
@@ -141,66 +161,145 @@ function textBindings(token: ReadToken, alias: Alias): PlannedStyle['bindings'] 
   return bindings
 }
 
-/** One shadow of a shadow token, or the shadows a referenced shadow token holds. */
-function shadowEffects(raw: unknown, resolve: Resolve, depth = 0): Effect[] | null {
+/** Shadows read from a token, each with the token paths its fields reference. */
+type ReadShadows = { effects: Effect[]; references: Array<Record<string, string[]>> }
+
+/** The token paths one shadow's fields reference, by the effect property they set. */
+function shadowReferences(raw: Record<string, unknown>): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(SHADOW_TOKEN_FIELDS).flatMap(([property, key]) => {
+      const path = referencePath(raw[key])
+      return path ? [[property, path]] : []
+    })
+  )
+}
+
+/**
+ * One shadow of a shadow token, or the shadows a referenced shadow token holds; those reference a
+ * whole shadow, not a variable, so they bind nothing.
+ */
+function shadowEffects(raw: unknown, resolve: Resolve, depth = 0): ReadShadows | null {
   const path = referencePath(raw)
   if (path) {
     const resolved = depth < 16 ? resolve(path) : undefined
-    return resolved?.kind === 'token' ? shadowList(resolved.token.value, resolve, depth + 1) : null
+    const shadows =
+      resolved?.kind === 'token' ? shadowList(resolved.token.value, resolve, depth + 1) : null
+    return shadows && { effects: shadows.effects, references: shadows.effects.map(() => ({})) }
   }
   if (!isPlainObject(raw)) return null
   const color = fieldValue<Color>(raw.color, resolve, (value) =>
     isPlainObject(value) && typeof value.r === 'number' ? (value as Color) : decodeColor(value)
   )
-  const length = (key: string) => fieldValue(raw[key], resolve, pixels) ?? 0
-  if (!color) return null
-  return [
-    {
-      type: raw.inset === true ? 'INNER_SHADOW' : 'DROP_SHADOW',
-      color,
-      offset: { x: length('offsetX'), y: length('offsetY') },
-      radius: length('blur'),
-      spread: length('spread'),
-      visible: true,
-      blendMode: 'NORMAL'
-    }
-  ]
+  // A missing length is 0; one that names a token which does not resolve makes the shadow invalid.
+  const length = (key: string) =>
+    raw[key] === undefined ? 0 : fieldValue(raw[key], resolve, pixels)
+  const [offsetX, offsetY, radius, spread] = ['offsetX', 'offsetY', 'blur', 'spread'].map(length)
+  if (!color || offsetX === null || offsetY === null || radius === null || spread === null)
+    return null
+  const effect: Effect = {
+    type: raw.inset === true ? 'INNER_SHADOW' : 'DROP_SHADOW',
+    color,
+    offset: { x: offsetX, y: offsetY },
+    radius,
+    spread,
+    visible: true,
+    blendMode: 'NORMAL'
+  }
+  return { effects: [effect], references: [shadowReferences(raw)] }
 }
 
-function shadowList(value: unknown, resolve: Resolve, depth = 0): Effect[] | null {
+function shadowList(value: unknown, resolve: Resolve, depth = 0): ReadShadows | null {
   const entries = Array.isArray(value) ? value : [value]
-  const effects: Effect[] = []
+  const list: ReadShadows = { effects: [], references: [] }
   for (const entry of entries) {
     const shadows = shadowEffects(entry, resolve, depth)
     if (!shadows) return null
-    effects.push(...shadows)
+    list.effects.push(...shadows.effects)
+    list.references.push(...shadows.references)
   }
-  return effects.length > 0 ? effects : null
+  return list.effects.length > 0 ? list : null
 }
 
 /**
  * Shadows edited in another tool, in place of the visible shadows OpenPencil wrote. Effects
  * `$value` cannot hold, such as blurs and hidden shadows, keep their places; extra shadows go last.
+ * Also gives the position each new shadow lands at, and each kept effect's new position.
  */
-function replaceShadows(exact: readonly Effect[], shadows: readonly Effect[]): Effect[] {
+function replaceShadows(
+  exact: readonly Effect[],
+  shadows: readonly Effect[]
+): { effects: Effect[]; positions: number[]; kept: Map<number, number> } {
   const queue = [...shadows]
-  const effects = exact.flatMap((effect) => {
-    if (!isShadow(effect) || !effect.visible) return [effect]
-    const next = queue.shift()
-    return next ? [next] : []
-  })
-  return [...effects, ...queue]
+  const effects: Effect[] = []
+  const positions: number[] = []
+  const kept = new Map<number, number>()
+  for (const [index, effect] of exact.entries()) {
+    if (isShadow(effect) && effect.visible) {
+      const next = queue.shift()
+      if (!next) continue
+      positions.push(effects.length)
+      effects.push(next)
+    } else {
+      kept.set(index, effects.length)
+      effects.push(effect)
+    }
+  }
+  for (const next of queue) {
+    positions.push(effects.length)
+    effects.push(next)
+  }
+  return { effects, positions, kept }
 }
 
-/** A shadow token as effects, preferring the exact effects OpenPencil wrote. */
-function effectFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
+/** A shadow token as effect style fields and the fields its references bind. */
+function effectStyle(
+  token: ReadToken,
+  resolve: Resolve,
+  alias: Alias
+): Pick<PlannedStyle, 'fields' | 'bindings'> | null {
   const own = v.safeParse(ownEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const ownBindings = own.success ? (own.output.bindings ?? {}) : {}
   // Extension effects that do not read fall back to the token's own shadows.
-  const exact = own.success ? tryParseFigmaEffects(own.output.effects) : null
-  if (exact && isEqual(token.value, shadowTokenValue(exact))) return { effects: exact }
+  const exact = own.success && own.output.effects ? tryParseFigmaEffects(own.output.effects) : null
+  if (exact && isEqual(token.value, shadowTokenValue(exact, ownBindings))) {
+    return { fields: { effects: exact }, bindings: aliasedBindings(ownBindings, alias) }
+  }
   const shadows = shadowList(token.value, resolve)
   if (!shadows) return null
-  return { effects: exact ? replaceShadows(exact, shadows) : shadows }
+  const placed = exact
+    ? replaceShadows(exact, shadows.effects)
+    : { effects: shadows.effects, positions: shadows.effects.map((_, index) => index), kept: null }
+  const references: Record<string, string> = {}
+  // Effects `$value` cannot hold, such as a bound blur, keep the bindings OpenPencil recorded.
+  for (const [field, reference] of Object.entries(ownBindings)) {
+    const target = effectBindingTarget(field)
+    const index = target && placed.kept?.get(target.index)
+    if (target && index !== undefined && index !== null)
+      references[effectBindingField(index, target.property)] = reference
+  }
+  shadows.references.forEach((paths, shadow) => {
+    const index = placed.positions.at(shadow)
+    if (index === undefined) return
+    for (const [property, path] of Object.entries(paths)) {
+      const field = `effects/${index}/${property}`
+      if (effectBindingTarget(field)) references[field] = tokenReference(path)
+    }
+  })
+  return { fields: { effects: placed.effects }, bindings: aliasedBindings(references, alias) }
+}
+
+/** Bound fields whose references name a variable, as alias targets. */
+function aliasedBindings(
+  references: Readonly<Record<string, string>>,
+  alias: Alias
+): PlannedStyle['bindings'] {
+  const bindings: PlannedStyle['bindings'] = {}
+  for (const [field, reference] of Object.entries(references)) {
+    const path = referencePath(reference)
+    const target = path && effectBindingTarget(field) && alias(path)
+    if (target) bindings[field] = target
+  }
+  return bindings
 }
 
 /** Typography tokens as text styles and shadow tokens as effect styles, matched by name. */
@@ -220,8 +319,9 @@ export function planStyles(
       skipped.push({ name: token.name, collection: undefined, reason: 'unsupported-type' })
       continue
     }
-    const fields = kind === 'TEXT' ? textFields(token, resolve) : effectFields(token, resolve)
-    if (!fields) {
+    const style =
+      kind === 'TEXT' ? textStyle(token, resolve, alias) : effectStyle(token, resolve, alias)
+    if (!style) {
       skipped.push({ name: token.name, collection: undefined, reason: 'invalid-value' })
       continue
     }
@@ -232,8 +332,7 @@ export function planStyles(
       kind,
       name: token.name,
       existingNodeId: existing?.nodeId ?? null,
-      fields,
-      bindings: kind === 'TEXT' ? textBindings(token, alias) : {}
+      ...style
     })
   }
   return { styles, skipped }

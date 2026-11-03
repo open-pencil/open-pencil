@@ -1,5 +1,6 @@
-import type { SceneGraph, SceneNode, Variable } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph, SceneNode, Variable } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { effectBindingTarget, type EffectBindingProperty } from '@open-pencil/scene-graph/variables'
 
 import { collectionVariables, variableCSSNames, variableNamespace } from './names'
 import { modeAttribute } from './stylesheet'
@@ -52,6 +53,13 @@ function sameColor(a: Color, b: Color): boolean {
 
 function isColor(value: unknown): value is Color {
   return typeof value === 'object' && value !== null && 'r' in value && 'a' in value
+}
+
+/** The length an effect draws for one of its bindable length properties. */
+function effectLength(effect: Effect, property: Exclude<EffectBindingProperty, 'color'>): number {
+  if (property === 'offsetX') return effect.offset.x
+  if (property === 'offsetY') return effect.offset.y
+  return property === 'radius' ? effect.radius : effect.spread
 }
 
 /** Where an alias chain ends in the modes the canvas draws: a value, or a CSS expression. */
@@ -161,7 +169,21 @@ export class DesignTokens {
     return undefined
   }
 
-  #drawsResolved(node: SceneNode, field: string, { value, end, expression }: TokenChain): boolean {
+  /** Whether a bound effect field draws the value its token chain ends at, in a length CSS reads. */
+  #drawsEffect(node: SceneNode, field: string, { value, end, expression }: TokenChain): boolean {
+    const bound = effectBindingTarget(field)
+    const effect = bound && node.effects.at(bound.index)
+    if (!bound || !effect?.visible) return false
+    if (bound.property === 'color') return isColor(value) && sameColor(effect.color, value)
+    // CSS has no negative blur, so a variable that gives one keeps the literal.
+    if (typeof value !== 'number' || (bound.property === 'radius' && value < 0)) return false
+    if (Math.fround(effectLength(effect, bound.property)) !== Math.fround(value)) return false
+    return expression || LENGTH_UNITS.has(variableUnit(end))
+  }
+
+  #drawsResolved(node: SceneNode, field: string, chain: TokenChain): boolean {
+    if (effectBindingTarget(field)) return this.#drawsEffect(node, field, chain)
+    const { value, end, expression } = chain
     if (field.endsWith('/color')) {
       const paint = boundPaint(node, field)
       if (!paint?.visible || paint.type !== 'SOLID' || !isColor(value)) return false

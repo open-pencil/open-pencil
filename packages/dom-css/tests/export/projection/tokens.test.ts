@@ -114,3 +114,43 @@ describe('token references in design-to-code', () => {
     })
   })
 })
+
+describe('token references in effects', () => {
+  const shadow = (offsetY: number) => ({
+    type: 'DROP_SHADOW' as const,
+    color: BLUE_500,
+    offset: { x: 0, y: offsetY },
+    radius: 8,
+    spread: 0,
+    visible: true
+  })
+
+  test('write a bound shadow’s colour and length as tokens', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, { effects: [shadow(24)] })
+    graph.bindVariable(frame.id, 'effects/0/offsetY', 'gutter')
+    graph.bindVariable(frame.id, 'effects/0/color', 'primary')
+
+    expect(element(graph, frame.id).inlineStyle?.['box-shadow']).toBe(
+      '0px var(--spacing-gutter) 8px 0px var(--color-primary)'
+    )
+  })
+
+  test('write a bound blur radius as a token', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, {
+      effects: [{ ...shadow(0), type: 'LAYER_BLUR' as const, radius: 24 }]
+    })
+    graph.bindVariable(frame.id, 'effects/0/radius', 'gutter')
+
+    expect(element(graph, frame.id).inlineStyle?.filter).toBe('blur(var(--spacing-gutter))')
+  })
+
+  test('keep the literal where the shadow draws another value, as a scaled instance does', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, { effects: [shadow(48)] })
+    graph.updateNode(frame.id, { boundVariables: { 'effects/0/offsetY': 'gutter' } })
+
+    expect(element(graph, frame.id).inlineStyle?.['box-shadow']).toBe('0px 48px 8px 0px #3B82F5')
+  })
+})
