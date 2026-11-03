@@ -601,6 +601,7 @@
   "behaviourDisabled": "Desactivado",
   "behaviourOnValue": "Encendido",
   "behaviourOffValue": "Apagado",
+  "behaviourValueField": "{value}: {side}",
   "behaviourTrack": "Pista",
   "behaviourThumb": "Control",
   "behaviourRange": "Rango",

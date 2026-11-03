@@ -608,6 +608,7 @@
   "behaviourDisabled": "Wyłączony",
   "behaviourOnValue": "Wł.",
   "behaviourOffValue": "Wył.",
+  "behaviourValueField": "{value}: {side}",
   "behaviourTrack": "Ścieżka",
   "behaviourThumb": "Uchwyt",
   "behaviourRange": "Zakres",
